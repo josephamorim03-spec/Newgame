@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Cronomotor — Newgame</title>
+<style>
+:root{--ink:#090d10;--petrol:#10262b;--brass:#c28a45;--hot:#ef613f;--cold:#61c9e9;--paper:#e8d6ae}
+*{box-sizing:border-box}body{margin:0;background:#060a0c;color:#eee;font-family:Inter,system-ui,sans-serif;overflow-x:hidden}
+#game{min-height:100svh;max-width:520px;margin:auto;position:relative;background:linear-gradient(#10252c,#081013 55%,#050708);overflow:hidden;padding-bottom:18px}
+.sky{height:270px;position:relative;overflow:hidden;background:radial-gradient(circle at 78% 32%,#dc6d3133,transparent 26%),linear-gradient(#15333a,#0c171b)}
+.sky:before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0 43px,#05090b55 44px 49px),repeating-linear-gradient(0deg,transparent 0 58px,#c56b2a12 59px 61px);transform:perspective(300px) rotateX(5deg) scale(1.2)}
+.pipe{position:absolute;background:linear-gradient(90deg,#10181a,#53605a,#171b19);border:2px solid #050707;box-shadow:4px 5px 0 #030404}
+.p1{width:30px;height:220px;left:22px;top:20px}.p2{width:20px;height:180px;left:72px;top:65px}.p3{width:24px;height:210px;right:18px;top:25px}
+.smoke{position:absolute;border-radius:50%;background:#93a3a04a;filter:blur(8px);animation:drift 6s ease-in-out infinite}.s1{width:130px;height:55px;left:-20px;top:30px}.s2{width:170px;height:70px;right:-30px;top:90px;animation-delay:-3s}@keyframes drift{50%{transform:translate(24px,-8px);opacity:.35}}
+.title{position:absolute;z-index:4;left:16px;top:13px;font:italic 900 27px/1 Impact,sans-serif;letter-spacing:.04em;transform:rotate(-2deg);text-shadow:4px 4px #000,-2px 0 var(--hot)}
+.sub{position:absolute;z-index:4;left:18px;top:48px;font:700 8px/1 monospace;letter-spacing:.16em;color:#bba78c}
+.boss{position:absolute;z-index:3;right:27px;top:65px;width:170px;height:170px;filter:drop-shadow(0 14px 10px #0009)}
+.crown{position:absolute;left:47px;top:0;width:76px;height:35px;background:linear-gradient(#e2a64f,#6d3c1d);clip-path:polygon(0 100%,7% 16%,27% 60%,48% 0,66% 58%,92% 15%,100% 100%);border-bottom:4px solid #2c170d}
+.head{position:absolute;left:25px;top:30px;width:120px;height:110px;border:5px solid #20130e;border-radius:42% 42% 32% 32%;background:radial-gradient(circle at 45% 30%,#b97138,#56301e 55%,#211714);box-shadow:inset 0 0 0 5px #c18a4c55,0 0 35px #ef74372b}
+.eye{position:absolute;top:45px;width:24px;height:17px;background:#ffb75b;border:4px solid #1b0c08;border-radius:50%;box-shadow:0 0 16px #ff623e}.e1{left:22px}.e2{right:22px}
+.mouth{position:absolute;left:29px;bottom:20px;width:62px;height:21px;background:#110b09;border:3px solid #382015}.mouth:after{content:"";position:absolute;inset:5px;background:repeating-linear-gradient(90deg,#d7b46f 0 5px,#28140e 6px 9px)}
+.intent{position:absolute;z-index:5;left:16px;bottom:12px;background:#090d10e8;border:2px solid #70412c;padding:8px 11px;box-shadow:4px 4px #000;font:800 10px monospace}.intent b{color:#ff7454;font-size:20px}
+.hp{position:absolute;z-index:5;right:18px;bottom:16px;width:180px}.hp label{font:800 8px monospace}.bar{height:9px;border:2px solid #060707;background:#261313}.fill{height:100%;width:75%;background:linear-gradient(90deg,#b42f28,#ff7652)}
+.machine{margin:-4px 12px 0;position:relative;padding:16px 12px 13px;border:3px solid #1a100b;border-radius:15px;background:linear-gradient(#664129,#251c17 70%,#111415);box-shadow:0 9px 0 #030404,inset 0 0 0 3px #b4773b55}
+.machine:before,.machine:after{content:"";position:absolute;top:45px;bottom:18px;width:6px;background:#ff7139;box-shadow:0 0 17px #ff632f}.machine:before{left:-5px}.machine:after{right:-5px}
+.chambers{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.ch{height:142px;border:2px solid #120c09;border-radius:8px;background:linear-gradient(90deg,#201a16,#5b4836 48%,#211a15);box-shadow:inset 0 0 18px #000,3px 4px #0a0908;position:relative;padding-top:13px;text-align:center}
+.ch.attack{outline:1px solid #a83c2a}.ch.guard{outline:1px solid #28708a}.ch small{font:900 8px monospace;letter-spacing:.08em}.ch.attack small{color:#ff7c5c}.ch.guard small{color:#70d5f3}
+.socket{position:absolute;left:50%;bottom:19px;transform:translateX(-50%);width:69px;height:69px;border-radius:50%;border:7px dashed #17120e;background:radial-gradient(circle,#101719,#27241f 60%,#8b643a);display:grid;place-items:center;font:900 29px monospace;color:#f2dfb5}
+.hand{display:flex;justify-content:center;gap:14px;padding:17px 8px 9px}.part{width:68px;height:68px;border:2px solid #17100b;border-radius:10px;background:linear-gradient(145deg,#e0c78f,#8d7047);box-shadow:4px 5px #020303,inset 5px 5px #fff3bd55;font:900 29px monospace;color:#17120d}
+.part.sel{transform:translateY(-8px) rotate(-3deg);outline:3px solid #ffb44c;box-shadow:5px 11px #020303,0 0 24px #ff9c3b77}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:7px 12px}.act{height:76px;border:2px solid #17100c;border-radius:8px;color:#f4e2bd;font-weight:900;box-shadow:4px 5px #020303}.attackBtn{background:linear-gradient(#a83b2b,#411d18)}.guardBtn{background:linear-gradient(#286f89,#153543)}.act span{display:block;font-size:22px}
+.phase{text-align:center;margin:13px 14px 0;padding:9px;border-top:1px solid #6c5a43;border-bottom:1px solid #30291f;color:#d6bd94;font:800 9px monospace;letter-spacing:.08em}
+.flash{animation:flash .32s steps(2)}@keyframes flash{50%{filter:brightness(1.8);transform:translateX(4px)}}.pop{animation:pop .28s cubic-bezier(.2,1.8,.3,1)}@keyframes pop{50%{transform:scale(1.18) rotate(-4deg)}}
+</style></head>
+<body><main id="game">
+<section class="sky" id="sky"><div class="pipe p1"></div><div class="pipe p2"></div><div class="pipe p3"></div><div class="smoke s1"></div><div class="smoke s2"></div><div class="title">CRONOMOTOR</div><div class="sub">CÂMARA 03 · PRESSÃO ALTA</div>
+<div class="boss" id="boss"><div class="crown"></div><div class="head"><i class="eye e1"></i><i class="eye e2"></i><div class="mouth"></div></div></div>
+<div class="intent">⚠ REI PREPARA <b id="intent">6</b></div><div class="hp"><label>REI DA CALDEIRA · <span id="ehp">64</span>/85</label><div class="bar"><div class="fill" id="efill"></div></div></div></section>
+<section class="machine"><div class="chambers"><div class="ch attack" data-i="0"><small>PISTÃO +50%</small><div class="socket">—</div></div><div class="ch" data-i="1"><small>NÚCLEO</small><div class="socket">—</div></div><div class="ch guard" data-i="2"><small>BARREIRA +75%</small><div class="socket">—</div></div></div><div class="hand" id="hand"></div></section>
+<div class="actions"><button class="act attackBtn" id="atk">ACIONAR PISTÃO<span id="dmg">0</span></button><button class="act guardBtn" id="def">ERGUER BARREIRA<span id="blk">0</span></button></div>
+<div class="phase" id="phase">SUA VEZ · MONTE A MÁQUINA</div></main>
+<script>
+const $=q=>document.querySelector(q),$$=q=>[...document.querySelectorAll(q)];
+const S={ehp:64,php:22,intent:6,heat:1,hand:[1,1,2],ch:[null,null,null],sel:null};
+let AC;function tone(f,d=.06){try{AC??=new AudioContext();let o=AC.createOscillator(),g=AC.createGain();o.frequency.value=f;g.gain.value=.035;g.gain.exponentialRampToValueAtTime(.0001,AC.currentTime+d);o.connect(g).connect(AC.destination);o.start();o.stop(AC.currentTime+d)}catch(e){}}
+const sum=()=>S.ch.reduce((a,b)=>a+(b||0),0),dmg=()=>Math.floor((sum()+(S.ch[0]||0)*.5)*S.heat),blk=()=>Math.ceil(sum()+(S.ch[2]||0)*.75);
+function render(){let h=$('#hand');h.innerHTML='';S.hand.forEach((v,i)=>{let b=document.createElement('button');b.className='part'+(S.sel===i?' sel':'');b.textContent=v;b.onclick=()=>{S.sel=i;tone(360);render()};h.append(b)});$$('.socket').forEach((x,i)=>x.textContent=S.ch[i]??'—');$('#dmg').textContent=dmg();$('#blk').textContent=blk();$('#ehp').textContent=S.ehp;$('#efill').style.width=(S.ehp/85*100)+'%';$('#intent').textContent=S.intent;$('#phase').textContent=sum()?('ESCOLHA A SAÍDA · DEPOIS O REI ATACA '+S.intent):'SUA VEZ · MONTE A MÁQUINA'}
+$$('.ch').forEach(c=>c.onclick=()=>{let i=+c.dataset.i;if(S.sel==null)return;let v=S.hand[S.sel];if(S.ch[i]==null){S.ch[i]=v;S.hand.splice(S.sel,1);tone(150)}else if(S.ch[i]===v){S.ch[i]*=2;S.hand.splice(S.sel,1);S.heat=Math.min(2.5,S.heat+.25);tone(480);c.classList.add('pop');setTimeout(()=>c.classList.remove('pop'),300)}S.sel=null;render()});
+function refill(){while(S.hand.length<3)S.hand.push(1+Math.floor(Math.random()*3))}
+function enemy(){let hit=Math.max(0,S.intent-(S.shield||0));S.php-=hit;S.shield=0;S.intent=5+Math.floor(Math.random()*4);refill();$('#sky').classList.add('flash');setTimeout(()=>$('#sky').classList.remove('flash'),330);render()}
+function clear(){S.ch=[null,null,null];S.heat=Math.max(1,S.heat-.08);refill()}
+$('#atk').onclick=()=>{if(!sum())return;let d=dmg();S.ehp=Math.max(0,S.ehp-d);tone(85,.15);$('#boss').classList.add('flash');clear();render();if(S.ehp>0)setTimeout(enemy,450)}
+$('#def').onclick=()=>{if(!sum())return;S.shield=blk();tone(520,.12);clear();render();setTimeout(enemy,420)}
+render();
+</script></body></html>
