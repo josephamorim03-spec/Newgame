@@ -145,7 +145,7 @@ function beep(f=220,d=.06,type='triangle',v=.08){if(muted)return;audioInit();let
 function fx(word,type='impact'){let w=$('#comicHit');if(w){w.textContent=word;cls(w,'go',520);cls(w,'chromatic',180)}cls($('#comicFrame'),'impact',240);if(type==='impact')cls($('#speedLines'),'attack',300)}
 function particles(n=10,cold=false){let L=$('#particleLayer'),r=$('#machine').getBoundingClientRect();for(let i=0;i<n;i++){let p=document.createElement('i');p.className='particle';p.style.left=(r.left+r.width/2+(Math.random()-.5)*70)+'px';p.style.top=(r.top+70+Math.random()*55)+'px';p.style.setProperty('--x',((Math.random()-.5)*150)+'px');p.style.setProperty('--y',(-30-Math.random()*90)+'px');p.style.setProperty('--d',(.35+Math.random()*.35)+'s');p.style.color=cold?'#62d7ff':'#ff8a42';L.append(p);setTimeout(()=>p.remove(),800)}}
 function refill(){while(S.hand.length<3)S.hand.push(1+Math.floor(Math.random()*3))}
-function validate(){if(!Array.isArray(S.hand))S.hand=[];if(!Array.isArray(S.ch)||S.ch.length!==3)S.ch=[null,null,null];S.php=Math.max(0,Math.min(S.pmax,Number(S.php)||0));S.ehp=Math.max(0,Math.min(S.emax,Number(S.ehp)||0));S.heat=Math.max(0,Math.min(6,Number(S.heat)||0));if(S.sel!=null&&(S.sel<0||S.sel>=S.hand.length))S.sel=null}
+function validate(){if(!Object.values(PHASE).includes(S.phase))S.phase=PHASE.INPUT;if(!Array.isArray(S.hand))S.hand=[];if(!Array.isArray(S.ch)||S.ch.length!==3)S.ch=[null,null,null];S.php=Math.max(0,Math.min(S.pmax,Number(S.php)||0));S.ehp=Math.max(0,Math.min(S.emax,Number(S.ehp)||0));S.heat=Math.max(0,Math.min(6,Number(S.heat)||0));if(S.sel!=null&&(S.sel<0||S.sel>=S.hand.length))S.sel=null}
 function render(){validate();
  const h=$('#hand');h.innerHTML='';
  S.hand.forEach((v,i)=>{let x=document.createElement('button');x.className='part'+(S.sel===i?' sel':'')+(S.ch.includes(v)?' comboReady':'');x.textContent=v;x.disabled=!isInput();x.onclick=()=>{S.sel=S.sel===i?null:i;beep(620,.035);haptic(5);render()};h.append(x)});
@@ -172,7 +172,7 @@ function enemy(){
  S.shield=0;if(S.php<=0){endGame(false);return}S.turn++;S.intent=5+Math.floor(Math.random()*4);S.phase=PHASE.INPUT;refill();let r=$('#turnRibbon');r.textContent='TURNO '+S.turn;cls(r,'go',620);render()},220);
 }
 function commit(kind){
- if(!isInput()||!sum())return;(S.phase!==PHASE.INPUT&&S.phase!==PHASE.WIN&&S.phase!==PHASE.LOSE)=true;render();
+ if(!isInput()||!sum())return;S.phase=PHASE.PLAYER;render();
  if(kind==='attack'){let d=dmg();cls($('#machine'),'windupA',150);setTimeout(()=>{S.ehp=Math.max(0,S.ehp-d);beep(70,.18,'sawtooth',.14);haptic(30);fx('THOOM!');particles(22);cls($('#boss'),'damageKick',340);S.ch=[null,null,null];S.heat=Math.max(0,S.heat-1);S.sel=null;render();if(S.ehp<=0){endGame(true);return}setTimeout(enemy,380)},150)}
  else{S.shield=blk();cls($('#machine'),'windupB',160);setTimeout(()=>{beep(420,.15);haptic(18);fx('KLANG!','soft');particles(14,true);S.ch=[null,null,null];S.heat=Math.max(0,S.heat-1);S.sel=null;render();setTimeout(enemy,300)},160)}
 }
