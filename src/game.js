@@ -3,6 +3,8 @@
   const C=window.RingCore,$=id=>document.getElementById(id);
   const canvas=$('board'),ctx=canvas.getContext('2d'),modal=$('modal');
   const colors=['#96ebd3','#baafff','#edc47c','#f28da7'],radii=[166,120,74],names=['Externo','Médio','Interno'];
+  const rewardColors=['#62ffd1','#b995ff','#ffda72','#ff82ba'];
+  const machine=document.querySelector('.machine');
   const SAVE='ring-break-save-0.1',ATLAS='ring-break-atlas-0.1',OPTIONS='ring-break-options-0.1';
   const defaults={sound:false,speed:1,reduced:matchMedia('(prefers-reduced-motion: reduce)').matches};
   function read(key,fallback) {try{return JSON.parse(localStorage.getItem(key))||fallback;}catch{return fallback;}}
@@ -12,7 +14,7 @@
   if(typeof atlas!=='object' || Array.isArray(atlas)) atlas={};
   let state=null,visual=null,audioContext=null,audioBus=null,toastTimer=null;
   const fxCanvas=$('reward-fx'),fxContext=fxCanvas.getContext('2d');
-  let effects=[],fxFrame=0;
+  let effects=[],fxFrame=0,rewardTimer=0;
   const portrait=$('anomaly-portrait');let enemyTimer=0;
   function updateEnemy(s){
     const kind=s.mode==='free'?'free':C.ENCOUNTERS[s.encounter].kind,art=AnomalyArt.characters[kind];
@@ -61,7 +63,7 @@
       if(audioContext.state==='suspended')audioContext.resume().catch(()=>{});
     }catch{}
   }
-  function sound(type,wave=1) {
+  function sound(type,wave=1,tier=1) {
     if(!options.sound){if(audioBus)audioBus.gain.setValueAtTime(0,audioContext.currentTime);return;}
     if(!audioContext || !audioBus)return;
     try {
@@ -76,18 +78,30 @@
       if(type==='lock'){note(330,0,.09,.022);note(440,.025,.11,.016);}
       if(type==='resonance'){
         const pitch=[1,1.125,1.25,1.5,2][Math.min(Math.max(wave-1,0),4)];
-        note(120,0,.18,.11,'sine',54); // Soft low-end impact, no noise burst.
-        note(261.63*pitch,.01,.24,.044);note(392*pitch,.035,.28,.024);
-        if(wave>1)note(523.25*pitch,.065,.30,.019,'triangle');
+        note(110,0,.18,tier>1?.09:.045,'sine',55);
+        note(261.63*pitch,.01,.26,.042);note(392*pitch,.045,.32,.024);
+        if(tier>1){note(523.25*pitch,.085,.34,.021);note(659.25*pitch,.13,.30,.012);}
       }
-      if(type==='win') [261.63,329.63,392,523.25].forEach((f,i)=>note(f,i*.065,.34,.045));
+      if(type==='win'){
+        note(130.81,0,.42,.065,'sine',65.4);
+        [261.63,329.63,392,523.25,783.99].forEach((f,i)=>note(f,i*.065,.40,i===4?.023:.04));
+      }
       if(type==='install'){note(392,0,.18,.026);note(523.25,.06,.24,.026);}
       if(type==='damage'){note(98,0,.16,.05,'triangle',65);note(73.4,0,.12,.04);}
     }catch{}
   }
   // An independent transparent overlay: never redraws gameplay, intercepts input,
   // consumes gameplay RNG or runs a permanent animation loop. Hard cap: 64 effects.
-  function clearEffects(){cancelAnimationFrame(fxFrame);fxFrame=0;effects=[];fxContext.clearRect(0,0,fxCanvas.width,fxCanvas.height);fxCanvas.dataset.active='false';}
+  function clearEffects(){
+    cancelAnimationFrame(fxFrame);fxFrame=0;effects=[];fxContext.clearRect(0,0,fxCanvas.width,fxCanvas.height);fxCanvas.dataset.active='false';
+    clearTimeout(rewardTimer);delete machine.dataset.reward;$('floating').classList.remove('show');
+  }
+  function rewardTier(matches,wave,victory=false){return victory?3:state.mode==='free'?1:wave>1||matches.length>1?2:1;}
+  function rewardMood(tier,color){
+    clearTimeout(rewardTimer);machine.style.setProperty('--reward-color',color);
+    machine.dataset.reward=String(tier);
+    rewardTimer=setTimeout(()=>{delete machine.dataset.reward;},options.reduced?450:850/Math.sqrt(options.speed));
+  }
   function effectFrame(now){
     fxFrame=0;
     if(options.reduced || document.hidden){clearEffects();return;}
@@ -95,9 +109,20 @@
     effects=effects.filter(e=>now-e.start<e.life);
     for(const e of effects){
       const t=Math.max(0,(now-e.start)/e.life),ease=1-(1-t)**2;
-      fxContext.save();fxContext.globalAlpha=(1-t)**2*e.alpha;fxContext.strokeStyle=e.color;fxContext.fillStyle=e.color;
-      if(e.kind==='ring'){
-        fxContext.lineWidth=1.4;fxContext.beginPath();fxContext.arc(e.x,e.y,e.radius+ease*e.travel,0,Math.PI*2);fxContext.stroke();
+      fxContext.save();fxContext.globalAlpha=(1-t)**1.5*e.alpha;fxContext.strokeStyle=e.color;fxContext.fillStyle=e.color;
+      if(e.kind==='bloom'){
+        const r=e.radius+ease*e.travel,g=fxContext.createRadialGradient(e.x,e.y,0,e.x,e.y,r);
+        g.addColorStop(0,e.color);g.addColorStop(1,e.color+'00');fxContext.fillStyle=g;fxContext.fillRect(e.x-r,e.y-r,r*2,r*2);
+      }else if(e.kind==='ring' || e.kind==='arc'){
+        fxContext.lineWidth=e.width||1.4;fxContext.lineCap='round';fxContext.beginPath();
+        const angle=(e.angle||0)+ease*.25;
+        fxContext.arc(e.x,e.y,e.radius+ease*e.travel,angle,angle+(e.kind==='arc'?Math.PI*.36:Math.PI*2));fxContext.stroke();
+      }else if(e.kind==='mote'){
+        // Energy travels from the matched pieces into the core, with a tiny curved tail.
+        const p=1-(1-t)**3,x=e.x+(210-e.x)*p+Math.sin(t*Math.PI)*e.bend,y=e.y+(210-e.y)*p;
+        fxContext.globalAlpha=Math.sin(Math.PI*t)*e.alpha;
+        fxContext.beginPath();fxContext.arc(x,y,e.size*(1-t*.5),0,Math.PI*2);fxContext.fill();
+        fxContext.globalAlpha*=.3;fxContext.beginPath();fxContext.arc(x+(e.x-210)*.045,y+(e.y-210)*.045,e.size*.6,0,Math.PI*2);fxContext.fill();
       }else{
         const x=e.x+e.dx*ease,y=e.y+e.dy*ease+t*t*6;
         fxContext.translate(x,y);fxContext.rotate(e.angle+t*.7);
@@ -109,28 +134,34 @@
     if(effects.length)fxFrame=requestAnimationFrame(effectFrame);
   }
   function rewardFX(matches=[],wave=1,victory=false){
+    const tier=rewardTier(matches,wave,victory),palette=tier>1?rewardColors:colors;
+    rewardMood(tier,victory?rewardColors[2]:tier>1?rewardColors[1]:colors[matches[0]?.tone??0]);
     if(options.reduced || document.hidden)return;
-    const now=performance.now(),life=(victory?660:440)/Math.sqrt(options.speed);
+    const now=performance.now(),life=(victory?800:tier>1?620:520)/Math.sqrt(options.speed);
     const add=e=>effects.push({...e,start:now,life,alpha:e.alpha??.8});
     if(victory){
-      add({kind:'ring',x:210,y:210,radius:42,travel:140,color:colors[0],alpha:.5});
+      add({kind:'bloom',x:210,y:210,radius:40,travel:100,color:palette[2],alpha:.22});
+      add({kind:'ring',x:210,y:210,radius:42,travel:140,color:palette[2],alpha:.8,width:2});
+      for(let i=0;i<4;i++)add({kind:'arc',x:210,y:210,radius:65,travel:105,angle:i*Math.PI/2,color:palette[i],alpha:.85,width:3});
       for(let i=0;i<24;i++){
         const a=i*Math.PI*2/24,r=70+i%3*28;
-        add({kind:'spark',x:210+Math.cos(a)*r,y:210+Math.sin(a)*r,dx:Math.cos(a)*35,dy:Math.sin(a)*35,angle:a,size:2+i%2,color:colors[i%4],alpha:.75});
+        add({kind:'spark',x:210+Math.cos(a)*r,y:210+Math.sin(a)*r,dx:Math.cos(a)*42,dy:Math.sin(a)*42,angle:a,size:2+i%3,color:palette[i%4],alpha:.9});
       }
     }else{
       for(const m of matches.slice(0,3)){
-        const a=m.sector*Math.PI/4-Math.PI/2,color=colors[m.tone];
+        const a=m.sector*Math.PI/4-Math.PI/2,color=palette[m.tone];
         for(const r of radii){
           const x=210+Math.cos(a)*r,y=210+Math.sin(a)*r;
-          add({kind:'ring',x,y,radius:15,travel:wave>1?13:7,color,alpha:.65});
-          for(let i=0;i<(wave>1?4:2);i++){
+          add({kind:'ring',x,y,radius:15,travel:tier>1?16:7,color,alpha:.7});
+          add({kind:'mote',x,y,size:tier>1?3.5:2.5,bend:(r===120?-1:1)*15,color,alpha:.9});
+          for(let i=0;i<(tier>1?4:1);i++){
             const angle=a+i*Math.PI*.62+r*.03;
-            add({kind:'spark',x,y,dx:Math.cos(angle)*(wave>1?23:14),dy:Math.sin(angle)*(wave>1?23:14),angle,size:2+i%2,color});
+            add({kind:'spark',x,y,dx:Math.cos(angle)*(tier>1?28:12),dy:Math.sin(angle)*(tier>1?28:12),angle,size:2+i%2,color});
           }
         }
       }
-      if(wave>1)add({kind:'ring',x:210,y:210,radius:40,travel:20,color:colors[1],alpha:.45});
+      add({kind:'bloom',x:210,y:210,radius:24,travel:tier>1?55:22,color:palette[tier>1?1:0],alpha:tier>1?.25:.12});
+      if(tier>1)for(let i=0;i<3;i++)add({kind:'arc',x:210,y:210,radius:44,travel:18,angle:i*Math.PI*2/3,color:palette[(i+1)%4],alpha:.8,width:2.5});
     }
     effects=effects.slice(-64);fxCanvas.dataset.active='true';
     if(!fxFrame)fxFrame=requestAnimationFrame(effectFrame);
@@ -201,6 +232,7 @@
   function resize() {const dpr=Math.min(window.devicePixelRatio||1,2);canvas.width=Math.round(420*dpr);canvas.height=canvas.width;fxCanvas.width=canvas.width;fxCanvas.height=canvas.height;draw();}
   function render(s=state) {
     const free=s.mode==='free',encounter=C.ENCOUNTERS[s.encounter];
+    machine.dataset.mode=free?'free':'run';
     updateEnemy(s);
     $('stage').textContent=free?'LABORATÓRIO · SEM AMEAÇAS':'ENCONTRO 0'+(s.encounter+1)+' / 03';$('anomaly-name').textContent=free?'LIVRE':encounter.name;
     $('energy').textContent=format(s.energy);$('goal').textContent=free?'':' / '+encounter.goal;$('goal-label').textContent=free?'Energia produzida':'Energia de ruptura';
@@ -254,7 +286,11 @@
     if(options.reduced){draw();return Promise.resolve();}
     return new Promise(resolve=>{const start=performance.now(),duration=190/options.speed;function frame(time){const t=Math.min((time-start)/duration,1),ease=1-(1-t)**3;draw(event.board,event.dirs.map(d=>d*ease));if(t<1)requestAnimationFrame(frame);else resolve();}requestAnimationFrame(frame);});
   }
-  function floating(text) {const el=$('floating');el.textContent=text;el.classList.remove('show');void el.offsetWidth;el.classList.add('show');}
+  function floating(text,label='') {
+    const el=$('floating');el.replaceChildren();const value=document.createElement('strong');value.textContent=text;el.append(value);
+    if(label){const caption=document.createElement('small');caption.textContent=label;el.append(caption);}
+    el.classList.remove('show');if(!options.reduced){void el.offsetWidth;el.classList.add('show');}
+  }
   async function commit(ring,direction) {
     if(busy || modal.open || state.status!=='playing')return;
     unlockAudio();const result=C.step(state,ring,direction);if(result.invalid){clearPreview();return;}
@@ -264,8 +300,9 @@
         if(event.type==='move') {sound('move');haptic();await animateMove(event);visual.board=event.board.map((r,i)=>event.dirs[i]?r.map((_,j)=>r[(j-event.dirs[i]+8)%8]):r);visual.locks=event.locks;draw();}
         if(event.type==='bonus') {visual.energy+=event.energy;visual.total+=event.energy;feedback(event.label+' +'+event.energy);}
         if(event.type==='resonance') {
-          visual.board=event.board;visual.energy=event.encounterEnergy;visual.total=event.total;render(visual);draw(event.board,[0,0,0],event.matches);sound('resonance',event.wave);haptic(15);
-          if(state.mode==='run')reactEnemy('hit');rewardFX(event.matches,event.wave);feedback((event.wave>1?'CASCATA ×'+event.multiplier:'RESSONÂNCIA')+' · +'+format(event.energy)+' energia');floating('+'+format(event.energy));await pause(240);
+          const tier=rewardTier(event.matches,event.wave),label=event.wave>1?'CASCATA ×'+event.multiplier:event.matches.length>1?event.matches.length+' RESSONÂNCIAS':'';
+          visual.board=event.board;visual.energy=event.encounterEnergy;visual.total=event.total;render(visual);draw(event.board,[0,0,0],event.matches);sound('resonance',event.wave,tier);haptic(tier>1?18:8);
+          if(state.mode==='run')reactEnemy('hit');rewardFX(event.matches,event.wave);feedback((label||'RESSONÂNCIA')+' · +'+format(event.energy)+' energia');floating('+'+format(event.energy),label);await pause(tier>1?290:240);
         }
         if(event.type==='refill'){visual.board=event.board;visual.queue=event.queue;render(visual);draw();await pause(90);}
         if(event.type==='lock'){visual.locks=event.locks;sound('lock');feedback('ACOPLAMENTO · '+names[event.edge]+' ↔ '+names[event.edge+1]);render(visual);draw();await pause(80);}
@@ -275,7 +312,7 @@
         if(event.type==='evade')feedback(event.label);
         if(event.type==='blocked'){reactEnemy('attack');feedback('ESCUDO · IMPACTO ABSORVIDO');}
         if(event.type==='limit')feedback(event.label);
-        if(event.type==='win'){reactEnemy('broken');sound('win');rewardFX([],1,true);await pause(330);}
+        if(event.type==='win'){reactEnemy('broken');sound('win');rewardFX([],1,true);floating('RUPTURA','ANOMALIA SUPERADA');feedback('RUPTURA · '+C.ENCOUNTERS[state.encounter].name+' superada');await pause(550);}
       }
       state=result.state;persist();
     } finally {busy=false;visual=null;render();draw();}

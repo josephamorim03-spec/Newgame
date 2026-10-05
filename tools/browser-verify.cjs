@@ -102,6 +102,43 @@ const fs=require('node:fs');
  const labState=await page.evaluate(()=>RingGame.getState());await page.reload();assert.deepEqual(await page.evaluate(()=>RingGame.getState()),labState);
  await page.setViewportSize({width:320,height:700});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
  await page.screenshot({path:path.join(screenshotDir,'small-mobile.png'),fullPage:true});
+ // Compare the same earned cascade in a run, in the calm laboratory, and with
+ // reduced motion. Use the public save format, then real buttons to play.
+ const C=require('../src/core.js');
+ let victorySeed;
+ for(let i=0;i<1000;i++)if(C.step(C.create('FEEL-'+i),0,1).events.some(e=>e.type==='win')){victorySeed='FEEL-'+i;break;}
+ assert.ok(victorySeed,'a deterministic opening reaches a rupture');
+ for(const spec of [
+  {seed:'FEEL-3',mode:'run',tier:'2',name:'cascade'},
+  {seed:'FEEL-3',mode:'free',tier:'1',name:'cozy'},
+  {seed:victorySeed,mode:'run',tier:'3',name:'rupture'},
+  {seed:'FEEL-3',mode:'run',tier:'2',name:'reduced',reduced:true}
+ ]){
+  const fxContext=await browser.newContext({viewport:{width:390,height:844},deviceScaleFactor:2}),fxPage=await fxContext.newPage();
+  fxPage.on('pageerror',e=>errors.push(e.message));
+  await fxPage.addInitScript(({spec,version})=>{
+   localStorage.setItem('ring-break-save-0.1',JSON.stringify({version,seed:spec.seed,mode:spec.mode,actions:[]}));
+   localStorage.setItem('ring-break-options-0.1',JSON.stringify({sound:false,speed:1,reduced:!!spec.reduced}));
+   window.__tiers=[];window.__activeFX=false;
+   document.addEventListener('DOMContentLoaded',()=>{
+    new MutationObserver(()=>{const tier=document.querySelector('.machine').dataset.reward;if(tier)window.__tiers.push(tier);window.__activeFX ||= document.getElementById('reward-fx').dataset.active==='true';}).observe(document.querySelector('.machine'),{attributes:true,subtree:true,attributeFilter:['data-reward','data-active']});
+   });
+  },{spec,version:C.VERSION});
+  await fxPage.goto('http://localhost:4173');
+  await fxPage.getByRole('button',{name:'Girar anel selecionado no sentido horário'}).click();
+  if(!spec.reduced){
+   await fxPage.waitForFunction(tier=>document.querySelector('.machine').dataset.reward===tier,spec.tier);
+   await fxPage.screenshot({path:path.join(screenshotDir,'feel-'+spec.name+'.png')});
+  }
+  await fxPage.waitForFunction(()=>!RingGame.getBusy());
+  assert.ok(await fxPage.evaluate(tier=>window.__tiers.includes(tier),spec.tier),spec.name+' has appropriate reward intensity');
+  if(spec.mode==='free')assert.ok(await fxPage.evaluate(()=>window.__tiers.every(tier=>tier==='1')),'laboratory stays gentle during a cascade');
+  if(spec.reduced)assert.equal(await fxPage.evaluate(()=>window.__activeFX),false,'reduced motion never starts particles');
+  const actual=await fxPage.evaluate(()=>RingGame.getState());
+  assert.deepEqual(actual,C.step(C.create(spec.seed,spec.mode),0,1).state,'effects do not change deterministic state');
+  await fxPage.waitForFunction(()=>!document.querySelector('.machine').dataset.reward&&document.getElementById('reward-fx').dataset.active!=='true');
+  await fxContext.close();
+ }
  const offline=await browser.newContext({viewport:{width:390,height:844},offline:true}),filePage=await offline.newPage();
  filePage.on('pageerror',e=>errors.push(e.message));
  await filePage.goto('file://'+path.resolve(__dirname,'../ring-break-standalone.html'));
