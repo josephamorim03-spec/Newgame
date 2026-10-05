@@ -162,6 +162,9 @@ body{
 .intents{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))!important}
 .card:disabled{opacity:.28;filter:grayscale(.35)}
 .lg.spawn{background:#15152a;border:1px dashed #f0f0f8!important}
+
+.intentHead i b{color:#ffdf72;font:1000 6px monospace}
+.cardLock{display:block;margin-top:6px;padding-top:4px;border-top:1px solid #ffffff18;color:#ff8d7f!important;font:1000 6px monospace!important;letter-spacing:.05em}
 </style>
 </head><body>
 <main id="game">
@@ -191,15 +194,15 @@ body{
   <div class="sectionLabel"><span>AMEAÇAS TELEGRÁFICAS</span><small>o inimigo não muda de ideia</small></div>
   <div class="intents">
     <div class="intent gun">
-      <div class="intentHead"><span class="enemyPortrait gunPortrait"></span><strong>ARTILHEIRO · <span id="gunHp">6</span> HP</strong><i>FIXA</i></div>
+      <div class="intentHead"><span class="enemyPortrait gunPortrait"></span><strong>ARTILHEIRO · <span id="gunHp">6</span> HP</strong><i><b id="gunOrder">1º</b> · FIXA</i></div>
       <small class="warn" id="gunIntent"></small>
     </div>
     <div class="intent crusher" id="cruCard">
-      <div class="intentHead"><span class="enemyPortrait crusherPortrait"></span><strong>ESMAGADOR · <span id="cruHp">8</span> HP</strong><i>FIXA</i></div>
+      <div class="intentHead"><span class="enemyPortrait crusherPortrait"></span><strong>ESMAGADOR · <span id="cruHp">8</span> HP</strong><i><b id="cruOrder">2º</b> · FIXA</i></div>
       <small class="move" id="cruIntent"></small>
     </div>
     <div class="intent parasite" id="parCard" hidden>
-      <div class="intentHead"><span class="enemyPortrait parasitePortrait"></span><strong>PARASITA · <span id="parHp">5</span> HP</strong><i>FIXA</i></div>
+      <div class="intentHead"><span class="enemyPortrait parasitePortrait"></span><strong>PARASITA · <span id="parHp">5</span> HP</strong><i><b id="parOrder">2º</b> · FIXA</i></div>
       <small class="consume" id="parIntent"></small>
     </div>
   </div>
@@ -403,12 +406,12 @@ function render(){
  document.querySelector('#hp').textContent=S.hp+'/'+S.maxHp;document.querySelector('#energy').textContent=S.energy+'/6';document.querySelector('#free').textContent=S.freeSlide+' desl. · '+S.freeMove+' robô';
  document.querySelector('#guideSlide').className=S.freeSlide?'active':'done';document.querySelector('#guideMove').className=S.freeSlide?'':(S.freeMove?'active':'done');document.querySelector('#guideCards').className=(!S.freeSlide&&!S.freeMove&&(S.selCard||S.usedCard||S.ammoStep))?'active':(S.usedCard?'done':'');document.querySelector('#guideEnd').className=(!S.freeSlide&&!S.freeMove&&!S.selCard&&!S.ammoStep)?'active':'';
  document.querySelector('#turn').textContent=S.turn;document.querySelector('#encounterLabel').textContent='COMBATE '+S.encounter+'/2 · ROBÔ VS KAIJU';document.querySelector('#objective').textContent=S.encounter===1?'OBJETIVO · DESTRUA ARTILHEIRO + ESMAGADOR':'OBJETIVO · DESTRUA ARTILHEIRO + PARASITA';document.querySelector('#nextTile').textContent=S.nextTile;document.querySelector('#nextSpawnLabel').textContent=S.nextSpawn==null?'SEM ESPAÇO':cellName(S.nextSpawn);document.querySelector('#relicList').textContent=relicText();
- let gc=document.querySelector('.intent.gun'),cc=document.querySelector('#cruCard'),pc=document.querySelector('#parCard');gc.hidden=!alive('gun');cc.hidden=!alive('cru');pc.hidden=!alive('par');document.querySelector('#gunHp').textContent=Math.max(0,S.enemies.gun.hp);document.querySelector('#cruHp').textContent=Math.max(0,S.enemies.cru.hp);document.querySelector('#parHp').textContent=Math.max(0,S.enemies.par.hp);
- document.querySelector('#gunIntent').textContent=alive('gun')?'⚠ LINHA '+(S.gunLine+1)+' · robô: -2 · se sair: alvo '+(S.gunBlockTarget==null?'nenhum':cellName(S.gunBlockTarget)):'DERROTADO';
+ let gc=document.querySelector('.intent.gun'),cc=document.querySelector('#cruCard'),pc=document.querySelector('#parCard');gc.hidden=!alive('gun');cc.hidden=!alive('cru');pc.hidden=!alive('par');document.querySelector('#gunHp').textContent=Math.max(0,S.enemies.gun.hp);document.querySelector('#cruHp').textContent=Math.max(0,S.enemies.cru.hp);document.querySelector('#parHp').textContent=Math.max(0,S.enemies.par.hp);let order=1;for(let k of KEYS){let el=document.querySelector('#'+(k==='gun'?'gunOrder':k==='cru'?'cruOrder':'parOrder'));if(el&&alive(k))el.textContent=(order++)+'º'}
+ document.querySelector('#gunIntent').textContent=alive('gun')?'⚠ LINHA '+(S.gunLine+1)+' · robô: -2 · se sair: '+(S.gunBlockTarget==null?'tiro erra':'bloco '+S.gunBlockValue+' em '+cellName(S.gunBlockTarget)):'DERROTADO';
  document.querySelector('#cruIntent').textContent=alive('cru')?(S.crusherTarget==null?'BLOQUEADO · não consegue avançar':'➜ '+cellName(S.crusherTarget)+' · vai esmagar o que estiver ali'):'DERROTADO';
  document.querySelector('#parIntent').textContent=alive('par')?(S.parasiteMode==='consume'?'◉ '+cellName(S.parasiteTarget)+' · consome bloco '+S.parasiteTargetValue+' e recupera 2 HP':S.parasiteMode==='move'?'➜ '+cellName(S.parasiteTarget)+' · avança para caçar blocos':'SEM ALVO · fica parado'):'DERROTADO';
  document.querySelector('#combo').textContent=S.mergeCount?'FUSÕES · '+S.mergeCount+'  |  ENERGIA +'+Math.min(3,S.mergeCount):'';
- let hand=document.querySelector('#hand');hand.innerHTML='';S.hand.forEach((c,i)=>{let x=document.createElement('button');x.className='card type-'+c.id+(S.selCardIndex===i?' sel':'');x.disabled=S.phase!=='input'||S.energy<c.cost||!cardHasTarget(c);x.innerHTML='<em>⚡'+c.cost+'</em><span class="cardIcon">'+cardIcon(c.id)+'</span><b>'+c.name+'</b><small>'+c.txt+'</small>';x.onclick=()=>selectCard(c,i);hand.append(x)});
+ let hand=document.querySelector('#hand');hand.innerHTML='';S.hand.forEach((c,i)=>{let x=document.createElement('button'),noTarget=!cardHasTarget(c),noEnergy=S.energy<c.cost;x.className='card type-'+c.id+(S.selCardIndex===i?' sel':'');x.disabled=S.phase!=='input'||noEnergy||noTarget;x.innerHTML='<em>⚡'+c.cost+'</em><span class="cardIcon">'+cardIcon(c.id)+'</span><b>'+c.name+'</b><small>'+c.txt+'</small>'+((noEnergy||noTarget)?'<small class="cardLock">'+(noEnergy?'SEM ENERGIA':'SEM ALVO VÁLIDO')+'</small>':'');x.onclick=()=>selectCard(c,i);hand.append(x)});
  document.querySelectorAll('[data-slide]').forEach(x=>x.disabled=S.phase!=='input'||S.freeSlide<=0);document.querySelector('#ammoBtn').disabled=S.phase!=='input'||!hasAdjacentBlock()||allDead();document.querySelector('#endBtn').disabled=S.phase!=='input';
  b.style.touchAction=(S.phase==='input'&&S.freeSlide>0&&!S.selCard&&!S.ammoStep&&!S.moveMode)?'none':'pan-y';
  updatePhase();S.lastMerges=[];S.spawned=[]
@@ -433,7 +436,7 @@ function slide(dir){
 document.querySelectorAll('[data-slide]').forEach(x=>x.onclick=()=>slide(x.dataset.slide));
 let gestureState=null;
 const boardEl=document.querySelector('#board');
-boardEl.addEventListener('pointerdown',e=>{if(S.phase!=='input'||S.freeSlide<=0||S.selCard||S.ammoStep||S.moveMode)return;if(e.pointerType==='mouse'&&e.button!==0)return;gestureState={id:e.pointerId,x:e.clientX,y:e.clientY};try{boardEl.setPointerCapture(e.pointerId)}catch(_){}});
+boardEl.addEventListener('pointerdown',e=>{if(!e.isPrimary||S.phase!=='input'||S.freeSlide<=0||S.selCard||S.ammoStep||S.moveMode)return;if(e.pointerType==='mouse'&&e.button!==0)return;gestureState={id:e.pointerId,x:e.clientX,y:e.clientY};try{boardEl.setPointerCapture(e.pointerId)}catch(_){}});
 boardEl.addEventListener('pointerup',e=>{if(!gestureState||gestureState.id!==e.pointerId)return;let dx=e.clientX-gestureState.x,dy=e.clientY-gestureState.y,ax=Math.abs(dx),ay=Math.abs(dy),main=Math.max(ax,ay),cross=Math.min(ax,ay),minSwipe=Math.max(68,boardEl.getBoundingClientRect().width*.18);gestureState=null;if(main<minSwipe||main<cross*1.5)return;ignoreTapUntil=performance.now()+350;slide(ax>ay?(dx>0?'right':'left'):(dy>0?'down':'up'))});
 boardEl.addEventListener('pointercancel',()=>{gestureState=null});
 function endTurn(){if(S.phase!=='input')return;refreshSpawnPreview(false);clearSelection();S.phase='enemy';render();setTimeout(resolveEnemies,420)}document.querySelector('#endBtn').onclick=endTurn;
