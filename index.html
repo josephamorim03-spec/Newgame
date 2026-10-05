@@ -28,7 +28,7 @@
 .phase{min-height:20px;margin-top:10px;text-align:center;color:#b6b0a6;font:800 8px/1.3 monospace;letter-spacing:.05em}
 .toast{position:fixed;z-index:20;left:50%;top:35%;transform:translate(-50%,-50%) scale(.7);padding:8px 13px;background:#f5e7b9;color:#13131b;border:3px solid #11131b;font:italic 1000 22px Impact,sans-serif;opacity:0;pointer-events:none}.toast.go{animation:toast .5s cubic-bezier(.2,1.5,.3,1)}@keyframes toast{20%,70%{opacity:1;transform:translate(-50%,-50%) scale(1) rotate(-3deg)}100%{opacity:0;transform:translate(-50%,-80%) scale(.9)}}
 @media(max-width:390px){#game{padding-left:8px;padding-right:8px}.hand{gap:3px}.card{padding:6px 4px;min-height:87px}.card b{font-size:7px}.card small{font-size:6px}.cell{font-size:21px}}
-</style>
+.intent small:after{content:" · TRAVADA";opacity:.55}.intent{position:relative}.intent:after{content:"INTENÇÃO FIXA";position:absolute;right:6px;top:5px;font:700 5px monospace;letter-spacing:.08em;color:#72798d}</style>
 </head><body>
 <main id="game">
 <div class="top"><div><h1>KAIJU 2048</h1><small>VERTICAL SLICE · SETOR 1</small></div><small id="turn">TURNO 1</small></div>
@@ -103,7 +103,7 @@ function useCard(i){
  let c=S.selCard;if(!c||S.energy<c.cost)return;
  if(c.id==='spawn'&&empty(i)){S.tiles[i]=2;S.energy-=c.cost}
  else if(c.id==='atk'){let k=enemyAt(i);if(!k||manhattan(S.mech,i)>2)return;S.enemies[k].hp-=2;S.energy-=c.cost;toast('2 DANO')}
- else if(c.id==='push'){let k=enemyAt(i);if(!k||!adjacent(S.mech,i))return;let ep=rc(S.enemies[k].pos),mp=rc(S.mech),dr=ep[0]-mp[0],dc=ep[1]-mp[1],nr=ep[0]+dr,nc=ep[1]+dc;if(nr<0||nr>3||nc<0||nc>3)return;let ni=id(nr,nc);if(!empty(ni))return;S.enemies[k].pos=ni;S.energy-=c.cost;if(k==='cru')planCrusher();toast('EMPURRÃO!')}
+ else if(c.id==='push'){let k=enemyAt(i);if(!k||!adjacent(S.mech,i))return;let ep=rc(S.enemies[k].pos),mp=rc(S.mech),dr=ep[0]-mp[0],dc=ep[1]-mp[1],nr=ep[0]+dr,nc=ep[1]+dc;if(nr<0||nr>3||nc<0||nc>3)return;let ni=id(nr,nc);if(!empty(ni))return;S.enemies[k].pos=ni;S.energy-=c.cost;toast('EMPURRÃO!')}
  else if(c.id==='move'){if(!empty(i)||!adjacent(S.mech,i))return;S.mech=i;S.energy-=c.cost;toast('PASSO EXTRA')}
  else if(c.id==='merge'){if(S.cardStep==null&&S.tiles[i]>0){S.cardStep=i;render();return}else if(S.cardStep!=null&&adjacent(S.cardStep,i)&&S.tiles[i]===S.tiles[S.cardStep]){S.tiles[i]*=2;S.tiles[S.cardStep]=0;S.energy=Math.min(6,S.energy-c.cost+1);S.mergeCount++;S.lastMerges=[i];toast('FUSÃO!')}else return}
  else return;
