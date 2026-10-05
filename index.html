@@ -168,6 +168,9 @@ body{
 
 .swipeCue{position:absolute;left:50%;top:52%;z-index:20;transform:translate(-50%,-50%) scale(.85);min-width:58px;height:58px;display:grid;place-items:center;border:2px solid #80d0ff;background:#091521dd;color:#dff8ff;font:1000 34px/1 monospace;opacity:0;pointer-events:none;box-shadow:0 0 18px #4fe0e066;transition:opacity .08s,transform .08s}
 .swipeCue.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
+.cell.brokenIntent{border-color:#7d879a!important;outline:2px dashed #a0a0b8!important;outline-offset:-5px!important;box-shadow:inset 0 0 0 2px #10101899!important;animation:none!important}
+.cell.brokenIntent:after{filter:none}
+.intent small{min-height:18px}
 </style>
 </head><body>
 <main id="game">
@@ -221,7 +224,7 @@ body{
     <div class="unitText">É a unidade azul no tabuleiro. <b>Toque nela</b> para revelar as casas onde ela pode andar.</div>
   </div>
   <div class="boardFrame">
-    <div class="boardTag"><span id="objective">OBJETIVO · DESTRUA OS 2 KAIJUS</span><small>PRÓXIMO <b id="nextTile">2</b> EM <strong id="nextSpawnLabel">—</strong></small></div>
+    <div class="boardTag"><span id="objective">OBJETIVO · DESTRUA OS 2 KAIJUS</span><small>PRÓXIMO <b id="nextTile">2</b> · <strong id="nextSpawnLabel">LOCAL APÓS DESLIZE</strong></small></div>
     <section class="board" id="board" aria-label="Tabuleiro 4 por 4"></section><div class="swipeCue" id="swipeCue" aria-hidden="true"></div>
   </div>
   <div class="coachBox" id="coachBox"></div>
@@ -366,6 +369,11 @@ function refreshSpawnPreview(force=false){
  let start=(S.encounter*5+S.turn*7)%16;c.sort((a,b)=>((a-start+16)%16)-((b-start+16)%16));S.nextSpawn=c[0];return S.nextSpawn
 }
 function threatSet(){let d=new Set,m=new Set,p=new Set;if(alive('gun'))for(let c=0;c<4;c++)d.add(id(S.gunLine,c));if(alive('cru')&&S.crusherTarget!=null)m.add(S.crusherTarget);if(alive('par')&&S.parasiteTarget!=null)p.add(S.parasiteTarget);return{d,m,p}}
+function gunIntentText(){if(!alive('gun'))return'DERROTADO';if(rc(S.mech)[0]===S.gunLine)return'⚠ SE ENCERRAR: -2 REATOR';if(S.gunBlockTarget!=null&&S.tiles[S.gunBlockTarget]===S.gunBlockValue)return'⚠ SE ENCERRAR: destrói o bloco ALVO';return'✓ SE ENCERRAR: o tiro ERRA'}
+function crusherIntentBroken(){return alive('cru')&&S.crusherTarget!=null&&!adjacent(S.enemies.cru.pos,S.crusherTarget)}
+function crusherIntentText(){if(!alive('cru'))return'DERROTADO';if(S.crusherTarget==null)return'✓ BLOQUEADO · perde a ação';if(crusherIntentBroken())return'✓ INTENÇÃO QUEBRADA · perde a ação';if(S.crusherTarget===S.mech)return'⚠ SE ENCERRAR: -2 REATOR';if(S.tiles[S.crusherTarget]>0)return'⚠ SE ENCERRAR: esmaga o bloco marcado';if(empty(S.crusherTarget))return'➜ SE ENCERRAR: avança para a casa amarela';return'✓ INTENÇÃO QUEBRADA · perde a ação'}
+function parasiteIntentBroken(){if(!alive('par')||S.parasiteTarget==null)return false;if(S.parasiteMode==='consume')return !adjacent(S.enemies.par.pos,S.parasiteTarget)||S.tiles[S.parasiteTarget]!==S.parasiteTargetValue;if(S.parasiteMode==='move')return !adjacent(S.enemies.par.pos,S.parasiteTarget)||!empty(S.parasiteTarget);return false}
+function parasiteIntentText(){if(!alive('par'))return'DERROTADO';if(S.parasiteTarget==null)return'✓ SEM ALVO · fica parado';if(parasiteIntentBroken())return'✓ INTENÇÃO QUEBRADA · perde a ação';if(S.parasiteMode==='consume')return'◉ SE ENCERRAR: consome o bloco rosa e recupera 2 HP';if(S.parasiteMode==='move')return'➜ SE ENCERRAR: avança para a casa rosa';return'✓ SEM ALVO · fica parado'}
 function enemyAt(i){for(let k of KEYS)if(alive(k)&&S.enemies[k].pos===i)return k;return null}
 function allDead(){return KEYS.every(k=>!alive(k))}
 function pushDestination(k){if(!alive(k)||!adjacent(S.mech,S.enemies[k].pos))return null;let ep=rc(S.enemies[k].pos),mp=rc(S.mech),dr=ep[0]-mp[0],dc=ep[1]-mp[1],nr=ep[0]+dr,nc=ep[1]+dc;if(nr<0||nr>3||nc<0||nc>3)return null;let ni=id(nr,nc);return playerEmpty(ni)?ni:null}
@@ -406,16 +414,16 @@ function render(){
   if(alive('cru')&&i===S.enemies.cru.pos){e.classList.add('crusher');e.dataset.hp=S.enemies.cru.hp}
   if(alive('par')&&i===S.enemies.par.pos){e.classList.add('parasite');e.dataset.hp=S.enemies.par.hp}
   if(th.d.has(i))e.classList.add('danger');if(i===S.gunBlockTarget&&alive('gun'))e.classList.add('gunFallback');
-  if(th.m.has(i))e.classList.add('moveTarget');if(th.p.has(i))e.classList.add('consumeTarget');if(valid.has(i))e.classList.add('valid');
+  if(th.m.has(i))e.classList.add(crusherIntentBroken()?'brokenIntent':'moveTarget');if(th.p.has(i))e.classList.add(parasiteIntentBroken()?'brokenIntent':'consumeTarget');if(valid.has(i))e.classList.add('valid');
   if(S.lastMerges.includes(i))e.classList.add('mergePop');if(S.spawned.includes(i))e.classList.add('spawnPop');if(valid.has(i)&&S.moveMode)e.classList.add('moveReady');if(i===S.mech&&S.moveMode)e.classList.add('moveMode');
   if(i===S.mech&&S.phase==='input'&&S.freeSlide===0&&S.freeMove>0&&!S.moveMode&&!S.selCard&&!S.ammoStep)e.classList.add('hintPulse');
   if(i===S.nextSpawn&&empty(i)){e.classList.add('spawnPreview');let g=document.createElement('span');g.className='spawnGhost';g.textContent=S.nextTile;e.append(g)}
-  if(i===S.gunBlockTarget&&alive('gun')&&S.tiles[i]>0){let gm=document.createElement('span');gm.className='gunMark';gm.textContent='ALVO';e.append(gm)}
+  if(i===S.gunBlockTarget&&alive('gun')){let gm=document.createElement('span');gm.className='gunMark';gm.textContent=(S.tiles[i]===S.gunBlockValue?'ALVO':'VAZIO');e.append(gm);if(S.tiles[i]!==S.gunBlockValue)e.classList.add('brokenIntent')}
   e.onclick=()=>tapCell(i);b.append(e)
  }
  document.querySelector('#hp').textContent=S.hp+'/'+S.maxHp;document.querySelector('#energy').textContent=S.energy+'/6';document.querySelector('#free').textContent=S.freeSlide+' desl. · '+S.freeMove+' robô';
  document.querySelector('#guideSlide').className=S.freeSlide?'active':'done';document.querySelector('#guideMove').className=S.freeSlide?'':(S.freeMove&&hasFreeMechStep()?'active':'done');document.querySelector('#guideCards').className=(!S.freeSlide&&!S.freeMove&&(S.selCard||S.usedCard||S.ammoStep))?'active':(S.usedCard?'done':'');document.querySelector('#guideEnd').className=(!S.freeSlide&&!S.freeMove&&!S.selCard&&!S.ammoStep)?'active':'';
- document.querySelector('#turn').textContent=S.turn;document.querySelector('#encounterLabel').textContent='COMBATE '+S.encounter+'/2 · ROBÔ VS KAIJU';document.querySelector('#objective').textContent=S.encounter===1?'OBJETIVO · DESTRUA ARTILHEIRO + ESMAGADOR':'OBJETIVO · DESTRUA ARTILHEIRO + PARASITA';document.querySelector('#nextTile').textContent=S.nextTile;document.querySelector('#nextSpawnLabel').textContent=S.freeSlide>0?'APÓS DESLIZE':(S.nextSpawn==null?'SEM ESPAÇO':cellName(S.nextSpawn));document.querySelector('#relicList').textContent=relicText();
+ document.querySelector('#turn').textContent=S.turn;document.querySelector('#encounterLabel').textContent='COMBATE '+S.encounter+'/2 · ROBÔ VS KAIJU';document.querySelector('#objective').textContent=S.encounter===1?'OBJETIVO · DESTRUA ARTILHEIRO + ESMAGADOR':'OBJETIVO · DESTRUA ARTILHEIRO + PARASITA';document.querySelector('#nextTile').textContent=S.nextTile;document.querySelector('#nextSpawnLabel').textContent=S.freeSlide>0?'LOCAL APÓS DESLIZE':(S.nextSpawn==null?'SEM ESPAÇO':'ENTRADA MARCADA');document.querySelector('#relicList').textContent=relicText();
  let gc=document.querySelector('.intent.gun'),cc=document.querySelector('#cruCard'),pc=document.querySelector('#parCard');gc.hidden=!alive('gun');cc.hidden=!alive('cru');pc.hidden=!alive('par');document.querySelector('#gunHp').textContent=Math.max(0,S.enemies.gun.hp);document.querySelector('#cruHp').textContent=Math.max(0,S.enemies.cru.hp);document.querySelector('#parHp').textContent=Math.max(0,S.enemies.par.hp);let order=1;for(let k of KEYS){let el=document.querySelector('#'+(k==='gun'?'gunOrder':k==='cru'?'cruOrder':'parOrder'));if(el&&alive(k))el.textContent=(order++)+'º'}
  document.querySelector('#gunIntent').textContent=alive('gun')?'⚠ LINHA '+(S.gunLine+1)+' · robô: -2 · se sair: '+(S.gunBlockTarget==null?'tiro erra':'bloco '+S.gunBlockValue+' em '+cellName(S.gunBlockTarget)):'DERROTADO';
  document.querySelector('#cruIntent').textContent=alive('cru')?(S.crusherTarget==null?'BLOQUEADO · não consegue avançar':'➜ '+cellName(S.crusherTarget)+' · vai esmagar o que estiver ali'):'DERROTADO';
