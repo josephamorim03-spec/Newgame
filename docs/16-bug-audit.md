@@ -1,102 +1,51 @@
-# 16 — Auditoria de bugs e invariantes do vertical slice
+# 16 — Auditoria de regras e invariantes do vertical slice (histórico)
 
-Atualizado após a revisão mobile do input e da telegráfica.
+> Esta auditoria cobre o protótipo 0.3.0. Os invariantes da campanha atual estão em [17 — Campanha tática](17-campanha-tatica.md) e nos testes de `tests/`.
 
-## Bugs corrigidos
+Este documento cobre a versão enxuta. As regras antigas de casa reservada, alvo de bloco congelado, cartas, energia, relíquias e múltiplos Kaijus foram substituídas; não devem orientar correções no jogo atual.
 
-### Swipe acidental
-Problema: pequenos movimentos do dedo podiam ser interpretados como deslize.
+## Entrada mobile
 
-Correção:
-- input do grid usa Pointer Events;
-- gesto exige deslocamento mínimo relevante;
-- exige direção dominante;
-- toque gerado logo após um swipe é ignorado;
-- não há handlers touch duplicados;
-- um deslize sem alteração real do tabuleiro não consome a ação.
+- Um swipe só é aceito com distância mínima e direção dominante; toque curto e gesto diagonal não gastam o deslize.
+- Um deslize que não altera o tabuleiro é inválido. O toque gerado ao fim do swipe não pode ativar outra ação.
+- Botões de direção e gesto na grade obedecem à mesma lógica. Alvos de reação e confirmação permanecem utilizáveis em tela estreita.
 
-## Spawn do próximo bloco
+## Spawn sem reserva
 
-Regra consolidada:
-1. Antes do deslize, o jogador conhece o **valor** do próximo bloco.
-2. Um deslize válido resolve o novo estado do grid.
-3. Só então o jogo escolhe e mostra a **casa exata** de entrada.
-4. Essa casa fica reservada até o fim do turno.
-5. Movimento do robô, Criar 2 e Empurrar não podem ocupar a casa reservada.
-6. O spawn não é reroteado silenciosamente.
-7. Se uma violação de estado conseguir bloquear a entrada, o bloco prometido é adiado em vez de ser trocado por outro.
+- Antes do turno, só o **valor** da próxima peça 2/4 é conhecido.
+- Nenhuma casa é pré-selecionada, mostrada como preview ou bloqueada para o Mech.
+- Depois de confirmado e resolvido o ataque, checam-se derrota e vitória; só então, se a partida continuar, escolhe-se uma casa vazia e a peça entra.
+- Se não houver casa vazia, a entrada é adiada sem trocar o valor prometido. O spawn jamais sobrepõe bloco ou unidade.
 
-Motivo: a posição precisa ser informação confiável, não uma previsão que muda escondido.
+## Ordem e desfazer
 
-## Ordem do turno
+- Uma reação opcional (mover **ou** descarregar) pode ocorrer antes ou depois do único deslize válido.
+- Confirmar permanece indisponível até um deslize válido. Ações sem efeito não consomem o orçamento.
+- Desfazer antes da confirmação restaura o estado anterior da jogada sem avançar ataque, turno ou valor da próxima peça.
+- Se não existir deslize válido, mesmo depois de uma reação legal, a derrota por grade travada é explícita.
 
-Regra:
-- o deslize é obrigatório para abrir o turno;
-- depois dele, movimento do robô, cartas e tiro de bloco são opcionais e podem ser combinados;
-- Encerrar Turno só fica disponível após um deslize válido.
+## Contrato da intenção
 
-A interface não deve fingir que movimento e cartas são obrigatórios.
+- O Artilheiro fixa a **linha**, não um bloco específico, ao começar o turno. Ela contém o maior bloco inicial; empates escolhem o menor índice. Sem blocos, mira a linha do Mech.
+- A consequência é calculada sobre o estado atual e exibida antes de confirmar: Mech na linha → Reator −2; senão, maior bloco na linha destruído; sem bloco → erro.
+- Descarregar um bloco adjacente cancela o ataque, não causa dano ao Artilheiro e impede movimento no mesmo turno.
+- Nenhum spawn ocorre entre o último preview da consequência e a resolução inimiga.
 
-## Intenções inimigas
+## Invariantes de estado
 
-Intenções são contratos congelados.
+1. Cada casa tem no máximo um ocupante principal; unidades nunca dividem casa com blocos.
+2. Uma fusão usa cada bloco no máximo uma vez por deslize.
+3. Intenção, HP, maior bloco, estado da reação e próxima peça mostrados na UI correspondem ao estado usado na resolução.
+4. Nenhuma ação inválida consome deslize ou reação.
+5. Reator em 0 causa derrota antes de avaliar o bloco 32; o bloco 32 precisa sobreviver ao ataque para vencer.
+6. O valor anunciado da peça é preservado ao desfazer ou adiar sua entrada.
+7. Renderizar novamente a grade não instala handlers duplicados de input.
 
-### Artilheiro
-- congela linha e bloco-alvo no início do turno;
-- se o robô continuar na linha: dano no Reator;
-- se sair da linha e o bloco-alvo ainda estiver exatamente ali: destrói aquele bloco;
-- se o alvo mudou/sumiu: erra;
-- nunca escolhe outro bloco na resolução.
+## Cenários mínimos de regressão
 
-### Esmagador
-- congela casa-alvo;
-- se for empurrado e a casa deixar de ser adjacente: intenção quebrada;
-- não teleporta para o alvo antigo.
-
-### Parasita
-- congela célula e valor do bloco que pretende consumir;
-- se o bloco sair, fundir ou mudar de valor: intenção quebrada;
-- não escolhe outro bloco na resolução.
-
-A UI agora mostra **o que acontecerá se o turno terminar naquele instante**, sem recalcular o alvo.
-
-## Cartas
-
-- cartas sem alvo legal ficam desabilitadas;
-- cartas não podem ser usadas antes do deslize obrigatório;
-- Fusão só permite escolher um primeiro bloco que realmente tenha par adjacente;
-- cartas usadas saem da mão;
-- o mesmo card não pode ser executado repetidamente por acidente.
-
-## Munição
-
-Regra canônica:
-**dano = valor do bloco consumido**.
-
-Foi removido o teto escondido de 16 que contradizia a documentação.
-
-## Gemas Gêmeas
-
-A primeira fusão do turno sobe um nível adicional.
-
-O feedback `GÊMEAS!` agora só aparece quando o efeito realmente foi acionado; fusões posteriores não reutilizam o feedback incorretamente.
-
-## Checks estruturais
-
-O protótipo possui validação interna de estado para detectar:
-- unidade fora do grid;
-- duas unidades na mesma casa;
-- unidade sobre bloco;
-- casa de spawn reservada ocupada.
-
-Esses problemas geram aviso no console durante desenvolvimento.
-
-## Invariantes a preservar
-
-1. Nenhum alvo inimigo muda escondido durante o turno.
-2. Nenhuma ação inválida deve consumir recurso.
-3. Nenhum swipe sem movimento deve consumir o deslize.
-4. Informação mostrada como exata deve permanecer exata.
-5. Nenhum handler de input deve ser registrado dentro de render().
-6. Uma carta indisponível deve parecer indisponível antes do toque.
-7. O jogador deve conseguir prever o resultado de Encerrar Turno olhando a tela.
+- Tentar mover o Mech para a casa onde uma peça poderia surgir é legal antes do spawn.
+- Deslizar 2–2–2 produz 4–2, não 8; obstáculos separam os segmentos.
+- Mover o Mech dentro da linha anunciada ainda causa dano; sair dela expõe o maior bloco remanescente.
+- Descarregar um bloco adjacente elimina esse bloco e cancela o ataque; não permite mover no mesmo turno.
+- Criar 32 e perdê-lo para o ataque não vence. Chegar a 0 HP no mesmo turno de um 32 sobrevivente perde.
+- Sem espaço para spawn, nenhum ocupante é substituído e o próximo valor não muda.

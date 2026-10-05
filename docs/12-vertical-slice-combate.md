@@ -1,77 +1,38 @@
-# 12 — Vertical Slice de Combate
+# 12 — Vertical Slice de Combate (histórico)
 
-## Escopo
-O primeiro slice não implementa a run inteira. Ele valida apenas:
+> Este documento descreve o protótipo 0.3.0 e foi substituído pela campanha atual em [17 — Campanha tática](17-campanha-tatica.md). As regras abaixo não são canônicas para o jogo aberto em `index.html`.
 
-- grade 4x4;
-- blocos 2/4/8/16...;
-- 1 Mech;
-- Artilheiro + Esmagador;
-- telegrafia perfeita;
-- 1 deslize grátis por turno;
-- 1 movimento grátis do Mech;
-- mão de 5 cartas;
-- energia 3 + bônus por fusão;
-- bloco adjacente como munição;
-- resolução inimiga;
-- vitória/derrota.
+Registro do contrato do antigo vertical slice com um Artilheiro.
 
-## Regras resolvidas
+## Arena e meta
 
-### Mech
-O Mech **não possui HP separado no MVP**. Se um Kaiju atinge o Mech, o dano vai para o Reator. Isso evita um segundo medidor de vida.
+- Grade 4×4 com blocos 2, 4, 8, 16, 32…; uma casa contém um bloco, o Mech, o Artilheiro ou fica vazia.
+- Mech e Artilheiro interrompem o deslize dos blocos. O Artilheiro permanece fixo.
+- Reator começa com **8 HP**. O Mech não possui outra barra de vida.
+- Vitória: **após o ataque**, preservar ao menos um bloco 32 ou maior com Reator acima de 0. Derrota: Reator chega a 0 ou não é possível obter um deslize válido, mesmo com uma reação legal.
 
-### Ocupação
-Cada casa contém apenas uma entidade principal: bloco, Mech, Kaiju ou vazio.
+## Intenção do Artilheiro
 
-### Movimento do Mech
-- 1 movimento ortogonal gratuito por turno.
-- Só pode entrar em casa vazia.
-- Cartas podem alterar essa regra depois.
+- No início do turno, ele escolhe a linha do maior bloco presente. Empates usam o menor índice no tabuleiro (de cima para baixo, da esquerda para a direita); se não houver blocos, mira a linha do Mech.
+- A linha fica fixa até a confirmação. A consequência mostrada ao jogador é recalculada depois de cada ação: com Mech na linha, o Reator perderá 2 HP; sem Mech, o maior bloco ainda nessa linha será destruído; sem bloco, o tiro errará.
+- Descarregar um bloco cancela o ataque do turno. A interface deve marcar a intenção como cancelada.
 
-### Bloco como munição
-- Mech pode consumir um bloco ortogonalmente adjacente.
-- Dano = valor do bloco, com teto temporário de 16 no protótipo.
-- É forte porque sacrifica progressão 2048.
+## Ações do jogador
 
-### Artilheiro
-- Telegráfa uma linha/coluna.
-- Se o Mech estiver na linha atingida, Reator sofre 2.
-- Caso contrário, destrói o menor bloco da linha atingida.
-- O jogador sempre vê qual linha será atacada antes de agir.
+- **Deslize:** exatamente um válido por turno; desloca e funde blocos em uma direção. Um gesto que não muda a grade não consome a ação.
+- **Reação opcional:** no máximo uma por turno, antes ou depois do deslize. Escolha entre mover o Mech uma casa ortogonal vazia **ou** descarregar um bloco ortogonalmente adjacente ao Mech para cancelar o ataque. Descarregar destrói o bloco; não causa dano ao Artilheiro.
+- **Desfazer:** antes de confirmar, o jogador pode restaurar ações ainda não confirmadas para tentar outra linha de jogo.
+- **Confirmar:** só é permitido após um deslize válido. Se nenhuma reação legal conseguir liberar um deslize, a grade está travada e a partida acaba.
 
-### Esmagador
-- Telegráfa a casa para a qual tentará avançar.
-- Se houver bloco: destrói e ocupa a casa.
-- Se houver Mech: Reator sofre 2 e o Esmagador não entra.
-- Se estiver vazia: ocupa a casa.
+## Ordem de resolução
 
-## Turno
-1. Inimigos mostram intenção.
-2. Jogador pode executar **1 deslize grátis**.
-3. Jogador pode mover o Mech **1 vez grátis**.
-4. Jogador usa cartas enquanto tiver energia.
-5. Jogador confirma.
-6. Inimigos resolvem.
-7. Novo bloco entra.
-8. Compra nova mão e energia volta a 3.
+1. Anunciar a linha inimiga e o valor da próxima peça (2 ou 4), sem prever sua casa.
+2. Jogador age e pode desfazer antes de confirmar.
+3. Ao confirmar, resolver ou cancelar o ataque anunciado.
+4. Verificar derrota e vitória, nessa ordem. Um bloco 32 destruído pelo tiro não satisfaz a meta; Reator em 0 prevalece sobre a meta.
+5. Se a partida continuar, inserir a peça anunciada numa casa vazia. Não existe reserva de casa. Sem vaga, a peça espera mantendo o mesmo valor.
+6. Iniciar o próximo turno e anunciar sua nova linha.
 
-## Cartas do vertical slice
-1. Ataque Básico — 1 energia — 2 dano, alcance 2.
-2. Ataque Básico — 1 energia.
-3. Empurrão — 1 energia — empurra Kaiju 1 casa.
-4. Criar Bloco — 1 energia — cria 2 em casa vazia.
-5. Fusão Forçada — 2 energia — funde dois blocos adjacentes iguais.
+## Critério de sucesso da experiência
 
-## Vitória
-Derrotar os dois Kaijus.
-
-## Derrota
-Reator chega a 0.
-
-## Critério de sucesso
-Depois de 5 minutos, o jogador deve conseguir prever:
-- o que o inimigo fará;
-- o efeito do deslize;
-- se vale sacrificar um bloco como munição;
-- se uma fusão melhora ou piora o espaço.
+Em poucos minutos, o jogador entende por que cada fusão aproxima a meta mas também expõe blocos, consegue prever o efeito de confirmar e percebe o custo de descarregar um bloco para proteger o tabuleiro.
