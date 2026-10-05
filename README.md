@@ -54,6 +54,8 @@ Não há pressão de tempo real. O contador avança apenas quando um movimento �
 - Atlas local de 3 interações descobertas, estatísticas, salvamento automático, seed e exportação/importação de replay JSON.
 - Retry imediato e arte/áudio gerados localmente.
 
+Polimento visual/sonoro: brilho discreto nos glifos, pequenos pulsos e fragmentos nas ressonâncias, reforço nas cascatas e uma breve expansão radial na vitória. Sem partículas em giros comuns, sem tremor de câmera e sem loop de animação ocioso. O áudio é opt-in, possui limite de volume e pode ser silenciado; movimento reduzido desativa as partículas. As regras e os replays não mudaram.
+
 Esta versão não implementa Daily online, ranking, Forge, gamepad, metaprogressão completa, famílias sorteadas ou o modo BREAK completo. A mini-run é menor que a run final proposta no GDD. O objetivo é testar Phase Locks, contrajogo e identidade de build.
 
 ## Desenvolvimento e verificação

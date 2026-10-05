@@ -10,7 +10,9 @@
   if(![1,2,4].includes(options.speed))options.speed=1;
   options.sound=Boolean(options.sound);options.reduced=Boolean(options.reduced);
   if(typeof atlas!=='object' || Array.isArray(atlas)) atlas={};
-  let state=null,visual=null,audioContext=null,toastTimer=null;
+  let state=null,visual=null,audioContext=null,audioBus=null,toastTimer=null;
+  const fxCanvas=$('reward-fx'),fxContext=fxCanvas.getContext('2d');
+  let effects=[],fxFrame=0;
   const format=n=>new Intl.NumberFormat('pt-BR',{maximumFractionDigits:1,notation:n>=100000?'compact':'standard'}).format(n);
   const esc=str=>String(str).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const toneHTML=t=>'<span class="glyph t'+t+'" role="img" aria-label="'+C.TONES[t]+'"></span>';
@@ -26,15 +28,90 @@
   function feedback(text,preview=false) {$('feedback').textContent=text;$('feedback').classList.toggle('preview',preview);}
   function unlockAudio() {
     if(!options.sound)return;
-    try {audioContext ||= new (window.AudioContext||window.webkitAudioContext)();if(audioContext.state==='suspended')audioContext.resume().catch(()=>{});}catch{}
+    try {
+      audioContext ||= new (window.AudioContext||window.webkitAudioContext)();
+      if(!audioBus){
+        audioBus=audioContext.createGain();audioBus.gain.value=.7;
+        const limiter=audioContext.createDynamicsCompressor();limiter.threshold.value=-18;limiter.ratio.value=4;limiter.attack.value=.005;limiter.release.value=.12;
+        audioBus.connect(limiter);limiter.connect(audioContext.destination);
+      }
+      audioBus.gain.setValueAtTime(.7,audioContext.currentTime);
+      if(audioContext.state==='suspended')audioContext.resume().catch(()=>{});
+    }catch{}
   }
   function sound(type,wave=1) {
-    if(!options.sound || !audioContext)return;
+    if(!options.sound){if(audioBus)audioBus.gain.setValueAtTime(0,audioContext.currentTime);return;}
+    if(!audioContext || !audioBus)return;
     try {
       const time=audioContext.currentTime;
-      const frequencies=type==='resonance'?[130.81,196,261.63].map(f=>f*2**Math.min(wave-1,3)/2):type==='lock'?[330,440]:type==='damage'?[73.4,77]:type==='win'?[261.63,329.63,392,523.25]:[180];
-      frequencies.forEach((f,i)=>{const oscillator=audioContext.createOscillator(),gain=audioContext.createGain();oscillator.type=type==='damage'?'sawtooth':'sine';oscillator.frequency.value=f;const start=time+i*.025,duration=type==='move'?.08:.24;gain.gain.setValueAtTime(0,start);gain.gain.linearRampToValueAtTime(type==='move'?.025:.045,start+.008);gain.gain.exponentialRampToValueAtTime(.001,start+duration);oscillator.connect(gain);gain.connect(audioContext.destination);oscillator.start(start);oscillator.stop(start+duration+.03);});
+      function note(frequency,delay,duration,volume,timbre='sine',end=frequency){
+        const oscillator=audioContext.createOscillator(),gain=audioContext.createGain(),start=time+delay;
+        oscillator.type=timbre;oscillator.frequency.setValueAtTime(frequency,start);oscillator.frequency.exponentialRampToValueAtTime(end,start+duration);
+        gain.gain.setValueAtTime(0,start);gain.gain.linearRampToValueAtTime(volume,start+.006);gain.gain.exponentialRampToValueAtTime(.0001,start+duration);
+        oscillator.connect(gain);gain.connect(audioBus);oscillator.onended=()=>{oscillator.disconnect();gain.disconnect();};oscillator.start(start);oscillator.stop(start+duration+.015);
+      }
+      if(type==='move')note(220,0,.045,.012,'sine',150);
+      if(type==='lock'){note(330,0,.09,.022);note(440,.025,.11,.016);}
+      if(type==='resonance'){
+        const pitch=[1,1.125,1.25,1.5,2][Math.min(Math.max(wave-1,0),4)];
+        note(120,0,.18,.11,'sine',54); // Soft low-end impact, no noise burst.
+        note(261.63*pitch,.01,.24,.044);note(392*pitch,.035,.28,.024);
+        if(wave>1)note(523.25*pitch,.065,.30,.019,'triangle');
+      }
+      if(type==='win') [261.63,329.63,392,523.25].forEach((f,i)=>note(f,i*.065,.34,.045));
+      if(type==='install'){note(392,0,.18,.026);note(523.25,.06,.24,.026);}
+      if(type==='damage'){note(98,0,.16,.05,'triangle',65);note(73.4,0,.12,.04);}
     }catch{}
+  }
+  // An independent transparent overlay: never redraws gameplay, intercepts input,
+  // consumes gameplay RNG or runs a permanent animation loop. Hard cap: 64 effects.
+  function clearEffects(){cancelAnimationFrame(fxFrame);fxFrame=0;effects=[];fxContext.clearRect(0,0,fxCanvas.width,fxCanvas.height);fxCanvas.dataset.active='false';}
+  function effectFrame(now){
+    fxFrame=0;
+    if(options.reduced || document.hidden){clearEffects();return;}
+    const scale=fxCanvas.width/420;fxContext.setTransform(scale,0,0,scale,0,0);fxContext.clearRect(0,0,420,420);
+    effects=effects.filter(e=>now-e.start<e.life);
+    for(const e of effects){
+      const t=Math.max(0,(now-e.start)/e.life),ease=1-(1-t)**2;
+      fxContext.save();fxContext.globalAlpha=(1-t)**2*e.alpha;fxContext.strokeStyle=e.color;fxContext.fillStyle=e.color;
+      if(e.kind==='ring'){
+        fxContext.lineWidth=1.4;fxContext.beginPath();fxContext.arc(e.x,e.y,e.radius+ease*e.travel,0,Math.PI*2);fxContext.stroke();
+      }else{
+        const x=e.x+e.dx*ease,y=e.y+e.dy*ease+t*t*6;
+        fxContext.translate(x,y);fxContext.rotate(e.angle+t*.7);
+        fxContext.fillRect(-e.size/2,-e.size/2,e.size,e.size);
+      }
+      fxContext.restore();
+    }
+    fxCanvas.dataset.active=String(effects.length>0);
+    if(effects.length)fxFrame=requestAnimationFrame(effectFrame);
+  }
+  function rewardFX(matches=[],wave=1,victory=false){
+    if(options.reduced || document.hidden)return;
+    const now=performance.now(),life=(victory?660:440)/Math.sqrt(options.speed);
+    const add=e=>effects.push({...e,start:now,life,alpha:e.alpha??.8});
+    if(victory){
+      add({kind:'ring',x:210,y:210,radius:42,travel:140,color:colors[0],alpha:.5});
+      for(let i=0;i<24;i++){
+        const a=i*Math.PI*2/24,r=70+i%3*28;
+        add({kind:'spark',x:210+Math.cos(a)*r,y:210+Math.sin(a)*r,dx:Math.cos(a)*35,dy:Math.sin(a)*35,angle:a,size:2+i%2,color:colors[i%4],alpha:.75});
+      }
+    }else{
+      for(const m of matches.slice(0,3)){
+        const a=m.sector*Math.PI/4-Math.PI/2,color=colors[m.tone];
+        for(const r of radii){
+          const x=210+Math.cos(a)*r,y=210+Math.sin(a)*r;
+          add({kind:'ring',x,y,radius:15,travel:wave>1?13:7,color,alpha:.65});
+          for(let i=0;i<(wave>1?4:2);i++){
+            const angle=a+i*Math.PI*.62+r*.03;
+            add({kind:'spark',x,y,dx:Math.cos(angle)*(wave>1?23:14),dy:Math.sin(angle)*(wave>1?23:14),angle,size:2+i%2,color});
+          }
+        }
+      }
+      if(wave>1)add({kind:'ring',x:210,y:210,radius:40,travel:20,color:colors[1],alpha:.45});
+    }
+    effects=effects.slice(-64);fxCanvas.dataset.active='true';
+    if(!fxFrame)fxFrame=requestAnimationFrame(effectFrame);
   }
   function haptic(ms=8) {if(!options.reduced && navigator.vibrate)navigator.vibrate(ms);}
   function circle(x,y,r,fill,stroke,width=1) {ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);if(fill){ctx.fillStyle=fill;ctx.fill();}if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=width;ctx.stroke();}}
@@ -44,6 +121,9 @@
     if(t===1){ctx.beginPath();ctx.moveTo(x,y-size);ctx.lineTo(x+size,y);ctx.lineTo(x,y+size);ctx.lineTo(x-size,y);ctx.closePath();ctx.fill();}
     if(t===2){ctx.beginPath();ctx.moveTo(x,y-size);ctx.lineTo(x+size*.94,y+size*.8);ctx.lineTo(x-size*.94,y+size*.8);ctx.closePath();ctx.fill();}
     if(t===3){ctx.beginPath();ctx.roundRect(x-size*.75,y-size*.75,size*1.5,size*1.5,3);ctx.fill();}
+    // A single restrained highlight gives each existing glyph a ceramic edge.
+    ctx.fillStyle='#ffffff';ctx.globalAlpha=alpha*.23;
+    ctx.beginPath();ctx.arc(x-size*.18,y-size*.30,1.5,0,Math.PI*2);ctx.fill();
     ctx.restore();
   }
   function draw(board=visual?.board||state.board,offsets=[0,0,0],matches=[]) {
@@ -96,7 +176,7 @@
     ctx.fillStyle=busy?'#96ebd3':'#b9bfd5';ctx.font='9px ui-monospace,monospace';ctx.fillText(isPreview?'PREVIEW':busy?'PULSO':'CORE',center,center-9);
     ctx.fillStyle='#f1efff';ctx.font='bold 18px ui-monospace,monospace';ctx.fillText(isPreview?ghost.matches.length?ghost.matches.length+' ◎':'↔':state.maxWave>=2?'×'+2**Math.min(state.maxWave-1,10):'◉',center,center+10);
   }
-  function resize() {const dpr=Math.min(window.devicePixelRatio||1,2);canvas.width=Math.round(420*dpr);canvas.height=canvas.width;draw();}
+  function resize() {const dpr=Math.min(window.devicePixelRatio||1,2);canvas.width=Math.round(420*dpr);canvas.height=canvas.width;fxCanvas.width=canvas.width;fxCanvas.height=canvas.height;draw();}
   function render(s=state) {
     const free=s.mode==='free',encounter=C.ENCOUNTERS[s.encounter];
     $('stage').textContent=free?'LABORATÓRIO · SEM AMEAÇAS':'ENCONTRO 0'+(s.encounter+1)+' / 03';$('anomaly-name').textContent=free?'LIVRE':encounter.name;
@@ -135,7 +215,7 @@
     const won=state.status==='won';
     show('<div class="eyebrow">'+(won?'MÁQUINA ESTÁVEL':'COLAPSO')+'</div><h2>'+(won?'Você rompeu o sistema.':'Mais uma ideia?')+'</h2><p>'+(won?'Três Anomalias. Uma máquina construída por você. Teste outra seed ou experimente livremente.':esc(state.cause))+'</p><div class="run-summary"><div><span>Energia total</span><strong>'+format(state.total)+'</strong></div><div><span>Melhor cascata</span><strong>×'+2**Math.min(Math.max(0,state.maxWave-1),10)+'</strong></div><div><span>Melhor movimento</span><strong>'+format(state.bestMove)+'</strong></div><div><span>Acoplamentos usados</span><strong>'+state.locksUsed+'</strong></div></div><button class="primary wide" data-action="retry">Tentar a mesma seed</button><div class="two-buttons"><button data-action="new">Nova seed</button><button data-action="free">Modo livre</button></div><button class="wide" data-action="export">Exportar esta run</button>',true);
   }
-  function start(seed=newSeed(),mode='run') {state=C.create(seed,mode);visual=null;ghost=null;selected=0;closeModal();render();draw();persist();feedback('Gire o anel externo para a direita.');}
+  function start(seed=newSeed(),mode='run') {clearEffects();state=C.create(seed,mode);visual=null;ghost=null;selected=0;closeModal();render();draw();persist();feedback('Gire o anel externo para a direita.');}
   function newSeed() {return 'RB-'+Date.now().toString(36).toUpperCase()+'-'+Math.floor(Math.random()*65536).toString(36).toUpperCase();}
   function resetDialog(mode) {if(!state.turn){start(newSeed(),mode);return;}show('<div class="eyebrow">NOVA MÁQUINA</div><h2>'+(mode==='free'?'Explorar livremente?':'Começar outra run?')+'</h2><p>A partida atual será substituída. Você pode exportar o replay nas opções.</p><button class="primary wide" data-action="'+(mode==='free'?'free':'new')+'">'+(mode==='free'?'Entrar no modo livre':'Nova seed')+'</button><button class="wide" data-action="close">Continuar esta partida</button>');}
   function setPreview(ring,direction) {
@@ -162,7 +242,7 @@
         if(event.type==='bonus') {visual.energy+=event.energy;visual.total+=event.energy;feedback(event.label+' +'+event.energy);}
         if(event.type==='resonance') {
           visual.board=event.board;visual.energy=event.encounterEnergy;visual.total=event.total;render(visual);draw(event.board,[0,0,0],event.matches);sound('resonance',event.wave);haptic(15);
-          feedback((event.wave>1?'CASCATA ×'+event.multiplier:'RESSONÂNCIA')+' · +'+format(event.energy)+' energia');floating('+'+format(event.energy));await pause(240);
+          rewardFX(event.matches,event.wave);feedback((event.wave>1?'CASCATA ×'+event.multiplier:'RESSONÂNCIA')+' · +'+format(event.energy)+' energia');floating('+'+format(event.energy));await pause(240);
         }
         if(event.type==='refill'){visual.board=event.board;visual.queue=event.queue;render(visual);draw();await pause(90);}
         if(event.type==='lock'){visual.locks=event.locks;sound('lock');feedback('ACOPLAMENTO · '+names[event.edge]+' ↔ '+names[event.edge+1]);render(visual);draw();await pause(80);}
@@ -172,7 +252,7 @@
         if(event.type==='evade')feedback(event.label);
         if(event.type==='blocked')feedback('ESCUDO · IMPACTO ABSORVIDO');
         if(event.type==='limit')feedback(event.label);
-        if(event.type==='win')sound('win');
+        if(event.type==='win'){sound('win');rewardFX([],1,true);await pause(330);}
       }
       state=result.state;persist();
     } finally {busy=false;visual=null;render();draw();}
@@ -228,14 +308,14 @@
   }
   modal.addEventListener('cancel',event=>{if(modal.dataset.locked==='true')event.preventDefault();});
   modal.addEventListener('click',event=>{
-    const choice=event.target.closest('[data-choice]');if(choice){state=C.choose(state,choice.dataset.choice);closeModal();render();draw();persist();feedback('PROTOCOLO ATIVO · '+C.PROTOCOLS.find(p=>p.id===choice.dataset.choice).name);return;}
+    const choice=event.target.closest('[data-choice]');if(choice){clearEffects();state=C.choose(state,choice.dataset.choice);sound('install');closeModal();render();draw();persist();feedback('PROTOCOLO ATIVO · '+C.PROTOCOLS.find(p=>p.id===choice.dataset.choice).name);return;}
     const lab=event.target.closest('[data-lab]');if(lab){const id=lab.dataset.lab;let protocols=state.protocols.slice();if(protocols.includes(id))protocols=protocols.filter(p=>p!==id);else if(protocols.length<3)protocols.push(id);else{toast('Máximo de 3 Protocolos. Remova um primeiro.');return;}state=C.configure(state.seed,protocols);persist();render();draw();labDialog();return;}
     const action=event.target.closest('[data-action]')?.dataset.action;if(!action)return;
     if(action==='close')closeModal();if(action==='rewrite'){state=C.rewrite(state);persist();draft();}
     if(action==='new')start();if(action==='retry')start(state.seed,state.mode);if(action==='free')start(newSeed(),'free');
     if(action==='speed'){options.speed=options.speed===4?1:options.speed*2;persist();settings();}
-    if(action==='reduced'){options.reduced=!options.reduced;persist();render();settings();}
-    if(action==='sound'){options.sound=!options.sound;unlockAudio();persist();render();settings();}
+    if(action==='reduced'){options.reduced=!options.reduced;if(options.reduced)clearEffects();persist();render();settings();}
+    if(action==='sound'){options.sound=!options.sound;unlockAudio();sound('lock');persist();render();settings();}
     if(action==='export')exportReplay();if(action==='import')$('import-file').click();if(action==='lab')labDialog();
     if(action==='seed')show('<div class="eyebrow">MESMO PROBLEMA, OUTRA SOLUÇÃO</div><h2>Jogar uma seed.</h2><p>Digite a seed para iniciar uma mini-run. O progresso atual será substituído.</p><input type="text" id="seed-input" maxlength="80" value="'+esc(state.seed)+'" aria-label="Seed"><button class="primary wide" data-action="seed-play">Começar</button><button class="wide" data-action="close">Cancelar</button>');
     if(action==='seed-play'){const seed=$('seed-input').value.trim();if(seed)start(seed);}
@@ -243,6 +323,7 @@
   function labDialog() {show('<div class="modal-top"><div class="eyebrow">LABORATÓRIO · 3 SLOTS</div><button class="close" data-action="close">Fechar</button></div><h2>Teste uma hipótese.</h2><p>Escolha até 3 regras. Alterações no laboratório começam um novo registro de replay mantendo a seed; o tabuleiro é reiniciado para garantir reprodução.</p>'+C.PROTOCOLS.map(p=>'<button class="protocol-offer" data-lab="'+p.id+'"><span class="family">'+p.family+' · '+(state.protocols.includes(p.id)?'ATIVO':'DESATIVADO')+'</span><strong>'+p.name+'</strong><p>'+p.description+'</p></button>').join(''));}
   $('import-file').addEventListener('change',async event=>{const file=event.target.files[0];if(!file)return;try{if(file.size>2000000)throw Error('Arquivo muito grande.');const data=JSON.parse(await file.text());const restored=C.replay(data);state=restored;visual=null;selected=0;closeModal();render();draw();persist();if(state.status==='draft')draft();else if(['won','lost'].includes(state.status))finish();toast('Replay reconstruído: '+state.turn+' movimentos.');}catch(error){toast('Não foi possível importar: '+error.message);}event.target.value='';});
   addEventListener('resize',resize);
+  document.addEventListener('visibilitychange',()=>{if(document.hidden)clearEffects();});
   const seedParam=new URLSearchParams(location.search).get('seed');
   const saved=read(SAVE,null);try{if(!seedParam && saved)state=C.replay(saved);}catch{}
   const fresh=!state;if(!state)state=C.create(seedParam||'FIRST-LIGHT-2');
