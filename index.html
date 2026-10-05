@@ -142,6 +142,14 @@ body{
 .introOverlay,.helpOverlay{backdrop-filter:none;background:#060810e8!important}.introOverlay{position:fixed;inset:0;z-index:101;display:none;align-items:flex-end;justify-content:center;padding:10px}.introOverlay.open{display:flex}.introCard,.helpCard{width:min(100%,580px);background:linear-gradient(180deg,#18243a,#0d1422)!important;border:3px solid #455571!important;border-radius:2px!important;box-shadow:0 12px 0 #05070d!important;padding:16px!important}.introKicker{color:#ff8c42;font:1000 6px monospace;letter-spacing:.12em}.introCard h2{margin:5px 0 10px;font:italic 1000 21px Impact,sans-serif}.introCard h2 i{color:#4fe0e0}.introHero{display:grid;grid-template-columns:54px 1fr;gap:10px;padding:9px;background:#0b1b27;border:1px solid #337481}.introRobot{width:50px;height:50px;background:url('assets/sprites/mech/mech_idle.svg') center/contain no-repeat;image-rendering:pixelated;filter:drop-shadow(0 0 6px #4fe0e0)}.introHero b{font-size:10px;color:#8ff}.introHero small{display:block;margin-top:3px;font-size:9px;line-height:1.25;color:#aebbd0}.introSteps{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:9px 0}.introSteps div{padding:8px;background:#101827;border:1px solid #35425a}.introSteps i{display:inline-grid;place-items:center;width:18px;height:18px;margin-right:4px;border:1px solid #ffd93d;color:#ffd93d;font:1000 8px monospace}.introSteps b{font-size:8px}.introSteps small{display:block;margin-top:4px;color:#95a1b6;font-size:8px;line-height:1.2}.introStart{width:100%;padding:13px;border:2px solid #62a6d6;background:#10304c;color:#e9f7ff;font:1000 10px monospace;box-shadow:0 4px #05070d}
 @media(max-width:390px){.brand h1{font-size:25px!important}.turnBox{min-width:48px}.hudBar{grid-template-columns:1fr 1fr 1.12fr!important}.statIcon{display:none}.unitText{font-size:8px}.card{flex-basis:116px!important}.introSteps{grid-template-columns:1fr 1fr}}
 @media(prefers-reduced-motion:reduce){.cell.mech.hintPulse{animation:none}}
+
+/* V6 — run, preview and parasite */
+.relicBar{display:flex;align-items:center;gap:8px;margin:-2px 0 8px;padding:6px 8px;background:#0b111d;border:1px solid #2f3d54;box-shadow:inset 3px 0 #b14cff}.relicBar b{font:1000 6px monospace;color:#aeb8cc;letter-spacing:.08em}.relicBar span{font:900 7px monospace;color:#d7a8ff}
+.intent.parasite{border:2px solid #a43b74!important}.consume{color:#f070b0!important}.parasitePortrait{background-image:url('assets/sprites/kaijus/parasita/idle.svg')}
+.cell.parasite{background:linear-gradient(145deg,#5b1d43,#240d1d)!important;border-color:#d44a8c!important;color:transparent!important;text-shadow:none!important}.cell.parasite:before{content:""!important;position:absolute;width:78%;height:78%;background:url('assets/sprites/kaijus/parasita/idle.svg') center/contain no-repeat;image-rendering:pixelated;z-index:2}.cell.parasite:after{content:"PARAS. " attr(data-hp)!important;color:#ffd8ec!important;font:1000 6px monospace!important}
+.cell.consumeTarget{border-color:#d44a8c!important;box-shadow:inset 0 0 0 2px #d44a8c99,0 0 12px #d44a8c55!important;animation:consumePulse .9s steps(2) infinite alternate}@keyframes consumePulse{to{filter:brightness(1.25)}}
+.boardTag small b{display:inline-grid;place-items:center;min-width:19px;height:19px;margin-left:3px;background:#b8b8c8;color:#0c1018;border:1px solid #fff;font-size:10px}
+.rewardOverlay,.runOverlay{position:fixed;inset:0;z-index:120;background:#050710ed;display:none;align-items:flex-end;justify-content:center;padding:10px}.rewardOverlay.open,.runOverlay.open{display:flex}.rewardCard{width:min(100%,590px);padding:16px;background:linear-gradient(180deg,#1a2133,#0c1320);border:3px solid #4a5873;box-shadow:0 12px 0 #03050a}.rewardKicker{font:1000 6px monospace;color:#5fd068;letter-spacing:.12em}.rewardCard h2{margin:5px 0;font:italic 1000 22px Impact,sans-serif}.rewardCard>p{margin:0 0 11px;color:#9da9bd;font-size:10px}.rewardChoices{display:grid;grid-template-columns:1fr;gap:7px}.rewardChoices button{display:grid;grid-template-columns:44px 1fr;text-align:left;gap:8px;padding:10px;background:#111a2a;color:#eef3fb;border:2px solid #43506a;box-shadow:0 4px #03050a}.rewardChoices i{grid-row:1/3;display:grid;place-items:center;font:1000 25px monospace;color:#ffd93d;font-style:normal}.rewardChoices b{font:1000 10px monospace}.rewardChoices small{font:700 8px/1.3 monospace;color:#9eabc0}.rewardChoices button:nth-child(1){border-color:#a58227}.rewardChoices button:nth-child(2){border-color:#4e7fa4}.rewardChoices button:nth-child(3){border-color:#7c4aa8}.finalCard{text-align:center}.finalCard .introStart{margin-top:12px}@media(min-width:520px){.rewardChoices{grid-template-columns:repeat(3,1fr)}.rewardChoices button{grid-template-columns:1fr;text-align:center}.rewardChoices i{grid-row:auto}}
 </style>
 </head><body>
 <main id="game">
@@ -149,7 +157,7 @@ body{
     <div class="brand">
       <span class="eyebrow">PROTOCOLO DE DEFESA // SETOR 1</span>
       <h1>KAIJU <i>2048</i></h1>
-      <small>PUZZLE TÁTICO · ROBÔ VS KAIJU</small>
+      <small id="encounterLabel">COMBATE 1/2 · ROBÔ VS KAIJU</small>
     </div>
     <div class="topRight"><div class="turnBox"><small>TURNO</small><b id="turn">1</b></div><button id="helpBtn" class="helpBtn" aria-label="Como jogar">?</button></div>
   </header>
@@ -159,6 +167,7 @@ body{
     <div class="stat en"><span class="statIcon">ϟ</span><div><small>ENERGIA</small><b id="energy">3/6</b></div></div>
     <div class="stat actionStat"><span class="statIcon">↔</span><div><small>AÇÕES GRÁTIS</small><b id="free">1 desl. · 1 robô</b></div></div>
   </section>
+  <div class="relicBar"><b>MÓDULOS DA RUN</b><span id="relicList">nenhum</span></div>
 
   <nav class="guide" aria-label="ordem do turno">
     <span id="guideSlide"><i>1</i> DESLIZE</span>
@@ -173,9 +182,13 @@ body{
       <div class="intentHead"><span class="enemyPortrait gunPortrait"></span><strong>ARTILHEIRO · <span id="gunHp">6</span> HP</strong><i>FIXA</i></div>
       <small class="warn" id="gunIntent"></small>
     </div>
-    <div class="intent crusher">
+    <div class="intent crusher" id="cruCard">
       <div class="intentHead"><span class="enemyPortrait crusherPortrait"></span><strong>ESMAGADOR · <span id="cruHp">8</span> HP</strong><i>FIXA</i></div>
       <small class="move" id="cruIntent"></small>
+    </div>
+    <div class="intent parasite" id="parCard" hidden>
+      <div class="intentHead"><span class="enemyPortrait parasitePortrait"></span><strong>PARASITA · <span id="parHp">5</span> HP</strong><i>FIXA</i></div>
+      <small class="consume" id="parIntent"></small>
     </div>
   </div>
 
@@ -190,7 +203,7 @@ body{
     <div class="unitText">É a unidade azul no tabuleiro. <b>Toque nela</b> para revelar as casas onde ela pode andar.</div>
   </div>
   <div class="boardFrame">
-    <div class="boardTag"><span>GRID 4×4</span><small>FUNDA · POSICIONE · SOBREVIVA</small></div>
+    <div class="boardTag"><span id="objective">OBJETIVO · DESTRUA OS 2 KAIJUS</span><small>PRÓXIMO BLOCO <b id="nextTile">2</b></small></div>
     <section class="board" id="board" aria-label="Tabuleiro 4 por 4"></section>
   </div>
   <div class="coachBox" id="coachBox"></div>
@@ -230,6 +243,22 @@ body{
     </div>
     <button id="introStart" class="introStart">ENTENDI · INICIAR COMBATE</button>
   </div>
+</div>
+
+<div class="rewardOverlay" id="rewardOverlay" aria-hidden="true">
+  <div class="rewardCard">
+    <span class="rewardKicker">COMBATE 1 VENCIDO</span>
+    <h2>ESCOLHA 1 MÓDULO</h2>
+    <p>Ele altera as regras do próximo combate.</p>
+    <div class="rewardChoices">
+      <button data-reward="core"><i>ϟ</i><b>REATOR NÚCLEO</b><small>comece cada turno com 4 Energia</small></button>
+      <button data-reward="armor"><i>▣</i><b>BLINDAGEM</b><small>recupere 3 do Reator e reduza cada dano em 1</small></button>
+      <button data-reward="twins"><i>◆◆</i><b>GEMAS GÊMEAS</b><small>a primeira fusão do turno sobe um nível extra</small></button>
+    </div>
+  </div>
+</div>
+<div class="runOverlay" id="runOverlay" aria-hidden="true">
+  <div class="rewardCard finalCard"><span class="rewardKicker">SETOR 1 CONCLUÍDO</span><h2>RUN DE TESTE VENCIDA</h2><p>Você passou pelos dois combates e testou um módulo de build.</p><button id="restartRun" class="introStart">JOGAR NOVAMENTE</button></div>
 </div>
 
 <div class="helpOverlay" id="helpOverlay" aria-hidden="true">
