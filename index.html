@@ -133,7 +133,7 @@ html,body{width:100%;max-width:100%;overflow-x:hidden}
 <div class="meters"><div class="meter integrity"><small>INTEGRIDADE</small><div class="meterTrack"><i id="integrityFill"></i></div><b id="integrityText">22/22</b></div><div class="meter heat"><small>CALOR</small><div class="heatPips" id="heatPips"><i></i><i></i><i></i><i></i><i></i><i></i></div><b id="heatText">FRIO</b></div></div><div class="turnRibbon" id="turnRibbon">TURNO 1</div><div class="phase" id="phase">SUA VEZ · MONTE A MÁQUINA</div><button class="restartBtn" id="restartBtn" hidden>REINICIAR</button><div class="helpOverlay" id="helpOverlay"><div class="helpCard"><button class="helpClose" id="helpClose">×</button><div class="helpEyebrow">MANUAL DA MÁQUINA · 01</div><h2>PRESSÃO É SIMPLES.</h2><div class="rule red"><b>PISTÃO</b><span>Some as peças.</span><strong>Peça esquerda dá +50% dela.</strong><small>Fusões aquecem a máquina e aumentam o disparo.</small></div><div class="rule blue"><b>BARREIRA</b><span>Some as peças.</span><strong>Peça direita dá +75% dela.</strong><small>Defesa intercepta o próximo golpe do Rei.</small></div><p>Você não precisa fazer a conta: os botões mostram diretamente quanto vai causar ou bloquear.</p></div></div></main>
 <script>
 const $=q=>document.querySelector(q), $$=q=>[...document.querySelectorAll(q)];
-const S={ehp:64,emax:85,php:22,pmax:22,intent:6,heat:0,hand:[1,1,2],ch:[null,null,null],sel:null,shield:0,turn:1,busy:false,over:false};
+const PHASE=Object.freeze({INPUT:'PLAYER_INPUT',PLAYER:'PLAYER_RESOLVE',ENEMY:'ENEMY_RESOLVE',WIN:'VICTORY',LOSE:'DEFEAT'});const S={ehp:64,emax:85,php:22,pmax:22,intent:6,heat:0,hand:[1,1,2],ch:[null,null,null],sel:null,shield:0,turn:1,phase:PHASE.INPUT};const isInput=()=>S.phase===PHASE.INPUT;
 const sum=()=>S.ch.reduce((a,v)=>a+(v||0),0);
 const dmg=()=>Math.ceil(sum()+(S.ch[0]||0)*.5+S.heat);
 const blk=()=>Math.ceil(sum()+(S.ch[2]||0)*.75);
@@ -148,35 +148,35 @@ function refill(){while(S.hand.length<3)S.hand.push(1+Math.floor(Math.random()*3
 function validate(){if(!Array.isArray(S.hand))S.hand=[];if(!Array.isArray(S.ch)||S.ch.length!==3)S.ch=[null,null,null];S.php=Math.max(0,Math.min(S.pmax,Number(S.php)||0));S.ehp=Math.max(0,Math.min(S.emax,Number(S.ehp)||0));S.heat=Math.max(0,Math.min(6,Number(S.heat)||0));if(S.sel!=null&&(S.sel<0||S.sel>=S.hand.length))S.sel=null}
 function render(){validate();
  const h=$('#hand');h.innerHTML='';
- S.hand.forEach((v,i)=>{let x=document.createElement('button');x.className='part'+(S.sel===i?' sel':'')+(S.ch.includes(v)?' comboReady':'');x.textContent=v;x.disabled=S.busy||S.over;x.onclick=()=>{S.sel=S.sel===i?null:i;beep(620,.035);haptic(5);render()};h.append(x)});
+ S.hand.forEach((v,i)=>{let x=document.createElement('button');x.className='part'+(S.sel===i?' sel':'')+(S.ch.includes(v)?' comboReady':'');x.textContent=v;x.disabled=!isInput();x.onclick=()=>{S.sel=S.sel===i?null:i;beep(620,.035);haptic(5);render()};h.append(x)});
  $$('.socket').forEach((x,i)=>{x.textContent=S.ch[i]??'—';x.classList.toggle('loaded',S.ch[i]!=null);x.closest('.ch')?.classList.toggle('loaded3d',S.ch[i]!=null)});
  $('#dmg').textContent=dmg();$('#blk').textContent=blk();$('#ehp').textContent=S.ehp;$('#efill').style.width=(S.ehp/S.emax*100)+'%';$('#intent').textContent=S.intent;
  $('#integrityText').textContent=S.php+'/'+S.pmax;$('#integrityFill').style.width=(S.php/S.pmax*100)+'%';
  let hp=Math.min(6,S.heat);$$('#heatPips i').forEach((p,i)=>{p.classList.toggle('on',i<hp);p.classList.toggle('hot',i<hp&&hp>=4)});$('#heatText').textContent=hp>=4?'CRÍTICO':hp?'ATIVO':'FRIO';
  $('.heat')?.classList.toggle('over',hp>=4);$('#machine')?.classList.toggle('redline',hp>=4);
- let usable=sum()>0&&!S.busy&&!S.over;$('#atk').disabled=!usable;$('#def').disabled=!usable;$('#atk').classList.toggle('ready',usable);$('#def').classList.toggle('ready',usable);
- $$('.ch').forEach(c=>c.classList.toggle('target',S.sel!=null&&!S.busy&&!S.over));
- if(!S.over)$('#phase').textContent=S.busy?'RESOLVENDO...':(sum()?('TURNO '+S.turn+' · ESCOLHA PISTÃO OU BARREIRA'):('TURNO '+S.turn+' · ESCOLHA UMA PEÇA'));
+ let usable=sum()>0&&isInput();$('#atk').disabled=!usable;$('#def').disabled=!usable;$('#atk').classList.toggle('ready',usable);$('#def').classList.toggle('ready',usable);
+ $$('.ch').forEach(c=>c.classList.toggle('target',S.sel!=null&&isInput()));
+ if(S.phase!==PHASE.WIN&&S.phase!==PHASE.LOSE)$('#phase').textContent=S.phase!==PHASE.INPUT?'RESOLVENDO...':(sum()?('TURNO '+S.turn+' · ESCOLHA PISTÃO OU BARREIRA'):('TURNO '+S.turn+' · ESCOLHA UMA PEÇA'));
 }
 $$('.ch').forEach(c=>c.onclick=()=>{
- if(S.busy||S.over||S.sel==null)return;let i=+c.dataset.i,v=S.hand[S.sel];
+ if(!isInput()||S.sel==null)return;let i=+c.dataset.i,v=S.hand[S.sel];
  if(v==null){S.sel=null;render();return}if(S.ch[i]!=null&&S.ch[i]!==v){beep(90,.08,'square');cls(c,'dangerBeat',220);S.sel=null;render();return}
  if(S.ch[i]==null){S.ch[i]=v;S.hand.splice(S.sel,1);beep(170,.07);haptic(10)}
  else{S.ch[i]*=2;S.hand.splice(S.sel,1);S.heat=Math.min(6,S.heat+1);beep(470,.12);haptic([12,22,16]);fx('FUSÃO!');particles(16);cls(c,'fusing',420)}
  S.sel=null;render();
 });
-function endGame(win){S.over=true;S.busy=false;$('#restartBtn').hidden=false;if(win){$('#boss').classList.add('defeated');fx('CALDEIRA ROMPIDA!');particles(28);$('#phase').textContent='VITÓRIA · CALDEIRA ROMPIDA'}else{$('#machine').classList.add('dead');fx('KRRRSH!');$('#phase').textContent='DERROTA · CRONOMOTOR ROMPIDO'}render()}
+function endGame(win){S.phase=win?PHASE.WIN:PHASE.LOSE;$('#restartBtn').hidden=false;if(win){$('#boss').classList.add('defeated');fx('CALDEIRA ROMPIDA!');particles(28);$('#phase').textContent='VITÓRIA · CALDEIRA ROMPIDA'}else{$('#machine').classList.add('dead');fx('KRRRSH!');$('#phase').textContent='DERROTA · CRONOMOTOR ROMPIDO'}render()}
 function enemy(){
- if(S.over)return;let shield=S.shield,hit=Math.max(0,S.intent-shield);cls($('#boss'),'anticipate',180);
+ if(S.phase===PHASE.WIN||S.phase===PHASE.LOSE)return;S.phase=PHASE.ENEMY;render();let shield=S.shield,hit=Math.max(0,S.intent-shield);cls($('#boss'),'anticipate',180);
  setTimeout(()=>{cls($('#boss'),'release',300);if(shield>0){cls($('#barrierField'),'raise',620)}if(hit>0){S.php=Math.max(0,S.php-hit);beep(72,.16,'sawtooth',.12);cls($('#sky'),'playerHit',300);cls($('.integrity'),'warning',420);let ei=$('#enemyImpact');if(ei)cls(ei,'go',420)}else{beep(520,.12);cls($('#machine'),'perfectGuard',450);fx('CLANG!','soft')}
- S.shield=0;if(S.php<=0){endGame(false);return}S.turn++;S.intent=5+Math.floor(Math.random()*4);S.busy=false;refill();let r=$('#turnRibbon');r.textContent='TURNO '+S.turn;cls(r,'go',620);render()},220);
+ S.shield=0;if(S.php<=0){endGame(false);return}S.turn++;S.intent=5+Math.floor(Math.random()*4);S.phase=PHASE.INPUT;refill();let r=$('#turnRibbon');r.textContent='TURNO '+S.turn;cls(r,'go',620);render()},220);
 }
 function commit(kind){
- if(S.busy||S.over||!sum())return;S.busy=true;render();
+ if(!isInput()||!sum())return;(S.phase!==PHASE.INPUT&&S.phase!==PHASE.WIN&&S.phase!==PHASE.LOSE)=true;render();
  if(kind==='attack'){let d=dmg();cls($('#machine'),'windupA',150);setTimeout(()=>{S.ehp=Math.max(0,S.ehp-d);beep(70,.18,'sawtooth',.14);haptic(30);fx('THOOM!');particles(22);cls($('#boss'),'damageKick',340);S.ch=[null,null,null];S.heat=Math.max(0,S.heat-1);S.sel=null;render();if(S.ehp<=0){endGame(true);return}setTimeout(enemy,380)},150)}
  else{S.shield=blk();cls($('#machine'),'windupB',160);setTimeout(()=>{beep(420,.15);haptic(18);fx('KLANG!','soft');particles(14,true);S.ch=[null,null,null];S.heat=Math.max(0,S.heat-1);S.sel=null;render();setTimeout(enemy,300)},160)}
 }
-$('#restartBtn').onclick=()=>{Object.assign(S,{ehp:64,php:22,intent:6,heat:0,hand:[1,1,2],ch:[null,null,null],sel:null,shield:0,turn:1,busy:false,over:false});$('#restartBtn').hidden=true;$('#boss').classList.remove('defeated','low');$('#machine').classList.remove('dead','redline');render()};
+$('#restartBtn').onclick=()=>{Object.assign(S,{ehp:64,php:22,intent:6,heat:0,hand:[1,1,2],ch:[null,null,null],sel:null,shield:0,turn:1,phase:PHASE.INPUT});$('#restartBtn').hidden=true;$('#boss').classList.remove('defeated','low');$('#machine').classList.remove('dead','redline');render()};
 $('#atk').onclick=()=>commit('attack');$('#def').onclick=()=>commit('guard');
 $('#soundBtn').onclick=()=>{audioInit();if(AC.state==='suspended')AC.resume();muted=!muted;master.gain.value=muted?0:.55;$('#soundBtn').classList.toggle('muted',muted);$('#soundBtn').textContent=muted?'×':'♪'};
 $('#helpBtn').onclick=()=>$('#helpOverlay').classList.add('open');$('#helpClose').onclick=()=>$('#helpOverlay').classList.remove('open');$('#helpOverlay').onclick=e=>{if(e.target.id==='helpOverlay')$('#helpOverlay').classList.remove('open')};
