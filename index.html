@@ -1,88 +1,37 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#0d0d1a">
-  <meta name="description" content="Kaiju 2048: monte seu robô, leia o ataque e resolva missões numéricas em um tabuleiro tático 4×4.">
-  <title>Kaiju 2048 — Defesa da Cidade</title>
-  <link rel="icon" href="assets/icons/reactor.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="game.css">
-  <script defer src="game-core.js"></script>
-  <script defer src="assets/audio/synth.js"></script>
-  <script defer src="game-ui.js"></script>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#10121a"><meta name="description" content="Gire. Acople. Ressoe e rompa. Um puzzle de anéis para celular e PC.">
+<title>RING//BREAK — Primeiro contato</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg"><link rel="stylesheet" href="src/style.css">
 </head>
 <body>
-  <div id="app">
-    <header class="masthead">
-      <div class="brand"><span id="sectorEyebrow">SETOR 01 / 07</span><h1>KAIJU <em>2048</em></h1></div>
-      <div class="header-actions">
-        <button id="levelButton" type="button" aria-label="Mapa de fases" title="Mapa de fases">≡</button>
-        <button id="soundButton" type="button" aria-label="Desativar som" title="Som">◖))</button>
-        <button id="helpButton" type="button" aria-label="Como jogar" title="Como jogar">?</button>
-      </div>
-    </header>
-
-    <main>
-      <section class="kaiju-stage" aria-label="Kaiju e intenção anunciada">
-        <div class="kaiju-portrait-frame"><img id="kaijuPortrait" src="assets/portraits/kaijus/artilheiro.svg" alt="Kaiju Artilheiro"><span class="portrait-glow" aria-hidden="true"></span></div>
-        <div class="kaiju-details">
-          <span class="section-kicker">AMEAÇA DETECTADA // ALVO TRAVADO</span>
-          <h2 id="kaijuName">ARTILHEIRO</h2>
-          <p id="kaijuAbility">Mira o maior bloco. Ataque em linha.</p>
-          <div id="intentBadge" class="intent-badge">LINHA HORIZONTAL</div>
-          <p id="forecastText" class="forecast-text" aria-live="polite">O maior bloco na linha será atingido.</p>
-        </div>
-      </section>
-
-      <div class="mission-strip">
-        <div><span id="missionSector" class="section-kicker">FASE 01 · SUBESTAÇÃO</span><strong id="missionGoal">Preserve um bloco 32 após o ataque.</strong><small id="challengeText">EXTRA · Conclua em até 8 turnos</small></div>
-        <div class="mission-timer"><span>TURNO</span><b id="turnValue">01/16</b></div>
-      </div>
-
-      <section class="board-zone" aria-label="Tabuleiro 4 por 4">
-        <div class="board-topline"><span>GRADE // 4×4</span><span id="boardStep">DESLIZE DISPONÍVEL</span></div>
-        <div id="board" class="board" role="grid" aria-label="Tabuleiro. Arraste para deslizar os blocos."></div>
-        <div class="board-key"><span><i class="key-threat"></i> ÁREA DE ATAQUE</span><span><i class="key-target"></i> ALVO PREVISTO</span><span><i class="key-guard"></i> PROTEGIDO / TRAVADO</span></div>
-        <div class="slide-controls"><span>DESLIZAR <small>arraste ou toque</small></span><div class="directions"><button type="button" data-direction="left" aria-label="Deslizar para esquerda">←</button><button type="button" data-direction="up" aria-label="Deslizar para cima">↑</button><button type="button" data-direction="down" aria-label="Deslizar para baixo">↓</button><button type="button" data-direction="right" aria-label="Deslizar para direita">→</button></div></div>
-      </section>
-
-      <section class="robot-panel" aria-label="Robô, vida e ações">
-        <div class="robot-identity">
-          <div id="gameRobot" class="robot-art" aria-hidden="true"></div>
-          <div class="robot-info"><span class="section-kicker">UNIDADE OPERACIONAL</span><strong id="robotName">ATLAS</strong><small id="robotBuild">Óptica · Descarga · Passo</small><div class="hp-caption"><span>PV DO ROBÔ</span><b id="hpValue">10/10</b></div><div class="hp-track"><i id="hpFill"></i></div></div>
-        </div>
-        <div class="turn-intro"><span id="reactionCount">1 REAÇÃO DISPONÍVEL</span><span>PRÓXIMA PEÇA <b id="nextValue">2</b> · CASA SORTEADA DEPOIS</span></div>
-        <p id="hintText" class="hint" aria-live="polite">Faça um deslize e, se quiser, uma reação antes ou depois.</p>
-        <div class="reaction-buttons"><button id="legButton" type="button" class="reaction-button"><span class="ability-glyph">⌁</span><span><strong id="legName">PASSO</strong><small id="legHelp">Mover robô</small></span></button><button id="armButton" type="button" class="reaction-button"><span class="ability-glyph">◎</span><span><strong id="armName">DESCARGA</strong><small id="armHelp">Cancelar ataque</small></span></button></div>
-        <div class="commit-row"><button id="undoButton" type="button" disabled>↶ DESFAZER</button><button id="confirmButton" type="button" disabled>CONFIRMAR ATAQUE ▶</button></div>
-        <div id="headIntel" class="head-intel">Óptica: a área e as perdas previstas estão marcadas na grade.</div>
-      </section>
-    </main>
-    <footer>1 DESLIZE · ATÉ 1 REAÇÃO · META VALIDADA APÓS O KAIJU · SEM CASA RESERVADA PARA O SPAWN</footer>
-  </div>
-
-  <div id="fxLayer" aria-hidden="true"></div><div id="screenFlash" aria-hidden="true"></div><div id="toast" role="status" aria-live="polite"></div>
-
-  <dialog id="briefingDialog" class="game-dialog briefing-dialog">
-    <div class="dialog-top"><span>BRIEFING PRÉ-MISSÃO</span><span id="briefSector">SETOR 01 / 07</span></div>
-    <div class="brief-hero"><img id="briefKaiju" src="assets/portraits/kaijus/artilheiro.svg" alt=""><div><span class="section-kicker">KAIJU IDENTIFICADO</span><h2 id="briefKaijuName">ARTILHEIRO</h2><p id="briefKaijuRules"></p></div></div>
-    <div class="brief-objective"><span>OBJETIVO DA FASE</span><strong id="briefGoal"></strong><small id="briefLimit"></small></div>
-    <div class="build-heading"><div><span class="section-kicker">MONTE SEU ROBÔ</span><p>Escolha 1 chassis, 1 cabeça, 1 braço e 1 perna. Braço e perna dividem a única reação do turno.</p></div><div id="briefRobot" class="robot-art" aria-hidden="true"></div></div>
-    <div id="buildGroups" class="build-groups"></div>
-    <button id="deployButton" class="primary-button" type="button">ENTRAR NA ARENA ▶</button>
-  </dialog>
-
-  <dialog id="resultDialog" class="game-dialog result-dialog">
-    <div class="dialog-top"><span id="resultTag">MISSÃO CONCLUÍDA</span></div>
-    <div id="resultSymbol" class="result-symbol" aria-hidden="true">32</div>
-    <h2 id="resultTitle">Setor protegido!</h2><p id="resultDescription"></p><p id="resultChallenge" class="result-challenge"></p>
-    <div id="resultStats" class="result-stats"></div>
-    <div class="result-actions"><button id="retryButton" class="secondary-button" type="button">TENTAR NOVAMENTE</button><button id="changeBuildButton" class="secondary-button" type="button">TROCAR BUILD</button><button id="continueButton" class="primary-button" type="button">PRÓXIMA FASE ▶</button></div>
-  </dialog>
-
-  <dialog id="levelDialog" class="game-dialog level-dialog"><div class="dialog-top"><span>MAPA DA CIDADE</span><button id="closeLevelButton" type="button" aria-label="Fechar mapa">✕</button></div><h2>Setores</h2><p>Concluir uma fase libera a próxima. Trocar de setor reinicia a tentativa.</p><div id="levelList" class="level-list"></div></dialog>
-
-  <dialog id="helpDialog" class="game-dialog help-dialog"><div class="dialog-top"><span>MANUAL DE CAMPO</span><button id="closeHelpButton" type="button" aria-label="Fechar ajuda">✕</button></div><h2>O 2048 é a arma.</h2><p>Deslize uma vez por turno. Blocos iguais fundem; o robô interrompe as rotas. Use no máximo uma reação de braço <em>ou</em> perna, antes ou depois do deslize. Desfazer é livre antes de confirmar.</p><p>O Kaiju fica fora da grade. Ele escolhe um alvo e uma <strong>área fixa</strong> antes de você agir. O painel mostra o que será atingido depois das suas ações. Especiais são preparados um turno antes.</p><p>Um ataque comum destrói o maior bloco da área; a cruz pode atingir dois. Especiais 3×3 e X atingem todos os blocos da área. O robô perde 1 PV se estiver no alcance comum, ou 2 PV num especial.</p><p>Ganhe cumprindo a meta numérica depois da resolução inimiga. Perde se o robô chegar a 0 PV, o limite de turnos acabar ou a grade não permitir deslize mesmo após uma reação. A nova peça só aparece depois do ataque.</p><p><strong>Cryo</strong> segura um bloco por um turno, mas aceita uma fusão igual. <strong>Aegis</strong> segue o bloco e protege por uma resolução. <strong>Selo</strong> do Carcereiro sai ao fazer uma fusão de valor igual ou maior.</p><small>TECLADO: SETAS/WASD DESLIZAM · M PERNAS · F BRAÇO · ENTER CONFIRMA · CTRL+Z DESFAZ · ESC CANCELA</small></dialog>
-</body>
-</html>
+<div class="shell">
+  <header class="topbar"><a class="brand" href="./" aria-label="RING BREAK início">RING<span>//</span>BREAK<small>PRIMEIRO CONTATO · 0.1</small></a><div class="header-actions"><button id="sound" class="icon-btn" aria-label="Ativar som" title="Som">Som: off</button><button id="help" class="icon-btn" aria-label="Como jogar">?</button><button id="settings" class="icon-btn" aria-label="Opções">≡</button></div></header>
+  <main>
+    <section class="machine" aria-label="Máquina de ressonância">
+      <div class="encounter"><div class="anomaly-mark" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="M24 4 44 24 24 44 4 24Z"/><path d="m24 12 12 12-12 12-12-12Z"/><circle cx="24" cy="24" r="4"/></svg></div><div class="encounter-copy"><div class="eyebrow" id="stage">ENCONTRO 01 / 03</div><h1 id="anomaly-name">NEEDLE</h1></div><div class="core-health"><span class="eyebrow">INTEGRIDADE</span><div id="health" aria-label="3 pontos de integridade"></div></div></div>
+      <div class="energy-row"><span id="goal-label">Energia de ruptura</span><strong><span id="energy">0</span><span class="muted" id="goal"> / 60</span></strong></div><div class="meter"><div id="energy-bar"></div></div>
+      <div id="intent" class="intent"><svg id="intent-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><circle cx="12" cy="12" r="6"/><path d="M12 1v7m0 8v7M1 12h7m8 0h7"/></svg><span id="intent-text">Ressoe no setor marcado</span><strong id="countdown">5</strong></div>
+      <div class="board-wrap"><canvas id="board" width="840" height="840" tabindex="0" aria-label="Tabuleiro de três anéis. Selecione um anel abaixo e use os botões de giro. Q e A giram o externo, W e S o médio, E e D o interno."></canvas><div id="floating" class="floating" aria-hidden="true"></div></div>
+      <div id="feedback" class="feedback" role="status" aria-live="polite">Gire o anel externo para a direita.</div>
+      <div class="queue-row"><span class="eyebrow">PRÓXIMOS</span><div id="queue" aria-label="Fila de reposição"></div><button id="queue-help" class="small-help" aria-label="Como funciona a fila">?</button></div>
+      <div class="selector" role="group" aria-label="Selecionar anel"><button data-ring="0" class="ring-choice active" aria-pressed="true"><span>01</span> Externo</button><button data-ring="1" class="ring-choice" aria-pressed="false"><span>02</span> Médio</button><button data-ring="2" class="ring-choice" aria-pressed="false"><span>03</span> Interno</button></div>
+      <div class="turn-controls"><button id="left" class="rotate-btn" aria-label="Girar anel selecionado no sentido anti-horário"><span>↶</span> Girar</button><div class="control-hint">Segure para prever<br><span>solte para girar</span></div><button id="right" class="rotate-btn" aria-label="Girar anel selecionado no sentido horário">Girar <span>↷</span></button></div>
+      <p class="drag-hint">Ou arraste diretamente um anel.</p>
+    </section>
+    <aside class="sidebar">
+      <section class="links-panel"><div class="panel-title"><span class="eyebrow">PHASE LOCKS</span><button id="lock-help" class="small-help" aria-label="Como funcionam os acoplamentos">?</button></div><div class="link-row"><span>01</span><div id="link0" class="charges"></div><span>02</span><div id="link1" class="charges"></div><span>03</span></div><p id="link-description">Dois tons iguais criam um acoplamento.</p></section>
+      <section class="protocol-panel"><div class="panel-title"><span class="eyebrow">SEUS PROTOCOLOS</span><span id="protocol-count" class="eyebrow">0 / 3</span></div><div id="protocols"><p class="empty">Rompa a primeira Anomalia para escolher uma nova regra.</p></div></section>
+      <section class="run-panel"><div class="panel-title"><span class="eyebrow">ESTA MÁQUINA</span><span id="seed-label" class="seed-label"></span></div><div class="stats-grid"><div><span>Energia total</span><strong id="total">0</strong></div><div><span>Melhor cascata</span><strong id="best-chain">×1</strong></div><div><span>Movimentos</span><strong id="moves">0</strong></div><div><span>Links usados</span><strong id="links-used">0</strong></div></div></section>
+      <section class="discovery-panel"><div class="panel-title"><span class="eyebrow">ATLAS DE DESCOBERTAS</span><span id="atlas-count" class="eyebrow">0 / 3</span></div><div id="atlas"></div></section>
+      <div class="footer-buttons"><button id="new-run">Nova run</button><button id="free-play">Modo livre</button></div><p class="footnote">Sem relógio. Cada giro é uma decisão.<br><span id="save-note">Progresso salvo neste dispositivo.</span></p>
+    </aside>
+  </main>
+</div>
+<dialog id="modal"><div id="modal-content"></div></dialog>
+<input type="file" id="import-file" accept=".json,application/json" hidden>
+<noscript>Ative JavaScript no navegador para jogar RING//BREAK.</noscript>
+<script src="src/core.js"></script><script src="src/game.js"></script>
+</body></html>

@@ -1,37 +1,80 @@
-# Kaiju 2048
+# RING//BREAK — Primeiro contato
 
-Um 2048 tático de missões curtas. Funda blocos numa arena 4×4 sob a mira de um Kaiju gigante, monte seu robô e descubra a melhor rota para cumprir uma meta numérica.
+Protótipo web de um puzzle de anéis com acoplamentos e escolhas de regras. Funciona em celular na vertical e em PC. Não exige conta, backend, bibliotecas remotas ou instalação de dependências para jogar.
 
-## Objetivo e turno
+## Jogar
 
-São sete fases, cada uma com Kaiju, abertura, limite e objetivo próprios: preservar 32 ou 64, manter uma quantidade exata de blocos ou alinhar uma sequência. O Kaiju observa de fora da grade; o robô ocupa uma casa e interrompe o deslize.
+Abra `index.html` no navegador ou publique a pasta na Netlify. No celular, prefira uma URL hospedada: visualizadores de arquivos do iOS podem não executar JavaScript.
 
-1. Leia o objetivo, a área anunciada de ataque e o valor da próxima peça.
-2. Faça **um deslize válido** e, se quiser, **uma reação** de braço ou perna antes ou depois dele. Braços e pernas são escolhidos no briefing; uma reação exclui a outra.
-3. Confira a consequência atualizada, desfaça à vontade antes de confirmar e confirme o ataque.
-4. O ataque acontece; vitória e derrota são checadas. Só então a peça anunciada surge numa casa vazia, sem preview ou reserva de posição.
+Para servir na rede local, com Node instalado:
 
-O robô perde PV se permanecer na área. A tentativa também acaba se o limite de turnos expirar ou a grade travar sem reação capaz de abri-la. Não há cartas, energia nem relíquias.
+```sh
+npm start
+```
 
-## Como jogar
+No PC: `http://localhost:4173`. No celular conectado à mesma rede: `http://IP-DO-PC:4173`.
 
-No computador, abra `index.html` num navegador moderno. **No celular, não copie apenas o HTML**: o jogo precisa também dos scripts, estilos e artes. Alguns aplicativos de arquivos do telefone nem executam JavaScript local.
+## Publicar na Netlify
 
-Para jogar no celular com o computador ligado:
+Arraste a pasta descompactada que contém `index.html` para Netlify Drop. Se conectar este repositório, selecione `main`, deixe o comando de build vazio e use `.` como diretório de publicação. `netlify.toml` já define a pasta.
 
-1. Conecte celular e computador ao **mesmo Wi-Fi**.
-2. No Windows, dê dois cliques em `jogar-no-celular.cmd` (ou execute `node mobile-server.js` nesta pasta).
-3. Deixe a janela aberta e digite no Chrome/Safari do celular o endereço `http://...:8765/` mostrado nela. Se o firewall perguntar, permita **rede privada**.
+O projeto inclui toda a arte vetorial e procedural, efeitos, áudio sintetizado e interface. Nada é carregado de CDN, fonte remota ou pasta do jogo anterior.
 
-No celular, use em retrato: deslize sobre a grade ou toque nas setas, escolha reação e toque nas casas destacadas. A página rola naturalmente até o painel do robô; não há controles fixos sobre a grade. O som pode ser desligado. O progresso fica neste navegador do celular e não é sincronizado com o computador. Se não abrir, confira se ambos estão na mesma rede, se o endereço exibido é o do Wi-Fi e se a rede não bloqueia comunicação entre dispositivos. Para jogar fora de casa ou com o computador desligado, será necessário publicar o site em uma hospedagem estática.
+## Regras em 60 segundos
 
-## Projeto
+- Cada ação gira um anel exatamente um setor.
+- Três tons iguais em um setor geram 10 energia, são consumidos e recebem novos tons da fila.
+- A reposição acontece por setor crescente, de externo para médio para interno.
+- Uma nova ressonância causada pela reposição inicia uma cascata: ×1, ×2, ×4…
+- Dois tons iguais em anéis vizinhos formam uma carga de Phase Lock; máximo 2 cargas por link.
+- Girar um anel conectado usa uma carga e arrasta o vizinho no sentido oposto. A propagação pode atravessar os três anéis.
+- Um link usado não recarrega na mesma ação. O mesmo par de glifos não gera cargas repetidas quando permanece junto.
+- Em combate, ressoe no setor ameaçado antes da contagem zerar para evitar dano. Com Parasite, gaste o link marcado antes do ataque.
+- Atingir a meta de energia encerra o encontro antes do ataque pendente.
 
-- `index.html` — jogo web, também adaptado para celular.
-- `game-core.js` — regras, sete fases, habilidades e Kaijus, sem dependência do navegador.
-- `game-ui.js` e `game.css` — interface, efeitos, controles e layout mobile.
-- `jogar-no-celular.cmd` e `mobile-server.js` — acesso local pelo navegador do celular; servidor somente leitura, sem dependências.
-- `assets/` — pixel art vetorial, ícones, cenário e áudio sintetizado por Web Audio.
-- [`docs/17-campanha-tatica.md`](docs/17-campanha-tatica.md) — contrato canônico da campanha atual.
-- `docs/` e `design/` — estudos e históricos; documentos anteriores ao 17 podem descrever protótipos substituídos.
-- `tests/` — testes de regras; execute `node --test tests/*.test.js`.
+## Controles
+
+| Plataforma | Controle |
+|---|---|
+| Celular | Arraste um anel ao redor do centro. Uma ação por gesto. |
+| Toque ou mouse | Selecione um anel e segure um botão de giro para prever. Solte para confirmar; saia do botão para cancelar. |
+| PC | Q/A externo, W/S médio, E/D interno. Q/W/E horário; A/S/D anti-horário. |
+| PC | 1/2/3 seleciona anel; ←/→ gira o selecionado. |
+
+Não há pressão de tempo real. O contador avança apenas quando um movimento é confirmado. O som começa desligado e pode ser ativado no topo. Há velocidade 1×/2×/4× e movimento reduzido nas opções.
+
+## O que esta versão contém
+
+- 3 anéis × 8 setores, 4 tons com cor e forma redundantes.
+- Preview dos movimentos propagados e das ressonâncias diretas.
+- Fila de 6 tons, ampliada a 12 por Antevisão.
+- Mini-run de 3 encontros: Needle, Parasite e The Clamp; 3 pontos de integridade por encontro.
+- Catálogo de 8 Protocolos; escolhas após os dois primeiros encontros, 1 Rewrite por run.
+- Modo livre com seleção manual de até 3 Protocolos.
+- Atlas local de 3 interações descobertas, estatísticas, salvamento automático, seed e exportação/importação de replay JSON.
+- Retry imediato e arte/áudio gerados localmente.
+
+Esta versão não implementa Daily online, ranking, Forge, gamepad, metaprogressão completa, famílias sorteadas ou o modo BREAK completo. A mini-run é menor que a run final proposta no GDD. O objetivo é testar Phase Locks, contrajogo e identidade de build.
+
+## Desenvolvimento e verificação
+
+```sh
+npm test
+node tests/balance.cjs
+npm run build
+```
+
+`npm run build` recompõe `ring-break-standalone.html`, uma cópia integral em um único arquivo. O site normal usa os arquivos separados para facilitar edição.
+
+- `src/core.js`: estado determinístico, RNG seeded, regras e replay; sem dependência da interface.
+- `src/game.js`: Canvas 2D, interação, animações, áudio Web Audio e persistência local.
+- `src/style.css`: interface responsiva.
+- `tests/core.test.cjs`: invariantes e regressões das regras.
+- `tools/browser-verify.cjs`: verificação de toque, teclado e uma mini-run completa, para ambientes com Playwright e Chromium disponíveis.
+- `docs/`: os 12 documentos do GDD original v0.3 e a nota de implementação deste protótipo.
+
+Os testes automatizados verificam funcionamento; diversão e retenção ainda precisam de playtest humano. Dados ficam no navegador. Replay contém seed e decisões, sem informações pessoais.
+
+## Histórico
+
+O jogo anterior, Kaiju 2048, está preservado na branch `archive/kaiju-2048-2026-10-05`. A `main` contém apenas RING//BREAK. O histórico anterior também permanece no Git.

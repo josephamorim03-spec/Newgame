@@ -1,12 +1,4 @@
+node_modules/
+verification/
+*.log
 .DS_Store
-Thumbs.db
-.vscode/
-.idea/
-*.swp
-.godot/
-*.import
-Library/
-Temp/
-Obj/
-Build/
-Builds/

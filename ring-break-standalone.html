@@ -1,0 +1,517 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#10121a"><meta name="description" content="Gire. Acople. Ressoe e rompa. Um puzzle de anéis para celular e PC.">
+<title>RING//BREAK — Primeiro contato</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2215%22%20fill%3D%22%2310121a%22%2F%3E%3Cg%20fill%3D%22none%22%20stroke%3D%22%23baafff%22%20stroke-width%3D%224%22%3E%3Ccircle%20cx%3D%2232%22%20cy%3D%2232%22%20r%3D%2223%22%2F%3E%3Ccircle%20cx%3D%2232%22%20cy%3D%2232%22%20r%3D%2214%22%2F%3E%3C%2Fg%3E%3Ccircle%20cx%3D%2232%22%20cy%3D%2232%22%20r%3D%225%22%20fill%3D%22%2396ebd3%22%2F%3E%3Cpath%20d%3D%22m34%205%204%2015M47%2027l13-4%22%20stroke%3D%22%2310121a%22%20stroke-width%3D%227%22%2F%3E%3C%2Fsvg%3E%0A"><style>:root{color-scheme:dark;--bg:#10121a;--panel:#1a1d29;--line:#303444;--ink:#eff0f8;--muted:#949bb3;--phase:#baafff;--mint:#96ebd3;--danger:#ff8b9d;--gold:#edc47c;font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}body{margin:0;background:radial-gradient(ellipse at 48% 0,#242238 0,transparent 55%),var(--bg);color:var(--ink);min-height:100dvh}button,a,input{font:inherit}button{cursor:pointer;color:inherit;border:1px solid var(--line);background:var(--panel);border-radius:12px;min-height:44px;touch-action:manipulation}button:hover{border-color:#747b9b;background:#262a3b}button:active{transform:translateY(1px)}button:disabled{opacity:.35;cursor:default;transform:none}button:focus-visible,a:focus-visible,canvas:focus-visible,input:focus-visible{outline:2px solid var(--mint);outline-offset:4px}button.primary{background:var(--mint);color:#122822;border:none;font-weight:750}button.primary:hover{background:#bdf7e8}.shell{max-width:1070px;margin:auto;padding:28px 28px 22px}.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:34px}.brand{font-weight:850;font-size:22px;letter-spacing:-1px;color:var(--ink);text-decoration:none}.brand>span{color:var(--phase);padding:0 3px}.brand small{display:block;margin-top:6px;font:9px ui-monospace,monospace;letter-spacing:2px;color:var(--muted)}.header-actions{display:flex;gap:8px}.icon-btn{padding:0 12px;min-width:42px;min-height:42px;font-size:14px}.icon-btn#help{font-size:19px}main{display:grid;grid-template-columns:minmax(340px,510px) minmax(260px,320px);gap:70px;justify-content:center}.machine{min-width:0}.encounter{display:flex;align-items:center;gap:13px;margin-bottom:18px}.anomaly-mark{background:#282036;border:1px solid #514361;border-radius:13px;width:52px;height:52px;display:grid;place-items:center}.anomaly-mark svg{width:36px;fill:none;stroke:var(--danger);stroke-width:1.5}.anomaly-mark circle{fill:var(--danger)}.eyebrow{font:10px ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:1.7px;color:var(--muted)}h1{font-size:21px;letter-spacing:2px;margin:5px 0 0;font-weight:650}.core-health{margin-left:auto;text-align:right}.core-health .eyebrow{font-size:9px}.core-health #health{display:flex;gap:6px;justify-content:flex-end;margin-top:9px}.health-pip{width:10px;height:10px;background:var(--mint);border-radius:3px;transform:rotate(45deg)}.health-pip.off{background:#383c4c}.health-pip.shield{border:2px solid var(--phase);background:transparent}.energy-row{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--muted);margin-bottom:8px}.energy-row strong{font:18px ui-monospace,monospace;color:var(--ink)}.muted{color:var(--muted);font-size:12px}.meter{height:5px;background:#292d3e;border-radius:8px;overflow:hidden}.meter div{height:100%;width:0;background:var(--mint);border-radius:8px;transition:width .3s}.intent{display:flex;gap:10px;align-items:center;border:1px solid #5b3946;background:#2a202d;color:#f7b2c0;padding:10px 13px;border-radius:11px;margin:14px 0 0;font-size:12px;min-height:45px}.intent>strong{margin-left:auto;min-width:23px;text-align:center;font:20px ui-monospace,monospace}.intent.safe{border-color:#33534c;background:#192d2c;color:var(--mint)}.board-wrap{position:relative;max-width:510px;margin:-1px auto -3px;aspect-ratio:1}canvas{display:block;width:100%;height:100%;touch-action:none;cursor:grab;outline:none}canvas:active{cursor:grabbing}.floating{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none;font-size:28px;font-weight:800;color:var(--mint);text-shadow:0 0 24px #96ebd3aa;opacity:0}.floating.show{animation:float .65s ease-out forwards}@keyframes float{0%{opacity:0;transform:translateY(10px) scale(.8)}20%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-35px)}}.feedback{height:35px;text-align:center;font-size:12px;line-height:17px;color:var(--mint);padding:0 7px;display:flex;align-items:center;justify-content:center}.feedback.preview{color:var(--phase)}.queue-row{display:flex;gap:12px;align-items:center;justify-content:center;margin:10px 0 16px;min-height:25px}.queue-row .eyebrow{font-size:9px;letter-spacing:1px}#queue{display:flex;gap:9px;align-items:center;flex-wrap:wrap;max-width:240px}.glyph{width:15px;height:15px;display:inline-block;flex-shrink:0;--tone:var(--mint);background:var(--tone)}.glyph.t0{border-radius:50%;--tone:#96ebd3}.glyph.t1{transform:rotate(45deg) scale(.82);--tone:#baafff}.glyph.t2{clip-path:polygon(50% 0,100% 100%,0 100%);--tone:#edc47c}.glyph.t3{border-radius:3px;--tone:#f28da7}#queue .glyph{width:13px;height:13px}.small-help{border:none;background:transparent;padding:0;min-width:28px;min-height:28px;color:var(--muted);font-size:12px}.selector{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}.ring-choice{font-size:12px;min-height:45px;border-radius:9px}.ring-choice span{font:10px ui-monospace,monospace;color:var(--muted);margin-right:5px}.ring-choice.active{border-color:var(--phase);background:#302b46}.ring-choice.active span{color:var(--phase)}.turn-controls{display:grid;grid-template-columns:1fr 1.2fr 1fr;gap:8px;align-items:center;margin-top:10px}.rotate-btn{min-height:54px;background:#292d3d;font-size:14px;font-weight:600;border-color:#474d65}.rotate-btn span{font-size:23px;vertical-align:middle;margin:0 5px;color:var(--phase)}.control-hint{text-align:center;font-size:10px;line-height:16px;color:var(--ink)}.control-hint span{color:var(--muted)}.drag-hint{text-align:center;font-size:10px;color:var(--muted);margin:10px 0}.sidebar{padding-top:3px;display:flex;flex-direction:column;gap:16px}.sidebar section{border:1px solid var(--line);background:linear-gradient(140deg,#1c1f2ddd,#171a25dd);border-radius:14px;padding:17px}.panel-title{display:flex;align-items:center;justify-content:space-between;min-height:22px;gap:8px}.panel-title .eyebrow{font-size:9px}.link-row{display:flex;justify-content:center;gap:14px;align-items:center;margin:19px 0 14px}.link-row>span{border:1px solid #4c526a;border-radius:50%;width:35px;height:35px;display:grid;place-items:center;font:12px ui-monospace,monospace}.charges{display:flex;gap:5px}.charge{width:9px;height:9px;border:1px solid #565074;border-radius:3px;transform:rotate(45deg)}.charge.on{background:var(--phase);border-color:var(--phase);box-shadow:0 0 10px #baafff44}.links-panel p{font-size:11px;text-align:center;color:var(--muted);line-height:18px;margin:0}.empty{font-size:12px;line-height:21px;color:var(--muted);margin:17px 0 3px}.protocol-chip{width:100%;text-align:left;margin-top:10px;padding:12px;display:grid;grid-template-columns:1fr auto;gap:5px;background:#222535}.protocol-chip strong{font-size:12px}.protocol-chip small{font:9px ui-monospace,monospace;color:var(--phase)}.protocol-chip>span{grid-column:1/-1;font-size:11px;color:var(--muted);line-height:18px}.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:21px;margin-top:16px}.stats-grid>div{display:flex;flex-direction:column;gap:6px}.stats-grid span{font-size:10px;color:var(--muted)}.stats-grid strong{font:20px ui-monospace,monospace}.seed-label{font:8px ui-monospace,monospace;color:#7f86a0;max-width:120px;text-overflow:ellipsis;overflow:hidden;white-space:nowrap}.atlas-entry{display:block;width:100%;margin-top:9px;padding:10px;text-align:left;font-size:11px;color:var(--mint);border-color:#35443f;background:#1b2928}.atlas-entry.locked{color:#687188;background:transparent;border:1px dashed #333747}.footer-buttons{display:flex;gap:8px}.footer-buttons button{flex:1;font-size:11px}.footnote{text-align:center;font-size:10px;line-height:19px;color:var(--muted);margin:0}dialog{max-width:480px;width:calc(100% - 32px);max-height:88dvh;overflow:auto;color:var(--ink);border:1px solid #53546c;background:#1a1d29;border-radius:19px;padding:26px;box-shadow:0 30px 120px #0008}dialog::backdrop{background:#090b14cc;backdrop-filter:blur(5px)}dialog .eyebrow{color:var(--phase)}dialog h2{font-size:27px;margin:10px 0 13px;letter-spacing:-.8px}dialog p{font-size:13px;line-height:22px;color:#bbc1d3}dialog button{padding:10px 15px}dialog .wide{display:block;width:100%;margin-top:12px}dialog .two-buttons{display:flex;gap:9px;margin-top:12px}dialog .two-buttons>*{flex:1}.rule{display:flex;align-items:center;gap:16px;padding:14px 0;border-bottom:1px solid var(--line)}.rule strong{font-size:13px}.rule p{font-size:12px;line-height:19px;margin:3px 0 0}.rule .rule-symbol{font-size:30px;color:var(--mint);min-width:40px;text-align:center}.rule-tones{display:flex;gap:4px;min-width:51px}.protocol-offer{display:block;width:100%;text-align:left;margin-top:10px;padding:16px;border-color:#4a4663;background:#262337}.protocol-offer .family{display:block;font:9px ui-monospace,monospace;letter-spacing:1.5px;color:var(--phase);margin-bottom:6px}.protocol-offer strong{font-size:16px}.protocol-offer p{margin:7px 0 0;font-size:12px;line-height:20px}.modal-top{display:flex;justify-content:space-between;align-items:center}.close{min-height:35px;padding:5px 12px;color:var(--muted)}.option-row{display:flex;align-items:center;justify-content:space-between;font-size:12px;margin:15px 0;gap:12px}input[type=text]{color:var(--ink);background:#10121a;border:1px solid #454961;border-radius:9px;padding:13px;width:100%;font:13px ui-monospace,monospace}.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#303148;color:var(--ink);border:1px solid #656079;border-radius:12px;padding:13px 18px;max-width:calc(100% - 30px);z-index:5;font-size:12px;pointer-events:none}.run-summary{display:grid;grid-template-columns:1fr 1fr;gap:15px;margin:22px 0}.run-summary span{display:block;font-size:11px;color:var(--muted)}.run-summary strong{font:24px ui-monospace,monospace;display:block;margin-top:5px}.mini-tone{vertical-align:middle}.reduced *{animation:none!important;transition:none!important}
+@media(max-width:800px){.shell{max-width:540px;padding:17px 18px 24px}.topbar{margin-bottom:24px}.brand{font-size:21px}.brand small{font-size:8px;letter-spacing:1.3px}main{display:flex;flex-direction:column;gap:17px}.machine{width:100%}.sidebar{gap:12px;display:grid;grid-template-columns:1fr 1fr}.sidebar section{padding:13px}.links-panel{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;align-items:center}.links-panel .panel-title{grid-row:1}.link-row{margin:0;gap:9px}.link-row>span{width:27px;height:27px;font-size:10px}.links-panel p{grid-column:1/-1;margin-top:11px;font-size:10px}.protocol-panel{grid-column:1/-1}.protocol-panel .empty{margin-top:8px}.discovery-panel{grid-column:2}.run-panel{grid-column:1}.stats-grid{gap:17px 6px}.stats-grid strong{font-size:18px}.discovery-panel .eyebrow{letter-spacing:.7px;font-size:8px}.sidebar .footer-buttons,.footnote{grid-column:1/-1}.board-wrap{max-width:420px;margin-top:-4px;margin-bottom:-9px}.feedback{height:33px;font-size:11px}.queue-row{margin:7px 0 12px}.energy-row strong{font-size:16px}.header-actions{gap:5px}.icon-btn{padding:0 9px;font-size:11px;min-width:35px;min-height:38px}.encounter{margin-bottom:13px}.intent{margin-top:12px;font-size:11px;min-height:41px;padding:7px 10px}.anomaly-mark{width:44px;height:44px}.core-health .eyebrow{font-size:8px}.selector button{min-height:43px}.drag-hint{margin-bottom:0}.protocol-chip{margin-top:8px;padding:10px}.protocol-chip>span{font-size:10px}.run-panel .seed-label{max-width:58px;font-size:7px}}
+@media(max-width:355px){.shell{padding:13px}.brand{font-size:18px}.brand small{font-size:7px}.eyebrow{font-size:8px}.header-actions{gap:3px}.icon-btn{padding:0 7px;min-width:31px}.ring-choice{font-size:10px}.turn-controls{grid-template-columns:1fr 1fr 1fr}.rotate-btn{font-size:12px}.queue-row{gap:7px}#queue{gap:8px}.sidebar{grid-template-columns:1fr}.sidebar section{grid-column:1/-1}.discovery-panel .eyebrow{font-size:9px}}
+@media(prefers-reduced-motion:reduce){*{animation-duration:0s!important;transition-duration:0s!important}dialog::backdrop{backdrop-filter:none}}
+</style>
+</head>
+<body>
+<div class="shell">
+  <header class="topbar"><a class="brand" href="./" aria-label="RING BREAK início">RING<span>//</span>BREAK<small>PRIMEIRO CONTATO · 0.1</small></a><div class="header-actions"><button id="sound" class="icon-btn" aria-label="Ativar som" title="Som">Som: off</button><button id="help" class="icon-btn" aria-label="Como jogar">?</button><button id="settings" class="icon-btn" aria-label="Opções">≡</button></div></header>
+  <main>
+    <section class="machine" aria-label="Máquina de ressonância">
+      <div class="encounter"><div class="anomaly-mark" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="M24 4 44 24 24 44 4 24Z"/><path d="m24 12 12 12-12 12-12-12Z"/><circle cx="24" cy="24" r="4"/></svg></div><div class="encounter-copy"><div class="eyebrow" id="stage">ENCONTRO 01 / 03</div><h1 id="anomaly-name">NEEDLE</h1></div><div class="core-health"><span class="eyebrow">INTEGRIDADE</span><div id="health" aria-label="3 pontos de integridade"></div></div></div>
+      <div class="energy-row"><span id="goal-label">Energia de ruptura</span><strong><span id="energy">0</span><span class="muted" id="goal"> / 60</span></strong></div><div class="meter"><div id="energy-bar"></div></div>
+      <div id="intent" class="intent"><svg id="intent-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><circle cx="12" cy="12" r="6"/><path d="M12 1v7m0 8v7M1 12h7m8 0h7"/></svg><span id="intent-text">Ressoe no setor marcado</span><strong id="countdown">5</strong></div>
+      <div class="board-wrap"><canvas id="board" width="840" height="840" tabindex="0" aria-label="Tabuleiro de três anéis. Selecione um anel abaixo e use os botões de giro. Q e A giram o externo, W e S o médio, E e D o interno."></canvas><div id="floating" class="floating" aria-hidden="true"></div></div>
+      <div id="feedback" class="feedback" role="status" aria-live="polite">Gire o anel externo para a direita.</div>
+      <div class="queue-row"><span class="eyebrow">PRÓXIMOS</span><div id="queue" aria-label="Fila de reposição"></div><button id="queue-help" class="small-help" aria-label="Como funciona a fila">?</button></div>
+      <div class="selector" role="group" aria-label="Selecionar anel"><button data-ring="0" class="ring-choice active" aria-pressed="true"><span>01</span> Externo</button><button data-ring="1" class="ring-choice" aria-pressed="false"><span>02</span> Médio</button><button data-ring="2" class="ring-choice" aria-pressed="false"><span>03</span> Interno</button></div>
+      <div class="turn-controls"><button id="left" class="rotate-btn" aria-label="Girar anel selecionado no sentido anti-horário"><span>↶</span> Girar</button><div class="control-hint">Segure para prever<br><span>solte para girar</span></div><button id="right" class="rotate-btn" aria-label="Girar anel selecionado no sentido horário">Girar <span>↷</span></button></div>
+      <p class="drag-hint">Ou arraste diretamente um anel.</p>
+    </section>
+    <aside class="sidebar">
+      <section class="links-panel"><div class="panel-title"><span class="eyebrow">PHASE LOCKS</span><button id="lock-help" class="small-help" aria-label="Como funcionam os acoplamentos">?</button></div><div class="link-row"><span>01</span><div id="link0" class="charges"></div><span>02</span><div id="link1" class="charges"></div><span>03</span></div><p id="link-description">Dois tons iguais criam um acoplamento.</p></section>
+      <section class="protocol-panel"><div class="panel-title"><span class="eyebrow">SEUS PROTOCOLOS</span><span id="protocol-count" class="eyebrow">0 / 3</span></div><div id="protocols"><p class="empty">Rompa a primeira Anomalia para escolher uma nova regra.</p></div></section>
+      <section class="run-panel"><div class="panel-title"><span class="eyebrow">ESTA MÁQUINA</span><span id="seed-label" class="seed-label"></span></div><div class="stats-grid"><div><span>Energia total</span><strong id="total">0</strong></div><div><span>Melhor cascata</span><strong id="best-chain">×1</strong></div><div><span>Movimentos</span><strong id="moves">0</strong></div><div><span>Links usados</span><strong id="links-used">0</strong></div></div></section>
+      <section class="discovery-panel"><div class="panel-title"><span class="eyebrow">ATLAS DE DESCOBERTAS</span><span id="atlas-count" class="eyebrow">0 / 3</span></div><div id="atlas"></div></section>
+      <div class="footer-buttons"><button id="new-run">Nova run</button><button id="free-play">Modo livre</button></div><p class="footnote">Sem relógio. Cada giro é uma decisão.<br><span id="save-note">Progresso salvo neste dispositivo.</span></p>
+    </aside>
+  </main>
+</div>
+<dialog id="modal"><div id="modal-content"></div></dialog>
+<input type="file" id="import-file" accept=".json,application/json" hidden>
+<noscript>Ative JavaScript no navegador para jogar RING//BREAK.</noscript>
+<script>(function (root) {
+  'use strict';
+  const VERSION = 'ring-break-0.1';
+  const TONES = ['Pulse','Echo','Spike','Anchor'];
+  const PROTOCOLS = [
+    {id:'counterweight',name:'Contrapeso',family:'PHASE',description:'Cada carga de acoplamento usada gera +3 energia.'},
+    {id:'drive',name:'Co-rotação',family:'PHASE',description:'Anéis acoplados giram no MESMO sentido. Sua máquina muda de controle.'},
+    {id:'mesh',name:'Malha completa',family:'PHASE',description:'Comece a ação com os dois links carregados: todas as ressonâncias dessa ação valem ×2.'},
+    {id:'aftertone',name:'Pós-tom',family:'ECHO',description:'A primeira ressonância de cada ação ecoa +50% da sua energia.'},
+    {id:'reverb',name:'Reverberação',family:'ECHO',description:'Ondas criadas pela reposição ganham um ×2 extra.'},
+    {id:'triad',name:'Tríade',family:'PRISM',description:'Uma vez por ação, o primeiro setor com 3 tons diferentes ressoa por 5 energia.'},
+    {id:'fortress',name:'Fortaleza',family:'ANCHOR',description:'Ressoar no setor marcado concede 1 escudo. Absorve o próximo dano.'},
+    {id:'foretell',name:'Antevisão',family:'FLUX',description:'Veja 12 tons futuros, em vez de 6. Planeje a próxima cascata.'}
+  ];
+  const ENCOUNTERS = [
+    {name:'NEEDLE',subtitle:'Encontre a frequência.',goal:60,interval:5,kind:'needle'},
+    {name:'PARASITE',subtitle:'Guarde ou gaste seus acoplamentos.',goal:100,interval:4,kind:'parasite'},
+    {name:'THE CLAMP',subtitle:'Um anel preso ainda pode ser arrastado.',goal:160,interval:4,kind:'clamp'}
+  ];
+  const copy = value => JSON.parse(JSON.stringify(value));
+  function hash(seed) {
+    let h = 2166136261;
+    for (const char of String(seed)) { h ^= char.charCodeAt(0); h = Math.imul(h,16777619); }
+    return h >>> 0 || 1;
+  }
+  function random(s) {
+    let a = s.rng += 0x6D2B79F5;
+    a = Math.imul(a ^ a >>> 15,a | 1);
+    a ^= a + Math.imul(a ^ a >>> 7,a | 61);
+    s.rng >>>= 0;
+    return ((a ^ a >>> 14) >>> 0) / 4294967296;
+  }
+  const has = (s,id) => s.protocols.includes(id);
+  function glyph(s,tone) { return {id:++s.serial,tone}; }
+  function refillQueue(s) { while(s.queue.length<36) s.queue.push(Math.floor(random(s)*4)); }
+  function take(s) { refillQueue(s); return glyph(s,s.queue.shift()); }
+  function rotate(ring,direction) { return ring.map((_,i)=>ring[(i-direction+8)%8]); }
+  function pairs(board) {
+    return [0,1].map(edge=>new Set(board[edge].flatMap((g,i)=>{
+      const other=board[edge+1][i];
+      return g.tone===other.tone && g.tone!==board[2-2*edge][i].tone ? [g.id+':'+other.id] : [];
+    })));
+  }
+  function resonances(board,allowTriad=false) {
+    const found=[];
+    for(let sector=0;sector<8;sector++) {
+      const tones=board.map(r=>r[sector].tone);
+      if(tones[0]===tones[1] && tones[1]===tones[2]) found.push({sector,tone:tones[0],base:10});
+    }
+    if(allowTriad) {
+      for(let sector=0;sector<8;sector++) {
+        if(new Set(board.map(r=>r[sector].tone)).size===3) {
+          found.push({sector,tone:board[0][sector].tone,base:5,triad:true}); break;
+        }
+      }
+    }
+    return found.sort((a,b)=>a.sector-b.sector);
+  }
+  function propagation(s,ring,direction) {
+    const dirs=[0,0,0],edges=[];
+    dirs[ring]=direction;
+    const pending=[ring];
+    while(pending.length) {
+      const source=pending.shift();
+      for(const other of [source-1,source+1]) {
+        if(other<0 || other>2 || dirs[other]) continue;
+        const edge=Math.min(source,other);
+        if(s.locks[edge]>0) { dirs[other]=dirs[source]*(has(s,'drive')?1:-1); edges.push(edge);pending.push(other); }
+      }
+    }
+    return {dirs,edges};
+  }
+  function preview(s,ring,direction) {
+    if(s.status!=='playing' || s.jam===ring) return null;
+    const move=propagation(s,ring,direction);
+    const board=s.board.map((r,i)=>move.dirs[i]?rotate(r,move.dirs[i]):r);
+    return {...move,board,matches:resonances(board,has(s,'triad'))};
+  }
+  function record(s,id,amount=1) { s.activations[id]=(s.activations[id]||0)+amount; }
+  function generateBoard(s,first=false) {
+    s.board=Array.from({length:3},()=>Array.from({length:8},()=>glyph(s,Math.floor(random(s)*4))));
+    // Stable start: no automatic triples and one learnable opening, independent of seed.
+    for(let i=0;i<8;i++) if(s.board.every(r=>r[i].tone===s.board[0][i].tone)) s.board[2][i].tone=(s.board[2][i].tone+1)%4;
+    if(first) {
+      s.board[0][7].tone=0; s.board[0][0].tone=1;
+      s.board[1][0].tone=0; s.board[2][0].tone=0;
+      // Clockwise outer rotation creates a Pulse resonance at sector 1.
+    }
+  }
+  function nextIntent(s) {
+    const encounter=ENCOUNTERS[s.encounter];
+    s.intent={sector:Math.floor(random(s)*8),count:encounter.interval,neutralized:false,kind:encounter.kind};
+    if(encounter.kind==='parasite') s.intent.edge=s.intent.sector%2;
+    if(encounter.kind==='clamp') s.jam=(s.turn+s.encounter)%3;
+  }
+  function startEncounter(s) {
+    s.energy=0;s.hp=3;s.shield=0;s.jam=-1;s.locks=[0,0];s.encounterTurns=0;
+    generateBoard(s,s.encounter===0);s.queue=[];refillQueue(s);
+    nextIntent(s);s.status='playing';
+  }
+  function create(seed='FIRST-LIGHT-2',mode='run') {
+    const s={version:VERSION,seed:String(seed).slice(0,80),mode:mode==='free'?'free':'run',rng:hash(seed),serial:0,
+      board:[],queue:[],locks:[0,0],protocols:[],activations:{},encounter:0,turn:0,encounterTurns:0,
+      total:0,energy:0,hp:3,shield:0,intent:null,jam:-1,status:'playing',maxWave:0,resonanceCount:0,
+      locksUsed:0,locksCreated:0,bestMove:0,damage:0,cause:'',actions:[],history:[],offers:[],rewrites:1};
+    startEncounter(s);
+    if(s.mode==='free') {s.intent=null;s.jam=-1;}
+    return s;
+  }
+  function offer(s) {
+    const available=PROTOCOLS.filter(p=>!has(s,p.id)).map(p=>p.id);
+    for(let i=available.length-1;i>0;i--) { const j=Math.floor(random(s)*(i+1));[available[i],available[j]]=[available[j],available[i]]; }
+    s.offers=available.slice(0,3);
+  }
+  function discover(events,id,title,text) { events.push({type:'discovery',id,title,text}); }
+  function step(source,ring,direction) {
+    const s=copy(source),events=[];
+    if(![0,1,2].includes(ring) || ![-1,1].includes(direction)) return {state:s,events:[],invalid:true};
+    const p=preview(s,ring,direction);
+    if(!p) return {state:s,events:[],invalid:true};
+    const oldPairs=pairs(s.board),fullMesh=s.locks.every(x=>x>0),totalBefore=s.total;
+    s.actions.push({type:'move',ring,direction});s.turn++;s.encounterTurns++;
+    const previous=copy(s.board);s.board=copy(p.board);
+    for(const edge of p.edges) {s.locks[edge]--;s.locksUsed++;}
+    events.push({type:'move',board:previous,dirs:p.dirs,edges:p.edges,locks:copy(s.locks)});
+    if(p.edges.length) {
+      discover(events,'phase','Acoplamento','Uma carga movimenta o anel vizinho; a propagação pode atravessar os três.');
+      if(has(s,'counterweight')) {const energy=p.edges.length*3;s.total+=energy;s.energy+=energy;record(s,'counterweight',p.edges.length);events.push({type:'bonus',energy,label:'CONTRAPESO'});}
+    }
+    let wave=0,triadUsed=false,echoUsed=false,guard=0;
+    const seen=new Set();
+    while(guard++<32) {
+      const matches=resonances(s.board,has(s,'triad') && !triadUsed);
+      if(!matches.length) break;
+      const signature=JSON.stringify([s.board.map(r=>r.map(g=>g.tone)),s.queue,s.rng,triadUsed]);
+      if(seen.has(signature)) {events.push({type:'limit',label:'LOOP ESTABILIZADO'});break;}
+      seen.add(signature);wave++;
+      const multiplier=2**Math.min(wave-1,10)*(has(s,'mesh') && fullMesh?2:1)*(has(s,'reverb') && wave>1?2:1);
+      let gained=0;
+      for(const m of matches) {
+        let energy=m.base*multiplier;
+        if(m.triad) {triadUsed=true;record(s,'triad');}
+        if(has(s,'aftertone') && !echoUsed) {energy+=energy*.5;echoUsed=true;record(s,'aftertone');}
+        if(has(s,'mesh') && fullMesh) record(s,'mesh');
+        if(has(s,'reverb') && wave>1) record(s,'reverb');
+        gained+=energy;s.resonanceCount++;
+        if(s.intent && s.intent.kind!=='parasite' && m.sector===s.intent.sector) {
+          s.intent.neutralized=true;
+          if(has(s,'fortress') && !s.shield) {s.shield=1;record(s,'fortress');events.push({type:'shield'});}
+          events.push({type:'defuse',sector:m.sector});
+        }
+      }
+      s.total+=gained;s.energy+=gained;s.maxWave=Math.max(s.maxWave,wave);
+      events.push({type:'resonance',matches,board:copy(s.board),energy:gained,multiplier,wave,total:s.total,encounterEnergy:s.energy});
+      for(const m of matches) for(let r=0;r<3;r++) s.board[r][m.sector]=take(s);
+      refillQueue(s);events.push({type:'refill',board:copy(s.board),queue:copy(s.queue)});
+      if(wave>=2) discover(events,'cascade','Cascata','A reposição pode ressoar de novo. Cada onda dobra a energia-base.');
+      if(triadUsed) discover(events,'triad','Nova gramática','Três tons diferentes também podem ressoar com Tríade.');
+    }
+    if(guard>32) events.push({type:'limit',label:'ENGINE BREAK · LIMITE TÉCNICO'});
+    const newPairs=pairs(s.board);
+    for(let edge=0;edge<2;edge++) {
+      // A used link rests for this action. This prevents endlessly refilling both links
+      // and collapsing six manual choices into the same two rigid motions.
+      if(!p.edges.includes(edge) && s.locks[edge]<2 && [...newPairs[edge]].some(key=>!oldPairs[edge].has(key))) {
+        s.locks[edge]++;s.locksCreated++;events.push({type:'lock',edge,locks:copy(s.locks)});
+      }
+    }
+    s.bestMove=Math.max(s.bestMove,s.total-totalBefore);
+    const goal=ENCOUNTERS[s.encounter].goal;
+    if(s.mode==='run' && s.energy>=goal) {
+      s.status=s.encounter===2?'won':'draft';s.history.push({encounter:s.encounter,turns:s.encounterTurns,energy:s.energy,hp:s.hp});
+      if(s.status==='draft') offer(s);
+      events.push({type:'win',final:s.status==='won'});
+    } else if(s.intent) {
+      s.intent.count--;
+      if(s.intent.count<=0) {
+        const i=s.intent;
+        const avoided=i.kind==='parasite'?s.locks[i.edge]===0:i.neutralized;
+        if(avoided) events.push({type:'evade',label:i.kind==='parasite'?'LINK VAZIO':'ATAQUE NEUTRALIZADO'});
+        else {
+          if(i.kind==='parasite') s.locks[i.edge]=0;
+          if(s.shield) {s.shield=0;events.push({type:'blocked'});}
+          else {s.hp--;s.damage++;events.push({type:'damage',sector:i.sector});}
+        }
+        if(s.hp<=0) {
+          s.status='lost';s.cause=i.kind==='parasite'?'O Parasite drenou um link ainda carregado.':'O setor '+(i.sector+1)+' não ressoou antes do ataque.';
+          events.push({type:'lose'});
+        } else nextIntent(s);
+      }
+    }
+    return {state:s,events};
+  }
+  function choose(source,id) {
+    const s=copy(source);
+    if(s.status!=='draft' || !s.offers.includes(id) || has(s,id) || s.protocols.length>=3) return s;
+    s.actions.push({type:'choose',id});s.protocols.push(id);s.encounter++;startEncounter(s);return s;
+  }
+  function rewrite(source) {
+    const s=copy(source);
+    if(s.status!=='draft' || !s.rewrites) return s;
+    s.rewrites--;s.actions.push({type:'rewrite'});offer(s);return s;
+  }
+  function configure(seed,protocols) {
+    if(!Array.isArray(protocols) || protocols.length>3 || new Set(protocols).size!==protocols.length || protocols.some(id=>!PROTOCOLS.some(p=>p.id===id))) throw Error('Configuração inválida.');
+    const s=create(seed,'free');s.protocols=protocols.slice();s.actions.push({type:'configure',protocols:protocols.slice()});return s;
+  }
+  function replay(data) {
+    if(data.version!==VERSION || typeof data.seed!=='string' || !['run','free'].includes(data.mode) || !Array.isArray(data.actions) || data.actions.length>10000) throw Error('Replay incompatível.');
+    let s=create(data.seed,data.mode);
+    for(const a of data.actions) {
+      if(a.type==='move') { const r=step(s,a.ring,a.direction);if(r.invalid) throw Error('Movimento inválido no replay.');s=r.state; }
+      else if(a.type==='choose') { const n=choose(s,a.id);if(n.actions.length===s.actions.length) throw Error('Protocolo inválido no replay.');s=n; }
+      else if(a.type==='rewrite') { const n=rewrite(s);if(n.actions.length===s.actions.length) throw Error('Rewrite inválido no replay.');s=n; }
+      else if(a.type==='configure' && s.mode==='free' && !s.actions.length) s=configure(s.seed,a.protocols);
+      else throw Error('Ação desconhecida.');
+    }
+    return s;
+  }
+  root.RingCore={VERSION,TONES,PROTOCOLS,ENCOUNTERS,create,step,preview,propagation,resonances,pairs,choose,rewrite,configure,replay,copy};
+  if(typeof module!=='undefined' && module.exports) module.exports=root.RingCore;
+})(typeof window!=='undefined'?window:globalThis);
+</script><script>(function () {
+  'use strict';
+  const C=window.RingCore,$=id=>document.getElementById(id);
+  const canvas=$('board'),ctx=canvas.getContext('2d'),modal=$('modal');
+  const colors=['#96ebd3','#baafff','#edc47c','#f28da7'],radii=[166,120,74],names=['Externo','Médio','Interno'];
+  const SAVE='ring-break-save-0.1',ATLAS='ring-break-atlas-0.1',OPTIONS='ring-break-options-0.1';
+  const defaults={sound:false,speed:1,reduced:matchMedia('(prefers-reduced-motion: reduce)').matches};
+  function read(key,fallback) {try{return JSON.parse(localStorage.getItem(key))||fallback;}catch{return fallback;}}
+  let options={...defaults,...read(OPTIONS,{})},atlas=read(ATLAS,{}),selected=0,busy=false,ghost=null,drag=null;
+  if(![1,2,4].includes(options.speed))options.speed=1;
+  options.sound=Boolean(options.sound);options.reduced=Boolean(options.reduced);
+  if(typeof atlas!=='object' || Array.isArray(atlas)) atlas={};
+  let state=null,visual=null,audioContext=null,toastTimer=null;
+  const format=n=>new Intl.NumberFormat('pt-BR',{maximumFractionDigits:1,notation:n>=100000?'compact':'standard'}).format(n);
+  const esc=str=>String(str).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const toneHTML=t=>'<span class="glyph t'+t+'" role="img" aria-label="'+C.TONES[t]+'"></span>';
+  function persist() {
+    try {localStorage.setItem(SAVE,JSON.stringify({version:C.VERSION,seed:state.seed,mode:state.mode,actions:state.actions}));localStorage.setItem(ATLAS,JSON.stringify(atlas));localStorage.setItem(OPTIONS,JSON.stringify(options));}
+    catch {$('save-note').textContent='Este navegador não permitiu salvar o progresso.';}
+  }
+  function toast(text) {
+    document.querySelector('.toast')?.remove();clearTimeout(toastTimer);
+    const el=document.createElement('div');el.className='toast';el.textContent=text;document.body.append(el);
+    toastTimer=setTimeout(()=>el.remove(),3200);
+  }
+  function feedback(text,preview=false) {$('feedback').textContent=text;$('feedback').classList.toggle('preview',preview);}
+  function unlockAudio() {
+    if(!options.sound)return;
+    try {audioContext ||= new (window.AudioContext||window.webkitAudioContext)();if(audioContext.state==='suspended')audioContext.resume().catch(()=>{});}catch{}
+  }
+  function sound(type,wave=1) {
+    if(!options.sound || !audioContext)return;
+    try {
+      const time=audioContext.currentTime;
+      const frequencies=type==='resonance'?[130.81,196,261.63].map(f=>f*2**Math.min(wave-1,3)/2):type==='lock'?[330,440]:type==='damage'?[73.4,77]:type==='win'?[261.63,329.63,392,523.25]:[180];
+      frequencies.forEach((f,i)=>{const oscillator=audioContext.createOscillator(),gain=audioContext.createGain();oscillator.type=type==='damage'?'sawtooth':'sine';oscillator.frequency.value=f;const start=time+i*.025,duration=type==='move'?.08:.24;gain.gain.setValueAtTime(0,start);gain.gain.linearRampToValueAtTime(type==='move'?.025:.045,start+.008);gain.gain.exponentialRampToValueAtTime(.001,start+duration);oscillator.connect(gain);gain.connect(audioContext.destination);oscillator.start(start);oscillator.stop(start+duration+.03);});
+    }catch{}
+  }
+  function haptic(ms=8) {if(!options.reduced && navigator.vibrate)navigator.vibrate(ms);}
+  function circle(x,y,r,fill,stroke,width=1) {ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);if(fill){ctx.fillStyle=fill;ctx.fill();}if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=width;ctx.stroke();}}
+  function glyph(t,x,y,size=11,alpha=1) {
+    ctx.save();ctx.globalAlpha=alpha;ctx.fillStyle=colors[t];ctx.strokeStyle=colors[t];ctx.lineWidth=2;
+    if(t===0)circle(x,y,size*.73,colors[t]);
+    if(t===1){ctx.beginPath();ctx.moveTo(x,y-size);ctx.lineTo(x+size,y);ctx.lineTo(x,y+size);ctx.lineTo(x-size,y);ctx.closePath();ctx.fill();}
+    if(t===2){ctx.beginPath();ctx.moveTo(x,y-size);ctx.lineTo(x+size*.94,y+size*.8);ctx.lineTo(x-size*.94,y+size*.8);ctx.closePath();ctx.fill();}
+    if(t===3){ctx.beginPath();ctx.roundRect(x-size*.75,y-size*.75,size*1.5,size*1.5,3);ctx.fill();}
+    ctx.restore();
+  }
+  function draw(board=visual?.board||state.board,offsets=[0,0,0],matches=[]) {
+    const scale=canvas.width/420;ctx.setTransform(scale,0,0,scale,0,0);ctx.clearRect(0,0,420,420);
+    const center=210,matchSet=new Set(matches.map(m=>m.sector)),intent=visual?.intent??state.intent;
+    circle(center,center,190,'#151823','#2d3141');
+    // Stationary sector spokes and numbered intent markers.
+    for(let i=0;i<8;i++) {
+      const a=i*Math.PI/4-Math.PI/2,edge=a-Math.PI/8;
+      ctx.beginPath();ctx.moveTo(center+Math.cos(edge)*47,center+Math.sin(edge)*47);ctx.lineTo(center+Math.cos(edge)*186,center+Math.sin(edge)*186);ctx.strokeStyle='#323548';ctx.lineWidth=1;ctx.stroke();
+      const x=center+Math.cos(a)*199,y=center+Math.sin(a)*199;
+      ctx.font='10px ui-monospace,monospace';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle=intent && i===intent.sector && intent.kind!=='parasite'?'#ff9cb0':'#7b829c';
+      if(intent && i===intent.sector && intent.kind!=='parasite')circle(x,y,10,intent.neutralized?'#29554b':'#553143');
+      ctx.fillStyle=intent && i===intent.sector && intent.kind!=='parasite'?'#ffb9c6':'#7b829c';ctx.fillText(String(i+1),x,y);
+      if(intent && i===intent.sector && intent.kind!=='parasite' && !intent.neutralized) {
+        ctx.beginPath();ctx.moveTo(center+Math.cos(a)*44,center+Math.sin(a)*44);ctx.lineTo(center+Math.cos(a)*184,center+Math.sin(a)*184);ctx.strokeStyle='#ff8b9d30';ctx.lineWidth=31;ctx.stroke();
+      }
+      if(matchSet.has(i)) {
+        ctx.beginPath();ctx.moveTo(center+Math.cos(a)*44,center+Math.sin(a)*44);ctx.lineTo(center+Math.cos(a)*184,center+Math.sin(a)*184);ctx.strokeStyle='#96ebd344';ctx.lineWidth=34;ctx.stroke();
+      }
+    }
+    const isPreview=ghost!==null;
+    for(let r=0;r<3;r++) {
+      circle(center,center,radii[r],null,selected===r?'#444057':'#292d3e',38);
+      circle(center,center,radii[r]+20,null,selected===r?'#8d81b980':'#3b4054',1);
+      circle(center,center,radii[r]-20,null,'#3b4054',1);
+      if(state.jam===r) {
+        ctx.save();ctx.setLineDash([4,6]);circle(center,center,radii[r]+20,null,'#f28da7',2);ctx.restore();
+      }
+      if(isPreview && ghost.dirs[r]) {
+        ctx.save();ctx.setLineDash([5,8]);circle(center,center,radii[r]+21,null,'#baafff',2);ctx.restore();
+      }
+      for(let i=0;i<8;i++) {
+        const a=(i+offsets[r])*Math.PI/4-Math.PI/2;
+        const x=center+Math.cos(a)*radii[r],y=center+Math.sin(a)*radii[r];
+        const targeted=intent && intent.kind!=='parasite' && intent.sector===i;
+        circle(x,y,16.5,targeted && !intent.neutralized?'#322331':'#151824',matchSet.has(i)?'#96ebd3':targeted?(intent.neutralized?'#96ebd3':'#ff8b9d'):'#4c5168',matchSet.has(i)||targeted?2:1);
+        glyph(board[r][i].tone,x,y,10.7,isPreview?.85:1);
+      }
+    }
+    const locks=visual?.locks||state.locks;
+    for(let edge=0;edge<2;edge++) {
+      const a=Math.PI/8+Math.PI/2,rr=(radii[edge]+radii[edge+1])/2;
+      const x=center+Math.cos(a)*rr,y=center+Math.sin(a)*rr;
+      circle(x,y,10,'#191a29',locks[edge]?'#baafff':'#474b64');
+      ctx.fillStyle=locks[edge]?'#d6ceff':'#747c97';ctx.font='10px ui-monospace,monospace';ctx.fillText(String(locks[edge]),x,y);
+    }
+    circle(center,center,40,'#1d2132','#575570',1);
+    circle(center,center,34,null,'#38384f',1);
+    ctx.fillStyle=busy?'#96ebd3':'#b9bfd5';ctx.font='9px ui-monospace,monospace';ctx.fillText(isPreview?'PREVIEW':busy?'PULSO':'CORE',center,center-9);
+    ctx.fillStyle='#f1efff';ctx.font='bold 18px ui-monospace,monospace';ctx.fillText(isPreview?ghost.matches.length?ghost.matches.length+' ◎':'↔':state.maxWave>=2?'×'+2**Math.min(state.maxWave-1,10):'◉',center,center+10);
+  }
+  function resize() {const dpr=Math.min(window.devicePixelRatio||1,2);canvas.width=Math.round(420*dpr);canvas.height=canvas.width;draw();}
+  function render(s=state) {
+    const free=s.mode==='free',encounter=C.ENCOUNTERS[s.encounter];
+    $('stage').textContent=free?'LABORATÓRIO · SEM AMEAÇAS':'ENCONTRO 0'+(s.encounter+1)+' / 03';$('anomaly-name').textContent=free?'LIVRE':encounter.name;
+    $('energy').textContent=format(s.energy);$('goal').textContent=free?'':' / '+encounter.goal;$('goal-label').textContent=free?'Energia produzida':'Energia de ruptura';
+    $('energy-bar').style.width=free?'100%':Math.min(s.energy/encounter.goal*100,100)+'%';
+    $('health').innerHTML=Array.from({length:3},(_,i)=>'<span class="health-pip '+(i>=s.hp?'off':'')+'"></span>').join('')+(s.shield?'<span class="health-pip shield"></span>':'');$('health').setAttribute('aria-label',s.hp+' de 3 pontos de integridade'+(s.shield?', escudo ativo':''));
+    const i=s.intent;$('intent').classList.toggle('safe',!i || i.neutralized || i.kind==='parasite' && s.locks[i.edge]===0);
+    if(!i){$('intent-text').textContent='Experimente. Não há limite de movimentos.';$('countdown').textContent='∞';}
+    else if(i.kind==='parasite'){$('intent-text').textContent='Drena link 0'+(i.edge+1)+'↔0'+(i.edge+2)+'. Gaste as cargas antes.';$('countdown').textContent=i.count;}
+    else {$('intent-text').textContent=i.neutralized?'Setor '+(i.sector+1)+' neutralizado.':(s.jam>=0?names[s.jam]+' preso · ':'')+'Ressoe no setor '+(i.sector+1)+' para evitar dano.';$('countdown').textContent=i.count;}
+    $('queue').innerHTML=s.queue.slice(0,s.protocols.includes('foretell')?12:6).map(toneHTML).join('');
+    for(let e=0;e<2;e++) $('link'+e).innerHTML=[0,1].map(j=>'<span class="charge '+(j<s.locks[e]?'on':'')+'"></span>').join('');
+    $('link-description').textContent=s.protocols.includes('drive')?'Carregados: giram juntos no mesmo sentido.':'Carregados: girar um arrasta o vizinho ao contrário.';
+    $('protocol-count').textContent=s.protocols.length+' / 3';
+    $('protocols').innerHTML=s.protocols.length?s.protocols.map(id=>{const p=C.PROTOCOLS.find(x=>x.id===id);return '<button class="protocol-chip" data-protocol="'+id+'"><strong>'+p.name+'</strong><small>'+p.family+'</small><span>'+p.description+'</span></button>';}).join(''):'<p class="empty">'+(free?'Modo livre: teste qualquer um dos 8 Protocolos nas opções.':'Rompa a primeira Anomalia para escolher uma nova regra.')+'</p>';
+    $('total').textContent=format(s.total);$('best-chain').textContent='×'+2**Math.min(Math.max(0,s.maxWave-1),10);$('moves').textContent=s.turn;$('links-used').textContent=s.locksUsed;$('seed-label').textContent=s.seed;
+    $('atlas-count').textContent=Object.keys(atlas).length+' / 3';
+    $('atlas').innerHTML=[['phase','Acoplamento'],['cascade','Cascata'],['triad','Nova gramática']].map(([id,title])=>'<button class="atlas-entry '+(!atlas[id]?'locked':'')+'" data-atlas="'+id+'">'+(atlas[id]?title:'??? · interação '+(['phase','cascade','triad'].indexOf(id)+1))+'</button>').join('');
+    document.querySelectorAll('[data-ring]').forEach(el=>{const r=Number(el.dataset.ring);el.classList.toggle('active',r===selected);el.setAttribute('aria-pressed',String(r===selected));el.textContent='';const n=document.createElement('span');n.textContent='0'+(r+1);el.append(n,' '+names[r]+(s.jam===r?' · preso':''));});
+    for(const id of ['left','right']) $(id).disabled=busy || s.status!=='playing' || s.jam===selected;
+    document.documentElement.classList.toggle('reduced',options.reduced);$('sound').textContent=options.sound?'Som: on':'Som: off';$('sound').setAttribute('aria-label',options.sound?'Desativar som':'Ativar som');
+  }
+  function show(html,locked=false) {ghost=null;draw();$('modal-content').innerHTML=html;modal.dataset.locked=String(locked);if(!modal.open)modal.showModal();}
+  function closeModal() {modal.close();draw();}
+  function help() {
+    show('<div class="eyebrow">GIRE. ACOPLE. ROMPA.</div><h2>Uma ação.<br>Uma máquina inteira.</h2><div class="rule"><div class="rule-tones">'+[0,0,0].map(toneHTML).join('')+'</div><div><strong>Três iguais na mesma direção</strong><p>Ressoam e geram energia. Preencha a barra para vencer.</p></div></div><div class="rule"><span class="rule-symbol">↔</span><div><strong>Dois iguais, anéis vizinhos</strong><p>Um novo par cria uma carga. O próximo giro arrasta o vizinho no sentido oposto.</p></div></div><div class="rule"><span class="rule-symbol">⌖</span><div><strong>A ameaça está no tabuleiro</strong><p>Ressoe no setor rosa antes da contagem zerar. Cada giro gasta uma ação; pensar não gasta nada.</p></div></div><p>Toque em um anel e arraste ao redor do centro. Ou selecione um anel abaixo e segure um botão para ver a previsão. Solte para confirmar.</p><button class="primary wide" data-action="close">Experimentar</button>');
+  }
+  function settings() {
+    show('<div class="modal-top"><div class="eyebrow">CONTROLE DA MÁQUINA</div><button class="close" data-action="close">Fechar</button></div><h2>Seu ritmo.</h2><div class="option-row"><span>Velocidade das animações</span><button data-action="speed">'+options.speed+'×</button></div><div class="option-row"><span>Movimento reduzido</span><button data-action="reduced">'+(options.reduced?'Ativo':'Desativado')+'</button></div><div class="option-row"><span>Som sintetizado</span><button data-action="sound">'+(options.sound?'Ativo':'Desativado')+'</button></div><p>PC: Q/A externo; W/S médio; E/D interno. ←/→ gira o anel selecionado. 1/2/3 seleciona. Arraste de volta à origem para cancelar.</p><button class="wide" data-action="seed">Jogar uma seed</button><div class="two-buttons"><button data-action="export">Exportar replay</button><button data-action="import">Importar replay</button></div>'+(state.mode==='free'?'<button class="wide" data-action="lab">Testar Protocolos</button>':'')+'<p>O replay inclui a seed e todas as decisões. Importar reconstrói a máquina e substitui o progresso local.</p>');
+  }
+  function draft() {
+    const prev=C.ENCOUNTERS[state.encounter];
+    show('<div class="eyebrow">'+prev.name+' · ROMPIDA</div><h2>Mude uma regra.</h2><p>Escolha um Protocolo. Ele permanece até o fim desta mini-run.</p>'+state.offers.map(id=>{const p=C.PROTOCOLS.find(x=>x.id===id);return '<button class="protocol-offer" data-choice="'+id+'"><span class="family">'+p.family+'</span><strong>'+p.name+'</strong><p>'+p.description+'</p></button>';}).join('')+'<button class="wide" data-action="rewrite" '+(!state.rewrites?'disabled':'')+'>Rewrite · '+state.rewrites+' restante</button>',true);
+  }
+  function finish() {
+    const won=state.status==='won';
+    show('<div class="eyebrow">'+(won?'MÁQUINA ESTÁVEL':'COLAPSO')+'</div><h2>'+(won?'Você rompeu o sistema.':'Mais uma ideia?')+'</h2><p>'+(won?'Três Anomalias. Uma máquina construída por você. Teste outra seed ou experimente livremente.':esc(state.cause))+'</p><div class="run-summary"><div><span>Energia total</span><strong>'+format(state.total)+'</strong></div><div><span>Melhor cascata</span><strong>×'+2**Math.min(Math.max(0,state.maxWave-1),10)+'</strong></div><div><span>Melhor movimento</span><strong>'+format(state.bestMove)+'</strong></div><div><span>Acoplamentos usados</span><strong>'+state.locksUsed+'</strong></div></div><button class="primary wide" data-action="retry">Tentar a mesma seed</button><div class="two-buttons"><button data-action="new">Nova seed</button><button data-action="free">Modo livre</button></div><button class="wide" data-action="export">Exportar esta run</button>',true);
+  }
+  function start(seed=newSeed(),mode='run') {state=C.create(seed,mode);visual=null;ghost=null;selected=0;closeModal();render();draw();persist();feedback('Gire o anel externo para a direita.');}
+  function newSeed() {return 'RB-'+Date.now().toString(36).toUpperCase()+'-'+Math.floor(Math.random()*65536).toString(36).toUpperCase();}
+  function resetDialog(mode) {if(!state.turn){start(newSeed(),mode);return;}show('<div class="eyebrow">NOVA MÁQUINA</div><h2>'+(mode==='free'?'Explorar livremente?':'Começar outra run?')+'</h2><p>A partida atual será substituída. Você pode exportar o replay nas opções.</p><button class="primary wide" data-action="'+(mode==='free'?'free':'new')+'">'+(mode==='free'?'Entrar no modo livre':'Nova seed')+'</button><button class="wide" data-action="close">Continuar esta partida</button>');}
+  function setPreview(ring,direction) {
+    if(busy || modal.open || state.status!=='playing')return;
+    const p=C.preview(state,ring,direction);if(!p){feedback(names[ring]+' está preso. Acoplamentos ainda podem movê-lo.');return;}
+    selected=ring;ghost=p;render();draw(p.board,[0,0,0],p.matches);
+    const movement=p.dirs.map((d,i)=>d?names[i]+' '+(d>0?'↷':'↶'):null).filter(Boolean).join(' · ');
+    feedback(movement+(p.matches.length?' · '+p.matches.length+' ressonância'+(p.matches.length>1?'s':''):''),true);
+  }
+  function clearPreview() {ghost=null;draw();feedback(state.turn?'Gire. Teste a próxima combinação.':'Gire o anel externo para a direita.');}
+  function pause(ms) {return new Promise(resolve=>setTimeout(resolve,options.reduced?0:ms/options.speed));}
+  function animateMove(event) {
+    if(options.reduced){draw();return Promise.resolve();}
+    return new Promise(resolve=>{const start=performance.now(),duration=190/options.speed;function frame(time){const t=Math.min((time-start)/duration,1),ease=1-(1-t)**3;draw(event.board,event.dirs.map(d=>d*ease));if(t<1)requestAnimationFrame(frame);else resolve();}requestAnimationFrame(frame);});
+  }
+  function floating(text) {const el=$('floating');el.textContent=text;el.classList.remove('show');void el.offsetWidth;el.classList.add('show');}
+  async function commit(ring,direction) {
+    if(busy || modal.open || state.status!=='playing')return;
+    unlockAudio();const result=C.step(state,ring,direction);if(result.invalid){clearPreview();return;}
+    busy=true;ghost=null;visual=C.copy(state);render();
+    try {
+      for(const event of result.events) {
+        if(event.type==='move') {sound('move');haptic();await animateMove(event);visual.board=event.board.map((r,i)=>event.dirs[i]?r.map((_,j)=>r[(j-event.dirs[i]+8)%8]):r);visual.locks=event.locks;draw();}
+        if(event.type==='bonus') {visual.energy+=event.energy;visual.total+=event.energy;feedback(event.label+' +'+event.energy);}
+        if(event.type==='resonance') {
+          visual.board=event.board;visual.energy=event.encounterEnergy;visual.total=event.total;render(visual);draw(event.board,[0,0,0],event.matches);sound('resonance',event.wave);haptic(15);
+          feedback((event.wave>1?'CASCATA ×'+event.multiplier:'RESSONÂNCIA')+' · +'+format(event.energy)+' energia');floating('+'+format(event.energy));await pause(240);
+        }
+        if(event.type==='refill'){visual.board=event.board;visual.queue=event.queue;render(visual);draw();await pause(90);}
+        if(event.type==='lock'){visual.locks=event.locks;sound('lock');feedback('ACOPLAMENTO · '+names[event.edge]+' ↔ '+names[event.edge+1]);render(visual);draw();await pause(80);}
+        if(event.type==='defuse'){visual.intent.neutralized=true;feedback('SETOR '+(event.sector+1)+' NEUTRALIZADO');}
+        if(event.type==='discovery' && !atlas[event.id]) {atlas[event.id]={title:event.title,text:event.text};toast('Descoberta: '+event.title);}
+        if(event.type==='damage'){sound('damage');haptic(25);feedback('IMPACTO · −1 integridade');await pause(160);}
+        if(event.type==='evade')feedback(event.label);
+        if(event.type==='blocked')feedback('ESCUDO · IMPACTO ABSORVIDO');
+        if(event.type==='limit')feedback(event.label);
+        if(event.type==='win')sound('win');
+      }
+      state=result.state;persist();
+    } finally {busy=false;visual=null;render();draw();}
+    if(state.status==='draft')draft();else if(['won','lost'].includes(state.status))finish();
+    else if(result.events.some(e=>e.type==='resonance')) {
+      const energy=result.events.filter(e=>e.type==='resonance'||e.type==='bonus').reduce((sum,e)=>sum+e.energy,0);
+      feedback('+'+format(energy)+' energia · '+(state.intent?.neutralized?'ameaça neutralizada':state.locks.some(Boolean)?'acoplamentos prontos':'prepare o próximo pulso'));
+    } else if(!result.events.some(e=>['damage','evade','lock','blocked'].includes(e.type)))feedback('Nenhuma ressonância. Reposicione para a próxima.');
+  }
+  // Both touch and mouse use the tangential distance around the center, with one step per gesture.
+  function point(event) {const rect=canvas.getBoundingClientRect();return {x:(event.clientX-rect.left)*420/rect.width-210,y:(event.clientY-rect.top)*420/rect.height-210};}
+  canvas.addEventListener('pointerdown',event=>{
+    if(busy || modal.open || state.status!=='playing' || drag)return;
+    const p=point(event),radius=Math.hypot(p.x,p.y);if(radius<48 || radius>189)return;
+    const ring=radius>=143?0:radius>=97?1:2;
+    if(state.jam===ring){feedback(names[ring]+' preso. Gire um vizinho acoplado.');return;}
+    selected=ring;drag={id:event.pointerId,ring,angle:Math.atan2(p.y,p.x),direction:0};canvas.setPointerCapture(event.pointerId);unlockAudio();render();draw();
+  });
+  canvas.addEventListener('pointermove',event=>{
+    if(!drag || event.pointerId!==drag.id)return;
+    const p=point(event);let angle=Math.atan2(p.y,p.x)-drag.angle;angle=Math.atan2(Math.sin(angle),Math.cos(angle));
+    const direction=Math.abs(angle)>.095?Math.sign(angle):0;
+    if(direction!==drag.direction){drag.direction=direction;direction?setPreview(drag.ring,direction):clearPreview();}
+  });
+  canvas.addEventListener('pointerup',event=>{if(!drag || event.pointerId!==drag.id)return;const d=drag;drag=null;canvas.releasePointerCapture(event.pointerId);if(d.direction)commit(d.ring,d.direction);else clearPreview();});
+  canvas.addEventListener('pointercancel',()=>{drag=null;clearPreview();});
+  canvas.addEventListener('lostpointercapture',()=>{if(drag){drag=null;clearPreview();}});
+  document.querySelectorAll('[data-ring]').forEach(el=>el.addEventListener('click',()=>{if(!busy){selected=Number(el.dataset.ring);clearPreview();render();}}));
+  for(const [id,direction] of [['left',-1],['right',1]]) {
+    const el=$(id);let held=false;
+    el.addEventListener('pointerdown',event=>{if(el.disabled || busy || modal.open)return;held=true;el.setPointerCapture(event.pointerId);unlockAudio();setPreview(selected,direction);});
+    el.addEventListener('pointerup',event=>{if(!held)return;held=false;el.releasePointerCapture(event.pointerId);const rect=el.getBoundingClientRect();if(event.clientX>=rect.left && event.clientX<=rect.right && event.clientY>=rect.top && event.clientY<=rect.bottom)commit(selected,direction);else clearPreview();});
+    el.addEventListener('pointercancel',()=>{held=false;clearPreview();});
+    el.addEventListener('click',event=>{if(event.detail===0)commit(selected,direction);});
+  }
+  document.addEventListener('keydown',event=>{
+    if(modal.open || busy || event.repeat || event.target.matches('input,textarea,select'))return;
+    const key=event.key.toLowerCase(),map={q:[0,1],a:[0,-1],w:[1,1],s:[1,-1],e:[2,1],d:[2,-1]};
+    if(map[key]){event.preventDefault();selected=map[key][0];commit(...map[key]);}
+    else if(['1','2','3'].includes(key)){event.preventDefault();selected=Number(key)-1;render();draw();}
+    else if(['arrowleft','arrowright'].includes(key)){event.preventDefault();commit(selected,key==='arrowright'?1:-1);}
+  });
+  $('sound').addEventListener('click',()=>{options.sound=!options.sound;unlockAudio();persist();render();sound('lock');});
+  $('help').addEventListener('click',()=>{if(!busy)help();});$('settings').addEventListener('click',()=>{if(!busy)settings();});
+  $('new-run').addEventListener('click',()=>{if(!busy)resetDialog('run');});$('free-play').addEventListener('click',()=>{if(!busy)resetDialog('free');});
+  $('queue-help').addEventListener('click',()=>{if(!busy)show('<div class="eyebrow">REPOSIÇÃO</div><h2>O futuro tem uma ordem.</h2><p>Após ressoar, os três tons são substituídos pelos próximos da fila: externo → médio → interno.</p><p>Se vários setores ressoam juntos, a fila preenche primeiro o menor número de setor. A nova combinação pode iniciar uma cascata.</p><button class="primary wide" data-action="close">Entendi</button>');});
+  $('lock-help').addEventListener('click',()=>{if(!busy)show('<div class="eyebrow">PHASE LOCK</div><h2>Uma carga. Dois anéis.</h2><p>Um novo par igual em anéis vizinhos cria uma carga, até 2 por link. Cada giro usa uma carga para arrastar o vizinho. Se o próximo link também tiver carga, o movimento continua até o terceiro anel.</p><p>Exemplo: externo ↷, médio ↶, interno ↷. Segure o botão para ver exatamente o que vai se mover.</p><p>Um link usado descansa nesta ação e não recarrega imediatamente. Um mesmo par de glifos que permanece junto também não cria cargas repetidas.</p><button class="primary wide" data-action="close">Entendi</button>');});
+  $('protocols').addEventListener('click',event=>{const el=event.target.closest('[data-protocol]');if(!el || busy)return;const p=C.PROTOCOLS.find(x=>x.id===el.dataset.protocol);show('<div class="eyebrow">'+p.family+'</div><h2>'+p.name+'</h2><p>'+p.description+'</p><p>Ativações nesta run: '+(state.activations[p.id]||0)+'</p><button class="primary wide" data-action="close">Continuar</button>');});
+  $('atlas').addEventListener('click',event=>{const el=event.target.closest('[data-atlas]');if(!el || busy)return;const entry=atlas[el.dataset.atlas];if(!entry){toast('Esta interação ainda espera uma descoberta.');return;}show('<div class="eyebrow">CONHECIMENTO REGISTRADO</div><h2>'+esc(entry.title)+'</h2><p>'+esc(entry.text)+'</p><button class="primary wide" data-action="close">Continuar</button>');});
+  function exportReplay() {
+    const data={version:C.VERSION,seed:state.seed,mode:state.mode,actions:state.actions,summary:{total:state.total,turns:state.turn,maxWave:state.maxWave,status:state.status}};
+    const url=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));const link=document.createElement('a');link.href=url;link.download='ring-break-replay.json';link.click();setTimeout(()=>URL.revokeObjectURL(url),30000);toast('Replay exportado.');
+  }
+  modal.addEventListener('cancel',event=>{if(modal.dataset.locked==='true')event.preventDefault();});
+  modal.addEventListener('click',event=>{
+    const choice=event.target.closest('[data-choice]');if(choice){state=C.choose(state,choice.dataset.choice);closeModal();render();draw();persist();feedback('PROTOCOLO ATIVO · '+C.PROTOCOLS.find(p=>p.id===choice.dataset.choice).name);return;}
+    const lab=event.target.closest('[data-lab]');if(lab){const id=lab.dataset.lab;let protocols=state.protocols.slice();if(protocols.includes(id))protocols=protocols.filter(p=>p!==id);else if(protocols.length<3)protocols.push(id);else{toast('Máximo de 3 Protocolos. Remova um primeiro.');return;}state=C.configure(state.seed,protocols);persist();render();draw();labDialog();return;}
+    const action=event.target.closest('[data-action]')?.dataset.action;if(!action)return;
+    if(action==='close')closeModal();if(action==='rewrite'){state=C.rewrite(state);persist();draft();}
+    if(action==='new')start();if(action==='retry')start(state.seed,state.mode);if(action==='free')start(newSeed(),'free');
+    if(action==='speed'){options.speed=options.speed===4?1:options.speed*2;persist();settings();}
+    if(action==='reduced'){options.reduced=!options.reduced;persist();render();settings();}
+    if(action==='sound'){options.sound=!options.sound;unlockAudio();persist();render();settings();}
+    if(action==='export')exportReplay();if(action==='import')$('import-file').click();if(action==='lab')labDialog();
+    if(action==='seed')show('<div class="eyebrow">MESMO PROBLEMA, OUTRA SOLUÇÃO</div><h2>Jogar uma seed.</h2><p>Digite a seed para iniciar uma mini-run. O progresso atual será substituído.</p><input type="text" id="seed-input" maxlength="80" value="'+esc(state.seed)+'" aria-label="Seed"><button class="primary wide" data-action="seed-play">Começar</button><button class="wide" data-action="close">Cancelar</button>');
+    if(action==='seed-play'){const seed=$('seed-input').value.trim();if(seed)start(seed);}
+  });
+  function labDialog() {show('<div class="modal-top"><div class="eyebrow">LABORATÓRIO · 3 SLOTS</div><button class="close" data-action="close">Fechar</button></div><h2>Teste uma hipótese.</h2><p>Escolha até 3 regras. Alterações no laboratório começam um novo registro de replay mantendo a seed; o tabuleiro é reiniciado para garantir reprodução.</p>'+C.PROTOCOLS.map(p=>'<button class="protocol-offer" data-lab="'+p.id+'"><span class="family">'+p.family+' · '+(state.protocols.includes(p.id)?'ATIVO':'DESATIVADO')+'</span><strong>'+p.name+'</strong><p>'+p.description+'</p></button>').join(''));}
+  $('import-file').addEventListener('change',async event=>{const file=event.target.files[0];if(!file)return;try{if(file.size>2000000)throw Error('Arquivo muito grande.');const data=JSON.parse(await file.text());const restored=C.replay(data);state=restored;visual=null;selected=0;closeModal();render();draw();persist();if(state.status==='draft')draft();else if(['won','lost'].includes(state.status))finish();toast('Replay reconstruído: '+state.turn+' movimentos.');}catch(error){toast('Não foi possível importar: '+error.message);}event.target.value='';});
+  addEventListener('resize',resize);
+  const seedParam=new URLSearchParams(location.search).get('seed');
+  const saved=read(SAVE,null);try{if(!seedParam && saved)state=C.replay(saved);}catch{}
+  const fresh=!state;if(!state)state=C.create(seedParam||'FIRST-LIGHT-2');
+  render();resize();
+  if(state.status==='draft')draft();else if(['won','lost'].includes(state.status))finish();else if(fresh)help();else feedback('Sua máquina está aqui. Continue de onde parou.');
+  // Test integration: the engine stays separate from rendering and is inspectable without network services.
+  window.RingGame={getState:()=>C.copy(state),getBusy:()=>busy};
+})();
+</script>
+</body></html>
