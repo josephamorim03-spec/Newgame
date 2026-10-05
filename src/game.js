@@ -13,6 +13,28 @@
   let state=null,visual=null,audioContext=null,audioBus=null,toastTimer=null;
   const fxCanvas=$('reward-fx'),fxContext=fxCanvas.getContext('2d');
   let effects=[],fxFrame=0;
+  const portrait=$('anomaly-portrait');let enemyTimer=0;
+  function updateEnemy(s){
+    const kind=s.mode==='free'?'free':C.ENCOUNTERS[s.encounter].kind,art=AnomalyArt.characters[kind];
+    if(portrait.dataset.kind!==kind){
+      clearTimeout(enemyTimer);delete portrait.dataset.reaction;
+      portrait.innerHTML=AnomalyArt.svg(kind,'main');portrait.dataset.kind=kind;
+    }
+    const safe=!s.intent || s.intent.neutralized || s.intent.kind==='parasite' && s.locks[s.intent.edge]===0;
+    portrait.dataset.pose=safe?'quiet':s.intent.count===1?'armed':'idle';
+    portrait.style.setProperty('--enemy-accent',art.accent);
+    const angle=(s.intent?.sector||0)*Math.PI/4-Math.PI/2;
+    portrait.style.setProperty('--look-x',Math.cos(angle)*1.6+'px');portrait.style.setProperty('--look-y',Math.sin(angle)*1.6+'px');
+    portrait.setAttribute('aria-label','Conhecer '+art.name+' — '+art.role);
+    $('anomaly-role').textContent=art.role;
+  }
+  function reactEnemy(reaction){
+    clearTimeout(enemyTimer);delete portrait.dataset.reaction;
+    // Restart only this finite, local reaction. No idle animation or camera movement.
+    if(!options.reduced)void portrait.offsetWidth;
+    portrait.dataset.reaction=reaction;
+    enemyTimer=setTimeout(()=>{delete portrait.dataset.reaction;},reaction==='broken'?520:300);
+  }
   const format=n=>new Intl.NumberFormat('pt-BR',{maximumFractionDigits:1,notation:n>=100000?'compact':'standard'}).format(n);
   const esc=str=>String(str).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const toneHTML=t=>'<span class="glyph t'+t+'" role="img" aria-label="'+C.TONES[t]+'"></span>';
@@ -179,6 +201,7 @@
   function resize() {const dpr=Math.min(window.devicePixelRatio||1,2);canvas.width=Math.round(420*dpr);canvas.height=canvas.width;fxCanvas.width=canvas.width;fxCanvas.height=canvas.height;draw();}
   function render(s=state) {
     const free=s.mode==='free',encounter=C.ENCOUNTERS[s.encounter];
+    updateEnemy(s);
     $('stage').textContent=free?'LABORATÓRIO · SEM AMEAÇAS':'ENCONTRO 0'+(s.encounter+1)+' / 03';$('anomaly-name').textContent=free?'LIVRE':encounter.name;
     $('energy').textContent=format(s.energy);$('goal').textContent=free?'':' / '+encounter.goal;$('goal-label').textContent=free?'Energia produzida':'Energia de ruptura';
     $('energy-bar').style.width=free?'100%':Math.min(s.energy/encounter.goal*100,100)+'%';
@@ -215,7 +238,7 @@
     const won=state.status==='won';
     show('<div class="eyebrow">'+(won?'MÁQUINA ESTÁVEL':'COLAPSO')+'</div><h2>'+(won?'Você rompeu o sistema.':'Mais uma ideia?')+'</h2><p>'+(won?'Três Anomalias. Uma máquina construída por você. Teste outra seed ou experimente livremente.':esc(state.cause))+'</p><div class="run-summary"><div><span>Energia total</span><strong>'+format(state.total)+'</strong></div><div><span>Melhor cascata</span><strong>×'+2**Math.min(Math.max(0,state.maxWave-1),10)+'</strong></div><div><span>Melhor movimento</span><strong>'+format(state.bestMove)+'</strong></div><div><span>Acoplamentos usados</span><strong>'+state.locksUsed+'</strong></div></div><button class="primary wide" data-action="retry">Tentar a mesma seed</button><div class="two-buttons"><button data-action="new">Nova seed</button><button data-action="free">Modo livre</button></div><button class="wide" data-action="export">Exportar esta run</button>',true);
   }
-  function start(seed=newSeed(),mode='run') {clearEffects();state=C.create(seed,mode);visual=null;ghost=null;selected=0;closeModal();render();draw();persist();feedback('Gire o anel externo para a direita.');}
+  function start(seed=newSeed(),mode='run') {clearEffects();clearTimeout(enemyTimer);delete portrait.dataset.reaction;state=C.create(seed,mode);visual=null;ghost=null;selected=0;closeModal();render();draw();persist();feedback('Gire o anel externo para a direita.');}
   function newSeed() {return 'RB-'+Date.now().toString(36).toUpperCase()+'-'+Math.floor(Math.random()*65536).toString(36).toUpperCase();}
   function resetDialog(mode) {if(!state.turn){start(newSeed(),mode);return;}show('<div class="eyebrow">NOVA MÁQUINA</div><h2>'+(mode==='free'?'Explorar livremente?':'Começar outra run?')+'</h2><p>A partida atual será substituída. Você pode exportar o replay nas opções.</p><button class="primary wide" data-action="'+(mode==='free'?'free':'new')+'">'+(mode==='free'?'Entrar no modo livre':'Nova seed')+'</button><button class="wide" data-action="close">Continuar esta partida</button>');}
   function setPreview(ring,direction) {
@@ -242,17 +265,17 @@
         if(event.type==='bonus') {visual.energy+=event.energy;visual.total+=event.energy;feedback(event.label+' +'+event.energy);}
         if(event.type==='resonance') {
           visual.board=event.board;visual.energy=event.encounterEnergy;visual.total=event.total;render(visual);draw(event.board,[0,0,0],event.matches);sound('resonance',event.wave);haptic(15);
-          rewardFX(event.matches,event.wave);feedback((event.wave>1?'CASCATA ×'+event.multiplier:'RESSONÂNCIA')+' · +'+format(event.energy)+' energia');floating('+'+format(event.energy));await pause(240);
+          if(state.mode==='run')reactEnemy('hit');rewardFX(event.matches,event.wave);feedback((event.wave>1?'CASCATA ×'+event.multiplier:'RESSONÂNCIA')+' · +'+format(event.energy)+' energia');floating('+'+format(event.energy));await pause(240);
         }
         if(event.type==='refill'){visual.board=event.board;visual.queue=event.queue;render(visual);draw();await pause(90);}
         if(event.type==='lock'){visual.locks=event.locks;sound('lock');feedback('ACOPLAMENTO · '+names[event.edge]+' ↔ '+names[event.edge+1]);render(visual);draw();await pause(80);}
         if(event.type==='defuse'){visual.intent.neutralized=true;feedback('SETOR '+(event.sector+1)+' NEUTRALIZADO');}
         if(event.type==='discovery' && !atlas[event.id]) {atlas[event.id]={title:event.title,text:event.text};toast('Descoberta: '+event.title);}
-        if(event.type==='damage'){sound('damage');haptic(25);feedback('IMPACTO · −1 integridade');await pause(160);}
+        if(event.type==='damage'){reactEnemy('attack');sound('damage');haptic(25);feedback('IMPACTO · −1 integridade');await pause(160);}
         if(event.type==='evade')feedback(event.label);
-        if(event.type==='blocked')feedback('ESCUDO · IMPACTO ABSORVIDO');
+        if(event.type==='blocked'){reactEnemy('attack');feedback('ESCUDO · IMPACTO ABSORVIDO');}
         if(event.type==='limit')feedback(event.label);
-        if(event.type==='win'){sound('win');rewardFX([],1,true);await pause(330);}
+        if(event.type==='win'){reactEnemy('broken');sound('win');rewardFX([],1,true);await pause(330);}
       }
       state=result.state;persist();
     } finally {busy=false;visual=null;render();draw();}
@@ -297,6 +320,11 @@
   });
   $('sound').addEventListener('click',()=>{options.sound=!options.sound;unlockAudio();persist();render();sound('lock');});
   $('help').addEventListener('click',()=>{if(!busy)help();});$('settings').addEventListener('click',()=>{if(!busy)settings();});
+  portrait.addEventListener('click',()=>{
+    if(busy)return;
+    const kind=portrait.dataset.kind,art=AnomalyArt.characters[kind];
+    show('<div class="eyebrow">'+art.role+'</div><div class="enemy-inspector-art" aria-hidden="true">'+AnomalyArt.svg(kind,'inspect')+'</div><h2>'+art.name+'</h2><p>'+art.description+'</p><p class="enemy-rule">'+art.rule+'</p><button class="primary wide" data-action="close">Entendi</button>');
+  });
   $('new-run').addEventListener('click',()=>{if(!busy)resetDialog('run');});$('free-play').addEventListener('click',()=>{if(!busy)resetDialog('free');});
   $('queue-help').addEventListener('click',()=>{if(!busy)show('<div class="eyebrow">REPOSIÇÃO</div><h2>O futuro tem uma ordem.</h2><p>Após ressoar, os três tons são substituídos pelos próximos da fila: externo → médio → interno.</p><p>Se vários setores ressoam juntos, a fila preenche primeiro o menor número de setor. A nova combinação pode iniciar uma cascata.</p><button class="primary wide" data-action="close">Entendi</button>');});
   $('lock-help').addEventListener('click',()=>{if(!busy)show('<div class="eyebrow">PHASE LOCK</div><h2>Uma carga. Dois anéis.</h2><p>Um novo par igual em anéis vizinhos cria uma carga, até 2 por link. Cada giro usa uma carga para arrastar o vizinho. Se o próximo link também tiver carga, o movimento continua até o terceiro anel.</p><p>Exemplo: externo ↷, médio ↶, interno ↷. Segure o botão para ver exatamente o que vai se mover.</p><p>Um link usado descansa nesta ação e não recarrega imediatamente. Um mesmo par de glifos que permanece junto também não cria cargas repetidas.</p><button class="primary wide" data-action="close">Entendi</button>');});

@@ -8,6 +8,11 @@ const fs=require('node:fs');
  const page=await context.newPage(),errors=[];
  await page.addInitScript(()=>{
   window.__soundNotes=0;
+  window.__enemyReactions=[];
+  document.addEventListener('DOMContentLoaded',()=>{
+   const portrait=document.getElementById('anomaly-portrait');
+   new MutationObserver(()=>{const reaction=portrait.dataset.reaction;if(reaction)window.__enemyReactions.push(reaction);}).observe(portrait,{attributes:true,attributeFilter:['data-reaction']});
+  });
   const native=AudioContext.prototype.createOscillator;
   AudioContext.prototype.createOscillator=function(...args){window.__soundNotes++;return native.apply(this,args);};
  });
@@ -20,6 +25,15 @@ const fs=require('node:fs');
  assert.equal(await page.locator('#reward-fx').evaluate(el=>getComputedStyle(el).pointerEvents),'none');
  assert.ok(await page.getByRole('button',{name:'Girar anel selecionado no sentido horário'}).isVisible());
  const screenshotDir=path.resolve(__dirname,'../../verification');fs.mkdirSync(screenshotDir,{recursive:true});
+ async function inspectEnemy(kind){
+  assert.equal(await page.locator('#anomaly-portrait').getAttribute('data-kind'),kind);
+  await page.locator('#anomaly-portrait').click();
+  assert.equal(await page.locator('.enemy-inspector-art svg').count(),1);
+  assert.ok(await page.evaluate(()=>{const ids=[...document.querySelectorAll('[id]')].map(el=>el.id);return new Set(ids).size===ids.length;}),'SVG gradient IDs are unique for portrait and inspector');
+  await page.locator('#modal').screenshot({path:path.join(screenshotDir,'enemy-'+kind+'.png')});
+  await page.getByRole('button',{name:'Entendi',exact:true}).click();
+ }
+ await inspectEnemy('needle');
  await page.screenshot({path:path.join(screenshotDir,'mobile.png'),fullPage:true});
  await page.getByRole('button',{name:'Ativar som',exact:true}).click();
  await page.getByRole('button',{name:'Girar anel selecionado no sentido horário'}).tap();
@@ -69,14 +83,18 @@ const fs=require('node:fs');
  const keys=[['a','q'],['s','w'],['d','e']];
  for(const action of plan){
    if(action.type==='move'){await page.keyboard.press(keys[action.ring][action.direction===1?1:0]);await page.waitForFunction(()=>!RingGame.getBusy());}
-   else await page.locator('[data-choice="'+action.id+'"]').click();
+   else {await page.locator('[data-choice="'+action.id+'"]').click();await inspectEnemy(await page.evaluate(()=>RingCore.ENCOUNTERS[RingGame.getState().encounter].kind));}
  }
  assert.equal(await page.evaluate(()=>RingGame.getState().status),'won');
+ const reactions=await page.evaluate(()=>window.__enemyReactions);
+ for(const reaction of ['hit','attack','broken'])assert.ok(reactions.includes(reaction),'anomaly responds to '+reaction);
+ assert.equal(await page.locator('#anomaly-portrait .enemy-body').evaluate(el=>getComputedStyle(el).animationName),'none','enemy reactions respect reduced motion');
  assert.notEqual(await page.locator('#reward-fx').getAttribute('data-active'),'true','reduced-motion suppresses reward particles');
  assert.ok(await page.getByRole('button',{name:'Tentar a mesma seed'}).isVisible());
  await page.screenshot({path:path.join(screenshotDir,'victory.png'),fullPage:true});
  await page.getByRole('button',{name:'Tentar a mesma seed'}).click();assert.equal(await page.evaluate(()=>RingGame.getState().turn),0);
  await page.getByRole('button',{name:'Modo livre',exact:true}).click();
+ assert.equal(await page.locator('#anomaly-portrait').getAttribute('data-kind'),'free');
  await page.getByRole('button',{name:'Opções',exact:true}).click();await page.getByRole('button',{name:'Testar Protocolos'}).click();
  await page.locator('[data-lab="triad"]').click();await page.locator('[data-lab="mesh"]').click();await page.getByRole('button',{name:'Fechar',exact:true}).click();
  assert.deepEqual(await page.evaluate(()=>RingGame.getState().protocols),['triad','mesh']);
@@ -88,6 +106,7 @@ const fs=require('node:fs');
  filePage.on('pageerror',e=>errors.push(e.message));
  await filePage.goto('file://'+path.resolve(__dirname,'../ring-break-standalone.html'));
  await filePage.getByRole('button',{name:'Experimentar',exact:true}).click();
+ assert.equal(await filePage.locator('#anomaly-portrait svg').count(),1,'offline standalone includes the vector assets');
  await filePage.getByRole('button',{name:'Girar anel selecionado no sentido horário'}).click();await filePage.waitForFunction(()=>!RingGame.getBusy());
  assert.equal(await filePage.evaluate(()=>RingGame.getState().turn),1);
  assert.ok(await filePage.evaluate(()=>RingGame.getState().energy>=10));await offline.close();

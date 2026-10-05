@@ -5,3 +5,36 @@
 @media(prefers-reduced-motion:reduce){*{animation-duration:0s!important;transition-duration:0s!important}dialog::backdrop{backdrop-filter:none}}
 #reward-fx{position:absolute;inset:0;pointer-events:none;touch-action:auto;cursor:default}
 .reduced #reward-fx{display:none}
+/* The Anomalies are tiny sculptures: one shared material, three distinct silhouettes. */
+.enemy-portrait{width:86px;height:86px;flex:0 0 86px;min-height:0;padding:0;border:0;border-radius:20px;background:radial-gradient(ellipse at 45% 25%,#30314577,transparent 70%);position:relative}
+.enemy-portrait:hover{background:radial-gradient(ellipse at 45% 25%,#38395099,transparent 70%)}
+.enemy-sculpture{display:block;width:100%;height:100%;overflow:visible;pointer-events:none}
+.enemy-role{font-size:10px;color:var(--muted);margin-top:5px;letter-spacing:.5px}
+.encounter-copy{min-width:0}.core-health{flex-shrink:0}
+.enemy-body,.parasite-claws{transform-origin:60px 59px}
+.enemy-eye{transform:translate(var(--look-x,0px),var(--look-y,0px));transition:transform .2s ease-out}
+.enemy-light{transition:opacity .18s ease-out}.enemy-aura{transition:opacity .18s ease-out}
+.clamp-jaw{transition:transform .2s ease-out}.parasite-claws{transition:transform .2s ease-out}
+.enemy-portrait[data-pose="quiet"] .enemy-light{opacity:.45}
+.enemy-portrait[data-pose="quiet"] .enemy-aura{opacity:.35}
+.enemy-portrait[data-pose="armed"] .enemy-aura{opacity:1}
+.enemy-portrait[data-pose="armed"] .enemy-light{filter:drop-shadow(0 0 2px var(--enemy-accent))}
+.enemy-portrait[data-pose="armed"] .left-jaw{transform:translateX(3px)}
+.enemy-portrait[data-pose="armed"] .right-jaw{transform:translateX(-3px)}
+.enemy-portrait[data-pose="armed"] .parasite-claws{transform:rotate(12deg) scale(.95)}
+.enemy-portrait[data-reaction="hit"] .enemy-body{animation:anomaly-hit .23s ease-out}
+.enemy-portrait[data-reaction="attack"][data-kind="needle"] .enemy-body{animation:needle-strike .26s ease-out}
+.enemy-portrait[data-reaction="attack"][data-kind="parasite"] .enemy-body{animation:parasite-drain .28s ease-out}
+.enemy-portrait[data-reaction="attack"][data-kind="clamp"] .enemy-body{animation:clamp-strike .28s ease-out}
+.enemy-portrait[data-reaction="broken"] .enemy-body{animation:anomaly-break .48s ease-out both}
+.enemy-inspector-art{width:160px;height:160px;margin:7px auto -5px}
+.enemy-rule{padding:12px 14px;border-left:2px solid var(--phase);background:#222637;border-radius:0 8px 8px 0}
+@keyframes anomaly-hit{0%{opacity:.55;transform:scale(.97)}100%{opacity:1;transform:scale(1)}}
+@keyframes needle-strike{0%,100%{transform:translateY(0)}25%{transform:translateY(-3px)}55%{transform:translateY(6px)}}
+@keyframes parasite-drain{0%,100%{transform:scale(1)}45%{transform:scale(.93) rotate(7deg)}}
+@keyframes clamp-strike{0%,100%{transform:scaleX(1)}40%{transform:scaleX(.88)}}
+@keyframes anomaly-break{0%{opacity:1;transform:scale(1)}30%{opacity:.8;transform:scale(1.035)}100%{opacity:.25;transform:scale(.93)}}
+@media(max-width:800px){.enemy-portrait{width:66px;height:66px;flex-basis:66px}.encounter{gap:11px}.enemy-role{font-size:9px;margin-top:3px}}
+@media(max-width:355px){.enemy-portrait{width:58px;height:58px;flex-basis:58px}.encounter{gap:8px}.encounter h1{font-size:17px;letter-spacing:1px}.core-health .eyebrow{font-size:7px}.enemy-role{font-size:8px}}
+.reduced .enemy-sculpture *{animation:none!important;transition:none!important}
+@media(prefers-reduced-motion:reduce){.enemy-sculpture *{animation:none!important;transition:none!important}}

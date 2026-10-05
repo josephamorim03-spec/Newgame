@@ -56,6 +56,8 @@ Não há pressão de tempo real. O contador avança apenas quando um movimento �
 
 Polimento visual/sonoro: brilho discreto nos glifos, pequenos pulsos e fragmentos nas ressonâncias, reforço nas cascatas e uma breve expansão radial na vitória. Sem partículas em giros comuns, sem tremor de câmera e sem loop de animação ocioso. O áudio é opt-in, possui limite de volume e pode ser silenciado; movimento reduzido desativa as partículas. As regras e os replays não mudaram.
 
+As Anomalias têm retratos vetoriais 2.5D próprios, com material de grafite facetado e núcleo emissivo: Needle é uma ponta com olhar direcional, Parasite tem um olho cercado por três garras e The Clamp tem duas mandíbulas. A postura anuncia um ataque iminente; impacto e ruptura têm reações curtas, sem animação ociosa contínua. Toque no retrato para consultar personalidade e contrajogo. O laboratório mostra um núcleo aberto, sem inimigo. Os vetores estão em `src/anomalies.js` e também são incorporados ao HTML standalone.
+
 Esta versão não implementa Daily online, ranking, Forge, gamepad, metaprogressão completa, famílias sorteadas ou o modo BREAK completo. A mini-run é menor que a run final proposta no GDD. O objetivo é testar Phase Locks, contrajogo e identidade de build.
 
 ## Desenvolvimento e verificação
