@@ -329,14 +329,85 @@ function allDead(){return KEYS.every(k=>!alive(k))}
 function hasAdjacentBlock(){for(let i=0;i<16;i++)if(S.tiles[i]>0&&adjacent(S.mech,i))return true;return false}
 function validTargets(){let set=new Set;if(S.phase!=='input')return set;if(S.ammoStep==='block'){for(let i=0;i<16;i++)if(S.tiles[i]>0&&adjacent(S.mech,i))set.add(i);return set}if(S.ammoStep==='enemy'){for(let k of KEYS)if(alive(k))set.add(S.enemies[k].pos);return set}let c=S.selCard;if(c){if(c.id==='spawn')for(let i=0;i<16;i++)if(empty(i))set.add(i);if(c.id==='atk')for(let k of KEYS)if(alive(k)&&manhattan(S.mech,S.enemies[k].pos)<=2)set.add(S.enemies[k].pos);if(c.id==='push')for(let k of KEYS)if(alive(k)&&adjacent(S.mech,S.enemies[k].pos))set.add(S.enemies[k].pos);if(c.id==='move')for(let i=0;i<16;i++)if(empty(i)&&adjacent(S.mech,i))set.add(i);if(c.id==='merge'){if(S.cardStep==null){for(let i=0;i<16;i++)if(S.tiles[i]>0)set.add(i)}else for(let i=0;i<16;i++)if(adjacent(S.cardStep,i)&&S.tiles[i]===S.tiles[S.cardStep])set.add(i)}}else if(S.moveMode&&S.freeMove>0)for(let i=0;i<16;i++)if(empty(i)&&adjacent(S.mech,i))set.add(i);return set}
 function relicText(){let r=[];if(S.relics.core)r.push('ϟ Reator Núcleo');if(S.relics.armor)r.push('▣ Blindagem');if(S.relics.twins)r.push('◆◆ Gemas Gêmeas');return r.length?r.join(' · '):'nenhum'}
-function render(){if(S.phase==='input')refreshSpawnPreview(false);let th=threatSet(),valid=validTargets(),b=document.querySelector('#board');b.innerHTML='';for(let i=0;i<16;i++){let e=document.createElement('button');e.className='cell';let v=S.tiles[i];if(v){e.classList.add('tile',tileClass(v));e.textContent=v}if(i===S.mech)e.classList.add('mech');if(alive('gun')&&i===S.enemies.gun.pos){e.classList.add('gunner');e.dataset.hp=S.enemies.gun.hp}if(alive('cru')&&i===S.enemies.cru.pos){e.classList.add('crusher');e.dataset.hp=S.enemies.cru.hp}if(alive('par')&&i===S.enemies.par.pos){e.classList.add('parasite');e.dataset.hp=S.enemies.par.hp}if(th.d.has(i))e.classList.add('danger');if(i===S.gunBlockTarget&&alive('gun'))e.classList.add('gunFallback');if(th.m.has(i))e.classList.add('moveTarget');if(th.p.has(i))e.classList.add('consumeTarget');if(valid.has(i))e.classList.add('valid');if(S.lastMerges.includes(i))e.classList.add('mergePop');if(S.spawned.includes(i))e.classList.add('spawnPop');if(valid.has(i)&&S.moveMode)e.classList.add('moveReady');if(i===S.mech&&S.moveMode)e.classList.add('moveMode');if(i===S.mech&&S.phase==='input'&&S.freeSlide===0&&S.freeMove>0&&!S.moveMode&&!S.selCard&&!S.ammoStep)e.classList.add('hintPulse');if(i===S.nextSpawn&&empty(i)){e.classList.add('spawnPreview');let g=document.createElement('span');g.className='spawnGhost';g.textContent=S.nextTile;e.append(g)}if(i===S.gunBlockTarget&&alive('gun')&&S.tiles[i]>0){let gm=document.createElement('span');gm.className='gunMark';gm.textContent='ALVO';e.append(gm)}e.onclick=()=>tapCell(i);b.append(e)}
- document.querySelector('#hp').textContent=S.hp+'/'+S.maxHp;document.querySelector('#energy').textContent=S.energy+'/6';document.querySelector('#free').textContent=S.freeSlide+' desl. · '+S.freeMove+' robô';document.querySelector('#guideSlide').className=S.freeSlide?'active':'done';document.querySelector('#guideMove').className=S.freeSlide?'':(S.freeMove?'active':'done');document.querySelector('#guideCards').className=(!S.freeSlide&&!S.freeMove&&(S.selCard||S.usedCard||S.ammoStep))?'active':(S.usedCard?'done':'');document.querySelector('#guideEnd').className=(!S.freeSlide&&!S.freeMove&&!S.selCard&&!S.ammoStep)?'active':'';document.querySelector('#turn').textContent=S.turn;document.querySelector('#encounterLabel').textContent='COMBATE '+S.encounter+'/2 · ROBÔ VS KAIJU';document.querySelector('#objective').textContent=S.encounter===1?'OBJETIVO · DESTRUA ARTILHEIRO + ESMAGADOR':'OBJETIVO · DESTRUA ARTILHEIRO + PARASITA';document.querySelector('#nextTile').textContent=S.nextTile;document.querySelector('#nextSpawnLabel').textContent=S.nextSpawn==null?'SEM ESPAÇO':cellName(S.nextSpawn);document.querySelector('#relicList').textContent=relicText();
- let gc=document.querySelector('.intent.gun'),cc=document.querySelector('#cruCard'),pc=document.querySelector('#parCard');gc.hidden=!alive('gun');cc.hidden=!alive('cru');pc.hidden=!alive('par');document.querySelector('#gunHp').textContent=Math.max(0,S.enemies.gun.hp);document.querySelector('#cruHp').textContent=Math.max(0,S.enemies.cru.hp);document.querySelector('#parHp').textContent=Math.max(0,S.enemies.par.hp);document.querySelector('#gunIntent').textContent=alive('gun')?'⚠ LINHA '+(S.gunLine+1)+' · robô: -2 · se sair: alvo '+(S.gunBlockTarget==null?'nenhum':cellName(S.gunBlockTarget)):'DERROTADO';document.querySelector('#cruIntent').textContent=alive('cru')?(S.crusherTarget==null?'BLOQUEADO · não consegue avançar':'➜ '+cellName(S.crusherTarget)+' · vai esmagar o que estiver ali'):'DERROTADO';document.querySelector('#parIntent').textContent=alive('par')?(S.parasiteMode==='consume'?'◉ '+cellName(S.parasiteTarget)+' · consome bloco e recupera 2 HP':S.parasiteMode==='move'?'➜ '+cellName(S.parasiteTarget)+' · avança para caçar blocos':'SEM ALVO · fica parado'):'DERROTADO';
- document.querySelector('#combo').textContent=S.mergeCount?'FUSÕES · '+S.mergeCount+'  |  ENERGIA +'+Math.min(3,S.mergeCount):'';let hand=document.querySelector('#hand');hand.innerHTML='';S.hand.forEach((c,i)=>{let x=document.createElement('button');x.className='card type-'+c.id+(S.selCardIndex===i?' sel':'');x.disabled=S.phase!=='input'||S.energy<c.cost;x.innerHTML='<em>⚡'+c.cost+'</em><span class="cardIcon">'+cardIcon(c.id)+'</span><b>'+c.name+'</b><small>'+c.txt+'</small>';x.onclick=()=>selectCard(c,i);hand.append(x)});document.querySelectorAll('[data-slide]').forEach(x=>x.onclick=()=>slide(x.dataset.slide));
+function render(){
+ if(S.phase==='input')refreshSpawnPreview(false);
+ let th=threatSet(),valid=validTargets(),b=document.querySelector('#board');
+ b.innerHTML='';
+ for(let i=0;i<16;i++){
+   let e=document.createElement('button');e.className='cell';
+   let v=S.tiles[i];
+   if(v){e.classList.add('tile',tileClass(v));e.textContent=v}
+   if(i===S.mech)e.classList.add('mech');
+   if(alive('gun')&&i===S.enemies.gun.pos){e.classList.add('gunner');e.dataset.hp=S.enemies.gun.hp}
+   if(alive('cru')&&i===S.enemies.cru.pos){e.classList.add('crusher');e.dataset.hp=S.enemies.cru.hp}
+   if(alive('par')&&i===S.enemies.par.pos){e.classList.add('parasite');e.dataset.hp=S.enemies.par.hp}
+   if(th.d.has(i))e.classList.add('danger');
+   if(i===S.gunBlockTarget&&alive('gun'))e.classList.add('gunFallback');
+   if(th.m.has(i))e.classList.add('moveTarget');
+   if(th.p.has(i))e.classList.add('consumeTarget');
+   if(valid.has(i))e.classList.add('valid');
+   if(S.lastMerges.includes(i))e.classList.add('mergePop');
+   if(S.spawned.includes(i))e.classList.add('spawnPop');
+   if(valid.has(i)&&S.moveMode)e.classList.add('moveReady');
+   if(i===S.mech&&S.moveMode)e.classList.add('moveMode');
+   if(i===S.mech&&S.phase==='input'&&S.freeSlide===0&&S.freeMove>0&&!S.moveMode&&!S.selCard&&!S.ammoStep)e.classList.add('hintPulse');
+   if(i===S.nextSpawn&&empty(i)){e.classList.add('spawnPreview');let g=document.createElement('span');g.className='spawnGhost';g.textContent=S.nextTile;e.append(g)}
+   if(i===S.gunBlockTarget&&alive('gun')&&S.tiles[i]>0){let gm=document.createElement('span');gm.className='gunMark';gm.textContent='ALVO';e.append(gm)}
+   e.onclick=()=>tapCell(i);
+   b.append(e)
+ }
+ document.querySelector('#hp').textContent=S.hp+'/'+S.maxHp;
+ document.querySelector('#energy').textContent=S.energy+'/6';
+ document.querySelector('#free').textContent=S.freeSlide+' desl. · '+S.freeMove+' robô';
+ document.querySelector('#guideSlide').className=S.freeSlide?'active':'done';
+ document.querySelector('#guideMove').className=S.freeSlide?'':(S.freeMove?'active':'done');
+ document.querySelector('#guideCards').className=(!S.freeSlide&&!S.freeMove&&(S.selCard||S.usedCard||S.ammoStep))?'active':(S.usedCard?'done':'');
+ document.querySelector('#guideEnd').className=(!S.freeSlide&&!S.freeMove&&!S.selCard&&!S.ammoStep)?'active':'';
+ document.querySelector('#turn').textContent=S.turn;
+ document.querySelector('#encounterLabel').textContent='COMBATE '+S.encounter+'/2 · ROBÔ VS KAIJU';
+ document.querySelector('#objective').textContent=S.encounter===1?'OBJETIVO · DESTRUA ARTILHEIRO + ESMAGADOR':'OBJETIVO · DESTRUA ARTILHEIRO + PARASITA';
+ document.querySelector('#nextTile').textContent=S.nextTile;
+ document.querySelector('#nextSpawnLabel').textContent=S.nextSpawn==null?'SEM ESPAÇO':cellName(S.nextSpawn);
+ document.querySelector('#relicList').textContent=relicText();
+
+ let gc=document.querySelector('.intent.gun'),cc=document.querySelector('#cruCard'),pc=document.querySelector('#parCard');
+ gc.hidden=!alive('gun');cc.hidden=!alive('cru');pc.hidden=!alive('par');
+ document.querySelector('#gunHp').textContent=Math.max(0,S.enemies.gun.hp);
+ document.querySelector('#cruHp').textContent=Math.max(0,S.enemies.cru.hp);
+ document.querySelector('#parHp').textContent=Math.max(0,S.enemies.par.hp);
+ document.querySelector('#gunIntent').textContent=alive('gun')?'⚠ LINHA '+(S.gunLine+1)+' · robô: -2 · se sair: alvo '+(S.gunBlockTarget==null?'nenhum':cellName(S.gunBlockTarget)):'DERROTADO';
+ document.querySelector('#cruIntent').textContent=alive('cru')?(S.crusherTarget==null?'BLOQUEADO · não consegue avançar':'➜ '+cellName(S.crusherTarget)+' · vai esmagar o que estiver ali'):'DERROTADO';
+ document.querySelector('#parIntent').textContent=alive('par')?(S.parasiteMode==='consume'?'◉ '+cellName(S.parasiteTarget)+' · consome bloco e recupera 2 HP':S.parasiteMode==='move'?'➜ '+cellName(S.parasiteTarget)+' · avança para caçar blocos':'SEM ALVO · fica parado'):'DERROTADO';
+
+ document.querySelector('#combo').textContent=S.mergeCount?'FUSÕES · '+S.mergeCount+'  |  ENERGIA +'+Math.min(3,S.mergeCount):'';
+ let hand=document.querySelector('#hand');hand.innerHTML='';
+ S.hand.forEach((c,i)=>{let x=document.createElement('button');x.className='card type-'+c.id+(S.selCardIndex===i?' sel':'');x.disabled=S.phase!=='input'||S.energy<c.cost;x.innerHTML='<em>⚡'+c.cost+'</em><span class="cardIcon">'+cardIcon(c.id)+'</span><b>'+c.name+'</b><small>'+c.txt+'</small>';x.onclick=()=>selectCard(c,i);hand.append(x)});
+
+ document.querySelectorAll('[data-slide]').forEach(x=>x.disabled=S.phase!=='input'||S.freeSlide<=0);
+ document.querySelector('#ammoBtn').disabled=S.phase!=='input'||!hasAdjacentBlock()||allDead();
+ document.querySelector('#endBtn').disabled=S.phase!=='input';
+ updatePhase();
+ S.lastMerges=[];S.spawned=[]
+}
+
+document.querySelectorAll('[data-slide]').forEach(x=>x.onclick=()=>slide(x.dataset.slide));
 let gestureState=null,ignoreTapUntil=0;
 const boardEl=document.querySelector('#board');
-boardEl.addEventListener('pointerdown',e=>{if(S.phase!=='input'||S.selCard||S.ammoStep||S.moveMode)return;if(e.pointerType==='mouse'&&e.button!==0)return;gestureState={id:e.pointerId,x:e.clientX,y:e.clientY};try{boardEl.setPointerCapture(e.pointerId)}catch(_){ }});
-boardEl.addEventListener('pointerup',e=>{if(!gestureState||gestureState.id!==e.pointerId)return;let dx=e.clientX-gestureState.x,dy=e.clientY-gestureState.y,ax=Math.abs(dx),ay=Math.abs(dy),main=Math.max(ax,ay),cross=Math.min(ax,ay),minSwipe=Math.max(56,boardEl.getBoundingClientRect().width*.15);gestureState=null;if(main<minSwipe||main<cross*1.35)return;ignoreTapUntil=performance.now()+320;slide(ax>ay?(dx>0?'right':'left'):(dy>0?'down':'up'))});
+boardEl.addEventListener('pointerdown',e=>{
+ if(S.phase!=='input'||S.selCard||S.ammoStep||S.moveMode)return;
+ if(e.pointerType==='mouse'&&e.button!==0)return;
+ gestureState={id:e.pointerId,x:e.clientX,y:e.clientY,t:performance.now()};
+ try{boardEl.setPointerCapture(e.pointerId)}catch(_){}
+});
+boardEl.addEventListener('pointerup',e=>{
+ if(!gestureState||gestureState.id!==e.pointerId)return;
+ let dx=e.clientX-gestureState.x,dy=e.clientY-gestureState.y,ax=Math.abs(dx),ay=Math.abs(dy),main=Math.max(ax,ay),cross=Math.min(ax,ay);
+ let minSwipe=Math.max(70,boardEl.getBoundingClientRect().width*.18);
+ gestureState=null;
+ if(main<minSwipe||main<cross*1.5)return;
+ ignoreTapUntil=performance.now()+360;
+ slide(ax>ay?(dx>0?'right':'left'):(dy>0?'down':'up'))
+});
 boardEl.addEventListener('pointercancel',()=>{gestureState=null});
 function endTurn(){if(S.phase!=='input')return;refreshSpawnPreview(false);clearSelection();S.phase='enemy';render();setTimeout(resolveEnemies,420)}document.querySelector('#endBtn').onclick=endTurn;
 function resolveEnemies(){let hpBefore=S.hp;if(alive('gun')){let row=S.gunLine;if(rc(S.mech)[0]===row)damageReactor(2);else if(S.gunBlockTarget!=null&&S.tiles[S.gunBlockTarget]>0){let t=S.gunBlockTarget;burstAt(t,'#ff2020',8,50);S.tiles[t]=0;floatAt(t,'ALVO DESTRUÍDO','#ff7065')}else{floatAt(S.enemies.gun.pos,'TIRO ERROU','#a0a0b8')}}if(alive('cru')&&S.crusherTarget!=null){let target=S.crusherTarget;if(!adjacent(S.enemies.cru.pos,target)){toast('INTENÇÃO QUEBRADA!');floatAt(S.enemies.cru.pos,'QUEBRADA','#ffe467')}else if(target===S.mech)damageReactor(2);else if(S.tiles[target]>0){burstAt(target,'#ff8c42',14,75);floatAt(target,'ESMAGADO','#ffb15f');S.tiles[target]=0;S.enemies.cru.pos=target;shake(false)}else if(empty(target))S.enemies.cru.pos=target}if(alive('par')&&S.parasiteTarget!=null){let t=S.parasiteTarget,p=S.enemies.par.pos;if(S.parasiteMode==='consume'){if(adjacent(p,t)&&S.tiles[t]>0){let val=S.tiles[t];S.tiles[t]=0;S.enemies.par.hp=Math.min(S.enemies.par.max,S.enemies.par.hp+2);burstAt(t,'#d44a8c',12,65);floatAt(t,'CONSUMIDO '+val,'#f070b0')}}else if(S.parasiteMode==='move'){if(adjacent(p,t)&&empty(t))S.enemies.par.pos=t}}reactorHit(hpBefore-S.hp);if(S.hp<=0){S.phase='lost';toast('DERROTA');render();return}spawnTile();S.turn++;S.energy=S.baseEnergy;S.freeSlide=1;S.freeMove=1;S.mergeCount=0;S.usedCard=false;S.firstMergeDone=false;drawHand();S.phase='input';planEnemies();render()}
