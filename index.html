@@ -14,7 +14,7 @@
 .board{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;aspect-ratio:1;padding:6px;background:#111523;border:2px solid #3d4658;box-shadow:0 12px 28px #0008}
 .cell{position:relative;display:grid;place-items:center;border-radius:6px;border:1px solid #4b5064;background:linear-gradient(145deg,#3c3d50,#2b2c3c);font-weight:1000;font-size:24px;overflow:hidden;transition:transform .12s,filter .12s}.cell:after{position:absolute;bottom:4px;font:800 6px monospace;letter-spacing:.06em}
 .cell.tile{color:#11131b;text-shadow:0 1px #fff5}.v2{background:#b8b8c8}.v4{background:#7ec8e3}.v8{background:#5fd068}.v16{background:#ffd93d}.v32{background:#ff8c42}.v64{background:#ff4c4c}.v128{background:#b14cff!important;color:#fff!important}.vhigh{background:linear-gradient(145deg,#d958ff,#6a2da6)!important;color:#fff!important}
-.cell.mech{background:linear-gradient(145deg,#8cffff,#238d99);color:#061418;border-color:#b3ffff}.cell.mech:before{content:"◆";font-size:29px}.cell.mech:after{content:"MECH"}
+.cell.mech{background:linear-gradient(145deg,#8cffff,#238d99);color:#061418;border-color:#b3ffff}.cell.mech:before{content:"◆";font-size:29px}.cell.mech:after{content:"ROBÔ"}
 .cell.gunner{background:linear-gradient(145deg,#8544a7,#361846);color:#f8defe}.cell.gunner:before{content:"◢";font-size:30px}.cell.gunner:after{content:"ARTILH. " attr(data-hp)}
 .cell.crusher{background:linear-gradient(145deg,#6e984f,#2b4522);color:#efffdc}.cell.crusher:before{content:"⬢";font-size:28px}.cell.crusher:after{content:"ESMAG. " attr(data-hp)}
 .cell.danger{box-shadow:inset 0 0 0 3px #ff4c4c,0 0 12px #ff4c4c55}.cell.moveTarget{box-shadow:inset 0 0 0 3px #ffd700,0 0 12px #ffd70055}.cell.valid{outline:3px solid #59e7e7;outline-offset:-4px;animation:pulse .85s ease-in-out infinite alternate}.cell.mergePop{animation:merge .28s cubic-bezier(.2,1.7,.3,1)}
@@ -72,34 +72,109 @@
 .handLabel{margin-top:10px!important}.hand{display:flex!important;overflow-x:auto;gap:7px!important;padding:2px 2px 8px;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch}.hand::-webkit-scrollbar{display:none}.card{flex:0 0 112px;min-height:96px!important;scroll-snap-align:start;padding:9px 8px!important}.card b{font-size:9px!important}.card small{font-size:7px!important;line-height:1.3!important}.card.type-atk{border-color:#8f4949}.card.type-push{border-color:#b88e44}.card.type-spawn,.card.type-merge{border-color:#714a8f}.card.type-move{border-color:#46779c}
 .helpOverlay{position:fixed;inset:0;z-index:100;background:#050812dd;display:none;align-items:flex-end;justify-content:center;padding:12px}.helpOverlay.open{display:flex}.helpCard{position:relative;width:min(100%,520px);background:#151b2b;border:1px solid #48546e;border-radius:14px;padding:18px 16px calc(18px + env(safe-area-inset-bottom));box-shadow:0 20px 60px #000}.helpCard h2{margin:0 0 12px;font-size:16px}.helpCard p{margin:9px 0;color:#c7cddd;font-size:12px;line-height:1.4}.helpCard strong,.helpCard b{color:#ffe16a}.helpClose{position:absolute;right:12px;top:10px;width:30px;height:30px;padding:0}.helpLegend{display:flex;gap:13px;flex-wrap:wrap;margin-top:14px;color:#9da7ba;font:800 8px monospace}.helpLegend span{display:flex;align-items:center;gap:5px}
 @media(max-width:390px){.brand h1{font-size:21px}.intents{grid-template-columns:1fr 1fr}.card{flex-basis:108px}.slideHelp small{display:none}.slideHelp{grid-template-columns:auto 1fr}.miniArrows{justify-self:end}.action b{font-size:9px}}
+/* ART DIRECTION V2 — industrial pixel tactical */
+:root{
+ --bg:#0d0d1a;--panel:#15152a;--panel2:#101624;--steel:#263247;--steel2:#39465f;
+ --ink:#f0f0f8;--muted:#a0a0b8;--energy:#ffd93d;--hp:#ff4c4c;--mech:#4fe0e0;
+ --gun:#6b2d8c;--crusher:#4a7c3a;--danger:#ff2020;--move:#ffd700;--orange:#ff6a20;
+}
+html{background:#080812}
+body{
+ background:
+  linear-gradient(#0d0d1ad9,#080812f2),
+  url('assets/art/industrial-skyline.svg') center top/auto 620px repeat-x fixed;
+ font-family:"Courier New",ui-monospace,monospace;
+}
+#game{position:relative;max-width:600px;background:linear-gradient(180deg,#11172af5,#080d17f8 58%,#070b12);border-left:1px solid #28334a;border-right:1px solid #28334a;box-shadow:0 0 44px #000}
+#game:before,#game:after{content:"";position:fixed;top:0;bottom:0;width:5px;background:repeating-linear-gradient(180deg,#ff6a20 0 10px,#36200e 10px 18px,#101018 18px 26px);opacity:.28;pointer-events:none;z-index:0}
+#game:before{left:max(0px,calc(50% - 300px))}#game:after{right:max(0px,calc(50% - 300px))}
+.top{position:relative;z-index:1;padding:5px 2px 10px;border-bottom:2px solid #36425b}
+.eyebrow{display:block;color:#ff9a4e;font:900 6px monospace;letter-spacing:.13em;margin-bottom:3px}
+.brand h1{font-family:Impact,"Arial Black",sans-serif!important;font-style:italic;font-size:29px!important;letter-spacing:.02em!important;text-shadow:3px 3px #090b12,-1px -1px #36405a}
+.brand h1 i{font-style:normal;color:#ffd93d}
+.brand small{font-size:7px!important;color:#8f9bb4!important}
+.topRight{align-self:stretch}.turnBox{min-width:54px;height:50px;padding:5px 8px;text-align:center;background:#101d30;border:2px solid #477ea9;box-shadow:inset 0 0 0 2px #0a101b,3px 3px #05070d;clip-path:polygon(8px 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%,0 8px)}
+.turnBox small{display:block;color:#7fb8df!important;font:900 6px monospace!important;letter-spacing:.1em}.turnBox b{font:1000 22px/1 monospace;color:#fff}
+.helpBtn{border-radius:2px!important;background:#252a38!important;border:2px solid #57647f!important;clip-path:polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px)}
+.hudBar{display:grid!important;grid-template-columns:1fr 1fr 1.18fr!important;margin:8px 0!important;gap:5px!important}
+.stat{display:flex;align-items:center;gap:7px;min-height:48px;padding:7px 8px!important;background:linear-gradient(180deg,#121b2c,#0c1320)!important;border:2px solid #334059!important;border-radius:2px!important;box-shadow:inset 0 0 0 1px #0b0e17,3px 3px #05070d}
+.statIcon{display:grid;place-items:center;width:29px;height:29px;flex:0 0 29px;border:1px solid #4b5972;background:#0d1422;font:1000 20px monospace}
+.hp .statIcon{color:#ff4c4c;text-shadow:0 0 7px #ff2020}.en .statIcon{color:#ffd93d;text-shadow:0 0 7px #ff8c42}.actionStat .statIcon{color:#80d0ff}
+.stat small{font-size:6px!important;letter-spacing:.11em!important}.stat b{font-size:14px!important}
+.guide{position:relative;margin:6px 0 9px!important;gap:3px!important}
+.guide span{position:relative;padding:7px 2px!important;border-radius:1px!important;background:#0e1625!important;border:1px solid #35425b!important;color:#77849e!important}
+.guide span i{display:inline-grid;place-items:center;width:14px;height:14px;margin-right:2px;border:1px solid currentColor;font-style:normal}
+.guide span.active{color:#ffd93d!important;border-color:#a47b26!important;background:#241c0d!important;box-shadow:inset 0 -3px #5b4214}.guide span.done{color:#5fd068!important;border-color:#356b43!important}
+.sectionLabel{display:flex;align-items:flex-end;justify-content:space-between;margin:3px 2px 5px;border-bottom:1px solid #374259;padding-bottom:4px}.sectionLabel span{font:1000 7px monospace;color:#ff7568;letter-spacing:.09em}.sectionLabel small{font:700 6px monospace;color:#69748b}
+.intents{gap:5px!important}.intent{position:relative;min-height:62px!important;border-radius:2px!important;background:linear-gradient(180deg,#161726,#0c111c)!important;box-shadow:inset 0 0 0 1px #090b12,3px 3px #05070d;overflow:hidden}
+.intent:before{content:"";position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(135deg,transparent 0 10px,#ffffff05 10px 11px)}
+.intent.gun{border:2px solid #8a3c9c!important}.intent.crusher{border:2px solid #617e46!important}
+.intentHead{display:grid!important;grid-template-columns:27px 1fr auto!important;align-items:center!important}.enemyPortrait{width:25px;height:25px;background:center/contain no-repeat;image-rendering:pixelated}.gunPortrait{background-image:url('assets/sprites/kaijus/artilheiro/idle.svg')}.crusherPortrait{background-image:url('assets/sprites/kaijus/esmagador/idle.svg')}
+.intentHead strong{font-size:8px!important}.intentHead i{padding:2px 4px;border:1px solid #4c5365;color:#8992a4!important}
+.intent small{padding-left:30px;font-size:7px!important}.warn{color:#ff7065!important;text-shadow:0 0 5px #ff202055}.move{color:#ffdd63!important}
+.legend{margin:5px 2px 6px!important}.lg{border-radius:0!important}
+.unitNote{display:grid;grid-template-columns:auto 1fr;gap:8px;align-items:center;margin:0 0 6px;padding:8px 9px;background:#0d1b29;border:1px solid #306876;box-shadow:inset 3px 0 #4fe0e0}
+.unitBadge{display:flex;align-items:center;gap:5px;color:#79f5f5;font:1000 8px monospace;white-space:nowrap}.miniMech{display:inline-block;width:24px;height:24px;background:url('assets/sprites/mech/mech_idle.svg') center/contain no-repeat;image-rendering:pixelated}.unitText{font-size:9px;line-height:1.3;color:#aab6c9}.unitText b{color:#e9ffff}
+.boardFrame{position:relative;padding:18px 7px 7px;background:linear-gradient(145deg,#253148,#101722);border:3px solid #3f4d66;box-shadow:inset 0 0 0 3px #090d16,6px 7px #05070d}
+.boardFrame:before,.boardFrame:after{content:"";position:absolute;top:4px;width:34px;height:6px;background:repeating-linear-gradient(90deg,#ff6a20 0 5px,#28170b 5px 9px)}.boardFrame:before{left:8px}.boardFrame:after{right:8px}
+.boardTag{position:absolute;top:3px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:8px;white-space:nowrap}.boardTag span{font:1000 6px monospace;color:#9eb1c8}.boardTag small{font:700 5px monospace;color:#59667c}
+.board{padding:4px!important;gap:4px!important;border:0!important;background:#080d16!important;box-shadow:none!important}
+.cell{border:2px solid #4a566d!important;border-radius:2px!important;background:linear-gradient(145deg,#323a4d,#202738)!important;box-shadow:inset 2px 2px #58627a55,inset -3px -3px #0a0d16aa;image-rendering:pixelated;overflow:hidden}
+.cell.tile:before{content:"";position:absolute;inset:4px;border-top:2px solid #ffffff66;border-left:2px solid #ffffff35;border-right:2px solid #0004;border-bottom:2px solid #0006;pointer-events:none}
+.cell.tile{font-family:"Courier New",monospace;font-size:26px!important;font-weight:1000!important;color:#0c1018!important;text-shadow:1px 1px #ffffff55!important}
+.cell.v2{background:#b8b8c8!important}.cell.v4{background:#7ec8e3!important}.cell.v8{background:#5fd068!important}.cell.v16{background:#ffd93d!important}.cell.v32{background:#ff8c42!important}.cell.v64{background:#ff4c4c!important}
+.cell.mech,.cell.gunner,.cell.crusher{color:transparent!important;text-shadow:none!important}
+.cell.mech{background:linear-gradient(145deg,#123a48,#09202b)!important;border-color:#4fe0e0!important;box-shadow:inset 0 0 0 2px #80f0f055,0 0 12px #4fe0e05c!important}
+.cell.mech:before{content:""!important;position:absolute;width:74%;height:74%;background:url('assets/sprites/mech/mech_idle.svg') center/contain no-repeat;image-rendering:pixelated;filter:drop-shadow(0 0 4px #4fe0e0);z-index:2}
+.cell.mech:after{content:"SEU ROBÔ"!important;bottom:3px!important;left:0;right:0;text-align:center;color:#d9ffff;font:1000 6px monospace!important;text-shadow:1px 1px #00131a}
+.cell.gunner{background:linear-gradient(145deg,#3a174d,#180b24)!important;border-color:#8d48a2!important}.cell.gunner:before{content:""!important;position:absolute;width:75%;height:75%;background:url('assets/sprites/kaijus/artilheiro/idle.svg') center/contain no-repeat;image-rendering:pixelated;z-index:2}.cell.gunner:after{content:"ARTILH. " attr(data-hp)!important;color:#f8defe!important;font:1000 6px monospace!important}
+.cell.crusher{background:linear-gradient(145deg,#2d4a24,#142311)!important;border-color:#6a9c5a!important}.cell.crusher:before{content:""!important;position:absolute;width:78%;height:78%;background:url('assets/sprites/kaijus/esmagador/idle.svg') center/contain no-repeat;image-rendering:pixelated;z-index:2}.cell.crusher:after{content:"ESMAG. " attr(data-hp)!important;color:#efffdc!important;font:1000 6px monospace!important}
+.cell.danger{border-color:#ff4c4c!important;box-shadow:inset 0 0 0 2px #ff202088,0 0 12px #ff202066!important}.cell.moveTarget{border-color:#ffd700!important;box-shadow:inset 0 0 0 2px #ffd70077,0 0 10px #ffd70044!important}.cell.valid{outline:3px solid #4fe0e0!important;outline-offset:-5px!important}
+.cell.mech.hintPulse{animation:mechHint .75s steps(2) infinite alternate}@keyframes mechHint{to{filter:brightness(1.3);box-shadow:inset 0 0 0 3px #fff,0 0 18px #4fe0e0!important}}
+.coachBox{margin-top:6px;padding:9px 10px;background:linear-gradient(90deg,#142031,#0d1421);border:1px solid #3c4b66;border-left:4px solid #ffd93d;box-shadow:3px 3px #05070d;color:#e8edf8;font-size:9px;line-height:1.25}.coachBox b{color:#ffd93d}.coachBox small{display:block;margin-top:3px;color:#8c98ae;font-size:8px}
+.slideHelp{border-radius:1px!important;background:#0c1422!important;border:2px solid #303e56!important;box-shadow:3px 3px #05070d}.slideHelp b{font-size:8px!important;color:#a7c6dd!important}.slideHelp small{font-size:7px!important}.miniArrows button{border-radius:1px!important;background:#152033!important;border:1px solid #4a5973!important;box-shadow:0 3px #05070d!important;color:#d9e9f5!important}
+.actions{margin-top:7px!important}.action{display:grid!important;grid-template-columns:34px 1fr!important;align-items:center!important;gap:7px!important;min-height:61px!important;border-radius:2px!important;box-shadow:0 5px #05070d!important;clip-path:polygon(7px 0,100% 0,100% calc(100% - 7px),calc(100% - 7px) 100%,0 100%,0 7px)}
+.actionIcon{font:1000 28px/1 monospace;text-align:center}.action b{font-size:11px!important}.action small{font-size:7px!important}.action.ammo{background:linear-gradient(180deg,#40200d,#211208)!important;border:2px solid #ff8c42!important;color:#ffd4a6!important}.action.ammo .actionIcon{color:#ff8c42;text-shadow:0 0 8px #ff6a20}.action.end{background:linear-gradient(180deg,#10304b,#0a1a2d)!important;border:2px solid #59a8e2!important;color:#d6f4ff!important}.action.end .actionIcon{color:#7ec8e3;text-shadow:0 0 8px #4ba3df}
+.handLabel{margin-top:12px!important;border-bottom:1px solid #313d54;padding-bottom:4px}.handLabel b{font-size:9px!important;color:#d8d3ef!important}.handLabel small{font-size:6px!important}
+.hand{padding-top:4px!important}.card{position:relative;flex:0 0 122px!important;min-height:112px!important;border-radius:2px!important;padding:13px 8px 8px!important;background:linear-gradient(180deg,#1a2234,#101626)!important;border:2px solid #4d5972!important;box-shadow:0 5px #05070d!important;clip-path:polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px)}
+.card:before{content:"";position:absolute;left:0;right:0;top:0;height:6px;background:#68758e}.cardIcon{display:grid;place-items:center;width:34px;height:28px;margin:3px 0 5px;font:1000 21px monospace;border:1px solid currentColor;background:#080c14aa}.card b{font-size:9px!important;letter-spacing:.01em}.card small{font-size:7px!important;line-height:1.25!important}.card em{font-size:9px!important;background:#0b0f19;padding:2px 4px;border:1px solid #6a7285}
+.card.type-atk{border-color:#b74343!important;color:#ff7b70}.card.type-atk:before{background:#ff4c4c}.card.type-push{border-color:#aa8431!important;color:#ffd66b}.card.type-push:before{background:#ffd93d}.card.type-spawn{border-color:#367b65!important;color:#72e6b6}.card.type-spawn:before{background:#5fd068}.card.type-merge{border-color:#7541a0!important;color:#c68aff}.card.type-merge:before{background:#b14cff}.card.type-move{border-color:#3d75a1!important;color:#8bd7ff}.card.type-move:before{background:#7ec8e3}.card.sel{transform:translateY(-5px);filter:brightness(1.15);box-shadow:0 7px #05070d,0 0 14px currentColor!important}
+.introOverlay,.helpOverlay{backdrop-filter:none;background:#060810e8!important}.introOverlay{position:fixed;inset:0;z-index:101;display:none;align-items:flex-end;justify-content:center;padding:10px}.introOverlay.open{display:flex}.introCard,.helpCard{width:min(100%,580px);background:linear-gradient(180deg,#18243a,#0d1422)!important;border:3px solid #455571!important;border-radius:2px!important;box-shadow:0 12px 0 #05070d!important;padding:16px!important}.introKicker{color:#ff8c42;font:1000 6px monospace;letter-spacing:.12em}.introCard h2{margin:5px 0 10px;font:italic 1000 21px Impact,sans-serif}.introCard h2 i{color:#4fe0e0}.introHero{display:grid;grid-template-columns:54px 1fr;gap:10px;padding:9px;background:#0b1b27;border:1px solid #337481}.introRobot{width:50px;height:50px;background:url('assets/sprites/mech/mech_idle.svg') center/contain no-repeat;image-rendering:pixelated;filter:drop-shadow(0 0 6px #4fe0e0)}.introHero b{font-size:10px;color:#8ff}.introHero small{display:block;margin-top:3px;font-size:9px;line-height:1.25;color:#aebbd0}.introSteps{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:9px 0}.introSteps div{padding:8px;background:#101827;border:1px solid #35425a}.introSteps i{display:inline-grid;place-items:center;width:18px;height:18px;margin-right:4px;border:1px solid #ffd93d;color:#ffd93d;font:1000 8px monospace}.introSteps b{font-size:8px}.introSteps small{display:block;margin-top:4px;color:#95a1b6;font-size:8px;line-height:1.2}.introStart{width:100%;padding:13px;border:2px solid #62a6d6;background:#10304c;color:#e9f7ff;font:1000 10px monospace;box-shadow:0 4px #05070d}
+@media(max-width:390px){.brand h1{font-size:25px!important}.turnBox{min-width:48px}.hudBar{grid-template-columns:1fr 1fr 1.12fr!important}.statIcon{display:none}.unitText{font-size:8px}.card{flex-basis:116px!important}.introSteps{grid-template-columns:1fr 1fr}}
+@media(prefers-reduced-motion:reduce){.cell.mech.hintPulse{animation:none}}
 </style>
 </head><body>
 <main id="game">
-  <div class="top">
-    <div class="brand"><h1>KAIJU 2048</h1><small>SETOR 1 · COMBATE 1</small></div>
-    <div class="topRight"><small id="turn">TURNO 1</small><button id="helpBtn" class="helpBtn" aria-label="Como jogar">?</button></div>
-  </div>
+  <header class="top">
+    <div class="brand">
+      <span class="eyebrow">PROTOCOLO DE DEFESA // SETOR 1</span>
+      <h1>KAIJU <i>2048</i></h1>
+      <small>PUZZLE TÁTICO · ROBÔ VS KAIJU</small>
+    </div>
+    <div class="topRight"><div class="turnBox"><small>TURNO</small><b id="turn">1</b></div><button id="helpBtn" class="helpBtn" aria-label="Como jogar">?</button></div>
+  </header>
 
-  <div class="status">
-    <div class="stat hp"><small>REATOR</small><b id="hp">10/10</b></div>
-    <div class="stat en"><small>ENERGIA</small><b id="energy">3/6</b></div>
-    <div class="stat"><small>AÇÕES GRÁTIS</small><b id="free">1 desl. · 1 mech</b></div>
-  </div>
+  <section class="status hudBar">
+    <div class="stat hp"><span class="statIcon">◆</span><div><small>REATOR</small><b id="hp">10/10</b></div></div>
+    <div class="stat en"><span class="statIcon">ϟ</span><div><small>ENERGIA</small><b id="energy">3/6</b></div></div>
+    <div class="stat actionStat"><span class="statIcon">↔</span><div><small>AÇÕES GRÁTIS</small><b id="free">1 desl. · 1 robô</b></div></div>
+  </section>
 
-  <div class="guide" aria-label="ordem do turno">
-    <span id="guideSlide">1 · DESLIZE</span>
-    <span id="guideMove">2 · MECH</span>
-    <span>3 · CARTAS</span>
-    <span>4 · CONFIRME</span>
-  </div>
+  <nav class="guide" aria-label="ordem do turno">
+    <span id="guideSlide"><i>1</i> DESLIZE</span>
+    <span id="guideMove"><i>2</i> ROBÔ</span>
+    <span id="guideCards"><i>3</i> CARTAS</span>
+    <span id="guideEnd"><i>4</i> FIM</span>
+  </nav>
 
+  <div class="sectionLabel"><span>AMEAÇAS TELEGRÁFICAS</span><small>o inimigo não muda de ideia</small></div>
   <div class="intents">
     <div class="intent gun">
-      <div class="intentHead"><strong>ARTILHEIRO · <span id="gunHp">6</span> HP</strong><i>FIXA</i></div>
+      <div class="intentHead"><span class="enemyPortrait gunPortrait"></span><strong>ARTILHEIRO · <span id="gunHp">6</span> HP</strong><i>FIXA</i></div>
       <small class="warn" id="gunIntent"></small>
     </div>
     <div class="intent crusher">
-      <div class="intentHead"><strong>ESMAGADOR · <span id="cruHp">8</span> HP</strong><i>FIXA</i></div>
+      <div class="intentHead"><span class="enemyPortrait crusherPortrait"></span><strong>ESMAGADOR · <span id="cruHp">8</span> HP</strong><i>FIXA</i></div>
       <small class="move" id="cruIntent"></small>
     </div>
   </div>
@@ -110,10 +185,18 @@
     <span><i class="lg cyan"></i>SEU ALVO</span>
   </div>
 
-  <section class="board" id="board" aria-label="Tabuleiro 4 por 4"></section>
+  <div class="unitNote">
+    <div class="unitBadge"><span class="miniRobô"></span>SEU ROBÔ</div>
+    <div class="unitText">É a unidade azul no tabuleiro. <b>Toque nela</b> para revelar as casas onde ela pode andar.</div>
+  </div>
+  <div class="boardFrame">
+    <div class="boardTag"><span>GRID 4×4</span><small>FUNDA · POSICIONE · SOBREVIVA</small></div>
+    <section class="board" id="board" aria-label="Tabuleiro 4 por 4"></section>
+  </div>
+  <div class="coachBox" id="coachBox"></div>
 
   <div class="slideHelp">
-    <b>DESLIZE</b><small>arraste o tabuleiro ou use as setas</small>
+    <b>DESLIZE O GRID</b><small>arraste o tabuleiro ou use as setas</small>
     <div class="miniArrows">
       <button data-slide="left" aria-label="Deslizar esquerda">◀</button>
       <button data-slide="up" aria-label="Deslizar cima">▲</button>
@@ -126,22 +209,37 @@
   <div class="phase" id="phase"></div>
 
   <div class="actions">
-    <button class="action ammo" id="ammoBtn"><b>DISPARAR BLOCO</b><small>consome um bloco adjacente</small></button>
-    <button class="action end" id="endBtn"><b>CONFIRMAR TURNO</b><small>Kaijus executam as intenções</small></button>
+    <button class="action ammo" id="ammoBtn"><span class="actionIcon">◆</span><span><b>ATIRAR BLOCO</b><small>um bloco ao lado do robô vira dano</small></span></button>
+    <button class="action end" id="endBtn"><span class="actionIcon">»</span><span><b>ENCERRAR TURNO</b><small>os Kaijus executam as intenções</small></span></button>
   </div>
 
-  <div class="handLabel"><b>MÃO</b><small>toque na carta → toque no alvo</small></div>
+  <div class="handLabel"><b>SUA MÃO</b><small>CARTA → ALVO DESTACADO</small></div>
   <div class="hand" id="hand"></div>
 </main>
+
+<div class="introOverlay" id="introOverlay" aria-hidden="false">
+  <div class="introCard">
+    <span class="introKicker">ANTES DO PRIMEIRO TURNO</span>
+    <h2>VOCÊ PILOTA O <i>ROBÔ AZUL</i></h2>
+    <div class="introHero"><span class="introRobot"></span><div><b>ROBÔ = VOCÊ</b><small>Ele ocupa uma casa do grid. Sua posição decide alcance, segurança e quais blocos podem virar munição.</small></div></div>
+    <div class="introSteps">
+      <div><i>1</i><b>DESLIZE</b><small>mova todos os blocos e funda iguais</small></div>
+      <div><i>2</i><b>MOVA O ROBÔ</b><small>toque nele e depois numa casa ciano</small></div>
+      <div><i>3</i><b>ATAQUE</b><small>use cartas ou transforme um bloco em tiro</small></div>
+      <div><i>4</i><b>ENCERRE</b><small>só então os Kaijus agem</small></div>
+    </div>
+    <button id="introStart" class="introStart">ENTENDI · INICIAR COMBATE</button>
+  </div>
+</div>
 
 <div class="helpOverlay" id="helpOverlay" aria-hidden="true">
   <div class="helpCard">
     <button class="helpClose" id="helpClose" aria-label="Fechar">×</button>
     <h2>COMO JOGAR</h2>
     <p><b>1.</b> Leia as intenções. Elas ficam fixas até o fim do turno.</p>
-    <p><b>2.</b> Você tem <strong>1 deslize</strong> e <strong>1 movimento do Mech</strong> grátis. Para mover, toque primeiro no Mech.</p>
+    <p><b>2.</b> Você tem <strong>1 deslize</strong> e <strong>1 movimento do Robô</strong> grátis. Para mover, toque primeiro no Robô.</p>
     <p><b>3.</b> Use cartas gastando Energia. Cada carta é usada uma única vez.</p>
-    <p><b>4.</b> Um bloco adjacente ao Mech pode virar munição. Você perde o bloco e causa o valor dele como dano.</p>
+    <p><b>4.</b> Um bloco adjacente ao Robô pode virar munição. Você perde o bloco e causa o valor dele como dano.</p>
     <p><b>5.</b> Só então toque em <strong>CONFIRMAR TURNO</strong>.</p>
     <div class="helpLegend"><span><i class="lg red"></i> perigo</span><span><i class="lg yellow"></i> ação inimiga</span><span><i class="lg cyan"></i> alvo válido seu</span></div>
   </div>
@@ -149,14 +247,14 @@
 <div id="screenFlash"></div><div id="fxLayer"></div><div class="toast" id="toast">FUSÃO!</div>
 <script>
 const deck=[
- {id:'atk',name:'ATAQUE',cost:1,txt:'2 dano · alcance 2'},
- {id:'atk',name:'ATAQUE',cost:1,txt:'2 dano · alcance 2'},
- {id:'push',name:'EMPURRÃO',cost:1,txt:'empurra Kaiju 1 casa'},
- {id:'spawn',name:'CRIAR 2',cost:1,txt:'cria bloco 2'},
- {id:'merge',name:'FUSÃO',cost:2,txt:'funde iguais adjacentes'},
- {id:'move',name:'MOV. EXTRA',cost:1,txt:'move Mech +1'}
+ {id:'atk',name:'ATAQUE',cost:1,txt:'toque em um Kaiju a até 2 casas'},
+ {id:'atk',name:'ATAQUE',cost:1,txt:'toque em um Kaiju a até 2 casas'},
+ {id:'push',name:'EMPURRAR',cost:1,txt:'Kaiju ao lado do robô recua 1 casa'},
+ {id:'spawn',name:'CRIAR 2',cost:1,txt:'crie um bloco 2 numa casa vazia'},
+ {id:'merge',name:'FUSÃO',cost:2,txt:'escolha 2 blocos iguais lado a lado'},
+ {id:'move',name:'PASSO EXTRA',cost:1,txt:'mova o robô +1 casa'}
 ];
-const S={turn:1,hp:10,energy:3,phase:'input',tiles:Array(16).fill(0),mech:6,enemies:{gun:{pos:3,hp:6},cru:{pos:12,hp:8}},gunLine:1,crusherTarget:null,freeSlide:1,freeMove:1,hand:[],selCard:null,selCardIndex:null,cardStep:null,ammoStep:null,ammoBlock:null,mergeCount:0,lastMerges:[],spawned:[],moveMode:false};
+const S={turn:1,hp:10,energy:3,phase:'input',tiles:Array(16).fill(0),mech:6,enemies:{gun:{pos:3,hp:6},cru:{pos:12,hp:8}},gunLine:1,crusherTarget:null,freeSlide:1,freeMove:1,hand:[],selCard:null,selCardIndex:null,cardStep:null,ammoStep:null,ammoBlock:null,mergeCount:0,lastMerges:[],spawned:[],moveMode:false,usedCard:false};
 const rc=i=>[Math.floor(i/4),i%4], id=(r,c)=>r*4+c, alive=k=>S.enemies[k].hp>0;
 function manhattan(a,b){let A=rc(a),B=rc(b);return Math.abs(A[0]-B[0])+Math.abs(A[1]-B[1])}
 const adjacent=(a,b)=>manhattan(a,b)===1;
@@ -173,7 +271,8 @@ function pulseEnergy(){let e=document.querySelector('.stat.en');e.classList.remo
 function reactorHit(amount){if(amount<=0)return;shake(true);flash('red');let e=document.querySelector('.stat.hp');e.classList.remove('hurt');void e.offsetWidth;e.classList.add('hurt');setTimeout(()=>e.classList.remove('hurt'),420);floatAt(S.mech,'-'+amount+' REATOR','#ff6a5d')}
 function damageFx(i,amount,killed=false){burstAt(i,killed?'#ffd93d':'#ff5f55',killed?22:12,killed?105:65);floatAt(i,killed?'MORTO!':'-'+amount,killed?'#ffd93d':'#ff7b6b');shake(killed);if(killed)flash('gold')}
 function tileClass(v){if(v===128)return'v128';if(v>128)return'vhigh';return'v'+v}
-function drawHand(){S.hand=[];for(let i=0;i<5;i++)S.hand.push(deck[Math.floor(Math.random()*deck.length)]);clearSelection()}
+function cardIcon(id){return id==='atk'?'✦':id==='push'?'➜':id==='spawn'?'◇':id==='merge'?'◆◆':id==='move'?'»':'•'}
+function drawHand(){S.hand=[];if(S.turn===1){[0,4,1,5,3].forEach(i=>S.hand.push(deck[i]))}else{for(let i=0;i<5;i++)S.hand.push(deck[Math.floor(Math.random()*deck.length)])}clearSelection()}
 function clearSelection(){S.selCard=null;S.selCardIndex=null;S.cardStep=null;S.ammoStep=null;S.ammoBlock=null;S.moveMode=false}
 function planGunner(){if(alive('gun'))S.gunLine=rc(S.mech)[0]}
 function planCrusher(){if(!alive('cru'))return;let p=rc(S.enemies.cru.pos),m=rc(S.mech),dr=m[0]-p[0],dc=m[1]-p[1],nr=p[0],nc=p[1];if(Math.abs(dc)>=Math.abs(dr)&&dc!==0)nc+=Math.sign(dc);else if(dr!==0)nr+=Math.sign(dr);S.crusherTarget=id(nr,nc)}
@@ -196,14 +295,26 @@ function validTargets(){
 }
 function render(){
  let th=threatSet(),valid=validTargets(),b=document.querySelector('#board');b.innerHTML='';
- for(let i=0;i<16;i++){let e=document.createElement('button');e.className='cell';let v=S.tiles[i];if(v){e.classList.add('tile',tileClass(v));e.textContent=v}if(i===S.mech)e.classList.add('mech');if(alive('gun')&&i===S.enemies.gun.pos){e.classList.add('gunner');e.dataset.hp=S.enemies.gun.hp}if(alive('cru')&&i===S.enemies.cru.pos){e.classList.add('crusher');e.dataset.hp=S.enemies.cru.hp}if(th.d.has(i))e.classList.add('danger');if(th.m.has(i))e.classList.add('moveTarget');if(valid.has(i))e.classList.add('valid');if(S.lastMerges.includes(i))e.classList.add('mergePop');if(S.spawned.includes(i))e.classList.add('spawnPop');if(valid.has(i)&&S.moveMode)e.classList.add('moveReady');if(i===S.mech&&S.moveMode)e.classList.add('moveMode');e.onclick=()=>tapCell(i);b.append(e)}
+ for(let i=0;i<16;i++){let e=document.createElement('button');e.className='cell';let v=S.tiles[i];if(v){e.classList.add('tile',tileClass(v));e.textContent=v}if(i===S.mech)e.classList.add('mech');if(alive('gun')&&i===S.enemies.gun.pos){e.classList.add('gunner');e.dataset.hp=S.enemies.gun.hp}if(alive('cru')&&i===S.enemies.cru.pos){e.classList.add('crusher');e.dataset.hp=S.enemies.cru.hp}if(th.d.has(i))e.classList.add('danger');if(th.m.has(i))e.classList.add('moveTarget');if(valid.has(i))e.classList.add('valid');if(S.lastMerges.includes(i))e.classList.add('mergePop');if(S.spawned.includes(i))e.classList.add('spawnPop');if(valid.has(i)&&S.moveMode)e.classList.add('moveReady');if(i===S.mech&&S.moveMode)e.classList.add('moveMode');if(i===S.mech&&S.phase==='input'&&S.freeSlide===0&&S.freeMove>0&&!S.moveMode&&!S.selCard&&!S.ammoStep)e.classList.add('hintPulse');e.onclick=()=>tapCell(i);b.append(e)}
  document.querySelector('#hp').textContent=S.hp+'/10';document.querySelector('#energy').textContent=S.energy+'/6';document.querySelector('#free').textContent=S.freeSlide+' desl. · '+S.freeMove+' mech';document.querySelector('#guideSlide').className=S.freeSlide?'active':'done';document.querySelector('#guideMove').className=S.freeMove?'active':'done';document.querySelector('#turn').textContent='TURNO '+S.turn;document.querySelector('#gunHp').textContent=Math.max(0,S.enemies.gun.hp);document.querySelector('#cruHp').textContent=Math.max(0,S.enemies.cru.hp);
- document.querySelector('#gunIntent').textContent=alive('gun')?'⚠ LINHA '+(S.gunLine+1)+' · 2 DANO SE O MECH FICAR NELA':'DERROTADO';document.querySelector('#cruIntent').textContent=alive('cru')?'➜ '+cellName(S.crusherTarget)+' · ESMAGA O QUE ESTIVER LÁ':'DERROTADO';
+ document.querySelector('#gunIntent').textContent=alive('gun')?'⚠ LINHA '+(S.gunLine+1)+' · 2 dano se seu robô ficar nela':'DERROTADO';document.querySelector('#cruIntent').textContent=alive('cru')?'➜ '+cellName(S.crusherTarget)+' · vai esmagar o que estiver ali':'DERROTADO';
  document.querySelector('#combo').textContent=S.mergeCount?'FUSÕES NO TURNO · '+S.mergeCount+'  |  ENERGIA +'+Math.min(3,S.mergeCount):'';
- let hand=document.querySelector('#hand');hand.innerHTML='';S.hand.forEach((c,i)=>{let x=document.createElement('button');x.className='card type-'+c.id+(S.selCardIndex===i?' sel':'');x.disabled=S.phase!=='input'||S.energy<c.cost;x.innerHTML='<em>⚡'+c.cost+'</em><b>'+c.name+'</b><small>'+c.txt+'</small>';x.onclick=()=>selectCard(c,i);hand.append(x)});
+ let hand=document.querySelector('#hand');hand.innerHTML='';S.hand.forEach((c,i)=>{let x=document.createElement('button');x.className='card type-'+c.id+(S.selCardIndex===i?' sel':'');x.disabled=S.phase!=='input'||S.energy<c.cost;x.innerHTML='<em>⚡'+c.cost+'</em><span class="cardIcon">'+cardIcon(c.id)+'</span><b>'+c.name+'</b><small>'+c.txt+'</small>';x.onclick=()=>selectCard(c,i);hand.append(x)});
  document.querySelectorAll('[data-slide]').forEach(x=>x.disabled=S.phase!=='input'||S.freeSlide<=0);document.querySelector('#ammoBtn').disabled=S.phase!=='input'||!hasAdjacentBlock()||(!alive('gun')&&!alive('cru'));document.querySelector('#endBtn').disabled=S.phase!=='input';updatePhase();S.lastMerges=[];S.spawned=[]
 }
-function updatePhase(){let p=document.querySelector('#phase');if(S.phase==='won'){p.innerHTML='<strong>COMBATE VENCIDO.</strong> Os dois Kaijus foram destruídos.';return}if(S.phase==='lost'){p.innerHTML='<strong>REATOR DESTRUÍDO.</strong> Reinicie a página para tentar novamente.';return}if(S.phase!=='input'){p.innerHTML='<strong>FASE INIMIGA.</strong> Os Kaijus estão executando exatamente as intenções mostradas.';return}if(S.ammoStep==='block'){p.innerHTML='<strong>MUNIÇÃO:</strong> toque em um bloco imediatamente ao lado do Mech.';return}if(S.ammoStep==='enemy'){p.innerHTML='<strong>MUNIÇÃO:</strong> agora toque no Kaiju que receberá o disparo.';return}if(S.moveMode){p.innerHTML='<strong>MOVER MECH:</strong> toque em uma casa ciano adjacente. Toque no Mech novamente para cancelar.';return}if(S.selCard){p.innerHTML='<strong>'+S.selCard.name+':</strong> toque em uma casa ciano válida. Toque na carta novamente para cancelar.';return}p.innerHTML='<strong>SUA VEZ.</strong> Deslize a grade, toque no Mech para movê-lo, use cartas e só então confirme.'}
+function updatePhase(){
+ let p=document.querySelector('#phase'),coach=document.querySelector('#coachBox');if(p)p.textContent='';
+ if(S.phase==='won'){coach.innerHTML='<b>COMBATE VENCIDO.</b> Os dois Kaijus foram destruídos.<small>O vertical slice termina aqui.</small>';return}
+ if(S.phase==='lost'){coach.innerHTML='<b>REATOR DESTRUÍDO.</b> Recarregue para tentar outra rota.<small>Leia as ameaças antes de encerrar cada turno.</small>';return}
+ if(S.phase!=='input'){coach.innerHTML='<b>FASE INIMIGA.</b> Agora os Kaijus executam exatamente o que foi telegráfado.<small>Depois surge um bloco novo e começa o próximo turno.</small>';return}
+ if(S.ammoStep==='block'){coach.innerHTML='<b>ATIRAR BLOCO.</b> Toque em um bloco imediatamente ao lado do seu robô.<small>O bloco será destruído e o número dele vira dano.</small>';return}
+ if(S.ammoStep==='enemy'){coach.innerHTML='<b>ESCOLHA O ALVO.</b> Agora toque no Kaiju que receberá o disparo.<small>Bloco 8 = 8 de dano. Você troca progressão do 2048 por poder imediato.</small>';return}
+ if(S.moveMode){coach.innerHTML='<b>MOVA SEU ROBÔ.</b> Toque numa casa ciano ao lado.<small>O robô é a unidade azul. Sua posição muda alcance, perigo e munição disponível.</small>';return}
+ if(S.selCard){let t=S.selCard.id==='atk'?'Toque em um Kaiju destacado.':S.selCard.id==='push'?'Toque em um Kaiju ao lado do robô.':S.selCard.id==='spawn'?'Toque numa casa vazia destacada.':S.selCard.id==='merge'?(S.cardStep==null?'Toque no primeiro bloco.':'Agora toque num bloco igual ao lado.'):'Toque numa casa vazia ao lado do robô.';coach.innerHTML='<b>'+S.selCard.name+'.</b> '+t+'<small>Toque na mesma carta para cancelar.</small>';return}
+ if(S.freeSlide>0){coach.innerHTML='<b>PASSO 1 · DESLIZE.</b> Arraste o grid ou use as setas.<small>Blocos iguais se fundem. Cada fusão gera +1 Energia.</small>';return}
+ if(S.freeMove>0){coach.innerHTML='<b>PASSO 2 · TOQUE NO ROBÔ AZUL.</b> Ele vai acender as casas para onde pode andar.<small>Você controla esse robô, não os blocos individualmente.</small>';return}
+ coach.innerHTML='<b>PASSO 3/4 · ATAQUE OU ENCERRE.</b> Use cartas, atire um bloco ou finalize.<small>Os Kaijus só agem quando você toca em ENCERRAR TURNO.</small>'
+}
 function selectCard(c,i){if(S.phase!=='input'||S.energy<c.cost)return;if(S.selCardIndex===i){clearSelection();render();return}clearSelection();S.selCard=c;S.selCardIndex=i;render()}
 function tapCell(i){
  if(S.phase!=='input')return;
@@ -211,7 +322,7 @@ function tapCell(i){
  if(S.ammoStep==='enemy'){let k=enemyAt(i);if(!k)return;let damage=Math.min(16,S.tiles[S.ammoBlock]),before=S.enemies[k].hp;S.tiles[S.ammoBlock]=0;S.enemies[k].hp-=damage;toast('MUNIÇÃO '+damage+'!');render();damageFx(i,damage,before>0&&S.enemies[k].hp<=0);clearSelection();checkVictory();render();return}
  if(S.selCard){useCard(i);return}
  if(i===S.mech&&S.freeMove>0){S.moveMode=!S.moveMode;render();return}
- if(S.moveMode&&S.freeMove>0&&empty(i)&&adjacent(S.mech,i)){S.mech=i;S.freeMove=0;S.moveMode=false;toast('MECH MOVE');render()}
+ if(S.moveMode&&S.freeMove>0&&empty(i)&&adjacent(S.mech,i)){S.mech=i;S.freeMove=0;S.moveMode=false;toast('ROBÔ MOVIDO');render()}
 }
 function useCard(i){
  let c=S.selCard,ci=S.selCardIndex;if(!c||ci==null||S.energy<c.cost)return;let used=false;
@@ -223,7 +334,7 @@ function useCard(i){
    if(S.cardStep==null&&S.tiles[i]>0){S.cardStep=i;render();return}
    if(S.cardStep!=null&&adjacent(S.cardStep,i)&&S.tiles[i]===S.tiles[S.cardStep]){S.tiles[i]*=2;S.tiles[S.cardStep]=0;S.energy=Math.min(6,S.energy-c.cost+1);S.mergeCount++;S.lastMerges=[i];used=true;toast('FUSÃO!')}else return
  } else return;
- if(used)S.hand.splice(ci,1);clearSelection();checkVictory();render()
+ if(used){S.hand.splice(ci,1);S.usedCard=true}clearSelection();checkVictory();render()
 }
 function ammo(){if(S.phase!=='input'||!hasAdjacentBlock())return;clearSelection();S.ammoStep='block';render()}document.querySelector('#ammoBtn').onclick=ammo;
 function slide(dir){
@@ -239,12 +350,14 @@ function endTurn(){if(S.phase!=='input')return;clearSelection();S.phase='enemy';
 function resolveEnemies(){
  let hpBefore=S.hp;if(alive('gun')){let row=S.gunLine;if(rc(S.mech)[0]===row)S.hp=Math.max(0,S.hp-2);else{let list=[];for(let c=0;c<4;c++){let i=id(row,c);if(S.tiles[i]>0)list.push(i)}if(list.length){list.sort((a,b)=>S.tiles[a]-S.tiles[b]);S.tiles[list[0]]=0}}}
  if(alive('cru')&&S.crusherTarget!=null){let target=S.crusherTarget;if(!adjacent(S.enemies.cru.pos,target)){toast('INTENÇÃO QUEBRADA!');floatAt(S.enemies.cru.pos,'QUEBRADA','#ffe467')}else if(target===S.mech)S.hp=Math.max(0,S.hp-2);else if(S.tiles[target]>0){burstAt(target,'#ff8c42',14,75);floatAt(target,'ESMAGADO','#ffb15f');S.tiles[target]=0;S.enemies.cru.pos=target;shake(false)}else if(empty(target))S.enemies.cru.pos=target}reactorHit(hpBefore-S.hp);
- if(S.hp<=0){S.phase='lost';toast('DERROTA');render();return}spawnTile();S.turn++;S.energy=3;S.freeSlide=1;S.freeMove=1;S.mergeCount=0;drawHand();S.phase='input';planEnemies();render()
+ if(S.hp<=0){S.phase='lost';toast('DERROTA');render();return}spawnTile();S.turn++;S.energy=3;S.freeSlide=1;S.freeMove=1;S.mergeCount=0;S.usedCard=false;drawHand();S.phase='input';planEnemies();render()
 }
 function spawnTile(){let e=[];for(let i=0;i<16;i++)if(empty(i))e.push(i);if(e.length){let p=e[Math.floor(Math.random()*e.length)];S.tiles[p]=Math.random()<.85?2:4;S.spawned=[p]}}
 function checkVictory(){if(!alive('gun')&&!alive('cru')){S.phase='won';toast('COMBATE VENCIDO!')}}
 document.querySelector('#helpBtn').onclick=()=>{document.querySelector('#helpOverlay').classList.add('open');document.querySelector('#helpOverlay').setAttribute('aria-hidden','false')};
+document.querySelector('#introStart').onclick=()=>{document.querySelector('#introOverlay').classList.remove('open');document.querySelector('#introOverlay').setAttribute('aria-hidden','true');try{localStorage.setItem('kaiju2048_intro_seen','1')}catch(e){}};
 document.querySelector('#helpClose').onclick=()=>{document.querySelector('#helpOverlay').classList.remove('open');document.querySelector('#helpOverlay').setAttribute('aria-hidden','true')};
 document.querySelector('#helpOverlay').onclick=e=>{if(e.target.id==='helpOverlay')document.querySelector('#helpClose').click()};
-function seed(){[0,1,4,7,8,10,15].forEach((p,j)=>S.tiles[p]=[2,4,4,2,8,4,8][j]);drawHand();planEnemies();render()}seed();
+document.querySelector('#introOverlay').onclick=e=>{if(e.target.id==='introOverlay')document.querySelector('#introStart').click()};
+function seed(){[0,1,4,7,8,10,15].forEach((p,j)=>S.tiles[p]=[2,4,4,2,8,4,8][j]);drawHand();planEnemies();render();try{if(localStorage.getItem('kaiju2048_intro_seen')!=='1')document.querySelector('#introOverlay').classList.add('open')}catch(e){document.querySelector('#introOverlay').classList.add('open')}}seed();
 </script></body></html>
