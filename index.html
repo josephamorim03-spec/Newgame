@@ -1,42 +1,129 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Kaiju 2048 — Prototype</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Kaiju 2048 — Vertical Slice</title>
 <style>
-:root{--bg:#101820;--panel:#18242b;--line:#34434a;--ink:#f1e7ce;--muted:#98a7a9;--hot:#ef6445;--mech:#e6ac4f;--kaiju:#db5a50;--cell:#223138}
-*{box-sizing:border-box}body{margin:0;background:#091014;color:var(--ink);font-family:Inter,system-ui,sans-serif}
-main{max-width:520px;min-height:100svh;margin:auto;padding:18px 14px calc(24px + env(safe-area-inset-bottom));background:linear-gradient(#102029,#0b1216)}
-header{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:12px}h1{margin:0;font-size:27px;letter-spacing:-.04em}header small{color:var(--muted);font-weight:800}
-.intent{border:1px solid #7a3c35;background:#241717;padding:9px 11px;margin-bottom:10px;display:flex;justify-content:space-between;font-weight:900}.intent b{color:#ff8168}
-.board{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;aspect-ratio:1;border:2px solid #4b5c60;background:#0b1114;padding:6px;box-shadow:0 10px 25px #0008}
-.cell{position:relative;border:1px solid #35474d;background:linear-gradient(145deg,#24363d,#17242a);border-radius:7px;display:grid;place-items:center;font-weight:1000;font-size:23px;overflow:hidden}
-.cell.tile{color:#17130e;background:linear-gradient(145deg,#f0cf82,#8a6238);border-color:#c28d4d}
-.cell.mech{background:linear-gradient(145deg,#f1ba53,#6a471e);color:#16110b}.cell.mech:after{content:"MECH";position:absolute;bottom:5px;font-size:7px;letter-spacing:.12em}
-.cell.kaiju{background:linear-gradient(145deg,#a6443b,#40201e);color:#ffe1d4}.cell.kaiju:after{content:"KAIJU";position:absolute;bottom:5px;font-size:7px}
-.tele{outline:3px solid #ef6445;outline-offset:-3px}
-.controls{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:12px auto;width:210px}.controls button:nth-child(1){grid-column:2}.controls button:nth-child(2){grid-column:1}.controls button:nth-child(3){grid-column:2}.controls button:nth-child(4){grid-column:3}
-button{border:1px solid #55646a;background:#18262c;color:#f3e8ce;border-radius:8px;padding:12px;font-weight:900;box-shadow:0 4px 0 #05090b}button:active{transform:translateY(3px);box-shadow:0 1px 0 #05090b}
-.status{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:10px}.status div{background:#121c21;border:1px solid #304047;padding:8px;border-radius:7px}.status small{display:block;color:#829194;font-size:7px;letter-spacing:.1em}.status b{font-size:15px}
-.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:12px}.card{text-align:left;min-height:78px;padding:9px;background:#1b272d}.card b{display:block;color:#f1c270}.card small{color:#99a6a8}.phase{text-align:center;color:#a99c83;font:800 9px monospace;letter-spacing:.1em;margin-top:13px}
-</style></head><body><main>
-<header><div><h1>KAIJU 2048</h1><small>protótipo do núcleo</small></div><small id="turn">TURNO 1</small></header>
-<div class="intent"><span>INTENÇÃO · ARTILHEIRO</span><b>ATACA COLUNA 4</b></div>
+:root{--bg:#101820;--panel:#1a1a2e;--ink:#f0f0f0;--muted:#99a1b4;--energy:#ffd93d;--hp:#ff4c4c;--mech:#4fe0e0;--gun:#6b2d8c;--crusher:#4a7c3a;--danger:#ff4c4c;--move:#ffd700}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}html,body{margin:0;background:#090e16;color:var(--ink);font-family:Inter,system-ui,sans-serif}button{font:inherit}
+#game{max-width:560px;min-height:100svh;margin:auto;padding:12px 12px calc(18px + env(safe-area-inset-bottom));background:linear-gradient(#171a31,#0d1322 48%,#080d15)}
+.top{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:7px}.top h1{margin:0;font-size:25px;letter-spacing:-.05em}.top small{font:800 7px monospace;letter-spacing:.1em;color:var(--muted)}
+.relics{display:flex;gap:6px;align-items:center;padding:6px 7px;margin-bottom:7px;background:#111725;border:1px solid #30384d;border-radius:7px}.relics b{font:900 7px monospace;color:#d9cfae}.slot{min-width:48px;padding:4px 6px;border:1px dashed #4d566d;border-radius:5px;color:#6d7488;font:800 7px monospace;text-align:center}
+.intents{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:7px}.intent{min-height:47px;padding:7px;border-radius:7px;background:#151729;border:1px solid #3a4156}.intent strong{display:block;font-size:8px}.intent small{display:block;margin-top:3px;font:700 7px/1.25 monospace}.intent.gun{border-color:#70408b}.intent.crusher{border-color:#577747}.warn{color:#ff8272}.move{color:#ffe467}
+.board{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;aspect-ratio:1;padding:6px;background:#111523;border:2px solid #3d4658;box-shadow:0 12px 28px #0008}
+.cell{position:relative;display:grid;place-items:center;border-radius:6px;border:1px solid #4b5064;background:linear-gradient(145deg,#3c3d50,#2b2c3c);font-weight:1000;font-size:24px;overflow:hidden;transition:transform .12s,filter .12s}.cell:after{position:absolute;bottom:4px;font:800 6px monospace;letter-spacing:.06em}
+.cell.tile{color:#11131b;text-shadow:0 1px #fff5}.v2{background:#b8b8c8}.v4{background:#7ec8e3}.v8{background:#5fd068}.v16{background:#ffd93d}.v32{background:#ff8c42}.v64{background:#ff4c4c}.v128{background:#b14cff!important;color:#fff!important}.vhigh{background:linear-gradient(145deg,#d958ff,#6a2da6)!important;color:#fff!important}
+.cell.mech{background:linear-gradient(145deg,#8cffff,#238d99);color:#061418;border-color:#b3ffff}.cell.mech:before{content:"◆";font-size:29px}.cell.mech:after{content:"MECH"}
+.cell.gunner{background:linear-gradient(145deg,#8544a7,#361846);color:#f8defe}.cell.gunner:before{content:"◢";font-size:30px}.cell.gunner:after{content:"ARTILH. " attr(data-hp)}
+.cell.crusher{background:linear-gradient(145deg,#6e984f,#2b4522);color:#efffdc}.cell.crusher:before{content:"⬢";font-size:28px}.cell.crusher:after{content:"ESMAG. " attr(data-hp)}
+.cell.danger{box-shadow:inset 0 0 0 3px #ff4c4c,0 0 12px #ff4c4c55}.cell.moveTarget{box-shadow:inset 0 0 0 3px #ffd700,0 0 12px #ffd70055}.cell.valid{outline:3px solid #59e7e7;outline-offset:-4px;animation:pulse .85s ease-in-out infinite alternate}.cell.mergePop{animation:merge .28s cubic-bezier(.2,1.7,.3,1)}
+@keyframes merge{50%{transform:scale(1.15);filter:brightness(1.8)}}@keyframes pulse{to{filter:brightness(1.22)}}
+.slideRow{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin:7px 0 0}.slideRow button,.action{border:1px solid #4a5268;border-radius:7px;background:#171e2e;color:#eaeef8;font-weight:900;box-shadow:0 4px 0 #050810}.slideRow button{padding:8px}.slideRow button:disabled,.action:disabled,.card:disabled{opacity:.35}
+.combo{height:18px;margin-top:5px;text-align:center;font:900 8px monospace;color:#ffdf62;letter-spacing:.08em}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:7px}.action{padding:9px 7px}.ammo{border-color:#b17036;color:#ffd6a1}.end{border-color:#59718a;color:#bcecff}
+.status{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:9px}.stat{padding:7px;background:#111725;border:1px solid #333c50;border-radius:7px}.stat small{display:block;color:#8d96aa;font:800 6px monospace;letter-spacing:.1em}.stat b{font-size:14px}.stat.hp b{color:#ff7777}.stat.en b{color:#ffe467}
+.handLabel{display:flex;justify-content:space-between;align-items:center;margin:10px 2px 5px}.handLabel b{font:900 8px monospace;letter-spacing:.1em}.handLabel small{font:700 7px monospace;color:#8d95a8}
+.hand{display:grid;grid-template-columns:repeat(5,1fr);gap:4px}.card{position:relative;min-width:0;min-height:91px;padding:7px 5px;border-radius:7px;border:1px solid #465066;background:linear-gradient(#21283b,#151b2a);color:#f4f5fb;text-align:left;box-shadow:0 4px 0 #050810}.card b{display:block;font-size:8px;line-height:1.1;color:#f1c86d}.card small{display:block;margin-top:5px;color:#aab0c1;font:700 7px/1.25 monospace}.card em{position:absolute;right:5px;top:5px;color:#ffd93d;font:900 8px monospace;font-style:normal}.card.sel{transform:translateY(-5px);border-color:#66e8e8;box-shadow:0 8px 0 #050810,0 0 12px #4fe0e055}
+.phase{min-height:20px;margin-top:10px;text-align:center;color:#b6b0a6;font:800 8px/1.3 monospace;letter-spacing:.05em}
+.toast{position:fixed;z-index:20;left:50%;top:35%;transform:translate(-50%,-50%) scale(.7);padding:8px 13px;background:#f5e7b9;color:#13131b;border:3px solid #11131b;font:italic 1000 22px Impact,sans-serif;opacity:0;pointer-events:none}.toast.go{animation:toast .5s cubic-bezier(.2,1.5,.3,1)}@keyframes toast{20%,70%{opacity:1;transform:translate(-50%,-50%) scale(1) rotate(-3deg)}100%{opacity:0;transform:translate(-50%,-80%) scale(.9)}}
+@media(max-width:390px){#game{padding-left:8px;padding-right:8px}.hand{gap:3px}.card{padding:6px 4px;min-height:87px}.card b{font-size:7px}.card small{font-size:6px}.cell{font-size:21px}}
+</style>
+</head><body>
+<main id="game">
+<div class="top"><div><h1>KAIJU 2048</h1><small>VERTICAL SLICE · SETOR 1</small></div><small id="turn">TURNO 1</small></div>
+<div class="relics"><b>RELÍQUIAS</b><div class="slot">—</div><div class="slot">—</div><div class="slot">—</div></div>
+<div class="intents"><div class="intent gun"><strong>ARTILHEIRO · <span id="gunHp">6</span> HP</strong><small class="warn" id="gunIntent"></small></div><div class="intent crusher"><strong>ESMAGADOR · <span id="cruHp">8</span> HP</strong><small class="move" id="cruIntent"></small></div></div>
 <section class="board" id="board"></section>
-<div class="controls"><button data-d="up">▲</button><button data-d="left">◀</button><button data-d="down">▼</button><button data-d="right">▶</button></div>
-<div class="status"><div><small>REATOR</small><b id="hp">10/10</b></div><div><small>ENERGIA</small><b id="energy">3</b></div><div><small>FUSÕES</small><b id="merges">0</b></div></div>
-<div class="cards"><button class="card" data-card="push"><b>EMPURRÃO · 1</b><small>empurra o Kaiju 1 casa</small></button><button class="card" data-card="spawn"><b>CRIAR 2 · 1</b><small>cria um bloco 2 vazio</small></button><button class="card" data-card="shield"><b>ESCUDO · 1</b><small>evita o próximo dano</small></button></div>
-<div class="phase" id="phase">DESLIZE A GRADE · DEPOIS O KAIJU AGE</div>
-</main>
+<div class="slideRow"><button data-slide="up">▲</button><button data-slide="left">◀</button><button data-slide="down">▼</button><button data-slide="right">▶</button></div>
+<div class="combo" id="combo"></div>
+<div class="actions"><button class="action ammo" id="ammoBtn">BLOCO → MUNIÇÃO</button><button class="action end" id="endBtn">CONFIRMAR TURNO</button></div>
+<div class="status"><div class="stat hp"><small>REATOR</small><b id="hp">10/10</b></div><div class="stat en"><small>ENERGIA</small><b id="energy">3/6</b></div><div class="stat"><small>DESLIZE / MOV.</small><b id="free">1 / 1</b></div></div>
+<div class="handLabel"><b>MÃO</b><small>carta → alvo</small></div><div class="hand" id="hand"></div>
+<div class="phase" id="phase"></div>
+</main><div class="toast" id="toast">FUSÃO!</div>
 <script>
-const B=4,S={turn:1,hp:10,energy:3,merges:0,shield:0,phase:'input',cells:Array(16).fill(0)};
-S.cells[0]=2;S.cells[1]=2;S.cells[5]='M';S.cells[15]='K';
-const idx=(r,c)=>r*B+c;
-function spawn(){let e=S.cells.map((v,i)=>v===0?i:-1).filter(i=>i>=0);if(!e.length)return;S.cells[e[Math.floor(Math.random()*e.length)]]=Math.random()<.8?2:4}
-function render(){let b=document.querySelector('#board');b.innerHTML='';S.cells.forEach((v,i)=>{let d=document.createElement('div');d.className='cell';if(typeof v==='number'&&v)d.classList.add('tile');if(v==='M')d.classList.add('mech');if(v==='K')d.classList.add('kaiju');if(i%4===3)d.classList.add('tele');d.textContent=typeof v==='number'&&v?v:v==='M'?'◆':v==='K'?'▲':'';b.append(d)});hp.textContent=S.hp+'/10';energy.textContent=S.energy;merges.textContent=S.merges;turn.textContent='TURNO '+S.turn;phase.textContent=S.phase==='input'?'DESLIZE A GRADE · DEPOIS O KAIJU AGE':'RESOLVENDO...'}
-function slide(dir){if(S.phase!=='input')return;let dr=dir==='down'?1:dir==='up'?-1:0,dc=dir==='right'?1:dir==='left'?-1:0;let order=[...Array(16).keys()].sort((a,b)=>dir==='right'||dir==='down'?b-a:a-b);let merged=new Set;for(const i of order){let v=S.cells[i];if(typeof v!=='number'||!v)continue;let r=Math.floor(i/4),c=i%4,cur=i;while(true){let nr=r+dr,nc=c+dc;if(nr<0||nr>=4||nc<0||nc>=4)break;let ni=idx(nr,nc),nv=S.cells[ni];if(nv===0){S.cells[ni]=S.cells[cur];S.cells[cur]=0;cur=ni;r=nr;c=nc;continue}if(nv===v&&!merged.has(ni)){S.cells[ni]=v*2;S.cells[cur]=0;merged.add(ni);S.merges++;S.energy=Math.min(6,S.energy+1)}break}}S.phase='enemy';render();setTimeout(enemy,250)}
-function enemy(){let k=S.cells.indexOf('K');let col=k%4;if(col===3&&!S.shield)S.hp=Math.max(0,S.hp-2);S.shield=0;spawn();S.turn++;S.energy=Math.max(3,S.energy);S.phase='input';render()}
-document.querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>slide(b.dataset.d));
-document.querySelectorAll('[data-card]').forEach(b=>b.onclick=()=>{if(S.phase!=='input'||S.energy<1)return;let c=b.dataset.card;if(c==='spawn'){spawn();S.energy--}else if(c==='shield'){S.shield=1;S.energy--}else if(c==='push'){let k=S.cells.indexOf('K'),r=Math.floor(k/4),cc=k%4;if(cc>0&&S.cells[k-1]===0){S.cells[k-1]='K';S.cells[k]=0;S.energy--}}render()});
-render();
+const deck=[
+ {id:'atk',name:'ATAQUE',cost:1,txt:'2 dano · alcance 2'},
+ {id:'atk',name:'ATAQUE',cost:1,txt:'2 dano · alcance 2'},
+ {id:'push',name:'EMPURRÃO',cost:1,txt:'empurra Kaiju 1 casa'},
+ {id:'spawn',name:'CRIAR 2',cost:1,txt:'cria bloco 2'},
+ {id:'merge',name:'FUSÃO',cost:2,txt:'funde iguais adjacentes'},
+ {id:'move',name:'MOV. EXTRA',cost:1,txt:'move Mech +1'}
+];
+const S={turn:1,hp:10,energy:3,phase:'input',tiles:Array(16).fill(0),mech:6,enemies:{gun:{pos:3,hp:6},cru:{pos:12,hp:8}},gunLine:1,crusherTarget:null,freeSlide:1,freeMove:1,hand:[],selCard:null,selCardIndex:null,cardStep:null,ammoStep:null,ammoBlock:null,mergeCount:0,lastMerges:[]};
+const rc=i=>[Math.floor(i/4),i%4], id=(r,c)=>r*4+c, alive=k=>S.enemies[k].hp>0;
+function manhattan(a,b){let A=rc(a),B=rc(b);return Math.abs(A[0]-B[0])+Math.abs(A[1]-B[1])}
+const adjacent=(a,b)=>manhattan(a,b)===1;
+function occupiedByUnit(i){return S.mech===i||(alive('gun')&&S.enemies.gun.pos===i)||(alive('cru')&&S.enemies.cru.pos===i)}
+function empty(i){return S.tiles[i]===0&&!occupiedByUnit(i)}
+function cellName(i){if(i==null)return'—';let a=rc(i);return'('+(a[0]+1)+','+(a[1]+1)+')'}
+function toast(t){let e=document.querySelector('#toast');e.textContent=t;e.classList.remove('go');void e.offsetWidth;e.classList.add('go')}
+function tileClass(v){if(v===128)return'v128';if(v>128)return'vhigh';return'v'+v}
+function drawHand(){S.hand=[];for(let i=0;i<5;i++)S.hand.push(deck[Math.floor(Math.random()*deck.length)]);clearSelection()}
+function clearSelection(){S.selCard=null;S.selCardIndex=null;S.cardStep=null;S.ammoStep=null;S.ammoBlock=null}
+function planGunner(){if(alive('gun'))S.gunLine=rc(S.mech)[0]}
+function planCrusher(){if(!alive('cru'))return;let p=rc(S.enemies.cru.pos),m=rc(S.mech),dr=m[0]-p[0],dc=m[1]-p[1],nr=p[0],nc=p[1];if(Math.abs(dc)>=Math.abs(dr)&&dc!==0)nc+=Math.sign(dc);else if(dr!==0)nr+=Math.sign(dr);S.crusherTarget=id(nr,nc)}
+function planEnemies(){planGunner();planCrusher()}
+function threatSet(){let d=new Set,m=new Set;if(alive('gun'))for(let c=0;c<4;c++)d.add(id(S.gunLine,c));if(alive('cru')&&S.crusherTarget!=null)m.add(S.crusherTarget);return{d,m}}
+function enemyAt(i){if(alive('gun')&&S.enemies.gun.pos===i)return'gun';if(alive('cru')&&S.enemies.cru.pos===i)return'cru';return null}
+function hasAdjacentBlock(){for(let i=0;i<16;i++)if(S.tiles[i]>0&&adjacent(S.mech,i))return true;return false}
+function validTargets(){
+ let set=new Set;if(S.phase!=='input')return set;
+ if(S.ammoStep==='block'){for(let i=0;i<16;i++)if(S.tiles[i]>0&&adjacent(S.mech,i))set.add(i);return set}
+ if(S.ammoStep==='enemy'){for(let k of['gun','cru'])if(alive(k))set.add(S.enemies[k].pos);return set}
+ let c=S.selCard;if(c){
+   if(c.id==='spawn')for(let i=0;i<16;i++)if(empty(i))set.add(i);
+   if(c.id==='atk')for(let k of['gun','cru'])if(alive(k)&&manhattan(S.mech,S.enemies[k].pos)<=2)set.add(S.enemies[k].pos);
+   if(c.id==='push')for(let k of['gun','cru'])if(alive(k)&&adjacent(S.mech,S.enemies[k].pos))set.add(S.enemies[k].pos);
+   if(c.id==='move')for(let i=0;i<16;i++)if(empty(i)&&adjacent(S.mech,i))set.add(i);
+   if(c.id==='merge'){if(S.cardStep==null){for(let i=0;i<16;i++)if(S.tiles[i]>0)set.add(i)}else for(let i=0;i<16;i++)if(adjacent(S.cardStep,i)&&S.tiles[i]===S.tiles[S.cardStep])set.add(i)}
+ }else if(S.freeMove>0)for(let i=0;i<16;i++)if(empty(i)&&adjacent(S.mech,i))set.add(i);
+ return set
+}
+function render(){
+ let th=threatSet(),valid=validTargets(),b=document.querySelector('#board');b.innerHTML='';
+ for(let i=0;i<16;i++){let e=document.createElement('button');e.className='cell';let v=S.tiles[i];if(v){e.classList.add('tile',tileClass(v));e.textContent=v}if(i===S.mech)e.classList.add('mech');if(alive('gun')&&i===S.enemies.gun.pos){e.classList.add('gunner');e.dataset.hp=S.enemies.gun.hp}if(alive('cru')&&i===S.enemies.cru.pos){e.classList.add('crusher');e.dataset.hp=S.enemies.cru.hp}if(th.d.has(i))e.classList.add('danger');if(th.m.has(i))e.classList.add('moveTarget');if(valid.has(i))e.classList.add('valid');if(S.lastMerges.includes(i))e.classList.add('mergePop');e.onclick=()=>tapCell(i);b.append(e)}
+ document.querySelector('#hp').textContent=S.hp+'/10';document.querySelector('#energy').textContent=S.energy+'/6';document.querySelector('#free').textContent=S.freeSlide+' / '+S.freeMove;document.querySelector('#turn').textContent='TURNO '+S.turn;document.querySelector('#gunHp').textContent=Math.max(0,S.enemies.gun.hp);document.querySelector('#cruHp').textContent=Math.max(0,S.enemies.cru.hp);
+ document.querySelector('#gunIntent').textContent=alive('gun')?'⚠ ATACA LINHA '+(S.gunLine+1):'DERROTADO';document.querySelector('#cruIntent').textContent=alive('cru')?'➜ '+cellName(S.crusherTarget)+' · MOVE/ESMAGA':'DERROTADO';
+ document.querySelector('#combo').textContent=S.mergeCount?'FUSÕES NO TURNO · '+S.mergeCount+'  |  ENERGIA +'+Math.min(3,S.mergeCount):'';
+ let hand=document.querySelector('#hand');hand.innerHTML='';S.hand.forEach((c,i)=>{let x=document.createElement('button');x.className='card'+(S.selCardIndex===i?' sel':'');x.disabled=S.phase!=='input'||S.energy<c.cost;x.innerHTML='<em>⚡'+c.cost+'</em><b>'+c.name+'</b><small>'+c.txt+'</small>';x.onclick=()=>selectCard(c,i);hand.append(x)});
+ document.querySelectorAll('[data-slide]').forEach(x=>x.disabled=S.phase!=='input'||S.freeSlide<=0);document.querySelector('#ammoBtn').disabled=S.phase!=='input'||!hasAdjacentBlock()||(!alive('gun')&&!alive('cru'));document.querySelector('#endBtn').disabled=S.phase!=='input';updatePhase();S.lastMerges=[]
+}
+function updatePhase(){let p=document.querySelector('#phase');if(S.phase==='won'){p.textContent='COMBATE VENCIDO · recompensa no próximo slice';return}if(S.phase==='lost'){p.textContent='REATOR DESTRUÍDO';return}if(S.phase!=='input'){p.textContent='Kaijus resolvendo intenções...';return}if(S.ammoStep==='block'){p.textContent='MUNIÇÃO · escolha um bloco adjacente ao Mech';return}if(S.ammoStep==='enemy'){p.textContent='MUNIÇÃO · escolha o Kaiju alvo';return}if(S.selCard){p.textContent=S.selCard.name+' · escolha um alvo válido';return}p.textContent='1 deslize grátis + 1 movimento grátis + cartas. CONFIRMAR encerra o turno.'}
+function selectCard(c,i){if(S.phase!=='input'||S.energy<c.cost)return;clearSelection();S.selCard=c;S.selCardIndex=i;render()}
+function tapCell(i){
+ if(S.phase!=='input')return;
+ if(S.ammoStep==='block'){if(!(S.tiles[i]>0&&adjacent(S.mech,i)))return;S.ammoBlock=i;S.ammoStep='enemy';render();return}
+ if(S.ammoStep==='enemy'){let k=enemyAt(i);if(!k)return;let damage=Math.min(16,S.tiles[S.ammoBlock]);S.tiles[S.ammoBlock]=0;S.enemies[k].hp-=damage;toast('MUNIÇÃO '+damage+'!');clearSelection();checkVictory();render();return}
+ if(S.selCard){useCard(i);return}
+ if(S.freeMove>0&&empty(i)&&adjacent(S.mech,i)){S.mech=i;S.freeMove=0;toast('MECH MOVE');render()}
+}
+function useCard(i){
+ let c=S.selCard;if(!c||S.energy<c.cost)return;
+ if(c.id==='spawn'&&empty(i)){S.tiles[i]=2;S.energy-=c.cost}
+ else if(c.id==='atk'){let k=enemyAt(i);if(!k||manhattan(S.mech,i)>2)return;S.enemies[k].hp-=2;S.energy-=c.cost;toast('2 DANO')}
+ else if(c.id==='push'){let k=enemyAt(i);if(!k||!adjacent(S.mech,i))return;let ep=rc(S.enemies[k].pos),mp=rc(S.mech),dr=ep[0]-mp[0],dc=ep[1]-mp[1],nr=ep[0]+dr,nc=ep[1]+dc;if(nr<0||nr>3||nc<0||nc>3)return;let ni=id(nr,nc);if(!empty(ni))return;S.enemies[k].pos=ni;S.energy-=c.cost;if(k==='cru')planCrusher();toast('EMPURRÃO!')}
+ else if(c.id==='move'){if(!empty(i)||!adjacent(S.mech,i))return;S.mech=i;S.energy-=c.cost;toast('PASSO EXTRA')}
+ else if(c.id==='merge'){if(S.cardStep==null&&S.tiles[i]>0){S.cardStep=i;render();return}else if(S.cardStep!=null&&adjacent(S.cardStep,i)&&S.tiles[i]===S.tiles[S.cardStep]){S.tiles[i]*=2;S.tiles[S.cardStep]=0;S.energy=Math.min(6,S.energy-c.cost+1);S.mergeCount++;S.lastMerges=[i];toast('FUSÃO!')}else return}
+ else return;
+ clearSelection();checkVictory();render()
+}
+function ammo(){if(S.phase!=='input'||!hasAdjacentBlock())return;clearSelection();S.ammoStep='block';render()}document.querySelector('#ammoBtn').onclick=ammo;
+function slide(dir){
+ if(S.phase!=='input'||S.freeSlide<=0)return;let dr=dir==='down'?1:dir==='up'?-1:0,dc=dir==='right'?1:dir==='left'?-1:0;
+ let order=[...Array(16).keys()].sort((a,b)=>{let A=rc(a),B=rc(b);if(dir==='right')return B[1]-A[1];if(dir==='left')return A[1]-B[1];if(dir==='down')return B[0]-A[0];return A[0]-B[0]});let merged=new Set,made=[];
+ for(const start of order){let v=S.tiles[start];if(!v)continue;let cur=start,p=rc(cur);while(true){let nr=p[0]+dr,nc=p[1]+dc;if(nr<0||nr>3||nc<0||nc>3)break;let ni=id(nr,nc);if(occupiedByUnit(ni))break;if(S.tiles[ni]===0){S.tiles[ni]=S.tiles[cur];S.tiles[cur]=0;cur=ni;p=[nr,nc];continue}if(S.tiles[ni]===v&&!merged.has(ni)){S.tiles[ni]=v*2;S.tiles[cur]=0;merged.add(ni);made.push(ni);S.mergeCount++;S.energy=Math.min(6,S.energy+1)}break}}
+ S.freeSlide=0;S.lastMerges=made;if(made.length)toast(made.length>1?'CADEIA x'+made.length+'!':'FUSÃO!');render()
+}
+document.querySelectorAll('[data-slide]').forEach(x=>x.onclick=()=>slide(x.dataset.slide));
+function endTurn(){if(S.phase!=='input')return;clearSelection();S.phase='enemy';render();setTimeout(resolveEnemies,400)}document.querySelector('#endBtn').onclick=endTurn;
+function resolveEnemies(){
+ if(alive('gun')){let row=S.gunLine;if(rc(S.mech)[0]===row)S.hp=Math.max(0,S.hp-2);else{let list=[];for(let c=0;c<4;c++){let i=id(row,c);if(S.tiles[i]>0)list.push(i)}if(list.length){list.sort((a,b)=>S.tiles[a]-S.tiles[b]);S.tiles[list[0]]=0}}}
+ if(alive('cru')&&S.crusherTarget!=null){let target=S.crusherTarget;if(target===S.mech)S.hp=Math.max(0,S.hp-2);else if(S.tiles[target]>0){S.tiles[target]=0;S.enemies.cru.pos=target}else if(empty(target))S.enemies.cru.pos=target}
+ if(S.hp<=0){S.phase='lost';toast('DERROTA');render();return}spawnTile();S.turn++;S.energy=3;S.freeSlide=1;S.freeMove=1;S.mergeCount=0;drawHand();S.phase='input';planEnemies();render()
+}
+function spawnTile(){let e=[];for(let i=0;i<16;i++)if(empty(i))e.push(i);if(e.length)S.tiles[e[Math.floor(Math.random()*e.length)]]=Math.random()<.85?2:4}
+function checkVictory(){if(!alive('gun')&&!alive('cru')){S.phase='won';toast('COMBATE VENCIDO!')}}
+function seed(){[0,1,4,7,8,10,15].forEach((p,j)=>S.tiles[p]=[2,4,4,2,8,4,8][j]);drawHand();planEnemies();render()}seed();
 </script></body></html>
