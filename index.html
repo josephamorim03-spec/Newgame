@@ -154,13 +154,14 @@ body{
 /* V7 — precise input + exact spawn preview */
 .board{touch-action:none;user-select:none;-webkit-user-select:none}
 .boardTag small strong{color:#80f0f0;font:1000 6px monospace}
-.cell.spawnPreview{border-color:#80f0f0!important;box-shadow:inset 0 0 0 2px #4fe0e044,0 0 10px #4fe0e044!important}
-.spawnGhost{position:absolute;z-index:4;display:grid;place-items:center;width:58%;height:58%;border:2px dashed #80f0f0;background:#102832bb;color:#dfffff;font:1000 18px monospace;opacity:.82;pointer-events:none}
-.spawnGhost:before{content:"ENTRA";position:absolute;top:-12px;color:#80f0f0;font:1000 5px monospace;letter-spacing:.08em}
+.cell.spawnPreview{border-color:#f0f0f8!important;box-shadow:inset 0 0 0 2px #f0f0f82b,0 0 9px #f0f0f833!important}
+.spawnGhost{position:absolute;z-index:4;display:grid;place-items:center;width:58%;height:58%;border:2px dashed #f0f0f8;background:#15152acc;color:#f0f0f8;font:1000 18px monospace;opacity:.78;pointer-events:none}
+.spawnGhost:before{content:"PRÓXIMO";position:absolute;top:-12px;color:#f0f0f8;font:1000 5px monospace;letter-spacing:.08em}
 .cell.gunFallback{box-shadow:inset 0 0 0 3px #ff202099,0 0 13px #ff202055!important}
 .cell.gunFallback .gunMark{position:absolute;right:3px;top:3px;z-index:5;color:#fff;background:#ff2020;border:1px solid #fff;font:1000 7px monospace;padding:1px 2px;pointer-events:none}
 .intents{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))!important}
 .card:disabled{opacity:.28;filter:grayscale(.35)}
+.lg.spawn{background:#15152a;border:1px dashed #f0f0f8!important}
 </style>
 </head><body>
 <main id="game">
@@ -206,7 +207,7 @@ body{
   <div class="legend">
     <span><i class="lg red"></i>PERIGO</span>
     <span><i class="lg yellow"></i>ALVO INIMIGO</span>
-    <span><i class="lg cyan"></i>SEU ALVO</span>
+    <span><i class="lg cyan"></i>SEU ALVO</span><span><i class="lg spawn"></i>PRÓXIMO BLOCO</span>
   </div>
 
   <div class="unitNote">
@@ -360,6 +361,8 @@ function refreshSpawnPreview(force=false){
 function threatSet(){let d=new Set,m=new Set,p=new Set;if(alive('gun'))for(let c=0;c<4;c++)d.add(id(S.gunLine,c));if(alive('cru')&&S.crusherTarget!=null)m.add(S.crusherTarget);if(alive('par')&&S.parasiteTarget!=null)p.add(S.parasiteTarget);return{d,m,p}}
 function enemyAt(i){for(let k of KEYS)if(alive(k)&&S.enemies[k].pos===i)return k;return null}
 function allDead(){return KEYS.every(k=>!alive(k))}
+function equalNeighbor(i){if(S.tiles[i]<=0)return false;for(let j=0;j<16;j++)if(adjacent(i,j)&&S.tiles[j]===S.tiles[i])return true;return false}
+function pushDestination(k){if(!alive(k)||!adjacent(S.mech,S.enemies[k].pos))return null;let ep=rc(S.enemies[k].pos),mp=rc(S.mech),dr=ep[0]-mp[0],dc=ep[1]-mp[1],nr=ep[0]+dr,nc=ep[1]+dc;if(nr<0||nr>3||nc<0||nc>3)return null;let ni=id(nr,nc);return empty(ni)?ni:null}
 function pushDestination(k){if(!alive(k)||!adjacent(S.mech,S.enemies[k].pos))return null;let ep=rc(S.enemies[k].pos),mp=rc(S.mech),dr=ep[0]-mp[0],dc=ep[1]-mp[1],nr=ep[0]+dr,nc=ep[1]+dc;if(nr<0||nr>3||nc<0||nc>3)return null;let ni=id(nr,nc);return empty(ni)?ni:null}
 function hasMergePartner(i){if(S.tiles[i]<=0)return false;for(let j=0;j<16;j++)if(adjacent(i,j)&&S.tiles[j]===S.tiles[i])return true;return false}
 function hasFreeMechStep(){for(let i=0;i<16;i++)if(empty(i)&&adjacent(S.mech,i))return true;return false}
@@ -415,7 +418,7 @@ function selectCard(c,i){if(S.phase!=='input'||S.energy<c.cost)return;if(S.selCa
 let ignoreTapUntil=0;
 function tapCell(i){if(performance.now()<ignoreTapUntil)return;if(S.phase!=='input')return;if(S.ammoStep==='block'){if(!(S.tiles[i]>0&&adjacent(S.mech,i)))return;S.ammoBlock=i;S.ammoStep='enemy';render();return}if(S.ammoStep==='enemy'){let k=enemyAt(i);if(!k)return;let damage=Math.min(16,S.tiles[S.ammoBlock]),before=S.enemies[k].hp;S.tiles[S.ammoBlock]=0;S.enemies[k].hp-=damage;toast('MUNIÇÃO '+damage+'!');render();damageFx(i,damage,before>0&&S.enemies[k].hp<=0);clearSelection();checkVictory();render();return}if(S.selCard){useCard(i);return}if(i===S.mech&&S.freeMove>0){if(!S.moveMode&&!hasFreeMechStep()){toast('ROBÔ SEM SAÍDA');return}S.moveMode=!S.moveMode;render();return}if(S.moveMode&&S.freeMove>0&&empty(i)&&adjacent(S.mech,i)){S.mech=i;S.freeMove=0;S.moveMode=false;toast('ROBÔ MOVIDO');render()}}
 function fusionValue(v){let out=v*2;if(S.relics.twins&&!S.firstMergeDone)out*=2;S.firstMergeDone=true;return out}
-function useCard(i){let c=S.selCard,ci=S.selCardIndex;if(!c||ci==null||S.energy<c.cost)return;let used=false;if(c.id==='spawn'&&empty(i)){S.tiles[i]=2;S.energy-=c.cost;S.spawned=[i];used=true;setTimeout(()=>{burstAt(i,'#b8b8c8',7,38);floatAt(i,'+2','#d7d7e5')},0)}else if(c.id==='atk'){let k=enemyAt(i);if(!k||manhattan(S.mech,i)>2)return;let before=S.enemies[k].hp;S.enemies[k].hp-=2;S.energy-=c.cost;used=true;toast('2 DANO');render();damageFx(i,2,before>0&&S.enemies[k].hp<=0)}else if(c.id==='push'){let k=enemyAt(i);if(!k)return;let ni=pushDestination(k);if(ni==null)return;S.enemies[k].pos=ni;S.energy-=c.cost;used=true;toast('EMPURRÃO!')}else if(c.id==='move'){if(!empty(i)||!adjacent(S.mech,i))return;S.mech=i;S.energy-=c.cost;used=true;toast('PASSO EXTRA')}else if(c.id==='merge'){if(S.cardStep==null&&S.tiles[i]>0){S.cardStep=i;render();return}if(S.cardStep!=null&&adjacent(S.cardStep,i)&&S.tiles[i]===S.tiles[S.cardStep]){let nv=fusionValue(S.tiles[i]);S.tiles[i]=nv;S.tiles[S.cardStep]=0;S.energy=Math.min(6,S.energy-c.cost+1);S.mergeCount++;S.lastMerges=[i];used=true;toast(S.relics.twins&&nv>=8?'GÊMEAS!':'FUSÃO!')}else return}else return;if(used){S.hand.splice(ci,1);S.usedCard=true}clearSelection();checkVictory();render()}
+function useCard(i){let c=S.selCard,ci=S.selCardIndex;if(!c||ci==null||S.energy<c.cost)return;let used=false;if(c.id==='spawn'&&empty(i)){S.tiles[i]=2;S.energy-=c.cost;S.spawned=[i];used=true;setTimeout(()=>{burstAt(i,'#b8b8c8',7,38);floatAt(i,'+2','#d7d7e5')},0)}else if(c.id==='atk'){let k=enemyAt(i);if(!k||manhattan(S.mech,i)>2)return;let before=S.enemies[k].hp;S.enemies[k].hp-=2;S.energy-=c.cost;used=true;toast('2 DANO');render();damageFx(i,2,before>0&&S.enemies[k].hp<=0)}else if(c.id==='push'){let k=enemyAt(i);if(!k)return;let ni=pushDestination(k);if(ni==null)return;S.enemies[k].pos=ni;S.energy-=c.cost;used=true;toast('EMPURRÃO!')}else if(c.id==='move'){if(!empty(i)||!adjacent(S.mech,i))return;S.mech=i;S.energy-=c.cost;used=true;toast('PASSO EXTRA')}else if(c.id==='merge'){if(S.cardStep==null&&equalNeighbor(i)){S.cardStep=i;render();return}if(S.cardStep!=null&&adjacent(S.cardStep,i)&&S.tiles[i]===S.tiles[S.cardStep]){let nv=fusionValue(S.tiles[i]);S.tiles[i]=nv;S.tiles[S.cardStep]=0;S.energy=Math.min(6,S.energy-c.cost+1);S.mergeCount++;S.lastMerges=[i];used=true;toast(S.relics.twins&&nv>=8?'GÊMEAS!':'FUSÃO!')}else return}else return;if(used){S.hand.splice(ci,1);S.usedCard=true}clearSelection();checkVictory();render()}
 function ammo(){if(S.phase!=='input'||!hasAdjacentBlock())return;clearSelection();S.ammoStep='block';render()}document.querySelector('#ammoBtn').onclick=ammo;
 function slide(dir){
  if(S.phase!=='input'||S.freeSlide<=0)return;
@@ -431,14 +434,14 @@ document.querySelectorAll('[data-slide]').forEach(x=>x.onclick=()=>slide(x.datas
 let gestureState=null;
 const boardEl=document.querySelector('#board');
 boardEl.addEventListener('pointerdown',e=>{if(S.phase!=='input'||S.freeSlide<=0||S.selCard||S.ammoStep||S.moveMode)return;if(e.pointerType==='mouse'&&e.button!==0)return;gestureState={id:e.pointerId,x:e.clientX,y:e.clientY};try{boardEl.setPointerCapture(e.pointerId)}catch(_){}});
-boardEl.addEventListener('pointerup',e=>{if(!gestureState||gestureState.id!==e.pointerId)return;let dx=e.clientX-gestureState.x,dy=e.clientY-gestureState.y,ax=Math.abs(dx),ay=Math.abs(dy),main=Math.max(ax,ay),cross=Math.min(ax,ay),minSwipe=Math.max(60,boardEl.getBoundingClientRect().width*.17);gestureState=null;if(main<minSwipe||main<cross*1.45)return;ignoreTapUntil=performance.now()+350;slide(ax>ay?(dx>0?'right':'left'):(dy>0?'down':'up'))});
+boardEl.addEventListener('pointerup',e=>{if(!gestureState||gestureState.id!==e.pointerId)return;let dx=e.clientX-gestureState.x,dy=e.clientY-gestureState.y,ax=Math.abs(dx),ay=Math.abs(dy),main=Math.max(ax,ay),cross=Math.min(ax,ay),minSwipe=Math.max(68,boardEl.getBoundingClientRect().width*.18);gestureState=null;if(main<minSwipe||main<cross*1.5)return;ignoreTapUntil=performance.now()+350;slide(ax>ay?(dx>0?'right':'left'):(dy>0?'down':'up'))});
 boardEl.addEventListener('pointercancel',()=>{gestureState=null});
 function endTurn(){if(S.phase!=='input')return;refreshSpawnPreview(false);clearSelection();S.phase='enemy';render();setTimeout(resolveEnemies,420)}document.querySelector('#endBtn').onclick=endTurn;
 function resolveEnemies(){
  let hpBefore=S.hp;
  if(alive('gun')){let row=S.gunLine;if(rc(S.mech)[0]===row)damageReactor(2);else if(S.gunBlockTarget!=null&&S.tiles[S.gunBlockTarget]===S.gunBlockValue){let t=S.gunBlockTarget;burstAt(t,'#ff2020',8,50);S.tiles[t]=0;floatAt(t,'ALVO DESTRUÍDO','#ff7065')}else{floatAt(S.enemies.gun.pos,'TIRO ERROU','#a0a0b8')}}
  if(alive('cru')&&S.crusherTarget!=null){let target=S.crusherTarget;if(!adjacent(S.enemies.cru.pos,target)){toast('INTENÇÃO QUEBRADA!');floatAt(S.enemies.cru.pos,'QUEBRADA','#ffe467')}else if(target===S.mech)damageReactor(2);else if(S.tiles[target]>0){burstAt(target,'#ff8c42',14,75);floatAt(target,'ESMAGADO','#ffb15f');S.tiles[target]=0;S.enemies.cru.pos=target;shake(false)}else if(empty(target))S.enemies.cru.pos=target}
- if(alive('par')&&S.parasiteTarget!=null){let t=S.parasiteTarget,p=S.enemies.par.pos;if(S.parasiteMode==='consume'){if(adjacent(p,t)&&S.tiles[t]===S.parasiteTargetValue){let val=S.tiles[t];S.tiles[t]=0;S.enemies.par.hp=Math.min(S.enemies.par.max,S.enemies.par.hp+2);burstAt(t,'#d44a8c',12,65);floatAt(t,'CONSUMIDO '+val,'#f070b0')}else floatAt(p,'FOME FRUSTRADA','#a0a0b8')}else if(S.parasiteMode==='move'){if(adjacent(p,t)&&empty(t))S.enemies.par.pos=t}}
+ if(alive('par')&&S.parasiteTarget!=null){let t=S.parasiteTarget,p=S.enemies.par.pos;if(S.parasiteMode==='consume'){if(adjacent(p,t)&&S.tiles[t]===S.parasiteTargetValue){let val=S.tiles[t];S.tiles[t]=0;S.enemies.par.hp=Math.min(S.enemies.par.max,S.enemies.par.hp+2);burstAt(t,'#d44a8c',12,65);floatAt(t,'CONSUMIDO '+val,'#f070b0')}else floatAt(p,'FOME FRUSTRADA','#a0a0b8')}else if(S.parasiteMode==='move'){if(adjacent(p,t)&&empty(t))S.enemies.par.pos=t;else floatAt(p,'CAMINHO BLOQUEADO','#a0a0b8')}}
  reactorHit(hpBefore-S.hp);
  if(S.hp<=0){S.phase='lost';toast('DERROTA');render();return}
  spawnTile();S.turn++;S.energy=S.baseEnergy;S.freeSlide=1;S.freeMove=1;S.mergeCount=0;S.usedCard=false;S.firstMergeDone=false;drawHand();S.phase='input';planEnemies();refreshSpawnPreview(true);render()
