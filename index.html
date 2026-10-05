@@ -120,7 +120,7 @@ document.querySelectorAll('[data-slide]').forEach(x=>x.onclick=()=>slide(x.datas
 function endTurn(){if(S.phase!=='input')return;clearSelection();S.phase='enemy';render();setTimeout(resolveEnemies,400)}document.querySelector('#endBtn').onclick=endTurn;
 function resolveEnemies(){
  if(alive('gun')){let row=S.gunLine;if(rc(S.mech)[0]===row)S.hp=Math.max(0,S.hp-2);else{let list=[];for(let c=0;c<4;c++){let i=id(row,c);if(S.tiles[i]>0)list.push(i)}if(list.length){list.sort((a,b)=>S.tiles[a]-S.tiles[b]);S.tiles[list[0]]=0}}}
- if(alive('cru')&&S.crusherTarget!=null){let target=S.crusherTarget;if(target===S.mech)S.hp=Math.max(0,S.hp-2);else if(S.tiles[target]>0){S.tiles[target]=0;S.enemies.cru.pos=target}else if(empty(target))S.enemies.cru.pos=target}
+ if(alive('cru')&&S.crusherTarget!=null){let target=S.crusherTarget;if(!adjacent(S.enemies.cru.pos,target)){toast('INTENÇÃO QUEBRADA!')}else if(target===S.mech)S.hp=Math.max(0,S.hp-2);else if(S.tiles[target]>0){S.tiles[target]=0;S.enemies.cru.pos=target}else if(empty(target))S.enemies.cru.pos=target}
  if(S.hp<=0){S.phase='lost';toast('DERROTA');render();return}spawnTile();S.turn++;S.energy=3;S.freeSlide=1;S.freeMove=1;S.mergeCount=0;drawHand();S.phase='input';planEnemies();render()
 }
 function spawnTile(){let e=[];for(let i=0;i<16;i++)if(empty(i))e.push(i);if(e.length)S.tiles[e[Math.floor(Math.random()*e.length)]]=Math.random()<.85?2:4}
