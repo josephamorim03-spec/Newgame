@@ -165,6 +165,9 @@ body{
 
 .intentHead i b{color:#ffdf72;font:1000 6px monospace}
 .cardLock{display:block;margin-top:6px;padding-top:4px;border-top:1px solid #ffffff18;color:#ff8d7f!important;font:1000 6px monospace!important;letter-spacing:.05em}
+
+.swipeCue{position:absolute;left:50%;top:52%;z-index:20;transform:translate(-50%,-50%) scale(.85);min-width:58px;height:58px;display:grid;place-items:center;border:2px solid #80d0ff;background:#091521dd;color:#dff8ff;font:1000 34px/1 monospace;opacity:0;pointer-events:none;box-shadow:0 0 18px #4fe0e066;transition:opacity .08s,transform .08s}
+.swipeCue.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
 </style>
 </head><body>
 <main id="game">
@@ -219,7 +222,7 @@ body{
   </div>
   <div class="boardFrame">
     <div class="boardTag"><span id="objective">OBJETIVO · DESTRUA OS 2 KAIJUS</span><small>PRÓXIMO <b id="nextTile">2</b> EM <strong id="nextSpawnLabel">—</strong></small></div>
-    <section class="board" id="board" aria-label="Tabuleiro 4 por 4"></section>
+    <section class="board" id="board" aria-label="Tabuleiro 4 por 4"></section><div class="swipeCue" id="swipeCue" aria-hidden="true"></div>
   </div>
   <div class="coachBox" id="coachBox"></div>
 
@@ -404,7 +407,7 @@ function render(){
   e.onclick=()=>tapCell(i);b.append(e)
  }
  document.querySelector('#hp').textContent=S.hp+'/'+S.maxHp;document.querySelector('#energy').textContent=S.energy+'/6';document.querySelector('#free').textContent=S.freeSlide+' desl. · '+S.freeMove+' robô';
- document.querySelector('#guideSlide').className=S.freeSlide?'active':'done';document.querySelector('#guideMove').className=S.freeSlide?'':(S.freeMove?'active':'done');document.querySelector('#guideCards').className=(!S.freeSlide&&!S.freeMove&&(S.selCard||S.usedCard||S.ammoStep))?'active':(S.usedCard?'done':'');document.querySelector('#guideEnd').className=(!S.freeSlide&&!S.freeMove&&!S.selCard&&!S.ammoStep)?'active':'';
+ document.querySelector('#guideSlide').className=S.freeSlide?'active':'done';document.querySelector('#guideMove').className=S.freeSlide?'':(S.freeMove&&hasFreeMechStep()?'active':'done');document.querySelector('#guideCards').className=(!S.freeSlide&&!S.freeMove&&(S.selCard||S.usedCard||S.ammoStep))?'active':(S.usedCard?'done':'');document.querySelector('#guideEnd').className=(!S.freeSlide&&!S.freeMove&&!S.selCard&&!S.ammoStep)?'active':'';
  document.querySelector('#turn').textContent=S.turn;document.querySelector('#encounterLabel').textContent='COMBATE '+S.encounter+'/2 · ROBÔ VS KAIJU';document.querySelector('#objective').textContent=S.encounter===1?'OBJETIVO · DESTRUA ARTILHEIRO + ESMAGADOR':'OBJETIVO · DESTRUA ARTILHEIRO + PARASITA';document.querySelector('#nextTile').textContent=S.nextTile;document.querySelector('#nextSpawnLabel').textContent=S.nextSpawn==null?'SEM ESPAÇO':cellName(S.nextSpawn);document.querySelector('#relicList').textContent=relicText();
  let gc=document.querySelector('.intent.gun'),cc=document.querySelector('#cruCard'),pc=document.querySelector('#parCard');gc.hidden=!alive('gun');cc.hidden=!alive('cru');pc.hidden=!alive('par');document.querySelector('#gunHp').textContent=Math.max(0,S.enemies.gun.hp);document.querySelector('#cruHp').textContent=Math.max(0,S.enemies.cru.hp);document.querySelector('#parHp').textContent=Math.max(0,S.enemies.par.hp);let order=1;for(let k of KEYS){let el=document.querySelector('#'+(k==='gun'?'gunOrder':k==='cru'?'cruOrder':'parOrder'));if(el&&alive(k))el.textContent=(order++)+'º'}
  document.querySelector('#gunIntent').textContent=alive('gun')?'⚠ LINHA '+(S.gunLine+1)+' · robô: -2 · se sair: '+(S.gunBlockTarget==null?'tiro erra':'bloco '+S.gunBlockValue+' em '+cellName(S.gunBlockTarget)):'DERROTADO';
@@ -435,10 +438,29 @@ function slide(dir){
 }
 document.querySelectorAll('[data-slide]').forEach(x=>x.onclick=()=>slide(x.dataset.slide));
 let gestureState=null;
-const boardEl=document.querySelector('#board');
-boardEl.addEventListener('pointerdown',e=>{if(!e.isPrimary||S.phase!=='input'||S.freeSlide<=0||S.selCard||S.ammoStep||S.moveMode)return;if(e.pointerType==='mouse'&&e.button!==0)return;gestureState={id:e.pointerId,x:e.clientX,y:e.clientY};try{boardEl.setPointerCapture(e.pointerId)}catch(_){}});
-boardEl.addEventListener('pointerup',e=>{if(!gestureState||gestureState.id!==e.pointerId)return;let dx=e.clientX-gestureState.x,dy=e.clientY-gestureState.y,ax=Math.abs(dx),ay=Math.abs(dy),main=Math.max(ax,ay),cross=Math.min(ax,ay),minSwipe=Math.max(68,boardEl.getBoundingClientRect().width*.18);gestureState=null;if(main<minSwipe||main<cross*1.5)return;ignoreTapUntil=performance.now()+350;slide(ax>ay?(dx>0?'right':'left'):(dy>0?'down':'up'))});
-boardEl.addEventListener('pointercancel',()=>{gestureState=null});
+const boardEl=document.querySelector('#board'),swipeCue=document.querySelector('#swipeCue');
+function hideSwipeCue(){swipeCue.classList.remove('show');swipeCue.textContent=''}
+boardEl.addEventListener('pointerdown',e=>{
+ if(!e.isPrimary||S.phase!=='input'||S.freeSlide<=0||S.selCard||S.ammoStep||S.moveMode)return;
+ if(e.pointerType==='mouse'&&e.button!==0)return;
+ gestureState={id:e.pointerId,x:e.clientX,y:e.clientY};
+ try{boardEl.setPointerCapture(e.pointerId)}catch(_){}
+});
+boardEl.addEventListener('pointermove',e=>{
+ if(!gestureState||gestureState.id!==e.pointerId)return;
+ let dx=e.clientX-gestureState.x,dy=e.clientY-gestureState.y,ax=Math.abs(dx),ay=Math.abs(dy),main=Math.max(ax,ay),cross=Math.min(ax,ay);
+ if(main<22||main<cross*1.15){hideSwipeCue();return}
+ swipeCue.textContent=ax>ay?(dx>0?'→':'←'):(dy>0?'↓':'↑');swipeCue.classList.add('show')
+});
+boardEl.addEventListener('pointerup',e=>{
+ if(!gestureState||gestureState.id!==e.pointerId)return;
+ let dx=e.clientX-gestureState.x,dy=e.clientY-gestureState.y,ax=Math.abs(dx),ay=Math.abs(dy),main=Math.max(ax,ay),cross=Math.min(ax,ay),minSwipe=Math.max(72,boardEl.getBoundingClientRect().width*.20);
+ gestureState=null;hideSwipeCue();
+ if(main<minSwipe||main<cross*1.5)return;
+ ignoreTapUntil=performance.now()+350;
+ slide(ax>ay?(dx>0?'right':'left'):(dy>0?'down':'up'))
+});
+boardEl.addEventListener('pointercancel',()=>{gestureState=null;hideSwipeCue()});
 function endTurn(){if(S.phase!=='input')return;refreshSpawnPreview(false);clearSelection();S.phase='enemy';render();setTimeout(resolveEnemies,420)}document.querySelector('#endBtn').onclick=endTurn;
 function resolveEnemies(){
  let hpBefore=S.hp;
