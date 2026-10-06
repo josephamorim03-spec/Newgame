@@ -1,6 +1,6 @@
 (function (root) {
   'use strict';
-  const VERSION = 'ring-break-0.1';
+  const VERSION = 'ring-break-0.2';
   const TONES = ['Pulse','Echo','Spike','Anchor'];
   const PROTOCOLS = [
     {id:'counterweight',name:'Contrapeso',family:'PHASE',description:'Cada carga de acoplamento usada gera +3 energia.'},
@@ -13,9 +13,9 @@
     {id:'foretell',name:'Antevisão',family:'FLUX',description:'Veja 12 tons futuros, em vez de 6. Planeje a próxima cascata.'}
   ];
   const ENCOUNTERS = [
-    {name:'NEEDLE',subtitle:'Encontre a frequência.',goal:60,interval:5,kind:'needle'},
-    {name:'PARASITE',subtitle:'Guarde ou gaste seus acoplamentos.',goal:100,interval:4,kind:'parasite'},
-    {name:'THE CLAMP',subtitle:'Um anel preso ainda pode ser arrastado.',goal:160,interval:4,kind:'clamp'}
+    {name:'NEEDLE',subtitle:'Quebre os pontos fracos.',breakGoal:3,interval:4,kind:'needle'},
+    {name:'PARASITE',subtitle:'Rompa o alvo ou esvazie o link.',breakGoal:4,interval:3,kind:'parasite'},
+    {name:'THE CLAMP',subtitle:'Rompa o alvo com a máquina parcialmente presa.',breakGoal:5,interval:3,kind:'clamp'}
   ];
   const copy = value => JSON.parse(JSON.stringify(value));
   function hash(seed) {
@@ -88,20 +88,22 @@
     }
   }
   function nextIntent(s) {
-    const encounter=ENCOUNTERS[s.encounter];
-    s.intent={sector:Math.floor(random(s)*8),count:encounter.interval,neutralized:false,kind:encounter.kind};
+    const encounter=ENCOUNTERS[s.encounter],previous=s.intent?.sector;
+    let sector=s.encounter===0 && s.encounterTurns===0 ? 0 : Math.floor(random(s)*8);
+    if(previous!=null && sector===previous) sector=(sector+1+Math.floor(random(s)*7))%8;
+    s.intent={sector,count:encounter.interval,neutralized:false,kind:encounter.kind};
     if(encounter.kind==='parasite') s.intent.edge=s.intent.sector%2;
     if(encounter.kind==='clamp') s.jam=(s.turn+s.encounter)%3;
   }
   function startEncounter(s) {
-    s.energy=0;s.hp=3;s.shield=0;s.jam=-1;s.locks=[0,0];s.encounterTurns=0;
+    s.energy=0;s.breaks=0;s.hp=3;s.shield=0;s.jam=-1;s.locks=[0,0];s.encounterTurns=0;
     generateBoard(s,s.encounter===0);s.queue=[];refillQueue(s);
     nextIntent(s);s.status='playing';
   }
   function create(seed='FIRST-LIGHT-2',mode='run') {
     const s={version:VERSION,seed:String(seed).slice(0,80),mode:mode==='free'?'free':'run',rng:hash(seed),serial:0,
       board:[],queue:[],locks:[0,0],protocols:[],activations:{},encounter:0,turn:0,encounterTurns:0,
-      total:0,energy:0,hp:3,shield:0,intent:null,jam:-1,status:'playing',maxWave:0,resonanceCount:0,
+      total:0,energy:0,breaks:0,hp:3,shield:0,intent:null,jam:-1,status:'playing',maxWave:0,resonanceCount:0,
       locksUsed:0,locksCreated:0,bestMove:0,damage:0,cause:'',actions:[],history:[],offers:[],rewrites:1};
     startEncounter(s);
     if(s.mode==='free') {s.intent=null;s.jam=-1;}
@@ -127,7 +129,7 @@
       discover(events,'phase','Acoplamento','Uma carga movimenta o anel vizinho; a propagação pode atravessar os três.');
       if(has(s,'counterweight')) {const energy=p.edges.length*3;s.total+=energy;s.energy+=energy;record(s,'counterweight',p.edges.length);events.push({type:'bonus',energy,label:'CONTRAPESO'});}
     }
-    let wave=0,triadUsed=false,echoUsed=false,guard=0;
+    let wave=0,triadUsed=false,echoUsed=false,hitBreak=false,guard=0;
     const seen=new Set();
     while(guard++<32) {
       const matches=resonances(s.board,has(s,'triad') && !triadUsed);
@@ -144,10 +146,10 @@
         if(has(s,'mesh') && fullMesh) record(s,'mesh');
         if(has(s,'reverb') && wave>1) record(s,'reverb');
         gained+=energy;s.resonanceCount++;
-        if(s.intent && s.intent.kind!=='parasite' && m.sector===s.intent.sector) {
-          s.intent.neutralized=true;
+        if(s.mode==='run' && s.intent && wave===1 && !hitBreak && m.sector===s.intent.sector) {
+          hitBreak=true;s.intent.neutralized=true;s.breaks++;
           if(has(s,'fortress') && !s.shield) {s.shield=1;record(s,'fortress');events.push({type:'shield'});}
-          events.push({type:'defuse',sector:m.sector});
+          events.push({type:'break',sector:m.sector,tone:m.tone,breaks:s.breaks,goal:ENCOUNTERS[s.encounter].breakGoal});
         }
       }
       s.total+=gained;s.energy+=gained;s.maxWave=Math.max(s.maxWave,wave);
@@ -167,26 +169,29 @@
       }
     }
     s.bestMove=Math.max(s.bestMove,s.total-totalBefore);
-    const goal=ENCOUNTERS[s.encounter].goal;
-    if(s.mode==='run' && s.energy>=goal) {
-      s.status=s.encounter===2?'won':'draft';s.history.push({encounter:s.encounter,turns:s.encounterTurns,energy:s.energy,hp:s.hp});
+    const encounter=ENCOUNTERS[s.encounter];
+    if(s.mode==='run' && s.breaks>=encounter.breakGoal) {
+      s.status=s.encounter===2?'won':'draft';s.history.push({encounter:s.encounter,turns:s.encounterTurns,energy:s.energy,breaks:s.breaks,hp:s.hp});
       if(s.status==='draft') offer(s);
       events.push({type:'win',final:s.status==='won'});
     } else if(s.intent) {
-      s.intent.count--;
-      if(s.intent.count<=0) {
-        const i=s.intent;
-        const avoided=i.kind==='parasite'?s.locks[i.edge]===0:i.neutralized;
-        if(avoided) events.push({type:'evade',label:i.kind==='parasite'?'LINK VAZIO':'ATAQUE NEUTRALIZADO'});
-        else {
-          if(i.kind==='parasite') s.locks[i.edge]=0;
-          if(s.shield) {s.shield=0;events.push({type:'blocked'});}
-          else {s.hp--;s.damage++;events.push({type:'damage',sector:i.sector});}
+      if(hitBreak) nextIntent(s);
+      else {
+        s.intent.count--;
+        if(s.intent.count<=0) {
+          const i=s.intent;
+          const avoided=i.neutralized || i.kind==='parasite' && s.locks[i.edge]===0;
+          if(avoided) events.push({type:'evade',label:i.kind==='parasite'?'LINK VAZIO':'ATAQUE NEUTRALIZADO'});
+          else {
+            if(i.kind==='parasite') s.locks[i.edge]=0;
+            if(s.shield) {s.shield=0;events.push({type:'blocked'});}
+            else {s.hp--;s.damage++;events.push({type:'damage',sector:i.sector});}
+          }
+          if(s.hp<=0) {
+            s.status='lost';s.cause=i.kind==='parasite'?'O Parasite drenou um link ainda carregado.':'O ponto fraco no setor '+(i.sector+1)+' não foi rompido a tempo.';
+            events.push({type:'lose'});
+          } else nextIntent(s);
         }
-        if(s.hp<=0) {
-          s.status='lost';s.cause=i.kind==='parasite'?'O Parasite drenou um link ainda carregado.':'O setor '+(i.sector+1)+' não ressoou antes do ataque.';
-          events.push({type:'lose'});
-        } else nextIntent(s);
       }
     }
     return {state:s,events};
