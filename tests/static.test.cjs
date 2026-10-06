@@ -5,7 +5,7 @@ const path=require('path');
 const root=path.join(__dirname,'..');
 const read=p=>fs.readFileSync(path.join(root,p),'utf8');
 
-for(const file of ['run-synergies.js','run-a.js','run-b.js','run-c.js','run-d.js','atlas-a.js','atlas-b.js','atlas-c.js','tools/calibrate-atlas.js','tools/calibrate-runs.js','tools/verify-route.js']){
+for(const file of ['share.js','run-synergies.js','run-a.js','run-b.js','run-c.js','run-d.js','atlas-a.js','atlas-b.js','atlas-c.js','tools/calibrate-atlas.js','tools/calibrate-runs.js','tools/verify-route.js']){
   assert.doesNotThrow(()=>new Function(read(file)),file+' should parse');
 }
 
