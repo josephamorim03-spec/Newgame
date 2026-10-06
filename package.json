@@ -1,0 +1,10 @@
+{
+  "name": "knot-game",
+  "private": true,
+  "version": "0.1.0",
+  "description": "KNOT — geometry puzzle roguelike and mastery atlas",
+  "scripts": {
+    "test": "node tests/atlas.test.cjs",
+    "calibrate": "node tools/calibrate-atlas.js 30000"
+  }
+}
