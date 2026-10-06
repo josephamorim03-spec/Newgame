@@ -1,16 +1,13 @@
 # Atlas calibration
 
-KNOT's Atlas goals are not intended to be guessed by feel alone.
+KNOT's Atlas goals are not guessed by feel alone.
 
-The repository includes `tools/calibrate-atlas.js`, a dependency-free Monte Carlo search that simulates legal routes using the same geometric grammar as Atlas. It checks every fixed map, searches for both a Gold witness and the map-specific Feat, and reports observed ceilings for:
+The repository includes `tools/calibrate-atlas.js`, a dependency-free calibrator that mirrors Atlas geometry.
 
-- score
-- Crosses
-- Echoes
-- Halos / center Loops
-- largest Loop
-- total Loops
-- clean Loops
+It now has two layers:
+
+1. **deterministic witnesses** — one known route for Gold and one for the map-specific Feat on every map;
+2. **seeded Monte Carlo exploration** — used to estimate empirical ceilings and discover alternate routes.
 
 Run:
 
@@ -18,27 +15,49 @@ Run:
 node tools/calibrate-atlas.js 30000
 ```
 
-Use a larger budget before raising a Gold goal.
+The deterministic phase must always pass before a goal ships.
 
-## Current calibration snapshot
+## Current Atlas
 
-A 30,000-route-per-map search found Gold witnesses for all eight current maps.
+There are 12 fixed maps and therefore 24 deterministic target witnesses:
 
-| Map | Gold target | Observed relevant ceiling* |
-| --- | --- | ---: |
-| Primeira trama | 3,000 score | ~4,133 score |
-| Cruzamento | 12 Crosses | 21 Crosses |
-| Jardim de Echo | 4 Echoes | 7 Echoes |
-| Halo | 3 center Loops | 5 center Loops |
-| Estrela aberta | Loop 10 | 10+ route vertices observed |
-| Dupla trama | 5 Loops | 6 Loops |
-| Linha limpa | 3 clean Loops | 4 clean Loops |
-| Trama mestra | 18 Crosses + 5 Loops | simultaneous Gold witness found; separate searches reached 35 Crosses / 7 Loops |
+| Map | Main question | Gold |
+| --- | --- | --- |
+| Primeira trama | score | 3,000 points |
+| Cruzamento | intersection density | 12 Crosses |
+| Jardim de Echo | repeated segment length | 4 Echoes |
+| Halo | enclosing the center | 3 Halos |
+| Estrela aberta | one large region | Loop with 10 vertices |
+| Dupla trama | repeated closures | 5 Loops |
+| Linha limpa | uncontaminated closure | 3 clean Loops |
+| Trama mestra | composition | 18 Crosses + 5 Loops |
+| Espelho | bilateral structure | 4 true reflected edge pairs |
+| Mosaico | compact geometry | 4 triangle Loops |
+| Ritual | event sequencing | 2 Cross → Echo → Loop sequences + 4 Loops |
+| Concentração | spatial economy | 4 Loops using at most 6 unique points |
 
-*These are empirical search results, not mathematical proofs of the true maxima.
+Each map also has a separately calibrated **Feat** that asks a lateral or hybrid question.
+
+## Metrics tracked
+
+The calibrator evaluates:
+
+- score
+- Crosses
+- Echoes
+- center Loops / Halos
+- largest Loop
+- total Loops
+- clean Loops
+- triangle Loops
+- real mirrored edge pairs
+- completed Ritual sequences
+- unique points used
 
 ## Design rule
 
-Passing should be discoverable by a competent player. Silver should ask for deliberate planning. Gold should require map-specific understanding but retain more than one plausible route whenever possible.
+Passing should be discoverable by a competent player. Silver should require deliberate planning. Gold should require map-specific understanding. A Feat should ask a genuinely different question, not simply "Gold but bigger".
 
-The solver is a calibration tool, not the game. Every new Feat should also get a witness before shipping. Human playtests still decide whether a target is understandable, satisfying, and appropriately difficult.
+A solver witness proves reachability, not fun. Human playtests still decide whether a target is understandable, satisfying, and appropriately difficult.
+
+For Ritual, Cross → Echo → Loop must happen across **three distinct moves**. For Espelho, an edge that is its own mirror does **not** count as a reflected pair.
