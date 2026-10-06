@@ -1,1 +1,0 @@
-{"name":"ring-break","version":"0.3.0","private":true,"scripts":{"start":"node server.cjs","test":"node --test tests/*.test.cjs","build":"node tools/build.cjs"}}

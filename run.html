@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>KNOT — Run</title>
+<link rel="stylesheet" href="run-base.css" />
+<link rel="stylesheet" href="run-ui.css" />
+<link rel="icon" href="favicon.svg" type="image/svg+xml" />
+</head>
+<body>
+<div class="app">
+<header class="topbar"><div class="brand"><div class="logo">K</div><div class="wordmark"><h1>KNOT</h1><p>Run</p></div></div><div class="controls"><a class="iconbtn homebtn" href="index.html" aria-label="Início">⌂</a><button class="iconbtn" id="musicBtn" type="button">♫</button><button class="iconbtn" id="soundBtn" type="button">♪</button><button class="btn strong" id="restartBtn" type="button">Nova run</button></div></header>
+<section class="board-shell"><div class="board-wrap" id="board"><div class="center-halo"></div><div class="playfield" id="playfield"><svg viewBox="0 0 1000 1000" aria-hidden="true"><g id="grid"></g><g id="loops"></g><g id="edges"></g><g id="junctions"></g><g id="pulses"></g></svg><div class="node-layer" id="nodes"></div></div><div class="fx-layer" id="fx"></div><div class="overlay-hud"><div class="hud-top"><div class="chip-row"><div class="chip" id="roundPill">Rodada 1/5</div><div class="chip" id="stitchPill">8 pontos de fio</div><div class="chip" id="targetInline">Alvo 1.800</div></div><div class="chip score">Pontos <b id="scoreEl">0</b></div></div><div class="hint" id="hint">Toque em qualquer ponto para começar.</div><div class="corner-actions"><button class="fab info" id="infoBtn" type="button">i</button></div><div class="bottom-bar"><div class="goal-stack"><div class="target-pill"><b id="constraintTitle">Primeira trama</b> <span id="constraintMini">Feche formas.</span></div><div class="goal-badges"><span class="goal-badge required" id="requiredGoal" hidden></span><span class="goal-badge optional" id="directiveGoal" hidden></span></div></div><div class="target-progress"><span id="meter"></span></div></div></div></div></section></div>
+<div class="drawer" id="drawer"><div class="drawer-sheet"><div class="drawer-handle" id="drawerToggle"><div class="drawer-title">Detalhes da rodada</div><div class="drawer-grab"></div><div class="drawer-title" id="drawerState">abrir</div></div><div class="drawer-body"><section class="drawer-panel"><h3 id="ruleTitle">Primeira trama</h3><div class="drawer-rule" id="constraintText"></div></section><section class="drawer-panel"><h3>Knots ativos</h3><div class="knot-list" id="knotList"></div></section><section class="drawer-panel"><h3>Estatísticas</h3><div class="stats"><div class="stat"><b id="loopsStat">0</b><small>Loops</small></div><div class="stat"><b id="crossStat">0</b><small>Crosses</small></div><div class="stat"><b id="echoStat">0</b><small>Echoes</small></div></div></section><section class="drawer-panel"><h3>Últimas jogadas</h3><div class="log" id="log"></div></section></div></div></div>
+<div class="sheet-overlay hidden" id="sheetOverlay"><div class="sheet-backdrop"></div><div class="sheet" id="sheet"></div></div>
+<script src="run-a.js"></script><script src="run-b.js"></script><script src="run-c.js"></script><script src="run-d.js"></script>
+</body></html>

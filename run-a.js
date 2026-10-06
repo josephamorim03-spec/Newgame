@@ -1,0 +1,34 @@
+'use strict';
+const $=s=>document.querySelector(s);
+const sheetOverlay=$('#sheetOverlay'), sheet=$('#sheet'), drawer=$('#drawer');
+const loopsEl=$('#loops'), edgesEl=$('#edges'), junctionsEl=$('#junctions'), pulsesEl=$('#pulses');
+const nodesEl=$('#nodes'), fxEl=$('#fx'), hint=$('#hint'), scoreEl=$('#scoreEl'), meterEl=$('#meter');
+const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const ROUND_LIBRARY={
+first:{title:'Primeira trama',text:'Feche formas. Aprenda o ritmo antes de tentar quebrá-lo.',target:1700,mastery:2800,moves:8,crossValue:140,echoValue:90,areaScale:1,focus:['loop']},
+cross:{title:'Fio cruzado',text:'Cruzamentos valem mais nesta rodada. Prepare o encontro das linhas.',target:3300,mastery:4800,moves:9,crossValue:220,echoValue:90,areaScale:1,focus:['cross']},
+echo:{title:'Ritmo repetido',text:'Echoes valem mais. Repetir comprimentos pode preparar uma trama elegante.',target:3500,mastery:5000,moves:9,crossValue:140,echoValue:180,areaScale:1,focus:['echo']},
+space:{title:'Espaço aberto',text:'Loops grandes rendem mais. Guarde área antes de fechar.',target:4000,mastery:5600,moves:9,crossValue:140,echoValue:90,areaScale:1.28,focus:['area','loop']},
+clean:{title:'Linha limpa',text:'Loops sem linhas cruzadas recebem um bônus extra nesta rodada.',target:4000,mastery:5600,moves:9,crossValue:125,echoValue:90,areaScale:1,roundClean:1.28,focus:['clean','loop']},
+center:{title:'Centro de tensão',text:'Linhas que passam perto do centro ganham valor e deixam o próximo Loop mais forte.',target:4600,mastery:6600,moves:10,crossValue:140,echoValue:90,areaScale:1,centerValue:130,focus:['center','line']},
+dense:{title:'Trama densa',text:'Você tem mais pontos, mas não mais tempo. Encontre uma estrutura boa cedo.',target:5200,mastery:7300,moves:10,crossValue:160,echoValue:105,areaScale:1.08,focus:['cross','loop']},
+final:{title:'Trama mestra',text:'A build inteira está ativa. Prepare uma jogada grande antes de gastar seus últimos pontos de fio.',target:9500,mastery:14500,moves:11,crossValue:170,echoValue:115,areaScale:1.15,focus:['loop','cross','area','growth']}};
+const GOALS={
+cross2:{label:'Crie 2 Crosses',progress:s=>`${Math.min(s.crosses,2)}/2 Crosses`,check:s=>s.crosses>=2},
+echo2:{label:'Crie 2 Echoes',progress:s=>`${Math.min(s.echoes,2)}/2 Echoes`,check:s=>s.echoes>=2},
+big5:{label:'Feche um Loop de 5+ vértices',progress:s=>s.maxLoopVertices>=5?'Loop 5+ ✓':`Maior Loop: ${s.maxLoopVertices}/5`,check:s=>s.maxLoopVertices>=5},
+clean1:{label:'Feche 1 Loop limpo',progress:s=>s.cleanLoops>=1?'Loop limpo ✓':'0/1 Loop limpo',check:s=>s.cleanLoops>=1},
+center2:{label:'Passe 2 linhas pelo centro',progress:s=>`${Math.min(s.centerHits,2)}/2 pelo centro`,check:s=>s.centerHits>=2},
+loops2:{label:'Feche 2 Loops',progress:s=>`${Math.min(s.loopCount,2)}/2 Loops`,check:s=>s.loopCount>=2},
+halo1:{label:'Feche um Loop envolvendo o centro',progress:s=>s.centerLoops>=1?'Halo central ✓':'0/1 Halo central',check:s=>s.centerLoops>=1},
+triangle1:{label:'Feche 1 triângulo',progress:s=>s.triangleLoops>=1?'Triângulo ✓':'0/1 Triângulo',check:s=>s.triangleLoops>=1}};
+const GOAL_BY_ROUND={cross:'cross2',echo:'echo2',space:'big5',clean:'clean1',center:'center2',dense:'loops2'};
+const DIRECTIVE_POOL=Object.keys(GOALS);
+function goalMet(id){return !id||GOALS[id].check(state)} function goalProgress(id){return id?GOALS[id].progress(state):''} function goalLabel(id){return id?GOALS[id].label:''} function requirementMet(rd){return !rd.requirement||goalMet(rd.requirement)}
+function pointInPoly(pt,poly){let inside=false;for(let i=0,j=poly.length-1;i<poly.length;j=i++){const xi=poly[i].x,yi=poly[i].y,xj=poly[j].x,yj=poly[j].y;const hit=((yi>pt.y)!==(yj>pt.y))&&(pt.x<(xj-xi)*(pt.y-yi)/(yj-yi+1e-9)+xi);if(hit)inside=!inside}return inside}
+const knotDefs={
+clean:{name:'Clean Thread',symbol:'○',desc:'Loops sem linhas cruzadas recebem ×2.',tags:['clean','loop']},blood:{name:'Blood Knot',symbol:'✕',desc:'Cada Cross fortalece o multiplicador do próximo Loop.',tags:['cross','loop']},mirror:{name:'Mirror Knot',symbol:'∥',desc:'Echoes ganham valor extra e acumulam mais tensão.',tags:['echo']},prism:{name:'Prism Knot',symbol:'◇',desc:'Loops com 4 ou mais pontos recebem ×1,6.',tags:['area','loop']},fracture:{name:'Fracture',symbol:'✦',desc:'Fechar um Loop logo após Crosses multiplica o fechamento.',tags:['cross','loop']},long:{name:'Long Thread',symbol:'—',desc:'Linhas longas rendem bônus e fortalecem um pouco o próximo Loop.',tags:['line','general']},heart:{name:'Heartline',symbol:'◎',desc:'Linhas que passam perto do centro rendem bônus e bastante tensão.',tags:['center','line']},loom:{name:'First Loom',symbol:'⌂',desc:'O primeiro Loop de cada rodada recebe +500 pontos.',tags:['loop','general']},crescendo:{name:'Crescendo',symbol:'↗',desc:'Cada Loop já fechado aumenta o multiplicador dos próximos.',tags:['loop','growth']},star:{name:'Star Knot',symbol:'☆',desc:'Loops com 5 ou mais vértices recebem ×1,8.',tags:['area','loop']},junction:{name:'Golden Junction',symbol:'✣',desc:'Cada Cross rende +80 pontos adicionais.',tags:['cross']},trinity:{name:'Trinity',symbol:'△',desc:'Triângulos recebem ×1,75. Menos lados, mais precisão.',tags:['clean','loop']},halo:{name:'Halo Knot',symbol:'⊙',desc:'Loops que envolvem o centro recebem ×1,65.',tags:['center','area','loop']},braid:{name:'Braid',symbol:'≋',desc:'Depois de criar ao menos um Cross e um Echo, seus Loops recebem ×1,45.',tags:['cross','echo','loop']}};
+function makeRegular(n,rotation=0,radius=360){const cx=500,cy=500;return Array.from({length:n},(_,i)=>{const a=(Math.PI*2/n)*i-Math.PI/2+rotation;return[cx+Math.cos(a)*radius,cy+Math.sin(a)*radius]})}
+function makeDoubleSquare(rotation=0){const cx=500,cy=500,out=350,inn=205,pts=[];for(let i=0;i<4;i++){let a=i*Math.PI/2-Math.PI/2+rotation;pts.push([cx+Math.cos(a)*out,cy+Math.sin(a)*out])}for(let i=0;i<4;i++){let a=i*Math.PI/2-Math.PI/4+rotation;pts.push([cx+Math.cos(a)*inn,cy+Math.sin(a)*inn])}return pts}
+function mulberry32(a){return function(){let t=a+=0x6D2B79F5;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296}} function shuffle(arr,rng){const a=[...arr];for(let i=a.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function buildRun(seed){const rng=mulberry32(seed);const mids=shuffle(['cross','echo','space','clean','center','dense'],rng).slice(0,4);const defs=['first',...mids,'final'].map(k=>({...ROUND_LIBRARY[k],key:k}));const layouts=[makeRegular(8,0),makeRegular(8,Math.PI/8),makeDoubleSquare(rng()>.5?0:Math.PI/4),makeRegular(10,Math.PI/10),makeRegular(8,rng()>.5?0:Math.PI/8),makeRegular(10,rng()>.5?0:Math.PI/10)];return defs.map((d,i)=>{const requirement=i===3?GOAL_BY_ROUND[d.key]||'loops2':null;const pool=shuffle(DIRECTIVE_POOL.filter(g=>g!==requirement),rng);const directive=i===0?null:pool[0];return{...d,layout:layouts[i],requirement,directive}})}
