@@ -46,6 +46,17 @@ O projeto inclui toda a arte vetorial e procedural, efeitos, áudio sintetizado 
 Não há pressão de tempo real. O contador avança apenas quando um movimento é confirmado. O som começa habilitado, mas navegadores móveis — especialmente Safari/iOS — exigem um gesto do usuário para liberar Web Audio. O último passo do onboarding faz esse desbloqueio explicitamente. Há velocidade 1×/2×/4× e movimento reduzido nas opções.
 
 
+## Controle v0.3 — escolha pela consequência
+
+O controle principal não exige mais selecionar um anel e depois uma direção. As **seis jogadas possíveis** ficam visíveis ao mesmo tempo abaixo do tabuleiro. Cada botão mostra:
+- qual anel/direção será usado;
+- como os três símbolos do Ponto Fraco ficarão depois do movimento;
+- a consequência prevista: **RUPTURA**, **RESSONÂNCIA**, **+ PHASE LOCK**, **DEFENDE**, **DANO** ou **REPOSICIONA**.
+
+O arrasto direto dos anéis continua disponível como atalho avançado. Em repouso, nenhum anel fica selecionado: a hierarquia visual privilegia o Ponto Fraco e a consequência da decisão.
+
+O onboarding inicial ensina apenas a regra essencial — deixar os três símbolos do setor rosa iguais. Phase Locks e cascatas são introduzidos depois, quando surgem no jogo.
+
 ## Onboarding e áudio no celular
 
 Na primeira abertura, o jogo apresenta quatro telas curtas: objetivo/Ponto Fraco, preview, Phase Lock/cascatas e primeiro movimento. O último botão é **Ativar som e começar**; esse toque cria e libera o `AudioContext` dentro de uma interação real, requisito do Safari/iOS. O jogo também inicia uma fonte praticamente silenciosa para “acordar” Web Audio no WebKit e toca uma confirmação curta.
