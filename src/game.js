@@ -5,7 +5,7 @@
   const colors=['#96ebd3','#baafff','#edc47c','#f28da7'],radii=[166,120,74],names=['Externo','Médio','Interno'];
   const rewardColors=['#62ffd1','#b995ff','#ffda72','#ff82ba'];
   const machine=document.querySelector('.machine');
-  const SAVE='ring-break-save-0.2',ATLAS='ring-break-atlas-0.1',OPTIONS='ring-break-options-0.2',ONBOARD='ring-break-onboarding-0.2';
+  const SAVE='ring-break-save-0.2',ATLAS='ring-break-atlas-0.1',OPTIONS='ring-break-options-0.2',ONBOARD='ring-break-onboarding-0.3';
   const defaults={sound:true,speed:1,reduced:matchMedia('(prefers-reduced-motion: reduce)').matches};
   function read(key,fallback) {try{return JSON.parse(localStorage.getItem(key))||fallback;}catch{return fallback;}}
   let options={...defaults,...read(OPTIONS,{})},atlas=read(ATLAS,{}),selected=0,busy=false,ghost=null,drag=null;
@@ -215,10 +215,10 @@
         ctx.beginPath();ctx.moveTo(center+Math.cos(a)*44,center+Math.sin(a)*44);ctx.lineTo(center+Math.cos(a)*184,center+Math.sin(a)*184);ctx.strokeStyle='#96ebd344';ctx.lineWidth=34;ctx.stroke();
       }
     }
-    const isPreview=ghost!==null;
+    const isPreview=ghost!==null,activeRing=drag?.ring ?? (isPreview?selected:-1);
     for(let r=0;r<3;r++) {
-      circle(center,center,radii[r],null,selected===r?'#444057':'#292d3e',38);
-      circle(center,center,radii[r]+20,null,selected===r?'#8d81b980':'#3b4054',1);
+      circle(center,center,radii[r],null,activeRing===r?'#444057':'#292d3e',38);
+      circle(center,center,radii[r]+20,null,activeRing===r?'#8d81b980':'#3b4054',1);
       circle(center,center,radii[r]-20,null,'#3b4054',1);
       if(state.jam===r) {
         ctx.save();ctx.setLineDash([4,6]);circle(center,center,radii[r]+20,null,'#f28da7',2);ctx.restore();
@@ -267,32 +267,56 @@
     $('total').textContent=format(s.total);$('best-chain').textContent='×'+2**Math.min(Math.max(0,s.maxWave-1),10);$('moves').textContent=s.turn;$('links-used').textContent=s.locksUsed;$('seed-label').textContent=s.seed;
     $('atlas-count').textContent=Object.keys(atlas).length+' / 3';
     $('atlas').innerHTML=[['phase','Acoplamento'],['cascade','Cascata'],['triad','Nova gramática']].map(([id,title])=>'<button class="atlas-entry '+(!atlas[id]?'locked':'')+'" data-atlas="'+id+'">'+(atlas[id]?title:'??? · interação '+(['phase','cascade','triad'].indexOf(id)+1))+'</button>').join('');
-    document.querySelectorAll('[data-ring]').forEach(el=>{const r=Number(el.dataset.ring);el.classList.toggle('active',r===selected);el.setAttribute('aria-pressed',String(r===selected));el.textContent='';const n=document.createElement('span');n.textContent='0'+(r+1);el.append(n,' '+names[r]+(s.jam===r?' · preso':''));});
-    for(const id of ['left','right']) $(id).disabled=busy || s.status!=='playing' || s.jam===selected;
+    renderDecisionPanel(s);
     document.documentElement.classList.toggle('reduced',options.reduced);$('sound').textContent=options.sound?'Som: on':'Som: off';$('sound').setAttribute('aria-label',options.sound?'Desativar som':'Ativar som');
+  }
+  function moveAnalysis(s,ring,direction){
+    const p=C.preview(s,ring,direction);if(!p)return null;
+    const result=C.step(s,ring,direction),events=result.events,target=s.intent?.sector;
+    const tones=target==null?[]:p.board.map(r=>r[target].tone);
+    let kind='shift',label='REPOSICIONA',detail='prepara a próxima jogada';
+    if(events.some(e=>e.type==='break')){kind='break';label='RUPTURA';detail='acerta o ponto fraco';}
+    else if(events.some(e=>e.type==='damage')){kind='danger';label='DANO';detail='o ataque chega antes';}
+    else if(events.some(e=>e.type==='evade'||e.type==='blocked')){kind='safe';label='DEFENDE';detail='evita o ataque';}
+    else if(events.some(e=>e.type==='resonance')){kind='resonance';label='RESSONÂNCIA';detail='gera energia, não rompe';}
+    else if(events.some(e=>e.type==='lock')){kind='lock';label='+ PHASE LOCK';detail='cria acoplamento';}
+    const moved=p.dirs.filter(Boolean).length;
+    if(moved>1 && kind==='shift')detail='move '+moved+' anéis acoplados';
+    return {ring,direction,p,result,tones,kind,label,detail};
+  }
+  function renderDecisionPanel(s){
+    const target=s.intent?.sector;
+    $('target-title').textContent=target==null?'Explore combinações':'Faça os 3 símbolos do setor '+(target+1)+' ficarem iguais';
+    $('target-hint').textContent=target==null?'Sem ameaça: use as seis jogadas para experimentar.':'Você não precisa adivinhar: cada botão mostra o resultado antes do toque.';
+    $('target-tones').innerHTML=target==null?'':s.board.map((r,idx)=>'<span class="target-tone"><small>R'+(idx+1)+'</small>'+toneHTML(r[target].tone)+'</span>').join('');
+    const moves=[];
+    for(let ring=0;ring<3;ring++)for(const direction of[-1,1]){
+      const a=moveAnalysis(s,ring,direction);
+      moves.push(a?'<button class="move-card '+a.kind+'" data-move-ring="'+ring+'" data-move-dir="'+direction+'" aria-label="'+names[ring]+' '+(direction>0?'horário':'anti-horário')+' — '+a.label+'"><span class="move-name"><b>'+names[ring]+'</b><i>'+(direction>0?'↷':'↶')+'</i></span><span class="move-result">'+a.label+'</span>'+(target==null?'':'<span class="move-tones">'+a.tones.map(toneHTML).join('')+'</span>')+'<small>'+a.detail+'</small></button>':'<button class="move-card disabled" disabled><span class="move-name"><b>'+names[ring]+'</b><i>'+(direction>0?'↷':'↶')+'</i></span><span class="move-result">PRESO</span><small>este anel não pode iniciar o giro</small></button>');
+    }
+    $('move-grid').innerHTML=moves.join('');
   }
   function show(html,locked=false) {ghost=null;draw();$('modal-content').innerHTML=html;modal.dataset.locked=String(locked);if(!modal.open)modal.showModal();}
   function closeModal() {modal.close();draw();}
   const onboardingSteps=[
-    ()=>'<div class="onboard-progress"><span class="on"></span><span></span><span></span><span></span></div><div class="eyebrow">01 · OBJETIVO</div><h2>Não é sobre girar.<br>É sobre acertar.</h2><div class="onboard-focus target"><strong>⌖ PONTO FRACO</strong><p>O setor rosa é o alvo. Faça <b>três tons iguais</b> exatamente ali para causar 1 Ruptura.</p></div><p>Energia e cascatas ajudam sua máquina, mas <strong>não vencem sozinhas</strong>. Needle cai com 3 Rupturas.</p>',
-    ()=>'<div class="onboard-progress"><span></span><span class="on"></span><span></span><span></span></div><div class="eyebrow">02 · DECISÃO</div><h2>Veja antes<br>de comprometer.</h2><div class="onboard-focus preview"><strong>SEGURE → PREVIEW</strong><p>Segure um botão de giro ou arraste um anel. A previsão mostra quais anéis se moverão e se a jogada cria uma Ressonância.</p></div><p>Se aparecer <strong>RUPTURA NO ALVO</strong>, você sabe que aquela ação realmente avança o combate.</p>',
-    ()=>'<div class="onboard-progress"><span></span><span></span><span class="on"></span><span></span></div><div class="eyebrow">03 · PHASE LOCK</div><h2>Construa a máquina.</h2><div class="rule"><span class="rule-symbol">↔</span><div><strong>Dois iguais em anéis vizinhos</strong><p>Criam uma carga. Ao girar um deles, o vizinho é arrastado no sentido oposto.</p></div></div><div class="rule"><span class="rule-symbol">×2</span><div><strong>Cascatas são potência, não piloto automático</strong><p>Refills podem ressoar de novo e multiplicar energia. Só a primeira onda direta pode causar Ruptura.</p></div></div>',
-    ()=>'<div class="onboard-progress"><span></span><span></span><span></span><span class="on"></span></div><div class="eyebrow">04 · PRIMEIRO MOVIMENTO</div><h2>Escute a máquina.</h2><p>O som confirma giro, acoplamento, ressonância, dano e ruptura. Em iPhone/Safari ele precisa ser liberado por um toque seu.</p><div class="onboard-focus sound"><strong>COMEÇO GARANTIDO</strong><p>Nesta seed inicial, <b>Externo ↷</b> já cria a primeira Ruptura no setor 1. Segure para ver antes de soltar.</p></div>'
+    ()=>'<div class="onboard-progress"><span class="on"></span><span></span><span></span></div><div class="eyebrow">01 · UMA REGRA</div><h2>Olhe para a coluna rosa.</h2><div class="onboard-focus target"><strong>⌖ PONTO FRACO</strong><p>Seu objetivo é simples: deixar os <b>3 símbolos do setor rosa iguais</b>. Quando isso acontece, você causa 1 Ruptura.</p></div><p>Needle precisa de 3 Rupturas. O contador mostra quantas jogadas você tem antes do ataque.</p>',
+    ()=>'<div class="onboard-progress"><span></span><span class="on"></span><span></span></div><div class="eyebrow">02 · ESCOLHA PELO RESULTADO</div><h2>Você tem seis jogadas.</h2><div class="onboard-focus preview"><strong>NÃO PRECISA CALCULAR A ROTAÇÃO</strong><p>Abaixo do tabuleiro, cada botão já mostra como os <b>3 símbolos do alvo</b> ficarão depois daquela jogada.</p></div><p><strong>RUPTURA</strong> avança a luta. <strong>RESSONÂNCIA</strong> dá energia. <strong>+ PHASE LOCK</strong> prepara movimentos combinados. <strong>DANO</strong> é uma escolha perigosa.</p>',
+    ()=>'<div class="onboard-progress"><span></span><span></span><span class="on"></span></div><div class="eyebrow">03 · DEPOIS VOCÊ APROFUNDA</div><h2>Primeiro jogue.<br>Depois domine.</h2><p>Phase Locks e cascatas aparecem durante a partida e serão explicados quando forem relevantes. Você não precisa entendê-los para começar.</p><div class="onboard-focus sound"><strong>PRIMEIRA JOGADA</strong><p>No começo, procure o botão marcado <b>RUPTURA</b>. Toque nele. É isso.</p></div>'
   ];
   function onboarding(step=0,locked=true){
     step=Math.max(0,Math.min(onboardingSteps.length-1,step));
     const left=step?'<button data-action="onboard-back" data-step="'+(step-1)+'">Voltar</button>':locked?'<button data-action="onboard-skip">Pular tutorial</button>':'<button data-action="close">Fechar</button>';
-    const right=step<onboardingSteps.length-1?'<button class="primary" data-action="onboard-next" data-step="'+(step+1)+'">Próximo</button>':locked?'<button class="primary" data-action="onboard-start">Ativar som e começar</button>':'<button class="primary" data-action="close">Voltar ao jogo</button>';
+    const right=step<onboardingSteps.length-1?'<button class="primary" data-action="onboard-next" data-step="'+(step+1)+'">Próximo</button>':locked?'<button class="primary" data-action="onboard-start">Ativar som e jogar</button>':'<button class="primary" data-action="close">Voltar ao jogo</button>';
     show('<div class="onboarding">'+onboardingSteps[step]()+'<div class="onboard-nav">'+left+right+'</div></div>',locked);
   }
   function help(){onboarding(0,false);}
   function finishOnboarding(withSound=true){
     try{localStorage.setItem(ONBOARD,JSON.stringify('done'));}catch{}
     if(withSound)enableSoundFromGesture();
-    closeModal();feedback('OBJETIVO · setor 1. Segure Externo ↷ para prever a primeira Ruptura.');
+    closeModal();feedback('Escolha uma das seis jogadas. Procure RUPTURA para acertar o setor rosa.');
   }
   function settings() {
-    show('<div class="modal-top"><div class="eyebrow">CONTROLE DA MÁQUINA</div><button class="close" data-action="close">Fechar</button></div><h2>Seu ritmo.</h2><div class="option-row"><span>Velocidade das animações</span><button data-action="speed">'+options.speed+'×</button></div><div class="option-row"><span>Movimento reduzido</span><button data-action="reduced">'+(options.reduced?'Ativo':'Desativado')+'</button></div><div class="option-row"><span>Som sintetizado</span><button data-action="sound">'+(options.sound?'Ativo':'Desativado')+'</button></div><p>PC: Q/A externo; W/S médio; E/D interno. ←/→ gira o anel selecionado. 1/2/3 seleciona. Arraste de volta à origem para cancelar.</p><button class="wide" data-action="seed">Jogar uma seed</button><div class="two-buttons"><button data-action="export">Exportar replay</button><button data-action="import">Importar replay</button></div>'+(state.mode==='free'?'<button class="wide" data-action="lab">Testar Protocolos</button>':'')+'<p>O replay inclui a seed e todas as decisões. Importar reconstrói a máquina e substitui o progresso local.</p>');
+    show('<div class="modal-top"><div class="eyebrow">CONTROLE DA MÁQUINA</div><button class="close" data-action="close">Fechar</button></div><h2>Seu ritmo.</h2><div class="option-row"><span>Velocidade das animações</span><button data-action="speed">'+options.speed+'×</button></div><div class="option-row"><span>Movimento reduzido</span><button data-action="reduced">'+(options.reduced?'Ativo':'Desativado')+'</button></div><div class="option-row"><span>Som sintetizado</span><button data-action="sound">'+(options.sound?'Ativo':'Desativado')+'</button></div><p>Controle principal: escolha diretamente uma das seis jogadas abaixo do tabuleiro. PC: Q/A externo; W/S médio; E/D interno. Você ainda pode arrastar qualquer anel como atalho.</p><button class="wide" data-action="seed">Jogar uma seed</button><div class="two-buttons"><button data-action="export">Exportar replay</button><button data-action="import">Importar replay</button></div>'+(state.mode==='free'?'<button class="wide" data-action="lab">Testar Protocolos</button>':'')+'<p>O replay inclui a seed e todas as decisões. Importar reconstrói a máquina e substitui o progresso local.</p>');
   }
   function draft() {
     const prev=C.ENCOUNTERS[state.encounter];
@@ -302,7 +326,7 @@
     const won=state.status==='won';
     show('<div class="eyebrow">'+(won?'MÁQUINA ESTÁVEL':'COLAPSO')+'</div><h2>'+(won?'Você rompeu o sistema.':'Mais uma ideia?')+'</h2><p>'+(won?'Três Anomalias. Uma máquina construída por você. Teste outra seed ou experimente livremente.':esc(state.cause))+'</p><div class="run-summary"><div><span>Energia total</span><strong>'+format(state.total)+'</strong></div><div><span>Melhor cascata</span><strong>×'+2**Math.min(Math.max(0,state.maxWave-1),10)+'</strong></div><div><span>Melhor movimento</span><strong>'+format(state.bestMove)+'</strong></div><div><span>Acoplamentos usados</span><strong>'+state.locksUsed+'</strong></div></div><button class="primary wide" data-action="retry">Tentar a mesma seed</button><div class="two-buttons"><button data-action="new">Nova seed</button><button data-action="free">Modo livre</button></div><button class="wide" data-action="export">Exportar esta run</button>',true);
   }
-  function start(seed=newSeed(),mode='run') {clearEffects();clearTimeout(enemyTimer);delete portrait.dataset.reaction;state=C.create(seed,mode);visual=null;ghost=null;selected=0;closeModal();render();draw();persist();feedback('Gire o anel externo para a direita.');}
+  function start(seed=newSeed(),mode='run') {clearEffects();clearTimeout(enemyTimer);delete portrait.dataset.reaction;state=C.create(seed,mode);visual=null;ghost=null;selected=0;closeModal();render();draw();persist();feedback('Escolha uma das seis jogadas pelo resultado.');}
   function newSeed() {return 'RB-'+Date.now().toString(36).toUpperCase()+'-'+Math.floor(Math.random()*65536).toString(36).toUpperCase();}
   function resetDialog(mode) {if(!state.turn){start(newSeed(),mode);return;}show('<div class="eyebrow">NOVA MÁQUINA</div><h2>'+(mode==='free'?'Explorar livremente?':'Começar outra run?')+'</h2><p>A partida atual será substituída. Você pode exportar o replay nas opções.</p><button class="primary wide" data-action="'+(mode==='free'?'free':'new')+'">'+(mode==='free'?'Entrar no modo livre':'Nova seed')+'</button><button class="wide" data-action="close">Continuar esta partida</button>');}
   function setPreview(ring,direction) {
@@ -313,7 +337,7 @@
     const breaks=state.mode==='run' && state.intent && p.matches.some(m=>m.sector===state.intent.sector);
     feedback(movement+(breaks?' · RUPTURA NO ALVO':p.matches.length?' · '+p.matches.length+' ressonância'+(p.matches.length>1?'s':''):' · sem ressonância'),true);
   }
-  function clearPreview() {ghost=null;draw();feedback(state.turn?'Gire. Teste a próxima combinação.':'Gire o anel externo para a direita.');}
+  function clearPreview() {ghost=null;draw();feedback('Escolha uma das seis jogadas pelo resultado.');}
   function pause(ms) {return new Promise(resolve=>setTimeout(resolve,options.reduced?0:ms/options.speed));}
   function animateMove(event) {
     if(options.reduced){draw();return Promise.resolve();}
@@ -374,19 +398,24 @@
   canvas.addEventListener('pointerup',event=>{if(!drag || event.pointerId!==drag.id)return;const d=drag;drag=null;canvas.releasePointerCapture(event.pointerId);if(d.direction)commit(d.ring,d.direction);else clearPreview();});
   canvas.addEventListener('pointercancel',()=>{drag=null;clearPreview();});
   canvas.addEventListener('lostpointercapture',()=>{if(drag){drag=null;clearPreview();}});
-  document.querySelectorAll('[data-ring]').forEach(el=>el.addEventListener('click',()=>{if(!busy){selected=Number(el.dataset.ring);clearPreview();render();}}));
-  for(const [id,direction] of [['left',-1],['right',1]]) {
-    const el=$(id);let held=false;
-    el.addEventListener('pointerdown',event=>{if(el.disabled || busy || modal.open)return;held=true;el.setPointerCapture(event.pointerId);unlockAudio();setPreview(selected,direction);});
-    el.addEventListener('pointerup',event=>{if(!held)return;held=false;el.releasePointerCapture(event.pointerId);const rect=el.getBoundingClientRect();if(event.clientX>=rect.left && event.clientX<=rect.right && event.clientY>=rect.top && event.clientY<=rect.bottom)commit(selected,direction);else clearPreview();});
-    el.addEventListener('pointercancel',()=>{held=false;clearPreview();});
-    el.addEventListener('click',event=>{if(event.detail===0)commit(selected,direction);});
-  }
+  $('move-grid').addEventListener('pointerover',event=>{
+    if(event.pointerType==='touch')return;
+    const el=event.target.closest('[data-move-ring]');if(!el||busy||modal.open)return;
+    setPreview(Number(el.dataset.moveRing),Number(el.dataset.moveDir));
+  });
+  $('move-grid').addEventListener('pointerout',event=>{
+    if(event.pointerType==='touch')return;
+    if(event.target.closest('[data-move-ring]'))clearPreview();
+  });
+  $('move-grid').addEventListener('click',event=>{
+    const el=event.target.closest('[data-move-ring]');if(!el||busy||modal.open)return;
+    selected=Number(el.dataset.moveRing);unlockAudio();commit(selected,Number(el.dataset.moveDir));
+  });
   document.addEventListener('keydown',event=>{
     if(modal.open || busy || event.repeat || event.target.matches('input,textarea,select'))return;
     const key=event.key.toLowerCase(),map={q:[0,1],a:[0,-1],w:[1,1],s:[1,-1],e:[2,1],d:[2,-1]};
     if(map[key]){event.preventDefault();selected=map[key][0];commit(...map[key]);}
-    else if(['1','2','3'].includes(key)){event.preventDefault();selected=Number(key)-1;render();draw();}
+    else if(['1','2','3'].includes(key)){event.preventDefault();selected=Number(key)-1;setPreview(selected,1);}
     else if(['arrowleft','arrowright'].includes(key)){event.preventDefault();commit(selected,key==='arrowright'?1:-1);}
   });
   $('sound').addEventListener('click',()=>{if(!options.sound)enableSoundFromGesture();else{options.sound=false;if(audioBus)audioBus.gain.setValueAtTime(0,audioContext.currentTime);persist();render();toast('Som desativado.');}});
@@ -432,7 +461,7 @@
   const fresh=!state;if(!state)state=C.create(seedParam||'FIRST-LIGHT-2');
   const onboarded=read(ONBOARD,null)==='done';
   render();resize();
-  if(state.status==='draft')draft();else if(['won','lost'].includes(state.status))finish();else if(!onboarded)onboarding(0,true);else feedback(fresh?'OBJETIVO · setor 1. Segure Externo ↷ para prever a primeira Ruptura.':'Sua máquina está aqui. Continue de onde parou.');
+  if(state.status==='draft')draft();else if(['won','lost'].includes(state.status))finish();else if(!onboarded)onboarding(0,true);else feedback(fresh?'Escolha uma das seis jogadas. Procure RUPTURA.':'Sua máquina está aqui. Escolha a próxima consequência.');
   // Test integration: the engine stays separate from rendering and is inspectable without network services.
   window.RingGame={getState:()=>C.copy(state),getBusy:()=>busy};
 })();
