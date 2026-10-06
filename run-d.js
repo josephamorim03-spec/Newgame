@@ -59,7 +59,7 @@ function showDraft(mastered=false,challenge=false){
 function showFail(){
   const rd=runPlan[state.round],scoreOk=state.score>=rd.target,reqOk=requirementMet(rd),reason=scoreOk&&!reqOk?`Você bateu a pontuação, mas faltou ${goalLabel(rd.requirement)}.`:`Você ficou abaixo de ${fmt(rd.target)}. Tente uma leitura diferente do espaço — sem uma rota destacada pelo jogo.`;
   sheet.innerHTML=`${sheetToolbar()}<div class="sheet-copy"><div class="drawer-title">A trama não fechou</div><h2>${fmt(state.score)} / ${fmt(rd.target)}</h2><p>${reason}</p><div class="sheet-actions"><button class="btn strong" id="retry">Repetir rodada</button><button class="btn" id="newrun">Nova seed</button><button class="btn" id="failLab">Laboratório</button></div></div>`;
-  openSheet('normal');wireSheetBack(false);$('#retry').onclick=()=>{state=freshState(state.round,state.build);closeSheet(true);hint.classList.remove('hide');render()};$('#newrun').onclick=()=>startRun();$('#failLab').onclick=showLab
+  openSheet('normal');wireSheetBack(false);$('#retry').onclick=()=>{state=freshState(state.round,state.build);closeSheet(true);hint.classList.remove('hide');render()};$('#newrun').onclick=()=>{runChallengeScore=0;startRun()};$('#failLab').onclick=showLab
 }
 async function shareRunChallenge(){
   const score=runTotalScore+(state?.ended?0:(state?.score||0)),url=currentRunUrl({beat:score});
@@ -74,7 +74,7 @@ function showWin(){
   sheet.innerHTML=`${sheetToolbar()}<div class="sheet-copy"><div class="drawer-title">Run ${runSeed} completa</div><h2>${fmt(runTotalScore)} pontos.</h2>
   <p>${runConfigSummary()}. ${runChallengeScore?`Desafio recebido: ${fmt(runChallengeScore)} · <b>${beat?'superado':'ainda à frente'}</b>. `:''}Você terminou com ${state.build.length} Knots, ${runMasteries} Maestrias e ${runChallenges} Desafios. Principal motor: <b>${sourceNames[topSource?.[0]]||'—'}</b>.${engines.length?` Engines: <b>${engines.map(e=>e.name).join(' · ')}</b>.`:''}${engineUse?` Ativações: <b>${engineUse}</b>.`:''}</p>
   <div class="sheet-actions"><button class="btn strong" id="shareRun">Compartilhar desafio</button><button class="btn" id="sameSeed">Rejogar seed</button><button class="btn" id="again">Nova seed</button><button class="btn" id="winLab">Laboratório</button></div></div>`;
-  openSheet('normal');wireSheetBack(false);$('#shareRun').onclick=shareRunChallenge;$('#sameSeed').onclick=()=>startRun(runSeed,runConfig);$('#again').onclick=()=>startRun();$('#winLab').onclick=showLab
+  openSheet('normal');wireSheetBack(false);$('#shareRun').onclick=shareRunChallenge;$('#sameSeed').onclick=()=>startRun(runSeed,runConfig);$('#again').onclick=()=>{runChallengeScore=0;startRun()};$('#winLab').onclick=showLab
 }
 function labSelect(id,label,options,value){return `<label class="lab-field"><span>${label}</span><select id="${id}">${options.map(([v,t])=>`<option value="${v}" ${String(value)===String(v)?'selected':''}>${t}</option>`).join('')}</select></label>`}
 function showLab(){
@@ -90,8 +90,8 @@ function showLab(){
   openSheet('lab');wireSheetBack(false);sheet.scrollTop=0;
   $('#rollSeed').onclick=()=>{$('#labSeed').value=Math.floor(1000+Math.random()*900000)};
   const read=()=>({difficulty:$('#labDifficulty').value,rounds:$('#labRounds').value,geometry:$('#labGeometry').value,nodes:$('#labNodes').value,objectives:$('#labObjectives').value});
-  $('#labStart').onclick=()=>{const seed=Math.max(1,Math.floor(Number($('#labSeed').value)||Math.random()*900000));startRun(seed,read())};
-  $('#labChaos').onclick=()=>startRun(Math.floor(1000+Math.random()*900000),{difficulty:'random',rounds:'random',geometry:'random',nodes:'random',objectives:'random'})
+  $('#labStart').onclick=()=>{runChallengeScore=0;const seed=Math.max(1,Math.floor(Number($('#labSeed').value)||Math.random()*900000));startRun(seed,read())};
+  $('#labChaos').onclick=()=>{runChallengeScore=0;startRun(Math.floor(1000+Math.random()*900000),{difficulty:'random',rounds:'random',geometry:'random',nodes:'random',objectives:'random'})}
 }
 function startRun(seed,config){
   if(roundEndTimer){clearTimeout(roundEndTimer);roundEndTimer=null}
@@ -108,7 +108,7 @@ function primeAudio(){
     if(audioCtx.state==='running'){audioPrimed=true;if(musicOn)ensureMusic()}else setTimeout(()=>{if(audioCtx&&audioCtx.state==='running'){audioPrimed=true;if(musicOn)ensureMusic()}},40)
   }catch(e){}
 }
-$('#restartBtn').addEventListener('click',()=>startRun());
+$('#restartBtn').addEventListener('click',()=>{runChallengeScore=0;startRun()});
 $('#labBtn').addEventListener('click',showLab);
 $('#draftResume').addEventListener('click',()=>{if(draftPending){openSheet('draft');sheet.scrollTop=0}});
 $('#soundBtn').addEventListener('click',()=>{soundOn=!soundOn;const b=$('#soundBtn');b.setAttribute('aria-pressed',String(soundOn));b.classList.toggle('is-off',!soundOn);primeAudio();if(soundOn)tone(392,.12,'triangle',.055)});
