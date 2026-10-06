@@ -113,6 +113,25 @@ Se dois ou mais setores ressoam no mesmo estado:
 - todos resolvem na mesma **onda**;
 - todos contam para a mesma etapa de Cascata.
 
+## Ruptura — progresso deliberado do encontro
+
+**Energia não é mais a condição de vitória.**
+
+Cada Anomalia marca um **Ponto Fraco** em um setor. Para avançar o encontro, o jogador precisa criar uma Ressonância **direta, na primeira onda da ação**, exatamente nesse setor.
+
+- acertar o Ponto Fraco = +1 Ruptura;
+- depois do acerto, um novo Ponto Fraco é marcado;
+- Ressonâncias fora do alvo continuam gerando Energia, Protocolos e Phase Locks;
+- Cascatas geradas pelo refill continuam valiosas, mas **não geram Rupturas adicionais**;
+- portanto, uma única ação deliberada pode causar no máximo 1 Ruptura.
+
+Metas atuais do protótipo:
+- NEEDLE: 3 Rupturas;
+- PARASITE: 4 Rupturas;
+- THE CLAMP: 5 Rupturas.
+
+Objetivo de design: separar claramente **recompensa sistêmica** (Energia/cascatas) de **progresso do combate** (Ruptura), para que o jogo não avance sozinho por sorte no refill.
+
 ---
 
 # 4. Refill
@@ -304,9 +323,10 @@ Após a cascata terminar:
 - gerar no máximo 1 carga por aresta por ação-base, salvo Protocolos.
 
 ## Fase F — Anomalia
-- reduzir countdowns;
+- se houve Ruptura, marcar imediatamente o próximo Ponto Fraco sem consumir o restante do countdown antigo;
+- caso contrário, reduzir countdown;
 - resolver Intent pronto;
-- gerar próximo Intent.
+- gerar próximo Intent após ataque/defesa.
 
 ## Fase G — novo turno
 UI volta ao estado totalmente controlável.
