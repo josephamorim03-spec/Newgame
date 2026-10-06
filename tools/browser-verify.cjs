@@ -156,7 +156,7 @@ const fs=require('node:fs');
  const offline=await browser.newContext({viewport:{width:390,height:844},offline:true}),filePage=await offline.newPage();
  filePage.on('pageerror',e=>errors.push(e.message));
  await filePage.goto('file://'+path.resolve(__dirname,'../ring-break-standalone.html'));
- if(await filePage.getByRole('button',{name:'Pular',exact:true}).count())await filePage.getByRole('button',{name:'Pular',exact:true}).click();
+ if(await filePage.getByRole('button',{name:'Pular tutorial',exact:true}).count())await filePage.getByRole('button',{name:'Pular',exact:true}).click();
  assert.equal(await filePage.locator('#anomaly-portrait svg').count(),1,'offline standalone includes the vector assets');
  await filePage.getByRole('button',{name:'Girar anel selecionado no sentido horário'}).click();await filePage.waitForFunction(()=>!RingGame.getBusy());
  assert.equal(await filePage.evaluate(()=>RingGame.getState().turn),1);
