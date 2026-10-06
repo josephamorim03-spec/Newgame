@@ -23,22 +23,54 @@ function clearedCount(){return MAPS.reduce((n,m)=>n+(mapProgress(m.id).medal>=1?
 function unlocked(i){if(i===0)return true;const first=mapProgress('first').medal>=1;if(!first)return false;if(i<=3)return true;const n=clearedCount();if(i<=6)return n>=3;if(i<=8)return n>=5;if(i<=10)return n>=7;return n>=9}
 function unlockHint(i){if(i===0)return'';if(!mapProgress('first').medal)return'Complete Primeira trama para abrir o Atlas.';if(i<=3)return'';if(i<=6)return`Complete 3 mapas do Atlas · ${clearedCount()}/3`;if(i<=8)return`Complete 5 mapas do Atlas · ${clearedCount()}/5`;if(i<=10)return`Complete 7 mapas do Atlas · ${clearedCount()}/7`;return`Complete 9 mapas do Atlas · ${clearedCount()}/9`}
 function mapProgress(id){const map=MAPS.find(m=>m.id===id),version=map?.version||1,p=profile.maps[id];if(p&&typeof p==='object'&&!Array.isArray(p)){const storedVersion=p.version==null?1:Number(p.version);if(storedVersion===version){p.version=storedVersion;p.medal=Number.isFinite(Number(p.medal))?Math.max(0,Math.min(3,Number(p.medal))):0;p.best=Number.isFinite(Number(p.best))?Math.max(0,Number(p.best)):0;p.feat=!!p.feat;if(!Array.isArray(p.attempts))p.attempts=[];return p}}return{version,medal:0,best:0,attempts:[],feat:false}}
+function isMasterProgress(p){return !!p&&p.medal>=3&&p.feat}
 function atlasCard(m,i){
-  const p=mapProgress(m.id),lock=!unlocked(i);
-  return `<button class="map-card ${lock?'locked':''}" ${lock?'disabled':''} data-map="${m.id}"><div class="map-top"><b>${i+1}. ${m.name}</b><div class="medals"><span class="medal ${p.medal>=1?'on':''}">●</span><span class="medal ${p.medal>=2?'on':''}">●</span><span class="medal ${p.medal>=3?'on':''}">●</span><span class="feat-medal ${p.feat?'on':''}" title="${m.feat.label}">◆</span></div></div><small>${lock?unlockHint(i):m.desc}</small><div class="map-goals"><span>${m.goals[0].label}</span><span>${m.goals[1].label}</span><span>${m.goals[2].label}</span><span class="feat-line">◆ ${m.feat.label}</span></div><div class="map-best">Melhor score: ${p.best?fmt(p.best):'—'}${p.bestObjectiveDisplay!=null?` · Melhor ${rankData(m,{}).label}: ${p.bestObjectiveDisplay}`:''}</div></button>`;
+  const p=mapProgress(m.id),lock=!unlocked(i),master=isMasterProgress(p);
+  return `<button class="map-card ${lock?'locked':''}" ${lock?'disabled':''} data-map="${m.id}">
+    <div class="map-top">
+      <b>${i+1}. ${m.name}</b>
+      <div class="medals" aria-label="Domínio">
+        <span class="medal pass ${p.medal>=1?'on':''}" title="Passar">●</span>
+        <span class="medal silver ${p.medal>=2?'on':''}" title="Prata">●</span>
+        <span class="medal gold ${p.medal>=3?'on':''}" title="Ouro">●</span>
+        <span class="medal master ${master?'on':''}" title="Mestre"><svg class="ui-icon" aria-hidden="true"><use href="ui-icons.svg#master"></use></svg></span>
+      </div>
+    </div>
+    <small>${lock?unlockHint(i):m.desc}</small>
+    <div class="map-goals">
+      <span>${m.goals[0].label}</span>
+      <span>${m.goals[1].label}</span>
+      <span>${m.goals[2].label}</span>
+      <span class="master-line">Mestre · Ouro + Feito</span>
+      <span class="feat-line"><svg class="ui-icon" aria-hidden="true"><use href="ui-icons.svg#feat"></use></svg> Feito · ${m.feat.label}</span>
+    </div>
+    <div class="map-best">Melhor score: ${p.best?fmt(p.best):'—'}${p.bestObjectiveDisplay!=null?` · Melhor ${rankData(m,{}).label}: ${p.bestObjectiveDisplay}`:''}</div>
+  </button>`;
 }
 function showAtlas(){
-  const medalTotal=MAPS.reduce((s,m)=>s+mapProgress(m.id).medal,0),goldTotal=MAPS.reduce((s,m)=>s+(mapProgress(m.id).medal>=3?1:0),0),featTotal=MAPS.reduce((s,m)=>s+(mapProgress(m.id).feat?1:0),0),pct=Math.round((medalTotal+featTotal)/(MAPS.length*4)*100);
+  const medalTotal=MAPS.reduce((s,m)=>s+mapProgress(m.id).medal,0),
+        masterTotal=MAPS.reduce((s,m)=>s+(isMasterProgress(mapProgress(m.id))?1:0),0),
+        featTotal=MAPS.reduce((s,m)=>s+(mapProgress(m.id).feat?1:0),0),
+        pct=Math.round((medalTotal+masterTotal)/(MAPS.length*4)*100);
   const chapters=[
     {title:'Fundamentos',desc:'Aprenda o vocabulário: pontuação, Cross, Echo e Halo.',from:0,to:4},
     {title:'Domínio',desc:'Comece a combinar tamanho, repetição, pureza e composição.',from:4,to:8},
     {title:'Composição avançada',desc:'Simetria, triângulos, sequências e economia espacial.',from:8,to:12}
   ];
   modalWrap.classList.remove('hidden');
-  modal.innerHTML=`<h2>Atlas</h2><p>Cada mapa é um problema geométrico fixo. Vença, volte e complete Prata, Ouro e o Feito lateral.</p><div class="atlas-progress"><div><b>${medalTotal}/${MAPS.length*3}</b><span>medalhas</span></div><div><b>${goldTotal}/${MAPS.length}</b><span>Ouros</span></div><div><b>${featTotal}/${MAPS.length}</b><span>Feitos</span></div><div><b>${pct}%</b><span>domínio</span></div></div>${chapters.map(ch=>{const ids=Array.from({length:ch.to-ch.from},(_,j)=>ch.from+j),done=ids.filter(i=>mapProgress(MAPS[i].id).medal>=1).length;return`<section class="atlas-chapter"><div class="chapter-head"><div><h3>${ch.title}</h3><p>${ch.desc}</p></div><span>${done}/${ids.length} concluídos</span></div><div class="atlas-grid">${ids.map(i=>atlasCard(MAPS[i],i)).join('')}</div></section>`}).join('')}<div class="modal-actions"><button class="btn" id="importRoute">Importar rota</button></div>`;
-  modal.querySelectorAll('[data-map]').forEach(b=>b.addEventListener('click',()=>startMap(b.dataset.map)));$('#importRoute').onclick=showImportRoute;
+  modal.innerHTML=`<h2>Atlas</h2><p>Suba a trilha <b>Passar → Prata → Ouro → Mestre</b>. Feitos são desafios laterais; completar Ouro + Feito torna o mapa Mestre.</p>
+  <div class="atlas-progress">
+    <div><b>${medalTotal}/${MAPS.length*3}</b><span>medalhas</span></div>
+    <div><b>${masterTotal}/${MAPS.length}</b><span>Mestres</span></div>
+    <div><b>${featTotal}/${MAPS.length}</b><span>Feitos</span></div>
+    <div><b>${pct}%</b><span>domínio</span></div>
+  </div>
+  ${chapters.map(ch=>{const ids=Array.from({length:ch.to-ch.from},(_,j)=>ch.from+j),done=ids.filter(i=>mapProgress(MAPS[i].id).medal>=1).length;return`<section class="atlas-chapter"><div class="chapter-head"><div><h3>${ch.title}</h3><p>${ch.desc}</p></div><span>${done}/${ids.length} concluídos</span></div><div class="atlas-grid">${ids.map(i=>atlasCard(MAPS[i],i)).join('')}</div></section>`}).join('')}
+  <div class="modal-actions"><button class="btn" id="importRoute">Importar rota</button></div>`;
+  modal.querySelectorAll('[data-map]').forEach(b=>b.addEventListener('click',()=>startMap(b.dataset.map)));
+  $('#importRoute').onclick=showImportRoute;
 }
-function startMap(id,keepRival=false){if(finishTimer){clearTimeout(finishTimer);finishTimer=null}clearGhost();if(!keepRival)rivalChallenge=null;currentMap=MAPS.find(m=>m.id===id);if(!currentMap){showAtlas();return}state={score:0,crosses:0,echoes:0,loops:0,cleanLoops:0,centerLoops:0,maxVertices:0,triangleLoops:0,symPairs:0,rituals:0,ritualStage:0,uniqueVertices:0,moves:0,current:null,path:[],edges:[],loopsData:[],junctions:[],pts:currentMap.pts.map((p,i)=>({id:i,x:p[0],y:p[1]})),ended:false,goalSeen:[false,false,false]};modalWrap.classList.add('hidden');hint.classList.remove('hide');hint.textContent=currentMap.id==='first'?'Toque em qualquer ponto para começar.':currentMap.goals[0].label;drawGrid();mood=.08;render()}
+function startMap(id,keepRival=false){if(finishTimer){clearTimeout(finishTimer);finishTimer=null}clearGhost();if(!keepRival)rivalChallenge=null;currentMap=MAPS.find(m=>m.id===id);if(!currentMap){showAtlas();return}state={score:0,crosses:0,echoes:0,loops:0,cleanLoops:0,centerLoops:0,maxVertices:0,triangleLoops:0,symPairs:0,rituals:0,ritualStage:0,uniqueVertices:0,moves:0,current:null,path:[],edges:[],loopsData:[],junctions:[],pts:currentMap.pts.map((p,i)=>({id:i,x:p[0],y:p[1]})),ended:false,goalSeen:[false,false,false],featAnnounced:false,masterAnnounced:false};modalWrap.classList.add('hidden');hint.classList.remove('hide');hint.textContent=currentMap.id==='first'?'Toque em qualquer ponto para começar.':currentMap.goals[0].label;drawGrid();mood=.08;render()}
 function fmt(n){return Math.round(n).toLocaleString('pt-BR')} function edgeKey(a,b){return a<b?`${a}-${b}`:`${b}-${a}`} function dist(a,b){return Math.hypot(a.x-b.x,a.y-b.y)} function area(poly){let s=0;for(let i=0;i<poly.length;i++){const p=poly[i],q=poly[(i+1)%poly.length];s+=p.x*q.y-q.x*p.y}return Math.abs(s/2)}
 function intersect(a,b,c,d){const den=(a.x-b.x)*(c.y-d.y)-(a.y-b.y)*(c.x-d.x);if(Math.abs(den)<1e-8)return null;const t=((a.x-c.x)*(c.y-d.y)-(a.y-c.y)*(c.x-d.x))/den,u=-((a.x-b.x)*(a.y-c.y)-(a.y-b.y)*(a.x-c.x))/den;if(t>.02&&t<.98&&u>.02&&u<.98)return{x:a.x+t*(b.x-a.x),y:a.y+t*(b.y-a.y)};return null}
 function pointInPoly(pt,poly){let inside=false;for(let i=0,j=poly.length-1;i<poly.length;j=i++){const xi=poly[i].x,yi=poly[i].y,xj=poly[j].x,yj=poly[j].y,hit=((yi>pt.y)!==(yj>pt.y))&&(pt.x<(xj-xi)*(pt.y-yi)/(yj-yi+1e-9)+xi);if(hit)inside=!inside}return inside}
