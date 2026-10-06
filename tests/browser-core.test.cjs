@@ -19,8 +19,16 @@ function loadCJS(src,reqMap={}){
   const dummy={classList:{add(){},remove(){},toggle(){}},style:{setProperty(){}},setAttribute(){},appendChild(){},removeChild(){},querySelectorAll(){return[]},addEventListener(){},innerHTML:'',textContent:'',animate(){}};
   const documentStub={querySelector(){return dummy},createElement(){return {...dummy,style:{setProperty(){}}}},createElementNS(){return {...dummy,style:{setProperty(){}}}},documentElement:{style:{setProperty(){}}}};
   const storage={getItem(){return null},setItem(){}};
-  const factory=new Function('document','localStorage',aa+'\n'+ab+'\nreturn {MAPS,evaluateRoute};');
-  const browser=factory(documentStub,storage);
+  const factory=new Function('document','localStorage','setTimeout','clearTimeout',aa+'\n'+ab+String.raw`
+function simulateLiveLock(map,route){
+  currentMap=map;state={score:0,crosses:0,echoes:0,loops:0,cleanLoops:0,centerLoops:0,maxVertices:0,triangleLoops:0,symPairs:0,rituals:0,ritualStage:0,uniqueVertices:1,moves:0,current:null,path:[],edges:[],loopsData:[],junctions:[],pts:map.pts.map((p,i)=>({id:i,x:p[0],y:p[1]})),ended:false,goalSeen:[false,false,false]};
+  tone=()=>{};nudgeMood=()=>{};spark=()=>{};haptic=()=>{};bigMoment=()=>{};checkGoalCelebration=()=>{};render=()=>{};
+  const ids=route.map(x=>x-1);state.current=ids[0];state.path=[ids[0]];
+  for(const to of ids.slice(1))connect(state.current,to);
+  return state.ended;
+}
+return {MAPS,evaluateRoute,simulateLiveLock};`);
+  const browser=factory(documentStub,storage,()=>1,()=>{});
   const core=loadCJS(read('tools/calibrate-atlas.js'));
   let checked=0;
   for(const [id,w] of Object.entries(core.WITNESSES)){
@@ -37,6 +45,8 @@ function loadCJS(src,reqMap={}){
     }
   }
   assert.equal(checked,24);
+  const firstRoute=core.WITNESSES.first.gold;
+  assert.equal(browser.simulateLiveLock(browser.MAPS.find(m=>m.id==='first'),firstRoute),true,'Atlas must lock immediately after the last stitch');
 }
 
 // Run: browser scoring vs empty-build calibration core
