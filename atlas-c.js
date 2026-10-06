@@ -3,7 +3,7 @@ function initAudio(){
   if(audioCtx)return;const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;audioCtx=new AC();
   const comp=audioCtx.createDynamicsCompressor();comp.threshold.value=-23;comp.knee.value=18;comp.ratio.value=2.4;
   masterGain=audioCtx.createGain();musicGain=audioCtx.createGain();fxGain=audioCtx.createGain();
-  masterGain.gain.value=.90;musicGain.gain.value=.095;fxGain.gain.value=.19;
+  masterGain.gain.value=.96;musicGain.gain.value=.20;fxGain.gain.value=.48;
   noiseBuffer=audioCtx.createBuffer(1,Math.floor(audioCtx.sampleRate*.35),audioCtx.sampleRate);const data=noiseBuffer.getChannelData(0);for(let i=0;i<data.length;i++)data[i]=(Math.random()*2-1)*(1-i/data.length);
   musicGain.connect(comp);fxGain.connect(comp);comp.connect(masterGain);masterGain.connect(audioCtx.destination)
 }
@@ -42,13 +42,15 @@ function musicLoop(){
   musicStep++;if(musicStep%3===0||intensity>.8)currentChord=(currentChord+1)%chords.length;mood=Math.max(.05,mood*.78)
 }
 function stopMusic(){if(musicTimer){clearInterval(musicTimer);musicTimer=null}}
-function unlockAudioOnce(){
-  initAudio();
-  const ready=audioCtx&&audioCtx.state==='suspended'?audioCtx.resume():Promise.resolve();
-  Promise.resolve(ready).then(()=>{if(audioCtx&&musicOn)ensureMusic()}).catch(()=>{});
-  document.removeEventListener('pointerdown',unlockAudioOnce,true);
-  document.removeEventListener('touchend',unlockAudioOnce,true);
+let atlasAudioPrimed=false;
+function primeAtlasAudio(){
+  initAudio();if(!audioCtx)return;
+  try{
+    if(audioCtx.state==='suspended')audioCtx.resume().catch(()=>{});
+    const o=audioCtx.createOscillator(),g=audioCtx.createGain();g.gain.value=.00001;o.frequency.value=82;o.connect(g);g.connect(masterGain);o.start();o.stop(audioCtx.currentTime+.025);
+    if(audioCtx.state==='running'){atlasAudioPrimed=true;if(musicOn)ensureMusic()}else setTimeout(()=>{if(audioCtx&&audioCtx.state==='running'){atlasAudioPrimed=true;if(musicOn)ensureMusic()}},40)
+  }catch(e){}
 }
-document.addEventListener('pointerdown',unlockAudioOnce,{capture:true,once:true});
-document.addEventListener('touchend',unlockAudioOnce,{capture:true,once:true});
-$('#atlasBtn').onclick=()=>{if(finishTimer)return;showAtlas()};$('#restartBtn').onclick=()=>currentMap?startMap(currentMap.id,!!(rivalChallenge&&rivalChallenge.mapId===currentMap.id)):showAtlas();$('#soundBtn').onclick=()=>{soundOn=!soundOn;const b=$('#soundBtn');b.setAttribute('aria-pressed',String(soundOn));b.classList.toggle('is-off',!soundOn);b.title=soundOn?'Som ligado':'Som desligado';initAudio();if(audioCtx&&audioCtx.state==='suspended')audioCtx.resume().catch(()=>{});if(soundOn)tone(320,.08,'sine',.018)};$('#musicBtn').onclick=()=>{musicOn=!musicOn;const b=$('#musicBtn');b.setAttribute('aria-pressed',String(musicOn));b.classList.toggle('is-off',!musicOn);b.title=musicOn?'Música ligada':'Música desligada';initAudio();if(audioCtx&&audioCtx.state==='suspended')audioCtx.resume().catch(()=>{});if(musicOn)ensureMusic();else stopMusic()};showAtlas();drawGrid();
+document.addEventListener('pointerdown',()=>{if(!atlasAudioPrimed)primeAtlasAudio()},{capture:true});
+document.addEventListener('touchstart',()=>{if(!atlasAudioPrimed)primeAtlasAudio()},{capture:true,passive:true});
+$('#atlasBtn').onclick=()=>{if(finishTimer)return;showAtlas()};$('#restartBtn').onclick=()=>currentMap?startMap(currentMap.id,!!(rivalChallenge&&rivalChallenge.mapId===currentMap.id)):showAtlas();$('#soundBtn').onclick=()=>{soundOn=!soundOn;const b=$('#soundBtn');b.setAttribute('aria-pressed',String(soundOn));b.classList.toggle('is-off',!soundOn);b.title=soundOn?'Som ligado':'Som desligado';primeAtlasAudio();if(soundOn)tone(392,.12,'triangle',.055)};$('#musicBtn').onclick=()=>{musicOn=!musicOn;const b=$('#musicBtn');b.setAttribute('aria-pressed',String(musicOn));b.classList.toggle('is-off',!musicOn);b.title=musicOn?'Música ligada':'Música desligada';primeAtlasAudio();if(musicOn)ensureMusic();else stopMusic()};showAtlas();drawGrid();const sharedRoute=new URLSearchParams(location.search).get('route');if(sharedRoute){const parsed=parseRouteCode(sharedRoute);if(parsed.ok)startRival(parsed);else{showImportRoute();const input=$('#routeInput');if(input)input.value=sharedRoute}}
