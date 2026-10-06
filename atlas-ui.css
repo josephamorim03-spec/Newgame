@@ -20,3 +20,12 @@ html,body{height:100%;overflow:hidden;overscroll-behavior:none}.app{height:100dv
 .edge{stroke-width:7.5;filter:drop-shadow(0 4px 2px rgba(20,16,13,.12)) drop-shadow(0 0 7px rgba(48,41,37,.05))}.edge.echo{filter:drop-shadow(0 3px 2px rgba(20,16,13,.10)) drop-shadow(0 0 8px rgba(93,157,152,.18))}.loop-fill{stroke-width:3;filter:drop-shadow(0 5px 16px rgba(212,107,88,.10))}.junction{stroke-width:4;filter:drop-shadow(0 0 12px rgba(217,170,93,.50)) drop-shadow(0 4px 8px rgba(74,48,18,.12))}
 @keyframes onboardPulse{0%,100%{transform:scale(1);box-shadow:0 5px 14px rgba(40,30,20,.18),0 0 0 7px rgba(212,107,88,.06)}50%{transform:scale(1.1);box-shadow:0 5px 14px rgba(40,30,20,.18),0 0 0 14px rgba(212,107,88,.13)}}@keyframes onboardSoft{0%,100%{transform:scale(1)}50%{transform:scale(1.055)}}@keyframes onboardClose{0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}
 @media(max-width:760px){.goal-row{grid-template-columns:1fr}.summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:520px){.hint:has(.hint-step){max-width:92%;top:52px}.goal{font-size:10px;padding:7px 9px}.medal{width:22px;height:22px}}
+
+/* subtle effect variation families */
+.particle.fx-v0{filter:brightness(1)}.particle.fx-v1{filter:saturate(.80) brightness(1.06)}.particle.fx-v2{filter:hue-rotate(9deg) brightness(.98)}
+.particle.fx-v1.thread{width:4px}.particle.fx-v2.thread{height:22px}.particle.fx-v1.petal{border-radius:35% 65% 45% 55%}.particle{scale:var(--scale,1)}
+.pulse-v0{stroke:rgba(217,170,93,.70)}.pulse-v1{stroke:rgba(93,157,152,.58);stroke-dasharray:18 12}.pulse-v2{stroke:rgba(135,115,216,.52);stroke-width:6}
+.ribbon-v0{background:linear-gradient(90deg,rgba(212,107,88,.05),rgba(212,107,88,.88),rgba(217,170,93,.80))}.ribbon-v1{background:linear-gradient(90deg,rgba(93,157,152,.04),rgba(93,157,152,.78),rgba(217,170,93,.66));height:3px}.ribbon-v2{background:linear-gradient(90deg,rgba(135,115,216,.04),rgba(135,115,216,.67),rgba(212,107,88,.62));height:5px}
+.flash-v0{transform:rotate(0)}.flash-v1{transform:rotate(10deg) scale(1.015)}.flash-v2{transform:rotate(-8deg) scale(.985)}
+.toast-v1{letter-spacing:.12em}.toast-v2{letter-spacing:.16em}
+@media(prefers-reduced-motion:reduce){.node.onboard-start:before,.node.onboard-next:before,.node.onboard-close:before{animation:none}.particle,.bigflash,.ribbon{animation-duration:.12s!important}}
