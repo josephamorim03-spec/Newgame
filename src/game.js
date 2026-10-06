@@ -5,7 +5,7 @@
   const colors=['#96ebd3','#baafff','#edc47c','#f28da7'],radii=[166,120,74],names=['Externo','Médio','Interno'];
   const rewardColors=['#62ffd1','#b995ff','#ffda72','#ff82ba'];
   const machine=document.querySelector('.machine');
-  const SAVE='ring-break-save-0.1',ATLAS='ring-break-atlas-0.1',OPTIONS='ring-break-options-0.1';
+  const SAVE='ring-break-save-0.2',ATLAS='ring-break-atlas-0.1',OPTIONS='ring-break-options-0.1';
   const defaults={sound:false,speed:1,reduced:matchMedia('(prefers-reduced-motion: reduce)').matches};
   function read(key,fallback) {try{return JSON.parse(localStorage.getItem(key))||fallback;}catch{return fallback;}}
   let options={...defaults,...read(OPTIONS,{})},atlas=read(ATLAS,{}),selected=0,busy=false,ghost=null,drag=null;
@@ -235,13 +235,13 @@
     machine.dataset.mode=free?'free':'run';
     updateEnemy(s);
     $('stage').textContent=free?'LABORATÓRIO · SEM AMEAÇAS':'ENCONTRO 0'+(s.encounter+1)+' / 03';$('anomaly-name').textContent=free?'LIVRE':encounter.name;
-    $('energy').textContent=format(s.energy);$('goal').textContent=free?'':' / '+encounter.goal;$('goal-label').textContent=free?'Energia produzida':'Energia de ruptura';
-    $('energy-bar').style.width=free?'100%':Math.min(s.energy/encounter.goal*100,100)+'%';
+    $('energy').textContent=free?format(s.energy):s.breaks;$('goal').textContent=free?'':' / '+encounter.breakGoal;$('goal-label').textContent=free?'Energia produzida':'Rupturas no núcleo';
+    $('energy-bar').style.width=free?'100%':Math.min(s.breaks/encounter.breakGoal*100,100)+'%';
     $('health').innerHTML=Array.from({length:3},(_,i)=>'<span class="health-pip '+(i>=s.hp?'off':'')+'"></span>').join('')+(s.shield?'<span class="health-pip shield"></span>':'');$('health').setAttribute('aria-label',s.hp+' de 3 pontos de integridade'+(s.shield?', escudo ativo':''));
     const i=s.intent;$('intent').classList.toggle('safe',!i || i.neutralized || i.kind==='parasite' && s.locks[i.edge]===0);
     if(!i){$('intent-text').textContent='Experimente. Não há limite de movimentos.';$('countdown').textContent='∞';}
-    else if(i.kind==='parasite'){$('intent-text').textContent='Drena link 0'+(i.edge+1)+'↔0'+(i.edge+2)+'. Gaste as cargas antes.';$('countdown').textContent=i.count;}
-    else {$('intent-text').textContent=i.neutralized?'Setor '+(i.sector+1)+' neutralizado.':(s.jam>=0?names[s.jam]+' preso · ':'')+'Ressoe no setor '+(i.sector+1)+' para evitar dano.';$('countdown').textContent=i.count;}
+    else if(i.kind==='parasite'){$('intent-text').textContent='PONTO FRACO '+(i.sector+1)+' · ou esvazie link 0'+(i.edge+1)+'↔0'+(i.edge+2)+' antes do ataque.';$('countdown').textContent=i.count;}
+    else {$('intent-text').textContent=(s.jam>=0?names[s.jam]+' preso · ':'')+'ROMPA O SETOR '+(i.sector+1)+' antes do ataque.';$('countdown').textContent=i.count;}
     $('queue').innerHTML=s.queue.slice(0,s.protocols.includes('foretell')?12:6).map(toneHTML).join('');
     for(let e=0;e<2;e++) $('link'+e).innerHTML=[0,1].map(j=>'<span class="charge '+(j<s.locks[e]?'on':'')+'"></span>').join('');
     $('link-description').textContent=s.protocols.includes('drive')?'Carregados: giram juntos no mesmo sentido.':'Carregados: girar um arrasta o vizinho ao contrário.';
@@ -257,7 +257,7 @@
   function show(html,locked=false) {ghost=null;draw();$('modal-content').innerHTML=html;modal.dataset.locked=String(locked);if(!modal.open)modal.showModal();}
   function closeModal() {modal.close();draw();}
   function help() {
-    show('<div class="eyebrow">GIRE. ACOPLE. ROMPA.</div><h2>Uma ação.<br>Uma máquina inteira.</h2><div class="rule"><div class="rule-tones">'+[0,0,0].map(toneHTML).join('')+'</div><div><strong>Três iguais na mesma direção</strong><p>Ressoam e geram energia. Preencha a barra para vencer.</p></div></div><div class="rule"><span class="rule-symbol">↔</span><div><strong>Dois iguais, anéis vizinhos</strong><p>Um novo par cria uma carga. O próximo giro arrasta o vizinho no sentido oposto.</p></div></div><div class="rule"><span class="rule-symbol">⌖</span><div><strong>A ameaça está no tabuleiro</strong><p>Ressoe no setor rosa antes da contagem zerar. Cada giro gasta uma ação; pensar não gasta nada.</p></div></div><p>Toque em um anel e arraste ao redor do centro. Ou selecione um anel abaixo e segure um botão para ver a previsão. Solte para confirmar.</p><button class="primary wide" data-action="close">Experimentar</button>');
+    show('<div class="eyebrow">GIRE. ACOPLE. ROMPA.</div><h2>Uma ação.<br>Uma decisão.</h2><div class="rule"><div class="rule-tones">'+[0,0,0].map(toneHTML).join('')+'</div><div><strong>Três iguais ressoam</strong><p>Ressonâncias geram energia e cascatas, mas energia sozinha não vence o encontro.</p></div></div><div class="rule"><span class="rule-symbol">⌖</span><div><strong>O setor rosa é o ponto fraco</strong><p>Uma ressonância DIRETA nele causa 1 Ruptura. Cascatas automáticas não causam Ruptura.</p></div></div><div class="rule"><span class="rule-symbol">↔</span><div><strong>Dois iguais criam Phase Lock</strong><p>Use os acoplamentos para mover mais de um anel e construir a jogada que atinge o alvo.</p></div></div><p>Cada giro também aproxima o ataque inimigo. Segure para prever; só solte quando a troca valer a pena.</p><button class="primary wide" data-action="close">Experimentar</button>');
   }
   function settings() {
     show('<div class="modal-top"><div class="eyebrow">CONTROLE DA MÁQUINA</div><button class="close" data-action="close">Fechar</button></div><h2>Seu ritmo.</h2><div class="option-row"><span>Velocidade das animações</span><button data-action="speed">'+options.speed+'×</button></div><div class="option-row"><span>Movimento reduzido</span><button data-action="reduced">'+(options.reduced?'Ativo':'Desativado')+'</button></div><div class="option-row"><span>Som sintetizado</span><button data-action="sound">'+(options.sound?'Ativo':'Desativado')+'</button></div><p>PC: Q/A externo; W/S médio; E/D interno. ←/→ gira o anel selecionado. 1/2/3 seleciona. Arraste de volta à origem para cancelar.</p><button class="wide" data-action="seed">Jogar uma seed</button><div class="two-buttons"><button data-action="export">Exportar replay</button><button data-action="import">Importar replay</button></div>'+(state.mode==='free'?'<button class="wide" data-action="lab">Testar Protocolos</button>':'')+'<p>O replay inclui a seed e todas as decisões. Importar reconstrói a máquina e substitui o progresso local.</p>');
@@ -278,7 +278,8 @@
     const p=C.preview(state,ring,direction);if(!p){feedback(names[ring]+' está preso. Acoplamentos ainda podem movê-lo.');return;}
     selected=ring;ghost=p;render();draw(p.board,[0,0,0],p.matches);
     const movement=p.dirs.map((d,i)=>d?names[i]+' '+(d>0?'↷':'↶'):null).filter(Boolean).join(' · ');
-    feedback(movement+(p.matches.length?' · '+p.matches.length+' ressonância'+(p.matches.length>1?'s':''):''),true);
+    const breaks=state.mode==='run' && state.intent && p.matches.some(m=>m.sector===state.intent.sector);
+    feedback(movement+(breaks?' · RUPTURA NO ALVO':p.matches.length?' · '+p.matches.length+' ressonância'+(p.matches.length>1?'s':''):' · sem ressonância'),true);
   }
   function clearPreview() {ghost=null;draw();feedback(state.turn?'Gire. Teste a próxima combinação.':'Gire o anel externo para a direita.');}
   function pause(ms) {return new Promise(resolve=>setTimeout(resolve,options.reduced?0:ms/options.speed));}
@@ -306,7 +307,7 @@
         }
         if(event.type==='refill'){visual.board=event.board;visual.queue=event.queue;render(visual);draw();await pause(90);}
         if(event.type==='lock'){visual.locks=event.locks;sound('lock');feedback('ACOPLAMENTO · '+names[event.edge]+' ↔ '+names[event.edge+1]);render(visual);draw();await pause(80);}
-        if(event.type==='defuse'){visual.intent.neutralized=true;feedback('SETOR '+(event.sector+1)+' NEUTRALIZADO');}
+        if(event.type==='break'){visual.breaks=event.breaks;visual.intent.neutralized=true;reactEnemy('hit');feedback('RUPTURA '+event.breaks+' / '+event.goal+' · SETOR '+(event.sector+1));floating(event.breaks+' / '+event.goal,'RUPTURAS');await pause(120);}
         if(event.type==='discovery' && !atlas[event.id]) {atlas[event.id]={title:event.title,text:event.text};toast('Descoberta: '+event.title);}
         if(event.type==='damage'){reactEnemy('attack');sound('damage');haptic(25);feedback('IMPACTO · −1 integridade');await pause(160);}
         if(event.type==='evade')feedback(event.label);
@@ -319,8 +320,9 @@
     if(state.status==='draft')draft();else if(['won','lost'].includes(state.status))finish();
     else if(result.events.some(e=>e.type==='resonance')) {
       const energy=result.events.filter(e=>e.type==='resonance'||e.type==='bonus').reduce((sum,e)=>sum+e.energy,0);
-      feedback('+'+format(energy)+' energia · '+(state.intent?.neutralized?'ameaça neutralizada':state.locks.some(Boolean)?'acoplamentos prontos':'prepare o próximo pulso'));
-    } else if(!result.events.some(e=>['damage','evade','lock','blocked'].includes(e.type)))feedback('Nenhuma ressonância. Reposicione para a próxima.');
+      const broke=result.events.some(e=>e.type==='break');
+      feedback(broke?'PONTO FRACO ROMPIDO · novo alvo marcado':'+'+format(energy)+' energia · '+(state.locks.some(Boolean)?'use os acoplamentos para alcançar o alvo':'energia não rompe a Anomalia sozinha'));
+    } else if(!result.events.some(e=>['damage','evade','lock','blocked','break'].includes(e.type)))feedback('Sem ruptura. Reposicione pensando no setor rosa.');
   }
   // Both touch and mouse use the tangential distance around the center, with one step per gesture.
   function point(event) {const rect=canvas.getBoundingClientRect();return {x:(event.clientX-rect.left)*420/rect.width-210,y:(event.clientY-rect.top)*420/rect.height-210};}
