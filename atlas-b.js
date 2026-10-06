@@ -146,10 +146,10 @@ function render(){
     const tutorialClass=onboard==='start'?' onboard-start':((onboard==='connect'&&p.id!==state.current&&!(pv&&pv.blocked))?' onboard-next':((onboard==='close'&&pv&&pv.closes)?' onboard-close':''));
     b.className='node'+(p.id===state.current?' active':'')+(state.path.includes(p.id)?' visited':'')+(pv&&pv.blocked?' blocked':'')+tutorialClass;
     b.style.left=(p.x/10)+'%';b.style.top=(p.y/10)+'%';b.type='button';
-    b.setAttribute('aria-label',`Ponto ${p.id+1}${pv&&!pv.blocked?(pv.closes?' · fecha Loop':pv.crosses?' · '+pv.crosses+' Cross':''):''}`);
+    b.setAttribute('aria-label',`Ponto ${p.id+1}${pv&&!pv.blocked?(pv.closes?' · fecha Loop':pv.crosses?' · cria Cross':''):''}`);
     if(pv&&!pv.blocked&&state.current!==null){
       const badge=document.createElement('span');badge.className='move-preview';
-      badge.textContent=currentMap.id==='mirror'&&pv.mirrorPair?'↔':currentMap.id==='mosaic'&&pv.triangle?'△':currentMap.id==='ritual'&&pv.ritualComplete?'✦':currentMap.id==='ritual'&&pv.ritualAdvance?'›':currentMap.id==='focus'&&pv.reuses?'↺':pv.halo?'⊙':pv.closes?'◌'+pv.verts:pv.crosses?'×'+pv.crosses:pv.echo?'∥':'·';
+      badge.textContent=currentMap.id==='mirror'&&pv.mirrorPair?'↔':currentMap.id==='mosaic'&&pv.triangle?'△':currentMap.id==='ritual'&&pv.ritualComplete?'✦':currentMap.id==='ritual'&&pv.ritualAdvance?'›':currentMap.id==='focus'&&pv.reuses?'↺':pv.halo?'⊙':pv.closes?'◌':pv.crosses?'×':pv.echo?'∥':'·';
       b.appendChild(badge);
     }
     b.addEventListener('pointerdown',ev=>{ev.preventDefault();pick(p.id)});
