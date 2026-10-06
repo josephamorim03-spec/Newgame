@@ -11,11 +11,15 @@ function nudgeMood(v){mood=Math.min(1,mood+v);document.documentElement.style.set
 let atlasAudioPrimed=false;
 modal.setAttribute('role','dialog');modal.setAttribute('aria-modal','true');modal.setAttribute('aria-label','Atlas');modal.tabIndex=-1;
 function primeAtlasAudio(){
-  initAudio();if(!soundtrack)return;
-  soundtrack.unlock().then(ready=>{atlasAudioPrimed=ready}).catch(()=>{atlasAudioPrimed=false});
+  initAudio();if(!soundtrack)return Promise.resolve(false);
+  return soundtrack.unlock().then(ready=>{atlasAudioPrimed=ready;setAtlasAudioReadyUI(ready);return ready}).catch(()=>{atlasAudioPrimed=false;setAtlasAudioReadyUI(false);return false});
 }
-document.addEventListener('pointerdown',()=>{if(!atlasAudioPrimed)primeAtlasAudio()},{capture:true});
-document.addEventListener('touchstart',()=>{if(!atlasAudioPrimed)primeAtlasAudio()},{capture:true,passive:true});
+function setAtlasAudioReadyUI(ready){['#soundBtn','#musicBtn'].forEach(id=>$(id).classList.toggle('needs-unlock',!ready));if(!ready){$('#soundBtn').title='Toque para ativar o som';$('#musicBtn').title='Toque para ativar a música'}}
+function syncAtlasAudioButton(id,on,label){const b=$(id),feminine=label==='Música';b.setAttribute('aria-pressed',String(on));b.classList.toggle('is-off',!on);b.title=`${label} ${on?'ligad':'desligad'}${feminine?'a':'o'}`}
+setAtlasAudioReadyUI(false);
+const primeAtlasFromPlayGesture=event=>{const control=event.target.closest?.('#soundBtn,#musicBtn');if(!atlasAudioPrimed&&!control)primeAtlasAudio()};
+document.addEventListener('pointerdown',primeAtlasFromPlayGesture,{capture:true});
+document.addEventListener('touchstart',primeAtlasFromPlayGesture,{capture:true,passive:true});
 modalWrap.addEventListener('click',event=>{if(currentMap&&event.target.classList.contains('backdrop'))modalWrap.classList.add('hidden')});
 document.addEventListener('keydown',event=>{if(currentMap&&event.key==='Escape'&&!modalWrap.classList.contains('hidden'))modalWrap.classList.add('hidden')});
-$('#atlasBtn').onclick=()=>{if(finishTimer)return;showAtlas()};$('#restartBtn').onclick=()=>currentMap?startMap(currentMap.id,!!(rivalChallenge&&rivalChallenge.mapId===currentMap.id)):showAtlas();$('#soundBtn').onclick=()=>{soundOn=!soundOn;const b=$('#soundBtn');b.setAttribute('aria-pressed',String(soundOn));b.classList.toggle('is-off',!soundOn);b.title=soundOn?'Som ligado':'Som desligado';primeAtlasAudio();if(soundOn)tone(392,.12,'triangle',.055)};$('#musicBtn').onclick=()=>{musicOn=!musicOn;const b=$('#musicBtn');b.setAttribute('aria-pressed',String(musicOn));b.classList.toggle('is-off',!musicOn);b.title=musicOn?'Música ligada':'Música desligada';primeAtlasAudio();if(musicOn)ensureMusic();else stopMusic()};showAtlas();drawGrid();const sharedRoute=new URLSearchParams(location.search).get('route');if(sharedRoute){const parsed=parseRouteCode(sharedRoute);if(parsed.ok)startRival(parsed);else{showImportRoute();const input=$('#routeInput');if(input)input.value=sharedRoute}}
+$('#atlasBtn').onclick=()=>{if(finishTimer)return;showAtlas()};$('#restartBtn').onclick=()=>currentMap?startMap(currentMap.id,!!(rivalChallenge&&rivalChallenge.mapId===currentMap.id)):showAtlas();$('#soundBtn').onclick=async()=>{if(!atlasAudioPrimed){soundOn=true;syncAtlasAudioButton('#soundBtn',true,'Som');if(await primeAtlasAudio())tone(392,.12,'triangle',.055);return}soundOn=!soundOn;syncAtlasAudioButton('#soundBtn',soundOn,'Som');if(soundOn)tone(392,.12,'triangle',.055)};$('#musicBtn').onclick=async()=>{if(!atlasAudioPrimed){musicOn=true;syncAtlasAudioButton('#musicBtn',true,'Música');if(await primeAtlasAudio()){ensureMusic();if(soundOn)tone(523,.12,'sine',.035)}return}musicOn=!musicOn;syncAtlasAudioButton('#musicBtn',musicOn,'Música');if(musicOn)ensureMusic();else stopMusic()};showAtlas();drawGrid();const sharedRoute=new URLSearchParams(location.search).get('route');if(sharedRoute){const parsed=parseRouteCode(sharedRoute);if(parsed.ok)startRival(parsed);else{showImportRoute();const input=$('#routeInput');if(input)input.value=sharedRoute}}

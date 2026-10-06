@@ -26,8 +26,8 @@ const KnotAudio = (() => {
     const beat=60/(mode==='run'?84:72), chords=[[48,55,64,69],[45,52,60,67],[50,57,64,67],[43,50,62,69]];
     function voice(hz,duration,volume,at,bus,type='sine',attack=.008,pan=0) {
       if(voices.size>=64)return;
-      const o=ctx.createOscillator(),g=ctx.createGain(),filter=ctx.createBiquadFilter(),p=ctx.createStereoPanner();
-      o.type=type;o.frequency.value=hz;filter.type='lowpass';filter.frequency.value=type==='triangle'?1600:2600;p.pan.value=pan;
+      const o=ctx.createOscillator(),g=ctx.createGain(),filter=ctx.createBiquadFilter(),p=typeof ctx.createStereoPanner==='function'?ctx.createStereoPanner():ctx.createGain();
+      o.type=type;o.frequency.value=hz;filter.type='lowpass';filter.frequency.value=type==='triangle'?1600:2600;if(p.pan)p.pan.value=pan;
       g.gain.setValueAtTime(.0001,at);g.gain.exponentialRampToValueAtTime(Math.max(.0002,volume),at+attack);g.gain.exponentialRampToValueAtTime(.0001,at+Math.max(duration,attack+.02));
       o.connect(filter);filter.connect(g);g.connect(p);p.connect(bus);voices.add(o);if(bus===music)musicVoices.add(o);
       o.onended=()=>{voices.delete(o);musicVoices.delete(o);o.disconnect();filter.disconnect();g.disconnect();p.disconnect()};o.start(at);o.stop(at+duration+.04);
@@ -101,7 +101,8 @@ const KnotAudio = (() => {
     }
     function start(){if(timer||!enabled().music||document.hidden)return;if(ctx.state!=='running'){unlock();return}music.gain.setTargetAtTime(.55,ctx.currentTime,.1);step=Math.ceil(step/16)*16;next=ctx.currentTime+.03;tick();timer=setInterval(tick,25)}
     function stop(){clearInterval(timer);timer=null;const t=ctx.currentTime;music.gain.cancelScheduledValues(t);music.gain.setTargetAtTime(.0001,t,.015);for(const o of musicVoices){try{o.stop(t+.08)}catch{}}}
-    ctx.addEventListener('statechange',()=>{if(ctx.state==='running'){flushPending();if(enabled().music)start()}});
+    const onStateChange=()=>{if(ctx.state==='running'){flushPending();if(enabled().music)start()}};
+    if(typeof ctx.addEventListener==='function')ctx.addEventListener('statechange',onStateChange);else ctx.onstatechange=onStateChange;
     document.addEventListener('visibilitychange',()=>{if(document.hidden){stop();ctx.suspend().catch(()=>{})}else unlock()});
     window.addEventListener('pagehide',stop);
     return {ctx,master,tone,texture,thread,chord,start,stop,unlock,get voiceCount(){return voices.size}};

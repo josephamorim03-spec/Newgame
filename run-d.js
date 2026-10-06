@@ -102,14 +102,16 @@ function startRun(seed,config){
   state=freshState(0,[]);closeSheet(true);hint.classList.remove('hide');hint.textContent=runChallengeScore?`Desafio: supere ${fmt(runChallengeScore)} nesta seed.`:'Toque em qualquer ponto para começar.';drawGrid();render();nudgeMood(0);document.documentElement.style.setProperty('--hueShift','0deg')
 }
 function primeAudio(){
-  initAudio();if(!soundtrack)return;
-  soundtrack.unlock().then(ready=>{audioPrimed=ready}).catch(()=>{audioPrimed=false});
+  initAudio();if(!soundtrack)return Promise.resolve(false);
+  return soundtrack.unlock().then(ready=>{audioPrimed=ready;setAudioReadyUI(ready);return ready}).catch(()=>{audioPrimed=false;setAudioReadyUI(false);return false});
 }
+function setAudioReadyUI(ready){['#soundBtn','#musicBtn'].forEach(id=>$(id).classList.toggle('needs-unlock',!ready));if(!ready){$('#soundBtn').title='Toque para ativar o som';$('#musicBtn').title='Toque para ativar a música'}}
+function syncAudioButton(id,on,label){const b=$(id),feminine=label==='Música';b.setAttribute('aria-pressed',String(on));b.classList.toggle('is-off',!on);b.title=`${label} ${on?'ligad':'desligad'}${feminine?'a':'o'}`}
 $('#restartBtn').addEventListener('click',()=>{runChallengeScore=0;startRun()});
 $('#labBtn').addEventListener('click',showLab);
 $('#draftResume').addEventListener('click',()=>{if(draftPending){openSheet('draft');sheet.scrollTop=0}});
-$('#soundBtn').addEventListener('click',()=>{soundOn=!soundOn;const b=$('#soundBtn');b.setAttribute('aria-pressed',String(soundOn));b.classList.toggle('is-off',!soundOn);primeAudio();if(soundOn)tone(392,.12,'triangle',.055)});
-$('#musicBtn').addEventListener('click',()=>{musicOn=!musicOn;const b=$('#musicBtn');b.setAttribute('aria-pressed',String(musicOn));b.classList.toggle('is-off',!musicOn);primeAudio();if(musicOn)ensureMusic();else stopMusic()});
+$('#soundBtn').addEventListener('click',async()=>{if(!audioPrimed){soundOn=true;syncAudioButton('#soundBtn',true,'Som');if(await primeAudio())tone(392,.12,'triangle',.055);return}soundOn=!soundOn;syncAudioButton('#soundBtn',soundOn,'Som');if(soundOn)tone(392,.12,'triangle',.055)});
+$('#musicBtn').addEventListener('click',async()=>{if(!audioPrimed){musicOn=true;syncAudioButton('#musicBtn',true,'Música');if(await primeAudio()){ensureMusic();if(soundOn)tone(523,.12,'sine',.035)}return}musicOn=!musicOn;syncAudioButton('#musicBtn',musicOn,'Música');if(musicOn)ensureMusic();else stopMusic()});
 function setDrawer(open){drawer.classList.toggle('open',open);const info=$('#infoBtn'),toggle=$('#drawerToggle');info.setAttribute('aria-expanded',String(open));info.hidden=open;toggle.setAttribute('aria-expanded',String(open));$('#drawerState').textContent=open?'fechar':'abrir'}
 $('#infoBtn').addEventListener('click',()=>setDrawer(true));
 $('#drawerToggle').addEventListener('click',()=>setDrawer(!drawer.classList.contains('open')));
@@ -118,7 +120,9 @@ $('#drawerScrim').addEventListener('click',()=>setDrawer(false));
 $('#ruleTitle').addEventListener('click',shareRunChallenge);$('#ruleTitle').title='Compartilhar esta seed';
 sheetOverlay.addEventListener('click',e=>{if(e.target.classList.contains('sheet-backdrop'))closeSheet(false)});
 document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;if(!sheetOverlay.classList.contains('hidden'))closeSheet(false);else if(drawer.classList.contains('open'))setDrawer(false)});
-document.addEventListener('pointerdown',()=>{if(!audioPrimed)primeAudio()},{capture:true});
-document.addEventListener('touchstart',()=>{if(!audioPrimed)primeAudio()},{capture:true,passive:true});
+setAudioReadyUI(false);
+const primeFromPlayGesture=event=>{const control=event.target.closest?.('#soundBtn,#musicBtn');if(!audioPrimed&&!control)primeAudio()};
+document.addEventListener('pointerdown',primeFromPlayGesture,{capture:true});
+document.addEventListener('touchstart',primeFromPlayGesture,{capture:true,passive:true});
 const q=new URLSearchParams(location.search),seedQ=Number(q.get('seed')),cfgQ={difficulty:q.get('diff')||RUN_LAB_DEFAULT.difficulty,rounds:q.get('rounds')||RUN_LAB_DEFAULT.rounds,geometry:q.get('geom')||RUN_LAB_DEFAULT.geometry,nodes:q.get('nodes')||RUN_LAB_DEFAULT.nodes,objectives:q.get('obj')||RUN_LAB_DEFAULT.objectives};
 runChallengeScore=Math.max(0,Number(q.get('beat'))||0);startRun(Number.isInteger(seedQ)&&seedQ>0?seedQ:undefined,cfgQ);

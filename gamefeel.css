@@ -35,3 +35,8 @@
 .node:focus-visible::before{outline:3px solid #8773d8;outline-offset:5px}
 @media(max-width:520px){.mode-atlas .wordmark h1{font-size:20px}.mode-atlas .brand{gap:6px}.mode-atlas .controls{gap:4px;max-width:none}.mode-atlas .controls .btn{padding:8px}.mode-atlas .iconbtn{width:32px}.mode-atlas .logo{width:30px;height:30px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+
+/* Audio controls show when a mobile browser still requires a user gesture. */
+.iconbtn.needs-unlock{box-shadow:0 0 0 3px rgba(93,157,152,.13),var(--soft)}
+.iconbtn.needs-unlock::before{content:"";position:absolute;right:2px;top:2px;width:7px;height:7px;border-radius:50%;background:var(--teal);box-shadow:0 0 0 3px rgba(93,157,152,.12);animation:audioUnlock 1.5s ease-in-out infinite}
+@keyframes audioUnlock{50%{transform:scale(.72);opacity:.55}}
