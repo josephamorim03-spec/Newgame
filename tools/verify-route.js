@@ -30,6 +30,10 @@ function verify(code){
     cleanLoops:state.cleanLoops,
     centerLoops:state.centerLoops,
     maxVertices:state.maxVertices,
+    triangleLoops:state.triangleLoops||0,
+    symPairs:state.symPairs||0,
+    rituals:state.rituals||0,
+    uniqueVertices:state.uniqueVertices||0,
     gold:parsed.map.gold(state),
     feat:parsed.map.feat(state)
   };
