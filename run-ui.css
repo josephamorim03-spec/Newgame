@@ -42,3 +42,5 @@ html,body{height:100%;overflow:hidden;overscroll-behavior:none}.app{height:100dv
 @keyframes momentIn{from{opacity:0;transform:translate(-50%,-44%) scale(.9)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
 @media(max-width:760px){.sheet{grid-template-columns:1fr;max-height:calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 28px);width:calc(100vw - 14px);border-radius:26px}.sheet-grid{grid-template-columns:1fr}.lab-grid{grid-template-columns:1fr}.sheet-copy h2{font-size:clamp(25px,7vw,34px)}}
 @media(max-width:520px){.sheet{padding:12px 13px 18px}.sheet-toolbar{top:-12px}.sheet-choice{padding:13px}.sheet-choice b{font-size:18px}.sheet-choice small{font-size:13px}.controls .btn span{display:none}.controls{max-width:none}.draft-resume{top:45px;right:2px}}
+
+.labbtn{padding-inline:10px}.labbtn span{font-weight:800}@media(max-width:520px){.controls .labbtn span{display:inline!important}.labbtn{padding-inline:8px;gap:4px}.labbtn .ui-icon{width:14px;height:14px}}
