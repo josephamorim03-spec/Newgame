@@ -71,7 +71,13 @@ function simulateRound(rd,route){
   for(const to of ids.slice(1))connect(state.current,to);
   return {score:state.score,crosses:state.crosses,echoes:state.echoes,loopCount:state.loopCount,cleanLoops:state.cleanLoops,centerHits:state.centerHits,centerLoops:state.centerLoops,triangleLoops:state.triangleLoops,maxLoopVertices:state.maxLoopVertices,ended:state.ended};
 }
-return {simulateRound};`);
+function previewTriangle(rd){
+  runPlan=[rd];runSchools=[];state=freshState(0,[]);
+  state.current=2;state.path=[0,1,2];
+  state.edges=[{from:0,to:1,key:edgeKey(0,1),a:state.pts[0],b:state.pts[1],crossed:false,echo:false},{from:1,to:2,key:edgeKey(1,2),a:state.pts[1],b:state.pts[2],crossed:false,echo:false}];
+  return previewMove(2,0);
+}
+return {simulateRound,previewTriangle};`);
   const browser=factory(documentStub,()=>({matches:true}),{vibrate(){}},()=>1,()=>{});
   const W=JSON.parse(read('tools/run-witnesses.json'));
   const core=loadCJS(read('tools/calibrate-runs.js'),{'./run-witnesses.json':W});
@@ -86,6 +92,9 @@ return {simulateRound};`);
     checked++;
   }
   assert.equal(checked,39);
+  const base=core.R.first,pts=core.L.r8,preview=browser.previewTriangle({key:'first',target:base.target,moves:base.moves,crossValue:base.cross,echoValue:base.echo,areaScale:base.area,layout:pts.map(p=>[p.x,p.y])});
+  assert.equal(preview.closes,true,'closing the third edge of a triangle must preview as a Loop');
+  assert.equal(preview.verts,3,'triangle preview must report three vertices');
 }
 
 console.log('Browser/core parity passed: Atlas 24 routes + Run 39 signatures.');
