@@ -61,3 +61,19 @@ Passing should be discoverable by a competent player. Silver should require deli
 A solver witness proves reachability, not fun. Human playtests still decide whether a target is understandable, satisfying, and appropriately difficult.
 
 For Ritual, Cross → Echo → Loop must happen across **three distinct moves**. For Espelho, an edge that is its own mirror does **not** count as a reflected pair.
+
+
+## Advanced random-route baseline
+
+A large random-route sample is used only as a coarse balance signal. Human players are not random, so these are **not** expected clear rates.
+
+Approximate random-route incidence after the current advanced rebalance:
+
+| Map | Pass | Silver | Gold | Feat |
+| --- | ---: | ---: | ---: | ---: |
+| Espelho | ~46% | ~11% | ~1.0% | ~0.6% |
+| Mosaico | ~41% | ~9% | ~0.8% | ~0.7% |
+| Ritual | ~48% | ~9% | ~5% | ~7% |
+| Concentração | ~69% | ~11% | ~0.16% | ~0.06% |
+
+These numbers are useful mainly for detecting broken tiering. For example, an earlier version of Concentração had Pass/Silver/Gold collapsing to nearly the same random-route set; the current thresholds deliberately separate the unique-point budget across tiers.
