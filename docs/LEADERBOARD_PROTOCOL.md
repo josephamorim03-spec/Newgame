@@ -92,7 +92,7 @@ Current primary metrics:
 | Espelho | Real reflected edge pairs | Score |
 | Mosaico | Triangle Loops | Score |
 | Ritual | Completed three-move Rituals | Score |
-| Concentração | Loops while staying within ≤6 unique points | Score |
+| Concentração | More Loops, then fewer unique points (within ≤7) | Score |
 
 This keeps leaderboards aligned with the question each map is teaching instead of rewarding unrelated point farming.
 
