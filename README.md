@@ -29,8 +29,10 @@ O projeto inclui toda a arte vetorial e procedural, efeitos, áudio sintetizado 
 - Dois tons iguais em anéis vizinhos formam uma carga de Phase Lock; máximo 2 cargas por link.
 - Girar um anel conectado usa uma carga e arrasta o vizinho no sentido oposto. A propagação pode atravessar os três anéis.
 - Um link usado não recarrega na mesma ação. O mesmo par de glifos não gera cargas repetidas quando permanece junto.
-- Em combate, ressoe no setor ameaçado antes da contagem zerar para evitar dano. Com Parasite, gaste o link marcado antes do ataque.
-- Atingir a meta de energia encerra o encontro antes do ataque pendente.
+- Em combate, o setor rosa é um **Ponto Fraco**. Uma ressonância direta nele causa 1 Ruptura e imediatamente marca um novo alvo.
+- Cascatas automáticas continuam gerando Energia e efeitos de build, mas não geram Rupturas adicionais.
+- Energia deixou de ser condição de vitória: vença causando 3 / 4 / 5 Rupturas em Needle / Parasite / The Clamp.
+- Com Parasite, esvaziar o link marcado evita o ataque, mas não substitui as Rupturas necessárias para vencer.
 
 ## Controles
 
@@ -54,7 +56,7 @@ Não há pressão de tempo real. O contador avança apenas quando um movimento �
 - Atlas local de 3 interações descobertas, estatísticas, salvamento automático, seed e exportação/importação de replay JSON.
 - Retry imediato e arte/áudio gerados localmente.
 
-Polimento visual/sonoro com contraste de intensidade: tons suaves durante o planejamento; pequenas partículas levam a energia das peças ao núcleo nos acertos; ressonâncias múltiplas e cascatas recebem cores mais vivas, arcos e acordes ascendentes. Rupturas ganham uma breve celebração dourada. O laboratório mantém o tratamento suave mesmo nas cascatas. Todos os efeitos terminam e a máquina volta ao repouso, com no máximo 64 partículas/elementos ativos. Sem partículas em giros comuns, sem tremor de câmera e sem loop de animação ocioso. O áudio é opt-in, possui limite de volume e pode ser silenciado; movimento reduzido mantém o feedback textual e desativa as partículas e saltos. As regras e os replays não mudaram.
+Polimento visual/sonoro com contraste de intensidade: tons suaves durante o planejamento; pequenas partículas levam a energia das peças ao núcleo nos acertos; ressonâncias múltiplas e cascatas recebem cores mais vivas, arcos e acordes ascendentes. Rupturas ganham uma breve celebração dourada. O laboratório mantém o tratamento suave mesmo nas cascatas. Todos os efeitos terminam e a máquina volta ao repouso, com no máximo 64 partículas/elementos ativos. Sem partículas em giros comuns, sem tremor de câmera e sem loop de animação ocioso. O áudio é opt-in, possui limite de volume e pode ser silenciado; movimento reduzido mantém o feedback textual e desativa as partículas e saltos. O feedback agora diferencia ressonância comum de acerto real no Ponto Fraco; saves/replays anteriores à v0.2 não são carregados por causa da mudança de regra.
 
 As Anomalias têm retratos vetoriais 2.5D próprios, com material de grafite facetado e núcleo emissivo: Needle é uma ponta com olhar direcional, Parasite tem um olho cercado por três garras e The Clamp tem duas mandíbulas. A postura anuncia um ataque iminente; impacto e ruptura têm reações curtas, sem animação ociosa contínua. Toque no retrato para consultar personalidade e contrajogo. O laboratório mostra um núcleo aberto, sem inimigo. Os vetores estão em `src/anomalies.js` e também são incorporados ao HTML standalone.
 
