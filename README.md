@@ -3,7 +3,7 @@
 Mobile-first geometry game with two complementary modes:
 
 - **Run** — roguelike buildcraft with deterministic seeds, local Knot schools, mastery goals, optional challenges, tactical move previews, Reweave and Focus.
-- **Atlas** — fixed geometry maps with Pass / Silver / Gold goals, versioned records, personal-best routes and visual PB ghost replays.
+- **Atlas** — fixed geometry maps with Pass / Silver / Gold goals, calibrated Feats, objective-aligned rankings, versioned records, shareable routes, personal-best ghosts and verified friend score challenges.
 
 ## Design pillars
 
@@ -23,8 +23,17 @@ Atlas goals are tested with a dependency-free Monte Carlo calibrator:
 node tools/calibrate-atlas.js 30000
 ```
 
-See `docs/ATLAS_CALIBRATION.md` for the current calibration policy and empirical margins.
+See `docs/ATLAS_CALIBRATION.md` for the current calibration policy and empirical margins. See `docs/LEADERBOARD_PROTOCOL.md` for the verified route/ghost/ranking contract.
 
 The game is self-contained: there are no external runtime art or audio assets. Music and sound are synthesized with WebAudio.
 
 Open `index.html` or deploy the repository root directly to Netlify.
+
+
+## Competitive route tools
+
+```bash
+node tools/verify-route.js "KNOT|cross@v1|3-5-1-..."
+```
+
+Atlas competition trusts routes, never client-submitted scores.
