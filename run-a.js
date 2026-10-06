@@ -11,8 +11,8 @@ echo:{title:'Ritmo repetido',text:'Echoes valem mais. Repetir comprimentos pode 
 space:{title:'Espaço aberto',text:'Loops grandes rendem mais. Guarde área antes de fechar.',target:4000,mastery:5600,moves:9,crossValue:140,echoValue:90,areaScale:1.28,focus:['area','loop']},
 clean:{title:'Linha limpa',text:'Loops sem linhas cruzadas recebem um bônus extra nesta rodada.',target:4000,mastery:5600,moves:9,crossValue:125,echoValue:90,areaScale:1,roundClean:1.28,focus:['clean','loop']},
 center:{title:'Centro de tensão',text:'Linhas que passam perto do centro ganham valor e deixam o próximo Loop mais forte.',target:4600,mastery:6600,moves:10,crossValue:140,echoValue:90,areaScale:1,centerValue:130,focus:['center','line']},
-dense:{title:'Trama densa',text:'Você tem mais pontos, mas não mais tempo. Encontre uma estrutura boa cedo.',target:5200,mastery:7300,moves:10,crossValue:160,echoValue:105,areaScale:1.08,focus:['cross','loop']},
-final:{title:'Trama mestra',text:'A build inteira está ativa. Prepare uma jogada grande antes de gastar seus últimos pontos de fio.',target:9500,mastery:14500,moves:11,crossValue:170,echoValue:115,areaScale:1.15,focus:['loop','cross','area','growth']}};
+dense:{title:'Trama densa',text:'Você tem mais pontos, mas não mais tempo. Encontre uma estrutura boa cedo.',target:4900,mastery:7300,moves:10,crossValue:160,echoValue:105,areaScale:1.08,focus:['cross','loop']},
+final:{title:'Trama mestra',text:'A build inteira está ativa. Prepare uma jogada grande antes de gastar seus últimos pontos de fio.',target:8500,mastery:14500,moves:11,crossValue:170,echoValue:115,areaScale:1.15,focus:['loop','cross','area','growth']}};
 const GOALS={
 cross2:{label:'Crie 2 Crosses',progress:s=>`${Math.min(s.crosses,2)}/2 Crosses`,check:s=>s.crosses>=2},
 echo2:{label:'Crie 2 Echoes',progress:s=>`${Math.min(s.echoes,2)}/2 Echoes`,check:s=>s.echoes>=2},
