@@ -2,7 +2,7 @@
 
 KNOT's Atlas goals are not intended to be guessed by feel alone.
 
-The repository includes `tools/calibrate-atlas.js`, a dependency-free Monte Carlo search that simulates legal routes using the same geometric grammar as Atlas. It checks every fixed map, searches for a Gold witness, and reports observed ceilings for:
+The repository includes `tools/calibrate-atlas.js`, a dependency-free Monte Carlo search that simulates legal routes using the same geometric grammar as Atlas. It checks every fixed map, searches for both a Gold witness and the map-specific Feat, and reports observed ceilings for:
 
 - score
 - Crosses
@@ -41,4 +41,4 @@ A 30,000-route-per-map search found Gold witnesses for all eight current maps.
 
 Passing should be discoverable by a competent player. Silver should ask for deliberate planning. Gold should require map-specific understanding but retain more than one plausible route whenever possible.
 
-The solver is a calibration tool, not the game. Human playtests still decide whether a target is understandable, satisfying, and appropriately difficult.
+The solver is a calibration tool, not the game. Every new Feat should also get a witness before shipping. Human playtests still decide whether a target is understandable, satisfying, and appropriately difficult.
