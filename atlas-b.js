@@ -28,7 +28,7 @@ function parseRouteCode(raw){
 }
 function showImportRoute(){
   modal.innerHTML=`<h2>Importar rota</h2><p>Cole um código KNOT. O jogo recalcula a rota localmente; score enviado pelo jogador nunca é confiável.</p><div class="route-import"><textarea id="routeInput" spellcheck="false" placeholder="KNOT|cross@v1|3-5-1-..."></textarea><div class="modal-actions"><button class="btn strong" id="validateRoute">Validar</button><button class="btn" id="backAtlas">Voltar</button></div><div id="routeResult"></div></div>`;
-  $('#backAtlas').onclick=showAtlas;$('#validateRoute').onclick=()=>{const parsed=parseRouteCode($('#routeInput').value),out=$('#routeResult');if(!parsed.ok){out.innerHTML=`<div class="route-error">${parsed.error}</div>`;return}const s=parsed.state;out.innerHTML=`<div class="route-valid"><b>Rota válida · ${parsed.map.name}</b><span>${fmt(s.score)} pts · ${s.crosses} Crosses · ${s.echoes} Echoes · ${s.loops} Loops</span><button class="btn" id="watchImported">Assistir ghost</button></div>`;$('#watchImported').onclick=()=>{currentMap=parsed.map;playGhost(parsed.route)}}};
+  $('#backAtlas').onclick=showAtlas;$('#validateRoute').onclick=()=>{const parsed=parseRouteCode($('#routeInput').value),out=$('#routeResult');if(!parsed.ok){out.innerHTML=`<div class="route-error">${parsed.error}</div>`;return}const s=parsed.state;out.innerHTML=`<div class="route-valid"><b>Rota válida · ${parsed.map.name}</b><span>${fmt(s.score)} pts · ${s.crosses} Crosses · ${s.echoes} Echoes · ${s.loops} Loops</span><button class="btn" id="watchImported">Assistir ghost</button></div>`;$('#watchImported').onclick=()=>{currentMap=parsed.map;playGhost(parsed.route)}};
 }
 function playGhost(route){
   if(!currentMap||!route||route.length<2)return;
