@@ -42,4 +42,13 @@ function musicLoop(){
   musicStep++;if(musicStep%3===0||intensity>.8)currentChord=(currentChord+1)%chords.length;mood=Math.max(.05,mood*.78)
 }
 function stopMusic(){if(musicTimer){clearInterval(musicTimer);musicTimer=null}}
+function unlockAudioOnce(){
+  initAudio();
+  const ready=audioCtx&&audioCtx.state==='suspended'?audioCtx.resume():Promise.resolve();
+  Promise.resolve(ready).then(()=>{if(audioCtx&&musicOn)ensureMusic()}).catch(()=>{});
+  document.removeEventListener('pointerdown',unlockAudioOnce,true);
+  document.removeEventListener('touchend',unlockAudioOnce,true);
+}
+document.addEventListener('pointerdown',unlockAudioOnce,{capture:true,once:true});
+document.addEventListener('touchend',unlockAudioOnce,{capture:true,once:true});
 $('#atlasBtn').onclick=()=>{if(finishTimer)return;showAtlas()};$('#restartBtn').onclick=()=>currentMap?startMap(currentMap.id,!!(rivalChallenge&&rivalChallenge.mapId===currentMap.id)):showAtlas();$('#soundBtn').onclick=()=>{soundOn=!soundOn;const b=$('#soundBtn');b.setAttribute('aria-pressed',String(soundOn));b.classList.toggle('is-off',!soundOn);b.title=soundOn?'Som ligado':'Som desligado';initAudio();if(audioCtx&&audioCtx.state==='suspended')audioCtx.resume().catch(()=>{});if(soundOn)tone(320,.08,'sine',.018)};$('#musicBtn').onclick=()=>{musicOn=!musicOn;const b=$('#musicBtn');b.setAttribute('aria-pressed',String(musicOn));b.classList.toggle('is-off',!musicOn);b.title=musicOn?'Música ligada':'Música desligada';initAudio();if(audioCtx&&audioCtx.state==='suspended')audioCtx.resume().catch(()=>{});if(musicOn)ensureMusic();else stopMusic()};showAtlas();drawGrid();
