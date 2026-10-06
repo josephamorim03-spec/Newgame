@@ -37,3 +37,14 @@ node tools/verify-route.js "KNOT|cross@v1|3-5-1-..."
 ```
 
 Atlas competition trusts routes, never client-submitted scores.
+
+
+## Regression checks
+
+The repository has no runtime dependencies. Geometry regression tests run with:
+
+```bash
+npm test
+```
+
+The suite validates all 24 deterministic Gold/Feat witness routes, advanced geometry metrics, and route rejection rules. GitHub Actions runs the same check on `main` pushes and pull requests.
