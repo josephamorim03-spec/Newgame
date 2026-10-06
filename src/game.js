@@ -283,7 +283,7 @@
     step=Math.max(0,Math.min(onboardingSteps.length-1,step));
     const left=step?'<button data-action="onboard-back" data-step="'+(step-1)+'">Voltar</button>':locked?'<button data-action="onboard-skip">Pular tutorial</button>':'<button data-action="close">Fechar</button>';
     const right=step<onboardingSteps.length-1?'<button class="primary" data-action="onboard-next" data-step="'+(step+1)+'">Próximo</button>':locked?'<button class="primary" data-action="onboard-start">Ativar som e começar</button>':'<button class="primary" data-action="close">Voltar ao jogo</button>';
-    show('<div class="onboarding">'+onboardingSteps[step]()+='<div class="onboard-nav">'+left+right+'</div></div>',locked);
+    show('<div class="onboarding">'+onboardingSteps[step]()+'<div class="onboard-nav">'+left+right+'</div></div>',locked);
   }
   function help(){onboarding(0,false);}
   function finishOnboarding(withSound=true){
