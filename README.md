@@ -43,7 +43,14 @@ O projeto inclui toda a arte vetorial e procedural, efeitos, áudio sintetizado 
 | PC | Q/A externo, W/S médio, E/D interno. Q/W/E horário; A/S/D anti-horário. |
 | PC | 1/2/3 seleciona anel; ←/→ gira o selecionado. |
 
-Não há pressão de tempo real. O contador avança apenas quando um movimento é confirmado. O som começa desligado e pode ser ativado no topo. Há velocidade 1×/2×/4× e movimento reduzido nas opções.
+Não há pressão de tempo real. O contador avança apenas quando um movimento é confirmado. O som começa habilitado, mas navegadores móveis — especialmente Safari/iOS — exigem um gesto do usuário para liberar Web Audio. O último passo do onboarding faz esse desbloqueio explicitamente. Há velocidade 1×/2×/4× e movimento reduzido nas opções.
+
+
+## Onboarding e áudio no celular
+
+Na primeira abertura, o jogo apresenta quatro telas curtas: objetivo/Ponto Fraco, preview, Phase Lock/cascatas e primeiro movimento. O último botão é **Ativar som e começar**; esse toque cria e libera o `AudioContext` dentro de uma interação real, requisito do Safari/iOS. O jogo também inicia uma fonte praticamente silenciosa para “acordar” Web Audio no WebKit e toca uma confirmação curta.
+
+Se um navegador já tiver uma versão antiga em cache, os assets usam sufixo de versão (`?v=021`) para forçar a atualização após o deploy. O botão **Som: on/off** continua disponível no topo e nas opções.
 
 ## O que esta versão contém
 
