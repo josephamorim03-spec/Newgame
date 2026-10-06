@@ -10,7 +10,12 @@ for(let seed=0;seed<100;seed++){
       let score=p.matches.reduce((sum,m)=>sum+m.base,0);
       if(s.protocols.includes('counterweight'))score+=p.edges.length*3;
       if(s.protocols.includes('mesh') && s.locks.every(Boolean))score*=2;
-      if(s.intent.kind!=='parasite' && !s.intent.neutralized && p.matches.some(m=>m.sector===s.intent.sector))score+=15/s.intent.count;
+      // Deliberate weak-point hits dominate the policy: energy is useful, but it does not win encounters.
+      if(s.intent && p.matches.some(m=>m.sector===s.intent.sector))score+=100/Math.max(1,s.intent.count);
+      if(s.intent?.kind==='parasite'){
+        const remaining=s.locks[s.intent.edge]-(p.edges.includes(s.intent.edge)?1:0);
+        if(remaining===0)score+=20/Math.max(1,s.intent.count);
+      }
       // Uses visible direct preview only; does not inspect future random refills.
       moves.push({ring,direction,score});
     }
