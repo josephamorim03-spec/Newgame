@@ -3,7 +3,7 @@ const $=s=>document.querySelector(s);
 const sheetOverlay=$('#sheetOverlay'), sheet=$('#sheet'), drawer=$('#drawer');
 const loopsEl=$('#loops'), edgesEl=$('#edges'), junctionsEl=$('#junctions'), pulsesEl=$('#pulses');
 const nodesEl=$('#nodes'), fxEl=$('#fx'), hint=$('#hint'), scoreEl=$('#scoreEl'), meterEl=$('#meter');
-const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const reduced=typeof matchMedia==='function'&&matchMedia('(prefers-reduced-motion: reduce)').matches;
 const ROUND_LIBRARY={
 first:{title:'Primeira trama',text:'Feche formas. Aprenda o ritmo antes de tentar quebrá-lo.',target:1700,mastery:2800,moves:8,crossValue:140,echoValue:90,areaScale:1,focus:['loop']},
 cross:{title:'Fio cruzado',text:'Cruzamentos valem mais nesta rodada. Prepare o encontro das linhas.',target:3300,mastery:4800,moves:9,crossValue:220,echoValue:90,areaScale:1,focus:['cross']},
