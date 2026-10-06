@@ -56,3 +56,28 @@ body{background:radial-gradient(ellipse at 35% 0,#2b273a88,transparent 58%),radi
 @media(max-width:355px){.enemy-portrait{width:58px;height:58px;flex-basis:58px}.encounter{gap:8px}.encounter h1{font-size:17px;letter-spacing:1px}.core-health .eyebrow{font-size:7px}.enemy-role{font-size:8px}}
 .reduced .enemy-sculpture *{animation:none!important;transition:none!important}
 @media(prefers-reduced-motion:reduce){.enemy-sculpture *{animation:none!important;transition:none!important}}
+
+
+/* Guided onboarding: one concept per screen, readable on mobile, no wall of text. */
+.onboarding h2{max-width:380px}
+.onboard-progress{display:flex;gap:7px;margin:0 0 19px}
+.onboard-progress span{height:3px;flex:1;border-radius:10px;background:#343849}
+.onboard-progress span.on{background:var(--mint);box-shadow:0 0 12px #96ebd355}
+.onboard-focus{margin:18px 0;padding:17px 18px;border:1px solid #444a61;border-radius:14px;background:linear-gradient(145deg,#222638,#191c29)}
+.onboard-focus strong{display:block;font:700 11px ui-monospace,monospace;letter-spacing:1.1px;color:var(--mint);margin-bottom:7px}
+.onboard-focus p{margin:0}
+.onboard-focus.target{border-color:#674050;background:linear-gradient(145deg,#30222f,#1d1b29)}
+.onboard-focus.target strong{color:#ff9cb0}
+.onboard-focus.preview{border-color:#554e78}.onboard-focus.preview strong{color:var(--phase)}
+.onboard-focus.sound{border-color:#665934;background:linear-gradient(145deg,#2c291e,#1b1c27)}
+.onboard-focus.sound strong{color:var(--gold)}
+.onboard-nav{display:grid;grid-template-columns:1fr 1.35fr;gap:9px;margin-top:20px}
+.onboard-nav button{width:100%}
+.onboarding b,.onboarding strong{color:var(--ink)}
+.onboarding .rule strong{color:var(--ink)}
+@media(max-width:520px){
+  dialog{padding:22px 19px;max-height:92dvh}
+  dialog h2{font-size:25px}
+  .onboard-focus{padding:14px 15px;margin:15px 0}
+  .onboard-nav{position:sticky;bottom:-22px;background:linear-gradient(transparent,#1a1d29 22%);padding:22px 0 4px}
+}
