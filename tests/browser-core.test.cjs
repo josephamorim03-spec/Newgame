@@ -44,16 +44,16 @@ function loadCJS(src,reqMap={}){
   const syn=read('run-synergies.js'),ra=read('run-a.js'),rb=read('run-b.js'),rc=read('run-c.js');
   const dummy={classList:{add(){},remove(){},toggle(){}},style:{setProperty(){}},setAttribute(){},appendChild(){},removeChild(){},querySelectorAll(){return[]},addEventListener(){},innerHTML:'',textContent:'',animate(){}};
   const documentStub={querySelector(){return dummy},createElement(){return {...dummy,style:{setProperty(){}}}},createElementNS(){return {...dummy,style:{setProperty(){}}}},documentElement:{style:{setProperty(){}}}};
-  const factory=new Function('document','matchMedia','navigator',syn+'\n'+ra+'\n'+rb+'\n'+rc+String.raw`
+  const factory=new Function('document','matchMedia','navigator','setTimeout','clearTimeout',syn+'\n'+ra+'\n'+rb+'\n'+rc+String.raw`
 function simulateRound(rd,route){
-  const simRound={...rd,moves:Number.MAX_SAFE_INTEGER};runPlan=[simRound];runSchools=[];state=freshState(0,[]);
+  runPlan=[rd];runSchools=[];state=freshState(0,[]);
   tone=()=>{};nudgeMood=()=>{};sparkAt=()=>{};haptic=()=>{};bigMoment=()=>{};toast=()=>{};render=()=>{};
   const ids=route.map(x=>x-1);state.current=ids[0];state.path=[ids[0]];
   for(const to of ids.slice(1))connect(state.current,to);
-  return {score:state.score,crosses:state.crosses,echoes:state.echoes,loopCount:state.loopCount,cleanLoops:state.cleanLoops,centerHits:state.centerHits,centerLoops:state.centerLoops,triangleLoops:state.triangleLoops,maxLoopVertices:state.maxLoopVertices};
+  return {score:state.score,crosses:state.crosses,echoes:state.echoes,loopCount:state.loopCount,cleanLoops:state.cleanLoops,centerHits:state.centerHits,centerLoops:state.centerLoops,triangleLoops:state.triangleLoops,maxLoopVertices:state.maxLoopVertices,ended:state.ended};
 }
 return {simulateRound};`);
-  const browser=factory(documentStub,()=>({matches:true}),{vibrate(){}});
+  const browser=factory(documentStub,()=>({matches:true}),{vibrate(){}},()=>1,()=>{});
   const W=JSON.parse(read('tools/run-witnesses.json'));
   const core=loadCJS(read('tools/calibrate-runs.js'),{'./run-witnesses.json':W});
   let checked=0;
@@ -63,6 +63,7 @@ return {simulateRound};`);
     const b=browser.simulateRound(rd,w.route),s=core.evaluate(kind,layout,w.route);
     const pairs=[['score','score'],['crosses','crosses'],['echoes','echoes'],['loopCount','loops'],['cleanLoops','cleanLoops'],['centerHits','centerHits'],['centerLoops','centerLoops'],['triangleLoops','triangleLoops'],['maxLoopVertices','maxv']];
     for(const [bk,sk] of pairs)assert(Math.abs(Number(b[bk]||0)-Number(s[sk]||0))<1e-6,`${key} drift in ${bk}`);
+    assert.equal(b.ended,true,`${key} must lock immediately after the last stitch`);
     checked++;
   }
   assert.equal(checked,39);
