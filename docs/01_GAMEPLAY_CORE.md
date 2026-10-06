@@ -47,14 +47,21 @@ Protocolos posteriores podem reinterpretar Tons.
 
 # 2. Ação do jogador
 
-## Mobile
-O jogador encosta em um anel e arrasta levemente:
-- direita/horário;
-- esquerda/anti-horário.
+## Mobile — controle principal
 
-O movimento “encaixa” em um setor.
+O jogador vê **as seis ações legais** simultaneamente:
+- R1 ↶ / R1 ↷;
+- R2 ↶ / R2 ↷;
+- R3 ↶ / R3 ↷.
 
-Arrastar mais longe **não** executa múltiplos turnos de uma vez no modo padrão.
+Cada ação mostra antes do toque:
+- os três Tons que ficarão no Ponto Fraco após o movimento direto;
+- se a ação causa Ruptura, Ressonância, cria Phase Lock, defende, causa dano ou apenas reposiciona.
+
+O jogador escolhe a **consequência**, não precisa primeiro selecionar uma roda.
+
+### Atalho gestual
+Ainda é possível encostar diretamente em um anel e arrastar levemente em sentido horário/anti-horário. O movimento encaixa em um setor e nunca executa múltiplos turnos de uma vez.
 
 ## PC
 Suporte:
