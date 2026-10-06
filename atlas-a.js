@@ -58,7 +58,7 @@ function showAtlas(){
     {title:'Composição avançada',desc:'Simetria, triângulos, sequências e economia espacial.',from:8,to:12}
   ];
   modalWrap.classList.remove('hidden');
-  modal.innerHTML=`<h2>Atlas</h2><p>Suba a trilha <b>Passar → Prata → Ouro → Mestre</b>. Feitos são desafios laterais; completar Ouro + Feito torna o mapa Mestre.</p>
+  modal.innerHTML=`<div class="modal-toolbar"><button class="modal-back" id="modalClose" type="button">← Voltar ao tabuleiro</button></div><h2>Atlas</h2><p>Suba a trilha <b>Passar → Prata → Ouro → Mestre</b>. Feitos são desafios laterais; completar Ouro + Feito torna o mapa Mestre.</p>
   <div class="atlas-progress">
     <div><b>${medalTotal}/${MAPS.length*3}</b><span>medalhas</span></div>
     <div><b>${masterTotal}/${MAPS.length}</b><span>Mestres</span></div>
@@ -68,7 +68,7 @@ function showAtlas(){
   ${chapters.map(ch=>{const ids=Array.from({length:ch.to-ch.from},(_,j)=>ch.from+j),done=ids.filter(i=>mapProgress(MAPS[i].id).medal>=1).length;return`<section class="atlas-chapter"><div class="chapter-head"><div><h3>${ch.title}</h3><p>${ch.desc}</p></div><span>${done}/${ids.length} concluídos</span></div><div class="atlas-grid">${ids.map(i=>atlasCard(MAPS[i],i)).join('')}</div></section>`}).join('')}
   <div class="modal-actions"><button class="btn" id="importRoute">Importar rota</button></div>`;
   modal.querySelectorAll('[data-map]').forEach(b=>b.addEventListener('click',()=>startMap(b.dataset.map)));
-  $('#importRoute').onclick=showImportRoute;
+  $('#importRoute').onclick=showImportRoute;$('#modalClose').onclick=()=>modalWrap.classList.add('hidden');
 }
 function startMap(id,keepRival=false){if(finishTimer){clearTimeout(finishTimer);finishTimer=null}clearGhost();if(!keepRival)rivalChallenge=null;currentMap=MAPS.find(m=>m.id===id);if(!currentMap){showAtlas();return}state={score:0,crosses:0,echoes:0,loops:0,cleanLoops:0,centerLoops:0,maxVertices:0,triangleLoops:0,symPairs:0,rituals:0,ritualStage:0,uniqueVertices:0,moves:0,current:null,path:[],edges:[],loopsData:[],junctions:[],pts:currentMap.pts.map((p,i)=>({id:i,x:p[0],y:p[1]})),ended:false,goalSeen:[false,false,false],featAnnounced:false,masterAnnounced:false};modalWrap.classList.add('hidden');hint.classList.remove('hide');hint.textContent=currentMap.id==='first'?'Toque em qualquer ponto para começar.':currentMap.goals[0].label;drawGrid();mood=.08;render()}
 function fmt(n){return Math.round(n).toLocaleString('pt-BR')} function edgeKey(a,b){return a<b?`${a}-${b}`:`${b}-${a}`} function dist(a,b){return Math.hypot(a.x-b.x,a.y-b.y)} function area(poly){let s=0;for(let i=0;i<poly.length;i++){const p=poly[i],q=poly[(i+1)%poly.length];s+=p.x*q.y-q.x*p.y}return Math.abs(s/2)}
