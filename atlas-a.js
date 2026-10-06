@@ -1,6 +1,6 @@
 'use strict';
 const $=s=>document.querySelector(s),modalWrap=$('#modalWrap'),modal=$('#modal'),nodesEl=$('#nodes'),ghostEl=$('#ghost'),loopsEl=$('#loops'),edgesEl=$('#edges'),junctionsEl=$('#junctions'),pulsesEl=$('#pulses'),fxEl=$('#fx'),hint=$('#hint'),scoreEl=$('#scoreEl');
-const STORAGE='knot-atlas-v8';let profile={maps:{}};try{const raw=localStorage.getItem(STORAGE),parsed=raw?JSON.parse(raw):null;if(parsed&&typeof parsed==='object'&&parsed.maps&&typeof parsed.maps==='object')profile=parsed}catch(e){profile={maps:{}}}
+const STORAGE='knot-atlas-v8';let profile={maps:{}};try{const raw=localStorage.getItem(STORAGE),parsed=raw?JSON.parse(raw):null;if(parsed&&typeof parsed==='object'&&parsed.maps&&typeof parsed.maps==='object'&&!Array.isArray(parsed.maps))profile=parsed}catch(e){profile={maps:{}}}
 function save(){try{localStorage.setItem(STORAGE,JSON.stringify(profile))}catch(e){}}
 
 function regular(n,rot=0,r=360){return Array.from({length:n},(_,i)=>{const a=i*Math.PI*2/n-Math.PI/2+rot;return[500+Math.cos(a)*r,500+Math.sin(a)*r]})}
