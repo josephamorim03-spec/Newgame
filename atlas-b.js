@@ -218,9 +218,9 @@ function checkGoalCelebration(){
   const gs=currentMap.goals,p=mapProgress(currentMap.id),featNow=currentMap.feat.check(state),goldNow=gs[2].check(state),masterNow=goldNow&&featNow;
   if(masterNow&&!isMasterProgress(p)&&!state.masterAnnounced){
     state.masterAnnounced=true;state.featAnnounced=true;state.goalSeen[2]=true;
-    toast('MESTRE',true);haptic(30);nudgeMood(.34);return;
+    toast('MESTRE',true,2);chord(true,2);textureNoise(.009,.03,true,.08);haptic(30);nudgeMood(.34);return;
   }
-  gs.forEach((g,i)=>{if(!state.goalSeen[i]&&g.check(state)){state.goalSeen[i]=true;toast(i===0?'PASSOU':i===1?'PRATA':'OURO',i===2);haptic(i===2?28:16);nudgeMood(i===2?.24:.12)}});
-  if(featNow&&!p.feat&&!state.featAnnounced){state.featAnnounced=true;toast('FEITO',false);haptic(18);nudgeMood(.16)}
+  gs.forEach((g,i)=>{if(!state.goalSeen[i]&&g.check(state)){state.goalSeen[i]=true;toast(i===0?'PASSOU':i===1?'PRATA':'OURO',i===2,i);if(i===2)chord(false,0);else tone(i===1?392:330,.11,'sine',.014,0,i===1?3:-2);haptic(i===2?28:16);nudgeMood(i===2?.24:.12)}});
+  if(featNow&&!p.feat&&!state.featAnnounced){state.featAnnounced=true;toast('FEITO',false,1);tone(523,.10,'sine',.016,0,-2);tone(784,.13,'sine',.010,.035,4);textureNoise(.004,.02,true,.05);haptic(18);nudgeMood(.16)}
 }
 function haptic(ms){try{navigator.vibrate&&navigator.vibrate(ms)}catch(e){}} function softTap(){threadSound(state?.moves||0);haptic(6);nudgeMood(.03)}
