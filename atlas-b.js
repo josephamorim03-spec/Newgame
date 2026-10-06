@@ -129,31 +129,27 @@ function render(){
 
   const onboard=atlasOnboardingStage();
   renderAtlasOnboarding(onboard);
-  nodesEl.innerHTML='';
+  KnotFeel.begin(state, nodesEl, [loopsEl, edgesEl, junctionsEl]);
   state.pts.forEach(p=>{
-    const b=document.createElement('button'),pv=atlasPreview(state.current,p.id);
+    const b=KnotFeel.node(nodesEl,p.id),pv=atlasPreview(state.current,p.id);
     const tutorialClass=onboard==='start'?' onboard-start':((onboard==='connect'&&p.id!==state.current&&!(pv&&pv.blocked))?' onboard-next':((onboard==='close'&&pv&&pv.closes)?' onboard-close':''));
-    b.className='node'+(p.id===state.current?' active':'')+(state.path.includes(p.id)?' visited':'')+(pv&&pv.blocked?' blocked':'')+tutorialClass;
+    b.className='node'+(p.id===state.current?' active':'')+(state.path.includes(p.id)?' visited':'')+(pv&&pv.blocked?' blocked':'')+tutorialClass+(b.classList.contains('pin-press')?' pin-press':'');
     b.style.left=(p.x/10)+'%';b.style.top=(p.y/10)+'%';b.type='button';
     b.setAttribute('aria-label',`Ponto ${p.id+1}${pv&&!pv.blocked?(pv.closes?' · fecha Loop':pv.crosses?' · '+pv.crosses+' Cross':''):''}`);
+    b.replaceChildren();
     if(pv&&!pv.blocked&&state.current!==null){
       const badge=document.createElement('span');badge.className='move-preview';
       badge.textContent=currentMap.id==='mirror'&&pv.mirrorPair?'↔':currentMap.id==='mosaic'&&pv.triangle?'△':currentMap.id==='ritual'&&pv.ritualComplete?'✦':currentMap.id==='ritual'&&pv.ritualAdvance?'›':currentMap.id==='focus'&&pv.reuses?'↺':pv.halo?'⊙':pv.closes?'◌'+pv.verts:pv.crosses?'×'+pv.crosses:pv.echo?'∥':'·';
-      b.appendChild(badge);
+      if(badge.textContent!=='·')b.appendChild(badge);
     }
-    b.addEventListener('pointerdown',ev=>{ev.preventDefault();pick(p.id)});
-    b.addEventListener('click',ev=>{ev.preventDefault();if(ev.detail===0)pick(p.id)});
-    nodesEl.appendChild(b);
+    b.onpointerdown=ev=>{ev.preventDefault();KnotFeel.press(b);pick(p.id)};
+    b.onclick=ev=>{ev.preventDefault();if(ev.detail===0){KnotFeel.press(b);pick(p.id)}};
+
   });
-  loopsEl.innerHTML='';
-  state.loopsData.forEach((L,i)=>{const p=svg('polygon',{points:L.map(q=>`${q.x},${q.y}`).join(' '),class:'loop-fill'});p.style.fill=`hsla(${14+i*29},42%,72%,${.12+Math.min(.12,i*.02)})`;loopsEl.appendChild(p)});
-  edgesEl.innerHTML='';
-  state.edges.forEach(e=>edgesEl.appendChild(svg('line',{x1:e.a.x,y1:e.a.y,x2:e.b.x,y2:e.b.y,class:'edge'+(e.echo?' echo':'')})));
-  junctionsEl.innerHTML='';
-  state.junctions.forEach(j=>junctionsEl.appendChild(svg('circle',{cx:j.x,cy:j.y,r:10,class:'junction'})));
+  KnotFeel.geometry(state, loopsEl, edgesEl, junctionsEl);
 }
 function pick(id){if(!currentMap||state.ended)return;initAudio();if(audioCtx&&audioCtx.state==='suspended')audioCtx.resume().catch(()=>{});ensureMusic();if(state.current===null){state.current=id;state.path=[id];state.uniqueVertices=1;if(currentMap.id!=='first')hint.textContent=currentMap.id==='mirror'?'↔ cria um par espelhado.':currentMap.id==='mosaic'?'△ fecha um triângulo.':currentMap.id==='ritual'?'› avança o Ritual · ✦ completa a sequência.':currentMap.id==='focus'?'↺ reutiliza um ponto já gasto.':'Os símbolos nos pontos mostram o efeito da próxima linha.';softTap();render();return}if(id===state.current)return;const key=edgeKey(state.current,id);if(state.edges.some(e=>e.key===key)){toast('fio já usado');return}connect(state.current,id)}
-function connect(u,v){const a=state.pts[u],b=state.pts[v],edge={a,b,from:u,to:v,key:edgeKey(u,v),echo:false,crossed:false};let gain=0,crossNow=0,moveEcho=false,moveLoop=false;if(state.edges.length){const pe=state.edges[state.edges.length-1],L=dist(a,b),P=dist(pe.a,pe.b);if(Math.abs(L-P)/Math.max(L,P)<.075){edge.echo=true;state.echoes++;moveEcho=true;gain+=currentMap.echo;tone(405,.082,'sine',.016,0,-3);tone(608,.12,'sine',.009,.024,4);textureNoise(.0035,.012,true,.04);nudgeMood(.07)}}for(const e of state.edges){if([e.from,e.to].includes(u)||[e.from,e.to].includes(v))continue;const p=intersect(a,b,e.a,e.b);if(p){state.crosses++;crossNow++;edge.crossed=true;e.crossed=true;state.junctions.push(p);gain+=currentMap.cross;spark(p.x,p.y,6,false,(state.moves+crossNow)%2);textureNoise(.007,crossNow*.012,true,.048);tone(492+crossNow*38,.072,'triangle',.020,crossNow*.016,(crossNow%2?3:-3));haptic(8);nudgeMood(.09)}}state.edges.push(edge);state.moves++;const idx=state.path.lastIndexOf(v);state.path.push(v);state.current=v;state.uniqueVertices=new Set(state.path).size;state.symPairs=computeSymPairs(state.edges,currentMap.pts);if(idx>=0){const ids=state.path.slice(idx,-1);if(ids.length>=3){const poly=ids.map(i=>state.pts[i]),cyc=state.edges.slice(Math.max(0,state.edges.length-(ids.length))),clean=cyc.every(e=>!e.crossed),center=pointInPoly({x:500,y:500},poly);state.loops++;state.maxVertices=Math.max(state.maxVertices,ids.length);if(clean)state.cleanLoops++;if(ids.length===3)state.triangleLoops++;if(center)state.centerLoops++;moveLoop=true;let pts=(280+area(poly)/420)*currentMap.area;gain+=pts;state.loopsData.push(poly);bigMoment(poly,pts)}}advanceRitual(state,crossNow>0,moveEcho,moveLoop);const note=[220,247,277,330,370,440,494,554,660,740][v%10];threadSound(state.moves);if(state.moves%4===0)tone(note,.04,'sine',.004,.01,(state.moves%2?2:-2));nudgeMood(.02);state.score+=gain;if(scoreEl.animate)scoreEl.animate([{transform:'scale(1)'},{transform:'scale(1.1)',color:'var(--accent)'},{transform:'scale(1)'}],{duration:260,easing:'ease-out'});checkGoalCelebration();const exhausted=state.moves>=currentMap.moves;if(exhausted)state.ended=true;render();if(!(currentMap.id==='first'&&atlasOnboardingStage()!=='done'))hint.classList.add('hide');if(exhausted){if(finishTimer)clearTimeout(finishTimer);const finishedState=state;finishTimer=setTimeout(()=>{finishTimer=null;if(state===finishedState)finish()},reducedMotion()?40:520)}}
+function connect(u,v){const a=state.pts[u],b=state.pts[v],edge={a,b,from:u,to:v,key:edgeKey(u,v),echo:false,crossed:false};let gain=0,crossNow=0,moveEcho=false,moveLoop=false;if(state.edges.length){const pe=state.edges[state.edges.length-1],L=dist(a,b),P=dist(pe.a,pe.b);if(Math.abs(L-P)/Math.max(L,P)<.075){edge.echo=true;state.echoes++;moveEcho=true;gain+=currentMap.echo;tone(405,.082,'sine',.016,0,-3);tone(608,.12,'sine',.009,.024,4);textureNoise(.0035,.012,true,.04);nudgeMood(.07)}}for(const e of state.edges){if([e.from,e.to].includes(u)||[e.from,e.to].includes(v))continue;const p=intersect(a,b,e.a,e.b);if(p){state.crosses++;crossNow++;edge.crossed=true;e.crossed=true;state.junctions.push(p);gain+=currentMap.cross;spark(p.x,p.y,6,false,(state.moves+crossNow)%2);textureNoise(.007,crossNow*.012,true,.048);tone(492+crossNow*38,.072,'triangle',.020,crossNow*.016,(crossNow%2?3:-3));haptic(8);nudgeMood(.09)}}state.edges.push(edge);state.moves++;const idx=state.path.lastIndexOf(v);state.path.push(v);state.current=v;state.uniqueVertices=new Set(state.path).size;state.symPairs=computeSymPairs(state.edges,currentMap.pts);if(idx>=0){const ids=state.path.slice(idx,-1);if(ids.length>=3){const poly=ids.map(i=>state.pts[i]),cyc=state.edges.slice(Math.max(0,state.edges.length-(ids.length))),clean=cyc.every(e=>!e.crossed),center=pointInPoly({x:500,y:500},poly);state.loops++;state.maxVertices=Math.max(state.maxVertices,ids.length);if(clean)state.cleanLoops++;if(ids.length===3)state.triangleLoops++;if(center)state.centerLoops++;moveLoop=true;let pts=(280+area(poly)/420)*currentMap.area;gain+=pts;state.loopsData.push(poly);bigMoment(poly,pts)}}advanceRitual(state,crossNow>0,moveEcho,moveLoop);const note=[220,247,277,330,370,440,494,554,660,740][v%10];threadSound(state.moves);if(state.moves%4===0)tone(note,.04,'sine',.004,.01,(state.moves%2?2:-2));nudgeMood(.02);state.score+=gain;if(!reducedMotion()&&scoreEl.animate)scoreEl.animate([{transform:'scale(1)'},{transform:'scale(1.1)',color:'var(--accent)'},{transform:'scale(1)'}],{duration:260,easing:'ease-out'});checkGoalCelebration();const exhausted=state.moves>=currentMap.moves;if(exhausted)state.ended=true;render();if(!(currentMap.id==='first'&&atlasOnboardingStage()!=='done'))hint.classList.add('hide');if(exhausted){if(finishTimer)clearTimeout(finishTimer);const finishedState=state;finishTimer=setTimeout(()=>{finishTimer=null;if(state===finishedState)finish()},reducedMotion()?40:520)}}
 function isBetterObjective(rank,score,p){const prev=p.bestObjective??-Infinity,prevScore=p.bestObjectiveScore??-Infinity;return rank.primary>prev||(rank.primary===prev&&score>prevScore)}
 function finish(){
   state.ended=true;
@@ -201,17 +197,19 @@ function showRank(){const p=mapProgress(currentMap.id),rankRoute=p.bestObjective
 function bigMoment(poly,pts){
   const c={x:poly.reduce((s,p)=>s+p.x,0)/poly.length,y:poly.reduce((s,p)=>s+p.y,0)/poly.length},variant=(state.loops+Math.round(pts))%3,p=svg('circle',{cx:c.x,cy:c.y,r:18,class:'pulse pulse-v'+variant});
   pulsesEl.appendChild(p);setTimeout(()=>p.remove(),820);const huge=pts>1200;
+  KnotFeel.gain(fxEl,boardPoint(c.x,c.y),pts);
   toast(huge?'GRANDE LOOP':'LOOP',huge,variant);spark(c.x,c.y,huge?18:9,huge,variant);ribbonToScore(c.x,c.y,variant);chord(huge,variant);
   if(huge&&!reducedMotion())flash(variant);haptic(huge?18:10);nudgeMood(huge?.28:.15)
 }
 function reducedMotion(){return typeof matchMedia==='function'&&matchMedia('(prefers-reduced-motion: reduce)').matches}
 function boardPoint(x,y){const r=$('#playfield').getBoundingClientRect(),b=$('#board').getBoundingClientRect();return{x:x/1000*r.width+r.left-b.left,y:y/1000*r.height+r.top-b.top}}
 function spark(x,y,n=6,big=false,variant=0){
+  if(reducedMotion())return;
   const p=boardPoint(x,y);for(let i=0;i<n;i++){const e=document.createElement('i'),kind=big?(['petal','thread','spark'][(i+variant)%3]):(['spark','thread','spark'][(i+variant)%3]);e.className='particle '+kind+' fx-v'+variant;e.style.left=p.x+'px';e.style.top=p.y+'px';const a=Math.random()*Math.PI*2+variant*.34,d=(big?66:28)+Math.random()*(big?105:44);e.style.setProperty('--dx',Math.cos(a)*d+'px');e.style.setProperty('--dy',Math.sin(a)*d+'px');e.style.setProperty('--rot',(Math.random()*120-60+variant*15)+'deg');e.style.setProperty('--dur',(.44+Math.random()*(big?.50:.28)+variant*.025)+'s');e.style.setProperty('--scale',(.80+Math.random()*.42).toFixed(2));fxEl.appendChild(e);setTimeout(()=>e.remove(),1200)}
 }
-function ribbonToScore(x,y,variant=0){const from=boardPoint(x,y),s=scoreEl.getBoundingClientRect(),b=$('#board').getBoundingClientRect(),to={x:s.left-b.left+s.width/2,y:s.top-b.top+s.height/2},dx=to.x-from.x,dy=to.y-from.y,len=Math.hypot(dx,dy),rot=Math.atan2(dy,dx)*180/Math.PI,r=document.createElement('i');r.className='ribbon ribbon-v'+variant;r.style.width=len+'px';r.style.setProperty('--x1',from.x+'px');r.style.setProperty('--y1',from.y+'px');r.style.setProperty('--rot',rot+'deg');fxEl.appendChild(r);setTimeout(()=>r.remove(),760)}
+function ribbonToScore(x,y,variant=0){if(reducedMotion())return;const from=boardPoint(x,y),s=scoreEl.getBoundingClientRect(),b=$('#board').getBoundingClientRect(),to={x:s.left-b.left+s.width/2,y:s.top-b.top+s.height/2},dx=to.x-from.x,dy=to.y-from.y,len=Math.hypot(dx,dy),rot=Math.atan2(dy,dx)*180/Math.PI,r=document.createElement('i');r.className='ribbon ribbon-v'+variant;r.style.width=len+'px';r.style.setProperty('--x1',from.x+'px');r.style.setProperty('--y1',from.y+'px');r.style.setProperty('--rot',rot+'deg');fxEl.appendChild(r);setTimeout(()=>r.remove(),760)}
 function flash(variant=0){const f=document.createElement('div');f.className='bigflash flash-v'+variant;fxEl.appendChild(f);setTimeout(()=>f.remove(),980)}
-function toast(t,big=false,variant=0){const e=document.createElement('div');e.className='toast'+(big?' big':'')+' toast-v'+variant;e.textContent=t;fxEl.appendChild(e);setTimeout(()=>e.remove(),950)}
+function toast(t,big=false,variant=0){KnotFeel.toast(fxEl,t,big)}
 function checkGoalCelebration(){
   if(!currentMap)return;
   if(currentMap.id==='focus'&&state.moves<currentMap.moves)return;

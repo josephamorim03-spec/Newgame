@@ -2,29 +2,13 @@
 let runSeed=0,runPlan=[],runSchools=[],runReweaves=1,runFocus=0,runMasteries=0,runChallenges=0,draftNonce=0,runSources={loop:0,cross:0,echo:0,line:0},runEngineHits={};
 let state,roundEndTimer=null;let soundOn=true,musicOn=true;let audioCtx,masterGain,musicGain,fxGain,compressor,noiseBuffer,musicTimer=null,musicStep=0,moodEnergy=0,currentChord=0;
 function freshState(round=0,build=[]){const rd=runPlan[round];return{round,build:[...build],score:0,loopCount:0,crosses:0,echoes:0,centerHits:0,cleanLoops:0,maxLoopVertices:0,centerLoops:0,triangleLoops:0,symPairs:0,moves:0,current:null,path:[],edges:[],loops:[],junctions:[],log:[],ended:false,nextLoopMult:1,directiveAnnounced:false,requirementAnnounced:false,sources:{loop:0,cross:0,echo:0,line:0},engineHits:{},pts:rd.layout.map((p,i)=>({id:i,x:p[0],y:p[1]}))}}
-function initAudio(){
-  if(audioCtx)return;const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;audioCtx=new AC();
-  compressor=audioCtx.createDynamicsCompressor();compressor.threshold.value=-22;compressor.knee.value=18;compressor.ratio.value=2.6;
-  masterGain=audioCtx.createGain();masterGain.gain.value=.88;musicGain=audioCtx.createGain();musicGain.gain.value=.105;fxGain=audioCtx.createGain();fxGain.gain.value=.20;
-  noiseBuffer=audioCtx.createBuffer(1,Math.floor(audioCtx.sampleRate*.35),audioCtx.sampleRate);const data=noiseBuffer.getChannelData(0);for(let i=0;i<data.length;i++)data[i]=(Math.random()*2-1)*(1-i/data.length);
-  musicGain.connect(compressor);fxGain.connect(compressor);compressor.connect(masterGain);masterGain.connect(audioCtx.destination)
-}
-function ensureMusic(){if(musicTimer||!musicOn||!audioCtx)return;musicLoop();musicTimer=setInterval(musicLoop,980)}
-function stopMusic(){if(musicTimer){clearInterval(musicTimer);musicTimer=null}}
-function tone(freq,dur=.12,type='sine',vol=.04,at=0,detune=0){if(!soundOn||!audioCtx)return;const t=audioCtx.currentTime+at,o=audioCtx.createOscillator(),g=audioCtx.createGain(),f=audioCtx.createBiquadFilter();f.type='lowpass';f.frequency.value=type==='triangle'?1650:2350;o.type=type;o.frequency.setValueAtTime(freq,t);o.detune.value=detune;g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(vol,t+.012);g.gain.exponentialRampToValueAtTime(.0001,t+dur);o.connect(f);f.connect(g);g.connect(fxGain);o.start(t);o.stop(t+dur+.03)}
-function textureNoise(vol=.012,at=0,bright=false,dur=.055){if(!soundOn||!audioCtx||!noiseBuffer)return;const t=audioCtx.currentTime+at,s=audioCtx.createBufferSource(),bp=audioCtx.createBiquadFilter(),g=audioCtx.createGain();s.buffer=noiseBuffer;bp.type='bandpass';bp.frequency.value=bright?2600:1050;bp.Q.value=bright?1.4:.8;g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.0001,t+dur);s.connect(bp);bp.connect(g);g.connect(fxGain);s.start(t);s.stop(t+dur+.02)}
-function threadSound(step=0){const v=step%3,base=[232,247,220][v];textureNoise(.006,0,v===1,.045);tone(base,.055,'triangle',.012,0,[-5,4,0][v]);if(v===2)tone(base*1.5,.045,'sine',.005,.018,3)}
-function pad(freq,dur=.88,vol=.025,at=0,detune=0){if(!musicOn||!audioCtx)return;const t=audioCtx.currentTime+at,g=audioCtx.createGain(),lp=audioCtx.createBiquadFilter();lp.type='lowpass';lp.frequency.value=980;g.gain.setValueAtTime(.0001,t);g.gain.linearRampToValueAtTime(vol,t+.28);g.gain.linearRampToValueAtTime(.0001,t+dur);for(const [type,ratio,dv] of [['triangle',1,detune],['sine',2,detune+4]]){const o=audioCtx.createOscillator();o.type=type;o.frequency.setValueAtTime(freq*ratio,t);o.detune.value=dv;o.connect(lp);o.start(t);o.stop(t+dur+.05)}lp.connect(g);g.connect(musicGain)}
-function pluck(freq,dur=.17,vol=.014,at=0,variant=0){if(!musicOn||!audioCtx)return;const t=audioCtx.currentTime+at,o=audioCtx.createOscillator(),g=audioCtx.createGain(),bp=audioCtx.createBiquadFilter();o.type=variant===1?'sine':'triangle';o.frequency.setValueAtTime(freq,t);o.detune.value=[-3,4,0][variant%3];bp.type='bandpass';bp.frequency.value=[1050,1450,1250][variant%3];bp.Q.value=1.1;g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(vol,t+.006);g.gain.exponentialRampToValueAtTime(.0001,t+dur);o.connect(bp);bp.connect(g);g.connect(musicGain);o.start(t);o.stop(t+dur+.03)}
-function musicLoop(){
-  if(!musicOn||!audioCtx)return;
-  const chords=[[174,220,262],[196,247,294],[220,277,330],[196,262,330]],chord=chords[currentChord%chords.length],intensity=Math.max(.04,Math.min(1,moodEnergy)),pattern=musicStep%3;
-  pad(chord[0],.94,.012+intensity*.012,0,-7);pad(chord[1],.92,.010+intensity*.010,.08,5);pad(chord[2],.90,.008+intensity*.010,.16,-2);
-  if(pattern===0){pluck(chord[1]*2,.15,.008+intensity*.007,.08,0);if(intensity>.46)pluck(chord[2]*1.5,.12,.006+intensity*.006,.56,1)}
-  else if(pattern===1){pluck(chord[0]*2,.13,.007+intensity*.006,.22,2);if(intensity>.62)pluck(chord[1]*2.02,.10,.006,.70,0)}
-  else if(intensity>.25){pluck(chord[2]*1.48,.14,.007+intensity*.006,.38,1)}
-  musicStep++;if(musicStep%2===0||intensity>.78)currentChord=(currentChord+1)%chords.length;moodEnergy=Math.max(.05,moodEnergy*.76)
-}
+let soundtrack=null;
+function initAudio(){if(soundtrack)return;soundtrack=KnotAudio.create('run',()=>({sound:soundOn,music:musicOn}),()=>moodEnergy);if(soundtrack)audioCtx=soundtrack.ctx}
+function tone(f,d=.12,type='sine',vol=.03,at=0,detune=0){if(soundtrack)soundtrack.tone(f,d,type,vol,at)}
+function textureNoise(vol=.004,at=0,bright=false,d=.05){if(soundtrack)soundtrack.texture(vol,at,bright,d)}
+function threadSound(step=0){if(soundtrack)soundtrack.thread(step)}
+function ensureMusic(){if(soundtrack)soundtrack.start()}
+function stopMusic(){if(soundtrack)soundtrack.stop()}
 function nudgeMood(v){moodEnergy=Math.min(1,moodEnergy+v);document.documentElement.style.setProperty('--hueShift',`${Math.round(moodEnergy*24)}deg`)}
 function svg(tag,attrs){const el=document.createElementNS('http://www.w3.org/2000/svg',tag);Object.entries(attrs).forEach(([k,v])=>el.setAttribute(k,v));return el}
 function fmt(n){return Math.round(n).toLocaleString('pt-BR')} function edgeKey(a,b){return a<b?`${a}-${b}`:`${b}-${a}`} function dist(a,b){return Math.hypot(a.x-b.x,a.y-b.y)}
@@ -70,27 +54,25 @@ function render(){
 
   const onboard=runOnboardingStage();
   renderRunOnboarding(onboard);
-  nodesEl.innerHTML='';
+  KnotFeel.begin(state, nodesEl, [loopsEl, edgesEl, junctionsEl]);
   state.pts.forEach(p=>{
-    const b=document.createElement('button'),pv=previewMove(state.current,p.id);
+    const b=KnotFeel.node(nodesEl,p.id),pv=previewMove(state.current,p.id);
     const tutorialClass=onboard==='start'?' onboard-start':((onboard==='connect'&&p.id!==state.current&&!(pv&&pv.blocked))?' onboard-next':((onboard==='close'&&pv&&pv.closes)?' onboard-close':''));
-    b.className='node'+(p.id===state.current?' active':'')+(state.path.includes(p.id)?' visited':'')+(state.current!==null&&p.id!==state.current?' crosshair':'')+(pv&&pv.blocked?' blocked':'')+tutorialClass;
+    b.className='node'+(p.id===state.current?' active':'')+(state.path.includes(p.id)?' visited':'')+(state.current!==null&&p.id!==state.current?' crosshair':'')+(pv&&pv.blocked?' blocked':'')+tutorialClass+(b.classList.contains('pin-press')?' pin-press':'');
     b.type='button';b.style.left=(p.x/10)+'%';b.style.top=(p.y/10)+'%';
     b.setAttribute('aria-label',`Ponto ${p.id+1}${pv&&!pv.blocked?' · '+pv.label:''}`);
+    b.replaceChildren();
     if(pv&&!pv.blocked&&state.current!==null){
       const badge=document.createElement('span');badge.className='move-preview';
-      badge.textContent=pv.mirrorPair?'↔':pv.closes?'◌':pv.crosses?'×'+pv.crosses:pv.echo?'∥':pv.center?'◎':'·';badge.title=pv.label;b.appendChild(badge);
+      badge.textContent=pv.mirrorPair?'↔':pv.closes?'◌':pv.crosses?'×'+pv.crosses:pv.echo?'∥':pv.center?'◎':'·';badge.title=pv.label;if(badge.textContent!=='·')b.appendChild(badge);
     }
-    b.addEventListener('pointerenter',()=>{if(onboard==='done'&&pv&&!pv.blocked&&state.current!==null){hint.classList.remove('hide');hint.textContent=pv.label}});
-    b.addEventListener('focus',()=>{if(onboard==='done'&&pv&&!pv.blocked&&state.current!==null){hint.classList.remove('hide');hint.textContent=pv.label}});
-    b.addEventListener('pointerdown',ev=>{ev.preventDefault();pickNode(p.id)});
-    b.addEventListener('click',ev=>{ev.preventDefault();if(ev.detail===0)pickNode(p.id)});
-    nodesEl.appendChild(b);
+    b.onpointerenter=()=>{if(onboard==='done'&&pv&&!pv.blocked&&state.current!==null){hint.classList.remove('hide');hint.textContent=pv.label}};
+    b.onfocus=()=>{if(onboard==='done'&&pv&&!pv.blocked&&state.current!==null){hint.classList.remove('hide');hint.textContent=pv.label}};
+    b.onpointerdown=ev=>{ev.preventDefault();KnotFeel.press(b);pickNode(p.id)};
+    b.onclick=ev=>{ev.preventDefault();if(ev.detail===0){KnotFeel.press(b);pickNode(p.id)}};
+
   });
-  loopsEl.innerHTML='';
-  state.loops.forEach((L,i)=>{const poly=svg('polygon',{points:L.points.map(p=>`${p.x},${p.y}`).join(' '),class:'loop-fill'});poly.style.fill=`hsla(${(14+i*28)%360},${36+(i%3)*8}%,${76-(i%5)*4}%,${.12+Math.min(.12,i*.015)})`;loopsEl.appendChild(poly)});
-  edgesEl.innerHTML='';state.edges.forEach(e=>edgesEl.appendChild(svg('line',{x1:e.a.x,y1:e.a.y,x2:e.b.x,y2:e.b.y,class:'edge'+(e.echo?' echo':'')})));
-  junctionsEl.innerHTML='';state.junctions.forEach(j=>junctionsEl.appendChild(svg('circle',{cx:j.x,cy:j.y,r:10,class:'junction'})));
+  KnotFeel.geometry(state, loopsEl, edgesEl, junctionsEl);
   renderBuild();renderLog();
 }
 function renderBuild(){const el=$('#knotList'),active=activeSynergies(state.build);const schoolLine=`<div class="knot-item run-schools"><b>Gramática desta run</b><span>${runSchools.join(' · ')}</span></div>`;const synergyLine=active.length?active.map(s=>`<div class="knot-item synergy-active"><b>${s.symbol} ${s.name}</b><span>${s.desc}</span></div>`).join(''):'';if(!state.build.length){el.innerHTML=schoolLine+'<div class="knot-item"><b>Sem knots</b><span>Vença a rodada para escolher um e mudar sua forma de pensar a geometria.</span></div>';return}el.innerHTML=schoolLine+synergyLine;state.build.forEach(id=>{const k=knotDefs[id],d=document.createElement('div');d.className='knot-item';d.innerHTML=`<b>${k.symbol} ${k.name}</b><span>${k.desc}</span>`;el.appendChild(d)})}

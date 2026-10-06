@@ -27,6 +27,7 @@ function isMasterProgress(p){return !!p&&p.medal>=3&&p.feat}
 function atlasCard(m,i){
   const p=mapProgress(m.id),lock=!unlocked(i),master=isMasterProgress(p);
   return `<button class="map-card ${lock?'locked':''}" ${lock?'disabled':''} data-map="${m.id}">
+    ${KnotFeel.mapPreview(m.pts)}
     <div class="map-top">
       <b>${i+1}. ${m.name}</b>
       <div class="medals" aria-label="Domínio">

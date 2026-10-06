@@ -1,0 +1,36 @@
+/* Shared paper, pins and thread presentation. */
+.ui-icon{position:static;inset:auto;flex:none;overflow:visible}
+.node::before{background:radial-gradient(circle at 32% 25%,#a69b8c 0 18%,#736960 46%,#51483f 100%);box-shadow:0 3px 1px rgba(47,35,23,.16),0 7px 12px rgba(47,35,23,.12),inset 0 1px 1px #fff8}
+.node.active::before{background:radial-gradient(circle at 32% 25%,#f5b599,#d46b58 55%,#ad5145)}
+.node.visited:not(.active)::before{background:radial-gradient(circle at 32% 25%,#766c61,#302925 70%)}
+.node.pin-press::before{animation:pinPress .22s ease-out}
+.edge{animation:threadDraw .2s ease-out both;filter:drop-shadow(0 3px 1px #30292524);stroke-width:8}
+.edge.echo-response{animation:echoResponse .42s ease-out}
+.loop-fill{animation:loopSet .32s ease-out;stroke-width:2}
+.junction{transform-box:fill-box;transform-origin:center;animation:crossSet .24s ease-out}
+.feel-notice{position:absolute;top:17%;left:50%;transform:translateX(-50%);max-width:88%;width:max-content;padding:9px 15px;border:1px solid #6c51301a;border-radius:18px;background:#fcf7eef2;box-shadow:0 5px 20px #45301c0d;color:#a84c3c;font-weight:750;font-size:13px;letter-spacing:.06em;text-align:center;animation:noticeIn .15s ease-out}
+.feel-notice.is-big{color:#82601e;border-color:#d9aa5d66}
+.loop-gain{position:absolute;transform:translate(-50%,-50%);color:#68452d;background:#fff9eeeb;padding:4px 9px;border-radius:20px;font-size:16px;font-weight:800;box-shadow:0 2px 10px #45301c10;animation:gainRise 1s ease-out forwards}
+.map-preview{position:static;inset:auto;width:76px;height:76px;justify-self:start;fill:#655a4f;background:radial-gradient(circle,#fffaf1,#eee3d355);border:1px solid #66503a12;border-radius:50%}
+.preview-guide{fill:none;stroke:#b8a58b;stroke-width:4;stroke-dasharray:8 16}
+.map-card{position:relative;padding-left:108px;min-height:195px}
+.map-card>.map-preview{position:absolute;left:16px;top:18px}
+.map-top{flex-wrap:wrap}
+.map-card.locked{opacity:.62}
+@keyframes threadDraw{from{stroke-dasharray:1;stroke-dashoffset:1;opacity:.6}to{stroke-dasharray:1;stroke-dashoffset:0;opacity:1}}
+@keyframes pinPress{0%{transform:scale(.87)}55%{transform:scale(1.12)}100%{transform:scale(1)}}
+@keyframes loopSet{from{opacity:0;stroke-width:8}to{opacity:1;stroke-width:2}}
+@keyframes crossSet{from{transform:scale(.6);opacity:.3}65%{transform:scale(1.25)}to{transform:scale(1);opacity:1}}
+@keyframes echoResponse{50%{stroke:var(--teal);stroke-width:11}}
+@keyframes noticeIn{from{opacity:0}to{opacity:1}}
+@keyframes gainRise{0%{opacity:0;translate:0 6px}20%,65%{opacity:1}100%{opacity:0;translate:0 -22px}}
+@media(max-width:520px){.map-card{padding-left:88px}.map-card>.map-preview{width:58px;height:58px;left:13px}.map-top b{font-size:16px}}
+@media(prefers-reduced-motion:reduce){.edge,.loop-fill,.junction,.node::before,.feel-notice,.loop-gain{animation:none!important}.particle,.pulse,.energy-ribbon,.ribbon,.big-flash,.bigflash{display:none}.loop-gain{opacity:1}}
+
+/* Keep round goals above the collapsed drawer. */
+.mode-run .bottom-bar{bottom:72px}
+.mode-run .corner-actions{bottom:134px}
+.node:focus-visible{outline:none}
+.node:focus-visible::before{outline:3px solid #8773d8;outline-offset:5px}
+@media(max-width:520px){.mode-atlas .wordmark h1{font-size:20px}.mode-atlas .brand{gap:6px}.mode-atlas .controls{gap:4px;max-width:none}.mode-atlas .controls .btn{padding:8px}.mode-atlas .iconbtn{width:32px}.mode-atlas .logo{width:30px;height:30px}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
