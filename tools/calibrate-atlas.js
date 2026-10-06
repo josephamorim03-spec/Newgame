@@ -13,18 +13,18 @@ const regular=(n,rot=0,r=360)=>Array.from({length:n},(_,i)=>{const a=i*TAU/n-Mat
 const doubleSquare=(rot=0)=>{const p=[];for(let i=0;i<4;i++){let a=i*Math.PI/2-Math.PI/2+rot;p.push([500+Math.cos(a)*350,500+Math.sin(a)*350])}for(let i=0;i<4;i++){let a=i*Math.PI/2-Math.PI/4+rot;p.push([500+Math.cos(a)*205,500+Math.sin(a)*205])}return p};
 
 const MAPS={
- first:{moves:8,pts:regular(8),cross:140,echo:90,area:1,gold:s=>s.score>=3000,feat:s=>s.score>=2200&&s.crosses>=2},
- cross:{moves:9,pts:regular(8,Math.PI/8),cross:180,echo:90,area:1,gold:s=>s.crosses>=12,feat:s=>s.crosses>=8&&s.loops>=1},
- echo:{moves:9,pts:regular(8),cross:140,echo:150,area:1,gold:s=>s.echoes>=4,feat:s=>s.echoes>=4&&s.loops>=1},
- halo:{moves:9,pts:doubleSquare(),cross:140,echo:90,area:1,gold:s=>s.centerLoops>=3,feat:s=>s.centerLoops>=2&&s.crosses>=2},
- star:{moves:11,pts:regular(10,Math.PI/10),cross:140,echo:90,area:1.12,gold:s=>s.maxVertices>=10,feat:s=>s.maxVertices>=8&&s.echoes>=2},
- twin:{moves:10,pts:doubleSquare(Math.PI/4),cross:140,echo:90,area:1,gold:s=>s.loops>=5,feat:s=>s.loops>=4&&s.crosses>=3},
- clean:{moves:9,pts:regular(8,Math.PI/8),cross:100,echo:90,area:1,gold:s=>s.cleanLoops>=3,feat:s=>s.cleanLoops>=2&&s.score>=2000},
- master:{moves:12,pts:regular(10),cross:160,echo:100,area:1.08,gold:s=>s.crosses>=18&&s.loops>=5,feat:s=>s.crosses>=12&&s.loops>=4&&s.echoes>=2},
- mirror:{moves:10,pts:regular(8),cross:130,echo:90,area:1,gold:s=>s.symPairs>=4,feat:s=>s.symPairs>=4&&s.echoes>=2},
- mosaic:{moves:11,pts:regular(8,Math.PI/8),cross:120,echo:90,area:1,gold:s=>s.triangleLoops>=4,feat:s=>s.triangleLoops>=4&&s.crosses>=6},
- ritual:{moves:12,pts:regular(10),cross:150,echo:120,area:1,gold:s=>s.rituals>=2&&s.loops>=5,feat:s=>s.rituals>=2&&s.crosses>=12},
- focus:{moves:10,pts:regular(8),cross:130,echo:90,area:1,gold:s=>s.loops>=4&&s.uniqueVertices<=5,feat:s=>s.loops>=4&&s.uniqueVertices<=5&&s.echoes>=2}
+ first:{version:1,moves:8,pts:regular(8),cross:140,echo:90,area:1,gold:s=>s.score>=3000,feat:s=>s.score>=2200&&s.crosses>=2},
+ cross:{version:1,moves:9,pts:regular(8,Math.PI/8),cross:180,echo:90,area:1,gold:s=>s.crosses>=12,feat:s=>s.crosses>=8&&s.loops>=1},
+ echo:{version:1,moves:9,pts:regular(8),cross:140,echo:150,area:1,gold:s=>s.echoes>=4,feat:s=>s.echoes>=4&&s.loops>=1},
+ halo:{version:1,moves:9,pts:doubleSquare(),cross:140,echo:90,area:1,gold:s=>s.centerLoops>=3,feat:s=>s.centerLoops>=2&&s.crosses>=2},
+ star:{version:1,moves:11,pts:regular(10,Math.PI/10),cross:140,echo:90,area:1.12,gold:s=>s.maxVertices>=10,feat:s=>s.maxVertices>=8&&s.echoes>=2},
+ twin:{version:1,moves:10,pts:doubleSquare(Math.PI/4),cross:140,echo:90,area:1,gold:s=>s.loops>=5,feat:s=>s.loops>=4&&s.crosses>=3},
+ clean:{version:1,moves:9,pts:regular(8,Math.PI/8),cross:100,echo:90,area:1,gold:s=>s.cleanLoops>=3,feat:s=>s.cleanLoops>=2&&s.score>=2000},
+ master:{version:1,moves:12,pts:regular(10),cross:160,echo:100,area:1.08,gold:s=>s.crosses>=18&&s.loops>=5,feat:s=>s.crosses>=12&&s.loops>=4&&s.echoes>=2},
+ mirror:{version:2,moves:10,pts:regular(8),cross:130,echo:90,area:1,gold:s=>s.symPairs>=4,feat:s=>s.symPairs>=4&&s.echoes>=2},
+ mosaic:{version:1,moves:11,pts:regular(8,Math.PI/8),cross:120,echo:90,area:1,gold:s=>s.triangleLoops>=4,feat:s=>s.triangleLoops>=4&&s.crosses>=6},
+ ritual:{version:2,moves:12,pts:regular(10),cross:150,echo:120,area:1,gold:s=>s.rituals>=2&&s.loops>=5,feat:s=>s.rituals>=2&&s.crosses>=12},
+ focus:{version:2,moves:10,pts:regular(8),cross:130,echo:90,area:1,gold:s=>s.loops>=4&&s.uniqueVertices<=5,feat:s=>s.loops>=4&&s.uniqueVertices<=5&&s.echoes>=2}
 };
 
 const WITNESSES={
