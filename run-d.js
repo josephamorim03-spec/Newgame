@@ -1,34 +1,123 @@
 'use strict';
 function masteryEarned(rd){return state.score>=rd.mastery&&requirementMet(rd)}
-function endRound(){const rd=runPlan[state.round];state.ended=true;const passed=state.score>=rd.target&&requirementMet(rd),mastered=masteryEarned(rd),challenge=!!rd.directive&&goalMet(rd.directive);if(passed){Object.keys(runSources).forEach(k=>runSources[k]+=state.sources[k]||0);Object.entries(state.engineHits||{}).forEach(([id,n])=>runEngineHits[id]=(runEngineHits[id]||0)+n)}if(passed&&challenge){runChallenges++;runFocus++;toast('FOCUS +1',true);haptic(14);nudgeMood(.18)}if(mastered){runMasteries++;runReweaves=Math.min(2,runReweaves+1);toast('MAESTRIA',true);haptic(22);nudgeMood(.28)}if(passed){if(state.round===runPlan.length-1)showWin();else showDraft(mastered,challenge)}else showFail()}
-function openSheet(){sheetOverlay.classList.remove('hidden')}function closeSheet(){sheetOverlay.classList.add('hidden')}
-
+let sheetMode='normal',draftPending=false,audioPrimed=false;
+function configQuery(cfg=runConfig){return{diff:cfg.difficulty,rounds:cfg.rounds,geom:cfg.geometry,nodes:cfg.nodes,obj:cfg.objectives}}
+function currentRunUrl(extra={}){return knotShareUrl('run.html',{seed:runSeed,...configQuery(),...extra})}
+function runConfigSummary(cfg=runConfig){
+  const d={easy:'Fácil',moderate:'Moderada',hard:'Difícil'}[cfg.difficulty]||cfg.difficulty,
+        g={radial:'Radial',symmetric:'Simétrica',axis:'Eixos',mixed:'Mista'}[cfg.geometry]||cfg.geometry,
+        o={balanced:'Balanceada',loop:'Loops',cross:'Crosses',echo:'Echoes'}[cfg.objectives]||cfg.objectives;
+  return `${d} · ${cfg.rounds} rodadas · ${g} · ${cfg.nodes==='mixed'?'pontos mistos':cfg.nodes+' pontos'} · ${o}`
+}
+function endRound(){
+  const rd=runPlan[state.round];state.ended=true;
+  const passed=state.score>=rd.target&&requirementMet(rd),mastered=masteryEarned(rd),challenge=!!rd.directive&&goalMet(rd.directive);
+  if(passed){
+    runTotalScore+=state.score;
+    Object.keys(runSources).forEach(k=>runSources[k]+=state.sources[k]||0);
+    Object.entries(state.engineHits||{}).forEach(([id,n])=>runEngineHits[id]=(runEngineHits[id]||0)+n)
+  }
+  if(passed&&challenge){runChallenges++;runFocus++;toast('FOCUS +1',true);haptic(14);nudgeMood(.18)}
+  if(mastered){runMasteries++;runReweaves=Math.min(2,runReweaves+1);toast('MAESTRIA',true);haptic(22);nudgeMood(.28)}
+  if(passed){if(state.round===runPlan.length-1)showWin();else showDraft(mastered,challenge)}else showFail()
+}
+function openSheet(mode='normal'){
+  sheetMode=mode;sheetOverlay.classList.remove('hidden');sheet.scrollTop=0;
+  const resume=$('#draftResume');if(resume)resume.hidden=true
+}
+function closeSheet(force=false){
+  sheetOverlay.classList.add('hidden');
+  const resume=$('#draftResume');if(resume)resume.hidden=!(sheetMode==='draft'&&draftPending&&!force)
+}
+function sheetToolbar(label='Voltar ao tabuleiro'){return `<div class="sheet-toolbar"><button class="sheet-back" id="sheetBack" type="button">← ${label}</button></div>`}
+function wireSheetBack(force=false){const b=$('#sheetBack');if(b)b.onclick=()=>closeSheet(force)}
 function showDraft(mastered=false,challenge=false){
-  const nextRound=runPlan[state.round+1];
+  const nextRound=runPlan[state.round+1];draftPending=true;
   let choiceCount=3,choices=buildDraftChoices(nextRound,draftNonce++,choiceCount);
   const renderDraft=()=>{
-    const buildTags=[...new Set(state.build.flatMap(id=>knotDefs[id].tags||[]))].slice(0,5);
-    const sourceNames={loop:'Loops',cross:'Crosses',echo:'Echoes',line:'Traços'};
-    const roundSources=Object.entries(state.sources).sort((a,b)=>b[1]-a[1]);
-    const roundTotal=roundSources.reduce((sum,x)=>sum+x[1],0)||1;
-    const roundRead=roundSources.filter(x=>x[1]>0).slice(0,2).map(([k,v])=>`${sourceNames[k]} ${Math.round(v/roundTotal*100)}%`).join(' · ')||'Sem engine dominante';const engineRead=Object.entries(state.engineHits||{}).filter(([,n])=>n>0).map(([id,n])=>`${SYNERGY_DEFS[id].name} ×${n}`).join(' · ');
-    const passRule=nextRound.requirement?`${fmt(nextRound.target)} + ${goalLabel(nextRound.requirement)}`:fmt(nextRound.target);
-    const optional=nextRound.directive?goalLabel(nextRound.directive):'—';
-    sheet.innerHTML=`<div class="sheet-copy"><div class="drawer-title">Rodada superada${mastered?' · MAESTRIA':''}${challenge?' · DESAFIO':''}</div><h2>Escolha como sua geometria vai escalar.</h2><p>Knots não são bônus genéricos: eles mudam quais formas valem a pena. Nenhuma escolha específica é obrigatória para passar; a build muda sua margem e sua chance de Maestria. A próxima rodada já está revelada para você decidir com contexto.</p><div class="draft-meta"><span class="draft-tag">Próxima: <b>${nextRound.title}</b></span><span class="draft-tag">Passar: ${passRule}</span><span class="draft-tag">Desafio: ${optional}</span><span class="draft-tag">Reweave: ${runReweaves}</span><span class="draft-tag">Focus: ${runFocus}</span><span class="draft-tag">Leitura: ${roundRead}</span>${engineRead?`<span class="draft-tag engine-read">Engines: ${engineRead}</span>`:''}${buildTags.length?`<span class="draft-tag">Build: ${buildTags.join(' · ')}</span>`:''}</div><div class="sheet-actions">${runReweaves>0?'<button class="btn" type="button" id="reweave">Reweave as opções</button>':''}${runFocus>0&&choiceCount===3?'<button class="btn" type="button" id="focusBtn">Usar Focus: abrir 4ª opção</button>':''}<span class="draft-required">Escolha 1 Knot para continuar</span></div></div><div class="sheet-grid">${choices.map(id=>{const k=knotDefs[id],a=affinityScore(id,nextRound),lab=affinityLabel(a),completed=synergiesCompletedBy(id,state.build);const allies=state.build.filter(other=>(knotDefs[other].tags||[]).some(t=>(k.tags||[]).includes(t))).slice(0,2).map(other=>knotDefs[other].name);const recipe=completed[0];const synergy=recipe?`FECHA ${recipe.name} · ${recipe.desc}`:(allies.length?`Combina com ${allies.join(' + ')}`:'Abre uma linha nova');return`<button class="sheet-choice ${recipe?'synergy-ready':''}" type="button" data-knot="${id}"><span class="sym">${k.symbol}</span><b>${k.name}</b><small>${k.school} · ${k.desc}</small><span class="affinity ${lab[1]}">${lab[0]} com ${nextRound.title}</span><span class="choice-synergy">${synergy}</span></button>`}).join('')}</div>`;
-    openSheet();const rw=$('#reweave');if(rw)rw.onclick=()=>{runReweaves--;choices=buildDraftChoices(nextRound,draftNonce++,choiceCount);renderDraft()};const fb=$('#focusBtn');if(fb)fb.onclick=()=>{runFocus--;choiceCount=4;const keep=[...choices],expanded=buildDraftChoices(nextRound,draftNonce++,Math.max(4,keep.length+1)),extra=expanded.find(id=>!keep.includes(id));choices=extra?[...keep,extra]:expanded.slice(0,4);renderDraft()};sheet.querySelectorAll('[data-knot]').forEach(b=>b.addEventListener('click',()=>{const completed=synergiesCompletedBy(b.dataset.knot,state.build),build=state.build.concat([b.dataset.knot]);state=freshState(state.round+1,build);closeSheet();hint.classList.remove('hide');hint.textContent=completed.length?`${completed[0].name} online · ${completed[0].desc}`:(nextRound.requirement?`${nextRound.title}: além da pontuação, cumpra ${goalLabel(nextRound.requirement)}.`:`${nextRound.title}: sua execução decide a forma; sua build decide como ela escala.`);render();if(completed.length){setTimeout(()=>{toast(`ENGINE · ${completed[0].name}`,true);chord(true);haptic(22)},100);nudgeMood(.38)}else nudgeMood(.2)}));
-  };renderDraft();
+    const engineRead=Object.entries(state.engineHits||{}).filter(([,n])=>n>0).map(([id,n])=>`${SYNERGY_DEFS[id].name} ×${n}`).join(' · '),
+          passRule=nextRound.requirement?`${fmt(nextRound.target)} + ${goalLabel(nextRound.requirement)}`:fmt(nextRound.target),
+          optional=nextRound.directive?goalLabel(nextRound.directive):'—';
+    sheet.innerHTML=`${sheetToolbar('Ver tabuleiro')}
+      <div class="sheet-copy"><div class="drawer-title">Rodada superada${mastered?' · MAESTRIA':''}${challenge?' · DESAFIO':''}</div>
+      <h2>Escolha uma regra para explorar.</h2>
+      <p>A próxima rodada está revelada, mas o jogo não marca uma opção como “melhor”. Forme uma hipótese e descubra como ela muda sua geometria.</p>
+      <div class="draft-meta"><span class="draft-tag">Próxima: <b>${nextRound.title}</b></span><span class="draft-tag">Passar: ${passRule}</span><span class="draft-tag">Desafio: ${optional}</span><span class="draft-tag">Reweave: ${runReweaves}</span><span class="draft-tag">Focus: ${runFocus}</span>${engineRead?`<span class="draft-tag engine-read">Ativou: ${engineRead}</span>`:''}</div>
+      <div class="sheet-actions">${runReweaves>0?'<button class="btn" type="button" id="reweave">Reweave</button>':''}${runFocus>0&&choiceCount===3?'<button class="btn" type="button" id="focusBtn">Focus: +1 opção</button>':''}<span class="draft-required">Escolha 1 Knot para continuar</span></div></div>
+      <div class="sheet-grid">${choices.map(id=>{const k=knotDefs[id],completed=synergiesCompletedBy(id,state.build),recipe=completed[0];return`<button class="sheet-choice ${recipe?'synergy-ready':''}" type="button" data-knot="${id}"><span class="sym">${k.symbol}</span><b>${k.name}</b><small>${k.school} · ${k.desc}</small>${recipe?`<span class="choice-synergy">Pode fechar ${recipe.name}. O gatilho ainda precisa ser executado na geometria.</span>`:'<span class="choice-synergy">Nova possibilidade para a build.</span>'}</button>`}).join('')}</div>`;
+    openSheet('draft');wireSheetBack(false);
+    const rw=$('#reweave');if(rw)rw.onclick=()=>{runReweaves--;choices=buildDraftChoices(nextRound,draftNonce++,choiceCount);renderDraft()};
+    const fb=$('#focusBtn');if(fb)fb.onclick=()=>{runFocus--;choiceCount=4;const keep=[...choices],expanded=buildDraftChoices(nextRound,draftNonce++,4),extra=expanded.find(id=>!keep.includes(id));choices=extra?[...keep,extra]:expanded.slice(0,4);renderDraft()};
+    sheet.querySelectorAll('[data-knot]').forEach(b=>b.addEventListener('click',()=>{
+      const completed=synergiesCompletedBy(b.dataset.knot,state.build),build=state.build.concat([b.dataset.knot]);draftPending=false;
+      state=freshState(state.round+1,build);closeSheet(true);hint.classList.remove('hide');
+      hint.textContent=completed.length?`${completed[0].name} online. Descubra como acioná-la.`:(nextRound.requirement?`${nextRound.title}: cumpra também ${goalLabel(nextRound.requirement)}.`:`${nextRound.title}: leia a geometria e teste sua hipótese.`);
+      render();if(completed.length){setTimeout(()=>{toast(`ENGINE · ${completed[0].name}`,true);chord(true);haptic(22)},100);nudgeMood(.38)}else nudgeMood(.2)
+    }))
+  };renderDraft()
 }
-
-function showFail(){const rd=runPlan[state.round],sourceNames={loop:'Loops',cross:'Crosses',echo:'Echoes',line:'Traços'},top=Object.entries(state.sources).sort((a,b)=>b[1]-a[1])[0],read=top&&top[1]>0?` Seu maior motor nesta tentativa foi ${sourceNames[top[0]]} (${fmt(top[1])} pts).`:'' ,active=activeSynergies(state.build),hits=Object.values(state.engineHits||{}).reduce((a,b)=>a+b,0),engineNote=active.length&&!hits?` Sua engine ${active.map(e=>e.name).join(' / ')} estava montada, mas não disparou nesta tentativa.`:'',scoreOk=state.score>=rd.target,reqOk=requirementMet(rd),reason=scoreOk&&!reqOk?`Você bateu a pontuação, mas faltou a condição geométrica obrigatória: ${goalLabel(rd.requirement)}.`:`Você ficou abaixo do alvo de ${fmt(rd.target)}. Existe ao menos uma rota de passagem mesmo sem um Knot específico; tente outra leitura da geometria e use a build para ampliar sua margem.${read}${engineNote}`;sheet.innerHTML=`<div class="sheet-copy"><div class="drawer-title">A trama não fechou</div><h2>${fmt(state.score)} / ${fmt(rd.target)}</h2><p>${reason}</p><div class="sheet-actions"><button class="btn strong" id="retry">Repetir rodada</button><button class="btn" id="newrun">Nova run</button></div></div><div class="sheet-grid"><div class="sheet-choice" style="cursor:default"><span class="sym">◌</span><b>Prepare</b><small>Nem toda forma precisa fechar cedo. Uma linha solta pode abrir a jogada que faltava.</small></div><div class="sheet-choice" style="cursor:default"><span class="sym">✕</span><b>Priorize</b><small>Às vezes cumprir a condição obrigatória cedo libera o restante dos movimentos para pontuar.</small></div><div class="sheet-choice" style="cursor:default"><span class="sym">◇</span><b>Escolha o risco</b><small>O Desafio opcional dá Focus, mas não vale sacrificar a passagem se sua build ainda não sustenta isso.</small></div></div>`;openSheet();$('#retry').onclick=()=>{state=freshState(state.round,state.build);closeSheet();hint.classList.remove('hide');render()};$('#newrun').onclick=()=>startRun()}
-function showWin(){const sourceNames={loop:'Loops',cross:'Crosses',echo:'Echoes',line:'Traços'},topSource=Object.entries(runSources).sort((a,b)=>b[1]-a[1])[0],engines=activeSynergies(state.build),engineUse=Object.entries(runEngineHits).filter(([,n])=>n>0).map(([id,n])=>`${SYNERGY_DEFS[id].name} ×${n}`).join(' · ');toast('MASTER KNOT',true);for(let i=0;i<5;i++)setTimeout(()=>burst(500,500,22,true),i*120);[220,277,330,440,554].forEach((f,i)=>tone(f,.45,'sine',.045,i*.06));nudgeMood(.6);sheet.innerHTML=`<div class="sheet-copy"><div class="drawer-title">Run ${runSeed} completa</div><h2>Você construiu uma linguagem.</h2><p>Chegou ao fim das ${runPlan.length} rodadas com ${state.build.length} Knots ativos, ${runMasteries} Maestrias e ${runChallenges} Desafios concluídos. A run agora mede três coisas: geometria, build e capacidade de adaptar seus objetivos. Seu principal motor foi <b>${sourceNames[topSource[0]]}</b>, com ${fmt(topSource[1])} pontos atribuídos.${engines.length?` Engines fechadas: <b>${engines.map(e=>e.name).join(' · ')}</b>.${engineUse?` Ativações: <b>${engineUse}</b>.`:''}`:''}</p><div class="sheet-actions"><button class="btn strong" id="again">Nova run</button></div></div><div class="sheet-grid"><div class="sheet-choice" style="cursor:default"><span class="sym">✦</span><b>Maestrias</b><small>${runMasteries} rodadas acima do alvo alto.</small></div><div class="sheet-choice" style="cursor:default"><span class="sym">◎</span><b>Desafios</b><small>${runChallenges} objetivos opcionais concluídos.</small></div><div class="sheet-choice" style="cursor:default"><span class="sym">⌘</span><b>Knots</b><small>${state.build.length} modificadores na build final.</small></div></div>`;openSheet();$('#again').onclick=()=>startRun()}
-function startRun(seed){if(roundEndTimer){clearTimeout(roundEndTimer);roundEndTimer=null}runSeed=Number.isInteger(seed)?seed:Math.floor(1000+Math.random()*9000);runPlan=buildRun(runSeed);try{history.replaceState(null,'',location.pathname+'?seed='+runSeed)}catch(e){}runReweaves=1;runFocus=0;runMasteries=0;runChallenges=0;draftNonce=0;runSources={loop:0,cross:0,echo:0,line:0};runEngineHits={};state=freshState(0,[]);closeSheet();hint.classList.remove('hide');hint.textContent='Toque em qualquer ponto para começar.';drawGrid();render();nudgeMood(0);document.documentElement.style.setProperty('--hueShift','0deg')}
-$('#restartBtn').addEventListener('click',()=>startRun());$('#soundBtn').addEventListener('click',()=>{soundOn=!soundOn;const b=$('#soundBtn');b.setAttribute('aria-pressed',String(soundOn));b.classList.toggle('is-off',!soundOn);b.title=soundOn?'Som ligado':'Som desligado';initAudio();if(audioCtx&&audioCtx.state==='suspended')audioCtx.resume().catch(()=>{});if(soundOn)tone(320,.08,'sine',.02)});$('#musicBtn').addEventListener('click',()=>{musicOn=!musicOn;const b=$('#musicBtn');b.setAttribute('aria-pressed',String(musicOn));b.classList.toggle('is-off',!musicOn);b.title=musicOn?'Música ligada':'Música desligada';initAudio();if(audioCtx&&audioCtx.state==='suspended')audioCtx.resume().catch(()=>{});if(musicOn)ensureMusic();else stopMusic()});$('#infoBtn').addEventListener('click',()=>{const open=drawer.classList.toggle('open');$('#infoBtn').setAttribute('aria-expanded',String(open));$('#drawerState').textContent=open?'fechar':'abrir'});$('#drawerToggle').addEventListener('click',()=>{const open=drawer.classList.toggle('open');$('#infoBtn').setAttribute('aria-expanded',String(open));$('#drawerState').textContent=open?'fechar':'abrir'});$('#ruleTitle').addEventListener('click',async()=>{try{await navigator.clipboard.writeText(location.href);toast('SEED COPIADA',false);tone(520,.08,'sine',.02)}catch(e){toast('RUN '+runSeed,false)}});$('#ruleTitle').title='Toque para copiar esta seed';sheetOverlay.addEventListener('click',e=>{if(e.target.classList.contains('sheet-backdrop')&&!state?.ended)closeSheet()});function unlockAudioOnce(){
-  initAudio();
-  const ready=audioCtx&&audioCtx.state==='suspended'?audioCtx.resume():Promise.resolve();
-  Promise.resolve(ready).then(()=>{if(audioCtx&&musicOn)ensureMusic()}).catch(()=>{});
-  document.removeEventListener('pointerdown',unlockAudioOnce,true);
-  document.removeEventListener('touchend',unlockAudioOnce,true);
+function showFail(){
+  const rd=runPlan[state.round],scoreOk=state.score>=rd.target,reqOk=requirementMet(rd),reason=scoreOk&&!reqOk?`Você bateu a pontuação, mas faltou ${goalLabel(rd.requirement)}.`:`Você ficou abaixo de ${fmt(rd.target)}. Tente uma leitura diferente do espaço — sem uma rota destacada pelo jogo.`;
+  sheet.innerHTML=`${sheetToolbar()}<div class="sheet-copy"><div class="drawer-title">A trama não fechou</div><h2>${fmt(state.score)} / ${fmt(rd.target)}</h2><p>${reason}</p><div class="sheet-actions"><button class="btn strong" id="retry">Repetir rodada</button><button class="btn" id="newrun">Nova seed</button><button class="btn" id="failLab">Laboratório</button></div></div>`;
+  openSheet('normal');wireSheetBack(false);$('#retry').onclick=()=>{state=freshState(state.round,state.build);closeSheet(true);hint.classList.remove('hide');render()};$('#newrun').onclick=()=>startRun();$('#failLab').onclick=showLab
 }
-document.addEventListener('pointerdown',unlockAudioOnce,{capture:true,once:true});
-document.addEventListener('touchend',unlockAudioOnce,{capture:true,once:true});
-const qs=Number(new URLSearchParams(location.search).get('seed'));startRun(Number.isInteger(qs)&&qs>0?qs:undefined);
+async function shareRunChallenge(){
+  const score=runTotalScore+(state?.ended?0:(state?.score||0)),url=currentRunUrl({beat:score});
+  try{
+    const out=await knotShareCard({mode:'RUN · DESAFIO',score:fmt(score),scoreLabel:'PONTOS DA RUN',badge:`Seed ${runSeed}`,pts:state?.pts||[],edges:state?.edges||[],title:`Run ${runSeed}`,subtitle:runConfigSummary(),meta:`${runMasteries} Maestrias · ${runChallenges} Desafios`,invite:`Consegue fazer mais que ${fmt(score)} nesta seed?`,url,shareText:`Eu fiz ${fmt(score)} pontos na seed ${runSeed} do KNOT. Consegue fazer mais?`,filename:`KNOT-run-${runSeed}`});
+    toast(out.shared?'DESAFIO ENVIADO':out.downloaded?'IMAGEM GERADA':'LINK PRONTO',false)
+  }catch(e){try{await navigator.clipboard.writeText(url);toast('LINK COPIADO',false)}catch(_) {toast('SEED '+runSeed,false)}}
+}
+function showWin(){
+  const sourceNames={loop:'Loops',cross:'Crosses',echo:'Echoes',line:'Traços'},topSource=Object.entries(runSources).sort((a,b)=>b[1]-a[1])[0],engines=activeSynergies(state.build),engineUse=Object.entries(runEngineHits).filter(([,n])=>n>0).map(([id,n])=>`${SYNERGY_DEFS[id].name} ×${n}`).join(' · '),beat=runChallengeScore>0?runTotalScore>runChallengeScore:null;
+  toast(beat===true?'DESAFIO VENCIDO':'MASTER KNOT',true);nudgeMood(.6);
+  sheet.innerHTML=`${sheetToolbar()}<div class="sheet-copy"><div class="drawer-title">Run ${runSeed} completa</div><h2>${fmt(runTotalScore)} pontos.</h2>
+  <p>${runConfigSummary()}. ${runChallengeScore?`Desafio recebido: ${fmt(runChallengeScore)} · <b>${beat?'superado':'ainda à frente'}</b>. `:''}Você terminou com ${state.build.length} Knots, ${runMasteries} Maestrias e ${runChallenges} Desafios. Principal motor: <b>${sourceNames[topSource?.[0]]||'—'}</b>.${engines.length?` Engines: <b>${engines.map(e=>e.name).join(' · ')}</b>.`:''}${engineUse?` Ativações: <b>${engineUse}</b>.`:''}</p>
+  <div class="sheet-actions"><button class="btn strong" id="shareRun">Compartilhar desafio</button><button class="btn" id="sameSeed">Rejogar seed</button><button class="btn" id="again">Nova seed</button><button class="btn" id="winLab">Laboratório</button></div></div>`;
+  openSheet('normal');wireSheetBack(false);$('#shareRun').onclick=shareRunChallenge;$('#sameSeed').onclick=()=>startRun(runSeed,runConfig);$('#again').onclick=()=>startRun();$('#winLab').onclick=showLab
+}
+function labSelect(id,label,options,value){return `<label class="lab-field"><span>${label}</span><select id="${id}">${options.map(([v,t])=>`<option value="${v}" ${String(value)===String(v)?'selected':''}>${t}</option>`).join('')}</select></label>`}
+function showLab(){
+  const seedValue=runSeed||Math.floor(1000+Math.random()*900000);
+  sheet.innerHTML=`${sheetToolbar()}<div class="sheet-copy lab-copy"><div class="drawer-title">Laboratório de seeds</div><h2>Monte a próxima run.</h2><p>Defina o que importa e deixe o restante aleatório. Seed + configuração reproduzem exatamente a mesma run.</p>
+  <div class="lab-grid"><label class="lab-field"><span>Seed</span><div class="seed-row"><input id="labSeed" inputmode="numeric" value="${seedValue}"><button class="btn" id="rollSeed" type="button">Sortear</button></div></label>
+  ${labSelect('labDifficulty','Dificuldade',[['random','Aleatória'],['easy','Fácil'],['moderate','Moderada'],['hard','Difícil']],runConfig.difficulty)}
+  ${labSelect('labRounds','Rodadas',[['random','Aleatória'],...[4,5,6,7,8,9,10].map(n=>[String(n),String(n)])],runConfig.rounds)}
+  ${labSelect('labGeometry','Geometria',[['random','Aleatória'],['mixed','Mista'],['radial','Radial'],['symmetric','Simétrica'],['axis','Mudança de eixos']],runConfig.geometry)}
+  ${labSelect('labNodes','Pontos',[['random','Aleatório'],['mixed','Mistos'],['8','8 pontos'],['10','10 pontos']],runConfig.nodes)}
+  ${labSelect('labObjectives','Ênfase dos desafios',[['random','Aleatória'],['balanced','Balanceada'],['loop','Loops'],['cross','Crosses'],['echo','Echoes']],runConfig.objectives)}
+  </div><div class="sheet-actions"><button class="btn strong" id="labStart">Gerar run</button><button class="btn" id="labChaos">Tudo aleatório</button></div></div>`;
+  openSheet('lab');wireSheetBack(false);sheet.scrollTop=0;
+  $('#rollSeed').onclick=()=>{$('#labSeed').value=Math.floor(1000+Math.random()*900000)};
+  const read=()=>({difficulty:$('#labDifficulty').value,rounds:$('#labRounds').value,geometry:$('#labGeometry').value,nodes:$('#labNodes').value,objectives:$('#labObjectives').value});
+  $('#labStart').onclick=()=>{const seed=Math.max(1,Math.floor(Number($('#labSeed').value)||Math.random()*900000));startRun(seed,read())};
+  $('#labChaos').onclick=()=>startRun(Math.floor(1000+Math.random()*900000),{difficulty:'random',rounds:'random',geometry:'random',nodes:'random',objectives:'random'})
+}
+function startRun(seed,config){
+  if(roundEndTimer){clearTimeout(roundEndTimer);roundEndTimer=null}
+  runSeed=Number.isInteger(seed)?seed:Math.floor(1000+Math.random()*900000);runConfig=resolveRunConfig(runSeed,config||runConfig||RUN_LAB_DEFAULT);runPlan=buildRun(runSeed,runConfig);
+  const url=currentRunUrl(runChallengeScore?{beat:runChallengeScore}:{});try{history.replaceState(null,'',url)}catch(e){}
+  runReweaves=1;runFocus=0;runMasteries=0;runChallenges=0;runTotalScore=0;draftNonce=0;runSources={loop:0,cross:0,echo:0,line:0};runEngineHits={};draftPending=false;
+  state=freshState(0,[]);closeSheet(true);hint.classList.remove('hide');hint.textContent=runChallengeScore?`Desafio: supere ${fmt(runChallengeScore)} nesta seed.`:'Toque em qualquer ponto para começar.';drawGrid();render();nudgeMood(0);document.documentElement.style.setProperty('--hueShift','0deg')
+}
+function primeAudio(){
+  initAudio();if(!audioCtx)return;
+  try{
+    if(audioCtx.state==='suspended')audioCtx.resume().catch(()=>{});
+    const o=audioCtx.createOscillator(),g=audioCtx.createGain();g.gain.value=.00001;o.frequency.value=80;o.connect(g);g.connect(masterGain);o.start();o.stop(audioCtx.currentTime+.025);
+    if(audioCtx.state==='running'){audioPrimed=true;if(musicOn)ensureMusic()}else setTimeout(()=>{if(audioCtx&&audioCtx.state==='running'){audioPrimed=true;if(musicOn)ensureMusic()}},40)
+  }catch(e){}
+}
+$('#restartBtn').addEventListener('click',()=>startRun());
+$('#labBtn').addEventListener('click',showLab);
+$('#draftResume').addEventListener('click',()=>{if(draftPending){openSheet('draft');sheet.scrollTop=0}});
+$('#soundBtn').addEventListener('click',()=>{soundOn=!soundOn;const b=$('#soundBtn');b.setAttribute('aria-pressed',String(soundOn));b.classList.toggle('is-off',!soundOn);primeAudio();if(soundOn)tone(392,.12,'triangle',.055)});
+$('#musicBtn').addEventListener('click',()=>{musicOn=!musicOn;const b=$('#musicBtn');b.setAttribute('aria-pressed',String(musicOn));b.classList.toggle('is-off',!musicOn);primeAudio();if(musicOn)ensureMusic();else stopMusic()});
+$('#infoBtn').addEventListener('click',()=>{const open=drawer.classList.toggle('open');$('#infoBtn').setAttribute('aria-expanded',String(open));$('#drawerState').textContent=open?'fechar':'abrir'});
+$('#drawerToggle').addEventListener('click',()=>{const open=drawer.classList.toggle('open');$('#infoBtn').setAttribute('aria-expanded',String(open));$('#drawerState').textContent=open?'fechar':'abrir'});
+$('#ruleTitle').addEventListener('click',shareRunChallenge);$('#ruleTitle').title='Compartilhar esta seed';
+sheetOverlay.addEventListener('click',e=>{if(e.target.classList.contains('sheet-backdrop'))closeSheet(false)});
+document.addEventListener('pointerdown',()=>{if(!audioPrimed)primeAudio()},{capture:true});
+document.addEventListener('touchstart',()=>{if(!audioPrimed)primeAudio()},{capture:true,passive:true});
+const q=new URLSearchParams(location.search),seedQ=Number(q.get('seed')),cfgQ={difficulty:q.get('diff')||RUN_LAB_DEFAULT.difficulty,rounds:q.get('rounds')||RUN_LAB_DEFAULT.rounds,geometry:q.get('geom')||RUN_LAB_DEFAULT.geometry,nodes:q.get('nodes')||RUN_LAB_DEFAULT.nodes,objectives:q.get('obj')||RUN_LAB_DEFAULT.objectives};
+runChallengeScore=Math.max(0,Number(q.get('beat'))||0);startRun(Number.isInteger(seedQ)&&seedQ>0?seedQ:undefined,cfgQ);
