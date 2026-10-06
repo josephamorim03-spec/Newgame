@@ -5,14 +5,14 @@
   const colors=['#96ebd3','#baafff','#edc47c','#f28da7'],radii=[166,120,74],names=['Externo','Médio','Interno'];
   const rewardColors=['#62ffd1','#b995ff','#ffda72','#ff82ba'];
   const machine=document.querySelector('.machine');
-  const SAVE='ring-break-save-0.2',ATLAS='ring-break-atlas-0.1',OPTIONS='ring-break-options-0.1';
-  const defaults={sound:false,speed:1,reduced:matchMedia('(prefers-reduced-motion: reduce)').matches};
+  const SAVE='ring-break-save-0.2',ATLAS='ring-break-atlas-0.1',OPTIONS='ring-break-options-0.2',ONBOARD='ring-break-onboarding-0.2';
+  const defaults={sound:true,speed:1,reduced:matchMedia('(prefers-reduced-motion: reduce)').matches};
   function read(key,fallback) {try{return JSON.parse(localStorage.getItem(key))||fallback;}catch{return fallback;}}
   let options={...defaults,...read(OPTIONS,{})},atlas=read(ATLAS,{}),selected=0,busy=false,ghost=null,drag=null;
   if(![1,2,4].includes(options.speed))options.speed=1;
   options.sound=Boolean(options.sound);options.reduced=Boolean(options.reduced);
   if(typeof atlas!=='object' || Array.isArray(atlas)) atlas={};
-  let state=null,visual=null,audioContext=null,audioBus=null,toastTimer=null;
+  let state=null,visual=null,audioContext=null,audioBus=null,audioPrimed=false,toastTimer=null;
   const fxCanvas=$('reward-fx'),fxContext=fxCanvas.getContext('2d');
   let effects=[],fxFrame=0,rewardTimer=0;
   const portrait=$('anomaly-portrait');let enemyTimer=0;
@@ -50,10 +50,13 @@
     toastTimer=setTimeout(()=>el.remove(),3200);
   }
   function feedback(text,preview=false) {$('feedback').textContent=text;$('feedback').classList.toggle('preview',preview);}
-  function unlockAudio() {
-    if(!options.sound)return;
+  function unlockAudio(force=false) {
+    if(force)options.sound=true;
+    if(!options.sound)return false;
     try {
-      audioContext ||= new (window.AudioContext||window.webkitAudioContext)();
+      const AudioCtor=window.AudioContext||window.webkitAudioContext;
+      if(!AudioCtor)return false;
+      audioContext ||= new AudioCtor();
       if(!audioBus){
         audioBus=audioContext.createGain();audioBus.gain.value=.7;
         const limiter=audioContext.createDynamicsCompressor();limiter.threshold.value=-18;limiter.ratio.value=4;limiter.attack.value=.005;limiter.release.value=.12;
@@ -61,7 +64,21 @@
       }
       audioBus.gain.setValueAtTime(.7,audioContext.currentTime);
       if(audioContext.state==='suspended')audioContext.resume().catch(()=>{});
-    }catch{}
+      // iOS/WebKit can require a source node to be started inside the user gesture.
+      if(!audioPrimed){
+        const osc=audioContext.createOscillator(),gain=audioContext.createGain(),now=audioContext.currentTime;
+        gain.gain.setValueAtTime(.00001,now);osc.connect(gain);gain.connect(audioBus);osc.start(now);osc.stop(now+.012);
+        osc.onended=()=>{osc.disconnect();gain.disconnect();};audioPrimed=true;
+      }
+      return true;
+    }catch{return false;}
+  }
+  function enableSoundFromGesture(){
+    options.sound=true;
+    const ok=unlockAudio(true);
+    persist();render();
+    if(ok){sound('install');toast('Som ativado.');}
+    else toast('Seu navegador bloqueou o áudio. Toque em Som: on novamente.');
   }
   function sound(type,wave=1,tier=1) {
     if(!options.sound){if(audioBus)audioBus.gain.setValueAtTime(0,audioContext.currentTime);return;}
@@ -256,8 +273,22 @@
   }
   function show(html,locked=false) {ghost=null;draw();$('modal-content').innerHTML=html;modal.dataset.locked=String(locked);if(!modal.open)modal.showModal();}
   function closeModal() {modal.close();draw();}
-  function help() {
-    show('<div class="eyebrow">GIRE. ACOPLE. ROMPA.</div><h2>Uma ação.<br>Uma decisão.</h2><div class="rule"><div class="rule-tones">'+[0,0,0].map(toneHTML).join('')+'</div><div><strong>Três iguais ressoam</strong><p>Ressonâncias geram energia e cascatas, mas energia sozinha não vence o encontro.</p></div></div><div class="rule"><span class="rule-symbol">⌖</span><div><strong>O setor rosa é o ponto fraco</strong><p>Uma ressonância DIRETA nele causa 1 Ruptura. Cascatas automáticas não causam Ruptura.</p></div></div><div class="rule"><span class="rule-symbol">↔</span><div><strong>Dois iguais criam Phase Lock</strong><p>Use os acoplamentos para mover mais de um anel e construir a jogada que atinge o alvo.</p></div></div><p>Cada giro também aproxima o ataque inimigo. Segure para prever; só solte quando a troca valer a pena.</p><button class="primary wide" data-action="close">Experimentar</button>');
+  const onboardingSteps=[
+    ()=>'<div class="onboard-progress"><span class="on"></span><span></span><span></span><span></span></div><div class="eyebrow">01 · OBJETIVO</div><h2>Não é sobre girar.<br>É sobre acertar.</h2><div class="onboard-focus target"><strong>⌖ PONTO FRACO</strong><p>O setor rosa é o alvo. Faça <b>três tons iguais</b> exatamente ali para causar 1 Ruptura.</p></div><p>Energia e cascatas ajudam sua máquina, mas <strong>não vencem sozinhas</strong>. Needle cai com 3 Rupturas.</p>',
+    ()=>'<div class="onboard-progress"><span></span><span class="on"></span><span></span><span></span></div><div class="eyebrow">02 · DECISÃO</div><h2>Veja antes<br>de comprometer.</h2><div class="onboard-focus preview"><strong>SEGURE → PREVIEW</strong><p>Segure um botão de giro ou arraste um anel. A previsão mostra quais anéis se moverão e se a jogada cria uma Ressonância.</p></div><p>Se aparecer <strong>RUPTURA NO ALVO</strong>, você sabe que aquela ação realmente avança o combate.</p>',
+    ()=>'<div class="onboard-progress"><span></span><span></span><span class="on"></span><span></span></div><div class="eyebrow">03 · PHASE LOCK</div><h2>Construa a máquina.</h2><div class="rule"><span class="rule-symbol">↔</span><div><strong>Dois iguais em anéis vizinhos</strong><p>Criam uma carga. Ao girar um deles, o vizinho é arrastado no sentido oposto.</p></div></div><div class="rule"><span class="rule-symbol">×2</span><div><strong>Cascatas são potência, não piloto automático</strong><p>Refills podem ressoar de novo e multiplicar energia. Só a primeira onda direta pode causar Ruptura.</p></div></div>',
+    ()=>'<div class="onboard-progress"><span></span><span></span><span></span><span class="on"></span></div><div class="eyebrow">04 · PRIMEIRO MOVIMENTO</div><h2>Escute a máquina.</h2><p>O som confirma giro, acoplamento, ressonância, dano e ruptura. Em iPhone/Safari ele precisa ser liberado por um toque seu.</p><div class="onboard-focus sound"><strong>COMEÇO GARANTIDO</strong><p>Nesta seed inicial, <b>Externo ↷</b> já cria a primeira Ruptura no setor 1. Segure para ver antes de soltar.</p></div>'
+  ];
+  function onboarding(step=0,locked=true){
+    step=Math.max(0,Math.min(onboardingSteps.length-1,step));
+    const nav='<div class="onboard-nav">'+(step?'<button data-action="onboard-back" data-step="'+(step-1)+'">Voltar</button>':'<button data-action="onboard-skip">Pular</button>')+(step<onboardingSteps.length-1?'<button class="primary" data-action="onboard-next" data-step="'+(step+1)+'">Próximo</button>':'<button class="primary" data-action="onboard-start">Ativar som e começar</button>')+'</div>';
+    show('<div class="onboarding">'+onboardingSteps[step]()+nav+'</div>',locked);
+  }
+  function help(){onboarding(0,false);}
+  function finishOnboarding(withSound=true){
+    try{localStorage.setItem(ONBOARD,'done');}catch{}
+    if(withSound)enableSoundFromGesture();
+    closeModal();feedback('OBJETIVO · setor 1. Segure Externo ↷ para prever a primeira Ruptura.');
   }
   function settings() {
     show('<div class="modal-top"><div class="eyebrow">CONTROLE DA MÁQUINA</div><button class="close" data-action="close">Fechar</button></div><h2>Seu ritmo.</h2><div class="option-row"><span>Velocidade das animações</span><button data-action="speed">'+options.speed+'×</button></div><div class="option-row"><span>Movimento reduzido</span><button data-action="reduced">'+(options.reduced?'Ativo':'Desativado')+'</button></div><div class="option-row"><span>Som sintetizado</span><button data-action="sound">'+(options.sound?'Ativo':'Desativado')+'</button></div><p>PC: Q/A externo; W/S médio; E/D interno. ←/→ gira o anel selecionado. 1/2/3 seleciona. Arraste de volta à origem para cancelar.</p><button class="wide" data-action="seed">Jogar uma seed</button><div class="two-buttons"><button data-action="export">Exportar replay</button><button data-action="import">Importar replay</button></div>'+(state.mode==='free'?'<button class="wide" data-action="lab">Testar Protocolos</button>':'')+'<p>O replay inclui a seed e todas as decisões. Importar reconstrói a máquina e substitui o progresso local.</p>');
@@ -357,7 +388,7 @@
     else if(['1','2','3'].includes(key)){event.preventDefault();selected=Number(key)-1;render();draw();}
     else if(['arrowleft','arrowright'].includes(key)){event.preventDefault();commit(selected,key==='arrowright'?1:-1);}
   });
-  $('sound').addEventListener('click',()=>{options.sound=!options.sound;unlockAudio();persist();render();sound('lock');});
+  $('sound').addEventListener('click',()=>{if(!options.sound)enableSoundFromGesture();else{options.sound=false;if(audioBus)audioBus.gain.setValueAtTime(0,audioContext.currentTime);persist();render();toast('Som desativado.');}});
   $('help').addEventListener('click',()=>{if(!busy)help();});$('settings').addEventListener('click',()=>{if(!busy)settings();});
   portrait.addEventListener('click',()=>{
     if(busy)return;
@@ -378,11 +409,15 @@
     const choice=event.target.closest('[data-choice]');if(choice){clearEffects();state=C.choose(state,choice.dataset.choice);sound('install');closeModal();render();draw();persist();feedback('PROTOCOLO ATIVO · '+C.PROTOCOLS.find(p=>p.id===choice.dataset.choice).name);return;}
     const lab=event.target.closest('[data-lab]');if(lab){const id=lab.dataset.lab;let protocols=state.protocols.slice();if(protocols.includes(id))protocols=protocols.filter(p=>p!==id);else if(protocols.length<3)protocols.push(id);else{toast('Máximo de 3 Protocolos. Remova um primeiro.');return;}state=C.configure(state.seed,protocols);persist();render();draw();labDialog();return;}
     const action=event.target.closest('[data-action]')?.dataset.action;if(!action)return;
-    if(action==='close')closeModal();if(action==='rewrite'){state=C.rewrite(state);persist();draft();}
+    if(action==='close')closeModal();
+    if(action==='onboard-next'||action==='onboard-back'){onboarding(Number(event.target.closest('[data-step]').dataset.step),modal.dataset.locked==='true');}
+    if(action==='onboard-start'){finishOnboarding(true);return;}
+    if(action==='onboard-skip'){finishOnboarding(false);return;}
+    if(action==='rewrite'){state=C.rewrite(state);persist();draft();}
     if(action==='new')start();if(action==='retry')start(state.seed,state.mode);if(action==='free')start(newSeed(),'free');
     if(action==='speed'){options.speed=options.speed===4?1:options.speed*2;persist();settings();}
     if(action==='reduced'){options.reduced=!options.reduced;if(options.reduced)clearEffects();persist();render();settings();}
-    if(action==='sound'){options.sound=!options.sound;unlockAudio();sound('lock');persist();render();settings();}
+    if(action==='sound'){if(!options.sound)enableSoundFromGesture();else{options.sound=false;if(audioBus)audioBus.gain.setValueAtTime(0,audioContext.currentTime);persist();render();}settings();}
     if(action==='export')exportReplay();if(action==='import')$('import-file').click();if(action==='lab')labDialog();
     if(action==='seed')show('<div class="eyebrow">MESMO PROBLEMA, OUTRA SOLUÇÃO</div><h2>Jogar uma seed.</h2><p>Digite a seed para iniciar uma mini-run. O progresso atual será substituído.</p><input type="text" id="seed-input" maxlength="80" value="'+esc(state.seed)+'" aria-label="Seed"><button class="primary wide" data-action="seed-play">Começar</button><button class="wide" data-action="close">Cancelar</button>');
     if(action==='seed-play'){const seed=$('seed-input').value.trim();if(seed)start(seed);}
@@ -394,8 +429,9 @@
   const seedParam=new URLSearchParams(location.search).get('seed');
   const saved=read(SAVE,null);try{if(!seedParam && saved)state=C.replay(saved);}catch{}
   const fresh=!state;if(!state)state=C.create(seedParam||'FIRST-LIGHT-2');
+  const onboarded=read(ONBOARD,null)==='done';
   render();resize();
-  if(state.status==='draft')draft();else if(['won','lost'].includes(state.status))finish();else if(fresh)help();else feedback('Sua máquina está aqui. Continue de onde parou.');
+  if(state.status==='draft')draft();else if(['won','lost'].includes(state.status))finish();else if(!onboarded)onboarding(0,true);else feedback(fresh?'OBJETIVO · setor 1. Segure Externo ↷ para prever a primeira Ruptura.':'Sua máquina está aqui. Continue de onde parou.');
   // Test integration: the engine stays separate from rendering and is inspectable without network services.
   window.RingGame={getState:()=>C.copy(state),getBusy:()=>busy};
 })();
