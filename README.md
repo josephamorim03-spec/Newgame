@@ -23,7 +23,7 @@ Atlas goals are tested with a dependency-free Monte Carlo calibrator:
 node tools/calibrate-atlas.js 30000
 ```
 
-See `docs/ATLAS_CALIBRATION.md` for the current calibration policy and empirical margins. See `docs/LEADERBOARD_PROTOCOL.md` for the verified route/ghost/ranking contract.
+See `docs/ATLAS_CALIBRATION.md` for Atlas target calibration, `docs/RUN_CALIBRATION.md` for the empty-build Run reachability invariant, and `docs/LEADERBOARD_PROTOCOL.md` for the verified route/ghost/ranking contract.
 
 The game is self-contained: there are no external runtime art or audio assets. Music and sound are synthesized with WebAudio.
 
@@ -48,3 +48,12 @@ npm test
 ```
 
 The suite validates all 24 deterministic Gold/Feat witness routes, advanced geometry metrics, and route rejection rules. GitHub Actions runs the same check on `main` pushes and pull requests.
+
+
+## Run reachability
+
+```bash
+npm run calibrate:runs
+```
+
+The current generator has 39 unique round/layout/mandatory-goal signatures. All 39 have a deterministic passing route with an empty build, so Knot choices affect efficiency and Mastery rather than basic mathematical reachability.
