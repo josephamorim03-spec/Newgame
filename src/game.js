@@ -286,7 +286,7 @@
   }
   function help(){onboarding(0,false);}
   function finishOnboarding(withSound=true){
-    try{localStorage.setItem(ONBOARD,'done');}catch{}
+    try{localStorage.setItem(ONBOARD,JSON.stringify('done'));}catch{}
     if(withSound)enableSoundFromGesture();
     closeModal();feedback('OBJETIVO · setor 1. Segure Externo ↷ para prever a primeira Ruptura.');
   }
@@ -338,7 +338,7 @@
         }
         if(event.type==='refill'){visual.board=event.board;visual.queue=event.queue;render(visual);draw();await pause(90);}
         if(event.type==='lock'){visual.locks=event.locks;sound('lock');feedback('ACOPLAMENTO · '+names[event.edge]+' ↔ '+names[event.edge+1]);render(visual);draw();await pause(80);}
-        if(event.type==='break'){visual.breaks=event.breaks;visual.intent.neutralized=true;reactEnemy('hit');feedback('RUPTURA '+event.breaks+' / '+event.goal+' · SETOR '+(event.sector+1));floating(event.breaks+' / '+event.goal,'RUPTURAS');await pause(120);}
+        if(event.type==='break'){visual.breaks=event.breaks;visual.intent.neutralized=true;reactEnemy('hit');feedback('RUPTURA '+event.breaks+' / '+event.goal+' · SETOR '+(event.sector+1));floating(event.breaks+' / '+event.goal,'RUPTURAS');if(event.breaks===1)toast('Boa. O ponto fraco mudou: agora planeje a próxima Ruptura.');await pause(120);}
         if(event.type==='discovery' && !atlas[event.id]) {atlas[event.id]={title:event.title,text:event.text};toast('Descoberta: '+event.title);}
         if(event.type==='damage'){reactEnemy('attack');sound('damage');haptic(25);feedback('IMPACTO · −1 integridade');await pause(160);}
         if(event.type==='evade')feedback(event.label);
