@@ -1,0 +1,34 @@
+name: Build Netlify production package
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Build standalone
+        run: npm run build
+      - name: Prepare Netlify Drop package
+        run: |
+          rm -rf dist-netlify
+          mkdir dist-netlify
+          cp ring-break-standalone.html dist-netlify/index.html
+          cp netlify.toml dist-netlify/netlify.toml
+          printf "RING//BREAK production package\nCommit: %s\n" "$GITHUB_SHA" > dist-netlify/BUILD.txt
+      - name: Upload package
+        uses: actions/upload-artifact@v4
+        with:
+          name: ring-break-netlify-production
+          path: dist-netlify/
+          if-no-files-found: error
+          compression-level: 9
