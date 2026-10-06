@@ -35,7 +35,9 @@ function computeSymPairs(edges,pts){
   return pairs;
 }
 function advanceRitual(s,moveCross,moveEcho,moveLoop){
-  for(const [kind,on] of [['cross',moveCross],['echo',moveEcho],['loop',moveLoop]]){if(!on)continue;if(s.ritualStage===0&&kind==='cross')s.ritualStage=1;else if(s.ritualStage===1&&kind==='echo')s.ritualStage=2;else if(s.ritualStage===2&&kind==='loop'){s.rituals++;s.ritualStage=0}else if(kind==='cross'&&s.ritualStage>0)s.ritualStage=1}
+  if(s.ritualStage===0&&moveCross)s.ritualStage=1;
+  else if(s.ritualStage===1&&moveEcho)s.ritualStage=2;
+  else if(s.ritualStage===2&&moveLoop){s.rituals++;s.ritualStage=0}
 }
 function evaluateRoute(map,route){
   if(!map||!Array.isArray(route)||route.length!==map.moves+1)return{ok:false,error:'A rota precisa usar exatamente todos os fios deste mapa.'};
