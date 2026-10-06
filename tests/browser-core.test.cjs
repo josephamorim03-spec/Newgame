@@ -46,7 +46,7 @@ function loadCJS(src,reqMap={}){
   const documentStub={querySelector(){return dummy},createElement(){return {...dummy,style:{setProperty(){}}}},createElementNS(){return {...dummy,style:{setProperty(){}}}},documentElement:{style:{setProperty(){}}}};
   const factory=new Function('document','matchMedia','navigator',syn+'\n'+ra+'\n'+rb+'\n'+rc+String.raw`
 function simulateRound(rd,route){
-  runPlan=[rd];runSchools=[];state=freshState(0,[]);
+  const simRound={...rd,moves:Number.MAX_SAFE_INTEGER};runPlan=[simRound];runSchools=[];state=freshState(0,[]);
   tone=()=>{};nudgeMood=()=>{};sparkAt=()=>{};haptic=()=>{};bigMoment=()=>{};toast=()=>{};render=()=>{};
   const ids=route.map(x=>x-1);state.current=ids[0];state.path=[ids[0]];
   for(const to of ids.slice(1))connect(state.current,to);
