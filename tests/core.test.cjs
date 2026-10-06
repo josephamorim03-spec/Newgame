@@ -51,6 +51,15 @@ test('refill resonance doubles second wave and echo does not consume twice',()=>
   assert.ok(waves.length>=2);assert.equal(waves[0].energy,15);assert.equal(waves[1].multiplier,4);
   assert.equal(r.state.activations.aftertone,1);
 });
+test('automatic cascade cannot score more than one rupture from one deliberate move',()=>{
+  const s=C.create('CHAIN-RUPTURE');s.intent.sector=0;
+  board(s,[[1,0,2,3,0,1,2,0],[0,2,3,0,1,2,3,0],[0,3,1,1,2,0,0,2]]);
+  s.queue=[1,1,1,0,1,2,...Array(30).fill(2)];
+  const r=C.step(s,0,1),waves=r.events.filter(e=>e.type==='resonance');
+  assert.ok(waves.length>=2);assert.equal(r.state.breaks,1);
+  assert.equal(r.events.filter(e=>e.type==='break').length,1);
+});
+
 test('triad is weak and activates at most once per action',()=>{
   const s=C.create('TRIAD','free');s.protocols=['triad'];
   const r=C.step(s,1,1);assert.ok((r.state.activations.triad||0)<=1);
@@ -58,25 +67,25 @@ test('triad is weak and activates at most once per action',()=>{
   assert.ok(triads.length<=1);if(triads.length)assert.equal(triads[0].base,5);
 });
 test('winning takes precedence over a ready hostile intent',()=>{
-  const s=C.create();s.energy=59;s.intent.count=1;s.hp=1;s.intent.sector=7;
+  const s=C.create();s.breaks=C.ENCOUNTERS[0].breakGoal-1;s.intent.count=1;s.hp=1;s.intent.sector=0;
   const r=C.step(s,0,1);assert.equal(r.state.status,'draft');assert.equal(r.state.hp,1);
-  assert.ok(!r.events.some(e=>e.type==='damage'));
+  assert.ok(r.events.some(e=>e.type==='break'));assert.ok(!r.events.some(e=>e.type==='damage'));
 });
 test('a jammed ring cannot be selected but still moves by propagation',()=>{
   const s=C.create('JAM','free');s.jam=1;s.locks=[1,1];
   assert.equal(C.preview(s,1,1),null);assert.ok(C.step(s,1,1).invalid);
   assert.deepEqual(C.preview(s,0,1).dirs,[1,-1,1]);
 });
-test('sector resonance neutralizes threat and fortress absorbs later damage',()=>{
+test('direct weak-point resonance advances rupture and fortress grants shield',()=>{
   const s=C.create();s.protocols=['fortress'];s.intent.sector=0;s.intent.count=1;
-  const r=C.step(s,0,1);assert.equal(r.state.hp,3);assert.equal(r.state.shield,1);
-  assert.ok(r.events.some(e=>e.type==='evade'));
+  const r=C.step(s,0,1);assert.equal(r.state.hp,3);assert.equal(r.state.shield,1);assert.equal(r.state.breaks,1);
+  assert.ok(r.events.some(e=>e.type==='break'));
 });
-test('draft and rewrite are deterministic and unique, next encounter resets integrity',()=>{
-  const s=C.create();s.energy=59;s.hp=1;
+test('draft and rewrite are deterministic and unique, next encounter resets integrity and rupture',()=>{
+  const s=C.create();s.breaks=C.ENCOUNTERS[0].breakGoal-1;s.hp=1;s.intent.sector=0;
   const won=C.step(s,0,1).state;assert.equal(new Set(won.offers).size,3);
   const rewritten=C.rewrite(won);assert.equal(rewritten.rewrites,0);assert.deepEqual(C.rewrite(rewritten),rewritten);
-  const n=C.choose(rewritten,rewritten.offers[0]);assert.equal(n.encounter,1);assert.equal(n.hp,3);assert.equal(n.energy,0);assert.equal(n.protocols.length,1);
+  const n=C.choose(rewritten,rewritten.offers[0]);assert.equal(n.encounter,1);assert.equal(n.hp,3);assert.equal(n.energy,0);assert.equal(n.breaks,0);assert.equal(n.protocols.length,1);
   assert.deepEqual(C.choose(n,'invalid'),n);
 });
 test('saved actions and imported replay reconstruct all seeded state including laboratory',()=>{
