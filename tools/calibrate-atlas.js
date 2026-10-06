@@ -5,7 +5,8 @@
  * Monte Carlo search: verifies that Gold is reachable and reports observed ceilings.
  * No witness routes are shipped in production data; routes are printed only when you run this tool.
  */
-const ITER=Math.max(1000,Number(process.argv[2]||30000));
+const argIter=Number(process.argv[2]);
+const ITER=Math.max(1000,Number.isFinite(argIter)?argIter:30000);
 const TAU=Math.PI*2;
 const regular=(n,rot=0,r=360)=>Array.from({length:n},(_,i)=>{const a=i*TAU/n-Math.PI/2+rot;return[500+Math.cos(a)*r,500+Math.sin(a)*r]});
 const doubleSquare=(rot=0)=>{const p=[];for(let i=0;i<4;i++){let a=i*Math.PI/2-Math.PI/2+rot;p.push([500+Math.cos(a)*350,500+Math.sin(a)*350])}for(let i=0;i<4;i++){let a=i*Math.PI/2-Math.PI/4+rot;p.push([500+Math.cos(a)*205,500+Math.sin(a)*205])}return p};
