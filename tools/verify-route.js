@@ -7,7 +7,7 @@ function parse(code){
   if(!m)throw new Error('Invalid KNOT route code');
   const id=m[1],version=Number(m[2]),map=MAPS[id];
   if(!map)throw new Error('Unknown map');
-  if(version!==1)throw new Error('Unsupported map version');
+  if(version!==(map.version||1))throw new Error(`Unsupported map version: expected v${map.version||1}`);
   const route=m[3].split('-').filter(Boolean).map(x=>Number(x)-1);
   if(route.length!==map.moves+1)throw new Error(`Expected ${map.moves+1} points, received ${route.length}`);
   const max=map.pts.length-1;
