@@ -71,3 +71,32 @@ node tools/calibrate-atlas.js 30000
 ```
 
 The verifier mirrors the intended server trust model: route in, deterministic result out.
+
+
+## Ranking semantics
+
+Atlas does not use raw score as the universal primary metric.
+
+Current primary metrics:
+
+| Map | Primary ranking metric | Tie-break |
+| --- | --- | --- |
+| Primeira trama | Score | — |
+| Cruzamento | Crosses | Score |
+| Jardim de Echo | Echoes | Score |
+| Halo | Center Loops / Halos | Score |
+| Estrela aberta | Largest Loop vertex count | Score |
+| Dupla trama | Total Loops | Score |
+| Linha limpa | Clean Loops | Score |
+| Trama mestra | Balanced master index = min(Crosses/18, Loops/5) | Score |
+
+This keeps leaderboards aligned with the question each map is teaching instead of rewarding unrelated point farming.
+
+## Friend challenge flow
+
+A verified route code can be imported locally.
+
+- before first clear: the route is validated, but its ghost is hidden;
+- after first clear: the player may watch the ghost or challenge its verified score;
+- challenging a score never reveals the route during the attempt;
+- the route remains the only trusted competitive payload.
