@@ -10,12 +10,8 @@ function chord(big=false,variant=0){if(soundtrack)soundtrack.chord(big,false,var
 function nudgeMood(v){mood=Math.min(1,mood+v);document.documentElement.style.setProperty('--hueShift',Math.round(mood*24)+'deg')}
 let atlasAudioPrimed=false;
 function primeAtlasAudio(){
-  initAudio();if(!audioCtx)return;
-  try{
-    if(audioCtx.state==='suspended')audioCtx.resume().catch(()=>{});
-    const o=audioCtx.createOscillator(),g=audioCtx.createGain();g.gain.value=.00001;o.frequency.value=82;o.connect(g);g.connect(masterGain);o.start();o.stop(audioCtx.currentTime+.025);
-    if(audioCtx.state==='running'){atlasAudioPrimed=true;if(musicOn)ensureMusic()}else setTimeout(()=>{if(audioCtx&&audioCtx.state==='running'){atlasAudioPrimed=true;if(musicOn)ensureMusic()}},40)
-  }catch(e){}
+  initAudio();if(!soundtrack)return;
+  soundtrack.unlock().then(ready=>{atlasAudioPrimed=ready}).catch(()=>{atlasAudioPrimed=false});
 }
 document.addEventListener('pointerdown',()=>{if(!atlasAudioPrimed)primeAtlasAudio()},{capture:true});
 document.addEventListener('touchstart',()=>{if(!atlasAudioPrimed)primeAtlasAudio()},{capture:true,passive:true});

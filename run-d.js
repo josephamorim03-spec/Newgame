@@ -101,12 +101,8 @@ function startRun(seed,config){
   state=freshState(0,[]);closeSheet(true);hint.classList.remove('hide');hint.textContent=runChallengeScore?`Desafio: supere ${fmt(runChallengeScore)} nesta seed.`:'Toque em qualquer ponto para começar.';drawGrid();render();nudgeMood(0);document.documentElement.style.setProperty('--hueShift','0deg')
 }
 function primeAudio(){
-  initAudio();if(!audioCtx)return;
-  try{
-    if(audioCtx.state==='suspended')audioCtx.resume().catch(()=>{});
-    const o=audioCtx.createOscillator(),g=audioCtx.createGain();g.gain.value=.00001;o.frequency.value=80;o.connect(g);g.connect(masterGain);o.start();o.stop(audioCtx.currentTime+.025);
-    if(audioCtx.state==='running'){audioPrimed=true;if(musicOn)ensureMusic()}else setTimeout(()=>{if(audioCtx&&audioCtx.state==='running'){audioPrimed=true;if(musicOn)ensureMusic()}},40)
-  }catch(e){}
+  initAudio();if(!soundtrack)return;
+  soundtrack.unlock().then(ready=>{audioPrimed=ready}).catch(()=>{audioPrimed=false});
 }
 $('#restartBtn').addEventListener('click',()=>{runChallengeScore=0;startRun()});
 $('#labBtn').addEventListener('click',showLab);

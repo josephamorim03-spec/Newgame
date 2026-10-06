@@ -1,7 +1,7 @@
 'use strict';
 // Presentation only: geometry, scoring and route validation remain in each mode.
 const KnotFeel = (() => {
-  let currentState, noticeTimer;
+  let currentState, noticeTimer, viewportFrame;
   const reduced = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
   const svg = (tag, attrs) => {
     const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
@@ -85,5 +85,27 @@ const KnotFeel = (() => {
     // Show the actual pin layout, without implying a solution route.
     return `<svg class="map-preview" viewBox="0 0 1000 1000" aria-hidden="true"><circle cx="500" cy="500" r="360" class="preview-guide"/>${points.map(p=>`<circle cx="${p[0]}" cy="${p[1]}" r="23"/>`).join('')}</svg>`;
   }
-  return {begin,node,geometry,press,toast,gain,mapPreview,reduced};
+  function lockViewport() {
+    cancelAnimationFrame(viewportFrame);
+    const root=document.documentElement,app=document.querySelector('.app'),board=document.querySelector('.board-wrap');
+    if(!app||!board)return;
+    root.style.setProperty('--game-viewport-height',`${Math.round(window.innerHeight)}px`);
+    viewportFrame=requestAnimationFrame(()=>{
+      const bounds=board.getBoundingClientRect();
+      const size=Math.max(220,Math.floor(Math.min(bounds.width*.94,bounds.height*.87)));
+      root.style.setProperty('--game-board-size',`${size}px`);
+    });
+  }
+  function protectViewport() {
+    lockViewport();
+    const board=document.querySelector('.board-shell');
+    if(board){
+      board.addEventListener('gesturestart',event=>event.preventDefault(),{passive:false});
+      board.addEventListener('touchmove',event=>{if(event.touches.length>1)event.preventDefault()},{passive:false});
+    }
+    window.addEventListener('orientationchange',()=>setTimeout(lockViewport,240));
+    document.addEventListener('visibilitychange',()=>{if(!document.hidden)setTimeout(lockViewport,80)});
+  }
+  protectViewport();
+  return {begin,node,geometry,press,toast,gain,mapPreview,reduced,lockViewport};
 })();

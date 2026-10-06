@@ -1,4 +1,5 @@
 /* Shared paper, pins and thread presentation. */
+[hidden]{display:none!important}
 .ui-icon{position:static;inset:auto;flex:none;overflow:visible}
 .node::before{background:radial-gradient(circle at 32% 25%,#a69b8c 0 18%,#736960 46%,#51483f 100%);box-shadow:0 3px 1px rgba(47,35,23,.16),0 7px 12px rgba(47,35,23,.12),inset 0 1px 1px #fff8}
 .node.active::before{background:radial-gradient(circle at 32% 25%,#f5b599,#d46b58 55%,#ad5145)}

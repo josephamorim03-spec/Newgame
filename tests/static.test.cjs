@@ -20,6 +20,14 @@ for(const htmlFile of ['index.html','run.html','atlas.html']){
   }
 }
 
+for(const htmlFile of ['run.html','atlas.html']){
+  const html=read(htmlFile);
+  assert(html.includes('maximum-scale=1'),'gameplay viewport must prevent pinch relayout in '+htmlFile);
+  assert(html.includes('user-scalable=no'),'gameplay viewport must stay fixed during touch gestures in '+htmlFile);
+}
+assert(read('gamefeel.js').includes('--game-board-size'),'gameplay surface must lock its initial board size');
+assert(read('knot-audio.js').includes('flushPending'),'audio events must survive a suspended mobile AudioContext');
+
 const manifest=JSON.parse(read('manifest.webmanifest'));
 assert.equal(manifest.display,'standalone','manifest must install standalone');
 assert(manifest.icons.some(i=>i.sizes==='192x192'&&i.type==='image/png'),'manifest needs a 192px PNG icon');

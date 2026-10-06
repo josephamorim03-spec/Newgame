@@ -21,7 +21,8 @@ const KnotAudio = (() => {
     const musicVoices = new Set(), voices = new Set();
     const noise = ctx.createBuffer(1,ctx.sampleRate*.12,ctx.sampleRate);
     const data=noise.getChannelData(0);for(let i=0;i<data.length;i++)data[i]=(Math.random()*2-1)*(1-i/data.length);
-    let timer=null, next=0, step=0, duckUntil=0;
+    let timer=null, next=0, step=0, duckUntil=0, unlockPromise=null;
+    const pending=[];
     const beat=60/(mode==='run'?84:72), chords=[[48,55,64,69],[45,52,60,67],[50,57,64,67],[43,50,62,69]];
     function voice(hz,duration,volume,at,bus,type='sine',attack=.008,pan=0) {
       if(voices.size>=64)return;
@@ -35,12 +36,44 @@ const KnotAudio = (() => {
       const t=ctx.currentTime;duckUntil=t+.22;
       music.gain.cancelScheduledValues(t);music.gain.setTargetAtTime(.34,t,.025);music.gain.setTargetAtTime(.55,duckUntil,.16);
     }
+    function flushPending() {
+      if(ctx.state!=='running')return;
+      while(pending.length){const play=pending.shift();play()}
+    }
+    function unlock() {
+      if(ctx.state==='running'){
+        flushPending();
+        if(enabled().music)start();
+        return Promise.resolve(true);
+      }
+      if(unlockPromise)return unlockPromise;
+      try{
+        const silent=ctx.createBufferSource();
+        silent.buffer=ctx.createBuffer(1,1,22050);
+        silent.connect(master);silent.start(0);
+      }catch(e){}
+      unlockPromise=Promise.resolve(ctx.resume()).then(()=>{
+        unlockPromise=null;
+        const ready=ctx.state==='running';
+        if(ready){flushPending();if(enabled().music)start()}
+        return ready;
+      }).catch(()=>{unlockPromise=null;return false});
+      return unlockPromise;
+    }
     function tone(hz,d=.12,type='sine',vol=.03,delay=0) {
-      if(!enabled().sound||ctx.state!=='running')return;
+      if(!enabled().sound)return;
+      if(ctx.state!=='running'){
+        if(pending.length<16)pending.push(()=>tone(hz,d,type,vol,delay));
+        unlock();return;
+      }
       duck();voice(tune(hz),Math.max(.06,d),Math.min(.075,vol*1.5),ctx.currentTime+delay,effects,type);
     }
     function texture(vol=.004,delay=0,bright=false,d=.05) {
-      if(!enabled().sound||ctx.state!=='running')return;
+      if(!enabled().sound)return;
+      if(ctx.state!=='running'){
+        if(pending.length<16)pending.push(()=>texture(vol,delay,bright,d));
+        unlock();return;
+      }
       const s=ctx.createBufferSource(),f=ctx.createBiquadFilter(),g=ctx.createGain(),t=ctx.currentTime+delay;
       s.buffer=noise;f.type='bandpass';f.frequency.value=bright?2100:850;f.Q.value=.8;g.gain.setValueAtTime(Math.min(vol,.012),t);g.gain.exponentialRampToValueAtTime(.0001,t+d);
       s.connect(f);f.connect(g);g.connect(effects);s.onended=()=>{s.disconnect();f.disconnect();g.disconnect()};s.start(t);s.stop(t+d+.01);
@@ -66,11 +99,12 @@ const KnotAudio = (() => {
         step++;next+=beat/2;
       }
     }
-    function start(){if(timer||!enabled().music||document.hidden)return;music.gain.setTargetAtTime(.55,ctx.currentTime,.1);step=Math.ceil(step/16)*16;next=ctx.currentTime+.03;tick();timer=setInterval(tick,25)}
+    function start(){if(timer||!enabled().music||document.hidden)return;if(ctx.state!=='running'){unlock();return}music.gain.setTargetAtTime(.55,ctx.currentTime,.1);step=Math.ceil(step/16)*16;next=ctx.currentTime+.03;tick();timer=setInterval(tick,25)}
     function stop(){clearInterval(timer);timer=null;const t=ctx.currentTime;music.gain.cancelScheduledValues(t);music.gain.setTargetAtTime(.0001,t,.015);for(const o of musicVoices){try{o.stop(t+.08)}catch{}}}
-    document.addEventListener('visibilitychange',()=>{if(document.hidden){stop();ctx.suspend().catch(()=>{})}else ctx.resume().then(start).catch(()=>{})});
+    ctx.addEventListener('statechange',()=>{if(ctx.state==='running'){flushPending();if(enabled().music)start()}});
+    document.addEventListener('visibilitychange',()=>{if(document.hidden){stop();ctx.suspend().catch(()=>{})}else unlock()});
     window.addEventListener('pagehide',stop);
-    return {ctx,master,tone,texture,thread,chord,start,stop,get voiceCount(){return voices.size}};
+    return {ctx,master,tone,texture,thread,chord,start,stop,unlock,get voiceCount(){return voices.size}};
   }
   return {create,tune};
 })();
