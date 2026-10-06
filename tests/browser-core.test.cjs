@@ -22,6 +22,7 @@ function loadCJS(src,reqMap={}){
   const factory=new Function('document','localStorage','setTimeout','clearTimeout','tone','nudgeMood',aa+'\n'+ab+String.raw`
 function simulateLiveLock(map,route){
   currentMap=map;state={score:0,crosses:0,echoes:0,loops:0,cleanLoops:0,centerLoops:0,maxVertices:0,triangleLoops:0,symPairs:0,rituals:0,ritualStage:0,uniqueVertices:1,moves:0,current:null,path:[],edges:[],loopsData:[],junctions:[],pts:map.pts.map((p,i)=>({id:i,x:p[0],y:p[1]})),ended:false,goalSeen:[false,false,false]};
+  spark=()=>{};haptic=()=>{};bigMoment=()=>{};checkGoalCelebration=()=>{};render=()=>{};toast=()=>{};
   const ids=route.map(x=>x-1);state.current=ids[0];state.path=[ids[0]];
   for(const to of ids.slice(1))connect(state.current,to);
   return state.ended;
