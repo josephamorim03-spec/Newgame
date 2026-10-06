@@ -29,3 +29,15 @@ html,body{height:100%;overflow:hidden;overscroll-behavior:none}.app{height:100dv
 .flash-v0{transform:rotate(0)}.flash-v1{transform:rotate(10deg) scale(1.015)}.flash-v2{transform:rotate(-8deg) scale(.985)}
 .toast-v1{letter-spacing:.12em}.toast-v2{letter-spacing:.16em}
 @media(prefers-reduced-motion:reduce){.node.onboard-start:before,.node.onboard-next:before,.node.onboard-close:before{animation:none}.particle,.bigflash,.ribbon{animation-duration:.12s!important}}
+
+/* modal integrity + icon containment */
+.ui-icon{position:static!important;inset:auto!important;display:inline-block!important;overflow:visible!important;flex:0 0 auto}
+.modal-wrap{padding:max(12px,env(safe-area-inset-top)) 10px max(12px,env(safe-area-inset-bottom))}
+.modal{width:min(920px,calc(100vw - 20px));max-height:calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 28px);overscroll-behavior:contain;-webkit-overflow-scrolling:touch;overflow-x:hidden}
+.modal-toolbar{position:sticky;top:-18px;z-index:8;display:flex;justify-content:flex-start;padding:9px 0 7px;background:linear-gradient(180deg,rgba(250,245,239,.99),rgba(250,245,239,.9) 72%,transparent)}
+.modal-back{border:0;background:transparent;color:var(--muted);font:inherit;font-weight:750;padding:7px 2px;cursor:pointer}
+.atlas-progress>div,.summary-card,.map-card,.rank-row{min-width:0;overflow:hidden}.atlas-progress b,.atlas-progress span,.summary-card b,.summary-card span,.map-card b,.map-card small,.map-goals span,.rank-row span,.rank-row b{overflow-wrap:anywhere;word-break:normal}
+.summary-card b{position:relative;display:flex;align-items:center;gap:6px;min-height:24px}.summary-card .ui-icon{width:20px;height:20px}
+.map-top{align-items:flex-start}.medals{flex:0 0 auto}.medal .ui-icon{position:static!important}
+@media(max-width:680px){.modal{padding:14px;border-radius:24px}.modal-toolbar{top:-14px}.summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.atlas-progress{grid-template-columns:repeat(2,minmax(0,1fr))}.modal-actions>.btn{flex:1 1 auto}.map-top{gap:8px}.medals{gap:4px}.medal{width:22px;height:22px}}
+@media(max-width:430px){.summary-grid{grid-template-columns:1fr 1fr}.summary-card{padding:12px}.summary-card span{font-size:11px}.modal h2{font-size:32px}.modal p{font-size:15px}.map-card{padding:13px}.map-card b{font-size:16px}}

@@ -57,3 +57,7 @@ npm run calibrate:runs
 ```
 
 The current generator has 39 unique round/layout/mandatory-goal signatures. All 39 have a deterministic passing route with an empty build, so Knot choices affect efficiency and Mastery rather than basic mathematical reachability.
+
+## Presentation and audio
+
+`gamefeel.js` preserves board elements between moves; `gamefeel.css` supplies tactile pin/thread feedback and reduced-motion alternatives. `knot-audio.js` shares a C-major pentatonic palette between effects and music, schedules notes against the WebAudio clock, and ducks the music under effects. Run uses an 84 BPM evolving motif; Atlas uses a quieter 72 BPM arrangement. Music pauses when the page is hidden; music and effects remain independently switchable.

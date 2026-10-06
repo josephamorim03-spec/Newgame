@@ -15,7 +15,7 @@ const KnotAudio = (() => {
     const AC = window.AudioContext || window.webkitAudioContext;
     if (!AC) return null;
     const ctx = new AC(), master = ctx.createGain(), music = ctx.createGain(), effects = ctx.createGain(), compressor = ctx.createDynamicsCompressor();
-    master.gain.value=.72;music.gain.value=.32;effects.gain.value=.48;
+    master.gain.value=.85;music.gain.value=.55;effects.gain.value=.65;
     compressor.threshold.value=-20;compressor.knee.value=18;compressor.ratio.value=3;compressor.attack.value=.006;compressor.release.value=.22;
     music.connect(compressor);effects.connect(compressor);compressor.connect(master);master.connect(ctx.destination);
     const musicVoices = new Set(), voices = new Set();
@@ -33,7 +33,7 @@ const KnotAudio = (() => {
     }
     function duck() {
       const t=ctx.currentTime;duckUntil=t+.22;
-      music.gain.cancelScheduledValues(t);music.gain.setTargetAtTime(.19,t,.025);music.gain.setTargetAtTime(.32,duckUntil,.16);
+      music.gain.cancelScheduledValues(t);music.gain.setTargetAtTime(.34,t,.025);music.gain.setTargetAtTime(.55,duckUntil,.16);
     }
     function tone(hz,d=.12,type='sine',vol=.03,delay=0) {
       if(!enabled().sound||ctx.state!=='running')return;
@@ -57,20 +57,20 @@ const KnotAudio = (() => {
       if(next<ctx.currentTime-.1)next=ctx.currentTime+.03;
       while(next<ctx.currentTime+.12){
         const intensity=Math.max(.05,Math.min(1,energy())),bar=Math.floor(step/16),n=step%16,c=chords[bar%4];
-        if(n===0){c.forEach((note,i)=>voice(frequency(note),beat*7.7,.014+intensity*.007,next+i*.025,music,'sine',.5,(i-1.5)*.2));voice(frequency(c[0]-12),beat*3,.018,next,music,'sine',.12)}
+        if(n===0){c.forEach((note,i)=>voice(frequency(note),beat*7.7,.040+intensity*.020,next+i*.025,music,'sine',.5,(i-1.5)*.2));voice(frequency(c[0]-12),beat*3,.035,next,music,'sine',.12)}
         const pattern=mode==='run'?[0,3,6,10,12]:[0,6,12];
         if(pattern.includes(n)||(mode==='run'&&intensity>.6&&n===14)){
           const index=[1,2,3,2,1,3,2,0][Math.floor(n/2)%8];
-          voice(frequency(c[index]+12),.55,.024+intensity*.016,next,music,'triangle',.012,n%4?-.18:.18);
+          voice(frequency(c[index]+12),.55,.060+intensity*.030,next,music,'triangle',.012,n%4?-.18:.18);
         }
         step++;next+=beat/2;
       }
     }
-    function start(){if(timer||!enabled().music||document.hidden)return;music.gain.setTargetAtTime(.32,ctx.currentTime,.1);next=ctx.currentTime+.03;tick();timer=setInterval(tick,25)}
+    function start(){if(timer||!enabled().music||document.hidden)return;music.gain.setTargetAtTime(.55,ctx.currentTime,.1);step=Math.ceil(step/16)*16;next=ctx.currentTime+.03;tick();timer=setInterval(tick,25)}
     function stop(){clearInterval(timer);timer=null;const t=ctx.currentTime;music.gain.cancelScheduledValues(t);music.gain.setTargetAtTime(.0001,t,.015);for(const o of musicVoices){try{o.stop(t+.08)}catch{}}}
     document.addEventListener('visibilitychange',()=>{if(document.hidden){stop();ctx.suspend().catch(()=>{})}else ctx.resume().then(start).catch(()=>{})});
     window.addEventListener('pagehide',stop);
-    return {ctx,tone,texture,thread,chord,start,stop,get voiceCount(){return voices.size}};
+    return {ctx,master,tone,texture,thread,chord,start,stop,get voiceCount(){return voices.size}};
   }
   return {create,tune};
 })();

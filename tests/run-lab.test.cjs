@@ -1,0 +1,18 @@
+'use strict';
+const assert=require('assert');
+const fs=require('fs');
+const path=require('path');
+const src=fs.readFileSync(path.join(__dirname,'..','run-a.js'),'utf8');
+const dummy={};const document={querySelector(){return dummy}};const matchMedia=()=>({matches:true});const api=new Function('document','matchMedia',"let runSchools=[];"+src+";return {buildRun,resolveRunConfig};")(document,matchMedia);
+const cfg={difficulty:'moderate',rounds:8,geometry:'axis',nodes:'10',objectives:'loop'};
+const a=api.buildRun(424242,cfg),b=api.buildRun(424242,cfg);
+assert.equal(a.length,8,'round count must follow lab config');
+assert.deepEqual(a,b,'same seed + config must reproduce exactly');
+assert(a.every(r=>Array.isArray(r.layout)&&r.layout.length===10),'10-node config must remain 10 nodes');
+const easy=api.buildRun(777,{...cfg,difficulty:'easy'}),hard=api.buildRun(777,{...cfg,difficulty:'hard'});
+assert(hard.at(-1).target>easy.at(-1).target,'hard final target should exceed easy');
+assert(hard.slice(1).some((r,i)=>r.target>=hard[i].target),'difficulty should not flatten progression');
+const randomA=api.resolveRunConfig(99,{difficulty:'random',rounds:'random',geometry:'random',nodes:'random',objectives:'random'});
+const randomB=api.resolveRunConfig(99,{difficulty:'random',rounds:'random',geometry:'random',nodes:'random',objectives:'random'});
+assert.deepEqual(randomA,randomB,'random lab settings must resolve deterministically from seed');
+console.log('Run laboratory determinism passed.');
