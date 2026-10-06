@@ -3,7 +3,7 @@
 Mobile-first geometry game with two complementary modes:
 
 - **Run** — roguelike buildcraft with deterministic seeds, local Knot schools, mastery goals, optional challenges, tactical move previews, Reweave and Focus.
-- **Atlas** — fixed geometry maps with Pass / Silver / Gold goals, calibrated Feats, objective-aligned rankings, versioned records, shareable routes, personal-best ghosts and verified friend score challenges.
+- **Atlas** — 12 fixed geometry problems with Pass / Silver / Gold goals, calibrated Feats, objective-aligned rankings, versioned records, shareable routes, personal-best ghosts and verified friend score challenges.
 
 ## Design pillars
 
