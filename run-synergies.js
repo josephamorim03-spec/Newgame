@@ -2,7 +2,7 @@
 const SYNERGY_DEFS={
   rupture:{name:'Rupture',symbol:'✕✦',requires:['blood','fracture'],desc:'Se a linha que fecha o Loop também cria Crosses, cada Cross amplifica ainda mais o fechamento.'},
   chorus:{name:'Chorus',symbol:'∥↗',requires:['mirror','crescendo'],desc:'Um Echo que fecha o Loop transforma repetição em crescendo e recebe um multiplicador extra.'},
-  needlework:{name:'Needlework',symbol:'○△',requires:['clean','trinity'],desc:'Um triângulo limpo preserva parte da tensão para o próximo Loop, permitindo encadear precisão.'},
+  needlework:{name:'Needlework',symbol:'○△',requires:['clean','trinity'],desc:'Fechar um triângulo limpo deixa ×1,25 de tensão para o próximo Loop.'},
   kaleidoscope:{name:'Kaleidoscope',symbol:'↔◇',requires:['reflection','prism'],desc:'Um Loop de 4+ pontos fechado ao criar um novo par espelhado ganha uma explosão geométrica.'},
   orbit:{name:'Orbit',symbol:'◎⊙',requires:['heart','halo'],desc:'Um Loop que envolve o centro e é fechado por uma linha central recebe um grande impulso.'},
   constellation:{name:'Constellation',symbol:'—☆',requires:['long','star'],desc:'Loops de 5+ vértices escalam com a quantidade de arestas longas dentro da própria forma.'},
