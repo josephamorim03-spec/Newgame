@@ -20,6 +20,19 @@ for(const htmlFile of ['index.html','run.html','atlas.html']){
   }
 }
 
+const manifest=JSON.parse(read('manifest.webmanifest'));
+assert.equal(manifest.display,'standalone','manifest must install standalone');
+assert(manifest.icons.some(i=>i.sizes==='192x192'&&i.type==='image/png'),'manifest needs a 192px PNG icon');
+assert(manifest.icons.some(i=>i.sizes==='512x512'&&i.type==='image/png'),'manifest needs a 512px PNG icon');
+for(const htmlFile of ['index.html','run.html','atlas.html']){
+  const html=read(htmlFile);
+  assert(html.includes('rel="manifest"'),htmlFile+' must link the web app manifest');
+  assert(html.includes('rel="apple-touch-icon"'),htmlFile+' must expose an Apple touch icon');
+}
+for(const asset of ['favicon.svg','apple-touch-icon.png','icon-192.png','icon-512.png','manifest.webmanifest']){
+  assert(fs.existsSync(path.join(root,asset)),'missing install asset '+asset);
+}
+
 const runHtml=read('run.html');
 assert(runHtml.indexOf('run-synergies.js')<runHtml.indexOf('run-a.js'),'synergy module must load before Run core');
 assert(read('atlas-b.js').trimStart().startsWith("'use strict';"),'atlas-b.js must stay in strict mode');
