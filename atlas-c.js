@@ -9,10 +9,13 @@ function stopMusic(){if(soundtrack)soundtrack.stop()}
 function chord(big=false,variant=0){if(soundtrack)soundtrack.chord(big,false,variant)}
 function nudgeMood(v){mood=Math.min(1,mood+v);document.documentElement.style.setProperty('--hueShift',Math.round(mood*24)+'deg')}
 let atlasAudioPrimed=false;
+modal.setAttribute('role','dialog');modal.setAttribute('aria-modal','true');modal.setAttribute('aria-label','Atlas');modal.tabIndex=-1;
 function primeAtlasAudio(){
   initAudio();if(!soundtrack)return;
   soundtrack.unlock().then(ready=>{atlasAudioPrimed=ready}).catch(()=>{atlasAudioPrimed=false});
 }
 document.addEventListener('pointerdown',()=>{if(!atlasAudioPrimed)primeAtlasAudio()},{capture:true});
 document.addEventListener('touchstart',()=>{if(!atlasAudioPrimed)primeAtlasAudio()},{capture:true,passive:true});
+modalWrap.addEventListener('click',event=>{if(currentMap&&event.target.classList.contains('backdrop'))modalWrap.classList.add('hidden')});
+document.addEventListener('keydown',event=>{if(currentMap&&event.key==='Escape'&&!modalWrap.classList.contains('hidden'))modalWrap.classList.add('hidden')});
 $('#atlasBtn').onclick=()=>{if(finishTimer)return;showAtlas()};$('#restartBtn').onclick=()=>currentMap?startMap(currentMap.id,!!(rivalChallenge&&rivalChallenge.mapId===currentMap.id)):showAtlas();$('#soundBtn').onclick=()=>{soundOn=!soundOn;const b=$('#soundBtn');b.setAttribute('aria-pressed',String(soundOn));b.classList.toggle('is-off',!soundOn);b.title=soundOn?'Som ligado':'Som desligado';primeAtlasAudio();if(soundOn)tone(392,.12,'triangle',.055)};$('#musicBtn').onclick=()=>{musicOn=!musicOn;const b=$('#musicBtn');b.setAttribute('aria-pressed',String(musicOn));b.classList.toggle('is-off',!musicOn);b.title=musicOn?'Música ligada':'Música desligada';primeAtlasAudio();if(musicOn)ensureMusic();else stopMusic()};showAtlas();drawGrid();const sharedRoute=new URLSearchParams(location.search).get('route');if(sharedRoute){const parsed=parseRouteCode(sharedRoute);if(parsed.ok)startRival(parsed);else{showImportRoute();const input=$('#routeInput');if(input)input.value=sharedRoute}}

@@ -23,7 +23,8 @@ function endRound(){
 }
 function openSheet(mode='normal'){
   sheetMode=mode;sheetOverlay.classList.remove('hidden');sheet.scrollTop=0;
-  const resume=$('#draftResume');if(resume)resume.hidden=true
+  const resume=$('#draftResume');if(resume)resume.hidden=true;
+  requestAnimationFrame(()=>sheet.focus({preventScroll:true}))
 }
 function closeSheet(force=false){
   sheetOverlay.classList.add('hidden');
@@ -43,7 +44,7 @@ function showDraft(mastered=false,challenge=false){
       <h2>Escolha uma regra para explorar.</h2>
       <p>A próxima rodada está revelada, mas o jogo não marca uma opção como “melhor”. Forme uma hipótese e descubra como ela muda sua geometria.</p>
       <div class="draft-meta"><span class="draft-tag">Próxima: <b>${nextRound.title}</b></span><span class="draft-tag">Passar: ${passRule}</span><span class="draft-tag">Desafio: ${optional}</span><span class="draft-tag">Reweave: ${runReweaves}</span><span class="draft-tag">Focus: ${runFocus}</span>${engineRead?`<span class="draft-tag engine-read">Ativou: ${engineRead}</span>`:''}</div>
-      <div class="sheet-actions">${runReweaves>0?'<button class="btn" type="button" id="reweave">Reweave</button>':''}${runFocus>0&&choiceCount===3?'<button class="btn" type="button" id="focusBtn">Focus: +1 opção</button>':''}<span class="draft-required">Escolha 1 Knot para continuar</span></div></div>
+      <div class="sheet-actions">${runReweaves>0?'<button class="btn" type="button" id="reweave"><svg class="ui-icon" aria-hidden="true"><use href="ui-icons.svg#reweave"></use></svg>Reweave</button>':''}${runFocus>0&&choiceCount===3?'<button class="btn" type="button" id="focusBtn"><svg class="ui-icon" aria-hidden="true"><use href="ui-icons.svg#focus"></use></svg>Focus: +1 opção</button>':''}<span class="draft-required">Escolha 1 Knot para continuar</span></div></div>
       <div class="sheet-grid">${choices.map(id=>{const k=knotDefs[id],completed=synergiesCompletedBy(id,state.build),recipe=completed[0];return`<button class="sheet-choice ${recipe?'synergy-ready':''}" type="button" data-knot="${id}"><span class="sym">${k.symbol}</span><b>${k.name}</b><small>${k.school} · ${k.desc}</small>${recipe?`<span class="choice-synergy">Pode fechar ${recipe.name}. O gatilho ainda precisa ser executado na geometria.</span>`:'<span class="choice-synergy">Nova possibilidade para a build.</span>'}</button>`}).join('')}</div>`;
     openSheet('draft');wireSheetBack(false);
     const rw=$('#reweave');if(rw)rw.onclick=()=>{runReweaves--;choices=buildDraftChoices(nextRound,draftNonce++,choiceCount);renderDraft()};
@@ -58,7 +59,7 @@ function showDraft(mastered=false,challenge=false){
 }
 function showFail(){
   const rd=runPlan[state.round],scoreOk=state.score>=rd.target,reqOk=requirementMet(rd),reason=scoreOk&&!reqOk?`Você bateu a pontuação, mas faltou ${goalLabel(rd.requirement)}.`:`Você ficou abaixo de ${fmt(rd.target)}. Tente uma leitura diferente do espaço — sem uma rota destacada pelo jogo.`;
-  sheet.innerHTML=`${sheetToolbar()}<div class="sheet-copy"><div class="drawer-title">A trama não fechou</div><h2>${fmt(state.score)} / ${fmt(rd.target)}</h2><p>${reason}</p><div class="sheet-actions"><button class="btn strong" id="retry">Repetir rodada</button><button class="btn" id="newrun">Nova seed</button><button class="btn" id="failLab">Laboratório</button></div></div>`;
+  sheet.innerHTML=`${sheetToolbar()}<div class="sheet-copy"><div class="drawer-title">A trama não fechou</div><h2>${fmt(state.score)} / ${fmt(rd.target)}</h2><p>${reason}</p><div class="sheet-actions"><button class="btn strong" id="retry"><svg class="ui-icon" aria-hidden="true"><use href="ui-icons.svg#retry"></use></svg>Repetir rodada</button><button class="btn" id="newrun"><svg class="ui-icon" aria-hidden="true"><use href="ui-icons.svg#restart"></use></svg>Nova seed</button><button class="btn" id="failLab"><svg class="ui-icon" aria-hidden="true"><use href="ui-icons.svg#settings"></use></svg>Laboratório</button></div></div>`;
   openSheet('normal');wireSheetBack(false);$('#retry').onclick=()=>{state=freshState(state.round,state.build);closeSheet(true);hint.classList.remove('hide');render()};$('#newrun').onclick=()=>{runChallengeScore=0;startRun()};$('#failLab').onclick=showLab
 }
 async function shareRunChallenge(){
@@ -84,9 +85,9 @@ function showLab(){
   ${labSelect('labDifficulty','Dificuldade',[['random','Aleatória'],['easy','Fácil'],['moderate','Moderada'],['hard','Difícil']],runConfig.difficulty)}
   ${labSelect('labRounds','Rodadas',[['random','Aleatória'],...[4,5,6,7,8,9,10].map(n=>[String(n),String(n)])],runConfig.rounds)}
   ${labSelect('labGeometry','Geometria',[['random','Aleatória'],['mixed','Mista'],['radial','Radial'],['symmetric','Simétrica'],['axis','Mudança de eixos']],runConfig.geometry)}
-  ${labSelect('labNodes','Pontos',[['random','Aleatório'],['mixed','Mistos'],['8','8 pontos'],['10','10 pontos']],runConfig.nodes)}
+  ${labSelect('labNodes','Pontos do tabuleiro',[['random','Aleatório'],['mixed','Mistos'],['8','8 pontos'],['10','10 pontos']],runConfig.nodes)}
   ${labSelect('labObjectives','Ênfase dos desafios',[['random','Aleatória'],['balanced','Balanceada'],['loop','Loops'],['cross','Crosses'],['echo','Echoes']],runConfig.objectives)}
-  </div><div class="sheet-actions"><button class="btn strong" id="labStart">Gerar run</button><button class="btn" id="labChaos">Tudo aleatório</button></div></div>`;
+  </div><div class="sheet-actions"><button class="btn strong" id="labStart"><svg class="ui-icon" aria-hidden="true"><use href="ui-icons.svg#run"></use></svg>Gerar run</button><button class="btn" id="labChaos"><svg class="ui-icon" aria-hidden="true"><use href="ui-icons.svg#reweave"></use></svg>Tudo aleatório</button></div></div>`;
   openSheet('lab');wireSheetBack(false);sheet.scrollTop=0;
   $('#rollSeed').onclick=()=>{$('#labSeed').value=Math.floor(1000+Math.random()*900000)};
   const read=()=>({difficulty:$('#labDifficulty').value,rounds:$('#labRounds').value,geometry:$('#labGeometry').value,nodes:$('#labNodes').value,objectives:$('#labObjectives').value});
@@ -109,10 +110,14 @@ $('#labBtn').addEventListener('click',showLab);
 $('#draftResume').addEventListener('click',()=>{if(draftPending){openSheet('draft');sheet.scrollTop=0}});
 $('#soundBtn').addEventListener('click',()=>{soundOn=!soundOn;const b=$('#soundBtn');b.setAttribute('aria-pressed',String(soundOn));b.classList.toggle('is-off',!soundOn);primeAudio();if(soundOn)tone(392,.12,'triangle',.055)});
 $('#musicBtn').addEventListener('click',()=>{musicOn=!musicOn;const b=$('#musicBtn');b.setAttribute('aria-pressed',String(musicOn));b.classList.toggle('is-off',!musicOn);primeAudio();if(musicOn)ensureMusic();else stopMusic()});
-$('#infoBtn').addEventListener('click',()=>{const open=drawer.classList.toggle('open');$('#infoBtn').setAttribute('aria-expanded',String(open));$('#drawerState').textContent=open?'fechar':'abrir'});
-$('#drawerToggle').addEventListener('click',()=>{const open=drawer.classList.toggle('open');$('#infoBtn').setAttribute('aria-expanded',String(open));$('#drawerState').textContent=open?'fechar':'abrir'});
+function setDrawer(open){drawer.classList.toggle('open',open);const info=$('#infoBtn'),toggle=$('#drawerToggle');info.setAttribute('aria-expanded',String(open));info.hidden=open;toggle.setAttribute('aria-expanded',String(open));$('#drawerState').textContent=open?'fechar':'abrir'}
+$('#infoBtn').addEventListener('click',()=>setDrawer(true));
+$('#drawerToggle').addEventListener('click',()=>setDrawer(!drawer.classList.contains('open')));
+$('#drawerToggle').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();setDrawer(!drawer.classList.contains('open'))}});
+$('#drawerScrim').addEventListener('click',()=>setDrawer(false));
 $('#ruleTitle').addEventListener('click',shareRunChallenge);$('#ruleTitle').title='Compartilhar esta seed';
 sheetOverlay.addEventListener('click',e=>{if(e.target.classList.contains('sheet-backdrop'))closeSheet(false)});
+document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;if(!sheetOverlay.classList.contains('hidden'))closeSheet(false);else if(drawer.classList.contains('open'))setDrawer(false)});
 document.addEventListener('pointerdown',()=>{if(!audioPrimed)primeAudio()},{capture:true});
 document.addEventListener('touchstart',()=>{if(!audioPrimed)primeAudio()},{capture:true,passive:true});
 const q=new URLSearchParams(location.search),seedQ=Number(q.get('seed')),cfgQ={difficulty:q.get('diff')||RUN_LAB_DEFAULT.difficulty,rounds:q.get('rounds')||RUN_LAB_DEFAULT.rounds,geometry:q.get('geom')||RUN_LAB_DEFAULT.geometry,nodes:q.get('nodes')||RUN_LAB_DEFAULT.nodes,objectives:q.get('obj')||RUN_LAB_DEFAULT.objectives};

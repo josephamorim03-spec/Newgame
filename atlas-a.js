@@ -24,10 +24,11 @@ function unlocked(i){if(i===0)return true;const first=mapProgress('first').medal
 function unlockHint(i){if(i===0)return'';if(!mapProgress('first').medal)return'Complete Primeira trama para abrir o Atlas.';if(i<=3)return'';if(i<=6)return`Complete 3 mapas do Atlas · ${clearedCount()}/3`;if(i<=8)return`Complete 5 mapas do Atlas · ${clearedCount()}/5`;if(i<=10)return`Complete 7 mapas do Atlas · ${clearedCount()}/7`;return`Complete 9 mapas do Atlas · ${clearedCount()}/9`}
 function mapProgress(id){const map=MAPS.find(m=>m.id===id),version=map?.version||1,p=profile.maps[id];if(p&&typeof p==='object'&&!Array.isArray(p)){const storedVersion=p.version==null?1:Number(p.version);if(storedVersion===version){p.version=storedVersion;p.medal=Number.isFinite(Number(p.medal))?Math.max(0,Math.min(3,Number(p.medal))):0;p.best=Number.isFinite(Number(p.best))?Math.max(0,Number(p.best)):0;p.feat=!!p.feat;if(!Array.isArray(p.attempts))p.attempts=[];return p}}return{version,medal:0,best:0,attempts:[],feat:false}}
 function isMasterProgress(p){return !!p&&p.medal>=3&&p.feat}
+function mapIcon(id){return{first:'loop',cross:'cross',echo:'echo',halo:'halo',star:'loop',twin:'loop',clean:'loop',master:'master',mirror:'reweave',mosaic:'loop',ritual:'feat',focus:'focus'}[id]||'loop'}
 function atlasCard(m,i){
   const p=mapProgress(m.id),lock=!unlocked(i),master=isMasterProgress(p);
   return `<button class="map-card ${lock?'locked':''}" ${lock?'disabled':''} data-map="${m.id}">
-    ${KnotFeel.mapPreview(m.pts)}
+    <span class="map-visual">${KnotFeel.mapPreview(m.pts)}<svg class="ui-icon map-glyph" aria-hidden="true"><use href="ui-icons.svg#${mapIcon(m.id)}"></use></svg></span>
     <div class="map-top">
       <b>${i+1}. ${m.name}</b>
       <div class="medals" aria-label="Domínio">
@@ -42,7 +43,7 @@ function atlasCard(m,i){
       <span>${m.goals[0].label}</span>
       <span>${m.goals[1].label}</span>
       <span>${m.goals[2].label}</span>
-      <span class="master-line">Mestre · Ouro + Feito</span>
+      <span class="master-line"><svg class="ui-icon" aria-hidden="true"><use href="ui-icons.svg#master"></use></svg> Mestre · Ouro + Feito</span>
       <span class="feat-line"><svg class="ui-icon" aria-hidden="true"><use href="ui-icons.svg#feat"></use></svg> Feito · ${m.feat.label}</span>
     </div>
     <div class="map-best">Melhor score: ${p.best?fmt(p.best):'—'}${p.bestObjectiveDisplay!=null?` · Melhor ${rankData(m,{}).label}: ${p.bestObjectiveDisplay}`:''}</div>
@@ -59,7 +60,7 @@ function showAtlas(){
     {title:'Composição avançada',desc:'Simetria, triângulos, sequências e economia espacial.',from:8,to:12}
   ];
   modalWrap.classList.remove('hidden');
-  modal.innerHTML=`<div class="modal-toolbar"><button class="modal-back" id="modalClose" type="button">← Voltar ao tabuleiro</button></div><h2>Atlas</h2><p>Suba a trilha <b>Passar → Prata → Ouro → Mestre</b>. Feitos são desafios laterais; completar Ouro + Feito torna o mapa Mestre.</p>
+  modal.innerHTML=`<div class="modal-toolbar"><button class="modal-back" id="modalClose" type="button">← ${currentMap?'Voltar ao tabuleiro':'Início'}</button></div><h2>Atlas</h2><p>Suba a trilha <b>Passar → Prata → Ouro → Mestre</b>. Feitos são desafios laterais; completar Ouro + Feito torna o mapa Mestre.</p>
   <div class="atlas-progress">
     <div><b>${medalTotal}/${MAPS.length*3}</b><span>medalhas</span></div>
     <div><b>${masterTotal}/${MAPS.length}</b><span>Mestres</span></div>
@@ -69,7 +70,7 @@ function showAtlas(){
   ${chapters.map(ch=>{const ids=Array.from({length:ch.to-ch.from},(_,j)=>ch.from+j),done=ids.filter(i=>mapProgress(MAPS[i].id).medal>=1).length;return`<section class="atlas-chapter"><div class="chapter-head"><div><h3>${ch.title}</h3><p>${ch.desc}</p></div><span>${done}/${ids.length} concluídos</span></div><div class="atlas-grid">${ids.map(i=>atlasCard(MAPS[i],i)).join('')}</div></section>`}).join('')}
   <div class="modal-actions"><button class="btn" id="importRoute">Importar rota</button></div>`;
   modal.querySelectorAll('[data-map]').forEach(b=>b.addEventListener('click',()=>startMap(b.dataset.map)));
-  $('#importRoute').onclick=showImportRoute;$('#modalClose').onclick=()=>modalWrap.classList.add('hidden');
+  $('#importRoute').onclick=showImportRoute;$('#modalClose').onclick=()=>currentMap?modalWrap.classList.add('hidden'):location.assign('index.html');requestAnimationFrame(()=>modal.focus({preventScroll:true}));
 }
 function startMap(id,keepRival=false){if(finishTimer){clearTimeout(finishTimer);finishTimer=null}clearGhost();if(!keepRival)rivalChallenge=null;currentMap=MAPS.find(m=>m.id===id);if(!currentMap){showAtlas();return}state={score:0,crosses:0,echoes:0,loops:0,cleanLoops:0,centerLoops:0,maxVertices:0,triangleLoops:0,symPairs:0,rituals:0,ritualStage:0,uniqueVertices:0,moves:0,current:null,path:[],edges:[],loopsData:[],junctions:[],pts:currentMap.pts.map((p,i)=>({id:i,x:p[0],y:p[1]})),ended:false,goalSeen:[false,false,false],featAnnounced:false,masterAnnounced:false};modalWrap.classList.add('hidden');hint.classList.remove('hide');hint.textContent=currentMap.id==='first'?'Toque em qualquer ponto para começar.':currentMap.goals[0].label;drawGrid();mood=.08;render()}
 function fmt(n){return Math.round(n).toLocaleString('pt-BR')} function edgeKey(a,b){return a<b?`${a}-${b}`:`${b}-${a}`} function dist(a,b){return Math.hypot(a.x-b.x,a.y-b.y)} function area(poly){let s=0;for(let i=0;i<poly.length;i++){const p=poly[i],q=poly[(i+1)%poly.length];s+=p.x*q.y-q.x*p.y}return Math.abs(s/2)}
