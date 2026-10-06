@@ -4,7 +4,8 @@
   "version": "0.1.0",
   "description": "KNOT — geometry puzzle roguelike and mastery atlas",
   "scripts": {
-    "test": "node tests/atlas.test.cjs",
-    "calibrate": "node tools/calibrate-atlas.js 30000"
+    "test": "node tests/atlas.test.cjs && node tests/run.test.cjs",
+    "calibrate:runs": "node tools/calibrate-runs.js",
+    "calibrate:atlas": "node tools/calibrate-atlas.js 30000"
   }
 }
