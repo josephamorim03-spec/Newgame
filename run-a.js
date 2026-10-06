@@ -31,4 +31,59 @@ clean:{name:'Clean Thread',symbol:'○',desc:'Loops sem linhas cruzadas recebem 
 function makeRegular(n,rotation=0,radius=360){const cx=500,cy=500;return Array.from({length:n},(_,i)=>{const a=(Math.PI*2/n)*i-Math.PI/2+rotation;return[cx+Math.cos(a)*radius,cy+Math.sin(a)*radius]})}
 function makeDoubleSquare(rotation=0){const cx=500,cy=500,out=350,inn=205,pts=[];for(let i=0;i<4;i++){let a=i*Math.PI/2-Math.PI/2+rotation;pts.push([cx+Math.cos(a)*out,cy+Math.sin(a)*out])}for(let i=0;i<4;i++){let a=i*Math.PI/2-Math.PI/4+rotation;pts.push([cx+Math.cos(a)*inn,cy+Math.sin(a)*inn])}return pts}
 function mulberry32(a){return function(){let t=a+=0x6D2B79F5;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296}} function shuffle(arr,rng){const a=[...arr];for(let i=a.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
-function buildRun(seed){const rng=mulberry32(seed);const schools=['Interseção','Forma','Ritmo','Traço','Pureza'];runSchools=shuffle(schools,rng).slice(0,3);const roundBySchool={Interseção:['cross','dense'],Forma:['space','dense'],Ritmo:['echo','dense'],Traço:['center','space'],Pureza:['clean','space']};let localRounds=[...new Set(runSchools.flatMap(s=>roundBySchool[s]))];if(localRounds.length<4)localRounds=[...new Set(localRounds.concat(['cross','echo','space','clean','center','dense']))];const mids=shuffle(localRounds,rng).slice(0,4);const defs=['first',...mids,'final'].map(k=>({...ROUND_LIBRARY[k],key:k}));const layouts=[makeRegular(8,0),makeRegular(8,Math.PI/8),makeDoubleSquare(rng()>.5?0:Math.PI/4),makeRegular(10,Math.PI/10),makeRegular(8,rng()>.5?0:Math.PI/8),makeRegular(10,rng()>.5?0:Math.PI/10)];return defs.map((d,i)=>{const requirement=i===3?GOAL_BY_ROUND[d.key]||'loops2':null;const pool=shuffle(DIRECTIVE_POOL.filter(g=>g!==requirement),rng);const directive=i===0?null:pool[0];return{...d,layout:layouts[i],requirement,directive}})}
+const RUN_LAB_DEFAULT={difficulty:'moderate',rounds:6,geometry:'mixed',nodes:'mixed',objectives:'balanced'};
+function makeAxisLayout(n,rotation=0,stretch=1.28){return makeRegular(n,rotation,330).map(([x,y])=>[500+(x-500)*stretch,500+(y-500)/stretch])}
+function resolveRunConfig(seed,input={}){
+  const pickRng=mulberry32((Number(seed)||1)^0x4b4e4f54),pick=a=>a[Math.floor(pickRng()*a.length)];
+  const raw={...RUN_LAB_DEFAULT,...(input||{})};
+  let difficulty=raw.difficulty==='random'?pick(['easy','moderate','hard']):raw.difficulty;
+  let rounds=raw.rounds==='random'?pick([4,5,6,7,8,9]):Number(raw.rounds);
+  let geometry=raw.geometry==='random'?pick(['radial','symmetric','axis','mixed']):raw.geometry;
+  let nodes=raw.nodes==='random'?pick(['8','10','mixed']):String(raw.nodes);
+  let objectives=raw.objectives==='random'?pick(['balanced','loop','cross','echo']):raw.objectives;
+  if(!['easy','moderate','hard'].includes(difficulty))difficulty='moderate';
+  if(!Number.isFinite(rounds))rounds=6;rounds=Math.max(4,Math.min(10,Math.round(rounds)));
+  if(!['radial','symmetric','axis','mixed'].includes(geometry))geometry='mixed';
+  if(!['8','10','mixed'].includes(nodes))nodes='mixed';
+  if(!['balanced','loop','cross','echo'].includes(objectives))objectives='balanced';
+  return{difficulty,rounds,geometry,nodes,objectives}
+}
+function makeRunLayout(cfg,rng,index){
+  const n=cfg.nodes==='mixed'?(rng()>.45?8:10):Number(cfg.nodes),rotation=(rng()-.5)*(Math.PI/n),mode=cfg.geometry==='mixed'?shuffle(['radial','symmetric','axis'],rng)[0]:cfg.geometry;
+  if(mode==='axis')return makeAxisLayout(n,rotation,rng()>.5?1.22:1.34);
+  if(mode==='symmetric'&&n===8&&rng()>.45)return makeDoubleSquare(rng()>.5?0:Math.PI/4);
+  return makeRegular(n,rotation,n===10?350:360)
+}
+function goalPoolForBias(bias){
+  if(bias==='loop')return['big5','clean1','loops2','halo1','triangle1'];
+  if(bias==='cross')return['cross2','center2','loops2'];
+  if(bias==='echo')return['echo2','loops2','big5'];
+  return DIRECTIVE_POOL
+}
+function buildRun(seed,inputConfig){
+  const cfg=resolveRunConfig(seed,inputConfig||((typeof runConfig!=='undefined'&&runConfig)||RUN_LAB_DEFAULT)),rng=mulberry32(seed);
+  if(typeof runConfig!=='undefined')runConfig={...cfg};
+  const schools=['Interseção','Forma','Ritmo','Traço','Pureza'];runSchools=shuffle(schools,rng).slice(0,3);
+  const roundBySchool={Interseção:['cross','dense'],Forma:['space','dense'],Ritmo:['echo','dense'],Traço:['center','space'],Pureza:['clean','space']};
+  let localRounds=[...new Set(runSchools.flatMap(s=>roundBySchool[s]))];
+  const biasRounds={loop:['space','clean','dense','center'],cross:['cross','dense','center'],echo:['echo','dense','space'],balanced:[]}[cfg.objectives]||[];
+  localRounds=[...new Set([...biasRounds,...localRounds,'cross','echo','space','clean','center','dense'])];
+  const midCount=cfg.rounds-2,mids=[];while(mids.length<midCount)mids.push(...shuffle(localRounds,rng));mids.length=midCount;
+  const defs=['first',...mids,'final'].map(k=>({...ROUND_LIBRARY[k],key:k})),goalPool=goalPoolForBias(cfg.objectives);
+  return defs.map((d,i)=>{
+    const progress=i/Math.max(1,defs.length-1),diff=cfg.difficulty;
+    const targetScale=(diff==='easy'?.82:diff==='hard'?1.12:1)*(1+progress*(diff==='hard'?.09:diff==='moderate'?.04:.015));
+    const masteryScale=(diff==='easy'?.86:diff==='hard'?1.10:1)*(1+progress*(diff==='hard'?.08:diff==='moderate'?.035:.015));
+    const moveDelta=diff==='easy'?1:(diff==='hard'&&i>0?-1:0);
+    let requirement=null,directive=null;
+    if(i>0&&i<defs.length-1){
+      const preferred=GOAL_BY_ROUND[d.key],pool=shuffle(goalPool.filter(g=>g!==preferred),rng);
+      if(diff==='hard'&&(i%2===0||progress>.55))requirement=preferred||pool[0]||'loops2';
+      else if(diff==='moderate'&&i===Math.floor((defs.length-1)/2))requirement=preferred||pool[0]||'loops2';
+      else if(diff==='easy'&&defs.length>=7&&i===Math.floor((defs.length-1)/2))requirement=preferred||pool[0]||'loops2';
+      const allowDirective=diff==='easy'?i%2===1:true;
+      if(allowDirective)directive=shuffle(goalPool.filter(g=>g!==requirement),rng)[0]||null;
+    }
+    return{...d,target:Math.round(d.target*targetScale/50)*50,mastery:Math.round(d.mastery*masteryScale/50)*50,moves:Math.max(6,d.moves+moveDelta),layout:makeRunLayout(cfg,rng,i),requirement,directive}
+  })
+}
