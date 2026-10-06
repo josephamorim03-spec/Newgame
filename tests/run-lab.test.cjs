@@ -3,7 +3,7 @@ const assert=require('assert');
 const fs=require('fs');
 const path=require('path');
 const src=fs.readFileSync(path.join(__dirname,'..','run-a.js'),'utf8');
-const api=new Function("let runSchools=[];"+src+";return {buildRun,resolveRunConfig};")();
+const dummy={};const document={querySelector(){return dummy}};const matchMedia=()=>({matches:true});const api=new Function('document','matchMedia',"let runSchools=[];"+src+";return {buildRun,resolveRunConfig};")(document,matchMedia);
 const cfg={difficulty:'moderate',rounds:8,geometry:'axis',nodes:'10',objectives:'loop'};
 const a=api.buildRun(424242,cfg),b=api.buildRun(424242,cfg);
 assert.equal(a.length,8,'round count must follow lab config');
