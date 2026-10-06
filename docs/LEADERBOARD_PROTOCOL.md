@@ -89,6 +89,10 @@ Current primary metrics:
 | Dupla trama | Total Loops | Score |
 | Linha limpa | Clean Loops | Score |
 | Trama mestra | Balanced master index = min(Crosses/18, Loops/5) | Score |
+| Espelho | Real reflected edge pairs | Score |
+| Mosaico | Triangle Loops | Score |
+| Ritual | Completed three-move Rituals | Score |
+| Concentração | Loops while staying within ≤6 unique points | Score |
 
 This keeps leaderboards aligned with the question each map is teaching instead of rewarding unrelated point farming.
 
