@@ -27,7 +27,7 @@ function simulateLiveLock(map,route){
   for(const to of ids.slice(1))connect(state.current,to);
   return state.ended;
 }
-return {MAPS,evaluateRoute,simulateLiveLock};`);
+return {MAPS,evaluateRoute,simulateLiveLock,mapProgress,isBetterObjective};`);
   const browser=factory(documentStub,storage,()=>1,()=>{});
   const core=loadCJS(read('tools/calibrate-atlas.js'));
   let checked=0;
@@ -47,6 +47,15 @@ return {MAPS,evaluateRoute,simulateLiveLock};`);
   assert.equal(checked,24);
   const firstRoute=core.WITNESSES.first.gold;
   assert.equal(browser.simulateLiveLock(browser.MAPS.find(m=>m.id==='first'),firstRoute),true,'Atlas must lock immediately after the last stitch');
+  assert.equal(browser.isBetterObjective({primary:4},1201,{bestObjective:4,bestObjectiveScore:1200}),true,'objective ties must use score as tie-break');
+  assert.equal(browser.isBetterObjective({primary:4},1199,{bestObjective:4,bestObjectiveScore:1200}),false,'worse tie-break score must not replace objective route');
+
+  const legacyData=JSON.stringify({maps:{cross:{medal:2,best:1234,attempts:[]},mirror:{medal:3,best:9999,attempts:[]}}});
+  const legacyBrowser=factory(documentStub,{getItem(){return legacyData},setItem(){}},()=>1,()=>{});
+  assert.equal(legacyBrowser.mapProgress('cross').medal,2,'unversioned legacy v1 progress should survive on v1 maps');
+  assert.equal(legacyBrowser.mapProgress('cross').version,1);
+  assert.equal(legacyBrowser.mapProgress('mirror').medal,0,'unversioned legacy v1 progress must not migrate into mirror v2');
+  assert.equal(legacyBrowser.mapProgress('mirror').version,2);
 }
 
 // Run: browser scoring vs empty-build calibration core
