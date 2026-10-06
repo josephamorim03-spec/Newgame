@@ -1,7 +1,7 @@
 'use strict';
 let runSeed=0,runPlan=[],runSchools=[],runReweaves=1,runFocus=0,runMasteries=0,runChallenges=0,runTotalScore=0,runChallengeScore=0,draftNonce=0,runSources={loop:0,cross:0,echo:0,line:0},runEngineHits={},runConfig={...RUN_LAB_DEFAULT};
 let state,roundEndTimer=null;let soundOn=true,musicOn=true;let audioCtx,masterGain,musicGain,fxGain,compressor,noiseBuffer,musicTimer=null,musicStep=0,moodEnergy=0,currentChord=0;
-function freshState(round=0,build=[]){const rd=runPlan[round];return{round,build:[...build],score:0,loopCount:0,crosses:0,echoes:0,centerHits:0,cleanLoops:0,maxLoopVertices:0,centerLoops:0,triangleLoops:0,symPairs:0,moves:0,current:null,path:[],edges:[],loops:[],junctions:[],log:[],ended:false,nextLoopMult:1,directiveAnnounced:false,requirementAnnounced:false,sources:{loop:0,cross:0,echo:0,line:0},engineHits:{},pts:rd.layout.map((p,i)=>({id:i,x:p[0],y:p[1]}))}}
+function freshState(round=0,build=[]){const rd=runPlan[round];return{round,build:[...build],score:0,loopCount:0,crosses:0,echoes:0,centerHits:0,cleanLoops:0,maxLoopVertices:0,centerLoops:0,triangleLoops:0,symPairs:0,moves:0,current:null,path:[],edges:[],loops:[],junctions:[],log:[],ended:false,nextLoopMult:1,directiveAnnounced:false,requirementAnnounced:false,sources:{loop:0,cross:0,echo:0,line:0},engineHits:{},celebrationHold:0,pts:rd.layout.map((p,i)=>({id:i,x:p[0],y:p[1]}))}}
 function initAudio(){
   if(audioCtx)return;const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;audioCtx=new AC();
   compressor=audioCtx.createDynamicsCompressor();compressor.threshold.value=-22;compressor.knee.value=18;compressor.ratio.value=2.6;
