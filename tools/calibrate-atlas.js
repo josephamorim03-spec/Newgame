@@ -38,7 +38,7 @@ const WITNESSES={
  master:{gold:[3,5,1,4,8,2,5,8,1,3,7,4,5],feat:[1,7,2,5,8,4,1,5,10,1,3,5,7]},
  mirror:{gold:[7,6,2,5,8,3,4,8,2,7,5],feat:[7,6,2,5,8,3,4,8,2,7,5]},
  mosaic:{gold:[7,3,2,7,1,2,5,7,4,5,1,4],feat:[7,3,2,7,1,2,5,7,4,5,1,4]},
- ritual:{gold:[3,5,8,2,6,8,10,5,6,10,4,3,9],feat:[3,5,8,2,6,8,10,5,6,10,4,3,9]},
+ ritual:{gold:[10,7,8,1,4,10,8,2,7,5,10,3,8],feat:[10,7,8,1,4,10,8,2,7,5,10,3,8]},
  focus:{gold:[6,5,7,8,4,6,3,7,6,8,5],feat:[4,5,2,7,4,3,7,5,3,2,4]}
 };
 
@@ -48,7 +48,7 @@ function intersect(a,b,c,d){const den=(a[0]-b[0])*(c[1]-d[1])-(a[1]-b[1])*(c[0]-
 function area(poly){let s=0;for(let i=0;i<poly.length;i++){const p=poly[i],q=poly[(i+1)%poly.length];s+=p[0]*q[1]-q[0]*p[1]}return Math.abs(s/2)}
 function inPoly(pt,poly){let inside=false;for(let i=0,j=poly.length-1;i<poly.length;j=i++){const xi=poly[i][0],yi=poly[i][1],xj=poly[j][0],yj=poly[j][1],hit=((yi>pt[1])!==(yj>pt[1]))&&(pt[0]<(xj-xi)*(pt[1]-yi)/(yj-yi+1e-9)+xi);if(hit)inside=!inside}return inside}
 function symPairs(edges,pts){const mirror={};for(let i=0;i<pts.length;i++){const [x,y]=pts[i],tx=1000-x,ty=y;let best=-1,bd=Infinity;for(let j=0;j<pts.length;j++){const dx=pts[j][0]-tx,dy=pts[j][1]-ty,d=dx*dx+dy*dy;if(d<bd){bd=d;best=j}}mirror[i]=bd<1?best:null}const set=new Set(edges.map(e=>key(e.u,e.v))),seen=new Set();let pairs=0;for(const e of edges){const a=key(e.u,e.v),ma=mirror[e.u],mb=mirror[e.v];if(ma==null||mb==null)continue;const b=key(ma,mb);if(a!==b&&set.has(b)){const p=[a,b].sort().join('|');if(!seen.has(p)){seen.add(p);pairs++}}}return pairs}
-function ritualStep(s,cross,echo,loop){for(const [kind,on] of [['cross',cross],['echo',echo],['loop',loop]]){if(!on)continue;if(s.ritualStage===0&&kind==='cross')s.ritualStage=1;else if(s.ritualStage===1&&kind==='echo')s.ritualStage=2;else if(s.ritualStage===2&&kind==='loop'){s.rituals++;s.ritualStage=0}else if(kind==='cross'&&s.ritualStage>0)s.ritualStage=1}}
+function ritualStep(s,cross,echo,loop){if(s.ritualStage===0&&cross)s.ritualStage=1;else if(s.ritualStage===1&&echo)s.ritualStage=2;else if(s.ritualStage===2&&loop){s.rituals++;s.ritualStage=0}}
 
 function evaluate(m,route){
   const edges=[],path=[route[0]],used=new Set(),s={score:0,crosses:0,echoes:0,loops:0,cleanLoops:0,centerLoops:0,maxVertices:0,triangleLoops:0,symPairs:0,rituals:0,ritualStage:0,uniqueVertices:1};
