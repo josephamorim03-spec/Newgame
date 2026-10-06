@@ -21,10 +21,10 @@ const MAPS={
  twin:{moves:10,pts:doubleSquare(Math.PI/4),cross:140,echo:90,area:1,gold:s=>s.loops>=5,feat:s=>s.loops>=4&&s.crosses>=3},
  clean:{moves:9,pts:regular(8,Math.PI/8),cross:100,echo:90,area:1,gold:s=>s.cleanLoops>=3,feat:s=>s.cleanLoops>=2&&s.score>=2000},
  master:{moves:12,pts:regular(10),cross:160,echo:100,area:1.08,gold:s=>s.crosses>=18&&s.loops>=5,feat:s=>s.crosses>=12&&s.loops>=4&&s.echoes>=2},
- mirror:{moves:10,pts:regular(8),cross:130,echo:90,area:1,gold:s=>s.symPairs>=4,feat:s=>s.symPairs>=4&&s.loops>=1},
+ mirror:{moves:10,pts:regular(8),cross:130,echo:90,area:1,gold:s=>s.symPairs>=4,feat:s=>s.symPairs>=4&&s.echoes>=2},
  mosaic:{moves:11,pts:regular(8,Math.PI/8),cross:120,echo:90,area:1,gold:s=>s.triangleLoops>=4,feat:s=>s.triangleLoops>=4&&s.crosses>=6},
- ritual:{moves:12,pts:regular(10),cross:150,echo:120,area:1,gold:s=>s.rituals>=2&&s.loops>=4,feat:s=>s.rituals>=2&&s.crosses>=10},
- focus:{moves:10,pts:regular(8),cross:130,echo:90,area:1,gold:s=>s.loops>=4&&s.uniqueVertices<=6,feat:s=>s.loops>=5&&s.uniqueVertices<=5}
+ ritual:{moves:12,pts:regular(10),cross:150,echo:120,area:1,gold:s=>s.rituals>=2&&s.loops>=5,feat:s=>s.rituals>=2&&s.crosses>=12},
+ focus:{moves:10,pts:regular(8),cross:130,echo:90,area:1,gold:s=>s.loops>=4&&s.uniqueVertices<=5,feat:s=>s.loops>=4&&s.uniqueVertices<=5&&s.echoes>=2}
 };
 
 const WITNESSES={
@@ -36,10 +36,10 @@ const WITNESSES={
  twin:{gold:[4,3,1,4,5,2,3,6,2,1,6],feat:[7,2,3,5,6,8,3,6,1,8,5]},
  clean:{gold:[5,7,8,1,7,6,5,1,4,7],feat:[3,8,2,3,5,8,4,3,6,2]},
  master:{gold:[3,5,1,4,8,2,5,8,1,3,7,4,5],feat:[1,7,2,5,8,4,1,5,10,1,3,5,7]},
- mirror:{gold:[7,6,2,5,8,3,4,8,2,7,5],feat:[7,6,2,5,8,3,4,8,2,7,5]},
+ mirror:{gold:[7,6,2,5,8,3,4,8,2,7,5],feat:[7,6,4,1,8,7,4,3,2,1,6]},
  mosaic:{gold:[7,3,2,7,1,2,5,7,4,5,1,4],feat:[7,3,2,7,1,2,5,7,4,5,1,4]},
  ritual:{gold:[10,7,8,1,4,10,8,2,7,5,10,3,8],feat:[10,7,8,1,4,10,8,2,7,5,10,3,8]},
- focus:{gold:[6,5,7,8,4,6,3,7,6,8,5],feat:[4,5,2,7,4,3,7,5,3,2,4]}
+ focus:{gold:[2,5,6,1,2,6,7,1,5,7,2],feat:[1,5,2,6,5,3,6,1,2,3,1]}
 };
 
 const key=(a,b)=>a<b?`${a}-${b}`:`${b}-${a}`;
