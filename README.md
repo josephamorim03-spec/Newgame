@@ -23,7 +23,7 @@ Atlas goals are tested with a dependency-free Monte Carlo calibrator:
 node tools/calibrate-atlas.js 30000
 ```
 
-See `docs/ATLAS_CALIBRATION.md` for Atlas target calibration, `docs/RUN_CALIBRATION.md` for the empty-build Run reachability invariant, and `docs/LEADERBOARD_PROTOCOL.md` for the verified route/ghost/ranking contract.
+See `docs/ATLAS_CALIBRATION.md` for Atlas target calibration, `docs/RUN_CALIBRATION.md` for the empty-build Run reachability invariant, `docs/RUN_SYNERGIES.md` for the seven named Run engines, and `docs/LEADERBOARD_PROTOCOL.md` for the verified route/ghost/ranking contract.
 
 The game is self-contained: there are no external runtime art or audio assets. Music and sound are synthesized with WebAudio.
 
