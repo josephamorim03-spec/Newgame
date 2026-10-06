@@ -25,10 +25,33 @@ jobs:
           cp ring-break-standalone.html dist-netlify/index.html
           cp netlify.toml dist-netlify/netlify.toml
           printf "RING//BREAK production package\nCommit: %s\n" "$GITHUB_SHA" > dist-netlify/BUILD.txt
-      - name: Upload package
+      - name: Upload Netlify package
         uses: actions/upload-artifact@v4
         with:
           name: ring-break-netlify-production
           path: dist-netlify/
           if-no-files-found: error
           compression-level: 9
+
+      - name: Run engine tests
+        run: |
+          npm test
+          node tests/balance.cjs
+
+      - name: Prepare full project package
+        run: |
+          rm -rf dist-full
+          mkdir -p dist-full/.github/workflows
+          cp README.md favicon.svg index.html netlify.toml package.json ring-break-standalone.html server.cjs dist-full/
+          cp -R src docs tests tools dist-full/
+          cp .github/workflows/build-netlify-production.yml dist-full/.github/workflows/
+          printf "RING//BREAK full project package\nCommit: %s\n" "$GITHUB_SHA" > dist-full/BUILD.txt
+
+      - name: Upload full project
+        uses: actions/upload-artifact@v4
+        with:
+          name: ring-break-full-project
+          path: dist-full/
+          if-no-files-found: error
+          compression-level: 9
+          include-hidden-files: true
