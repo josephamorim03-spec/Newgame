@@ -135,6 +135,11 @@
       kalimba(notaPenta(5), 0, 0.16); kalimba(notaPenta(3), 0.22, 0.16); kalimba(notaPenta(2), 0.44, 0.18);
       [57, 60, 64].map(midi).forEach(f => tom({ freq: f, tipo: 'triangle', ini: 0.5, ataque: 0.08, dur: 2, ganho: 0.06, filtro: 1500, reverbAmt: 0.6 }));
     },
+    moeda: ({ n = 1 } = {}) => {                                                              // moedas entrando: tilintar curto, um por punhado
+      for (let i = 0; i < Math.min(8, n); i++) { tom({ freq: 1975 + (i % 3) * 220, ini: i * 0.07, dur: 0.18, ganho: 0.06, reverbAmt: 0.3 }); tom({ freq: 2637, ini: i * 0.07 + 0.02, dur: 0.1, ganho: 0.03, reverbAmt: 0.2 }); }
+    },
+    compra: () => { [0, 2, 4, 7].forEach((g, i) => kalimba(notaPenta(g + 5), i * 0.08, 0.18)); },  // compra feita: presente aberto
+    nivel: () => { [0, 1, 2, 4, 5, 7].forEach((g, i) => kalimba(notaPenta(g + 3), i * 0.09, 0.17)); },  // subiu de nível: escadinha alegre
     falaRival: () => { [0, 1, 2].forEach(i => tom({ freq: 520 + Math.random() * 260, ini: i * 0.07, dur: 0.06, ganho: 0.04, tipo: 'triangle', reverbAmt: 0.05 })); }, // "blá-blá" fofinho
   };
   function tocar(nome, dados) {

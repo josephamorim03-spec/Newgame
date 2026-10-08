@@ -377,3 +377,65 @@ button.carta:hover { transform: translateY(-2px) rotate(-1deg); }
 /* sem animações: tudo para (a escolha também respeita o sistema) */
 .sem-animacoes *, .sem-animacoes *::before, .sem-animacoes *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; } }
+
+/* ---------- progressão: carteira, loja, recompensas ---------- */
+.moeda { display: inline-block; width: 1em; height: 1em; border-radius: 50%; vertical-align: -0.12em; flex: none;
+  background: radial-gradient(circle at 35% 30%, #fff3b0, #f2c14e 45%, #c8901c); box-shadow: inset 0 0 0 1.5px #a8740f, 0 1px 0 rgba(0,0,0,.2); }
+.carteira { min-height: 44px; padding: 0 12px; border-radius: 14px; border: 0; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
+  font-weight: 800; font-size: 15px; color: var(--tinta); background: linear-gradient(180deg, #ffe6a8, #f6c86b); box-shadow: 0 3px 0 var(--mel-escuro); font-variant-numeric: tabular-nums; }
+.carteira:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--mel-escuro); }
+.loja-perfil { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; align-items: center; padding: 12px; border-radius: 16px; background: var(--papel-2); }
+.loja-perfil .avatar { width: 54px; height: 54px; margin: 0; grid-row: span 3; }
+.titulo-rating { font-family: var(--f-titulo); font-size: 20px; line-height: 1.1; }
+.xp { height: 10px; border-radius: 99px; background: rgba(58,42,46,.12); overflow: hidden; }
+.xp i { display: block; height: 100%; background: linear-gradient(90deg, var(--passo), #5fc290); border-radius: 99px; transition: width .8s cubic-bezier(.2,.8,.2,1); }
+.itens { display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: 10px; }
+.item { display: grid; gap: 6px; justify-items: center; text-align: center; padding: 12px 10px; border-radius: 16px; background: var(--marfim); box-shadow: 0 3px 0 var(--papel-2), inset 0 0 0 1.5px rgba(58,42,46,.12); min-width: 0; }
+.item.usando { box-shadow: 0 3px 0 var(--mel-escuro), inset 0 0 0 2.5px var(--mel); }
+.item .previa { width: 58px; height: 58px; display: grid; place-items: center; }
+.item .previa .avatar { width: 58px; height: 58px; margin: 0; }
+.item .previa svg.ico { width: 34px; height: 34px; color: var(--mel-escuro); }
+.item b { font-size: 15px; }
+.item small { font-size: 12px; color: var(--tinta-suave); line-height: 1.3; }
+.item .btn { min-height: 40px; font-size: 14px; padding: 0 12px; width: 100%; }
+.amostra-mesa { width: 58px; height: 42px; border-radius: 10px; box-shadow: 0 0 0 4px var(--madeira), inset 0 0 10px rgba(0,0,0,.3); }
+.recompensas { display: grid; gap: 8px; padding: 12px; border-radius: 16px; background: var(--papel-2); }
+.recompensas .grande { display: flex; align-items: center; gap: 10px; font-family: var(--f-titulo); font-size: 30px; line-height: 1; }
+.recompensas .conta { font-size: 13px; color: var(--tinta-suave); }
+.recompensas .linha { display: flex; justify-content: space-between; gap: 10px; font-size: 14px; font-weight: 700; flex-wrap: wrap; }
+.sobe { color: #2f8a5c; } .desce { color: var(--rival-tinta); }
+.taxas { width: 100%; border-collapse: collapse; font-size: 13px; }
+.taxas td, .taxas th { padding: 6px 6px; border-bottom: 1px solid var(--papel-2); text-align: left; }
+.taxas th { color: var(--tinta-suave); font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; }
+
+/* ---------- skins de dado ---------- */
+.dado.skin-madeira { background: repeating-linear-gradient(78deg, rgba(0,0,0,.06) 0 2px, transparent 2px 6px), radial-gradient(circle at 30% 25%, #e0a877, #c48a5a 50%, #a46e44); box-shadow: inset 0 -3px 0 rgba(70,40,20,.3), 0 6px 12px rgba(0,0,0,.32); }
+.dado.skin-madeira .pip { background: radial-gradient(circle at 35% 35%, #6a4128, #3d2414); }
+.dado.skin-rosa { background: radial-gradient(circle at 30% 25%, #fff3f7, #ffc9da 45%, #f3a3bd); }
+.dado.skin-rosa .pip { background: radial-gradient(circle at 35% 35%, #b4567b, #7a2f4d); }
+.dado.skin-menta { background: radial-gradient(circle at 30% 25%, #f2fff9, #c4f0dc 45%, #96dcbd); }
+.dado.skin-menta .pip { background: radial-gradient(circle at 35% 35%, #3b8a68, #1f5a41); }
+.dado.skin-pelucia { border-radius: 34%; background: radial-gradient(circle, rgba(255,255,255,.4) 1px, transparent 1.6px) 0 0 / 5px 5px, radial-gradient(circle at 30% 25%, #fff6e8, #f0d6b8 50%, #ddb68c);
+  box-shadow: inset 0 0 0 2px rgba(255,255,255,.55), inset 0 -5px 7px rgba(120,80,40,.25), 0 6px 12px rgba(0,0,0,.3); }
+.dado.skin-pelucia .pip { background: radial-gradient(circle at 35% 35%, #8a6250, #5b3d30); width: 80%; height: 80%; }
+.dado.skin-dourado, .dado.skin-diamante { position: relative; overflow: hidden; }
+.dado.skin-dourado { background: linear-gradient(135deg, #fff2bf, #f2c14e 35%, #c8901c 62%, #ffe28a 88%); box-shadow: inset 0 -3px 0 rgba(120,80,10,.35), 0 6px 14px rgba(0,0,0,.35), 0 0 10px rgba(242,193,78,.35); }
+.dado.skin-dourado .pip { background: radial-gradient(circle at 35% 35%, #8a5c10, #4f3306); }
+.dado.skin-diamante { background: conic-gradient(from 30deg, #eefcff, #bfe9ff, #f3e8ff, #c8f5ff, #ffffff, #d6e9ff, #eefcff); box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.9), inset 0 -3px 0 rgba(60,90,140,.25), 0 6px 14px rgba(0,0,0,.35), 0 0 12px rgba(190,230,255,.45); }
+.dado.skin-diamante .pip { background: radial-gradient(circle at 35% 35%, #6a7fb4, #34446e); }
+.dado.skin-dourado::after, .dado.skin-diamante::after { content: ''; position: absolute; inset: -40%; background: linear-gradient(115deg, transparent 40%, rgba(255,255,255,.65) 50%, transparent 60%); transform: translateX(-60%); animation: reluz 3.4s ease-in-out infinite; pointer-events: none; }
+@keyframes reluz { 0%, 55% { transform: translateX(-60%); } 85%, 100% { transform: translateX(60%); } }
+
+/* ---------- temas de mesa ---------- */
+body.mesa-vinho { --feltro: #7a3b4a; --feltro-2: #8f4c5b; --feltro-escuro: #5a2836; }
+body.mesa-noite { --feltro: #2f4870; --feltro-2: #3d5a88; --feltro-escuro: #22365a; }
+body.mesa-noite .tabuleiro { background:
+    radial-gradient(circle, rgba(255,243,226,.5) 0 1px, transparent 1.6px) 0 0 / 46px 46px,
+    radial-gradient(circle, rgba(255,243,226,.3) 0 1px, transparent 1.5px) 23px 17px / 46px 46px,
+    radial-gradient(ellipse 80% 60% at 50% 40%, rgba(255, 220, 160, .14), transparent 70%),
+    linear-gradient(160deg, var(--feltro-2), var(--feltro) 45%, var(--feltro-escuro)); }
+body.mesa-piquenique .tabuleiro { background:
+    repeating-linear-gradient(0deg, rgba(232,128,111,.28) 0 16px, transparent 16px 32px),
+    repeating-linear-gradient(90deg, rgba(232,128,111,.28) 0 16px, transparent 16px 32px), #fbf1df; box-shadow: inset 0 0 50px rgba(120, 60, 40, .25); }
+body.mesa-piquenique .mesa-topo h2, body.mesa-piquenique .mesa-topo span, body.mesa-piquenique .ticker { color: var(--tinta); text-shadow: none; }
+body.mesa-piquenique .ticker .cor0 { color: var(--voce-tinta); } body.mesa-piquenique .ticker .cor1 { color: var(--rival-tinta); }

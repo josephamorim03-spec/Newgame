@@ -194,7 +194,7 @@ class Partida:
     def jogar(s):
         while max(x.pts for x in s.j)<s.meta and s.turnos<800:
             if not s.mesa:
-                s.mesa=[random.randint(1,6) for _ in range(5)]; s.marca=None
+                s.mesa=[random.randint(1,6) for _ in range(5)]; s.marca=None; s.rodadas=getattr(s,'rodadas',0)+1
                 for x in s.j:
                     if x.armada=='espelho': x.armada=None  # marca sem dono (não acontece na prática)
                 if s.j[0].pts!=s.j[1].pts: s.vez=0 if s.j[0].pts<s.j[1].pts else 1

@@ -1,6 +1,6 @@
 # Dice Duel: design
 
-> Versão 0.6. Os números saem do simulador em `sim/` (robôs jogando milhares de partidas).
+> Versão 0.7 (a progressão, as moedas e a loja estão em `docs/progressao.md`). Os números saem do simulador em `sim/` (robôs jogando milhares de partidas).
 > Robôs não blefam nem leem o rival: os números dizem a direção, não as casas decimais.
 
 ## 1. A ideia em uma frase

@@ -43,6 +43,9 @@
   const PRONTOS = [
     { nome: 'Primeira mesa', cartas: ['ajuste', 'coringa', 'pressa'], nota: 'só efeitos' },
     { nome: 'Muralha', cartas: ['ancora', 'coringa', 'interferencia'], nota: '' },
+    { nome: 'Corredor', cartas: ['ajuste', 'interferencia', 'pressa'], nota: '' },
+    { nome: 'Vira-vira', cartas: ['ancora', 'coringa', 'virar'], nota: '' },
+    // os dois abaixo aparecem quando as cartas deles forem compradas
     { nome: 'Arapuca', cartas: ['fundo', 'interferencia', 'pressa'], nota: '' },
     { nome: 'Cobrador', cartas: ['coringa', 'pedagio', 'pressa'], nota: '' },
   ];
@@ -53,6 +56,51 @@
     ['coringa', 'pedagio', 'pressa'], ['ancora', 'coringa', 'fundo'], ['coringa', 'fundo', 'interferencia'],
   ];
   const deckValido = d => d.length <= 3 && d.filter(c => CARTAS[c].tipo === 'armadilha').length <= 2 && d.filter(c => CARTAS[c].pontos).length <= 1;
+
+  // ---------- progressão (docs/progressao.md) ----------
+  // Cartas grátis vs. à venda: o melhor deck só com cartas grátis vence 60,8% contra o campo; nenhum dos 113 decks
+  // com carta comprada passa dele (sim/economia.py). Comprar dá variedade e estilo, não força.
+  const GRATIS = ['ajuste', 'virar', 'pressa', 'coringa', 'ancora', 'interferencia'];
+  const PRECO_CARTA = { rerrolar: 90, espelho: 110, sobrecarga: 120, fundo: 140, pedagio: 140 };
+  const DADOS = {
+    marfim:   { nome: 'Marfim', preco: 0, desc: 'o clássico da mesa' },
+    madeira:  { nome: 'Madeira', preco: 80, desc: 'cheirinho de marcenaria' },
+    rosa:     { nome: 'Rosa', preco: 120, desc: 'doce como algodão-doce' },
+    menta:    { nome: 'Menta', preco: 0, nivel: 3, desc: 'presente do nível 3' },
+    pelucia:  { nome: 'Pelúcia', preco: 220, desc: 'fofinho e redondinho' },
+    dourado:  { nome: 'Dourado', preco: 450, desc: 'reluz na mesa' },
+    diamante: { nome: 'Diamante', preco: 800, desc: 'para quem tem paciência' },
+  };
+  const ICONES = {
+    bolinha:  { nome: 'Bolinha', preco: 0, svg: `<circle cx="32" cy="34" r="22" fill="#6fbfd3" stroke="#3a2a2e" stroke-width="2.5"/><circle class="olho" cx="25" cy="32" r="3" fill="#3a2a2e"/><circle class="olho" cx="39" cy="32" r="3" fill="#3a2a2e"/><path d="M26 41 q6 5 12 0" stroke="#3a2a2e" stroke-width="2.5" fill="none" stroke-linecap="round"/>` },
+    xicara:   { nome: 'Xícara', preco: 0, nivel: 2, svg: `<path d="M26 14c-3-3 3-5 0-8M34 14c-3-3 3-5 0-8" stroke="#ecdcc8" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M12 22h34v10a14 14 0 0 1-14 14h-6A14 14 0 0 1 12 32z" fill="#f1dfc2" stroke="#3a2a2e" stroke-width="2.5"/><path d="M46 26h3a6 6 0 0 1 0 12h-4" fill="none" stroke="#3a2a2e" stroke-width="2.5"/><circle class="olho" cx="23" cy="31" r="2.4" fill="#3a2a2e"/><circle class="olho" cx="35" cy="31" r="2.4" fill="#3a2a2e"/><path d="M26 37 q3 3 6 0" stroke="#3a2a2e" stroke-width="2" fill="none" stroke-linecap="round"/><circle cx="19" cy="36" r="2.4" fill="#ec8fa8" opacity=".6"/><circle cx="39" cy="36" r="2.4" fill="#ec8fa8" opacity=".6"/>` },
+    raposa:   { nome: 'Raposa', preco: 100, svg: `<path d="M10 14 L22 26 L14 34 Z M54 14 L42 26 L50 34 Z" fill="#e8874f" stroke="#3a2a2e" stroke-width="2.5" stroke-linejoin="round"/><path d="M12 30 Q32 6 52 30 Q50 48 32 56 Q14 48 12 30 Z" fill="#e8874f" stroke="#3a2a2e" stroke-width="2.5"/><path d="M18 38 Q32 44 46 38 Q42 52 32 56 Q22 52 18 38 Z" fill="#fff3e2"/><circle class="olho" cx="24" cy="34" r="2.6" fill="#3a2a2e"/><circle class="olho" cx="40" cy="34" r="2.6" fill="#3a2a2e"/><circle cx="32" cy="45" r="2.6" fill="#3a2a2e"/>` },
+    sapo:     { nome: 'Sapinho', preco: 100, svg: `<ellipse cx="32" cy="40" rx="24" ry="17" fill="#8fd6a8" stroke="#3a2a2e" stroke-width="2.5"/><circle cx="20" cy="24" r="9" fill="#8fd6a8" stroke="#3a2a2e" stroke-width="2.5"/><circle cx="44" cy="24" r="9" fill="#8fd6a8" stroke="#3a2a2e" stroke-width="2.5"/><circle class="olho" cx="20" cy="24" r="4" fill="#3a2a2e"/><circle class="olho" cx="44" cy="24" r="4" fill="#3a2a2e"/><path d="M22 44 q10 7 20 0" stroke="#3a2a2e" stroke-width="2.5" fill="none" stroke-linecap="round"/><circle cx="16" cy="42" r="3" fill="#ec8fa8" opacity=".5"/><circle cx="48" cy="42" r="3" fill="#ec8fa8" opacity=".5"/>` },
+    cogumelo: { nome: 'Cogumelo', preco: 140, svg: `<path d="M8 32 Q8 10 32 10 Q56 10 56 32 Z" fill="#e8806f" stroke="#3a2a2e" stroke-width="2.5" stroke-linejoin="round"/><circle cx="22" cy="20" r="4" fill="#fff3e2"/><circle cx="38" cy="17" r="3.5" fill="#fff3e2"/><circle cx="46" cy="27" r="3" fill="#fff3e2"/><path d="M20 32 h24 v12 a12 12 0 0 1 -24 0 z" fill="#fbf1df" stroke="#3a2a2e" stroke-width="2.5"/><circle class="olho" cx="27" cy="40" r="2.3" fill="#3a2a2e"/><circle class="olho" cx="37" cy="40" r="2.3" fill="#3a2a2e"/><path d="M29 46 q3 2.5 6 0" stroke="#3a2a2e" stroke-width="2" fill="none" stroke-linecap="round"/>` },
+  };
+  const MESAS = {
+    salvia:     { nome: 'Feltro sálvia', preco: 0, amostra: 'linear-gradient(160deg,#5f8f78,#3b6252)' },
+    vinho:      { nome: 'Feltro vinho', preco: 150, amostra: 'linear-gradient(160deg,#8f4c5b,#5a2836)' },
+    noite:      { nome: 'Noite estrelada', preco: 0, nivel: 5, amostra: 'radial-gradient(circle,#fff3e2 0 1px,transparent 1.5px) 0 0/12px 12px,linear-gradient(160deg,#3d5a88,#22365a)' },
+    piquenique: { nome: 'Piquenique', preco: 250, amostra: 'repeating-linear-gradient(0deg,rgba(232,128,111,.4) 0 6px,transparent 6px 12px),repeating-linear-gradient(90deg,rgba(232,128,111,.4) 0 6px,transparent 6px 12px),#fbf1df' },
+  };
+  const NIVEIS = [0, 60, 150, 280, 450, 700, 1000, 1400, 1900, 2500];   // XP para chegar a cada nível (1, 2, 3…)
+  const PRESENTES = { 2: ['icones', 'xicara'], 3: ['dados', 'menta'], 5: ['mesas', 'noite'] };
+  // rating provisório contra os rivais (o online será a referência). Cada rival só paga moedas abaixo de um teto:
+  // quem já joga bem não fica farmando moeda no modo fácil.
+  const RATING_RIVAL = { aprendiz: 850, esperto: 1250 };
+  const TETO_MOEDAS = { aprendiz: 1050, esperto: 1400 };
+  const BASE_MOEDAS = { aprendiz: 8, esperto: 14, online: 22 };
+  const TITULOS = [[0, 'Aprendiz de mesa'], [1000, 'Jogador de chá'], [1150, 'Tecelão de correntes'], [1300, 'Mestre do Bolso'], [1450, 'Grão-mestre da Mesa']];
+  const tituloDe = r => TITULOS.filter(t => r >= t[0]).pop()[1];
+  const nivelDe = xp => NIVEIS.filter(x => xp >= x).length;
+  // moedas de uma vitória: base do modo × margem (×1 a ×2) × rapidez em Mesas (×1 a ×1,5)
+  function moedasDaVitoria(base, margem, mesas, meta) {
+    const mm = 1 + Math.min(1, Math.max(0, margem) / (meta * 2 / 3));
+    const rapida = Math.round(meta * 5 / 12), normal = Math.round(meta * 6 / 12);
+    const mr = mesas <= rapida ? 1.5 : mesas <= normal ? 1.25 : 1;
+    return { base, mm, mr, total: Math.round(base * mm * mr) };
+  }
 
   const rels = (a, b) => {
     const r = [];
@@ -123,6 +171,8 @@
     pref: { ...PREF_PADRAO },
     decks: [['ajuste', 'coringa', 'pressa'], ['ancora', 'coringa', 'interferencia']],
     rec: { partidas: 0, vitorias: 0, seq: 0, melhorSeq: 0, maiorDisparo: 0, maiorCorrente: 0 },
+    conta: { moedas: 0, rating: 1000, xp: 0, cartas: GRATIS.slice(), dados: ['marfim'], icones: ['bolinha'], mesas: ['salvia'], dado: 'marfim', icone: 'bolinha', mesa: 'salvia' },
+    abaLoja: 'cartas',
     primeiro: 0, abaDeck: 0, deckVisto: false,
   };
   if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) st.pref.animacoes = false;
@@ -132,18 +182,23 @@
     if (s.cfg) Object.assign(st.cfg, s.cfg);
     if (s.pref) Object.assign(st.pref, s.pref);
     if (s.rec) Object.assign(st.rec, s.rec);
+    if (s.conta) { Object.assign(st.conta, s.conta); GRATIS.forEach(c => { if (!st.conta.cartas.includes(c)) st.conta.cartas.push(c); }); }
     if (Array.isArray(s.decks)) st.decks = s.decks.map(d => (d || []).filter(c => CARTAS[c])).map(d => deckValido(d) ? d : []);
     st.deckVisto = !!s.deckVisto;
   } catch (e) {}
-  const salvar = () => { try { localStorage.setItem('diceduel.v1', JSON.stringify({ cfg: st.cfg, pref: st.pref, rec: st.rec, decks: st.decks, deckVisto: st.deckVisto })); } catch (e) {} };
+  const salvar = () => { try { localStorage.setItem('diceduel.v1', JSON.stringify({ cfg: st.cfg, pref: st.pref, rec: st.rec, conta: st.conta, decks: st.decks, deckVisto: st.deckVisto })); } catch (e) {} };
   const armadilhasLiberadas = () => st.pref.liberar || st.rec.partidas >= 1;
   const travada = c => CARTAS[c].tipo === 'armadilha' && !armadilhasLiberadas();
+  const possui = c => st.conta.cartas.includes(c);
+  const disponivel = c => possui(c) && !travada(c);
 
   function aplicarPrefs() {
     const p = st.pref;
     Som.configurar({ som: p.som, musica: p.musica, volSom: p.volSom, volMusica: p.volMusica });
     Object.assign(Fx.cfg, { animacoes: p.animacoes, particulas: p.particulas, tremor: p.tremor });
     document.documentElement.classList.toggle('sem-animacoes', !p.animacoes);
+    Object.keys(MESAS).forEach(m => document.body.classList.toggle('mesa-' + m, st.conta.mesa === m && m !== 'salvia'));
+    const sl = document.getElementById('saldo'); if (sl) sl.textContent = st.conta.moedas;
   }
   const vibrar = ms => { if (!st.pref.vibrar) return; try { navigator.vibrate && navigator.vibrate(ms); } catch (e) {} };
   const ritmo = () => ({ calmo: 1.4, normal: 1, rapido: 0.55 }[st.cfg.ritmo] || 1);
@@ -156,9 +211,9 @@
     const modo = st.cfg.modo, nivel = st.cfg.nivel;
     const deckRival = modo === 'local' ? st.decks[1].slice()
       : nivel === 'esperto' ? sorteia(DECKS_CORUJA).slice() : sorteiaDeck(!armadilhasLiberadas());
-    const decks = [st.decks[0].filter(c => !travada(c)), deckRival];
+    const decks = [st.decks[0].filter(disponivel), modo === 'local' ? deckRival.filter(disponivel) : deckRival];
     jogo = {
-      v: 6, modo, nivel, meta: +st.cfg.meta, decks,
+      v: 7, modo, nivel, meta: +st.cfg.meta, decks,
       cartas: decks.map(d => Object.fromEntries(d.map(c => [c, 'pronta']))),
       armada: [null, null], coringa: [false, false], sobre: [false, false], extra: [0, 0], espelhado: false,
       cor: [[], []], pts: [0, 0], mesa: [], vez: st.primeiro, fase: 'pegar', bolso: [null, null], mao: null,
@@ -403,7 +458,30 @@
       if (s.maiorDisp > r.maiorDisparo) { r.maiorDisparo = s.maiorDisp; j.recordes.push(`Maior disparo: +${s.maiorDisp}`); }
       if (s.maior > r.maiorCorrente) { r.maiorCorrente = s.maior; j.recordes.push(`Maior corrente: ${s.maior}`); }
       if (liberouAgora) j.recordes.push('Armadilhas liberadas no deck!');
-      salvar();
+      // moedas: só vitórias, e só abaixo do teto de rating de cada rival (nada de farmar no modo fácil)
+      // o teto olha o maior rating já alcançado: perder de propósito para voltar a farmar o modo fácil não adianta
+      const c = st.conta, ratingAntes = c.rating, pico = Math.max(c.rating, c.pico || 0), elegivel = pico < TETO_MOEDAS[j.nivel];
+      let moedas = null;
+      if (p === 0) {
+        moedas = moedasDaVitoria(BASE_MOEDAS[j.nivel], j.pts[0] - j.pts[1], j.rodada, j.meta);
+        moedas.elegivel = elegivel;
+        if (!elegivel) moedas.total = 0;
+        c.moedas += moedas.total;
+      }
+      // rating provisório (Elo contra o rating do rival)
+      const esperado = 1 / (1 + Math.pow(10, (RATING_RIVAL[j.nivel] - c.rating) / 400));
+      c.rating = Math.max(100, Math.round(c.rating + 32 * ((p === 0 ? 1 : 0) - esperado)));
+      c.pico = Math.max(pico, c.rating);
+      // experiência: sobe sempre (vitória ou derrota), e os níveis dão presentes cosméticos
+      const xpGanho = (p === 0 ? 20 : 10) + Math.min(15, j.momentos.filter(m => m.p === 0).length * 3);
+      const nivelAntes = nivelDe(c.xp); c.xp += xpGanho; const nivelDepois = nivelDe(c.xp);
+      const presentes = [];
+      for (let nv = nivelAntes + 1; nv <= nivelDepois; nv++) {
+        const pr = PRESENTES[nv]; if (!pr) continue;
+        const [tipo, id] = pr; if (!c[tipo].includes(id)) { c[tipo].push(id); presentes.push({ tipo, id }); }
+      }
+      j.premio = { moedas, ratingAntes, pico, rating: c.rating, xpGanho, nivelAntes, nivelDepois, presentes };
+      salvar(); aplicarPrefs();
       falar(p === 1 ? 'venci' : 'perdi', 1);
     }
     emitir('fim', { p, virada });
@@ -606,14 +684,18 @@
 
   // ---------- desenho ----------
   const PIPS = { 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] };
-  const dadoHTML = v => `<span class="dado" role="img" aria-label="${v}">${Array.from({ length: 9 }, (_, i) => `<i class="pip${PIPS[v].includes(i) ? ' on' : ''}"></i>`).join('')}</span>`;
-  const mini = v => `<span class="mini">${dadoHTML(v)}</span>`;
+  const dadoHTML = (v, skin = 'marfim') => `<span class="dado skin-${skin}" role="img" aria-label="${v}">${Array.from({ length: 9 }, (_, i) => `<i class="pip${PIPS[v].includes(i) ? ' on' : ''}"></i>`).join('')}</span>`;
+  const mini = (v, skin) => `<span class="mini">${dadoHTML(v, skin)}</span>`;
+  // cada um vê os próprios dados com a própria skin; os rivais têm a sua; a Mesa usa a sua (ou marfim, a dois)
+  const skinDe = p => p === 0 ? st.conta.dado : jogo.modo === 'bot' ? (jogo.nivel === 'esperto' ? 'madeira' : 'rosa') : 'marfim';
+  const skinMesa = () => jogo.modo === 'bot' ? st.conta.dado : 'marfim';
+  const iconeSVG = id => `<svg class="avatar" viewBox="0 0 64 64" aria-hidden="true">${(ICONES[id] || ICONES.bolinha).svg}</svg>`;
   const elo = r => `<span class="elo ${r.length > 1 ? 'duplo' : 'r-' + r[0]}" title="${r.map(k => REL[k].nome).join(' + ')}">${r.map(k => REL[k].simb).join('·')}</span>`;
 
   function bolsoHTML(p) {
     const j = jogo, b = j.bolso[p], util = b !== null && j.cor[p].length && encaixaP(p, b);
     const destaque = j.fase === 'destino' && j.vez === p ? ' ativo' : '';
-    return `<span class="bolso${destaque}" title="Bolso: guarda um dado"><span class="rot">Bolso</span>${b === null ? '<span class="bolso-vazio"></span>' : `<span class="mini${util ? ' util' : ''}">${dadoHTML(b)}</span>`}</span>`;
+    return `<span class="bolso${destaque}" title="Bolso: guarda um dado"><span class="rot">Bolso</span>${b === null ? '<span class="bolso-vazio"></span>' : `<span class="mini${util ? ' util' : ''}">${dadoHTML(b, skinDe(p))}</span>`}</span>`;
   }
   function cartasHTML(p) {
     const j = jogo, deck = j.decks[p];
@@ -644,7 +726,7 @@
       if (i < cor.length) {
         const r = i > 0 ? rels(cor[i - 1], cor[i]) : [];
         const frenteCls = !fx && i === cor.length - 1 ? ' frente' : '';
-        slots += `<div class="slot${frenteCls}" data-slot="${i}">${r.length ? elo(r) : (i > 0 ? '<span class="elo r-coringa" title="Coringa">★</span>' : '')}${dadoHTML(cor[i])}</div>`;
+        slots += `<div class="slot${frenteCls}" data-slot="${i}">${r.length ? elo(r) : (i > 0 ? '<span class="elo r-coringa" title="Coringa">★</span>' : '')}${dadoHTML(cor[i], skinDe(p))}</div>`;
       } else if (i === cor.length && !fx) {
         const fs = facesQueEncaixam(cor);
         slots += `<div class="slot prox" title="Faces que sincronizam com a frente">${cor.length && !j.coringa[p] ? `<span class="prox-faces">${fs.join(' ')}</span>` : '<span class="prox-faces qualquer">livre</span>'}</div>`;
@@ -657,7 +739,7 @@
     const seCrescer = L >= 3 && L < LIM ? ` · com ${L + 1}: <b>+${pontos(L + 1)}</b>` : '';
     const pensa = daVez && !humano(p);
     const tag = j.fase === 'fim' ? (j.vencedor === p ? 'venceu' : '') : daVez ? (humano(p) ? (j.modo === 'bot' ? 'sua vez' : 'vez') : 'pensando') : '';
-    const avatar = j.modo === 'bot' && p === 1 ? AVATAR[j.nivel].replace('class="avatar"', `class="avatar ${j.humor || ''}"`) : '';
+    const avatar = j.modo === 'bot' && p === 1 ? AVATAR[j.nivel].replace('class="avatar"', `class="avatar ${j.humor || ''}"`) : p === 0 ? iconeSVG(st.conta.icone) : '';
     const fala = j.modo === 'bot' && p === 1 && j.fala ? `<div class="fala" aria-live="polite">${j.fala.txt}</div>` : '';
     return `<div class="jogador p${p}${daVez ? ' da-vez' : ''}">${fala}
       <div class="cab">${avatar}<span class="nome">${n[p]}</span>${tag ? `<span class="vez-tag${pensa ? ' pensando-pontos' : ''}">${tag}</span>` : ''}
@@ -695,7 +777,7 @@
       const cls = ['pega', d.novo ? 'novo' : '', !salvo && j.fase === 'pegar' && dicas ? 'nao-cabe' : '', j.confirma === d.id || (j.fase === 'ajuste' && j.ajusteIdx === i) ? 'armado' : '', j.destaque === d.id ? 'destaque' : '', j.virando === d.id ? 'virando' : ''].join(' ');
       const rotulo = `${j.fase === 'alvo' ? 'Escolher' : 'Pegar'} ${d.v}${cabe ? (r.length ? ', ' + r.map(k => REL[k].nome).join(' e ') : '') : salvo ? ', só pelo Bolso' : ', rompe a corrente'}${serveRival ? ', serve ao rival' : ''}${marcado !== null ? ', marcado com Espelho' : ''}`;
       return `<button class="${cls}" data-i="${i}" data-id="${d.id}" ${ativo ? '' : 'disabled'} aria-label="${rotulo}">
-        <span class="kbd">${i + 1}</span><span class="face">${dadoHTML(d.v)}${serveRival ? '<span class="alvo-rival"></span>' : ''}${marcado !== null ? `<span class="marca-esp dono${marcado}" title="Marcado com Espelho">${CARTAS.espelho.ico}</span>` : ''}</span><span class="tags">${tags}</span></button>`;
+        <span class="kbd">${i + 1}</span><span class="face">${dadoHTML(d.v, skinMesa())}${serveRival ? '<span class="alvo-rival"></span>' : ''}${marcado !== null ? `<span class="marca-esp dono${marcado}" title="Marcado com Espelho">${CARTAS.espelho.ico}</span>` : ''}</span><span class="tags">${tags}</span></button>`;
     }).join('');
   }
 
@@ -714,7 +796,7 @@
     }
     if (j.fase === 'ajuste') {
       const d = j.mesa[j.ajusteIdx];
-      return `<div class="status">Ajuste no ${mini(d.v)} <b>${d.v}</b>:</div><div class="botoes">
+      return `<div class="status">Ajuste no ${mini(d.v, skinMesa())} <b>${d.v}</b>:</div><div class="botoes">
         <button class="btn btn-mel" data-ajuste="-1" ${d.v <= 1 ? 'disabled' : ''}>−1 · vira ${d.v - 1}</button>
         <button class="btn btn-mel" data-ajuste="1" ${d.v >= 6 ? 'disabled' : ''}>+1 · vira ${d.v + 1}</button>
         <button class="btn btn-papel" data-acao="cancelar-alvo">Cancelar</button></div>`;
@@ -732,7 +814,7 @@
         botoes += bt('corrente', `Na corrente (rompe${b !== null ? ` e guarda o ${b}` : ''})`, 'btn-papel');
         if (b !== null) botoes += bt('trocar', `Trocar (o ${b} rompe e o ${v} fica)`, 'btn-papel');
       }
-      return `<div class="status">${quem} pegou ${mini(v)} <b>${v}</b>. Para onde ele vai?${ds.length ? '' : ' Nenhuma opção sincroniza.'}</div>
+      return `<div class="status">${quem} pegou ${mini(v, skinDe(p))} <b>${v}</b>. Para onde ele vai?${ds.length ? '' : ' Nenhuma opção sincroniza.'}</div>
         <div class="botoes">${botoes}</div>`;
     }
     const sobreBtn = j.cartas[p].sobrecarga === 'pronta' && !j.sobre[p] && eu.length >= 4 ? `<button class="btn btn-papel" data-acao="sobrecarga">${CARTAS.sobrecarga.ico}Sobrecarga: +2</button>` : '';
@@ -810,7 +892,7 @@
       let alvo = null;
       if (para === 'corrente') { const s = document.querySelectorAll(`#pj${p} .corrente .slot[data-slot]`); alvo = s[s.length - 1] || null; }
       if (para === 'bolso') alvo = qs(`#pj${p} .bolso .mini`);
-      if (alvo) Fx.voar(de, alvo, `<div style="width:100%;height:100%">${dadoHTML(v)}</div>`);
+      if (alvo) Fx.voar(de, alvo, `<div style="width:100%;height:100%">${dadoHTML(v, skinDe(p))}</div>`);
     }
     const evs = j.eventos.splice(0);
     for (const e of evs) {
@@ -876,7 +958,7 @@
     const j = jogo, n = nomes();
     j.intro = true; render();
     const lado = p => {
-      const av = j.modo === 'bot' && p === 1 ? AVATAR[j.nivel] : `<svg class="avatar" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="34" r="22" fill="${p === 0 ? '#6fbfd3' : '#ec8fa8'}" stroke="#3a2a2e" stroke-width="2.5"/><circle class="olho" cx="25" cy="32" r="3" fill="#3a2a2e"/><circle class="olho" cx="39" cy="32" r="3" fill="#3a2a2e"/><path d="M26 41 q6 5 12 0" stroke="#3a2a2e" stroke-width="2.5" fill="none" stroke-linecap="round"/></svg>`;
+      const av = j.modo === 'bot' && p === 1 ? AVATAR[j.nivel] : p === 0 ? iconeSVG(st.conta.icone) : iconeSVG('sapo');
       const deck = j.decks[p].map(c => `<span class="carta ${CARTAS[c].tipo}">${CARTAS[c].ico}${CARTAS[c].nome}</span>`).join('') || '<span class="nota">sem cartas</span>';
       return `<div class="vs-lado">${av}<b class="cor${p}">${n[p]}</b><div class="vs-deck">${deck}</div></div>`;
     };
@@ -905,6 +987,7 @@
       .map(m => `<li><span class="em">${m.simbolo}</span><span>${j.modo === 'local' ? `<span class="cor${m.p}">${n[m.p]}</span> ` : ''}${m.txt}${m.vezes > 1 ? ` <b>×${m.vezes}</b>` : ''}</span></li>`).join('');
     const recs = (j.recordes || []).map(r => `<li class="recorde"><span class="em">✪</span>Novo: ${r}</li>`).join('');
     document.getElementById('fimMomentos').innerHTML = recs + (momentos || '<li><span class="em">☕</span>Partida tranquila. A próxima corrente vem.</li>');
+    desenharRecompensas(j);
     const s = j.stats, linha = (rot, f) => `<tr><th>${rot}</th><td>${f(s[0], 0)}</td><td>${f(s[1], 1)}</td></tr>`;
     document.getElementById('fimTabela').innerHTML =
       `<tr><th></th><th class="cor0">${n[0]}</th><th class="cor1">${n[1]}</th></tr>` +
@@ -913,12 +996,92 @@
       linha('Disparos', x => x.disp) + linha('Maior corrente', x => x.maior || '–') + linha('Rupturas', x => x.rupt) +
       linha('Bolso (guardou · trocou)', x => `${x.guardou} · ${x.trocou}`);
     document.getElementById('fimTexto').value =
-      `Dice Duel v0.6 · ${j.modo === 'bot' ? 'contra ' + n[1] : '2 jogadores'} · meta ${j.meta}\n` +
+      `Dice Duel v0.7 · ${j.modo === 'bot' ? 'contra ' + n[1] : '2 jogadores'} · meta ${j.meta}${j.premio ? ` · moedas +${j.premio.moedas ? j.premio.moedas.total : 0} · rating ${j.premio.ratingAntes}→${j.premio.rating}` : ''}\n` +
       `${n[0]} ${j.pts[0]} × ${j.pts[1]} ${n[1]} · ${j.compras} dados pegos · ${j.rodada} rodadas\n` +
       [0, 1].map(k => `${n[k]} [${j.decks[k].map(c => CARTAS[c].nome).join(', ') || 'sem cartas'}]: ${s[k].disp} disparos, maior ${s[k].maior}, ${s[k].rupt} rupturas, Bolso ${s[k].guardou}/${s[k].trocou}, cartas que agiram: ${s[k].cartas.join(', ') || 'nenhuma'}`).join('\n') +
       `\nComentário: `;
     document.getElementById('fim').hidden = false;
     document.getElementById('btnDeNovo').focus();
+  }
+
+  const fmt = x => String(x).replace('.', ',');
+  const nomeItem = (tipo, id) => ({ cartas: CARTAS, dados: DADOS, icones: ICONES, mesas: MESAS })[tipo][id].nome;
+  function desenharRecompensas(j) {
+    const el = document.getElementById('fimRecompensas');
+    if (j.modo !== 'bot' || !j.premio) { el.innerHTML = '<span class="conta">Partidas a dois no mesmo aparelho não dão moedas nem rating (assim ninguém farma sozinho).</span>'; return; }
+    const pr = j.premio, m = pr.moedas, c = st.conta, rival = RIVAIS[j.nivel].nome;
+    let linhaMoedas;
+    if (!m) linhaMoedas = `<span class="conta">Moedas vêm das vitórias. A próxima é sua.</span>`;
+    else if (!m.elegivel) linhaMoedas = `<span class="conta">Seu maior rating (${pr.pico}) já passou do que ${rival} paga (até ${TETO_MOEDAS[j.nivel] - 1}). ${j.nivel === 'aprendiz' ? 'A Dona Coruja ainda paga.' : 'As próximas moedas virão do online.'}</span>`;
+    else linhaMoedas = `<span class="conta">vitória contra ${rival}: ${m.base} × margem ×${fmt(m.mm.toFixed(2))} × rapidez ×${fmt(m.mr)} (${j.rodada} Mesas)</span>`;
+    const dr = pr.rating - pr.ratingAntes;
+    const prox = NIVEIS[pr.nivelDepois] ?? null, ant = NIVEIS[pr.nivelDepois - 1];
+    const pct = prox === null ? 100 : Math.round((c.xp - ant) / (prox - ant) * 100);
+    const presentes = pr.presentes.map(x => `<div class="linha"><span>Presente do nível: ${nomeItem(x.tipo, x.id)}</span><span class="sobe">novo!</span></div>`).join('');
+    el.innerHTML = `<div class="grande"><span class="moeda" aria-hidden="true"></span><span id="contaMoedas">+0</span></div>${linhaMoedas}
+      <div class="linha"><span>Rating ${pr.ratingAntes} → <b>${pr.rating}</b> <span class="${dr >= 0 ? 'sobe' : 'desce'}">(${dr >= 0 ? '+' : ''}${dr})</span></span><span>${tituloDe(pr.rating)}</span></div>
+      <div class="linha"><span>Nível ${pr.nivelDepois}${pr.nivelDepois > pr.nivelAntes ? ' <span class="sobe">subiu!</span>' : ''}</span><span>+${pr.xpGanho} XP</span></div>
+      <div class="xp"><i style="width:${pct}%"></i></div>${presentes}`;
+    const total = m ? m.total : 0, alvo = document.getElementById('contaMoedas');
+    if (total) {
+      setTimeout(() => { Fx.contar(alvo, 0, total); setTimeout(() => { alvo.textContent = '+' + total; }, 600); Som.tocar('moeda', { n: Math.ceil(total / 5) }); Fx.faiscas(alvo, 18, ['#ffe3a3', '#f2c14e', '#fff6e6']); }, 350);
+    }
+    if (pr.nivelDepois > pr.nivelAntes) setTimeout(() => { Som.tocar('nivel'); Fx.chamada(`Nível ${pr.nivelDepois}!`, pr.presentes.length ? 'você ganhou um presente na Loja' : 'continue assim', 'suave'); }, 900);
+  }
+
+  // ---------- loja ----------
+  function abrirLoja(aba) {
+    if (aba) st.abaLoja = aba;
+    desenharLoja();
+    document.getElementById('janelaLoja').hidden = false;
+  }
+  function desenharLoja() {
+    const c = st.conta, aba = st.abaLoja;
+    document.getElementById('saldoLoja').textContent = c.moedas;
+    document.getElementById('saldo').textContent = c.moedas;
+    const nv = nivelDe(c.xp), prox = NIVEIS[nv] ?? null, ant = NIVEIS[nv - 1];
+    document.getElementById('lojaPerfil').innerHTML = `${iconeSVG(c.icone)}<span class="titulo-rating">${tituloDe(c.rating)}</span>
+      <span class="nota">Rating ${c.rating} · Nível ${nv} · ${st.rec.vitorias} vitórias</span>
+      <div class="xp" title="experiência"><i style="width:${prox === null ? 100 : Math.round((c.xp - ant) / (prox - ant) * 100)}%"></i></div>`;
+    document.querySelectorAll('#abasLoja [data-aba-loja]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.abaLoja === aba)));
+    const alvo = document.getElementById('lojaConteudo');
+    if (aba === 'ganhar') {
+      alvo.innerHTML = `<table class="taxas">
+        <tr><th>Partida</th><th>Base</th><th>Paga moedas enquanto o seu maior rating estiver</th></tr>
+        <tr><td>Biscoito (iniciante)</td><td>${BASE_MOEDAS.aprendiz}</td><td>rating abaixo de ${TETO_MOEDAS.aprendiz}</td></tr>
+        <tr><td>Dona Coruja (avançado)</td><td>${BASE_MOEDAS.esperto}</td><td>rating abaixo de ${TETO_MOEDAS.esperto}</td></tr>
+        <tr><td>Online (em breve)</td><td>${BASE_MOEDAS.online}</td><td>sempre; vale mais vencer quem tem rating maior</td></tr>
+        <tr><td>A dois no aparelho</td><td>–</td><td>não paga</td></tr></table>
+        <p class="nota" style="margin-top:10px">Só vitórias dão moedas. A base é multiplicada pela <b>margem</b> (×1 a ×2: vencer por 8 pontos ou mais, na meta 12, dobra) e pela <b>rapidez</b> (×1,5 em até 5 Mesas, ×1,25 em 6). Uma vitória típica rende cerca de 14 contra o Biscoito e 24 contra a Dona Coruja.</p>
+        <p class="nota">Experiência sobe em toda partida, ganhando ou perdendo, e os níveis 2, 3 e 5 dão presentes. Cartas nunca serão vendidas por dinheiro: elas ampliam o estilo, não a força (o melhor deck é feito só de cartas grátis).</p>`;
+      return;
+    }
+    const item = (tipo, id, info, previa, sub) => {
+      const tem = c[tipo].includes(id), usando = tipo !== 'cartas' && c[tipo.slice(0, -1) === 'icone' ? 'icone' : tipo === 'dados' ? 'dado' : 'mesa'] === id;
+      let botao;
+      if (tem && tipo === 'cartas') botao = `<button class="btn btn-papel" disabled>${GRATIS.includes(id) ? 'Grátis' : 'Sua'}</button>`;
+      else if (tem) botao = usando ? `<button class="btn btn-papel" disabled>Usando</button>` : `<button class="btn btn-mel" data-usar-item="${tipo}:${id}">Usar</button>`;
+      else if (info.nivel) botao = `<button class="btn btn-papel" disabled>Nível ${info.nivel}</button>`;
+      else if (c.moedas < info.preco) botao = `<button class="btn btn-papel" disabled><span class="moeda"></span>${info.preco} · faltam ${info.preco - c.moedas}</button>`;
+      else botao = `<button class="btn btn-mel" data-comprar="${tipo}:${id}"><span class="moeda"></span>${info.preco}</button>`;
+      return `<div class="item${usando ? ' usando' : ''}"><div class="previa">${previa}</div><b>${info.nome}</b><small>${sub}</small>${botao}</div>`;
+    };
+    let html = '';
+    if (aba === 'cartas') html = ORDEM.map(id => item('cartas', id, { nome: CARTAS[id].nome, preco: PRECO_CARTA[id] || 0 }, CARTAS[id].ico, `${CARTAS[id].tipo}${CARTAS[id].pontos ? ' · ⚡' : ''} · ${CARTAS[id].verbo}`)).join('');
+    if (aba === 'dados') html = Object.entries(DADOS).map(([id, d]) => item('dados', id, d, `<span style="width:52px;height:52px;display:block">${dadoHTML(5, id)}</span>`, d.desc)).join('');
+    if (aba === 'icones') html = Object.entries(ICONES).map(([id, d]) => item('icones', id, d, iconeSVG(id), d.nivel ? `presente do nível ${d.nivel}` : 'seu rosto na mesa')).join('');
+    if (aba === 'mesas') html = Object.entries(MESAS).map(([id, d]) => item('mesas', id, d, `<span class="amostra-mesa" style="background:${d.amostra}"></span>`, d.nivel ? `presente do nível ${d.nivel}` : 'o feltro da sua mesa')).join('');
+    alvo.innerHTML = `<div class="itens">${html}</div>${aba === 'cartas' ? '<p class="nota" style="margin-top:10px">As cartas à venda são situacionais: dão jeitos novos de jogar, não mais força. Na simulação, nenhum deck com carta comprada supera o melhor deck de cartas grátis.</p>' : '<p class="nota" style="margin-top:10px">Só aparência. Na versão final, alguns cosméticos também poderão ser comprados com dinheiro; cartas, nunca.</p>'}`;
+  }
+  function comprar(tipo, id, botao) {
+    const c = st.conta;
+    const info = tipo === 'cartas' ? { preco: PRECO_CARTA[id] } : ({ dados: DADOS, icones: ICONES, mesas: MESAS })[tipo][id];
+    if (!info || c[tipo].includes(id) || c.moedas < info.preco) return;
+    if (botao.dataset.certeza !== '1') { botao.dataset.certeza = '1'; botao.innerHTML = `Confirmar? <span class="moeda"></span>${info.preco}`; return; }
+    c.moedas -= info.preco; c[tipo].push(id);
+    if (tipo === 'dados') c.dado = id; if (tipo === 'icones') c.icone = id; if (tipo === 'mesas') c.mesa = id;
+    salvar(); aplicarPrefs(); desenharLoja(); if (jogo) render();
+    Som.tocar('compra'); Fx.confete(60); Fx.chamada('Novo!', `${nomeItem(tipo, id)} é seu`, 'suave');
   }
 
   // ---------- montar o deck ----------
@@ -932,14 +1095,15 @@
     document.getElementById('janelaDeck').hidden = false;
   }
   function desenharDeck() {
-    const d = st.decks[st.abaDeck] = st.decks[st.abaDeck].filter(c => !travada(c));
+    const d = st.decks[st.abaDeck] = st.decks[st.abaDeck].filter(disponivel);
     const nt = d.filter(c => CARTAS[c].tipo === 'armadilha').length, np = d.filter(c => CARTAS[c].pontos).length;
     document.getElementById('deckContador').innerHTML = `<b>${d.length}/3</b> cartas · ${nt}/2 armadilhas · ${np}/1 de pontos ⚡${d.length ? ' · ' + d.map(c => CARTAS[c].nome).join(', ') : ''}`;
-    document.getElementById('deckProntos').innerHTML = PRONTOS.filter(k => k.cartas.every(c => !travada(c))).map(k => `<button data-pronto="${PRONTOS.indexOf(k)}">${k.nome} <small>${k.cartas.map(c => CARTAS[c].nome).join(' · ')}${k.nota ? ' (' + k.nota + ')' : ''}</small></button>`).join('');
+    document.getElementById('deckProntos').innerHTML = PRONTOS.filter(k => k.cartas.every(disponivel)).map(k => `<button data-pronto="${PRONTOS.indexOf(k)}">${k.nome} <small>${k.cartas.map(c => CARTAS[c].nome).join(' · ')}${k.nota ? ' (' + k.nota + ')' : ''}</small></button>`).join('');
     document.getElementById('deckGrade').innerHTML = ORDEM.map(c => {
-      const k = CARTAS[c], dentro = d.includes(c), trav = travada(c);
-      const cabe = !trav && (dentro || deckValido(d.concat(c)));
-      return `<button class="carta-op" data-op="${c}" aria-pressed="${dentro}" ${cabe ? '' : 'disabled'}>${k.ico}<b>${k.nome}${k.pontos ? ' <span class="raio">⚡</span>' : ''}<span class="tipo">${k.tipo}</span></b><span class="txt">${k.texto}</span>${trav ? '<span class="cadeado">Libera depois da sua 1ª partida</span>' : ''}</button>`;
+      const k = CARTAS[c], dentro = d.includes(c), trav = travada(c), aVenda = !possui(c);
+      const cabe = !trav && !aVenda && (dentro || deckValido(d.concat(c)));
+      const aviso = aVenda ? `<span class="cadeado"><span class="moeda"></span> ${PRECO_CARTA[c]} na Loja · toque para ver</span>` : trav ? '<span class="cadeado">Libera depois da sua 1ª partida</span>' : '';
+      return `<button class="carta-op" data-op="${c}" ${aVenda ? 'data-na-loja="1"' : ''} aria-pressed="${dentro}" ${cabe || aVenda ? '' : 'disabled'}>${k.ico}<b>${k.nome}${k.pontos ? ' <span class="raio">⚡</span>' : ''}<span class="tipo">${k.tipo}</span></b><span class="txt">${k.texto}</span>${aviso}</button>`;
     }).join('');
   }
 
@@ -986,6 +1150,14 @@
   document.getElementById('btnFecharLado').addEventListener('click', () => { abrirLado(false); btnRegras.focus(); });
   document.getElementById('btnDeck').addEventListener('click', abrirDeck);
   document.getElementById('btnConfig').addEventListener('click', abrirConfig);
+  document.getElementById('btnCarteira').addEventListener('click', () => abrirLoja());
+  document.getElementById('btnFecharLoja').addEventListener('click', () => { document.getElementById('janelaLoja').hidden = true; });
+  document.getElementById('abasLoja').addEventListener('click', e => { const b = e.target.closest('[data-aba-loja]'); if (b) { st.abaLoja = b.dataset.abaLoja; desenharLoja(); } });
+  document.getElementById('lojaConteudo').addEventListener('click', e => {
+    const cb = e.target.closest('[data-comprar]'); if (cb) { const [t, id] = cb.dataset.comprar.split(':'); comprar(t, id, cb); return; }
+    const ub = e.target.closest('[data-usar-item]');
+    if (ub) { const [t, id] = ub.dataset.usarItem.split(':'); st.conta[t === 'dados' ? 'dado' : t === 'icones' ? 'icone' : 'mesa'] = id; salvar(); aplicarPrefs(); desenharLoja(); if (jogo) render(); Som.tocar('momento'); }
+  });
 
   document.getElementById('mesa').addEventListener('click', e => { const b = e.target.closest('.pega'); if (b && !b.disabled) clicarDado(+b.dataset.i); });
   document.getElementById('tabuleiro').addEventListener('click', e => {
@@ -1055,6 +1227,7 @@
   document.getElementById('abasDeck').addEventListener('click', e => { const b = e.target.closest('[data-aba]'); if (!b) return; st.abaDeck = +b.dataset.aba; abrirDeck(); });
   document.getElementById('deckGrade').addEventListener('click', e => {
     const b = e.target.closest('[data-op]'); if (!b || b.disabled) return;
+    if (b.dataset.naLoja) { document.getElementById('janelaDeck').hidden = true; abrirLoja('cartas'); return; }
     const d = st.decks[st.abaDeck], c = b.dataset.op;
     st.decks[st.abaDeck] = d.includes(c) ? d.filter(x => x !== c) : d.concat(c);
     Som.tocar('carta'); salvar(); desenharDeck();
@@ -1072,12 +1245,12 @@
   document.addEventListener('keydown', e => {
     if (!jogo || e.target.closest('textarea, input') || e.metaKey || e.ctrlKey || e.altKey) return;
     if (e.key === 'Escape') {
-      ['fim', 'janelaCarta', 'janelaDeck', 'janelaConfig'].forEach(id => { document.getElementById(id).hidden = true; }); abrirLado(false);
+      ['fim', 'janelaCarta', 'janelaDeck', 'janelaConfig', 'janelaLoja'].forEach(id => { document.getElementById(id).hidden = true; }); abrirLado(false);
       if (jogo.confirma) jogo.confirma = null;
       if (jogo.fase === 'alvo' || jogo.fase === 'ajuste') { jogo.fase = 'pegar'; jogo.alvo = null; jogo.ajusteIdx = null; }
       render(); return;
     }
-    if (['janelaCarta', 'janelaDeck', 'janelaConfig'].some(id => !document.getElementById(id).hidden)) return;
+    if (['janelaCarta', 'janelaDeck', 'janelaConfig', 'janelaLoja'].some(id => !document.getElementById(id).hidden)) return;
     if (/^[1-5]$/.test(e.key)) { clicarDado(+e.key - 1); return; }
     const k = e.key.toLowerCase();
     if (jogo.fase === 'destino' && jogo.mao && humano(jogo.vez)) {
@@ -1096,7 +1269,7 @@
   aplicarPrefs();
   window.claude?.hot?.snapshot?.(() => ({ st, jogo, uid }));
   function iniciar(dados) {
-    if (dados && dados.jogo && dados.jogo.v === 6) {
+    if (dados && dados.jogo && dados.jogo.v === 7) {
       Object.assign(st, dados.st); uid = dados.uid || uid;
       jogo = dados.jogo; jogo.pensando = false; jogo.token = Math.random(); jogo.fx = null; jogo.eventos = []; jogo.intro = false; jogo.voo = null;
       if (jogo.fase === 'alvo' || jogo.fase === 'ajuste') { jogo.fase = 'pegar'; jogo.alvo = null; }

@@ -10,6 +10,12 @@ Os dois jogadores disputam a mesma Mesa de 5 dados e montam **correntes** de dad
 Cada um guarda um dado no **Bolso**, escolhe a hora de **disparar** a corrente para marcar pontos e leva um
 **deck de até 3 cartas** com efeitos e armadilhas. A partida dura de 4 a 6 minutos.
 
+**Progressão sem pagar para vencer:**
+- moedas só vêm de vitórias, e rendem mais com margem maior e menos Mesas;
+- elas compram cartas novas (que dão estilo, não força) e cosméticos (skins de dado, ícones, mesas);
+- a experiência sobe em toda partida;
+- um rating evita que jogador forte farme o modo fácil.
+
 > Esta branch (`DiceDuel`) guarda só o Dice Duel. A `main` do repositório continua com o design do LIMIAR,
 > como manda a política de branches do projeto.
 
@@ -36,7 +42,7 @@ Cada um guarda um dado no **Bolso**, escolhe a hora de **disparar** a corrente p
 |---|---|
 | `index.html` | a página do jogo |
 | `css/estilo.css` | o visual aconchegante (mesa de madeira, feltro, fichas de papel) |
-| `js/jogo.js` | regras, rivais, cartas, bons momentos, recordes, ajustes |
+| `js/jogo.js` | regras, rivais, cartas, bons momentos, recordes, ajustes, moedas, rating, loja |
 | `js/audio.js` | efeitos e trilha lo-fi sintetizados na hora (Web Audio, sem arquivos de áudio) |
 | `js/efeitos.js` | partículas, dados voando, chamadas de "bom momento", contagem do placar |
 | `sim/` | regras de referência em Python e os experimentos de balanceamento |
@@ -44,6 +50,7 @@ Cada um guarda um dado no **Bolso**, escolhe a hora de **disparar** a corrente p
 | `tools/fumaca.js` | teste de fumaça: joga partidas inteiras no navegador e falha com qualquer erro |
 | `docs/design.md` | regras, cartas, números, decisões e por quê |
 | `docs/pesquisa.md` | o que jogos de cartas no celular ensinam (deck pequeno, armadilhas, contra-jogo) |
+| `docs/progressao.md` | moedas, rating contra o farm, XP e níveis, loja, cosméticos, regras de monetização |
 
 ## Verificar
 
@@ -51,12 +58,13 @@ Cada um guarda um dado no **Bolso**, escolhe a hora de **disparar** a corrente p
 cd sim && python3 valor_cartas.py      # valor de cada carta sozinha
 cd sim && python3 informacao.py        # armadilhas: oculto × à mostra
 cd sim && python3 decks.py             # todos os 133 decks: algum domina?
+cd sim && python3 economia.py          # cartas compradas não superam as grátis; moedas por vitória
 npm i -D playwright && node tools/fumaca.js   # 4 partidas no navegador (celular, computador, Coruja, a dois)
 ```
 
 ## Estado
 
-**Protótipo v0.6, pronto para testes com gente.** O resumo copiável do fim da partida traz:
+**Protótipo v0.7, pronto para testes com gente.** O resumo copiável do fim da partida traz:
 - o deck de cada um;
 - as cartas que agiram;
 - as rupturas;

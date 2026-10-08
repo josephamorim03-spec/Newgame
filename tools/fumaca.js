@@ -35,6 +35,19 @@ fs.mkdirSync(FOTOS, { recursive: true });
       await pg.screenshot({ path: path.join(FOTOS, 'ajustes-celular.png') });
       for (const id of ['#opMusica', '#opMusica', '#opSom', '#opSom', '#opAnim', '#opAnim', '#opParticulas', '#opParticulas']) await pg.click(id);
       await pg.click('#btnFecharConfig');
+      // loja: com moedas de teste, compra uma skin, um ícone e uma carta, e usa
+      await pg.evaluate(() => { DiceDuel.st.conta.moedas = 1000; });
+      await pg.click('#btnCarteira'); await pg.waitForTimeout(150);
+      for (const [aba, item] of [['dados', 'dados:dourado'], ['icones', 'icones:raposa'], ['cartas', 'cartas:espelho']]) {
+        await pg.click(`[data-aba-loja="${aba}"]`);
+        await pg.click(`[data-comprar="${item}"]`); await pg.click(`[data-comprar="${item}"]`);
+        await pg.waitForTimeout(150);
+      }
+      await pg.click('[data-aba-loja="dados"]');
+      await pg.screenshot({ path: path.join(FOTOS, 'loja-celular.png') });
+      const conta = await pg.evaluate(() => DiceDuel.st.conta);
+      if (conta.dado !== 'dourado' || !conta.cartas.includes('espelho') || conta.icone !== 'raposa' || conta.moedas !== 1000 - 450 - 100 - 110) erros.push(`${r.nome}: a compra na loja não funcionou ${JSON.stringify(conta)}`);
+      await pg.click('#btnFecharLoja');
     }
     if (r.coruja || r.modo === 'local') {
       await pg.click('#btnConfig');
@@ -77,9 +90,12 @@ fs.mkdirSync(FOTOS, { recursive: true });
     const res = await pg.evaluate(() => ({
       fase: DiceDuel.jogo.fase, placar: DiceDuel.jogo.pts, fimAberto: !document.getElementById('fim').hidden,
       momentos: DiceDuel.jogo.momentos.map(m => m.txt), largura: [document.documentElement.scrollWidth, innerWidth],
+      premio: DiceDuel.jogo.premio && { moedas: DiceDuel.jogo.premio.moedas && DiceDuel.jogo.premio.moedas.total, rating: [DiceDuel.jogo.premio.ratingAntes, DiceDuel.jogo.premio.rating], nivel: DiceDuel.jogo.premio.nivelDepois },
+      recompensas: document.getElementById('fimRecompensas').textContent.trim().slice(0, 140),
     }));
     console.log(r.nome, { deckAberto, travadas, passos, usosCarta, ...res });
     if (res.fase !== 'fim') erros.push(`${r.nome}: a partida não terminou`);
+    if (r.modo === 'bot' && !res.premio) erros.push(`${r.nome}: o fim da partida não deu recompensa`);
     if (res.largura[0] > res.largura[1]) erros.push(`${r.nome}: a página rola para o lado`);
     await pg.close();
   }
