@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#241a24">
+<title>Dice Duel</title>
+<meta name="description" content="Duelo de dados 1×1 aconchegante: monte correntes que se sincronizam, guarde no Bolso e use um deck de até 3 cartas.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700;800&display=swap">
+<link rel="stylesheet" href="css/estilo.css">
+</head>
+<body>
+<div class="app">
+  <header class="topo">
+    <div class="marca">
+      <svg class="logo" viewBox="0 0 64 64" aria-hidden="true">
+        <rect x="6" y="10" width="40" height="40" rx="11" fill="#fffaf0" stroke="#3a2a2e" stroke-width="3" transform="rotate(-10 26 30)"/>
+        <circle cx="18" cy="22" r="4" fill="#ec8fa8"/><circle cx="28" cy="31" r="4" fill="#3a2a2e"/><circle cx="37" cy="39" r="4" fill="#6fbfd3"/>
+        <rect x="30" y="24" width="28" height="28" rx="8" fill="#f2b15e" stroke="#3a2a2e" stroke-width="3" transform="rotate(12 44 38)"/>
+        <circle cx="40" cy="34" r="3" fill="#3a2a2e"/><circle cx="48" cy="42" r="3" fill="#3a2a2e"/>
+      </svg>
+      <div>
+        <h1>Dice <span>Duel</span></h1>
+        <p>duelo de dados aconchegante · v0.6</p>
+      </div>
+    </div>
+    <div class="topo-botoes">
+      <svg class="cha" viewBox="0 0 48 48" aria-hidden="true">
+        <path class="vapor" d="M18 14c-3-3 3-5 0-8" fill="none" stroke="#ecdcc8" stroke-width="2" stroke-linecap="round"/>
+        <path class="vapor v2" d="M26 14c-3-3 3-5 0-8" fill="none" stroke="#ecdcc8" stroke-width="2" stroke-linecap="round"/>
+        <path d="M8 20h28v8a12 12 0 0 1-12 12h-4A12 12 0 0 1 8 28z" fill="#f1dfc2" stroke="#3a2a2e" stroke-width="2.5"/>
+        <path d="M36 23h3a5 5 0 0 1 0 10h-4" fill="none" stroke="#3a2a2e" stroke-width="2.5"/>
+        <path d="M13 26c3 2 9 2 12 0" fill="none" stroke="#ec8fa8" stroke-width="2.5" stroke-linecap="round"/>
+      </svg>
+      <button class="btn-topo" id="btnRegras" aria-expanded="false" aria-controls="lado" aria-label="Regras e registro">
+        <svg class="ico" viewBox="0 0 24 24"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11M9 8h6"/></svg><span class="rotulo">Regras</span>
+      </button>
+      <button class="btn-topo" id="btnDeck" aria-label="Montar deck">
+        <svg class="ico" viewBox="0 0 24 24"><rect x="4" y="6" width="11" height="15" rx="2"/><path d="M9 3h9a2 2 0 0 1 2 2v13"/></svg><span class="rotulo">Deck</span>
+      </button>
+      <button class="btn-topo" id="btnConfig" aria-label="Ajustes">
+        <svg class="ico" viewBox="0 0 24 24"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg><span class="rotulo">Ajustes</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="tabuleiro" id="tabuleiro" aria-label="Mesa de jogo">
+      <div id="pj1"></div>
+      <div class="mesa-area">
+        <div class="mesa-topo"><h2>Mesa</h2><span id="mesaInfo"></span></div>
+        <div class="mesa" id="mesa"></div>
+        <div class="ticker" id="ticker" aria-hidden="true"></div>
+      </div>
+      <div id="pj0"></div>
+      <div class="acoes" id="acoes" aria-live="polite"></div>
+    </section>
+
+    <aside class="lado" id="lado" aria-label="Regras e registro">
+      <div class="lado-topo"><strong>Regras e registro</strong><button class="btn-topo" id="btnFecharLado">Voltar ao jogo</button></div>
+      <section class="card regras" aria-labelledby="tRegras">
+        <h2 id="tRegras">Como se joga</h2>
+        <p>Chegue primeiro à meta de pontos montando correntes de dados que se sincronizam.</p>
+        <h3>A rodada</h3>
+        <ol>
+          <li>Cinco dados ficam na <b>Mesa</b>. Vocês se alternam pegando <b>um dado por vez</b>. Quando a Mesa esvazia, rolam-se cinco novos, e <b>quem está atrás no placar abre</b>.</li>
+          <li>O dado entra <b>na frente</b> da sua corrente e precisa sincronizar com o último dado dela.</li>
+          <li>Ou ele vai para o <b>Bolso</b> (um espaço), ou você <b>troca</b>: o dado do Bolso entra e o novo fica guardado.</li>
+          <li>Com <b>3 dados ou mais</b>, você pode <b>Disparar</b> (marca pontos e zera a corrente) ou <b>Segurar</b>.</li>
+          <li>Se o dado que entra não sincroniza, acontece a <b>Ruptura</b>: você perde a corrente.</li>
+        </ol>
+        <h3>As três sincronias</h3>
+        <div class="rel" id="relacoes"></div>
+        <p class="nota" style="margin-top:10px">Na Mesa, a etiqueta de cada dado diz como ele sincroniza com a sua frente. O ponto <span class="legenda"></span> marca os dados que servem ao rival.</p>
+        <h3>Quanto vale disparar</h3>
+        <table class="tabela" aria-label="Pontos por tamanho da corrente">
+          <tr><th>Dados na corrente</th><td class="k">3</td><td class="k">4</td><td class="k">5</td><td class="k">6</td></tr>
+          <tr><th>Pontos</th><td>1</td><td>2</td><td>4</td><td>6</td></tr>
+        </table>
+        <h3>Cartas</h3>
+        <ol>
+          <li>Antes da partida, monte um deck de <b>até 3 cartas</b>: no máximo <b>2 armadilhas</b> e no máximo <b>1 carta de pontos</b> (<span class="raio">⚡</span>). Cada carta vale <b>uma vez</b>.</li>
+          <li><b>Efeitos</b> são usados na sua vez, antes de pegar, à vista do rival.</li>
+          <li><b>Armadilhas</b> são armadas na sua vez (uma por vez). Os dois decks ficam à mostra: o rival vê que há uma armada, mas não qual. O <b>Espelho</b> deixa a marca à vista.</li>
+          <li><b>Virar</b> e <b>Rerrolar</b> desfazem a marca de um Espelho.</li>
+          <li>As armadilhas se liberam depois da sua primeira partida (ou em Ajustes).</li>
+        </ol>
+        <div class="lista-cartas" id="listaCartas" style="margin-top:10px"></div>
+        <h3>Nem todo dado vale o mesmo</h3>
+        <p class="nota">Quantas faces sincronizam depois de cada face. O <b>2</b> e o <b>5</b> são as melhores frentes.</p>
+        <div class="valor" id="valorFaces"></div>
+        <h3>Dicas</h3>
+        <ol>
+          <li>A Mesa que sobra depois da sua escolha é a do rival.</li>
+          <li>Armadilha armada do rival não é motivo para pânico: na simulação, jogar com medo perdeu mais do que as armadilhas tiram.</li>
+          <li>No teclado: <b>1–5</b> pegam o dado, <b>C</b> põe na corrente, <b>B</b> usa o Bolso, <b>D</b> dispara, <b>S</b> segura.</li>
+        </ol>
+      </section>
+      <section class="card registro" aria-labelledby="tReg">
+        <h2 id="tReg">Registro</h2>
+        <ol id="log"></ol>
+      </section>
+    </aside>
+  </main>
+
+  <div class="janela" id="janelaDeck" hidden>
+    <div class="caixa larga" role="dialog" aria-modal="true" aria-labelledby="deckTitulo">
+      <div class="deck-topo">
+        <h2 id="deckTitulo">Monte seu deck</h2>
+        <div class="abas" id="abasDeck" role="group" aria-label="De quem é o deck" hidden>
+          <button data-aba="0" aria-pressed="true">Jogador 1</button>
+          <button data-aba="1" aria-pressed="false">Jogador 2</button>
+        </div>
+      </div>
+      <p class="nota">Até 3 cartas, cada uma vale uma vez. No máximo 2 armadilhas e no máximo 1 carta de pontos (<span class="raio">⚡</span>). O rival vê o seu deck no começo da partida.</p>
+      <div class="contador" id="deckContador"></div>
+      <div><span class="rot">Decks prontos</span><div class="prontos" id="deckProntos" style="margin-top:6px"></div></div>
+      <div class="grade-cartas" id="deckGrade"></div>
+      <div class="botoes">
+        <button class="btn btn-mel" id="btnJogarDeck">Jogar com este deck</button>
+        <button class="btn btn-papel" id="btnFecharDeck">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="janela" id="janelaCarta" hidden>
+    <div class="caixa" role="dialog" aria-modal="true" aria-labelledby="cartaTitulo">
+      <div class="detalhe-carta" id="cartaDetalhe"></div>
+      <p class="nota" id="cartaNota"></p>
+      <div class="botoes" id="cartaBotoes"></div>
+    </div>
+  </div>
+
+  <div class="janela" id="janelaConfig" hidden>
+    <div class="caixa" role="dialog" aria-modal="true" aria-labelledby="cfgTitulo">
+      <h2 id="cfgTitulo">Ajustes</h2>
+      <h3>Partida</h3>
+      <div class="cfg-grupo">
+        <div class="linha-cfg"><span><label>Modo</label></span>
+          <div class="segmento" role="group" aria-label="Modo">
+            <button data-cfg="modo" data-v="bot">Contra um rival</button><button data-cfg="modo" data-v="local">2 jogadores</button>
+          </div></div>
+        <div class="linha-cfg" id="linhaNivel"><span><label>Rival</label><small id="rivalDesc"></small></span>
+          <div class="segmento" role="group" aria-label="Rival">
+            <button data-cfg="nivel" data-v="aprendiz">Biscoito</button><button data-cfg="nivel" data-v="esperto">Dona Coruja</button>
+          </div></div>
+        <div class="linha-cfg"><span><label>Meta</label><small>16 deixa a partida mais longa</small></span>
+          <div class="segmento" role="group" aria-label="Pontos para vencer">
+            <button data-cfg="meta" data-v="12">12</button><button data-cfg="meta" data-v="16">16</button>
+          </div></div>
+        <div class="linha-cfg"><span><label>Ritmo do rival</label></span>
+          <div class="segmento" role="group" aria-label="Ritmo do rival">
+            <button data-cfg="ritmo" data-v="calmo">Calmo</button><button data-cfg="ritmo" data-v="normal">Normal</button><button data-cfg="ritmo" data-v="rapido">Rápido</button>
+          </div></div>
+        <p class="nota" id="avisoCfg" hidden>Modo, rival e meta valem na próxima partida.</p>
+      </div>
+      <h3>Som</h3>
+      <div class="cfg-grupo">
+        <div class="linha-cfg"><span><label for="opSom">Efeitos sonoros</label></span><span style="display:flex;gap:10px;align-items:center"><input class="volume" type="range" id="volSom" min="0" max="1" step="0.05" aria-label="Volume dos efeitos"><input class="chave-liga" type="checkbox" id="opSom"></span></div>
+        <div class="linha-cfg"><span><label for="opMusica">Música</label><small>lo-fi gerada na hora</small></span><span style="display:flex;gap:10px;align-items:center"><input class="volume" type="range" id="volMusica" min="0" max="1" step="0.05" aria-label="Volume da música"><input class="chave-liga" type="checkbox" id="opMusica"></span></div>
+      </div>
+      <h3>Imagem e toque</h3>
+      <div class="cfg-grupo">
+        <div class="linha-cfg"><span><label for="opAnim">Animações</label><small>dados voando, chamadas, contagem</small></span><input class="chave-liga" type="checkbox" id="opAnim"></div>
+        <div class="linha-cfg"><span><label for="opParticulas">Brilhos e confete</label></span><input class="chave-liga" type="checkbox" id="opParticulas"></div>
+        <div class="linha-cfg"><span><label for="opTremor">Tremor leve da mesa</label></span><input class="chave-liga" type="checkbox" id="opTremor"></div>
+        <div class="linha-cfg"><span><label for="opVibrar">Vibração</label><small>nos aparelhos que permitem</small></span><input class="chave-liga" type="checkbox" id="opVibrar"></div>
+        <div class="linha-cfg"><span><label for="opFalas">Falas do rival</label></span><input class="chave-liga" type="checkbox" id="opFalas"></div>
+        <div class="linha-cfg"><span><label for="opDicas">Etiquetas de ajuda na Mesa</label></span><input class="chave-liga" type="checkbox" id="opDicas"></div>
+      </div>
+      <h3>Cartas e progresso</h3>
+      <div class="cfg-grupo">
+        <div class="linha-cfg"><span><label for="opLiberar">Todas as cartas liberadas</label><small>as armadilhas se liberam sozinhas depois da 1ª partida</small></span><input class="chave-liga" type="checkbox" id="opLiberar"></div>
+        <div class="linha-cfg"><span><label>Recordes</label><small id="resumoRecordes"></small></span><button class="btn btn-papel" id="btnZerar" style="min-height:40px">Apagar</button></div>
+      </div>
+      <button class="btn btn-mel" id="btnFecharConfig">Pronto</button>
+    </div>
+  </div>
+
+  <div class="janela" id="fim" hidden>
+    <div class="caixa" role="dialog" aria-modal="true" aria-labelledby="fimTitulo">
+      <h2 id="fimTitulo"></h2>
+      <div class="fim-placar" id="fimPlacar"></div>
+      <h3>Bons momentos</h3>
+      <ul class="momentos" id="fimMomentos"></ul>
+      <table class="tabela" id="fimTabela"></table>
+      <textarea id="fimTexto" readonly aria-label="Resumo da partida para enviar"></textarea>
+      <div class="botoes">
+        <button class="btn btn-mel" id="btnDeNovo">Jogar de novo</button>
+        <button class="btn btn-papel" id="btnCopiar">Copiar resumo</button>
+        <button class="btn btn-papel" id="btnTrocarDeck">Trocar deck</button>
+        <button class="btn btn-papel" id="btnFechar">Ver a mesa</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="js/audio.js"></script>
+<script src="js/efeitos.js"></script>
+<script src="js/jogo.js"></script>
+</body>
+</html>
