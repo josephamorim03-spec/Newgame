@@ -62,7 +62,8 @@ const espera = ms => new Promise(r => setTimeout(r, ms));
     await ana.waitForFunction(() => DiceDuel.st.conta.moedas === 520 && DiceDuel.st.conta.dado === 'madeira', null, { timeout: 5000 });
     await ana.click('#btnFecharLoja');
     // deck da Ana para o online
-    await ana.evaluate(() => { DiceDuel.st.decks[0] = ['espelho', 'ajuste', 'pressa']; });
+    await ana.evaluate(() => { DiceDuel.st.decks[0] = ['espelho', 'ajuste', 'pressa']; DiceDuel.st.rec.melhorSeq = 3; DiceDuel.salvar(); });
+    await espera(1800); // a conta recebe o deck (sincroniza 1,2 s depois de salvar)
     // cria a sala e pega o link
     await ana.click('#btnOnline');
     await ana.click('[data-on="criar-sala"]');
@@ -147,6 +148,18 @@ const espera = ms => new Promise(r => setTimeout(r, ms));
     await ana.reload(); await ana.waitForTimeout(500);
     const nome = await ana.evaluate(() => DiceDuel.st.conta.online && DiceDuel.st.conta.online.nome);
     if (nome !== 'Ana') throw new Error('a sessão não sobreviveu ao recarregar');
+    // outro aparelho (computador): entra com a mesma conta e continua de onde parou
+    const anaPc = await abrir('ana-pc', { width: 1360, height: 900 });
+    await anaPc.goto(base + '/'); await anaPc.waitForTimeout(400); await sem(anaPc); await fechar(anaPc);
+    await anaPc.click('#btnOnline');
+    await anaPc.fill('#formConta [name=nome]', 'ana');
+    await anaPc.fill('#formConta [name=senha]', 'senha-boa-1');
+    await anaPc.click('#formConta [type=submit]');
+    await anaPc.waitForSelector('.eu-online', { timeout: 5000 });
+    const noPc = await anaPc.evaluate(() => ({ deck: DiceDuel.st.decks[0].join(), moedas: DiceDuel.st.conta.moedas, dado: DiceDuel.st.conta.dado, seq: DiceDuel.st.rec.melhorSeq }));
+    const noCel = await ana.evaluate(() => ({ moedas: DiceDuel.st.conta.moedas }));
+    if (noPc.deck !== 'espelho,ajuste,pressa' || noPc.dado !== 'madeira' || noPc.seq !== 3 || noPc.moedas !== noCel.moedas) throw new Error('a conta não seguiu para o outro aparelho: ' + JSON.stringify({ noPc, noCel }));
+    await layout(anaPc, 'outro-aparelho');
     console.log(`Online ok: ${passos} passos; venceu com +${vencedor.premio.moedas.total} moedas; ranking ${ranking.join(' > ')}`);
   } catch (e) {
     erros.push(e.stack || String(e));

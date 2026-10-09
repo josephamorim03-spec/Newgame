@@ -545,3 +545,12 @@ body.mesa-piquenique .ticker .cor0 { color: var(--voce-tinta); } body.mesa-pique
 .ranking .quem-rk small { display: block; font-weight: 600; font-size: 12px; color: var(--tinta-suave); }
 .ranking .rk { font-weight: 800; }
 .prazo { font-weight: 800; color: var(--perigo, #c4553f); }
+
+/* ---------- ícones por grupo (v0.9): os especiais têm moldura dourada ---------- */
+.itens .grupo-loja { grid-column: 1 / -1; margin: 8px 0 0; }
+.itens .grupo-loja:first-child { margin-top: 0; }
+.item:has(.avatar.especial) { box-shadow: inset 0 0 0 2px #e2b04a, 0 3px 0 var(--papel-2); }
+img.avatar { object-fit: contain; }
+/* cartões da loja da mesma altura na linha: o botão sempre no pé */
+.item { grid-template-rows: auto auto 1fr auto; }
+.item small { align-self: start; }

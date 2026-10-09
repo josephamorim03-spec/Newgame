@@ -80,7 +80,7 @@ Cada regra abaixo aparece também no painel de Regras do jogo e é conferida por
 
 | Bug | Efeito no jogo | Correção |
 |---|---|---|
-| `podeUsar` recusava qualquer carta enquanto o rival "pensava" | **O Biscoito nunca usava cartas** (0 de 18 em 6 partidas de teste) | a checagem saiu da regra e foi para o clique |
+| `podeUsar` recusava qualquer carta enquanto o rival "pensava" | **O rival fácil (então o Biscoito) nunca usava cartas** (0 de 18 em 6 partidas de teste) | a checagem saiu da regra e foi para o clique |
 | Pressa + corrente completando 6 | o segundo dado sumia sem aviso | o disparo automático acontece e o segundo dado continua |
 | Pressa sem saída | o segundo dado era obrigatório e podia forçar uma ruptura | botão "Dispensar o 2.º dado" (o robô também dispensa) |
 | Pressa no último dado | a carta só dizia "precisa de 2 dados" | o texto e o aviso dizem que ela não passa para a Mesa seguinte |
@@ -148,7 +148,7 @@ verdade. Por isso o "?" volta a ser uma leitura do rival (*yomi*, docs/pesquisa.
   disparo, e lembra que pode ser blefe com tal e tal efeito.
 - **Quando age:** a carta se revela com o nome (armadilha) ou com "Blefe!" (efeito).
 
-**Robôs:** a Dona Coruja blefa às vezes (quando o rival tem corrente de 3+ e ela não armou nada); o Biscoito não.
+**Robôs:** a Dona Coruja blefa às vezes (quando o rival tem corrente de 3+ e ela não armou nada); a Diana não.
 O simulador não modela blefe (os robôs dele não leem o rival), então o efeito do blefe sai dos testes com gente:
 o resumo copiável agora conta os blefes de cada um.
 
@@ -168,9 +168,9 @@ evitar o Bolso sem saber) perdeu mais do que as armadilhas tiram. O jogo diz iss
 
 ## 5. Primeiras partidas (onboarding)
 
-- **Primeira visita:** o deck "Primeira mesa" (só efeitos) e o rival Biscoito (o mais fácil).
+- **Primeira visita:** o deck "Primeira mesa" (só efeitos) e a rival Diana (a mais fácil).
 - **Armadilhas:** chegam depois da primeira partida (ou em Ajustes → "Todas as cartas liberadas").
-  O Biscoito também só usa efeitos até lá.
+  A Diana também só usa efeitos até lá.
 - **Prévia antes de confirmar:** ao escolher o alvo de Virar ou Ajuste, cada dado mostra como ficaria.
   Cancelar devolve a carta.
 
@@ -190,11 +190,19 @@ evitar o Bolso sem saber) perdeu mais do que as armadilhas tiram. O jogo diz iss
 | Fim de partida | lista de **bons momentos** (repetições viram "×2"), **recordes** (maior disparo, maior corrente, melhor sequência) e confete na vitória |
 
 **Perder também é aconchegante.** A ruptura é um "plonc" descendente com poeirinha caindo devagar, nunca um
-estrondo. A derrota diz "Quase!" e mostra os bons momentos da partida.
+estrondo. A derrota diz "Fim de partida" e mostra os bons momentos da partida.
+
+**O tom (v0.9):** aconchegante, mas adulto e bonito. Nada de falas infantis ("que vitória gostosa", "doce como
+algodão-doce"). Os textos são curtos e sóbrios, como um bom adversário de mesa falaria: "Boa leitura da Mesa",
+"Arrisquei demais", "Partida bem jogada".
 
 **Os rivais:**
-- **Biscoito**, um gatinho que joga por diversão;
-- **Dona Coruja**, que joga com calma e lê a Mesa.
+- **Diana**, uma gata branca de olhos azuis que joga solto e arrisca;
+- **Dona Coruja**, que joga com paciência e lê a Mesa.
+
+A Diana tem marcas fixas, que a arte precisa respeitar: ponta da orelha direita (dela) preta, a esquerda branca,
+um cinza leve logo acima dos olhos, dois riscos escuros simétricos e horizontais na testa e um pequeno ferimento
+vermelho no dorso do nariz.
 
 Os dois piscam, ficam felizes ou murcham, e soltam falas curtas (dá para desligar). A Dona Coruja leva um
 dos 9 melhores decks da simulação.
@@ -213,7 +221,7 @@ Tudo é sintetizado na hora com Web Audio: nenhum arquivo de áudio. Nada no som
 | Armadilha armada | brilho curto e agudo: há um segredo na mesa |
 | Armadilha revelada | "tchã-rã" mágico: surpresa curiosa, não punição |
 | Vitória / derrota | fanfarra pequena / três notas descendo com acorde acolhedor |
-| Falas do rival | "blá-blá" fofinho |
+| Falas do rival | "blá-blá" curto e macio |
 
 **A música** é um lo-fi gerado na hora, a 72 bpm:
 - acordes de piano elétrico abafado (Cmaj7 – Am7 – Fmaj7 – G6) e um baixo macio;
@@ -236,7 +244,7 @@ Tudo é sintetizado na hora com Web Audio: nenhum arquivo de áudio. Nada no som
 
 **Partida:**
 - modo (contra um rival ou 2 jogadores);
-- rival (Biscoito ou Dona Coruja);
+- rival (Diana ou Dona Coruja);
 - meta (12 ou 16);
 - ritmo do rival (calmo, normal, rápido).
 

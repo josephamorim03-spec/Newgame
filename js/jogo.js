@@ -41,17 +41,14 @@
     ['coringa', 'pedagio', 'pressa'], ['ancora', 'coringa', 'fundo'], ['coringa', 'fundo', 'interferencia'],
   ];
   // a parte visual do catálogo (os preços e níveis vêm do motor compartilhado)
-  const DESC_DADOS = { marfim: 'o clássico da mesa', madeira: 'cheirinho de marcenaria', rosa: 'doce como algodão-doce', menta: 'presente do nível 3', pelucia: 'fofinho e redondinho', dourado: 'reluz na mesa', diamante: 'para quem tem paciência' };
+  const DESC_DADOS = { marfim: 'o clássico da mesa', madeira: 'nogueira encerada', rosa: 'quartzo rosa', menta: 'presente do nível 3', pelucia: 'veludo macio', dourado: 'reluz sob o abajur', diamante: 'lapidado, para quem tem paciência' };
   const DADOS = Object.fromEntries(Object.entries(R.CATALOGO.dados).map(([k, v]) => [k, { ...v, desc: DESC_DADOS[k] }]));
-  const ICONES_SVG = {
-    bolinha:  { nome: 'Bolinha', preco: 0, svg: `<circle cx="32" cy="34" r="22" fill="#6fbfd3" stroke="#3a2a2e" stroke-width="2.5"/><circle class="olho" cx="25" cy="32" r="3" fill="#3a2a2e"/><circle class="olho" cx="39" cy="32" r="3" fill="#3a2a2e"/><path d="M26 41 q6 5 12 0" stroke="#3a2a2e" stroke-width="2.5" fill="none" stroke-linecap="round"/>` },
-    xicara:   { nome: 'Xícara', preco: 0, nivel: 2, svg: `<path d="M26 14c-3-3 3-5 0-8M34 14c-3-3 3-5 0-8" stroke="#ecdcc8" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M12 22h34v10a14 14 0 0 1-14 14h-6A14 14 0 0 1 12 32z" fill="#f1dfc2" stroke="#3a2a2e" stroke-width="2.5"/><path d="M46 26h3a6 6 0 0 1 0 12h-4" fill="none" stroke="#3a2a2e" stroke-width="2.5"/><circle class="olho" cx="23" cy="31" r="2.4" fill="#3a2a2e"/><circle class="olho" cx="35" cy="31" r="2.4" fill="#3a2a2e"/><path d="M26 37 q3 3 6 0" stroke="#3a2a2e" stroke-width="2" fill="none" stroke-linecap="round"/><circle cx="19" cy="36" r="2.4" fill="#ec8fa8" opacity=".6"/><circle cx="39" cy="36" r="2.4" fill="#ec8fa8" opacity=".6"/>` },
-    raposa:   { nome: 'Raposa', preco: 100, svg: `<path d="M10 14 L22 26 L14 34 Z M54 14 L42 26 L50 34 Z" fill="#e8874f" stroke="#3a2a2e" stroke-width="2.5" stroke-linejoin="round"/><path d="M12 30 Q32 6 52 30 Q50 48 32 56 Q14 48 12 30 Z" fill="#e8874f" stroke="#3a2a2e" stroke-width="2.5"/><path d="M18 38 Q32 44 46 38 Q42 52 32 56 Q22 52 18 38 Z" fill="#fff3e2"/><circle class="olho" cx="24" cy="34" r="2.6" fill="#3a2a2e"/><circle class="olho" cx="40" cy="34" r="2.6" fill="#3a2a2e"/><circle cx="32" cy="45" r="2.6" fill="#3a2a2e"/>` },
-    sapo:     { nome: 'Sapinho', preco: 100, svg: `<ellipse cx="32" cy="40" rx="24" ry="17" fill="#8fd6a8" stroke="#3a2a2e" stroke-width="2.5"/><circle cx="20" cy="24" r="9" fill="#8fd6a8" stroke="#3a2a2e" stroke-width="2.5"/><circle cx="44" cy="24" r="9" fill="#8fd6a8" stroke="#3a2a2e" stroke-width="2.5"/><circle class="olho" cx="20" cy="24" r="4" fill="#3a2a2e"/><circle class="olho" cx="44" cy="24" r="4" fill="#3a2a2e"/><path d="M22 44 q10 7 20 0" stroke="#3a2a2e" stroke-width="2.5" fill="none" stroke-linecap="round"/><circle cx="16" cy="42" r="3" fill="#ec8fa8" opacity=".5"/><circle cx="48" cy="42" r="3" fill="#ec8fa8" opacity=".5"/>` },
-    cogumelo: { nome: 'Cogumelo', preco: 140, svg: `<path d="M8 32 Q8 10 32 10 Q56 10 56 32 Z" fill="#e8806f" stroke="#3a2a2e" stroke-width="2.5" stroke-linejoin="round"/><circle cx="22" cy="20" r="4" fill="#fff3e2"/><circle cx="38" cy="17" r="3.5" fill="#fff3e2"/><circle cx="46" cy="27" r="3" fill="#fff3e2"/><path d="M20 32 h24 v12 a12 12 0 0 1 -24 0 z" fill="#fbf1df" stroke="#3a2a2e" stroke-width="2.5"/><circle class="olho" cx="27" cy="40" r="2.3" fill="#3a2a2e"/><circle class="olho" cx="37" cy="40" r="2.3" fill="#3a2a2e"/><path d="M29 46 q3 2.5 6 0" stroke="#3a2a2e" stroke-width="2" fill="none" stroke-linecap="round"/>` },
-  };
-  Object.keys(ICONES_SVG).forEach(k => Object.assign(ICONES_SVG[k], R.CATALOGO.icones[k]));
-  const ICONES = ICONES_SVG;
+  // ícones: o desenho mora em js/retratos.js (vetor, ou a versão pintada quando existe)
+  const DESC_ICONES = { bolinha: 'o clássico', xicara: 'presente do nível 2', raposa: 'de cachecol', sapo: 'de chapéu de palha', urso: 'de gorro de lã',
+    coelho: 'de gravata-borboleta', guaxinim: 'de moletom', cogumelo: 'do sub-bosque', monstera: 'em vaso de barro', cacto: 'em flor',
+    biscoito: 'cabelo dourado, sorriso largo', gordinho: 'óculos redondos, segundas intenções', cafu: 'de amarelo e verde', bandoleiro: 'sempre tem uma carta escondida' };
+  const ICONES = Object.fromEntries(Object.entries(R.CATALOGO.icones).map(([k, v]) => [k, { ...v, desc: DESC_ICONES[k] || '' }]));
+  const GRUPOS_ICONES = [['especial', 'Especiais'], ['animal', 'Animais'], ['natureza', 'Natureza'], ['basico', 'Básicos']];
   const MESAS_VISUAL = {
     salvia:     { nome: 'Feltro sálvia', preco: 0, amostra: 'linear-gradient(160deg,#5f8f78,#3b6252)' },
     vinho:      { nome: 'Feltro vinho', preco: 150, amostra: 'linear-gradient(160deg,#8f4c5b,#5a2836)' },
@@ -63,41 +60,19 @@
   const sorteia = a => a[Math.floor(Math.random() * a.length)];
 
   // ---------- rivais ----------
-  const AVATAR = {
-    aprendiz: `<svg class="avatar" viewBox="0 0 64 64" aria-hidden="true">
-      <path d="M12 26 L14 8 L26 18 Z M52 26 L50 8 L38 18 Z" fill="#f0a868" stroke="#3a2a2e" stroke-width="2.5" stroke-linejoin="round"/>
-      <path d="M16 12 l3 8 M48 12 l-3 8" stroke="#f6c9a4" stroke-width="3" stroke-linecap="round"/>
-      <ellipse cx="32" cy="36" rx="22" ry="19" fill="#f0a868" stroke="#3a2a2e" stroke-width="2.5"/>
-      <path d="M22 22 q4 4 0 8 M42 22 q-4 4 0 8" stroke="#d98a4c" stroke-width="2.5" fill="none" stroke-linecap="round"/>
-      <ellipse cx="32" cy="44" rx="10" ry="7" fill="#fbe3cc"/>
-      <ellipse class="olho" cx="24" cy="35" rx="3" ry="4" fill="#3a2a2e"/><ellipse class="olho" cx="40" cy="35" rx="3" ry="4" fill="#3a2a2e"/>
-      <circle cx="25" cy="33.5" r="1" fill="#fff"/><circle cx="41" cy="33.5" r="1" fill="#fff"/>
-      <path d="M30 41 h4 l-2 2.4 z" fill="#ec8fa8"/><path d="M32 43.4 q-2 3 -5 2 M32 43.4 q2 3 5 2" stroke="#3a2a2e" stroke-width="1.6" fill="none" stroke-linecap="round"/>
-      <path d="M14 40 h8 M14 44 h8 M42 40 h8 M42 44 h8" stroke="#3a2a2e" stroke-width="1.3" stroke-linecap="round" opacity=".6"/>
-      <ellipse cx="20" cy="42" rx="3" ry="2" fill="#ec8fa8" opacity=".5"/><ellipse cx="44" cy="42" rx="3" ry="2" fill="#ec8fa8" opacity=".5"/></svg>`,
-    esperto: `<svg class="avatar" viewBox="0 0 64 64" aria-hidden="true">
-      <path d="M14 18 L18 6 L26 14 Z M50 18 L46 6 L38 14 Z" fill="#9c7f6a" stroke="#3a2a2e" stroke-width="2.5" stroke-linejoin="round"/>
-      <ellipse cx="32" cy="36" rx="24" ry="22" fill="#b0927c" stroke="#3a2a2e" stroke-width="2.5"/>
-      <ellipse cx="32" cy="46" rx="13" ry="10" fill="#e9d8c4"/>
-      <path d="M26 46 q2 2 4 0 q2 2 4 0 q2 2 4 0" stroke="#b0927c" stroke-width="1.6" fill="none"/>
-      <circle cx="22" cy="30" r="9" fill="#fffaf0" stroke="#3a2a2e" stroke-width="2.5"/><circle cx="42" cy="30" r="9" fill="#fffaf0" stroke="#3a2a2e" stroke-width="2.5"/>
-      <path d="M31 30 h2" stroke="#3a2a2e" stroke-width="2.5"/>
-      <circle class="olho" cx="22" cy="30" r="4" fill="#3a2a2e"/><circle class="olho" cx="42" cy="30" r="4" fill="#3a2a2e"/>
-      <circle cx="23.5" cy="28.5" r="1.3" fill="#fff"/><circle cx="43.5" cy="28.5" r="1.3" fill="#fff"/>
-      <path d="M29 36 L35 36 L32 41 Z" fill="#f2b15e" stroke="#3a2a2e" stroke-width="1.8" stroke-linejoin="round"/>
-      <circle cx="13" cy="38" r="3" fill="#ec8fa8" opacity=".45"/><circle cx="51" cy="38" r="3" fill="#ec8fa8" opacity=".45"/></svg>`,
-  };
+  // os rivais do jogo: Diana (fácil) e Dona Coruja (difícil)
+  const RETRATO_RIVAL = { aprendiz: 'diana', esperto: 'coruja' };
   const RIVAIS = {
-    aprendiz: { nome: 'Biscoito', desc: 'um gatinho que joga por diversão', falas: {
-      inicio: ['Miau! Vamos brincar?', 'Trouxe biscoitos. Bora jogar?'],
-      meuDisparo: ['Prrr, que bonito!', 'Olha a minha corrente!'], minhaRuptura: ['Ops, derrubei tudo…', 'Miau… escorregou.'],
-      seuDisparoGrande: ['Uau, que corrente!', 'Você é bom nisso!'], armadilha: ['Hihi, te peguei!'], caiu: ['Ei! Isso foi esperto.'],
-      venci: ['Ganhei! Quer um biscoito?'], perdi: ['Boa partida! Mais uma?'] } },
-    esperto: { nome: 'Dona Coruja', desc: 'joga com calma e lê a Mesa', falas: {
-      inicio: ['Boa noite, querido. Chá?', 'Sente-se. Vamos com calma.'],
-      meuDisparo: ['Huu-huu, paciência rende.', 'Uma corrente bem tecida.'], minhaRuptura: ['Ora, ora… acontece.', 'Hum. Me distraí com o chá.'],
-      seuDisparoGrande: ['Bela jogada!', 'Assim se faz.'], armadilha: ['Uma coruja nunca esquece um dado.', 'Eu avisei que estava armada.'], caiu: ['Muito bem lido.'],
-      venci: ['Foi por pouco. Outra rodada?'], perdi: ['Muito bem! Estou orgulhosa.'] } },
+    aprendiz: { nome: 'Diana', desc: 'gata branca de olhos azuis; joga solto e arrisca', falas: {
+      inicio: ['Boa noite. Uma partida?', 'A Mesa está pronta. Comece quando quiser.'],
+      meuDisparo: ['Essa entrou.', 'Corrente fechada.'], minhaRuptura: ['Arrisquei demais.', 'Essa não segurou.'],
+      seuDisparoGrande: ['Boa leitura da Mesa.', 'Belo disparo.'], armadilha: ['Estava armada desde o começo.', 'Caiu na minha.'], caiu: ['Bem visto.'],
+      venci: ['Boa partida. Outra?'], perdi: ['Mereceu. Revanche?'] } },
+    esperto: { nome: 'Dona Coruja', desc: 'joga com paciência e lê a Mesa', falas: {
+      inicio: ['Boa noite. Sem pressa: a Mesa fala.', 'Sente-se. Vamos com calma.'],
+      meuDisparo: ['Paciência rende.', 'Uma corrente bem construída.'], minhaRuptura: ['Hum. Calculei mal.', 'Acontece com quem arrisca.'],
+      seuDisparoGrande: ['Jogada precisa.', 'Muito bem construída.'], armadilha: ['Eu avisei que havia algo armado.', 'A Mesa nunca esquece.'], caiu: ['Bem lido.'],
+      venci: ['Foi equilibrado. Outra?'], perdi: ['Excelente partida.'] } },
   };
 
   // o módulo online (mais abaixo) preenche estes dois
@@ -127,7 +102,10 @@
     if (Array.isArray(s.decks)) st.decks = s.decks.map(d => (d || []).filter(c => CARTAS[c])).map(d => deckValido(d) ? d : []);
     st.deckVisto = !!s.deckVisto;
   } catch (e) {}
-  const salvar = () => { try { localStorage.setItem('diceduel.v1', JSON.stringify({ cfg: st.cfg, pref: st.pref, rec: st.rec, conta: st.contaConvidado || st.conta, decks: st.decks, deckVisto: st.deckVisto })); } catch (e) {} };
+  const salvar = () => {
+    try { localStorage.setItem('diceduel.v1', JSON.stringify({ cfg: st.cfg, pref: st.pref, rec: st.rec, conta: st.contaConvidado || st.conta, decks: st.decks, deckVisto: st.deckVisto })); } catch (e) {}
+    if (st.sessao && Conta.sincronizar) Conta.sincronizar();   // com conta, decks e recordes vão para o servidor
+  };
   const armadilhasLiberadas = () => st.pref.liberar || st.rec.partidas >= 1;
   const travada = c => CARTAS[c].tipo === 'armadilha' && !armadilhasLiberadas();
   const possui = c => st.conta.cartas.includes(c);
@@ -484,7 +462,7 @@
   // cada um vê os próprios dados com a própria skin; os rivais têm a sua; a Mesa usa a sua (ou marfim, a dois)
   const skinDe = p => p === 0 ? st.conta.dado : jogo.modo === 'bot' ? (jogo.nivel === 'esperto' ? 'madeira' : 'rosa') : online() ? (jogo.perfis[1].dado || 'marfim') : 'marfim';
   const skinMesa = () => jogo.modo !== 'local' ? st.conta.dado : 'marfim';
-  const iconeSVG = id => `<svg class="avatar" viewBox="0 0 64 64" aria-hidden="true">${(ICONES[id] || ICONES.bolinha).svg}</svg>`;
+  const iconeSVG = id => Retratos.retrato(ICONES[id] ? id : 'bolinha', ICONES[id] && ICONES[id].grupo === 'especial' ? 'especial' : '');
   const elo = r => `<span class="elo ${r.length > 1 ? 'duplo' : 'r-' + r[0]}" title="${r.map(k => REL[k].nome).join(' + ')}">${r.map(k => REL[k].simb).join('·')}</span>`;
 
   function bolsoHTML(p) {
@@ -536,7 +514,7 @@
     const seCrescer = L >= 3 && L < LIM ? ` · com ${L + 1}: <b>+${pontos(L + 1)}</b>` : '';
     const pensa = daVez && !humano(p) && !(online() && j.perfis[1].conectado === false);
     const tag = j.fase === 'fim' ? (j.vencedor === p ? 'venceu' : '') : daVez ? (humano(p) ? (j.modo !== 'local' ? 'sua vez' : 'vez') : online() ? (j.perfis[1].conectado === false ? 'caiu, esperando' : 'jogando') : 'pensando') : '';
-    const avatar = j.modo === 'bot' && p === 1 ? AVATAR[j.nivel].replace('class="avatar"', `class="avatar ${j.humor || ''}"`) : p === 0 ? iconeSVG(st.conta.icone) : online() ? iconeSVG(j.perfis[1].icone) : '';
+    const avatar = j.modo === 'bot' && p === 1 ? Retratos.retrato(RETRATO_RIVAL[j.nivel], j.humor || '') : p === 0 ? iconeSVG(st.conta.icone) : online() ? iconeSVG(j.perfis[1].icone) : '';
     const fala = j.modo === 'bot' && p === 1 && j.fala ? `<div class="fala" aria-live="polite">${j.fala.txt}</div>` : '';
     return `<div class="jogador p${p}${daVez ? ' da-vez' : ''}">${fala}
       <div class="cab">${avatar}<span class="quem"><span class="nome">${n[p]}</span>${tag ? `<span class="vez-tag${pensa ? ' pensando-pontos' : ''}">${tag}</span>` : ''}</span>
@@ -728,8 +706,8 @@
             Som.tocar('elo', { n: e.n });
             const s = document.querySelectorAll(`#pj${e.p} .corrente .slot[data-slot]`); const alvo = s[s.length - 1];
             if (alvo) Fx.faiscas(alvo, 5 + e.n * 2, undefined, 1.6 + e.n * 0.3);
-            if (e.n === 4) Fx.texto(alvo, 'Boa corrente!', 'pequeno');
-            if (e.n === 5) Fx.texto(alvo, 'Corrente de 5!', 'pequeno');
+            if (e.n === 4) Fx.texto(alvo, 'Corrente de 4', 'pequeno');
+            if (e.n === 5) Fx.texto(alvo, 'Corrente de 5', 'pequeno');
           }, 300);
           break;
         }
@@ -749,7 +727,7 @@
         case 'ruptura': {
           Som.tocar('ruptura'); Fx.poeira(qs(`#pj${e.p} .corrente`), 8 + e.L * 2); if (humano(e.p)) vibrar(90);
           if (painelEl) Fx.tremer(painelEl, 0.6);
-          if (e.L >= 4 && humano(e.p)) Fx.texto(qs(`#pj${e.p} .corrente`), 'Ah… rompeu', 'pequeno ruim');
+          if (e.L >= 4 && humano(e.p)) Fx.texto(qs(`#pj${e.p} .corrente`), 'Rompeu', 'pequeno ruim');
           break;
         }
         case 'salvo': Som.tocar('salvo'); Fx.chamada('Salvo!', e.txt, 'suave'); Fx.faiscas(qs(`#pj${e.p} .corrente`), 14, ['#cdeccf', '#fff6e6']); break;
@@ -766,8 +744,8 @@
         case 'falar': if (j.modo === 'bot') falaDoEvento(e); break;
         case 'fim': {
           const venceuHumano = humano(e.p);
-          if (venceuHumano) { Som.tocar('vitoria'); Fx.confete(120); Fx.chamada(e.virada ? 'Virada!' : j.modo !== 'local' ? 'Vitória!' : `${n[e.p]} venceu!`, e.virada ? 'que volta por cima' : 'que partida gostosa'); }
-          else { Som.tocar('derrota'); Fx.chamada('Quase!', `${n[e.p]} venceu desta vez`, 'rival'); }
+          if (venceuHumano) { Som.tocar('vitoria'); Fx.confete(120); Fx.chamada(e.virada ? 'Virada!' : j.modo !== 'local' ? 'Vitória!' : `${n[e.p]} venceu!`, e.virada ? 'veio de trás e venceu' : 'partida bem jogada'); }
+          else { Som.tocar('derrota'); Fx.chamada('Fim de partida', `${n[e.p]} venceu desta vez`, 'rival'); }
           break;
         }
       }
@@ -779,7 +757,7 @@
     const j = jogo, n = nomes();
     j.intro = true; render();
     const lado = p => {
-      const av = j.modo === 'bot' && p === 1 ? AVATAR[j.nivel] : p === 0 ? iconeSVG(st.conta.icone) : iconeSVG(online() ? j.perfis[1].icone : 'sapo');
+      const av = j.modo === 'bot' && p === 1 ? Retratos.retrato(RETRATO_RIVAL[j.nivel]) : p === 0 ? iconeSVG(st.conta.icone) : iconeSVG(online() ? j.perfis[1].icone : 'raposa');
       const deck = j.decks[p].map(c => `<span class="carta ${CARTAS[c].tipo}">${CARTAS[c].ico}${CARTAS[c].nome}</span>`).join('') || '<span class="nota">sem cartas</span>';
       return `<div class="vs-lado">${av}<b class="cor${p}">${n[p]}</b><div class="vs-deck">${deck}</div></div>`;
     };
@@ -807,7 +785,7 @@
     const momentos = [...grupos.values()].sort((a, b) => ordemSimb.indexOf(a.simbolo) - ordemSimb.indexOf(b.simbolo)).slice(0, 6)
       .map(m => `<li><span class="em">${m.simbolo}</span><span>${j.modo === 'local' ? `<span class="cor${m.p}">${n[m.p]}</span> ` : ''}${m.txt}${m.vezes > 1 ? ` <b>×${m.vezes}</b>` : ''}</span></li>`).join('');
     const recs = (j.recordes || []).map(r => `<li class="recorde"><span class="em">✪</span>Novo: ${r}</li>`).join('');
-    document.getElementById('fimMomentos').innerHTML = recs + (momentos || '<li><span class="em">☕</span>Partida tranquila. A próxima corrente vem.</li>');
+    document.getElementById('fimMomentos').innerHTML = recs + (momentos || '<li><span class="em">☕</span>Sem lances marcantes desta vez.</li>');
     desenharRecompensas(j);
     const s = j.stats, linha = (rot, f) => `<tr><th>${rot}</th><td>${f(s[0], 0)}</td><td>${f(s[1], 1)}</td></tr>`;
     document.getElementById('fimTabela').innerHTML =
@@ -817,7 +795,7 @@
       linha('Disparos', x => x.disp) + linha('Maior corrente', x => x.maior || '–') + linha('Rupturas', x => x.rupt) +
       linha('Bolso (guardou · trocou)', x => `${x.guardou} · ${x.trocou}`);
     document.getElementById('fimTexto').value =
-      `Dice Duel v0.8 · ${j.modo === 'bot' ? 'contra ' + n[1] : online() ? 'online contra ' + n[1] : '2 jogadores'} · meta ${j.meta}${j.premio ? ` · moedas +${j.premio.moedas ? j.premio.moedas.total : 0} · rating ${j.premio.ratingAntes}→${j.premio.rating}` : ''}\n` +
+      `Dice Duel v0.9 · ${j.modo === 'bot' ? 'contra ' + n[1] : online() ? 'online contra ' + n[1] : '2 jogadores'} · meta ${j.meta}${j.premio ? ` · moedas +${j.premio.moedas ? j.premio.moedas.total : 0} · rating ${j.premio.ratingAntes}→${j.premio.rating}` : ''}\n` +
       `${n[0]} ${j.pts[0]} × ${j.pts[1]} ${n[1]} · ${j.compras} dados pegos · ${j.rodada} rodadas\n` +
       [0, 1].map(k => `${n[k]} [${j.decks[k].map(c => CARTAS[c].nome).join(', ') || 'sem cartas'}]: ${s[k].disp} disparos, maior ${s[k].maior}, ${s[k].rupt} rupturas, Bolso ${s[k].guardou}/${s[k].trocou}, cartas que agiram: ${s[k].cartas.join(', ') || 'nenhuma'}, blefes ${s[k].blefes || 0}`).join('\n') +
       `\nComentário: `;
@@ -873,11 +851,11 @@
     if (aba === 'ganhar') {
       alvo.innerHTML = `<table class="taxas">
         <tr><th>Partida</th><th>Base</th><th>Paga moedas enquanto o seu maior rating estiver</th></tr>
-        <tr><td>Biscoito (iniciante)</td><td>${BASE_MOEDAS.aprendiz}</td><td>rating abaixo de ${TETO_MOEDAS.aprendiz}</td></tr>
+        <tr><td>Diana (iniciante)</td><td>${BASE_MOEDAS.aprendiz}</td><td>rating abaixo de ${TETO_MOEDAS.aprendiz}</td></tr>
         <tr><td>Dona Coruja (avançado)</td><td>${BASE_MOEDAS.esperto}</td><td>rating abaixo de ${TETO_MOEDAS.esperto}</td></tr>
         <tr><td>Online, com amigos</td><td>${BASE_MOEDAS.online}</td><td>sempre; vale mais vencer quem tem rating maior</td></tr>
         <tr><td>A dois no aparelho</td><td>–</td><td>não paga</td></tr></table>
-        <p class="nota" style="margin-top:10px">Só vitórias dão moedas. A base é multiplicada pela <b>margem</b> (×1 a ×2: vencer por 8 pontos ou mais, na meta 12, dobra) e pela <b>rapidez</b> (×1,5 em até 5 Mesas, ×1,25 em 6). Uma vitória típica rende cerca de 14 contra o Biscoito e 24 contra a Dona Coruja. Com conta, as vitórias contra os rivais do jogo rendem até 300 moedas por dia.</p>
+        <p class="nota" style="margin-top:10px">Só vitórias dão moedas. A base é multiplicada pela <b>margem</b> (×1 a ×2: vencer por 8 pontos ou mais, na meta 12, dobra) e pela <b>rapidez</b> (×1,5 em até 5 Mesas, ×1,25 em 6). Uma vitória típica rende cerca de 14 contra a Diana e 24 contra a Dona Coruja. Com conta, as vitórias contra os rivais do jogo rendem até 300 moedas por dia.</p>
         <p class="nota">Experiência sobe em toda partida, ganhando ou perdendo, e os níveis 2, 3 e 5 dão presentes. Cartas nunca serão vendidas por dinheiro: elas ampliam o estilo, não a força (o melhor deck é feito só de cartas grátis).</p>`;
       return;
     }
@@ -894,7 +872,7 @@
     let html = '';
     if (aba === 'cartas') html = ORDEM.map(id => item('cartas', id, { nome: CARTAS[id].nome, preco: PRECO_CARTA[id] || 0 }, CARTAS[id].ico, `${CARTAS[id].tipo}${CARTAS[id].pontos ? ' · ⚡' : ''} · ${CARTAS[id].verbo}`)).join('');
     if (aba === 'dados') html = Object.entries(DADOS).map(([id, d]) => item('dados', id, d, `<span style="width:52px;height:52px;display:block">${dadoHTML(5, id)}</span>`, d.desc)).join('');
-    if (aba === 'icones') html = Object.entries(ICONES).map(([id, d]) => item('icones', id, d, iconeSVG(id), d.nivel ? `presente do nível ${d.nivel}` : 'seu rosto na mesa')).join('');
+    if (aba === 'icones') html = GRUPOS_ICONES.map(([g, titulo]) => `<h3 class="grupo-loja">${titulo}</h3>` + Object.entries(ICONES).filter(([, d]) => d.grupo === g).map(([id, d]) => item('icones', id, d, iconeSVG(id), d.desc)).join('')).join('');
     if (aba === 'mesas') html = Object.entries(MESAS).map(([id, d]) => item('mesas', id, d, `<span class="amostra-mesa" style="background:${d.amostra}"></span>`, d.nivel ? `presente do nível ${d.nivel}` : 'o feltro da sua mesa')).join('');
     alvo.innerHTML = `<div class="itens">${html}</div>${aba === 'cartas' ? '<p class="nota" style="margin-top:10px">As cartas à venda são situacionais: dão jeitos novos de jogar, não mais força. Na simulação, nenhum deck com carta comprada supera o melhor deck de cartas grátis.</p>' : '<p class="nota" style="margin-top:10px">Só aparência. Na versão final, alguns cosméticos também poderão ser comprados com dinheiro; cartas, nunca.</p>'}`;
   }
@@ -903,7 +881,7 @@
     const info = tipo === 'cartas' ? { preco: PRECO_CARTA[id] } : ({ dados: DADOS, icones: ICONES, mesas: MESAS })[tipo][id];
     if (!info || c[tipo].includes(id) || c.moedas < info.preco) return;
     if (botao.dataset.certeza !== '1') { botao.dataset.certeza = '1'; botao.innerHTML = `Confirmar? <span class="moeda"></span>${info.preco}`; return; }
-    const festa = () => { if (jogo) render(); Som.tocar('compra'); Fx.confete(60); Fx.chamada('Novo!', `${nomeItem(tipo, id)} é seu`, 'suave'); };
+    const festa = () => { if (jogo) render(); Som.tocar('compra'); Fx.confete(60); Fx.chamada('Na coleção', `${nomeItem(tipo, id)} agora é seu`, 'suave'); };
     if (st.sessao) {
       botao.disabled = true;
       pedir('POST', '/api/loja/comprar', { tipo, id })
@@ -1154,6 +1132,7 @@
     if (!st.sessao) st.contaConvidado = st.conta;
     st.sessao = { token: r.token, perfil: r.conta };
     usarPerfil(r.conta);
+    unirExtras(r.conta);
     aviso(criar ? `Conta criada. Bem-vindo, ${r.conta.nome}!` : `Olá de novo, ${r.conta.nome}!`);
     Som.tocar('momento');
     if (Rede.convite) { const c = Rede.convite; Rede.convite = null; entrarNaSala(c); }
@@ -1166,6 +1145,26 @@
     if (st.contaConvidado) { st.conta = st.contaConvidado; delete st.contaConvidado; }
     aplicarPrefs(); desenharOnline(); if (jogo) render();
   }
+  // o que segue a conta entre aparelhos (o som e a imagem ficam em cada aparelho)
+  const extrasDoAparelho = () => ({ decks: st.decks, rec: st.rec, cfg: st.cfg, deckVisto: st.deckVisto });
+  function aplicarExtras(ex) {
+    if (!ex || !ex.em) return false;
+    if (Array.isArray(ex.decks)) st.decks = [0, 1].map(i => (ex.decks[i] || []).filter(c => CARTAS[c]));
+    if (ex.rec) Object.assign(st.rec, ex.rec);
+    if (ex.cfg) Object.assign(st.cfg, ex.cfg);
+    if (typeof ex.deckVisto === 'boolean') st.deckVisto = st.deckVisto || ex.deckVisto;
+    try { localStorage.setItem('diceduel.v1', JSON.stringify({ cfg: st.cfg, pref: st.pref, rec: st.rec, conta: st.contaConvidado || st.conta, decks: st.decks, deckVisto: st.deckVisto })); } catch (e) {}
+    if (!document.getElementById('janelaDeck').hidden) desenharDeck();
+    return true;
+  }
+  let esperaSync = null;
+  Conta.sincronizar = () => {
+    clearTimeout(esperaSync);
+    esperaSync = setTimeout(() => { if (st.sessao) pedir('PUT', '/api/eu/dados', extrasDoAparelho()).then(r => { st.sessao.perfil = r.conta; guardarSessao(); }).catch(() => {}); }, 1200);
+  };
+  // ao entrar (ou abrir o jogo já com conta): o que está na conta vale; conta nova recebe o que está no aparelho
+  const unirExtras = pf => { if (!aplicarExtras(pf.extras)) Conta.sincronizar(); };
+
   // partidas contra os rivais do jogo, com conta: o servidor confere o teto e paga (o aparelho só mostra antes)
   Conta.relatarSolo = async j => {
     if (!st.sessao) return;
@@ -1302,7 +1301,7 @@
     const el = document.getElementById('onlineConteudo');
     document.getElementById('onlineServidor').textContent = st.sessao ? (Rede.ola ? 'conectado' : '') : '';
     if (!API) {
-      el.innerHTML = `<p>O online precisa do servidor do Dice Duel. Abra o jogo pelo endereço do servidor (por exemplo, o da Railway) para criar conta, chamar amigos e entrar no ranking.</p><p class="nota">Aqui, neste arquivo, dá para jogar contra o Biscoito, a Dona Coruja ou a dois no mesmo aparelho.</p>`;
+      el.innerHTML = `<p>O online precisa do servidor do Dice Duel. Abra o jogo pelo endereço do servidor (por exemplo, o da Railway) para criar conta, chamar amigos e entrar no ranking.</p><p class="nota">Aqui, neste arquivo, dá para jogar contra a Diana, a Dona Coruja ou a dois no mesmo aparelho.</p>`;
       return;
     }
     if (!st.sessao) {
@@ -1391,7 +1390,7 @@
     st.deckVisto = true; // quem chega por convite vai direto para a sala
   })();
   // com conta: atualiza o perfil (e renova o token) em segundo plano
-  if (st.sessao && API) pedir('GET', '/api/eu').then(r => { st.sessao.token = r.token; usarPerfil(r.conta); }).catch(() => {});
+  if (st.sessao && API) pedir('GET', '/api/eu').then(r => { st.sessao.token = r.token; usarPerfil(r.conta); unirExtras(r.conta); if (jogo) render(); }).catch(() => {});
 
   // ---------- início ----------
   aplicarPrefs();
@@ -1404,7 +1403,7 @@
       aplicarPrefs(); render(); talvezAutomato();
       if (jogo.fase === 'fim') mostrarFim();
     } else if (!st.deckVisto) {
-      // primeira visita: o deck "Primeira mesa" e o Biscoito; as armadilhas chegam depois da 1ª partida
+      // primeira visita: o deck "Primeira mesa" e a Diana; as armadilhas chegam depois da 1ª partida
       st.decks[0] = PRONTOS[0].cartas.slice(); st.cfg.nivel = 'aprendiz';
       const animar = st.pref.animacoes; st.pref.animacoes = false; novaPartida(); st.pref.animacoes = animar;
       abrirDeck();
@@ -1412,6 +1411,6 @@
     if (Rede.convite) { abrirOnline(); if (st.sessao) { const c = Rede.convite; Rede.convite = null; entrarNaSala(c).then(abrirOnline); } }
   }
   // o roteiro de teste automático (tools/) pode ler o estado
-  window.DiceDuel = { get jogo() { return jogo; }, st, ajustar(p) { Object.assign(st.pref, p); aplicarPrefs(); if (jogo) render(); } };
+  window.DiceDuel = { get jogo() { return jogo; }, st, salvar, ajustar(p) { Object.assign(st.pref, p); aplicarPrefs(); if (jogo) render(); } };
   window.claude?.hot?.ready ? window.claude.hot.ready(iniciar) : iniciar(window.claude?.hot?.data ?? {});
 })();

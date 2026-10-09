@@ -10,17 +10,17 @@ const contaNova = (id, nome, senha) => ({
   id, nome, chave: nome.toLowerCase(), senha_hash: senha.hash, sal: senha.sal,
   rating: 1000, pico: 1000, partidas: 0, vitorias: 0, moedas: 0, xp: 0,
   cartas: Regras.GRATIS.slice(), dados: ['marfim'], icones: ['bolinha'], mesas: ['salvia'],
-  ativo: { dado: 'marfim', icone: 'bolinha', mesa: 'salvia' }, solo_dia: '', solo_hoje: 0, solo_rating: 1000, solo_pico: 1000,
+  ativo: { dado: 'marfim', icone: 'bolinha', mesa: 'salvia' }, solo_dia: '', solo_hoje: 0, solo_rating: 1000, solo_pico: 1000, extras: {},
   criado: new Date().toISOString(),
 });
-const CAMPOS_JSON = ['cartas', 'dados', 'icones', 'mesas', 'ativo'];
-const CAMPOS_EDITAVEIS = ['rating', 'pico', 'partidas', 'vitorias', 'moedas', 'xp', 'cartas', 'dados', 'icones', 'mesas', 'ativo', 'solo_dia', 'solo_hoje', 'solo_rating', 'solo_pico'];
+const CAMPOS_JSON = ['cartas', 'dados', 'icones', 'mesas', 'ativo', 'extras'];
+const CAMPOS_EDITAVEIS = ['rating', 'pico', 'partidas', 'vitorias', 'moedas', 'xp', 'cartas', 'dados', 'icones', 'mesas', 'ativo', 'solo_dia', 'solo_hoje', 'solo_rating', 'solo_pico', 'extras'];
 const hoje = () => new Date().toISOString().slice(0, 10);
 // o que a conta mostra ao próprio dono (nunca a senha)
 const perfil = c => c && ({
   id: c.id, nome: c.nome, rating: c.rating, pico: c.pico, partidas: c.partidas, vitorias: c.vitorias, moedas: c.moedas, xp: c.xp,
   cartas: c.cartas, dados: c.dados, icones: c.icones, mesas: c.mesas, ativo: c.ativo, solo_rating: c.solo_rating, solo_pico: c.solo_pico,
-  titulo: Regras.tituloDe(c.rating), nivel: Regras.nivelDe(c.xp),
+  extras: c.extras || {}, titulo: Regras.tituloDe(c.rating), nivel: Regras.nivelDe(c.xp),
 });
 
 class BancoMemoria {
@@ -68,6 +68,8 @@ class BancoPostgres {
     await this.pool.query(`CREATE TABLE IF NOT EXISTS partidas (
       id SERIAL PRIMARY KEY, a INTEGER NOT NULL, b INTEGER NOT NULL, vencedor INTEGER, placar TEXT NOT NULL,
       rodadas INTEGER NOT NULL, moedas INTEGER NOT NULL DEFAULT 0, dia TEXT NOT NULL, criado TIMESTAMPTZ NOT NULL DEFAULT now())`);
+    // colunas que chegaram depois da primeira versão (bancos já criados ganham a coluna sem perder nada)
+    await this.pool.query("ALTER TABLE contas ADD COLUMN IF NOT EXISTS extras JSONB NOT NULL DEFAULT '{}'::jsonb");
     await this.pool.query('CREATE INDEX IF NOT EXISTS contas_rating ON contas (rating DESC)');
     await this.pool.query('CREATE INDEX IF NOT EXISTS partidas_dia ON partidas (dia)');
   }

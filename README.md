@@ -17,6 +17,9 @@ Cada um guarda um dado no **Bolso**, escolhe a hora de **disparar** a corrente p
 - a experiência sobe em toda partida;
 - um rating evita que jogador forte farme o modo fácil.
 
+**Ícones:** básicos, animais humanizados (raposa, sapo, urso, coelho, guaxinim), natureza (cogumelos, monstera, cacto) e os
+**especiais**, de moldura dourada: Biscoito, Gordinho, Cafú e Bandoleiro.
+
 **Online:** conta com nome e senha, ranking, e salas para jogar com amigos. Você manda um link de convite (`/?sala=CODIGO`)
 e o amigo cai direto na sala. O servidor é a autoridade da partida e roda na Railway (`docs/servidor.md`).
 
@@ -31,7 +34,7 @@ e o amigo cai direto na sala. O servidor é a autoridade da partida e roda na Ra
 - **Com o online:** `npm install && npm start` e abra `http://localhost:8080`. Na Railway, siga `docs/servidor.md`.
 
 **Contra quem:**
-- **Biscoito**, um gatinho, fácil;
+- **Diana**, uma gata branca de olhos azuis, a rival fácil;
 - **Dona Coruja**, que lê a Mesa;
 - **duas pessoas** no mesmo aparelho;
 - **um amigo, online**, por link de convite (vale rating e moedas).
@@ -51,10 +54,12 @@ e o amigo cai direto na sala. O servidor é a autoridade da partida e roda na Ra
 | `js/jogo.js` | tela, rivais, bons momentos, recordes, ajustes, loja e a janela Online (conta, salas, ranking) |
 | `shared/regras.js` | o motor de regras, puro, usado pelo navegador e pelo servidor |
 | `servidor/` | API, contas, ranking, salas e partida online (Node, Express, WebSocket, Postgres) |
+| `js/retratos.js` | os rivais (Diana, Dona Coruja) e os ícones dos jogadores em vetor; a versão pintada, quando existe, vem de `js/retratos_pintados.js` |
 | `js/audio.js` | efeitos e trilha lo-fi sintetizados na hora (Web Audio, sem arquivos de áudio) |
 | `js/efeitos.js` | partículas, dados voando, chamadas de "bom momento", contagem do placar |
 | `sim/` | regras de referência em Python e os experimentos de balanceamento |
 | `tools/empacotar.py` | gera o HTML único |
+| `tools/arte_icones.py` | pinta os retratos com a API de imagem da OpenAI (pedidos em `arte/retratos.json`) e os embute no jogo |
 | `tools/fumaca.js` | teste de fumaça: joga partidas inteiras no navegador e falha com qualquer erro |
 | `tools/regras.js` | testes dirigidos das cartas (Pressa, Coringa, Espelho, blefe, Âncora × Interferência) |
 | `tools/layout.js` | verificador de layout em 5 larguras: texto vazando, fora da caixa, quebrado, descentralizado |
@@ -81,7 +86,7 @@ node tools/online_e2e.js                       # online de ponta a ponta, com o 
 
 ## Estado
 
-**Protótipo v0.8, pronto para testes com gente, com online pronto para a Railway.** O resumo copiável do fim da partida traz:
+**Protótipo v0.9, pronto para testes com gente, com online pronto para a Railway.** O resumo copiável do fim da partida traz:
 - o deck de cada um;
 - as cartas que agiram;
 - as rupturas;

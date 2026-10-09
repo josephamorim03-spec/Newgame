@@ -11,6 +11,7 @@ Banco: Postgres (o plugin da Railway). Sem `DATABASE_URL`, guarda tudo num arqui
 | **Ranking** | Elo (K 32), começando em 1000. Os 50 melhores aparecem na janela Online. |
 | **Salas** | quem cria recebe um código de 6 letras e um link `/?sala=CODIGO`. Não há lista de amigos: o convite pelo link já resolve. |
 | **Partida** | o servidor é a autoridade: guarda o estado inteiro, aplica as jogadas com o mesmo motor do jogo (`shared/regras.js`) e manda a cada um só a visão dele. A armadilha armada do rival não sai do servidor; o Espelho, que é visível na mesa, sai. |
+| **Vários aparelhos** | entrar com o mesmo nome e senha no PC e no celular traz tudo: moedas, itens, rating, nível, decks, recordes e o jeito de jogar (rival, meta, ritmo). Som, música e animações ficam em cada aparelho. |
 | **Moedas e loja** | com conta, moedas e itens moram no servidor. Preço e posse são conferidos lá. Cartas que a conta não tem não entram no deck online. |
 
 ### Regras contra abuso
@@ -68,6 +69,7 @@ A janela Online explica que precisa do servidor.
 | `GET /api/ranking` | top 50 |
 | `POST /api/loja/comprar` `{tipo, id}` | `tipo`: `cartas`, `dados`, `icones` ou `mesas` |
 | `POST /api/loja/usar` `{tipo, id}` | troca o dado, o ícone ou a mesa em uso |
+| `PUT /api/eu/dados` `{decks, rec, cfg, deckVisto}` | guarda o que segue a conta entre aparelhos (cartas que a conta não tem saem do deck) |
 | `POST /api/solo` `{nivel, venceu, margem, rodadas, meta, momentos}` | resultado contra um rival do jogo (com o teto diário) |
 | `POST /api/salas` `{meta}` | cria uma sala |
 | `GET /api/salas/:codigo` | quem está na sala |

@@ -29,7 +29,7 @@ rapidez = ×1,5 em até 5 Mesas · ×1,25 em 6 · ×1,0 depois   (na meta 16: 7 
 
 | Modo | Base | Vitória apertada (p25) | Típica (mediana) | Excelente (máx.) |
 |---|---|---|---|---|
-| Biscoito (iniciante) | 8 | 11 | 14 | 24 |
+| Diana (iniciante) | 8 | 11 | 14 | 24 |
 | Dona Coruja (avançado) | 14 | 19 | 24 | 42 |
 | Online (futuro) | 22 | 30 | 38 | 66 |
 
@@ -39,12 +39,12 @@ Uma vitória excelente rende mais de 2× uma apertada: quem joga bem é recompen
 
 | Situação | Regra |
 |---|---|
-| Jogador forte farmando o modo fácil | cada rival só paga moedas enquanto o **maior rating já alcançado** estiver abaixo de um teto: Biscoito até 1.050, Dona Coruja até 1.400. Acima disso, as moedas vêm do online |
+| Jogador forte farmando o modo fácil | cada rival só paga moedas enquanto o **maior rating já alcançado** estiver abaixo de um teto: Diana até 1.050, Dona Coruja até 1.400. Acima disso, as moedas vêm do online |
 | Perder de propósito para baixar o rating | não adianta: o teto olha o pico, não o rating atual |
 | Duas pessoas no mesmo aparelho | não dá moedas nem rating |
 | Online: atropelar iniciantes (smurf) | proposta: multiplicar por `1 + clamp((rating do rival − seu rating) / 400, −0,5, +0,5)`. Vencer quem é melhor vale até ×1,5; vencer quem é bem pior, ×0,5 |
 
-O **rating** do protótipo é provisório: um Elo (K = 32) contra o rating fixo de cada rival (Biscoito 850,
+O **rating** do protótipo é provisório: um Elo (K = 32) contra o rating fixo de cada rival (Diana 850,
 Dona Coruja 1.250). No jogo final, o rating online é a referência.
 
 **Títulos por rating:** Aprendiz de mesa (até 999), Jogador de chá (1.000), Tecelão de correntes (1.150),
@@ -80,7 +80,7 @@ As cartas chegam rápido; os cosméticos caros (Dourado, Diamante) ficam como me
 
 **Onde aparece:**
 - a skin vale para os seus dados na corrente, no Bolso e na Mesa;
-- cada rival usa a sua (Biscoito, rosa; Dona Coruja, madeira);
+- cada rival usa a sua (Diana, rosa; Dona Coruja, madeira);
 - o ícone aparece na sua ficha e na tela de "versus";
 - a mesa muda o feltro inteiro.
 

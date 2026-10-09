@@ -558,6 +558,15 @@ body.mesa-piquenique .ticker .cor0 { color: var(--voce-tinta); } body.mesa-pique
 .ranking .rk { font-weight: 800; }
 .prazo { font-weight: 800; color: var(--perigo, #c4553f); }
 
+/* ---------- ícones por grupo (v0.9): os especiais têm moldura dourada ---------- */
+.itens .grupo-loja { grid-column: 1 / -1; margin: 8px 0 0; }
+.itens .grupo-loja:first-child { margin-top: 0; }
+.item:has(.avatar.especial) { box-shadow: inset 0 0 0 2px #e2b04a, 0 3px 0 var(--papel-2); }
+img.avatar { object-fit: contain; }
+/* cartões da loja da mesma altura na linha: o botão sempre no pé */
+.item { grid-template-rows: auto auto 1fr auto; }
+.item small { align-self: start; }
+
 </style>
 </head>
 <body>
@@ -572,7 +581,7 @@ body.mesa-piquenique .ticker .cor0 { color: var(--voce-tinta); } body.mesa-pique
       </svg>
       <div>
         <h1>Dice <span>Duel</span></h1>
-        <p>duelo de dados aconchegante · v0.8</p>
+        <p>duelo de dados aconchegante · v0.9</p>
       </div>
     </div>
     <div class="topo-botoes">
@@ -710,7 +719,7 @@ body.mesa-piquenique .ticker .cor0 { color: var(--voce-tinta); } body.mesa-pique
           </div></div>
         <div class="linha-cfg" id="linhaNivel"><span><label>Rival</label><small id="rivalDesc"></small></span>
           <div class="segmento" role="group" aria-label="Rival">
-            <button data-cfg="nivel" data-v="aprendiz">Biscoito</button><button data-cfg="nivel" data-v="esperto">Dona Coruja</button>
+            <button data-cfg="nivel" data-v="aprendiz">Diana</button><button data-cfg="nivel" data-v="esperto">Dona Coruja</button>
           </div></div>
         <div class="linha-cfg"><span><label>Meta</label><small>16 deixa a partida mais longa</small></span>
           <div class="segmento" role="group" aria-label="Pontos para vencer">
@@ -849,9 +858,16 @@ body.mesa-piquenique .ticker .cor0 { color: var(--voce-tinta); } body.mesa-pique
       menta: { nome: 'Menta', preco: 0, nivel: 3 }, pelucia: { nome: 'Pelúcia', preco: 220 }, dourado: { nome: 'Dourado', preco: 450 },
       diamante: { nome: 'Diamante', preco: 800 },
     },
+    // grupo: basico, animal, natureza ou especial (os especiais têm moldura dourada)
     icones: {
-      bolinha: { nome: 'Bolinha', preco: 0 }, xicara: { nome: 'Xícara', preco: 0, nivel: 2 }, raposa: { nome: 'Raposa', preco: 100 },
-      sapo: { nome: 'Sapinho', preco: 100 }, cogumelo: { nome: 'Cogumelo', preco: 140 },
+      bolinha: { nome: 'Dado', preco: 0, grupo: 'basico' }, xicara: { nome: 'Xícara', preco: 0, nivel: 2, grupo: 'basico' },
+      raposa: { nome: 'Raposa', preco: 100, grupo: 'animal' }, sapo: { nome: 'Sapo', preco: 100, grupo: 'animal' },
+      urso: { nome: 'Urso', preco: 120, grupo: 'animal' }, coelho: { nome: 'Coelho', preco: 120, grupo: 'animal' },
+      guaxinim: { nome: 'Guaxinim', preco: 160, grupo: 'animal' },
+      cogumelo: { nome: 'Cogumelos', preco: 140, grupo: 'natureza' }, monstera: { nome: 'Monstera', preco: 90, grupo: 'natureza' },
+      cacto: { nome: 'Cacto', preco: 90, grupo: 'natureza' },
+      biscoito: { nome: 'Biscoito', preco: 300, grupo: 'especial' }, gordinho: { nome: 'Gordinho', preco: 350, grupo: 'especial' },
+      cafu: { nome: 'Cafú', preco: 400, grupo: 'especial' }, bandoleiro: { nome: 'Bandoleiro', preco: 450, grupo: 'especial' },
     },
     mesas: {
       salvia: { nome: 'Feltro sálvia', preco: 0 }, vinho: { nome: 'Feltro vinho', preco: 150 },
@@ -1277,6 +1293,218 @@ body.mesa-piquenique .ticker .cor0 { color: var(--voce-tinta); } body.mesa-pique
 });
 
 </script>
+  <script>
+/* gerado por tools/arte_icones.py: os retratos pintados (webp em data URI). Vazio = só vetor. */
+window.RETRATOS_PINTADOS = Object.assign(window.RETRATOS_PINTADOS || {}, {
+});
+
+</script>
+  <script>
+/* Dice Duel · retratos: os rivais e os ícones dos jogadores.
+ * Cada retrato tem uma versão em vetor (aqui) e pode ter uma versão pintada (js/retratos_pintados.js,
+ * gerada por tools/arte_icones.py com a API de imagem). Quando a pintada existe, ela é usada.
+ */
+(function () {
+  'use strict';
+  const T = '#3a2a2e';                // tinta dos contornos
+  const L = `stroke="${T}" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"`;
+  const l = w => `stroke="${T}" stroke-width="${w}" stroke-linejoin="round" stroke-linecap="round"`;
+  // moldura dos especiais: disco escuro com aro dourado
+  const MOLDURA = `<circle cx="32" cy="32" r="30" fill="#2e2330"/><circle cx="32" cy="32" r="30" fill="none" stroke="#e2b04a" stroke-width="2.6"/><circle cx="32" cy="32" r="27" fill="none" stroke="#e2b04a" stroke-width=".8" opacity=".5"/>`;
+
+  const SVG = {
+    // ---------- rivais ----------
+    // Diana: gata branca de olhos azuis; ponta da orelha direita (dela) preta, a esquerda branca;
+    // cinza leve logo acima dos olhos, dois riscos escuros simétricos na testa e um arranhão no dorso do nariz
+    diana: `
+      <path d="M9 31 L12 5 L29 17 Z" fill="#f8f6f2" ${L}/>
+      <path d="M10.6 17.2 L12 5 L20.3 11 Z" fill="#231c1f"/>
+      <path d="M9 31 L12 5 L29 17 Z" fill="none" ${L}/>
+      <path d="M14.5 14 L16 24 L23.5 19.5 Z" fill="#f0c6cb" opacity=".8"/>
+      <path d="M55 31 L52 5 L35 17 Z" fill="#f8f6f2" ${L}/>
+      <path d="M49.5 14 L48 24 L40.5 19.5 Z" fill="#f0c6cb" opacity=".8"/>
+      <ellipse cx="32" cy="37" rx="23.5" ry="20.5" fill="#f8f6f2" ${L}/>
+      <path d="M17.5 29.5 q6.5 -4.5 12 -1 M34.5 28.5 q5.5 -3.5 12 1" stroke="#dcdde3" stroke-width="4" fill="none" stroke-linecap="round" opacity=".75"/>
+      <path d="M25 22 h5.5 M33.5 22 h5.5" stroke="#9b9ca6" stroke-width="2" stroke-linecap="round"/>
+      <ellipse cx="32" cy="48" rx="11" ry="7.5" fill="#fff" opacity=".9"/>
+      <g class="olho"><path d="M18.5 35.5 q5 -6 11 0 q-5 5 -11 0 z" fill="#7fb6e6" ${l(1.6)}/><ellipse cx="24" cy="35.4" rx="1.3" ry="2.9" fill="#1f1a1d"/>
+      <path d="M34.5 35.5 q6 -6 11 0 q-6 5 -11 0 z" fill="#7fb6e6" ${l(1.6)}/><ellipse cx="40" cy="35.4" rx="1.3" ry="2.9" fill="#1f1a1d"/></g>
+      <circle cx="25.3" cy="34" r=".9" fill="#fff"/><circle cx="41.3" cy="34" r=".9" fill="#fff"/>
+      <path d="M30.6 37.6 l2.8 1.9" stroke="#c4473a" stroke-width="1.7" stroke-linecap="round"/>
+      <path d="M29.4 42.2 h5.2 l-2.6 2.8 z" fill="#e3a0a8" ${l(1.1)}/>
+      <path d="M32 45 q-1.8 2.4 -4.4 1.6 M32 45 q1.8 2.4 4.4 1.6" fill="none" ${l(1.4)}/>
+      <path d="M12 42 l9 1 M12 46.5 l9 -.5 M52 42 l-9 1 M52 46.5 l-9 -.5" stroke="#9a9aa4" stroke-width="1.1" stroke-linecap="round"/>`,
+    // Dona Coruja: sem nada sob o bico que pareça uma boca
+    coruja: `
+      <path d="M13 19 L16 5 L26 14 Z M51 19 L48 5 L38 14 Z" fill="#8e7260" ${L}/>
+      <ellipse cx="32" cy="36" rx="24" ry="22" fill="#a8896f" ${L}/>
+      <path d="M17 54 q15 8 30 0 q-3 -12 -15 -13 q-12 1 -15 13 z" fill="#e6d4be"/>
+      <path d="M22 51 l2 2 l2 -2 M38 51 l2 2 l2 -2 M30 56 l2 2 l2 -2" stroke="#b39880" stroke-width="1.3" fill="none" stroke-linecap="round"/>
+      <path d="M24 19 l8 6 l8 -6" fill="none" ${l(1.6)} stroke="#6f5646"/>
+      <circle cx="22" cy="31" r="9.5" fill="#fbf4e6" ${L}/><circle cx="42" cy="31" r="9.5" fill="#fbf4e6" ${L}/>
+      <path d="M31.4 30 h1.2" ${l(2.4)}/>
+      <g class="olho"><circle cx="22" cy="31" r="4.3" fill="#e0a43f"/><circle cx="22" cy="31" r="2.6" fill="#1f1a1d"/>
+      <circle cx="42" cy="31" r="4.3" fill="#e0a43f"/><circle cx="42" cy="31" r="2.6" fill="#1f1a1d"/></g>
+      <circle cx="23.3" cy="29.6" r="1" fill="#fff"/><circle cx="43.3" cy="29.6" r="1" fill="#fff"/>
+      <path d="M29 37.5 L35 37.5 L32 43 Z" fill="#e9a94f" ${l(1.6)}/>`,
+
+    // ---------- básicos ----------
+    bolinha: `
+      <g transform="rotate(-8 32 32)"><rect x="12" y="12" width="40" height="40" rx="10" fill="#fbf3e4" ${L}/>
+      <circle cx="22" cy="22" r="3.6" fill="${T}"/><circle cx="42" cy="22" r="3.6" fill="${T}"/><circle cx="32" cy="32" r="3.6" fill="${T}"/>
+      <circle cx="22" cy="42" r="3.6" fill="${T}"/><circle cx="42" cy="42" r="3.6" fill="${T}"/></g>`,
+    xicara: `
+      <path d="M25 15 c-3 -3 3 -5 0 -9 M33 15 c-3 -3 3 -5 0 -9" stroke="#d9c7ae" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <ellipse cx="31" cy="51" rx="23" ry="5.5" fill="#e6d2b7" ${L}/>
+      <path d="M46 26 h3 a7 7 0 0 1 0 14 h-5" fill="none" ${L}/>
+      <path d="M13 21 h36 v8 a16 16 0 0 1 -16 16 h-4 a16 16 0 0 1 -16 -16 z" fill="#f5e8d3" ${L}/>
+      <ellipse cx="31" cy="21.5" rx="17" ry="3.2" fill="#9a5b3a"/>
+      <path d="M15 31 h32" stroke="#c98a6b" stroke-width="3"/>`,
+
+    // ---------- animais humanizados ----------
+    raposa: `
+      <path d="M9 13 L22 24 L13 33 Z M55 13 L42 24 L51 33 Z" fill="#df7e47" ${L}/>
+      <path d="M12 15.5 l4.5 9 M52 15.5 l-4.5 9" stroke="#3a2a2e" stroke-width="3" stroke-linecap="round" opacity=".55"/>
+      <path d="M11 29 Q32 6 53 29 Q51 46 32 51 Q13 46 11 29 Z" fill="#df7e47" ${L}/>
+      <path d="M17 36 Q32 42 47 36 Q43 49 32 51 Q21 49 17 36 Z" fill="#fbf0e1"/>
+      <g class="olho"><path d="M21 32 q4 -3 7 0" fill="none" ${l(2.4)}/><path d="M36 32 q4 -3 7 0" fill="none" ${l(2.4)}/></g>
+      <ellipse cx="32" cy="42.5" rx="3" ry="2.2" fill="${T}"/>
+      <path d="M12 50 q20 10 40 0 l2 7 q-22 9 -44 0 z" fill="#4f7d63" ${L}/>
+      <path d="M40 54 l3 9 l6 -2 l-3 -8" fill="#4f7d63" ${L}/>
+      <path d="M18 53 v5 M26 55 v5 M34 55 v5" stroke="#3d634e" stroke-width="1.6"/>`,
+    sapo: `
+      <ellipse cx="32" cy="42" rx="24" ry="16" fill="#7fbf8e" ${L}/>
+      <circle cx="19" cy="27" r="8.5" fill="#7fbf8e" ${L}/><circle cx="45" cy="27" r="8.5" fill="#7fbf8e" ${L}/>
+      <g class="olho"><circle cx="19" cy="27" r="4.6" fill="#fbf3e4"/><circle cx="19.6" cy="27.6" r="2.6" fill="${T}"/>
+      <circle cx="45" cy="27" r="4.6" fill="#fbf3e4"/><circle cx="45.6" cy="27.6" r="2.6" fill="${T}"/></g>
+      <path d="M23 45 q9 5 18 0" fill="none" ${l(2.2)}/>
+      <ellipse cx="32" cy="15" rx="17" ry="3.4" fill="#e9cf8c" ${L}/>
+      <path d="M22 15 v-6 h20 v6" fill="#e9cf8c" ${L}/><path d="M22 12 h20" stroke="#a5523e" stroke-width="2.6"/>
+      <path d="M27 56 l5 -3 l5 3 l-5 3 z" fill="#a5523e" ${l(1.4)}/>`,
+    urso: `
+      <circle cx="13" cy="25" r="7" fill="#8a5f45" ${L}/><circle cx="51" cy="25" r="7" fill="#8a5f45" ${L}/>
+      <ellipse cx="32" cy="37" rx="22" ry="20" fill="#8a5f45" ${L}/>
+      <path d="M11 27 Q12 6 32 6 Q52 6 53 27 Z" fill="#b8473e" ${L}/>
+      <path d="M11 25 h42" stroke="#e7d6be" stroke-width="5"/><path d="M11 25 h42" fill="none" ${l(1.4)}/>
+      <path d="M19 12 v11 M25 9 v14 M32 8 v15 M39 9 v14 M45 12 v11" stroke="#9a3a33" stroke-width="1.4"/>
+      <circle cx="32" cy="5" r="4.5" fill="#e7d6be" ${L}/>
+      <ellipse cx="32" cy="44" rx="10" ry="7.5" fill="#d9b994"/>
+      <g class="olho"><circle cx="24" cy="35" r="2.5" fill="${T}"/><circle cx="40" cy="35" r="2.5" fill="${T}"/></g>
+      <ellipse cx="32" cy="41" rx="3.6" ry="2.6" fill="${T}"/>
+      <path d="M32 43.5 v2.5 M29 47 q3 2 6 0" fill="none" ${l(1.6)}/>`,
+    coelho: `
+      <path d="M19 30 Q13 4 21 3 Q28 4 26 29 Z" fill="#e9e4dc" ${L}/><path d="M20.5 26 Q17 8 21.5 7 Q24.5 8 23.8 26 Z" fill="#e9b7bd"/>
+      <path d="M45 30 Q51 4 43 3 Q36 4 38 29 Z" fill="#e9e4dc" ${L}/><path d="M43.5 26 Q47 8 42.5 7 Q39.5 8 40.2 26 Z" fill="#e9b7bd"/>
+      <ellipse cx="32" cy="39" rx="19" ry="17" fill="#e9e4dc" ${L}/>
+      <g class="olho"><ellipse cx="25" cy="37" rx="2.3" ry="2.8" fill="${T}"/><ellipse cx="39" cy="37" rx="2.3" ry="2.8" fill="${T}"/></g>
+      <path d="M30.2 42 h3.6 l-1.8 2 z" fill="#d98c97"/>
+      <path d="M32 44 v2 M29.5 47 q2.5 1.6 5 0" fill="none" ${l(1.4)}/>
+      <path d="M32 56 l-9 -5 v10 z M32 56 l9 -5 v10 z" fill="#3f6f8f" ${L}/><circle cx="32" cy="56" r="2.6" fill="#335c77" ${l(1.4)}/>`,
+    guaxinim: `
+      <path d="M11 26 L15 9 L26 17 Z M53 26 L49 9 L38 17 Z" fill="#8c8a8f" ${L}/>
+      <path d="M14.5 21 L16.2 13.5 L21.5 17.3 Z M49.5 21 L47.8 13.5 L42.5 17.3 Z" fill="#3b3438"/>
+      <ellipse cx="32" cy="36" rx="22" ry="19" fill="#9b999e" ${L}/>
+      <path d="M12 34 Q22 26 30 33 Q32 35 34 33 Q42 26 52 34 Q46 41 38 38 Q32 36 26 38 Q18 41 12 34 Z" fill="#3b3438"/>
+      <path d="M22 22 Q32 16 42 22 Q32 27 22 22 Z" fill="#c7c5c9"/>
+      <ellipse cx="32" cy="45" rx="9" ry="6.5" fill="#efece6"/>
+      <g class="olho"><circle cx="24" cy="34" r="2.5" fill="#f4efe6"/><circle cx="40" cy="34" r="2.5" fill="#f4efe6"/>
+      <circle cx="24.4" cy="34.4" r="1.4" fill="${T}"/><circle cx="40.4" cy="34.4" r="1.4" fill="${T}"/></g>
+      <ellipse cx="32" cy="42" rx="2.8" ry="2" fill="${T}"/><path d="M29 46.5 q3 2 6 0" fill="none" ${l(1.4)}/>
+      <path d="M8 64 Q10 52 22 52 Q32 57 42 52 Q54 52 56 64 Z" fill="#d9a441" ${L}/>
+      <path d="M27 54 l-1 7 M37 54 l1 7" stroke="#f3e2b8" stroke-width="1.6" stroke-linecap="round"/>`,
+
+    // ---------- natureza ----------
+    cogumelo: `
+      <path d="M8 56 q24 -6 48 0" fill="none" stroke="#6c9a5b" stroke-width="3" stroke-linecap="round"/>
+      <path d="M20 36 h14 v16 a7 3 0 0 1 -14 0 z" fill="#f4ead8" ${L}/>
+      <path d="M6 37 Q6 12 27 12 Q48 12 48 37 Z" fill="#c9503f" ${L}/>
+      <ellipse cx="17" cy="25" rx="3.6" ry="2.8" fill="#f8efe2"/><ellipse cx="29" cy="19" rx="3.2" ry="2.4" fill="#f8efe2"/><ellipse cx="39" cy="27" rx="3" ry="2.4" fill="#f8efe2"/><ellipse cx="25" cy="31" rx="2.4" ry="1.8" fill="#f8efe2"/>
+      <path d="M45 46 h6 v8 a3 1.5 0 0 1 -6 0 z" fill="#efe3cf" ${l(1.8)}/>
+      <path d="M39 47 Q39 37 48 37 Q57 37 57 47 Z" fill="#9b6a45" ${l(1.8)}/>`,
+    monstera: `
+      <path d="M32 44 V30" ${l(2.4)}/>
+      <path d="M32 31 C14 31 8 18 14 8 C22 2 40 3 48 12 C56 22 46 33 32 31 Z" fill="#4e8a5c" ${L}/>
+      <path d="M32 31 C30 22 30 14 33 6" fill="none" stroke="#2f5e3d" stroke-width="1.8" stroke-linecap="round"/>
+      <path d="M18 12 l9 6 M14 21 l13 3 M44 11 l-9 7 M49 21 l-14 4" stroke="#f3ead9" stroke-width="2.6" stroke-linecap="round"/>
+      <path d="M17 42 h30 l-4 18 h-22 z" fill="#c8754d" ${L}/>
+      <path d="M15 40 h34 v5 h-34 z" fill="#d88a60" ${L}/>`,
+    cacto: `
+      <path d="M26 44 V20 a6 6 0 0 1 12 0 V44 z" fill="#5f9a62" ${L}/>
+      <path d="M26 34 h-6 a4 4 0 0 1 -4 -4 v-7 a3 3 0 0 1 6 0 v5 h4" fill="#5f9a62" ${L}/>
+      <path d="M38 30 h6 a4 4 0 0 0 4 -4 v-9 a3 3 0 0 0 -6 0 v7 h-4" fill="#5f9a62" ${L}/>
+      <path d="M30 20 v20 M34 20 v20" stroke="#477b4b" stroke-width="1.3"/>
+      <circle cx="32" cy="13.5" r="3.2" fill="#e88aa0" ${l(1.4)}/><circle cx="32" cy="13.5" r="1.1" fill="#f6d36b"/>
+      <path d="M18 44 h28 l-4 16 h-20 z" fill="#c8754d" ${L}/>
+      <path d="M16 42 h32 v5 h-32 z" fill="#d88a60" ${L}/>`,
+
+    // ---------- especiais ----------
+    // Biscoito: um cookie de cabelo dourado, sorridente e meio bobo
+    biscoito: `${MOLDURA}
+      <circle cx="32" cy="37" r="19" fill="#d39a55" ${L}/>
+      <path d="M17 33 q-1 -3 2 -5 M44 50 q3 -1 4 -4" stroke="#b97c3c" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+      <path d="M15 24 q2 -12 10 -9 q1 -8 8 -5 q5 -6 10 0 q8 -2 7 8 q5 3 0 8 q-4 -5 -9 -3 q-3 -5 -8 -2 q-4 -4 -8 0 q-5 -3 -10 3 z" fill="#f2c443" ${L}/>
+      <path d="M27 12 q2 4 0 8 M37 11 q3 3 1 8" stroke="#d9a52a" stroke-width="1.4" fill="none" stroke-linecap="round"/>
+      <ellipse cx="22" cy="44" rx="2.4" ry="2" fill="#5a3726"/><ellipse cx="44" cy="40" rx="2.2" ry="1.8" fill="#5a3726"/><ellipse cx="38" cy="51" rx="2" ry="1.6" fill="#5a3726"/><ellipse cx="18" cy="36" rx="1.7" ry="1.4" fill="#5a3726"/>
+      <g class="olho"><circle cx="25" cy="33" r="5" fill="#fffaf0" ${l(1.8)}/><circle cx="27" cy="34" r="2.3" fill="${T}"/>
+      <circle cx="39.5" cy="32" r="3.8" fill="#fffaf0" ${l(1.8)}/><circle cx="38.5" cy="31.5" r="1.9" fill="${T}"/></g>
+      <path d="M23 42 q9 11 19 -1 q-9 3 -19 1 z" fill="#7a3328" ${l(1.8)}/>
+      <path d="M30 43 h4 v3 h-4 z" fill="#fffaf0"/><path d="M32 47.5 q3 2 6 -1" fill="#e57b7b"/>`,
+    // Gordinho: careca de óculos, cara de malícia, mas fofo
+    gordinho: `${MOLDURA}
+      <ellipse cx="12" cy="36" rx="3.5" ry="5" fill="#ecbf98" ${L}/><ellipse cx="52" cy="36" rx="3.5" ry="5" fill="#ecbf98" ${L}/>
+      <path d="M12 34 Q12 12 32 12 Q52 12 52 34 Q53 52 32 56 Q11 52 12 34 Z" fill="#f3cba6" ${L}/>
+      <ellipse cx="25" cy="18" rx="7" ry="3" fill="#fff" opacity=".45" transform="rotate(-20 25 18)"/>
+      <path d="M22 54.5 q10 4 20 0" fill="none" ${l(1.6)} opacity=".7"/>
+      <path d="M18 27 q5 -4 10 -1" fill="none" ${l(2)}/><path d="M36 26.5 q5 1 10 -1.5" fill="none" ${l(2)}/>
+      <circle cx="24" cy="34" r="6.5" fill="#e6f1f5" fill-opacity=".55" ${l(2)}/><circle cx="40" cy="34" r="6.5" fill="#e6f1f5" fill-opacity=".55" ${l(2)}/>
+      <path d="M30.5 33 q1.5 -1.5 3 0" fill="none" ${l(1.8)}/>
+      <g class="olho"><circle cx="26" cy="34.6" r="1.9" fill="${T}"/><circle cx="42" cy="34.6" r="1.9" fill="${T}"/></g>
+      <circle cx="18" cy="44" r="3.5" fill="#ec9f8f" opacity=".45"/><circle cx="46" cy="44" r="3.5" fill="#ec9f8f" opacity=".45"/>
+      <path d="M30 40 q2 2 4 0" fill="none" ${l(1.6)}/>
+      <path d="M25 46 q8 3 15 -2" fill="none" ${l(2.2)}/><path d="M39.5 44 l1.8 -1" ${l(2.2)}/>`,
+    // Cafú: o craque de amarelo e verde
+    cafu: `${MOLDURA}
+      <path d="M6 62 Q8 48 22 46 L32 52 L42 46 Q56 48 58 62 Z" fill="#f4cf2a" ${L}/>
+      <path d="M22 46 L32 55 L42 46" fill="none" stroke="#1e8e4e" stroke-width="3.6" stroke-linejoin="round"/>
+      <path d="M12 54 l4 8 M52 54 l-4 8" stroke="#1e8e4e" stroke-width="2.4" stroke-linecap="round"/>
+      <circle cx="44.5" cy="56.5" r="3" fill="#2f63b5" ${l(1.2)}/>
+      <path d="M27 44 h10 v6 l-5 3 l-5 -3 z" fill="#7a4c33" ${l(1.8)}/>
+      <ellipse cx="18.5" cy="31" rx="3" ry="4.4" fill="#7a4c33" ${L}/><ellipse cx="45.5" cy="31" rx="3" ry="4.4" fill="#7a4c33" ${L}/>
+      <ellipse cx="32" cy="30" rx="13.5" ry="16" fill="#86553a" ${L}/>
+      <path d="M18.5 26 Q18 12 32 12 Q46 12 45.5 26 Q42 19 32 19 Q22 19 18.5 26 Z" fill="#231a17" ${L}/>
+      <path d="M23 26 q3 -2 6 0 M35 26 q3 -2 6 0" fill="none" ${l(1.8)}/>
+      <g class="olho"><circle cx="26" cy="30" r="2" fill="${T}"/><circle cx="38" cy="30" r="2" fill="${T}"/></g>
+      <path d="M30 35 q2 1.5 4 0" fill="none" ${l(1.5)}/>
+      <path d="M25 39 q7 7 14 0 z" fill="#fffaf0" ${l(1.8)}/>`,
+    // Bandoleiro: chapéu de aba, bigode fino, piscadela e um dente de ouro
+    bandoleiro: `${MOLDURA}
+      <path d="M8 62 Q10 50 22 48 Q32 54 42 48 Q54 50 56 62 Z" fill="#3e4a5c" ${L}/>
+      <path d="M22 48 L32 58 L42 48 L37 46 L32 51 L27 46 Z" fill="#b3412f" ${l(1.8)}/>
+      <ellipse cx="32" cy="33" rx="14" ry="15.5" fill="#e6b88e" ${L}/>
+      <path d="M18 24 Q32 21 46 24 Q50 23 54 22 Q50 28 32 27 Q14 28 10 22 Q14 23 18 24 Z" fill="#5b3c2a" ${L}/>
+      <path d="M21 23 Q21 8 32 8 Q43 8 43 23 Z" fill="#5b3c2a" ${L}/>
+      <path d="M21.5 19 Q32 22 42.5 19 v3.5 Q32 25 21.5 22.5 Z" fill="#2c1e17"/>
+      <rect x="35" y="11" width="6.5" height="9" rx="1.2" fill="#fbf3e4" transform="rotate(14 38 15)" ${l(1.2)}/><circle cx="38.4" cy="15.3" r="1.2" fill="#c0392b"/>
+      <path d="M22 31 l6 -1.5" ${l(1.8)}/><path d="M36 30.5 q3 -2.5 6 0" fill="none" ${l(1.8)}/>
+      <path d="M23 34.5 q2.5 1.8 5 0" fill="none" ${l(2)}/>
+      <g class="olho"><circle cx="39" cy="34" r="2" fill="${T}"/></g>
+      <path d="M32 41.5 q-5 -2.5 -9 0.5 q4 -.5 9 1 q5 -1.5 9 -1 q-4 -3 -9 -.5 z" fill="#3a2620"/>
+      <path d="M26 44.5 q7 4.5 13 -1.5" fill="none" ${l(2)}/><rect x="34" y="44" width="2.6" height="2.4" rx=".5" fill="#f2c14e"/>
+      <path d="M22 41 l.1 0 M42 40 l.1 0 M24 45 l.1 0 M41 44 l.1 0" stroke="#8a6a52" stroke-width="1.4" stroke-linecap="round"/>`,
+  };
+
+  const pintados = () => window.RETRATOS_PINTADOS || {};
+  // o retrato pronto para pôr na tela (com a classe "avatar")
+  function retrato(id, extra = '') {
+    const src = pintados()[id];
+    if (src) return `<img class="avatar pintado ${extra}" src="${src}" alt="" aria-hidden="true" draggable="false">`;
+    const corpo = SVG[id] || SVG.bolinha;
+    return `<svg class="avatar ${extra}" viewBox="0 0 64 64" aria-hidden="true">${corpo}</svg>`;
+  }
+  window.Retratos = { SVG, retrato, tem: id => !!(SVG[id] || pintados()[id]) };
+})();
+
+</script>
 <script>
 /* Dice Duel · som e música
  * Tudo é sintetizado com Web Audio: nenhum arquivo de áudio.
@@ -1686,17 +1914,14 @@ body.mesa-piquenique .ticker .cor0 { color: var(--voce-tinta); } body.mesa-pique
     ['coringa', 'pedagio', 'pressa'], ['ancora', 'coringa', 'fundo'], ['coringa', 'fundo', 'interferencia'],
   ];
   // a parte visual do catálogo (os preços e níveis vêm do motor compartilhado)
-  const DESC_DADOS = { marfim: 'o clássico da mesa', madeira: 'cheirinho de marcenaria', rosa: 'doce como algodão-doce', menta: 'presente do nível 3', pelucia: 'fofinho e redondinho', dourado: 'reluz na mesa', diamante: 'para quem tem paciência' };
+  const DESC_DADOS = { marfim: 'o clássico da mesa', madeira: 'nogueira encerada', rosa: 'quartzo rosa', menta: 'presente do nível 3', pelucia: 'veludo macio', dourado: 'reluz sob o abajur', diamante: 'lapidado, para quem tem paciência' };
   const DADOS = Object.fromEntries(Object.entries(R.CATALOGO.dados).map(([k, v]) => [k, { ...v, desc: DESC_DADOS[k] }]));
-  const ICONES_SVG = {
-    bolinha:  { nome: 'Bolinha', preco: 0, svg: `<circle cx="32" cy="34" r="22" fill="#6fbfd3" stroke="#3a2a2e" stroke-width="2.5"/><circle class="olho" cx="25" cy="32" r="3" fill="#3a2a2e"/><circle class="olho" cx="39" cy="32" r="3" fill="#3a2a2e"/><path d="M26 41 q6 5 12 0" stroke="#3a2a2e" stroke-width="2.5" fill="none" stroke-linecap="round"/>` },
-    xicara:   { nome: 'Xícara', preco: 0, nivel: 2, svg: `<path d="M26 14c-3-3 3-5 0-8M34 14c-3-3 3-5 0-8" stroke="#ecdcc8" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M12 22h34v10a14 14 0 0 1-14 14h-6A14 14 0 0 1 12 32z" fill="#f1dfc2" stroke="#3a2a2e" stroke-width="2.5"/><path d="M46 26h3a6 6 0 0 1 0 12h-4" fill="none" stroke="#3a2a2e" stroke-width="2.5"/><circle class="olho" cx="23" cy="31" r="2.4" fill="#3a2a2e"/><circle class="olho" cx="35" cy="31" r="2.4" fill="#3a2a2e"/><path d="M26 37 q3 3 6 0" stroke="#3a2a2e" stroke-width="2" fill="none" stroke-linecap="round"/><circle cx="19" cy="36" r="2.4" fill="#ec8fa8" opacity=".6"/><circle cx="39" cy="36" r="2.4" fill="#ec8fa8" opacity=".6"/>` },
-    raposa:   { nome: 'Raposa', preco: 100, svg: `<path d="M10 14 L22 26 L14 34 Z M54 14 L42 26 L50 34 Z" fill="#e8874f" stroke="#3a2a2e" stroke-width="2.5" stroke-linejoin="round"/><path d="M12 30 Q32 6 52 30 Q50 48 32 56 Q14 48 12 30 Z" fill="#e8874f" stroke="#3a2a2e" stroke-width="2.5"/><path d="M18 38 Q32 44 46 38 Q42 52 32 56 Q22 52 18 38 Z" fill="#fff3e2"/><circle class="olho" cx="24" cy="34" r="2.6" fill="#3a2a2e"/><circle class="olho" cx="40" cy="34" r="2.6" fill="#3a2a2e"/><circle cx="32" cy="45" r="2.6" fill="#3a2a2e"/>` },
-    sapo:     { nome: 'Sapinho', preco: 100, svg: `<ellipse cx="32" cy="40" rx="24" ry="17" fill="#8fd6a8" stroke="#3a2a2e" stroke-width="2.5"/><circle cx="20" cy="24" r="9" fill="#8fd6a8" stroke="#3a2a2e" stroke-width="2.5"/><circle cx="44" cy="24" r="9" fill="#8fd6a8" stroke="#3a2a2e" stroke-width="2.5"/><circle class="olho" cx="20" cy="24" r="4" fill="#3a2a2e"/><circle class="olho" cx="44" cy="24" r="4" fill="#3a2a2e"/><path d="M22 44 q10 7 20 0" stroke="#3a2a2e" stroke-width="2.5" fill="none" stroke-linecap="round"/><circle cx="16" cy="42" r="3" fill="#ec8fa8" opacity=".5"/><circle cx="48" cy="42" r="3" fill="#ec8fa8" opacity=".5"/>` },
-    cogumelo: { nome: 'Cogumelo', preco: 140, svg: `<path d="M8 32 Q8 10 32 10 Q56 10 56 32 Z" fill="#e8806f" stroke="#3a2a2e" stroke-width="2.5" stroke-linejoin="round"/><circle cx="22" cy="20" r="4" fill="#fff3e2"/><circle cx="38" cy="17" r="3.5" fill="#fff3e2"/><circle cx="46" cy="27" r="3" fill="#fff3e2"/><path d="M20 32 h24 v12 a12 12 0 0 1 -24 0 z" fill="#fbf1df" stroke="#3a2a2e" stroke-width="2.5"/><circle class="olho" cx="27" cy="40" r="2.3" fill="#3a2a2e"/><circle class="olho" cx="37" cy="40" r="2.3" fill="#3a2a2e"/><path d="M29 46 q3 2.5 6 0" stroke="#3a2a2e" stroke-width="2" fill="none" stroke-linecap="round"/>` },
-  };
-  Object.keys(ICONES_SVG).forEach(k => Object.assign(ICONES_SVG[k], R.CATALOGO.icones[k]));
-  const ICONES = ICONES_SVG;
+  // ícones: o desenho mora em js/retratos.js (vetor, ou a versão pintada quando existe)
+  const DESC_ICONES = { bolinha: 'o clássico', xicara: 'presente do nível 2', raposa: 'de cachecol', sapo: 'de chapéu de palha', urso: 'de gorro de lã',
+    coelho: 'de gravata-borboleta', guaxinim: 'de moletom', cogumelo: 'do sub-bosque', monstera: 'em vaso de barro', cacto: 'em flor',
+    biscoito: 'cabelo dourado, sorriso largo', gordinho: 'óculos redondos, segundas intenções', cafu: 'de amarelo e verde', bandoleiro: 'sempre tem uma carta escondida' };
+  const ICONES = Object.fromEntries(Object.entries(R.CATALOGO.icones).map(([k, v]) => [k, { ...v, desc: DESC_ICONES[k] || '' }]));
+  const GRUPOS_ICONES = [['especial', 'Especiais'], ['animal', 'Animais'], ['natureza', 'Natureza'], ['basico', 'Básicos']];
   const MESAS_VISUAL = {
     salvia:     { nome: 'Feltro sálvia', preco: 0, amostra: 'linear-gradient(160deg,#5f8f78,#3b6252)' },
     vinho:      { nome: 'Feltro vinho', preco: 150, amostra: 'linear-gradient(160deg,#8f4c5b,#5a2836)' },
@@ -1708,41 +1933,19 @@ body.mesa-piquenique .ticker .cor0 { color: var(--voce-tinta); } body.mesa-pique
   const sorteia = a => a[Math.floor(Math.random() * a.length)];
 
   // ---------- rivais ----------
-  const AVATAR = {
-    aprendiz: `<svg class="avatar" viewBox="0 0 64 64" aria-hidden="true">
-      <path d="M12 26 L14 8 L26 18 Z M52 26 L50 8 L38 18 Z" fill="#f0a868" stroke="#3a2a2e" stroke-width="2.5" stroke-linejoin="round"/>
-      <path d="M16 12 l3 8 M48 12 l-3 8" stroke="#f6c9a4" stroke-width="3" stroke-linecap="round"/>
-      <ellipse cx="32" cy="36" rx="22" ry="19" fill="#f0a868" stroke="#3a2a2e" stroke-width="2.5"/>
-      <path d="M22 22 q4 4 0 8 M42 22 q-4 4 0 8" stroke="#d98a4c" stroke-width="2.5" fill="none" stroke-linecap="round"/>
-      <ellipse cx="32" cy="44" rx="10" ry="7" fill="#fbe3cc"/>
-      <ellipse class="olho" cx="24" cy="35" rx="3" ry="4" fill="#3a2a2e"/><ellipse class="olho" cx="40" cy="35" rx="3" ry="4" fill="#3a2a2e"/>
-      <circle cx="25" cy="33.5" r="1" fill="#fff"/><circle cx="41" cy="33.5" r="1" fill="#fff"/>
-      <path d="M30 41 h4 l-2 2.4 z" fill="#ec8fa8"/><path d="M32 43.4 q-2 3 -5 2 M32 43.4 q2 3 5 2" stroke="#3a2a2e" stroke-width="1.6" fill="none" stroke-linecap="round"/>
-      <path d="M14 40 h8 M14 44 h8 M42 40 h8 M42 44 h8" stroke="#3a2a2e" stroke-width="1.3" stroke-linecap="round" opacity=".6"/>
-      <ellipse cx="20" cy="42" rx="3" ry="2" fill="#ec8fa8" opacity=".5"/><ellipse cx="44" cy="42" rx="3" ry="2" fill="#ec8fa8" opacity=".5"/></svg>`,
-    esperto: `<svg class="avatar" viewBox="0 0 64 64" aria-hidden="true">
-      <path d="M14 18 L18 6 L26 14 Z M50 18 L46 6 L38 14 Z" fill="#9c7f6a" stroke="#3a2a2e" stroke-width="2.5" stroke-linejoin="round"/>
-      <ellipse cx="32" cy="36" rx="24" ry="22" fill="#b0927c" stroke="#3a2a2e" stroke-width="2.5"/>
-      <ellipse cx="32" cy="46" rx="13" ry="10" fill="#e9d8c4"/>
-      <path d="M26 46 q2 2 4 0 q2 2 4 0 q2 2 4 0" stroke="#b0927c" stroke-width="1.6" fill="none"/>
-      <circle cx="22" cy="30" r="9" fill="#fffaf0" stroke="#3a2a2e" stroke-width="2.5"/><circle cx="42" cy="30" r="9" fill="#fffaf0" stroke="#3a2a2e" stroke-width="2.5"/>
-      <path d="M31 30 h2" stroke="#3a2a2e" stroke-width="2.5"/>
-      <circle class="olho" cx="22" cy="30" r="4" fill="#3a2a2e"/><circle class="olho" cx="42" cy="30" r="4" fill="#3a2a2e"/>
-      <circle cx="23.5" cy="28.5" r="1.3" fill="#fff"/><circle cx="43.5" cy="28.5" r="1.3" fill="#fff"/>
-      <path d="M29 36 L35 36 L32 41 Z" fill="#f2b15e" stroke="#3a2a2e" stroke-width="1.8" stroke-linejoin="round"/>
-      <circle cx="13" cy="38" r="3" fill="#ec8fa8" opacity=".45"/><circle cx="51" cy="38" r="3" fill="#ec8fa8" opacity=".45"/></svg>`,
-  };
+  // os rivais do jogo: Diana (fácil) e Dona Coruja (difícil)
+  const RETRATO_RIVAL = { aprendiz: 'diana', esperto: 'coruja' };
   const RIVAIS = {
-    aprendiz: { nome: 'Biscoito', desc: 'um gatinho que joga por diversão', falas: {
-      inicio: ['Miau! Vamos brincar?', 'Trouxe biscoitos. Bora jogar?'],
-      meuDisparo: ['Prrr, que bonito!', 'Olha a minha corrente!'], minhaRuptura: ['Ops, derrubei tudo…', 'Miau… escorregou.'],
-      seuDisparoGrande: ['Uau, que corrente!', 'Você é bom nisso!'], armadilha: ['Hihi, te peguei!'], caiu: ['Ei! Isso foi esperto.'],
-      venci: ['Ganhei! Quer um biscoito?'], perdi: ['Boa partida! Mais uma?'] } },
-    esperto: { nome: 'Dona Coruja', desc: 'joga com calma e lê a Mesa', falas: {
-      inicio: ['Boa noite, querido. Chá?', 'Sente-se. Vamos com calma.'],
-      meuDisparo: ['Huu-huu, paciência rende.', 'Uma corrente bem tecida.'], minhaRuptura: ['Ora, ora… acontece.', 'Hum. Me distraí com o chá.'],
-      seuDisparoGrande: ['Bela jogada!', 'Assim se faz.'], armadilha: ['Uma coruja nunca esquece um dado.', 'Eu avisei que estava armada.'], caiu: ['Muito bem lido.'],
-      venci: ['Foi por pouco. Outra rodada?'], perdi: ['Muito bem! Estou orgulhosa.'] } },
+    aprendiz: { nome: 'Diana', desc: 'gata branca de olhos azuis; joga solto e arrisca', falas: {
+      inicio: ['Boa noite. Uma partida?', 'A Mesa está pronta. Comece quando quiser.'],
+      meuDisparo: ['Essa entrou.', 'Corrente fechada.'], minhaRuptura: ['Arrisquei demais.', 'Essa não segurou.'],
+      seuDisparoGrande: ['Boa leitura da Mesa.', 'Belo disparo.'], armadilha: ['Estava armada desde o começo.', 'Caiu na minha.'], caiu: ['Bem visto.'],
+      venci: ['Boa partida. Outra?'], perdi: ['Mereceu. Revanche?'] } },
+    esperto: { nome: 'Dona Coruja', desc: 'joga com paciência e lê a Mesa', falas: {
+      inicio: ['Boa noite. Sem pressa: a Mesa fala.', 'Sente-se. Vamos com calma.'],
+      meuDisparo: ['Paciência rende.', 'Uma corrente bem construída.'], minhaRuptura: ['Hum. Calculei mal.', 'Acontece com quem arrisca.'],
+      seuDisparoGrande: ['Jogada precisa.', 'Muito bem construída.'], armadilha: ['Eu avisei que havia algo armado.', 'A Mesa nunca esquece.'], caiu: ['Bem lido.'],
+      venci: ['Foi equilibrado. Outra?'], perdi: ['Excelente partida.'] } },
   };
 
   // o módulo online (mais abaixo) preenche estes dois
@@ -1772,7 +1975,10 @@ body.mesa-piquenique .ticker .cor0 { color: var(--voce-tinta); } body.mesa-pique
     if (Array.isArray(s.decks)) st.decks = s.decks.map(d => (d || []).filter(c => CARTAS[c])).map(d => deckValido(d) ? d : []);
     st.deckVisto = !!s.deckVisto;
   } catch (e) {}
-  const salvar = () => { try { localStorage.setItem('diceduel.v1', JSON.stringify({ cfg: st.cfg, pref: st.pref, rec: st.rec, conta: st.contaConvidado || st.conta, decks: st.decks, deckVisto: st.deckVisto })); } catch (e) {} };
+  const salvar = () => {
+    try { localStorage.setItem('diceduel.v1', JSON.stringify({ cfg: st.cfg, pref: st.pref, rec: st.rec, conta: st.contaConvidado || st.conta, decks: st.decks, deckVisto: st.deckVisto })); } catch (e) {}
+    if (st.sessao && Conta.sincronizar) Conta.sincronizar();   // com conta, decks e recordes vão para o servidor
+  };
   const armadilhasLiberadas = () => st.pref.liberar || st.rec.partidas >= 1;
   const travada = c => CARTAS[c].tipo === 'armadilha' && !armadilhasLiberadas();
   const possui = c => st.conta.cartas.includes(c);
@@ -2129,7 +2335,7 @@ body.mesa-piquenique .ticker .cor0 { color: var(--voce-tinta); } body.mesa-pique
   // cada um vê os próprios dados com a própria skin; os rivais têm a sua; a Mesa usa a sua (ou marfim, a dois)
   const skinDe = p => p === 0 ? st.conta.dado : jogo.modo === 'bot' ? (jogo.nivel === 'esperto' ? 'madeira' : 'rosa') : online() ? (jogo.perfis[1].dado || 'marfim') : 'marfim';
   const skinMesa = () => jogo.modo !== 'local' ? st.conta.dado : 'marfim';
-  const iconeSVG = id => `<svg class="avatar" viewBox="0 0 64 64" aria-hidden="true">${(ICONES[id] || ICONES.bolinha).svg}</svg>`;
+  const iconeSVG = id => Retratos.retrato(ICONES[id] ? id : 'bolinha', ICONES[id] && ICONES[id].grupo === 'especial' ? 'especial' : '');
   const elo = r => `<span class="elo ${r.length > 1 ? 'duplo' : 'r-' + r[0]}" title="${r.map(k => REL[k].nome).join(' + ')}">${r.map(k => REL[k].simb).join('·')}</span>`;
 
   function bolsoHTML(p) {
@@ -2181,7 +2387,7 @@ body.mesa-piquenique .ticker .cor0 { color: var(--voce-tinta); } body.mesa-pique
     const seCrescer = L >= 3 && L < LIM ? ` · com ${L + 1}: <b>+${pontos(L + 1)}</b>` : '';
     const pensa = daVez && !humano(p) && !(online() && j.perfis[1].conectado === false);
     const tag = j.fase === 'fim' ? (j.vencedor === p ? 'venceu' : '') : daVez ? (humano(p) ? (j.modo !== 'local' ? 'sua vez' : 'vez') : online() ? (j.perfis[1].conectado === false ? 'caiu, esperando' : 'jogando') : 'pensando') : '';
-    const avatar = j.modo === 'bot' && p === 1 ? AVATAR[j.nivel].replace('class="avatar"', `class="avatar ${j.humor || ''}"`) : p === 0 ? iconeSVG(st.conta.icone) : online() ? iconeSVG(j.perfis[1].icone) : '';
+    const avatar = j.modo === 'bot' && p === 1 ? Retratos.retrato(RETRATO_RIVAL[j.nivel], j.humor || '') : p === 0 ? iconeSVG(st.conta.icone) : online() ? iconeSVG(j.perfis[1].icone) : '';
     const fala = j.modo === 'bot' && p === 1 && j.fala ? `<div class="fala" aria-live="polite">${j.fala.txt}</div>` : '';
     return `<div class="jogador p${p}${daVez ? ' da-vez' : ''}">${fala}
       <div class="cab">${avatar}<span class="quem"><span class="nome">${n[p]}</span>${tag ? `<span class="vez-tag${pensa ? ' pensando-pontos' : ''}">${tag}</span>` : ''}</span>
@@ -2373,8 +2579,8 @@ body.mesa-piquenique .ticker .cor0 { color: var(--voce-tinta); } body.mesa-pique
             Som.tocar('elo', { n: e.n });
             const s = document.querySelectorAll(`#pj${e.p} .corrente .slot[data-slot]`); const alvo = s[s.length - 1];
             if (alvo) Fx.faiscas(alvo, 5 + e.n * 2, undefined, 1.6 + e.n * 0.3);
-            if (e.n === 4) Fx.texto(alvo, 'Boa corrente!', 'pequeno');
-            if (e.n === 5) Fx.texto(alvo, 'Corrente de 5!', 'pequeno');
+            if (e.n === 4) Fx.texto(alvo, 'Corrente de 4', 'pequeno');
+            if (e.n === 5) Fx.texto(alvo, 'Corrente de 5', 'pequeno');
           }, 300);
           break;
         }
@@ -2394,7 +2600,7 @@ body.mesa-piquenique .ticker .cor0 { color: var(--voce-tinta); } body.mesa-pique
         case 'ruptura': {
           Som.tocar('ruptura'); Fx.poeira(qs(`#pj${e.p} .corrente`), 8 + e.L * 2); if (humano(e.p)) vibrar(90);
           if (painelEl) Fx.tremer(painelEl, 0.6);
-          if (e.L >= 4 && humano(e.p)) Fx.texto(qs(`#pj${e.p} .corrente`), 'Ah… rompeu', 'pequeno ruim');
+          if (e.L >= 4 && humano(e.p)) Fx.texto(qs(`#pj${e.p} .corrente`), 'Rompeu', 'pequeno ruim');
           break;
         }
         case 'salvo': Som.tocar('salvo'); Fx.chamada('Salvo!', e.txt, 'suave'); Fx.faiscas(qs(`#pj${e.p} .corrente`), 14, ['#cdeccf', '#fff6e6']); break;
@@ -2411,8 +2617,8 @@ body.mesa-piquenique .ticker .cor0 { color: var(--voce-tinta); } body.mesa-pique
         case 'falar': if (j.modo === 'bot') falaDoEvento(e); break;
         case 'fim': {
           const venceuHumano = humano(e.p);
-          if (venceuHumano) { Som.tocar('vitoria'); Fx.confete(120); Fx.chamada(e.virada ? 'Virada!' : j.modo !== 'local' ? 'Vitória!' : `${n[e.p]} venceu!`, e.virada ? 'que volta por cima' : 'que partida gostosa'); }
-          else { Som.tocar('derrota'); Fx.chamada('Quase!', `${n[e.p]} venceu desta vez`, 'rival'); }
+          if (venceuHumano) { Som.tocar('vitoria'); Fx.confete(120); Fx.chamada(e.virada ? 'Virada!' : j.modo !== 'local' ? 'Vitória!' : `${n[e.p]} venceu!`, e.virada ? 'veio de trás e venceu' : 'partida bem jogada'); }
+          else { Som.tocar('derrota'); Fx.chamada('Fim de partida', `${n[e.p]} venceu desta vez`, 'rival'); }
           break;
         }
       }
@@ -2424,7 +2630,7 @@ body.mesa-piquenique .ticker .cor0 { color: var(--voce-tinta); } body.mesa-pique
     const j = jogo, n = nomes();
     j.intro = true; render();
     const lado = p => {
-      const av = j.modo === 'bot' && p === 1 ? AVATAR[j.nivel] : p === 0 ? iconeSVG(st.conta.icone) : iconeSVG(online() ? j.perfis[1].icone : 'sapo');
+      const av = j.modo === 'bot' && p === 1 ? Retratos.retrato(RETRATO_RIVAL[j.nivel]) : p === 0 ? iconeSVG(st.conta.icone) : iconeSVG(online() ? j.perfis[1].icone : 'raposa');
       const deck = j.decks[p].map(c => `<span class="carta ${CARTAS[c].tipo}">${CARTAS[c].ico}${CARTAS[c].nome}</span>`).join('') || '<span class="nota">sem cartas</span>';
       return `<div class="vs-lado">${av}<b class="cor${p}">${n[p]}</b><div class="vs-deck">${deck}</div></div>`;
     };
@@ -2452,7 +2658,7 @@ body.mesa-piquenique .ticker .cor0 { color: var(--voce-tinta); } body.mesa-pique
     const momentos = [...grupos.values()].sort((a, b) => ordemSimb.indexOf(a.simbolo) - ordemSimb.indexOf(b.simbolo)).slice(0, 6)
       .map(m => `<li><span class="em">${m.simbolo}</span><span>${j.modo === 'local' ? `<span class="cor${m.p}">${n[m.p]}</span> ` : ''}${m.txt}${m.vezes > 1 ? ` <b>×${m.vezes}</b>` : ''}</span></li>`).join('');
     const recs = (j.recordes || []).map(r => `<li class="recorde"><span class="em">✪</span>Novo: ${r}</li>`).join('');
-    document.getElementById('fimMomentos').innerHTML = recs + (momentos || '<li><span class="em">☕</span>Partida tranquila. A próxima corrente vem.</li>');
+    document.getElementById('fimMomentos').innerHTML = recs + (momentos || '<li><span class="em">☕</span>Sem lances marcantes desta vez.</li>');
     desenharRecompensas(j);
     const s = j.stats, linha = (rot, f) => `<tr><th>${rot}</th><td>${f(s[0], 0)}</td><td>${f(s[1], 1)}</td></tr>`;
     document.getElementById('fimTabela').innerHTML =
@@ -2462,7 +2668,7 @@ body.mesa-piquenique .ticker .cor0 { color: var(--voce-tinta); } body.mesa-pique
       linha('Disparos', x => x.disp) + linha('Maior corrente', x => x.maior || '–') + linha('Rupturas', x => x.rupt) +
       linha('Bolso (guardou · trocou)', x => `${x.guardou} · ${x.trocou}`);
     document.getElementById('fimTexto').value =
-      `Dice Duel v0.8 · ${j.modo === 'bot' ? 'contra ' + n[1] : online() ? 'online contra ' + n[1] : '2 jogadores'} · meta ${j.meta}${j.premio ? ` · moedas +${j.premio.moedas ? j.premio.moedas.total : 0} · rating ${j.premio.ratingAntes}→${j.premio.rating}` : ''}\n` +
+      `Dice Duel v0.9 · ${j.modo === 'bot' ? 'contra ' + n[1] : online() ? 'online contra ' + n[1] : '2 jogadores'} · meta ${j.meta}${j.premio ? ` · moedas +${j.premio.moedas ? j.premio.moedas.total : 0} · rating ${j.premio.ratingAntes}→${j.premio.rating}` : ''}\n` +
       `${n[0]} ${j.pts[0]} × ${j.pts[1]} ${n[1]} · ${j.compras} dados pegos · ${j.rodada} rodadas\n` +
       [0, 1].map(k => `${n[k]} [${j.decks[k].map(c => CARTAS[c].nome).join(', ') || 'sem cartas'}]: ${s[k].disp} disparos, maior ${s[k].maior}, ${s[k].rupt} rupturas, Bolso ${s[k].guardou}/${s[k].trocou}, cartas que agiram: ${s[k].cartas.join(', ') || 'nenhuma'}, blefes ${s[k].blefes || 0}`).join('\n') +
       `\nComentário: `;
@@ -2518,11 +2724,11 @@ body.mesa-piquenique .ticker .cor0 { color: var(--voce-tinta); } body.mesa-pique
     if (aba === 'ganhar') {
       alvo.innerHTML = `<table class="taxas">
         <tr><th>Partida</th><th>Base</th><th>Paga moedas enquanto o seu maior rating estiver</th></tr>
-        <tr><td>Biscoito (iniciante)</td><td>${BASE_MOEDAS.aprendiz}</td><td>rating abaixo de ${TETO_MOEDAS.aprendiz}</td></tr>
+        <tr><td>Diana (iniciante)</td><td>${BASE_MOEDAS.aprendiz}</td><td>rating abaixo de ${TETO_MOEDAS.aprendiz}</td></tr>
         <tr><td>Dona Coruja (avançado)</td><td>${BASE_MOEDAS.esperto}</td><td>rating abaixo de ${TETO_MOEDAS.esperto}</td></tr>
         <tr><td>Online, com amigos</td><td>${BASE_MOEDAS.online}</td><td>sempre; vale mais vencer quem tem rating maior</td></tr>
         <tr><td>A dois no aparelho</td><td>–</td><td>não paga</td></tr></table>
-        <p class="nota" style="margin-top:10px">Só vitórias dão moedas. A base é multiplicada pela <b>margem</b> (×1 a ×2: vencer por 8 pontos ou mais, na meta 12, dobra) e pela <b>rapidez</b> (×1,5 em até 5 Mesas, ×1,25 em 6). Uma vitória típica rende cerca de 14 contra o Biscoito e 24 contra a Dona Coruja. Com conta, as vitórias contra os rivais do jogo rendem até 300 moedas por dia.</p>
+        <p class="nota" style="margin-top:10px">Só vitórias dão moedas. A base é multiplicada pela <b>margem</b> (×1 a ×2: vencer por 8 pontos ou mais, na meta 12, dobra) e pela <b>rapidez</b> (×1,5 em até 5 Mesas, ×1,25 em 6). Uma vitória típica rende cerca de 14 contra a Diana e 24 contra a Dona Coruja. Com conta, as vitórias contra os rivais do jogo rendem até 300 moedas por dia.</p>
         <p class="nota">Experiência sobe em toda partida, ganhando ou perdendo, e os níveis 2, 3 e 5 dão presentes. Cartas nunca serão vendidas por dinheiro: elas ampliam o estilo, não a força (o melhor deck é feito só de cartas grátis).</p>`;
       return;
     }
@@ -2539,7 +2745,7 @@ body.mesa-piquenique .ticker .cor0 { color: var(--voce-tinta); } body.mesa-pique
     let html = '';
     if (aba === 'cartas') html = ORDEM.map(id => item('cartas', id, { nome: CARTAS[id].nome, preco: PRECO_CARTA[id] || 0 }, CARTAS[id].ico, `${CARTAS[id].tipo}${CARTAS[id].pontos ? ' · ⚡' : ''} · ${CARTAS[id].verbo}`)).join('');
     if (aba === 'dados') html = Object.entries(DADOS).map(([id, d]) => item('dados', id, d, `<span style="width:52px;height:52px;display:block">${dadoHTML(5, id)}</span>`, d.desc)).join('');
-    if (aba === 'icones') html = Object.entries(ICONES).map(([id, d]) => item('icones', id, d, iconeSVG(id), d.nivel ? `presente do nível ${d.nivel}` : 'seu rosto na mesa')).join('');
+    if (aba === 'icones') html = GRUPOS_ICONES.map(([g, titulo]) => `<h3 class="grupo-loja">${titulo}</h3>` + Object.entries(ICONES).filter(([, d]) => d.grupo === g).map(([id, d]) => item('icones', id, d, iconeSVG(id), d.desc)).join('')).join('');
     if (aba === 'mesas') html = Object.entries(MESAS).map(([id, d]) => item('mesas', id, d, `<span class="amostra-mesa" style="background:${d.amostra}"></span>`, d.nivel ? `presente do nível ${d.nivel}` : 'o feltro da sua mesa')).join('');
     alvo.innerHTML = `<div class="itens">${html}</div>${aba === 'cartas' ? '<p class="nota" style="margin-top:10px">As cartas à venda são situacionais: dão jeitos novos de jogar, não mais força. Na simulação, nenhum deck com carta comprada supera o melhor deck de cartas grátis.</p>' : '<p class="nota" style="margin-top:10px">Só aparência. Na versão final, alguns cosméticos também poderão ser comprados com dinheiro; cartas, nunca.</p>'}`;
   }
@@ -2548,7 +2754,7 @@ body.mesa-piquenique .ticker .cor0 { color: var(--voce-tinta); } body.mesa-pique
     const info = tipo === 'cartas' ? { preco: PRECO_CARTA[id] } : ({ dados: DADOS, icones: ICONES, mesas: MESAS })[tipo][id];
     if (!info || c[tipo].includes(id) || c.moedas < info.preco) return;
     if (botao.dataset.certeza !== '1') { botao.dataset.certeza = '1'; botao.innerHTML = `Confirmar? <span class="moeda"></span>${info.preco}`; return; }
-    const festa = () => { if (jogo) render(); Som.tocar('compra'); Fx.confete(60); Fx.chamada('Novo!', `${nomeItem(tipo, id)} é seu`, 'suave'); };
+    const festa = () => { if (jogo) render(); Som.tocar('compra'); Fx.confete(60); Fx.chamada('Na coleção', `${nomeItem(tipo, id)} agora é seu`, 'suave'); };
     if (st.sessao) {
       botao.disabled = true;
       pedir('POST', '/api/loja/comprar', { tipo, id })
@@ -2799,6 +3005,7 @@ body.mesa-piquenique .ticker .cor0 { color: var(--voce-tinta); } body.mesa-pique
     if (!st.sessao) st.contaConvidado = st.conta;
     st.sessao = { token: r.token, perfil: r.conta };
     usarPerfil(r.conta);
+    unirExtras(r.conta);
     aviso(criar ? `Conta criada. Bem-vindo, ${r.conta.nome}!` : `Olá de novo, ${r.conta.nome}!`);
     Som.tocar('momento');
     if (Rede.convite) { const c = Rede.convite; Rede.convite = null; entrarNaSala(c); }
@@ -2811,6 +3018,26 @@ body.mesa-piquenique .ticker .cor0 { color: var(--voce-tinta); } body.mesa-pique
     if (st.contaConvidado) { st.conta = st.contaConvidado; delete st.contaConvidado; }
     aplicarPrefs(); desenharOnline(); if (jogo) render();
   }
+  // o que segue a conta entre aparelhos (o som e a imagem ficam em cada aparelho)
+  const extrasDoAparelho = () => ({ decks: st.decks, rec: st.rec, cfg: st.cfg, deckVisto: st.deckVisto });
+  function aplicarExtras(ex) {
+    if (!ex || !ex.em) return false;
+    if (Array.isArray(ex.decks)) st.decks = [0, 1].map(i => (ex.decks[i] || []).filter(c => CARTAS[c]));
+    if (ex.rec) Object.assign(st.rec, ex.rec);
+    if (ex.cfg) Object.assign(st.cfg, ex.cfg);
+    if (typeof ex.deckVisto === 'boolean') st.deckVisto = st.deckVisto || ex.deckVisto;
+    try { localStorage.setItem('diceduel.v1', JSON.stringify({ cfg: st.cfg, pref: st.pref, rec: st.rec, conta: st.contaConvidado || st.conta, decks: st.decks, deckVisto: st.deckVisto })); } catch (e) {}
+    if (!document.getElementById('janelaDeck').hidden) desenharDeck();
+    return true;
+  }
+  let esperaSync = null;
+  Conta.sincronizar = () => {
+    clearTimeout(esperaSync);
+    esperaSync = setTimeout(() => { if (st.sessao) pedir('PUT', '/api/eu/dados', extrasDoAparelho()).then(r => { st.sessao.perfil = r.conta; guardarSessao(); }).catch(() => {}); }, 1200);
+  };
+  // ao entrar (ou abrir o jogo já com conta): o que está na conta vale; conta nova recebe o que está no aparelho
+  const unirExtras = pf => { if (!aplicarExtras(pf.extras)) Conta.sincronizar(); };
+
   // partidas contra os rivais do jogo, com conta: o servidor confere o teto e paga (o aparelho só mostra antes)
   Conta.relatarSolo = async j => {
     if (!st.sessao) return;
@@ -2947,7 +3174,7 @@ body.mesa-piquenique .ticker .cor0 { color: var(--voce-tinta); } body.mesa-pique
     const el = document.getElementById('onlineConteudo');
     document.getElementById('onlineServidor').textContent = st.sessao ? (Rede.ola ? 'conectado' : '') : '';
     if (!API) {
-      el.innerHTML = `<p>O online precisa do servidor do Dice Duel. Abra o jogo pelo endereço do servidor (por exemplo, o da Railway) para criar conta, chamar amigos e entrar no ranking.</p><p class="nota">Aqui, neste arquivo, dá para jogar contra o Biscoito, a Dona Coruja ou a dois no mesmo aparelho.</p>`;
+      el.innerHTML = `<p>O online precisa do servidor do Dice Duel. Abra o jogo pelo endereço do servidor (por exemplo, o da Railway) para criar conta, chamar amigos e entrar no ranking.</p><p class="nota">Aqui, neste arquivo, dá para jogar contra a Diana, a Dona Coruja ou a dois no mesmo aparelho.</p>`;
       return;
     }
     if (!st.sessao) {
@@ -3036,7 +3263,7 @@ body.mesa-piquenique .ticker .cor0 { color: var(--voce-tinta); } body.mesa-pique
     st.deckVisto = true; // quem chega por convite vai direto para a sala
   })();
   // com conta: atualiza o perfil (e renova o token) em segundo plano
-  if (st.sessao && API) pedir('GET', '/api/eu').then(r => { st.sessao.token = r.token; usarPerfil(r.conta); }).catch(() => {});
+  if (st.sessao && API) pedir('GET', '/api/eu').then(r => { st.sessao.token = r.token; usarPerfil(r.conta); unirExtras(r.conta); if (jogo) render(); }).catch(() => {});
 
   // ---------- início ----------
   aplicarPrefs();
@@ -3049,7 +3276,7 @@ body.mesa-piquenique .ticker .cor0 { color: var(--voce-tinta); } body.mesa-pique
       aplicarPrefs(); render(); talvezAutomato();
       if (jogo.fase === 'fim') mostrarFim();
     } else if (!st.deckVisto) {
-      // primeira visita: o deck "Primeira mesa" e o Biscoito; as armadilhas chegam depois da 1ª partida
+      // primeira visita: o deck "Primeira mesa" e a Diana; as armadilhas chegam depois da 1ª partida
       st.decks[0] = PRONTOS[0].cartas.slice(); st.cfg.nivel = 'aprendiz';
       const animar = st.pref.animacoes; st.pref.animacoes = false; novaPartida(); st.pref.animacoes = animar;
       abrirDeck();
@@ -3057,7 +3284,7 @@ body.mesa-piquenique .ticker .cor0 { color: var(--voce-tinta); } body.mesa-pique
     if (Rede.convite) { abrirOnline(); if (st.sessao) { const c = Rede.convite; Rede.convite = null; entrarNaSala(c).then(abrirOnline); } }
   }
   // o roteiro de teste automático (tools/) pode ler o estado
-  window.DiceDuel = { get jogo() { return jogo; }, st, ajustar(p) { Object.assign(st.pref, p); aplicarPrefs(); if (jogo) render(); } };
+  window.DiceDuel = { get jogo() { return jogo; }, st, salvar, ajustar(p) { Object.assign(st.pref, p); aplicarPrefs(); if (jogo) render(); } };
   window.claude?.hot?.ready ? window.claude.hot.ready(iniciar) : iniciar(window.claude?.hot?.data ?? {});
 })();
 

@@ -62,9 +62,16 @@
       menta: { nome: 'Menta', preco: 0, nivel: 3 }, pelucia: { nome: 'Pelúcia', preco: 220 }, dourado: { nome: 'Dourado', preco: 450 },
       diamante: { nome: 'Diamante', preco: 800 },
     },
+    // grupo: basico, animal, natureza ou especial (os especiais têm moldura dourada)
     icones: {
-      bolinha: { nome: 'Bolinha', preco: 0 }, xicara: { nome: 'Xícara', preco: 0, nivel: 2 }, raposa: { nome: 'Raposa', preco: 100 },
-      sapo: { nome: 'Sapinho', preco: 100 }, cogumelo: { nome: 'Cogumelo', preco: 140 },
+      bolinha: { nome: 'Dado', preco: 0, grupo: 'basico' }, xicara: { nome: 'Xícara', preco: 0, nivel: 2, grupo: 'basico' },
+      raposa: { nome: 'Raposa', preco: 100, grupo: 'animal' }, sapo: { nome: 'Sapo', preco: 100, grupo: 'animal' },
+      urso: { nome: 'Urso', preco: 120, grupo: 'animal' }, coelho: { nome: 'Coelho', preco: 120, grupo: 'animal' },
+      guaxinim: { nome: 'Guaxinim', preco: 160, grupo: 'animal' },
+      cogumelo: { nome: 'Cogumelos', preco: 140, grupo: 'natureza' }, monstera: { nome: 'Monstera', preco: 90, grupo: 'natureza' },
+      cacto: { nome: 'Cacto', preco: 90, grupo: 'natureza' },
+      biscoito: { nome: 'Biscoito', preco: 300, grupo: 'especial' }, gordinho: { nome: 'Gordinho', preco: 350, grupo: 'especial' },
+      cafu: { nome: 'Cafú', preco: 400, grupo: 'especial' }, bandoleiro: { nome: 'Bandoleiro', preco: 450, grupo: 'especial' },
     },
     mesas: {
       salvia: { nome: 'Feltro sálvia', preco: 0 }, vinho: { nome: 'Feltro vinho', preco: 150 },

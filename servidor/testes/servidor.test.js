@@ -297,3 +297,23 @@ test('banco Postgres: contas, partidas e ranking', { skip: !process.env.TESTE_DA
     a.fechar(); b.fechar();
   } finally { await s.fechar(); await banco.fechar(); }
 });
+
+test('a conta segue entre aparelhos: decks, recordes e ajustes de partida', async () => {
+  const s = await subir();
+  try {
+    const { token } = await conta(s, 'Quim');
+    const r = await s.api('PUT', '/api/eu/dados', { decks: [['ajuste', 'interferencia', 'pressa'], ['espelho', 'ajuste']], rec: { partidas: 7, vitorias: 4, maiorDisparo: 6, lixo: 9 }, cfg: { nivel: 'esperto', meta: 16, modo: 'hack' }, deckVisto: true }, token);
+    assert.strictEqual(r.status, 200);
+    // outro aparelho: entra com nome e senha e encontra tudo
+    const outro = await s.api('POST', '/api/entrar', { nome: 'quim', senha: 'senha123' });
+    const ex = outro.conta.extras;
+    assert.deepStrictEqual(ex.decks[0], ['ajuste', 'interferencia', 'pressa']);
+    assert.deepStrictEqual(ex.decks[1], ['ajuste'], 'carta que a conta não tem sai do deck');
+    assert.strictEqual(ex.rec.partidas, 7);
+    assert.ok(!('lixo' in ex.rec));
+    assert.deepStrictEqual(ex.cfg, { modo: 'bot', nivel: 'esperto', meta: 16, ritmo: 'normal' });
+    assert.strictEqual(ex.deckVisto, true);
+    assert.ok(ex.em > 0);
+    assert.strictEqual((await s.api('PUT', '/api/eu/dados', { decks: [['ajuste']] })).status, 401);
+  } finally { await s.fechar(); }
+});

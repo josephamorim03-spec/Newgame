@@ -74,6 +74,35 @@ function criarApp({ banco, segredo, raiz = path.join(__dirname, '..'), tempos = 
     res.json({ ranking: (await banco.ranking(50)).map(r => ({ ...r, titulo: Regras.tituloDe(r.rating) })) });
   }));
 
+  // ---------- o que segue a conta entre aparelhos: decks, recordes e o jeito de jogar ----------
+  const REC = ['partidas', 'vitorias', 'seq', 'melhorSeq', 'maiorDisparo', 'maiorCorrente'];
+  const inteiro = (v, max) => (Number.isFinite(v) ? Math.max(0, Math.min(max, Math.floor(v))) : 0);
+  function limparExtras(c, b) {
+    const ex = { ...(c.extras || {}) };
+    if (Array.isArray(b.decks)) {
+      ex.decks = [0, 1].map(i => {
+        const d = Array.isArray(b.decks[i]) ? b.decks[i].filter(x => typeof x === 'string' && c.cartas.includes(x)) : [];
+        return Regras.deckValido(d) ? d : [];
+      });
+    }
+    if (b.rec && typeof b.rec === 'object') ex.rec = Object.fromEntries(REC.map(k => [k, inteiro(b.rec[k], 1e6)]));
+    if (b.cfg && typeof b.cfg === 'object') {
+      const um = (v, ok, padrao) => (ok.includes(v) ? v : padrao);
+      ex.cfg = { modo: um(b.cfg.modo, ['bot', 'local'], 'bot'), nivel: um(b.cfg.nivel, ['aprendiz', 'esperto'], 'aprendiz'),
+        meta: b.cfg.meta === 16 ? 16 : 12, ritmo: um(b.cfg.ritmo, ['calmo', 'normal', 'rapido'], 'normal') };
+    }
+    if (typeof b.deckVisto === 'boolean') ex.deckVisto = b.deckVisto;
+    ex.em = Date.now();
+    return ex;
+  }
+  app.put('/api/eu/dados', exigirConta, assincrono(async (req, res) => {
+    const conta = await trava(req.conta.id, async () => {
+      const c = await banco.contaPorId(req.conta.id);
+      return banco.atualizarConta(c.id, { extras: limparExtras(c, req.body || {}) });
+    });
+    res.json({ conta: perfil(conta) });
+  }));
+
   // ---------- loja: preços e posse conferidos aqui, nunca no cliente ----------
   const TIPOS = ['cartas', 'dados', 'icones', 'mesas'];
   const ATIVO = { dados: 'dado', icones: 'icone', mesas: 'mesa' };
