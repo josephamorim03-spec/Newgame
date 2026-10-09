@@ -64,7 +64,7 @@
   // ícones: o desenho mora em js/retratos.js (vetor, ou a versão pintada quando existe)
   const DESC_ICONES = { bolinha: 'o clássico', xicara: 'presente do nível 2', raposa: 'de cachecol', sapo: 'de chapéu de palha', urso: 'de gorro de lã',
     coelho: 'de gravata-borboleta', guaxinim: 'de moletom', cogumelo: 'do sub-bosque', monstera: 'em vaso de barro', cacto: 'em flor',
-    biscoito: 'cabelo dourado, sorriso largo', gordinho: 'barriga redonda, segundas intenções', cafu: 'de terno, óculos e cavanhaque', galgo: 'sagaz: já viu essa jogada antes', bandoleiro: 'sempre tem uma carta escondida' };
+    biscoito: 'meio perdido, sempre simpático', gordinho: 'barriga redonda, segundas intenções', cafu: 'de terno, óculos e cavanhaque', galgo: 'sagaz: já viu essa jogada antes', bandoleiro: 'sempre tem uma carta escondida', ovelha: 'num pasto de hexágono', cavalo: 'a peça mais rica do tabuleiro' };
   const ICONES = Object.fromEntries(Object.entries(R.CATALOGO.icones).map(([k, v]) => [k, { ...v, desc: DESC_ICONES[k] || '' }]));
   const GRUPOS_ICONES = [['especial', 'Especiais'], ['animal', 'Animais'], ['natureza', 'Natureza'], ['basico', 'Básicos']];
   const MESAS_VISUAL = {
@@ -1482,6 +1482,7 @@
   }
   if (st.sessao && st.sessao.perfil) { st.contaConvidado = st.conta; st.conta = deServidor(st.sessao.perfil); }
 
+  const SESSAO_ACABOU = 'Sua sessão terminou: a senha foi trocada, alguém usou "sair de todos os aparelhos" ou faz 30 dias que o jogo não abria. Entre de novo.';
   async function pedir(metodo, rota, corpo) {
     if (!API) throw new Error('Este aparelho não sabe onde está o servidor.');
     let r;
@@ -1489,8 +1490,8 @@
       r = await fetch(API + rota, { method: metodo, headers: { 'content-type': 'application/json', ...(st.sessao ? { authorization: 'Bearer ' + st.sessao.token } : {}) }, body: corpo ? JSON.stringify(corpo) : undefined });
     } catch (e) { throw new Error('Sem conexão com o servidor.'); }
     const d = await r.json().catch(() => ({}));
-    if (r.status === 401 && st.sessao && rota !== '/api/entrar') sairDaConta();
-    if (!r.ok) throw new Error(d.erro || `O servidor respondeu ${r.status}.`);
+    if (r.status === 401 && st.sessao && rota !== '/api/entrar') { sairDaConta(); aviso(SESSAO_ACABOU, true); }
+    if (!r.ok) throw Object.assign(new Error(d.erro || `O servidor respondeu ${r.status}.`), { status: r.status, espera: d.espera, trancadaAte: d.trancadaAte, restam: d.restam, codigo: d.codigo });
     return d;
   }
   function aviso(txt, erro = false) {
@@ -1556,7 +1557,8 @@
       if ((r.premio.moedas ? r.premio.moedas.total : 0) !== antes && jogo === j && !document.getElementById('fim').hidden) desenharRecompensas(j);
     } catch (e) {
       if (st.sessao) usarPerfil(st.sessao.perfil); // volta ao que o servidor sabe
-      j.premio.motivo = 'Sem conexão: esta partida não entrou na sua conta.';
+      j.premio.motivo = e.status === 429 || e.status === 400 ? e.message : 'Sem conexão: esta partida não entrou na sua conta.';
+      if (jogo === j && !document.getElementById('fim').hidden) desenharRecompensas(j);
     }
   };
 
@@ -1612,7 +1614,7 @@
         let m; try { m = JSON.parse(e.data); } catch (x) { return; }
         if (m.tipo === 'pulso') return;
         if (m.tipo === 'ola') { clearTimeout(limite); Rede.ola = true; Rede.tentativas = 0; Rede.quedaDesde = null; Rede.desistiu = false; usarPerfil(m.conta); ok(); return; }
-        if (m.tipo === 'erro' && m.sair) { clearTimeout(limite); sairDaConta(); falha(new Error(m.erro)); return; }
+        if (m.tipo === 'erro' && m.sair) { clearTimeout(limite); sairDaConta(); aviso(SESSAO_ACABOU, true); falha(new Error(m.erro)); return; }
         receber(m);
       };
       ws.onclose = () => {
@@ -1941,15 +1943,15 @@
       <div class="linha-cfg"><span>Quem pode me chamar para uma sala</span>
         <span class="segmento" role="group" aria-label="Quem pode me chamar"><button data-on="priv-todos" aria-pressed="${!soAmigos}">Todos</button><button data-on="priv-amigos" aria-pressed="${soAmigos}">Só amigos</button></span></div>
       <form class="form-conta" id="formSenha" autocomplete="off"><h3>Trocar a senha</h3>
-        <label>Senha atual<input class="campo" name="atual" type="password" autocomplete="current-password" required maxlength="72"></label>
-        <label>Senha nova<input class="campo" name="nova" type="password" autocomplete="new-password" required minlength="6" maxlength="72" placeholder="6 caracteres ou mais"></label>
-        <button class="btn btn-papel" type="submit">Trocar a senha</button>
+        <label>Senha atual<span class="campo-senha"><input class="campo" name="atual" type="password" autocomplete="current-password" required maxlength="72"><button type="button" class="ver-senha" data-ver-senha aria-label="Mostrar a senha" aria-pressed="false">mostrar</button></span></label>
+        <label>Senha nova<span class="campo-senha"><input class="campo" name="nova" type="password" autocomplete="new-password" required minlength="6" maxlength="72" placeholder="6 caracteres ou mais"><button type="button" class="ver-senha" data-ver-senha aria-label="Mostrar a senha" aria-pressed="false">mostrar</button></span></label>
+        ${botaoComTrava('btn btn-papel', 'Trocar a senha')}
         <p class="nota" style="margin:0">Os outros aparelhos saem da conta; este continua.</p></form>
       <div class="linha-botoes"><button class="btn btn-papel" data-on="sair-de-tudo">Sair de todos os aparelhos</button></div>
       <form class="form-conta" id="formApagar" autocomplete="off"><h3>Apagar a conta</h3>
         <p class="nota" style="margin:0">Some com a conta, as moedas, os itens, o rating e as amizades. Não tem volta.</p>
-        <label>Sua senha<input class="campo" name="senha" type="password" autocomplete="current-password" required maxlength="72"></label>
-        <button class="btn btn-papel perigo" type="submit">Apagar minha conta</button></form>
+        <label>Sua senha<span class="campo-senha"><input class="campo" name="senha" type="password" autocomplete="current-password" required maxlength="72"><button type="button" class="ver-senha" data-ver-senha aria-label="Mostrar a senha" aria-pressed="false">mostrar</button></span></label>
+        ${botaoComTrava('btn btn-papel perigo', 'Apagar minha conta')}</form>
     </details>`;
   }
   // o ranking: global (top 50) ou entre amigos, com a sua posição
@@ -2028,8 +2030,8 @@
         <div class="abas" role="group" aria-label="Conta"><button data-on="aba-entrar" aria-pressed="${!criar}">Entrar</button><button data-on="aba-criar" aria-pressed="${criar}">Criar conta</button></div>
         <form class="form-conta" id="formConta" autocomplete="on">
           <label>Nome<input class="campo" name="nome" autocomplete="username" required minlength="3" maxlength="20" pattern="[A-Za-zÀ-ÖØ-öø-ÿ0-9_.\\-]{3,20}" placeholder="de 3 a 20 letras">${criar && Rede.nomeStatus ? `<small class="nome-status ${Rede.nomeStatus.livre ? 'livre' : 'ocupado'}" aria-live="polite">${esc(Rede.nomeStatus.livre ? '✓ Nome livre' : Rede.nomeStatus.erro)}</small>` : ''}</label>
-          <label>Senha<input class="campo" name="senha" type="password" autocomplete="${criar ? 'new-password' : 'current-password'}" required minlength="6" maxlength="72" placeholder="6 caracteres ou mais"></label>
-          <button class="btn btn-mel" type="submit">${criar ? 'Criar conta' : 'Entrar'}</button>
+          <label>Senha<span class="campo-senha"><input class="campo" name="senha" type="password" autocomplete="${criar ? 'new-password' : 'current-password'}" required minlength="6" maxlength="72" placeholder="6 caracteres ou mais"><button type="button" class="ver-senha" data-ver-senha aria-label="Mostrar a senha" aria-pressed="false">mostrar</button></span></label>
+          ${botaoComTrava('btn btn-mel', criar ? 'Criar conta' : 'Entrar')}
         </form>
         ${criar ? '<p class="nota" style="margin:0">O que você ganhou neste aparelho vai junto para a conta (até 600 moedas e itens até um valor de 900).</p>' : ''}`;
       return;
@@ -2084,8 +2086,8 @@
         const r = await pedir('POST', '/api/eu/senha', { atual: f.atual.value, nova: f.nova.value });
         st.sessao.token = r.token; usarPerfil(r.conta); f.atual.value = ''; f.nova.value = '';
         aviso('Senha trocada. Os outros aparelhos saíram da conta.');
-      } catch (x) { aviso(x.message, true); }
-      botao.disabled = false; return;
+      } catch (x) { erroDeSenha(x); }
+      botao.disabled = travado(); return;
     }
     if (f.id === 'formApagar') {
       if (botao.dataset.certeza !== '1') { botao.dataset.certeza = '1'; botao.textContent = 'Toque de novo para apagar'; setTimeout(() => { botao.dataset.certeza = ''; botao.textContent = 'Apagar minha conta'; }, 4000); return; }
@@ -2094,7 +2096,7 @@
         await pedir('POST', '/api/eu/apagar', { senha: f.senha.value });
         Rede.sala = null; lembrarSala(); Rede.contaAberta = false; sairDaConta();
         aviso('Conta apagada. O progresso deste aparelho continua aqui, sem conta.');
-      } catch (x) { aviso(x.message, true); botao.disabled = false; }
+      } catch (x) { erroDeSenha(x); botao.disabled = travado(); }
       return;
     }
     if (f.id === 'formAmigo') {
@@ -2103,9 +2105,10 @@
       botao.disabled = false;
       return;
     }
+    if (travado()) return;
     botao.disabled = true;
-    try { await entrarNaConta(Rede.aba === 'criar', f.nome.value.trim(), f.senha.value); }
-    catch (x) { aviso(x.message, true); botao.disabled = false; }
+    try { await entrarNaConta(Rede.aba === 'criar', f.nome.value.trim(), f.senha.value); Rede.trava = null; }
+    catch (x) { erroDeSenha(x, Auth.chave(f.nome.value)); botao.disabled = travado(); }
   });
   document.getElementById('onlineConteudo').addEventListener('click', async e => {
     const b = e.target.closest('[data-on]'); if (!b) return;
@@ -2158,6 +2161,67 @@
   }
   document.getElementById('onlineConteudo').addEventListener('change', e => { if (e.target.dataset.priv === 'visivel') salvarPrivacidade({ visivel: e.target.checked }); });
   document.getElementById('onlineConteudo').addEventListener('toggle', e => { if (e.target.classList.contains('conta-opcoes')) Rede.contaAberta = e.target.open; }, true);
+  // ---------- avisos de senha: tentativas restantes, trava com contagem regressiva, Caps Lock, senha fácil ----------
+  // Rede.trava = { ate, nome? }: até quando os botões de senha ficam travados (a conta, ou o aparelho por muitas tentativas)
+  const Auth = { chave: n => String(n || '').trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[._-]/g, '') };
+  const travado = () => !!(Rede.trava && Rede.trava.ate > Date.now());
+  const mmss = ms => { const s = Math.max(0, Math.ceil(ms / 1000)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
+  function botaoComTrava(classe, texto) {
+    const t = travado();
+    return `<button class="${classe}" type="submit" data-trava="${esc(texto)}" ${t ? 'disabled' : ''}>${t ? `Tente de novo em ${mmss(Rede.trava.ate - Date.now())}` : esc(texto)}</button>`;
+  }
+  function erroDeSenha(x, nome = null) {
+    if (x.espera || x.trancadaAte) {
+      Rede.trava = { ate: x.trancadaAte || Date.now() + x.espera * 1000, nome: x.codigo === 'trancada' ? nome : null };
+      desenharOnline();
+    }
+    aviso(x.message, true);
+    if (x.restam !== undefined && x.restam <= 3 && !x.trancadaAte) Som.tocar('perigo');
+  }
+  // a contagem anda sozinha no botão e, quando acaba, ele volta
+  setInterval(() => {
+    if (!Rede.trava) return;
+    const bs = document.querySelectorAll('#onlineConteudo [data-trava]');
+    if (travado()) { bs.forEach(b => { b.disabled = true; b.textContent = `Tente de novo em ${mmss(Rede.trava.ate - Date.now())}`; }); return; }
+    Rede.trava = null;
+    bs.forEach(b => { b.disabled = false; b.textContent = b.dataset.trava; });
+    aviso('Pode tentar de novo.');
+  }, 1000);
+  // a trava de senha é de uma conta: digitar outro nome no login destrava o botão
+  document.getElementById('onlineConteudo').addEventListener('input', e => {
+    if (e.target.name === 'nome' && Rede.trava && Rede.trava.nome && Auth.chave(e.target.value) !== Rede.trava.nome) { Rede.trava = null; desenharOnline(); }
+  });
+  // Caps Lock ligado num campo de senha
+  const capsLock = e => {
+    if (!e.target.matches || !e.target.matches('#onlineConteudo input[type=password], #onlineConteudo .campo-senha input') || !e.getModifierState) return;
+    const caixa = e.target.closest('.campo-senha') || e.target;
+    let av = caixa.parentElement.querySelector('.caps-aviso');
+    const ligado = e.getModifierState('CapsLock');
+    if (ligado && !av) { av = document.createElement('small'); av.className = 'caps-aviso'; av.textContent = 'Caps Lock ligado'; caixa.after(av); }
+    if (!ligado && av) av.remove();
+  };
+  document.getElementById('onlineConteudo').addEventListener('keydown', capsLock);
+  document.getElementById('onlineConteudo').addEventListener('keyup', capsLock);
+  // mostrar/ocultar a senha (no celular é fácil errar uma letra sem ver)
+  document.getElementById('onlineConteudo').addEventListener('click', e => {
+    const b = e.target.closest('[data-ver-senha]'); if (!b) return;
+    const i = b.parentElement.querySelector('input'), ver = i.type === 'password';
+    i.type = ver ? 'text' : 'password'; b.textContent = ver ? 'ocultar' : 'mostrar';
+    b.setAttribute('aria-pressed', String(ver)); b.setAttribute('aria-label', ver ? 'Ocultar a senha' : 'Mostrar a senha');
+    i.focus();
+  });
+  // senha nova fácil de adivinhar: só uma dica (não impede)
+  const FACEIS = ['123456', '1234567', '12345678', '123456789', 'senha123', 'abc123', 'qwerty', 'abcdef', '111111', '000000', 'senha', 'password'];
+  document.getElementById('onlineConteudo').addEventListener('input', e => {
+    const nova = e.target.name === 'nova' || (e.target.name === 'senha' && e.target.closest('#formConta') && Rede.aba === 'criar');
+    if (!nova) return;
+    const v = e.target.value, f = e.target.closest('form'), nome = f.nome ? f.nome.value : (st.sessao && st.sessao.perfil.nome) || '';
+    const facil = v.length >= 6 && (/^\d+$/.test(v) || FACEIS.includes(v.toLowerCase()) || Auth.chave(v) === Auth.chave(nome) || /^(.)\1+$/.test(v));
+    const caixa = e.target.closest('.campo-senha') || e.target;
+    let d = caixa.parentElement.querySelector('.dica-senha');
+    if (facil && !d) { d = document.createElement('small'); d.className = 'dica-senha'; d.textContent = 'Fácil de adivinhar: misture letras e números.'; caixa.after(d); }
+    if (!facil && d) d.remove();
+  });
   // criando a conta: o nome está livre? (pergunta ao servidor enquanto a pessoa digita; Ana = ana = ANA = Aná)
   let esperaNome = null;
   document.getElementById('onlineConteudo').addEventListener('input', e => {

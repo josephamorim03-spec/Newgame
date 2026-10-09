@@ -45,6 +45,8 @@ const lerToken = (token, segredo) => { const s = lerSessao(token, segredo); retu
 // o token vale para esta conta? (assinado, no prazo e da versão atual da sessão)
 const sessaoValida = (s, conta) => !!(s && conta && s.id === conta.id && s.v === (conta.versao_token || 0));
 
+// "40 s", "3 min"
+const tempoLegivel = s => (s < 60 ? `${s} s` : `${Math.ceil(s / 60)} min`);
 // limite simples por IP (contra força bruta no login e na criação de contas)
 function limitador({ janelaMs = 60_000, maximo = 10 } = {}) {
   const contagens = new Map();
@@ -54,9 +56,14 @@ function limitador({ janelaMs = 60_000, maximo = 10 } = {}) {
     const v = contagens.get(ip) || { inicio: agora, n: 0 };
     if (agora - v.inicio > janelaMs) { v.inicio = agora; v.n = 0; }
     v.n++; contagens.set(ip, v);
-    if (v.n > maximo) return res.status(429).json({ erro: 'Muitas tentativas. Espere um minuto.' });
+    if (v.n > maximo) {
+      // quanto falta para a janela abrir de novo (a página mostra a contagem e libera o botão sozinha)
+      const espera = Math.max(1, Math.ceil((v.inicio + janelaMs - agora) / 1000));
+      res.set('Retry-After', String(espera));
+      return res.status(429).json({ erro: `Muitas tentativas seguidas deste aparelho. Tente de novo em ${tempoLegivel(espera)}.`, espera, codigo: 'limite' });
+    }
     next();
   };
 }
 
-module.exports = { chaveDoNome, validarNome, validarSenha, hashSenha, conferirSenha, criarToken, lerToken, lerSessao, sessaoValida, limitador };
+module.exports = { tempoLegivel, chaveDoNome, validarNome, validarSenha, hashSenha, conferirSenha, criarToken, lerToken, lerSessao, sessaoValida, limitador };

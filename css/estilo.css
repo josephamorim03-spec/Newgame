@@ -31,6 +31,9 @@
   --perigo: #e8806f;
   --mel: #f2b15e;
   --mel-escuro: #c4843a;
+  /* avisos: o erro usa a tinta e o fundo que o aviso do Online já tinha; o realce de perigo é o --perigo (coral pastel) */
+  --erro-tinta: #7a2a24;
+  --erro-fundo: #f6d2cf;
   --f-titulo: "Fredoka", "Baloo 2", "Trebuchet MS", sans-serif;
   --f-corpo: "Nunito", "Segoe UI", Roboto, Arial, sans-serif;
   --d-mesa: clamp(44px, 13vw, 76px);
@@ -555,9 +558,9 @@ body.mesa-piquenique .ticker .cor0 { color: var(--voce-tinta); } body.mesa-pique
 
 /* ---------- online (v0.8): conta, salas por convite e ranking ---------- */
 .btn-topo { position: relative; }
-.ponto-online { position: absolute; top: 6px; right: 6px; width: 8px; height: 8px; border-radius: 50%; background: #8fd19e; box-shadow: 0 0 0 2px var(--noite); }
+.ponto-online { position: absolute; top: 6px; right: 6px; width: 8px; height: 8px; border-radius: 50%; background: var(--passo); box-shadow: 0 0 0 2px var(--noite); }
 .aviso-online { margin: 0; padding: 10px 12px; border-radius: 12px; background: var(--papel-2); font-size: 14px; font-weight: 700; text-align: center; }
-.aviso-online.erro { background: #f6d2cf; color: #7a2a24; }
+.aviso-online.erro { background: var(--erro-fundo); color: var(--erro-tinta); }
 .form-conta { display: grid; gap: 10px; }
 .form-conta label { display: grid; gap: 4px; font-size: 14px; font-weight: 800; }
 .campo { width: 100%; min-height: 46px; border: 0; border-radius: 12px; padding: 0 12px; background: var(--papel-2); color: var(--tinta); font: inherit; font-size: 16px; box-shadow: inset 0 0 0 1.5px rgba(0,0,0,.08); }
@@ -614,7 +617,7 @@ img.avatar { object-fit: contain; }
 /* ---------- dado escolhido (v0.9.2): tocar escolhe, não pega ---------- */
 .pega.escolhido .face, .pega.escolhido:not(:disabled):hover .face { transform: translateY(-3px); }
 .pega.escolhido .dado { box-shadow: 0 0 0 3px var(--mel), 0 0 0 6px rgba(242,177,94,.35), 0 10px 20px rgba(0,0,0,.45); }
-.btn.perigo small { color: #b3412f; font-weight: 800; }
+.btn.perigo small { color: var(--erro-tinta); font-weight: 800; }
 .btn-link { border: 0; background: none; padding: 4px 2px; min-height: 32px; font: inherit; font-weight: 800; color: var(--tinta); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 .btn-link[hidden] { display: none; }
 
@@ -726,21 +729,24 @@ button.vaga { cursor: pointer; border: 0; background: #fff3dc; color: var(--tint
 
 /* ---------- amigos: lista com quem está online, pedidos, chamar para a sala; nome livre ao criar a conta ---------- */
 .nome-status { font-size: 13px; font-weight: 700; }
-.nome-status.livre { color: #2f7a4a; }
-.nome-status.ocupado { color: #7a2a24; }
+.nome-status.livre { color: var(--feltro-escuro); }
+.nome-status.ocupado { color: var(--erro-tinta); }
 .amigos { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; max-height: 300px; overflow-y: auto; }
 .amigo { display: grid; grid-template-columns: 32px minmax(0, 1fr) auto auto; gap: 8px; align-items: center; padding: 6px 8px 6px 10px; border-radius: 12px; background: var(--papel-2); }
 .amigo .avatar { width: 32px; height: 32px; margin: 0; }
 .amigo .quem-rk { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
-.amigo .quem-rk small { display: flex; align-items: center; gap: 5px; font-weight: 600; font-size: 12px; color: var(--tinta-suave); }
+/* bloco (não flex): o texto longo termina em reticências em vez de cortar no meio da palavra */
+.amigo .quem-rk small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; font-size: 12px; color: var(--tinta-suave); }
+.amigo .quem-rk small .ponto-status { display: inline-block; vertical-align: 1px; margin-right: 5px; }
 .amigo.pedido { box-shadow: inset 0 0 0 2px var(--mel); }
 .amigos .vazio { list-style: none; font-size: 13px; color: var(--tinta-suave); padding: 4px 2px; }
-.ponto-status { width: 8px; height: 8px; border-radius: 50%; background: #b7a99a; flex: none; }
-.ponto-status.online, .ponto-status.numa-sala { background: #3fa564; box-shadow: 0 0 0 3px rgba(63,165,100,.2); }
+.ponto-status { width: 8px; height: 8px; border-radius: 50%; background: var(--tinta-suave); opacity: .45; flex: none; }
+.ponto-status.online, .ponto-status.numa-sala { background: var(--feltro); opacity: 1; box-shadow: 0 0 0 3px rgba(143,214,168,.45); }
+.ponto-status.jogando { opacity: 1; }
 .ponto-status.jogando { background: var(--mel); }
 .btn.btn-peq { min-height: 36px; padding: 0 12px; border-radius: 12px; font-size: 14px; box-shadow: 0 3px 0 var(--papel-2), inset 0 0 0 1.5px rgba(58,42,46,.12); }
 .btn-mel.btn-peq { box-shadow: 0 3px 0 var(--mel-escuro); }
-.selo { display: inline-grid; place-items: center; min-width: 20px; height: 20px; padding: 0 6px; margin-left: 4px; border-radius: 999px; background: var(--rival); color: #fff; font-size: 12px; letter-spacing: 0; vertical-align: middle; }
+.selo { display: inline-grid; place-items: center; min-width: 20px; height: 20px; padding: 0 6px; margin-left: 4px; border-radius: 999px; background: var(--mel); color: var(--tinta); font-size: 12px; letter-spacing: 0; vertical-align: middle; }
 .chamado-amigo { position: fixed; left: 50%; bottom: calc(16px + env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 70; width: min(440px, calc(100vw - 32px));
   display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px 12px; align-items: center; padding: 12px 14px; border-radius: 18px; background: var(--papel); color: var(--tinta);
   box-shadow: 0 6px 0 var(--papel-2), 0 18px 40px rgba(0,0,0,.45), 0 0 0 3px var(--mel); animation: caixaEntra .3s cubic-bezier(.2,1.3,.4,1); }
@@ -752,9 +758,9 @@ button.vaga { cursor: pointer; border: 0; background: #fff3dc; color: var(--tint
 /* ---------- quem está online agora: contador no botão Online e a lista para chamar ---------- */
 #btnOnline { position: relative; }
 .conta-online { min-width: 19px; height: 19px; padding: 0 5px; border-radius: 999px; display: inline-grid; place-items: center; flex: none;
-  background: #3fa564; color: #fff; font-size: 11px; font-weight: 800; line-height: 1; }
+  background: var(--passo); color: var(--tinta); font-size: 11px; font-weight: 800; line-height: 1; }
 #btnOnline:has(.conta-online:not([hidden])) .ponto-online { display: none; }
-.selo.selo-online { background: #3fa564; }
+.selo.selo-online { background: var(--passo); }
 .aviso-online .ponto-status { display: inline-block; vertical-align: middle; margin-right: 4px; }
 /* no celular os botões do topo são só ícone: o contador vira um selinho no canto, sem alargar o botão */
 @media (max-width: 520px) { .conta-online { position: absolute; top: 2px; right: 2px; min-width: 15px; height: 15px; padding: 0 3px; font-size: 10px; box-shadow: 0 0 0 1.5px var(--noite); } }
@@ -769,4 +775,15 @@ button.vaga { cursor: pointer; border: 0; background: #fff3dc; color: var(--tint
 .conta-opcoes .linha-cfg { border-bottom-color: rgba(58,42,46,.1); }
 .conta-opcoes .form-conta { padding-top: 6px; border-top: 1px solid rgba(58,42,46,.1); }
 .conta-opcoes .form-conta h3 { margin: 4px 0 0; }
-.btn.perigo { color: #9b2f22; box-shadow: 0 4px 0 #e9c9c3, inset 0 0 0 1.5px rgba(155,47,34,.35); }
+.btn.perigo { color: var(--erro-tinta); box-shadow: 0 4px 0 var(--erro-fundo), inset 0 0 0 2px var(--perigo); }
+
+/* ---------- campos de senha: mostrar/ocultar, Caps Lock e senha fácil ---------- */
+.campo-senha { position: relative; display: block; }
+.campo-senha .campo { padding-right: 84px; }
+.ver-senha { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); min-height: 34px; padding: 0 10px; border: 0; border-radius: 10px;
+  background: var(--papel); color: var(--tinta-suave); font-size: 13px; font-weight: 800; cursor: pointer; box-shadow: inset 0 0 0 1.5px rgba(58,42,46,.12); }
+.ver-senha[aria-pressed="true"] { color: var(--tinta); }
+.caps-aviso, .dica-senha { font-size: 12px; font-weight: 700; }
+.caps-aviso { color: var(--erro-tinta); }
+.dica-senha { color: var(--madeira); }
+.btn[data-trava]:disabled { font-variant-numeric: tabular-nums; opacity: 1; background: var(--papel-2); color: var(--tinta); box-shadow: inset 0 0 0 2px rgba(122,101,96,.35); }
