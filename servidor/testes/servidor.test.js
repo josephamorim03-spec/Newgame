@@ -8,8 +8,8 @@ const { jogadaAoAcaso } = require('./ajuda');
 
 const SEGREDO = 'segredo-de-teste-com-32-caracteres!!';
 
-async function subir({ banco = new BancoMemoria(), tempos = {}, limites = { contas: 1000, entrar: 1000, solo: 1000, ws: 100000 } } = {}) {
-  const { criarServidor, salas } = criarApp({ banco, segredo: SEGREDO, tempos, limites });
+async function subir({ banco = new BancoMemoria(), tempos = {}, limites = { contas: 1000, entrar: 1000, solo: 1000, ws: 100000 }, origens = [] } = {}) {
+  const { criarServidor, salas } = criarApp({ banco, segredo: SEGREDO, tempos, limites, origens });
   const servidor = criarServidor();
   await new Promise(r => servidor.listen(0, r));
   const base = `http://127.0.0.1:${servidor.address().port}`;
@@ -86,6 +86,20 @@ test('contas: criar, nome repetido, senha errada, entrar e /api/eu', { timeout: 
     assert.strictEqual((await s.api('GET', '/api/eu', null, e.token)).conta.nome, 'Ana');
     assert.strictEqual((await s.api('GET', '/api/eu', null, 'lixo.lixo')).status, 401);
     assert.strictEqual((await s.api('GET', '/api/eu')).status, 401);
+  } finally { await s.fechar(); }
+});
+
+test('página no Vercel: CORS só para as ORIGENS, e a página servida daqui fala com o mesmo endereço', { timeout: 20000 }, async () => {
+  const s = await subir({ origens: ['https://diceduel-game.vercel.app'] });
+  try {
+    const pre = await fetch(s.base + '/api/entrar', { method: 'OPTIONS', headers: { origin: 'https://diceduel-game.vercel.app', 'access-control-request-method': 'POST', 'access-control-request-headers': 'content-type' } });
+    assert.strictEqual(pre.status, 204);
+    assert.strictEqual(pre.headers.get('access-control-allow-origin'), 'https://diceduel-game.vercel.app');
+    assert.match(pre.headers.get('access-control-allow-headers'), /authorization/);
+    const estranho = await fetch(s.base + '/api/ranking', { headers: { origin: 'https://outro.example' } });
+    assert.strictEqual(estranho.headers.get('access-control-allow-origin'), null);
+    const html = await (await fetch(s.base + '/')).text();
+    assert.match(html, /<meta name="dice-servidor" content="">/);
   } finally { await s.fechar(); }
 });
 

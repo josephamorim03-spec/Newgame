@@ -45,6 +45,18 @@ Contas, moedas e ranking ficam no Postgres.
 
 **Conferir:** `curl https://<nome>.up.railway.app/api/saude` deve responder `{"ok":true,"banco":"postgres",...}`.
 
+## A página no Vercel (opcional)
+
+O endereço curto do jogo é **https://diceduel-game.vercel.app**: o Vercel serve só a página (`index.html`, `css/`, `js/`, `shared/`,
+veja o `vercel.json`) a partir da branch `DiceDuel`, e a conta, o ranking e as salas continuam na Railway.
+
+- A `<meta name="dice-servidor">` do `index.html` diz à página onde está o servidor. Quando o próprio servidor serve a página,
+  ele a manda vazia, e a página fala com o mesmo endereço (é assim no computador e no endereço da Railway).
+- A página chama a API e o WebSocket **direto** na Railway (o Vercel não repassa WebSocket, e repassar a API faria todo mundo
+  chegar com o IP do Vercel, estourando o limite de login por IP).
+- Na Railway, `ORIGENS` = `https://diceduel-game.vercel.app` libera o CORS da API para essa página. Mais de um endereço: separe por vírgula.
+- O convite usa o endereço da página aberta: quem jogou pelo Vercel convida pelo Vercel.
+
 ## Rodar no computador
 
 ```bash
