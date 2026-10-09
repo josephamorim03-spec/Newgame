@@ -157,10 +157,17 @@ test('amigos online, aviso de pedido ao vivo e chamar um amigo para a sala', asy
     assert.strictEqual(chamado.sala, sala.codigo); assert.strictEqual(chamado.de, 'Dora');
     a.enviar({ tipo: 'chamar', nome: 'Edu' });
     assert.match((await a.esperar(m => m.tipo === 'aviso')).erro, /acabou de chamar/);
-    // quem não é amigo não pode ser chamado; e o aviso não derruba a sala de quem chamou
+    // quem não está com o jogo aberto não pode ser chamado; e o aviso não derruba a sala de quem chamou
     a.enviar({ tipo: 'chamar', nome: 'Fabi' });
-    assert.match((await a.esperar(m => m.tipo === 'aviso')).erro, /seu amigo/);
+    assert.match((await a.esperar(m => m.tipo === 'aviso')).erro, /não está com o jogo aberto/);
     assert.ok(!a.msgs.some(m => m.tipo === 'erro'));
+    // quem não é amigo, mas está online, pode ser chamado (o convite diz que não é amigo)
+    const c = await cliente(s.ws, C.token);
+    a.enviar({ tipo: 'chamar', nome: 'Fabi' });
+    await a.esperar(m => m.tipo === 'chamou');
+    const chamadoC = await c.esperar(m => m.tipo === 'chamado');
+    assert.strictEqual(chamadoC.amigo, false); assert.strictEqual(chamado.amigo, true);
+    c.fechar();
     // Edu entra pela chamada e a partida começa
     b.enviar({ tipo: 'entrar', sala: chamado.sala, deck: [] });
     await b.esperar(m => m.tipo === 'estado');
@@ -168,7 +175,42 @@ test('amigos online, aviso de pedido ao vivo e chamar um amigo para a sala', asy
     b.fechar(); await espera(100);
     lista = await s.api('GET', '/api/amigos', null, A.token);
     assert.strictEqual(lista.amigos[0].online, false);
-    a.fechar(); void C;
+    a.fechar();
+  } finally { await s.fechar(); }
+});
+
+test('quem está online: sem conta, só quantos; com conta, a lista (amigos e quem pode jogar primeiro) e chamadas com limite', async () => {
+  const s = await subir();
+  try {
+    const nomes = ['Gabi', 'Heitor', 'Iris', 'Joel', 'Kika', 'Leo', 'Malu', 'Nina'], cs = {};
+    for (const n of nomes) cs[n] = await conta(s, n);
+    assert.deepStrictEqual(await s.api('GET', '/api/online'), { status: 200, total: 0 });
+    const ws = {};
+    for (const n of nomes) ws[n] = await cliente(s.ws, cs[n].token);
+    const extra = await cliente(s.ws, cs.Gabi.token);   // duas abas da mesma conta contam uma vez
+    const sem = await s.api('GET', '/api/online');
+    assert.deepStrictEqual(Object.keys(sem).sort(), ['status', 'total']);   // sem conta: nenhum nome
+    assert.strictEqual(sem.total, 8);
+    // Heitor é amigo da Gabi; Iris pediu amizade a ela
+    await s.api('POST', '/api/amigos', { nome: 'Heitor' }, cs.Gabi.token); await s.api('POST', '/api/amigos/aceitar', { nome: 'Gabi' }, cs.Heitor.token);
+    await s.api('POST', '/api/amigos', { nome: 'Gabi' }, cs.Iris.token);
+    const r = await s.api('GET', '/api/online', null, cs.Gabi.token);
+    assert.strictEqual(r.total, 8);
+    assert.strictEqual(r.jogadores.length, 7, 'a própria conta não aparece');
+    assert.strictEqual(r.jogadores[0].nome, 'Heitor', 'amigo primeiro');
+    assert.strictEqual(r.jogadores.find(x => x.nome === 'Iris').pedido, 'recebido');
+    assert.ok(!('id' in r.jogadores[0]));
+    // limite: 5 chamadas por minuto para quem não é amigo (para amigo não conta)
+    const { sala } = await s.api('POST', '/api/salas', {}, cs.Gabi.token);
+    ws.Gabi.enviar({ tipo: 'entrar', sala: sala.codigo, deck: [] }); await ws.Gabi.esperar(m => m.tipo === 'sala');
+    for (const n of ['Iris', 'Joel', 'Kika', 'Leo', 'Malu']) { ws.Gabi.enviar({ tipo: 'chamar', nome: n }); await ws.Gabi.esperar(m => m.tipo === 'chamou'); }
+    ws.Gabi.enviar({ tipo: 'chamar', nome: 'Nina' });
+    assert.match((await ws.Gabi.esperar(m => m.tipo === 'aviso')).erro, /muitas chamadas/);
+    ws.Gabi.enviar({ tipo: 'chamar', nome: 'Heitor' });
+    await ws.Gabi.esperar(m => m.tipo === 'chamou');
+    for (const c of Object.values(ws).concat(extra)) c.fechar();
+    await espera(150);
+    assert.strictEqual((await s.api('GET', '/api/online')).total, 0);
   } finally { await s.fechar(); }
 });
 
