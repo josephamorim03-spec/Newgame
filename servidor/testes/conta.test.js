@@ -45,17 +45,17 @@ async function aparelho(url, token) {
   if (token) { c.enviar({ tipo: 'ola', token }); c.resposta = await c.esperar(m => m.tipo === 'ola' || m.tipo === 'erro' || m.tipo === 'aviso'); }
   return c;
 }
-const conta = async (s, nome) => { const r = await s.api('POST', '/api/contas', { nome, senha: 'senha123' }); assert.strictEqual(r.status, 200, r.erro); return r; };
+const conta = async (s, nome) => { const r = await s.api('POST', '/api/contas', { nome, senha: 'dado-forte-7' }); assert.strictEqual(r.status, 200, r.erro); return r; };
 
 test('trocar a senha: confere a atual, os outros aparelhos saem, este continua', async () => {
   const s = await subir();
   try {
     const cel = await conta(s, 'Rita');
-    const pc = await s.api('POST', '/api/entrar', { nome: 'rita', senha: 'senha123' });   // o mesmo login em outro aparelho
+    const pc = await s.api('POST', '/api/entrar', { nome: 'rita', senha: 'dado-forte-7' });   // o mesmo login em outro aparelho
     const wsPc = await aparelho(s.ws, pc.token);
     assert.strictEqual((await s.api('POST', '/api/eu/senha', { atual: 'errada1', nova: 'nova-senha' }, cel.token)).status, 403);
-    assert.strictEqual((await s.api('POST', '/api/eu/senha', { atual: 'senha123', nova: '123' }, cel.token)).status, 400);
-    const r = await s.api('POST', '/api/eu/senha', { atual: 'senha123', nova: 'nova-senha' }, cel.token);
+    assert.strictEqual((await s.api('POST', '/api/eu/senha', { atual: 'dado-forte-7', nova: '123' }, cel.token)).status, 400);
+    const r = await s.api('POST', '/api/eu/senha', { atual: 'dado-forte-7', nova: 'nova-senha' }, cel.token);
     assert.strictEqual(r.status, 200);
     // o token antigo (deste e do outro aparelho) não vale mais; o novo vale
     assert.strictEqual((await s.api('GET', '/api/eu', null, pc.token)).status, 401);
@@ -68,7 +68,7 @@ test('trocar a senha: confere a atual, os outros aparelhos saem, este continua',
     const volta = await aparelho(s.ws, pc.token);
     assert.ok(volta.resposta.tipo === 'erro' && volta.resposta.sair);
     // a senha antiga não entra mais; a nova entra
-    assert.strictEqual((await s.api('POST', '/api/entrar', { nome: 'Rita', senha: 'senha123' })).status, 401);
+    assert.strictEqual((await s.api('POST', '/api/entrar', { nome: 'Rita', senha: 'dado-forte-7' })).status, 401);
     assert.strictEqual((await s.api('POST', '/api/entrar', { nome: 'Rita', senha: 'nova-senha' })).status, 200);
     volta.fechar();
   } finally { await s.fechar(); }
@@ -78,7 +78,7 @@ test('sair de todos os aparelhos: todos os tokens antigos caem', async () => {
   const s = await subir();
   try {
     const a = await conta(s, 'Saulo');
-    const b = await s.api('POST', '/api/entrar', { nome: 'Saulo', senha: 'senha123' });
+    const b = await s.api('POST', '/api/entrar', { nome: 'Saulo', senha: 'dado-forte-7' });
     const r = await s.api('POST', '/api/eu/sair-de-tudo', {}, a.token);
     assert.strictEqual(r.status, 200);
     for (const t of [a.token, b.token]) assert.strictEqual((await s.api('GET', '/api/eu', null, t)).status, 401);
@@ -96,13 +96,13 @@ test('apagar a conta: pede a senha, some com amizades, libera o nome e desiste d
     a.enviar({ tipo: 'entrar', sala: sala.codigo, deck: [] }); b.enviar({ tipo: 'entrar', sala: sala.codigo, deck: [] });
     await b.esperar(m => m.tipo === 'estado');
     assert.strictEqual((await s.api('POST', '/api/eu/apagar', { senha: 'errada1' }, A.token)).status, 403);
-    assert.strictEqual((await s.api('POST', '/api/eu/apagar', { senha: 'senha123' }, A.token)).apagada, true);
+    assert.strictEqual((await s.api('POST', '/api/eu/apagar', { senha: 'dado-forte-7' }, A.token)).apagada, true);
     // a partida acaba (desistência) para quem ficou, e a conta sumiu
     const fim = await b.esperar(m => m.tipo === 'fim');
     assert.strictEqual(fim.premio.porDesistencia, true);
     assert.strictEqual((await s.api('GET', '/api/eu', null, A.token)).status, 401);
     assert.strictEqual((await s.api('GET', '/api/amigos', null, B.token)).amigos.length, 0);
-    assert.strictEqual((await s.api('POST', '/api/entrar', { nome: 'Tina', senha: 'senha123' })).status, 401);
+    assert.strictEqual((await s.api('POST', '/api/entrar', { nome: 'Tina', senha: 'dado-forte-7' })).status, 401);
     assert.strictEqual((await s.api('GET', '/api/nomes/Tina')).livre, true, 'o nome fica livre de novo');
     b.fechar(); a.fechar();
   } finally { await s.fechar(); }
@@ -122,7 +122,10 @@ test('privacidade: quem não quer aparecer some do "Online agora" (menos para am
     // Wagner (não amigo) não consegue chamar; Xuxa (amiga) consegue
     for (const [ws, tok] of [[ww, W.token], [xw, X.token]]) { const { sala } = await s.api('POST', '/api/salas', {}, tok); ws.enviar({ tipo: 'entrar', sala: sala.codigo, deck: [] }); await ws.esperar(m => m.tipo === 'sala'); }
     ww.enviar({ tipo: 'chamar', nome: 'Vera' });
-    assert.match((await ww.esperar(m => m.tipo === 'aviso')).erro, /só aceita chamadas de amigos/);
+    // a resposta é a mesma de "offline": chamar não serve para descobrir se quem está invisível está online
+    assert.match((await ww.esperar(m => m.tipo === 'aviso')).erro, /Não dá para chamar Vera agora/);
+    await new Promise(r => setTimeout(r, 150));
+    assert.ok(!vw.msgs.some(m => m.tipo === 'chamado'), 'quem está invisível não recebe a chamada de quem não é amigo');
     xw.enviar({ tipo: 'chamar', nome: 'Vera' });
     await xw.esperar(m => m.tipo === 'chamou');
     await vw.esperar(m => m.tipo === 'chamado');
@@ -210,11 +213,11 @@ test('senha errada 5 vezes tranca o login daquela conta (mesmo trocando de IP); 
     assert.match(r[4].erro, /travado por 15 minutos/);
     assert.ok(r[4].trancadaAte > Date.now() + 14 * 60_000 && r[4].codigo === 'trancada');
     // travada: nem a senha certa entra, e a resposta diz quanto falta (e manda Retry-After)
-    const trancada = await s.api('POST', '/api/entrar', { nome: 'Davi', senha: 'senha123' });
+    const trancada = await s.api('POST', '/api/entrar', { nome: 'Davi', senha: 'dado-forte-7' });
     assert.strictEqual(trancada.status, 429);
     assert.match(trancada.erro, /travado por mais 15 min/);
     assert.ok(+trancada.cabecalhos.get('retry-after') > 800);
-    assert.strictEqual((await s.api('POST', '/api/entrar', { nome: 'Eva', senha: 'senha123' })).status, 200);
+    assert.strictEqual((await s.api('POST', '/api/entrar', { nome: 'Eva', senha: 'dado-forte-7' })).status, 200);
     // nome que não existe responde igual (sem tranca e sem revelar nada)
     assert.strictEqual((await s.api('POST', '/api/entrar', { nome: 'Ninguem', senha: 'x' })).status, 401);
   } finally { await s.fechar(); }
@@ -231,8 +234,8 @@ test('trocar a senha e apagar a conta: senha atual errada conta para a trava, co
     assert.match(r.erro, /Mais 1 tentativa/);
     r = await s.api('POST', '/api/eu/apagar', { senha: 'errada' }, L.token);
     assert.strictEqual(r.status, 429); assert.strictEqual(r.codigo, 'trancada');
-    assert.strictEqual((await s.api('POST', '/api/eu/apagar', { senha: 'senha123' }, L.token)).status, 429, 'travada, nem a certa apaga');
-    assert.strictEqual((await s.api('POST', '/api/entrar', { nome: 'Lara', senha: 'senha123' })).status, 429, 'o login também fica travado');
+    assert.strictEqual((await s.api('POST', '/api/eu/apagar', { senha: 'dado-forte-7' }, L.token)).status, 429, 'travada, nem a certa apaga');
+    assert.strictEqual((await s.api('POST', '/api/entrar', { nome: 'Lara', senha: 'dado-forte-7' })).status, 429, 'o login também fica travado');
   } finally { await s.fechar(); }
 });
 
@@ -297,7 +300,7 @@ test('Postgres: senha nova derruba os tokens antigos, apagar some com a conta, o
   try {
     assert.strictEqual((await s.api('GET', '/api/saude')).banco, 'postgres');
     const J = await conta(s, 'Joana'), K = await conta(s, 'Kleber');
-    const r = await s.api('POST', '/api/eu/senha', { atual: 'senha123', nova: 'outra-senha' }, J.token);
+    const r = await s.api('POST', '/api/eu/senha', { atual: 'dado-forte-7', nova: 'outra-senha' }, J.token);
     assert.strictEqual(r.status, 200);
     assert.strictEqual((await s.api('GET', '/api/eu', null, J.token)).status, 401);
     assert.strictEqual((await s.api('GET', '/api/eu', null, r.token)).status, 200);
@@ -310,4 +313,24 @@ test('Postgres: senha nova derruba os tokens antigos, apagar some com a conta, o
     assert.strictEqual(await banco.contaPorNome('joana'), null);
     ws.forEach(x => x.fechar());
   } finally { await s.fechar(); await banco.fechar(); }
+});
+
+test('senha nova forte (criar e trocar); quem já tinha senha curta continua entrando', async () => {
+  const s = await subir();
+  try {
+    for (const [senha, motivo] of [['curta1', /de 8 a 72/], ['senha123', /mais usadas/], ['12345678', /mais usadas/], ['aaaaaaaa', /repetido/], ['19900101', /Só números/], ['tiago-2024', /nome dentro/], ['abcdefgh', /mais usadas|sequência/]]) {
+      const r = await s.api('POST', '/api/contas', { nome: 'Tiago', senha });
+      assert.strictEqual(r.status, 400, senha); assert.match(r.erro, motivo, senha); assert.strictEqual(r.codigo, 'senha');
+    }
+    const T = await s.api('POST', '/api/contas', { nome: 'Tiago', senha: 'meu cachorro rex' });
+    assert.strictEqual(T.status, 200);
+    const r = await s.api('POST', '/api/eu/senha', { atual: 'meu cachorro rex', nova: 'qwerty123' }, T.token);
+    assert.strictEqual(r.status, 400); assert.match(r.erro, /Senha nova|mais usadas/);
+    // conta antiga, criada quando bastavam 6 caracteres: o login continua
+    const { hashSenha } = require('../autenticacao');
+    const h = await hashSenha('abc123');
+    const velha = await s.banco.criarConta('Antiga', h);
+    assert.ok(velha);
+    assert.strictEqual((await s.api('POST', '/api/entrar', { nome: 'antiga', senha: 'abc123' })).status, 200);
+  } finally { await s.fechar(); }
 });

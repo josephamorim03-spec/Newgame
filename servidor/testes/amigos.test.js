@@ -44,7 +44,7 @@ async function cliente(url, token) {
   await c.esperar(m => m.tipo === 'ola');
   return c;
 }
-const conta = async (s, nome) => { const r = await s.api('POST', '/api/contas', { nome, senha: 'senha123' }); assert.strictEqual(r.status, 200, r.erro); return r; };
+const conta = async (s, nome) => { const r = await s.api('POST', '/api/contas', { nome, senha: 'dado-forte-7' }); assert.strictEqual(r.status, 200, r.erro); return r; };
 
 test('nome único: maiúsculas, acentos e separadores não fazem um nome novo', async () => {
   assert.strictEqual(chaveDoNome('José_Silva'), chaveDoNome('jose.silva'));
@@ -53,30 +53,30 @@ test('nome único: maiúsculas, acentos e separadores não fazem um nome novo', 
   try {
     await conta(s, 'José.Silva');
     for (const nome of ['josé.silva', 'JOSE.SILVA', 'Jose_Silva', 'josesilva', 'José-Silva', ' jose.silva ']) {
-      const r = await s.api('POST', '/api/contas', { nome, senha: 'senha123' });
+      const r = await s.api('POST', '/api/contas', { nome, senha: 'dado-forte-7' });
       assert.strictEqual(r.status, 409, `${nome} deveria ser recusado`);
       assert.match(r.erro, /já existe/);
     }
-    const parecido = await s.api('POST', '/api/contas', { nome: 'JOSESILVA', senha: 'senha123' });
+    const parecido = await s.api('POST', '/api/contas', { nome: 'JOSESILVA', senha: 'dado-forte-7' });
     assert.match(parecido.erro, /José\.Silva/, 'a mensagem mostra com qual nome ele bate');
     // o login acha a conta por qualquer forma do nome
-    for (const nome of ['jose.silva', 'JOSÉ_SILVA']) assert.strictEqual((await s.api('POST', '/api/entrar', { nome, senha: 'senha123' })).conta.nome, 'José.Silva');
+    for (const nome of ['jose.silva', 'JOSÉ_SILVA']) assert.strictEqual((await s.api('POST', '/api/entrar', { nome, senha: 'dado-forte-7' })).conta.nome, 'José.Silva');
     // a tela pergunta enquanto a pessoa digita
     assert.strictEqual((await s.api('GET', '/api/nomes/Jose-Silva')).livre, false);
     assert.strictEqual((await s.api('GET', '/api/nomes/Maria')).livre, true);
     assert.strictEqual((await s.api('GET', '/api/nomes/a.%20b')).livre, false);
     // separadores não contam para o tamanho mínimo, e × não é letra
-    assert.strictEqual((await s.api('POST', '/api/contas', { nome: 'a._', senha: 'senha123' })).status, 400);
-    assert.strictEqual((await s.api('POST', '/api/contas', { nome: 'ab×cd', senha: 'senha123' })).status, 400);
+    assert.strictEqual((await s.api('POST', '/api/contas', { nome: 'a._', senha: 'dado-forte-7' })).status, 400);
+    assert.strictEqual((await s.api('POST', '/api/contas', { nome: 'ab×cd', senha: 'dado-forte-7' })).status, 400);
     // duas criações ao mesmo tempo com o mesmo nome: só uma passa
-    const rs = await Promise.all(['Corrida', 'CORRIDA', 'córrida'].map(nome => s.api('POST', '/api/contas', { nome, senha: 'senha123' })));
+    const rs = await Promise.all(['Corrida', 'CORRIDA', 'córrida'].map(nome => s.api('POST', '/api/contas', { nome, senha: 'dado-forte-7' })));
     assert.strictEqual(rs.filter(r => r.status === 200).length, 1);
   } finally { await s.fechar(); }
 });
 
 test('contas antigas (chave só em minúsculas) passam para a chave nova sem perder o login', async () => {
   const banco = new BancoMemoria();
-  const h = await hashSenha('senha123');
+  const h = await hashSenha('dado-forte-7');
   banco.contas.push({ id: 1, nome: 'Júlia', chave: 'júlia', senha_hash: h.hash, sal: h.sal, rating: 1000, pico: 1000, partidas: 0, vitorias: 0, moedas: 0, xp: 0,
     cartas: [], dados: ['marfim'], icones: ['bolinha'], mesas: ['salvia'], ativo: { dado: 'marfim', icone: 'bolinha', mesa: 'salvia' }, extras: {} });
   // duas antigas que viram a mesma chave nova: a segunda fica com a antiga e entra pelo próprio nome
@@ -88,8 +88,8 @@ test('contas antigas (chave só em minúsculas) passam para a chave nova sem per
   assert.strictEqual((await banco.contaPorNome('ANA.B')).nome, 'Ana.B');
   const s = await subir({ banco });
   try {
-    assert.strictEqual((await s.api('POST', '/api/entrar', { nome: 'julia', senha: 'senha123' })).conta.nome, 'Júlia');
-    assert.strictEqual((await s.api('POST', '/api/contas', { nome: 'Julia', senha: 'senha123' })).status, 409);
+    assert.strictEqual((await s.api('POST', '/api/entrar', { nome: 'julia', senha: 'dado-forte-7' })).conta.nome, 'Júlia');
+    assert.strictEqual((await s.api('POST', '/api/contas', { nome: 'Julia', senha: 'dado-forte-7' })).status, 409);
   } finally { await s.fechar(); }
 });
 
@@ -159,7 +159,7 @@ test('amigos online, aviso de pedido ao vivo e chamar um amigo para a sala', asy
     assert.match((await a.esperar(m => m.tipo === 'aviso')).erro, /acabou de chamar/);
     // quem não está com o jogo aberto não pode ser chamado; e o aviso não derruba a sala de quem chamou
     a.enviar({ tipo: 'chamar', nome: 'Fabi' });
-    assert.match((await a.esperar(m => m.tipo === 'aviso')).erro, /não está com o jogo aberto/);
+    assert.match((await a.esperar(m => m.tipo === 'aviso')).erro, /Não dá para chamar Fabi agora/);
     assert.ok(!a.msgs.some(m => m.tipo === 'erro'));
     // quem não é amigo, mas está online, pode ser chamado (o convite diz que não é amigo)
     const c = await cliente(s.ws, C.token);
@@ -242,7 +242,7 @@ test('Postgres: chaves antigas migram, nome único, amizades e posição no rank
   await banco.pool.query('TRUNCATE contas, partidas, amizades RESTART IDENTITY');
   await banco.pool.query("DELETE FROM config WHERE chave = 'chaves_v2'");
   // três contas do jeito antigo (chave = nome em minúsculas); duas delas viram a mesma chave nova
-  const h = await hashSenha('senha123'), velha = (nome, chave) => banco.pool.query(
+  const h = await hashSenha('dado-forte-7'), velha = (nome, chave) => banco.pool.query(
     `INSERT INTO contas (nome, chave, senha_hash, sal, cartas, dados, icones, mesas, ativo) VALUES ($1, $2, $3, $4, '[]', '["marfim"]', '["bolinha"]', '["salvia"]', '{"dado":"marfim","icone":"bolinha","mesa":"salvia"}')`,
     [nome, chave, h.hash, h.sal]);
   await velha('Júlia', 'júlia'); await velha('Ana.B', 'ana.b'); await velha('ana_b', 'ana_b');
@@ -254,10 +254,10 @@ test('Postgres: chaves antigas migram, nome único, amizades e posição no rank
   assert.strictEqual((await banco.contaPorNome('ana.b')).nome, 'Ana.B');
   const s = await subir({ banco });
   try {
-    assert.strictEqual((await s.api('POST', '/api/contas', { nome: 'JÚLIA', senha: 'senha123' })).status, 409);
-    const rs = await Promise.all(['Rafa', 'RAFA', 'rafá'].map(nome => s.api('POST', '/api/contas', { nome, senha: 'senha123' })));
+    assert.strictEqual((await s.api('POST', '/api/contas', { nome: 'JÚLIA', senha: 'dado-forte-7' })).status, 409);
+    const rs = await Promise.all(['Rafa', 'RAFA', 'rafá'].map(nome => s.api('POST', '/api/contas', { nome, senha: 'dado-forte-7' })));
     assert.strictEqual(rs.filter(r => r.status === 200).length, 1);
-    const R = rs.find(r => r.status === 200), J = await s.api('POST', '/api/entrar', { nome: 'julia', senha: 'senha123' });
+    const R = rs.find(r => r.status === 200), J = await s.api('POST', '/api/entrar', { nome: 'julia', senha: 'dado-forte-7' });
     const S = await conta(s, 'Sara');
     await s.api('POST', '/api/amigos', { nome: 'Júlia' }, R.token);
     assert.deepStrictEqual((await s.api('GET', '/api/amigos', null, J.token)).recebidos.map(x => x.nome), [R.conta.nome]);
