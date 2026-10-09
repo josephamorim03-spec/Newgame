@@ -242,9 +242,18 @@
     "biscoito": {
       "grupo": "retratos4",
       "pedidos": "arte/retratos.json",
-      "mestra": "arte/fonte/biscoito.png",
-      "n": 4,
-      "texto": "SPECIAL. Changes: (1) the medallion background becomes clean white-ivory with an antique-gold rim; (2) add the game's thick uniform dark cocoa outline (#3a2a2e) around the cookie, around the golden hair tuft and around every shape, because the dark background no longer outlines them. Keep the same cookie character: golden-blond messy hair tuft, the big goofy smile with one tooth, the slightly mismatched eyes, the chocolate chips and the colors."
+      "n": 10,
+      "texto": "SPECIAL. Biscoito: a whole round chocolate-chip cookie (NOT bitten, perfectly round, no missing piece) with a humanized face drawn on it, NO hair, no hat. A lost, slightly dopey but very likable expression: big round eyes looking a bit off to the side, eyebrows raised in mild confusion, a small open goofy smile. Golden-brown cookie with a few dark chocolate chips, little cream arms optional. No text.",
+      "estilo": [
+        "builds/arte/revisao-1/r3/gordinho/B.png",
+        "builds/arte/revisao-1/r3/cafu/B.png"
+      ],
+      "_obs": "redesenho pedido pelo dono: cookie inteiro, sem cabelo, rosto humanizado, cara de perdido e bobo, simpático",
+      "variantes": [
+        "SPECIAL. Biscoito: a whole round chocolate-chip cookie (NOT bitten, perfectly round, no missing piece) with a humanized face drawn on it, NO hair, no hat. A lost, slightly dopey but very likable expression: big round eyes with small pupils looking a bit off to the side, eyebrows raised in mild confusion, a small open goofy smile. Golden-brown cookie with a few dark chocolate chips. No text.",
+        "SPECIAL. Biscoito: a whole round chocolate-chip cookie (NOT bitten, perfectly round, no missing piece) with a humanized face drawn on it, NO hair, no hat. Goofy and sweet: one eyebrow higher than the other, big round eyes looking up as if trying to remember something, a wobbly open smile with the tip of the tongue showing. Golden cookie, chocolate chips around the face (not on the eyes). No text.",
+        "SPECIAL. Biscoito: a whole round chocolate-chip cookie (NOT bitten, perfectly round, no missing piece) with a humanized face drawn on it, NO hair, no hat. Cheerfully confused: big round eyes slightly crossed, a small question-like tilt of the whole cookie, a soft open-mouth smile, rosy cheeks. Warm golden cookie with chocolate chips. No text."
+      ]
     }
   }
 }
