@@ -1,0 +1,81 @@
+{
+  "_leia": "Lote de arte (tools/arte_lote.py): ícones das 6 cartas novas, retratos refeitos (Gordinho, Bandoleiro, Galgo, cacto, monstera) e 2 personagens novos (referência ao Catan e o cavalo do xadrez). Textos em inglês porque o gerador entende melhor.",
+  "n": 6,
+  "itens": {
+    "pausa": {"grupo": "cartas", "pedidos": "arte/cartas.json", "estilo": ["arte/fonte/cartas/pressa.png", "arte/fonte/cartas/ancora.png", "arte/fonte/cartas/espelho.png"],
+      "texto": "Pausa card: skip your turn without taking a die. A steaming cream teacup on a small saucer, a cozy break.",
+      "variantes": [
+        "Pausa card (skip your turn, a calm break): a steaming cream teacup on a small saucer with a honey band, one curl of steam.",
+        "Pausa card (skip your turn): a round sage-green token with two thick vertical cream pause bars on it.",
+        "Pausa card (skip your turn): an open hand raised palm forward, saying 'wait', warm skin tone, simple mitten-like shape."]},
+    "reverso": {"grupo": "cartas", "pedidos": "arte/cartas.json", "estilo": ["arte/fonte/cartas/pressa.png", "arte/fonte/cartas/ancora.png", "arte/fonte/cartas/espelho.png"],
+      "texto": "Reverso card: your dice chain now grows from the other end.",
+      "variantes": [
+        "Reverso card (reverse your dice chain): a short horizontal row of three small ivory dice with one thick sky-blue U-turn arrow looping over them from right back to left.",
+        "Reverso card (reverse the chain): one thick lavender U-turn arrow, chunky and bold, nothing else.",
+        "Reverso card (reverse the chain): two thick arrows, honey and sky blue, pointing in opposite directions, stacked, like a swap sign."]},
+    "furto": {"grupo": "cartas", "pedidos": "arte/cartas.json", "estilo": ["arte/fonte/cartas/pressa.png", "arte/fonte/cartas/ancora.png", "arte/fonte/cartas/espelho.png"],
+      "texto": "Furto card: swap your pocket die with the rival's pocket die.",
+      "variantes": [
+        "Furto card (swap pockets with the rival): two small drawstring cloth pouches, one coral and one sky blue, with two curved arrows crossing between them.",
+        "Furto card (steal the rival's pocket die): a sly gloved hand pulling a small ivory die out of a coral drawstring pouch.",
+        "Furto card (pocket swap): a coral drawstring pouch wearing a tiny black bandit eye mask, cheeky, a die peeking out."]},
+    "convite": {"grupo": "cartas", "pedidos": "arte/cartas.json", "estilo": ["arte/fonte/cartas/pressa.png", "arte/fonte/cartas/ancora.png", "arte/fonte/cartas/espelho.png"],
+      "texto": "Convite card: the rival must take the die you choose.",
+      "variantes": [
+        "Convite card (an invitation the rival must accept): a cream envelope, flap open, with a small ivory die peeking out of it. No wax seal.",
+        "Convite card (you choose the die the rival must take): a hand presenting a single ivory die on an open palm, like an offering.",
+        "Convite card (forced invitation): a small honey-gold ticket with a die printed on it, slightly tilted. No text."]},
+    "lacre": {"grupo": "cartas", "pedidos": "arte/cartas.json", "estilo": ["arte/fonte/cartas/pressa.png", "arte/fonte/cartas/ancora.png", "arte/fonte/cartas/espelho.png"],
+      "texto": "Lacre trap card: cancels the rival's next effect card.",
+      "variantes": [
+        "Lacre trap (seals and cancels the rival's next effect): a round coral-red wax seal with a simple embossed star and drippy wax edges.",
+        "Lacre trap (cancels the next effect): a small sage-green padlock, chunky and closed.",
+        "Lacre trap (seal that cancels a card): a cream card seen from the front with a big coral-red wax seal stamped on its center. No text on the card."]},
+    "ampulheta": {"grupo": "cartas", "pedidos": "arte/cartas.json", "estilo": ["arte/fonte/cartas/pressa.png", "arte/fonte/cartas/ancora.png", "arte/fonte/cartas/espelho.png"],
+      "texto": "Ampulheta trap card: you score 3 if the rival holds his chain instead of firing.",
+      "variantes": [
+        "Ampulheta trap (punishes the rival for waiting): a wooden hourglass with honey-gold sand flowing, chunky wooden caps.",
+        "Ampulheta trap (punishes waiting, a points card): a wooden hourglass with honey sand and one tiny gold lightning spark beside it.",
+        "Ampulheta trap: a slim glass hourglass with lavender sand and brass caps, slightly tilted."]},
+
+    "gordinho": {"grupo": "retratos", "pedidos": "arte/retratos.json", "estilo": ["arte/fonte/biscoito.png", "arte/fonte/cafu.png"],
+      "texto": "SPECIAL. Gordinho: a friendly, likable chubby American guy (fair skin, rosy cheeks, round face, small round nose), shown from the head down to the round belly. HAIR, very important: short brown hair covering the back and the sides of the head and most of the top; at the front of the hairline there is a small central forelock tuft, and on each side of that tuft a receding bald 'entrada' (two deep temple recessions forming an M-shaped hairline). NOT bald on top, NO single curl, NO topknot, NO pigtail. Big open friendly eyes with visible irises and eyebrows (not narrow slits, not closed), a warm wide smile. Light-blue button shirt stretched over the belly, hands resting on the belly. Kind Midwestern dad energy, cute and lovable, never a caricature.",
+      "variantes": [
+        "SPECIAL. Gordinho: a friendly, likable chubby American guy (fair skin, rosy cheeks, round face, small round nose), shown from the head down to the round belly. HAIR, very important: short brown hair covering the back and the sides of the head and most of the top; at the front of the hairline a small central forelock tuft, and on each side of that tuft a receding bald temple 'entrada' (an M-shaped hairline). NOT bald on top, NO single curl, NO topknot, NO pigtail. Big open friendly eyes with visible irises and eyebrows, a warm wide smile. Light-blue button shirt stretched over the belly, hands resting on the belly. Cute and lovable, never a caricature.",
+        "SPECIAL. Gordinho: a jolly chubby American man in his forties (fair skin, freckles, rosy cheeks, round face), head down to the round belly. HAIR: brown, short, with an M-shaped receding hairline: two bald temple recessions and a small tuft of hair in the middle front; hair everywhere else on top and sides. NOT bald on top, NO single curl, NO pigtail. Open bright eyes with irises, raised friendly eyebrows, a cheeky grin, one hand giving a thumbs up and the other on the belly. Light-blue short-sleeve button shirt.",
+        "SPECIAL. Gordinho: a sweet chubby American guy (fair skin, rosy cheeks, double chin, round face), head down to the round belly. HAIR: light brown, an M-shaped receding hairline (two bald temple recessions on the forehead, a small rounded tuft at the center front), hair on top and sides. NOT bald on top, NO curl, NO pigtail. Big open eyes with irises looking at the viewer, a slightly mischievous smile with one raised eyebrow. Light-blue button shirt stretched over the belly with one button almost popping, hands on the belly."]},
+    "bandoleiro": {"grupo": "retratos", "pedidos": "arte/retratos.json", "mestra": "arte/fonte/bandoleiro.png", "n": 3,
+      "texto": "SPECIAL. Change only the mouth: remove the gold tooth and the yellow mark at the corner of the mouth; the mouth is a clean sly grin with no tooth and no mark. Keep the hat with the playing card, the wink, the thin curled mustache, the red neckerchief, the slate-blue coat and the medallion exactly as they are."},
+    "galgo": {"grupo": "retratos", "pedidos": "arte/retratos.json", "estilo": ["arte/fonte/biscoito.png", "arte/fonte/cafu.png"],
+      "texto": "SPECIAL. Galgo, a shrewd and witty anthropomorphic greyhound seen STRAIGHT FROM THE FRONT, facing the viewer, symmetrical: long narrow muzzle seen head-on (foreshortened, the nose at the center of the face), rose ears folded back on both sides, slate-gray short coat with a white blaze running down the center of the face, narrowed amber eyes with a knowing look and slanted brows, a faint confident smirk, wide red martingale collar with a small gold tag. NOT in profile, NOT three-quarter view.",
+      "variantes": [
+        "SPECIAL. Galgo, a shrewd and witty anthropomorphic greyhound seen STRAIGHT FROM THE FRONT, facing the viewer, symmetrical: long narrow muzzle seen head-on (foreshortened, the black nose at the center of the face), rose ears folded back on both sides, slate-gray short coat with a white blaze down the center of the face, narrowed amber eyes with a knowing look, a faint confident smirk, wide red martingale collar with a small gold tag. NOT in profile, NOT three-quarter view.",
+        "SPECIAL. Galgo, a clever gentleman greyhound, front view facing the viewer, symmetrical: slender head, narrow muzzle pointing at the viewer, ears folded back like little rose petals, slate-gray coat, white chest and white blaze down the face, half-lidded amber eyes and one eyebrow raised, a small knowing smile, red collar with a gold tag. NOT in profile.",
+        "SPECIAL. Galgo, a witty greyhound with a slate-gray coat seen from the front, looking straight at the viewer: long elegant muzzle foreshortened toward the viewer, folded-back ears, white blaze, amber eyes narrowed in amusement, confident smirk, a red bow tie instead of the collar. NOT in profile."]},
+    "cacto": {"grupo": "retratos", "pedidos": "arte/retratos.json", "estilo": ["arte/fonte/cogumelo.png", "arte/fonte/xicara.png"],
+      "texto": "A cheerful little cactus character in a playful running pose, inspired by classic JRPG cactus creatures: a tall rounded green cactus body with soft vertical ribs, two short arms raised at different heights, two little legs mid-stride, a simple face of two black dot eyes and a small round 'o' mouth, three tiny tufts of spines on top. Standing on a tiny patch of sand. No pot.",
+      "variantes": [
+        "A cheerful little cactus character in a playful running pose, inspired by classic JRPG cactus creatures: a tall rounded green cactus body with soft vertical ribs, one arm raised up and the other bent down, two little legs mid-stride, a simple face of two black dot eyes and a small round 'o' mouth, three tiny tufts of spines on top. A small shadow of sand under its feet. No pot.",
+        "A cute cactus creature striking a dynamic dance pose (arms up and down, one knee raised), smooth bright green body, simple face with two black dot eyes and an open round mouth, a tiny pink flower on its head. No pot.",
+        "A small green cactus character sprinting to the side but facing the viewer, arms swinging, body slightly leaning, dot eyes and an 'o' mouth, a few spine tufts. Simple, iconic, friendly. No pot."]},
+    "monstera": {"grupo": "retratos", "pedidos": "arte/retratos.json", "estilo": ["arte/fonte/cogumelo.png", "arte/fonte/xicara.png"],
+      "texto": "A monstera deliciosa houseplant in a terracotta pot: three large glossy heart-shaped leaves with the characteristic deep side splits and a few oval holes (fenestrations), sage and deep green, leaves fanning out. No face.",
+      "variantes": [
+        "A monstera deliciosa houseplant in a terracotta pot: three large glossy heart-shaped leaves with the characteristic deep side splits and a few oval holes (fenestrations), sage and deep green, leaves fanning out. No face.",
+        "A single big monstera leaf, heart-shaped with deep splits and holes, standing in a small terracotta pot with a cream band, plus one small young rolled leaf. No face.",
+        "A lush monstera in a round cream ceramic pot, four split leaves of different sizes, clearly recognizable monstera fenestrations. No face."]},
+    "catan": {"grupo": "retratos", "pedidos": "arte/retratos.json", "estilo": ["arte/fonte/biscoito.png", "arte/fonte/cafu.png"],
+      "texto": "SPECIAL. A homage to classic hex-tile settlement board games (no logo, no text, no branded art).",
+      "variantes": [
+        "SPECIAL. A fluffy cream sheep character with a friendly face standing on a single green hexagonal board-game tile, a tiny wheat sheaf beside it. Homage to hex-tile settlement board games. No logo, no text.",
+        "SPECIAL. A friendly settler character: a simple rounded wooden board-game pawn (meeple-like) painted brick red, with a small smiling face, holding a sheaf of golden wheat, standing on a hexagonal tile. No logo, no text.",
+        "SPECIAL. A charming robber pawn character: a dark gray turned-wood game pawn with a sly friendly face and a tiny bandit mask, standing on a sandy desert hexagon tile. No logo, no text."]},
+    "cavalo": {"grupo": "retratos", "pedidos": "arte/retratos.json", "estilo": ["arte/fonte/biscoito.png", "arte/fonte/cafu.png"],
+      "texto": "SPECIAL. Cavalo: the knight chess piece as a character.",
+      "variantes": [
+        "SPECIAL. Cavalo: a classic wooden knight chess piece as a character, polished walnut wood, carved horse head with a flowing mane, one friendly clever eye, round base. Facing the viewer at a slight angle as chess knights do. No text.",
+        "SPECIAL. Cavalo: an ivory knight chess piece with a noble, witty expression, carved mane, round base with a thin gold ring, a tiny smile. No text.",
+        "SPECIAL. Cavalo: a dark ebony knight chess piece with a bold confident look, carved mane highlighted in warm wood, one eye shining, round base. No text."]}
+  }
+}
