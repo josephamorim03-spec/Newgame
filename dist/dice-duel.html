@@ -817,6 +817,77 @@ button.vaga { cursor: pointer; border: 0; background: #fff3dc; color: var(--tint
 .dica-senha { color: var(--madeira); }
 .btn[data-trava]:disabled { font-variant-numeric: tabular-nums; opacity: 1; background: var(--papel-2); color: var(--tinta); box-shadow: inset 0 0 0 2px rgba(122,101,96,.35); }
 
+/* ==========================================================================
+   Telas de verdade (v0.12): a decisão da vez — os botões e a sua corrente — cabe na tela sem rolar
+   ========================================================================== */
+
+/* tablet e telas médias: o cabeçalho não quebra em duas linhas (o subtítulo e a xícara saem antes) */
+@media (max-width: 900px) { .marca p, .cha { display: none; } }
+@media (max-width: 760px) { .btn-topo .rotulo { display: none; } .btn-topo { padding: 0 11px; } .topo-botoes { flex-wrap: nowrap; } }
+
+/* computador com pouca altura (notebook de 720–900 px): cabeçalho enxuto, dados um pouco menores
+   e as ações presas no rodapé da tela, como no celular — antes ficavam abaixo da dobra em toda jogada */
+@media (min-width: 1040px) and (max-height: 900px) {
+  :root { --d-mesa: 60px; --d-cor: 44px; --d-riv: 38px; }
+  .app { padding-top: 8px; gap: 8px; }
+  .marca p, .cha { display: none; }
+  .marca h1 { font-size: 32px; }
+  .logo { width: 40px; height: 40px; }
+  .btn-topo, .carteira { min-height: 40px; }
+  .tabuleiro { gap: 8px; padding: 14px; }
+  .jogador { padding: 8px 12px 10px; gap: 6px; }
+  .mesa-area { padding: 0; gap: 2px; }
+  .mesa { min-height: calc(var(--d-mesa) + 30px); }
+  .acoes { position: sticky; }
+  .lado { top: 8px; max-height: calc(100vh - 16px); }
+}
+@media (min-width: 1040px) and (max-height: 760px) {
+  :root { --d-mesa: 54px; --d-cor: 40px; --d-riv: 34px; }
+  .carta { min-height: 34px; }
+  .acoes { padding: 10px 12px; gap: 8px; min-height: 0; }
+  .acoes .btn { min-height: 44px; }
+}
+
+/* celular em pé com pouca altura (360×640, 360×740): menos ar entre as peças, para o painel de ação cobrir menos a sua corrente */
+@media (max-width: 520px) and (max-height: 760px) {
+  :root { --d-mesa: clamp(40px, 12vw, 52px); --d-cor: clamp(30px, 8vw, 40px); --d-riv: clamp(26px, 6.6vw, 34px); }
+  .app { gap: 8px; padding-top: 8px; }
+  .tabuleiro { gap: 8px; }
+  .jogador { padding: 8px 10px 10px; gap: 6px; }
+  .mesa-area { padding: 0; gap: 2px; }
+  .mesa-topo h2 { font-size: 19px; }
+  .carta { min-height: 34px; }
+  .acoes { padding: 10px; gap: 8px; min-height: 0; }
+  .acoes .status { font-size: 15px; }
+  .acoes .btn { min-height: 46px; }
+}
+
+/* celular deitado: o rival e você lado a lado, a Mesa embaixo e as ações presas no rodapé; cabeçalho mínimo */
+@media (orientation: landscape) and (max-height: 520px) and (max-width: 1039px) {
+  :root { --d-mesa: 44px; --d-cor: 30px; --d-riv: 26px; }
+  .app { padding-top: 4px; gap: 4px; }
+  .marca p, .cha, .logo { display: none; }
+  .marca h1 { font-size: 22px; }
+  .btn-topo .rotulo { display: none; }
+  .btn-topo, .carteira { min-height: 36px; }
+  .topo-botoes { flex-wrap: nowrap; }
+  .tabuleiro { margin: 6px; padding: 8px; gap: 6px; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: "rival voce" "mesa mesa" "acoes acoes"; }
+  .tabuleiro::before { inset: -6px; border-radius: 30px; }
+  #pj1 { grid-area: rival; min-width: 0; } #pj0 { grid-area: voce; min-width: 0; }
+  .mesa-area { grid-area: mesa; padding: 0; gap: 0; }
+  .acoes { grid-area: acoes; padding: 8px 10px; gap: 6px; min-height: 0; }
+  .acoes .btn { min-height: 40px; }
+  .acoes .status { font-size: 14px; }
+  .jogador { padding: 6px 8px 8px; gap: 4px; }
+  .carta { min-height: 30px; font-size: 12px; }
+  .mesa-topo h2 { font-size: 17px; }
+}
+
+/* fim da partida: Revanche, Compartilhar, Deck e Mesa presos no rodapé da janela, como no deck
+   (antes ficavam depois da tabela de estatísticas: no celular era preciso rolar a janela inteira para jogar de novo) */
+#fim .botoes { position: sticky; bottom: -20px; margin: 0 -20px -20px; padding: 12px 20px calc(16px + env(safe-area-inset-bottom, 0px)); background: var(--papel); box-shadow: 0 -6px 8px -8px rgba(58,42,46,.35); z-index: 2; }
+@media (max-width: 520px) { #fim .botoes { display: grid; grid-template-columns: 1fr 1fr; } #fim .botoes .btn { padding: 0 10px; min-width: 0; } }
+
 </style>
 </head>
 <body>
@@ -3856,6 +3927,20 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     return `<div class="status">${quem}, ${msg}</div>${dispensa}${prontas ? `<p class="nota" style="margin:0">Toque numa carta sua para usar (${prontas} ${prontas === 1 ? 'pronta' : 'prontas'}).</p>` : ''}`;
   }
 
+  // na hora de disparar ou segurar, a sua corrente precisa estar à vista: em telas baixas o painel de ação (preso no
+  // rodapé) pode cobri-la; então a página rola o mínimo para ela aparecer — uma vez por decisão, sem brigar com quem rola
+  function mostrarCorrenteNaDecisao(j) {
+    const p = j.modo === 'local' ? j.vez : 0;
+    const chave = j.fase === 'decidir' && humano(j.vez) ? `${j.rodada}:${j.compras}:${j.vez}` : null;
+    if (!chave || j.decisaoVista === chave) return;
+    j.decisaoVista = chave;
+    requestAnimationFrame(() => {
+      const cor = document.querySelector(`#pj${p} .corrente`), acoes = document.getElementById('acoes');
+      if (!cor || !acoes) return;
+      const falta = cor.getBoundingClientRect().bottom + 8 - acoes.getBoundingClientRect().top;
+      if (falta > 0 && cor.getBoundingClientRect().top - falta > 0) window.scrollBy({ top: falta, behavior: Fx.cfg.animacoes ? 'smooth' : 'auto' });
+    });
+  }
   function render() {
     if (!jogo) return;
     const j = jogo;
@@ -3873,6 +3958,7 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     const linha = l => `${l.p === null ? '' : `<span class="cor${l.p}">${n[l.p]}</span> `}${l.txt}`;
     document.getElementById('log').innerHTML = j.log.map(l => `<li class="${l.tipo}">${linha(l)}</li>`).join('');
     document.getElementById('ticker').innerHTML = j.log[0] ? linha(j.log[0]) : '';
+    mostrarCorrenteNaDecisao(j);
     if (j.fase !== 'fim' && Som.musica.cenaAtual === 'fim') Som.musica.cena('jogo');
     Som.musica.intensidade(Math.max(j.pts[0], j.pts[1]) / j.meta);
     // a vez chegou a um humano: um sininho discreto e o painel dá um pulinho (no modo 2 jogadores, a cada troca)
