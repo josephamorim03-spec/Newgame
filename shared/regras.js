@@ -1,4 +1,4 @@
-/* Dice Duel · motor de regras compartilhado (navegador e servidor), regras v0.11 (blefe; Pausa, Reverso, Furto, Lacre; Pedágio +2 na meta 16)
+/* Dice Duel · motor de regras compartilhado (navegador e servidor), regras v0.11 (blefe; Pausa, Reverso, Furto, Lacre; Pedágio +2)
  * Tudo aqui é puro: recebe o estado da partida (um objeto serializável) e o altera.
  * Nada de DOM, som ou tempo. Quem desenha (o cliente) ou transmite (o servidor) lê
  * j.eventos, j.log e j.momentos depois de cada ação.
@@ -30,11 +30,12 @@
     lacre:         { nome: 'Lacre', tipo: 'armadilha', verbo: 'anula o próximo efeito', texto: 'O próximo efeito que o rival usar não funciona: a carta dele é gasta sem agir. Vale também para um blefe desvirado e para a Sobrecarga.' },
     ancora:        { nome: 'Âncora', tipo: 'armadilha', verbo: 'protege sua corrente', texto: 'Protege a sua corrente de 4 dados ou mais: se entrar nela um dado que não sincroniza, esse dado é jogado fora e a corrente continua inteira. Não mexe nos pontos. Com corrente de 3 ou menos, a ruptura acontece e a Âncora continua armada.' },
     interferencia: { nome: 'Interferência', tipo: 'armadilha', pontos: true, verbo: '−1 no disparo dele', texto: 'O próximo disparo do rival com 4 dados ou mais vale 1 ponto a menos. Disparo de 3 não a gasta: ela continua armada.' },
-    pedagio:       { nome: 'Pedágio', tipo: 'armadilha', pontos: true, verbo: 'pontos no disparo dele', texto: 'No próximo disparo do rival, de qualquer tamanho, você ganha 3 pontos (2 na meta 16). Se os dois passarem da meta, vence quem disparou.' },
+    pedagio:       { nome: 'Pedágio', tipo: 'armadilha', pontos: true, verbo: '+2 quando ele dispara', texto: 'No próximo disparo do rival, de qualquer tamanho, você ganha 2 pontos. Se os dois passarem da meta, vence quem disparou.' },
   };
-  // Pedágio: +3, mas +2 na meta 16 (lá os +3 poupavam um disparo inteiro e ele estava em 24 dos 25 melhores decks;
-  // docs/balanceamento-cartas.md §9)
-  const pedagioDe = meta => (meta >= 16 ? 2 : 3);
+  // Pedágio: +2 em qualquer meta (v0.11). Com +3 ele era a carta mais forte sozinha (61% contra deck vazio) e,
+  // na meta 16, estava em 24 dos 25 melhores decks; docs/balanceamento-cartas.md §9 e §10
+  const PEDAGIO = 2;
+  const pedagioDe = () => PEDAGIO;
   const tem = (o, k) => typeof k === 'string' && Object.prototype.hasOwnProperty.call(o, k);
   const ORDEM = ['ajuste', 'virar', 'rerrolar', 'pressa', 'coringa', 'sobrecarga', 'pausa', 'reverso', 'furto', 'espelho', 'fundo', 'ancora', 'lacre', 'interferencia', 'pedagio'];
   const deckValido = d => Array.isArray(d) && d.length <= 3 && new Set(d).size === d.length && d.every(c => tem(CARTAS, c))

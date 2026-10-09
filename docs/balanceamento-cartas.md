@@ -18,7 +18,7 @@
 - **Quatro ideias foram descartadas** (§6): Rede, Gêmeo, Convite "forte" e Pausa com disparo.
 - **O dono escolheu 4 cartas: Lacre, Pausa, Furto e Reverso** (§9). Elas entram como estão, nas metas 12 e 16.
   - Na meta 16, o **Pedágio** (carta antiga) domina, com ou sem as novas.
-  - Ajuste adotado na v0.11: o Pedágio dá **+2 na meta 16** e continua +3 na meta 12.
+  - Ajuste adotado na v0.11: o Pedágio dá **+2 em qualquer meta** (§10).
 
 ## 2. Simulador × jogo (`sim/deck.py` × `shared/regras.js`)
 
@@ -391,7 +391,7 @@ Hoje: Rerrolar 90 · Espelho 110 · Sobrecarga 120 · Fundo Falso 140 · Pedági
 python3 sim/decks.py                       # as 11 cartas (CONFIRMA=6000 confirma os 8 melhores; CONFIRMA_N=10)
 NOVAS=lacre,pausa,furto,reverso META=16 JSON=/tmp/e16.json python3 sim/decks.py   # as 4 escolhidas, meta 16
 python3 sim/escolhidas.py pares|coruja|descuidado /tmp/e16.json          # pares, Dona Coruja, robô descuidado
-BAL='{"pedagio16": 2}' ...                 # o Pedágio da meta 16 (§9; já é o padrão)
+BAL='{"pedagio": 3}' ...                  # o Pedágio antigo (+3), para comparar (§10)
 python3 sim/valor_cartas.py                # cada carta sozinha
 NOVAS=pausa,reverso,furto,convite,lacre,ampulheta python3 sim/decks.py
 NOVAS=ampulheta BALN='{"ampulheta": 4}' python3 sim/decks.py   # outro número
@@ -522,4 +522,23 @@ descuidado, o deck médio vence 68% na meta 16 e 66% na meta 12.
   - Texto: «No próximo disparo do rival, de qualquer tamanho, você ganha 3 pontos (2 na meta 16). Se os dois
     passarem da meta, vence quem disparou.»
   - O verbo pode ser «+3 quando ele dispara» na meta 12 e «+2 quando ele dispara» na 16.
-  - No simulador: `BAL['pedagio16'] = 2`, igual ao jogo (v0.11).
+  - No simulador: `BAL['pedagio'] = BAL['pedagio16'] = 2`, igual ao jogo (v0.11, §10).
+
+## 10. Pedágio +2 em qualquer meta (v0.11)
+
+Pedido do dono: o Pedágio parecia roubado (+3 é um quarto da meta 12). Medido com as 15 cartas e Mesa de 5:
+
+| | Meta 12, +3 | Meta 12, +2 | Meta 16, +3 | Meta 16, +2 |
+|---|---|---|---|---|
+| Pedágio sozinho contra deck vazio (16 mil partidas) | **61,3%** (a carta mais forte) | 57,3% | 64,5% | — |
+| Decks com Pedágio contra o campo (`sim/pedagio.py`) | 50,4% | 49,1% | 56,5% | 50,6% |
+| Média dos decks com Pedágio (402 decks) | 50,8% | 49,4% | 56,7% | 50,1% |
+| O Pedágio entrega a vitória direto ao dono | 1,0% das partidas | 0,8% | 0,7% | 0,2% |
+| Os dois passam da meta no mesmo disparo (vence quem disparou) | 1,1% | 0,8% | 0,4% | 0,2% |
+
+- **Decisão:** +2 nas duas metas. Um número só, e o Pedágio deixa de ser a carta mais forte sozinha.
+- **Empate não existe:** se os dois passam da meta no mesmo disparo, vence quem disparou.
+- **Efeito colateral, a medir depois:** na meta 12 a Interferência sobe de 54,1% para 55,4% de média, e o melhor
+  deck confirmado (Âncora + Coringa + Interferência) de 59,9% para 61,6%. Duas variantes não mudaram nada (valer só
+  em disparo de 5+: 60,1% sozinha; valer em qualquer disparo, inclusive o de 3: 60,3%). A força dela vem do −1 nos
+  disparos grandes.

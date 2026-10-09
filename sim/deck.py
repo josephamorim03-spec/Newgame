@@ -14,7 +14,7 @@ def opcoes(cor): return 6 if not cor else _opc(cor[-1])
 
 ARMADILHAS={'espelho','interferencia','fundo','pedagio','ancora'}
 # números das cartas (os valores finais, ajustados por simulação; docs/design.md §4)
-BAL=dict(interf_menos=1, interf_min=4, pedagio=3, pedagio16=2, fundo_tudo=True, rerrolar_tudo=True, ancora_min=4, rerrolar_cor=2, coringa_cor=2, sobre=2, espelho_sem_bolso=True)
+BAL=dict(interf_menos=1, interf_min=4, pedagio=2, pedagio16=2, fundo_tudo=True, rerrolar_tudo=True, ancora_min=4, rerrolar_cor=2, coringa_cor=2, sobre=2, espelho_sem_bolso=True)
 import os, json
 BAL.update(json.loads(os.environ.get('BAL', '{}')))   # ex.: BAL='{"pedagio": 2}' para testar outro número
 EFEITOS={'rerrolar','virar','ajuste','pressa','coringa','sobrecarga'}
@@ -101,7 +101,7 @@ class Partida:
         if L>=BAL['interf_min'] and r.armada=='interferencia':
             g=max(0,g-BAL['interf_menos']) if BAL['interf_menos']!=2 else pontos(efL-1); s.disparar_trap(1-p,'interferencia')
         if r.armada=='pedagio':
-            # pedagio16: o valor na meta 16 (2, como no jogo desde a v0.11; docs/balanceamento-cartas.md §9)
+            # +2 nas duas metas desde a v0.11 (docs/balanceamento-cartas.md §10); pedagio16 separa a meta 16 para testes
             r.pts+= (g+1)//2 if BAL['pedagio']=='metade' else BAL['pedagio16'] if s.meta>=16 else BAL['pedagio']; s.disparar_trap(1-p,'pedagio')
         j.pts+=g; j.cor=[]
         # se os dois passarem da meta no mesmo disparo (Pedágio), vence quem disparou

@@ -229,8 +229,8 @@ test('cartas novas: deck válido, loja e servidor reconhecem', () => {
   }
 });
 
-test('Pedágio: +3 na meta 12 e +2 na meta 16 (docs/balanceamento-cartas.md §9)', () => {
-  for (const [meta, ganho] of [[12, 3], [16, 2]]) {
+test('Pedágio: +2 na meta 12 e na 16 (docs/balanceamento-cartas.md §10)', () => {
+  for (const [meta, ganho] of [[12, 2], [16, 2]]) {
     const j = Regras.criarPartida({ decks: [['pedagio'], []], vez: 0, meta, rng: rngDe(5) });
     Regras.aplicar(j, 0, { tipo: 'carta', carta: 'pedagio' });
     j.vez = 1; j.fase = 'decidir'; j.cor[1] = [1, 2, 3];
