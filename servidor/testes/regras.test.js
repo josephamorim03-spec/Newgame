@@ -4,12 +4,13 @@ const assert = require('node:assert');
 const Regras = require('../../shared/regras');
 const { rngDe, jogadaAoAcaso } = require('./ajuda');
 
-const DECKS = [['ajuste', 'virar', 'pressa'], ['espelho', 'fundo', 'coringa'], ['rerrolar', 'ancora', 'sobrecarga'], ['interferencia', 'pedagio'], []];
+const DECKS = [['ajuste', 'virar', 'pressa'], ['espelho', 'fundo', 'coringa'], ['rerrolar', 'ancora', 'sobrecarga'], ['interferencia', 'pedagio'], [],
+  ['pausa', 'reverso', 'furto'], ['lacre', 'pressa', 'sobrecarga'], ['lacre', 'fundo', 'pausa']];
 
 test('partidas ao acaso sempre terminam, com placar coerente', () => {
   for (let s = 1; s <= 300; s++) {
     const rng = rngDe(s);
-    const decks = [DECKS[s % 5], DECKS[(s * 7) % 5]];
+    const decks = [DECKS[s % DECKS.length], DECKS[(s * 7) % DECKS.length]];
     const j = Regras.criarPartida({ decks, vez: s % 2, meta: s % 3 ? 12 : 16, rng });
     let passos = 0;
     while (j.fase !== 'fim') {
@@ -144,4 +145,97 @@ test('pegar com destino: escolher e confirmar numa ação só, com o Espelho já
   assert.ok(r.ok);
   assert.strictEqual(j.bolso[0], 3);
   assert.strictEqual(j.mesa.length, 2);
+});
+
+// ---------- cartas da v0.11: Pausa, Reverso, Furto e Lacre (docs/balanceamento-cartas.md) ----------
+const montar = (decks, f) => { const j = Regras.criarPartida({ decks, vez: 0, meta: 16, rng: rngDe(11) }); f(j); return j; };
+
+test('Pausa: passa a vez sem mexer em corrente, Bolso e Coringa; não vale na Pressa', () => {
+  const j = montar([['pausa', 'coringa', 'pressa'], []], j => { j.cor[0] = [1, 2, 3]; j.bolso[0] = 6; j.mesa = [{ id: 90, v: 5 }, { id: 91, v: 6 }]; });
+  Regras.aplicar(j, 0, { tipo: 'carta', carta: 'coringa' });
+  const r = Regras.aplicar(j, 0, { tipo: 'carta', carta: 'pausa' });
+  assert.deepStrictEqual(r, { ok: true, resultado: 'proximo' });
+  assert.strictEqual(j.vez, 1);
+  assert.deepStrictEqual(j.cor[0], [1, 2, 3]); assert.strictEqual(j.bolso[0], 6); assert.strictEqual(j.coringa[0], true);
+  assert.strictEqual(j.mesa.length, 2, 'ninguém pegou dado');
+  // com a Pressa valendo, não
+  const k = montar([['pausa', 'pressa'], []], j => { j.mesa = [{ id: 1, v: 1 }, { id: 2, v: 2 }, { id: 3, v: 3 }]; });
+  Regras.aplicar(k, 0, { tipo: 'carta', carta: 'pressa' });
+  assert.strictEqual(Regras.aplicar(k, 0, { tipo: 'carta', carta: 'pausa' }).ok, false);
+});
+
+test('Reverso: a corrente cresce pela outra ponta; precisa de 2 dados', () => {
+  const j = montar([['reverso'], []], j => { j.cor[0] = [1]; });
+  assert.strictEqual(Regras.aplicar(j, 0, { tipo: 'carta', carta: 'reverso' }).ok, false);
+  j.cor[0] = [6, 5, 3]; j.mesa = [{ id: 1, v: 6 }, { id: 2, v: 6 }];
+  assert.strictEqual(Regras.aplicar(j, 0, { tipo: 'carta', carta: 'reverso' }).ok, true);
+  assert.deepStrictEqual(j.cor[0], [3, 5, 6]);
+  // o 6 agora entra (eco com a frente 6), sem romper
+  Regras.aplicar(j, 0, { tipo: 'pegar', idx: 0, modo: 'corrente' });
+  assert.deepStrictEqual(j.cor[0], [3, 5, 6, 6]);
+});
+
+test('Furto: troca os Bolsos (vazio também); o Fundo Falso não pega', () => {
+  const j = montar([['furto'], ['fundo']], j => { j.bolso = [2, 5]; j.vez = 1; });
+  Regras.aplicar(j, 1, { tipo: 'carta', carta: 'fundo' });
+  j.vez = 0;
+  assert.strictEqual(Regras.aplicar(j, 0, { tipo: 'carta', carta: 'furto' }).ok, true);
+  assert.deepStrictEqual(j.bolso, [5, 2]);
+  assert.strictEqual(j.armada[1], 'fundo', 'o Fundo Falso continua armado');
+  const k = montar([['furto'], []], j => { j.bolso = [null, 4]; });
+  Regras.aplicar(k, 0, { tipo: 'carta', carta: 'furto' });
+  assert.deepStrictEqual(k.bolso, [4, null]);
+  const v = montar([['furto'], []], () => {});
+  assert.strictEqual(Regras.aplicar(v, 0, { tipo: 'carta', carta: 'furto' }).ok, false, 'dois Bolsos vazios');
+});
+
+test('Lacre: o próximo efeito do rival é gasto sem agir (Pressa, Pausa, Sobrecarga e blefe desvirado)', () => {
+  for (const c of ['pressa', 'pausa', 'coringa', 'virar']) {
+    const j = montar([['lacre'], [c, 'fundo']], j => { j.mesa = [{ id: 1, v: 2 }, { id: 2, v: 3 }, { id: 3, v: 4 }]; });
+    Regras.aplicar(j, 0, { tipo: 'carta', carta: 'lacre' });
+    j.vez = 1;
+    const antes = j.mesa.map(d => d.v).join();
+    const r = Regras.aplicar(j, 1, { tipo: 'carta', carta: c, idx: 0 });
+    assert.deepStrictEqual(r, { ok: true, resultado: 'carta' }, c);
+    assert.strictEqual(j.vez, 1, `${c}: a vez continua com quem usou`);
+    assert.strictEqual(j.cartas[1][c], 'usada'); assert.strictEqual(j.cartas[0].lacre, 'usada'); assert.strictEqual(j.armada[0], null);
+    assert.strictEqual(j.extra[1], 0); assert.strictEqual(j.coringa[1], false); assert.strictEqual(j.mesa.map(d => d.v).join(), antes);
+    assert.ok(j.eventos.some(e => e.tipo === 'revelou' && e.c === 'lacre'));
+    assert.ok(!j.eventos.some(e => e.tipo === 'carta'), `${c}: nenhum aviso de efeito`);
+  }
+  // blefe: virar um efeito, depois desvirar contra o Lacre
+  const b = montar([['lacre'], ['ajuste', 'fundo']], j => { j.mesa = [{ id: 1, v: 2 }, { id: 2, v: 3 }]; });
+  Regras.aplicar(b, 0, { tipo: 'carta', carta: 'lacre' }); b.vez = 1;
+  assert.strictEqual(Regras.aplicar(b, 1, { tipo: 'virar', carta: 'ajuste' }).ok, true);
+  Regras.aplicar(b, 1, { tipo: 'carta', carta: 'ajuste', idx: 0, delta: 1 });
+  assert.strictEqual(b.mesa[0].v, 2, 'o Ajuste desvirado não agiu');
+  // a Sobrecarga na hora de disparar
+  const s = montar([['lacre'], ['sobrecarga']], j => { j.vez = 1; j.cor[1] = [1, 2, 3, 4]; j.fase = 'decidir'; });
+  s.armada[0] = 'lacre'; s.cartas[0].lacre = 'armada';
+  Regras.aplicar(s, 1, { tipo: 'carta', carta: 'sobrecarga' });
+  Regras.aplicar(s, 1, { tipo: 'disparar' });
+  assert.strictEqual(s.pts[1], Regras.pontos(4), 'disparo de 4 sem o +2');
+  // o Lacre é armadilha escondida: o rival vê "?" e pode blefar com ela no deck
+  const v = Regras.visaoDe(montar([['lacre'], []], j => { Regras.aplicar(j, 0, { tipo: 'carta', carta: 'lacre' }); }), 1);
+  assert.strictEqual(v.armada[1], 'oculta');
+});
+
+test('cartas novas: deck válido, loja e servidor reconhecem', () => {
+  assert.ok(Regras.deckValido(['pausa', 'reverso', 'furto']));
+  assert.ok(Regras.deckValido(['lacre', 'fundo', 'pausa']));
+  assert.ok(!Regras.deckValido(['lacre', 'fundo', 'ancora']), 'no máximo 2 armadilhas');
+  for (const [c, preco] of [['reverso', 90], ['furto', 100], ['pausa', 130], ['lacre', 140]]) {
+    assert.strictEqual(Regras.precoDe('cartas', c), preco); assert.ok(Regras.ORDEM.includes(c));
+  }
+});
+
+test('Pedágio: +3 na meta 12 e +2 na meta 16 (docs/balanceamento-cartas.md §9)', () => {
+  for (const [meta, ganho] of [[12, 3], [16, 2]]) {
+    const j = Regras.criarPartida({ decks: [['pedagio'], []], vez: 0, meta, rng: rngDe(5) });
+    Regras.aplicar(j, 0, { tipo: 'carta', carta: 'pedagio' });
+    j.vez = 1; j.fase = 'decidir'; j.cor[1] = [1, 2, 3];
+    Regras.aplicar(j, 1, { tipo: 'disparar' });
+    assert.strictEqual(j.pts[0], ganho, `meta ${meta}`);
+    assert.strictEqual(Regras.pedagioDe(meta), ganho);
+  }
 });

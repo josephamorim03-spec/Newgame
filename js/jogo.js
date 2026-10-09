@@ -18,8 +18,12 @@
     pressa: svg('<path d="M5 6l6 6-6 6M13 6l6 6-6 6"/>'),
     coringa: svg('<path d="M6.5 18c0-3.5-1-6-4-5.5.5-4.5 4.5-6.5 8-3.5.2-2.5.7-4.5 1.5-6 .8 1.5 1.3 3.5 1.5 6 3.5-3 7.5-1 8 3.5-3-.5-4 2-4 5.5z"/><path d="M5.5 20.5h13"/><circle cx="2.5" cy="14.6" r="1.4"/><circle cx="21.5" cy="14.6" r="1.4"/><circle cx="12" cy="2.4" r="1.2"/>'),
     sobrecarga: svg('<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>'),
+    pausa: svg('<circle cx="12" cy="12" r="9"/><path d="M10 8.5v7M14 8.5v7"/>'),
+    reverso: svg('<path d="M4 8h15M15.5 4.5 19 8l-3.5 3.5M20 16H5M8.5 12.5 5 16l3.5 3.5"/>'),
+    furto: svg('<rect x="2.5" y="9.5" width="7" height="7" rx="2"/><rect x="14.5" y="9.5" width="7" height="7" rx="2"/><path d="M6 6.5c2.5-3 9.5-3 12 0M16 4.5l2 2-2.4.9M18 19.5c-2.5 3-9.5 3-12 0M8 21.5l-2-2 2.4-.9"/>'),
     espelho: svg('<ellipse cx="12" cy="9" rx="6" ry="7"/><path d="M12 16v5M8.5 21h7M9.5 6.5l4 4M10 11l2 2"/>'),
     fundo: svg('<path d="M4 4h16M4 4v9M20 4v9M4 13l3 7M20 13l-3 7M9 9h6"/>'),
+    lacre: svg('<rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5M12 14.5v2.5"/>'),
     ancora: svg('<circle cx="12" cy="5" r="2"/><path d="M12 7v14M8 11h8M4.5 14.5c.5 3.8 3.8 6.5 7.5 6.5s7-2.7 7.5-6.5"/>'),
     interferencia: svg('<path d="M2 12h3l2-5 3 10 3-13 3 13 2-5h4"/>'),
     pedagio: svg('<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5v9M14.5 9.5h-3.5a1.5 1.5 0 0 0 0 3h2a1.5 1.5 0 0 1 0 3H9.5"/>'),
@@ -225,11 +229,14 @@
     if (online()) { Online.enviar({ tipo: 'dispensar' }); return 'online'; }
     return depois(R.dispensarSegundo(jogo, p));
   }
+  // devolve 'proximo' quando a carta passou a vez (Pausa): quem chamou não joga mais nesta vez
   function usarCarta(p, c, idx, delta) {
     if (online()) { Online.enviar({ tipo: 'carta', carta: c, idx, delta }); return; }
     if ((c === 'virar' || c === 'ajuste') && jogo.mesa[idx]) jogo.virando = jogo.mesa[idx].id;
-    R.usarCarta(jogo, p, c, idx, delta);
+    const r = R.usarCarta(jogo, p, c, idx, delta);
     marcarNovos();
+    if (r === 'proximo') { jogo.sel = null; jogo.alvo = null; jogo.ajusteIdx = null; }
+    return r;
   }
   function colocar(p, v, modo) {
     if (online()) { Online.enviar({ tipo: 'destino', modo }); return 'online'; }
@@ -331,6 +338,13 @@
       }
     }
     if (precisa && pode('coringa')) { usa.push({ carta: 'coringa' }); precisa = false; }
+    // Reverso: nada entra pela frente, mas algo da Mesa (ou o dado do Bolso) entra pela outra ponta
+    if (precisa && pode('reverso')) {
+      const outra = [eu[0]];
+      if (m.some(d => encaixa(outra, d.v)) || (j.bolso[p] !== null && encaixa(outra, j.bolso[p]))) { usa.push({ carta: 'reverso' }); precisa = false; }
+    }
+    // Furto: o dado do Bolso do rival salva a corrente de 3+ (vem para o meu Bolso e entra na troca)
+    if (precisa && pode('furto') && eu.length >= 3 && j.bolso[1 - p] !== null && encaixa(eu, j.bolso[1 - p])) { usa.push({ carta: 'furto' }); precisa = false; }
     if (precisa && pode('rerrolar')) { usa.push({ carta: 'rerrolar' }); precisa = false; }
     if (ele.length >= 4 && m.length >= 2 && !usa.length) {
       const so = m.map((d, i) => i).filter(i => encaixa(ele, m[i].v));
@@ -344,6 +358,7 @@
       if (pronta('interferencia') && ele.length >= 3) usa.push({ carta: 'interferencia' });
       else if (pronta('pedagio') && ele.length >= 3) usa.push({ carta: 'pedagio' });
       else if (pronta('fundo') && (j.bolso[1 - p] !== null || ele.length >= 1)) usa.push({ carta: 'fundo' });
+      else if (pronta('lacre') && j.decks[1 - p].some(c => CARTAS[c].tipo === 'efeito' && j.cartas[1 - p][c] === 'pronta')) usa.push({ carta: 'lacre' });
       else if (pronta('ancora') && eu.length >= 3) usa.push({ carta: 'ancora' });
       else if (pronta('espelho') && ele.length >= 2 && m.length >= 3) {
         const meu = automatoEscolhe(p).idx;
@@ -355,6 +370,8 @@
       const ok = m.some((a, i) => encaixaP(p, a.v) && m.some((b, k) => k !== i && encaixa(eu.concat(a.v), b.v)));
       if (ok) usa.push({ carta: 'pressa' });
     }
+    // Pausa, por último (passa a vez): a corrente de 2+ romperia com qualquer dado e nada acima a salvou
+    if (precisa && pode('pausa') && eu.length >= 2 && !m.some(d => seguroDado(p, d)) && !j.segundoDado && !j.extra[p]) { usa.push({ carta: 'pausa' }); return usa; }
     // blefe: com uma armadilha ainda escondida no deck, às vezes vira para baixo um efeito que não precisa agora
     if (!j.armada[p] && !usa.some(u => CARTAS[u.carta].tipo === 'armadilha') && ele.length >= 3 && Math.random() < 0.4) {
       const c = j.decks[p].find(c => c !== 'pressa' && podeVirar(p, c).ok && !usa.some(u => u.carta === c));
@@ -393,6 +410,9 @@
       pressa: `${quem} vai pegar dois dados nesta vez`,
       coringa: `o próximo dado de ${quem} entra com qualquer frente`,
       sobrecarga: `o próximo disparo de 4+ de ${quem} vale +2`,
+      pausa: `${quem} passou a vez sem pegar dado`,
+      reverso: `a corrente de ${quem} agora cresce pela outra ponta${e.frente ? ` (frente: ${e.frente})` : ''}`,
+      furto: e.meu === undefined ? `${quem} trocou os dados dos Bolsos` : `${quem} trocou ${e.meu === null ? 'o Bolso vazio' : 'o ' + e.meu} pelo ${e.dele === null ? 'Bolso vazio' : e.dele} do rival`,
     }[e.c] || `${quem} usou`;
   }
   let marcaMudanca = null;   // { ids, antes, ate }
@@ -413,7 +433,11 @@
       if (window.Rolagem) { await Rolagem.esperar(); if (tok !== jogo.token) return; }   // escolhe com os dados já assentados
       for (const u of automatoCartas(p)) {
         if (u.virar ? !podeVirar(p, u.carta).ok : (!podeUsar(p, u.carta).ok || (CARTAS[u.carta].alvo && !j.mesa[u.idx]))) continue;
-        if (u.virar) virarCarta(p, u.carta); else usarCarta(p, u.carta, u.idx, u.delta || 1);
+        if (u.virar) virarCarta(p, u.carta);
+        else if (usarCarta(p, u.carta, u.idx, u.delta || 1) === 'proximo') {
+          // a Pausa passou a vez: o aviso fica um tempo e a vez segue para o outro lado
+          j.pensando = false; depois('proximo'); return;
+        }
         render();
         // dá tempo de ler o aviso e ver o dado que mudou antes da próxima ação (não acelera no ritmo rápido)
         await new Promise(r => setTimeout(r, Math.max(AVISO_CARTA + 300, (AVISO_CARTA + 300) * ritmo()))); if (tok !== jogo.token) return;
@@ -653,7 +677,7 @@
   // o que uma carta virada (?) do rival pode ser, com o que cada armadilha faria neste disparo
   function cartaViradaTxt(r, L) {
     const j = jogo, n = nomes();
-    const efeito = { interferencia: L >= 4 ? 'Interferência (−1 neste disparo)' : 'Interferência (não pega disparo de 3)', pedagio: 'Pedágio (+3 para ele se você disparar)',
+    const efeito = { interferencia: L >= 4 ? 'Interferência (−1 neste disparo)' : 'Interferência (não pega disparo de 3)', pedagio: `Pedágio (+${R.pedagioDe(jogo.meta)} para ele se você disparar)`,
       fundo: 'Fundo Falso (só pega o Bolso)', ancora: 'Âncora (protege a corrente dele)' };
     const traps = armadilhasOcultas(r).map(c => efeito[c] || CARTAS[c].nome);
     const blefes = j.decks[r].filter(c => CARTAS[c].tipo === 'efeito' && ['pronta', 'armada'].includes(j.cartas[r][c])).map(c => CARTAS[c].nome);
@@ -1276,7 +1300,7 @@
     document.getElementById('janelaCarta').hidden = true;
     j.sel = null;
     if (CARTAS[c].alvo) { j.fase = 'alvo'; j.alvo = c; }
-    else usarCarta(p, c);
+    else if (usarCarta(p, c) === 'proximo') { depois('proximo'); return; }
     render();
   });
   document.getElementById('acoes').addEventListener('click', e => {
@@ -2087,6 +2111,6 @@
     }
   }
   // o roteiro de teste automático (tools/) pode ler o estado
-  window.DiceDuel = { get jogo() { return jogo; }, st, salvar, ajustar(p) { Object.assign(st.pref, p); aplicarPrefs(); if (jogo) render(); } };
+  window.DiceDuel = { get jogo() { return jogo; }, st, salvar, ajustar(p) { Object.assign(st.pref, p); aplicarPrefs(); if (jogo) render(); }, automato: () => talvezAutomato() };
   window.claude?.hot?.ready ? window.claude.hot.ready(iniciar) : iniciar(window.claude?.hot?.data ?? {});
 })();

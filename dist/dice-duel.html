@@ -353,7 +353,7 @@ button.carta:hover { transform: translateY(-2px) rotate(-1deg); }
 .janela { position: fixed; inset: 0; background: rgba(28, 18, 26, .66); display: grid; place-items: end center; padding: 16px; z-index: 59; backdrop-filter: blur(4px); animation: fundoEntra .2s ease; }
 @keyframes fundoEntra { from { opacity: 0; } }
 @media (min-width: 600px) { .janela { place-items: center; } }
-.caixa { width: min(480px, 100%); max-height: calc(100% - 8px); overflow-y: auto; border-radius: 24px; padding: 20px; background: var(--papel); color: var(--tinta); box-shadow: 0 8px 0 var(--papel-2), 0 30px 60px rgba(0,0,0,.5); display: grid; gap: 14px; margin-bottom: env(safe-area-inset-bottom, 0px); animation: caixaEntra .3s cubic-bezier(.2,1.3,.4,1); }
+.caixa { width: min(480px, 100%); max-height: calc(100% - 8px); overflow-y: auto; border-radius: 24px; padding: 20px; background: var(--papel); color: var(--tinta); box-shadow: 0 8px 0 var(--papel-2), 0 30px 60px rgba(0,0,0,.5); display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; margin-bottom: env(safe-area-inset-bottom, 0px); animation: caixaEntra .3s cubic-bezier(.2,1.3,.4,1); }
 @keyframes caixaEntra { from { transform: translateY(30px) scale(.96); opacity: 0; } }
 .caixa.larga { width: min(780px, 100%); }
 .caixa h2 { font-family: var(--f-titulo); font-weight: 700; font-size: 28px; margin: 0; line-height: 1.05; }
@@ -792,7 +792,7 @@ button.vaga { cursor: pointer; border: 0; background: #fff3dc; color: var(--tint
       </svg>
       <div>
         <h1>Dice <span>Duel</span></h1>
-        <p>duelo de dados aconchegante · v0.10</p>
+        <p>duelo de dados aconchegante · v0.11</p>
       </div>
     </div>
     <div class="topo-botoes">
@@ -866,12 +866,16 @@ button.vaga { cursor: pointer; border: 0; background: #fff3dc; color: var(--tint
           <li><b>Armadilhas não se anulam: cada uma olha a sua condição.</b> A Âncora do rival segurar a corrente dele não gasta a sua Interferência; ela continua esperando o próximo disparo dele de 4+.</li>
           <li><b>“4 ou mais” é sempre o tamanho da corrente na hora.</b> Interferência e Sobrecarga olham a corrente no disparo; a Âncora, a corrente no momento em que o dado ruim ia entrar. Com 3, nenhuma delas é gasta e elas continuam esperando.</li>
           <li><b>Interferência + Sobrecarga:</b> as duas valem. Um disparo de 4 vale 2 + 2 − 1 = 3.</li>
-          <li><b>Pedágio:</b> pega qualquer disparo, até o de 3 e o automático de 6. Se os dois passarem da meta, vence quem disparou.</li>
+          <li><b>Pedágio:</b> +3 (+2 na meta 16, onde os pontos rendem mais). Pega qualquer disparo, até o de 3 e o automático de 6. Se os dois passarem da meta, vence quem disparou.</li>
           <li><b>Coringa e Âncora:</b> com o Coringa ativo, nenhum dado rompe, então a Âncora não é gasta.</li>
           <li><b>Coringa</b> é gasto no primeiro dado que entra numa corrente já começada, mesmo que esse dado já sincronizasse. Guardar no Bolso não gasta.</li>
           <li><b>Pressa:</b> precisa de 2 dados na Mesa e não passa para a Mesa seguinte. Você não dispara entre os dois dados; o segundo é opcional (“Dispensar”). Se o primeiro completar 6, a corrente dispara sozinha e o segundo dado começa outra.</li>
           <li><b>Espelho:</b> quem pega o dado marcado o recebe virado (7 − valor) e não pode guardá-lo; Bolso e troca ficam fechados, mas Coringa e Âncora ainda valem. As etiquetas da Mesa já mostram o valor virado. <b>Virar</b> no dado marcado e <b>Rerrolar</b> apagam a marca; <b>Ajuste</b> não.</li>
           <li><b>Fundo Falso:</b> só pega quando o dado vai para o Bolso (guardar ou trocar). Na troca, os dois dados caem e a corrente não muda.</li>
+          <li><b>Lacre:</b> anula o próximo efeito do rival, qualquer um: a carta é gasta sem agir (a Pressa não dá o segundo dado, a Pausa não passa a vez, a Sobrecarga não soma). Um blefe desvirado também conta. Não mexe em armadilhas.</li>
+          <li><b>Pausa:</b> passa a vez sem pegar dado e sem disparar; corrente, Bolso, Coringa e armadilhas ficam como estão. Não combina com a Pressa.</li>
+          <li><b>Reverso:</b> a corrente passa a crescer pela outra ponta. Os pontos, o Coringa ativo e a Âncora continuam valendo.</li>
+          <li><b>Furto:</b> troca os dados dos Bolsos sem “guardar”, então o Fundo Falso não pega. O dado que chega pode entrar depois na troca, como qualquer dado do Bolso.</li>
           <li><b>Uma carta armada por vez</b>, contando o blefe. Uma armadilha que nunca encontra a sua condição fica armada até o fim.</li>
         </ol>
         <h3>Nem todo dado vale o mesmo</h3>
@@ -1007,7 +1011,7 @@ button.vaga { cursor: pointer; border: 0; background: #fff3dc; color: var(--tint
   </div>
 </div>
 <script>
-/* Dice Duel · motor de regras compartilhado (navegador e servidor), regras v0.8 (com o blefe)
+/* Dice Duel · motor de regras compartilhado (navegador e servidor), regras v0.11 (blefe; Pausa, Reverso, Furto, Lacre; Pedágio +2 na meta 16)
  * Tudo aqui é puro: recebe o estado da partida (um objeto serializável) e o altera.
  * Nada de DOM, som ou tempo. Quem desenha (o cliente) ou transmite (o servidor) lê
  * j.eventos, j.log e j.momentos depois de cada ação.
@@ -1030,14 +1034,22 @@ button.vaga { cursor: pointer; border: 0; background: #fff3dc; color: var(--tint
     pressa:        { nome: 'Pressa', tipo: 'efeito', verbo: 'pega 2 dados', texto: 'Nesta vez você pega dois dados, um depois do outro, sem disparar no meio. Só com 2 dados ou mais na Mesa: não passa para a Mesa seguinte. O segundo dado é opcional.' },
     coringa:       { nome: 'Coringa', tipo: 'efeito', verbo: 'próximo dado entra', texto: 'O próximo dado que entrar na sua corrente sincroniza com qualquer frente. Fica ativo até um dado entrar numa corrente já começada, e é gasto nele mesmo que ele já sincronizasse.' },
     sobrecarga:    { nome: 'Sobrecarga', tipo: 'efeito', pontos: true, verbo: '+2 no disparo', texto: 'Seu próximo disparo de 4 dados ou mais vale +2. Disparo de 3 não a gasta. Pode ser usada também na hora de disparar.' },
+    // v0.11 (docs/balanceamento-cartas.md): medidas no simulador com meta 12 e 16
+    pausa:         { nome: 'Pausa', tipo: 'efeito', verbo: 'passa a vez', texto: 'Nesta vez você não pega dado nem dispara: a vez passa ao rival, e a sua corrente e o seu Bolso ficam como estão. Não vale no segundo dado da Pressa.' },
+    reverso:       { nome: 'Reverso', tipo: 'efeito', verbo: 'inverte a corrente', texto: 'Inverta a sua corrente: o primeiro dado vira a frente e ela passa a crescer por essa ponta. Os dados e os pontos não mudam. Precisa de 2 dados na corrente.' },
+    furto:         { nome: 'Furto', tipo: 'efeito', verbo: 'troca os Bolsos', texto: 'Troque o dado do seu Bolso com o do Bolso do rival (vazio também vale: o dado só muda de lado). Não conta como guardar: o Fundo Falso não pega.' },
     espelho:       { nome: 'Espelho', tipo: 'armadilha', alvo: true, verbo: 'marca um dado', texto: 'Marque um dado da Mesa (a marca fica à vista). Se o rival pegá-lo, ele vira 7 − valor e não pode ir para o Bolso. Se você mesmo pegá-lo, a armadilha se perde.' },
     fundo:         { nome: 'Fundo Falso', tipo: 'armadilha', verbo: 'o Bolso dele cai', texto: 'Na próxima vez que o rival guardar um dado no Bolso, o dado cai. Na troca, os dois caem e nada entra na corrente dele.' },
+    lacre:         { nome: 'Lacre', tipo: 'armadilha', verbo: 'anula o próximo efeito', texto: 'O próximo efeito que o rival usar não funciona: a carta dele é gasta sem agir. Vale também para um blefe desvirado e para a Sobrecarga.' },
     ancora:        { nome: 'Âncora', tipo: 'armadilha', verbo: 'protege sua corrente', texto: 'Protege a sua corrente de 4 dados ou mais: se entrar nela um dado que não sincroniza, esse dado é jogado fora e a corrente continua inteira. Não mexe nos pontos. Com corrente de 3 ou menos, a ruptura acontece e a Âncora continua armada.' },
     interferencia: { nome: 'Interferência', tipo: 'armadilha', pontos: true, verbo: '−1 no disparo dele', texto: 'O próximo disparo do rival com 4 dados ou mais vale 1 ponto a menos. Disparo de 3 não a gasta: ela continua armada.' },
-    pedagio:       { nome: 'Pedágio', tipo: 'armadilha', pontos: true, verbo: '+3 quando ele dispara', texto: 'No próximo disparo do rival, de qualquer tamanho, você ganha 3 pontos. Se os dois passarem da meta, vence quem disparou.' },
+    pedagio:       { nome: 'Pedágio', tipo: 'armadilha', pontos: true, verbo: 'pontos no disparo dele', texto: 'No próximo disparo do rival, de qualquer tamanho, você ganha 3 pontos (2 na meta 16). Se os dois passarem da meta, vence quem disparou.' },
   };
+  // Pedágio: +3, mas +2 na meta 16 (lá os +3 poupavam um disparo inteiro e ele estava em 24 dos 25 melhores decks;
+  // docs/balanceamento-cartas.md §9)
+  const pedagioDe = meta => (meta >= 16 ? 2 : 3);
   const tem = (o, k) => typeof k === 'string' && Object.prototype.hasOwnProperty.call(o, k);
-  const ORDEM = ['ajuste', 'virar', 'rerrolar', 'pressa', 'coringa', 'sobrecarga', 'espelho', 'fundo', 'ancora', 'interferencia', 'pedagio'];
+  const ORDEM = ['ajuste', 'virar', 'rerrolar', 'pressa', 'coringa', 'sobrecarga', 'pausa', 'reverso', 'furto', 'espelho', 'fundo', 'ancora', 'lacre', 'interferencia', 'pedagio'];
   const deckValido = d => Array.isArray(d) && d.length <= 3 && new Set(d).size === d.length && d.every(c => tem(CARTAS, c))
     && d.filter(c => CARTAS[c].tipo === 'armadilha').length <= 2 && d.filter(c => CARTAS[c].pontos).length <= 1;
 
@@ -1064,7 +1076,7 @@ button.vaga { cursor: pointer; border: 0; background: #fff3dc; color: var(--tint
 
   // ---------- progressão e economia (docs/progressao.md) ----------
   const GRATIS = ['ajuste', 'virar', 'pressa', 'coringa', 'ancora', 'interferencia'];
-  const PRECO_CARTA = { rerrolar: 90, espelho: 110, sobrecarga: 120, fundo: 140, pedagio: 140 };
+  const PRECO_CARTA = { rerrolar: 90, espelho: 110, sobrecarga: 120, fundo: 140, pedagio: 140, reverso: 90, furto: 100, pausa: 130, lacre: 140 };
   const CATALOGO = {
     dados: {
       marfim: { nome: 'Marfim', preco: 0 }, madeira: { nome: 'Madeira', preco: 80 }, rosa: { nome: 'Rosa', preco: 120 },
@@ -1206,6 +1218,11 @@ button.vaga { cursor: pointer; border: 0; background: #fff3dc; color: var(--tint
     if (c === 'pressa' && j.mesa.length < 2) return { ok: false, motivo: 'Precisa de 2 dados ou mais na Mesa: a Pressa não passa para a Mesa seguinte.' };
     if (c === 'espelho' && j.mesa.length < 2) return { ok: false, motivo: 'Precisa de 2 dados ou mais na Mesa.' };
     if (c === 'pressa' && j.extra[p]) return { ok: false, motivo: 'A Pressa já está valendo nesta vez.' };
+    if (c === 'pausa' && j.segundoDado) return { ok: false, motivo: 'No segundo dado da Pressa, use Dispensar.' };
+    if (c === 'pausa' && j.extra[p]) return { ok: false, motivo: 'A Pressa já está valendo nesta vez: pegue os dados.' };
+    if (c === 'pausa' && !j.mesa.length) return { ok: false, motivo: 'A Mesa está vazia.' };
+    if (c === 'reverso' && j.cor[p].length < 2) return { ok: false, motivo: 'Precisa de 2 dados ou mais na sua corrente.' };
+    if (c === 'furto' && j.bolso[0] === null && j.bolso[1] === null) return { ok: false, motivo: 'Os dois Bolsos estão vazios.' };
     if (k.alvo && !j.mesa.length) return { ok: false, motivo: 'A Mesa está vazia.' };
     if (k.alvo && idx !== undefined && !j.mesa[idx]) return { ok: false, motivo: 'Esse dado não está na Mesa.' };
     return { ok: true };
@@ -1223,6 +1240,7 @@ button.vaga { cursor: pointer; border: 0; background: #fff3dc; color: var(--tint
     registrar(j, p, 'armou uma armadilha', 'seg');   // o registro é igual ao de uma armadilha de verdade
     emitir(j, 'armou', { p, c });
   }
+  // devolve 'proximo' quando a carta passa a vez (Pausa), 'lacrada' quando o Lacre do rival a anulou
   function usarCarta(j, p, c, idx, delta = 1) {
     const k = CARTAS[c];
     if (blefando(j, p, c)) {
@@ -1241,6 +1259,11 @@ button.vaga { cursor: pointer; border: 0; background: #fff3dc; color: var(--tint
       return;
     }
     j.cartas[p][c] = 'usada'; j.stats[p].cartas.push(k.nome);
+    // Lacre do rival: o efeito é gasto sem agir (inclusive um blefe desvirado e a Sobrecarga na hora de disparar)
+    if (j.armada[1 - p] === 'lacre' && j.cartas[1 - p].lacre === 'armada') {
+      revelar(j, 1 - p, 'lacre', `${k.nome} de ${j.nomes[p]} não funcionou.`);
+      return 'lacrada';
+    }
     const ev = { p, c, nome: k.nome };   // ajuste e virar levam o dado e os valores: a tela mostra o que mudou
     if (c === 'ajuste') {
       const d = j.mesa[idx], antes = d.v; d.v = Math.min(6, Math.max(1, d.v + (delta < 0 ? -1 : 1)));
@@ -1258,6 +1281,21 @@ button.vaga { cursor: pointer; border: 0; background: #fff3dc; color: var(--tint
     } else if (c === 'pressa') { j.extra[p] = 1; registrar(j, p, 'usou Pressa: pega dois dados nesta vez', 'seg'); }
     else if (c === 'coringa') { j.coringa[p] = true; registrar(j, p, 'usou Coringa: o próximo dado entra com qualquer frente', 'seg'); }
     else if (c === 'sobrecarga') { j.sobre[p] = true; registrar(j, p, 'usou Sobrecarga: o próximo disparo de 4+ vale +2', 'seg'); }
+    else if (c === 'reverso') {
+      j.cor[p].reverse();
+      registrar(j, p, `usou Reverso: a frente da corrente agora é ${frente(j.cor[p])}`, 'seg');
+      ev.frente = frente(j.cor[p]);
+    } else if (c === 'furto') {
+      const meu = j.bolso[p], dele = j.bolso[1 - p];
+      j.bolso[p] = dele; j.bolso[1 - p] = meu;   // não passa por colocar(): não é "guardar" (o Fundo Falso não pega)
+      registrar(j, p, `usou Furto: ${meu === null ? 'o Bolso vazio' : 'o ' + meu} pelo ${dele === null ? 'Bolso vazio' : dele} do rival`, 'seg');
+      Object.assign(ev, { meu, dele });
+    } else if (c === 'pausa') {
+      registrar(j, p, `usou Pausa: passou a vez com a corrente de ${j.cor[p].length}`, 'seg');
+      emitir(j, 'carta', ev);
+      proximo(j);
+      return 'proximo';
+    }
     emitir(j, 'carta', ev);
   }
   function desfazerEspelho(j, quem) {
@@ -1407,7 +1445,7 @@ button.vaga { cursor: pointer; border: 0; background: #fff3dc; color: var(--tint
     else if (L === 5) momento(j, p, '♪', 'Disparou uma corrente de 5');
     if (harm) momento(j, p, '✿', `Harmonia: todos os elos em ${REL[harm].nome}`);
     if (L >= 4) emitir(j, 'falar', { chave: 'disparo', dono: p, L });
-    if (j.armada[1 - p] === 'pedagio') { j.pts[1 - p] += 3; revelar(j, 1 - p, 'pedagio', `${n[1 - p]} ganhou 3 pontos com o disparo de ${n[p]}.`); emitir(j, 'placar', { p: 1 - p, de: antes[1 - p] }); }
+    if (j.armada[1 - p] === 'pedagio') { const ganho = pedagioDe(j.meta); j.pts[1 - p] += ganho; revelar(j, 1 - p, 'pedagio', `${n[1 - p]} ganhou ${ganho} pontos com o disparo de ${n[p]}.`); emitir(j, 'placar', { p: 1 - p, de: antes[1 - p] }); }
     [0, 1].forEach(k => { j.piorDiferenca[k] = Math.min(j.piorDiferenca[k], j.pts[k] - j.pts[1 - k]); });
     if (j.pts[p] >= j.meta) { terminar(j, p); return 'fim'; }
     if (j.pts[1 - p] >= j.meta) { terminar(j, 1 - p); return 'fim'; }
@@ -1468,8 +1506,8 @@ button.vaga { cursor: pointer; border: 0; background: #fff3dc; color: var(--tint
         const pu = podeUsar(j, p, c, acao.idx);
         if (!pu.ok) return { ok: false, erro: pu.motivo || 'não dá para usar agora' };
         if (c === 'ajuste') { const d = j.mesa[acao.idx]; const nv = d.v + (acao.delta < 0 ? -1 : 1); if (nv < 1 || nv > 6) return { ok: false, erro: 'o dado ficaria fora de 1 a 6' }; }
-        usarCarta(j, p, c, acao.idx, acao.delta);
-        return { ok: true, resultado: 'carta' };
+        const r = usarCarta(j, p, c, acao.idx, acao.delta);
+        return { ok: true, resultado: r === 'proximo' ? 'proximo' : 'carta' };
       }
       case 'virar': {
         const pv = podeVirar(j, p, acao.carta);
@@ -1518,7 +1556,7 @@ button.vaga { cursor: pointer; border: 0; background: #fff3dc; color: var(--tint
   }
 
   return {
-    PONTOS, LIM, NA_MESA, REL, CARTAS, ORDEM, deckValido, rels, sinc, frente, encaixa, facesQueEncaixam, opcoes, pontos, harmonica,
+    PONTOS, LIM, NA_MESA, REL, CARTAS, ORDEM, pedagioDe, deckValido, rels, sinc, frente, encaixa, facesQueEncaixam, opcoes, pontos, harmonica,
     GRATIS, PRECO_CARTA, CATALOGO, NIVEIS, PRESENTES, RATING_RIVAL, TETO_MOEDAS, BASE_MOEDAS, TITULOS, tituloDe, nivelDe,
     moedasDaVitoria, ajusteRatingOnline, elo, premioSolo, xpDaPartida, ganharXp, precoDe,
     criarPartida, usarRng, encaixaP, destinos, destinosValidos, seguro, bolsoGarante, marcadoContra, valorAoPegar, seguroDado,
@@ -2994,8 +3032,12 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     pressa: svg('<path d="M5 6l6 6-6 6M13 6l6 6-6 6"/>'),
     coringa: svg('<path d="M6.5 18c0-3.5-1-6-4-5.5.5-4.5 4.5-6.5 8-3.5.2-2.5.7-4.5 1.5-6 .8 1.5 1.3 3.5 1.5 6 3.5-3 7.5-1 8 3.5-3-.5-4 2-4 5.5z"/><path d="M5.5 20.5h13"/><circle cx="2.5" cy="14.6" r="1.4"/><circle cx="21.5" cy="14.6" r="1.4"/><circle cx="12" cy="2.4" r="1.2"/>'),
     sobrecarga: svg('<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>'),
+    pausa: svg('<circle cx="12" cy="12" r="9"/><path d="M10 8.5v7M14 8.5v7"/>'),
+    reverso: svg('<path d="M4 8h15M15.5 4.5 19 8l-3.5 3.5M20 16H5M8.5 12.5 5 16l3.5 3.5"/>'),
+    furto: svg('<rect x="2.5" y="9.5" width="7" height="7" rx="2"/><rect x="14.5" y="9.5" width="7" height="7" rx="2"/><path d="M6 6.5c2.5-3 9.5-3 12 0M16 4.5l2 2-2.4.9M18 19.5c-2.5 3-9.5 3-12 0M8 21.5l-2-2 2.4-.9"/>'),
     espelho: svg('<ellipse cx="12" cy="9" rx="6" ry="7"/><path d="M12 16v5M8.5 21h7M9.5 6.5l4 4M10 11l2 2"/>'),
     fundo: svg('<path d="M4 4h16M4 4v9M20 4v9M4 13l3 7M20 13l-3 7M9 9h6"/>'),
+    lacre: svg('<rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5M12 14.5v2.5"/>'),
     ancora: svg('<circle cx="12" cy="5" r="2"/><path d="M12 7v14M8 11h8M4.5 14.5c.5 3.8 3.8 6.5 7.5 6.5s7-2.7 7.5-6.5"/>'),
     interferencia: svg('<path d="M2 12h3l2-5 3 10 3-13 3 13 2-5h4"/>'),
     pedagio: svg('<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5v9M14.5 9.5h-3.5a1.5 1.5 0 0 0 0 3h2a1.5 1.5 0 0 1 0 3H9.5"/>'),
@@ -3201,11 +3243,14 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     if (online()) { Online.enviar({ tipo: 'dispensar' }); return 'online'; }
     return depois(R.dispensarSegundo(jogo, p));
   }
+  // devolve 'proximo' quando a carta passou a vez (Pausa): quem chamou não joga mais nesta vez
   function usarCarta(p, c, idx, delta) {
     if (online()) { Online.enviar({ tipo: 'carta', carta: c, idx, delta }); return; }
     if ((c === 'virar' || c === 'ajuste') && jogo.mesa[idx]) jogo.virando = jogo.mesa[idx].id;
-    R.usarCarta(jogo, p, c, idx, delta);
+    const r = R.usarCarta(jogo, p, c, idx, delta);
     marcarNovos();
+    if (r === 'proximo') { jogo.sel = null; jogo.alvo = null; jogo.ajusteIdx = null; }
+    return r;
   }
   function colocar(p, v, modo) {
     if (online()) { Online.enviar({ tipo: 'destino', modo }); return 'online'; }
@@ -3307,6 +3352,13 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
       }
     }
     if (precisa && pode('coringa')) { usa.push({ carta: 'coringa' }); precisa = false; }
+    // Reverso: nada entra pela frente, mas algo da Mesa (ou o dado do Bolso) entra pela outra ponta
+    if (precisa && pode('reverso')) {
+      const outra = [eu[0]];
+      if (m.some(d => encaixa(outra, d.v)) || (j.bolso[p] !== null && encaixa(outra, j.bolso[p]))) { usa.push({ carta: 'reverso' }); precisa = false; }
+    }
+    // Furto: o dado do Bolso do rival salva a corrente de 3+ (vem para o meu Bolso e entra na troca)
+    if (precisa && pode('furto') && eu.length >= 3 && j.bolso[1 - p] !== null && encaixa(eu, j.bolso[1 - p])) { usa.push({ carta: 'furto' }); precisa = false; }
     if (precisa && pode('rerrolar')) { usa.push({ carta: 'rerrolar' }); precisa = false; }
     if (ele.length >= 4 && m.length >= 2 && !usa.length) {
       const so = m.map((d, i) => i).filter(i => encaixa(ele, m[i].v));
@@ -3320,6 +3372,7 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
       if (pronta('interferencia') && ele.length >= 3) usa.push({ carta: 'interferencia' });
       else if (pronta('pedagio') && ele.length >= 3) usa.push({ carta: 'pedagio' });
       else if (pronta('fundo') && (j.bolso[1 - p] !== null || ele.length >= 1)) usa.push({ carta: 'fundo' });
+      else if (pronta('lacre') && j.decks[1 - p].some(c => CARTAS[c].tipo === 'efeito' && j.cartas[1 - p][c] === 'pronta')) usa.push({ carta: 'lacre' });
       else if (pronta('ancora') && eu.length >= 3) usa.push({ carta: 'ancora' });
       else if (pronta('espelho') && ele.length >= 2 && m.length >= 3) {
         const meu = automatoEscolhe(p).idx;
@@ -3331,6 +3384,8 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
       const ok = m.some((a, i) => encaixaP(p, a.v) && m.some((b, k) => k !== i && encaixa(eu.concat(a.v), b.v)));
       if (ok) usa.push({ carta: 'pressa' });
     }
+    // Pausa, por último (passa a vez): a corrente de 2+ romperia com qualquer dado e nada acima a salvou
+    if (precisa && pode('pausa') && eu.length >= 2 && !m.some(d => seguroDado(p, d)) && !j.segundoDado && !j.extra[p]) { usa.push({ carta: 'pausa' }); return usa; }
     // blefe: com uma armadilha ainda escondida no deck, às vezes vira para baixo um efeito que não precisa agora
     if (!j.armada[p] && !usa.some(u => CARTAS[u.carta].tipo === 'armadilha') && ele.length >= 3 && Math.random() < 0.4) {
       const c = j.decks[p].find(c => c !== 'pressa' && podeVirar(p, c).ok && !usa.some(u => u.carta === c));
@@ -3369,6 +3424,9 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
       pressa: `${quem} vai pegar dois dados nesta vez`,
       coringa: `o próximo dado de ${quem} entra com qualquer frente`,
       sobrecarga: `o próximo disparo de 4+ de ${quem} vale +2`,
+      pausa: `${quem} passou a vez sem pegar dado`,
+      reverso: `a corrente de ${quem} agora cresce pela outra ponta${e.frente ? ` (frente: ${e.frente})` : ''}`,
+      furto: e.meu === undefined ? `${quem} trocou os dados dos Bolsos` : `${quem} trocou ${e.meu === null ? 'o Bolso vazio' : 'o ' + e.meu} pelo ${e.dele === null ? 'Bolso vazio' : e.dele} do rival`,
     }[e.c] || `${quem} usou`;
   }
   let marcaMudanca = null;   // { ids, antes, ate }
@@ -3389,7 +3447,11 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
       if (window.Rolagem) { await Rolagem.esperar(); if (tok !== jogo.token) return; }   // escolhe com os dados já assentados
       for (const u of automatoCartas(p)) {
         if (u.virar ? !podeVirar(p, u.carta).ok : (!podeUsar(p, u.carta).ok || (CARTAS[u.carta].alvo && !j.mesa[u.idx]))) continue;
-        if (u.virar) virarCarta(p, u.carta); else usarCarta(p, u.carta, u.idx, u.delta || 1);
+        if (u.virar) virarCarta(p, u.carta);
+        else if (usarCarta(p, u.carta, u.idx, u.delta || 1) === 'proximo') {
+          // a Pausa passou a vez: o aviso fica um tempo e a vez segue para o outro lado
+          j.pensando = false; depois('proximo'); return;
+        }
         render();
         // dá tempo de ler o aviso e ver o dado que mudou antes da próxima ação (não acelera no ritmo rápido)
         await new Promise(r => setTimeout(r, Math.max(AVISO_CARTA + 300, (AVISO_CARTA + 300) * ritmo()))); if (tok !== jogo.token) return;
@@ -3629,7 +3691,7 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
   // o que uma carta virada (?) do rival pode ser, com o que cada armadilha faria neste disparo
   function cartaViradaTxt(r, L) {
     const j = jogo, n = nomes();
-    const efeito = { interferencia: L >= 4 ? 'Interferência (−1 neste disparo)' : 'Interferência (não pega disparo de 3)', pedagio: 'Pedágio (+3 para ele se você disparar)',
+    const efeito = { interferencia: L >= 4 ? 'Interferência (−1 neste disparo)' : 'Interferência (não pega disparo de 3)', pedagio: `Pedágio (+${R.pedagioDe(jogo.meta)} para ele se você disparar)`,
       fundo: 'Fundo Falso (só pega o Bolso)', ancora: 'Âncora (protege a corrente dele)' };
     const traps = armadilhasOcultas(r).map(c => efeito[c] || CARTAS[c].nome);
     const blefes = j.decks[r].filter(c => CARTAS[c].tipo === 'efeito' && ['pronta', 'armada'].includes(j.cartas[r][c])).map(c => CARTAS[c].nome);
@@ -4252,7 +4314,7 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     document.getElementById('janelaCarta').hidden = true;
     j.sel = null;
     if (CARTAS[c].alvo) { j.fase = 'alvo'; j.alvo = c; }
-    else usarCarta(p, c);
+    else if (usarCarta(p, c) === 'proximo') { depois('proximo'); return; }
     render();
   });
   document.getElementById('acoes').addEventListener('click', e => {
@@ -5063,7 +5125,7 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     }
   }
   // o roteiro de teste automático (tools/) pode ler o estado
-  window.DiceDuel = { get jogo() { return jogo; }, st, salvar, ajustar(p) { Object.assign(st.pref, p); aplicarPrefs(); if (jogo) render(); } };
+  window.DiceDuel = { get jogo() { return jogo; }, st, salvar, ajustar(p) { Object.assign(st.pref, p); aplicarPrefs(); if (jogo) render(); }, automato: () => talvezAutomato() };
   window.claude?.hot?.ready ? window.claude.hot.ready(iniciar) : iniciar(window.claude?.hot?.data ?? {});
 })();
 

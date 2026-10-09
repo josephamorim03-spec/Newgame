@@ -9,11 +9,12 @@ if NOVAS:
 else:
     import deck as D
 N = int(sys.argv[1]) if len(sys.argv) > 1 else 16000
+META = int(os.environ.get("META", "12"))   # meta da partida (12 ou 16)
 def valor(c):
     random.seed(9); w = 0; usos = 0
     for i in range(N):
         a = i % 2
-        P = D.Partida([[c], []] if a == 0 else [[], [c]], inicia=(i // 2) % 2)
+        P = D.Partida([[c], []] if a == 0 else [[], [c]], inicia=(i // 2) % 2, meta=META)
         dono = 0 if a == 0 else 1
         w += P.jogar() == dono; usos += any(u.startswith(c) for u in P.j[dono].usou)
     return c, w / N, usos / N
