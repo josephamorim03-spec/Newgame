@@ -11,11 +11,12 @@ const contaNova = (id, nome, senha) => ({
   id, nome, chave: chaveDoNome(nome), senha_hash: senha.hash, sal: senha.sal,
   rating: 1000, pico: 1000, partidas: 0, vitorias: 0, moedas: 0, xp: 0,
   cartas: Regras.GRATIS.slice(), dados: ['marfim'], icones: ['bolinha'], mesas: ['salvia'],
-  ativo: { dado: 'marfim', icone: 'bolinha', mesa: 'salvia' }, solo_dia: '', solo_hoje: 0, solo_rating: 1000, solo_pico: 1000, extras: {},
+  ativo: { dado: 'marfim', icone: 'bolinha', mesa: 'salvia' }, solo_dia: '', solo_hoje: 0, solo_rating: 1000, solo_pico: 1000, extras: {}, versao_token: 0,
   criado: new Date().toISOString(),
 });
 const CAMPOS_JSON = ['cartas', 'dados', 'icones', 'mesas', 'ativo', 'extras'];
-const CAMPOS_EDITAVEIS = ['rating', 'pico', 'partidas', 'vitorias', 'moedas', 'xp', 'cartas', 'dados', 'icones', 'mesas', 'ativo', 'solo_dia', 'solo_hoje', 'solo_rating', 'solo_pico', 'extras'];
+// senha_hash, sal e versao_token: trocar a senha e "sair de todos os aparelhos"
+const CAMPOS_EDITAVEIS = ['senha_hash', 'sal', 'versao_token', 'rating', 'pico', 'partidas', 'vitorias', 'moedas', 'xp', 'cartas', 'dados', 'icones', 'mesas', 'ativo', 'solo_dia', 'solo_hoje', 'solo_rating', 'solo_pico', 'extras'];
 const hoje = () => new Date().toISOString().slice(0, 10);
 // o que a conta mostra ao próprio dono (nunca a senha)
 const perfil = c => c && ({
@@ -25,6 +26,8 @@ const perfil = c => c && ({
 });
 // o que os outros veem de uma conta (amigos, ranking)
 const publico = c => ({ id: c.id, nome: c.nome, rating: c.rating, partidas: c.partidas, vitorias: c.vitorias, icone: (typeof c.ativo === 'string' ? JSON.parse(c.ativo) : c.ativo).icone });
+// quem escolheu não aparecer na lista de quem está online
+const oculta = c => { const ex = typeof c.extras === 'string' ? JSON.parse(c.extras) : c.extras; return !!(ex && ex.privacidade && ex.privacidade.visivel === false); };
 // ordem do ranking: rating, depois vitórias
 const acima = (o, e) => o.rating > e.rating || (o.rating === e.rating && o.vitorias > e.vitorias);
 
@@ -68,7 +71,15 @@ class BancoMemoria {
     return this.contas.filter(c => c.partidas > 0).sort((a, b) => b.rating - a.rating || b.vitorias - a.vitorias).slice(0, limite).map(publico);
   }
   // o que é público de várias contas de uma vez (a lista de quem está online)
-  async contasPorIds(ids) { const s = new Set(ids); return this.contas.filter(c => s.has(c.id)).map(publico); }
+  async contasPorIds(ids) { const s = new Set(ids); return this.contas.filter(c => s.has(c.id)).map(c => ({ ...publico(c), oculto: oculta(c) })); }
+  // apagar a conta (LGPD): some a conta e as amizades; as partidas ficam só com o número, sem nome
+  async apagarConta(id) {
+    const antes = this.contas.length;
+    this.contas = this.contas.filter(c => c.id !== id);
+    this.amizades = this.amizades.filter(x => x.de !== id && x.para !== id);
+    this._gravar(); return this.contas.length !== antes;
+  }
+  async ping() { return true; }
   // posição no ranking global (null se a conta ainda não jogou online) e quantos estão nele
   async posicaoNoRanking(id) {
     const e = this.contas.find(x => x.id === id), noRanking = this.contas.filter(c => c.partidas > 0);
@@ -126,6 +137,7 @@ class BancoPostgres {
       rodadas INTEGER NOT NULL, moedas INTEGER NOT NULL DEFAULT 0, dia TEXT NOT NULL, criado TIMESTAMPTZ NOT NULL DEFAULT now())`);
     // colunas que chegaram depois da primeira versão (bancos já criados ganham a coluna sem perder nada)
     await this.pool.query("ALTER TABLE contas ADD COLUMN IF NOT EXISTS extras JSONB NOT NULL DEFAULT '{}'::jsonb");
+    await this.pool.query('ALTER TABLE contas ADD COLUMN IF NOT EXISTS versao_token INTEGER NOT NULL DEFAULT 0');
     await this.pool.query('CREATE INDEX IF NOT EXISTS contas_rating ON contas (rating DESC)');
     await this.pool.query('CREATE TABLE IF NOT EXISTS config (chave TEXT PRIMARY KEY, valor TEXT NOT NULL)');
     await this.pool.query('CREATE INDEX IF NOT EXISTS partidas_dia ON partidas (dia)');
@@ -179,8 +191,14 @@ class BancoPostgres {
   }
   async contasPorIds(ids) {
     if (!ids.length) return [];
-    const r = await this.pool.query('SELECT id, nome, rating, partidas, vitorias, ativo FROM contas WHERE id = ANY($1)', [ids]);
-    return r.rows.map(publico);
+    const r = await this.pool.query('SELECT id, nome, rating, partidas, vitorias, ativo, extras FROM contas WHERE id = ANY($1)', [ids]);
+    return r.rows.map(c => ({ ...publico(c), oculto: oculta(c) }));
+  }
+  async apagarConta(id) { return (await this.pool.query('DELETE FROM contas WHERE id = $1', [id])).rowCount > 0; }   // amizades vão junto (CASCADE)
+  // o banco responde? (o healthcheck; 3 s no máximo)
+  async ping() {
+    const c = await Promise.race([this.pool.query('SELECT 1'), new Promise((_, e) => setTimeout(() => e(new Error('banco não respondeu em 3 s')), 3000))]);
+    return !!c;
   }
   async posicaoNoRanking(id) {
     const r = await this.pool.query(`SELECT e.partidas > 0 AS joga,
@@ -236,7 +254,7 @@ async function criarBanco({ url = process.env.DATABASE_URL, arquivo = null } = {
   if (url) {
     const { Pool } = require('pg');
     const local = /localhost|127\.0\.0\.1|\.railway\.internal/.test(url);
-    const pool = new Pool({ connectionString: url, ssl: local ? false : { rejectUnauthorized: false }, max: 8, connectionTimeoutMillis: 10_000 });
+    const pool = new Pool({ connectionString: url, ssl: local ? false : { rejectUnauthorized: false }, max: 8, connectionTimeoutMillis: 10_000, statement_timeout: 10_000, query_timeout: 15_000 });
     pool.on('error', e => console.error('postgres:', e.message));   // conexão ociosa caiu: o pool abre outra, o processo não cai
     banco = new BancoPostgres(pool);
     try { await banco.iniciar(); } catch (e) { await pool.end().catch(() => {}); throw e; }

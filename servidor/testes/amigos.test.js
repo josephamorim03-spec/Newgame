@@ -76,7 +76,7 @@ test('nome único: maiúsculas, acentos e separadores não fazem um nome novo', 
 
 test('contas antigas (chave só em minúsculas) passam para a chave nova sem perder o login', async () => {
   const banco = new BancoMemoria();
-  const h = hashSenha('senha123');
+  const h = await hashSenha('senha123');
   banco.contas.push({ id: 1, nome: 'Júlia', chave: 'júlia', senha_hash: h.hash, sal: h.sal, rating: 1000, pico: 1000, partidas: 0, vitorias: 0, moedas: 0, xp: 0,
     cartas: [], dados: ['marfim'], icones: ['bolinha'], mesas: ['salvia'], ativo: { dado: 'marfim', icone: 'bolinha', mesa: 'salvia' }, extras: {} });
   // duas antigas que viram a mesma chave nova: a segunda fica com a antiga e entra pelo próprio nome
@@ -242,7 +242,7 @@ test('Postgres: chaves antigas migram, nome único, amizades e posição no rank
   await banco.pool.query('TRUNCATE contas, partidas, amizades RESTART IDENTITY');
   await banco.pool.query("DELETE FROM config WHERE chave = 'chaves_v2'");
   // três contas do jeito antigo (chave = nome em minúsculas); duas delas viram a mesma chave nova
-  const h = hashSenha('senha123'), velha = (nome, chave) => banco.pool.query(
+  const h = await hashSenha('senha123'), velha = (nome, chave) => banco.pool.query(
     `INSERT INTO contas (nome, chave, senha_hash, sal, cartas, dados, icones, mesas, ativo) VALUES ($1, $2, $3, $4, '[]', '["marfim"]', '["bolinha"]', '["salvia"]', '{"dado":"marfim","icone":"bolinha","mesa":"salvia"}')`,
     [nome, chave, h.hash, h.sal]);
   await velha('Júlia', 'júlia'); await velha('Ana.B', 'ana.b'); await velha('ana_b', 'ana_b');

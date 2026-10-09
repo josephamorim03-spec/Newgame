@@ -15,6 +15,11 @@ const { Fila } = require('./fila');
 const MAX_AMIGOS = 200;          // amigos + pedidos de uma conta
 const INTERVALO_CHAMADA = 10_000; // chamar a mesma pessoa para a sala de novo só depois disso
 const MAX_CHAMADAS_DESCONHECIDOS = 5; // por minuto, para quem não é amigo
+const MAX_PEDIDOS_RECEBIDOS = 100;   // pedidos de amizade esperando resposta (contra enxurrada de pedidos numa pessoa)
+const MAX_ABAS = 5;                  // conexões ao mesmo tempo por conta
+const PRAZO_OLA = 15_000;            // conexão que não se identifica nesse tempo fecha
+const SOLO_POR_DIA = { relatos: 80, xp: 800 };   // partidas contra os rivais do jogo relatadas por conta por dia (o servidor não as vê)
+const TRANCA_SENHA = { erros: 5, janela: 15 * 60_000 };   // erros de senha seguidos numa conta trancam o login dela por 15 min
 
 const TETO_SOLO_DIA = 300;   // moedas por dia vindas de partidas contra os rivais do jogo (o servidor não as vê)
 const TETO_IMPORTAR = { moedas: 600, xp: 1000, valor: 900 }; // valor: moedas + preço dos itens trazidos
@@ -37,12 +42,38 @@ function criarApp({ banco, segredo, raiz = path.join(__dirname, '..'), tempos = 
   if (!segredo || segredo.length < 16) throw new Error('SEGREDO precisa ter 16 caracteres ou mais');
   const app = express();
   const trava = criarTrava();
-  const salas = new Salas({ banco, trava, tempos });
+  // uma partida online muda ratings: o ranking guardado em memória (15 s) é refeito na próxima consulta
+  let rankingGuardado = { em: 0, lista: null };
+  const salas = new Salas({ banco, trava, tempos, aoMudarConta: () => { rankingGuardado.em = 0; } });
 
   // ---------- presença: quem está com o jogo aberto (uma conta pode ter várias abas) ----------
   const presenca = new Map();   // id da conta -> Set de sockets
   const online = id => !!(presenca.get(id) && presenca.get(id).size);
   const avisar = (id, msg) => { for (const ws of presenca.get(id) || []) salas.enviar(ws, msg); };
+  // quando alguém entra ou sai, todo mundo conectado recebe o novo total (juntando mudanças de 1,5 s numa mensagem só):
+  // o contador do botão Online anda na hora, sem esperar a próxima consulta
+  let avisoPresenca = null;
+  const presencaMudou = () => {
+    if (avisoPresenca) return;
+    avisoPresenca = setTimeout(() => {
+      avisoPresenca = null;
+      const msg = JSON.stringify({ tipo: 'online', total: presenca.size });
+      for (const s of presenca.values()) for (const ws of s) if (ws.readyState === 1) ws.send(msg);
+    }, 1500);
+    avisoPresenca.unref();
+  };
+  // a sessão mudou (senha nova, "sair de todos os aparelhos", conta apagada): as conexões abertas fecham;
+  // o aparelho que fez a mudança volta com o token novo, os outros caem para "entre de novo"
+  // devolve as promessas dos prêmios das partidas abandonadas (quem apaga a conta espera por elas)
+  function encerrarSessoes(id, { sairDasSalas = false } = {}) {
+    const premios = [];
+    for (const ws of [...(presenca.get(id) || [])]) {
+      if (sairDasSalas) premios.push(salas.sair(ws));
+      salas.enviar(ws, { tipo: 'sessao' });
+      ws.close(4001, 'sessao');
+    }
+    return Promise.all(premios);
+  }
 
   // ---------- fila por rating: forma o par, cria a sala e põe os dois nela ----------
   const fila = new Fila({ ativa: filaAtiva, opcoes: filaOpcoes, aoParear: async par => {
@@ -56,7 +87,18 @@ function criarApp({ banco, segredo, raiz = path.join(__dirname, '..'), tempos = 
   app.set('trust proxy', 1); // Railway fica atrás de um proxy: o IP real vem no X-Forwarded-For
   app.disable('x-powered-by');
   app.use(compression());   // a página, o js e o css vão com gzip (~340 KB em vez de ~740 KB)
-  app.use((req, res, next) => { res.set('X-Content-Type-Options', 'nosniff'); next(); });
+  // cabeçalhos de segurança: sem MIME adivinhado, sem a página dentro de um iframe alheio (clickjacking), HTTPS lembrado,
+  // e uma CSP que só deixa rodar os scripts do próprio jogo (um nome malicioso que escapasse do esc() não executaria nada)
+  const CSP = ["default-src 'self'", "script-src 'self'", "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com", "font-src 'self' https://fonts.gstatic.com data:",
+    "img-src 'self' data: blob:", "media-src 'self' data: blob:", "connect-src 'self' https: wss:", "worker-src 'self' blob:", "manifest-src 'self'",
+    "frame-ancestors 'none'", "base-uri 'self'", "form-action 'self'", "object-src 'none'"].join('; ');
+  app.use((req, res, next) => {
+    res.set({ 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'strict-origin-when-cross-origin', 'X-Frame-Options': 'DENY',
+      'Permissions-Policy': 'camera=(), microphone=(), geolocation=(), payment=()', 'Cross-Origin-Opener-Policy': 'same-origin' });
+    if (req.secure) res.set('Strict-Transport-Security', 'max-age=15552000');
+    if (!req.path.startsWith('/api')) res.set('Content-Security-Policy', CSP);
+    next();
+  });
   // CORS só para as páginas do jogo hospedadas fora daqui (ORIGENS, ex.: o Vercel); o token vai no cabeçalho, sem cookies
   app.use('/api', (req, res, next) => {
     res.vary('Origin');
@@ -69,47 +111,114 @@ function criarApp({ banco, segredo, raiz = path.join(__dirname, '..'), tempos = 
   // depois do CORS: um corpo inválido (400) também chega à página do Vercel com a mensagem de erro
   app.use(express.json({ limit: '8kb' }));
 
-  const lim = { contas: 5, entrar: 10, solo: 20, ws: 120, amigos: 30, nomes: 60, ...limites };
+  const lim = { contas: 5, entrar: 10, solo: 20, ws: 120, amigos: 30, nomes: 60, api: 1200, conexoes: 50, prazoOla: PRAZO_OLA, ...limites };
   const limContas = Auth.limitador({ janelaMs: 10 * 60_000, maximo: lim.contas });
   const limEntrar = Auth.limitador({ janelaMs: 60_000, maximo: lim.entrar });
   const limSolo = Auth.limitador({ janelaMs: 10 * 60_000, maximo: lim.solo });
   const limAmigos = Auth.limitador({ janelaMs: 10 * 60_000, maximo: lim.amigos });   // pedidos de amizade (contra spam)
   const limNomes = Auth.limitador({ janelaMs: 60_000, maximo: lim.nomes });          // "esse nome está livre?" enquanto digita
+  const limConta = Auth.limitador({ janelaMs: 10 * 60_000, maximo: lim.entrar });    // trocar senha e apagar conta (contra adivinhar a senha atual)
+  // um teto geral por IP para toda a API (as rotas sensíveis têm os seus, mais apertados)
+  app.use('/api', Auth.limitador({ janelaMs: 60_000, maximo: lim.api }));
   const assincrono = fn => (req, res, next) => fn(req, res, next).catch(next);
+  // a conta do token, se ele for válido e da versão atual da sessão (senha trocada ou "sair de tudo" invalidam os antigos)
+  async function contaDoToken(token) {
+    const s = Auth.lerSessao(token, segredo);
+    const conta = s && await banco.contaPorId(s.id);
+    return Auth.sessaoValida(s, conta) ? conta : null;
+  }
+  const tokenDe = req => (req.get('authorization') || '').replace(/^Bearer\s+/i, '');
   const exigirConta = assincrono(async (req, res, next) => {
-    const token = (req.get('authorization') || '').replace(/^Bearer\s+/i, '');
-    const id = Auth.lerToken(token, segredo);
-    const conta = id && await banco.contaPorId(id);
+    const conta = await contaDoToken(tokenDe(req));
     if (!conta) return res.status(401).json({ erro: 'Entre na sua conta de novo.' });
     req.conta = conta; next();
   });
   // como exigirConta, mas sem conta também passa (req.conta fica null)
-  const contaSeHouver = assincrono(async (req, res, next) => {
-    const id = Auth.lerToken((req.get('authorization') || '').replace(/^Bearer\s+/i, ''), segredo);
-    req.conta = (id && await banco.contaPorId(id)) || null; next();
-  });
-  const responderConta = (res, conta, extra = {}) => res.json({ token: Auth.criarToken(conta.id, segredo), conta: perfil(conta), ...extra });
+  const contaSeHouver = assincrono(async (req, res, next) => { req.conta = await contaDoToken(tokenDe(req)); next(); });
+  const responderConta = (res, conta, extra = {}) => res.json({ token: Auth.criarToken(conta.id, segredo, 30, conta.versao_token || 0), conta: perfil(conta), ...extra });
 
   // ---------- saúde (healthcheck da Railway) ----------
-  app.get('/api/saude', (req, res) => res.json({ ok: true, banco: banco.constructor.name === 'BancoPostgres' ? 'postgres' : 'memoria', salas: salas.salas.size }));
+  // olha o banco de verdade: com o Postgres fora do ar, responde 503 (a Railway não troca um deploy bom por um quebrado)
+  app.get('/api/saude', assincrono(async (req, res) => {
+    const tipo = banco.constructor.name === 'BancoPostgres' ? 'postgres' : 'memoria';
+    try { await banco.ping(); } catch (e) { return res.status(503).json({ ok: false, banco: tipo, erro: 'banco fora do ar' }); }
+    res.json({ ok: true, banco: tipo, salas: salas.salas.size, online: presenca.size });
+  }));
 
   // ---------- contas ----------
   app.post('/api/contas', limContas, assincrono(async (req, res) => {
     const { nome, senha, importar } = req.body || {};
     if (!Auth.validarNome(nome)) return res.status(400).json({ erro: 'Nome: de 3 a 20 letras, números, ponto, traço ou _.' });
     if (!Auth.validarSenha(senha)) return res.status(400).json({ erro: 'Senha: de 6 a 72 caracteres.' });
-    const conta = await banco.criarConta(nome.trim(), Auth.hashSenha(senha));
+    const conta = await banco.criarConta(nome.trim(), await Auth.hashSenha(senha));
     if (!conta) return res.status(409).json({ erro: await nomeOcupado(nome) });
     const final = importar ? await banco.atualizarConta(conta.id, importacao(conta, importar)) : conta;
     responderConta(res, final);
   }));
+  // erros de senha por conta (além do limite por IP): quem troca de IP para adivinhar a senha de alguém esbarra aqui
+  const errosDeSenha = new Map();   // chave do nome -> { n, desde }
+  setInterval(() => { const agora = Date.now(); for (const [k, v] of errosDeSenha) if (agora - v.desde > TRANCA_SENHA.janela) errosDeSenha.delete(k); }, 60_000).unref();
+  const CONTA_FALSA = { sal: '00'.repeat(16), senha_hash: '00'.repeat(64) };   // a conta não existe: o scrypt roda igual (mesmo tempo de resposta)
   app.post('/api/entrar', limEntrar, assincrono(async (req, res) => {
     const { nome, senha } = req.body || {};
-    const conta = typeof nome === 'string' && typeof senha === 'string' && await banco.contaPorNome(nome.trim());
-    if (!conta || !Auth.conferirSenha(senha, conta)) return res.status(401).json({ erro: 'Nome ou senha não conferem.' });
+    if (typeof nome !== 'string' || typeof senha !== 'string' || nome.length > 40 || senha.length > 200) return res.status(401).json({ erro: 'Nome ou senha não conferem.' });
+    const chave = Auth.chaveDoNome(nome), e = errosDeSenha.get(chave);
+    if (e && e.n >= TRANCA_SENHA.erros && Date.now() - e.desde < TRANCA_SENHA.janela) return res.status(429).json({ erro: 'Muitas senhas erradas para esta conta. Espere 15 minutos.' });
+    const conta = await banco.contaPorNome(nome.trim());
+    const certa = await Auth.conferirSenha(senha, conta || CONTA_FALSA);
+    if (!conta || !certa) {
+      if (conta) { const v = e && Date.now() - e.desde < TRANCA_SENHA.janela ? e : { n: 0, desde: Date.now() }; v.n++; errosDeSenha.set(chave, v); }
+      return res.status(401).json({ erro: 'Nome ou senha não conferem.' });
+    }
+    errosDeSenha.delete(chave);
     responderConta(res, conta);
   }));
   app.get('/api/eu', exigirConta, (req, res) => responderConta(res, req.conta));
+  // trocar a senha: confere a atual; os outros aparelhos saem (este recebe o token novo)
+  app.post('/api/eu/senha', limConta, exigirConta, assincrono(async (req, res) => {
+    const { atual, nova } = req.body || {};
+    if (!Auth.validarSenha(nova)) return res.status(400).json({ erro: 'Senha nova: de 6 a 72 caracteres.' });
+    if (typeof atual !== 'string' || !(await Auth.conferirSenha(atual, req.conta))) return res.status(403).json({ erro: 'A senha atual não confere.' });
+    const h = await Auth.hashSenha(nova);
+    const conta = await trava(req.conta.id, async () => {
+      const c = await banco.contaPorId(req.conta.id);
+      return banco.atualizarConta(c.id, { senha_hash: h.hash, sal: h.sal, versao_token: (c.versao_token || 0) + 1 });
+    });
+    encerrarSessoes(conta.id);
+    responderConta(res, conta);
+  }));
+  // sair de todos os aparelhos (celular perdido, computador emprestado): todos os tokens antigos deixam de valer
+  app.post('/api/eu/sair-de-tudo', exigirConta, assincrono(async (req, res) => {
+    const conta = await trava(req.conta.id, async () => {
+      const c = await banco.contaPorId(req.conta.id);
+      return banco.atualizarConta(c.id, { versao_token: (c.versao_token || 0) + 1 });
+    });
+    encerrarSessoes(conta.id);
+    responderConta(res, conta);
+  }));
+  // apagar a conta (LGPD): pede a senha; sai das salas (uma partida em andamento conta como desistência) e da fila
+  app.post('/api/eu/apagar', limConta, exigirConta, assincrono(async (req, res) => {
+    const { senha } = req.body || {};
+    if (typeof senha !== 'string' || !(await Auth.conferirSenha(senha, req.conta))) return res.status(403).json({ erro: 'A senha não confere.' });
+    const id = req.conta.id;
+    fila.sair(id);
+    await encerrarSessoes(id, { sairDasSalas: true });
+    await trava(id, () => banco.apagarConta(id));
+    res.json({ apagada: true });
+  }));
+  // privacidade: aparecer (ou não) na lista de quem está online, e quem pode chamar para a sala
+  app.put('/api/eu/privacidade', exigirConta, assincrono(async (req, res) => {
+    const b = req.body || {};
+    const conta = await trava(req.conta.id, async () => {
+      const c = await banco.contaPorId(req.conta.id), atual = (c.extras && c.extras.privacidade) || {};
+      const privacidade = {
+        visivel: typeof b.visivel === 'boolean' ? b.visivel : atual.visivel !== false,
+        chamadas: ['todos', 'amigos'].includes(b.chamadas) ? b.chamadas : (atual.chamadas === 'amigos' ? 'amigos' : 'todos'),
+      };
+      return banco.atualizarConta(c.id, { extras: { ...(c.extras || {}), privacidade } });
+    });
+    res.json({ conta: perfil(conta) });
+  }));
   // o nome está livre? (a tela de criar conta pergunta enquanto a pessoa digita). Igual para maiúsculas, acentos e separadores.
   async function nomeOcupado(nome) {
     const dono = await banco.contaPorNome(nome);
@@ -126,9 +235,11 @@ function criarApp({ banco, segredo, raiz = path.join(__dirname, '..'), tempos = 
   // ---------- ranking: o global (top 50, público) e o entre amigos, com a sua posição nos dois ----------
   const linhaRanking = r => ({ nome: r.nome, rating: r.rating, partidas: r.partidas, vitorias: r.vitorias, icone: r.icone, titulo: Regras.tituloDe(r.rating) });
   const acima = (o, e) => o.rating > e.rating || (o.rating === e.rating && o.vitorias > e.vitorias);
+  // o top 50 muda devagar: 15 s em memória poupam o banco de quem fica atualizando a página
   app.get('/api/ranking', assincrono(async (req, res) => {
     res.set('Cache-Control', 'public, max-age=15');
-    res.json({ ranking: (await banco.ranking(50)).map(linhaRanking) });
+    if (Date.now() - rankingGuardado.em > 15_000) rankingGuardado = { em: Date.now(), lista: (await banco.ranking(50)).map(linhaRanking) };
+    res.json({ ranking: rankingGuardado.lista });
   }));
   app.get('/api/ranking/amigos', exigirConta, assincrono(async (req, res) => {
     const eu = req.conta, amigos = (await banco.amizadesDe(eu.id)).filter(a => a.aceita);
@@ -164,6 +275,8 @@ function criarApp({ banco, segredo, raiz = path.join(__dirname, '..'), tempos = 
       // a outra pessoa já tinha pedido: pedir de volta é aceitar
       if (rel) { await banco.aceitarAmizade(alvo.id, eu.id); return { estado: 'amigos' }; }
       if ((await banco.amizadesDe(eu.id)).length >= MAX_AMIGOS) return { status: 409, erro: `Você chegou a ${MAX_AMIGOS} amigos e pedidos.` };
+      const recebidos = (await banco.amizadesDe(alvo.id)).filter(x => !x.aceita && !x.enviado).length;
+      if (recebidos >= MAX_PEDIDOS_RECEBIDOS) return { status: 409, erro: `${alvo.nome} tem pedidos demais esperando resposta. Tente mais tarde.` };
       await banco.pedirAmizade(eu.id, alvo.id);
       return { estado: 'pedido' };
     });
@@ -191,7 +304,7 @@ function criarApp({ banco, segredo, raiz = path.join(__dirname, '..'), tempos = 
     if (!eu) return res.json({ total });
     const ids = [...presenca.keys()].filter(id => id !== eu.id).slice(0, 500);
     const amigos = new Map((await banco.amizadesDe(eu.id)).map(a => [a.id, a]));
-    const jogadores = (await banco.contasPorIds(ids)).map(c => {
+    const jogadores = (await banco.contasPorIds(ids)).filter(c => !c.oculto || (amigos.get(c.id) && amigos.get(c.id).aceita)).map(c => {
       const rel = amigos.get(c.id);
       return { nome: c.nome, rating: c.rating, icone: c.icone, titulo: Regras.tituloDe(c.rating), onde: salas.estadoDe(c.id),
         amigo: !!(rel && rel.aceita), pedido: rel && !rel.aceita ? (rel.enviado ? 'enviado' : 'recebido') : null };
@@ -274,18 +387,25 @@ function criarApp({ banco, segredo, raiz = path.join(__dirname, '..'), tempos = 
       const c = await banco.contaPorId(req.conta.id);
       const ps = Regras.premioSolo({ rating: c.solo_rating, pico: c.solo_pico }, { nivel: b.nivel, venceu: b.venceu, margem: b.margem, rodadas: b.rodadas, meta });
       const dia = hoje(), jaHoje = c.solo_dia === dia ? c.solo_hoje : 0;
+      // o resultado vem do aparelho: além do teto de moedas, um teto de relatos e de XP por dia limita quem inventa vitórias
+      const sd = c.extras && c.extras.soloDia && c.extras.soloDia.dia === dia ? c.extras.soloDia : { dia, n: 0, xp: 0 };
+      if (sd.n >= SOLO_POR_DIA.relatos) return { status: 429, erro: 'Você já jogou muitas partidas contra os rivais hoje. Amanhã tem mais; o online não tem teto.' };
       if (ps.moedas && ps.moedas.total > 0) {
         const cabe = Math.max(0, TETO_SOLO_DIA - jaHoje);
         if (ps.moedas.total > cabe) { ps.moedas.total = cabe; ps.moedas.tetoDia = true; }
       }
       const ganho = ps.moedas ? ps.moedas.total : 0;
       const conta = { xp: c.xp, dados: c.dados.slice(), icones: c.icones.slice(), mesas: c.mesas.slice() };
-      const xp = Regras.ganharXp(conta, b.desistiu === true ? 0 : Regras.xpDaPartida(b.venceu, b.momentos));   // abandonar não rende experiência
+      const xpPedido = b.desistiu === true ? 0 : Regras.xpDaPartida(b.venceu, b.momentos);   // abandonar não rende experiência
+      const xpDado = Math.max(0, Math.min(xpPedido, SOLO_POR_DIA.xp - sd.xp));
+      const xp = Regras.ganharXp(conta, xpDado);
       const nova = await banco.atualizarConta(c.id, {
         moedas: c.moedas + ganho, solo_rating: ps.rating, solo_pico: ps.picoNovo, solo_dia: dia, solo_hoje: jaHoje + ganho, ...conta,
+        extras: { ...(c.extras || {}), soloDia: { dia, n: sd.n + 1, xp: sd.xp + xpDado } },
       });
       return { premio: { moedas: ps.moedas, ratingAntes: ps.ratingAntes, pico: ps.pico, rating: ps.rating, ...xp }, conta: nova };
     });
+    if (r.erro) return res.status(r.status).json({ erro: r.erro });
     res.json({ premio: r.premio, conta: perfil(r.conta) });
   }));
 
@@ -297,7 +417,8 @@ function criarApp({ banco, segredo, raiz = path.join(__dirname, '..'), tempos = 
   app.get('/api/salas/:codigo', (req, res) => {
     const sala = salas.salas.get(String(req.params.codigo).toUpperCase());
     if (!sala) return res.status(404).json({ erro: 'Sala não encontrada. O convite pode ter expirado.' });
-    res.json({ sala: salas.resumo(sala) });
+    const r = salas.resumo(sala);   // quem não está na sala não precisa dos ids internos
+    res.json({ sala: { codigo: r.codigo, meta: r.meta, estado: r.estado, jogadores: r.jogadores.map(j => ({ nome: j.nome, rating: j.rating, icone: j.icone, conectado: j.conectado })) } });
   });
 
   // ---------- o jogo em si (arquivos estáticos; só o que o navegador precisa) ----------
@@ -322,8 +443,11 @@ function criarApp({ banco, segredo, raiz = path.join(__dirname, '..'), tempos = 
   // Avisos que não são da partida vão como { tipo: 'aviso' }: um 'erro' faria a página largar a sala.
   function sairDaPresenca(ws) {
     const s = ws.contaId && presenca.get(ws.contaId);
-    if (s) { s.delete(ws); if (!s.size) presenca.delete(ws.contaId); }
+    if (s) { s.delete(ws); if (!s.size) { presenca.delete(ws.contaId); presencaMudou(); } }
   }
+  // conexões abertas por IP: um script abrindo milhares de sockets não esgota o servidor
+  const conexoesPorIp = new Map();
+  const ipDe = req => { const xff = req.headers['x-forwarded-for']; return xff ? String(xff).split(',').pop().trim() : req.socket.remoteAddress; };
   const chamadas = new Map();   // "de:para" -> quando chamou (sem repetir a chamada a cada toque)
   const chamadasDesconhecidos = new Map();   // id -> quando chamou quem não é amigo (no último minuto)
   async function chamarAmigo(ws, conta, nome) {
@@ -335,6 +459,7 @@ function criarApp({ banco, segredo, raiz = path.join(__dirname, '..'), tempos = 
     // dá para chamar qualquer um que esteja online (com pouca gente jogando, é o jeito de começar uma partida);
     // quem não é amigo conta num limite por minuto, contra quem sai chamando todo mundo
     const rel = await banco.amizade(conta.id, alvo.id), amigo = !!(rel && rel.aceita);
+    if (!amigo && alvo.extras && alvo.extras.privacidade && alvo.extras.privacidade.chamadas === 'amigos') return aviso(`${alvo.nome} só aceita chamadas de amigos. Peça amizade primeiro.`);
     if (!online(alvo.id)) return aviso(`${alvo.nome} não está com o jogo aberto agora. Mande o link do convite.`);
     if (salas.estadoDe(alvo.id) === 'jogando') return aviso(`${alvo.nome} está no meio de uma partida.`);
     const k = `${conta.id}:${alvo.id}`, agora = Date.now();
@@ -362,7 +487,20 @@ function criarApp({ banco, segredo, raiz = path.join(__dirname, '..'), tempos = 
 
   function anexar(servidor) {
     const wss = new WebSocketServer({ server: servidor, path: '/ws', maxPayload: 4096 });
-    wss.on('connection', ws => {
+    wss.on('connection', (ws, req) => {
+      ws.ip = ipDe(req);
+      const abertas = (conexoesPorIp.get(ws.ip) || 0) + 1;
+      conexoesPorIp.set(ws.ip, abertas);
+      ws.on('close', () => { const n = (conexoesPorIp.get(ws.ip) || 1) - 1; if (n > 0) conexoesPorIp.set(ws.ip, n); else conexoesPorIp.delete(ws.ip); });
+      if (abertas > lim.conexoes) { ws.on('error', () => {}); ws.close(1013, 'muitas conexoes'); return; }
+      // só a página do jogo (este endereço ou as ORIGENS, como o Vercel) abre conexão pelo navegador; scripts sem Origin passam
+      const origem = req.headers.origin;
+      if (origem && !origens.includes(origem.replace(/\/$/, '')) && (() => { try { return new URL(origem).host !== req.headers.host; } catch (e) { return true; } })()) {
+        ws.on('error', () => {}); ws.close(1008, 'origem'); return;
+      }
+      // quem não se identifica logo fecha (sockets anônimos não ficam vivos para sempre)
+      const prazoOla = setTimeout(() => { if (!ws.contaId) ws.close(1008, 'sem ola'); }, lim.prazoOla);
+      ws.on('close', () => clearTimeout(prazoOla));
       ws.vivo = true; ws.contaId = null; ws.sala = null; ws.cota = { inicio: Date.now(), n: 0 };
       ws.on('pong', () => { ws.vivo = true; });
       // mensagem grande demais ou quadro inválido: o ws avisa com 'error' e fecha só esta conexão.
@@ -378,16 +516,23 @@ function criarApp({ banco, segredo, raiz = path.join(__dirname, '..'), tempos = 
         if (m.tipo === 'pulso') return salas.enviar(ws, { tipo: 'pulso' });
         try {
           if (m.tipo === 'ola') {
-            const id = Auth.lerToken(m.token, segredo), conta = id && await banco.contaPorId(id);
+            const conta = await contaDoToken(m.token);
             if (!conta) return salas.enviar(ws, { tipo: 'erro', erro: 'Entre na sua conta de novo.', sair: true });
             if (ws.contaId && ws.contaId !== conta.id) sairDaPresenca(ws);
-            ws.contaId = conta.id;
-            if (!presenca.has(conta.id)) presenca.set(conta.id, new Set());
+            const abas = presenca.get(conta.id);
+            if (abas && !abas.has(ws) && abas.size >= MAX_ABAS) return salas.enviar(ws, { tipo: 'aviso', erro: `O jogo já está aberto em ${MAX_ABAS} abas ou aparelhos. Feche uma para conectar esta.` });
+            ws.contaId = conta.id; ws.conta = conta; ws.contaEm = Date.now();
+            if (!presenca.has(conta.id)) { presenca.set(conta.id, new Set()); presencaMudou(); }
             presenca.get(conta.id).add(ws);
             return salas.enviar(ws, { tipo: 'ola', conta: perfil(conta) });
           }
           if (!ws.contaId) return salas.enviar(ws, { tipo: 'erro', erro: 'Entre na sua conta primeiro.' });
-          const conta = await banco.contaPorId(ws.contaId);
+          // a conta fica guardada na conexão por alguns segundos: não é preciso ir ao banco a cada jogada
+          // (entrar, procurar e revanche conferem as cartas: esses sempre buscam a conta fresca, uma compra de agora já vale)
+          const fresca = m.tipo === 'entrar' || m.tipo === 'procurar' || m.tipo === 'revanche';
+          if (fresca || !ws.conta || Date.now() - ws.contaEm > 5000) { ws.conta = await banco.contaPorId(ws.contaId); ws.contaEm = Date.now(); }
+          const conta = ws.conta;
+          if (!conta) { salas.enviar(ws, { tipo: 'erro', erro: 'Esta conta não existe mais.', sair: true }); return ws.close(4001, 'sessao'); }   // apagada
           if (m.tipo === 'chamar') await chamarAmigo(ws, conta, m.nome);
           else if (m.tipo === 'procurar') await procurarRival(ws, conta, m);
           else if (m.tipo === 'cancelarBusca') { if (fila.sair(conta.id)) salas.enviar(ws, { tipo: 'buscaCancelada' }); }
