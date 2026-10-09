@@ -614,7 +614,6 @@ img.avatar { object-fit: contain; }
 .btn-link { border: 0; background: none; padding: 4px 2px; min-height: 32px; font: inherit; font-weight: 800; color: var(--tinta); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 .btn-link[hidden] { display: none; }
 
-<<<<<<< HEAD
 /* ---------- rolagem 3D dos dados (v0.10): cubos em CSS 3D numa camada sobre a Mesa (js/rolagem.js) ---------- */
 .camada-rolagem { position: fixed; inset: 0; pointer-events: none; z-index: 40; perspective: 1400px; transform-style: preserve-3d; }
 .cubo-rolagem, .sombra-rolagem { position: absolute; left: 0; top: 0; transform-style: preserve-3d; will-change: transform; }
@@ -628,7 +627,7 @@ img.avatar { object-fit: contain; }
 .pega.assentou .face > .dado { animation: assentou .16s ease-out; }
 @keyframes assentou { 0% { transform: scale(1.05, .95); } 100% { transform: none; } }
 .sem-animacoes .camada-rolagem { display: none; }
-=======
+
 /* ---------- gamefeel ---------- */
 /* corrente de 4 esquenta, de 5 ferve: um halo que respira (a fase continua entre os renders) */
 .corrente.quente, .corrente.fervendo { animation: aquece 1.8s ease-in-out infinite; animation-delay: var(--fase, 0ms); }
@@ -639,7 +638,6 @@ img.avatar { object-fit: contain; }
 .clarao { position: fixed; z-index: 56; pointer-events: none; width: 420px; height: 420px; border-radius: 50%; background: radial-gradient(circle, rgba(255,246,230,.95), rgba(255,207,138,.45) 35%, transparent 70%); transform: translate(-50%, -50%); mix-blend-mode: screen; }
 .sem-animacoes .corrente.quente, .sem-animacoes .corrente.fervendo { box-shadow: inset 0 3px 8px rgba(0,0,0,.35), 0 0 0 2px rgba(255,207,138,.6); }
 @media (prefers-reduced-motion: reduce) { .corrente.quente, .corrente.fervendo { animation: none; box-shadow: inset 0 3px 8px rgba(0,0,0,.35), 0 0 0 2px rgba(255,207,138,.6); } }
->>>>>>> 037cb6a1d670cdb87ff92502e35276610fc5fd32
 
 </style>
 </head>
@@ -1908,38 +1906,21 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
 
   // ---------- efeitos (intenção de cada um ao lado) ----------
   const SONS = {
-<<<<<<< HEAD
-    toque: () => tom({ freq: 1320, dur: 0.05, ganho: 0.06, reverbAmt: 0 }),                // interface: confirma o toque
-    rolar: () => { for (let i = 0; i < 6; i++) madeira(i * 0.055 + Math.random() * 0.03, 0.8 + Math.random() * 0.5); }, // dados chegando à mesa
-    // a rolagem 3D (js/rolagem.js): cada batida gravada soa no quadro em que acontece; força = impulso da física
-    quique: ({ forca = 8, primeira = false } = {}) => {                                     // dado no feltro: toque abafado; o 1º pouso tem corpo
-      const f = Math.min(1, forca / 16);
-      if (primeira) { tom({ freq: 92 + Math.random() * 14, tipo: 'sine', dur: 0.12, ganho: 0.16 + 0.12 * f, reverbAmt: 0.04, glide: 0.7 }); ruido({ dur: 0.05, ganho: 0.1 + 0.08 * f, freq: 520, q: 0.8, tipo: 'lowpass', reverbAmt: 0.03 }); }
-      else ruido({ dur: 0.035, ganho: 0.03 + 0.07 * f, freq: 700 + 500 * (1 - f), q: 0.9, tipo: 'lowpass', reverbAmt: 0.02 });
-    },
-    choque: ({ forca = 3 } = {}) => {                                                        // dado contra dado: estalo seco de osso, sem grave
-      const f = Math.min(1, forca / 6), alto = 2600 + Math.random() * 2400;
-      ruido({ dur: 0.022, ganho: 0.07 + 0.1 * f, freq: alto, q: 6, reverbAmt: 0.06 });
-      if (Math.random() < 0.55) ruido({ ini: 0.012 + Math.random() * 0.016, dur: 0.016, ganho: 0.04 + 0.05 * f, freq: alto * 1.15, q: 7, reverbAmt: 0.04 });
-    },
-    aro: ({ forca = 4 } = {}) => madeira(0, 0.75 + Math.min(0.4, forca / 20)),             // dado na borda de madeira da mesa
-                                                            // o dado sai da Mesa
-    elo: ({ n = 1 } = {}) => kalimba(notaPenta(n + 2), 0, 0.22),                            // cada elo sobe uma nota: a corrente "canta"
-    bolso: () => tom({ freq: 520, glide: 0.55, dur: 0.12, ganho: 0.18, tipo: 'sine', reverbAmt: 0.1 }), // guardar no bolso: "pop" macio
-    troca: () => { tom({ freq: 420, glide: 1.5, dur: 0.1, ganho: 0.15 }); tom({ freq: 640, glide: 0.6, ini: 0.07, dur: 0.12, ganho: 0.15 }); },
-    disparo: ({ L = 3 } = {}) => {                                                           // recompensa: arpejo que cresce com a corrente
-      for (let i = 0; i < L + 1; i++) kalimba(notaPenta(i + 2), i * 0.07, 0.2);
-      const acorde = [60, 64, 67, 71].map(midi);
-      acorde.forEach((f, k) => tom({ freq: f, tipo: 'triangle', ini: (L + 1) * 0.07, ataque: 0.04, dur: 1.4 + L * 0.15, ganho: 0.07, filtro: 2200, reverbAmt: 0.5 }));
-      if (L >= 5) for (let i = 0; i < 6; i++) tom({ freq: notaPenta(10 + i, 72), ini: 0.45 + i * 0.05, dur: 0.5, ganho: 0.06, reverbAmt: 0.6 });
-=======
     toque: () => { tom({ freq: 1500, dur: 0.04, ganho: 0.07, reverbAmt: 0 }); tom({ freq: 750, dur: 0.05, ganho: 0.05, reverbAmt: 0 }); }, // botão: clique de madeira fino
     passar: ({ i = 0 } = {}) => tom({ freq: notaAcorde(i + 7, 72), dur: 0.08, ganho: 0.04, reverbAmt: 0.15, x: (i - 2) * 0.25 }),     // mouse por cima de um dado
     rolar: ({ n = 5, atraso = 0.07, queda = 0.27 } = {}) => {                                       // dados chegando à mesa, cada um no seu tempo (bate com a animação .novo do CSS)
       chiado({ dur: 0.35, ganho: 0.05, freq: 900, q: 0.6, ataque: 0.05, reverbAmt: 0 });            // a mão chacoalhando
       for (let i = 0; i < n; i++) quicar(queda + i * atraso, sorte(0.35, 0.5), (i - (n - 1) / 2) * 0.3, 2, 0.2);
->>>>>>> 037cb6a1d670cdb87ff92502e35276610fc5fd32
     },
+    // a rolagem 3D (js/rolagem.js): cada batida gravada soa no quadro em que acontece; forca = impulso da física
+    // (lados/s), x = posição da casa no estéreo
+    quique: ({ forca = 8, primeira = false, x = 0 } = {}) =>                                        // dado no feltro: o 1º pouso tem corpo, os seguintes se acomodam
+      impacto({ forca: Math.min(0.6, Math.max(0.05, forca / (primeira ? 30 : 40))), brilho: sorte(0.95, 1.06), feltro: primeira ? 1 : 0.45, x }),
+    choque: ({ forca = 3, x = 0 } = {}) => {                                                        // dado contra dado: estalo seco, sem grave
+      impacto({ forca: Math.min(0.5, Math.max(0.06, forca / 14)), brilho: sorte(1.2, 1.4), feltro: 0, x });
+      if (Math.random() < 0.5) impacto({ ini: sorte(0.012, 0.028), forca: Math.min(0.25, forca / 30), brilho: sorte(1.3, 1.5), feltro: 0, x });
+    },
+    aro: ({ forca = 4, x = 0 } = {}) => impacto({ forca: Math.min(0.4, forca / 25), brilho: 0.75, feltro: 0.3, x }),  // dado na borda de madeira da mesa
     escolher: ({ n = 0, x = 0 } = {}) => {                                                          // escolheu um dado que sincroniza: a nota que ele vai somar, bem baixinho
       impacto({ forca: 0.2, brilho: 1.15, feltro: 0, x });
       tom({ freq: notaAcorde(n + 1), dur: 0.35, ganho: 0.05, reverbAmt: 0.35, x });
@@ -2597,9 +2578,10 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
       while (g.proxima < g.batidas.length && g.batidas[g.proxima].t <= t) {
         const b = g.batidas[g.proxima++], id = g.ids[b.casa];
         if (!ativos.has(id) || t - b.t > 0.12) continue;
-        if (b.tipo === 1) g.som('choque', { forca: b.impulso });
-        else if (b.tipo === 0) { g.som('quique', { forca: b.impulso, primeira: !g.primeiros.has(b.casa) }); g.primeiros.add(b.casa); }
-        else g.som('aro', { forca: b.impulso });
+        const x = (b.casa - (g.ids.length - 1) / 2) * 0.3;   // no estéreo, cada dado soa do lado da sua casa
+        if (b.tipo === 1) g.som('choque', { forca: b.impulso, x });
+        else if (b.tipo === 0) { g.som('quique', { forca: b.impulso, primeira: !g.primeiros.has(b.casa), x }); g.primeiros.add(b.casa); }
+        else g.som('aro', { forca: b.impulso, x });
       }
       if (!g.ids.some(id => ativos.has(id) && ativos.get(id).grupo === g)) grupos.delete(g);
     }
@@ -2938,7 +2920,7 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     if (!j || j.rolouAVista || j.intro || j.compras || j.fase === 'fim' || document.querySelector('.janela:not([hidden])')) return false;
     j.rolouAVista = true;
     j.mesa.forEach(d => { d.novo = true; }); marcarNovos();
-    Som.tocar('rolar', { n: j.mesa.length });
+    rolarNaTela(j.mesa.map(d => ({ id: d.id, v: d.v })));
     return true;
   }
   // os dados novos rolam na tela só uma vez
@@ -3537,7 +3519,7 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
       faceHTML: v => dadoHTML(v, skinMesa()), som: (nome, dados) => Som.tocar(nome, dados),
       velocidade: { calmo: 0.9, normal: 1, rapido: 1.2 }[st.cfg.ritmo] || 1,
     });
-    if (!rolou) Som.tocar('rolar');
+    if (!rolou) Som.tocar('rolar', { n: lista.length });
   }
 
   // ---------- eventos → som, efeitos e recompensas ----------
@@ -3560,18 +3542,14 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     for (const e of evs) {
       const painelEl = qs(`#pj${e.p} .jogador`);
       switch (e.tipo) {
-<<<<<<< HEAD
         case 'rolar': {
-          const novos = jogo.mesa.filter(d => d.novo).map(d => ({ id: d.id, v: d.v }));
-          if (jogo.intro) { jogo.rolarDepois = novos; break; }      // a 1ª Mesa rola quando a tela de versus fecha
-          rolarNaTela(novos);
+          // a 1ª Mesa da partida rola quando as janelas do começo (deck, versus) fecham: rolarAVista
+          if (jogo.intro || (!jogo.compras && document.querySelector('.janela:not([hidden])'))) break;
+          if (!jogo.compras) jogo.rolouAVista = true;   // já rolou à vista: as janelas fechando depois não repetem
+          rolarNaTela(jogo.mesa.filter(d => d.novo).map(d => ({ id: d.id, v: d.v })));
           break;
         }
-        case 'pegar': Som.tocar('pegar'); break;
-=======
-        case 'rolar': Som.tocar('rolar', { n: j.mesa.length }); break;
         case 'pegar': Som.tocar('pegar'); if (humano(e.p)) vibrar(8); break;
->>>>>>> 037cb6a1d670cdb87ff92502e35276610fc5fd32
         case 'bolso': setTimeout(() => Som.tocar('bolso'), 250); break;
         case 'troca': setTimeout(() => Som.tocar('troca'), 250); break;
         case 'elo': {
@@ -3655,15 +3633,11 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     document.body.appendChild(el);
     Som.tocar('carta');
     let fechou = false;
-<<<<<<< HEAD
-    const fechar = () => { if (fechou) return; fechou = true; el.remove(); j.intro = false; render(); if (j.rolarDepois && jogo === j) { rolarNaTela(j.rolarDepois); j.rolarDepois = null; } talvezAutomato(); };
-=======
     const fechar = () => {
       if (fechou) return; fechou = true; el.remove(); j.intro = false;
       if (jogo === j) rolarAVista();
       render(); talvezAutomato();
     };
->>>>>>> 037cb6a1d670cdb87ff92502e35276610fc5fd32
     el.addEventListener('click', () => { Som.desbloquear(); fechar(); });
     setTimeout(fechar, 3200);
   }
