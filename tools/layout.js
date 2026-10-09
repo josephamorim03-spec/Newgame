@@ -8,7 +8,8 @@ const fs = require('fs');
 const RAIZ = path.join(__dirname, '..');
 const FOTOS = path.join(RAIZ, 'builds', 'layout');
 fs.mkdirSync(FOTOS, { recursive: true });
-const LARGURAS = [[320, 640], [360, 740], [390, 844], [430, 932], [768, 1024], [1360, 900]];
+// a última é um iPhone com entalhe e barrinha: o Chromium não tem margens de segurança, então elas entram pelas variáveis do CSS
+const LARGURAS = [[320, 640], [360, 740], [390, 844], [430, 932], [768, 1024], [1360, 900], [393, 852, { topo: 59, baixo: 34 }]];
 
 // roda dentro da página
 function verificar() {
@@ -113,6 +114,18 @@ function verificar() {
     if (ignorar(el) || !visivel(el)) continue;
     if (getComputedStyle(el).textOverflow === 'ellipsis' && el.scrollWidth > el.clientWidth + 1) probs.push(`cortado com "…": ${nome(el)} "${texto(el)}"`);
   }
+  // 8) margens de segurança: caixas, menu e a barra da partida ficam inteiros entre o entalhe e a barrinha do aparelho
+  const raiz = getComputedStyle(document.documentElement);
+  const px = v => { const d = document.createElement('div'); d.style.cssText = `position:fixed;height:${v}`; document.body.appendChild(d); const h = d.getBoundingClientRect().height; d.remove(); return h; };
+  const segTopo = px(raiz.getPropertyValue('--seg-topo') || '0px'), segBaixo = px(raiz.getPropertyValue('--seg-baixo') || '0px');
+  for (const el of document.querySelectorAll('.janela:not([hidden]) > .caixa, .tela-inicio:not([hidden]) .inicio-caixa, #barraPartida:not([hidden])')) {
+    if (ignorar(el) || !visivel(el)) continue;
+    const r = el.getBoundingClientRect();
+    // a barra da partida rola com a página: o que conta é onde ela fica com a página no topo
+    const topo = r.top + (el.matches('#barraPartida') ? scrollY : 0);
+    if (topo < segTopo - 1) probs.push(`passa do topo seguro: ${nome(el)} (${Math.round(topo)}px < ${Math.round(segTopo)}px)`);
+    if (el.matches('.caixa') && r.bottom > innerHeight - segBaixo + 1) probs.push(`entra na barrinha de baixo: ${nome(el)} (${Math.round(innerHeight - r.bottom)}px de ${Math.round(segBaixo)}px)`);
+  }
   // 6) texto de programa vazando para a tela
   const vazou = (document.body.innerText.match(/\bundefined\b|\bNaN\b|\[object Object\]|\bnull\b/g) || []);
   if (vazou.length) probs.push(`texto quebrado na tela: "${[...new Set(vazou)].join(', ')}"`);
@@ -124,8 +137,10 @@ if (require.main === module) (async () => {
   const navegador = await chromium.launch(process.env.CHROMIUM ? { executablePath: process.env.CHROMIUM } : {});
   const achados = new Map();   // problema -> larguras/telas onde apareceu
   const anota = (tela, largura, lista) => lista.forEach(p => { const k = `${tela} · ${p}`; if (!achados.has(k)) achados.set(k, new Set()); achados.get(k).add(largura); });
-  for (const [w, h] of LARGURAS) {
-    const pg = await navegador.newPage({ viewport: { width: w, height: h } });
+  for (const [w0, h, seg] of LARGURAS) {
+    const w = seg ? `${w0}-iphone` : w0;
+    const pg = await navegador.newPage({ viewport: { width: w0, height: h } });
+    if (seg) await pg.addInitScript(([t, b]) => addEventListener('DOMContentLoaded', () => { document.documentElement.style.setProperty('--seg-topo', t + 'px'); document.documentElement.style.setProperty('--seg-baixo', b + 'px'); }), [seg.topo, seg.baixo]);
     const erros = []; pg.on('pageerror', e => erros.push(e.message));
     await pg.goto('file://' + path.join(RAIZ, 'index.html'));
     await pg.evaluate(() => { DiceDuel.ajustar({ animacoes: false, liberar: true }); DiceDuel.st.conta.moedas = 400; DiceDuel.st.conta.cartas = Regras.ORDEM.slice(); });
@@ -141,7 +156,7 @@ if (require.main === module) (async () => {
     await pg.evaluate(() => document.getElementById('btnCarteira').click()); for (const aba of ['cartas', 'dados', 'icones', 'mesas']) { await pg.click(`[data-aba-loja="${aba}"]`); await olha('loja-' + aba, aba === 'cartas'); } await pg.click('#btnComoGanhar'); await olha('loja-ganhar', false); await pg.click('[data-voltar-loja]'); await pg.click('#btnFecharLoja');
     await pg.evaluate(() => document.getElementById('btnOnline').click()); await olha('online-sem-servidor', false); await pg.click('#btnFecharOnline');
     await pg.evaluate(() => document.getElementById('btnConfig').click()); await olha('ajustes', true); await pg.click('#btnFecharConfig'); await pg.click('[data-inicio="rival"][data-v="esperto"]');
-    if (w < 1040) { await pg.evaluate(() => document.getElementById('btnRegras').click()); await pg.waitForTimeout(350); await olha('regras', false); await pg.click('#btnFecharLado'); }
+    if (w0 < 1040) { await pg.evaluate(() => document.getElementById('btnRegras').click()); await pg.waitForTimeout(350); await olha('regras', false); await pg.click('#btnFecharLado'); }
     await pg.evaluate(() => document.getElementById('btnDeck').click()); await pg.click('[data-pronto="1"]'); await pg.click('#btnJogarDeck');
     await pg.waitForTimeout(200);
     await pg.evaluate(() => document.querySelectorAll('.versus').forEach(v => v.click()));

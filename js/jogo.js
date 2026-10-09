@@ -1337,7 +1337,7 @@
     // com uma partida offline em andamento, o caminho é continuar ou abandonar (começar outra é abandonar)
     ['[data-inicio="jogar"]', '[data-inicio="dois"]', '.inicio-jogar .segmento'].forEach(sel => { inicio.querySelector(sel).hidden = !!g; });
     box.hidden = !g;
-    if (!g) return;
+    if (!g) { box.innerHTML = ''; return; }   // sem partida guardada, nada de botões velhos escondidos
     const quem = g.modo === 'bot' ? ['Você', RIVAIS[g.nivel].nome] : ['Jogador 1', 'Jogador 2'];
     const custo = custoAbandono(g);
     const aviso = !confirmarAbandono ? '' : custo

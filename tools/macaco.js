@@ -102,13 +102,17 @@ function tocar([semente, modo]) {
       ultimo = v.fim ? 'fim' : '';
       // parado no menu principal (sem janela por cima): de vez em quando continua ou começa, como faria alguém
       if (i % 12 === 0 && await pg.$('#inicio:not([hidden])') && !(await pg.$('.janela:not([hidden]), .lado.aberto'))) {
-        const cont = await pg.$('[data-inicio="continuar"]'), voltar = await pg.$('[data-inicio="abandonar-nao"]');
+        const cont = await pg.$('#inicioPartida:not([hidden]) [data-inicio="continuar"]'), voltar = await pg.$('#inicioPartida:not([hidden]) [data-inicio="abandonar-nao"]');
         try {
-          if (voltar) { await voltar.click(); rastro.push('menu voltar'); }
-          else if (cont) { await cont.click(); rastro.push('menu continuar'); }
-          else if (r.modo === 'local') { await pg.click('[data-inicio="dois"]'); await pg.click('#btnJogarDeck'); rastro.push('menu 2 jogadores'); }
-          else { await pg.click('[data-inicio="jogar"]'); rastro.push('menu jogar'); }
-        } catch (e) { erros.push(`${r.nome}: menu: ${e.message}`); }
+          const T = { timeout: 3000 };
+          if (voltar) { await voltar.click(T); rastro.push('menu voltar'); }
+          else if (cont) { await cont.click(T); rastro.push('menu continuar'); }
+          else if (r.modo === 'local') { await pg.click('[data-inicio="dois"]', T); await pg.click('#btnJogarDeck', T); rastro.push('menu 2 jogadores'); }
+          else { await pg.click('[data-inicio="jogar"]', T); rastro.push('menu jogar'); }
+        } catch (e) {
+          const estado = await pg.evaluate(() => ({ jogo: DiceDuel.jogo && { modo: DiceDuel.jogo.modo, fase: DiceDuel.jogo.fase, compras: DiceDuel.jogo.compras }, visiveis: [...document.querySelectorAll('#inicio [data-inicio]')].filter(b => b.offsetParent).map(b => b.dataset.inicio), deck: !document.getElementById('janelaDeck').hidden, versus: !!document.querySelector('.versus') })).catch(() => ({}));
+          erros.push(`${r.nome}: menu: ${e.message.split('\n')[0]} ${JSON.stringify(estado)} (depois de: ${rastro.slice(-4).join(' → ')})`);
+        }
         continue;
       }
       try { rastro.push(await pg.evaluate(tocar, [(i + 1) * 2654435761 % 4294967296, r.modo])); } catch (e) { erros.push(`${r.nome}: toque: ${e.message}`); }

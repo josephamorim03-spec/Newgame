@@ -371,6 +371,12 @@ de novo" seria revanche).
 o texto quebra de linha (o miúdo dos botões da decisão, a linha do registro sobre a Mesa, que no celular tem duas
 linhas reservadas) ou a peça encolhe o que não é texto (em 320 px, o Bolso perde a palavra e fica a caixa do dado).
 
+**Margens de segurança (entalhe e barrinha).** Janelas, menu principal e a barra da partida ficam inteiros entre o
+entalhe de cima e a barrinha de baixo do aparelho. O CSS lê essas margens por variáveis (`--seg-topo`, `--seg-baixo`,
+em `:root`) e não por `env()` espalhado; a janela soma a margem uma vez só (antes a caixa ganhava margem embaixo
+além da altura máxima e o topo dela saía da tela no iPhone). O `tools/layout.js` roda também num iPhone simulado
+(entalhe 59 px, barrinha 34 px) e reprova caixa que passa do topo seguro ou entra na barrinha.
+
 **Cartas no celular.** Os nomes compridos (Sobrecarga, Fundo Falso, Interferência) aparecem inteiros: sem o ícone e
 em 12 px; o raio das cartas de pontos virou um selo no canto, que não rouba a largura do nome.
 

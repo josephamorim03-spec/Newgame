@@ -32,6 +32,10 @@
    Painéis são fichas de papel creme; dados de marfim; uma cor pastel para cada sincronia.
    Visual único e de propósito (sem tema claro/escuro alternado). */
 :root {
+  /* margens de segurança do aparelho (entalhe em cima, barrinha do iPhone embaixo): todo o CSS usa estas variáveis,
+     e não env() direto, para os testes poderem simular um iPhone no Chromium */
+  --seg-topo: env(safe-area-inset-top, 0px); --seg-baixo: env(safe-area-inset-bottom, 0px);
+  --seg-esq: env(safe-area-inset-left, 0px); --seg-dir: env(safe-area-inset-right, 0px);
   --noite: #241a24;
   --noite-2: #35242f;
   --luz: #ffcf8a;
@@ -93,7 +97,7 @@ svg.ico.mini-ico { width: 1.25em; height: 1.25em; vertical-align: -0.25em; strok
 .moeda-pintada .moeda { background: var(--moeda-img) center / contain no-repeat; box-shadow: none; border-radius: 0; width: 1.15em; height: 1.15em; vertical-align: -0.2em; }
 .verso-pintado { width: 1.3em; height: 1.3em; vertical-align: -0.3em; margin: -2px 2px -2px -3px; }
 
-.app { max-width: 1240px; margin: 0 auto; padding: 12px max(16px, env(safe-area-inset-right)) calc(28px + env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); display: grid; gap: 12px; }
+.app { max-width: 1240px; margin: 0 auto; padding: 12px max(16px, var(--seg-dir)) calc(28px + var(--seg-baixo)) max(16px, var(--seg-esq)); display: grid; gap: 12px; }
 .janela h2:focus { outline: none; }
 
 /* ---------- topo ---------- */
@@ -283,7 +287,7 @@ svg.ico.mini-ico { width: 1.25em; height: 1.25em; vertical-align: -0.25em; strok
 @keyframes vira { 50% { transform: rotateY(90deg) scale(.9); } }
 
 /* ---------- barra de ação ---------- */
-.acoes { border-radius: var(--raio); padding: 12px; background: var(--papel); color: var(--tinta); display: grid; gap: 10px; min-height: 76px; align-content: center; box-shadow: 0 6px 0 var(--papel-2), 0 -6px 24px rgba(0,0,0,.25); position: sticky; bottom: calc(8px + env(safe-area-inset-bottom)); z-index: 6; }
+.acoes { border-radius: var(--raio); padding: 12px; background: var(--papel); color: var(--tinta); display: grid; gap: 10px; min-height: 76px; align-content: center; box-shadow: 0 6px 0 var(--papel-2), 0 -6px 24px rgba(0,0,0,.25); position: sticky; bottom: calc(8px + var(--seg-baixo)); z-index: 6; }
 @media (min-width: 1040px) { .acoes { position: static; } }
 .status { font-size: 16px; }
 .status .cor0 { color: var(--voce-tinta); } .status .cor1 { color: var(--rival-tinta); }
@@ -325,7 +329,7 @@ button.carta:hover { transform: translateY(-2px) rotate(-1deg); }
 @media (max-width: 1039px) {
   .lado { position: fixed; inset: 0; z-index: 20; overflow-y: auto; background: var(--noite); padding: 0 16px 24px; transform: translateY(105%); visibility: hidden; transition: transform .3s ease, visibility 0s .3s; }
   .lado.aberto { transform: none; visibility: visible; transition: transform .3s ease; }
-  .lado-topo { display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 2; padding: calc(10px + env(safe-area-inset-top, 0px)) 0 10px; background: var(--noite); }
+  .lado-topo { display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 2; padding: calc(10px + var(--seg-topo)) 0 10px; background: var(--noite); }
   .lado-topo strong { font-family: var(--f-titulo); font-size: 22px; }
 }
 .card { border-radius: var(--raio); padding: 16px; background: var(--papel); color: var(--tinta); box-shadow: 0 6px 0 var(--papel-2); }
@@ -363,10 +367,11 @@ button.carta:hover { transform: translateY(-2px) rotate(-1deg); }
 .cor0 { color: var(--voce-tinta); font-weight: 800; } .cor1 { color: var(--rival-tinta); font-weight: 800; }
 
 /* ---------- janelas ---------- */
-.janela { position: fixed; inset: 0; background: rgba(28, 18, 26, .66); display: grid; place-items: end center; padding: 16px; z-index: 59; backdrop-filter: blur(4px); animation: fundoEntra .2s ease; }
+/* a janela respeita as margens de segurança dos dois lados: a caixa nunca passa do topo nem entra na barrinha */
+.janela { position: fixed; inset: 0; background: rgba(28, 18, 26, .66); display: grid; place-items: end center; padding: max(16px, calc(var(--seg-topo) + 8px)) max(16px, var(--seg-dir)) max(16px, calc(var(--seg-baixo) + 4px)) max(16px, var(--seg-esq)); z-index: 59; backdrop-filter: blur(4px); animation: fundoEntra .2s ease; }
 @keyframes fundoEntra { from { opacity: 0; } }
 @media (min-width: 600px) { .janela { place-items: center; } }
-.caixa { width: min(480px, 100%); max-height: calc(100% - 8px); overflow-y: auto; border-radius: 24px; padding: 20px; background: var(--papel); color: var(--tinta); box-shadow: 0 8px 0 var(--papel-2), 0 30px 60px rgba(0,0,0,.5); display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; margin-bottom: env(safe-area-inset-bottom, 0px); animation: caixaEntra .3s cubic-bezier(.2,1.3,.4,1); }
+.caixa { width: min(480px, 100%); max-height: 100%; overflow-y: auto; border-radius: 24px; padding: 20px; background: var(--papel); color: var(--tinta); box-shadow: 0 8px 0 var(--papel-2), 0 30px 60px rgba(0,0,0,.5); display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; animation: caixaEntra .3s cubic-bezier(.2,1.3,.4,1); }
 @keyframes caixaEntra { from { transform: translateY(30px) scale(.96); opacity: 0; } }
 .caixa.larga { width: min(780px, 100%); }
 .caixa h2 { font-family: var(--f-titulo); font-weight: 700; font-size: 28px; margin: 0; line-height: 1.05; }
@@ -567,7 +572,7 @@ body.mesa-piquenique .ticker .cor0 { color: var(--voce-tinta); } body.mesa-pique
 @media (max-width: 380px) { .cartas .carta { padding: 0 5px; } }
 /* celular bem estreito (320): cartas um pouco mais justas e o Bolso sem a palavra (a caixa com o dado continua) */
 @media (max-width: 340px) {
-  .app { padding-left: max(8px, env(safe-area-inset-left)); padding-right: max(8px, env(safe-area-inset-right)); }
+  .app { padding-left: max(8px, var(--seg-esq)); padding-right: max(8px, var(--seg-dir)); }
   .jogador { padding-left: 8px; padding-right: 8px; }
   .cartas .carta { padding: 0 4px; letter-spacing: -.02em; }
   .cab .bolso .rot { display: none; }
@@ -777,7 +782,7 @@ button.vaga { cursor: pointer; border: 0; background: #fff3dc; color: var(--tint
 .op .preco { font-size: 12px; font-weight: 800; color: var(--rival-tinta); }
 .op-wrap { position: relative; min-width: 0; display: grid; }
 .op-info { position: absolute; top: 6px; right: 6px; width: 26px; height: 26px; border-radius: 50%; border: 0; background: var(--papel-2); color: var(--tinta-suave); font-weight: 900; font-size: 13px; font-style: italic; font-family: Georgia, serif; cursor: pointer; z-index: 1; }
-.deck-rodape { position: sticky; bottom: -20px; margin: 0 -20px -20px; padding: 12px 20px calc(16px + env(safe-area-inset-bottom, 0px)); background: var(--papel); box-shadow: 0 -6px 8px -8px rgba(58,42,46,.35); z-index: 2; }
+.deck-rodape { position: sticky; bottom: -20px; margin: 0 -20px -20px; padding: 12px 20px 16px; background: var(--papel); box-shadow: 0 -6px 8px -8px rgba(58,42,46,.35); z-index: 2; }
 /* telas de 340 px ou menos (iPhone SE de 1ª geração): o topo cabe sem rolar para o lado */
 @media (max-width: 340px) {
   .marca h1 { font-size: 19px; }
@@ -811,7 +816,7 @@ button.vaga { cursor: pointer; border: 0; background: #fff3dc; color: var(--tint
 .btn.btn-peq { min-height: 36px; padding: 0 12px; border-radius: 12px; font-size: 14px; box-shadow: 0 3px 0 var(--papel-2), inset 0 0 0 1.5px rgba(58,42,46,.12); }
 .btn-mel.btn-peq { box-shadow: 0 3px 0 var(--mel-escuro); }
 .selo { display: inline-grid; place-items: center; min-width: 20px; height: 20px; padding: 0 6px; margin-left: 4px; border-radius: 999px; background: var(--mel); color: var(--tinta); font-size: 12px; letter-spacing: 0; vertical-align: middle; }
-.chamado-amigo { position: fixed; left: 50%; bottom: calc(16px + env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 70; width: min(440px, calc(100vw - 32px));
+.chamado-amigo { position: fixed; left: 50%; bottom: calc(16px + var(--seg-baixo)); transform: translateX(-50%); z-index: 70; width: min(440px, calc(100vw - 32px));
   display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px 12px; align-items: center; padding: 12px 14px; border-radius: 18px; background: var(--papel); color: var(--tinta);
   box-shadow: 0 6px 0 var(--papel-2), 0 18px 40px rgba(0,0,0,.45), 0 0 0 3px var(--mel); animation: caixaEntra .3s cubic-bezier(.2,1.3,.4,1); }
 .chamado-amigo .avatar { width: 44px; height: 44px; margin: 0; }
@@ -920,7 +925,7 @@ button.vaga { cursor: pointer; border: 0; background: #fff3dc; color: var(--tint
 
 /* fim da partida: Revanche, Compartilhar, Deck e Mesa presos no rodapé da janela, como no deck
    (antes ficavam depois da tabela de estatísticas: no celular era preciso rolar a janela inteira para jogar de novo) */
-#fim .botoes { position: sticky; bottom: -20px; margin: 0 -20px -20px; padding: 12px 20px calc(16px + env(safe-area-inset-bottom, 0px)); background: var(--papel); box-shadow: 0 -6px 8px -8px rgba(58,42,46,.35); z-index: 2; }
+#fim .botoes { position: sticky; bottom: -20px; margin: 0 -20px -20px; padding: 12px 20px 16px; background: var(--papel); box-shadow: 0 -6px 8px -8px rgba(58,42,46,.35); z-index: 2; }
 /* fim: Jogar de novo inteiro em cima; Menu, Ver a Mesa e Compartilhar lado a lado embaixo */
 #fim .botoes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
 #fim .botoes .fim-principal { grid-column: 1 / -1; }
@@ -935,7 +940,7 @@ button.vaga { cursor: pointer; border: 0; background: #fff3dc; color: var(--tint
 /* ---------- partida em foco (v0.11): durante a partida, a tela é só o jogo, centrada ---------- */
 /* o cabeçalho sai; no alto fica só a faixa com Som e Pausa; o tabuleiro fica no meio da tela (vertical e horizontal) */
 .em-partida .topo { display: none; }
-.em-partida .app { min-height: 100vh; min-height: 100dvh; align-content: center; padding-top: max(8px, env(safe-area-inset-top)); padding-bottom: max(10px, env(safe-area-inset-bottom)); }
+.em-partida .app { min-height: 100vh; min-height: 100dvh; align-content: center; padding-top: max(8px, var(--seg-topo)); padding-bottom: max(10px, var(--seg-baixo)); }
 .em-partida .layout { grid-template-columns: minmax(0, 860px); justify-content: center; }
 .barra-partida { display: flex; justify-content: flex-end; gap: 8px; width: 100%; max-width: 860px; margin: 0 auto; padding: 0 8px; }
 .barra-partida[hidden] { display: none; }
@@ -978,7 +983,7 @@ button.vaga { cursor: pointer; border: 0; background: #fff3dc; color: var(--tint
 /* a fala do rival sai do retrato para a direita: cobre o nome por um instante, nunca o Bolso nem o placar */
 
 /* ---------- menu principal (v0.11): a primeira tela ---------- */
-.tela-inicio { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; overflow-y: auto; padding: max(20px, env(safe-area-inset-top)) 16px max(20px, env(safe-area-inset-bottom));
+.tela-inicio { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; overflow-y: auto; padding: max(20px, var(--seg-topo)) 16px max(20px, var(--seg-baixo));
   background: radial-gradient(ellipse 90% 60% at 50% 30%, rgba(255,207,138,.16), transparent 70%), var(--noite); color: var(--texto); }
 .tela-inicio[hidden] { display: none; }
 .inicio-caixa { width: min(400px, 100%); display: grid; gap: 16px; justify-items: center; text-align: center; }
@@ -4661,7 +4666,7 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     // com uma partida offline em andamento, o caminho é continuar ou abandonar (começar outra é abandonar)
     ['[data-inicio="jogar"]', '[data-inicio="dois"]', '.inicio-jogar .segmento'].forEach(sel => { inicio.querySelector(sel).hidden = !!g; });
     box.hidden = !g;
-    if (!g) return;
+    if (!g) { box.innerHTML = ''; return; }   // sem partida guardada, nada de botões velhos escondidos
     const quem = g.modo === 'bot' ? ['Você', RIVAIS[g.nivel].nome] : ['Jogador 1', 'Jogador 2'];
     const custo = custoAbandono(g);
     const aviso = !confirmarAbandono ? '' : custo
