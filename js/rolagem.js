@@ -48,7 +48,9 @@
     const cubo = document.createElement('div');
     cubo.className = 'cubo-rolagem';
     cubo.style.width = cubo.style.height = L + 'px';
-    const s = (skin === 'pelucia' ? 0.385 : 0.41) * L;
+    // o miolo quase do tamanho do dado, com cantos arredondados: enche quinas e arestas sem deixá-las quadradas (com 0,41 sobrava um entalhe escuro em cada vértice);
+    // perto do pouso, de pé, ele se apaga (quadro): visto de cima, os cantos dele apareceriam pelos cantos redondos
+    const s = 0.47 * L;
     let html = '';
     for (let i = 0; i < 6; i++) {
       const t = paraCss(M.tangente(i)), b = paraCss(M.bitangente(i)), n = paraCss(M.NORMAIS[i]);
@@ -143,8 +145,6 @@
         a.opacidade = entra;
         // o miolo (mais escuro) apareceria através das faces que somem e deixaria o dado cinza; pousado, ele fica
         // todo atrás da face de cima, então some de uma vez no começo da fusão, sem mudar nada na tela
-        const miolo = a.pousando ? 0 : entra;
-        a.miolos.forEach(m => { m.style.opacity = miolo.toFixed(3); });
       }
       if (!c) continue;
       const L = a.L, p = M.pose(a.d, t);
@@ -163,17 +163,22 @@
       a.sombra.style.opacity = a.pousando ? '0' : String(entra * (1 - Math.min(0.75, h * 0.3)));
       // luz por face: a que olha para longe da luz escurece; a de cima, parada, fica igual ao dado parado.
       // --topo (quanto a face olha para cima) acende o brilho das skins que brilham
+      // inclinação da face de cima (0 = de pé): o miolo some nos últimos graus, e de vez na fusão
+      const deCima = Math.max(...M.NORMAIS.map(nn => M.mulMV(p.base, nn)[1]));
+      const miolo = a.pousando ? 0 : entra * Math.max(0, Math.min(1, ((1 - deCima) - 0.0015) / 0.008));
+      if (miolo !== a.miolo) { a.miolo = miolo; a.miolos.forEach(m => { m.style.opacity = miolo.toFixed(3); }); }
       a.faces.forEach((f, i) => {
         const n = M.mulMV(p.base, M.NORMAIS[i]), luz = n[0] * LUZ[0] + n[1] * LUZ[1] + n[2] * LUZ[2];
-        // a face quase de perfil (olhando para o lado) some aos poucos: de perfil ela seria uma lasca com bolinhas
-        // saindo do contorno; no lugar dela aparece o miolo, como a quina arredondada de um dado de verdade
+        // a face fica sempre opaca (translúcida, o dado parecia oco, com a face de cima flutuando); quase de perfil,
+        // só as bolinhas somem: espremidas na lasca, elas pareceriam sair do contorno
         const perfil = Math.max(0, Math.min(1, (n[1] - 0.06) / 0.22));
-        f.style.opacity = (entra * perfil).toFixed(3);
+        f.style.opacity = entra.toFixed(3);
+        f.style.setProperty('--pips', perfil.toFixed(3));
         const escuro = Math.max(0, Math.min(0.42, 0.42 * (LUZ_TOPO - luz) / (1 + LUZ_TOPO))).toFixed(3);
         f.style.setProperty('--escuro', escuro);
         f.style.setProperty('--topo', Math.max(0, n[1]).toFixed(3));
-        // o miolo leva a mesma luz, um pouco mais escuro (fica recuado, na quina)
-        a.miolos[i].style.setProperty('--escuro', (Math.min(0.5, +escuro + 0.08)).toFixed(3));
+        // o miolo leva a mesma luz da face do mesmo lado (quase no mesmo plano, ele é a quina dela)
+        a.miolos[i].style.setProperty('--escuro', (Math.min(0.5, +escuro + 0.03)).toFixed(3));
       });
     }
     if (ativos.size && !relogio) raf = requestAnimationFrame(quadro);

@@ -637,7 +637,7 @@ img.avatar { object-fit: contain; }
 .sombra-rolagem[data-skin="diamante"] { background: rgba(0,0,0,.33); box-shadow: 0 -6px 12px rgba(190,230,255,.45); }
 .face-rolagem { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
 /* o miolo (um cubo menor por dentro) enche as quinas: na cor de cada skin, com a luz de cada lado (js/rolagem.js) */
-.miolo-rolagem { position: absolute; backface-visibility: hidden; -webkit-backface-visibility: hidden; border-radius: 6%;
+.miolo-rolagem { position: absolute; backface-visibility: hidden; -webkit-backface-visibility: hidden; border-radius: 12%;
   background: linear-gradient(rgba(42,26,18,var(--escuro, 0)), rgba(42,26,18,var(--escuro, 0))), var(--miolo, #ecdfc8); }
 .cubo-rolagem[data-skin="madeira"] { --miolo: #b47b4d; } .cubo-rolagem[data-skin="rosa"] { --miolo: #f4b4c8; }
 .cubo-rolagem[data-skin="menta"] { --miolo: #a8e2c8; } .cubo-rolagem[data-skin="pelucia"] { --miolo: #e6c6a0; }
@@ -651,6 +651,8 @@ img.avatar { object-fit: contain; }
 .face-rolagem .dado.skin-dourado { box-shadow: inset 0 -3px 0 rgba(120,80,10,.35); }
 .face-rolagem .dado.skin-diamante { box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.9), inset 0 -3px 0 rgba(60,90,140,.25); }
 /* sombra por face (a luz vem de cima, à esquerda): por cima das bolinhas, com o canto da skin; o ::after é do brilho do dourado */
+/* quase de perfil, a face continua opaca e só as bolinhas somem (js/rolagem.js) */
+.face-rolagem .pip { opacity: var(--pips, 1); }
 .face-rolagem .dado::before { content: ''; position: absolute; inset: 0; border-radius: inherit; background: #2a1a12; opacity: var(--escuro, 0); z-index: 2; pointer-events: none; }
 .pega.rolando .face > .dado, .pega.rolando .face > .marca-esp, .pega.rolando .face > .alvo-rival { opacity: 0; }   /* opacity: as bolinhas têm visibility própria */
 .pega.rolando.novo .face { animation: none; }
