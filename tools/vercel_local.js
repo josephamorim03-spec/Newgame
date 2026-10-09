@@ -49,7 +49,8 @@ const servidor = http.createServer((req, res) => {
       if (!menuAberto && await pg.$('#btnPausa:visible') && (m === 'ajustes' || m === 'regras')) { await pg.click('#btnPausa'); await pg.click(`[data-menu="${m}"]`); }
       else if (!menuAberto && await pg.$('#btnPausa:visible')) { await pg.click('#btnPausa'); await pg.click('[data-menu="inicio"]'); await pg.click(`[data-inicio="${m}"]`); }
       else if (menuAberto) await pg.click(`[data-inicio="${m}"]`);
-      else await pg.click({ loja: '#btnCarteira', ajustes: '#btnConfig', regras: '#btnRegras', online: '#btnOnline', deck: '#btnDeck' }[m]);
+      else if (m === 'loja') await pg.click('#btnCarteira');   // fora da partida, o cabeçalho tem moedas (Loja) e Menu
+      else { await pg.click('#btnMenuTopo'); await pg.click(`[data-inicio="${m}"]`); }
       await pg.waitForTimeout(250); await pg.keyboard.press('Escape');
     }
     await pg.close();

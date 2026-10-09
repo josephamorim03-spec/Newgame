@@ -81,16 +81,19 @@
         <path d="M13 26c3 2 9 2 12 0" fill="none" stroke="#ec8fa8" stroke-width="2.5" stroke-linecap="round"/>
       </svg>
       <button class="carteira" id="btnCarteira" aria-label="Loja e moedas"><span class="moeda" aria-hidden="true"></span><span id="saldo">0</span></button>
-      <button class="btn-topo" id="btnOnline" aria-label="Jogar online">
+      <button class="btn-topo" id="btnMenuTopo" aria-label="Menu principal">
+        <svg class="ico" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg><span class="rotulo">Menu</span><span class="ponto-online" id="pontoMenuTopo" hidden></span>
+      </button>
+      <button class="btn-topo atalho" id="btnOnline" aria-label="Jogar online">
         <svg class="ico" viewBox="0 0 24 24"><circle cx="8" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 19a5 5 0 0 1 10 0M13.5 18.5a4 4 0 0 1 7.5-1"/></svg><span class="rotulo">Online</span><span class="ponto-online" id="pontoOnline" hidden></span><span class="conta-online" id="contaOnline" hidden></span>
       </button>
-      <button class="btn-topo" id="btnRegras" aria-expanded="false" aria-controls="lado" aria-label="Regras e registro">
+      <button class="btn-topo atalho" id="btnRegras" aria-expanded="false" aria-controls="lado" aria-label="Regras e registro">
         <svg class="ico" viewBox="0 0 24 24"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11M9 8h6"/></svg><span class="rotulo">Regras</span>
       </button>
-      <button class="btn-topo" id="btnDeck" aria-label="Montar deck">
+      <button class="btn-topo atalho" id="btnDeck" aria-label="Montar deck">
         <svg class="ico" viewBox="0 0 24 24"><rect x="4" y="6" width="11" height="15" rx="2"/><path d="M9 3h9a2 2 0 0 1 2 2v13"/></svg><span class="rotulo">Deck</span>
       </button>
-      <button class="btn-topo" id="btnConfig" aria-label="Ajustes">
+      <button class="btn-topo atalho" id="btnConfig" aria-label="Ajustes">
         <svg class="ico" viewBox="0 0 24 24"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg><span class="rotulo">Ajustes</span>
       </button>
     </div>
@@ -256,7 +259,7 @@
       </div>
       <h3>Cartas e progresso</h3>
       <div class="cfg-grupo">
-        <div class="linha-cfg"><span><label for="opLiberar">Armadilhas desde o começo</label><small>sem isso, elas aparecem depois da 1ª partida; as cartas à venda continuam na Loja</small></span><input class="chave-liga" type="checkbox" id="opLiberar"></div>
+        <div class="linha-cfg"><span><label for="opLiberar">Armadilhas liberadas</label><small>sem isso, elas aparecem depois da 1ª partida; as cartas à venda continuam na Loja</small></span><input class="chave-liga" type="checkbox" id="opLiberar"></div>
         <div class="linha-cfg"><span><label>Recordes</label><small id="resumoRecordes"></small></span><button class="btn btn-papel" id="btnZerar" style="min-height:40px">Apagar</button></div>
       </div>
       <button class="btn btn-mel" id="btnFecharConfig">Pronto</button>
@@ -286,7 +289,7 @@
 
   <div class="janela" id="fim" hidden>
     <div class="caixa" role="dialog" aria-modal="true" aria-labelledby="fimTitulo">
-      <h2 id="fimTitulo"></h2>
+      <div class="fim-topo"><h2 id="fimTitulo"></h2><button class="btn-icone" id="btnCompartilhar" aria-label="Compartilhar o resultado" title="Compartilhar"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="M8.2 10.8l7.6-4.4M8.2 13.2l7.6 4.4"/></svg></button></div>
       <div class="fim-placar" id="fimPlacar"></div>
       <div class="recompensas" id="fimRecompensas"></div>
       <h3>Bons momentos</h3>
@@ -296,7 +299,6 @@
         <button class="btn btn-mel fim-principal" id="btnDeNovo">Jogar de novo</button>
         <button class="btn btn-papel" id="btnMenuFim">Menu</button>
         <button class="btn btn-papel" id="btnFechar">Ver a Mesa</button>
-        <button class="btn btn-papel" id="btnCompartilhar">Compartilhar</button>
       </div>
     </div>
   </div>

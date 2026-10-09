@@ -8,7 +8,7 @@ const fs = require('fs');
 const RAIZ = path.join(__dirname, '..');
 const FOTOS = path.join(RAIZ, 'builds', 'layout');
 fs.mkdirSync(FOTOS, { recursive: true });
-const LARGURAS = [[360, 740], [390, 844], [430, 932], [768, 1024], [1360, 900]];
+const LARGURAS = [[320, 640], [360, 740], [390, 844], [430, 932], [768, 1024], [1360, 900]];
 
 // roda dentro da página
 function verificar() {
@@ -93,6 +93,26 @@ function verificar() {
     const folga = b.top - (a.bottom + sombraSolida(el));
     if (folga < 6) probs.push(`colado na vertical: ${nome(el)} "${texto(el)}" e ${nome(prox)} (${Math.round(folga)}px)`);
   }
+  // 7) texto com respiro: em botões, etiquetas e cartões o texto fica dentro do miolo (não invade o padding nem
+  //    encosta na borda) e nunca é cortado com "…" (o que se lê inteiro é parte da identidade: nada pela metade)
+  const RESPIRO = '.btn, .segmento button, .abas button, .tag, .carta, .vez-tag, .inicio-ico, .op, .item, .prontos button, .efeito-ativo, .ficha';
+  for (const el of document.querySelectorAll(RESPIRO)) {
+    if (ignorar(el) || !visivel(el) || el.closest(SOLTOS)) continue;
+    const r = el.getBoundingClientRect(), cs = getComputedStyle(el);
+    const esq = r.left + parseFloat(cs.borderLeftWidth) + Math.min(parseFloat(cs.paddingLeft), 6) - 1;
+    const dir = r.right - parseFloat(cs.borderRightWidth) - Math.min(parseFloat(cs.paddingRight), 6) + 1;
+    const w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT); let n, fora = null;
+    while ((n = w.nextNode()) && !fora) {
+      if (!n.textContent.trim() || (n.parentElement && (n.parentElement.closest(SOLTOS) || !visivel(n.parentElement)))) continue;
+      const g = document.createRange(); g.selectNodeContents(n);
+      for (const q of g.getClientRects()) if (q.width > 1 && (q.left < esq || q.right > dir)) { fora = n.textContent.trim(); break; }
+    }
+    if (fora) probs.push(`texto sem respiro: ${nome(el)} "${fora.slice(0, 28)}"`);
+  }
+  for (const el of document.querySelectorAll('body *')) {
+    if (ignorar(el) || !visivel(el)) continue;
+    if (getComputedStyle(el).textOverflow === 'ellipsis' && el.scrollWidth > el.clientWidth + 1) probs.push(`cortado com "…": ${nome(el)} "${texto(el)}"`);
+  }
   // 6) texto de programa vazando para a tela
   const vazou = (document.body.innerText.match(/\bundefined\b|\bNaN\b|\[object Object\]|\bnull\b/g) || []);
   if (vazou.length) probs.push(`texto quebrado na tela: "${[...new Set(vazou)].join(', ')}"`);
@@ -115,13 +135,21 @@ if (require.main === module) (async () => {
     await olha('inicio', true);
     await pg.click('[data-inicio="jogar"]');   // primeira visita: o Jogar do menu abre o deck "Primeira mesa"
     await olha('deck', true);
+    await pg.click('#janelaDeck [data-info="interferencia"]'); await olha('info-carta', false); await pg.click('#janelaCarta [data-fechar-carta]');
     await pg.click('#btnFecharDeck');
+    await pg.click('[data-inicio="dois"]'); await olha('deck-dois', false); await pg.click('#btnFecharDeck');
     await pg.evaluate(() => document.getElementById('btnCarteira').click()); for (const aba of ['cartas', 'dados', 'icones', 'mesas']) { await pg.click(`[data-aba-loja="${aba}"]`); await olha('loja-' + aba, aba === 'cartas'); } await pg.click('#btnComoGanhar'); await olha('loja-ganhar', false); await pg.click('[data-voltar-loja]'); await pg.click('#btnFecharLoja');
     await pg.evaluate(() => document.getElementById('btnOnline').click()); await olha('online-sem-servidor', false); await pg.click('#btnFecharOnline');
     await pg.evaluate(() => document.getElementById('btnConfig').click()); await olha('ajustes', true); await pg.click('#btnFecharConfig'); await pg.click('[data-inicio="rival"][data-v="esperto"]');
     if (w < 1040) { await pg.evaluate(() => document.getElementById('btnRegras').click()); await pg.waitForTimeout(350); await olha('regras', false); await pg.click('#btnFecharLado'); }
     await pg.evaluate(() => document.getElementById('btnDeck').click()); await pg.click('[data-pronto="1"]'); await pg.click('#btnJogarDeck');
     await pg.waitForTimeout(200);
+    await pg.evaluate(() => document.querySelectorAll('.versus').forEach(v => v.click()));
+    await pg.evaluate(() => { DiceDuel.jogo.compras = Math.max(1, DiceDuel.jogo.compras); });   // conta como começada (a guardada aparece no menu)
+    await pg.click('#btnPausa'); await olha('pausa', true);
+    await pg.click('[data-menu="inicio"]'); await olha('inicio-guardada', true);
+    await pg.click('[data-inicio="abandonar"]'); await olha('inicio-abandonar', true);
+    await pg.click('[data-inicio="abandonar-nao"]'); await pg.click('[data-inicio="continuar"]');
     // partida inteira, verificando em cada fase que aparecer
     const vistas = new Set(); let passos = 0;
     while (passos++ < 900) {

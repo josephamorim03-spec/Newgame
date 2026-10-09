@@ -836,6 +836,7 @@
     const novidade = !document.getElementById('pontoOnline').hidden, somLigado = st.pref.som || st.pref.musica;
     document.getElementById('barraPartida').hidden = j.fase === 'fim';
     document.getElementById('btnPausa').classList.toggle('com-aviso', novidade);
+    document.getElementById('pontoMenuTopo').hidden = !novidade;
     const som = document.getElementById('btnSom'); som.setAttribute('aria-pressed', String(somLigado)); som.classList.toggle('sem-som', !somLigado);
     const n = nomes();
     const linha = l => `${l.p === null ? '' : `<span class="cor${l.p}">${n[l.p]}</span> `}${l.txt}`;
@@ -1022,7 +1023,8 @@
     const s = j.stats, linha = (rot, f) => `<tr><th>${rot}</th><td>${f(s[0], 0)}</td><td>${f(s[1], 1)}</td></tr>`;
     document.getElementById('fimTabela').innerHTML =
       `<tr><th></th><th class="cor0">${n[0]}</th><th class="cor1">${n[1]}</th></tr>` +
-      linha('Deck', (x, p) => j.decks[p].map(c => CARTAS[c].nome).join(', ') || '–') +
+      // uma carta por linha: no celular estreito, "Interferência" não divide a coluna com outra carta
+      linha('Deck', (x, p) => j.decks[p].map(c => `<span class="td-carta">${CARTAS[c].nome}</span>`).join('') || '–') +
       linha('Cartas que agiram', x => x.cartas.join(', ') || '–') +
       linha('Disparos', x => x.disp) + linha('Maior corrente', x => x.maior || '–') + linha('Rupturas', x => x.rupt) +
       linha('Bolso (guardou · trocou)', x => `${x.guardou} · ${x.trocou}`);
@@ -1298,6 +1300,7 @@
   const inicio = document.getElementById('inicio');
   const inicioAberto = () => !inicio.hidden;
   let confirmarAbandono = false;
+  let modoAntesDoDois = null;   // o modo de antes de tocar em "2 jogadores" (volta se a janela fechar sem jogar)
   function guardarPartida() {
     try {
       if (!jogo || jogo.modo === 'online') return;
@@ -1372,7 +1375,8 @@
       novaPartida(); return;
     }
     // a dois, primeiro cada jogador escolhe o deck (as abas Jogador 1 e 2); o Jogar da janela começa
-    if (a === 'dois') { st.cfg.modo = 'local'; st.abaDeck = 0; salvar(); abrirDeck(); return; }
+    // (fechar a janela sem jogar devolve o modo de antes: o Deck do menu não começa uma partida a dois sem querer)
+    if (a === 'dois') { modoAntesDoDois = st.cfg.modo; st.cfg.modo = 'local'; st.abaDeck = 0; salvar(); abrirDeck(); return; }
     if (a === 'continuar') {
       const g = partidaParaContinuar(); if (!g) return desenharInicio();
       if (jogo !== g) jogo = restaurarPartida(g);
@@ -1547,9 +1551,14 @@
 
   document.getElementById('btnDeNovo').addEventListener('click', novaPartida);
   document.getElementById('btnFechar').addEventListener('click', () => { document.getElementById('fim').hidden = true; });
+  document.getElementById('btnMenuTopo').addEventListener('click', () => mostrarInicio());
   document.getElementById('btnMenuFim').addEventListener('click', () => { document.getElementById('fim').hidden = true; mostrarInicio(); });
-  document.getElementById('btnFecharDeck').addEventListener('click', () => { document.getElementById('janelaDeck').hidden = true; });
+  document.getElementById('btnFecharDeck').addEventListener('click', () => {
+    document.getElementById('janelaDeck').hidden = true;
+    if (modoAntesDoDois) { st.cfg.modo = modoAntesDoDois; modoAntesDoDois = null; salvar(); }
+  });
   document.getElementById('btnJogarDeck').addEventListener('click', () => {
+    modoAntesDoDois = null;
     st.deckVisto = true; salvar();
     Online.deckMudou();
     if ((partidaEmAndamento() || (!online() && lerPartidaGuardada())) && !online()) { document.getElementById('janelaDeck').hidden = true; Fx.chamada('Deck salvo', 'vale a partir da próxima partida', 'suave'); return; }
@@ -1602,22 +1611,24 @@
   // o endereço do jogo para mandar (aberto por arquivo, vale o do Vercel)
   const linkJogo = () => (PAGINA ? PAGINA + '/' : 'https://diceduel-game.vercel.app/');
   document.getElementById('btnCompartilhar').addEventListener('click', async () => {
-    const b = document.getElementById('btnCompartilhar');
     const blob = cartao && (cartao.blob || await cartao.promessa.catch(() => null));
     const r = await compartilhar({ blob, arquivo: 'dice-duel.png', titulo: 'Dice Duel', texto: (cartao && cartao.texto) || 'Bora um duelo no Dice Duel? 🎲', url: linkJogo() });
     if (r === 'ok' || r === 'cancelou') return;
-    b.textContent = r === 'copiou' ? (blob ? 'Link copiado e imagem salva' : 'Link copiado') : 'Imagem salva';
-    setTimeout(() => { b.textContent = 'Compartilhar'; }, 2600);
+    // o botão é só o ícone: o que aconteceu aparece numa chamada curta
+    Fx.chamada(r === 'copiou' ? 'Link copiado' : 'Imagem salva', r === 'copiou' && blob ? 'e a imagem do resultado também' : '', 'suave');
   });
   document.addEventListener('keydown', e => {
     const alvo = e.target && e.target.closest ? e.target : document.body;   // tecla vinda do documento não tem .closest
-    if (!jogo || e.metaKey || e.ctrlKey || e.altKey) return;
-    // Esc fecha a janela aberta mesmo com o foco num campo (o login do Online abre com o foco no nome)
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    // Esc fecha a janela aberta mesmo com o foco num campo (o login do Online abre com o foco no nome),
+    // e também no menu principal, quando ainda não há partida
     if (alvo.closest('textarea, input') && e.key !== 'Escape') return;
     if (e.key === 'Escape') {
       ['fim', 'janelaCarta', 'janelaDeck', 'janelaConfig', 'janelaLoja', 'janelaOnline', 'janelaMenu'].forEach(id => { const el = document.getElementById(id); if (el) el.hidden = true; }); abrirLado(false);
-      return cancelarEscolha();
+      if (modoAntesDoDois) { st.cfg.modo = modoAntesDoDois; modoAntesDoDois = null; salvar(); }
+      return jogo ? cancelarEscolha() : undefined;
     }
+    if (!jogo) return;
     // com qualquer janela (ou o "versus") por cima, as teclas não mexem na Mesa escondida atrás
     if (document.querySelector('.janela:not([hidden]), .versus') || inicioAberto()) return;
     if (/^[1-5]$/.test(e.key)) { clicarDado(+e.key - 1); return; }

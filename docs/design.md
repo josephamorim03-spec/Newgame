@@ -362,8 +362,14 @@ Dona Coruja, com uma linha sobre o jeito dela e a meta), **Jogar** grande, Onlin
 ícones (Deck, Loja, Regras, Ajustes). É ali que a sessão se monta: Jogar começa contra o rival marcado; 2 jogadores
 abre primeiro os decks dos dois (abas Jogador 1 e 2) e o Jogar da janela começa. Ajustes não repete modo nem
 rival: ficou com meta, ritmo do rival, som e imagem. O cartão do fim tem **Jogar de novo** inteiro em cima e, em
-baixo, Menu, Ver a Mesa e Compartilhar. Começar pelo menu depois de uma partida online larga a sala (ali, "jogar
+baixo, Menu e Ver a Mesa; Compartilhar é o ícone ao lado do título. Fora da partida, o cabeçalho tem só logo,
+moedas (a Loja) e **Menu**: Online, Regras, Deck e Ajustes moram no menu principal. Começar pelo menu depois de uma partida online larga a sala (ali, "jogar
 de novo" seria revanche).
+
+**Texto inteiro, sempre.** Nenhum texto de botão, etiqueta ou cartão é cortado com "…" nem encosta na borda, de
+320 px ao PC; o `tools/layout.js` reprova as duas coisas ("cortado com …", "texto sem respiro"). Onde falta largura,
+o texto quebra de linha (o miúdo dos botões da decisão, a linha do registro sobre a Mesa, que no celular tem duas
+linhas reservadas) ou a peça encolhe o que não é texto (em 320 px, o Bolso perde a palavra e fica a caixa do dado).
 
 **Cartas no celular.** Os nomes compridos (Sobrecarga, Fundo Falso, Interferência) aparecem inteiros: sem o ícone e
 em 12 px; o raio das cartas de pontos virou um selo no canto, que não rouba a largura do nome.
