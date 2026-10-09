@@ -148,9 +148,14 @@ svg.ico.mini-ico { width: 1.25em; height: 1.25em; vertical-align: -0.25em; strok
 .modo-local .p1 .corrente { --d: var(--d-cor); --gap: 12px; }
 .slot { width: var(--d); height: var(--d); border-radius: 24%; position: relative; flex: none; }
 .slot.vazio { box-shadow: inset 0 0 0 2px rgba(255,255,255,.12); }
-.slot.prox { box-shadow: inset 0 0 0 2px rgba(255,243,226,.5); display: grid; place-items: center; animation: respira 2.4s ease-in-out infinite; }
+.slot.prox { box-shadow: inset 0 0 0 2px rgba(255,243,226,.5); display: grid; place-items: center; container-type: inline-size; animation: respira 2.4s ease-in-out infinite; }
 @keyframes respira { 50% { box-shadow: inset 0 0 0 2px rgba(255,243,226,.85); } }
-.prox-faces { display: flex; flex-wrap: wrap; justify-content: center; gap: 0 3px; font-size: 11px; font-weight: 800; color: var(--texto); font-variant-numeric: tabular-nums; line-height: 1.15; padding: 2px; }
+/* as faces que servem na casa seguinte: 1 ou 2 numa linha, 3 ou 4 em grade 2×2, sempre centradas e do tamanho da casa */
+.prox-faces { display: grid; grid-template-columns: repeat(2, auto); place-content: center; place-items: center; gap: 0 .3em; font-size: min(36cqi, 15px); font-weight: 800; color: var(--texto); font-variant-numeric: tabular-nums; line-height: 1.1; width: 100%; height: 100%; }
+.prox-faces i { font-style: normal; }
+.prox-faces.n1 { grid-template-columns: auto; font-size: min(50cqi, 22px); }
+.prox-faces.n2 { font-size: min(40cqi, 18px); }
+.prox-faces.n3 i:last-child { grid-column: 1 / -1; }
 .prox-faces.qualquer { font-size: 9px; text-transform: uppercase; letter-spacing: .04em; color: var(--texto-suave); }
 .elo { position: absolute; left: calc(var(--gap) / -2); top: -14px; transform: translateX(-50%); font-size: 10px; font-weight: 800; line-height: 1; padding: 3px 5px; border-radius: 7px; color: var(--tinta); white-space: nowrap; z-index: 2; box-shadow: 0 2px 4px rgba(0,0,0,.2); }
 .r-eco { background: var(--eco); } .r-passo { background: var(--passo); } .r-oposto { background: var(--oposto); }
@@ -465,7 +470,6 @@ body.mesa-piquenique .ticker .cor0 { color: var(--voce-tinta); } body.mesa-pique
 .bolso .rot { font-size: 10px; letter-spacing: .06em; }
 .avatar { width: clamp(38px, 10vw, 46px); height: clamp(38px, 10vw, 46px); }
 /* casa seguinte da corrente: ícone no lugar do texto */
-.slot.prox .prox-faces { font-size: clamp(9px, 2.4vw, 11px); max-width: 100%; overflow: hidden; }
 .prox-livre { width: 55%; height: 55%; color: rgba(255,243,226,.75); }
 /* cartas: três colunas iguais; o resto (armadilha armada, efeitos ativos) vem numa linha à parte */
 .cartas { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
