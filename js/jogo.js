@@ -1149,7 +1149,7 @@
   // a API mora no endereço da <meta name="dice-servidor"> (página no Vercel) ou no mesmo da página (o servidor serve
   // a página com a meta vazia); por file:// não há online. O convite usa sempre o endereço da página.
   const PAGINA = /^https?:$/.test(location.protocol) ? location.origin : null;
-  const API = PAGINA && ((document.querySelector('meta[name="dice-servidor"]') || {}).content || PAGINA).replace(//$/, '');
+  const API = PAGINA && ((document.querySelector('meta[name="dice-servidor"]') || {}).content || PAGINA).replace(/\/$/, '');
   const Rede = { ws: null, ola: false, sala: null, infoSala: null, tentativas: 0, ranking: null, convite: null, aba: 'entrar', pediuRevanche: false, aviso: null };
   try { st.sessao = JSON.parse(localStorage.getItem('diceduel.sessao') || 'null'); } catch (e) { st.sessao = null; }
   const guardarSessao = () => { try { if (st.sessao) localStorage.setItem('diceduel.sessao', JSON.stringify(st.sessao)); else localStorage.removeItem('diceduel.sessao'); } catch (e) {} };

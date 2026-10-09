@@ -1,0 +1,7 @@
+# o Vercel publica só a página do jogo; servidor, docs, arte e ferramentas ficam de fora
+/*
+!/index.html
+!/css
+!/js
+!/shared
+!/vercel.json

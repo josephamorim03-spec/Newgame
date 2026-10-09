@@ -2,7 +2,6 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
   "installCommand": "",
-  "buildCommand": "rm -rf site && mkdir site && cp -r index.html css js shared site/",
-  "outputDirectory": "site",
+  "buildCommand": "",
   "git": { "deploymentEnabled": { "*": false, "DiceDuel": true } }
 }
