@@ -1,6 +1,6 @@
 # Dice Duel: design
 
-> Versão 0.7 (a progressão, as moedas e a loja estão em `docs/progressao.md`). Os números saem do simulador em `sim/` (robôs jogando milhares de partidas).
+> Versão 0.8 (a progressão, as moedas e a loja estão em `docs/progressao.md`). Os números saem do simulador em `sim/` (robôs jogando milhares de partidas).
 > Robôs não blefam nem leem o rival: os números dizem a direção, não as casas decimais.
 
 ## 1. A ideia em uma frase
@@ -46,16 +46,49 @@ Antes da partida, cada um monta um deck de **até 3 cartas**, cada uma valendo *
 | Ajuste | efeito | ±1 num dado da Mesa | 56,6% |
 | Virar | efeito | vira um dado (7 − valor); desfaz uma marca de Espelho | 54,1% |
 | Rerrolar | efeito | rola a Mesa toda; desfaz uma marca de Espelho | 55,1% |
-| Pressa | efeito | pega 2 dados nesta vez | 58,1% |
-| Coringa | efeito | o próximo dado entra com qualquer frente | 56,3% |
+| Pressa | efeito | pega 2 dados nesta vez (só com 2+ na Mesa; o 2.º é opcional) | 58,1% |
+| Coringa | efeito | o próximo dado que entra numa corrente já começada entra com qualquer frente | 56,3% |
 | Sobrecarga ⚡ | efeito | +2 no próximo disparo de 4+ | — |
 | Espelho | armadilha | marca à vista num dado; quem o pega recebe o dado virado e não pode guardá-lo | 53,7% (marca à vista) |
 | Fundo Falso | armadilha | o próximo dado que o rival guardar no Bolso cai (na troca, caem os dois) | 54,5% (deck à mostra) |
-| Âncora | armadilha | evita a próxima ruptura de uma corrente sua com 4+ | 58,9% |
+| Âncora | armadilha | protege sua corrente de 4+: o dado que romperia é jogado fora | 58,9% |
 | Interferência ⚡ | armadilha | o próximo disparo do rival com 4+ vale −1 | 59,0% |
 | Pedágio ⚡ | armadilha | no próximo disparo do rival, você ganha +3 | — |
 
 \* deck de 1 carta contra deck vazio; 50% = carta neutra (`sim/valor_cartas.py`).
+
+### Quando as cartas se cruzam (exceções explícitas)
+
+Cada regra abaixo aparece também no painel de Regras do jogo e é conferida por `tools/regras.js`.
+
+| Situação | O que acontece |
+|---|---|
+| Armadilhas de lados opostos | Não se anulam: cada uma olha só a sua condição. A Âncora do rival segurar a corrente dele **não** gasta a sua Interferência; ela segue esperando o próximo disparo de 4+ dele. |
+| "4 ou mais" | É o tamanho da corrente na hora: no disparo (Interferência, Sobrecarga) ou quando o dado ruim ia entrar (Âncora). Com 3, nada é gasto e a carta continua esperando. |
+| Interferência + Sobrecarga | As duas valem: um disparo de 4 vale 2 + 2 − 1 = 3. |
+| Pedágio | Pega qualquer disparo, inclusive o de 3 e o automático de 6. Se os dois passarem da meta no mesmo disparo, vence quem disparou. |
+| Coringa + Âncora | Com o Coringa ativo nenhum dado rompe, então a Âncora não é gasta. |
+| Coringa | É gasto no primeiro dado que entra numa corrente **já começada**, mesmo que esse dado já sincronizasse. Corrente vazia e Bolso não gastam. |
+| Pressa | Precisa de 2+ dados na Mesa e não passa para a Mesa seguinte. Não se dispara entre os dois dados; o segundo é opcional ("Dispensar"). Se o primeiro completar 6, a corrente dispara sozinha e o segundo começa outra. |
+| Espelho | O dado chega virado (7 − valor) e não pode ir para o Bolso; Coringa e Âncora ainda valem. As etiquetas da Mesa e o aviso de ruptura já usam o valor virado. Virar (no dado marcado) e Rerrolar apagam a marca; Ajuste não. Pegar o próprio dado marcado desperdiça o Espelho. |
+| Fundo Falso | Só pega quando o dado vai para o Bolso. Na troca, os dois caem e a corrente não muda. |
+| Lugar da armadilha | Uma carta armada por vez, contando o blefe. Armadilha que nunca encontra a sua condição fica armada até o fim. |
+
+### Bugs corrigidos na v0.8
+
+| Bug | Efeito no jogo | Correção |
+|---|---|---|
+| `podeUsar` recusava qualquer carta enquanto o rival "pensava" | **O Biscoito nunca usava cartas** (0 de 18 em 6 partidas de teste) | a checagem saiu da regra e foi para o clique |
+| Pressa + corrente completando 6 | o segundo dado sumia sem aviso | o disparo automático acontece e o segundo dado continua |
+| Pressa sem saída | o segundo dado era obrigatório e podia forçar uma ruptura | botão "Dispensar o 2.º dado" (o robô também dispensa) |
+| Pressa no último dado | a carta só dizia "precisa de 2 dados" | o texto e o aviso dizem que ela não passa para a Mesa seguinte |
+| Segundo dado da Pressa no 6 | o aviso "pegue o segundo dado" aparecia na vez do rival | a vez nova limpa o estado da Pressa |
+| Coringa com corrente vazia | era gasto no primeiro dado, que não precisava dele | só é gasto numa corrente já começada |
+| Dado com Espelho do rival | etiquetas e aviso de ruptura usavam o valor **antes** de virar: o jogo dizia "Eco" e rompia sem pedir confirmação | etiqueta "vira X", relação e aviso calculados com o valor virado |
+| Aviso de armadilha na decisão | listava armadilhas que não mexem no disparo e falava em Interferência com corrente de 3 | diz o que cada possibilidade faria neste disparo |
+
+Com a Pressa nova, o simulador (`sim/deck.py`, alinhado ao jogo) mede o melhor deck em 60,3% (antes 59,7%) e só
+3 decks acima de 58%: dentro do ruído de 1.200 partidas por deck.
 
 ### Equilíbrio dos decks (`sim/decks.py`)
 
@@ -84,11 +117,38 @@ Olhar os resumos dos testes com gente antes de reforçar.
 
 | | O rival vê? |
 |---|---|
-| O seu deck de 3 cartas | **sim**, desde o começo (tela de "versus") |
-| Que há uma armadilha armada | **sim** ("?") |
-| Qual armadilha está armada | **não** (só aparece quando dispara) |
+| O seu deck de 3 cartas | **sim**, desde o começo (tela de "versus") e durante a partida |
+| Que há uma carta virada | **sim** ("?") |
+| Qual carta está virada | **não**: pode ser qualquer carta sua ainda não revelada (armadilha ou blefe) |
 | O dado marcado pelo Espelho | **sim** |
 | Efeitos usados | sim, na hora |
+
+### O blefe (v0.8)
+
+**O problema que um teste com gente apontou.** Com o deck à mostra, um "?" de quem só tem uma armadilha
+(ou só uma que mexe em disparo) era certeza, não dúvida: "tenho corrente de 4, ele tem Interferência e armou
+algo, então é a Interferência". Não existia blefe.
+
+**A regra.** Qualquer **efeito** pode ser virado para baixo no lugar da armadilha. Para o rival é um "?" igual:
+- virado, ele não faz nada e ocupa o lugar da armadilha (uma carta armada por vez);
+- quando você o usa, ele funciona normalmente e o blefe se revela ("Blefe!");
+- só é permitido se o seu deck ainda esconde uma armadilha que gera "?" (não o Espelho, que é sempre à vista).
+  Sem isso, todos saberiam que é blefe.
+
+**O custo do blefe** é o lugar da armadilha: enquanto o efeito está virado, você não arma a sua armadilha de
+verdade. Por isso o "?" volta a ser uma leitura do rival (*yomi*, docs/pesquisa.md §2), não uma conta.
+
+**Como mostrar durante a partida:**
+- **Começo (versus):** os dois decks inteiros.
+- **Durante:** cada carta aparece como "na mão" até agir. A carta virada **não** é marcada no deck do dono
+  visto pelo rival; aparece só o "?" ao lado.
+- **Na hora de disparar:** o aviso lista o que o "?" pode ser e o que cada possibilidade faria **neste**
+  disparo, e lembra que pode ser blefe com tal e tal efeito.
+- **Quando age:** a carta se revela com o nome (armadilha) ou com "Blefe!" (efeito).
+
+**Robôs:** a Dona Coruja blefa às vezes (quando o rival tem corrente de 3+ e ela não armou nada); o Biscoito não.
+O simulador não modela blefe (os robôs dele não leem o rival), então o efeito do blefe sai dos testes com gente:
+o resumo copiável agora conta os blefes de cada um.
 
 Por quê (`sim/informacao.py`): mostrar quase não enfraquece as armadilhas.
 
@@ -188,5 +248,5 @@ Tudo é sintetizado na hora com Web Audio: nenhum arquivo de áudio. Nada no som
   as rupturas e o uso do Bolso.
 - **Medir no teste** se a Interferência ainda pesa demais com gente e se Espelho, Rerrolar e Virar são fracos
   de verdade ou só no robô.
-- **Avaliar um "?" que vira dedução:** limitar quais armadilhas cada arquétipo pode ter (modelo das classes do
-  Hearthstone).
+- **Medir o blefe com gente:** quantas vezes o "?" era blefe e se o rival passou a disparar de 3 para fugir da
+  Interferência.

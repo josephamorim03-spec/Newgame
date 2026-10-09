@@ -8,7 +8,8 @@ Os dois jogadores disputam a mesma Mesa de 5 dados e montam **correntes** de dad
 - **Oposto:** soma 7.
 
 Cada um guarda um dado no **Bolso**, escolhe a hora de **disparar** a corrente para marcar pontos e leva um
-**deck de até 3 cartas** com efeitos e armadilhas. A partida dura de 4 a 6 minutos.
+**deck de até 3 cartas** com efeitos e armadilhas. Um efeito virado para baixo vira **blefe**: para o rival, é um
+"?" igual ao de uma armadilha. A partida dura de 4 a 6 minutos.
 
 **Progressão sem pagar para vencer:**
 - moedas só vêm de vitórias, e rendem mais com margem maior e menos Mesas;
@@ -48,6 +49,7 @@ Cada um guarda um dado no **Bolso**, escolhe a hora de **disparar** a corrente p
 | `sim/` | regras de referência em Python e os experimentos de balanceamento |
 | `tools/empacotar.py` | gera o HTML único |
 | `tools/fumaca.js` | teste de fumaça: joga partidas inteiras no navegador e falha com qualquer erro |
+| `tools/regras.js` | testes dirigidos das cartas (Pressa, Coringa, Espelho, blefe, Âncora × Interferência) |
 | `docs/design.md` | regras, cartas, números, decisões e por quê |
 | `docs/pesquisa.md` | o que jogos de cartas no celular ensinam (deck pequeno, armadilhas, contra-jogo) |
 | `docs/progressao.md` | moedas, rating contra o farm, XP e níveis, loja, cosméticos, regras de monetização |
@@ -60,14 +62,17 @@ cd sim && python3 informacao.py        # armadilhas: oculto × à mostra
 cd sim && python3 decks.py             # todos os 133 decks: algum domina?
 cd sim && python3 economia.py          # cartas compradas não superam as grátis; moedas por vitória
 npm i -D playwright && node tools/fumaca.js   # 4 partidas no navegador (celular, computador, Coruja, a dois)
+node tools/regras.js                          # as cartas fazem o que o texto delas diz
 ```
 
 ## Estado
 
-**Protótipo v0.7, pronto para testes com gente.** O resumo copiável do fim da partida traz:
+**Protótipo v0.8, pronto para testes com gente.** O resumo copiável do fim da partida traz:
 - o deck de cada um;
 - as cartas que agiram;
 - as rupturas;
-- o uso do Bolso.
+- o uso do Bolso;
+- os blefes.
 
-Os números do balanceamento estão em `docs/design.md` §2–4.
+Os números do balanceamento estão em `docs/design.md` §2–4. As exceções e combinações das cartas, os bugs
+corrigidos na v0.8 e o blefe estão em `docs/design.md` §3–4.
