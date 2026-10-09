@@ -1761,7 +1761,24 @@
     este.promessa.catch(() => {});
     return (convitePronto = este);
   }
+  // a janela se redesenha quando chega o ranking, a sala muda etc.: o que a pessoa está digitando (código, nome,
+  // senha) e o cursor não podem sumir no meio da digitação
   function desenharOnline() {
+    const caixa = document.getElementById('onlineConteudo');
+    const digitado = [...caixa.querySelectorAll('input[name]')].map(i => [i.closest('form') ? i.closest('form').id : '', i.name, i.value]);
+    const foco = document.activeElement && caixa.contains(document.activeElement) && document.activeElement.name
+      ? { form: document.activeElement.closest('form') ? document.activeElement.closest('form').id : '', name: document.activeElement.name, ini: document.activeElement.selectionStart, fim: document.activeElement.selectionEnd } : null;
+    desenharOnlineConteudo();
+    for (const [form, name, valor] of digitado) {
+      const i = caixa.querySelector(`${form ? '#' + form + ' ' : ''}input[name="${name}"]`);
+      if (i && valor && !i.value) i.value = valor;
+    }
+    if (foco) {
+      const i = caixa.querySelector(`${foco.form ? '#' + foco.form + ' ' : ''}input[name="${foco.name}"]`);
+      if (i) { i.focus(); try { i.setSelectionRange(foco.ini, foco.fim); } catch (e) {} }
+    }
+  }
+  function desenharOnlineConteudo() {
     document.getElementById('pontoOnline').hidden = !st.sessao;
     const el = document.getElementById('onlineConteudo');
     document.getElementById('onlineServidor').textContent = st.sessao ? (Rede.ola ? 'conectado' : '') : '';
