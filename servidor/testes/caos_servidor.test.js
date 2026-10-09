@@ -74,6 +74,8 @@ test('WebSocket: lixo e mensagens fora de ordem não derrubam nem travam', async
     c.enviar({ tipo: 'ola', token: t });
     for (const m of [{ tipo: 'entrar', sala: ['A'], deck: 'ajuste' }, { tipo: 'entrar', sala: 'ZZZZZZ', deck: [] }, { tipo: 'entrar', sala: 'abc', deck: null },
       { tipo: 'acao', acao: { tipo: 'pegar', idx: 0 } }, { tipo: 'revanche', deck: 5 }, { tipo: 'desistir' }, { tipo: 'sair' }, { tipo: 'sair' }, { tipo: '__proto__' }, { tipo: 'constructor' }]) c.enviar(m);
+    // a resposta ao "ola" é assíncrona (busca a conta no banco): se a mensagem grande chegar antes, a conexão fecha sem ela
+    for (let i = 0; i < 100 && !c.msgs.some(m => m.tipo === 'ola'); i++) await espera(20);
     c.ws.send('x'.repeat(10000));   // maior que o limite: o servidor fecha esta conexão, e só ela
     await espera(300);
     assert.deepStrictEqual(s.errosServidor, []);
