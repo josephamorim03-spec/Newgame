@@ -33,6 +33,15 @@ const { criarApp } = require('./app');
   const servidor = criarServidor();
   const porta = +process.env.PORT || 8080;
   servidor.listen(porta, () => console.log(`Dice Duel em http://localhost:${porta} (banco: ${process.env.DATABASE_URL ? 'postgres' : 'arquivo'})`));
-  const encerrar = async () => { salas.fechar(); servidor.close(); await banco.fechar(); process.exit(0); };
+  let encerrando = false;
+  const encerrar = async () => {
+    if (encerrando) return;
+    encerrando = true;
+    salas.fechar(); servidor.close();
+    await banco.fechar().catch(e => console.error('fechar banco', e));
+    process.exit(0);
+  };
   process.on('SIGTERM', encerrar); process.on('SIGINT', encerrar);
+  // uma promessa rejeitada sem dono vira log, não derruba as partidas em andamento
+  process.on('unhandledRejection', e => console.error('promessa sem tratamento', e));
 })().catch(e => { console.error(e); process.exit(1); });

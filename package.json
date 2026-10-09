@@ -6,7 +6,7 @@
   "engines": { "node": ">=20" },
   "scripts": {
     "start": "node servidor/index.js",
-    "test": "node --test servidor/testes/*.test.js"
+    "test": "node --check servidor/index.js && node --test servidor/testes/*.test.js"
   },
   "dependencies": {
     "express": "4.21.2",

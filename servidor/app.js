@@ -33,7 +33,6 @@ function criarApp({ banco, segredo, raiz = path.join(__dirname, '..'), tempos = 
   const salas = new Salas({ banco, trava, tempos });
   app.set('trust proxy', 1); // Railway fica atrás de um proxy: o IP real vem no X-Forwarded-For
   app.disable('x-powered-by');
-  app.use(express.json({ limit: '8kb' }));
   app.use((req, res, next) => { res.set('X-Content-Type-Options', 'nosniff'); next(); });
   // CORS só para as páginas do jogo hospedadas fora daqui (ORIGENS, ex.: o Vercel); o token vai no cabeçalho, sem cookies
   app.use('/api', (req, res, next) => {
@@ -44,6 +43,8 @@ function criarApp({ banco, segredo, raiz = path.join(__dirname, '..'), tempos = 
     if (req.method === 'OPTIONS') return res.sendStatus(204);
     next();
   });
+  // depois do CORS: um corpo inválido (400) também chega à página do Vercel com a mensagem de erro
+  app.use(express.json({ limit: '8kb' }));
 
   const lim = { contas: 5, entrar: 10, solo: 20, ws: 120, ...limites };
   const limContas = Auth.limitador({ janelaMs: 10 * 60_000, maximo: lim.contas });
@@ -144,7 +145,7 @@ function criarApp({ banco, segredo, raiz = path.join(__dirname, '..'), tempos = 
   app.post('/api/solo', limSolo, exigirConta, assincrono(async (req, res) => {
     const b = req.body || {};
     const meta = b.meta === 16 ? 16 : 12;
-    const ok = Regras.RATING_RIVAL[b.nivel] && typeof b.venceu === 'boolean'
+    const ok = typeof b.nivel === 'string' && Object.hasOwn(Regras.RATING_RIVAL, b.nivel) && typeof b.venceu === 'boolean'
       && Number.isInteger(b.margem) && b.margem >= 0 && b.margem <= meta + 9
       && Number.isInteger(b.rodadas) && b.rodadas >= 1 && b.rodadas <= 80
       && Number.isInteger(b.momentos) && b.momentos >= 0 && b.momentos <= 40;
@@ -255,7 +256,7 @@ function criarApp({ banco, segredo, raiz = path.join(__dirname, '..'), tempos = 
     pedidos.sort((a, b) => a.preco - b.preco).forEach(x => { if (x.preco <= orcamento) { orcamento -= x.preco; campos[x.t].push(x.id); } });
     // presentes de nível vêm da experiência importada
     Regras.ganharXp({ xp: 0, dados: campos.dados, icones: campos.icones, mesas: campos.mesas }, campos.xp);
-    if (Number.isFinite(imp.rating)) { campos.solo_rating = Math.max(600, Math.min(1400, Math.round(imp.rating))); campos.solo_pico = Math.max(campos.solo_rating, Math.min(1500, Math.round(imp.pico || 0))); }
+    if (Number.isFinite(imp.rating)) { campos.solo_rating = Math.max(600, Math.min(1400, Math.round(imp.rating))); campos.solo_pico = Math.max(campos.solo_rating, Math.min(1500, Math.round(Number.isFinite(imp.pico) ? imp.pico : 0))); }
     const at = imp.ativo || {};
     campos.ativo = { dado: campos.dados.includes(at.dado) ? at.dado : 'marfim', icone: campos.icones.includes(at.icone) ? at.icone : 'bolinha', mesa: campos.mesas.includes(at.mesa) ? at.mesa : 'salvia' };
     return campos;

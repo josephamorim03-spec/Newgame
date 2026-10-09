@@ -54,7 +54,9 @@ class Salas {
     if (!Array.isArray(deck) || !Regras.deckValido(deck)) return this.erro(ws, 'Deck inválido.', 'sala');
     const faltam = deck.filter(c => !conta.cartas.includes(c));
     if (faltam.length) return this.erro(ws, 'Seu deck tem cartas que esta conta não possui.', 'sala');
-    this.sair(ws, { silencioso: true }); // um socket fica numa sala só
+    // um socket fica numa sala só; reenviar "entrar" pela mesma conexão só reenvia o estado (sem contar como queda)
+    const jaAqui = ws.sala === sala.codigo && sala.jogadores.some(j => j.ws === ws && j.id === conta.id);
+    if (!jaAqui) this.sair(ws, { silencioso: true });
     let eu = sala.jogadores.find(j => j.id === conta.id);
     if (!eu) {
       if (sala.jogadores.length >= 2) return this.erro(ws, 'Esta sala já está cheia.', 'sala');
@@ -62,10 +64,15 @@ class Salas {
       sala.jogadores.push(eu);
     } else if (!sala.jogo || sala.jogo.fase === 'fim') eu.deck = deck.slice();
     if (eu.ws && eu.ws !== ws) { this.enviar(eu.ws, { tipo: 'erro', erro: 'Você entrou nesta sala por outra janela.', codigo: 'sala' }); eu.ws.sala = null; }
-    // voltou de uma queda na própria vez: o relógio da vez, parado durante a queda, continua de onde estava
+    // voltou de uma queda na própria vez: o relógio da vez, parado durante a queda, continua de onde estava.
+    // Contra cair e voltar sem fim para segurar a partida: numa mesma vez, o relógio para no máximo
+    // esperaReconexao no total, e o mínimo para jogar na volta vale uma vez só
     if (eu.caiuEm && sala.jogo && sala.jogo.fase !== 'fim' && sala.jogo.vez === sala.jogadores.indexOf(eu)) {
-      const agora = this.agora(), parado = agora - Math.max(eu.caiuEm, sala.vezDesde);
-      sala.vezDesde = Math.max(sala.vezDesde + parado, agora - this.t.limiteVez + this.t.minimoNaVolta);
+      const agora = this.agora();
+      const parado = Math.max(0, Math.min(agora - Math.max(eu.caiuEm, sala.vezDesde), this.t.esperaReconexao - (sala.pausaVez || 0)));
+      sala.pausaVez = (sala.pausaVez || 0) + parado;
+      sala.vezDesde += parado;
+      if (!sala.voltaDada) { sala.voltaDada = true; sala.vezDesde = Math.max(sala.vezDesde, agora - this.t.limiteVez + this.t.minimoNaVolta); }
     }
     eu.ws = ws; eu.caiuEm = null; ws.sala = sala.codigo;
     sala.mexida = this.agora();
@@ -89,7 +96,8 @@ class Salas {
     const r = Regras.aplicar(sala.jogo, assento, acao);
     if (!r.ok) { this.erro(ws, r.erro); this.mandarEstado(sala, assento); return; }
     sala.mexida = this.agora();
-    if (sala.jogo.vez !== sala.ultimaVez) { sala.ultimaVez = sala.jogo.vez; sala.vezDesde = this.agora(); }
+    // o relógio recomeça quando a vez passa e também na Mesa nova (que pode começar com quem fechou a anterior)
+    if (sala.jogo.vez !== sala.ultimaVez || sala.jogo.rodada !== sala.ultimaRodada) this.novaVez(sala);
     await this.depoisDaAcao(sala);
   }
   async desistir(ws, conta) {
@@ -117,7 +125,7 @@ class Salas {
     const emJogo = sala.jogo && sala.jogo.fase !== 'fim';
     if (emJogo) {
       // saiu de propósito no meio: perde já
-      if (!silencioso) { Regras.desistir(sala.jogo, sala.jogadores.indexOf(eu)); this.depoisDaAcao(sala); }
+      if (!silencioso) { Regras.desistir(sala.jogo, sala.jogadores.indexOf(eu)); this.depoisDaAcao(sala).catch(e => console.error('sair', e)); }
       else eu.caiuEm = this.agora();
     } else if (!sala.jogo) {
       sala.jogadores = sala.jogadores.filter(j => j !== eu); // ainda esperando: libera a vaga
@@ -143,9 +151,14 @@ class Salas {
     sala.jogo = Regras.criarPartida({ decks: [a.deck, b.deck], vez: sala.primeiro, meta: sala.meta, nomes: [a.nome, b.nome], modo: 'online', nivel: 'online' });
     sala.primeiro = 1 - sala.primeiro;
     sala.partidas = (sala.partidas || 0) + 1;
-    sala.premiada = false; sala.resultado = null; sala.ultimaVez = sala.jogo.vez; sala.vezDesde = this.agora();
+    sala.premiada = false; sala.resultado = null;
+    this.novaVez(sala);
     this.avisarSala(sala);
     this.transmitir(sala);
+  }
+  novaVez(sala) {
+    sala.ultimaVez = sala.jogo.vez; sala.ultimaRodada = sala.jogo.rodada; sala.vezDesde = this.agora();
+    sala.pausaVez = 0; sala.voltaDada = false;
   }
   async depoisDaAcao(sala) {
     const fim = sala.jogo.fase === 'fim' && !sala.premiada;
@@ -153,7 +166,7 @@ class Salas {
     if (fim) {
       // o resultado fica guardado na sala: quem voltar depois do fim também o recebe
       try { sala.resultado = { premios: await this.premiar(sala) }; }
-      catch (e) { console.error('premiar', e); sala.resultado = { erro: 'A partida acabou, mas o servidor não conseguiu registrar o resultado. Rating e moedas ficaram como estavam.' }; }
+      catch (e) { console.error('premiar', e); sala.resultado = { erro: 'A partida acabou, mas o servidor não conseguiu registrar o resultado. Confira rating e moedas no seu perfil.' }; }
     }
     this.transmitir(sala);
     if (fim) sala.jogadores.forEach((jg, i) => this.enviar(jg.ws, this.msgFim(sala, i)));
@@ -221,7 +234,9 @@ class Salas {
       premios[i] = p;
       this.aoMudarConta(nova);
     })));
-    await this.banco.registrarPartida({ a: ids[0], b: ids[1], vencedor: ids[w], placar: `${j.pts[0]}-${j.pts[1]}`, rodadas: j.rodada, moedas: moedasDadas });
+    // as contas já foram atualizadas: uma falha só no histórico não pode virar "nada foi registrado"
+    try { await this.banco.registrarPartida({ a: ids[0], b: ids[1], vencedor: ids[w], placar: `${j.pts[0]}-${j.pts[1]}`, rodadas: j.rodada, moedas: moedasDadas }); }
+    catch (e) { console.error('registrarPartida', e); }
     return premios;
   }
 
@@ -232,10 +247,10 @@ class Salas {
       const j = sala.jogo, emJogo = j && j.fase !== 'fim';
       if (emJogo) {
         const caido = sala.jogadores.findIndex(x => !x.ws && x.caiuEm && agora - x.caiuEm > this.t.esperaReconexao);
-        if (caido >= 0) { Regras.desistir(j, caido); this.depoisDaAcao(sala); continue; }
+        if (caido >= 0) { Regras.desistir(j, caido); this.depoisDaAcao(sala).catch(e => console.error('verificar', e)); continue; }
         // a vez não vence enquanto quem joga está caído: aí vale só o prazo de volta
         const daVezCaido = !sala.jogadores[j.vez].ws;
-        if (!daVezCaido && agora - sala.vezDesde > this.t.limiteVez) { Regras.desistir(j, j.vez); this.depoisDaAcao(sala); continue; }
+        if (!daVezCaido && agora - sala.vezDesde > this.t.limiteVez) { Regras.desistir(j, j.vez); this.depoisDaAcao(sala).catch(e => console.error('verificar', e)); continue; }
       }
       const alguem = sala.jogadores.some(x => x.ws);
       if ((!alguem && agora - sala.mexida > this.t.salaParada) || (!j && agora - sala.criada > this.t.conviteValido)) {

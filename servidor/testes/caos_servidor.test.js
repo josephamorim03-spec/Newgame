@@ -150,3 +150,24 @@ test('erros que tiram da sala vêm marcados (o cliente sai da partida fantasma)'
     assert.deepStrictEqual(s.errosServidor, []);
   } finally { await s.fechar(); }
 });
+
+test('nível de rival herdado (constructor), pico de texto na importação e CORS nos erros de JSON', async () => {
+  const { criarServidor, salas } = criarApp({ banco: new BancoMemoria(), segredo: 'segredo-de-caos-com-32-caracteres!!', origens: ['https://exemplo.app'], limites: { contas: 1e4, entrar: 1e4, solo: 1e4, ws: 1e6 } });
+  const servidor = criarServidor();
+  await new Promise(r => servidor.listen(0, '127.0.0.1', r));
+  const base = `http://127.0.0.1:${servidor.address().port}`;
+  try {
+    const nova = JSON.parse((await http(base, 'POST', '/api/contas', JSON.stringify({ nome: 'Herdado', senha: 'senha123', importar: { rating: 1100, pico: 'muito' } }))).texto);
+    assert.strictEqual(nova.conta.solo_pico, 1100, 'pico de texto não vira NaN');
+    const aut = { authorization: 'Bearer ' + nova.token };
+    for (const nivel of ['constructor', 'toString', '__proto__', 'online']) {
+      const r = await http(base, 'POST', '/api/solo', JSON.stringify({ nivel, venceu: true, margem: 2, rodadas: 4, meta: 12, momentos: 0 }), aut);
+      assert.strictEqual(r.status, 400, `nível ${nivel} recusado`);
+    }
+    const eu = JSON.parse((await http(base, 'GET', '/api/eu', undefined, aut)).texto);
+    assert.ok(Number.isFinite(eu.conta.moedas) && Number.isFinite(eu.conta.solo_rating) && Number.isFinite(eu.conta.xp));
+    const ruim = await fetch(base + '/api/entrar', { method: 'POST', headers: { 'content-type': 'application/json', origin: 'https://exemplo.app' }, body: '{' });
+    assert.strictEqual(ruim.status, 400);
+    assert.strictEqual(ruim.headers.get('access-control-allow-origin'), 'https://exemplo.app');
+  } finally { salas.fechar(); await new Promise(r => servidor.close(r)); }
+});
