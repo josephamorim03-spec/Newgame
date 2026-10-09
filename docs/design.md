@@ -244,6 +244,14 @@ regra sempre termina para cima, de pé, no ângulo certo e na casa.
 **Na tela:**
 - cubos em CSS 3D, com a skin do jogador nas seis faces, luz por face e uma sombra que se afasta e clareia com a
   altura;
+- **o pouso é o dado parado (v0.10.1).** Cada dado tem a própria perspectiva, com o olho em cima da casa dele:
+  pousado, o cubo é visto de cima, sem lateral à mostra, e não entorta longe do centro da tela. A face de cima
+  pousada recebe a mesma luz do dado parado, guarda a beirada de baixo da skin e tem a mesma sombra (6 px abaixo,
+  desfocada). A troca acontece no quadro em que o cubo pousa;
+- **um dado de verdade, não abas de papel.** As faces têm o canto arredondado do dado parado, então as quinas
+  do cubo ficariam ocas. Um **miolo** (cubo menor, 41% do lado a partir do centro; 38,5% na pelúcia) enche as
+  quinas como um dado de canto gasto, sem aparecer pelos cantos quando o dado está pousado. A face que fica quase
+  de perfil esmaece: de perfil ela seria uma lasca com bolinhas saindo do contorno;
 - cada batida gravada (feltro, dado contra dado, borda) soa no quadro em que acontece;
 - nada espera a rolagem: dá para escolher um dado ainda girando. Só a Diana e a Dona Coruja esperam os dados
   assentarem antes de escolher (no máximo 2,5 s);

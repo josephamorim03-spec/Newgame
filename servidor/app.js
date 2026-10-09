@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const http = require('http');
 const express = require('express');
+const compression = require('compression');
 const { WebSocketServer } = require('ws');
 const Regras = require('../shared/regras');
 const { perfil, hoje } = require('./banco');
@@ -33,6 +34,7 @@ function criarApp({ banco, segredo, raiz = path.join(__dirname, '..'), tempos = 
   const salas = new Salas({ banco, trava, tempos });
   app.set('trust proxy', 1); // Railway fica atrás de um proxy: o IP real vem no X-Forwarded-For
   app.disable('x-powered-by');
+  app.use(compression());   // a página, o js e o css vão com gzip (~340 KB em vez de ~740 KB)
   app.use((req, res, next) => { res.set('X-Content-Type-Options', 'nosniff'); next(); });
   // CORS só para as páginas do jogo hospedadas fora daqui (ORIGENS, ex.: o Vercel); o token vai no cabeçalho, sem cookies
   app.use('/api', (req, res, next) => {
@@ -181,7 +183,10 @@ function criarApp({ banco, segredo, raiz = path.join(__dirname, '..'), tempos = 
   });
 
   // ---------- o jogo em si (arquivos estáticos; só o que o navegador precisa) ----------
-  for (const pasta of ['css', 'js', 'shared', 'img']) app.use('/' + pasta, express.static(path.join(raiz, pasta), { maxAge: '1h', index: false }));
+  // css e js sem hash no nome: o navegador revalida pelo ETag (304 barato) para nunca juntar HTML novo com JS velho
+  // depois de um deploy; as imagens podem ficar 1 h
+  for (const pasta of ['css', 'js', 'shared']) app.use('/' + pasta, express.static(path.join(raiz, pasta), { maxAge: 0, index: false }));
+  app.use('/img', express.static(path.join(raiz, 'img'), { maxAge: '1h', index: false }));
   app.get('/manifest.webmanifest', (req, res) => res.type('application/manifest+json').sendFile(path.join(raiz, 'manifest.webmanifest')));
   // servida daqui, a página fala com este mesmo endereço: a <meta name="dice-servidor"> (para o Vercel) sai vazia
   app.get(['/', '/index.html'], assincrono(async (req, res) => {

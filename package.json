@@ -3,14 +3,17 @@
   "version": "0.8.0",
   "private": true,
   "description": "Dice Duel: duelo de dados aconchegante. Servidor de contas, ranking e salas (Railway).",
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "start": "node servidor/index.js",
     "test": "node --check servidor/index.js && node --test servidor/testes/*.test.js"
   },
   "dependencies": {
-    "express": "4.21.2",
+    "compression": "1.8.2",
+    "express": "4.22.3",
     "pg": "8.13.1",
-    "ws": "8.18.0"
+    "ws": "8.21.3"
   }
 }

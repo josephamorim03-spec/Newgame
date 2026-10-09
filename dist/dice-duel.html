@@ -90,7 +90,8 @@ svg.ico.mini-ico { width: 1.25em; height: 1.25em; vertical-align: -0.25em; strok
 .moeda-pintada .moeda { background: var(--moeda-img) center / contain no-repeat; box-shadow: none; border-radius: 0; width: 1.15em; height: 1.15em; vertical-align: -0.2em; }
 .verso-pintado { width: 1.3em; height: 1.3em; vertical-align: -0.3em; margin: -2px 2px -2px -3px; }
 
-.app { max-width: 1240px; margin: 0 auto; padding: 12px 16px 28px; display: grid; gap: 12px; }
+.app { max-width: 1240px; margin: 0 auto; padding: 12px max(16px, env(safe-area-inset-right)) calc(28px + env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); display: grid; gap: 12px; }
+.janela h2:focus { outline: none; }
 
 /* ---------- topo ---------- */
 .topo { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
@@ -177,8 +178,11 @@ svg.ico.mini-ico { width: 1.25em; height: 1.25em; vertical-align: -0.25em; strok
 .modo-local .p1 .corrente { --d: var(--d-cor); --gap: 12px; }
 .slot { width: var(--d); height: var(--d); border-radius: 24%; position: relative; flex: none; }
 .slot.vazio { box-shadow: inset 0 0 0 2px rgba(255,255,255,.12); }
-.slot.prox { box-shadow: inset 0 0 0 2px rgba(255,243,226,.5); display: grid; place-items: center; container-type: inline-size; animation: respira 2.4s ease-in-out infinite; }
-@keyframes respira { 50% { box-shadow: inset 0 0 0 2px rgba(255,243,226,.85); } }
+.slot.prox { box-shadow: inset 0 0 0 2px rgba(255,243,226,.5); display: grid; place-items: center; container-type: inline-size; }
+/* a casa seguinte respira: o contorno forte numa camada própria, só a opacidade anima (sem repintar a tela a cada quadro) */
+.slot.prox::after { content: ''; position: absolute; inset: 0; border-radius: inherit; box-shadow: inset 0 0 0 2px rgba(255,243,226,.85); opacity: 0; animation: respira 2.4s ease-in-out infinite; will-change: opacity; pointer-events: none; }
+@keyframes respira { 50% { opacity: 1; } }
+.sem-animacoes .slot.prox::after { animation: none; }
 /* as faces que servem na casa seguinte: 1 ou 2 numa linha, 3 ou 4 em grade 2×2, sempre centradas e do tamanho da casa */
 .prox-faces { display: grid; grid-template-columns: repeat(2, auto); place-content: center; place-items: center; gap: 0 .3em; font-size: min(36cqi, 15px); font-weight: 800; color: var(--texto); font-variant-numeric: tabular-nums; line-height: 1.1; width: 100%; height: 100%; }
 .prox-faces i { font-style: normal; }
@@ -268,7 +272,7 @@ svg.ico.mini-ico { width: 1.25em; height: 1.25em; vertical-align: -0.25em; strok
 @keyframes vira { 50% { transform: rotateY(90deg) scale(.9); } }
 
 /* ---------- barra de ação ---------- */
-.acoes { border-radius: var(--raio); padding: 12px; background: var(--papel); color: var(--tinta); display: grid; gap: 10px; min-height: 76px; align-content: center; box-shadow: 0 6px 0 var(--papel-2), 0 -6px 24px rgba(0,0,0,.25); position: sticky; bottom: 8px; z-index: 6; }
+.acoes { border-radius: var(--raio); padding: 12px; background: var(--papel); color: var(--tinta); display: grid; gap: 10px; min-height: 76px; align-content: center; box-shadow: 0 6px 0 var(--papel-2), 0 -6px 24px rgba(0,0,0,.25); position: sticky; bottom: calc(8px + env(safe-area-inset-bottom)); z-index: 6; }
 @media (min-width: 1040px) { .acoes { position: static; } }
 .status { font-size: 16px; }
 .status .cor0 { color: var(--voce-tinta); } .status .cor1 { color: var(--rival-tinta); }
@@ -300,6 +304,13 @@ button.carta:hover { transform: translateY(-2px) rotate(-1deg); }
 /* ---------- lateral (regras e registro) ---------- */
 .lado { display: grid; gap: 16px; min-width: 0; align-content: start; }
 .lado-topo { display: none; }
+/* no computador, a lateral acompanha a Mesa: fica parada ao rolar a página, com rolagem própria, e o Registro
+   (o que se consulta jogando) vem antes das regras (consulta de vez em quando) */
+@media (min-width: 1040px) {
+  .lado { position: sticky; top: 12px; max-height: calc(100vh - 24px); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; border-radius: var(--raio); }
+  .lado .registro { order: -1; }
+  .lado .registro ol { max-height: 230px; }
+}
 @media (max-width: 1039px) {
   .lado { position: fixed; inset: 0; z-index: 20; overflow-y: auto; background: var(--noite); padding: 0 16px 24px; transform: translateY(105%); visibility: hidden; transition: transform .3s ease, visibility 0s .3s; }
   .lado.aberto { transform: none; visibility: visible; transition: transform .3s ease; }
@@ -413,7 +424,9 @@ button.carta:hover { transform: translateY(-2px) rotate(-1deg); }
 .texto-sobe.pequeno { font-size: 18px; }
 .texto-sobe.ruim { color: #ffd3cb; }
 @keyframes sobe { 0% { transform: translate(-50%, -30%) scale(.6); opacity: 0; } 20% { transform: translate(-50%, -60%) scale(1.1); opacity: 1; } 100% { transform: translate(-50%, -160%) scale(1); opacity: 0; } }
-.chamada { position: fixed; left: 50%; top: 36%; z-index: 57; pointer-events: none; transform: translate(-50%, -50%); text-align: center; padding: 14px 26px; border-radius: 22px; background: var(--papel); color: var(--tinta); box-shadow: 0 8px 0 var(--papel-2), 0 20px 50px rgba(0,0,0,.45), 0 0 0 4px var(--mel); animation: chamadaEntra .45s cubic-bezier(.2,1.5,.4,1) both; min-width: 220px; max-width: calc(100vw - 40px); }
+.chamada { position: fixed; left: 50%; top: 36%; z-index: 61; pointer-events: none; transform: translate(-50%, -50%); text-align: center; padding: 14px 26px; border-radius: 22px; background: var(--papel); color: var(--tinta); box-shadow: 0 8px 0 var(--papel-2), 0 20px 50px rgba(0,0,0,.45), 0 0 0 4px var(--mel); animation: chamadaEntra .45s cubic-bezier(.2,1.5,.4,1) both; min-width: 220px; max-width: calc(100vw - 40px); }
+/* o que acontece na Mesa fica atrás das janelas (Loja, Ajustes...); o resto (erros, Loja, revanche) vem por cima delas */
+.chamada.de-jogo, .chamada.aviso-carta { z-index: 57; }
 .chamada b { display: block; font-family: var(--f-titulo); font-size: clamp(26px, 7vw, 40px); line-height: 1.05; }
 .chamada > span { display: block; font-size: 14px; color: var(--tinta-suave); margin-top: 4px; font-weight: 700; }
 .chamada.rival { box-shadow: 0 8px 0 var(--papel-2), 0 20px 50px rgba(0,0,0,.45), 0 0 0 4px var(--rival); }
@@ -635,23 +648,40 @@ img.avatar { object-fit: contain; }
 .btn-link[hidden] { display: none; }
 
 /* ---------- rolagem 3D dos dados (v0.10): cubos em CSS 3D numa camada sobre a Mesa (js/rolagem.js) ---------- */
-.camada-rolagem { position: fixed; inset: 0; pointer-events: none; z-index: 40; perspective: 1400px; transform-style: preserve-3d; }
-.cubo-rolagem, .sombra-rolagem { position: absolute; left: 0; top: 0; transform-style: preserve-3d; will-change: transform; }
-.sombra-rolagem { border-radius: 30%; background: radial-gradient(closest-side, rgba(20,12,10,.9), rgba(20,12,10,0)); transform-style: flat; }
-.face-rolagem, .miolo-rolagem { position: absolute; inset: 0; backface-visibility: hidden; }
-.miolo-rolagem { inset: 3%; background: var(--miolo, #ecdfc8); backface-visibility: visible; border-radius: 10%; }
-/* o miolo tapa as quinas arredondadas: na cor de cada skin, para não aparecer marfim nas quinas da madeira */
+/* cada dado num palco com a própria perspectiva (o olho em cima da casa dele): pousado, o cubo é visto de cima,
+   do mesmo jeito que o dado parado, e a troca pelo dado da Mesa não tem salto */
+.camada-rolagem { position: fixed; inset: 0; pointer-events: none; z-index: 40; }
+.palco-rolagem { position: absolute; inset: 0; perspective: 1400px; }
+.cubo-rolagem, .sombra-rolagem { position: absolute; left: 0; top: 0; }
+.cubo-rolagem { transform-style: preserve-3d; -webkit-transform-style: preserve-3d; }
+/* a sombra imita a do dado parado (0 6px 12px): uma mancha cheia e desfocada, 6 px abaixo (js/rolagem.js).
+   Cheia, e não um box-shadow: com o dado no ar a sombra sai de baixo dele, e um box-shadow é oco por dentro.
+   O brilho do dourado e do diamante vem por box-shadow (sutil, só aparece em volta) */
+.sombra-rolagem { border-radius: 24%; background: rgba(0,0,0,.3); filter: blur(5px); }
+.sombra-rolagem[data-skin="pelucia"] { border-radius: 34%; background: rgba(0,0,0,.28); }
+.sombra-rolagem[data-skin="dourado"] { background: rgba(0,0,0,.33); box-shadow: 0 -6px 10px rgba(242,193,78,.35); }
+.sombra-rolagem[data-skin="diamante"] { background: rgba(0,0,0,.33); box-shadow: 0 -6px 12px rgba(190,230,255,.45); }
+.face-rolagem { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+/* o miolo (um cubo menor por dentro) enche as quinas: na cor de cada skin, com a luz de cada lado (js/rolagem.js) */
+.miolo-rolagem { position: absolute; backface-visibility: hidden; -webkit-backface-visibility: hidden; border-radius: 6%;
+  background: linear-gradient(rgba(42,26,18,var(--escuro, 0)), rgba(42,26,18,var(--escuro, 0))), var(--miolo, #ecdfc8); }
 .cubo-rolagem[data-skin="madeira"] { --miolo: #b47b4d; } .cubo-rolagem[data-skin="rosa"] { --miolo: #f4b4c8; }
 .cubo-rolagem[data-skin="menta"] { --miolo: #a8e2c8; } .cubo-rolagem[data-skin="pelucia"] { --miolo: #e6c6a0; }
 .cubo-rolagem[data-skin="dourado"] { --miolo: #d7a433; } .cubo-rolagem[data-skin="diamante"] { --miolo: #d2ecfb; }
-/* o canto de cada face é o da própria skin (24%, a pelúcia 34%): o cubo pousa com o mesmo contorno do dado parado */
-.face-rolagem .dado { width: 100%; height: 100%; box-shadow: none; position: relative; }
+/* o canto de cada face é o da própria skin (24%, a pelúcia 34%): o cubo pousa com o mesmo contorno do dado parado.
+   Cada face guarda a parte de dentro do box-shadow da skin (a beirada de baixo que dá corpo ao dado); a de fora
+   (a sombra no chão) mora na .sombra-rolagem */
+.face-rolagem .dado { width: 100%; height: 100%; position: relative; box-shadow: inset 0 -3px 0 rgba(120, 90, 60, .18); }
+.face-rolagem .dado.skin-madeira { box-shadow: inset 0 -3px 0 rgba(70,40,20,.3); }
+.face-rolagem .dado.skin-pelucia { box-shadow: inset 0 0 0 2px rgba(255,255,255,.55), inset 0 -5px 7px rgba(120,80,40,.25); }
+.face-rolagem .dado.skin-dourado { box-shadow: inset 0 -3px 0 rgba(120,80,10,.35); }
+.face-rolagem .dado.skin-diamante { box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.9), inset 0 -3px 0 rgba(60,90,140,.25); }
 /* sombra por face (a luz vem de cima, à esquerda): por cima das bolinhas, com o canto da skin; o ::after é do brilho do dourado */
 .face-rolagem .dado::before { content: ''; position: absolute; inset: 0; border-radius: inherit; background: #2a1a12; opacity: var(--escuro, 0); z-index: 2; pointer-events: none; }
 .pega.rolando .face > .dado, .pega.rolando .face > .marca-esp, .pega.rolando .face > .alvo-rival { opacity: 0; }   /* opacity: as bolinhas têm visibility própria */
 .pega.rolando.novo .face { animation: none; }
 .pega.assentou .face > .dado { animation: assentou .16s ease-out; }
-@keyframes assentou { 0% { transform: scale(1.05, .95); } 100% { transform: none; } }
+@keyframes assentou { 0% { transform: scale(1.012, .988); } 100% { transform: none; } }   /* só um assento: o cubo já pousou */
 .sem-animacoes .camada-rolagem { display: none; }
 
 /* ---------- gamefeel ---------- */
@@ -737,7 +767,7 @@ button.vaga { cursor: pointer; border: 0; background: #fff3dc; color: var(--tint
       </svg>
       <div>
         <h1>Dice <span>Duel</span></h1>
-        <p>duelo de dados aconchegante · v0.9.2</p>
+        <p>duelo de dados aconchegante · v0.10</p>
       </div>
     </div>
     <div class="topo-botoes">
@@ -2117,6 +2147,8 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     const colcheia = () => 60 / CENAS[cena].bpm / 2;
     function agendar() {
       if (!ctx) return;
+      // depois de um travamento (aba pesada, celular lento) as colcheias perdidas não saem todas juntas
+      if (prox < ctx.currentTime) prox = ctx.currentTime + 0.05;
       while (prox < ctx.currentTime + 0.35) {
         const c = colcheia(), noCompasso = passo % 8, compasso = Math.floor(passo / 8);
         if (noCompasso === 0 && proxCena) { cena = proxCena; proxCena = null; parte = 0; novoMotivo(); }
@@ -2202,7 +2234,8 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
   // pausa tudo quando a aba some (economiza bateria no celular)
   document.addEventListener('visibilitychange', () => {
     if (!ctx) return;
-    if (document.hidden) ctx.suspend(); else if (cfg.som || cfg.musica) ctx.resume();
+    // o Safari recusa o resume fora de um toque: o próximo toque desbloqueia
+    if (document.hidden) ctx.suspend().catch(() => {}); else if (cfg.som || cfg.musica) ctx.resume().catch(() => {});
   });
 
   // para testes: toca um efeito num contexto offline e devolve o pico e o RMS (tools/fumaca.js confere que nada estoura)
@@ -2588,7 +2621,7 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
 (function () {
   'use strict';
   const M = window.RolagemMat, BIB = window.LANCAMENTOS || [];
-  const ativos = new Map();      // id do dado -> { d, cubo, sombra, faces, grupo, t0, assentou }
+  const ativos = new Map();      // id do dado -> { d, palco, cubo, sombra, faces, grupo, L, opacidade }
   const grupos = new Set();      // um por lançamento: as batidas e o relógio
   let camada = null, raf = 0;
   let esperas = [];
@@ -2596,6 +2629,9 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
 
   // a luz vem de cima, à esquerda e um pouco de trás (a mesma do resto da mesa)
   const LUZ = (() => { const v = [-0.42, 0.82, -0.39], n = Math.hypot(...v); return v.map(x => x / n); })();
+  // a face de cima, parada, recebe a luz que o dado parado recebe: escurecer zero (senão a troca pisca)
+  const LUZ_TOPO = LUZ[1];
+  const PERSPECTIVA = 1400;
   // Godot (x, y altura, z para quem joga) -> CSS (x, y para baixo, z para quem olha): troca y e z
   const paraCss = v => [v[0], v[2], v[1]];
   const baseCss = m => [[m[0][0], m[0][2], m[0][1]], [m[2][0], m[2][2], m[2][1]], [m[1][0], m[1][2], m[1][1]]];
@@ -2617,20 +2653,45 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     return { L: face.offsetWidth, cx: r.left + face.offsetLeft + face.offsetWidth / 2, cy: r.top + face.offsetTop + face.offsetHeight / 2 };
   }
 
-  // o cubo: 6 faces (o desenho de cada face é o mesmo dado parado) e um miolo que tapa as quinas arredondadas
-  function montarCubo(faceHTML, L) {
+  // o cubo: 6 faces (o desenho de cada face é o mesmo dado parado) e um MIOLO, um cubo menor por dentro.
+  // As faces têm os cantos arredondados do dado parado; sem o miolo, cada quina do cubo ficava oca e, de lado,
+  // as faces pareciam abas de papel soltas. O miolo enche as quinas como um dado de canto gasto, e é pequeno o
+  // bastante para não aparecer pelos cantos da face de cima quando o dado está pousado (visto de cima):
+  // lado/2 − 0,293 × raio do canto (24% do lado; a pelúcia, 34%), com folga.
+  function montarCubo(L, skin) {
     const cubo = document.createElement('div');
     cubo.className = 'cubo-rolagem';
     cubo.style.width = cubo.style.height = L + 'px';
+    const s = (skin === 'pelucia' ? 0.385 : 0.41) * L;
     let html = '';
-    for (const eixo of [[0, 0, 0], [0, 90, 0], [90, 0, 0]]) html += `<div class="miolo-rolagem" style="transform: rotateX(${eixo[0]}deg) rotateY(${eixo[1]}deg)"></div>`;
     for (let i = 0; i < 6; i++) {
       const t = paraCss(M.tangente(i)), b = paraCss(M.bitangente(i)), n = paraCss(M.NORMAIS[i]);
       const m = [[t[0], b[0], n[0]], [t[1], b[1], n[1]], [t[2], b[2], n[2]]];
-      html += `<div class="face-rolagem" style="transform:${matriz(m, n.map(x => x * L / 2))}">${faceHTML(i + 1)}</div>`;
+      // o lado do miolo é 2s, centrado na caixa do cubo (a caixa tem o lado L)
+      html += `<div class="miolo-rolagem" style="left:${L / 2 - s}px;top:${L / 2 - s}px;width:${2 * s}px;height:${2 * s}px;transform:${matriz(m, n.map(x => x * s))}"></div>`;
+    }
+    for (let i = 0; i < 6; i++) {
+      const t = paraCss(M.tangente(i)), b = paraCss(M.bitangente(i)), n = paraCss(M.NORMAIS[i]);
+      const m = [[t[0], b[0], n[0]], [t[1], b[1], n[1]], [t[2], b[2], n[2]]];
+      html += `<div class="face-rolagem" style="transform:${matriz(m, n.map(x => x * L / 2))}">${montarCubo.faceHTML(i + 1)}</div>`;
     }
     cubo.innerHTML = html;
-    return { cubo, faces: [...cubo.querySelectorAll('.face-rolagem')] };
+    return { cubo, faces: [...cubo.querySelectorAll('.face-rolagem')], miolos: [...cubo.querySelectorAll('.miolo-rolagem')] };
+  }
+
+  // cada dado tem o seu palco: a perspectiva olha para a casa dele (de frente, um pouco de baixo), e não para o
+  // centro da tela. Com uma perspectiva só, o dado longe do centro rolava torto e pousava com uma lateral à
+  // mostra que o dado parado não tem. Parado, o cubo é visto exatamente de cima: igual ao dado da Mesa.
+  function montarPalco(L, skin) {
+    const palco = document.createElement('div');
+    palco.className = 'palco-rolagem';
+    const sombra = document.createElement('div');
+    sombra.className = 'sombra-rolagem';
+    sombra.style.width = sombra.style.height = L + 'px';
+    const { cubo, faces, miolos } = montarCubo(L, skin);
+    if (skin) cubo.dataset.skin = sombra.dataset.skin = skin;
+    palco.append(sombra, cubo);
+    return { palco, sombra, cubo, faces, miolos };
   }
 
   // itens: [{ id, v }] na ordem da Mesa (é a ordem das casas). op: { faceHTML(v), som(nome, dados), velocidade }
@@ -2646,14 +2707,11 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
       const el = casaDe(it.id);
       if (el) el.closest('.pega').classList.add('rolando');   // antes de medir: desliga a animação antiga da casa
       const L = el ? onde(el).L : 60;
-      const { cubo, faces } = montarCubo(v => op.faceHTML(v), L);
-      if (op.skin) cubo.dataset.skin = op.skin;
-      const sombra = document.createElement('div');
-      sombra.className = 'sombra-rolagem';
-      sombra.style.width = sombra.style.height = L + 'px';
-      camada.append(sombra, cubo);
+      montarCubo.faceHTML = op.faceHTML;
+      const { palco, cubo, sombra, faces, miolos } = montarPalco(L, op.skin);
+      camada.append(palco);
       const d = M.preparar(sorteio.l, i, it.v - 1, 0, sorteio.espelhado);
-      ativos.set(it.id, { d, cubo, sombra, faces, grupo, L, opacidade: -1 });
+      ativos.set(it.id, { d, palco, cubo, sombra, faces, miolos, grupo, L, opacidade: -1 });
     });
     if (!raf) raf = requestAnimationFrame(quadro);
     return true;
@@ -2677,31 +2735,46 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     }
     // primeiro todas as leituras (onde está cada casa), depois todas as escritas: no celular, ler o layout
     // entre uma escrita e outra faria o navegador recalcular tudo a cada dado
-    const lote = [];
+    const lote = [], acabaram = [];
     for (const [id, a] of ativos) {
       const t = (agora - a.grupo.t0) / 1000 * a.grupo.vel;
       const el = casaDe(id);
-      if (!el) { encerrar(id, false); continue; }                 // o dado saiu da Mesa no meio da rolagem
-      if (t >= a.d.fim + 0.02 || t > a.d.fim + 1.5) { encerrar(id, true); continue; }
+      if (!el) { acabaram.push([id, false]); continue; }      // o dado saiu da Mesa no meio da rolagem
+      if (t >= a.d.fim) { acabaram.push([id, true]); continue; }   // pousou: o dado da Mesa (nítido) toma o lugar já
       lote.push({ a, t, c: t < a.d.inicio ? null : onde(el) });
     }
+    acabaram.forEach(([id, assentou]) => encerrar(id, assentou));
     for (const { a, t, c } of lote) {
       // a opacidade vai em cada face, nunca no cubo: opacidade num elemento 3D achata o que está dentro dele;
       // e display, não visibility, para esconder: as bolinhas têm visibilidade própria e escapariam
       const entra = t < a.d.inicio ? 0 : Math.min(1, (t - a.d.inicio) / 0.06);
-      if (entra !== a.opacidade) { a.opacidade = entra; a.cubo.style.display = entra > 0 ? '' : 'none'; a.faces.forEach(f => { f.style.opacity = String(entra); }); }
-      if (!c) { a.sombra.style.opacity = '0'; continue; }
+      if (entra !== a.opacidade) { a.opacidade = entra; a.palco.style.display = entra > 0 ? '' : 'none'; }
+      if (!c) continue;
       const L = a.L, p = M.pose(a.d, t);
       const cx = c.cx + p.pos[0] * L, cy = c.cy + p.pos[2] * L, h = Math.max(0, p.pos[1]);
+      // o olho do palco: em cima da casa, na beira de baixo dela (sem lateral à mostra quando o dado pousa)
+      a.palco.style.perspectiveOrigin = `${c.cx}px ${c.cy + L / 2}px`;
+      // quem está mais alto passa por cima (cada palco é plano para os outros)
+      a.palco.style.zIndex = String(Math.round(h * 100));
       // o centro fica meio lado abaixo da face de cima: parado, a face de cima cai no plano da tela (escala 1)
       a.cubo.style.transform = `translate3d(${cx - L / 2}px, ${cy - L / 2}px, ${p.pos[1] * L - L / 2}px) ${matriz(baseCss(p.base))}`;
-      // parada, a sombra fica um pouco abaixo, como a do dado parado (0 6px 12px): a troca não acende uma sombra nova
-      a.sombra.style.transform = `translate3d(${cx - L / 2 + h * L * 0.28}px, ${cy - L / 2 + L * 0.1 + h * L * 0.42}px, ${-L - 1}px) scale(${1 - Math.min(0.45, h * 0.16)})`;
-      a.sombra.style.opacity = String(entra * 0.42 * (1 - Math.min(0.7, h * 0.28)));
-      // luz por face: a que olha para longe da luz escurece
+      // a sombra é a do dado parado (6 px abaixo, desfocada): no chão ela fica onde a dele fica;
+      // no ar ela se afasta para baixo e à direita, encolhe e clareia
+      a.sombra.style.transform = `translate(${cx - L / 2 + h * L * 0.28}px, ${cy - L / 2 + 6 + h * L * 0.42}px) scale(${1 - Math.min(0.45, h * 0.16)})`;
+      a.sombra.style.opacity = String(entra * (1 - Math.min(0.75, h * 0.3)));
+      // luz por face: a que olha para longe da luz escurece; a de cima, parada, fica igual ao dado parado.
+      // --topo (quanto a face olha para cima) acende o brilho das skins que brilham
       a.faces.forEach((f, i) => {
-        const n = M.mulMV(p.base, M.NORMAIS[i]);
-        f.style.setProperty('--escuro', (0.42 * (1 - Math.max(0, n[0] * LUZ[0] + n[1] * LUZ[1] + n[2] * LUZ[2]))).toFixed(3));
+        const n = M.mulMV(p.base, M.NORMAIS[i]), luz = n[0] * LUZ[0] + n[1] * LUZ[1] + n[2] * LUZ[2];
+        // a face quase de perfil (olhando para o lado) some aos poucos: de perfil ela seria uma lasca com bolinhas
+        // saindo do contorno; no lugar dela aparece o miolo, como a quina arredondada de um dado de verdade
+        const perfil = Math.max(0, Math.min(1, (n[1] - 0.06) / 0.22));
+        f.style.opacity = (entra * perfil).toFixed(3);
+        const escuro = Math.max(0, Math.min(0.42, 0.42 * (LUZ_TOPO - luz) / (1 + LUZ_TOPO))).toFixed(3);
+        f.style.setProperty('--escuro', escuro);
+        f.style.setProperty('--topo', Math.max(0, n[1]).toFixed(3));
+        // o miolo leva a mesma luz, um pouco mais escuro (fica recuado, na quina)
+        a.miolos[i].style.setProperty('--escuro', (Math.min(0.5, +escuro + 0.08)).toFixed(3));
       });
     }
     if (ativos.size && !relogio) raf = requestAnimationFrame(quadro);
@@ -2712,7 +2785,7 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     const a = ativos.get(id);
     if (!a) return;
     ativos.delete(id);
-    a.cubo.remove(); a.sombra.remove();
+    a.palco.remove();
     const pega = document.querySelector(`.pega[data-id="${id}"]`);
     if (pega) {
       pega.classList.remove('rolando', 'novo');   // sem 'novo': a animação antiga da casa não recomeça
@@ -2725,6 +2798,8 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     disponivel: () => !!(M && BIB.length),
     lancar,
     ativo: id => ativos.has(id),
+    // só para testes e fotos: o instante (ms) em que cada dado assenta
+    _fins: () => [...ativos.values()].map(a => Math.round(a.d.fim * 1000 / a.grupo.vel)),
     // quem joga pelo rival espera os dados assentarem (no máximo 2,5 s: nada trava o turno)
     esperar: () => (ativos.size ? new Promise(r => { esperas.push(r); setTimeout(r, 2500); }) : Promise.resolve()),
     parar: () => { for (const id of [...ativos.keys()]) encerrar(id, false); grupos.clear(); },
@@ -3032,13 +3107,17 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
       : nivel === 'esperto' ? sorteia(DECKS_CORUJA).slice() : sorteiaDeck(!armadilhasLiberadas());
     const decks = [st.decks[0].filter(disponivel), modo === 'local' ? deckRival.filter(disponivel) : deckRival];
     const nomesP = modo === 'bot' ? ['Você', RIVAIS[nivel].nome] : ['Jogador 1', 'Jogador 2'];
-    jogo = R.criarPartida({ decks, vez: st.primeiro, meta: +st.cfg.meta, nomes: nomesP, modo, nivel, idInicial: uid });
+    // ids dos dados nunca se repetem entre partidas: um temporizador da partida anterior não marca dado da nova
+    const idInicial = Math.max(uid, jogo && jogo.proxId ? jogo.proxId + 1 : 1);
+    uid = idInicial + 1;
+    jogo = R.criarPartida({ decks, vez: st.primeiro, meta: +st.cfg.meta, nomes: nomesP, modo, nivel, idInicial });
     Object.assign(jogo, { alvo: null, ajusteIdx: null, sel: null, destaque: null, pensando: false, token: Math.random(), fala: null, humor: null, intro: false });
     st.primeiro = 1 - st.primeiro;
     ['avisoCfg', 'fim', 'janelaCarta', 'janelaDeck'].forEach(id => { document.getElementById(id).hidden = true; });
     marcarNovos();
     // sem "versus" e sem janela por cima, a Mesa já rolou à vista agora
-    if (st.pref.animacoes) mostrarVersus(); else { jogo.rolouAVista = !document.querySelector('.janela:not([hidden])'); render(); talvezAutomato(); }
+    // com uma janela aberta (Ajustes), sem o "versus" por cima dela: a Mesa rola quando a janela fechar
+    if (st.pref.animacoes && !document.querySelector('.janela:not([hidden])')) mostrarVersus(); else { jogo.rolouAVista = !document.querySelector('.janela:not([hidden])'); render(); talvezAutomato(); }
   }
   function sorteiaDeck(semArmadilha) {
     const pool = ORDEM.filter(c => !semArmadilha || CARTAS[c].tipo !== 'armadilha');
@@ -3743,9 +3822,9 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
             }).then(() => { const pl = qs(`[data-placar="${e.p}"]`); if (pl) pl.textContent = jogo.pts[e.p]; });
           }
           if (e.L >= 5) Fx.tremer(qs('#tabuleiro'), e.L === 6 ? 1.4 : 0.8);
-          if (e.L === 6) { Fx.chamada('Sinfonia!', 'corrente completa de 6', e.p === 1 && j.modo !== 'local' ? 'rival' : ''); vibrar([30, 40, 60]); }
-          else if (e.L === 5) Fx.chamada('Belo disparo!', `corrente de 5 · +${e.ganho}`, e.p === 1 && j.modo !== 'local' ? 'rival' : '');
-          if (e.harm) Fx.chamada('Harmonia!', `todos os elos em ${REL[e.harm].nome}`, 'suave');
+          if (e.L === 6) { Fx.chamada('Sinfonia!', 'corrente completa de 6', e.p === 1 && j.modo !== 'local' ? 'rival' : '', { classe: 'de-jogo' }); vibrar([30, 40, 60]); }
+          else if (e.L === 5) Fx.chamada('Belo disparo!', `corrente de 5 · +${e.ganho}`, e.p === 1 && j.modo !== 'local' ? 'rival' : '', { classe: 'de-jogo' });
+          if (e.harm) Fx.chamada('Harmonia!', `todos os elos em ${REL[e.harm].nome}`, 'suave', { classe: 'de-jogo' });
           if (e.L >= 4 && humano(e.p)) setTimeout(() => Som.tocar('momento'), 500);
           break;
         }
@@ -3756,7 +3835,7 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
           if (e.L >= 4 && humano(e.p)) Fx.texto(qs(`#pj${e.p} .corrente`), 'Rompeu', 'pequeno ruim');
           break;
         }
-        case 'salvo': Som.tocar('salvo'); Fx.chamada('Salvo!', e.txt, 'suave'); Fx.faiscas(qs(`#pj${e.p} .corrente`), 14, ['#cdeccf', '#fff6e6']); break;
+        case 'salvo': Som.tocar('salvo'); Fx.chamada('Salvo!', e.txt, 'suave', { classe: 'de-jogo' }); Fx.faiscas(qs(`#pj${e.p} .corrente`), 14, ['#cdeccf', '#fff6e6']); break;
         case 'bloqueio': Som.tocar('bloqueio'); Fx.texto(qs(`#pj${e.p} .corrente`) || null, 'Bloqueio!', 'pequeno'); break;
         case 'carta': {
           Som.tocar('carta');
@@ -3773,18 +3852,18 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
           break;
         }
         case 'revelou': {
-          Som.tocar('revelou'); Fx.chamada(CARTAS[e.c].nome + '!', e.txt, e.p === 1 && j.modo !== 'local' ? 'rival' : '');
+          Som.tocar('revelou'); Fx.chamada(CARTAS[e.c].nome + '!', e.txt, e.p === 1 && j.modo !== 'local' ? 'rival' : '', { classe: 'de-jogo' });
           Fx.faiscas(painelEl, 22, ['#e2d6ff', '#fff6e6', '#ffe3a3']); vibrar([40, 60, 40]);
           break;
         }
         case 'virar': setTimeout(() => { if (jogo.virando === e.id) jogo.virando = null; }, 500); Som.tocar('virar'); break;
-        case 'chamada': Som.tocar('momento'); Fx.chamada(e.titulo, e.sub, e.estilo === 'esquiva' ? (e.p === 1 && j.modo !== 'local' ? 'rival' : '') : e.estilo); break;
+        case 'chamada': Som.tocar('momento'); Fx.chamada(e.titulo, e.sub, e.estilo === 'esquiva' ? (e.p === 1 && j.modo !== 'local' ? 'rival' : '') : e.estilo, { classe: 'de-jogo' }); break;
         case 'falar': if (j.modo === 'bot') falaDoEvento(e); break;
         case 'fim': {
           const venceuHumano = humano(e.p);
           Som.musica.cena('fim');
-          if (venceuHumano) { Som.tocar('vitoria'); Fx.confete(120); Fx.chamada(e.virada ? 'Virada!' : j.modo !== 'local' ? 'Vitória!' : `${n[e.p]} venceu!`, e.virada ? 'veio de trás e venceu' : 'partida bem jogada'); }
-          else { Som.tocar('derrota'); Fx.chamada('Fim de partida', `${n[e.p]} venceu desta vez`, 'rival'); }
+          if (venceuHumano) { Som.tocar('vitoria'); Fx.confete(120); Fx.chamada(e.virada ? 'Virada!' : j.modo !== 'local' ? 'Vitória!' : `${n[e.p]} venceu!`, e.virada ? 'veio de trás e venceu' : 'partida bem jogada', '', { classe: 'de-jogo' }); }
+          else { Som.tocar('derrota'); Fx.chamada('Fim de partida', `${n[e.p]} venceu desta vez`, 'rival', { classe: 'de-jogo' }); }
           break;
         }
       }
@@ -3847,12 +3926,13 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
   // o cartão do fim (imagem para o grupo). Fica pronto antes do toque: o iPhone só compartilha arquivo dentro do próprio toque.
   let cartao = null;
   function prepararCartao(j, lances) {
-    const n = nomes(), pr = j.premio, eu = st.sessao && st.sessao.perfil ? st.sessao.perfil.nome : n[0];
+    const n = nomes(), pr = j.premio, conta = st.sessao && st.sessao.perfil ? st.sessao.perfil.nome : null, eu = conta || 'Eu';
     const quem = [j.modo === 'local' ? n[0] : eu, n[1]];
+    // sem conta, "Você venceu!" no grupo parece falar de quem lê: aí o cartão diz "Venci!"
     const icone = id => (ICONES[id] ? id : 'bolinha');
     const dr = pr ? pr.rating - pr.ratingAntes : 0;
     const d = {
-      titulo: `${quem[j.vencedor]} venceu!`,
+      titulo: !conta && j.modo !== 'local' && j.vencedor === 0 ? 'Venci!' : `${quem[j.vencedor]} venceu!`,
       modo: j.modo === 'bot' ? `contra ${n[1]} · meta ${j.meta}` : online() ? `duelo online · meta ${j.meta}` : `a dois na mesma mesa · meta ${j.meta}`,
       nomes: quem, pts: j.pts.slice(), vencedor: j.vencedor,
       retratos: [icone(st.conta.icone), j.modo === 'bot' ? RETRATO_RIVAL[j.nivel] : online() ? icone(j.perfis[1].icone) : 'raposa'],
@@ -4068,7 +4148,13 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     const titulo = janela.querySelector('h2');
     if (titulo && titulo.getBoundingClientRect().top < 0) titulo.scrollIntoView({ block: 'start' });
   }
-  const vigiaJanelas = new MutationObserver(ms => ms.forEach(m => { if (!m.target.hidden) rolarAoTopo(m.target); }));
+  // e o foco vai para dentro dela (teclado e leitor de tela começam pelo título), salvo se já está lá
+  const focarJanela = janela => {
+    if (janela.contains(document.activeElement)) return;
+    const h = janela.querySelector('h2');
+    if (h) { h.tabIndex = -1; h.focus({ preventScroll: true }); }
+  };
+  const vigiaJanelas = new MutationObserver(ms => ms.forEach(m => { if (!m.target.hidden) { rolarAoTopo(m.target); setTimeout(() => { if (!m.target.hidden) focarJanela(m.target); }, 0); } }));
   document.querySelectorAll('.janela').forEach(el => vigiaJanelas.observe(el, { attributes: true, attributeFilter: ['hidden'] }));
 
   // ---------- sem zoom de pinça (o Safari do iPhone ignora user-scalable=no) ----------
@@ -4166,13 +4252,21 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
   });
   // ajustes
   document.querySelectorAll('#janelaConfig [data-cfg]').forEach(b => b.addEventListener('click', () => {
-    const k = b.dataset.cfg;
-    st.cfg[k] = k === 'meta' ? +b.dataset.v : b.dataset.v;
+    const k = b.dataset.cfg, novo = k === 'meta' ? +b.dataset.v : b.dataset.v;
+    if (st.cfg[k] === novo) return;   // tocar no que já está marcado não recomeça nada
+    st.cfg[k] = novo;
     salvar(); abrirConfig();
     if (k === 'ritmo') return;
-    if (online()) { if (k === 'modo') sairDaSala(); return; }
+    const aviso = document.getElementById('avisoCfg');
+    if (online()) {
+      // no meio de uma partida online, sair é desistir: isso fica só no botão Desistir (que pede confirmação)
+      if (jogo.fase !== 'fim') { aviso.textContent = 'Vale depois desta partida online. Para sair agora, use Desistir.'; aviso.hidden = false; return; }
+      if (k === 'modo') sairDaSala();
+      return;
+    }
+    aviso.textContent = 'Modo, rival e meta valem na próxima partida.';
     if (!jogo || jogo.compras === 0) novaPartida();
-    else document.getElementById('avisoCfg').hidden = false;
+    else aviso.hidden = false;
   }));
   const liga = (id, chave) => document.getElementById(id).addEventListener('change', e => {
     st.pref[chave] = e.target.checked; salvar(); aplicarPrefs();
@@ -4199,6 +4293,7 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
   document.getElementById('btnFecharDeck').addEventListener('click', () => { document.getElementById('janelaDeck').hidden = true; });
   document.getElementById('btnJogarDeck').addEventListener('click', () => {
     st.deckVisto = true; salvar();
+    Online.deckMudou();
     if (partidaEmAndamento() && !online()) { document.getElementById('janelaDeck').hidden = true; Fx.chamada('Deck salvo', 'vale a partir da próxima partida', 'suave'); return; }
     novaPartida();
   });
@@ -4260,10 +4355,11 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     const alvo = e.target && e.target.closest ? e.target : document.body;   // tecla vinda do documento não tem .closest
     if (!jogo || alvo.closest('textarea, input') || e.metaKey || e.ctrlKey || e.altKey) return;
     if (e.key === 'Escape') {
-      ['fim', 'janelaCarta', 'janelaDeck', 'janelaConfig', 'janelaLoja'].forEach(id => { document.getElementById(id).hidden = true; }); abrirLado(false);
+      ['fim', 'janelaCarta', 'janelaDeck', 'janelaConfig', 'janelaLoja', 'janelaOnline'].forEach(id => { const el = document.getElementById(id); if (el) el.hidden = true; }); abrirLado(false);
       return cancelarEscolha();
     }
-    if (['janelaCarta', 'janelaDeck', 'janelaConfig', 'janelaLoja'].some(id => !document.getElementById(id).hidden)) return;
+    // com qualquer janela (ou o "versus") por cima, as teclas não mexem na Mesa escondida atrás
+    if (document.querySelector('.janela:not([hidden]), .versus')) return;
     if (/^[1-5]$/.test(e.key)) { clicarDado(+e.key - 1); return; }
     const k = e.key.toLowerCase();
     // com um dado escolhido: Enter (ou C) põe na corrente/destino principal, B guarda ou troca
@@ -4495,6 +4591,9 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
   const enviarWs = m => { if (Rede.ws && Rede.ws.readyState === 1 && Rede.ola) { Rede.ws.send(JSON.stringify(m)); return true; } if (Rede.sala) reconectar(); return false; };
   Online.enviar = acao => { if (enviarWs({ tipo: 'acao', acao })) { jogo.pensando = true; render(); } };
   Online.naSala = () => !!(Rede.sala && st.sessao);
+  // trocou o deck esperando o amigo: o servidor guarda o deck da entrada, então entra de novo com o novo
+  // (pela mesma conexão isso só atualiza o deck; com a partida já começada, o servidor ignora)
+  Online.deckMudou = () => { if (Rede.sala && st.sessao && !online()) enviarWs({ tipo: 'entrar', sala: Rede.sala, deck: deckOnline() }); };
   Online.revanche = () => {
     if (!enviarWs({ tipo: 'revanche', deck: deckOnline() })) return;
     Rede.pediuRevanche = true; document.getElementById('fim').hidden = true; render();

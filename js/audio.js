@@ -349,6 +349,8 @@
     const colcheia = () => 60 / CENAS[cena].bpm / 2;
     function agendar() {
       if (!ctx) return;
+      // depois de um travamento (aba pesada, celular lento) as colcheias perdidas não saem todas juntas
+      if (prox < ctx.currentTime) prox = ctx.currentTime + 0.05;
       while (prox < ctx.currentTime + 0.35) {
         const c = colcheia(), noCompasso = passo % 8, compasso = Math.floor(passo / 8);
         if (noCompasso === 0 && proxCena) { cena = proxCena; proxCena = null; parte = 0; novoMotivo(); }
@@ -434,7 +436,8 @@
   // pausa tudo quando a aba some (economiza bateria no celular)
   document.addEventListener('visibilitychange', () => {
     if (!ctx) return;
-    if (document.hidden) ctx.suspend(); else if (cfg.som || cfg.musica) ctx.resume();
+    // o Safari recusa o resume fora de um toque: o próximo toque desbloqueia
+    if (document.hidden) ctx.suspend().catch(() => {}); else if (cfg.som || cfg.musica) ctx.resume().catch(() => {});
   });
 
   // para testes: toca um efeito num contexto offline e devolve o pico e o RMS (tools/fumaca.js confere que nada estoura)

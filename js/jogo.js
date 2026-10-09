@@ -156,13 +156,17 @@
       : nivel === 'esperto' ? sorteia(DECKS_CORUJA).slice() : sorteiaDeck(!armadilhasLiberadas());
     const decks = [st.decks[0].filter(disponivel), modo === 'local' ? deckRival.filter(disponivel) : deckRival];
     const nomesP = modo === 'bot' ? ['Você', RIVAIS[nivel].nome] : ['Jogador 1', 'Jogador 2'];
-    jogo = R.criarPartida({ decks, vez: st.primeiro, meta: +st.cfg.meta, nomes: nomesP, modo, nivel, idInicial: uid });
+    // ids dos dados nunca se repetem entre partidas: um temporizador da partida anterior não marca dado da nova
+    const idInicial = Math.max(uid, jogo && jogo.proxId ? jogo.proxId + 1 : 1);
+    uid = idInicial + 1;
+    jogo = R.criarPartida({ decks, vez: st.primeiro, meta: +st.cfg.meta, nomes: nomesP, modo, nivel, idInicial });
     Object.assign(jogo, { alvo: null, ajusteIdx: null, sel: null, destaque: null, pensando: false, token: Math.random(), fala: null, humor: null, intro: false });
     st.primeiro = 1 - st.primeiro;
     ['avisoCfg', 'fim', 'janelaCarta', 'janelaDeck'].forEach(id => { document.getElementById(id).hidden = true; });
     marcarNovos();
     // sem "versus" e sem janela por cima, a Mesa já rolou à vista agora
-    if (st.pref.animacoes) mostrarVersus(); else { jogo.rolouAVista = !document.querySelector('.janela:not([hidden])'); render(); talvezAutomato(); }
+    // com uma janela aberta (Ajustes), sem o "versus" por cima dela: a Mesa rola quando a janela fechar
+    if (st.pref.animacoes && !document.querySelector('.janela:not([hidden])')) mostrarVersus(); else { jogo.rolouAVista = !document.querySelector('.janela:not([hidden])'); render(); talvezAutomato(); }
   }
   function sorteiaDeck(semArmadilha) {
     const pool = ORDEM.filter(c => !semArmadilha || CARTAS[c].tipo !== 'armadilha');
@@ -867,9 +871,9 @@
             }).then(() => { const pl = qs(`[data-placar="${e.p}"]`); if (pl) pl.textContent = jogo.pts[e.p]; });
           }
           if (e.L >= 5) Fx.tremer(qs('#tabuleiro'), e.L === 6 ? 1.4 : 0.8);
-          if (e.L === 6) { Fx.chamada('Sinfonia!', 'corrente completa de 6', e.p === 1 && j.modo !== 'local' ? 'rival' : ''); vibrar([30, 40, 60]); }
-          else if (e.L === 5) Fx.chamada('Belo disparo!', `corrente de 5 · +${e.ganho}`, e.p === 1 && j.modo !== 'local' ? 'rival' : '');
-          if (e.harm) Fx.chamada('Harmonia!', `todos os elos em ${REL[e.harm].nome}`, 'suave');
+          if (e.L === 6) { Fx.chamada('Sinfonia!', 'corrente completa de 6', e.p === 1 && j.modo !== 'local' ? 'rival' : '', { classe: 'de-jogo' }); vibrar([30, 40, 60]); }
+          else if (e.L === 5) Fx.chamada('Belo disparo!', `corrente de 5 · +${e.ganho}`, e.p === 1 && j.modo !== 'local' ? 'rival' : '', { classe: 'de-jogo' });
+          if (e.harm) Fx.chamada('Harmonia!', `todos os elos em ${REL[e.harm].nome}`, 'suave', { classe: 'de-jogo' });
           if (e.L >= 4 && humano(e.p)) setTimeout(() => Som.tocar('momento'), 500);
           break;
         }
@@ -880,7 +884,7 @@
           if (e.L >= 4 && humano(e.p)) Fx.texto(qs(`#pj${e.p} .corrente`), 'Rompeu', 'pequeno ruim');
           break;
         }
-        case 'salvo': Som.tocar('salvo'); Fx.chamada('Salvo!', e.txt, 'suave'); Fx.faiscas(qs(`#pj${e.p} .corrente`), 14, ['#cdeccf', '#fff6e6']); break;
+        case 'salvo': Som.tocar('salvo'); Fx.chamada('Salvo!', e.txt, 'suave', { classe: 'de-jogo' }); Fx.faiscas(qs(`#pj${e.p} .corrente`), 14, ['#cdeccf', '#fff6e6']); break;
         case 'bloqueio': Som.tocar('bloqueio'); Fx.texto(qs(`#pj${e.p} .corrente`) || null, 'Bloqueio!', 'pequeno'); break;
         case 'carta': {
           Som.tocar('carta');
@@ -897,18 +901,18 @@
           break;
         }
         case 'revelou': {
-          Som.tocar('revelou'); Fx.chamada(CARTAS[e.c].nome + '!', e.txt, e.p === 1 && j.modo !== 'local' ? 'rival' : '');
+          Som.tocar('revelou'); Fx.chamada(CARTAS[e.c].nome + '!', e.txt, e.p === 1 && j.modo !== 'local' ? 'rival' : '', { classe: 'de-jogo' });
           Fx.faiscas(painelEl, 22, ['#e2d6ff', '#fff6e6', '#ffe3a3']); vibrar([40, 60, 40]);
           break;
         }
         case 'virar': setTimeout(() => { if (jogo.virando === e.id) jogo.virando = null; }, 500); Som.tocar('virar'); break;
-        case 'chamada': Som.tocar('momento'); Fx.chamada(e.titulo, e.sub, e.estilo === 'esquiva' ? (e.p === 1 && j.modo !== 'local' ? 'rival' : '') : e.estilo); break;
+        case 'chamada': Som.tocar('momento'); Fx.chamada(e.titulo, e.sub, e.estilo === 'esquiva' ? (e.p === 1 && j.modo !== 'local' ? 'rival' : '') : e.estilo, { classe: 'de-jogo' }); break;
         case 'falar': if (j.modo === 'bot') falaDoEvento(e); break;
         case 'fim': {
           const venceuHumano = humano(e.p);
           Som.musica.cena('fim');
-          if (venceuHumano) { Som.tocar('vitoria'); Fx.confete(120); Fx.chamada(e.virada ? 'Virada!' : j.modo !== 'local' ? 'Vitória!' : `${n[e.p]} venceu!`, e.virada ? 'veio de trás e venceu' : 'partida bem jogada'); }
-          else { Som.tocar('derrota'); Fx.chamada('Fim de partida', `${n[e.p]} venceu desta vez`, 'rival'); }
+          if (venceuHumano) { Som.tocar('vitoria'); Fx.confete(120); Fx.chamada(e.virada ? 'Virada!' : j.modo !== 'local' ? 'Vitória!' : `${n[e.p]} venceu!`, e.virada ? 'veio de trás e venceu' : 'partida bem jogada', '', { classe: 'de-jogo' }); }
+          else { Som.tocar('derrota'); Fx.chamada('Fim de partida', `${n[e.p]} venceu desta vez`, 'rival', { classe: 'de-jogo' }); }
           break;
         }
       }
@@ -971,12 +975,13 @@
   // o cartão do fim (imagem para o grupo). Fica pronto antes do toque: o iPhone só compartilha arquivo dentro do próprio toque.
   let cartao = null;
   function prepararCartao(j, lances) {
-    const n = nomes(), pr = j.premio, eu = st.sessao && st.sessao.perfil ? st.sessao.perfil.nome : n[0];
+    const n = nomes(), pr = j.premio, conta = st.sessao && st.sessao.perfil ? st.sessao.perfil.nome : null, eu = conta || 'Eu';
     const quem = [j.modo === 'local' ? n[0] : eu, n[1]];
+    // sem conta, "Você venceu!" no grupo parece falar de quem lê: aí o cartão diz "Venci!"
     const icone = id => (ICONES[id] ? id : 'bolinha');
     const dr = pr ? pr.rating - pr.ratingAntes : 0;
     const d = {
-      titulo: `${quem[j.vencedor]} venceu!`,
+      titulo: !conta && j.modo !== 'local' && j.vencedor === 0 ? 'Venci!' : `${quem[j.vencedor]} venceu!`,
       modo: j.modo === 'bot' ? `contra ${n[1]} · meta ${j.meta}` : online() ? `duelo online · meta ${j.meta}` : `a dois na mesma mesa · meta ${j.meta}`,
       nomes: quem, pts: j.pts.slice(), vencedor: j.vencedor,
       retratos: [icone(st.conta.icone), j.modo === 'bot' ? RETRATO_RIVAL[j.nivel] : online() ? icone(j.perfis[1].icone) : 'raposa'],
@@ -1192,7 +1197,13 @@
     const titulo = janela.querySelector('h2');
     if (titulo && titulo.getBoundingClientRect().top < 0) titulo.scrollIntoView({ block: 'start' });
   }
-  const vigiaJanelas = new MutationObserver(ms => ms.forEach(m => { if (!m.target.hidden) rolarAoTopo(m.target); }));
+  // e o foco vai para dentro dela (teclado e leitor de tela começam pelo título), salvo se já está lá
+  const focarJanela = janela => {
+    if (janela.contains(document.activeElement)) return;
+    const h = janela.querySelector('h2');
+    if (h) { h.tabIndex = -1; h.focus({ preventScroll: true }); }
+  };
+  const vigiaJanelas = new MutationObserver(ms => ms.forEach(m => { if (!m.target.hidden) { rolarAoTopo(m.target); setTimeout(() => { if (!m.target.hidden) focarJanela(m.target); }, 0); } }));
   document.querySelectorAll('.janela').forEach(el => vigiaJanelas.observe(el, { attributes: true, attributeFilter: ['hidden'] }));
 
   // ---------- sem zoom de pinça (o Safari do iPhone ignora user-scalable=no) ----------
@@ -1290,13 +1301,21 @@
   });
   // ajustes
   document.querySelectorAll('#janelaConfig [data-cfg]').forEach(b => b.addEventListener('click', () => {
-    const k = b.dataset.cfg;
-    st.cfg[k] = k === 'meta' ? +b.dataset.v : b.dataset.v;
+    const k = b.dataset.cfg, novo = k === 'meta' ? +b.dataset.v : b.dataset.v;
+    if (st.cfg[k] === novo) return;   // tocar no que já está marcado não recomeça nada
+    st.cfg[k] = novo;
     salvar(); abrirConfig();
     if (k === 'ritmo') return;
-    if (online()) { if (k === 'modo') sairDaSala(); return; }
+    const aviso = document.getElementById('avisoCfg');
+    if (online()) {
+      // no meio de uma partida online, sair é desistir: isso fica só no botão Desistir (que pede confirmação)
+      if (jogo.fase !== 'fim') { aviso.textContent = 'Vale depois desta partida online. Para sair agora, use Desistir.'; aviso.hidden = false; return; }
+      if (k === 'modo') sairDaSala();
+      return;
+    }
+    aviso.textContent = 'Modo, rival e meta valem na próxima partida.';
     if (!jogo || jogo.compras === 0) novaPartida();
-    else document.getElementById('avisoCfg').hidden = false;
+    else aviso.hidden = false;
   }));
   const liga = (id, chave) => document.getElementById(id).addEventListener('change', e => {
     st.pref[chave] = e.target.checked; salvar(); aplicarPrefs();
@@ -1323,6 +1342,7 @@
   document.getElementById('btnFecharDeck').addEventListener('click', () => { document.getElementById('janelaDeck').hidden = true; });
   document.getElementById('btnJogarDeck').addEventListener('click', () => {
     st.deckVisto = true; salvar();
+    Online.deckMudou();
     if (partidaEmAndamento() && !online()) { document.getElementById('janelaDeck').hidden = true; Fx.chamada('Deck salvo', 'vale a partir da próxima partida', 'suave'); return; }
     novaPartida();
   });
@@ -1384,10 +1404,11 @@
     const alvo = e.target && e.target.closest ? e.target : document.body;   // tecla vinda do documento não tem .closest
     if (!jogo || alvo.closest('textarea, input') || e.metaKey || e.ctrlKey || e.altKey) return;
     if (e.key === 'Escape') {
-      ['fim', 'janelaCarta', 'janelaDeck', 'janelaConfig', 'janelaLoja'].forEach(id => { document.getElementById(id).hidden = true; }); abrirLado(false);
+      ['fim', 'janelaCarta', 'janelaDeck', 'janelaConfig', 'janelaLoja', 'janelaOnline'].forEach(id => { const el = document.getElementById(id); if (el) el.hidden = true; }); abrirLado(false);
       return cancelarEscolha();
     }
-    if (['janelaCarta', 'janelaDeck', 'janelaConfig', 'janelaLoja'].some(id => !document.getElementById(id).hidden)) return;
+    // com qualquer janela (ou o "versus") por cima, as teclas não mexem na Mesa escondida atrás
+    if (document.querySelector('.janela:not([hidden]), .versus')) return;
     if (/^[1-5]$/.test(e.key)) { clicarDado(+e.key - 1); return; }
     const k = e.key.toLowerCase();
     // com um dado escolhido: Enter (ou C) põe na corrente/destino principal, B guarda ou troca
@@ -1619,6 +1640,9 @@
   const enviarWs = m => { if (Rede.ws && Rede.ws.readyState === 1 && Rede.ola) { Rede.ws.send(JSON.stringify(m)); return true; } if (Rede.sala) reconectar(); return false; };
   Online.enviar = acao => { if (enviarWs({ tipo: 'acao', acao })) { jogo.pensando = true; render(); } };
   Online.naSala = () => !!(Rede.sala && st.sessao);
+  // trocou o deck esperando o amigo: o servidor guarda o deck da entrada, então entra de novo com o novo
+  // (pela mesma conexão isso só atualiza o deck; com a partida já começada, o servidor ignora)
+  Online.deckMudou = () => { if (Rede.sala && st.sessao && !online()) enviarWs({ tipo: 'entrar', sala: Rede.sala, deck: deckOnline() }); };
   Online.revanche = () => {
     if (!enviarWs({ tipo: 'revanche', deck: deckOnline() })) return;
     Rede.pediuRevanche = true; document.getElementById('fim').hidden = true; render();

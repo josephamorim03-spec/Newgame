@@ -68,7 +68,7 @@ const espera = ms => new Promise(r => setTimeout(r, ms));
     await ana.waitForFunction(() => DiceDuel.st.conta.moedas === 520 && DiceDuel.st.conta.dado === 'madeira', null, { timeout: 5000 });
     await ana.click('#btnFecharLoja');
     // deck da Ana para o online
-    await ana.evaluate(() => { DiceDuel.st.decks[0] = ['espelho', 'ajuste', 'pressa']; DiceDuel.st.rec.melhorSeq = 3; DiceDuel.salvar(); });
+    await ana.evaluate(() => { DiceDuel.st.decks[0] = ['ajuste', 'coringa']; DiceDuel.st.rec.melhorSeq = 3; DiceDuel.salvar(); });
     await espera(1800); // a conta recebe o deck (sincroniza 1,2 s depois de salvar)
     // cria a sala e pega o link
     await ana.click('#btnOnline');
@@ -77,6 +77,11 @@ const espera = ms => new Promise(r => setTimeout(r, ms));
     const link = await ana.textContent('.convite .link');
     await ana.screenshot({ path: path.join(FOTOS, 'online-convite.png') }); await layout(ana, 'convite');
     if (!/\/\?sala=[A-Z2-9]{6}$/.test(link)) throw new Error('link de convite estranho: ' + link);
+    // esperando a amiga, a Ana troca o deck pela janela do deck: a partida tem de começar com o deck novo
+    await ana.evaluate(() => { DiceDuel.st.pref.liberar = true; DiceDuel.st.decks[0] = ['espelho', 'ajuste', 'pressa']; });
+    await ana.click('#btnFecharOnline'); await ana.click('#btnDeck'); await ana.click('#btnJogarDeck');
+    await espera(1800);
+    await fechar(ana); await ana.evaluate(() => document.querySelectorAll('.versus').forEach(v => v.click()));
 
     // Bia: computador, abre o link do convite sem conta: cria a conta e cai direto na sala
     const bia = await abrir('bia', { width: 1360, height: 900 });
@@ -93,6 +98,14 @@ const espera = ms => new Promise(r => setTimeout(r, ms));
     await espera(300);
     for (const pg of [ana, bia]) { await fechar(pg); await pg.evaluate(() => document.querySelectorAll('.versus').forEach(v => v.click())); }
     await ana.screenshot({ path: path.join(FOTOS, 'online-partida-celular.png') }); await layout(ana, 'partida'); await layout(bia, 'partida');
+    // Ajustes no meio da partida online: tocar em "Modo" (o marcado e o outro) não é desistência
+    await ana.click('#btnConfig');
+    await ana.click('#janelaConfig [data-cfg="modo"][data-v="bot"]'); await ana.click('#janelaConfig [data-cfg="modo"][data-v="local"]');
+    await espera(400);
+    const depoisCfg = await ana.evaluate(() => ({ modo: DiceDuel.jogo.modo, fase: DiceDuel.jogo.fase, aviso: !document.getElementById('avisoCfg').hidden }));
+    if (depoisCfg.modo !== 'online' || depoisCfg.fase === 'fim' || !depoisCfg.aviso) throw new Error('Ajustes no online mexeram na partida: ' + JSON.stringify(depoisCfg));
+    await ana.click('#janelaConfig [data-cfg="modo"][data-v="bot"]');
+    await fechar(ana);
     const vistaBia = await bia.evaluate(() => ({ nomes: DiceDuel.jogo.nomes, deckRival: DiceDuel.jogo.decks[1] }));
     if (vistaBia.nomes[1] !== ANA || vistaBia.deckRival.join() !== 'espelho,ajuste,pressa') throw new Error('a Bia não vê a Ana direito: ' + JSON.stringify(vistaBia));
 

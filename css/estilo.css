@@ -61,7 +61,8 @@ svg.ico.mini-ico { width: 1.25em; height: 1.25em; vertical-align: -0.25em; strok
 .moeda-pintada .moeda { background: var(--moeda-img) center / contain no-repeat; box-shadow: none; border-radius: 0; width: 1.15em; height: 1.15em; vertical-align: -0.2em; }
 .verso-pintado { width: 1.3em; height: 1.3em; vertical-align: -0.3em; margin: -2px 2px -2px -3px; }
 
-.app { max-width: 1240px; margin: 0 auto; padding: 12px 16px 28px; display: grid; gap: 12px; }
+.app { max-width: 1240px; margin: 0 auto; padding: 12px max(16px, env(safe-area-inset-right)) calc(28px + env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); display: grid; gap: 12px; }
+.janela h2:focus { outline: none; }
 
 /* ---------- topo ---------- */
 .topo { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
@@ -148,8 +149,11 @@ svg.ico.mini-ico { width: 1.25em; height: 1.25em; vertical-align: -0.25em; strok
 .modo-local .p1 .corrente { --d: var(--d-cor); --gap: 12px; }
 .slot { width: var(--d); height: var(--d); border-radius: 24%; position: relative; flex: none; }
 .slot.vazio { box-shadow: inset 0 0 0 2px rgba(255,255,255,.12); }
-.slot.prox { box-shadow: inset 0 0 0 2px rgba(255,243,226,.5); display: grid; place-items: center; container-type: inline-size; animation: respira 2.4s ease-in-out infinite; }
-@keyframes respira { 50% { box-shadow: inset 0 0 0 2px rgba(255,243,226,.85); } }
+.slot.prox { box-shadow: inset 0 0 0 2px rgba(255,243,226,.5); display: grid; place-items: center; container-type: inline-size; }
+/* a casa seguinte respira: o contorno forte numa camada própria, só a opacidade anima (sem repintar a tela a cada quadro) */
+.slot.prox::after { content: ''; position: absolute; inset: 0; border-radius: inherit; box-shadow: inset 0 0 0 2px rgba(255,243,226,.85); opacity: 0; animation: respira 2.4s ease-in-out infinite; will-change: opacity; pointer-events: none; }
+@keyframes respira { 50% { opacity: 1; } }
+.sem-animacoes .slot.prox::after { animation: none; }
 /* as faces que servem na casa seguinte: 1 ou 2 numa linha, 3 ou 4 em grade 2×2, sempre centradas e do tamanho da casa */
 .prox-faces { display: grid; grid-template-columns: repeat(2, auto); place-content: center; place-items: center; gap: 0 .3em; font-size: min(36cqi, 15px); font-weight: 800; color: var(--texto); font-variant-numeric: tabular-nums; line-height: 1.1; width: 100%; height: 100%; }
 .prox-faces i { font-style: normal; }
@@ -239,7 +243,7 @@ svg.ico.mini-ico { width: 1.25em; height: 1.25em; vertical-align: -0.25em; strok
 @keyframes vira { 50% { transform: rotateY(90deg) scale(.9); } }
 
 /* ---------- barra de ação ---------- */
-.acoes { border-radius: var(--raio); padding: 12px; background: var(--papel); color: var(--tinta); display: grid; gap: 10px; min-height: 76px; align-content: center; box-shadow: 0 6px 0 var(--papel-2), 0 -6px 24px rgba(0,0,0,.25); position: sticky; bottom: 8px; z-index: 6; }
+.acoes { border-radius: var(--raio); padding: 12px; background: var(--papel); color: var(--tinta); display: grid; gap: 10px; min-height: 76px; align-content: center; box-shadow: 0 6px 0 var(--papel-2), 0 -6px 24px rgba(0,0,0,.25); position: sticky; bottom: calc(8px + env(safe-area-inset-bottom)); z-index: 6; }
 @media (min-width: 1040px) { .acoes { position: static; } }
 .status { font-size: 16px; }
 .status .cor0 { color: var(--voce-tinta); } .status .cor1 { color: var(--rival-tinta); }
@@ -271,6 +275,13 @@ button.carta:hover { transform: translateY(-2px) rotate(-1deg); }
 /* ---------- lateral (regras e registro) ---------- */
 .lado { display: grid; gap: 16px; min-width: 0; align-content: start; }
 .lado-topo { display: none; }
+/* no computador, a lateral acompanha a Mesa: fica parada ao rolar a página, com rolagem própria, e o Registro
+   (o que se consulta jogando) vem antes das regras (consulta de vez em quando) */
+@media (min-width: 1040px) {
+  .lado { position: sticky; top: 12px; max-height: calc(100vh - 24px); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; border-radius: var(--raio); }
+  .lado .registro { order: -1; }
+  .lado .registro ol { max-height: 230px; }
+}
 @media (max-width: 1039px) {
   .lado { position: fixed; inset: 0; z-index: 20; overflow-y: auto; background: var(--noite); padding: 0 16px 24px; transform: translateY(105%); visibility: hidden; transition: transform .3s ease, visibility 0s .3s; }
   .lado.aberto { transform: none; visibility: visible; transition: transform .3s ease; }
@@ -384,7 +395,9 @@ button.carta:hover { transform: translateY(-2px) rotate(-1deg); }
 .texto-sobe.pequeno { font-size: 18px; }
 .texto-sobe.ruim { color: #ffd3cb; }
 @keyframes sobe { 0% { transform: translate(-50%, -30%) scale(.6); opacity: 0; } 20% { transform: translate(-50%, -60%) scale(1.1); opacity: 1; } 100% { transform: translate(-50%, -160%) scale(1); opacity: 0; } }
-.chamada { position: fixed; left: 50%; top: 36%; z-index: 57; pointer-events: none; transform: translate(-50%, -50%); text-align: center; padding: 14px 26px; border-radius: 22px; background: var(--papel); color: var(--tinta); box-shadow: 0 8px 0 var(--papel-2), 0 20px 50px rgba(0,0,0,.45), 0 0 0 4px var(--mel); animation: chamadaEntra .45s cubic-bezier(.2,1.5,.4,1) both; min-width: 220px; max-width: calc(100vw - 40px); }
+.chamada { position: fixed; left: 50%; top: 36%; z-index: 61; pointer-events: none; transform: translate(-50%, -50%); text-align: center; padding: 14px 26px; border-radius: 22px; background: var(--papel); color: var(--tinta); box-shadow: 0 8px 0 var(--papel-2), 0 20px 50px rgba(0,0,0,.45), 0 0 0 4px var(--mel); animation: chamadaEntra .45s cubic-bezier(.2,1.5,.4,1) both; min-width: 220px; max-width: calc(100vw - 40px); }
+/* o que acontece na Mesa fica atrás das janelas (Loja, Ajustes...); o resto (erros, Loja, revanche) vem por cima delas */
+.chamada.de-jogo, .chamada.aviso-carta { z-index: 57; }
 .chamada b { display: block; font-family: var(--f-titulo); font-size: clamp(26px, 7vw, 40px); line-height: 1.05; }
 .chamada > span { display: block; font-size: 14px; color: var(--tinta-suave); margin-top: 4px; font-weight: 700; }
 .chamada.rival { box-shadow: 0 8px 0 var(--papel-2), 0 20px 50px rgba(0,0,0,.45), 0 0 0 4px var(--rival); }
@@ -606,23 +619,40 @@ img.avatar { object-fit: contain; }
 .btn-link[hidden] { display: none; }
 
 /* ---------- rolagem 3D dos dados (v0.10): cubos em CSS 3D numa camada sobre a Mesa (js/rolagem.js) ---------- */
-.camada-rolagem { position: fixed; inset: 0; pointer-events: none; z-index: 40; perspective: 1400px; transform-style: preserve-3d; }
-.cubo-rolagem, .sombra-rolagem { position: absolute; left: 0; top: 0; transform-style: preserve-3d; will-change: transform; }
-.sombra-rolagem { border-radius: 30%; background: radial-gradient(closest-side, rgba(20,12,10,.9), rgba(20,12,10,0)); transform-style: flat; }
-.face-rolagem, .miolo-rolagem { position: absolute; inset: 0; backface-visibility: hidden; }
-.miolo-rolagem { inset: 3%; background: var(--miolo, #ecdfc8); backface-visibility: visible; border-radius: 10%; }
-/* o miolo tapa as quinas arredondadas: na cor de cada skin, para não aparecer marfim nas quinas da madeira */
+/* cada dado num palco com a própria perspectiva (o olho em cima da casa dele): pousado, o cubo é visto de cima,
+   do mesmo jeito que o dado parado, e a troca pelo dado da Mesa não tem salto */
+.camada-rolagem { position: fixed; inset: 0; pointer-events: none; z-index: 40; }
+.palco-rolagem { position: absolute; inset: 0; perspective: 1400px; }
+.cubo-rolagem, .sombra-rolagem { position: absolute; left: 0; top: 0; }
+.cubo-rolagem { transform-style: preserve-3d; -webkit-transform-style: preserve-3d; }
+/* a sombra imita a do dado parado (0 6px 12px): uma mancha cheia e desfocada, 6 px abaixo (js/rolagem.js).
+   Cheia, e não um box-shadow: com o dado no ar a sombra sai de baixo dele, e um box-shadow é oco por dentro.
+   O brilho do dourado e do diamante vem por box-shadow (sutil, só aparece em volta) */
+.sombra-rolagem { border-radius: 24%; background: rgba(0,0,0,.3); filter: blur(5px); }
+.sombra-rolagem[data-skin="pelucia"] { border-radius: 34%; background: rgba(0,0,0,.28); }
+.sombra-rolagem[data-skin="dourado"] { background: rgba(0,0,0,.33); box-shadow: 0 -6px 10px rgba(242,193,78,.35); }
+.sombra-rolagem[data-skin="diamante"] { background: rgba(0,0,0,.33); box-shadow: 0 -6px 12px rgba(190,230,255,.45); }
+.face-rolagem { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+/* o miolo (um cubo menor por dentro) enche as quinas: na cor de cada skin, com a luz de cada lado (js/rolagem.js) */
+.miolo-rolagem { position: absolute; backface-visibility: hidden; -webkit-backface-visibility: hidden; border-radius: 6%;
+  background: linear-gradient(rgba(42,26,18,var(--escuro, 0)), rgba(42,26,18,var(--escuro, 0))), var(--miolo, #ecdfc8); }
 .cubo-rolagem[data-skin="madeira"] { --miolo: #b47b4d; } .cubo-rolagem[data-skin="rosa"] { --miolo: #f4b4c8; }
 .cubo-rolagem[data-skin="menta"] { --miolo: #a8e2c8; } .cubo-rolagem[data-skin="pelucia"] { --miolo: #e6c6a0; }
 .cubo-rolagem[data-skin="dourado"] { --miolo: #d7a433; } .cubo-rolagem[data-skin="diamante"] { --miolo: #d2ecfb; }
-/* o canto de cada face é o da própria skin (24%, a pelúcia 34%): o cubo pousa com o mesmo contorno do dado parado */
-.face-rolagem .dado { width: 100%; height: 100%; box-shadow: none; position: relative; }
+/* o canto de cada face é o da própria skin (24%, a pelúcia 34%): o cubo pousa com o mesmo contorno do dado parado.
+   Cada face guarda a parte de dentro do box-shadow da skin (a beirada de baixo que dá corpo ao dado); a de fora
+   (a sombra no chão) mora na .sombra-rolagem */
+.face-rolagem .dado { width: 100%; height: 100%; position: relative; box-shadow: inset 0 -3px 0 rgba(120, 90, 60, .18); }
+.face-rolagem .dado.skin-madeira { box-shadow: inset 0 -3px 0 rgba(70,40,20,.3); }
+.face-rolagem .dado.skin-pelucia { box-shadow: inset 0 0 0 2px rgba(255,255,255,.55), inset 0 -5px 7px rgba(120,80,40,.25); }
+.face-rolagem .dado.skin-dourado { box-shadow: inset 0 -3px 0 rgba(120,80,10,.35); }
+.face-rolagem .dado.skin-diamante { box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.9), inset 0 -3px 0 rgba(60,90,140,.25); }
 /* sombra por face (a luz vem de cima, à esquerda): por cima das bolinhas, com o canto da skin; o ::after é do brilho do dourado */
 .face-rolagem .dado::before { content: ''; position: absolute; inset: 0; border-radius: inherit; background: #2a1a12; opacity: var(--escuro, 0); z-index: 2; pointer-events: none; }
 .pega.rolando .face > .dado, .pega.rolando .face > .marca-esp, .pega.rolando .face > .alvo-rival { opacity: 0; }   /* opacity: as bolinhas têm visibility própria */
 .pega.rolando.novo .face { animation: none; }
 .pega.assentou .face > .dado { animation: assentou .16s ease-out; }
-@keyframes assentou { 0% { transform: scale(1.05, .95); } 100% { transform: none; } }
+@keyframes assentou { 0% { transform: scale(1.012, .988); } 100% { transform: none; } }   /* só um assento: o cubo já pousou */
 .sem-animacoes .camada-rolagem { display: none; }
 
 /* ---------- gamefeel ---------- */
