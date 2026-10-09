@@ -374,6 +374,27 @@
   }
 
   const espera = ms => new Promise(res => setTimeout(res, ms * ritmo()));
+  // ---------- quando alguém usa carta: o aviso explica e o dado que mudou fica marcado na Mesa ----------
+  const AVISO_CARTA = 2600;   // ms do aviso da carta do rival (o bot espera por ele antes de jogar)
+  function explicarCarta(e, quem) {
+    const mudou = e.antes != null ? `${quem} mudou um ${e.antes} da Mesa para ${e.depois}` : null;
+    return {
+      ajuste: mudou || `${quem} somou ou tirou 1 de um dado da Mesa`,
+      virar: e.antes != null ? `${quem} virou um ${e.antes} da Mesa: agora é ${e.depois}` : `${quem} virou um dado da Mesa`,
+      rerrolar: `${quem} rolou a Mesa de novo`,
+      pressa: `${quem} vai pegar dois dados nesta vez`,
+      coringa: `o próximo dado de ${quem} entra com qualquer frente`,
+      sobrecarga: `o próximo disparo de 4+ de ${quem} vale +2`,
+    }[e.c] || `${quem} usou`;
+  }
+  let marcaMudanca = null;   // { ids, antes, ate }
+  function marcarMudanca(ids, antes) {
+    const ate = Date.now() + AVISO_CARTA + 600;
+    marcaMudanca = { ids, antes, ate };
+    setTimeout(() => { if (marcaMudanca && marcaMudanca.ate === ate) { marcaMudanca = null; if (jogo) render(); } }, AVISO_CARTA + 650);
+    if (jogo) render();
+  }
+  const mudou = id => !!(marcaMudanca && marcaMudanca.ids.includes(id) && Date.now() < marcaMudanca.ate);
   async function talvezAutomato() {
     const j = jogo;
     if (!j || j.modo !== 'bot' || j.fase === 'fim' || humano(j.vez) || j.pensando || j.intro) return;
@@ -385,7 +406,8 @@
         if (u.virar ? !podeVirar(p, u.carta).ok : (!podeUsar(p, u.carta).ok || (CARTAS[u.carta].alvo && !j.mesa[u.idx]))) continue;
         if (u.virar) virarCarta(p, u.carta); else usarCarta(p, u.carta, u.idx, u.delta || 1);
         render();
-        await espera(1000); if (tok !== jogo.token) return;
+        // dá tempo de ler o aviso e ver o dado que mudou antes da próxima ação (não acelera no ritmo rápido)
+        await new Promise(r => setTimeout(r, Math.max(AVISO_CARTA + 300, (AVISO_CARTA + 300) * ritmo()))); if (tok !== jogo.token) return;
       }
       for (;;) {
         const plano = automatoEscolhe(p);
@@ -610,10 +632,10 @@
       }
       if (j.fase === 'ajuste' && j.ajusteIdx === i) tags = `<span class="tag previa">ajustar</span>`;
       const serveRival = dicas && ele.length && encaixa(ele, valorAoPegar(1 - p, d)) && j.fase !== 'fim';
-      const cls = ['pega', d.novo ? 'novo' : '', !salvo && j.fase === 'pegar' && dicas ? 'nao-cabe' : '', j.sel === d.id || (j.fase === 'ajuste' && j.ajusteIdx === i) ? 'escolhido' : '', j.destaque === d.id ? 'destaque' : '', j.virando === d.id ? 'virando' : ''].join(' ');
+      const cls = ['pega', d.novo ? 'novo' : '', !salvo && j.fase === 'pegar' && dicas ? 'nao-cabe' : '', j.sel === d.id || (j.fase === 'ajuste' && j.ajusteIdx === i) ? 'escolhido' : '', j.destaque === d.id ? 'destaque' : '', j.virando === d.id ? 'virando' : '', mudou(d.id) ? 'mudou' : ''].join(' ');
       const rotulo = `${j.fase === 'alvo' ? 'Escolher' : 'Pegar'} ${d.v}${contra ? `, chega virado como ${vv}` : ''}${cabe ? (r.length ? ', ' + r.map(k => REL[k].nome).join(' e ') : '') : salvo ? ', só pelo Bolso' : ', rompe a corrente'}${serveRival ? ', serve ao rival' : ''}${marcado !== null ? ', marcado com Espelho' : ''}`;
       return `<button class="${cls}" style="--i:${i}" data-i="${i}" data-id="${d.id}" ${ativo ? '' : 'disabled'} aria-label="${rotulo}" aria-pressed="${j.sel === d.id || (j.fase === 'ajuste' && j.ajusteIdx === i)}">
-        <span class="kbd">${i + 1}</span><span class="face">${dadoHTML(d.v, skinMesa())}${serveRival ? '<span class="alvo-rival"></span>' : ''}${marcado !== null ? `<span class="marca-esp dono${marcado}" title="Marcado com Espelho">${CARTAS.espelho.ico}</span>` : ''}</span><span class="tags">${tags}</span></button>`;
+        <span class="kbd">${i + 1}</span><span class="face">${dadoHTML(d.v, skinMesa())}${mudou(d.id) && marcaMudanca.antes != null ? `<span class="era">era ${marcaMudanca.antes}</span>` : ''}${serveRival ? '<span class="alvo-rival"></span>' : ''}${marcado !== null ? `<span class="marca-esp dono${marcado}" title="Marcado com Espelho">${CARTAS.espelho.ico}</span>` : ''}</span><span class="tags">${tags}</span></button>`;
     }).join('');
   }
 
@@ -833,8 +855,20 @@
         }
         case 'salvo': Som.tocar('salvo'); Fx.chamada('Salvo!', e.txt, 'suave'); Fx.faiscas(qs(`#pj${e.p} .corrente`), 14, ['#cdeccf', '#fff6e6']); break;
         case 'bloqueio': Som.tocar('bloqueio'); Fx.texto(qs(`#pj${e.p} .corrente`) || null, 'Bloqueio!', 'pequeno'); break;
-        case 'carta': Som.tocar('carta'); if (!humano(e.p) || j.modo === 'local') Fx.chamada(e.nome, `${n[e.p]} usou`, e.p === 1 && j.modo !== 'local' ? 'rival' : 'suave'); break;
-        case 'armou': Som.tocar('armou'); if (!humano(e.p) || j.modo === 'local') Fx.texto(painelEl, e.c === 'espelho' ? 'Espelho!' : 'Carta virada!', 'pequeno'); break;
+        case 'carta': {
+          Som.tocar('carta');
+          if (e.id != null && e.antes != null) marcarMudanca([e.id], e.antes);
+          else if (e.c === 'rerrolar') marcarMudanca(j.mesa.map(d => d.id), null);
+          if (!humano(e.p) || j.modo === 'local') Fx.chamada(e.nome, explicarCarta(e, n[e.p]), e.p === 1 && j.modo !== 'local' ? 'rival' : 'suave', { ico: CARTAS[e.c].arte, ms: AVISO_CARTA, classe: 'aviso-carta' });
+          break;
+        }
+        case 'armou': {
+          Som.tocar('armou');
+          if (humano(e.p) && j.modo !== 'local') break;
+          if (e.c === 'espelho' && j.marca) { marcarMudanca([j.marca.id], null); Fx.chamada('Espelho', `${n[e.p]} marcou um ${(j.mesa.find(d => d.id === j.marca.id) || {}).v || ''} da Mesa: se você pegá-lo, ele vira`, e.p === 1 && j.modo !== 'local' ? 'rival' : 'suave', { ico: CARTAS.espelho.arte, ms: AVISO_CARTA, classe: 'aviso-carta' }); }
+          else Fx.chamada('Carta virada', `${n[e.p]} virou uma carta para baixo: pode ser armadilha ou blefe`, e.p === 1 && j.modo !== 'local' ? 'rival' : 'suave', { ico: VERSO, ms: AVISO_CARTA, classe: 'aviso-carta' });
+          break;
+        }
         case 'revelou': {
           Som.tocar('revelou'); Fx.chamada(CARTAS[e.c].nome + '!', e.txt, e.p === 1 && j.modo !== 'local' ? 'rival' : '');
           Fx.faiscas(painelEl, 22, ['#e2d6ff', '#fff6e6', '#ffe3a3']); vibrar([40, 60, 40]);
