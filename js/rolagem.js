@@ -89,7 +89,7 @@
     const grupo = { t0: performance.now(), vel: op.velocidade || 1, batidas: M.batidas(sorteio.l, sorteio.espelhado), proxima: 0, ids: itens.map(x => x.id), som: op.som || (() => {}), primeiros: new Set() };
     grupos.add(grupo);
     itens.forEach((it, i) => {
-      encerrar(it.id, false);   // Rerrolar com o dado ainda girando: o novo lançamento toma o lugar
+      encerrar(it.id);   // Rerrolar com o dado ainda girando: o novo lançamento toma o lugar
       const el = casaDe(it.id);
       if (el) el.closest('.pega').classList.add('rolando');   // antes de medir: desliga a animação antiga da casa
       const L = el ? onde(el).L : 60;
@@ -127,14 +127,25 @@
       const el = casaDe(id);
       if (!el) { acabaram.push([id, false]); continue; }      // o dado saiu da Mesa no meio da rolagem
       if (t >= a.d.fim) { acabaram.push([id, true]); continue; }   // pousou: o dado da Mesa (nítido) toma o lugar já
+      // na pose final: o dado parado aparece por baixo e o cubo se funde nele (sem trocar num quadro só,
+      // o cubo 3D é desenhado mais macio que o dado nítido e a troca dava um estalo)
+      if (t >= a.d.assenta && !a.pousando) { a.pousando = true; el.closest('.pega').classList.add('pousando'); }
       lote.push({ a, t, c: t < a.d.inicio ? null : onde(el) });
     }
-    acabaram.forEach(([id, assentou]) => encerrar(id, assentou));
+    acabaram.forEach(([id]) => encerrar(id));
     for (const { a, t, c } of lote) {
       // a opacidade vai em cada face, nunca no cubo: opacidade num elemento 3D achata o que está dentro dele;
       // e display, não visibility, para esconder: as bolinhas têm visibilidade própria e escapariam
-      const entra = t < a.d.inicio ? 0 : Math.min(1, (t - a.d.inicio) / 0.06);
-      if (entra !== a.opacidade) { a.opacidade = entra; a.palco.style.display = entra > 0 ? '' : 'none'; }
+      const entra = (t < a.d.inicio ? 0 : Math.min(1, (t - a.d.inicio) / 0.06))
+        * (t < a.d.assenta ? 1 : Math.max(0, 1 - (t - a.d.assenta) / Math.max(0.01, a.d.fim - a.d.assenta)));
+      if (entra !== a.opacidade) {
+        if ((entra > 0) !== (a.opacidade > 0)) a.palco.style.display = entra > 0 ? '' : 'none';
+        a.opacidade = entra;
+        // o miolo (mais escuro) apareceria através das faces que somem e deixaria o dado cinza; pousado, ele fica
+        // todo atrás da face de cima, então some de uma vez no começo da fusão, sem mudar nada na tela
+        const miolo = a.pousando ? 0 : entra;
+        a.miolos.forEach(m => { m.style.opacity = miolo.toFixed(3); });
+      }
       if (!c) continue;
       const L = a.L, p = M.pose(a.d, t);
       const cx = c.cx + p.pos[0] * L, cy = c.cy + p.pos[2] * L, h = Math.max(0, p.pos[1]);
@@ -147,7 +158,9 @@
       // a sombra é a do dado parado (6 px abaixo, desfocada): no chão ela fica onde a dele fica;
       // no ar ela se afasta para baixo e à direita, encolhe e clareia
       a.sombra.style.transform = `translate(${cx - L / 2 + h * L * 0.28}px, ${cy - L / 2 + 6 + h * L * 0.42}px) scale(${1 - Math.min(0.45, h * 0.16)})`;
-      a.sombra.style.opacity = String(entra * (1 - Math.min(0.75, h * 0.3)));
+      // na fusão, a sombra do cubo (desenhada por cima do dado parado) escureceria o dado através das faces que
+      // somem: o dado parado já tem a dele, igual, e assume na hora
+      a.sombra.style.opacity = a.pousando ? '0' : String(entra * (1 - Math.min(0.75, h * 0.3)));
       // luz por face: a que olha para longe da luz escurece; a de cima, parada, fica igual ao dado parado.
       // --topo (quanto a face olha para cima) acende o brilho das skins que brilham
       a.faces.forEach((f, i) => {
@@ -167,15 +180,14 @@
     else { const e = esperas; esperas = []; e.forEach(f => f()); }
   }
 
-  function encerrar(id, assentou) {
+  function encerrar(id) {
     const a = ativos.get(id);
     if (!a) return;
     ativos.delete(id);
     a.palco.remove();
     const pega = document.querySelector(`.pega[data-id="${id}"]`);
     if (pega) {
-      pega.classList.remove('rolando', 'novo');   // sem 'novo': a animação antiga da casa não recomeça
-      if (assentou) { pega.classList.remove('assentou'); void pega.offsetWidth; pega.classList.add('assentou'); }
+      pega.classList.remove('rolando', 'novo', 'pousando');   // sem 'novo': a animação antiga da casa não recomeça
     }
     if (!ativos.size) { const e = esperas; esperas = []; e.forEach(f => f()); }
   }
@@ -184,11 +196,13 @@
     disponivel: () => !!(M && BIB.length),
     lancar,
     ativo: id => ativos.has(id),
+    // na pose final, fundindo no dado parado (a Mesa redesenhada mantém a classe da casa)
+    pousando: id => !!(ativos.get(id) || {}).pousando,
     // só para testes e fotos: o instante (ms) em que cada dado assenta
     _fins: () => [...ativos.values()].map(a => Math.round(a.d.fim * 1000 / a.grupo.vel)),
     // quem joga pelo rival espera os dados assentarem (no máximo 2,5 s: nada trava o turno)
     esperar: () => (ativos.size ? new Promise(r => { esperas.push(r); setTimeout(r, 2500); }) : Promise.resolve()),
-    parar: () => { for (const id of [...ativos.keys()]) encerrar(id, false); grupos.clear(); },
+    parar: () => { for (const id of [...ativos.keys()]) encerrar(id); grupos.clear(); },
     // só para testes e fotos: desenha o quadro do instante `ms` depois do lançamento
     _quadroEm: ms => { const g = [...grupos][0]; if (!g) return; relogio = () => g.t0 + ms / g.vel; quadro(0); },
     _soltar: () => { relogio = null; cancelAnimationFrame(raf); raf = ativos.size ? requestAnimationFrame(quadro) : 0; },

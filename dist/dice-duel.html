@@ -683,8 +683,8 @@ img.avatar { object-fit: contain; }
 .face-rolagem .dado::before { content: ''; position: absolute; inset: 0; border-radius: inherit; background: #2a1a12; opacity: var(--escuro, 0); z-index: 2; pointer-events: none; }
 .pega.rolando .face > .dado, .pega.rolando .face > .marca-esp, .pega.rolando .face > .alvo-rival { opacity: 0; }   /* opacity: as bolinhas têm visibility própria */
 .pega.rolando.novo .face { animation: none; }
-.pega.assentou .face > .dado { animation: assentou .16s ease-out; }
-@keyframes assentou { 0% { transform: scale(1.012, .988); } 100% { transform: none; } }   /* só um assento: o cubo já pousou */
+/* na pose final o dado parado já aparece por baixo e o cubo se funde nele (js/rolagem.js, "pousando") */
+.pega.rolando.pousando .face > .dado, .pega.rolando.pousando .face > .marca-esp, .pega.rolando.pousando .face > .alvo-rival { opacity: 1; }
 .sem-animacoes .camada-rolagem { display: none; }
 
 /* ---------- gamefeel ---------- */
@@ -2586,7 +2586,9 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
  *  - cada dado segue a trajetória gravada de uma casa, com uma CORREÇÃO DE FACE (uma simetria do cubo que
  *    leva a face sorteada para onde a face gravada caiu, entre as 4 equivalentes a de menor giro final);
  *  - nos últimos ~0,3 s, um AJUSTE FINAL: desliza até a casa exata, gira até o ângulo do dado parado e
- *    termina exatamente de pé, para a troca pelo dado parado não dar salto.
+ *    termina exatamente de pé, para a troca pelo dado parado não dar salto. O ajuste acaba PARADO segundos
+ *    antes do fim, ainda junto do último movimento da física (corrigir com o dado já parado parecia patinar),
+ *    e nesses últimos instantes o cubo, já na pose final, se funde no dado parado (js/rolagem.js).
  * Espaço da bandeja (o do Godot): x para a direita, y altura, z para quem joga. Unidade = 1 lado do dado.
  */
 (function (raiz, fabrica) {
@@ -2670,14 +2672,15 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
   const MEIA_VOLTA = eixoAngulo([0, 1, 0], Math.PI);
 
   // ---------- um dado dentro do lançamento (LanceDado.gd) ----------
-  const AJUSTE_ANTES = 0.22, AJUSTE_DEPOIS = 0.12;
+  const AJUSTE_ANTES = 0.30, AJUSTE_DEPOIS = 0.16, PARADO = 0.10;
   function preparar(l, indice, alvo, anguloFinal = 0, espelhado = false) {
     const d = { l, indice, alvo, espelhado, trilha: espelhado ? l.n - 1 - indice : indice };
     const repouso = l.rep[d.trilha] / 1000;
     d.fim = Math.min(repouso + AJUSTE_DEPOIS, duracaoLanc(l));
     d.ajusteIni = Math.max(repouso - AJUSTE_ANTES, l.ini[d.trilha] / 1000);
+    d.assenta = Math.max(d.ajusteIni + 0.05, d.fim - PARADO);   // daqui ao fim: parado na pose final, fundindo
     d.inicio = l.ini[d.trilha] / 1000;
-    const fim = amostraDe(d, d.fim);
+    const fim = amostraDe(d, d.assenta);   // a correção mira a pose da física no fim do ajuste
     const pousou = l.fac[d.trilha];
     const base = correcao(alvo, pousou), eixo = NORMAIS[pousou];
     d.giro = Infinity;
@@ -2697,8 +2700,8 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
   }
   // posição do centro (relativa à casa; y = altura acima do repouso) e orientação do desenho no instante t
   function pose(d, t) {
-    const a = amostraDe(d, Math.min(t, d.fim));
-    const w = suave(d.ajusteIni, d.fim, t);
+    const a = amostraDe(d, Math.min(t, d.assenta));
+    const w = suave(d.ajusteIni, d.assenta, t);
     const c = casa(d.l, d.indice);
     const pos = [0, 1, 2].map(k => a.pos[k] - c[k] + d.deslize[k] * w);
     const corpo = mulMM(eixoAngulo([0, 1, 0], d.giro * w), a.base);
@@ -2817,7 +2820,7 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     const grupo = { t0: performance.now(), vel: op.velocidade || 1, batidas: M.batidas(sorteio.l, sorteio.espelhado), proxima: 0, ids: itens.map(x => x.id), som: op.som || (() => {}), primeiros: new Set() };
     grupos.add(grupo);
     itens.forEach((it, i) => {
-      encerrar(it.id, false);   // Rerrolar com o dado ainda girando: o novo lançamento toma o lugar
+      encerrar(it.id);   // Rerrolar com o dado ainda girando: o novo lançamento toma o lugar
       const el = casaDe(it.id);
       if (el) el.closest('.pega').classList.add('rolando');   // antes de medir: desliga a animação antiga da casa
       const L = el ? onde(el).L : 60;
@@ -2855,14 +2858,25 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
       const el = casaDe(id);
       if (!el) { acabaram.push([id, false]); continue; }      // o dado saiu da Mesa no meio da rolagem
       if (t >= a.d.fim) { acabaram.push([id, true]); continue; }   // pousou: o dado da Mesa (nítido) toma o lugar já
+      // na pose final: o dado parado aparece por baixo e o cubo se funde nele (sem trocar num quadro só,
+      // o cubo 3D é desenhado mais macio que o dado nítido e a troca dava um estalo)
+      if (t >= a.d.assenta && !a.pousando) { a.pousando = true; el.closest('.pega').classList.add('pousando'); }
       lote.push({ a, t, c: t < a.d.inicio ? null : onde(el) });
     }
-    acabaram.forEach(([id, assentou]) => encerrar(id, assentou));
+    acabaram.forEach(([id]) => encerrar(id));
     for (const { a, t, c } of lote) {
       // a opacidade vai em cada face, nunca no cubo: opacidade num elemento 3D achata o que está dentro dele;
       // e display, não visibility, para esconder: as bolinhas têm visibilidade própria e escapariam
-      const entra = t < a.d.inicio ? 0 : Math.min(1, (t - a.d.inicio) / 0.06);
-      if (entra !== a.opacidade) { a.opacidade = entra; a.palco.style.display = entra > 0 ? '' : 'none'; }
+      const entra = (t < a.d.inicio ? 0 : Math.min(1, (t - a.d.inicio) / 0.06))
+        * (t < a.d.assenta ? 1 : Math.max(0, 1 - (t - a.d.assenta) / Math.max(0.01, a.d.fim - a.d.assenta)));
+      if (entra !== a.opacidade) {
+        if ((entra > 0) !== (a.opacidade > 0)) a.palco.style.display = entra > 0 ? '' : 'none';
+        a.opacidade = entra;
+        // o miolo (mais escuro) apareceria através das faces que somem e deixaria o dado cinza; pousado, ele fica
+        // todo atrás da face de cima, então some de uma vez no começo da fusão, sem mudar nada na tela
+        const miolo = a.pousando ? 0 : entra;
+        a.miolos.forEach(m => { m.style.opacity = miolo.toFixed(3); });
+      }
       if (!c) continue;
       const L = a.L, p = M.pose(a.d, t);
       const cx = c.cx + p.pos[0] * L, cy = c.cy + p.pos[2] * L, h = Math.max(0, p.pos[1]);
@@ -2875,7 +2889,9 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
       // a sombra é a do dado parado (6 px abaixo, desfocada): no chão ela fica onde a dele fica;
       // no ar ela se afasta para baixo e à direita, encolhe e clareia
       a.sombra.style.transform = `translate(${cx - L / 2 + h * L * 0.28}px, ${cy - L / 2 + 6 + h * L * 0.42}px) scale(${1 - Math.min(0.45, h * 0.16)})`;
-      a.sombra.style.opacity = String(entra * (1 - Math.min(0.75, h * 0.3)));
+      // na fusão, a sombra do cubo (desenhada por cima do dado parado) escureceria o dado através das faces que
+      // somem: o dado parado já tem a dele, igual, e assume na hora
+      a.sombra.style.opacity = a.pousando ? '0' : String(entra * (1 - Math.min(0.75, h * 0.3)));
       // luz por face: a que olha para longe da luz escurece; a de cima, parada, fica igual ao dado parado.
       // --topo (quanto a face olha para cima) acende o brilho das skins que brilham
       a.faces.forEach((f, i) => {
@@ -2895,15 +2911,14 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     else { const e = esperas; esperas = []; e.forEach(f => f()); }
   }
 
-  function encerrar(id, assentou) {
+  function encerrar(id) {
     const a = ativos.get(id);
     if (!a) return;
     ativos.delete(id);
     a.palco.remove();
     const pega = document.querySelector(`.pega[data-id="${id}"]`);
     if (pega) {
-      pega.classList.remove('rolando', 'novo');   // sem 'novo': a animação antiga da casa não recomeça
-      if (assentou) { pega.classList.remove('assentou'); void pega.offsetWidth; pega.classList.add('assentou'); }
+      pega.classList.remove('rolando', 'novo', 'pousando');   // sem 'novo': a animação antiga da casa não recomeça
     }
     if (!ativos.size) { const e = esperas; esperas = []; e.forEach(f => f()); }
   }
@@ -2912,11 +2927,13 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     disponivel: () => !!(M && BIB.length),
     lancar,
     ativo: id => ativos.has(id),
+    // na pose final, fundindo no dado parado (a Mesa redesenhada mantém a classe da casa)
+    pousando: id => !!(ativos.get(id) || {}).pousando,
     // só para testes e fotos: o instante (ms) em que cada dado assenta
     _fins: () => [...ativos.values()].map(a => Math.round(a.d.fim * 1000 / a.grupo.vel)),
     // quem joga pelo rival espera os dados assentarem (no máximo 2,5 s: nada trava o turno)
     esperar: () => (ativos.size ? new Promise(r => { esperas.push(r); setTimeout(r, 2500); }) : Promise.resolve()),
-    parar: () => { for (const id of [...ativos.keys()]) encerrar(id, false); grupos.clear(); },
+    parar: () => { for (const id of [...ativos.keys()]) encerrar(id); grupos.clear(); },
     // só para testes e fotos: desenha o quadro do instante `ms` depois do lançamento
     _quadroEm: ms => { const g = [...grupos][0]; if (!g) return; relogio = () => g.t0 + ms / g.vel; quadro(0); },
     _soltar: () => { relogio = null; cancelAnimationFrame(raf); raf = ativos.size ? requestAnimationFrame(quadro) : 0; },
@@ -3732,7 +3749,7 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
       }
       if (j.fase === 'ajuste' && j.ajusteIdx === i) tags = `<span class="tag previa">ajustar</span>`;
       const serveRival = dicas && ele.length && encaixa(ele, valorAoPegar(1 - p, d)) && j.fase !== 'fim';
-      const cls = ['pega', d.novo ? 'novo' : '', window.Rolagem && Rolagem.ativo(d.id) ? 'rolando' : '', !salvo && j.fase === 'pegar' && dicas ? 'nao-cabe' : '', j.sel === d.id || (j.fase === 'ajuste' && j.ajusteIdx === i) ? 'escolhido' : '', j.destaque === d.id ? 'destaque' : '', j.virando === d.id ? 'virando' : '', mudou(d.id) ? 'mudou' : ''].join(' ');
+      const cls = ['pega', d.novo ? 'novo' : '', window.Rolagem && Rolagem.ativo(d.id) ? 'rolando' : '', window.Rolagem && Rolagem.pousando(d.id) ? 'pousando' : '', !salvo && j.fase === 'pegar' && dicas ? 'nao-cabe' : '', j.sel === d.id || (j.fase === 'ajuste' && j.ajusteIdx === i) ? 'escolhido' : '', j.destaque === d.id ? 'destaque' : '', j.virando === d.id ? 'virando' : '', mudou(d.id) ? 'mudou' : ''].join(' ');
       const rotulo = `${j.fase === 'alvo' ? 'Escolher' : 'Pegar'} ${d.v}${contra ? `, chega virado como ${vv}` : ''}${cabe ? (r.length ? ', ' + r.map(k => REL[k].nome).join(' e ') : '') : salvo ? ', só pelo Bolso' : ', rompe a corrente'}${serveRival ? ', serve ao rival' : ''}${marcado !== null ? ', marcado com Espelho' : ''}`;
       return `<button class="${cls}" style="--i:${i}" data-i="${i}" data-id="${d.id}" ${ativo ? '' : 'disabled'} aria-label="${rotulo}" aria-pressed="${j.sel === d.id || (j.fase === 'ajuste' && j.ajusteIdx === i)}">
         <span class="kbd">${i + 1}</span><span class="face">${dadoHTML(d.v, skinMesa())}${mudou(d.id) && marcaMudanca.antes != null ? `<span class="era">era ${marcaMudanca.antes}</span>` : ''}${serveRival ? '<span class="alvo-rival"></span>' : ''}${marcado !== null ? `<span class="marca-esp dono${marcado}" title="Marcado com Espelho">${CARTAS.espelho.ico}</span>` : ''}</span><span class="tags">${tags}</span></button>`;

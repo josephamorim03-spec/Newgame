@@ -654,8 +654,8 @@ img.avatar { object-fit: contain; }
 .face-rolagem .dado::before { content: ''; position: absolute; inset: 0; border-radius: inherit; background: #2a1a12; opacity: var(--escuro, 0); z-index: 2; pointer-events: none; }
 .pega.rolando .face > .dado, .pega.rolando .face > .marca-esp, .pega.rolando .face > .alvo-rival { opacity: 0; }   /* opacity: as bolinhas têm visibility própria */
 .pega.rolando.novo .face { animation: none; }
-.pega.assentou .face > .dado { animation: assentou .16s ease-out; }
-@keyframes assentou { 0% { transform: scale(1.012, .988); } 100% { transform: none; } }   /* só um assento: o cubo já pousou */
+/* na pose final o dado parado já aparece por baixo e o cubo se funde nele (js/rolagem.js, "pousando") */
+.pega.rolando.pousando .face > .dado, .pega.rolando.pousando .face > .marca-esp, .pega.rolando.pousando .face > .alvo-rival { opacity: 1; }
 .sem-animacoes .camada-rolagem { display: none; }
 
 /* ---------- gamefeel ---------- */

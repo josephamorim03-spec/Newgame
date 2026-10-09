@@ -4,7 +4,9 @@
  *  - cada dado segue a trajetória gravada de uma casa, com uma CORREÇÃO DE FACE (uma simetria do cubo que
  *    leva a face sorteada para onde a face gravada caiu, entre as 4 equivalentes a de menor giro final);
  *  - nos últimos ~0,3 s, um AJUSTE FINAL: desliza até a casa exata, gira até o ângulo do dado parado e
- *    termina exatamente de pé, para a troca pelo dado parado não dar salto.
+ *    termina exatamente de pé, para a troca pelo dado parado não dar salto. O ajuste acaba PARADO segundos
+ *    antes do fim, ainda junto do último movimento da física (corrigir com o dado já parado parecia patinar),
+ *    e nesses últimos instantes o cubo, já na pose final, se funde no dado parado (js/rolagem.js).
  * Espaço da bandeja (o do Godot): x para a direita, y altura, z para quem joga. Unidade = 1 lado do dado.
  */
 (function (raiz, fabrica) {
@@ -88,14 +90,15 @@
   const MEIA_VOLTA = eixoAngulo([0, 1, 0], Math.PI);
 
   // ---------- um dado dentro do lançamento (LanceDado.gd) ----------
-  const AJUSTE_ANTES = 0.22, AJUSTE_DEPOIS = 0.12;
+  const AJUSTE_ANTES = 0.30, AJUSTE_DEPOIS = 0.16, PARADO = 0.10;
   function preparar(l, indice, alvo, anguloFinal = 0, espelhado = false) {
     const d = { l, indice, alvo, espelhado, trilha: espelhado ? l.n - 1 - indice : indice };
     const repouso = l.rep[d.trilha] / 1000;
     d.fim = Math.min(repouso + AJUSTE_DEPOIS, duracaoLanc(l));
     d.ajusteIni = Math.max(repouso - AJUSTE_ANTES, l.ini[d.trilha] / 1000);
+    d.assenta = Math.max(d.ajusteIni + 0.05, d.fim - PARADO);   // daqui ao fim: parado na pose final, fundindo
     d.inicio = l.ini[d.trilha] / 1000;
-    const fim = amostraDe(d, d.fim);
+    const fim = amostraDe(d, d.assenta);   // a correção mira a pose da física no fim do ajuste
     const pousou = l.fac[d.trilha];
     const base = correcao(alvo, pousou), eixo = NORMAIS[pousou];
     d.giro = Infinity;
@@ -115,8 +118,8 @@
   }
   // posição do centro (relativa à casa; y = altura acima do repouso) e orientação do desenho no instante t
   function pose(d, t) {
-    const a = amostraDe(d, Math.min(t, d.fim));
-    const w = suave(d.ajusteIni, d.fim, t);
+    const a = amostraDe(d, Math.min(t, d.assenta));
+    const w = suave(d.ajusteIni, d.assenta, t);
     const c = casa(d.l, d.indice);
     const pos = [0, 1, 2].map(k => a.pos[k] - c[k] + d.deslize[k] * w);
     const corpo = mulMM(eixoAngulo([0, 1, 0], d.giro * w), a.base);

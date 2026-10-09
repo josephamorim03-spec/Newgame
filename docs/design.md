@@ -266,6 +266,11 @@ regra sempre termina para cima, de pé, no ângulo certo e na casa.
   pousado, o cubo é visto de cima, sem lateral à mostra, e não entorta longe do centro da tela. A face de cima
   pousada recebe a mesma luz do dado parado, guarda a beirada de baixo da skin e tem a mesma sombra (6 px abaixo,
   desfocada). A troca acontece no quadro em que o cubo pousa;
+- **o pouso sem quebra (v0.11).** O ajuste final (deslizar até a casa e endireitar) termina ainda junto do último
+  movimento da física, não com o dado já parado (parecia patinar no feltro). Nos últimos 0,1 s o cubo fica na pose final
+  e se funde no dado parado: o dado parado aparece por baixo e o cubo some aos poucos, junto com o miolo e a sombra
+  dele (que, por cima, acinzentariam o dado). Antes, a troca era num quadro só, e o cubo 3D, desenhado mais macio que
+  o dado nítido, dava um estalo; o "assento" depois da troca saiu.
 - **um dado de verdade, não abas de papel.** As faces têm o canto arredondado do dado parado, então as quinas
   do cubo ficariam ocas. Um **miolo** (cubo menor, 41% do lado a partir do centro; 38,5% na pelúcia) enche as
   quinas como um dado de canto gasto, sem aparecer pelos cantos quando o dado está pousado. A face que fica quase
