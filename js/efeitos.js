@@ -158,7 +158,7 @@
     const el = document.createElement('div');
     el.className = 'chamada ' + c.tipo + (c.classe ? ' ' + c.classe : '') + (cfg.animacoes ? '' : ' sem-anim');
     el.setAttribute('role', 'status');
-    el.innerHTML = `<b>${c.ico ? `<span class="ch-ico">${c.ico}</span>` : ''}${c.titulo}</b>${c.sub ? `<span>${c.sub}</span>` : ''}`;
+    el.innerHTML = `<b${c.ico ? ' class="com-ico"' : ''}>${c.ico ? `<span class="ch-ico">${c.ico}</span>` : ''}<span>${c.titulo}</span></b>${c.sub ? `<span>${c.sub}</span>` : ''}`;
     document.body.appendChild(el);
     setTimeout(() => { el.classList.add('saindo'); setTimeout(() => { el.remove(); proxima(); }, cfg.animacoes ? 260 : 0); }, c.ms || (cfg.animacoes ? 1150 : 1400));
   }

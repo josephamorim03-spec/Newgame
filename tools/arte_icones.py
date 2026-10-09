@@ -138,6 +138,35 @@ def recortar_fundo(png_bytes, tolerancia=70):
     return buf.getvalue()
 
 
+def furar(png_bytes):
+    """abre o miolo de um objeto vazado (a boia): tudo o que é claro e ligado ao centro, até o contorno escuro
+    (inclusive a borda de adesivo creme por dentro do furo), vira transparente; a faixa suavizada que encosta
+    no contorno fica meio transparente, para a borda do furo não serrilhar"""
+    im = Image.open(io.BytesIO(png_bytes)).convert("RGBA")
+    w, h = im.size
+    px = im.load()
+    claro = lambda c: min(c[0], c[1]) > 185 and c[0] - c[2] < 85        # creme e branco (não o coral nem o contorno)
+    furo, pilha = set(), [(w // 2, h // 2)]
+    while pilha:
+        x, y = pilha.pop()
+        if (x, y) in furo or not (0 <= x < w and 0 <= y < h) or not claro(px[x, y]):
+            continue
+        furo.add((x, y))
+        pilha += [(x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)]
+    borda = {(x + dx, y + dy) for x, y in furo for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1), (2, 0), (-2, 0), (0, 2), (0, -2))} - furo
+    for x, y in furo:
+        px[x, y] = (0, 0, 0, 0)
+    for x, y in borda:                       # transição: quanto mais claro, mais transparente
+        if 0 <= x < w and 0 <= y < h:
+            r, g, b, a = px[x, y]
+            luz = (r + g + b) / 3
+            if luz > 110:
+                px[x, y] = (r, g, b, int(a * max(0.0, min(1.0, (235 - luz) / 125))))
+    buf = io.BytesIO()
+    im.save(buf, "PNG")
+    return buf.getvalue()
+
+
 def webp(png_bytes, lado_final):
     im = Image.open(io.BytesIO(png_bytes)).convert("RGBA")
     caixa = im.getbbox()                    # corta a sobra transparente e centraliza num quadrado
@@ -156,7 +185,10 @@ def embutir(cfg):
     fonte, saida, variavel, _, lado = opcoes(cfg)
     prontos = {}
     for png in sorted(fonte.glob("*.png")):
-        prontos[png.stem] = "data:image/webp;base64," + base64.b64encode(webp(png.read_bytes(), lado)).decode()
+        dados = png.read_bytes()
+        if png.stem in cfg.get("furos", []):      # objetos vazados: o miolo sai transparente (ver furar)
+            dados = furar(dados)
+        prontos[png.stem] = "data:image/webp;base64," + base64.b64encode(webp(dados, lado)).decode()
     linhas = [f"/* gerado por tools/arte_icones.py a partir de {PEDIDOS.relative_to(RAIZ)}: as versões pintadas (webp em data URI). Vazio = só vetor. */",
               f"window.{variavel} = Object.assign(window.{variavel} || {{}}, {{"]
     linhas += [f'  {k}: "{v}",' for k, v in prontos.items()]
