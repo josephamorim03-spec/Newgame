@@ -23,8 +23,23 @@ Banco: Postgres (o plugin da Railway). Sem `DATABASE_URL`, guarda tudo num arqui
 - Quem já jogava sem conta leva o progresso uma vez, ao criar a conta: até 600 moedas, e itens até um valor total de 900.
 - Login: 10 tentativas por minuto por IP. Criação de contas: 5 a cada 10 minutos.
 - WebSocket: até 120 mensagens a cada 10 s.
-- Quem cai tem 1 minuto para voltar à sala (o jogo reconecta sozinho). Depois disso perde por W.O.
 - Cada vez tem 2 minutos. Quem passa disso perde.
+
+### Quedas e tempos
+
+| O quê | Quanto |
+|---|---|
+| Quem cai no meio da partida tem para voltar | **90 s** (depois perde por W.O., sem moedas para ninguém) |
+| Relógio da vez de quem está caído | **para**; na volta, continua de onde estava, com pelo menos **30 s** para jogar |
+| O rival de quem caiu vê | "caiu · N s" contando o tempo que falta para a volta |
+| O servidor percebe uma conexão morta | em 15 a 30 s (ping a cada 15 s) |
+| O aparelho de quem caiu tenta voltar | durante 100 s, de 0,8 s a 5 s entre tentativas; **na hora** quando a internet volta ou o app volta para a frente |
+| Conexão "zumbi" (aberta, mas sem resposta) | o aparelho manda um pulso a cada 15 s; 35 s sem ouvir o servidor, ou 4 s sem resposta ao voltar para a frente, contam como queda |
+| A aba recarregou (o celular a fechou em segundo plano) | o jogo volta sozinho para a sala guardada no aparelho (por até 3 h) |
+| Quem volta depois do fim (inclusive depois do W.O.) | recebe o resultado da partida |
+| Convite que ninguém aceitou | some em 24 h |
+| Sala sem ninguém conectado | some 30 min depois da última jogada |
+| Login | dura 30 dias desde a última vez que o jogo foi aberto |
 
 ## Pôr no ar na Railway
 
@@ -65,6 +80,8 @@ npm start                                   # http://localhost:8080 (banco em da
 npm test                                    # motor, API, salas, quedas, limite por par (node:test)
 TESTE_DATABASE_URL=postgres://... npm test  # o mesmo, mais um roteiro contra um Postgres de verdade
 NODE_PATH=$(npm root -g) node tools/online_e2e.js   # dois navegadores: conta, convite, partida, revanche, ranking
+NODE_PATH=$(npm root -g) node tools/reconexao_e2e.js  # quedas: conexão morta, aba recarregada, sem internet
+python3 tools/empacotar.py                          # dist/dice-duel.html (arquivo único)
 ```
 
 Aberto por `file://` ou como arquivo único (`dist/dice-duel.html`), o jogo continua funcionando contra os rivais e a dois.
