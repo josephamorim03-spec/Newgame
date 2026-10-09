@@ -143,7 +143,7 @@ svg.ico.mini-ico { width: 1.25em; height: 1.25em; vertical-align: -0.25em; strok
 .avatar.triste { animation: murcha .8s ease; }
 @keyframes pula { 50% { transform: translateY(-5px) rotate(-4deg); } }
 @keyframes murcha { 40% { transform: translateY(3px) scale(.95); } }
-.fala { position: absolute; top: -14px; right: 12px; max-width: 70%; background: var(--marfim); color: var(--tinta); border-radius: 14px 14px 4px 14px; padding: 6px 10px; font-size: 13px; font-weight: 700; box-shadow: 0 6px 14px rgba(0,0,0,.2); z-index: 3; animation: entraFala .25s cubic-bezier(.2,1.4,.4,1); }
+.fala { position: absolute; top: -14px; left: 66px; right: auto; max-width: max(130px, calc(100% - 230px)); pointer-events: none; background: var(--marfim); color: var(--tinta); border-radius: 14px 14px 14px 4px; padding: 6px 10px; font-size: 13px; font-weight: 700; box-shadow: 0 6px 14px rgba(0,0,0,.2); z-index: 3; animation: entraFala .25s cubic-bezier(.2,1.4,.4,1); }
 @keyframes entraFala { from { transform: scale(.6) translateY(6px); opacity: 0; } }
 
 /* ---------- corrente (sulco de feltro dentro da ficha) ---------- */
@@ -860,3 +860,22 @@ button.vaga { cursor: pointer; border: 0; background: #fff3dc; color: var(--tint
    (antes ficavam depois da tabela de estatísticas: no celular era preciso rolar a janela inteira para jogar de novo) */
 #fim .botoes { position: sticky; bottom: -20px; margin: 0 -20px -20px; padding: 12px 20px calc(16px + env(safe-area-inset-bottom, 0px)); background: var(--papel); box-shadow: 0 -6px 8px -8px rgba(58,42,46,.35); z-index: 2; }
 @media (max-width: 520px) { #fim .botoes { display: grid; grid-template-columns: 1fr 1fr; } #fim .botoes .btn { padding: 0 10px; min-width: 0; } }
+
+/* ---------- partida em foco (v0.11): durante a partida, só o que importa nela ---------- */
+/* o cabeçalho encolhe: sem xícara e subtítulo; os botões viram só ícones (o nome continua no aria-label). As moedas
+   ficam: são a entrada da Loja */
+.em-partida .marca p, .em-partida .topo-botoes .cha { display: none; }
+.em-partida .btn-topo .rotulo { display: none; }
+.em-partida .marca h1 { font-size: 22px; }
+.em-partida .topo { min-height: 0; }
+/* no PC, o "Como se joga" sai da lateral (fica o Registro); o botão Regras o traz de volta */
+@media (min-width: 1040px) { .em-partida .lado:not(.aberto) .regras { display: none; } .acoes { position: relative; } }
+/* o interruptor das ajudas, preso na borda de cima da barra de jogada */
+/* o interruptor das ajudas, no canto de cima da barra de jogada (o texto da primeira linha deixa o espaço dele) */
+.ajudas-liga { position: absolute; top: 8px; right: 8px; z-index: 2; display: inline-flex; gap: 6px; align-items: center; border: 0; border-radius: 999px; padding: 5px 7px 5px 10px; min-height: 30px; font: inherit; font-size: 12px; font-weight: 800; background: var(--papel-2); color: var(--tinta-suave); cursor: pointer; }
+.ajudas-liga .chavinha { width: 26px; height: 16px; border-radius: 999px; background: rgba(58,42,46,.25); position: relative; transition: background .15s; }
+.ajudas-liga .chavinha::after { content: ''; position: absolute; top: 2px; left: 2px; width: 12px; height: 12px; border-radius: 50%; background: var(--papel); transition: transform .15s; }
+.ajudas-liga[aria-pressed="true"] .chavinha { background: var(--eco); }
+.ajudas-liga[aria-pressed="true"] .chavinha::after { transform: translateX(10px); }
+.acoes > .ajudas-liga + .status { padding-right: 92px; }
+/* a fala do rival sai do retrato para a direita: cobre o nome por um instante, nunca o Bolso nem o placar */

@@ -339,7 +339,14 @@ animações desligadas, tudo isso vira instantâneo.
 - tremor leve da mesa;
 - vibração;
 - falas do rival;
-- etiquetas de ajuda na Mesa.
+- **ajudas na partida** (v0.11): etiquetas nos dados, faces da próxima casa, a linha "disparar vale…", o risco de
+  segurar, a explicação da carta virada e os "toque em…". Desligadas, a barra de jogada fica com uma frase curta e os
+  botões; os avisos de que a corrente vai romper continuam (evitam toque errado). Também liga e desliga pelo botão
+  "Ajudas" no canto da barra de jogada.
+
+**Partida em foco (v0.11):** durante a partida, o cabeçalho perde a xícara, o subtítulo e os rótulos (os botões
+viram ícones; as moedas ficam, porque são a entrada da Loja), e no PC o "Como se joga" sai da lateral (fica o
+Registro; o botão Regras o traz de volta). A fala do rival sai do retrato e nunca cobre o Bolso nem o placar.
 
 **Partida:**
 - modo (contra um rival ou 2 jogadores);

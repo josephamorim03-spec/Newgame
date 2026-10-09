@@ -196,6 +196,22 @@ const RAIZ = path.join(__dirname, '..');
   confere(k.vez === 0 && k.cartas[1].pausa === 'usada' && k.cor[1].join() === '1,3', `Coruja: usou a Pausa (${k.cartas[1].pausa}) e a vez voltou (vez ${k.vez})`);
   await pg.evaluate(() => { DiceDuel.st.cfg.modo = 'local'; DiceDuel.st.cfg.nivel = 'aprendiz'; });
 
+  // 11. Ajudas: o botão da barra de jogada liga e desliga etiquetas, dicas e explicações (e lembra a escolha)
+  await cena([['ajuste'], []], () => {
+    const j = DiceDuel.jogo; j.vez = 0; j.fase = 'pegar'; j.cor[0] = [2]; j.mesa = [{ id: 9601, v: 3 }, { id: 9602, v: 6 }];
+  });
+  const vista = () => pg.evaluate(() => ({ tags: document.querySelectorAll('#mesa .tag').length, info: document.querySelectorAll('.jogador .info').length,
+    prox: document.querySelectorAll('.prox-faces').length, status: document.querySelector('#acoes .status').textContent.trim(), pref: DiceDuel.st.pref.dicas,
+    foco: document.body.classList.contains('em-partida') }));
+  const com = await vista();
+  await pg.click('#acoes .ajudas-liga');
+  const sem = await vista();
+  confere(com.tags > 0 && com.info > 0 && com.prox > 0 && /sincronizam/.test(com.status), 'Ajudas ligadas: etiquetas, linha da corrente, faces da próxima casa e a explicação');
+  confere(sem.tags === 0 && sem.info === 0 && sem.prox === 0 && !/sincronizam/.test(sem.status) && sem.pref === false, `Ajudas desligadas pelo botão: só o essencial ("${sem.status}")`);
+  confere(com.foco, 'Partida em foco: o cabeçalho fica enxuto durante a partida');
+  await pg.click('#acoes .ajudas-liga');
+  confere((await vista()).pref === true, 'Ajudas: o mesmo botão liga de novo');
+
   // 9. Toda skin rola com a própria cara: seis faces da skin, miolo da cor dela, canto igual ao do dado parado, nada sobra
   await pg.evaluate(() => { DiceDuel.st.cfg.modo = 'bot'; DiceDuel.st.conta.dados = ['marfim', 'madeira', 'rosa', 'menta', 'pelucia', 'dourado', 'diamante']; });
   await cena([[], []], () => {});

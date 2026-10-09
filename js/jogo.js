@@ -618,7 +618,7 @@
         slots += `<div class="slot${frenteCls}" data-slot="${i}">${r.length ? elo(r) : (i > 0 ? `<span class="elo r-coringa" title="Coringa">${CHAPEU}</span>` : '')}${dadoHTML(cor[i], skinDe(p))}</div>`;
       } else if (i === cor.length && !fx) {
         const fs = facesQueEncaixam(cor);
-        slots += `<div class="slot prox" title="Faces que sincronizam com a frente">${cor.length && !j.coringa[p] ? `<span class="prox-faces n${fs.length}">${fs.map(f => `<i>${f}</i>`).join('')}</span>` : '<svg class="ico prox-livre" viewBox="0 0 24 24" aria-label="qualquer dado começa"><path d="M12 6v12M6 12h12"/></svg>'}</div>`;
+        slots += `<div class="slot prox" title="Faces que sincronizam com a frente">${!st.pref.dicas ? '' : cor.length && !j.coringa[p] ? `<span class="prox-faces n${fs.length}">${fs.map(f => `<i>${f}</i>`).join('')}</span>` : '<svg class="ico prox-livre" viewBox="0 0 24 24" aria-label="qualquer dado começa"><path d="M12 6v12M6 12h12"/></svg>'}</div>`;
       } else slots += `<div class="slot vazio"></div>`;
     }
     const pct = Math.min(100, j.pts[p] / j.meta * 100);
@@ -637,7 +637,7 @@
         ${bolsoHTML(p)}<span class="placar"><b data-placar="${p}">${j.pts[p]}</b><small>/${j.meta}</small></span></div>
       <div class="barra" role="progressbar" aria-valuemin="0" aria-valuemax="${j.meta}" aria-valuenow="${j.pts[p]}" aria-label="Pontos de ${n[p]}"><i style="width:${pct}%"></i>${prev ? `<span class="prev" style="left:${pct}%;width:${prev}%"></span>` : ''}</div>
       <div class="corrente${fx ? ' fx-' + fx.tipo : L >= 5 ? ' fervendo' : L >= 4 ? ' quente' : ''}" style="--fase:-${Math.round(performance.now() % 1800)}ms">${slots}</div>
-      <div class="info"><span>Corrente <b>${L}</b>/${LIM}</span><span>${valeAgora}${seCrescer}</span></div>
+      ${st.pref.dicas ? `<div class="info"><span>Corrente <b>${L}</b>/${LIM}</span><span>${valeAgora}${seCrescer}</span></div>` : ''}
       ${cartasHTML(p)}
     </div>`;
   }
@@ -684,8 +684,15 @@
     return `${n[r]} tem uma carta virada (?). Pode ser ${traps.join(' ou ')}${blefes.length ? `, ou um blefe com ${blefes.join(' ou ')}` : ''}.`;
   }
 
+  // o interruptor das ajudas fica na própria barra de ação: um toque liga ou desliga etiquetas, dicas e explicações
+  const botaoAjudas = () => `<button class="ajudas-liga" data-acao="ajudas" aria-pressed="${st.pref.dicas}" aria-label="Ajudas da partida ${st.pref.dicas ? 'ligadas' : 'desligadas'}" title="${st.pref.dicas ? 'Esconder as ajudas da partida' : 'Mostrar as ajudas da partida'}">Ajudas<span class="chavinha" aria-hidden="true"></span></button>`;
   function acoesHTML() {
-    const j = jogo, p = j.vez, n = nomes(), quem = `<b class="cor${p}">${n[p]}</b>`;
+    const j = jogo;
+    const html = acoesConteudo();
+    return j.fase === 'fim' ? html : botaoAjudas() + html;
+  }
+  function acoesConteudo() {
+    const j = jogo, p = j.vez, n = nomes(), quem = `<b class="cor${p}">${n[p]}</b>`, ajudas = st.pref.dicas;
     if (j.fase === 'fim') {
       return `<div class="status"><b class="cor${j.vencedor}">${n[j.vencedor]}</b> venceu por ${j.pts[j.vencedor]} × ${j.pts[1 - j.vencedor]}.</div>
         <div class="botoes"><button class="btn btn-mel" data-acao="nova" ${online() && Rede.pediuRevanche ? 'disabled' : ''}>${online() ? (Rede.pediuRevanche ? 'Esperando o rival…' : 'Revanche') : 'Jogar de novo'}</button><button class="btn btn-papel" data-acao="deck">Trocar deck</button></div>`;
@@ -701,15 +708,15 @@
       const k = CARTAS[j.alvo], ds = j.sel !== null && j.sel !== undefined ? j.mesa[idxDe(j.sel)] : null;
       if (ds) {
         const efeito = { virar: [`Virar o ${ds.v}`, `ele vira ${7 - ds.v}`, 'Virar este dado'], espelho: [`Marcar o ${ds.v} com o Espelho`, 'a marca fica à vista do rival', 'Marcar este dado'] }[j.alvo];
-        return `<div class="status">${efeito[0]}: ${efeito[1]}. Toque em outro dado para trocar.</div>
+        return `<div class="status">${efeito[0]}: ${efeito[1]}.${ajudas ? ' Toque em outro dado para trocar.' : ''}</div>
           <div class="botoes"><button class="btn btn-mel" data-acao="confirmar-alvo">${efeito[2]}</button><button class="btn btn-papel" data-acao="cancelar-alvo">Cancelar</button></div>`;
       }
       const txt = { espelho: 'Escolha o dado que vai receber a marca do <b>Espelho</b>.', virar: 'Escolha o dado que vai <b>virar</b>. A etiqueta mostra como ele fica.', ajuste: 'Escolha o dado que vai receber o <b>Ajuste</b>.' }[j.alvo];
-      return `<div class="status">${txt} Nada acontece até você confirmar.</div><div class="botoes"><button class="btn btn-papel" data-acao="cancelar-alvo">Cancelar (${k.nome} volta para a mão)</button></div>`;
+      return `<div class="status">${txt}${ajudas ? ' Nada acontece até você confirmar.' : ''}</div><div class="botoes"><button class="btn btn-papel" data-acao="cancelar-alvo">Cancelar (${k.nome} volta para a mão)</button></div>`;
     }
     if (j.fase === 'ajuste') {
       const d = j.mesa[j.ajusteIdx];
-      return `<div class="status">Ajuste no ${mini(d.v, skinMesa())} <b>${d.v}</b>. Toque em outro dado para trocar.</div><div class="botoes">
+      return `<div class="status">Ajuste no ${mini(d.v, skinMesa())} <b>${d.v}</b>.${ajudas ? ' Toque em outro dado para trocar.' : ''}</div><div class="botoes">
         <button class="btn btn-duplo btn-mel" data-ajuste="-1" ${d.v <= 1 ? 'disabled' : ''}><span>−1</span><small>${d.v > 1 ? 'vira ' + (d.v - 1) : 'não dá'}</small></button>
         <button class="btn btn-duplo btn-mel" data-ajuste="1" ${d.v >= 6 ? 'disabled' : ''}><span>+1</span><small>${d.v < 6 ? 'vira ' + (d.v + 1) : 'não dá'}</small></button>
         <button class="btn btn-papel" data-acao="cancelar-alvo">Cancelar</button></div>`;
@@ -751,7 +758,7 @@
       if (j.armada[p] === 'ancora' && L >= 4) extra += `<div class="risco baixo"><span>Sua Âncora está armada: uma ruptura seria evitada.</span></div>`;
       if (j.armada[1 - p] && j.armada[1 - p] !== 'espelho') extra += `<div class="risco aviso"><span>${cartaViradaTxt(1 - p, L)}</span></div>`;
       return `<div class="status">${quem}: corrente de <b>${L}</b>. Disparar ou segurar?</div>
-        <div class="risco ${nivel}"><span>${txt}</span></div>${extra}
+        ${ajudas ? `<div class="risco ${nivel}"><span>${txt}</span></div>${extra}` : ''}
         <div class="botoes">
           <button class="btn btn-duplo btn-mel" data-acao="disparar"><span>Disparar</span><small>+${vale} agora</small></button>
           <button class="btn btn-duplo btn-papel" data-acao="segurar"><span>Segurar</span><small>${L + 1 <= LIM ? `com ${L + 1} vale +${pontos(L + 1)}` : 'continuar'}</small></button>
@@ -779,16 +786,19 @@
         if (op.ds.includes('trocar')) botoes += bt('trocar', 'Trocar', `o ${b} entra e rompe; o ${op.v} fica`, 'btn-papel perigo');
       }
       const dica = op.principal ? 'Toque em outro dado para trocar, ou de novo neste para pegar.' : 'Toque em outro dado para trocar.';
+      if (!ajudas) return `<div class="status">${mini(op.d.v, skinMesa())} <b>${op.d.v}</b>${op.contra ? ` → <b>${op.v}</b> (Espelho)` : ''}${aviso ? `. ${aviso}` : ''}</div>
+        <div class="botoes">${botoes}<button class="btn btn-papel" data-acao="cancelar">Cancelar</button></div>`;
       return `<div class="status">${quem}, você escolheu ${mini(op.d.v, skinMesa())} <b>${op.d.v}</b>${op.contra ? `, que chega virado como <b>${op.v}</b> (Espelho do rival) e não pode ir para o Bolso` : ''}. ${aviso}</div>
-        <div class="botoes">${botoes}<button class="btn btn-papel" data-acao="cancelar">Cancelar</button></div><p class="nota" style="margin:0">${dica}</p>`;
+        <div class="botoes">${botoes}<button class="btn btn-papel" data-acao="cancelar">Cancelar</button></div>${ajudas ? `<p class="nota" style="margin:0">${dica}</p>` : ''}`;
     }
     let msg;
     if (j.segundoDado) msg = `escolha o segundo dado (Pressa) ou dispense${eu.length >= 3 ? ' e vá para o disparo' : ''}.`;
     else if (!algumSeguro) msg = `<b>nenhum dado sincroniza</b> com o seu ${frente(eu)}, nem o do Bolso. Use uma carta ou escolha um: a corrente de ${eu.length} rompe${j.armada[p] === 'ancora' && eu.length >= 4 ? ', mas a sua Âncora está armada' : ''}.`;
+    else if (!ajudas) msg = 'escolha um dado.';
     else msg = eu.length ? `escolha um dado. Sua frente é <b>${frente(eu)}</b>: sincronizam ${j.coringa[p] ? 'todos (Coringa)' : facesQueEncaixam(eu).join(', ')}.` : 'escolha um dado. Sua corrente está vazia: qualquer um começa.';
     const prontas = j.decks[p].filter(c => usavel(p, c)).length;
     const dispensa = j.segundoDado ? `<div class="botoes"><button class="btn btn-papel" data-acao="dispensar">Dispensar o 2.º dado</button></div>` : '';
-    return `<div class="status">${quem}, ${msg}</div>${dispensa}${prontas ? `<p class="nota" style="margin:0">Toque numa carta sua para usar (${prontas} ${prontas === 1 ? 'pronta' : 'prontas'}).</p>` : ''}`;
+    return `<div class="status">${quem}, ${msg}</div>${dispensa}${prontas && ajudas ? `<p class="nota" style="margin:0">Toque numa carta sua para usar (${prontas} ${prontas === 1 ? 'pronta' : 'prontas'}).</p>` : ''}`;
   }
 
   // na hora de disparar ou segurar, a sua corrente precisa estar à vista: em telas baixas o painel de ação (preso no
@@ -810,6 +820,8 @@
     const j = jogo;
     if (j.voo && !j.voo.de) { const el = document.querySelector(`.pega[data-id="${j.voo.id}"] .face`); if (el) j.voo.de = el.getBoundingClientRect(); }
     document.getElementById('tabuleiro').classList.toggle('modo-local', j.modo === 'local');
+    // durante a partida a tela fica só com o que importa nela (cabeçalho enxuto; no PC, as regras saem da lateral)
+    document.body.classList.toggle('em-partida', j.fase !== 'fim');
     document.getElementById('pj1').innerHTML = painel(1);
     document.getElementById('pj0').innerHTML = painel(0);
     const mesa = document.getElementById('mesa');
@@ -1320,6 +1332,11 @@
   });
   document.getElementById('acoes').addEventListener('click', e => {
     const j = jogo;
+    if (e.target.closest('[data-acao="ajudas"]')) {
+      st.pref.dicas = !st.pref.dicas; salvar(); aplicarPrefs(); render();
+      const b = document.querySelector('#acoes .ajudas-liga'); if (b) b.focus();
+      return;
+    }
     const dst = e.target.closest('[data-destino]');
     if (dst && j.fase === 'pegar' && j.sel && humano(j.vez) && !j.pensando) { pegarDado(dst.dataset.destino); return; }
     if (dst && j.fase === 'destino' && j.mao && humano(j.vez)) { colocar(j.vez, j.mao.v, dst.dataset.destino); return; }
