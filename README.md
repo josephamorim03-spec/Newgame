@@ -49,6 +49,7 @@ Cada um guarda um dado no **Bolso**, escolhe a hora de **disparar** a corrente p
 | `sim/` | regras de referência em Python e os experimentos de balanceamento |
 | `tools/empacotar.py` | gera o HTML único |
 | `tools/fumaca.js` | teste de fumaça: joga partidas inteiras no navegador e falha com qualquer erro |
+| `tools/gerar_arte.py` | gera rivais, ícones, ilustrações das cartas e ícone do app pela API de imagens da OpenAI (`--listar` mostra o custo) |
 | `tools/regras.js` | testes dirigidos das cartas (Pressa, Coringa, Espelho, blefe, Âncora × Interferência) |
 | `docs/design.md` | regras, cartas, números, decisões e por quê |
 | `docs/pesquisa.md` | o que jogos de cartas no celular ensinam (deck pequeno, armadilhas, contra-jogo) |
