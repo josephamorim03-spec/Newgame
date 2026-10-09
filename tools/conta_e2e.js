@@ -7,6 +7,9 @@ const { chromium } = require('playwright');
 const { criarApp } = require('../servidor/app');
 const { BancoMemoria } = require('../servidor/banco');
 const { verificar } = require('./layout');
+const path = require('path');
+const FOTOS = path.join(__dirname, '..', 'builds', 'fotos');
+require('fs').mkdirSync(FOTOS, { recursive: true });
 
 (async () => {
   const { criarServidor, salas, fila } = criarApp({ banco: new BancoMemoria(), segredo: 'segredo-do-teste-da-conta-1234', limites: { ws: 100000 } });
@@ -19,12 +22,12 @@ const { verificar } = require('./layout');
     const ctx = await navegador.newContext({ viewport: vp, hasTouch: vp.width < 500 });
     const pg = await ctx.newPage();
     pg.on('pageerror', e => erros.push(`${nome}: ${e.message}`));
-    pg.on('console', m => { if (m.type() === 'error' && !/fonts\.g|ERR_NAME|net::|status of 40[13489]/.test(m.text())) erros.push(`${nome} console: ${m.text()}`); });
+    pg.on('console', m => { if (m.type() === 'error' && !/fonts\.g|ERR_NAME|net::|status of (40[13489]|429)/.test(m.text())) erros.push(`${nome} console: ${m.text()}`); });
     await pg.goto(base + '/'); await pg.waitForTimeout(300);
     await pg.evaluate(() => { DiceDuel.ajustar({ animacoes: false, som: false, musica: false }); ['janelaDeck', 'fim', 'janelaCarta'].forEach(id => { document.getElementById(id).hidden = true; }); });
     return pg;
   };
-  const layout = async (pg, tela) => (await pg.evaluate(verificar)).forEach(x => erros.push(`layout ${tela} (${pg.viewportSize().width}px): ${x}`));
+  const layout = async (pg, tela) => (await pg.screenshot({ path: path.join(FOTOS, `conta-${tela}-${pg.viewportSize().width}.png`) }), await pg.evaluate(verificar)).forEach(x => erros.push(`layout ${tela} (${pg.viewportSize().width}px): ${x}`));
   const avisoTem = (pg, re) => pg.waitForFunction(r => new RegExp(r).test(document.getElementById('onlineAviso').textContent), re.source, { timeout: 8000 });
   async function entrar(pg, nome, senha, criar) {
     await pg.click('#btnOnline');
@@ -42,6 +45,31 @@ const { verificar } = require('./layout');
     await entrar(pc, 'helena', 'senha-boa-1', false);
     const outro = await abrir('outro', { width: 390, height: 844 });
     await entrar(outro, 'Igor', 'senha-boa-2', true);
+
+    // avisos de senha: tentativas restantes, trava com contagem no botão, outro nome destrava, mostrar senha, Caps Lock
+    const intruso = await abrir('intruso', { width: 390, height: 844 });
+    await intruso.click('#btnOnline');
+    await intruso.click('[data-ver-senha]');
+    if ((await intruso.getAttribute('#formConta [name=senha]', 'type')) !== 'text') throw new Error('"mostrar" não revelou a senha');
+    await intruso.click('[data-ver-senha]');
+    await intruso.focus('#formConta [name=senha]');
+    await intruso.keyboard.press('CapsLock'); await intruso.keyboard.press('a');
+    const caps = await intruso.$('.caps-aviso');
+    await intruso.keyboard.press('CapsLock');
+    for (let i = 0; i < 5; i++) {
+      await intruso.fill('#formConta [name=nome]', 'igor'); await intruso.fill('#formConta [name=senha]', 'chute-' + i);
+      await intruso.click('#formConta [type=submit]');
+      await intruso.waitForFunction(n => document.getElementById('onlineAviso').dataset.n !== String(n) && (document.getElementById('onlineAviso').dataset.n = n, true), i);
+      await intruso.waitForTimeout(250);
+      if (i === 2 && !/Mais 2 tentativas/.test(await intruso.textContent('#onlineAviso'))) throw new Error('faltou o aviso de tentativas restantes: ' + await intruso.textContent('#onlineAviso'));
+    }
+    await intruso.waitForFunction(() => { const b = document.querySelector('#formConta [type=submit]'); return b.disabled && /Tente de novo em 1[45]:\d\d/.test(b.textContent); }, null, { timeout: 5000 });
+    if (!/travado por 15 minutos/.test(await intruso.textContent('#onlineAviso'))) throw new Error('faltou o aviso da trava');
+    await layout(intruso, 'login-travado');
+    await intruso.fill('#formConta [name=nome]', 'outra-pessoa');
+    await intruso.waitForFunction(() => !document.querySelector('#formConta [type=submit]').disabled, null, { timeout: 3000 });
+    await intruso.close();
+    console.log(`0) senha: aviso de tentativas, trava com contagem no botão, outro nome destrava, mostrar senha${caps ? ', Caps Lock' : ' (Caps Lock não simulável aqui)'}`);
     // o Igor vê a Helena no Online agora
     await outro.waitForFunction(() => [...document.querySelectorAll('.amigo')].some(x => /Helena/.test(x.textContent)), null, { timeout: 25000 });
 
