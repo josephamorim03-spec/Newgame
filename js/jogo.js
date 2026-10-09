@@ -1153,8 +1153,10 @@
   // ---------- online: conta, loja no servidor e salas por convite (servidor/ e docs/servidor.md) ----------
   // Sem conta, tudo fica no aparelho (como antes). Com conta, moedas e itens moram no servidor e o
   // st.conta vira um espelho do perfil; o progresso de convidado fica guardado à parte.
-  // o jogo e a API moram no mesmo endereço (o servidor serve a página); por file:// não há online
-  const API = /^https?:$/.test(location.protocol) ? location.origin : null;
+  // a API mora no endereço da <meta name="dice-servidor"> (página no Vercel) ou no mesmo da página (o servidor serve
+  // a página com a meta vazia); por file:// não há online. O convite usa sempre o endereço da página.
+  const PAGINA = /^https?:$/.test(location.protocol) ? location.origin : null;
+  const API = PAGINA && ((document.querySelector('meta[name="dice-servidor"]') || {}).content || PAGINA).replace(/\/$/, '');
   const Rede = { ws: null, ola: false, sala: null, infoSala: null, tentativas: 0, ranking: null, convite: null, aba: 'entrar', pediuRevanche: false, aviso: null };
   try { st.sessao = JSON.parse(localStorage.getItem('diceduel.sessao') || 'null'); } catch (e) { st.sessao = null; }
   const guardarSessao = () => { try { if (st.sessao) localStorage.setItem('diceduel.sessao', JSON.stringify(st.sessao)); else localStorage.removeItem('diceduel.sessao'); } catch (e) {} };
@@ -1363,7 +1365,7 @@
     if (f) f.focus();
   }
   const esc = t => String(t).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
-  const linkDaSala = c => `${API}/?sala=${c}`;
+  const linkDaSala = c => `${PAGINA}/?sala=${c}`;
   function desenharOnline() {
     document.getElementById('pontoOnline').hidden = !st.sessao;
     const el = document.getElementById('onlineConteudo');
