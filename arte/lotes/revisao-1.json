@@ -15,7 +15,8 @@
         "Pausa card (skip your turn, a calm break): a steaming cream teacup on a small saucer with a honey band, one curl of steam.",
         "Pausa card (skip your turn): a round sage-green token with two thick vertical cream pause bars on it.",
         "Pausa card (skip your turn): an open hand raised palm forward, saying 'wait', warm skin tone, simple mitten-like shape."
-      ]
+      ],
+      "texto_final": "Pausa card (skip your turn, a calm break): a steaming cream teacup on a small saucer, the tea a flat honey color with only one shadow tone (no gradient), the saucer centered under the cup, one simple curl of steam."
     },
     "reverso": {
       "grupo": "cartas",
@@ -30,7 +31,8 @@
         "Reverso card (reverse your dice chain): a short horizontal row of three small ivory dice with one thick sky-blue U-turn arrow looping over them from right back to left.",
         "Reverso card (reverse the chain): one thick lavender U-turn arrow, chunky and bold, nothing else.",
         "Reverso card (reverse the chain): two thick arrows, honey and sky blue, pointing in opposite directions, stacked, like a swap sign."
-      ]
+      ],
+      "texto_final": "Reverso card (reverse your dice chain): a short horizontal row of three small ivory dice drawn flat (no layered bases under them), with one thick LAVENDER (#b8a4f0) U-turn arrow looping over them from right back to left. Not blue."
     },
     "furto": {
       "grupo": "cartas",
@@ -45,7 +47,8 @@
         "Furto card (swap pockets with the rival): two small drawstring cloth pouches, one coral and one sky blue, with two curved arrows crossing between them.",
         "Furto card (steal the rival's pocket die): a sly gloved hand pulling a small ivory die out of a coral drawstring pouch.",
         "Furto card (pocket swap): a coral drawstring pouch wearing a tiny black bandit eye mask, cheeky, a die peeking out."
-      ]
+      ],
+      "texto_final": "Furto card (swap pockets with the rival): two small drawstring cloth pouches, one coral and one sky blue, each with a tiny ivory die peeking out, and two THICK honey-yellow curved arrows crossing between them. High contrast, arrows never blue."
     },
     "convite": {
       "grupo": "cartas",
@@ -60,7 +63,8 @@
         "Convite card (an invitation the rival must accept): a cream envelope, flap open, with a small ivory die peeking out of it. No wax seal.",
         "Convite card (you choose the die the rival must take): a hand presenting a single ivory die on an open palm, like an offering.",
         "Convite card (forced invitation): a small honey-gold ticket with a die printed on it, slightly tilted. No text."
-      ]
+      ],
+      "texto_final": "Convite card (an invitation the rival must accept): a cream envelope, flap open with a light cream or pale coral inner flap (no red triangle, nothing that looks like a wax seal), a small ivory die clearly sitting inside and peeking out of it."
     },
     "lacre": {
       "grupo": "cartas",
@@ -75,7 +79,8 @@
         "Lacre trap (seals and cancels the rival's next effect): a round coral-red wax seal with a simple embossed star and drippy wax edges.",
         "Lacre trap (cancels the next effect): a small sage-green padlock, chunky and closed.",
         "Lacre trap (seal that cancels a card): a cream card seen from the front with a big coral-red wax seal stamped on its center. No text on the card."
-      ]
+      ],
+      "texto_final": "Lacre trap (seals and cancels the rival's next effect): a round coral-red wax seal with a simple embossed star, crisp rounded silhouette with only two or three small drips."
     },
     "ampulheta": {
       "grupo": "cartas",
@@ -90,7 +95,8 @@
         "Ampulheta trap (punishes the rival for waiting): a wooden hourglass with honey-gold sand flowing, chunky wooden caps.",
         "Ampulheta trap (punishes waiting, a points card): a wooden hourglass with honey sand and one tiny gold lightning spark beside it.",
         "Ampulheta trap: a slim glass hourglass with lavender sand and brass caps, slightly tilted."
-      ]
+      ],
+      "texto_final": "Ampulheta trap (punishes the rival for waiting): a wooden hourglass with chunky wooden caps, CLEAR light glass (pale, not green, not filled with liquid) and honey-gold sand flowing from the top bulb to the bottom."
     },
     "gordinho": {
       "grupo": "retratos",
@@ -103,14 +109,20 @@
       "variantes": [
         "SPECIAL. Gordinho: a friendly chubby American man (fair skin, rosy cheeks, round face) with open friendly eyes with dark pupils and visible eyebrows, a small ROUND nose in skin tone (not brown, not triangular), a warm smile. HAIR: short brown hair that still covers the top and back of the head, with a small tuft at the front center of the hairline and two receding-hairline bays (bald 'entradas') on either side of that tuft, like an M-shaped hairline. NO single curl, NO pigtail, NOT bald on top. Light sky-blue button shirt over a round belly, hands on the belly. Cute and lovable, never a caricature."
       ],
-      "n": 12
+      "n": 12,
+      "texto_final": "SPECIAL. Gordinho: friendly chubby American guy, keep this exact face, hair (small front tuft with a receding bald 'entrada' on each side), light-blue shirt and pose. Fixes: a small ROUND nose in skin tone (not orange, not a carrot), clean uniform dark cocoa outline without brush texture, the medallion background changed to clean white-ivory with the antique-gold rim (no brown, no glow)."
     },
     "bandoleiro": {
       "grupo": "retratos",
       "pedidos": "arte/retratos.json",
       "mestra": "arte/fonte/bandoleiro.png",
-      "n": 3,
-      "texto": "SPECIAL. Change only the mouth: remove the gold tooth and the yellow mark at the corner of the mouth; the mouth is a clean sly grin with no tooth and no mark. Keep the hat with the playing card, the wink, the thin curled mustache, the red neckerchief, the slate-blue coat and the medallion exactly as they are."
+      "n": 9,
+      "texto": "SPECIAL. Change only the mouth: remove the gold tooth and the yellow mark at the corner of the mouth; the mouth is a clean sly grin with no tooth and no mark. Keep the hat with the playing card, the wink, the thin curled mustache, the red neckerchief, the slate-blue coat and the medallion exactly as they are.",
+      "variantes": [
+        "SPECIAL. Changes: (1) give him a MULLET haircut: short at the front and sides under the hat, and long wavy dark-brown hair flowing out from under the back of the hat down to his shoulders; (2) remove the chin goatee completely, the chin is clean-shaven; (3) a big, respectable, thick dark-brown mustache (a full chevron mustache with the ends slightly curled); (4) the medallion background becomes clean white-ivory with the antique-gold rim. Keep the hat with the playing card, the wink, the red neckerchief and the slate-blue coat.",
+        "SPECIAL. Changes: a classic 80s MULLET (short on top and sides, long dark hair at the back reaching the shoulders, visible on both sides of the neck below the hat brim); no goatee, clean chin; a big bushy walrus-style mustache covering the upper lip, dark brown; white-ivory medallion background with the gold rim. Keep the hat with the playing card, the wink, the red neckerchief and the slate-blue coat.",
+        "SPECIAL. Changes: MULLET hair (long dark-brown hair at the back of the neck flowing over the coat collar, short at the front); no goatee; a thick handlebar mustache with curled tips, a mustache to be respected; the medallion background is white-ivory with the gold rim. Keep the hat with the playing card, the wink, the red neckerchief and the slate-blue coat."
+      ]
     },
     "galgo": {
       "grupo": "retratos",
@@ -222,7 +234,15 @@
       "variantes": [
         "SPECIAL. An original character (generic face, not resembling any real person): a white Brazilian man in his fifties with a former footballer's build (broad shoulders), short neat dark hair, thin rectangular glasses, OPEN friendly eyes visible behind the glasses, and a mustache that connects down both sides of the mouth into a short chin goatee (a full circle beard around the mouth), clean-shaven cheeks, a big friendly smile. Green suit jacket, canary-yellow shirt, blue tie. A small classic black-and-white soccer ball tucked at his shoulder. No text, no logo, no numbers."
       ],
-      "n": 12
+      "n": 12,
+      "texto_final": "SPECIAL. Keep this exact character, face, glasses, suit colors and pose. Fixes: the goatee stays only on the chin and connects to the mustache around the mouth (no beard along the jaw); clear glasses lenses (no yellow tint); the soccer ball behind his shoulder becomes a clean classic soccer ball (white with black pentagon patches), fully visible and clearly readable, sitting inside the medallion next to his shoulder, not cropped and not gray; the medallion background is clean white-ivory with the antique-gold rim."
+    },
+    "biscoito": {
+      "grupo": "retratos4",
+      "pedidos": "arte/retratos.json",
+      "mestra": "arte/fonte/biscoito.png",
+      "n": 4,
+      "texto": "SPECIAL. Changes: (1) the medallion background becomes clean white-ivory with an antique-gold rim; (2) add the game's thick uniform dark cocoa outline (#3a2a2e) around the cookie, around the golden hair tuft and around every shape, because the dark background no longer outlines them. Keep the same cookie character: golden-blond messy hair tuft, the big goofy smile with one tooth, the slightly mismatched eyes, the chocolate chips and the colors."
     }
   }
 }
