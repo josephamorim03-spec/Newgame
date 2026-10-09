@@ -924,7 +924,12 @@
       linhas: lances.map(m => ({ simbolo: m.simbolo, src: srcMomento(m.simbolo), txt: `${j.modo === 'local' ? n[m.p] + ': ' : ''}${m.txt}${m.vezes > 1 ? ` ×${m.vezes}` : ''}` })),
       endereco: PAGINA ? location.host : 'diceduel-game.vercel.app',
     };
-    const este = { blob: null };
+    // a mensagem que vai junto da imagem, com o link do jogo
+    const venci = j.vencedor === 0, placar = `${j.pts[j.vencedor]} × ${j.pts[1 - j.vencedor]}`;
+    const texto = j.modo === 'local' ? `${quem[j.vencedor]} venceu ${quem[1 - j.vencedor]} por ${placar} no Dice Duel 🎲 Bora um duelo?`
+      : venci ? `Venci ${online() ? quem[1] : `a ${quem[1]}`} por ${placar} no Dice Duel 🎲 Duvido você me ganhar!`
+      : `Perdi para ${online() ? quem[1] : `a ${quem[1]}`} por ${placar} no Dice Duel 🎲 Me vinga?`;
+    const este = { blob: null, texto };
     este.promessa = Cartao.gerar(d).then(b => { este.blob = b; return b; });
     este.promessa.catch(() => {});
     cartao = este;
@@ -1286,19 +1291,33 @@
     const b = e.target.closest('[data-pronto]'); if (!b) return;
     st.decks[st.abaDeck] = PRONTOS[+b.dataset.pronto].cartas.slice(); Som.tocar('carta'); salvar(); desenharDeck();
   });
-  // compartilha a imagem do cartão (WhatsApp, Instagram…); onde não dá para compartilhar arquivo, ela é baixada
+  // compartilhar: imagem + texto com o link (WhatsApp, Instagram…). Sem como mandar arquivo, vai o texto com o link;
+  // no computador, o texto com o link é copiado e a imagem baixada. Devolve 'ok', 'cancelou' ou 'copiou'.
+  async function compartilhar({ blob, arquivo, titulo, texto, url }) {
+    const msg = `${texto}\n${url}`;
+    const arq = blob && new File([blob], arquivo, { type: 'image/png' });
+    if (arq && navigator.canShare && navigator.canShare({ files: [arq], text: msg })) {
+      try { await navigator.share({ files: [arq], title: titulo, text: msg }); return 'ok'; }
+      catch (e) { if (e.name === 'AbortError') return 'cancelou'; }
+    }
+    if (navigator.share) {
+      try { await navigator.share({ title: titulo, text: texto, url }); return 'ok'; }
+      catch (e) { if (e.name === 'AbortError') return 'cancelou'; }
+    }
+    let copiou = false;
+    try { await navigator.clipboard.writeText(msg); copiou = true; } catch (e) {}
+    if (blob) baixar(blob, arquivo);
+    return copiou ? 'copiou' : 'baixou';
+  }
+  // o endereço do jogo para mandar (aberto por arquivo, vale o do Vercel)
+  const linkJogo = () => (PAGINA ? PAGINA + '/' : 'https://diceduel-game.vercel.app/');
   document.getElementById('btnCompartilhar').addEventListener('click', async () => {
     const b = document.getElementById('btnCompartilhar');
     const blob = cartao && (cartao.blob || await cartao.promessa.catch(() => null));
-    if (!blob) { Fx.chamada('Ops', 'Não deu para montar a imagem.', 'suave'); return; }
-    const arq = new File([blob], 'dice-duel.png', { type: 'image/png' });
-    if (navigator.canShare && navigator.canShare({ files: [arq] })) {
-      try { await navigator.share({ files: [arq] }); return; }
-      catch (e) { if (e.name === 'AbortError') return; }
-    }
-    baixar(blob, 'dice-duel.png');
-    b.textContent = 'Imagem salva';
-    setTimeout(() => { b.textContent = 'Compartilhar'; }, 2200);
+    const r = await compartilhar({ blob, arquivo: 'dice-duel.png', titulo: 'Dice Duel', texto: (cartao && cartao.texto) || 'Bora um duelo no Dice Duel? 🎲', url: linkJogo() });
+    if (r === 'ok' || r === 'cancelou') return;
+    b.textContent = r === 'copiou' ? (blob ? 'Link copiado e imagem salva' : 'Link copiado') : 'Imagem salva';
+    setTimeout(() => { b.textContent = 'Compartilhar'; }, 2600);
   });
   document.addEventListener('keydown', e => {
     const alvo = e.target && e.target.closest ? e.target : document.body;   // tecla vinda do documento não tem .closest
@@ -1568,6 +1587,18 @@
   }
   const esc = t => String(t).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
   const linkDaSala = c => `${PAGINA}/?sala=${c}`;
+  const meuNome = () => (st.sessao && st.sessao.perfil && st.sessao.perfil.nome) || (st.conta.online && st.conta.online.nome) || 'Um amigo';
+  const textoConvite = () => `${meuNome()} te chamou para um duelo no Dice Duel 🎲 Toque no link para entrar na sala ${Rede.sala}:`;
+  // a imagem do convite fica pronta quando a sala aparece (o iPhone só compartilha arquivo dentro do próprio toque)
+  let convitePronto = { sala: null };
+  function imagemConvite() {
+    if (convitePronto.sala === Rede.sala) return convitePronto;
+    const sala = Rede.infoSala, este = { sala: Rede.sala, blob: null };
+    este.promessa = Cartao.convite({ nome: meuNome(), retrato: ICONES[st.conta.icone] ? st.conta.icone : 'bolinha', sala: Rede.sala,
+      meta: sala && sala.meta ? sala.meta : st.cfg.meta, endereco: linkDaSala(Rede.sala).replace(/^https?:\/\//, '') }).then(b => { este.blob = b; return b; });
+    este.promessa.catch(() => {});
+    return (convitePronto = este);
+  }
   function desenharOnline() {
     document.getElementById('pontoOnline').hidden = !st.sessao;
     const el = document.getElementById('onlineConteudo');
@@ -1603,10 +1634,11 @@
           <div class="linha-botoes"><button class="btn btn-mel" data-on="revanche" ${Rede.pediuRevanche ? 'disabled' : ''}>${Rede.pediuRevanche ? 'Esperando o rival…' : 'Revanche'}</button><button class="btn btn-papel" data-on="sair-sala">Sair da sala</button></div>`;
         return;
       }
+      imagemConvite();
       const lista = sala ? sala.jogadores.map(x => `<li><span>${esc(x.nome)}</span><span>${x.rating}</span></li>`).join('') : '';
       el.innerHTML = `${eu}<div class="convite"><span class="nota">Mande o link (ou o código) para quem vai jogar com você</span>
           <span class="codigo-grande">${Rede.sala}</span><span class="link">${esc(linkDaSala(Rede.sala))}</span>
-          <div class="linha-botoes"><button class="btn btn-mel" data-on="copiar">Copiar convite</button>${navigator.share ? '<button class="btn btn-papel" data-on="compartilhar">Compartilhar</button>' : ''}</div>
+          <div class="linha-botoes"><button class="btn btn-mel" data-on="compartilhar">Compartilhar</button><button class="btn btn-papel" data-on="copiar">Copiar convite</button></div>
           <ul class="lista-sala">${lista}</ul>
           <span class="esperando">Esperando o amigo<span class="pensando-pontos"></span></span></div>
         <p class="nota" style="margin:0">Meta ${sala ? sala.meta : st.cfg.meta} · seu deck: ${deckOnline().map(c => CARTAS[c].nome).join(', ') || 'sem cartas'}. Enquanto espera, dá para jogar contra o rival do jogo.</p>
@@ -1646,11 +1678,15 @@
       enviarWs({ tipo: 'desistir' }); document.getElementById('janelaOnline').hidden = true;
     }
     if (a === 'copiar') {
-      const texto = `Vem jogar Dice Duel comigo! Sala ${Rede.sala}: ${linkDaSala(Rede.sala)}`;
+      const texto = `${textoConvite()}\n${linkDaSala(Rede.sala)}`;
       try { await navigator.clipboard.writeText(texto); b.textContent = 'Copiado!'; } catch (x) { b.textContent = 'Copie o link acima'; }
       setTimeout(() => { b.textContent = 'Copiar convite'; }, 2000);
     }
-    if (a === 'compartilhar') { try { await navigator.share({ title: 'Dice Duel', text: `Vem jogar Dice Duel comigo! Sala ${Rede.sala}`, url: linkDaSala(Rede.sala) }); } catch (x) {} }
+    if (a === 'compartilhar') {
+      const cv = imagemConvite(), blob = cv.blob || await cv.promessa.catch(() => null);
+      const r = await compartilhar({ blob, arquivo: `dice-duel-sala-${Rede.sala}.png`, titulo: 'Dice Duel', texto: textoConvite(), url: linkDaSala(Rede.sala) });
+      if (r === 'copiou' || r === 'baixou') { b.textContent = r === 'copiou' ? 'Link copiado' : 'Imagem salva'; setTimeout(() => { b.textContent = 'Compartilhar'; }, 2200); }
+    }
   });
   // convite por link: /?sala=CODIGO
   (() => {

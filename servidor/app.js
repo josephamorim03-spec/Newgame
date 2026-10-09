@@ -180,7 +180,8 @@ function criarApp({ banco, segredo, raiz = path.join(__dirname, '..'), tempos = 
   });
 
   // ---------- o jogo em si (arquivos estáticos; só o que o navegador precisa) ----------
-  for (const pasta of ['css', 'js', 'shared']) app.use('/' + pasta, express.static(path.join(raiz, pasta), { maxAge: '1h', index: false }));
+  for (const pasta of ['css', 'js', 'shared', 'img']) app.use('/' + pasta, express.static(path.join(raiz, pasta), { maxAge: '1h', index: false }));
+  app.get('/manifest.webmanifest', (req, res) => res.type('application/manifest+json').sendFile(path.join(raiz, 'manifest.webmanifest')));
   // servida daqui, a página fala com este mesmo endereço: a <meta name="dice-servidor"> (para o Vercel) sai vazia
   app.get(['/', '/index.html'], assincrono(async (req, res) => {
     const html = await fs.promises.readFile(path.join(raiz, 'index.html'), 'utf8');
