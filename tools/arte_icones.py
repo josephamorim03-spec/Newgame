@@ -83,7 +83,7 @@ def multipart(campos, arquivo):
     return b"".join(partes), f"multipart/form-data; boundary={fronteira}"
 
 
-def gerar(prompt, qualidade, ref=None, fundo="transparent"):
+def gerar(prompt, qualidade, ref=None, fundo="transparent", fidelidade="high"):
     chave = os.environ.get("OPENAI_API_KEY")
     if not chave:
         sys.exit("Falta OPENAI_API_KEY no ambiente.")
@@ -91,7 +91,8 @@ def gerar(prompt, qualidade, ref=None, fundo="transparent"):
               "background": fundo, "quality": qualidade, "n": 1}
     if ref is not None:
         # com referência: edição a partir do vetor; "input_fidelity" alta segura o desenho original
-        corpo, tipo = multipart({**campos, "input_fidelity": "high"}, ref)
+        # (baixa quando a imagem é só referência de estilo, ver tools/arte_lote.py)
+        corpo, tipo = multipart({**campos, "input_fidelity": fidelidade}, ref)
         url = "https://api.openai.com/v1/images/edits"
     else:
         corpo, tipo = json.dumps(campos).encode(), "application/json"
@@ -107,7 +108,7 @@ def gerar(prompt, qualidade, ref=None, fundo="transparent"):
             msg = e.read().decode(errors="replace")[:400]
             if e.code == 400 and ref is not None:
                 print(f"  a API recusou a edição com referência ({msg[:160]}); tentando só com o texto", flush=True)
-                return gerar(prompt, qualidade, fundo=fundo)
+                return gerar(prompt, qualidade, fundo=fundo, fidelidade=fidelidade)
             if e.code in (429, 500, 502, 503) and tentativa < 3:
                 time.sleep(2 ** (tentativa + 2)); continue
             sys.exit(f"A API recusou ({e.code}): {msg}")
