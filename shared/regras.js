@@ -71,7 +71,8 @@
       cogumelo: { nome: 'Cogumelos', preco: 140, grupo: 'natureza' }, monstera: { nome: 'Monstera', preco: 90, grupo: 'natureza' },
       cacto: { nome: 'Cacto', preco: 90, grupo: 'natureza' },
       biscoito: { nome: 'Biscoito', preco: 300, grupo: 'especial' }, gordinho: { nome: 'Gordinho', preco: 350, grupo: 'especial' },
-      cafu: { nome: 'Cafú', preco: 400, grupo: 'especial' }, bandoleiro: { nome: 'Bandoleiro', preco: 450, grupo: 'especial' },
+      cafu: { nome: 'Cafú', preco: 400, grupo: 'especial' }, galgo: { nome: 'Galgo', preco: 380, grupo: 'especial' },
+      bandoleiro: { nome: 'Bandoleiro', preco: 450, grupo: 'especial' },
     },
     mesas: {
       salvia: { nome: 'Feltro sálvia', preco: 0 }, vinho: { nome: 'Feltro vinho', preco: 150 },
@@ -296,6 +297,19 @@
   }
   // destinos possíveis quando não há nenhum seguro: a corrente rompe, ou o dado do Bolso entra e rompe
   const destinosValidos = (j, p, v) => { const ds = destinos(j, p, v); return ds.length ? ds : (j.bolso[p] !== null && !j.espelhado ? ['corrente', 'trocar'] : ['corrente']); };
+  // os destinos de um dado AINDA na Mesa, como ficarão depois de pegá-lo: o dado com o Espelho do rival
+  // chega virado e só pode ir para a corrente. Serve para escolher o dado e o destino de uma vez só.
+  function destinosDoDado(j, p, idx) {
+    const d = j.mesa[idx];
+    if (!d) return [];
+    if (marcadoContra(j, p, d)) return ['corrente'];
+    return destinosValidos(j, p, d.v);
+  }
+  // pega o dado idx e já o põe no destino escolhido (nada fica pela metade: a escolha só vale quando confirmada)
+  function pegarPara(j, p, idx, modo) {
+    const v = tirar(j, p, idx);
+    return colocar(j, p, v, modo);
+  }
 
   // Põe o dado v no destino. Devolve 'extra' (Pressa), 'decidir', 'proximo' ou 'fim'.
   function colocar(j, p, v, modo) {
@@ -414,7 +428,7 @@
   }
 
   // ---------- ação genérica (o servidor recebe isto pela rede) ----------
-  // acao: {tipo:'pegar', idx} | {tipo:'destino', modo} | {tipo:'carta', carta, idx?, delta?} | {tipo:'virar', carta} (blefe)
+  // acao: {tipo:'pegar', idx, modo?} (com modo: pega e põe de uma vez) | {tipo:'destino', modo} | {tipo:'carta', carta, idx?, delta?} | {tipo:'virar', carta} (blefe)
   //       | {tipo:'dispensar'} (2.º dado da Pressa) | {tipo:'disparar'} | {tipo:'segurar'}
   function aplicar(j, p, acao) {
     if (!acao || typeof acao !== 'object') return { ok: false, erro: 'ação inválida' };
@@ -424,6 +438,10 @@
     switch (acao.tipo) {
       case 'pegar':
         if (j.fase !== 'pegar' || !idxValido(acao.idx)) return { ok: false, erro: 'não dá para pegar esse dado agora' };
+        if (acao.modo !== undefined) {
+          if (!destinosDoDado(j, p, acao.idx).includes(acao.modo)) return { ok: false, erro: 'destino inválido para esse dado' };
+          return { ok: true, resultado: pegarPara(j, p, acao.idx, acao.modo) };
+        }
         return { ok: true, resultado: pegar(j, p, acao.idx) };
       case 'destino': {
         if (j.fase !== 'destino' || !j.mao) return { ok: false, erro: 'não há dado esperando destino' };
@@ -492,6 +510,6 @@
     moedasDaVitoria, ajusteRatingOnline, elo, premioSolo, xpDaPartida, ganharXp, precoDe,
     criarPartida, usarRng, encaixaP, destinos, destinosValidos, seguro, bolsoGarante, marcadoContra, valorAoPegar, seguroDado,
     blefando, usavel, armadilhasOcultas, podeUsar, podeVirar, virarCarta, usarCarta,
-    tirar, pegar, colocar, dispensarSegundo, disparar, segurar, proximo, terminar, desistir, aplicar, visaoDe,
+    tirar, pegar, pegarPara, destinosDoDado, colocar, dispensarSegundo, disparar, segurar, proximo, terminar, desistir, aplicar, visaoDe,
   };
 });

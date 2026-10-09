@@ -130,3 +130,18 @@ test('Pressa: o 6.º dado dispara e o segundo dado continua; dispensar leva à d
   if (c.fase === 'destino') Regras.aplicar(c, 0, { tipo: 'destino', modo: 'corrente' });
   assert.strictEqual(c.coringa[0], true);
 });
+
+test('pegar com destino: escolher e confirmar numa ação só, com o Espelho já considerado', () => {
+  const j = Regras.criarPartida({ decks: [[], ['espelho']], vez: 0, rng: rngDe(11) });
+  j.cor[0] = [3, 3, 3]; j.bolso[0] = null;
+  j.mesa = [{ id: 1, v: 2 }, { id: 2, v: 3 }, { id: 3, v: 6 }];
+  assert.deepStrictEqual(Regras.destinosDoDado(j, 0, 1), ['corrente', 'guardar']);
+  assert.strictEqual(Regras.aplicar(j, 0, { tipo: 'pegar', idx: 1, modo: 'trocar' }).ok, false);
+  j.marca = { dono: 1, id: 1 }; j.cartas[1].espelho = 'armada'; j.armada[1] = 'espelho';
+  assert.deepStrictEqual(Regras.destinosDoDado(j, 0, 0), ['corrente']);           // marcado: chega virado e não vai ao Bolso
+  assert.strictEqual(Regras.aplicar(j, 0, { tipo: 'pegar', idx: 0, modo: 'guardar' }).ok, false);
+  const r = Regras.aplicar(j, 0, { tipo: 'pegar', idx: 1, modo: 'guardar' });
+  assert.ok(r.ok);
+  assert.strictEqual(j.bolso[0], 3);
+  assert.strictEqual(j.mesa.length, 2);
+});

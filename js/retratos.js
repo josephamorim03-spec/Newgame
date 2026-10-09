@@ -147,19 +147,47 @@
       <circle cx="39.5" cy="32" r="3.8" fill="#fffaf0" ${l(1.8)}/><circle cx="38.5" cy="31.5" r="1.9" fill="${T}"/></g>
       <path d="M23 42 q9 11 19 -1 q-9 3 -19 1 z" fill="#7a3328" ${l(1.8)}/>
       <path d="M30 43 h4 v3 h-4 z" fill="#fffaf0"/><path d="M32 47.5 q3 2 6 -1" fill="#e57b7b"/>`,
-    // Gordinho: careca de óculos, cara de malícia, mas fofo
+    // Gordinho: barrigudo, careca com entradas, cabelo só nos lados e um "toim" de cabelo no alto; cara de malícia, mas fofo
     gordinho: `${MOLDURA}
-      <ellipse cx="12" cy="36" rx="3.5" ry="5" fill="#ecbf98" ${L}/><ellipse cx="52" cy="36" rx="3.5" ry="5" fill="#ecbf98" ${L}/>
-      <path d="M12 34 Q12 12 32 12 Q52 12 52 34 Q53 52 32 56 Q11 52 12 34 Z" fill="#f3cba6" ${L}/>
-      <ellipse cx="25" cy="18" rx="7" ry="3" fill="#fff" opacity=".45" transform="rotate(-20 25 18)"/>
-      <path d="M22 54.5 q10 4 20 0" fill="none" ${l(1.6)} opacity=".7"/>
-      <path d="M18 27 q5 -4 10 -1" fill="none" ${l(2)}/><path d="M36 26.5 q5 1 10 -1.5" fill="none" ${l(2)}/>
-      <circle cx="24" cy="34" r="6.5" fill="#e6f1f5" fill-opacity=".55" ${l(2)}/><circle cx="40" cy="34" r="6.5" fill="#e6f1f5" fill-opacity=".55" ${l(2)}/>
-      <path d="M30.5 33 q1.5 -1.5 3 0" fill="none" ${l(1.8)}/>
-      <g class="olho"><circle cx="26" cy="34.6" r="1.9" fill="${T}"/><circle cx="42" cy="34.6" r="1.9" fill="${T}"/></g>
-      <circle cx="18" cy="44" r="3.5" fill="#ec9f8f" opacity=".45"/><circle cx="46" cy="44" r="3.5" fill="#ec9f8f" opacity=".45"/>
-      <path d="M30 40 q2 2 4 0" fill="none" ${l(1.6)}/>
-      <path d="M25 46 q8 3 15 -2" fill="none" ${l(2.2)}/><path d="M39.5 44 l1.8 -1" ${l(2.2)}/>`,
+      <clipPath id="medalhaGordinho"><circle cx="32" cy="32" r="29"/></clipPath>
+      <g clip-path="url(#medalhaGordinho)">
+      <path d="M20 46 Q20 34 32 33 Q44 34 44 46 Z" fill="#8fb8cc" ${L}/>
+      <ellipse cx="32" cy="50" rx="21.5" ry="13.5" fill="#8fb8cc" ${L}/>
+      <path d="M14 47 q18 -9 36 0" fill="none" stroke="#7aa3b8" stroke-width="1.3"/>
+      <path d="M32 36.5 v27" stroke="#6f97ab" stroke-width="1.2"/>
+      <circle cx="32" cy="42" r="1.2" fill="#fbf3e4"/><circle cx="32" cy="48.5" r="1.2" fill="#fbf3e4"/><circle cx="32" cy="55" r="1.2" fill="#fbf3e4"/>
+      <path d="M29.4 51.6 q2.6 -1.7 5.2 0" fill="none" stroke="#6f97ab" stroke-width="1.2"/>
+      <ellipse cx="13.5" cy="53" rx="3.6" ry="3.2" fill="#f0c49c" ${l(1.6)}/><ellipse cx="50.5" cy="53" rx="3.6" ry="3.2" fill="#f0c49c" ${l(1.6)}/>
+      </g>
+      <g transform="translate(4.5 1) scale(.86)">
+      <ellipse cx="17.5" cy="25" rx="2.8" ry="4" fill="#ecbf98" ${L}/><ellipse cx="46.5" cy="25" rx="2.8" ry="4" fill="#ecbf98" ${L}/>
+      <path d="M18.5 23 Q18.5 9 32 9 Q45.5 9 45.5 23 Q46.5 37 32 40 Q17.5 37 18.5 23 Z" fill="#f3cba6" ${L}/>
+      <path d="M19 27 Q17.5 18 21.5 14.6 Q21 21 22.6 25.5 Z M45 27 Q46.5 18 42.5 14.6 Q43 21 41.4 25.5 Z" fill="#6b4a36" ${l(1.4)}/>
+      <ellipse cx="26.5" cy="13.6" rx="5" ry="2" fill="#fff" opacity=".5" transform="rotate(-18 26.5 13.6)"/>
+      <path d="M32 9.4 c-.6 -3.2 2 -6 4 -4.6 c1.8 1.3 -.4 3.8 -2.2 2.4" fill="none" stroke="#6b4a36" stroke-width="1.7" stroke-linecap="round"/>
+      <path d="M23.6 19.6 q3.2 -2.6 6.4 -.6" fill="none" ${l(1.8)}/><path d="M34.4 18.4 q3.2 1 6 -.6" fill="none" ${l(1.8)}/>
+      <g class="olho"><path d="M23.8 23.6 q2.8 -1.8 5.6 0" fill="none" ${l(1.7)}/><circle cx="27.9" cy="24.6" r="1.5" fill="${T}"/>
+      <path d="M34.6 23.6 q2.8 -1.8 5.6 0" fill="none" ${l(1.7)}/><circle cx="38.7" cy="24.6" r="1.5" fill="${T}"/></g>
+      <circle cx="22.8" cy="30" r="2.8" fill="#ec9f8f" opacity=".45"/><circle cx="41.2" cy="30" r="2.8" fill="#ec9f8f" opacity=".45"/>
+      <path d="M31 28 q1 1.5 2 0" fill="none" ${l(1.4)}/>
+      <path d="M27.2 32.4 q5.4 2.6 10.2 -1.3" fill="none" ${l(2)}/><path d="M37.2 31.2 l1.5 -1" ${l(2)}/>
+      <path d="M26 37.8 q6 2.6 12 0" fill="none" ${l(1.3)} opacity=".6"/></g>`,
+    // Galgo: um galgo sagaz, de perfil (o focinho comprido é o que faz o galgo), olhar de quem já viu a jogada antes
+    galgo: `${MOLDURA}
+      <clipPath id="medalhaGalgo"><circle cx="32" cy="32" r="29"/></clipPath>
+      <g clip-path="url(#medalhaGalgo)">
+      <path d="M28 66 Q28 50 35 41 L47 39 Q52 52 52 66 Z" fill="#c9a27a" ${L}/>
+      <path d="M33 43 Q31 52 31 66 L36 66 Q35 52 37 44 Z" fill="#f1e6d6"/>
+      <path d="M33.5 45.5 Q41 48 48.4 44.6 L49.4 50 Q41 53.4 33.6 51 Z" fill="#b3412f" ${l(1.6)}/>
+      <circle cx="40.6" cy="54.6" r="2" fill="#e2b04a" ${l(1.1)}/>
+      </g>
+      <path d="M50 22 Q50 11 40 11 Q31 11 28 18 L14 29.5 Q9.5 33 11.6 37 Q13.6 40.4 19 39.4 L32 37.4 Q42 38.4 47 32 Q50 28 50 22 Z" fill="#c9a27a" ${L}/>
+      <path d="M13.2 38.6 Q22 40.4 31.4 37.6 Q26 40.6 19 41 Q15 41 13.2 38.6 Z" fill="#f1e6d6" ${l(1.2)}/>
+      <path d="M41.5 13.6 Q49.5 7 54.5 15.4 Q50.5 15.6 47 21 Z" fill="#9c7552" ${L}/>
+      <path d="M30.4 17.4 l8.4 1.6" fill="none" ${l(2)}/>
+      <g class="olho"><path d="M30.8 22 q3.6 -2.6 7.2 0 q-3.6 2.2 -7.2 0 z" fill="#d79a35" ${l(1.4)}/><circle cx="35.6" cy="22" r="1.3" fill="${T}"/></g>
+      <ellipse cx="12.6" cy="33" rx="2.6" ry="2.2" fill="#231c1f"/>
+      <path d="M14.4 36.6 q8 1.6 15 -.6 l2 -1.6" fill="none" ${l(1.5)}/>`,
     // Cafú: o craque de amarelo e verde
     cafu: `${MOLDURA}
       <path d="M6 62 Q8 48 22 46 L32 52 L42 46 Q56 48 58 62 Z" fill="#f4cf2a" ${L}/>

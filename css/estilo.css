@@ -567,3 +567,8 @@ img.avatar { object-fit: contain; }
 .convite { gap: 14px; }
 .form-conta { gap: 14px; }
 .ranking { gap: 6px; }
+
+/* ---------- dado escolhido (v0.9.2): tocar escolhe, não pega ---------- */
+.pega.escolhido .face { transform: translateY(-3px); }
+.pega.escolhido .dado { box-shadow: 0 0 0 3px var(--mel), 0 0 0 6px rgba(242,177,94,.35), 0 10px 20px rgba(0,0,0,.45); }
+.btn.perigo small { color: #b3412f; font-weight: 800; }
