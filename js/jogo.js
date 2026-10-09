@@ -99,7 +99,7 @@
 
   // ---------- estado e preferências ----------
   let uid = 1;
-  const PREF_PADRAO = { som: true, musica: true, volSom: 0.8, volMusica: 0.45, animacoes: true, particulas: true, tremor: true, vibrar: true, falas: true, dicas: true, liberar: false };
+  const PREF_PADRAO = { som: true, musica: true, volSom: 0.8, volMusica: 0.45, animacoes: true, particulas: true, tremor: true, vibrar: true, falas: true, dicas: true, liberar: false, ajudasV11: true };
   const st = {
     cfg: { modo: 'bot', nivel: 'aprendiz', meta: 12, ritmo: 'normal' },
     pref: { ...PREF_PADRAO },
@@ -115,6 +115,8 @@
     const s = JSON.parse(localStorage.getItem('diceduel.v1') || '{}');
     if (s.cfg) Object.assign(st.cfg, s.cfg);
     if (s.pref) Object.assign(st.pref, s.pref);
+    // v0.11: as ajudas voltam ligadas uma vez para todo mundo (são o padrão); quem desligar de novo, fica desligado
+    if (s.pref && !s.pref.ajudasV11) { st.pref.dicas = true; st.pref.ajudasV11 = true; }
     if (s.rec) Object.assign(st.rec, s.rec);
     if (s.conta) { Object.assign(st.conta, s.conta); GRATIS.forEach(c => { if (!st.conta.cartas.includes(c)) st.conta.cartas.push(c); }); }
     if (Array.isArray(s.decks)) st.decks = s.decks.map(d => (d || []).filter(c => CARTAS[c])).map(d => deckValido(d) ? d : []);

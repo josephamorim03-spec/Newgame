@@ -248,6 +248,17 @@ const RAIZ = path.join(__dirname, '..');
   const sobra = await pg.evaluate(() => ({ cubos: document.querySelectorAll('.cubo-rolagem').length, escondidos: document.querySelectorAll('.pega.rolando').length }));
   confere(sobra.cubos === 0 && sobra.escondidos === 0, 'Skins: depois de todas as rolagens, nada sobra nem fica escondido');
   await pg.evaluate(() => DiceDuel.ajustar({ animacoes: false }));
+  // 12. Ajudas ligadas por padrão: aparelho que as tinha desligado antes da v0.11 volta com elas; desligar de novo fica
+  const pa = await navegador.newPage();
+  await pa.goto('file://' + path.join(RAIZ, 'index.html')); await pa.waitForTimeout(250);
+  const padrao = await pa.evaluate(() => DiceDuel.st.pref.dicas);
+  await pa.evaluate(() => { const s = JSON.parse(localStorage.getItem('diceduel.v1') || '{}'); s.pref = { ...(s.pref || {}), dicas: false }; delete s.pref.ajudasV11; localStorage.setItem('diceduel.v1', JSON.stringify(s)); });
+  await pa.reload(); await pa.waitForTimeout(250);
+  const migrou = await pa.evaluate(() => DiceDuel.st.pref.dicas);
+  await pa.evaluate(() => { DiceDuel.st.pref.dicas = false; DiceDuel.salvar(); }); await pa.reload(); await pa.waitForTimeout(250);
+  const ficou = await pa.evaluate(() => DiceDuel.st.pref.dicas);
+  confere(padrao && migrou && !ficou, 'Ajudas: ligadas por padrão, religadas uma vez na v0.11, e a escolha de desligar fica');
+  await pa.close();
   await navegador.close();
   console.log(erros.length ? 'ERROS:\n' + erros.join('\n') : 'Tudo certo: as regras das cartas se comportam como o texto diz.');
   process.exit(erros.length ? 1 : 0);
