@@ -15,11 +15,17 @@ fs.mkdirSync(FOTOS, { recursive: true });
 const espera = ms => new Promise(r => setTimeout(r, ms));
 
 (async () => {
-  const banco = new BancoMemoria();
-  const { criarServidor, salas } = criarApp({ banco, segredo: 'segredo-do-teste-ponta-a-ponta-123', limites: { ws: 100000 } });
-  const servidor = criarServidor();
-  await new Promise(r => servidor.listen(0, '127.0.0.1', r));
-  const base = `http://127.0.0.1:${servidor.address().port}`;
+  // BASE=https://... testa um servidor de verdade (ex.: o deploy na Railway), com contas de nome único
+  const externo = process.env.BASE ? process.env.BASE.replace(/\/$/, '') : null;
+  let servidor = null, salas = null, base = externo;
+  if (!externo) {
+    const app = criarApp({ banco: new BancoMemoria(), segredo: 'segredo-do-teste-ponta-a-ponta-123', limites: { ws: 100000 } });
+    salas = app.salas; servidor = app.criarServidor();
+    await new Promise(r => servidor.listen(0, '127.0.0.1', r));
+    base = `http://127.0.0.1:${servidor.address().port}`;
+  }
+  const sufixo = externo ? String(Date.now()).slice(-6) : '';
+  const ANA = 'Ana' + sufixo, BIA = 'Bia' + sufixo;
   const navegador = await chromium.launch(process.env.CHROMIUM ? { executablePath: process.env.CHROMIUM } : {});
   const erros = [];
   const abrir = async (nome, vp) => {
@@ -49,7 +55,7 @@ const espera = ms => new Promise(r => setTimeout(r, ms));
     await ana.waitForTimeout(400);
     await ana.evaluate(() => { DiceDuel.st.conta.moedas = 5000; DiceDuel.st.conta.cartas.push('espelho'); });
     await sem(ana); await fechar(ana);
-    await criarConta(ana, 'Ana');
+    await criarConta(ana, ANA);
     const contaAna = await ana.evaluate(() => DiceDuel.st.conta);
     if (contaAna.moedas !== 600) throw new Error('importação: esperava 600 moedas, veio ' + contaAna.moedas);
     if (!contaAna.cartas.includes('espelho')) throw new Error('importação: o Espelho não veio');
@@ -80,7 +86,7 @@ const espera = ms => new Promise(r => setTimeout(r, ms));
     await sem(bia);
     await bia.screenshot({ path: path.join(FOTOS, 'online-convidada.png') }); await layout(bia, 'convidada');
     await bia.click('[data-on="aba-criar"]');
-    await bia.fill('#formConta [name=nome]', 'Bia');
+    await bia.fill('#formConta [name=nome]', BIA);
     await bia.fill('#formConta [name=senha]', 'senha-boa-2');
     await bia.click('#formConta [type=submit]');
     for (const pg of [ana, bia]) await pg.waitForFunction(() => DiceDuel.jogo && DiceDuel.jogo.modo === 'online', null, { timeout: 8000 });
@@ -88,7 +94,7 @@ const espera = ms => new Promise(r => setTimeout(r, ms));
     for (const pg of [ana, bia]) { await fechar(pg); await pg.evaluate(() => document.querySelectorAll('.versus').forEach(v => v.click())); }
     await ana.screenshot({ path: path.join(FOTOS, 'online-partida-celular.png') }); await layout(ana, 'partida'); await layout(bia, 'partida');
     const vistaBia = await bia.evaluate(() => ({ nomes: DiceDuel.jogo.nomes, deckRival: DiceDuel.jogo.decks[1] }));
-    if (vistaBia.nomes[1] !== 'Ana' || vistaBia.deckRival.join() !== 'espelho,ajuste,pressa') throw new Error('a Bia não vê a Ana direito: ' + JSON.stringify(vistaBia));
+    if (vistaBia.nomes[1] !== ANA || vistaBia.deckRival.join() !== 'espelho,ajuste,pressa') throw new Error('a Bia não vê a Ana direito: ' + JSON.stringify(vistaBia));
 
     // joga clicando: quem tem a vez escolhe um dado (às vezes confirma), um destino, ou dispara/segura
     let passos = 0;
@@ -141,19 +147,19 @@ const espera = ms => new Promise(r => setTimeout(r, ms));
     await bia.waitForSelector('.ranking li .rk', { timeout: 5000 });
     const ranking = await bia.$$eval('.ranking .quem-rk', l => l.map(x => x.childNodes[0].textContent));
     await bia.screenshot({ path: path.join(FOTOS, 'online-ranking.png') }); await layout(bia, 'ranking');
-    if (ranking.length !== 2) throw new Error('ranking: ' + ranking.join(', '));
+    if (!ranking.includes(BIA) || (!externo && ranking.length !== 2)) throw new Error('ranking: ' + ranking.join(', '));
     // depois de sair da sala, volta a jogar contra o rival do jogo
     const modo = await bia.evaluate(() => DiceDuel.jogo.modo);
     if (modo !== 'bot') throw new Error('depois de sair da sala esperava o modo contra o rival, veio ' + modo);
     // recarregar mantém a conta
     await ana.reload(); await ana.waitForTimeout(500);
     const nome = await ana.evaluate(() => DiceDuel.st.conta.online && DiceDuel.st.conta.online.nome);
-    if (nome !== 'Ana') throw new Error('a sessão não sobreviveu ao recarregar');
+    if (nome !== ANA) throw new Error('a sessão não sobreviveu ao recarregar');
     // outro aparelho (computador): entra com a mesma conta e continua de onde parou
     const anaPc = await abrir('ana-pc', { width: 1360, height: 900 });
     await anaPc.goto(base + '/'); await anaPc.waitForTimeout(400); await sem(anaPc); await fechar(anaPc);
     await anaPc.click('#btnOnline');
-    await anaPc.fill('#formConta [name=nome]', 'ana');
+    await anaPc.fill('#formConta [name=nome]', ANA.toLowerCase());
     await anaPc.fill('#formConta [name=senha]', 'senha-boa-1');
     await anaPc.click('#formConta [type=submit]');
     await anaPc.waitForSelector('.eu-online', { timeout: 5000 });
@@ -166,7 +172,7 @@ const espera = ms => new Promise(r => setTimeout(r, ms));
     erros.push(e.stack || String(e));
   }
   await navegador.close();
-  salas.fechar(); servidor.wss.clients.forEach(c => c.terminate()); servidor.close();
+  if (servidor) { salas.fechar(); servidor.wss.clients.forEach(c => c.terminate()); servidor.close(); }
   if (erros.length) { console.error('ERROS:\n' + erros.join('\n')); process.exit(1); }
   console.log('Tudo certo: nenhum erro.');
   process.exit(0);

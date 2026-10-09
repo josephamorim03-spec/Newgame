@@ -25,14 +25,14 @@ const perfil = c => c && ({
 
 class BancoMemoria {
   constructor(arquivo = null) {
-    this.arquivo = arquivo; this.contas = []; this.partidas = []; this.proximo = 1;
+    this.arquivo = arquivo; this.contas = []; this.partidas = []; this.proximo = 1; this.config = {};
     if (arquivo && fs.existsSync(arquivo)) Object.assign(this, JSON.parse(fs.readFileSync(arquivo, 'utf8')));
   }
   async iniciar() {}
   _gravar() {
     if (!this.arquivo) return;
     fs.mkdirSync(path.dirname(this.arquivo), { recursive: true });
-    fs.writeFileSync(this.arquivo, JSON.stringify({ contas: this.contas, partidas: this.partidas, proximo: this.proximo }));
+    fs.writeFileSync(this.arquivo, JSON.stringify({ contas: this.contas, partidas: this.partidas, proximo: this.proximo, config: this.config }));
   }
   async criarConta(nome, senha) {
     if (this.contas.some(c => c.chave === nome.toLowerCase())) return null;
@@ -52,6 +52,12 @@ class BancoMemoria {
   async registrarPartida(p) { this.partidas.push({ ...p, id: this.partidas.length + 1, dia: hoje(), criado: new Date().toISOString() }); this._gravar(); }
   // quantas partidas valendo moedas este par já jogou hoje (contra conluio de duas contas)
   async partidasDoParHoje(a, b) { const d = hoje(); return this.partidas.filter(p => p.dia === d && ((p.a === a && p.b === b) || (p.a === b && p.b === a))).length; }
+  // um valor de configuração que nasce uma vez e fica (ex.: o segredo dos tokens, quando SEGREDO não foi definido)
+  async valorFixo(chave, criar) {
+    if (!this.config) this.config = {};
+    if (!this.config[chave]) { this.config[chave] = criar(); this._gravar(); }
+    return this.config[chave];
+  }
   async fechar() {}
 }
 
@@ -71,6 +77,7 @@ class BancoPostgres {
     // colunas que chegaram depois da primeira versão (bancos já criados ganham a coluna sem perder nada)
     await this.pool.query("ALTER TABLE contas ADD COLUMN IF NOT EXISTS extras JSONB NOT NULL DEFAULT '{}'::jsonb");
     await this.pool.query('CREATE INDEX IF NOT EXISTS contas_rating ON contas (rating DESC)');
+    await this.pool.query('CREATE TABLE IF NOT EXISTS config (chave TEXT PRIMARY KEY, valor TEXT NOT NULL)');
     await this.pool.query('CREATE INDEX IF NOT EXISTS partidas_dia ON partidas (dia)');
   }
   _linha(r) { if (!r) return null; const c = { ...r }; for (const k of CAMPOS_JSON) if (typeof c[k] === 'string') c[k] = JSON.parse(c[k]); if (c.criado instanceof Date) c.criado = c.criado.toISOString(); return c; }
@@ -104,6 +111,10 @@ class BancoPostgres {
     const r = await this.pool.query('SELECT count(*)::int AS n FROM partidas WHERE dia = $1 AND ((a = $2 AND b = $3) OR (a = $3 AND b = $2))', [hoje(), a, b]);
     return r.rows[0].n;
   }
+  async valorFixo(chave, criar) {
+    await this.pool.query('INSERT INTO config (chave, valor) VALUES ($1, $2) ON CONFLICT (chave) DO NOTHING', [chave, criar()]);
+    return (await this.pool.query('SELECT valor FROM config WHERE chave = $1', [chave])).rows[0].valor;
+  }
   async fechar() { await this.pool.end(); }
 }
 
@@ -112,8 +123,13 @@ async function criarBanco({ url = process.env.DATABASE_URL, arquivo = null } = {
   if (url) {
     const { Pool } = require('pg');
     const local = /localhost|127\.0\.0\.1|\.railway\.internal/.test(url);
-    banco = new BancoPostgres(new Pool({ connectionString: url, ssl: local ? false : { rejectUnauthorized: false }, max: 8 }));
-  } else banco = new BancoMemoria(arquivo);
+    const pool = new Pool({ connectionString: url, ssl: local ? false : { rejectUnauthorized: false }, max: 8, connectionTimeoutMillis: 10_000 });
+    pool.on('error', e => console.error('postgres:', e.message));   // conexão ociosa caiu: o pool abre outra, o processo não cai
+    banco = new BancoPostgres(pool);
+    try { await banco.iniciar(); } catch (e) { await pool.end().catch(() => {}); throw e; }
+    return banco;
+  }
+  banco = new BancoMemoria(arquivo);
   await banco.iniciar();
   return banco;
 }
