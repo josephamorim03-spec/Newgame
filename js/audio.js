@@ -46,10 +46,10 @@
     busSom.gain.setTargetAtTime(cfg.som ? cfg.volSom : 0, t, 0.05);
     busMusica.gain.setTargetAtTime(cfg.musica ? cfg.volMusica * 0.55 : 0, t, 0.3);
   }
-  // o navegador só libera áudio depois de um toque
+  // o navegador só libera áudio depois de um toque; o iPhone também usa "interrupted" (depois de uma ligação, por exemplo)
   function desbloquear() {
     if (!criar()) return;
-    if (ctx.state === 'suspended') ctx.resume();
+    if (ctx.state !== 'running' && ctx.state !== 'closed') ctx.resume().catch(() => {});
     if (cfg.musica) musica.iniciar();
   }
 

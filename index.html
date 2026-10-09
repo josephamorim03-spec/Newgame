@@ -7,6 +7,7 @@
 <!-- onde mora o servidor (conta, ranking, salas) quando a página vem de fora dele, como no Vercel; o próprio servidor a serve vazia -->
 <meta name="dice-servidor" content="https://dice-duel-production-be6b.up.railway.app">
 <title>Dice Duel</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect x='6' y='6' width='52' height='52' rx='13' fill='%23fffaf0'/%3E%3Cg fill='%233a2a2e'%3E%3Ccircle cx='20' cy='20' r='5'/%3E%3Ccircle cx='32' cy='32' r='5'/%3E%3Ccircle cx='44' cy='44' r='5'/%3E%3C/g%3E%3C/svg%3E">
 <meta name="description" content="Duelo de dados 1×1 aconchegante: monte correntes que se sincronizam, guarde no Bolso e use um deck de até 3 cartas.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -227,10 +228,9 @@
       <h3>Bons momentos</h3>
       <ul class="momentos" id="fimMomentos"></ul>
       <table class="tabela" id="fimTabela"></table>
-      <textarea id="fimTexto" readonly aria-label="Resumo da partida para enviar"></textarea>
       <div class="botoes">
         <button class="btn btn-mel" id="btnDeNovo">Jogar de novo</button>
-        <button class="btn btn-papel" id="btnCopiar">Copiar</button>
+        <button class="btn btn-papel" id="btnCompartilhar">Compartilhar</button>
         <button class="btn btn-papel" id="btnTrocarDeck">Deck</button>
         <button class="btn btn-papel" id="btnFechar">Mesa</button>
       </div>
@@ -243,6 +243,7 @@
   <script src="js/retratos.js"></script>
 <script src="js/audio.js"></script>
 <script src="js/efeitos.js"></script>
+<script src="js/cartao.js"></script>
 <script src="js/jogo.js"></script>
 </body>
 </html>
