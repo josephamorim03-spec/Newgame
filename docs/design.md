@@ -218,32 +218,46 @@ algodão-doce"). Os textos são curtos e sóbrios, como um bom adversário de me
 - **Dona Coruja**, que joga com paciência e lê a Mesa.
 
 A Diana tem marcas fixas, que a arte precisa respeitar: ponta da orelha direita (dela) preta, a esquerda branca,
-um cinza leve logo acima dos olhos, dois riscos escuros simétricos e horizontais na testa e um pequeno ferimento
-vermelho no dorso do nariz.
+um cinza leve logo acima dos olhos, dois riscos escuros verticais no meio da testa (um de cada lado) e um pequeno
+ferimento vermelho no dorso do nariz, entre os olhos, bem acima das narinas.
 
 Os dois piscam, ficam felizes ou murcham, e soltam falas curtas (dá para desligar). A Dona Coruja leva um
 dos 9 melhores decks da simulação.
 
-## 7. Som e música (intenções)
+## 7. Som, música e gamefeel (intenções)
 
-Tudo é sintetizado na hora com Web Audio: nenhum arquivo de áudio. Nada no som deve assustar.
+Tudo é sintetizado na hora com Web Audio: nenhum arquivo de áudio (abre por `file://`, no HTML único e na Vercel
+sem pedido extra). Nada no som deve assustar.
+
+**Uma harmonia só.** A música e os efeitos dividem um relógio harmônico: as notas do elo, do disparo, dos sininhos e
+da contagem do placar saem do acorde que está tocando agora. A corrente "canta" dentro da trilha, nunca contra ela.
 
 | Som | Intenção |
 |---|---|
-| Pegar um dado | madeira macia: o toque foi recebido |
-| Elo | kalimba subindo a escala pentatônica: a corrente "canta" e cresce |
-| Bolso / troca | "pop" macio: guardado em segurança |
-| Disparo | arpejo + acorde morno, maior quanto maior a corrente: recompensa |
-| Ruptura | duas notas descendo, abafadas: "ah, quase", sem susto |
-| Armadilha armada | brilho curto e agudo: há um segredo na mesa |
-| Armadilha revelada | "tchã-rã" mágico: surpresa curiosa, não punição |
+| Mesa rolando | cada dado cai, achata no feltro e quica, no tempo da animação (um depois do outro) |
+| Escolher um dado | prévia: se sincroniza, toca baixinho a nota que vai somar; se rompe, um "hm-hm" grave e macio |
+| Pegar um dado | o estalo do dado saindo do feltro |
+| Elo | o dado assenta e soa a próxima nota do acorde: a corrente sobe e cresce |
+| Bolso / troca | "fump" de pano: guardado em segurança |
+| Disparo | um "fuuu" que sobe, arpejo da corrente e um acorde morno; os pontos voam até o placar com um tique por ponto |
+| Ruptura | os dados se espalham pelo feltro e duas notas descem: "ah, quase", sem susto |
+| Sua vez | dois sininhos discretos e o painel dá um pulinho |
+| Armadilha armada / revelada | brilho curto / "tchã-rã" mágico: surpresa curiosa, não punição |
+| Janela abrindo | papel; a música vai para o fundo (abafada) enquanto ela estiver aberta |
 | Vitória / derrota | fanfarra pequena / três notas descendo com acorde acolhedor |
-| Falas do rival | "blá-blá" curto e macio |
+| Falas do rival | "blá-blá" com a voz de cada um: a gata sobe no fim, a coruja é grave e redonda |
 
-**A música** é um lo-fi gerado na hora, a 72 bpm:
-- acordes de piano elétrico abafado (Cmaj7 – Am7 – Fmaj7 – G6) e um baixo macio;
-- uma kalimba que passeia pela escala e chiado de vinil;
-- quando alguém se aproxima da meta, a música "esquenta": mais notas e uma escovinha nos contratempos.
+**A música** é um lo-fi gerado na hora, em cenas, com piano elétrico (FM), baixo redondo, kalimba e o "wow" de fita:
+- **partida** (76 bpm, com balanço): duas progressões que se alternam; o chimbal entra quando alguém passa de 30% da
+  meta, o bumbo e a vassourinha a partir de 50%;
+- **reta final** (82 bpm), quando alguém passa de 75% da meta: progressão em lá menor, contracanto e um pad que respira;
+- **fim**: só piano e pad, devagar, até a próxima partida;
+- a kalimba toca motivos de um compasso que se repetem com variação, então soa composta, não aleatória;
+- a música abaixa sozinha sob disparos, armadilhas e o fim (e volta), e um limitador segura os picos.
+
+**Gamefeel:** o dado afunda quando é tocado; a corrente esquenta com 4 dados e ferve com 5; o disparo de 4+ solta um
+clarão; o celular vibra de leve ao escolher, pegar e disparar (dá para desligar). Com "reduzir movimento" ou as
+animações desligadas, tudo isso vira instantâneo.
 
 ## 8. Ajustes
 

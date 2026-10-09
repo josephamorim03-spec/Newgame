@@ -191,6 +191,7 @@ img.ico { width: 18px; height: 18px; flex: none; object-fit: contain; }
 .pega { background: none; border: 0; padding: 9px 0 0; display: grid; justify-items: center; align-content: start; gap: 6px; cursor: pointer; position: relative; border-radius: 14px; }
 .pega .face { width: var(--d-mesa); height: var(--d-mesa); transition: transform .18s cubic-bezier(.3,1.5,.5,1); position: relative; display: block; }
 .pega:not(:disabled):hover .face { transform: translateY(-5px) rotate(-4deg); }
+.pega:not(:disabled):active .face { transform: translateY(2px) scale(.9); transition-duration: .06s; }
 .pega:not(:disabled):active .face { transform: translateY(-2px) scale(.96); }
 .pega:disabled { cursor: default; }
 .pega.nao-cabe .face { filter: saturate(.55) brightness(.82); }
@@ -216,9 +217,17 @@ img.ico { width: 18px; height: 18px; flex: none; object-fit: contain; }
 @media (hover: none), (max-width: 599px) { .kbd { display: none; } }
 .ticker { font-size: 13px; color: var(--texto-suave); text-align: center; min-height: 19px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ticker .cor0 { color: #bfe8f2; } .ticker .cor1 { color: #ffd0dc; }
-.novo .face { animation: rola .65s cubic-bezier(.2,.9,.3,1.25) both; }
+.novo .face { animation: rola .6s linear both; animation-delay: calc(var(--i, 0) * 70ms); }
 .novo:nth-child(2) .face { animation-delay: .05s; } .novo:nth-child(3) .face { animation-delay: .1s; } .novo:nth-child(4) .face { animation-delay: .15s; } .novo:nth-child(5) .face { animation-delay: .2s; }
-@keyframes rola { 0% { transform: translateY(-40px) rotate(-220deg) scale(.5); opacity: 0; } 70% { transform: translateY(4px) rotate(10deg) scale(1.04); opacity: 1; } 100% { transform: none; } }
+/* cai girando, achata no feltro (45%: o som do primeiro toque), quica e assenta (78%: o segundo toque) */
+@keyframes rola {
+  0% { transform: translateY(-52px) rotate(-210deg) scale(.6); opacity: 0; animation-timing-function: cubic-bezier(.5,0,.9,.5); }
+  12% { opacity: 1; }
+  45% { transform: translateY(0) rotate(-8deg) scale(1.12, .86); animation-timing-function: cubic-bezier(.2,.6,.4,1); }
+  62% { transform: translateY(-9px) rotate(4deg) scale(.96, 1.05); animation-timing-function: cubic-bezier(.6,0,.9,.6); }
+  78% { transform: translateY(0) rotate(0) scale(1.04, .96); animation-timing-function: ease-out; }
+  100% { transform: none; opacity: 1; }
+}
 .virando .face { animation: vira .45s ease; }
 @keyframes vira { 50% { transform: rotateY(90deg) scale(.9); } }
 
@@ -383,8 +392,8 @@ button.carta:hover { transform: translateY(-2px) rotate(-1deg); }
 @keyframes rompe { 20% { transform: rotate(-8deg); } 40% { transform: rotate(6deg); } 100% { transform: translateY(16px) rotate(18deg) scale(.8); opacity: 0; } }
 
 /* sem animações: tudo para (a escolha também respeita o sistema) */
-.sem-animacoes *, .sem-animacoes *::before, .sem-animacoes *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
-@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; } }
+.sem-animacoes *, .sem-animacoes *::before, .sem-animacoes *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; animation-delay: 0s !important; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; animation-delay: 0s !important; } }
 
 /* ---------- progressão: carteira, loja, recompensas ---------- */
 .moeda { display: inline-block; width: 1em; height: 1em; border-radius: 50%; vertical-align: -0.12em; flex: none;
@@ -583,3 +592,14 @@ img.avatar { object-fit: contain; }
 .btn.perigo small { color: #b3412f; font-weight: 800; }
 .btn-link { border: 0; background: none; padding: 4px 2px; min-height: 32px; font: inherit; font-weight: 800; color: var(--tinta); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 .btn-link[hidden] { display: none; }
+
+/* ---------- gamefeel ---------- */
+/* corrente de 4 esquenta, de 5 ferve: um halo que respira (a fase continua entre os renders) */
+.corrente.quente, .corrente.fervendo { animation: aquece 1.8s ease-in-out infinite; animation-delay: var(--fase, 0ms); }
+.corrente.fervendo { animation-name: ferve; animation-duration: 1.2s; }
+@keyframes aquece { 50% { box-shadow: inset 0 3px 8px rgba(0,0,0,.35), 0 0 0 2px rgba(255,207,138,.45), 0 0 18px rgba(255,207,138,.35); } }
+@keyframes ferve { 50% { box-shadow: inset 0 3px 8px rgba(0,0,0,.35), 0 0 0 3px rgba(255,207,138,.75), 0 0 28px rgba(255,180,110,.55); } }
+/* clarão de disparo grande */
+.clarao { position: fixed; z-index: 56; pointer-events: none; width: 420px; height: 420px; border-radius: 50%; background: radial-gradient(circle, rgba(255,246,230,.95), rgba(255,207,138,.45) 35%, transparent 70%); transform: translate(-50%, -50%); mix-blend-mode: screen; }
+.sem-animacoes .corrente.quente, .sem-animacoes .corrente.fervendo { box-shadow: inset 0 3px 8px rgba(0,0,0,.35), 0 0 0 2px rgba(255,207,138,.6); }
+@media (prefers-reduced-motion: reduce) { .corrente.quente, .corrente.fervendo { animation: none; box-shadow: inset 0 3px 8px rgba(0,0,0,.35), 0 0 0 2px rgba(255,207,138,.6); } }
