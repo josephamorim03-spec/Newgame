@@ -791,6 +791,20 @@
     return `<div class="status">${quem}, ${msg}</div>${dispensa}${prontas ? `<p class="nota" style="margin:0">Toque numa carta sua para usar (${prontas} ${prontas === 1 ? 'pronta' : 'prontas'}).</p>` : ''}`;
   }
 
+  // na hora de disparar ou segurar, a sua corrente precisa estar à vista: em telas baixas o painel de ação (preso no
+  // rodapé) pode cobri-la; então a página rola o mínimo para ela aparecer — uma vez por decisão, sem brigar com quem rola
+  function mostrarCorrenteNaDecisao(j) {
+    const p = j.modo === 'local' ? j.vez : 0;
+    const chave = j.fase === 'decidir' && humano(j.vez) ? `${j.rodada}:${j.compras}:${j.vez}` : null;
+    if (!chave || j.decisaoVista === chave) return;
+    j.decisaoVista = chave;
+    requestAnimationFrame(() => {
+      const cor = document.querySelector(`#pj${p} .corrente`), acoes = document.getElementById('acoes');
+      if (!cor || !acoes) return;
+      const falta = cor.getBoundingClientRect().bottom + 8 - acoes.getBoundingClientRect().top;
+      if (falta > 0 && cor.getBoundingClientRect().top - falta > 0) window.scrollBy({ top: falta, behavior: Fx.cfg.animacoes ? 'smooth' : 'auto' });
+    });
+  }
   function render() {
     if (!jogo) return;
     const j = jogo;
@@ -808,6 +822,7 @@
     const linha = l => `${l.p === null ? '' : `<span class="cor${l.p}">${n[l.p]}</span> `}${l.txt}`;
     document.getElementById('log').innerHTML = j.log.map(l => `<li class="${l.tipo}">${linha(l)}</li>`).join('');
     document.getElementById('ticker').innerHTML = j.log[0] ? linha(j.log[0]) : '';
+    mostrarCorrenteNaDecisao(j);
     if (j.fase !== 'fim' && Som.musica.cenaAtual === 'fim') Som.musica.cena('jogo');
     Som.musica.intensidade(Math.max(j.pts[0], j.pts[1]) / j.meta);
     // a vez chegou a um humano: um sininho discreto e o painel dá um pulinho (no modo 2 jogadores, a cada troca)
