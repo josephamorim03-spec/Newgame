@@ -15,9 +15,15 @@ const aleatorio = () => crypto.randomInt(0, 2 ** 32) / 2 ** 32;
 const MESAS_PARA_VALER = 3;
 const PARTIDAS_POR_PAR = 3; // por dia, valendo rating e moedas (contra duas contas combinando resultado)
 
+// ritmo da sala (como o controle de tempo do chess.com, escolhido ao criar a sala): o tempo de cada vez.
+// Quem estoura o tempo da própria vez perde (por W.O.); quem cai tem o prazo de volta, com o relógio da vez parado.
+const RITMOS = { relampago: 20_000, rapida: 45_000, calma: 120_000 };
+const RITMO_PADRAO = 'rapida';
+const ritmoValido = r => (typeof r === 'string' && Object.hasOwn(RITMOS, r) ? r : RITMO_PADRAO);
+
 const PADRAO = {
   esperaReconexao: 90_000,  // quem cai tem esse tempo para voltar antes de perder por W.O. (troca de rede, aba recarregada…)
-  limiteVez: 120_000,       // quem não joga na própria vez por esse tempo perde (o relógio para enquanto ele está caído)
+  limiteVez: null,          // null: o tempo da vez vem do ritmo da sala (RITMOS); um número fixa o mesmo para todas (testes)
   minimoNaVolta: 30_000,    // quem volta de uma queda na própria vez tem pelo menos isso para jogar
   salaParada: 30 * 60_000,  // sala sem ninguém conectado some
   conviteValido: 24 * 3600_000,
@@ -29,21 +35,25 @@ class Salas {
     this.banco = banco; this.trava = trava; this.agora = agora; this.aoMudarConta = aoMudarConta;
     this.t = { ...PADRAO, ...tempos };
     this.salas = new Map();
-    this.relogio = setInterval(() => this.verificar(), Math.min(5000, this.t.esperaReconexao / 4)).unref();
+    // a cada segundo: com o ritmo Relâmpago (20 s), conferir de 5 em 5 s daria até 5 s a mais na vez
+    this.relogio = setInterval(() => this.verificar(), Math.min(1000, this.t.esperaReconexao / 4)).unref();
   }
   fechar() { clearInterval(this.relogio); }
 
-  criar(conta, { meta = 12 } = {}) {
+  // o tempo da vez desta sala (o do ritmo dela) e o mínimo de quem volta de uma queda (nunca mais que a vez inteira)
+  limiteDe(sala) { return this.t.limiteVez || RITMOS[sala.ritmo] || RITMOS[RITMO_PADRAO]; }
+  minimoDe(sala) { return Math.min(this.t.minimoNaVolta, this.limiteDe(sala)); }
+  criar(conta, { meta = 12, ritmo } = {}) {
     // uma sala esperando por conta: criar outra fecha a anterior
     for (const s of this.salas.values()) if (s.dono === conta.id && !s.jogo) { s.fechada = true; this.salas.delete(s.codigo); }
     let codigo; do codigo = novoCodigo(); while (this.salas.has(codigo));
-    const sala = { codigo, dono: conta.id, meta: meta === 16 ? 16 : 12, criada: this.agora(), mexida: this.agora(), jogadores: [], jogo: null, revanche: new Set(), primeiro: crypto.randomInt(2), fechada: false };
+    const sala = { codigo, dono: conta.id, meta: meta === 16 ? 16 : 12, ritmo: ritmoValido(ritmo), criada: this.agora(), mexida: this.agora(), jogadores: [], jogo: null, revanche: new Set(), primeiro: crypto.randomInt(2), fechada: false };
     this.salas.set(codigo, sala);
     return sala;
   }
   resumo(sala) {
     return {
-      codigo: sala.codigo, meta: sala.meta, dono: sala.dono,
+      codigo: sala.codigo, meta: sala.meta, ritmo: sala.ritmo, limiteVez: this.limiteDe(sala), dono: sala.dono,
       jogadores: sala.jogadores.map(j => ({ id: j.id, nome: j.nome, rating: j.rating, icone: j.icone, conectado: !!j.ws, volta: this.volta(sala, j) })),
       estado: sala.jogo ? (sala.jogo.fase === 'fim' ? 'fim' : 'jogando') : 'esperando',
     };
@@ -78,7 +88,7 @@ class Salas {
       const parado = Math.max(0, Math.min(agora - Math.max(eu.caiuEm, sala.vezDesde), this.t.esperaReconexao - (sala.pausaVez || 0)));
       sala.pausaVez = (sala.pausaVez || 0) + parado;
       sala.vezDesde += parado;
-      if (!sala.voltaDada) { sala.voltaDada = true; sala.vezDesde = Math.max(sala.vezDesde, agora - this.t.limiteVez + this.t.minimoNaVolta); }
+      if (!sala.voltaDada) { sala.voltaDada = true; sala.vezDesde = Math.max(sala.vezDesde, agora - this.limiteDe(sala) + this.minimoDe(sala)); }
     }
     eu.ws = ws; eu.caiuEm = null; ws.sala = sala.codigo;
     sala.mexida = this.agora();
@@ -209,7 +219,8 @@ class Salas {
     ];
     visao.sala = sala.codigo;
     visao.partida = sala.partidas;
-    visao.prazoVez = sala.jogo.fase === 'fim' ? null : Math.max(0, this.t.limiteVez - (this.agora() - sala.vezDesde));
+    visao.prazoVez = sala.jogo.fase === 'fim' ? null : Math.max(0, this.limiteDe(sala) - (this.agora() - sala.vezDesde));
+    visao.limiteVez = this.limiteDe(sala); visao.ritmo = sala.ritmo;
     this.enviar(jg.ws, { tipo: 'estado', jogo: visao });
   }
 
@@ -270,7 +281,7 @@ class Salas {
         if (caido >= 0) { Regras.desistir(j, caido); this.depoisDaAcao(sala).catch(e => console.error('verificar', e)); continue; }
         // a vez não vence enquanto quem joga está caído: aí vale só o prazo de volta
         const daVezCaido = !sala.jogadores[j.vez].ws;
-        if (!daVezCaido && agora - sala.vezDesde > this.t.limiteVez) { Regras.desistir(j, j.vez); this.depoisDaAcao(sala).catch(e => console.error('verificar', e)); continue; }
+        if (!daVezCaido && agora - sala.vezDesde > this.limiteDe(sala)) { Regras.desistir(j, j.vez); this.depoisDaAcao(sala).catch(e => console.error('verificar', e)); continue; }
       }
       const alguem = sala.jogadores.some(x => x.ws);
       if ((!alguem && agora - sala.mexida > this.t.salaParada) || (!j && agora - sala.criada > this.t.conviteValido)) {
@@ -318,4 +329,4 @@ class Salas {
   enviar(ws, msg) { if (ws && ws.readyState === 1) ws.send(JSON.stringify(msg)); }
 }
 
-module.exports = { Salas, novoCodigo, PARTIDAS_POR_PAR };
+module.exports = { Salas, novoCodigo, PARTIDAS_POR_PAR, RITMOS, RITMO_PADRAO };

@@ -406,6 +406,10 @@ button.carta:hover { transform: translateY(-2px) rotate(-1deg); }
 .volume { width: 120px; accent-color: var(--mel-escuro); }
 .segmento { display: inline-flex; border-radius: 999px; padding: 3px; background: var(--papel-2); flex-wrap: wrap; }
 .segmento button { border: 0; background: transparent; min-height: 34px; padding: 0 10px; border-radius: 999px; cursor: pointer; font-size: 13px; font-weight: 800; color: var(--tinta-suave); }
+.segmento button small { font-size: 11px; font-weight: 700; opacity: .75; }
+.tempo-online .segmento button { white-space: nowrap; }
+.tempo-online .segmento button small { display: inline; }   /* .linha-cfg small é bloco (a legenda embaixo do rótulo) */
+.tempo-online .segmento { flex-wrap: wrap; justify-content: flex-end; }
 .segmento button[aria-pressed="true"] { background: var(--marfim); color: var(--tinta); box-shadow: 0 2px 0 var(--papel-2); }
 
 /* tela de "versus" no começo da partida */
@@ -3322,7 +3326,7 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
   let uid = 1;
   const PREF_PADRAO = { som: true, musica: true, volSom: 0.8, volMusica: 0.45, animacoes: true, particulas: true, tremor: true, vibrar: true, falas: true, dicas: true, liberar: false, ajudasV11: true };
   const st = {
-    cfg: { modo: 'bot', nivel: 'aprendiz', meta: 12, ritmo: 'normal' },
+    cfg: { modo: 'bot', nivel: 'aprendiz', meta: 12, ritmo: 'normal', tempoOnline: 'rapida' },
     pref: { ...PREF_PADRAO },
     decks: [['ajuste', 'coringa', 'pressa'], ['ancora', 'coringa', 'interferencia']],
     rec: { partidas: 0, vitorias: 0, seq: 0, melhorSeq: 0, maiorDisparo: 0, maiorCorrente: 0 },
@@ -4209,7 +4213,7 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     const el = document.createElement('div');
     el.className = 'versus'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Começo da partida');
     el.innerHTML = `<div class="caixa"><h2>Dice Duel</h2><div class="vs-linha">${lado(0)}<span class="vs-x">×</span>${lado(1)}</div>
-      <p class="nota">${j.modo === 'bot' ? RIVAIS[j.nivel].desc + '. ' : online() ? `Rating ${j.perfis[1].rating}. ` : ''}Meta: ${j.meta} pontos. ${n[j.vez]} começa.</p><button class="btn btn-mel">Vamos lá</button></div>`;
+      <p class="nota">${j.modo === 'bot' ? RIVAIS[j.nivel].desc + '. ' : online() ? `Rating ${j.perfis[1].rating}. ${tempoTxt(j.ritmo)}. ` : ''}Meta: ${j.meta} pontos. ${n[j.vez]} começa.</p><button class="btn btn-mel">Vamos lá</button></div>`;
     document.body.appendChild(el);
     Som.tocar('carta');
     let fechou = false;
@@ -4524,7 +4528,7 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     document.getElementById('pontoMenu').hidden = document.getElementById('pontoOnline').hidden;
     const [txt, nota] = textoSair(), b = janelaMenu.querySelector('[data-menu="sair"]');
     document.getElementById('menuSairTxt').textContent = txt; b.dataset.certeza = '';
-    document.getElementById('menuSairNota').textContent = nota;
+    document.getElementById('menuSairNota').textContent = (online() && jogo.fase !== 'fim' ? 'No online o relógio da vez continua correndo. ' : '') + nota;
     janelaMenu.hidden = false;
     janelaMenu.querySelector('[data-menu="continuar"]').focus();
   }
@@ -4993,9 +4997,12 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     Rede.pediuRevanche = true; document.getElementById('fim').hidden = true; render();
   };
 
+  // o tempo de cada vez no online, escolhido ao criar a sala (como o controle de tempo do chess.com; servidor/salas.js)
+  const TEMPOS_ONLINE = { relampago: ['Relâmpago', '20 s'], rapida: ['Rápida', '45 s'], calma: ['Calma', '2 min'] };
+  const tempoTxt = r => { const t = TEMPOS_ONLINE[r] || TEMPOS_ONLINE.rapida; return `${t[0]} · ${t[1]} por vez`; };
   async function criarSala() {
     aviso('Criando a sala…');
-    try { const r = await pedir('POST', '/api/salas', { meta: +st.cfg.meta }); await entrarNaSala(r.sala.codigo); }
+    try { const r = await pedir('POST', '/api/salas', { meta: +st.cfg.meta, ritmo: st.cfg.tempoOnline }); await entrarNaSala(r.sala.codigo); }
     catch (e) { aviso(e.message, true); }
   }
   async function entrarNaSala(codigo) {
@@ -5360,11 +5367,13 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
           <ul class="lista-sala">${lista}</ul>
           <span class="esperando">Esperando o amigo<span class="pensando-pontos"></span></span></div>
         ${htmlOnlineAgora({ sala: true })}
-        <p class="nota" style="margin:0">Meta ${sala ? sala.meta : st.cfg.meta} · seu deck: ${deckOnline().map(c => CARTAS[c].nome).join(', ') || 'sem cartas'}. Enquanto espera, dá para jogar contra o rival do jogo.</p>
+        <p class="nota" style="margin:0">Meta ${sala ? sala.meta : st.cfg.meta} · ${tempoTxt(sala ? sala.ritmo : st.cfg.tempoOnline)} · seu deck: ${deckOnline().map(c => CARTAS[c].nome).join(', ') || 'sem cartas'}. Enquanto espera, dá para jogar contra o rival do jogo.</p>
         <div class="linha-botoes"><button class="btn btn-papel" data-on="deck">Trocar deck</button><button class="btn btn-papel" data-on="sair-sala">Cancelar a sala</button></div>`;
       return;
     }
     el.innerHTML = `${eu}
+      <div class="linha-cfg tempo-online"><span><label>Tempo por vez</label><small>quem estoura o tempo da própria vez perde</small></span>
+        <span class="segmento" role="group" aria-label="Tempo por vez">${Object.entries(TEMPOS_ONLINE).map(([k, t]) => `<button data-on="tempo" data-v="${k}" aria-pressed="${st.cfg.tempoOnline === k}">${t[0]} <small>${t[1]}</small></button>`).join('')}</span></div>
       <div class="linha-botoes"><button class="btn btn-mel" data-on="criar-sala">Chamar um amigo</button></div>
       <form class="linha-botoes" id="formCodigo"><input class="campo codigo" name="codigo" maxlength="6" placeholder="código" aria-label="Código da sala" autocomplete="off" style="flex:1 1 120px"><button class="btn btn-papel" type="submit">Entrar na sala</button></form>
       ${htmlBusca()}
@@ -5430,6 +5439,7 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
       catch (x) { Rede.busca = null; aviso(x.message, true); desenharOnline(); }
     }
     if (a === 'cancelar-busca') { enviarWs({ tipo: 'cancelarBusca' }); Rede.busca = null; desenharOnline(); }
+    if (a === 'tempo' && TEMPOS_ONLINE[b.dataset.v]) { st.cfg.tempoOnline = b.dataset.v; salvar(); desenharOnline(); }
     if (a === 'criar-sala') criarSala();
     if (a === 'sair-sala') sairDaSala();
     if (a === 'sair-conta') sairDaConta();

@@ -57,9 +57,10 @@ Banco: Postgres (o plugin da Railway). Sem `DATABASE_URL`, guarda tudo num arqui
 
 | O quê | Quanto |
 |---|---|
+| Tempo por vez (o ritmo da sala, escolhido ao criar, como no chess.com) | **Relâmpago 20 s**, **Rápida 45 s** (padrão; a fila usa este) ou **Calma 2 min**; quem estoura o tempo da própria vez perde por W.O. O rating é um só para os três |
 | Quem cai no meio da partida tem para voltar | **90 s** (depois perde por W.O., sem moedas para ninguém) |
 | Relógio da vez de quem está caído | **para**; na volta, continua de onde estava, com pelo menos **30 s** para jogar (o mínimo vale uma vez por vez; numa mesma vez, o relógio fica parado por no máximo 90 s somados: cair e voltar sem fim não segura a partida) |
-| Relógio da vez (2 min) | recomeça quando a vez passa e a cada Mesa nova, mesmo quando quem fechou a Mesa abre a próxima |
+| Relógio da vez (o do ritmo) | recomeça quando a vez passa e a cada Mesa nova, mesmo quando quem fechou a Mesa abre a próxima |
 | O rival de quem caiu vê | "caiu · N s" contando o tempo que falta para a volta |
 | O servidor percebe uma conexão morta | em 15 a 30 s (ping a cada 15 s) |
 | O aparelho de quem caiu tenta voltar | durante 100 s, de 0,8 s a 5 s entre tentativas; **na hora** quando a internet volta ou o app volta para a frente |

@@ -80,3 +80,23 @@ test('o relógio recomeça na Mesa nova, mesmo quando quem fechou a Mesa abre a 
   }
   p.salas.fechar();
 });
+
+test('ritmo da sala: o tempo da vez vem do ritmo escolhido ao criar (Relâmpago 20 s, Rápida 45 s, Calma 2 min)', async () => {
+  const { Salas: S, RITMOS } = require('../salas');
+  let agora = 5_000_000;
+  const banco = await criarBanco({ url: '' });
+  const salas = new S({ banco, trava: (id, fn) => fn(), tempos: { esperaReconexao: 90_000, minimoNaVolta: 30_000 }, agora: () => agora });
+  const ws = () => ({ readyState: 1, msgs: [], send(m) { this.msgs.push(JSON.parse(m)); } });
+  for (const [ritmo, ms] of [['relampago', 20_000], ['rapida', 45_000], ['calma', 120_000], ['qualquer', 45_000], [undefined, 45_000]]) {
+    const a = await banco.criarConta('A' + ritmo + ms, 'x'), b = await banco.criarConta('B' + ritmo + ms, 'x'), wa = ws(), wb = ws();
+    const sala = salas.criar(a, { ritmo });
+    assert.strictEqual(salas.resumo(sala).limiteVez, ms, `${ritmo}`);
+    await salas.entrar(wa, a, { sala: sala.codigo, deck: [] }); await salas.entrar(wb, b, { sala: sala.codigo, deck: [] });
+    const w = [wa, wb][sala.jogo.vez];
+    assert.strictEqual(prazo(w), ms);
+    assert.strictEqual(RITMOS[sala.ritmo], ms);
+    agora += ms + 1; salas.verificar();
+    assert.strictEqual(sala.jogo.fase, 'fim', `${ritmo}: estourou o tempo da vez e perdeu`);
+  }
+  salas.fechar();
+});

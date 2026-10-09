@@ -72,6 +72,7 @@ const espera = ms => new Promise(r => setTimeout(r, ms));
     await espera(1800); // a conta recebe o deck (sincroniza 1,2 s depois de salvar)
     // cria a sala e pega o link
     await ana.evaluate(() => document.getElementById('btnOnline').click());
+    await ana.click('[data-on="tempo"][data-v="calma"]');   // o tempo por vez é escolhido ao criar a sala
     await ana.click('[data-on="criar-sala"]');
     await ana.waitForSelector('.codigo-grande', { timeout: 5000 });
     const link = await ana.textContent('.convite .link');
@@ -106,7 +107,8 @@ const espera = ms => new Promise(r => setTimeout(r, ms));
     if (depoisCfg.modo !== 'online' || depoisCfg.fase === 'fim' || !depoisCfg.aviso) throw new Error('Ajustes no online mexeram na partida: ' + JSON.stringify(depoisCfg));
     await ana.click('#janelaConfig [data-cfg="modo"][data-v="bot"]');
     await fechar(ana);
-    const vistaBia = await bia.evaluate(() => ({ nomes: DiceDuel.jogo.nomes, deckRival: DiceDuel.jogo.decks[1] }));
+    const vistaBia = await bia.evaluate(() => ({ nomes: DiceDuel.jogo.nomes, deckRival: DiceDuel.jogo.decks[1], ritmo: DiceDuel.jogo.ritmo, limite: DiceDuel.jogo.limiteVez }));
+    if (vistaBia.ritmo !== 'calma' || vistaBia.limite !== 120000) throw new Error('o tempo por vez escolhido não chegou à partida: ' + JSON.stringify(vistaBia));
     if (vistaBia.nomes[1] !== ANA || vistaBia.deckRival.join() !== 'espelho,ajuste,pressa') throw new Error('a Bia não vê a Ana direito: ' + JSON.stringify(vistaBia));
 
     // joga clicando: quem tem a vez escolhe um dado (às vezes confirma), um destino, ou dispara/segura

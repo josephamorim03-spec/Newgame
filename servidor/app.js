@@ -80,7 +80,7 @@ function criarApp({ banco, segredo, raiz = path.join(__dirname, '..'), tempos = 
     const vivos = par.filter(e => e.dados.ws.readyState === 1);
     if (vivos.length < 2) { vivos.forEach(e => fila.entrar(e)); return; }   // um saiu nesse meio-tempo: o outro volta para a fila
     const contas = await Promise.all(par.map(e => banco.contaPorId(e.id)));
-    const sala = salas.criar(contas[0], { meta: par[0].meta });
+    const sala = salas.criar(contas[0], { meta: par[0].meta });   // a fila usa o ritmo padrão (Rápida)
     par.forEach((e, i) => salas.enviar(e.dados.ws, { tipo: 'achou', sala: sala.codigo, rival: contas[1 - i].nome, rating: contas[1 - i].rating }));
     for (let i = 0; i < 2; i++) await salas.entrar(par[i].dados.ws, contas[i], { sala: sala.codigo, deck: par[i].dados.deck });
   } });
@@ -436,7 +436,8 @@ function criarApp({ banco, segredo, raiz = path.join(__dirname, '..'), tempos = 
 
   // ---------- salas (convite por link) ----------
   app.post('/api/salas', exigirConta, (req, res) => {
-    const sala = salas.criar(req.conta, { meta: (req.body || {}).meta });
+    const b = req.body || {};
+    const sala = salas.criar(req.conta, { meta: b.meta, ritmo: b.ritmo });
     res.json({ sala: salas.resumo(sala) });
   });
   app.get('/api/salas/:codigo', (req, res) => {
