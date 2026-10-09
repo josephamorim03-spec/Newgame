@@ -167,6 +167,23 @@ const espera = ms => new Promise(r => setTimeout(r, ms));
     const noCel = await ana.evaluate(() => ({ moedas: DiceDuel.st.conta.moedas }));
     if (noPc.deck !== 'espelho,ajuste,pressa' || noPc.dado !== 'madeira' || noPc.seq !== 3 || noPc.moedas !== noCel.moedas) throw new Error('a conta não seguiu para o outro aparelho: ' + JSON.stringify({ noPc, noCel }));
     await layout(anaPc, 'outro-aparelho');
+    // a sala some no meio da partida (servidor reiniciou): os dois voltam ao jogo contra o rival, com aviso
+    if (!externo) {
+      await bia.click('[data-on="criar-sala"]');
+      await bia.waitForSelector('.codigo-grande', { timeout: 5000 });
+      const cod = (await bia.textContent('.codigo-grande')).trim();
+      await fechar(ana);
+      await ana.click('#btnOnline');
+      await ana.fill('#formCodigo [name=codigo]', cod.toLowerCase());
+      await ana.click('#formCodigo [type=submit]');
+      for (const pg of [ana, bia]) await pg.waitForFunction(() => DiceDuel.jogo && DiceDuel.jogo.modo === 'online' && DiceDuel.jogo.fase !== 'fim', null, { timeout: 6000 })
+        .catch(async e => { throw new Error('a partida nova não começou: ' + JSON.stringify(await pg.evaluate(() => ({ modo: DiceDuel.jogo && DiceDuel.jogo.modo, aviso: document.getElementById('onlineAviso').textContent, online: document.getElementById('onlineConteudo').innerText.slice(0, 200) })))); });
+      salas.salas.clear(); servidor.wss.clients.forEach(c => c.terminate());
+      for (const pg of [ana, bia]) await pg.waitForFunction(() => DiceDuel.jogo && DiceDuel.jogo.modo === 'bot', null, { timeout: 10000 });
+      const aviso = await ana.textContent('#onlineAviso');
+      if (!/não encontrada/.test(aviso)) throw new Error('sem aviso de sala perdida: ' + aviso);
+      await layout(ana, 'sala-perdida');
+    }
     console.log(`Online ok: ${passos} passos; venceu com +${vencedor.premio.moedas.total} moedas; ranking ${ranking.join(' > ')}`);
   } catch (e) {
     erros.push(e.stack || String(e));

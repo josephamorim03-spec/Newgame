@@ -228,7 +228,7 @@
       const c = st.conta, ps = R.premioSolo({ rating: c.rating, pico: c.pico }, { nivel: j.nivel, venceu: p === 0, margem: j.pts[0] - j.pts[1], rodadas: j.rodada, meta: j.meta });
       if (ps.moedas) c.moedas += ps.moedas.total;
       c.rating = ps.rating; c.pico = ps.picoNovo;
-      const xp = R.ganharXp(c, R.xpDaPartida(p === 0, j.momentos.filter(m => m.p === 0).length));
+      const xp = R.ganharXp(c, j.desistencia === 0 ? 0 : R.xpDaPartida(p === 0, j.momentos.filter(m => m.p === 0).length));
       j.premio = { moedas: ps.moedas, ratingAntes: ps.ratingAntes, pico: ps.pico, rating: c.rating, ...xp };
       salvar(); aplicarPrefs();
       falar(p === 1 ? 'venci' : 'perdi');
@@ -944,8 +944,15 @@
   }
 
   // ---------- montar o deck ----------
+  // partida em andamento: mexer no deck não pode abandoná-la sem querer
+  const partidaEmAndamento = () => !!(jogo && jogo.fase !== 'fim' && (jogo.compras > 0 || online()));
   function abrirDeck() {
     const local = st.cfg.modo === 'local';
+    const andando = partidaEmAndamento();
+    document.getElementById('btnJogarDeck').textContent = andando ? 'Salvar deck' : 'Jogar';
+    document.getElementById('deckEmAndamento').hidden = !andando;
+    document.getElementById('btnRecomecar').hidden = online();
+    document.getElementById('btnRecomecar').textContent = jogo && jogo.modo === 'bot' ? 'Recomeçar agora (conta como derrota)' : 'Recomeçar agora';
     document.getElementById('abasDeck').hidden = !local;
     if (!local) st.abaDeck = 0;
     document.querySelectorAll('#abasDeck [data-aba]').forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.aba === st.abaDeck)));
@@ -1092,7 +1099,18 @@
   document.getElementById('btnDeNovo').addEventListener('click', novaPartida);
   document.getElementById('btnFechar').addEventListener('click', () => { document.getElementById('fim').hidden = true; });
   document.getElementById('btnFecharDeck').addEventListener('click', () => { document.getElementById('janelaDeck').hidden = true; });
-  document.getElementById('btnJogarDeck').addEventListener('click', () => { st.deckVisto = true; salvar(); novaPartida(); });
+  document.getElementById('btnJogarDeck').addEventListener('click', () => {
+    st.deckVisto = true; salvar();
+    if (partidaEmAndamento() && !online()) { document.getElementById('janelaDeck').hidden = true; Fx.chamada('Deck salvo', 'vale a partir da próxima partida', 'suave'); return; }
+    novaPartida();
+  });
+  // recomeçar no meio: contra o rival do jogo conta como derrota (senão abandonar seria um jeito de nunca perder rating)
+  document.getElementById('btnRecomecar').addEventListener('click', () => {
+    document.getElementById('janelaDeck').hidden = true;
+    if (!jogo || online()) return;
+    if (jogo.modo === 'bot' && jogo.fase !== 'fim' && jogo.compras > 0) { jogo.token = Math.random(); jogo.pensando = false; R.desistir(jogo, 0); depois('fim'); return; }
+    novaPartida();
+  });
   document.getElementById('abasDeck').addEventListener('click', e => { const b = e.target.closest('[data-aba]'); if (!b) return; st.abaDeck = +b.dataset.aba; abrirDeck(); });
   document.getElementById('deckGrade').addEventListener('click', e => {
     const b = e.target.closest('[data-op]'); if (!b || b.disabled) return;
@@ -1112,7 +1130,8 @@
     setTimeout(() => { b.textContent = 'Copiar resumo'; }, 2200);
   });
   document.addEventListener('keydown', e => {
-    if (!jogo || e.target.closest('textarea, input') || e.metaKey || e.ctrlKey || e.altKey) return;
+    const alvo = e.target && e.target.closest ? e.target : document.body;   // tecla vinda do documento não tem .closest
+    if (!jogo || alvo.closest('textarea, input') || e.metaKey || e.ctrlKey || e.altKey) return;
     if (e.key === 'Escape') {
       ['fim', 'janelaCarta', 'janelaDeck', 'janelaConfig', 'janelaLoja'].forEach(id => { document.getElementById(id).hidden = true; }); abrirLado(false);
       return cancelarEscolha();
@@ -1121,7 +1140,7 @@
     if (/^[1-5]$/.test(e.key)) { clicarDado(+e.key - 1); return; }
     const k = e.key.toLowerCase();
     // com um dado escolhido: Enter (ou C) põe na corrente/destino principal, B guarda ou troca
-    if (k === 'enter' && e.target.closest('button')) return;   // Enter num botão focado já é o clique dele
+    if (k === 'enter' && alvo.closest('button')) return;   // Enter num botão focado já é o clique dele
     if (jogo.sel != null && humano(jogo.vez) && !jogo.pensando) {
       if (jogo.fase === 'alvo' && k === 'enter') return confirmarAlvo();
       if (jogo.fase === 'pegar') {
@@ -1231,7 +1250,7 @@
     if (!st.sessao) return;
     const antes = j.premio && j.premio.moedas ? j.premio.moedas.total : 0;
     try {
-      const r = await pedir('POST', '/api/solo', { nivel: j.nivel, venceu: j.vencedor === 0, margem: Math.max(0, j.pts[0] - j.pts[1]), rodadas: j.rodada, meta: +j.meta, momentos: j.momentos.filter(m => m.p === 0).length });
+      const r = await pedir('POST', '/api/solo', { desistiu: j.desistencia === 0, nivel: j.nivel, venceu: j.vencedor === 0, margem: Math.max(0, j.pts[0] - j.pts[1]), rodadas: j.rodada, meta: +j.meta, momentos: j.momentos.filter(m => m.p === 0).length });
       j.premio = r.premio; usarPerfil(r.conta);
       if ((r.premio.moedas ? r.premio.moedas.total : 0) !== antes && jogo === j && !document.getElementById('fim').hidden) desenharRecompensas(j);
     } catch (e) {
@@ -1319,8 +1338,12 @@
       j.premio = m.premio; usarPerfil(m.premio.conta);
       setTimeout(mostrarFim, st.pref.animacoes ? 1800 : 600);
     } else if (m.tipo === 'erro') {
-      if (online() && jogo.sala === Rede.sala) { Rede.pediuRevanche = false; render(); Fx.chamada('Ops', m.erro, 'suave'); return; }
-      Rede.sala = null; Rede.infoSala = null;
+      // jogada recusada: destrava e mostra por quê (o servidor manda o estado certo logo em seguida)
+      if (m.codigo !== 'sala' && online() && jogo.sala === Rede.sala) { jogo.pensando = false; Rede.pediuRevanche = false; render(); Fx.chamada('Ops', m.erro, 'suave'); return; }
+      // a sala não existe mais (ou recusou a entrada): sai da partida fantasma e volta ao jogo contra o rival
+      const estavaJogando = online();
+      Rede.sala = null; Rede.infoSala = null; Rede.pediuRevanche = false;
+      if (estavaJogando) { jogo = null; novaPartida(); }
       aviso(m.erro, true); abrirOnline();
     }
   }
@@ -1341,6 +1364,11 @@
   }
   // o relógio da vez (o servidor dá 2 minutos; o aviso aparece nos últimos 30 s)
   setInterval(() => {
+    // jogada enviada e nenhuma resposta em 7 s: pede o estado de novo (o servidor reenvia a partida)
+    if (jogo && online() && jogo.pensando) {
+      jogo.pensandoDesde = jogo.pensandoDesde || Date.now();
+      if (Date.now() - jogo.pensandoDesde > 7000 && Rede.sala) { jogo.pensandoDesde = Date.now(); enviarWs({ tipo: 'entrar', sala: Rede.sala, deck: deckOnline() }); }
+    } else if (jogo) jogo.pensandoDesde = 0;
     if (!jogo || !online() || !jogo.prazoAte || jogo.fase === 'fim') return;
     const s = Math.max(0, Math.ceil((jogo.prazoAte - Date.now()) / 1000)), el = document.getElementById('mesaInfo');
     if (s <= 30) el.innerHTML = `<span class="prazo">${jogo.vez === 0 ? 'sua vez' : 'vez do rival'}: ${s} s</span>`;

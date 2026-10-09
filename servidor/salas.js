@@ -47,18 +47,18 @@ class Salas {
   // ---------- mensagens de um jogador (ws já autenticado com a conta) ----------
   async entrar(ws, conta, { sala: codigo, deck }) {
     const sala = this.salas.get(String(codigo || '').toUpperCase());
-    if (!sala || sala.fechada) return this.erro(ws, 'Sala não encontrada. O convite pode ter expirado.');
-    if (!Array.isArray(deck) || !Regras.deckValido(deck)) return this.erro(ws, 'Deck inválido.');
+    if (!sala || sala.fechada) return this.erro(ws, 'Sala não encontrada. O convite pode ter expirado.', 'sala');
+    if (!Array.isArray(deck) || !Regras.deckValido(deck)) return this.erro(ws, 'Deck inválido.', 'sala');
     const faltam = deck.filter(c => !conta.cartas.includes(c));
-    if (faltam.length) return this.erro(ws, 'Seu deck tem cartas que esta conta não possui.');
+    if (faltam.length) return this.erro(ws, 'Seu deck tem cartas que esta conta não possui.', 'sala');
     this.sair(ws, { silencioso: true }); // um socket fica numa sala só
     let eu = sala.jogadores.find(j => j.id === conta.id);
     if (!eu) {
-      if (sala.jogadores.length >= 2) return this.erro(ws, 'Esta sala já está cheia.');
+      if (sala.jogadores.length >= 2) return this.erro(ws, 'Esta sala já está cheia.', 'sala');
       eu = { id: conta.id, nome: conta.nome, rating: conta.rating, icone: conta.ativo.icone, dado: conta.ativo.dado, deck: deck.slice(), ws: null, caiuEm: null };
       sala.jogadores.push(eu);
     } else if (!sala.jogo || sala.jogo.fase === 'fim') eu.deck = deck.slice();
-    if (eu.ws && eu.ws !== ws) { this.enviar(eu.ws, { tipo: 'erro', erro: 'Você entrou nesta sala por outra janela.' }); eu.ws.sala = null; }
+    if (eu.ws && eu.ws !== ws) { this.enviar(eu.ws, { tipo: 'erro', erro: 'Você entrou nesta sala por outra janela.', codigo: 'sala' }); eu.ws.sala = null; }
     eu.ws = ws; eu.caiuEm = null; ws.sala = sala.codigo;
     sala.mexida = this.agora();
     if (sala.jogadores.length === 2 && !sala.jogo) this.comecar(sala);
@@ -225,7 +225,8 @@ class Salas {
     return assento < 0 ? {} : { sala, assento };
   }
   avisarSala(sala, extra = {}) { const r = this.resumo(sala); sala.jogadores.forEach(j => this.enviar(j.ws, { tipo: 'sala', sala: r, ...extra })); }
-  erro(ws, erro) { this.enviar(ws, { tipo: 'erro', erro }); return null; }
+  // codigo 'sala': o erro tira o jogador da sala (não existe mais, cheia, deck recusado)
+  erro(ws, erro, codigo) { this.enviar(ws, codigo ? { tipo: 'erro', erro, codigo } : { tipo: 'erro', erro }); return null; }
   enviar(ws, msg) { if (ws && ws.readyState === 1) ws.send(JSON.stringify(msg)); }
 }
 
