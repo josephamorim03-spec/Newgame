@@ -24,7 +24,13 @@
     interferencia: svg('<path d="M2 12h3l2-5 3 10 3-13 3 13 2-5h4"/>'),
     pedagio: svg('<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5v9M14.5 9.5h-3.5a1.5 1.5 0 0 0 0 3h2a1.5 1.5 0 0 1 0 3H9.5"/>'),
   };
-  const CARTAS = Object.fromEntries(Object.entries(R.CARTAS).map(([k, v]) => [k, { ...v, ico: ICO_CARTA[k] }]));
+  // versão pintada (js/cartas_pintadas.js, feita por tools/arte_icones.py) onde o ícone aparece grande o bastante para ler
+  // (deck, loja, detalhe, regras, versus); nos botões de 18 px da mesa e na marca do Espelho fica o traço. Sem pintura, traço em tudo.
+  const pintada = id => (window.CARTAS_PINTADAS || {})[id];
+  const imgPintada = (id, cls) => `<img class="${cls}" src="${pintada(id)}" alt="" aria-hidden="true" draggable="false">`;
+  const RAIO = pintada('raio') ? imgPintada('raio', 'raio-pintado') : '⚡';
+  const VERSO = pintada('verso') ? imgPintada('verso', 'verso-pintado') : '?';
+  const CARTAS = Object.fromEntries(Object.entries(R.CARTAS).map(([k, v]) => [k, { ...v, ico: ICO_CARTA[k], arte: pintada(k) ? imgPintada(k, 'ico pintado') : ICO_CARTA[k] }]));
   const PRONTOS = [
     { nome: 'Primeira mesa', cartas: ['ajuste', 'coringa', 'pressa'], nota: 'só efeitos' },
     { nome: 'Muralha', cartas: ['ancora', 'coringa', 'interferencia'], nota: '' },
@@ -469,8 +475,8 @@
     if (!meu && e === 'armada' && c !== 'espelho') e = 'pronta';
     const blefe = meu && blefando(p, c), pv = podeVirar(p, c);
     const estado = { pronta: 'na mão', armada: blefe ? 'virada para baixo (blefe)' : 'armada', usada: 'usada', perdida: 'perdida' }[e] || e;
-    document.getElementById('cartaDetalhe').innerHTML = `${k.ico}<div><h2 id="cartaTitulo">${k.nome}</h2>
-      <p class="nota">${k.tipo === 'armadilha' ? 'Armadilha' : 'Efeito'}${k.pontos ? ' · carta de pontos ⚡' : ''} · ${estado}</p><p style="margin-top:8px">${k.texto}</p></div>`;
+    document.getElementById('cartaDetalhe').innerHTML = `${k.arte}<div><h2 id="cartaTitulo">${k.nome}</h2>
+      <p class="nota">${k.tipo === 'armadilha' ? 'Armadilha' : 'Efeito'}${k.pontos ? ` · carta de pontos <span class="raio">${RAIO}</span>` : ''} · ${estado}</p><p style="margin-top:8px">${k.texto}</p></div>`;
     const visivel = humano(p) && j.vez === p;
     let nota = !meu ? 'O deck do rival fica à mostra. Uma carta virada (?) pode ser qualquer carta dele ainda não revelada: uma armadilha ou um blefe.'
       : !visivel ? 'Só na sua vez.' : pu.ok ? '' : (pu.motivo || '');
@@ -515,7 +521,7 @@
       html += `<button class="carta ${k.tipo} ${e}" data-carta="${c}" data-dono="${p}" aria-label="${k.nome}: ${rotulo || e}">${k.ico}<span class="cnome">${k.nome}</span>${raio}${rotulo ? `<small>${rotulo}</small>` : ''}</button>`;
     }
     let estados = '';
-    if (j.armada[p] && j.armada[p] !== 'espelho' && !meu) estados += `<span class="efeito-ativo oculta" style="background:var(--tinta);color:var(--papel)" title="Uma carta virada: pode ser uma armadilha ou um blefe">? carta virada</span>`;
+    if (j.armada[p] && j.armada[p] !== 'espelho' && !meu) estados += `<span class="efeito-ativo oculta" style="background:var(--tinta);color:var(--papel)" title="Uma carta virada: pode ser uma armadilha ou um blefe">${VERSO} carta virada</span>`;
     if (j.coringa[p]) estados += `<span class="efeito-ativo">Coringa ativo</span>`;
     if (j.sobre[p]) estados += `<span class="efeito-ativo">Sobrecarga +2</span>`;
     if (j.extra[p]) estados += `<span class="efeito-ativo">Pressa: +1 dado</span>`;
@@ -807,7 +813,7 @@
     j.intro = true; render();
     const lado = p => {
       const av = j.modo === 'bot' && p === 1 ? Retratos.retrato(RETRATO_RIVAL[j.nivel]) : p === 0 ? iconeSVG(st.conta.icone) : iconeSVG(online() ? j.perfis[1].icone : 'raposa');
-      const deck = j.decks[p].map(c => `<span class="carta ${CARTAS[c].tipo}">${CARTAS[c].ico}${CARTAS[c].nome}</span>`).join('') || '<span class="nota">sem cartas</span>';
+      const deck = j.decks[p].map(c => `<span class="carta ${CARTAS[c].tipo}">${CARTAS[c].arte}${CARTAS[c].nome}</span>`).join('') || '<span class="nota">sem cartas</span>';
       return `<div class="vs-lado">${av}<b class="cor${p}">${n[p]}</b><div class="vs-deck">${deck}</div></div>`;
     };
     const el = document.createElement('div');
@@ -919,7 +925,7 @@
       return `<div class="item${usando ? ' usando' : ''}"><div class="previa">${previa}</div><b>${info.nome}</b><small>${sub}</small>${botao}</div>`;
     };
     let html = '';
-    if (aba === 'cartas') html = ORDEM.map(id => item('cartas', id, { nome: CARTAS[id].nome, preco: PRECO_CARTA[id] || 0 }, CARTAS[id].ico, `${CARTAS[id].tipo}${CARTAS[id].pontos ? ' · ⚡' : ''} · ${CARTAS[id].verbo}`)).join('');
+    if (aba === 'cartas') html = ORDEM.map(id => item('cartas', id, { nome: CARTAS[id].nome, preco: PRECO_CARTA[id] || 0 }, CARTAS[id].arte, `${CARTAS[id].tipo}${CARTAS[id].pontos ? ` · <span class="raio">${RAIO}</span>` : ''} · ${CARTAS[id].verbo}`)).join('');
     if (aba === 'dados') html = Object.entries(DADOS).map(([id, d]) => item('dados', id, d, `<span style="width:52px;height:52px;display:block">${dadoHTML(5, id)}</span>`, d.desc)).join('');
     if (aba === 'icones') html = GRUPOS_ICONES.map(([g, titulo]) => `<h3 class="grupo-loja">${titulo}</h3>` + Object.entries(ICONES).filter(([, d]) => d.grupo === g).map(([id, d]) => item('icones', id, d, iconeSVG(id), d.desc)).join('')).join('');
     if (aba === 'mesas') html = Object.entries(MESAS).map(([id, d]) => item('mesas', id, d, `<span class="amostra-mesa" style="background:${d.amostra}"></span>`, d.nivel ? `presente do nível ${d.nivel}` : 'o feltro da sua mesa')).join('');
@@ -956,13 +962,13 @@
   function desenharDeck() {
     const d = st.decks[st.abaDeck] = st.decks[st.abaDeck].filter(disponivel);
     const nt = d.filter(c => CARTAS[c].tipo === 'armadilha').length, np = d.filter(c => CARTAS[c].pontos).length;
-    document.getElementById('deckContador').innerHTML = `<b>${d.length}/3</b> cartas · ${nt}/2 armadilhas · ${np}/1 de pontos ⚡${d.length ? ' · ' + d.map(c => CARTAS[c].nome).join(', ') : ''}`;
+    document.getElementById('deckContador').innerHTML = `<b>${d.length}/3</b> cartas · ${nt}/2 armadilhas · ${np}/1 de pontos <span class="raio">${RAIO}</span>${d.length ? ' · ' + d.map(c => CARTAS[c].nome).join(', ') : ''}`;
     document.getElementById('deckProntos').innerHTML = PRONTOS.filter(k => k.cartas.every(disponivel)).map(k => `<button data-pronto="${PRONTOS.indexOf(k)}">${k.nome} <small>${k.cartas.map(c => CARTAS[c].nome).join(' · ')}${k.nota ? ' (' + k.nota + ')' : ''}</small></button>`).join('');
     document.getElementById('deckGrade').innerHTML = ORDEM.map(c => {
       const k = CARTAS[c], dentro = d.includes(c), trav = travada(c), aVenda = !possui(c);
       const cabe = !trav && !aVenda && (dentro || deckValido(d.concat(c)));
       const aviso = aVenda ? `<span class="cadeado"><span class="moeda"></span> ${PRECO_CARTA[c]} na Loja · toque para ver</span>` : trav ? '<span class="cadeado">Libera depois da sua 1ª partida</span>' : '';
-      return `<button class="carta-op" data-op="${c}" ${aVenda ? 'data-na-loja="1"' : ''} aria-pressed="${dentro}" ${cabe || aVenda ? '' : 'disabled'}>${k.ico}<b>${k.nome}${k.pontos ? ' <span class="raio">⚡</span>' : ''}<span class="tipo">${k.tipo}</span></b><span class="txt">${k.texto}</span>${aviso}</button>`;
+      return `<button class="carta-op" data-op="${c}" ${aVenda ? 'data-na-loja="1"' : ''} aria-pressed="${dentro}" ${cabe || aVenda ? '' : 'disabled'}>${k.arte}<b>${k.nome}${k.pontos ? ` <span class="raio">${RAIO}</span>` : ''}<span class="tipo">${k.tipo}</span></b><span class="txt">${k.texto}</span>${aviso}</button>`;
     }).join('');
   }
 
@@ -990,7 +996,8 @@
     const fs = facesQueEncaixam([f]);
     return `<div class="${fs.length > 3 ? 'forte' : ''}">${mini(f)}<span><b>${fs.length} faces</b><br>${fs.join(' ')}</span></div>`;
   }).join('');
-  document.getElementById('listaCartas').innerHTML = ORDEM.map(c => `<div>${CARTAS[c].ico}<span><b>${CARTAS[c].nome}${CARTAS[c].pontos ? ' ⚡' : ''}</b> <span class="nota">(${CARTAS[c].tipo})</span>. ${CARTAS[c].texto}</span></div>`).join('');
+  document.querySelectorAll('span.raio').forEach(el => { el.innerHTML = RAIO; });
+  document.getElementById('listaCartas').innerHTML = ORDEM.map(c => `<div>${CARTAS[c].arte}<span><b>${CARTAS[c].nome}${CARTAS[c].pontos ? ` <span class="raio">${RAIO}</span>` : ''}</b> <span class="nota">(${CARTAS[c].tipo})</span>. ${CARTAS[c].texto}</span></div>`).join('');
 
   // ---------- eventos da interface ----------
   // o áudio só pode começar depois de um toque

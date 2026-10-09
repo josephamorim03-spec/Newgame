@@ -6,6 +6,7 @@
     python3 tools/arte_icones.py --seco           # mostra os pedidos, não gasta nada
     python3 tools/arte_icones.py --qualidade high # low | medium (padrão) | high
     python3 tools/arte_icones.py --embutir        # só refaz js/retratos_pintados.js com o que já existe
+    python3 tools/arte_icones.py --pedidos arte/cartas.json [ids...]   # os ícones das cartas (js/cartas_pintadas.js)
 
 Precisa de OPENAI_API_KEY no ambiente (ARTE_MODELO troca o modelo; padrão gpt-image-1).
 O estilo é o do jogo: cada pedido leva o vetor do personagem (arte/referencia/<id>.png, gerado por
@@ -17,6 +18,9 @@ file://, no servidor e no HTML único, sem pedido extra de rede. Quem não tem v
 de js/retratos.js. Para tirar um retrato pintado, apague arte/fonte/<id>.png e rode --embutir.
 Personagens claros (os de "fundo_opaco" em arte/retratos.json) somem no fundo transparente da API, que
 toma o pelo branco por fundo: esses vêm num magenta liso, que é recortado aqui.
+Outro arquivo de pedidos (--pedidos) pode trocar a pasta das fontes ("fonte"), o arquivo de saída ("saida"),
+a variável global ("variavel"), o prefixo da referência ("prefixo_referencia") e o lado do WebP ("lado"), e lista
+os pedidos em "itens": é assim que os ícones das cartas usam esta mesma ferramenta (arte/cartas.json).
 """
 import base64
 import io
@@ -32,15 +36,28 @@ from PIL import Image
 
 RAIZ = Path(__file__).resolve().parent.parent
 PEDIDOS = RAIZ / "arte" / "retratos.json"
-FONTE = RAIZ / "arte" / "fonte"
 REFERENCIA = RAIZ / "arte" / "referencia"
-SAIDA = RAIZ / "js" / "retratos_pintados.js"
-LADO = 160          # px do WebP no jogo (o maior retrato na tela tem ~120 px em 1x; 160 cobre telas densas)
+# o padrão é o dos retratos; o arquivo de pedidos pode trocar cada um destes
+PADRAO = {"fonte": "arte/fonte", "saida": "js/retratos_pintados.js", "variavel": "RETRATOS_PINTADOS",
+          "prefixo_referencia": "", "lado": 160}   # 160 px: o maior retrato na tela tem ~120 px em 1x; 160 cobre telas densas
+
+
+def opcoes(cfg):
+    o = {**PADRAO, **{k: cfg[k] for k in PADRAO if k in cfg}}
+    return RAIZ / o["fonte"], RAIZ / o["saida"], o["variavel"], o["prefixo_referencia"], o["lado"]
+
+
+def itens(cfg):
+    return cfg.get("itens") or cfg["retratos"]
+
+
+def ref_de(cfg, id_):
+    return REFERENCIA / f"{opcoes(cfg)[3]}{id_}.png"
 
 
 def prompt_de(cfg, id_):
-    texto = cfg["retratos"][id_]
-    partes = [cfg["referencia"]] if (REFERENCIA / f"{id_}.png").exists() and cfg.get("referencia") else []
+    texto = itens(cfg)[id_]
+    partes = [cfg["referencia"]] if ref_de(cfg, id_).exists() and cfg.get("referencia") else []
     if id_ in cfg.get("fundo_opaco", []):
         partes.append(cfg["estilo"].replace("plain transparent background", "no transparency"))
         partes.append(cfg["fundo_opaco_texto"])
@@ -91,7 +108,7 @@ def gerar(prompt, qualidade, ref=None, fundo="transparent"):
             if e.code in (429, 500, 502, 503) and tentativa < 3:
                 time.sleep(2 ** (tentativa + 2)); continue
             sys.exit(f"A API recusou ({e.code}): {msg}")
-        except urllib.error.URLError as e:
+        except (urllib.error.URLError, ConnectionError, TimeoutError) as e:   # inclui a conexão que cai no meio da resposta
             if tentativa < 3:
                 time.sleep(2 ** (tentativa + 2)); continue
             sys.exit(f"Sem conexão com a API: {e}")
@@ -118,7 +135,7 @@ def recortar_fundo(png_bytes, tolerancia=90):
     return buf.getvalue()
 
 
-def webp(png_bytes):
+def webp(png_bytes, lado_final):
     im = Image.open(io.BytesIO(png_bytes)).convert("RGBA")
     caixa = im.getbbox()                    # corta a sobra transparente e centraliza num quadrado
     if caixa:
@@ -126,56 +143,61 @@ def webp(png_bytes):
     lado = max(im.size)
     quadro = Image.new("RGBA", (lado, lado), (0, 0, 0, 0))
     quadro.paste(im, ((lado - im.width) // 2, (lado - im.height) // 2))
-    quadro = quadro.resize((LADO, LADO), Image.LANCZOS)
+    quadro = quadro.resize((lado_final, lado_final), Image.LANCZOS)
     buf = io.BytesIO()
     quadro.save(buf, "WEBP", quality=82, method=6)
     return buf.getvalue()
 
 
-def embutir():
-    itens = {}
-    for png in sorted(FONTE.glob("*.png")):
-        itens[png.stem] = "data:image/webp;base64," + base64.b64encode(webp(png.read_bytes())).decode()
-    linhas = ["/* gerado por tools/arte_icones.py: os retratos pintados (webp em data URI). Vazio = só vetor. */",
-              "window.RETRATOS_PINTADOS = Object.assign(window.RETRATOS_PINTADOS || {}, {"]
-    linhas += [f'  {k}: "{v}",' for k, v in itens.items()]
+def embutir(cfg):
+    fonte, saida, variavel, _, lado = opcoes(cfg)
+    prontos = {}
+    for png in sorted(fonte.glob("*.png")):
+        prontos[png.stem] = "data:image/webp;base64," + base64.b64encode(webp(png.read_bytes(), lado)).decode()
+    linhas = [f"/* gerado por tools/arte_icones.py a partir de {PEDIDOS.relative_to(RAIZ)}: as versões pintadas (webp em data URI). Vazio = só vetor. */",
+              f"window.{variavel} = Object.assign(window.{variavel} || {{}}, {{"]
+    linhas += [f'  {k}: "{v}",' for k, v in prontos.items()]
     linhas.append("});")
-    SAIDA.write_text("\n".join(linhas) + "\n", encoding="utf-8")
-    tamanho = SAIDA.stat().st_size // 1024
-    print(f"{SAIDA.relative_to(RAIZ)}: {len(itens)} retratos pintados, {tamanho} KB")
+    saida.write_text("\n".join(linhas) + "\n", encoding="utf-8")
+    tamanho = saida.stat().st_size // 1024
+    print(f"{saida.relative_to(RAIZ)}: {len(prontos)} pintados, {tamanho} KB")
 
 
 def main():
-    args = [a for a in sys.argv[1:] if not a.startswith("--")]
+    global PEDIDOS
+    if "--pedidos" in sys.argv:
+        PEDIDOS = (Path.cwd() / sys.argv[sys.argv.index("--pedidos") + 1]).resolve()
+    args = [a for a in sys.argv[1:] if not a.startswith("--") and Path(a).resolve() != PEDIDOS]
     seco = "--seco" in sys.argv
     qualidade = "medium"
     if "--qualidade" in sys.argv:
         qualidade = sys.argv[sys.argv.index("--qualidade") + 1]
         args = [a for a in args if a != qualidade]
-    if "--embutir" in sys.argv:
-        return embutir()
     cfg = json.loads(PEDIDOS.read_text(encoding="utf-8"))
-    ids = args or list(cfg["retratos"])
-    desconhecidos = [i for i in ids if i not in cfg["retratos"]]
+    fonte = opcoes(cfg)[0]
+    if "--embutir" in sys.argv:
+        return embutir(cfg)
+    ids = args or list(itens(cfg))
+    desconhecidos = [i for i in ids if i not in itens(cfg)]
     if desconhecidos:
         sys.exit(f"Sem pedido para: {', '.join(desconhecidos)}")
-    FONTE.mkdir(parents=True, exist_ok=True)
+    fonte.mkdir(parents=True, exist_ok=True)
     for id_ in ids:
         p = prompt_de(cfg, id_)
         if seco:
-            tem = (REFERENCIA / f"{id_}.png").exists()
+            tem = ref_de(cfg, id_).exists()
             print(f"--- {id_} ({'com o vetor de referência' if tem else 'só texto'})\n{p}\n"); continue
         print(f"pintando {id_}…", flush=True)
-        ref = REFERENCIA / f"{id_}.png"
+        ref = ref_de(cfg, id_)
         ref = ref if ref.exists() else None
         if id_ in cfg.get("fundo_opaco", []):
             png = recortar_fundo(gerar(p, qualidade, ref, fundo="opaque"))
         else:
             png = gerar(p, qualidade, ref)
-        (FONTE / f"{id_}.png").write_bytes(png)
-        (FONTE / f"{id_}.json").write_text(json.dumps({"prompt": p, "qualidade": qualidade, "referencia": bool(ref), "modelo": os.environ.get("ARTE_MODELO", "gpt-image-1")}, ensure_ascii=False, indent=1))
+        (fonte / f"{id_}.png").write_bytes(png)
+        (fonte / f"{id_}.json").write_text(json.dumps({"prompt": p, "qualidade": qualidade, "referencia": bool(ref), "modelo": os.environ.get("ARTE_MODELO", "gpt-image-1")}, ensure_ascii=False, indent=1))
     if not seco:
-        embutir()
+        embutir(cfg)
 
 
 if __name__ == "__main__":
