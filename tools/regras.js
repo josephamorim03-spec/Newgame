@@ -157,6 +157,27 @@ const RAIZ = path.join(__dirname, '..');
   const fim = await pg.evaluate(() => ({ cubos: document.querySelectorAll('.cubo-rolagem').length, escondidos: document.querySelectorAll('.pega.rolando').length, valores: DiceDuel.jogo.mesa.map(d => d.v).join() }));
   confere(fim.cubos === 0 && fim.escondidos === 0, 'Rolagem: no fim não sobra cubo nem dado escondido');
   confere(fim.valores === novos.valores, 'Rolagem: a animação não muda nenhum valor (a regra decide)');
+  // 9. Toda skin rola com a própria cara: seis faces da skin, miolo da cor dela, canto igual ao do dado parado, nada sobra
+  await pg.evaluate(() => { DiceDuel.st.cfg.modo = 'bot'; DiceDuel.st.conta.dados = ['marfim', 'madeira', 'rosa', 'menta', 'pelucia', 'dourado', 'diamante']; });
+  await cena([[], []], () => {});
+  for (const skin of ['marfim', 'madeira', 'rosa', 'menta', 'pelucia', 'dourado', 'diamante']) {
+    const r = await pg.evaluate(skin => {
+      document.querySelectorAll('.versus').forEach(v => v.remove());
+      const j = DiceDuel.jogo; DiceDuel.st.conta.dado = skin; j.vez = 0; j.fase = 'pegar'; j.intro = false; j.token = Math.random();
+      Rolagem.parar(); j.mesa.forEach(d => { d.novo = true; }); j.eventos.push({ tipo: 'rolar' }); DiceDuel.ajustar({});
+      const cubo = document.querySelector('.cubo-rolagem'), face = cubo && cubo.querySelector('.face-rolagem .dado');
+      const parado = document.querySelector('.pega .face > .dado');
+      return { cubos: document.querySelectorAll('.cubo-rolagem').length, faces: document.querySelectorAll(`.cubo-rolagem .dado.skin-${skin}`).length,
+        miolo: cubo && getComputedStyle(cubo.querySelector('.miolo-rolagem')).backgroundColor, canto: face && getComputedStyle(face).borderTopLeftRadius,
+        cantoParado: parado && getComputedStyle(parado).borderTopLeftRadius, mesa: j.mesa.length };
+    }, skin);
+    confere(r.cubos === r.mesa && r.faces === r.mesa * 6, `Skin ${skin}: ${r.cubos} cubos com as 6 faces na skin (${r.faces})`);
+    confere(r.canto === r.cantoParado, `Skin ${skin}: o cubo tem o mesmo canto do dado parado (${r.canto} × ${r.cantoParado})`);
+    if (skin !== 'marfim') confere(r.miolo !== 'rgb(236, 223, 200)', `Skin ${skin}: miolo na cor da skin (${r.miolo})`);
+  }
+  await pg.waitForTimeout(2600);
+  const sobra = await pg.evaluate(() => ({ cubos: document.querySelectorAll('.cubo-rolagem').length, escondidos: document.querySelectorAll('.pega.rolando').length }));
+  confere(sobra.cubos === 0 && sobra.escondidos === 0, 'Skins: depois de todas as rolagens, nada sobra nem fica escondido');
   await pg.evaluate(() => DiceDuel.ajustar({ animacoes: false }));
   await navegador.close();
   console.log(erros.length ? 'ERROS:\n' + erros.join('\n') : 'Tudo certo: as regras das cartas se comportam como o texto diz.');

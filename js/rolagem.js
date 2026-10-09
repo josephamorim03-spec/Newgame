@@ -66,6 +66,7 @@
       if (el) el.closest('.pega').classList.add('rolando');   // antes de medir: desliga a animação antiga da casa
       const L = el ? onde(el).L : 60;
       const { cubo, faces } = montarCubo(v => op.faceHTML(v), L);
+      if (op.skin) cubo.dataset.skin = op.skin;
       const sombra = document.createElement('div');
       sombra.className = 'sombra-rolagem';
       sombra.style.width = sombra.style.height = L + 'px';
@@ -113,7 +114,8 @@
       const cx = c.cx + p.pos[0] * L, cy = c.cy + p.pos[2] * L, h = Math.max(0, p.pos[1]);
       // o centro fica meio lado abaixo da face de cima: parado, a face de cima cai no plano da tela (escala 1)
       a.cubo.style.transform = `translate3d(${cx - L / 2}px, ${cy - L / 2}px, ${p.pos[1] * L - L / 2}px) ${matriz(baseCss(p.base))}`;
-      a.sombra.style.transform = `translate3d(${cx - L / 2 + h * L * 0.28}px, ${cy - L / 2 + h * L * 0.42}px, ${-L - 1}px) scale(${1 - Math.min(0.45, h * 0.16)})`;
+      // parada, a sombra fica um pouco abaixo, como a do dado parado (0 6px 12px): a troca não acende uma sombra nova
+      a.sombra.style.transform = `translate3d(${cx - L / 2 + h * L * 0.28}px, ${cy - L / 2 + L * 0.1 + h * L * 0.42}px, ${-L - 1}px) scale(${1 - Math.min(0.45, h * 0.16)})`;
       a.sombra.style.opacity = String(entra * 0.42 * (1 - Math.min(0.7, h * 0.28)));
       // luz por face: a que olha para longe da luz escurece
       a.faces.forEach((f, i) => {

@@ -639,9 +639,15 @@ img.avatar { object-fit: contain; }
 .cubo-rolagem, .sombra-rolagem { position: absolute; left: 0; top: 0; transform-style: preserve-3d; will-change: transform; }
 .sombra-rolagem { border-radius: 30%; background: radial-gradient(closest-side, rgba(20,12,10,.9), rgba(20,12,10,0)); transform-style: flat; }
 .face-rolagem, .miolo-rolagem { position: absolute; inset: 0; backface-visibility: hidden; }
-.miolo-rolagem { inset: 6%; background: #e9dcc6; backface-visibility: visible; border-radius: 12%; }
-.face-rolagem .dado { width: 100%; height: 100%; box-shadow: none; border-radius: 16%; }
-.face-rolagem::after { content: ''; position: absolute; inset: 0; border-radius: 16%; background: #2a1a12; opacity: var(--escuro, 0); }
+.miolo-rolagem { inset: 3%; background: var(--miolo, #ecdfc8); backface-visibility: visible; border-radius: 10%; }
+/* o miolo tapa as quinas arredondadas: na cor de cada skin, para não aparecer marfim nas quinas da madeira */
+.cubo-rolagem[data-skin="madeira"] { --miolo: #b47b4d; } .cubo-rolagem[data-skin="rosa"] { --miolo: #f4b4c8; }
+.cubo-rolagem[data-skin="menta"] { --miolo: #a8e2c8; } .cubo-rolagem[data-skin="pelucia"] { --miolo: #e6c6a0; }
+.cubo-rolagem[data-skin="dourado"] { --miolo: #d7a433; } .cubo-rolagem[data-skin="diamante"] { --miolo: #d2ecfb; }
+/* o canto de cada face é o da própria skin (24%, a pelúcia 34%): o cubo pousa com o mesmo contorno do dado parado */
+.face-rolagem .dado { width: 100%; height: 100%; box-shadow: none; position: relative; }
+/* sombra por face (a luz vem de cima, à esquerda): por cima das bolinhas, com o canto da skin; o ::after é do brilho do dourado */
+.face-rolagem .dado::before { content: ''; position: absolute; inset: 0; border-radius: inherit; background: #2a1a12; opacity: var(--escuro, 0); z-index: 2; pointer-events: none; }
 .pega.rolando .face > .dado, .pega.rolando .face > .marca-esp, .pega.rolando .face > .alvo-rival { opacity: 0; }   /* opacity: as bolinhas têm visibility própria */
 .pega.rolando.novo .face { animation: none; }
 .pega.assentou .face > .dado { animation: assentou .16s ease-out; }
@@ -2641,6 +2647,7 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
       if (el) el.closest('.pega').classList.add('rolando');   // antes de medir: desliga a animação antiga da casa
       const L = el ? onde(el).L : 60;
       const { cubo, faces } = montarCubo(v => op.faceHTML(v), L);
+      if (op.skin) cubo.dataset.skin = op.skin;
       const sombra = document.createElement('div');
       sombra.className = 'sombra-rolagem';
       sombra.style.width = sombra.style.height = L + 'px';
@@ -2688,7 +2695,8 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
       const cx = c.cx + p.pos[0] * L, cy = c.cy + p.pos[2] * L, h = Math.max(0, p.pos[1]);
       // o centro fica meio lado abaixo da face de cima: parado, a face de cima cai no plano da tela (escala 1)
       a.cubo.style.transform = `translate3d(${cx - L / 2}px, ${cy - L / 2}px, ${p.pos[1] * L - L / 2}px) ${matriz(baseCss(p.base))}`;
-      a.sombra.style.transform = `translate3d(${cx - L / 2 + h * L * 0.28}px, ${cy - L / 2 + h * L * 0.42}px, ${-L - 1}px) scale(${1 - Math.min(0.45, h * 0.16)})`;
+      // parada, a sombra fica um pouco abaixo, como a do dado parado (0 6px 12px): a troca não acende uma sombra nova
+      a.sombra.style.transform = `translate3d(${cx - L / 2 + h * L * 0.28}px, ${cy - L / 2 + L * 0.1 + h * L * 0.42}px, ${-L - 1}px) scale(${1 - Math.min(0.45, h * 0.16)})`;
       a.sombra.style.opacity = String(entra * 0.42 * (1 - Math.min(0.7, h * 0.28)));
       // luz por face: a que olha para longe da luz escurece
       a.faces.forEach((f, i) => {
@@ -3670,7 +3678,7 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
   // os dados caem como cubos 3D (física gravada, face da regra: js/rolagem.js); sem animação, o som de antes
   function rolarNaTela(lista) {
     const rolou = st.pref.animacoes && window.Rolagem && Rolagem.disponivel() && lista.length && lista.every(d => jogo.mesa.some(x => x.id === d.id)) && Rolagem.lancar(lista, {
-      faceHTML: v => dadoHTML(v, skinMesa()), som: (nome, dados) => Som.tocar(nome, dados),
+      faceHTML: v => dadoHTML(v, skinMesa()), skin: skinMesa(), som: (nome, dados) => Som.tocar(nome, dados),
       velocidade: { calmo: 0.9, normal: 1, rapido: 1.2 }[st.cfg.ritmo] || 1,
     });
     if (!rolou) Som.tocar('rolar', { n: lista.length });

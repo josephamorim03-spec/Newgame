@@ -802,7 +802,7 @@
   // os dados caem como cubos 3D (física gravada, face da regra: js/rolagem.js); sem animação, o som de antes
   function rolarNaTela(lista) {
     const rolou = st.pref.animacoes && window.Rolagem && Rolagem.disponivel() && lista.length && lista.every(d => jogo.mesa.some(x => x.id === d.id)) && Rolagem.lancar(lista, {
-      faceHTML: v => dadoHTML(v, skinMesa()), som: (nome, dados) => Som.tocar(nome, dados),
+      faceHTML: v => dadoHTML(v, skinMesa()), skin: skinMesa(), som: (nome, dados) => Som.tocar(nome, dados),
       velocidade: { calmo: 0.9, normal: 1, rapido: 1.2 }[st.cfg.ritmo] || 1,
     });
     if (!rolou) Som.tocar('rolar', { n: lista.length });

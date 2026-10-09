@@ -610,9 +610,15 @@ img.avatar { object-fit: contain; }
 .cubo-rolagem, .sombra-rolagem { position: absolute; left: 0; top: 0; transform-style: preserve-3d; will-change: transform; }
 .sombra-rolagem { border-radius: 30%; background: radial-gradient(closest-side, rgba(20,12,10,.9), rgba(20,12,10,0)); transform-style: flat; }
 .face-rolagem, .miolo-rolagem { position: absolute; inset: 0; backface-visibility: hidden; }
-.miolo-rolagem { inset: 6%; background: #e9dcc6; backface-visibility: visible; border-radius: 12%; }
-.face-rolagem .dado { width: 100%; height: 100%; box-shadow: none; border-radius: 16%; }
-.face-rolagem::after { content: ''; position: absolute; inset: 0; border-radius: 16%; background: #2a1a12; opacity: var(--escuro, 0); }
+.miolo-rolagem { inset: 3%; background: var(--miolo, #ecdfc8); backface-visibility: visible; border-radius: 10%; }
+/* o miolo tapa as quinas arredondadas: na cor de cada skin, para não aparecer marfim nas quinas da madeira */
+.cubo-rolagem[data-skin="madeira"] { --miolo: #b47b4d; } .cubo-rolagem[data-skin="rosa"] { --miolo: #f4b4c8; }
+.cubo-rolagem[data-skin="menta"] { --miolo: #a8e2c8; } .cubo-rolagem[data-skin="pelucia"] { --miolo: #e6c6a0; }
+.cubo-rolagem[data-skin="dourado"] { --miolo: #d7a433; } .cubo-rolagem[data-skin="diamante"] { --miolo: #d2ecfb; }
+/* o canto de cada face é o da própria skin (24%, a pelúcia 34%): o cubo pousa com o mesmo contorno do dado parado */
+.face-rolagem .dado { width: 100%; height: 100%; box-shadow: none; position: relative; }
+/* sombra por face (a luz vem de cima, à esquerda): por cima das bolinhas, com o canto da skin; o ::after é do brilho do dourado */
+.face-rolagem .dado::before { content: ''; position: absolute; inset: 0; border-radius: inherit; background: #2a1a12; opacity: var(--escuro, 0); z-index: 2; pointer-events: none; }
 .pega.rolando .face > .dado, .pega.rolando .face > .marca-esp, .pega.rolando .face > .alvo-rival { opacity: 0; }   /* opacity: as bolinhas têm visibility própria */
 .pega.rolando.novo .face { animation: none; }
 .pega.assentou .face > .dado { animation: assentou .16s ease-out; }
