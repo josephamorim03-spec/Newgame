@@ -44,7 +44,7 @@ const servidor = http.createServer((req, res) => {
     }
     // o que não é jogada, pelo menu de pausa (durante a partida) ou pelo cabeçalho (depois dela)
     for (const m of ['loja', 'ajustes', 'regras', 'online', 'deck']) {
-      if (await pg.$('.menu-partida')) { await pg.click('.menu-partida'); await pg.click(`[data-menu="${m}"]`); }
+      if (await pg.$('#btnPausa:visible')) { await pg.click('#btnPausa'); await pg.click(`[data-menu="${m}"]`); }
       else await pg.click({ loja: '#btnCarteira', ajustes: '#btnConfig', regras: '#btnRegras', online: '#btnOnline', deck: '#btnDeck' }[m]);
       await pg.waitForTimeout(250); await pg.keyboard.press('Escape');
     }

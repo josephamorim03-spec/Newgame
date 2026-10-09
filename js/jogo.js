@@ -607,7 +607,9 @@
     return `<div class="cartas">${html}</div><div class="estados">${estados}</div>`;
   }
 
-  function painel(p) {
+  // comDecisao: a decisão da vez (destinos, disparar ou segurar...) entra no painel no lugar da fileira de cartas,
+  // logo abaixo da corrente que ela afeta; o tabuleiro não ganha barra solta e não se mexe
+  function painel(p, comDecisao = false) {
     const j = jogo, n = nomes(), daVez = j.vez === p && j.fase !== 'fim';
     const fx = j.fx && j.fx.p === p ? j.fx : null;
     const cor = fx ? fx.dados : j.cor[p];
@@ -640,7 +642,7 @@
       <div class="barra" role="progressbar" aria-valuemin="0" aria-valuemax="${j.meta}" aria-valuenow="${j.pts[p]}" aria-label="Pontos de ${n[p]}"><i style="width:${pct}%"></i>${prev ? `<span class="prev" style="left:${pct}%;width:${prev}%"></span>` : ''}</div>
       <div class="corrente${fx ? ' fx-' + fx.tipo : L >= 5 ? ' fervendo' : L >= 4 ? ' quente' : ''}" style="--fase:-${Math.round(performance.now() % 1800)}ms">${slots}</div>
       ${st.pref.dicas ? `<div class="info"><span>Corrente <b>${L}</b>/${LIM}</span><span>${valeAgora}${seCrescer}</span></div>` : ''}
-      ${cartasHTML(p)}
+      ${comDecisao ? '<div class="decisao-slot"></div>' : cartasHTML(p)}
     </div>`;
   }
 
@@ -818,17 +820,22 @@
     document.getElementById('tabuleiro').classList.toggle('modo-local', j.modo === 'local');
     // durante a partida a tela fica só com o que importa nela (cabeçalho enxuto; no PC, as regras saem da lateral)
     document.body.classList.toggle('em-partida', j.fase !== 'fim');
-    document.getElementById('pj1').innerHTML = painel(1);
-    document.getElementById('pj0').innerHTML = painel(0);
+    const acoes = document.getElementById('acoes'), barra = acoesHTML();
+    document.getElementById('tabuleiro').appendChild(acoes);   // sai do painel antes de ele ser redesenhado
+    const donoBarra = !barra ? -1 : j.modo === 'local' && j.fase !== 'fim' ? j.vez : 0;
+    document.getElementById('pj1').innerHTML = painel(1, donoBarra === 1);
+    document.getElementById('pj0').innerHTML = painel(0, donoBarra === 0);
+    acoes.innerHTML = barra; acoes.hidden = !barra;
+    if (barra) document.querySelector(`#pj${donoBarra} .decisao-slot`).appendChild(acoes);
     const mesa = document.getElementById('mesa');
     mesa.innerHTML = mesaHTML();
     mesa.classList.toggle('alvo', j.fase === 'alvo');
     const resta = j.mesa.length;
     document.getElementById('mesaInfo').textContent = `rodada ${j.rodada} · ${resta} ${resta === 1 ? 'dado' : 'dados'}`;
-    const acoes = document.getElementById('acoes'), barra = acoesHTML();
-    acoes.innerHTML = barra; acoes.hidden = !barra;
-    const pausa = document.getElementById('btnPausa'), novidade = !document.getElementById('pontoOnline').hidden;
-    pausa.hidden = j.fase === 'fim'; pausa.classList.toggle('com-aviso', novidade);
+    const novidade = !document.getElementById('pontoOnline').hidden, somLigado = st.pref.som || st.pref.musica;
+    document.getElementById('barraPartida').hidden = j.fase === 'fim';
+    document.getElementById('btnPausa').classList.toggle('com-aviso', novidade);
+    const som = document.getElementById('btnSom'); som.setAttribute('aria-pressed', String(somLigado)); som.classList.toggle('sem-som', !somLigado);
     const n = nomes();
     const linha = l => `${l.p === null ? '' : `<span class="cor${l.p}">${n[l.p]}</span> `}${l.txt}`;
     document.getElementById('log').innerHTML = j.log.map(l => `<li class="${l.tipo}">${linha(l)}</li>`).join('');
@@ -1301,6 +1308,13 @@
     janelaMenu.querySelector('[data-menu="continuar"]').focus();
   }
   document.getElementById('btnPausa').addEventListener('click', () => abrirMenu());
+  // som: um toque cala efeitos e música juntos; outro toque devolve os dois
+  document.getElementById('btnSom').addEventListener('click', () => {
+    const liga = !(st.pref.som || st.pref.musica);
+    st.pref.som = liga; st.pref.musica = liga; salvar(); aplicarPrefs();
+    if (liga) { Som.desbloquear(); Som.tocar('toque'); }
+    if (jogo) render();
+  });
   document.getElementById('opDicasMenu').addEventListener('change', e => { st.pref.dicas = e.target.checked; salvar(); aplicarPrefs(); render(); });
   janelaMenu.addEventListener('click', e => {
     if (e.target === janelaMenu) { janelaMenu.hidden = true; return; }   // tocar fora fecha

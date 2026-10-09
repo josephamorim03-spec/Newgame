@@ -70,12 +70,17 @@
     </div>
   </header>
 
+  <!-- durante a partida, no lugar do cabeçalho: só som e pausa (o resto mora no menu de pausa) -->
+  <div class="barra-partida" id="barraPartida" hidden>
+    <button class="menu-partida" id="btnSom" aria-pressed="true" aria-label="Som e música" title="Som e música"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z"/><path class="ondas" d="M16 9a4 4 0 0 1 0 6M18.5 6.5a7.5 7.5 0 0 1 0 11"/><path class="mudo" d="M16 9l5 6M21 9l-5 6"/></svg></button>
+    <button class="menu-partida" id="btnPausa" aria-label="Pausa: ajudas, regras, ajustes e mais" title="Pausa"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6v12M15 6v12"/></svg></button>
+  </div>
+
   <main class="layout">
     <section class="tabuleiro" id="tabuleiro" aria-label="Mesa de jogo">
       <div id="pj1"></div>
       <div class="mesa-area">
-        <div class="mesa-topo"><h2>Mesa</h2><span id="mesaInfo"></span>
-          <button class="menu-partida" id="btnPausa" hidden aria-label="Pausa: ajudas, regras, ajustes e mais" title="Pausa"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6v12M15 6v12"/></svg></button></div>
+        <div class="mesa-topo"><h2>Mesa</h2><span id="mesaInfo"></span></div>
         <div class="mesa" id="mesa"></div>
         <div class="ticker" id="ticker" aria-hidden="true"></div>
       </div>
@@ -185,7 +190,7 @@
       <button class="btn btn-mel" data-menu="continuar">Continuar a partida</button>
       <div class="linha-cfg"><span><label for="opDicasMenu">Ajudas na partida</label><small>etiquetas nos dados, dicas e explicações</small></span><input class="chave-liga" type="checkbox" id="opDicasMenu"></div>
       <div class="menu-grade">
-        <button class="btn btn-papel" data-menu="regras">Regras</button>
+        <button class="btn btn-papel" data-menu="regras">Regras e registro</button>
         <button class="btn btn-papel" data-menu="ajustes">Ajustes</button>
         <button class="btn btn-papel" data-menu="deck">Deck</button>
         <button class="btn btn-papel" data-menu="loja">Loja</button>

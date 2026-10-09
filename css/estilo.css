@@ -861,23 +861,38 @@ button.vaga { cursor: pointer; border: 0; background: #fff3dc; color: var(--tint
 #fim .botoes { position: sticky; bottom: -20px; margin: 0 -20px -20px; padding: 12px 20px calc(16px + env(safe-area-inset-bottom, 0px)); background: var(--papel); box-shadow: 0 -6px 8px -8px rgba(58,42,46,.35); z-index: 2; }
 @media (max-width: 520px) { #fim .botoes { display: grid; grid-template-columns: 1fr 1fr; } #fim .botoes .btn { padding: 0 10px; min-width: 0; } }
 
-/* ---------- partida em foco (v0.11): durante a partida, a tela é só o jogo ---------- */
-/* o cabeçalho inteiro sai; o que não é jogada mora no menu de pausa (botão no canto da barra de jogada) */
+/* ---------- partida em foco (v0.11): durante a partida, a tela é só o jogo, centrada ---------- */
+/* o cabeçalho sai; no alto fica só a faixa com Som e Pausa; o tabuleiro fica no meio da tela (vertical e horizontal) */
 .em-partida .topo { display: none; }
-.em-partida .app { padding-top: max(10px, env(safe-area-inset-top)); }
-/* no PC, o "Como se joga" sai da lateral (fica o Registro); "Regras", no menu, o traz de volta */
-@media (min-width: 1040px) { .em-partida .lado:not(.aberto) .regras { display: none; } .acoes { position: relative; } }
+.em-partida .app { min-height: 100vh; min-height: 100dvh; align-content: center; padding-top: max(8px, env(safe-area-inset-top)); padding-bottom: max(10px, env(safe-area-inset-bottom)); }
+.em-partida .layout { grid-template-columns: minmax(0, 860px); justify-content: center; }
+.barra-partida { display: flex; justify-content: flex-end; gap: 8px; width: 100%; max-width: 860px; margin: 0 auto; padding: 0 8px; }
+.barra-partida[hidden] { display: none; }
+/* no PC, a lateral (Registro e regras) sai durante a partida; "Regras e registro", no menu de pausa, abre por cima */
+@media (min-width: 1040px) {
+  .em-partida .lado:not(.aberto) { display: none; }
+  .em-partida .lado.aberto { position: fixed; top: 0; right: 0; bottom: 0; width: min(420px, 100vw); max-height: none; z-index: 20; overflow-y: auto; background: var(--noite); padding: 0 16px 24px; box-shadow: -20px 0 40px rgba(0,0,0,.4); border-radius: 0; }
+  .em-partida .lado.aberto .lado-topo { display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 2; padding: 12px 0 10px; background: var(--noite); }
+  .em-partida .lado.aberto .lado-topo strong { font-family: var(--f-titulo); font-size: 22px; }
+  .acoes { position: relative; }
+}
+/* a decisão da vez mora no painel de quem joga, no lugar das cartas (sem barra solta presa no rodapé) */
 .acoes[hidden] { display: none; }
-.acoes:not([hidden]) { animation: barraSobe .18s ease-out; }
-@keyframes barraSobe { from { transform: translateY(14px); opacity: 0; } }
-/* o botão de pausa, na linha da Mesa: o único caminho para fora da jogada */
-.mesa-topo { align-items: center; }
-.menu-partida[hidden] { display: none; }
-.menu-partida { position: relative; margin-left: 4px; width: 34px; height: 34px; flex: none; display: grid; place-items: center; border: 0; border-radius: 12px; background: var(--papel-2); color: var(--tinta); cursor: pointer; }
-.menu-partida .ico { width: 18px; height: 18px; stroke-width: 3; }
-.mesa-topo .menu-partida { background: rgba(255,243,226,.12); color: var(--texto); box-shadow: inset 0 0 0 1.5px rgba(255,243,226,.22); }
-body.mesa-piquenique .mesa-topo .menu-partida { color: var(--tinta); }
-.menu-partida.com-aviso::after { content: ''; position: absolute; top: 4px; right: 4px; width: 9px; height: 9px; border-radius: 50%; background: var(--passo); box-shadow: 0 0 0 2px var(--papel); }
+.decisao-slot #acoes { position: static; padding: 0; background: none; box-shadow: none; min-height: 0; border-radius: 0; gap: 8px; animation: decisaoEntra .16s ease-out; }
+.decisao-slot #acoes .status { font-size: 15px; }
+.decisao-slot #acoes .nota { font-size: 12px; }
+/* os botões da decisão numa linha só, do tamanho da fileira de cartas que eles substituem; Cancelar fica estreito */
+.decisao-slot #acoes .botoes { flex-wrap: nowrap; gap: 6px; }
+.decisao-slot #acoes .botoes .btn { flex: 1 1 0; min-width: 0; padding-left: 8px; padding-right: 8px; min-height: 48px; }
+.decisao-slot #acoes .botoes [data-acao="cancelar"], .decisao-slot #acoes .botoes [data-acao="cancelar-alvo"] { flex: 0 0 auto; }
+.decisao-slot #acoes .btn small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+@keyframes decisaoEntra { from { opacity: 0; transform: translateY(4px); } }
+.menu-partida { position: relative; width: 40px; height: 40px; flex: none; display: grid; place-items: center; border: 0; border-radius: 12px; cursor: pointer;
+  background: rgba(255,243,226,.08); color: var(--texto); box-shadow: inset 0 0 0 1.5px rgba(255,243,226,.18); }
+.menu-partida .ico { width: 20px; height: 20px; stroke-width: 2.6; }
+.menu-partida.com-aviso::after { content: ''; position: absolute; top: 5px; right: 5px; width: 9px; height: 9px; border-radius: 50%; background: var(--passo); box-shadow: 0 0 0 2px var(--noite); }
+#btnSom .mudo { display: none; }
+#btnSom.sem-som .mudo { display: inline; } #btnSom.sem-som .ondas { display: none; }
 .caixa-menu { gap: 12px; }
 .menu-grade { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .menu-grade .btn { position: relative; }

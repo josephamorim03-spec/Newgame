@@ -890,23 +890,38 @@ button.vaga { cursor: pointer; border: 0; background: #fff3dc; color: var(--tint
 #fim .botoes { position: sticky; bottom: -20px; margin: 0 -20px -20px; padding: 12px 20px calc(16px + env(safe-area-inset-bottom, 0px)); background: var(--papel); box-shadow: 0 -6px 8px -8px rgba(58,42,46,.35); z-index: 2; }
 @media (max-width: 520px) { #fim .botoes { display: grid; grid-template-columns: 1fr 1fr; } #fim .botoes .btn { padding: 0 10px; min-width: 0; } }
 
-/* ---------- partida em foco (v0.11): durante a partida, a tela é só o jogo ---------- */
-/* o cabeçalho inteiro sai; o que não é jogada mora no menu de pausa (botão no canto da barra de jogada) */
+/* ---------- partida em foco (v0.11): durante a partida, a tela é só o jogo, centrada ---------- */
+/* o cabeçalho sai; no alto fica só a faixa com Som e Pausa; o tabuleiro fica no meio da tela (vertical e horizontal) */
 .em-partida .topo { display: none; }
-.em-partida .app { padding-top: max(10px, env(safe-area-inset-top)); }
-/* no PC, o "Como se joga" sai da lateral (fica o Registro); "Regras", no menu, o traz de volta */
-@media (min-width: 1040px) { .em-partida .lado:not(.aberto) .regras { display: none; } .acoes { position: relative; } }
+.em-partida .app { min-height: 100vh; min-height: 100dvh; align-content: center; padding-top: max(8px, env(safe-area-inset-top)); padding-bottom: max(10px, env(safe-area-inset-bottom)); }
+.em-partida .layout { grid-template-columns: minmax(0, 860px); justify-content: center; }
+.barra-partida { display: flex; justify-content: flex-end; gap: 8px; width: 100%; max-width: 860px; margin: 0 auto; padding: 0 8px; }
+.barra-partida[hidden] { display: none; }
+/* no PC, a lateral (Registro e regras) sai durante a partida; "Regras e registro", no menu de pausa, abre por cima */
+@media (min-width: 1040px) {
+  .em-partida .lado:not(.aberto) { display: none; }
+  .em-partida .lado.aberto { position: fixed; top: 0; right: 0; bottom: 0; width: min(420px, 100vw); max-height: none; z-index: 20; overflow-y: auto; background: var(--noite); padding: 0 16px 24px; box-shadow: -20px 0 40px rgba(0,0,0,.4); border-radius: 0; }
+  .em-partida .lado.aberto .lado-topo { display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 2; padding: 12px 0 10px; background: var(--noite); }
+  .em-partida .lado.aberto .lado-topo strong { font-family: var(--f-titulo); font-size: 22px; }
+  .acoes { position: relative; }
+}
+/* a decisão da vez mora no painel de quem joga, no lugar das cartas (sem barra solta presa no rodapé) */
 .acoes[hidden] { display: none; }
-.acoes:not([hidden]) { animation: barraSobe .18s ease-out; }
-@keyframes barraSobe { from { transform: translateY(14px); opacity: 0; } }
-/* o botão de pausa, na linha da Mesa: o único caminho para fora da jogada */
-.mesa-topo { align-items: center; }
-.menu-partida[hidden] { display: none; }
-.menu-partida { position: relative; margin-left: 4px; width: 34px; height: 34px; flex: none; display: grid; place-items: center; border: 0; border-radius: 12px; background: var(--papel-2); color: var(--tinta); cursor: pointer; }
-.menu-partida .ico { width: 18px; height: 18px; stroke-width: 3; }
-.mesa-topo .menu-partida { background: rgba(255,243,226,.12); color: var(--texto); box-shadow: inset 0 0 0 1.5px rgba(255,243,226,.22); }
-body.mesa-piquenique .mesa-topo .menu-partida { color: var(--tinta); }
-.menu-partida.com-aviso::after { content: ''; position: absolute; top: 4px; right: 4px; width: 9px; height: 9px; border-radius: 50%; background: var(--passo); box-shadow: 0 0 0 2px var(--papel); }
+.decisao-slot #acoes { position: static; padding: 0; background: none; box-shadow: none; min-height: 0; border-radius: 0; gap: 8px; animation: decisaoEntra .16s ease-out; }
+.decisao-slot #acoes .status { font-size: 15px; }
+.decisao-slot #acoes .nota { font-size: 12px; }
+/* os botões da decisão numa linha só, do tamanho da fileira de cartas que eles substituem; Cancelar fica estreito */
+.decisao-slot #acoes .botoes { flex-wrap: nowrap; gap: 6px; }
+.decisao-slot #acoes .botoes .btn { flex: 1 1 0; min-width: 0; padding-left: 8px; padding-right: 8px; min-height: 48px; }
+.decisao-slot #acoes .botoes [data-acao="cancelar"], .decisao-slot #acoes .botoes [data-acao="cancelar-alvo"] { flex: 0 0 auto; }
+.decisao-slot #acoes .btn small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+@keyframes decisaoEntra { from { opacity: 0; transform: translateY(4px); } }
+.menu-partida { position: relative; width: 40px; height: 40px; flex: none; display: grid; place-items: center; border: 0; border-radius: 12px; cursor: pointer;
+  background: rgba(255,243,226,.08); color: var(--texto); box-shadow: inset 0 0 0 1.5px rgba(255,243,226,.18); }
+.menu-partida .ico { width: 20px; height: 20px; stroke-width: 2.6; }
+.menu-partida.com-aviso::after { content: ''; position: absolute; top: 5px; right: 5px; width: 9px; height: 9px; border-radius: 50%; background: var(--passo); box-shadow: 0 0 0 2px var(--noite); }
+#btnSom .mudo { display: none; }
+#btnSom.sem-som .mudo { display: inline; } #btnSom.sem-som .ondas { display: none; }
 .caixa-menu { gap: 12px; }
 .menu-grade { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .menu-grade .btn { position: relative; }
@@ -954,12 +969,17 @@ body.mesa-piquenique .mesa-topo .menu-partida { color: var(--tinta); }
     </div>
   </header>
 
+  <!-- durante a partida, no lugar do cabeçalho: só som e pausa (o resto mora no menu de pausa) -->
+  <div class="barra-partida" id="barraPartida" hidden>
+    <button class="menu-partida" id="btnSom" aria-pressed="true" aria-label="Som e música" title="Som e música"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z"/><path class="ondas" d="M16 9a4 4 0 0 1 0 6M18.5 6.5a7.5 7.5 0 0 1 0 11"/><path class="mudo" d="M16 9l5 6M21 9l-5 6"/></svg></button>
+    <button class="menu-partida" id="btnPausa" aria-label="Pausa: ajudas, regras, ajustes e mais" title="Pausa"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6v12M15 6v12"/></svg></button>
+  </div>
+
   <main class="layout">
     <section class="tabuleiro" id="tabuleiro" aria-label="Mesa de jogo">
       <div id="pj1"></div>
       <div class="mesa-area">
-        <div class="mesa-topo"><h2>Mesa</h2><span id="mesaInfo"></span>
-          <button class="menu-partida" id="btnPausa" hidden aria-label="Pausa: ajudas, regras, ajustes e mais" title="Pausa"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6v12M15 6v12"/></svg></button></div>
+        <div class="mesa-topo"><h2>Mesa</h2><span id="mesaInfo"></span></div>
         <div class="mesa" id="mesa"></div>
         <div class="ticker" id="ticker" aria-hidden="true"></div>
       </div>
@@ -1069,7 +1089,7 @@ body.mesa-piquenique .mesa-topo .menu-partida { color: var(--tinta); }
       <button class="btn btn-mel" data-menu="continuar">Continuar a partida</button>
       <div class="linha-cfg"><span><label for="opDicasMenu">Ajudas na partida</label><small>etiquetas nos dados, dicas e explicações</small></span><input class="chave-liga" type="checkbox" id="opDicasMenu"></div>
       <div class="menu-grade">
-        <button class="btn btn-papel" data-menu="regras">Regras</button>
+        <button class="btn btn-papel" data-menu="regras">Regras e registro</button>
         <button class="btn btn-papel" data-menu="ajustes">Ajustes</button>
         <button class="btn btn-papel" data-menu="deck">Deck</button>
         <button class="btn btn-papel" data-menu="loja">Loja</button>
@@ -3808,7 +3828,9 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     return `<div class="cartas">${html}</div><div class="estados">${estados}</div>`;
   }
 
-  function painel(p) {
+  // comDecisao: a decisão da vez (destinos, disparar ou segurar...) entra no painel no lugar da fileira de cartas,
+  // logo abaixo da corrente que ela afeta; o tabuleiro não ganha barra solta e não se mexe
+  function painel(p, comDecisao = false) {
     const j = jogo, n = nomes(), daVez = j.vez === p && j.fase !== 'fim';
     const fx = j.fx && j.fx.p === p ? j.fx : null;
     const cor = fx ? fx.dados : j.cor[p];
@@ -3841,7 +3863,7 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
       <div class="barra" role="progressbar" aria-valuemin="0" aria-valuemax="${j.meta}" aria-valuenow="${j.pts[p]}" aria-label="Pontos de ${n[p]}"><i style="width:${pct}%"></i>${prev ? `<span class="prev" style="left:${pct}%;width:${prev}%"></span>` : ''}</div>
       <div class="corrente${fx ? ' fx-' + fx.tipo : L >= 5 ? ' fervendo' : L >= 4 ? ' quente' : ''}" style="--fase:-${Math.round(performance.now() % 1800)}ms">${slots}</div>
       ${st.pref.dicas ? `<div class="info"><span>Corrente <b>${L}</b>/${LIM}</span><span>${valeAgora}${seCrescer}</span></div>` : ''}
-      ${cartasHTML(p)}
+      ${comDecisao ? '<div class="decisao-slot"></div>' : cartasHTML(p)}
     </div>`;
   }
 
@@ -4019,17 +4041,22 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     document.getElementById('tabuleiro').classList.toggle('modo-local', j.modo === 'local');
     // durante a partida a tela fica só com o que importa nela (cabeçalho enxuto; no PC, as regras saem da lateral)
     document.body.classList.toggle('em-partida', j.fase !== 'fim');
-    document.getElementById('pj1').innerHTML = painel(1);
-    document.getElementById('pj0').innerHTML = painel(0);
+    const acoes = document.getElementById('acoes'), barra = acoesHTML();
+    document.getElementById('tabuleiro').appendChild(acoes);   // sai do painel antes de ele ser redesenhado
+    const donoBarra = !barra ? -1 : j.modo === 'local' && j.fase !== 'fim' ? j.vez : 0;
+    document.getElementById('pj1').innerHTML = painel(1, donoBarra === 1);
+    document.getElementById('pj0').innerHTML = painel(0, donoBarra === 0);
+    acoes.innerHTML = barra; acoes.hidden = !barra;
+    if (barra) document.querySelector(`#pj${donoBarra} .decisao-slot`).appendChild(acoes);
     const mesa = document.getElementById('mesa');
     mesa.innerHTML = mesaHTML();
     mesa.classList.toggle('alvo', j.fase === 'alvo');
     const resta = j.mesa.length;
     document.getElementById('mesaInfo').textContent = `rodada ${j.rodada} · ${resta} ${resta === 1 ? 'dado' : 'dados'}`;
-    const acoes = document.getElementById('acoes'), barra = acoesHTML();
-    acoes.innerHTML = barra; acoes.hidden = !barra;
-    const pausa = document.getElementById('btnPausa'), novidade = !document.getElementById('pontoOnline').hidden;
-    pausa.hidden = j.fase === 'fim'; pausa.classList.toggle('com-aviso', novidade);
+    const novidade = !document.getElementById('pontoOnline').hidden, somLigado = st.pref.som || st.pref.musica;
+    document.getElementById('barraPartida').hidden = j.fase === 'fim';
+    document.getElementById('btnPausa').classList.toggle('com-aviso', novidade);
+    const som = document.getElementById('btnSom'); som.setAttribute('aria-pressed', String(somLigado)); som.classList.toggle('sem-som', !somLigado);
     const n = nomes();
     const linha = l => `${l.p === null ? '' : `<span class="cor${l.p}">${n[l.p]}</span> `}${l.txt}`;
     document.getElementById('log').innerHTML = j.log.map(l => `<li class="${l.tipo}">${linha(l)}</li>`).join('');
@@ -4502,6 +4529,13 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     janelaMenu.querySelector('[data-menu="continuar"]').focus();
   }
   document.getElementById('btnPausa').addEventListener('click', () => abrirMenu());
+  // som: um toque cala efeitos e música juntos; outro toque devolve os dois
+  document.getElementById('btnSom').addEventListener('click', () => {
+    const liga = !(st.pref.som || st.pref.musica);
+    st.pref.som = liga; st.pref.musica = liga; salvar(); aplicarPrefs();
+    if (liga) { Som.desbloquear(); Som.tocar('toque'); }
+    if (jogo) render();
+  });
   document.getElementById('opDicasMenu').addEventListener('change', e => { st.pref.dicas = e.target.checked; salvar(); aplicarPrefs(); render(); });
   janelaMenu.addEventListener('click', e => {
     if (e.target === janelaMenu) { janelaMenu.hidden = true; return; }   // tocar fora fecha
