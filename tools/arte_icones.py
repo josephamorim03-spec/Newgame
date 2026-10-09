@@ -8,6 +8,9 @@
     python3 tools/arte_icones.py --embutir        # só refaz js/retratos_pintados.js com o que já existe
 
 Precisa de OPENAI_API_KEY no ambiente (ARTE_MODELO troca o modelo; padrão gpt-image-1).
+O estilo é o do jogo: cada pedido leva o vetor do personagem (arte/referencia/<id>.png, gerado por
+tools/referencias.js) como referência, para a versão pintada manter o desenho, as marcas e o traço.
+Sem a referência (ou se a API recusar a edição), o pedido vai só com o texto.
 Cada imagem fica em arte/fonte/<id>.png (1024 px, fundo transparente, para revisar e regerar)
 e entra no jogo como WebP de 160 px em js/retratos_pintados.js, embutida em data URI: funciona por
 file://, no servidor e no HTML único, sem pedido extra de rede. Quem não tem versão pintada usa o vetor
@@ -28,13 +31,15 @@ from PIL import Image
 RAIZ = Path(__file__).resolve().parent.parent
 PEDIDOS = RAIZ / "arte" / "retratos.json"
 FONTE = RAIZ / "arte" / "fonte"
+REFERENCIA = RAIZ / "arte" / "referencia"
 SAIDA = RAIZ / "js" / "retratos_pintados.js"
 LADO = 160          # px do WebP no jogo (o maior retrato na tela tem ~120 px em 1x; 160 cobre telas densas)
 
 
 def prompt_de(cfg, id_):
     texto = cfg["retratos"][id_]
-    partes = [cfg["estilo"]]
+    partes = [cfg["referencia"]] if (REFERENCIA / f"{id_}.png").exists() and cfg.get("referencia") else []
+    partes.append(cfg["estilo"])
     if texto.startswith("SPECIAL."):
         partes.append(cfg["especial"])
         texto = texto[len("SPECIAL."):].strip()
@@ -42,21 +47,41 @@ def prompt_de(cfg, id_):
     return " ".join(partes)
 
 
-def gerar(prompt, qualidade):
+def multipart(campos, arquivo):
+    """corpo multipart/form-data com os campos de texto e uma imagem (sem depender de requests)"""
+    fronteira = "----diceduel" + base64.b16encode(os.urandom(8)).decode()
+    partes = [f'--{fronteira}\r\nContent-Disposition: form-data; name="{k}"\r\n\r\n{v}\r\n'.encode() for k, v in campos.items()]
+    partes.append(f'--{fronteira}\r\nContent-Disposition: form-data; name="image"; filename="{arquivo.name}"\r\n'
+                  f'Content-Type: image/png\r\n\r\n'.encode() + arquivo.read_bytes() + b"\r\n")
+    partes.append(f"--{fronteira}--\r\n".encode())
+    return b"".join(partes), f"multipart/form-data; boundary={fronteira}"
+
+
+def gerar(prompt, qualidade, ref=None):
     chave = os.environ.get("OPENAI_API_KEY")
     if not chave:
         sys.exit("Falta OPENAI_API_KEY no ambiente.")
-    corpo = json.dumps({"model": os.environ.get("ARTE_MODELO", "gpt-image-1"), "prompt": prompt, "size": "1024x1024",
-                        "background": "transparent", "quality": qualidade, "n": 1}).encode()
-    req = urllib.request.Request("https://api.openai.com/v1/images/generations", data=corpo, method="POST")
+    campos = {"model": os.environ.get("ARTE_MODELO", "gpt-image-1"), "prompt": prompt, "size": "1024x1024",
+              "background": "transparent", "quality": qualidade, "n": 1}
+    if ref is not None:
+        # com referência: edição a partir do vetor; "input_fidelity" alta segura o desenho original
+        corpo, tipo = multipart({**campos, "input_fidelity": "high"}, ref)
+        url = "https://api.openai.com/v1/images/edits"
+    else:
+        corpo, tipo = json.dumps(campos).encode(), "application/json"
+        url = "https://api.openai.com/v1/images/generations"
+    req = urllib.request.Request(url, data=corpo, method="POST")
     req.add_header("Authorization", f"Bearer {chave}")
-    req.add_header("Content-Type", "application/json")
+    req.add_header("Content-Type", tipo)
     for tentativa in range(4):
         try:
             with urllib.request.urlopen(req, timeout=300) as r:
                 return base64.b64decode(json.load(r)["data"][0]["b64_json"])
         except urllib.error.HTTPError as e:
             msg = e.read().decode(errors="replace")[:400]
+            if e.code == 400 and ref is not None:
+                print(f"  a API recusou a edição com referência ({msg[:160]}); tentando só com o texto", flush=True)
+                return gerar(prompt, qualidade)
             if e.code in (429, 500, 502, 503) and tentativa < 3:
                 time.sleep(2 ** (tentativa + 2)); continue
             sys.exit(f"A API recusou ({e.code}): {msg}")
@@ -111,10 +136,13 @@ def main():
     for id_ in ids:
         p = prompt_de(cfg, id_)
         if seco:
-            print(f"--- {id_}\n{p}\n"); continue
+            tem = (REFERENCIA / f"{id_}.png").exists()
+            print(f"--- {id_} ({'com o vetor de referência' if tem else 'só texto'})\n{p}\n"); continue
         print(f"pintando {id_}…", flush=True)
-        (FONTE / f"{id_}.png").write_bytes(gerar(p, qualidade))
-        (FONTE / f"{id_}.json").write_text(json.dumps({"prompt": p, "qualidade": qualidade, "modelo": os.environ.get("ARTE_MODELO", "gpt-image-1")}, ensure_ascii=False, indent=1))
+        ref = REFERENCIA / f"{id_}.png"
+        ref = ref if ref.exists() else None
+        (FONTE / f"{id_}.png").write_bytes(gerar(p, qualidade, ref))
+        (FONTE / f"{id_}.json").write_text(json.dumps({"prompt": p, "qualidade": qualidade, "referencia": bool(ref), "modelo": os.environ.get("ARTE_MODELO", "gpt-image-1")}, ensure_ascii=False, indent=1))
     if not seco:
         embutir()
 

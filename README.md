@@ -59,7 +59,8 @@ e o amigo cai direto na sala. O servidor é a autoridade da partida e roda na Ra
 | `js/efeitos.js` | partículas, dados voando, chamadas de "bom momento", contagem do placar |
 | `sim/` | regras de referência em Python e os experimentos de balanceamento |
 | `tools/empacotar.py` | gera o HTML único |
-| `tools/arte_icones.py` | pinta os retratos com a API de imagem da OpenAI (pedidos em `arte/retratos.json`) e os embute no jogo |
+| `tools/arte_icones.py` | pinta os retratos com a API de imagem da OpenAI, no estilo do jogo (pedidos em `arte/retratos.json`, com o vetor de cada personagem como referência), e os embute no jogo |
+| `tools/referencias.js` | desenha os vetores de `js/retratos.js` em `arte/referencia/` (rode de novo quando mudar um vetor) |
 | `tools/fumaca.js` | teste de fumaça: joga partidas inteiras no navegador e falha com qualquer erro |
 | `tools/regras.js` | testes dirigidos das cartas (Pressa, Coringa, Espelho, blefe, Âncora × Interferência) |
 | `tools/layout.js` | verificador de layout em 5 larguras: texto vazando, fora da caixa, quebrado, descentralizado |
