@@ -1,0 +1,36 @@
+{
+  "_leia": "Cacto e Cogumelo menos parecidos com os originais (Cactuar e o cogumelo do Mario): inspirados, sem os traços que identificam cada um. Uma rodada direto em medium (tools/arte_lote.py rascunhos ... --qualidade medium).",
+  "n": 3,
+  "itens": {
+    "cacto": {
+      "grupo": "natureza",
+      "pedidos": "arte/retratos.json",
+      "estilo": [
+        "arte/fonte/xicara.png",
+        "arte/fonte/monstera.png"
+      ],
+      "texto": "A cheerful little sage-green cactus character hopping with joy: BOTH short arms raised up happily, a small hop with both little feet off a tiny sand mound, happy closed arc eyes (like smiling crescents), a wide friendly smile, rosy cheeks, a small pink flower on top of its head and a few soft spine dots. Rounded body with soft ribs. No pot. NOT a running pose, NOT dot eyes with a round 'o' mouth.",
+      "variantes": [
+        "A cheerful little sage-green cactus character hopping with joy: BOTH short arms raised up happily, a small hop with both little feet off a tiny sand mound, happy closed arc eyes (like smiling crescents), a wide friendly smile, rosy cheeks, a small pink flower on top of its head and a few soft spine dots. Rounded body with soft ribs. No pot. NOT a running pose, NOT dot eyes with a round 'o' mouth.",
+        "A cute round sage-green cactus character waving hello with one arm while the other rests on its side, standing firmly on a tiny sand mound, big friendly eyes with eyelashes and a warm smile, rosy cheeks, a pink flower crown of two small blossoms. No pot. NOT a running pose, NOT dot eyes with a round 'o' mouth.",
+        "A small sage-green cactus character doing a happy little dance, arms in a gentle wave shape, one foot tapping, happy crescent eyes and an open laughing smile, rosy cheeks, a yellow flower on its head. No pot. NOT a running pose, NOT dot eyes with a round 'o' mouth."
+      ],
+      "texto_final": "Keep this exact cheerful sage-green barrel cactus character: round chubby body, flower crown, big round shiny eyes and smile, rosy cheeks, standing still with both feet planted on the sand mound. Fixes: BOTH arms raised together at the same height in a happy cheer (not one up and one down); flat clean green without canvas texture; tiny or no eyelashes. No pot."
+    },
+    "cogumelo": {
+      "grupo": "natureza",
+      "pedidos": "arte/retratos.json",
+      "estilo": [
+        "arte/fonte/xicara.png",
+        "arte/fonte/monstera.png"
+      ],
+      "texto": "A cute forest mushroom character, inspired by a real fly agaric: a WIDE, slightly flattened cap tilted a little to one side, coral-red with many small irregular cream flecks (not big round spots), a cream stem with a frilly ring (skirt) around it, and a friendly face on the stem: round eyes with a shine, a small smile and rosy cheeks. A small green leaf at its base. NOT tall oval eyes, NOT a dome cap with big round white spots.",
+      "variantes": [
+        "A cute forest mushroom character, inspired by a real fly agaric: a WIDE, slightly flattened cap tilted a little to one side, coral-red with many small irregular cream flecks (not big round spots), a cream stem with a frilly ring (skirt) around it, and a friendly face on the stem: round eyes with a shine, a small smile and rosy cheeks. A small green leaf at its base. NOT tall oval eyes, NOT a dome cap with big round white spots.",
+        "A charming mushroom character with a wide umbrella-like coral-red cap speckled with tiny cream dots, a slender cream stem with a ring, sleepy happy half-closed eyes and a content smile, rosy cheeks, a tiny moss patch under it. NOT tall oval eyes, NOT a dome cap with big round white spots.",
+        "A playful mushroom character with a wide wavy-edged coral-red cap with small scattered cream flecks, worn slightly tilted like a hat, a chubby cream stem with a frilly ring, big round curious eyes and a grin, two tiny arms. NOT tall oval eyes, NOT a dome cap with big round white spots."
+      ],
+      "texto_final": "Keep this exact mushroom character: wide low bell-shaped coral-red cap with small elongated cream flecks, cream stem with the frilly ring, round eyes, smile and rosy cheeks. Fix: remove the leaf behind it completely; nothing green, only the mushroom."
+    }
+  }
+}

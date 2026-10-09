@@ -140,7 +140,7 @@ def prancha(lote, rodada, ids, filtro=None, sufixo=""):
     return saidas
 
 
-def rascunhos(lote, so, seco):
+def rascunhos(lote, so, seco, qualidade="low"):
     ids = so or list(lote["itens"])
     tarefas = []
     for i in ids:
@@ -157,12 +157,12 @@ def rascunhos(lote, so, seco):
             if seco:
                 print(f"--- {i} {LETRAS[k]} ({modo or 'só texto'})\n{prompt(i, item, texto, modo)}\n")
                 continue
-            tarefas.append((i, item, texto, modo, ref, "low", pasta(lote, "r1") / i / f"{LETRAS[k]}.png", fid))
+            tarefas.append((i, item, texto, modo, ref, qualidade, pasta(lote, "r1") / i / f"{LETRAS[k]}.png", fid))
     if seco:
         return
     for t in tarefas:
         t[6].parent.mkdir(parents=True, exist_ok=True)
-    print(f"{len(tarefas)} rascunhos em low, {PARALELO} por vez…", flush=True)
+    print(f"{len(tarefas)} rascunhos em {qualidade}, {PARALELO} por vez…", flush=True)
     with ThreadPoolExecutor(PARALELO) as ex:
         list(ex.map(lambda t: pintar(*t), tarefas))
     prancha(lote, "r1", ids)
@@ -265,7 +265,8 @@ def main():
     n = int(args[args.index("--n") + 1]) if "--n" in args else 3
     qualidade = args[args.index("--qualidade") + 1] if "--qualidade" in args else "medium"
     if acao == "rascunhos":
-        rascunhos(lote, so, "--seco" in args)
+        # --qualidade medium: quando a ideia já está clara e uma rodada só basta (gasta mais por imagem)
+        rascunhos(lote, so, "--seco" in args, args[args.index("--qualidade") + 1] if "--qualidade" in args else "low")
     elif acao == "candidatos":
         # --fidelidade low: o refino pode mudar a estrutura (cabelo, encaixe de peças); o padrão high só acaba o desenho
         candidatos(lote, opc, n, qualidade, args[args.index("--fidelidade") + 1] if "--fidelidade" in args else "high")
