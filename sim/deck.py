@@ -14,7 +14,7 @@ def opcoes(cor): return 6 if not cor else _opc(cor[-1])
 
 ARMADILHAS={'espelho','interferencia','fundo','pedagio','ancora'}
 # números das cartas (os valores finais, ajustados por simulação; docs/design.md §4)
-BAL=dict(interf_menos=1, interf_min=4, interf_max=9, interf_6='normal', pedagio=2, pedagio16=2, fundo_tudo=True, rerrolar_tudo=True, ancora_min=4, rerrolar_cor=2, coringa_cor=2, sobre=2, espelho_sem_bolso=True)
+BAL=dict(interf_menos=1, interf_min=4, interf_max=9, interf_6='normal', interf_lider=False, pedagio=2, pedagio16=2, fundo_tudo=True, rerrolar_tudo=True, ancora_min=4, rerrolar_cor=2, coringa_cor=2, sobre=2, espelho_sem_bolso=True)
 import os, json
 BAL.update(json.loads(os.environ.get('BAL', '{}')))   # ex.: BAL='{"pedagio": 2}' para testar outro número
 EFEITOS={'rerrolar','virar','ajuste','pressa','coringa','sobrecarga'}
@@ -99,7 +99,11 @@ class Partida:
         if bonus_sobre and BAL['sobre']=='teto6': g=min(6,g)
         if bonus_sobre and BAL['sobre']=='curto2': g+=2
         # interf_6: 'normal' (o 6 perde 1, como no jogo) ou 'gasta' (o disparo de 6 gasta a Interferência sem tirar ponto)
-        if L>=6 and BAL['interf_6']=='gasta' and r.armada=='interferencia':
+        # interf_lider: a Interferência só tira ponto de quem está na frente (ou empatado); atrás, o disparo a gasta
+        # (interf_lider='espera': atrás, o disparo não a gasta; ela espera um disparo dele na frente ou empatado)
+        if BAL['interf_lider'] and L>=BAL['interf_min'] and r.armada=='interferencia' and j.pts<r.pts:
+            if BAL['interf_lider']!='espera': s.disparar_trap(1-p,'interferencia')
+        elif L>=6 and BAL['interf_6']=='gasta' and r.armada=='interferencia':
             s.disparar_trap(1-p,'interferencia')
         elif BAL['interf_min']<=L<=BAL['interf_max'] and r.armada=='interferencia':
             g=max(0,g-BAL['interf_menos']) if BAL['interf_menos']!=2 else pontos(efL-1); s.disparar_trap(1-p,'interferencia')
