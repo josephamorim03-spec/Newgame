@@ -19,7 +19,7 @@ const RAIZ = path.join(__dirname, '..');
   });
   const cena = async (decks, montar) => {
     await pg.evaluate(d => { DiceDuel.st.decks = d; }, decks);
-    await pg.click('#btnDeck');
+    await pg.evaluate(() => document.getElementById('btnDeck').click());
     // com uma partida em andamento, o botão só salva o deck; recomeçar é o link de baixo
     if (await pg.$('#deckEmAndamento:not([hidden]) #btnRecomecar:not([hidden])')) await pg.click('#btnRecomecar'); else await pg.click('#btnJogarDeck');
     await pg.waitForTimeout(80);
@@ -132,12 +132,12 @@ const RAIZ = path.join(__dirname, '..');
   await cena([['ajuste'], []], () => {});
   await pegar(0); await pg.waitForTimeout(50);
   const antes = await J();
-  await pg.click('#btnDeck');
+  await pg.evaluate(() => document.getElementById('btnDeck').click());
   confere((await pg.textContent('#btnJogarDeck')).includes('Salvar'), 'Deck: no meio da partida o botão vira "Salvar deck"');
   await pg.click('#btnJogarDeck'); let depois = await J();
   confere(depois.compras >= antes.compras && depois.fase !== 'fim' && depois.compras > 0, 'Deck: salvar no meio da partida não a abandona');
   const rec = await pg.evaluate(() => DiceDuel.st.rec.partidas);
-  await pg.click('#btnDeck'); await pg.click('#btnRecomecar'); await pg.waitForTimeout(100); depois = await J();
+  await pg.evaluate(() => document.getElementById('btnDeck').click()); await pg.click('#btnRecomecar'); await pg.waitForTimeout(100); depois = await J();
   confere(depois.fase === 'fim' && depois.vencedor === 1 && (await pg.evaluate(() => DiceDuel.st.rec.partidas)) === rec + 1 && depois.premio && depois.premio.xpGanho === 0, 'Deck: recomeçar contra o rival conta como derrota, sem experiência');
   // 8. Rolagem 3D: os cubos caem, somem sozinhos e a face é a da regra; Rerrolar no meio da rolagem também
   await pg.waitForTimeout(900);   // a tela de fim da cena anterior abre sozinha; fecha antes
@@ -196,7 +196,8 @@ const RAIZ = path.join(__dirname, '..');
   confere(k.vez === 0 && k.cartas[1].pausa === 'usada' && k.cor[1].join() === '1,3', `Coruja: usou a Pausa (${k.cartas[1].pausa}) e a vez voltou (vez ${k.vez})`);
   await pg.evaluate(() => { DiceDuel.st.cfg.modo = 'local'; DiceDuel.st.cfg.nivel = 'aprendiz'; });
 
-  // 11. Ajudas: o botão da barra de jogada liga e desliga etiquetas, dicas e explicações (e lembra a escolha)
+  // 11. Ajudas: a chave do menu de pausa liga e desliga etiquetas, dicas e explicações (e lembra a escolha);
+  //     durante a partida o cabeçalho some e o menu é o único caminho para fora da jogada
   await cena([['ajuste'], []], () => {
     const j = DiceDuel.jogo; j.vez = 0; j.fase = 'pegar'; j.cor[0] = [2]; j.mesa = [{ id: 9601, v: 3 }, { id: 9602, v: 6 }];
   });
@@ -204,13 +205,26 @@ const RAIZ = path.join(__dirname, '..');
     prox: document.querySelectorAll('.prox-faces').length, status: document.querySelector('#acoes .status').textContent.trim(), pref: DiceDuel.st.pref.dicas,
     foco: document.body.classList.contains('em-partida') }));
   const com = await vista();
-  await pg.click('#acoes .ajudas-liga');
+  const topoVisivel = await pg.evaluate(() => getComputedStyle(document.querySelector('.topo')).display !== 'none');
+  await pg.click('#acoes .menu-partida');
+  const menuAberto = await pg.evaluate(() => !document.getElementById('janelaMenu').hidden);
+  await pg.click('#opDicasMenu');
+  await pg.click('[data-menu="continuar"]');
   const sem = await vista();
   confere(com.tags > 0 && com.info > 0 && com.prox > 0 && /sincronizam/.test(com.status), 'Ajudas ligadas: etiquetas, linha da corrente, faces da próxima casa e a explicação');
-  confere(sem.tags === 0 && sem.info === 0 && sem.prox === 0 && !/sincronizam/.test(sem.status) && sem.pref === false, `Ajudas desligadas pelo botão: só o essencial ("${sem.status}")`);
-  confere(com.foco, 'Partida em foco: o cabeçalho fica enxuto durante a partida');
-  await pg.click('#acoes .ajudas-liga');
-  confere((await vista()).pref === true, 'Ajudas: o mesmo botão liga de novo');
+  confere(sem.tags === 0 && sem.info === 0 && sem.prox === 0 && !/sincronizam/.test(sem.status) && sem.pref === false, `Ajudas desligadas pelo menu: só o essencial ("${sem.status}")`);
+  confere(com.foco && !topoVisivel && menuAberto, 'Partida em foco: sem cabeçalho; o botão de pausa abre o menu');
+  await pg.click('#acoes .menu-partida'); await pg.click('#opDicasMenu'); await pg.click('[data-menu="continuar"]');
+  confere((await vista()).pref === true, 'Ajudas: a mesma chave liga de novo');
+  // pelo menu: Ajustes abre, e Desistir pede um segundo toque contra o rival do jogo
+  await pg.click('#acoes .menu-partida'); await pg.click('[data-menu="ajustes"]');
+  confere(await pg.evaluate(() => !document.getElementById('janelaConfig').hidden && document.getElementById('janelaMenu').hidden), 'Menu de pausa: Ajustes abre no lugar do menu');
+  await pg.click('#btnFecharConfig');
+  await pg.evaluate(() => { DiceDuel.jogo.compras = 3; });
+  await pg.click('#acoes .menu-partida');
+  const sairTxt = await pg.textContent('#menuSairTxt');
+  await pg.click('[data-menu="sair"]');
+  confere(sairTxt === 'Recomeçar' && (await pg.evaluate(() => DiceDuel.jogo.compras)) === 0, `Menu de pausa: a dois, "${sairTxt}" começa outra partida`);
 
   // 9. Toda skin rola com a própria cara: seis faces da skin, miolo da cor dela, canto igual ao do dado parado, nada sobra
   await pg.evaluate(() => { DiceDuel.st.cfg.modo = 'bot'; DiceDuel.st.conta.dados = ['marfim', 'madeira', 'rosa', 'menta', 'pelucia', 'dourado', 'diamante']; });

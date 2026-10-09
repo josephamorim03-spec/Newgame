@@ -178,6 +178,23 @@
     </div>
   </div>
 
+  <div class="janela" id="janelaMenu" hidden>
+    <div class="caixa caixa-menu" role="dialog" aria-modal="true" aria-labelledby="menuTitulo">
+      <h2 id="menuTitulo">Pausa</h2>
+      <button class="btn btn-mel" data-menu="continuar">Continuar a partida</button>
+      <div class="linha-cfg"><span><label for="opDicasMenu">Ajudas na partida</label><small>etiquetas nos dados, dicas e explicações</small></span><input class="chave-liga" type="checkbox" id="opDicasMenu"></div>
+      <div class="menu-grade">
+        <button class="btn btn-papel" data-menu="regras">Regras</button>
+        <button class="btn btn-papel" data-menu="ajustes">Ajustes</button>
+        <button class="btn btn-papel" data-menu="deck">Deck</button>
+        <button class="btn btn-papel" data-menu="loja">Loja</button>
+        <button class="btn btn-papel menu-online" data-menu="online">Online<span class="ponto-online" id="pontoMenu" hidden></span></button>
+        <button class="btn btn-papel perigo" data-menu="sair"><span id="menuSairTxt">Desistir</span></button>
+      </div>
+      <p class="nota" id="menuSairNota" style="margin:0"></p>
+    </div>
+  </div>
+
   <div class="janela" id="janelaConfig" hidden>
     <div class="caixa" role="dialog" aria-modal="true" aria-labelledby="cfgTitulo">
       <h2 id="cfgTitulo">Ajustes</h2>
@@ -213,7 +230,7 @@
         <div class="linha-cfg"><span><label for="opTremor">Tremor leve da mesa</label></span><input class="chave-liga" type="checkbox" id="opTremor"></div>
         <div class="linha-cfg"><span><label for="opVibrar">Vibração</label><small>nos aparelhos que permitem</small></span><input class="chave-liga" type="checkbox" id="opVibrar"></div>
         <div class="linha-cfg"><span><label for="opFalas">Falas do rival</label></span><input class="chave-liga" type="checkbox" id="opFalas"></div>
-        <div class="linha-cfg"><span><label for="opDicas">Ajudas na partida</label><small>etiquetas nos dados, dicas e explicações; também no botão “Ajudas” da barra de jogada</small></span><input class="chave-liga" type="checkbox" id="opDicas"></div>
+        <div class="linha-cfg"><span><label for="opDicas">Ajudas na partida</label><small>etiquetas nos dados, dicas e explicações; também no menu de pausa da partida</small></span><input class="chave-liga" type="checkbox" id="opDicas"></div>
       </div>
       <h3>Cartas e progresso</h3>
       <div class="cfg-grupo">

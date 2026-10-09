@@ -29,7 +29,7 @@ const servidor = http.createServer((req, res) => {
     pg.on('response', r => { if (r.status() === 404 && r.url().startsWith(base)) faltando.push(r.url().slice(base.length)); });
     await pg.goto(base + '/'); await pg.waitForTimeout(600);
     await pg.evaluate(() => { const st = DiceDuel.st; st.deckVisto = true; st.cfg.modo = 'bot'; DiceDuel.ajustar({ som: false, musica: false }); document.getElementById('janelaDeck').hidden = true; });
-    await pg.click('#btnDeck'); await pg.click('#btnJogarDeck'); await pg.waitForTimeout(400);
+    await pg.evaluate(() => document.getElementById('btnDeck').click()); await pg.click('#btnJogarDeck'); await pg.waitForTimeout(400);
     await pg.evaluate(() => document.querySelectorAll('.versus').forEach(v => v.click()));
     // joga clicando na Mesa até o fim (ou 150 toques)
     for (let k = 0; k < 150; k++) {
@@ -42,7 +42,12 @@ const servidor = http.createServer((req, res) => {
       }
       await pg.waitForTimeout(250);
     }
-    for (const id of ['#btnCarteira', '#btnConfig', '#btnRegras', '#btnOnline']) { await pg.click(id).catch(() => {}); await pg.waitForTimeout(250); await pg.keyboard.press('Escape'); }
+    // o que não é jogada, pelo menu de pausa (durante a partida) ou pelo cabeçalho (depois dela)
+    for (const m of ['loja', 'ajustes', 'regras', 'online', 'deck']) {
+      if (await pg.$('.menu-partida')) { await pg.click('.menu-partida'); await pg.click(`[data-menu="${m}"]`); }
+      else await pg.click({ loja: '#btnCarteira', ajustes: '#btnConfig', regras: '#btnRegras', online: '#btnOnline', deck: '#btnDeck' }[m]);
+      await pg.waitForTimeout(250); await pg.keyboard.press('Escape');
+    }
     await pg.close();
   }
   await nav.close(); servidor.close();

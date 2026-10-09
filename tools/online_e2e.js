@@ -40,7 +40,7 @@ const espera = ms => new Promise(r => setTimeout(r, ms));
   const sem = pg => pg.evaluate(() => DiceDuel.ajustar({ animacoes: false, som: false, musica: false }));
   const fechar = pg => pg.evaluate(() => ['janelaDeck', 'fim', 'janelaCarta', 'janelaLoja', 'janelaConfig'].forEach(id => { document.getElementById(id).hidden = true; }));
   async function criarConta(pg, nome) {
-    await pg.click('#btnOnline');
+    await pg.evaluate(() => document.getElementById('btnOnline').click());
     await pg.click('[data-on="aba-criar"]');
     await pg.fill('#formConta [name=nome]', nome);
     await pg.fill('#formConta [name=senha]', 'senha-boa-1');
@@ -62,7 +62,7 @@ const espera = ms => new Promise(r => setTimeout(r, ms));
     await ana.screenshot({ path: path.join(FOTOS, 'online-conta.png') }); await layout(ana, 'conta');
     // compra na loja com conta (o servidor desconta)
     await ana.click('#btnFecharOnline');
-    await ana.click('#btnCarteira');
+    await ana.evaluate(() => document.getElementById('btnCarteira').click());
     await ana.click('[data-aba-loja="dados"]');
     await ana.click('[data-comprar="dados:madeira"]'); await ana.click('[data-comprar="dados:madeira"]');
     await ana.waitForFunction(() => DiceDuel.st.conta.moedas === 520 && DiceDuel.st.conta.dado === 'madeira', null, { timeout: 5000 });
@@ -71,7 +71,7 @@ const espera = ms => new Promise(r => setTimeout(r, ms));
     await ana.evaluate(() => { DiceDuel.st.decks[0] = ['ajuste', 'coringa']; DiceDuel.st.rec.melhorSeq = 3; DiceDuel.salvar(); });
     await espera(1800); // a conta recebe o deck (sincroniza 1,2 s depois de salvar)
     // cria a sala e pega o link
-    await ana.click('#btnOnline');
+    await ana.evaluate(() => document.getElementById('btnOnline').click());
     await ana.click('[data-on="criar-sala"]');
     await ana.waitForSelector('.codigo-grande', { timeout: 5000 });
     const link = await ana.textContent('.convite .link');
@@ -79,7 +79,7 @@ const espera = ms => new Promise(r => setTimeout(r, ms));
     if (!/\/\?sala=[A-Z2-9]{6}$/.test(link)) throw new Error('link de convite estranho: ' + link);
     // esperando a amiga, a Ana troca o deck pela janela do deck: a partida tem de começar com o deck novo
     await ana.evaluate(() => { DiceDuel.st.pref.liberar = true; DiceDuel.st.decks[0] = ['espelho', 'ajuste', 'pressa']; });
-    await ana.click('#btnFecharOnline'); await ana.click('#btnDeck'); await ana.click('#btnJogarDeck');
+    await ana.click('#btnFecharOnline'); await ana.evaluate(() => document.getElementById('btnDeck').click()); await ana.click('#btnJogarDeck');
     await espera(1800);
     await fechar(ana); await ana.evaluate(() => document.querySelectorAll('.versus').forEach(v => v.click()));
 
@@ -99,7 +99,7 @@ const espera = ms => new Promise(r => setTimeout(r, ms));
     for (const pg of [ana, bia]) { await fechar(pg); await pg.evaluate(() => document.querySelectorAll('.versus').forEach(v => v.click())); }
     await ana.screenshot({ path: path.join(FOTOS, 'online-partida-celular.png') }); await layout(ana, 'partida'); await layout(bia, 'partida');
     // Ajustes no meio da partida online: tocar em "Modo" (o marcado e o outro) não é desistência
-    await ana.click('#btnConfig');
+    await ana.evaluate(() => document.getElementById('btnConfig').click());
     await ana.click('#janelaConfig [data-cfg="modo"][data-v="bot"]'); await ana.click('#janelaConfig [data-cfg="modo"][data-v="local"]');
     await espera(400);
     const depoisCfg = await ana.evaluate(() => ({ modo: DiceDuel.jogo.modo, fase: DiceDuel.jogo.fase, aviso: !document.getElementById('avisoCfg').hidden }));
@@ -149,13 +149,13 @@ const espera = ms => new Promise(r => setTimeout(r, ms));
     for (const pg of [ana, bia]) await pg.waitForFunction(() => DiceDuel.jogo.fase !== 'fim' && DiceDuel.jogo.partida === 2, null, { timeout: 5000 });
     // a Ana desiste pela janela Online: a Bia vence por W.O. (sem moedas)
     await ana.evaluate(() => document.querySelectorAll('.versus').forEach(v => v.click()));
-    await ana.click('#btnOnline');
+    await ana.evaluate(() => document.getElementById('btnOnline').click());
     await ana.click('[data-on="desistir"]'); await ana.click('[data-on="desistir"]');
     await bia.waitForFunction(() => DiceDuel.jogo.fase === 'fim' && DiceDuel.jogo.premio && DiceDuel.jogo.premio.porDesistencia, null, { timeout: 5000 });
     // ranking aparece para quem abre o Online fora de sala
     await bia.waitForSelector('#fim:not([hidden])', { timeout: 5000 });
     await bia.click('#btnFechar');
-    await bia.click('#btnOnline');
+    await bia.evaluate(() => document.getElementById('btnOnline').click());
     await bia.click('[data-on="sair-sala"]');
     await bia.waitForSelector('.ranking li .rk', { timeout: 5000 });
     const ranking = await bia.$$eval('.ranking .quem-rk', l => l.map(x => x.childNodes[0].textContent));
@@ -171,7 +171,7 @@ const espera = ms => new Promise(r => setTimeout(r, ms));
     // outro aparelho (computador): entra com a mesma conta e continua de onde parou
     const anaPc = await abrir('ana-pc', { width: 1360, height: 900 });
     await anaPc.goto(base + '/'); await anaPc.waitForTimeout(400); await sem(anaPc); await fechar(anaPc);
-    await anaPc.click('#btnOnline');
+    await anaPc.evaluate(() => document.getElementById('btnOnline').click());
     await anaPc.fill('#formConta [name=nome]', ANA.toLowerCase());
     await anaPc.fill('#formConta [name=senha]', 'senha-boa-1');
     await anaPc.click('#formConta [type=submit]');
@@ -186,7 +186,7 @@ const espera = ms => new Promise(r => setTimeout(r, ms));
       await bia.waitForSelector('.codigo-grande', { timeout: 5000 });
       const cod = (await bia.textContent('.codigo-grande')).trim();
       await fechar(ana);
-      await ana.click('#btnOnline');
+      await ana.evaluate(() => document.getElementById('btnOnline').click());
       await ana.fill('#formCodigo [name=codigo]', cod.toLowerCase());
       await ana.click('#formCodigo [type=submit]');
       for (const pg of [ana, bia]) await pg.waitForFunction(() => DiceDuel.jogo && DiceDuel.jogo.modo === 'online' && DiceDuel.jogo.fase !== 'fim', null, { timeout: 6000 })

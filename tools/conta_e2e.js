@@ -30,7 +30,7 @@ require('fs').mkdirSync(FOTOS, { recursive: true });
   const layout = async (pg, tela) => (await pg.screenshot({ path: path.join(FOTOS, `conta-${tela}-${pg.viewportSize().width}.png`) }), await pg.evaluate(verificar)).forEach(x => erros.push(`layout ${tela} (${pg.viewportSize().width}px): ${x}`));
   const avisoTem = (pg, re) => pg.waitForFunction(r => new RegExp(r).test(document.getElementById('onlineAviso').textContent), re.source, { timeout: 8000 });
   async function entrar(pg, nome, senha, criar) {
-    await pg.click('#btnOnline');
+    await pg.evaluate(() => document.getElementById('btnOnline').click());
     if (criar) await pg.click('[data-on="aba-criar"]');
     await pg.fill('#formConta [name=nome]', nome); await pg.fill('#formConta [name=senha]', senha);
     await pg.click('#formConta [type=submit]');
@@ -48,7 +48,7 @@ require('fs').mkdirSync(FOTOS, { recursive: true });
 
     // avisos de senha: tentativas restantes, trava com contagem no botão, outro nome destrava, mostrar senha, Caps Lock
     const intruso = await abrir('intruso', { width: 390, height: 844 });
-    await intruso.click('#btnOnline');
+    await intruso.evaluate(() => document.getElementById('btnOnline').click());
     await intruso.click('[data-ver-senha]');
     if ((await intruso.getAttribute('#formConta [name=senha]', 'type')) !== 'text') throw new Error('"mostrar" não revelou a senha');
     await intruso.click('[data-ver-senha]');
@@ -79,7 +79,7 @@ require('fs').mkdirSync(FOTOS, { recursive: true });
     await cel.click('.conta-opcoes [data-priv="visivel"]');
     await cel.click('[data-on="priv-amigos"]');
     await cel.waitForFunction(() => { const p = DiceDuel.st.sessao.perfil.extras.privacidade || {}; return p.visivel === false && p.chamadas === 'amigos'; }, null, { timeout: 5000 });
-    await outro.click('#btnFecharOnline'); await outro.click('#btnOnline');
+    await outro.click('#btnFecharOnline'); await outro.evaluate(() => document.getElementById('btnOnline').click());
     await outro.waitForFunction(() => !/Helena/.test([...document.querySelectorAll('.amigo')].map(x => x.textContent).join()), null, { timeout: 10000 });
     // e a chamada de quem não é amigo é recusada (pelo nome, já que ela não aparece)
     await outro.evaluate(() => document.querySelector('[data-on="criar-sala"]').click());

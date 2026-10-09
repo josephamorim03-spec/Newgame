@@ -342,11 +342,14 @@ animações desligadas, tudo isso vira instantâneo.
 - **ajudas na partida** (v0.11): etiquetas nos dados, faces da próxima casa, a linha "disparar vale…", o risco de
   segurar, a explicação da carta virada e os "toque em…". Desligadas, a barra de jogada fica com uma frase curta e os
   botões; os avisos de que a corrente vai romper continuam (evitam toque errado). Também liga e desliga pelo botão
-  "Ajudas" no canto da barra de jogada.
+  menu de pausa (o botão no canto da barra de jogada).
 
-**Partida em foco (v0.11):** durante a partida, o cabeçalho perde a xícara, o subtítulo e os rótulos (os botões
-viram ícones; as moedas ficam, porque são a entrada da Loja), e no PC o "Como se joga" sai da lateral (fica o
-Registro; o botão Regras o traz de volta). A fala do rival sai do retrato e nunca cobre o Bolso nem o placar.
+**Partida em foco (v0.11): o jogo é o jogo.** Durante a partida, a tela tem só os dois painéis, a Mesa e a barra de
+jogada. O cabeçalho inteiro sai (logo, moedas, Online, Regras, Deck, Ajustes) e no PC o "Como se joga" sai da
+lateral (fica o Registro). O único caminho para fora da jogada é o botão de **pausa**, no canto da barra: ele abre
+o menu com Continuar, a chave das ajudas, Regras, Ajustes, Deck, Loja, Online (com o pontinho quando há novidade)
+e Desistir, que pede um segundo toque quando conta como derrota (contra o rival, depois do primeiro dado, e
+online). Fora da partida, o cabeçalho volta. A fala do rival sai do retrato e nunca cobre o Bolso nem o placar.
 
 **Partida:**
 - modo (contra um rival ou 2 jogadores);

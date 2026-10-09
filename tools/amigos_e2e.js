@@ -40,7 +40,7 @@ fs.mkdirSync(FOTOS, { recursive: true });
     return pg.evaluate(() => ({ livre: document.querySelector('.nome-status').classList.contains('livre'), texto: document.querySelector('.nome-status').textContent }));
   };
   async function criarConta(pg, nome) {
-    await pg.click('#btnOnline'); await pg.click('[data-on="aba-criar"]');
+    await pg.evaluate(() => document.getElementById('btnOnline').click()); await pg.click('[data-on="aba-criar"]');
     const s = await statusDoNome(pg, nome);
     if (!s.livre) throw new Error(`${nome} deveria estar livre: ${s.texto}`);
     await pg.fill('#formConta [name=senha]', 'senha-boa-1');
@@ -52,7 +52,7 @@ fs.mkdirSync(FOTOS, { recursive: true });
     const ana = await abrir('ana', { width: 390, height: 844 });
     await criarConta(ana, 'Ana');
     const bia = await abrir('bia', { width: 1360, height: 900 });
-    await bia.click('#btnOnline'); await bia.click('[data-on="aba-criar"]');
+    await bia.evaluate(() => document.getElementById('btnOnline').click()); await bia.click('[data-on="aba-criar"]');
     // o mesmo nome em outra forma é recusado já enquanto se digita, e o servidor recusa se insistir
     for (const n of ['ANA', 'aná', 'a.na']) {
       const s = await statusDoNome(bia, n);
@@ -68,7 +68,7 @@ fs.mkdirSync(FOTOS, { recursive: true });
 
     // quem está online: o visitante sem conta vê quantos; a Bia vê a Ana na lista e o contador no botão
     const visita = await abrir('visita', { width: 390, height: 844 });
-    await visita.click('#btnOnline');
+    await visita.evaluate(() => document.getElementById('btnOnline').click());
     await visita.waitForFunction(() => /2 pessoas estão com o jogo aberto/.test(document.getElementById('onlineConteudo').textContent), null, { timeout: 8000 });
     await layout(visita, 'visitante-online');
     await visita.close();
@@ -118,7 +118,7 @@ fs.mkdirSync(FOTOS, { recursive: true });
     if (await ana.$('[data-on="procurar"]')) throw new Error('com a fila desligada, "Procurar rival" não devia aparecer');
     const caio = await abrir('caio', { width: 390, height: 844 }, baseFila), duda = await abrir('duda', { width: 1360, height: 900 }, baseFila);
     await criarConta(caio, 'Caio'); await criarConta(duda, 'Duda');
-    for (const pg of [caio, duda]) { await pg.click('#btnFecharOnline'); await pg.click('#btnOnline'); await pg.waitForSelector('[data-on="procurar"]', { timeout: 5000 }); }
+    for (const pg of [caio, duda]) { await pg.click('#btnFecharOnline'); await pg.evaluate(() => document.getElementById('btnOnline').click()); await pg.waitForSelector('[data-on="procurar"]', { timeout: 5000 }); }
     await caio.click('[data-on="procurar"]');
     await caio.waitForSelector('[data-on="cancelar-busca"]', { timeout: 5000 });
     await layout(caio, 'procurando');

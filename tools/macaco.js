@@ -43,7 +43,7 @@ function tocar(semente) {
   const grupos = [
     [10, '.pega:not([disabled])'], [9, '#acoes button:not([disabled])'], [2, '.jogador button.carta'],
     [3, '#cartaBotoes button:not([disabled])'], [2, '.janela:not([hidden]) button:not([disabled])'], [2, '.versus'],
-    [1, '#btnRegras, #btnDeck, #btnConfig, #btnCarteira, #btnOnline, #btnFecharLado'], [1, '.janela:not([hidden]) [data-aba-loja], .janela:not([hidden]) [data-op], .janela:not([hidden]) [data-pronto]'],
+    [1, '#btnRegras, #btnDeck, #btnConfig, #btnCarteira, #btnOnline, #btnFecharLado, .menu-partida, .janela:not([hidden]) [data-menu]'], [1, '.janela:not([hidden]) [data-aba-loja], .janela:not([hidden]) [data-op], .janela:not([hidden]) [data-pronto]'],
   ];
   const teclas = ['1', '2', '3', '4', '5', 'Enter', 'Escape', 'c', 'b', 'd', 's'];
   if (rnd() < 0.15) { const k = teclas[Math.floor(rnd() * teclas.length)]; (document.activeElement || document.body).dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true })); return 'tecla ' + k; }

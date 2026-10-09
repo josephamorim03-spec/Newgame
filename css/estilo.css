@@ -861,21 +861,18 @@ button.vaga { cursor: pointer; border: 0; background: #fff3dc; color: var(--tint
 #fim .botoes { position: sticky; bottom: -20px; margin: 0 -20px -20px; padding: 12px 20px calc(16px + env(safe-area-inset-bottom, 0px)); background: var(--papel); box-shadow: 0 -6px 8px -8px rgba(58,42,46,.35); z-index: 2; }
 @media (max-width: 520px) { #fim .botoes { display: grid; grid-template-columns: 1fr 1fr; } #fim .botoes .btn { padding: 0 10px; min-width: 0; } }
 
-/* ---------- partida em foco (v0.11): durante a partida, só o que importa nela ---------- */
-/* o cabeçalho encolhe: sem xícara e subtítulo; os botões viram só ícones (o nome continua no aria-label). As moedas
-   ficam: são a entrada da Loja */
-.em-partida .marca p, .em-partida .topo-botoes .cha { display: none; }
-.em-partida .btn-topo .rotulo { display: none; }
-.em-partida .marca h1 { font-size: 22px; }
-.em-partida .topo { min-height: 0; }
-/* no PC, o "Como se joga" sai da lateral (fica o Registro); o botão Regras o traz de volta */
+/* ---------- partida em foco (v0.11): durante a partida, a tela é só o jogo ---------- */
+/* o cabeçalho inteiro sai; o que não é jogada mora no menu de pausa (botão no canto da barra de jogada) */
+.em-partida .topo { display: none; }
+.em-partida .app { padding-top: max(10px, env(safe-area-inset-top)); }
+/* no PC, o "Como se joga" sai da lateral (fica o Registro); "Regras", no menu, o traz de volta */
 @media (min-width: 1040px) { .em-partida .lado:not(.aberto) .regras { display: none; } .acoes { position: relative; } }
-/* o interruptor das ajudas, preso na borda de cima da barra de jogada */
-/* o interruptor das ajudas, no canto de cima da barra de jogada (o texto da primeira linha deixa o espaço dele) */
-.ajudas-liga { position: absolute; top: 8px; right: 8px; z-index: 2; display: inline-flex; gap: 6px; align-items: center; border: 0; border-radius: 999px; padding: 5px 7px 5px 10px; min-height: 30px; font: inherit; font-size: 12px; font-weight: 800; background: var(--papel-2); color: var(--tinta-suave); cursor: pointer; }
-.ajudas-liga .chavinha { width: 26px; height: 16px; border-radius: 999px; background: rgba(58,42,46,.25); position: relative; transition: background .15s; }
-.ajudas-liga .chavinha::after { content: ''; position: absolute; top: 2px; left: 2px; width: 12px; height: 12px; border-radius: 50%; background: var(--papel); transition: transform .15s; }
-.ajudas-liga[aria-pressed="true"] .chavinha { background: var(--eco); }
-.ajudas-liga[aria-pressed="true"] .chavinha::after { transform: translateX(10px); }
-.acoes > .ajudas-liga + .status { padding-right: 92px; }
+.menu-partida { position: absolute; top: 5px; right: 6px; z-index: 2; width: 32px; height: 32px; display: grid; place-items: center; border: 0; border-radius: 12px; background: var(--papel-2); color: var(--tinta); cursor: pointer; }
+.menu-partida .ico { width: 18px; height: 18px; stroke-width: 3; }
+.menu-partida.com-aviso::after { content: ''; position: absolute; top: 4px; right: 4px; width: 9px; height: 9px; border-radius: 50%; background: var(--passo); box-shadow: 0 0 0 2px var(--papel); }
+.acoes > .menu-partida + .status { padding-right: 38px; }
+.caixa-menu { gap: 12px; }
+.menu-grade { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.menu-grade .btn { position: relative; }
+.menu-grade .ponto-online { position: absolute; top: 8px; right: 10px; }
 /* a fala do rival sai do retrato para a direita: cobre o nome por um instante, nunca o Bolso nem o placar */

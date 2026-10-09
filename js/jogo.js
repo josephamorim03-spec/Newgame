@@ -684,12 +684,17 @@
     return `${n[r]} tem uma carta virada (?). Pode ser ${traps.join(' ou ')}${blefes.length ? `, ou um blefe com ${blefes.join(' ou ')}` : ''}.`;
   }
 
-  // o interruptor das ajudas fica na própria barra de ação: um toque liga ou desliga etiquetas, dicas e explicações
-  const botaoAjudas = () => `<button class="ajudas-liga" data-acao="ajudas" aria-pressed="${st.pref.dicas}" aria-label="Ajudas da partida ${st.pref.dicas ? 'ligadas' : 'desligadas'}" title="${st.pref.dicas ? 'Esconder as ajudas da partida' : 'Mostrar as ajudas da partida'}">Ajudas<span class="chavinha" aria-hidden="true"></span></button>`;
+  // durante a partida a tela é só o jogo: o que não é a jogada (ajudas, regras, ajustes, deck, loja, online, desistir)
+  // mora no menu de pausa, aberto pelo único botão fora do jogo, no canto da barra de jogada
+  const botaoMenu = () => {
+    const aviso = !document.getElementById('pontoOnline').hidden;
+    return `<button class="menu-partida${aviso ? ' com-aviso' : ''}" data-acao="menu" aria-label="Pausa: ajudas, regras, ajustes e mais${aviso ? ' (há novidade no Online)' : ''}" title="Pausa">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6v12M15 6v12"/></svg></button>`;
+  };
   function acoesHTML() {
     const j = jogo;
     const html = acoesConteudo();
-    return j.fase === 'fim' ? html : botaoAjudas() + html;
+    return j.fase === 'fim' ? html : botaoMenu() + html;
   }
   function acoesConteudo() {
     const j = jogo, p = j.vez, n = nomes(), quem = `<b class="cor${p}">${n[p]}</b>`, ajudas = st.pref.dicas;
@@ -1284,6 +1289,42 @@
     passou = id;
   });
 
+  // ---------- menu de pausa (durante a partida, o cabeçalho some e tudo o que não é jogada fica aqui) ----------
+  const janelaMenu = document.getElementById('janelaMenu');
+  function textoSair() {
+    if (!jogo || jogo.fase === 'fim') return ['Nova partida', ''];
+    if (online()) return ['Desistir', 'Desistir conta como derrota no ranking.'];
+    if (jogo.modo === 'bot' && jogo.compras > 0) return ['Desistir', 'Desistir conta como derrota (rating e sequência).'];
+    return ['Recomeçar', ''];
+  }
+  function abrirMenu() {
+    document.getElementById('opDicasMenu').checked = st.pref.dicas;
+    document.getElementById('pontoMenu').hidden = document.getElementById('pontoOnline').hidden;
+    const [txt, nota] = textoSair(), b = janelaMenu.querySelector('[data-menu="sair"]');
+    document.getElementById('menuSairTxt').textContent = txt; b.dataset.certeza = '';
+    document.getElementById('menuSairNota').textContent = nota;
+    janelaMenu.hidden = false;
+    janelaMenu.querySelector('[data-menu="continuar"]').focus();
+  }
+  document.getElementById('opDicasMenu').addEventListener('change', e => { st.pref.dicas = e.target.checked; salvar(); aplicarPrefs(); render(); });
+  janelaMenu.addEventListener('click', e => {
+    if (e.target === janelaMenu) { janelaMenu.hidden = true; return; }   // tocar fora fecha
+    const b = e.target.closest('[data-menu]'); if (!b) return;
+    const m = b.dataset.menu;
+    if (m === 'sair') {
+      // desistir pede um segundo toque (um toque sem querer não pode custar a partida)
+      if (textoSair()[1] && b.dataset.certeza !== '1') { b.dataset.certeza = '1'; document.getElementById('menuSairTxt').textContent = 'Toque de novo para desistir'; return; }
+      janelaMenu.hidden = true;
+      if (online()) { Online.desistir(); return; }
+      if (jogo && jogo.modo === 'bot' && jogo.fase !== 'fim' && jogo.compras > 0) { jogo.token = Math.random(); jogo.pensando = false; R.desistir(jogo, 0); depois('fim'); return; }
+      novaPartida(); return;
+    }
+    janelaMenu.hidden = true;
+    if (m === 'regras') { abrirLado(true); if (innerWidth >= 1040) lado.querySelector('.regras').scrollIntoView({ block: 'start' }); }
+    const botao = { ajustes: 'btnConfig', deck: 'btnDeck', loja: 'btnCarteira', online: 'btnOnline' }[m];
+    if (botao) document.getElementById(botao).click();
+  });
+
   const lado = document.getElementById('lado'), btnRegras = document.getElementById('btnRegras');
   const abrirLado = abre => {
     lado.classList.toggle('aberto', abre); btnRegras.setAttribute('aria-expanded', String(abre));
@@ -1332,11 +1373,7 @@
   });
   document.getElementById('acoes').addEventListener('click', e => {
     const j = jogo;
-    if (e.target.closest('[data-acao="ajudas"]')) {
-      st.pref.dicas = !st.pref.dicas; salvar(); aplicarPrefs(); render();
-      const b = document.querySelector('#acoes .ajudas-liga'); if (b) b.focus();
-      return;
-    }
+    if (e.target.closest('[data-acao="menu"]')) { abrirMenu(); return; }
     const dst = e.target.closest('[data-destino]');
     if (dst && j.fase === 'pegar' && j.sel && humano(j.vez) && !j.pensando) { pegarDado(dst.dataset.destino); return; }
     if (dst && j.fase === 'destino' && j.mao && humano(j.vez)) { colocar(j.vez, j.mao.v, dst.dataset.destino); return; }
@@ -1458,9 +1495,11 @@
   });
   document.addEventListener('keydown', e => {
     const alvo = e.target && e.target.closest ? e.target : document.body;   // tecla vinda do documento não tem .closest
-    if (!jogo || alvo.closest('textarea, input') || e.metaKey || e.ctrlKey || e.altKey) return;
+    if (!jogo || e.metaKey || e.ctrlKey || e.altKey) return;
+    // Esc fecha a janela aberta mesmo com o foco num campo (o login do Online abre com o foco no nome)
+    if (alvo.closest('textarea, input') && e.key !== 'Escape') return;
     if (e.key === 'Escape') {
-      ['fim', 'janelaCarta', 'janelaDeck', 'janelaConfig', 'janelaLoja', 'janelaOnline'].forEach(id => { const el = document.getElementById(id); if (el) el.hidden = true; }); abrirLado(false);
+      ['fim', 'janelaCarta', 'janelaDeck', 'janelaConfig', 'janelaLoja', 'janelaOnline', 'janelaMenu'].forEach(id => { const el = document.getElementById(id); if (el) el.hidden = true; }); abrirLado(false);
       return cancelarEscolha();
     }
     // com qualquer janela (ou o "versus") por cima, as teclas não mexem na Mesa escondida atrás
@@ -1716,6 +1755,7 @@
   const enviarWs = m => { if (Rede.ws && Rede.ws.readyState === 1 && Rede.ola) { Rede.ws.send(JSON.stringify(m)); return true; } if (Rede.sala) reconectar(); return false; };
   Online.enviar = acao => { if (enviarWs({ tipo: 'acao', acao })) { jogo.pensando = true; render(); } };
   Online.naSala = () => !!(Rede.sala && st.sessao);
+  Online.desistir = () => { enviarWs({ tipo: 'desistir' }); };
   // trocou o deck esperando o amigo: o servidor guarda o deck da entrada, então entra de novo com o novo
   // (pela mesma conexão isso só atualiza o deck; com a partida já começada, o servidor ignora)
   Online.deckMudou = () => { if (Rede.sala && st.sessao && !online()) enviarWs({ tipo: 'entrar', sala: Rede.sala, deck: deckOnline() }); };

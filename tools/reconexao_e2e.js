@@ -28,7 +28,7 @@ const espera = ms => new Promise(r => setTimeout(r, ms));
   const sem = pg => pg.evaluate(() => DiceDuel.ajustar({ animacoes: false, som: false, musica: false }));
   const fechar = pg => pg.evaluate(() => ['janelaDeck', 'fim', 'janelaCarta', 'janelaLoja', 'janelaConfig', 'janelaOnline'].forEach(id => { document.getElementById(id).hidden = true; }));
   async function criarConta(pg, nome) {
-    await pg.click('#btnOnline');
+    await pg.evaluate(() => document.getElementById('btnOnline').click());
     await pg.click('[data-on="aba-criar"]');
     await pg.fill('#formConta [name=nome]', nome);
     await pg.fill('#formConta [name=senha]', 'senha-boa-1');

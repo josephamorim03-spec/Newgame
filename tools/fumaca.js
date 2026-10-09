@@ -31,13 +31,13 @@ fs.mkdirSync(FOTOS, { recursive: true });
     await pg.evaluate(() => { DiceDuel.st.pref.liberar = true; });       // libera tudo para testar as armadilhas
     await pg.click('#btnFecharDeck');
     if (r.mexeAjustes) {
-      await pg.click('#btnConfig'); await pg.waitForTimeout(200);
+      await pg.evaluate(() => document.getElementById('btnConfig').click()); await pg.waitForTimeout(200);
       await pg.screenshot({ path: path.join(FOTOS, 'ajustes-celular.png') });
       for (const id of ['#opMusica', '#opMusica', '#opSom', '#opSom', '#opAnim', '#opAnim', '#opParticulas', '#opParticulas']) await pg.click(id);
       await pg.click('#btnFecharConfig');
       // loja: com moedas de teste, compra uma skin, um ícone e uma carta, e usa
       await pg.evaluate(() => { DiceDuel.st.conta.moedas = 1000; });
-      await pg.click('#btnCarteira'); await pg.waitForTimeout(150);
+      await pg.evaluate(() => document.getElementById('btnCarteira').click()); await pg.waitForTimeout(150);
       for (const [aba, item] of [['dados', 'dados:dourado'], ['icones', 'icones:raposa'], ['cartas', 'cartas:espelho']]) {
         await pg.click(`[data-aba-loja="${aba}"]`);
         await pg.click(`[data-comprar="${item}"]`); await pg.click(`[data-comprar="${item}"]`);
@@ -50,12 +50,12 @@ fs.mkdirSync(FOTOS, { recursive: true });
       await pg.click('#btnFecharLoja');
     }
     if (r.coruja || r.modo === 'local') {
-      await pg.click('#btnConfig');
+      await pg.evaluate(() => document.getElementById('btnConfig').click());
       if (r.modo === 'local') await pg.click('[data-cfg="modo"][data-v="local"]');
       else await pg.click('[data-cfg="nivel"][data-v="esperto"]');
       await pg.click('#btnFecharConfig');
     }
-    await pg.click('#btnDeck');
+    await pg.evaluate(() => document.getElementById('btnDeck').click());
     await pg.click(`[data-pronto="${r.pronto}"]`);
     if (r.modo === 'local') { await pg.click('[data-aba="1"]'); await pg.click('[data-pronto="1"]'); }
     await pg.click('#btnJogarDeck');
