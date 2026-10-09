@@ -64,7 +64,7 @@
   // ícones: o desenho mora em js/retratos.js (vetor, ou a versão pintada quando existe)
   const DESC_ICONES = { bolinha: 'o clássico', xicara: 'presente do nível 2', raposa: 'de cachecol', sapo: 'de chapéu de palha', urso: 'de gorro de lã',
     coelho: 'de gravata-borboleta', guaxinim: 'de moletom', cogumelo: 'do sub-bosque', monstera: 'em vaso de barro', cacto: 'em flor',
-    biscoito: 'cabelo dourado, sorriso largo', gordinho: 'barriga redonda, segundas intenções', cafu: 'de amarelo e verde', galgo: 'sagaz: já viu essa jogada antes', bandoleiro: 'sempre tem uma carta escondida' };
+    biscoito: 'cabelo dourado, sorriso largo', gordinho: 'barriga redonda, segundas intenções', cafu: 'de terno, óculos e cavanhaque', galgo: 'sagaz: já viu essa jogada antes', bandoleiro: 'sempre tem uma carta escondida' };
   const ICONES = Object.fromEntries(Object.entries(R.CATALOGO.icones).map(([k, v]) => [k, { ...v, desc: DESC_ICONES[k] || '' }]));
   const GRUPOS_ICONES = [['especial', 'Especiais'], ['animal', 'Animais'], ['natureza', 'Natureza'], ['basico', 'Básicos']];
   const MESAS_VISUAL = {
