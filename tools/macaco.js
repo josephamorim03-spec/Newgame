@@ -17,7 +17,8 @@ const RODADAS = [
 // roda na página: o que está errado agora?
 function vigiar() {
   const j = DiceDuel.jogo, st = DiceDuel.st, prob = [];
-  if (!j) return { prob: ['sem partida'], sig: '' };
+  const menu = !document.getElementById('inicio').hidden;   // o menu principal: a partida (se houver) espera atrás dele
+  if (!j) return { prob: menu ? [] : ['sem partida'], sig: 'menu' };
   const humano = p => j.modo === 'local' || p === 0;
   if (!['pegar', 'destino', 'decidir', 'fim', 'alvo', 'ajuste'].includes(j.fase)) prob.push('fase ' + j.fase);
   if (j.mesa.length > 5) prob.push('mesa com ' + j.mesa.length);
@@ -27,23 +28,26 @@ function vigiar() {
   if (j.sel != null && !humano(j.vez)) prob.push('dado escolhido na vez do rival');
   if (j.fase === 'ajuste' && !j.mesa[j.ajusteIdx]) prob.push('Ajuste sem dado');
   // na vez de quem joga, sempre tem algo para tocar
-  const modalAberto = [...document.querySelectorAll('.janela')].some(x => !x.hidden) || document.querySelector('.versus');
+  const modalAberto = [...document.querySelectorAll('.janela')].some(x => !x.hidden) || document.querySelector('.versus') || menu;
   if (!modalAberto && humano(j.vez) && j.fase === 'pegar' && !j.pensando && !j.intro && !document.querySelector('.pega:not([disabled])')) prob.push('vez de pegar sem nenhum dado clicável');
   if (!modalAberto && humano(j.vez) && j.fase === 'decidir' && !document.querySelector('[data-acao="disparar"]')) prob.push('decidir sem botão de disparar');
   if (document.body.innerText.match(/\bundefined\b|\bNaN\b|\[object Object\]/)) prob.push('texto quebrado na tela');
   const sig = JSON.stringify([j.compras, j.rodada, j.pts, j.fase, j.vez, j.mesa.length, j.cor, j.cartas]);
-  return { prob, sig, vezRival: j.modo === 'bot' && j.vez === 1 && j.fase !== 'fim' && !j.intro, fim: j.fase === 'fim', st: st.cfg.modo };
+  return { prob, sig, vezRival: j.modo === 'bot' && j.vez === 1 && j.fase !== 'fim' && !j.intro && !menu, fim: j.fase === 'fim', st: st.cfg.modo };
 }
 
 // roda na página: toca em algo ao acaso
-function tocar(semente) {
+function tocar([semente, modo]) {
   let s = semente;
+  // no menu, só o botão de começar do modo desta rodada (o outro trocaria o modo, como o [data-cfg="modo"])
+  const outroModo = modo === 'local' ? '[data-inicio="jogar"], [data-inicio="rival"]' : '[data-inicio="dois"]';
   const rnd = () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 2 ** 32; };
   const visivel = el => { const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0 && getComputedStyle(el).visibility !== 'hidden'; };
   const grupos = [
     [10, '.pega:not([disabled])'], [9, '#acoes button:not([disabled])'], [2, '.jogador button.carta'],
     [3, '#cartaBotoes button:not([disabled])'], [2, '.janela:not([hidden]) button:not([disabled])'], [2, '.versus'],
     [1, '#btnRegras, #btnDeck, #btnConfig, #btnCarteira, #btnOnline, #btnFecharLado, .menu-partida, .janela:not([hidden]) [data-menu]'], [1, '.janela:not([hidden]) [data-aba-loja], .janela:not([hidden]) [data-op], .janela:not([hidden]) [data-pronto]'],
+    [6, '.tela-inicio:not([hidden]) button'],
   ];
   const teclas = ['1', '2', '3', '4', '5', 'Enter', 'Escape', 'c', 'b', 'd', 's'];
   if (rnd() < 0.15) { const k = teclas[Math.floor(rnd() * teclas.length)]; (document.activeElement || document.body).dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true })); return 'tecla ' + k; }
@@ -52,7 +56,10 @@ function tocar(semente) {
     let x = rnd() * total, sel = grupos[0][1];
     for (const [w, q] of grupos) { if ((x -= w) < 0) { sel = q; break; } }
     const els = [...document.querySelectorAll(sel)].filter(visivel)
-      .filter(el => !el.closest('#btnZerar') && el.id !== 'btnZerar' && !el.matches('[data-cfg="modo"]'));
+      .filter(el => !el.closest('#btnZerar') && el.id !== 'btnZerar' && !el.matches('[data-cfg="modo"], [data-inicio="online"]') && !el.matches(outroModo)
+        // o que está coberto não recebe toque: com uma janela aberta, nada do menu; com o menu aberto, nada da Mesa atrás dele
+        && !(el.closest('.tela-inicio') && document.querySelector('.janela:not([hidden])'))
+        && !(!document.getElementById('inicio').hidden && !el.closest('.tela-inicio, .janela, .lado, .versus')));
     if (!els.length) continue;
     const el = els[Math.floor(rnd() * els.length)];
     el.click();
@@ -89,7 +96,7 @@ function tocar(semente) {
       else if (v.vezRival && Date.now() - desde > 9000) { erros.push(`${r.nome} passo ${i}: o rival travou (depois de: ${rastro.slice(-5).join(' → ')})`); break; }
       if (v.fim && ultimo !== 'fim') partidas++;
       ultimo = v.fim ? 'fim' : '';
-      try { rastro.push(await pg.evaluate(tocar, (i + 1) * 2654435761 % 4294967296)); } catch (e) { erros.push(`${r.nome}: toque: ${e.message}`); }
+      try { rastro.push(await pg.evaluate(tocar, [(i + 1) * 2654435761 % 4294967296, r.modo])); } catch (e) { erros.push(`${r.nome}: toque: ${e.message}`); }
       await pg.waitForTimeout(r.anim ? 60 : 25);
     }
     console.log(`${r.nome}: ${PASSOS} toques, ${partidas} partidas até o fim`);

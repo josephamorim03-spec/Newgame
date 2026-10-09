@@ -112,6 +112,8 @@ if (require.main === module) (async () => {
     await pg.waitForTimeout(300);
     // o mouse sai de cima antes de medir: o dado inclinado pelo :hover passa da borda de propósito e não é defeito
     const olha = async (tela, foto) => { await pg.mouse.move(0, 0); await pg.waitForTimeout(220); anota(tela, w, await pg.evaluate(verificar)); if (foto) await pg.screenshot({ path: path.join(FOTOS, `${tela}-${w}.png`), fullPage: false }); };
+    await olha('inicio', true);
+    await pg.click('[data-inicio="jogar"]');   // primeira visita: o Jogar do menu abre o deck "Primeira mesa"
     await olha('deck', true);
     await pg.click('#btnFecharDeck');
     await pg.evaluate(() => document.getElementById('btnCarteira').click()); for (const aba of ['cartas', 'dados', 'icones', 'mesas']) { await pg.click(`[data-aba-loja="${aba}"]`); await olha('loja-' + aba, aba === 'cartas'); } await pg.click('#btnComoGanhar'); await olha('loja-ganhar', false); await pg.click('[data-voltar-loja]'); await pg.click('#btnFecharLoja');

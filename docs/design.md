@@ -186,7 +186,8 @@ evitar o Bolso sem saber) perdeu mais do que as armadilhas tiram. O jogo diz iss
 
 ## 5. Primeiras partidas (onboarding)
 
-- **Primeira visita:** o deck "Primeira mesa" (só efeitos) e a rival Diana (a mais fácil).
+- **Primeira visita:** o menu principal; o Jogar abre o deck "Primeira mesa" (só efeitos) por cima dele, e a rival
+  é a Diana (a mais fácil).
 - **Armadilhas:** chegam depois da primeira partida (ou em Ajustes → "Todas as cartas liberadas").
   A Diana também só usa efeitos até lá.
 - **Prévia antes de confirmar:** ao escolher o alvo de Virar ou Ajuste, cada dado mostra como ficaria.
@@ -355,6 +356,17 @@ do rival aparece no painel dele. O único caminho para fora da jogada é a **Pau
 o menu com Continuar, a chave das ajudas, Regras, Ajustes, Deck, Loja, Online (com o pontinho quando há novidade)
 e Desistir, que pede um segundo toque quando conta como derrota (contra o rival, depois do primeiro dado, e
 online). Fora da partida, o cabeçalho volta. A fala do rival sai do retrato e nunca cobre o Bolso nem o placar.
+
+**Menu principal (v0.11).** O jogo abre nele: logo, nome e rating, a escolha do rival (Diana ou Dona Coruja),
+**Jogar** grande, Online e 2 jogadores, e uma fileira de ícones (Deck, Loja, Regras, Ajustes). A Pausa tem
+"Menu principal" (fora das partidas online, onde sair é desistir) e o cartão do fim tem "Menu".
+
+**Partida offline guardada.** A partida contra o rival ou a dois fica guardada no aparelho a cada jogada (desde o
+primeiro dado; acabar ou começar outra apaga). Fora da partida não há relógio: fechar a aba e voltar dias depois
+mostra, no menu, o placar com **Continuar** e **Abandonar**. Enquanto ela existe, o menu não oferece começar outra.
+Abandonar pede um segundo toque e diz o preço antes: contra o rival conta como derrota ("seu rating vai de 1000
+para 977"); a dois, não custa nada e só some. Online o relógio é o da sala (tempo por vez escolhido ao criá-la, em
+`docs/servidor.md`): quem cai tem o tempo de voltar e, se não volta, perde.
 
 **Partida:**
 - modo (contra um rival ou 2 jogadores);

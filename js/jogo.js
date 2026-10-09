@@ -150,6 +150,7 @@
   const segundosVolta = () => { const ate = jogo.perfis[1].voltaAte; return ate ? Math.max(0, Math.ceil((ate - Date.now()) / 1000)) : null; };
 
   function novaPartida() {
+    esconderInicio();   // começar uma partida sai do menu principal
     if (window.Rolagem) Rolagem.parar();
     // numa sala online: "jogar de novo" é pedir revanche; no meio da partida, só volta à mesa
     if (Online.naSala() && online()) {
@@ -184,7 +185,7 @@
   // a primeira Mesa de cada partida rola quando dá para ver: atrás do "versus" ou de uma janela ela rolaria escondida
   function rolarAVista() {
     const j = jogo;
-    if (!j || j.rolouAVista || j.intro || j.compras || j.fase === 'fim' || document.querySelector('.janela:not([hidden])')) return false;
+    if (!j || j.rolouAVista || j.intro || j.compras || j.fase === 'fim' || document.querySelector('.janela:not([hidden])') || inicioAberto()) return false;
     j.rolouAVista = true;
     j.mesa.forEach(d => { d.novo = true; }); marcarNovos();
     rolarNaTela(j.mesa.map(d => ({ id: d.id, v: d.v })));
@@ -427,7 +428,7 @@
   const mudou = id => !!(marcaMudanca && marcaMudanca.ids.includes(id) && Date.now() < marcaMudanca.ate);
   async function talvezAutomato() {
     const j = jogo;
-    if (!j || j.modo !== 'bot' || j.fase === 'fim' || humano(j.vez) || j.pensando || j.intro) return;
+    if (!j || j.modo !== 'bot' || j.fase === 'fim' || humano(j.vez) || j.pensando || j.intro || inicioAberto()) return;
     const tok = j.token, p = j.vez;
     j.pensando = true; render();
     if (j.fase === 'pegar') {
@@ -841,6 +842,8 @@
     document.getElementById('log').innerHTML = j.log.map(l => `<li class="${l.tipo}">${linha(l)}</li>`).join('');
     document.getElementById('ticker').innerHTML = j.log[0] ? linha(j.log[0]) : '';
     mostrarCorrenteNaDecisao(j);
+    guardarPartida();
+    if (j.modo === 'online' && j.fase !== 'fim' && inicioAberto()) esconderInicio();
     if (j.fase !== 'fim' && Som.musica.cenaAtual === 'fim') Som.musica.cena('jogo');
     Som.musica.intensidade(Math.max(j.pts[0], j.pts[1]) / j.meta);
     // a vez chegou a um humano: um sininho discreto e o painel dá um pulinho (no modo 2 jogadores, a cada troca)
@@ -1290,6 +1293,109 @@
     passou = id;
   });
 
+  // ---------- menu principal (a primeira tela) e a partida offline guardada no aparelho ----------
+  // Contra a Diana, a Coruja ou a dois não há relógio: a partida fica guardada e continua depois, mesmo fechando o
+  // app. Abandonar avisa antes quando custa rating (contra o rival, depois do primeiro dado, conta como derrota).
+  const PARTIDA_GUARDADA = 'diceduel.partida';
+  const inicio = document.getElementById('inicio');
+  const inicioAberto = () => !inicio.hidden;
+  let confirmarAbandono = false;
+  function guardarPartida() {
+    try {
+      if (!jogo || jogo.modo === 'online') return;
+      // acabou, ou começou outra (sem jogada ainda): a guardada antiga não vale mais
+      if (jogo.fase === 'fim' || !jogo.compras) { localStorage.removeItem(PARTIDA_GUARDADA); return; }
+      localStorage.setItem(PARTIDA_GUARDADA, JSON.stringify(jogo, (k, v) => (k === 'voo' || k === 'fx' ? null : v)));
+    } catch (e) {}
+  }
+  function lerPartidaGuardada() {
+    try {
+      const g = JSON.parse(localStorage.getItem(PARTIDA_GUARDADA) || 'null');
+      return g && g.v === 8 && g.modo !== 'online' && g.fase !== 'fim' && Array.isArray(g.mesa) && Array.isArray(g.cor) ? g : null;
+    } catch (e) { return null; }
+  }
+  function restaurarPartida(g) {
+    Object.assign(g, { pensando: false, token: Math.random(), fx: null, eventos: [], intro: false, voo: null, sel: null, destaque: null, fala: null, rolouAVista: true });
+    if (g.fase === 'alvo' || g.fase === 'ajuste') { g.fase = 'pegar'; g.alvo = null; g.ajusteIdx = null; }
+    return g;
+  }
+  // a partida offline em andamento: a da mesa (se for offline e já tiver começado) ou a guardada no aparelho
+  const partidaParaContinuar = () => (jogo && jogo.modo !== 'online' && jogo.fase !== 'fim' && jogo.compras ? jogo : lerPartidaGuardada());
+  function custoAbandono(g) {
+    if (g.modo !== 'bot' || !g.compras) return null;
+    const c = st.conta, ps = R.premioSolo({ rating: c.rating, pico: c.pico }, { nivel: g.nivel, venceu: false, margem: g.pts[0] - g.pts[1], rodadas: g.rodada, meta: g.meta });
+    return { antes: c.rating, depois: ps.rating };
+  }
+  function desenharInicio() {
+    const c = st.conta, nome = st.sessao && st.sessao.perfil ? st.sessao.perfil.nome : 'Convidado';
+    document.getElementById('inicioPerfil').innerHTML = `${iconeSVG(c.icone)}<span><b>${esc(nome)}</b> <small>· nível ${nivelDe(c.xp)} · ${c.moedas} moedas</small></span>`;
+    document.getElementById('pontoInicio').hidden = document.getElementById('pontoOnline').hidden;
+    inicio.querySelectorAll('[data-inicio="rival"]').forEach(b => b.setAttribute('aria-pressed', String(st.cfg.nivel === b.dataset.v)));
+    const g = partidaParaContinuar(), box = document.getElementById('inicioPartida');
+    // com uma partida offline em andamento, o caminho é continuar ou abandonar (começar outra é abandonar)
+    ['[data-inicio="jogar"]', '[data-inicio="dois"]', '.inicio-jogar .segmento'].forEach(sel => { inicio.querySelector(sel).hidden = !!g; });
+    box.hidden = !g;
+    if (!g) return;
+    const quem = g.modo === 'bot' ? ['Você', RIVAIS[g.nivel].nome] : ['Jogador 1', 'Jogador 2'];
+    const custo = custoAbandono(g);
+    const aviso = !confirmarAbandono ? '' : custo
+      ? `<p class="aviso-abandono" style="margin:0">Abandonar conta como derrota: seu rating vai de ${custo.antes} para ${custo.depois}.</p>`
+      : `<p class="nota" style="margin:0">${g.modo === 'local' ? 'A partida a dois não vale rating: ' : 'Nenhum dado foi pego ainda: '}abandonar só apaga a partida.</p>`;
+    box.innerHTML = `<span class="nota" style="margin:0">Partida em andamento · meta ${g.meta}</span>
+      <span class="placar-guardado">${quem[0]} <b>${g.pts[0]}</b> × <b>${g.pts[1]}</b> ${quem[1]}</span>${aviso}
+      ${confirmarAbandono
+        ? `<div class="inicio-linha"><button class="btn btn-papel perigo" data-inicio="abandonar-sim">Abandonar</button><button class="btn btn-papel" data-inicio="abandonar-nao">Voltar</button></div>`
+        : `<button class="btn btn-mel inicio-principal" data-inicio="continuar">Continuar a partida</button><button class="btn-link" data-inicio="abandonar">Abandonar a partida</button>`}`;
+  }
+  function mostrarInicio() {
+    confirmarAbandono = false;
+    // a partida para atrás do menu: a jogada do rival que estava no meio recomeça do zero no Continuar
+    if (jogo && jogo.modo === 'bot' && jogo.pensando) { jogo.token = Math.random(); jogo.pensando = false; jogo.destaque = null; }
+    ['fim', 'janelaMenu', 'janelaCarta'].forEach(id => { document.getElementById(id).hidden = true; });
+    document.body.classList.add('inicio-aberto');
+    desenharInicio();
+    inicio.hidden = false;
+    const foco = inicio.querySelector('[data-inicio="continuar"], [data-inicio="jogar"]:not([hidden])'); if (foco) foco.focus({ preventScroll: true });
+  }
+  function esconderInicio() {
+    if (inicio.hidden) return;
+    inicio.hidden = true; document.body.classList.remove('inicio-aberto');
+  }
+  inicio.addEventListener('click', e => {
+    const b = e.target.closest('[data-inicio]'); if (!b) return;
+    const a = b.dataset.inicio;
+    if (a === 'rival') { st.cfg.nivel = b.dataset.v; salvar(); desenharInicio(); return; }
+    if (a === 'jogar') {
+      st.cfg.modo = 'bot'; salvar();
+      // primeira vez: o deck "Primeira mesa" abre por cima do menu (fechar sem jogar volta para ele)
+      if (!st.deckVisto) { st.decks[0] = PRONTOS[0].cartas.slice(); abrirDeck(); return; }
+      novaPartida(); return;
+    }
+    if (a === 'dois') { st.cfg.modo = 'local'; salvar(); novaPartida(); return; }
+    if (a === 'continuar') {
+      const g = partidaParaContinuar(); if (!g) return desenharInicio();
+      if (jogo !== g) jogo = restaurarPartida(g);
+      esconderInicio(); render(); if (rolarAVista()) render(); talvezAutomato(); return;
+    }
+    if (a === 'abandonar') { confirmarAbandono = true; desenharInicio(); return; }
+    if (a === 'abandonar-nao') { confirmarAbandono = false; desenharInicio(); return; }
+    if (a === 'abandonar-sim') {
+      const g = partidaParaContinuar(); confirmarAbandono = false;
+      if (!g) return desenharInicio();
+      if (custoAbandono(g)) {   // conta como derrota: rating, sequência e o resumo do fim, como um Desistir
+        jogo = jogo === g ? g : restaurarPartida(g); jogo.token = Math.random(); jogo.pensando = false;
+        esconderInicio(); R.desistir(jogo, 0); depois('fim'); return;
+      }
+      try { localStorage.removeItem(PARTIDA_GUARDADA); } catch (x) {}
+      if (jogo === g) jogo = null;
+      desenharInicio(); return;
+    }
+    if (a === 'online') { document.getElementById('btnOnline').click(); return; }
+    if (a === 'regras') { abrirLado(true); return; }
+    const botao = { deck: 'btnDeck', loja: 'btnCarteira', ajustes: 'btnConfig' }[a];
+    if (botao) document.getElementById(botao).click();
+  });
+
   // ---------- menu de pausa (durante a partida, o cabeçalho some e tudo o que não é jogada fica aqui) ----------
   const janelaMenu = document.getElementById('janelaMenu');
   function textoSair() {
@@ -1300,6 +1406,7 @@
   }
   function abrirMenu() {
     document.getElementById('opDicasMenu').checked = st.pref.dicas;
+    janelaMenu.querySelector('[data-menu="inicio"]').hidden = online() && jogo.fase !== 'fim';
     document.getElementById('pontoMenu').hidden = document.getElementById('pontoOnline').hidden;
     const [txt, nota] = textoSair(), b = janelaMenu.querySelector('[data-menu="sair"]');
     document.getElementById('menuSairTxt').textContent = txt; b.dataset.certeza = '';
@@ -1329,6 +1436,7 @@
       novaPartida(); return;
     }
     janelaMenu.hidden = true;
+    if (m === 'inicio') { mostrarInicio(); return; }
     if (m === 'regras') { abrirLado(true); if (innerWidth >= 1040) lado.querySelector('.regras').scrollIntoView({ block: 'start' }); }
     const botao = { ajustes: 'btnConfig', deck: 'btnDeck', loja: 'btnCarteira', online: 'btnOnline' }[m];
     if (botao) document.getElementById(botao).click();
@@ -1415,6 +1523,7 @@
       return;
     }
     aviso.textContent = 'Modo, rival e meta valem na próxima partida.';
+    if (inicioAberto()) return;   // no menu principal, os ajustes valem para a próxima partida que começar
     if (!jogo || jogo.compras === 0) novaPartida();
     else aviso.hidden = false;
   }));
@@ -1440,11 +1549,12 @@
   document.getElementById('btnTrocarDeck').addEventListener('click', () => { document.getElementById('fim').hidden = true; abrirDeck(); });
   document.getElementById('btnDeNovo').addEventListener('click', novaPartida);
   document.getElementById('btnFechar').addEventListener('click', () => { document.getElementById('fim').hidden = true; });
+  document.getElementById('btnMenuFim').addEventListener('click', () => { document.getElementById('fim').hidden = true; mostrarInicio(); });
   document.getElementById('btnFecharDeck').addEventListener('click', () => { document.getElementById('janelaDeck').hidden = true; });
   document.getElementById('btnJogarDeck').addEventListener('click', () => {
     st.deckVisto = true; salvar();
     Online.deckMudou();
-    if (partidaEmAndamento() && !online()) { document.getElementById('janelaDeck').hidden = true; Fx.chamada('Deck salvo', 'vale a partir da próxima partida', 'suave'); return; }
+    if ((partidaEmAndamento() || (!online() && lerPartidaGuardada())) && !online()) { document.getElementById('janelaDeck').hidden = true; Fx.chamada('Deck salvo', 'vale a partir da próxima partida', 'suave'); return; }
     novaPartida();
   });
   // recomeçar no meio: contra o rival do jogo conta como derrota (senão abandonar seria um jeito de nunca perder rating)
@@ -1511,7 +1621,7 @@
       return cancelarEscolha();
     }
     // com qualquer janela (ou o "versus") por cima, as teclas não mexem na Mesa escondida atrás
-    if (document.querySelector('.janela:not([hidden]), .versus')) return;
+    if (document.querySelector('.janela:not([hidden]), .versus') || inicioAberto()) return;
     if (/^[1-5]$/.test(e.key)) { clicarDado(+e.key - 1); return; }
     const k = e.key.toLowerCase();
     // com um dado escolhido: Enter (ou C) põe na corrente/destino principal, B guarda ou troca
@@ -2347,13 +2457,13 @@
       if (jogo.fase === 'alvo' || jogo.fase === 'ajuste') { jogo.fase = 'pegar'; jogo.alvo = null; }
       aplicarPrefs(); render(); talvezAutomato();
       if (jogo.fase === 'fim') mostrarFim();
-    } else if (!st.deckVisto) {
-      // primeira visita: o deck "Primeira mesa" e a Diana; as armadilhas chegam depois da 1ª partida
-      st.decks[0] = PRONTOS[0].cartas.slice(); st.cfg.nivel = 'aprendiz';
-      const animar = st.pref.animacoes; st.pref.animacoes = false; novaPartida(); st.pref.animacoes = animar;
-      abrirDeck(); jogo.rolouAVista = false;   // a Mesa rola quando a janela do deck fechar
-    } else novaPartida();
-    if (Rede.convite) { abrirOnline(); if (st.sessao) { const c = Rede.convite; Rede.convite = null; entrarNaSala(c).then(abrirOnline); } }
+    } else {
+      // o jogo abre no menu principal; a partida offline guardada (se houver) fica atrás dele, para continuar
+      const g = lerPartidaGuardada();
+      if (g) { jogo = restaurarPartida(g); render(); }
+      mostrarInicio();
+    }
+    if (Rede.convite) { esconderInicio(); abrirOnline(); if (st.sessao) { const c = Rede.convite; Rede.convite = null; entrarNaSala(c).then(abrirOnline); } }
     else if (st.sessao && API) {
       // a aba recarregou no meio de uma sala (queda, celular que fechou a aba): volta para ela sozinho
       const guardada = salaGuardada();
@@ -2361,6 +2471,6 @@
     }
   }
   // o roteiro de teste automático (tools/) pode ler o estado
-  window.DiceDuel = { get jogo() { return jogo; }, st, salvar, ajustar(p) { Object.assign(st.pref, p); aplicarPrefs(); if (jogo) render(); }, automato: () => talvezAutomato() };
+  window.DiceDuel = { get jogo() { return jogo; }, st, salvar, fecharInicio: () => esconderInicio(), abrirInicio: () => mostrarInicio(), ajustar(p) { Object.assign(st.pref, p); aplicarPrefs(); if (jogo) render(); }, automato: () => talvezAutomato() };
   window.claude?.hot?.ready ? window.claude.hot.ready(iniciar) : iniciar(window.claude?.hot?.data ?? {});
 })();

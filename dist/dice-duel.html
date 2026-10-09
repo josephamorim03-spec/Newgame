@@ -153,7 +153,7 @@ svg.ico.mini-ico { width: 1.25em; height: 1.25em; vertical-align: -0.25em; strok
 .cab { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .nome { font-family: var(--f-titulo); font-weight: 700; font-size: 20px; line-height: 1; }
 .p0 .nome { color: var(--voce-tinta); } .p1 .nome { color: var(--rival-tinta); }
-.vez-tag { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; padding: 3px 8px; border-radius: 999px; background: var(--papel-2); color: var(--tinta-suave); }
+.vez-tag { white-space: nowrap; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; padding: 3px 8px; border-radius: 999px; background: var(--papel-2); color: var(--tinta-suave); }
 .da-vez.p0 .vez-tag { background: var(--voce); color: #fff; } .da-vez.p1 .vez-tag { background: var(--rival); color: #fff; }
 .pensando-pontos::after { content: '…'; display: inline-block; animation: pontinhos 1s steps(4) infinite; width: 1.2em; text-align: left; }
 @keyframes pontinhos { 0% { content: ''; } 25% { content: '.'; } 50% { content: '..'; } 75% { content: '...'; } }
@@ -915,10 +915,14 @@ button.vaga { cursor: pointer; border: 0; background: #fff3dc; color: var(--tint
 .decisao-slot #acoes .status { font-size: 15px; }
 .decisao-slot #acoes .nota { font-size: 12px; }
 /* os botões da decisão numa linha só, do tamanho da fileira de cartas que eles substituem; Cancelar fica estreito */
-.decisao-slot #acoes .botoes { flex-wrap: nowrap; gap: 6px; }
-.decisao-slot #acoes .botoes .btn { flex: 1 1 0; min-width: 0; padding-left: 8px; padding-right: 8px; min-height: 48px; }
+/* a coluna do painel não cresce além da largura dele (a fileira de botões se ajusta dentro) */
+.jogador, .decisao-slot #acoes { grid-template-columns: minmax(0, 1fr); }
+/* no celular estreito, quando os rótulos não cabem lado a lado, o Cancelar desce para uma linha só dele */
+.decisao-slot #acoes .botoes { flex-wrap: wrap; justify-content: center; gap: 6px; }
+.decisao-slot #acoes .botoes .btn { flex: 1 1 0; padding-left: 8px; padding-right: 8px; min-height: 48px; }
 .decisao-slot #acoes .botoes [data-acao="cancelar"], .decisao-slot #acoes .botoes [data-acao="cancelar-alvo"] { flex: 0 0 auto; }
-.decisao-slot #acoes .btn small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+/* o texto miúdo não alarga o botão (o rótulo é que dá a largura mínima); se faltar espaço, termina em "…" */
+.decisao-slot #acoes .btn small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 0; min-width: 100%; }
 @keyframes decisaoEntra { from { opacity: 0; transform: translateY(4px); } }
 .menu-partida { position: relative; width: 40px; height: 40px; flex: none; display: grid; place-items: center; border: 0; border-radius: 12px; cursor: pointer;
   background: rgba(255,243,226,.08); color: var(--texto); box-shadow: inset 0 0 0 1.5px rgba(255,243,226,.18); }
@@ -932,9 +936,70 @@ button.vaga { cursor: pointer; border: 0; background: #fff3dc; color: var(--tint
 .menu-grade .ponto-online { position: absolute; top: 8px; right: 10px; }
 /* a fala do rival sai do retrato para a direita: cobre o nome por um instante, nunca o Bolso nem o placar */
 
+/* ---------- menu principal (v0.11): a primeira tela ---------- */
+.tela-inicio { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; overflow-y: auto; padding: max(20px, env(safe-area-inset-top)) 16px max(20px, env(safe-area-inset-bottom));
+  background: radial-gradient(ellipse 90% 60% at 50% 30%, rgba(255,207,138,.16), transparent 70%), var(--noite); color: var(--texto); }
+.tela-inicio[hidden] { display: none; }
+.inicio-caixa { width: min(400px, 100%); display: grid; gap: 16px; justify-items: center; text-align: center; }
+.inicio-logo { width: 84px; height: 84px; filter: drop-shadow(0 8px 16px rgba(0,0,0,.35)); }
+.tela-inicio h1 { font-family: var(--f-titulo); font-weight: 700; font-size: clamp(40px, 12vw, 56px); line-height: 1; margin: -6px 0 0; }
+.tela-inicio h1 span { color: var(--mel); }
+.inicio-perfil { display: flex; align-items: center; gap: 10px; padding: 6px 14px 6px 6px; border-radius: 999px; background: rgba(255,243,226,.08); box-shadow: inset 0 0 0 1.5px rgba(255,243,226,.16); font-size: 14px; }
+.inicio-perfil svg.ico, .inicio-perfil .retrato, .inicio-perfil img { width: 36px; height: 36px; }
+.inicio-perfil b { font-size: 15px; } .inicio-perfil small { color: var(--texto-suave); }
+.inicio-jogar, .inicio-partida { width: 100%; display: grid; gap: 10px; justify-items: stretch; }
+.inicio-jogar .segmento { justify-self: center; margin: 0 auto; }
+.inicio-jogar [hidden] { display: none !important; }
+.inicio-linha:has(> [hidden]) > .btn:not([hidden]) { grid-column: 1 / -1; }
+.inicio-principal { min-height: 60px; font-size: 20px; }
+.inicio-linha { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.inicio-linha .btn { position: relative; }
+.inicio-linha .ponto-online { position: absolute; top: 8px; right: 10px; }
+.inicio-partida { padding: 14px; border-radius: var(--raio); background: var(--papel); color: var(--tinta); box-shadow: 0 6px 0 var(--papel-2); }
+.inicio-partida[hidden] { display: none; }
+.inicio-partida .placar-guardado { font-size: 15px; }
+.inicio-partida .placar-guardado b { font-family: var(--f-titulo); font-size: 22px; }
+.inicio-partida .aviso-abandono { font-size: 14px; color: var(--rival-tinta); font-weight: 700; }
+.inicio-mais { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; width: 100%; }
+.inicio-ico { display: grid; justify-items: center; gap: 4px; padding: 10px 4px; border: 0; border-radius: 14px; background: rgba(255,243,226,.06); color: var(--texto); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; box-shadow: inset 0 0 0 1.5px rgba(255,243,226,.14); }
+.inicio-ico .ico { width: 24px; height: 24px; }
+.menu-largo { grid-column: 1 / -1; }
+/* com o menu principal aberto, a lateral (regras) abre por cima dele, também no PC */
+.lado.aberto { z-index: 60; }
+@media (min-width: 1040px) {
+  .inicio-aberto .lado.aberto { position: fixed; top: 0; right: 0; bottom: 0; width: min(420px, 100vw); max-height: none; overflow-y: auto; background: var(--noite); padding: 0 16px 24px; box-shadow: -20px 0 40px rgba(0,0,0,.4); border-radius: 0; display: grid; }
+  .inicio-aberto .lado.aberto .lado-topo { display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 2; padding: 12px 0 10px; background: var(--noite); }
+  .inicio-aberto .lado.aberto .regras { display: block; }
+}
+
 </style>
 </head>
 <body>
+<!-- o menu principal: a primeira tela; volta pela Pausa ("Menu principal") e pelo fim da partida -->
+<section class="tela-inicio" id="inicio" hidden aria-labelledby="inicioTitulo">
+  <div class="inicio-caixa">
+    <svg class="inicio-logo" viewBox="0 0 64 64" aria-hidden="true">
+      <rect x="6" y="10" width="40" height="40" rx="11" fill="#fffaf0" stroke="#3a2a2e" stroke-width="3" transform="rotate(-10 26 30)"/>
+      <circle cx="18" cy="22" r="4" fill="#ec8fa8"/><circle cx="28" cy="31" r="4" fill="#3a2a2e"/><circle cx="37" cy="39" r="4" fill="#6fbfd3"/>
+      <rect x="30" y="24" width="28" height="28" rx="8" fill="#f2b15e" stroke="#3a2a2e" stroke-width="3" transform="rotate(12 44 38)"/>
+      <circle cx="40" cy="34" r="3" fill="#3a2a2e"/><circle cx="48" cy="42" r="3" fill="#3a2a2e"/>
+    </svg>
+    <h1 id="inicioTitulo">Dice <span>Duel</span></h1>
+    <div class="inicio-perfil" id="inicioPerfil"></div>
+    <div class="inicio-partida" id="inicioPartida" hidden></div>
+    <div class="inicio-jogar" id="inicioJogar">
+      <span class="segmento" role="group" aria-label="Rival"><button data-inicio="rival" data-v="aprendiz">Diana</button><button data-inicio="rival" data-v="esperto">Dona Coruja</button></span>
+      <button class="btn btn-mel inicio-principal" data-inicio="jogar">Jogar</button>
+      <div class="inicio-linha"><button class="btn btn-papel" data-inicio="online">Online<span class="ponto-online" id="pontoInicio" hidden></span></button><button class="btn btn-papel" data-inicio="dois">2 jogadores</button></div>
+    </div>
+    <div class="inicio-mais">
+      <button class="inicio-ico" data-inicio="deck"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="6" width="11" height="15" rx="2"/><path d="M9 3h9a2 2 0 0 1 2 2v13"/></svg>Deck</button>
+      <button class="inicio-ico" data-inicio="loja"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 8v8M9.5 10.5h3.5a1.5 1.5 0 0 1 0 3h-2a1.5 1.5 0 0 0 0 3H14"/></svg>Loja</button>
+      <button class="inicio-ico" data-inicio="regras"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11M9 8h6"/></svg>Regras</button>
+      <button class="inicio-ico" data-inicio="ajustes"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>Ajustes</button>
+    </div>
+  </div>
+</section>
 <div class="app">
   <header class="topo">
     <div class="marca">
@@ -1093,6 +1158,7 @@ button.vaga { cursor: pointer; border: 0; background: #fff3dc; color: var(--tint
       <button class="btn btn-mel" data-menu="continuar">Continuar a partida</button>
       <div class="linha-cfg"><span><label for="opDicasMenu">Ajudas na partida</label><small>etiquetas nos dados, dicas e explicações</small></span><input class="chave-liga" type="checkbox" id="opDicasMenu"></div>
       <div class="menu-grade">
+        <button class="btn btn-papel menu-largo" data-menu="inicio">Menu principal</button>
         <button class="btn btn-papel" data-menu="regras">Regras e registro</button>
         <button class="btn btn-papel" data-menu="ajustes">Ajustes</button>
         <button class="btn btn-papel" data-menu="deck">Deck</button>
@@ -1184,6 +1250,7 @@ button.vaga { cursor: pointer; border: 0; background: #fff3dc; color: var(--tint
         <button class="btn btn-papel" id="btnCompartilhar">Compartilhar</button>
         <button class="btn btn-papel" id="btnTrocarDeck">Deck</button>
         <button class="btn btn-papel" id="btnFechar">Mesa</button>
+        <button class="btn btn-papel" id="btnMenuFim">Menu</button>
       </div>
     </div>
   </div>
@@ -3375,6 +3442,7 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
   const segundosVolta = () => { const ate = jogo.perfis[1].voltaAte; return ate ? Math.max(0, Math.ceil((ate - Date.now()) / 1000)) : null; };
 
   function novaPartida() {
+    esconderInicio();   // começar uma partida sai do menu principal
     if (window.Rolagem) Rolagem.parar();
     // numa sala online: "jogar de novo" é pedir revanche; no meio da partida, só volta à mesa
     if (Online.naSala() && online()) {
@@ -3409,7 +3477,7 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
   // a primeira Mesa de cada partida rola quando dá para ver: atrás do "versus" ou de uma janela ela rolaria escondida
   function rolarAVista() {
     const j = jogo;
-    if (!j || j.rolouAVista || j.intro || j.compras || j.fase === 'fim' || document.querySelector('.janela:not([hidden])')) return false;
+    if (!j || j.rolouAVista || j.intro || j.compras || j.fase === 'fim' || document.querySelector('.janela:not([hidden])') || inicioAberto()) return false;
     j.rolouAVista = true;
     j.mesa.forEach(d => { d.novo = true; }); marcarNovos();
     rolarNaTela(j.mesa.map(d => ({ id: d.id, v: d.v })));
@@ -3652,7 +3720,7 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
   const mudou = id => !!(marcaMudanca && marcaMudanca.ids.includes(id) && Date.now() < marcaMudanca.ate);
   async function talvezAutomato() {
     const j = jogo;
-    if (!j || j.modo !== 'bot' || j.fase === 'fim' || humano(j.vez) || j.pensando || j.intro) return;
+    if (!j || j.modo !== 'bot' || j.fase === 'fim' || humano(j.vez) || j.pensando || j.intro || inicioAberto()) return;
     const tok = j.token, p = j.vez;
     j.pensando = true; render();
     if (j.fase === 'pegar') {
@@ -4066,6 +4134,8 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     document.getElementById('log').innerHTML = j.log.map(l => `<li class="${l.tipo}">${linha(l)}</li>`).join('');
     document.getElementById('ticker').innerHTML = j.log[0] ? linha(j.log[0]) : '';
     mostrarCorrenteNaDecisao(j);
+    guardarPartida();
+    if (j.modo === 'online' && j.fase !== 'fim' && inicioAberto()) esconderInicio();
     if (j.fase !== 'fim' && Som.musica.cenaAtual === 'fim') Som.musica.cena('jogo');
     Som.musica.intensidade(Math.max(j.pts[0], j.pts[1]) / j.meta);
     // a vez chegou a um humano: um sininho discreto e o painel dá um pulinho (no modo 2 jogadores, a cada troca)
@@ -4515,6 +4585,109 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     passou = id;
   });
 
+  // ---------- menu principal (a primeira tela) e a partida offline guardada no aparelho ----------
+  // Contra a Diana, a Coruja ou a dois não há relógio: a partida fica guardada e continua depois, mesmo fechando o
+  // app. Abandonar avisa antes quando custa rating (contra o rival, depois do primeiro dado, conta como derrota).
+  const PARTIDA_GUARDADA = 'diceduel.partida';
+  const inicio = document.getElementById('inicio');
+  const inicioAberto = () => !inicio.hidden;
+  let confirmarAbandono = false;
+  function guardarPartida() {
+    try {
+      if (!jogo || jogo.modo === 'online') return;
+      // acabou, ou começou outra (sem jogada ainda): a guardada antiga não vale mais
+      if (jogo.fase === 'fim' || !jogo.compras) { localStorage.removeItem(PARTIDA_GUARDADA); return; }
+      localStorage.setItem(PARTIDA_GUARDADA, JSON.stringify(jogo, (k, v) => (k === 'voo' || k === 'fx' ? null : v)));
+    } catch (e) {}
+  }
+  function lerPartidaGuardada() {
+    try {
+      const g = JSON.parse(localStorage.getItem(PARTIDA_GUARDADA) || 'null');
+      return g && g.v === 8 && g.modo !== 'online' && g.fase !== 'fim' && Array.isArray(g.mesa) && Array.isArray(g.cor) ? g : null;
+    } catch (e) { return null; }
+  }
+  function restaurarPartida(g) {
+    Object.assign(g, { pensando: false, token: Math.random(), fx: null, eventos: [], intro: false, voo: null, sel: null, destaque: null, fala: null, rolouAVista: true });
+    if (g.fase === 'alvo' || g.fase === 'ajuste') { g.fase = 'pegar'; g.alvo = null; g.ajusteIdx = null; }
+    return g;
+  }
+  // a partida offline em andamento: a da mesa (se for offline e já tiver começado) ou a guardada no aparelho
+  const partidaParaContinuar = () => (jogo && jogo.modo !== 'online' && jogo.fase !== 'fim' && jogo.compras ? jogo : lerPartidaGuardada());
+  function custoAbandono(g) {
+    if (g.modo !== 'bot' || !g.compras) return null;
+    const c = st.conta, ps = R.premioSolo({ rating: c.rating, pico: c.pico }, { nivel: g.nivel, venceu: false, margem: g.pts[0] - g.pts[1], rodadas: g.rodada, meta: g.meta });
+    return { antes: c.rating, depois: ps.rating };
+  }
+  function desenharInicio() {
+    const c = st.conta, nome = st.sessao && st.sessao.perfil ? st.sessao.perfil.nome : 'Convidado';
+    document.getElementById('inicioPerfil').innerHTML = `${iconeSVG(c.icone)}<span><b>${esc(nome)}</b> <small>· nível ${nivelDe(c.xp)} · ${c.moedas} moedas</small></span>`;
+    document.getElementById('pontoInicio').hidden = document.getElementById('pontoOnline').hidden;
+    inicio.querySelectorAll('[data-inicio="rival"]').forEach(b => b.setAttribute('aria-pressed', String(st.cfg.nivel === b.dataset.v)));
+    const g = partidaParaContinuar(), box = document.getElementById('inicioPartida');
+    // com uma partida offline em andamento, o caminho é continuar ou abandonar (começar outra é abandonar)
+    ['[data-inicio="jogar"]', '[data-inicio="dois"]', '.inicio-jogar .segmento'].forEach(sel => { inicio.querySelector(sel).hidden = !!g; });
+    box.hidden = !g;
+    if (!g) return;
+    const quem = g.modo === 'bot' ? ['Você', RIVAIS[g.nivel].nome] : ['Jogador 1', 'Jogador 2'];
+    const custo = custoAbandono(g);
+    const aviso = !confirmarAbandono ? '' : custo
+      ? `<p class="aviso-abandono" style="margin:0">Abandonar conta como derrota: seu rating vai de ${custo.antes} para ${custo.depois}.</p>`
+      : `<p class="nota" style="margin:0">${g.modo === 'local' ? 'A partida a dois não vale rating: ' : 'Nenhum dado foi pego ainda: '}abandonar só apaga a partida.</p>`;
+    box.innerHTML = `<span class="nota" style="margin:0">Partida em andamento · meta ${g.meta}</span>
+      <span class="placar-guardado">${quem[0]} <b>${g.pts[0]}</b> × <b>${g.pts[1]}</b> ${quem[1]}</span>${aviso}
+      ${confirmarAbandono
+        ? `<div class="inicio-linha"><button class="btn btn-papel perigo" data-inicio="abandonar-sim">Abandonar</button><button class="btn btn-papel" data-inicio="abandonar-nao">Voltar</button></div>`
+        : `<button class="btn btn-mel inicio-principal" data-inicio="continuar">Continuar a partida</button><button class="btn-link" data-inicio="abandonar">Abandonar a partida</button>`}`;
+  }
+  function mostrarInicio() {
+    confirmarAbandono = false;
+    // a partida para atrás do menu: a jogada do rival que estava no meio recomeça do zero no Continuar
+    if (jogo && jogo.modo === 'bot' && jogo.pensando) { jogo.token = Math.random(); jogo.pensando = false; jogo.destaque = null; }
+    ['fim', 'janelaMenu', 'janelaCarta'].forEach(id => { document.getElementById(id).hidden = true; });
+    document.body.classList.add('inicio-aberto');
+    desenharInicio();
+    inicio.hidden = false;
+    const foco = inicio.querySelector('[data-inicio="continuar"], [data-inicio="jogar"]:not([hidden])'); if (foco) foco.focus({ preventScroll: true });
+  }
+  function esconderInicio() {
+    if (inicio.hidden) return;
+    inicio.hidden = true; document.body.classList.remove('inicio-aberto');
+  }
+  inicio.addEventListener('click', e => {
+    const b = e.target.closest('[data-inicio]'); if (!b) return;
+    const a = b.dataset.inicio;
+    if (a === 'rival') { st.cfg.nivel = b.dataset.v; salvar(); desenharInicio(); return; }
+    if (a === 'jogar') {
+      st.cfg.modo = 'bot'; salvar();
+      // primeira vez: o deck "Primeira mesa" abre por cima do menu (fechar sem jogar volta para ele)
+      if (!st.deckVisto) { st.decks[0] = PRONTOS[0].cartas.slice(); abrirDeck(); return; }
+      novaPartida(); return;
+    }
+    if (a === 'dois') { st.cfg.modo = 'local'; salvar(); novaPartida(); return; }
+    if (a === 'continuar') {
+      const g = partidaParaContinuar(); if (!g) return desenharInicio();
+      if (jogo !== g) jogo = restaurarPartida(g);
+      esconderInicio(); render(); if (rolarAVista()) render(); talvezAutomato(); return;
+    }
+    if (a === 'abandonar') { confirmarAbandono = true; desenharInicio(); return; }
+    if (a === 'abandonar-nao') { confirmarAbandono = false; desenharInicio(); return; }
+    if (a === 'abandonar-sim') {
+      const g = partidaParaContinuar(); confirmarAbandono = false;
+      if (!g) return desenharInicio();
+      if (custoAbandono(g)) {   // conta como derrota: rating, sequência e o resumo do fim, como um Desistir
+        jogo = jogo === g ? g : restaurarPartida(g); jogo.token = Math.random(); jogo.pensando = false;
+        esconderInicio(); R.desistir(jogo, 0); depois('fim'); return;
+      }
+      try { localStorage.removeItem(PARTIDA_GUARDADA); } catch (x) {}
+      if (jogo === g) jogo = null;
+      desenharInicio(); return;
+    }
+    if (a === 'online') { document.getElementById('btnOnline').click(); return; }
+    if (a === 'regras') { abrirLado(true); return; }
+    const botao = { deck: 'btnDeck', loja: 'btnCarteira', ajustes: 'btnConfig' }[a];
+    if (botao) document.getElementById(botao).click();
+  });
+
   // ---------- menu de pausa (durante a partida, o cabeçalho some e tudo o que não é jogada fica aqui) ----------
   const janelaMenu = document.getElementById('janelaMenu');
   function textoSair() {
@@ -4525,6 +4698,7 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
   }
   function abrirMenu() {
     document.getElementById('opDicasMenu').checked = st.pref.dicas;
+    janelaMenu.querySelector('[data-menu="inicio"]').hidden = online() && jogo.fase !== 'fim';
     document.getElementById('pontoMenu').hidden = document.getElementById('pontoOnline').hidden;
     const [txt, nota] = textoSair(), b = janelaMenu.querySelector('[data-menu="sair"]');
     document.getElementById('menuSairTxt').textContent = txt; b.dataset.certeza = '';
@@ -4554,6 +4728,7 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
       novaPartida(); return;
     }
     janelaMenu.hidden = true;
+    if (m === 'inicio') { mostrarInicio(); return; }
     if (m === 'regras') { abrirLado(true); if (innerWidth >= 1040) lado.querySelector('.regras').scrollIntoView({ block: 'start' }); }
     const botao = { ajustes: 'btnConfig', deck: 'btnDeck', loja: 'btnCarteira', online: 'btnOnline' }[m];
     if (botao) document.getElementById(botao).click();
@@ -4640,6 +4815,7 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
       return;
     }
     aviso.textContent = 'Modo, rival e meta valem na próxima partida.';
+    if (inicioAberto()) return;   // no menu principal, os ajustes valem para a próxima partida que começar
     if (!jogo || jogo.compras === 0) novaPartida();
     else aviso.hidden = false;
   }));
@@ -4665,11 +4841,12 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
   document.getElementById('btnTrocarDeck').addEventListener('click', () => { document.getElementById('fim').hidden = true; abrirDeck(); });
   document.getElementById('btnDeNovo').addEventListener('click', novaPartida);
   document.getElementById('btnFechar').addEventListener('click', () => { document.getElementById('fim').hidden = true; });
+  document.getElementById('btnMenuFim').addEventListener('click', () => { document.getElementById('fim').hidden = true; mostrarInicio(); });
   document.getElementById('btnFecharDeck').addEventListener('click', () => { document.getElementById('janelaDeck').hidden = true; });
   document.getElementById('btnJogarDeck').addEventListener('click', () => {
     st.deckVisto = true; salvar();
     Online.deckMudou();
-    if (partidaEmAndamento() && !online()) { document.getElementById('janelaDeck').hidden = true; Fx.chamada('Deck salvo', 'vale a partir da próxima partida', 'suave'); return; }
+    if ((partidaEmAndamento() || (!online() && lerPartidaGuardada())) && !online()) { document.getElementById('janelaDeck').hidden = true; Fx.chamada('Deck salvo', 'vale a partir da próxima partida', 'suave'); return; }
     novaPartida();
   });
   // recomeçar no meio: contra o rival do jogo conta como derrota (senão abandonar seria um jeito de nunca perder rating)
@@ -4736,7 +4913,7 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
       return cancelarEscolha();
     }
     // com qualquer janela (ou o "versus") por cima, as teclas não mexem na Mesa escondida atrás
-    if (document.querySelector('.janela:not([hidden]), .versus')) return;
+    if (document.querySelector('.janela:not([hidden]), .versus') || inicioAberto()) return;
     if (/^[1-5]$/.test(e.key)) { clicarDado(+e.key - 1); return; }
     const k = e.key.toLowerCase();
     // com um dado escolhido: Enter (ou C) põe na corrente/destino principal, B guarda ou troca
@@ -5572,13 +5749,13 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
       if (jogo.fase === 'alvo' || jogo.fase === 'ajuste') { jogo.fase = 'pegar'; jogo.alvo = null; }
       aplicarPrefs(); render(); talvezAutomato();
       if (jogo.fase === 'fim') mostrarFim();
-    } else if (!st.deckVisto) {
-      // primeira visita: o deck "Primeira mesa" e a Diana; as armadilhas chegam depois da 1ª partida
-      st.decks[0] = PRONTOS[0].cartas.slice(); st.cfg.nivel = 'aprendiz';
-      const animar = st.pref.animacoes; st.pref.animacoes = false; novaPartida(); st.pref.animacoes = animar;
-      abrirDeck(); jogo.rolouAVista = false;   // a Mesa rola quando a janela do deck fechar
-    } else novaPartida();
-    if (Rede.convite) { abrirOnline(); if (st.sessao) { const c = Rede.convite; Rede.convite = null; entrarNaSala(c).then(abrirOnline); } }
+    } else {
+      // o jogo abre no menu principal; a partida offline guardada (se houver) fica atrás dele, para continuar
+      const g = lerPartidaGuardada();
+      if (g) { jogo = restaurarPartida(g); render(); }
+      mostrarInicio();
+    }
+    if (Rede.convite) { esconderInicio(); abrirOnline(); if (st.sessao) { const c = Rede.convite; Rede.convite = null; entrarNaSala(c).then(abrirOnline); } }
     else if (st.sessao && API) {
       // a aba recarregou no meio de uma sala (queda, celular que fechou a aba): volta para ela sozinho
       const guardada = salaGuardada();
@@ -5586,7 +5763,7 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     }
   }
   // o roteiro de teste automático (tools/) pode ler o estado
-  window.DiceDuel = { get jogo() { return jogo; }, st, salvar, ajustar(p) { Object.assign(st.pref, p); aplicarPrefs(); if (jogo) render(); }, automato: () => talvezAutomato() };
+  window.DiceDuel = { get jogo() { return jogo; }, st, salvar, fecharInicio: () => esconderInicio(), abrirInicio: () => mostrarInicio(), ajustar(p) { Object.assign(st.pref, p); aplicarPrefs(); if (jogo) render(); }, automato: () => talvezAutomato() };
   window.claude?.hot?.ready ? window.claude.hot.ready(iniciar) : iniciar(window.claude?.hot?.data ?? {});
 })();
 
