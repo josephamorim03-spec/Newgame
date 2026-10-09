@@ -1,6 +1,6 @@
 # Quanto cada armadilha perde quando o rival sabe mais (oculto, aviso de "armada", deck à mostra, marca do Espelho à mostra).
 # Uso: python3 sim/informacao.py [partidas]
-import random, sys
+import random, sys, os
 from multiprocessing import Pool
 import deck as D
 N = int(sys.argv[1]) if len(sys.argv) > 1 else 16000
@@ -14,7 +14,7 @@ def valor(args):
     return w / N
 if __name__ == '__main__':
     traps = sorted(D.ARMADILHAS)
-    with Pool() as pool: res = pool.map(valor, [(c, m) for c in traps for m in MODOS])
+    with Pool(int(os.environ.get("PROCS", "4"))) as pool: res = pool.map(valor, [(c, m) for c in traps for m in MODOS])
     print(f"  {'':13s} " + " ".join(f"{m:>8s}" for m in MODOS))
     for k, c in enumerate(traps):
         print(f"  {c:13s} " + " ".join(f"{res[k * 4 + j]:8.3f}" for j in range(4)))

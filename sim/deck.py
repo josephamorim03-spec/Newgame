@@ -1,4 +1,5 @@
-# Dice Duel: implementação de referência das regras (v0.8) e robôs, para simular o balanceamento.
+# Dice Duel: implementação de referência das regras (v0.8, alinhada a shared/regras.js) e robôs, para simular o balanceamento.
+# Fora do modelo: o blefe (os robôs não leem o "?" do rival além do Fundo Falso; ver docs/balanceamento-cartas.md).
 # Regras: Mesa de 5 dados, corrente pela frente, Bolso, quem está atrás abre a Mesa, deck de até 3 cartas.
 # Deck de até 3 cartas, cada uma 1x por partida. Armadilhas: no máximo 1 armada por vez.
 import random
@@ -16,6 +17,7 @@ ARMADILHAS={'espelho','interferencia','fundo','pedagio','ancora'}
 BAL=dict(interf_menos=1, interf_min=4, pedagio=3, fundo_tudo=True, rerrolar_tudo=True, ancora_min=4, rerrolar_cor=2, coringa_cor=2, sobre=2, espelho_sem_bolso=True)
 EFEITOS={'rerrolar','virar','ajuste','pressa','coringa','sobrecarga'}
 CARTAS=sorted(ARMADILHAS|EFEITOS)
+PONTOS_CARTAS={'interferencia','pedagio','sobrecarga'}   # cartas ⚡: no máximo 1 por deck
 
 class Jog:
     def __init__(s,deck):
@@ -28,7 +30,7 @@ class Partida:
         s.j=[Jog(decks[0]),Jog(decks[1])]; s.vez=inicia; s.mesa=[]; s.marca=None; s.info=info; s.meta=meta
         # sem cartas dos dois lados, quem joga em segundo começa com um dado no Bolso; com cartas não precisa
         if not decks[0] and not decks[1]: s.j[1-inicia].bolso=random.randint(1,6)
-        s.turnos=0; s.ev=[]
+        s.turnos=0; s.ev=[]; s.vencedor=None
     # ---------- regras ----------
     def destinos(s,p,v):
         j=s.j[p]; ds=[]
@@ -38,13 +40,19 @@ class Partida:
         elif encaixa(j.cor,j.bolso,j.coringa): ds.append('trocar')
         return ds
     def garante(s,p):
-        j=s.j[p]; return j.bolso is None or encaixa(j.cor,j.bolso)
+        j=s.j[p]; return j.bolso is None or encaixa(j.cor,j.bolso,j.coringa)
     def desarma(s,i):
         # mexer no dado marcado (ou rolar a Mesa toda) desfaz o Espelho
         if s.marca and (i is None or s.marca[1]==i):
             dono=s.marca[0]; s.marca=None; s.j[dono].est['espelho']='perdido'; s.j[dono].armada=None; s.ev.append((dono,'espelho_desfeito'))
     def usar(s,p,c):
         j=s.j[p]; j.est[c]='usado'; j.usou.append(c)
+    def efeito(s,p,c):
+        """gasta o efeito c; devolve se ele age (gancho para cartas que anulam efeitos, em sim/novas.py)"""
+        s.usar(p,c); return True
+    def romper(s,p):
+        """a corrente de p rompe (gancho para cartas que olham a ruptura, em sim/novas.py)"""
+        s.j[p].cor=[]; s.ev.append((p,'ruptura'))
     def armar(s,p,c,alvo=None):
         j=s.j[p]; j.est[c]='armado'; j.armada=c
         if c=='espelho': s.marca=(p,alvo)
@@ -71,13 +79,18 @@ class Partida:
         elif modo=='trocar': entra=j.bolso; j.bolso=v
         if entra is None: return
         if encaixa(j.cor,entra,j.coringa):
-            j.cor.append(entra); j.coringa=False
+            # o Coringa só é gasto num dado que entra numa corrente já começada (como no jogo)
+            if j.cor: j.coringa=False
+            j.cor.append(entra)
         elif j.armada=='ancora' and len(j.cor)>=BAL['ancora_min']:
             s.disparar_trap(p,'ancora')
         else:
-            j.cor=[]; s.ev.append((p,'ruptura'))
+            s.romper(p)
     def fire(s,p):
-        j=s.j[p]; r=s.j[1-p]; L=len(j.cor); bonus_sobre=j.sobre; j.sobre=False
+        j=s.j[p]; r=s.j[1-p]; L=len(j.cor); bonus_sobre=j.sobre
+        # disparo de 3 não gasta a Sobrecarga (a de +2 só vale em 4+, como no jogo)
+        if bonus_sobre and isinstance(BAL['sobre'],int) and L<4: bonus_sobre=False
+        else: j.sobre=False
         efL=L+(1 if bonus_sobre and BAL['sobre']=='dado' else 0)
         if bonus_sobre and BAL['sobre']=='teto6': efL=L+1
         g=pontos(efL)+(BAL['sobre'] if bonus_sobre and isinstance(BAL['sobre'],int) else 0)
@@ -88,6 +101,10 @@ class Partida:
         if r.armada=='pedagio':
             r.pts+= (g+1)//2 if BAL['pedagio']=='metade' else BAL['pedagio']; s.disparar_trap(1-p,'pedagio')
         j.pts+=g; j.cor=[]
+        # se os dois passarem da meta no mesmo disparo (Pedágio), vence quem disparou
+        if s.vencedor is None:
+            if j.pts>=s.meta: s.vencedor=p
+            elif r.pts>=s.meta: s.vencedor=1-p
     # ---------- robô ----------
     def nota(s,p,X,modo):
         j=s.j[p]; nc=j.cor; nb=j.bolso
@@ -99,7 +116,8 @@ class Partida:
     def planeja(s,p):
         j=s.j[p]; r=s.j[1-p]; best=None; bv=-1e9
         sabe_deck = s.info in ('deck','marca')
-        evita_bolso = sabe_deck and r.armada is not None and r.est.get('fundo') in ('pronto','armado')
+        # o Espelho armado é público: só um "?" (armadilha escondida) pode ser o Fundo Falso
+        evita_bolso = sabe_deck and r.armada not in (None,'espelho') and r.est.get('fundo') in ('pronto','armado')
         marcado = s.marca[1] if (s.info=='marca' and s.marca and s.marca[0]!=p) else None
         for i,X in enumerate(s.mesa):
             if i==marcado and len(s.mesa)>1 and any(s.destinos(p,Y) for k,Y in enumerate(s.mesa) if k!=i): continue
@@ -140,17 +158,17 @@ class Partida:
         # Virar / Ajuste / Rerrolar: consertar a Mesa quando nada entra na corrente
         if precisa and j.pronta('virar'):
             alvo=[i for i,X in enumerate(m) if encaixa(j.cor,7-X)]
-            if alvo: s.usar(p,'virar'); m[alvo[0]]=7-m[alvo[0]]; s.desarma(alvo[0]); precisa=False
+            if alvo and s.efeito(p,'virar'): m[alvo[0]]=7-m[alvo[0]]; s.desarma(alvo[0]); precisa=False
         if precisa and j.pronta('ajuste'):
             for i,X in enumerate(m):
                 for d in (1,-1):
                     if 1<=X+d<=6 and encaixa(j.cor,X+d):
-                        s.usar(p,'ajuste'); m[i]=X+d; precisa=False; break
-                if not precisa: break
+                        if s.efeito(p,'ajuste'): m[i]=X+d; precisa=False
+                        break
+                if not precisa or not j.pronta('ajuste'): break
         if precisa and j.pronta('coringa') and len(j.cor)>=BAL['coringa_cor']:
-            s.usar(p,'coringa'); j.coringa=True; precisa=False
-        if precisa and j.pronta('rerrolar') and len(j.cor)>=BAL['rerrolar_cor']:
-            s.usar(p,'rerrolar')
+            if s.efeito(p,'coringa'): j.coringa=True; precisa=False
+        if precisa and j.pronta('rerrolar') and len(j.cor)>=BAL['rerrolar_cor'] and s.efeito(p,'rerrolar'):
             if BAL['rerrolar_tudo']: m[:]=[random.randint(1,6) for _ in m]; s.desarma(None)
             else: i=random.randrange(len(m)); m[i]=random.randint(1,6); s.desarma(i)
         # negação pública: o único dado que serve ao rival com corrente grande
@@ -158,9 +176,9 @@ class Partida:
             so=[i for i,X in enumerate(m) if encaixa(r.cor,X)]
             if len(so)==1:
                 i=so[0]
-                if j.pronta('virar') and not encaixa(r.cor,7-m[i]): s.usar(p,'virar'); m[i]=7-m[i]; s.desarma(i)
-                elif j.pronta('rerrolar'):
-                    s.usar(p,'rerrolar')
+                if j.pronta('virar') and not encaixa(r.cor,7-m[i]):
+                    if s.efeito(p,'virar'): m[i]=7-m[i]; s.desarma(i)
+                elif j.pronta('rerrolar') and s.efeito(p,'rerrolar'):
                     if BAL['rerrolar_tudo']: m[:]=[random.randint(1,6) for _ in m]; s.desarma(None)
                     else: m[i]=random.randint(1,6); s.desarma(i)
         # armadilhas (uma armada por vez)
@@ -173,13 +191,20 @@ class Partida:
                 i_meu,_=s.planeja(p)
                 alvos=[i for i,X in enumerate(m) if i!=i_meu and encaixa(r.cor,X) and not encaixa(r.cor,7-X)]
                 if alvos: s.armar(p,'espelho',alvos[0])
+    def passa(s,p):
+        """o robô passa a vez sem pegar dado (gancho para cartas novas, em sim/novas.py)"""
+        return False
     def vez_de(s,p):
         j=s.j[p]
         s.cartas_antes(p)
+        if s.passa(p): s.decidir(p); return
         n_pegas=1
         if j.pronta('pressa') and len(j.cor)>=2 and len(s.mesa)>=2:
             ok=any('corrente' in s.destinos(p,a) and any(encaixa(j.cor+[a],b) for k,b in enumerate(s.mesa) if k!=i) for i,a in enumerate(s.mesa))
-            if ok: s.usar(p,'pressa'); n_pegas=2
+            if ok and s.efeito(p,'pressa'): n_pegas=2
+        # Sobrecarga antes do 6.º dado: com corrente de 5 e um dado que entra, o disparo automático de 6 leva o +2
+        if j.pronta('sobrecarga') and BAL['sobre']==2 and len(j.cor)==5 and any(encaixa(j.cor,X,j.coringa) for X in s.mesa):
+            if s.efeito(p,'sobrecarga'): j.sobre=True
         for k in range(n_pegas):
             if not s.mesa: break
             # o segundo dado da Pressa é opcional: sem saída segura, o robô dispensa
@@ -191,9 +216,13 @@ class Partida:
             # com 6 a corrente dispara sozinha; o segundo dado da Pressa (se houver) começa outra
             if len(j.cor)>=LIM: s.fire(p)
             if max(x.pts for x in s.j)>=s.meta: return
+        s.decidir(p)
+    def decidir(s,p):
+        j=s.j[p]
         if s.quer_disparar(p):
             L=len(j.cor)
-            if j.pronta('sobrecarga') and (L in (3,4) if BAL['sobre']=='curto2' else L in (4,5) if BAL['sobre']=='teto6' else L>=(5 if BAL['sobre']=='dado' else 4)): s.usar(p,'sobrecarga'); j.sobre=True
+            if j.pronta('sobrecarga') and (L in (3,4) if BAL['sobre']=='curto2' else L in (4,5) if BAL['sobre']=='teto6' else L>=(5 if BAL['sobre']=='dado' else 4)):
+                if s.efeito(p,'sobrecarga'): j.sobre=True
             s.fire(p)
     def jogar(s):
         while max(x.pts for x in s.j)<s.meta and s.turnos<800:
@@ -204,6 +233,7 @@ class Partida:
                 if s.j[0].pts!=s.j[1].pts: s.vez=0 if s.j[0].pts<s.j[1].pts else 1
             s.vez_de(s.vez)
             s.vez=1-s.vez; s.turnos+=1
+        if s.vencedor is not None: return s.vencedor
         return 0 if s.j[0].pts>=s.meta else 1
 
 def duelo(d0,d1,n,info='marca'):

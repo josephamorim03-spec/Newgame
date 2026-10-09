@@ -1,13 +1,13 @@
 # Progressão do Dice Duel: (1) comprar cartas não pode dar vantagem (nada de pagar para vencer);
 # (2) quantas moedas uma vitória rende com a fórmula de margem e rapidez.
 # Uso: python3 sim/economia.py
-import random, itertools, statistics as E
+import random, itertools, os, statistics as E
 from multiprocessing import Pool
 import deck as D
 
 GRATIS = ['ajuste', 'virar', 'pressa', 'coringa', 'ancora', 'interferencia']   # já vêm liberadas
 COMPRA = [c for c in D.CARTAS if c not in GRATIS]                            # se compram com moedas
-PONTOS = {'interferencia', 'pedagio', 'sobrecarga'}
+PONTOS = D.PONTOS_CARTAS
 valido = lambda d: sum(c in D.ARMADILHAS for c in d) <= 2 and sum(c in PONTOS for c in d) <= 1
 TODOS = [list(d) for d in itertools.combinations(D.CARTAS, 3) if valido(d)]
 
@@ -19,7 +19,7 @@ def contra_campo(d, n=2400, seed=0):
     return w / n
 
 def melhor(decks):
-    with Pool() as pool: res = pool.starmap(contra_campo, [(d, 1200, i) for i, d in enumerate(decks)])
+    with Pool(int(os.environ.get("PROCS", "4"))) as pool: res = pool.starmap(contra_campo, [(d, 1200, i) for i, d in enumerate(decks)])
     k = max(range(len(decks)), key=lambda i: res[i]); return decks[k], res[k], res
 
 def partidas(n=6000):
