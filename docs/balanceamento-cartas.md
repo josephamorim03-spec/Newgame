@@ -542,3 +542,26 @@ Pedido do dono: o Pedágio parecia roubado (+3 é um quarto da meta 12). Medido 
   deck confirmado (Âncora + Coringa + Interferência) de 59,9% para 61,6%. Duas variantes não mudaram nada (valer só
   em disparo de 5+: 60,1% sozinha; valer em qualquer disparo, inclusive o de 3: 60,3%). A força dela vem do −1 nos
   disparos grandes.
+
+## 11. A Âncora está roubada? Os decks fortes uns contra os outros (v0.11)
+
+Contra o campo inteiro (402 decks, muitos fracos), os melhores decks passam de 60% na meta 12. Para ver se algum
+**domina os outros fortes**, `sim/torneio.py` joga os 20 melhores uns contra os outros (600 partidas por par),
+com as regras atuais (15 cartas, Mesa de 5, Pedágio +2).
+
+| | Meta 12 | Meta 16 |
+|---|---|---|
+| Melhor contra os outros 19 | 57,5% (Ajuste + Fundo Falso + Interferência) | 52,3% (Fundo Falso + Pressa + Sobrecarga) |
+| Decks de Âncora contra os outros 19 | 47% a 51% | 45% a 49% |
+| Todo deck forte tem quem o vença? | sim (o pior confronto de cada um fica entre 30% e 50%) | sim (entre 39% e 49%) |
+| Interferência entre os 20 melhores | **15** | 0 |
+
+- **A Âncora não está roubada.** Contra o campo inteiro, os decks de Âncora + Interferência fazem 60% a 61% na
+  meta 12, mas contra os fortes ficam na metade. Os decks com Fundo Falso os vencem (64% contra 36%): o Fundo
+  Falso derruba a corrente que a Âncora protege.
+- **A meta 16 está equilibrada:** os 20 melhores ficam entre 45% e 52% uns contra os outros, com 11 cartas
+  diferentes entre eles.
+- **O ponto de atenção é a variedade na meta 12:** a Interferência está em 15 dos 20 melhores decks. A força dela
+  vem do −1 no disparo automático de 6 (na meta 12, dois disparos de 6 fecham a partida). Duas variantes simples
+  não fecham: valer só em 4 ou 5 dados deixa a meta 12 mais variada, mas na meta 16 a Interferência passa a
+  dominar (59,7% de média, decks de 65%); valer só em 5+, ou em qualquer disparo, não muda nada.
