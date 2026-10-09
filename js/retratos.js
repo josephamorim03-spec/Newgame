@@ -13,7 +13,7 @@
   const SVG = {
     // ---------- rivais ----------
     // Diana: gata branca de olhos azuis; ponta da orelha direita (dela) preta, a esquerda branca;
-    // cinza leve logo acima dos olhos, dois riscos escuros simétricos na testa e um arranhão no dorso do nariz
+    // cinza leve logo acima dos olhos, dois riscos escuros verticais no meio da testa (um de cada lado) e um arranhão no dorso do nariz, entre os olhos, bem acima das narinas
     diana: `
       <path d="M9 31 L12 5 L29 17 Z" fill="#f8f6f2" ${L}/>
       <path d="M10.6 17.2 L12 5 L20.3 11 Z" fill="#231c1f"/>
@@ -23,12 +23,12 @@
       <path d="M49.5 14 L48 24 L40.5 19.5 Z" fill="#f0c6cb" opacity=".8"/>
       <ellipse cx="32" cy="37" rx="23.5" ry="20.5" fill="#f8f6f2" ${L}/>
       <path d="M17.5 29.5 q6.5 -4.5 12 -1 M34.5 28.5 q5.5 -3.5 12 1" stroke="#dcdde3" stroke-width="4" fill="none" stroke-linecap="round" opacity=".75"/>
-      <path d="M25 22 h5.5 M33.5 22 h5.5" stroke="#9b9ca6" stroke-width="2" stroke-linecap="round"/>
+      <path d="M29.4 19.5 v6 M34.6 19.5 v6" stroke="#7e7f8a" stroke-width="2.2" stroke-linecap="round"/>
       <ellipse cx="32" cy="48" rx="11" ry="7.5" fill="#fff" opacity=".9"/>
       <g class="olho"><path d="M18.5 35.5 q5 -6 11 0 q-5 5 -11 0 z" fill="#7fb6e6" ${l(1.6)}/><ellipse cx="24" cy="35.4" rx="1.3" ry="2.9" fill="#1f1a1d"/>
       <path d="M34.5 35.5 q6 -6 11 0 q-6 5 -11 0 z" fill="#7fb6e6" ${l(1.6)}/><ellipse cx="40" cy="35.4" rx="1.3" ry="2.9" fill="#1f1a1d"/></g>
       <circle cx="25.3" cy="34" r=".9" fill="#fff"/><circle cx="41.3" cy="34" r=".9" fill="#fff"/>
-      <path d="M30.6 37.6 l2.8 1.9" stroke="#c4473a" stroke-width="1.7" stroke-linecap="round"/>
+      <path d="M30.4 36.6 l3.2 2.2" stroke="#c4473a" stroke-width="1.8" stroke-linecap="round"/>
       <path d="M29.4 42.2 h5.2 l-2.6 2.8 z" fill="#e3a0a8" ${l(1.1)}/>
       <path d="M32 45 q-1.8 2.4 -4.4 1.6 M32 45 q1.8 2.4 4.4 1.6" fill="none" ${l(1.4)}/>
       <path d="M12 42 l9 1 M12 46.5 l9 -.5 M52 42 l-9 1 M52 46.5 l-9 -.5" stroke="#9a9aa4" stroke-width="1.1" stroke-linecap="round"/>`,

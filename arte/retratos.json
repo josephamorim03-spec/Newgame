@@ -3,14 +3,14 @@
   "estilo": "Dice Duel game avatar: a cozy flat sticker illustration that looks like a polished vector drawing. Thick uniform dark cocoa outline (#3a2a2e) around every shape, flat color fills with only one soft cel-shaded shadow tone and one small highlight per shape, no painterly brush texture, no gradients, no noise, no 3D rendering. Palette of the game: warm cream paper #fbf1df and #f1dfc2, ivory #fffaf0, sage felt greens #4e7d68 and #5f8f78, wood browns #7a4b2f and #a86c45, honey #f2b15e, coral #e8806f, rose #ec8fa8, sky blue #6fbfd3, lavender #b8a4f0, mint #8fd6a8. Head and shoulders, centered, facing the viewer, bold readable silhouette that still reads at 40 pixels, charming but adult, not chibi, not childish. No text, no letters, no frame, plain transparent background.",
   "especial": "Special premium portrait: inside a dark plum circular medallion (#2e2330) with an antique-gold rim (#e2b04a), the character slightly overlapping the rim at the bottom.",
   "retratos": {
-    "diana": "A white domestic cat named Diana with clear light-blue eyes, calm and confident expression. Exact markings that must be respected: the tip of HER RIGHT ear (on the viewer's left) is black, her left ear is entirely white; a very faint light-gray shading just above both eyes; two short darker gray horizontal stripes on the forehead, symmetric, one on each side of the center; a small red scratch wound across the bridge of the nose. Pink nose, white whiskers.",
+    "diana": "A pure white domestic cat (cool white fur #f8f6f2, not cream, not beige, not yellow) named Diana with clear light-blue eyes, calm and confident expression. Exact markings that must be respected: the upper third of HER RIGHT ear (the ear on the viewer's LEFT) is a solid black triangle (#231c1f), clearly visible, like the reference; below it that ear is white with a pink inner ear; her left ear is entirely white with a pink inner ear, no orange or yellow; a very faint light-gray shading just above both eyes; two short dark charcoal-gray (#5a5b66, high contrast against the white fur, never beige or faint) VERTICAL stripes in the middle of the forehead, parallel and symmetric, one on each side of the center line; a small diagonal red scratch wound on the flat bridge of the nose, between the eyes and well above the nostrils, NOT on or beside the nose pad. Small pink nose, white whiskers. Her fur is solid, fully opaque white: only the empty area outside her outline is transparent, the face and ears are filled with white.",
     "coruja": "An old wise brown tawny owl lady, Dona Coruja, large round amber eyes with thin round reading-glasses rims, small ear tufts, a pale cream chest with a few feather chevrons. IMPORTANT: no line, curve or mark under the beak that could read as a mouth; the beak is the only feature below the eyes.",
-    "bolinha": "A single ivory six-sided die with rounded corners, slightly tilted, five dark pips, soft shadow. No face.",
+    "bolinha": "The subject is ONLY one single object: an ivory six-sided die with rounded corners, slightly tilted, five dark pips on the front face, filling the frame. No person, no hands, no character, no cup, nothing else. No face. Ignore the head-and-shoulders framing: show just the die.",
     "xicara": "A steaming porcelain teacup on a saucer, cream with a terracotta band, dark tea, soft steam. No face.",
     "raposa": "An anthropomorphic red fox with half-closed contented eyes wearing a dark-green knitted scarf.",
     "sapo": "An anthropomorphic green frog wearing a straw boater hat with a rust ribbon and a small rust bow tie.",
     "urso": "An anthropomorphic brown bear wearing a red knitted beanie with a cream pompom and cream rim.",
-    "coelho": "An anthropomorphic light-gray rabbit with long ears and pink inner ears, wearing a navy bow tie.",
+    "coelho": "An anthropomorphic light-gray rabbit (cool pale gray fur #e4e2df, not cream, not beige) with long ears and pink inner ears, wearing a navy bow tie.",
     "guaxinim": "An anthropomorphic raccoon with the classic black eye mask, wearing a mustard-yellow hoodie.",
     "cogumelo": "A small cluster of forest mushrooms: one red cap with white spots and one small brown cap, a bit of moss. No faces.",
     "monstera": "A monstera leaf plant in a terracotta pot. No face.",
@@ -21,5 +21,13 @@
     "galgo": "SPECIAL. Galgo, a shrewd and witty anthropomorphic greyhound: long narrow elegant muzzle, rose ears folded back, slate-gray short coat with a white blaze down the face, narrowed amber eyes with a knowing look and slanted brows, a faint confident smirk, wide red martingale collar with a small gold tag.",
     "bandoleiro": "SPECIAL. A charming trickster gambler called Bandoleiro: wide-brimmed dark-brown hat with a playing card tucked in the band, one eye winking, thin curled mustache, sly grin with one gold tooth, red neckerchief, slate-blue coat."
   },
-  "referencia": "Use the attached image as the exact design reference: keep the same character, pose, framing, markings, accessories and color choices, and redraw it as a more detailed finished illustration in the same visual language."
+  "referencia": "Use the attached image as the exact design reference: keep the same character, pose, framing, markings, accessories and color choices, and redraw it as a more detailed finished illustration in the same visual language.",
+  "fundo_opaco": [
+    "diana",
+    "bolinha",
+    "xicara",
+    "coelho",
+    "cogumelo"
+  ],
+  "fundo_opaco_texto": "Plain flat solid pure chroma-key green background (#00ff00) filling the whole image around the subject and inside any gaps (such as a cup handle), with no shadow, no texture and no other objects. The subject itself must not use this bright green anywhere, and its colors must not be tinted by the background. The thick dark outline is the outermost edge of the subject: no white or cream sticker border or halo around it."
 }

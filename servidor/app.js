@@ -1,5 +1,6 @@
 // Dice Duel · API (contas, ranking, loja, salas) e o canal de partida (WebSocket em /ws)
 'use strict';
+const fs = require('fs');
 const path = require('path');
 const http = require('http');
 const express = require('express');
@@ -25,7 +26,7 @@ function criarTrava() {
   };
 }
 
-function criarApp({ banco, segredo, raiz = path.join(__dirname, '..'), tempos = {}, limites = {} }) {
+function criarApp({ banco, segredo, raiz = path.join(__dirname, '..'), tempos = {}, limites = {}, origens = [] }) {
   if (!segredo || segredo.length < 16) throw new Error('SEGREDO precisa ter 16 caracteres ou mais');
   const app = express();
   const trava = criarTrava();
@@ -34,6 +35,15 @@ function criarApp({ banco, segredo, raiz = path.join(__dirname, '..'), tempos = 
   app.disable('x-powered-by');
   app.use(express.json({ limit: '8kb' }));
   app.use((req, res, next) => { res.set('X-Content-Type-Options', 'nosniff'); next(); });
+  // CORS só para as páginas do jogo hospedadas fora daqui (ORIGENS, ex.: o Vercel); o token vai no cabeçalho, sem cookies
+  app.use('/api', (req, res, next) => {
+    res.vary('Origin');
+    const origem = req.get('origin');
+    if (!origem || !origens.includes(origem)) return next();
+    res.set({ 'Access-Control-Allow-Origin': origem, 'Access-Control-Allow-Headers': 'content-type, authorization', 'Access-Control-Allow-Methods': 'GET, POST, PUT', 'Access-Control-Max-Age': '600' });
+    if (req.method === 'OPTIONS') return res.sendStatus(204);
+    next();
+  });
 
   const lim = { contas: 5, entrar: 10, solo: 20, ws: 120, ...limites };
   const limContas = Auth.limitador({ janelaMs: 10 * 60_000, maximo: lim.contas });
@@ -171,7 +181,11 @@ function criarApp({ banco, segredo, raiz = path.join(__dirname, '..'), tempos = 
 
   // ---------- o jogo em si (arquivos estáticos; só o que o navegador precisa) ----------
   for (const pasta of ['css', 'js', 'shared']) app.use('/' + pasta, express.static(path.join(raiz, pasta), { maxAge: '1h', index: false }));
-  app.get(['/', '/index.html'], (req, res) => res.sendFile(path.join(raiz, 'index.html')));
+  // servida daqui, a página fala com este mesmo endereço: a <meta name="dice-servidor"> (para o Vercel) sai vazia
+  app.get(['/', '/index.html'], assincrono(async (req, res) => {
+    const html = await fs.promises.readFile(path.join(raiz, 'index.html'), 'utf8');
+    res.type('html').send(html.replace(/(<meta name="dice-servidor" content=")[^"]*"/, '$1"'));
+  }));
   app.use('/api', (req, res) => res.status(404).json({ erro: 'Rota desconhecida.' }));
   app.use((err, req, res, next) => { // eslint-disable-line no-unused-vars
     if (err.type === 'entity.parse.failed' || err.type === 'entity.too.large') return res.status(400).json({ erro: 'Pedido inválido.' });
