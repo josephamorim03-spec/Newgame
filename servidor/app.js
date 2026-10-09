@@ -149,7 +149,8 @@ function criarApp({ banco, segredo, raiz = path.join(__dirname, '..'), tempos = 
   app.post('/api/contas', limContas, assincrono(async (req, res) => {
     const { nome, senha, importar } = req.body || {};
     if (!Auth.validarNome(nome)) return res.status(400).json({ erro: 'Nome: de 3 a 20 letras, números, ponto, traço ou _.' });
-    if (!Auth.validarSenha(senha)) return res.status(400).json({ erro: 'Senha: de 6 a 72 caracteres.' });
+    const fraca = Auth.problemaSenhaNova(senha, nome);
+    if (fraca) return res.status(400).json({ erro: fraca, codigo: 'senha' });
     const conta = await banco.criarConta(nome.trim(), await Auth.hashSenha(senha));
     if (!conta) return res.status(409).json({ erro: await nomeOcupado(nome) });
     const final = importar ? await banco.atualizarConta(conta.id, importacao(conta, importar)) : conta;
@@ -197,7 +198,8 @@ function criarApp({ banco, segredo, raiz = path.join(__dirname, '..'), tempos = 
   // trocar a senha: confere a atual; os outros aparelhos saem (este recebe o token novo)
   app.post('/api/eu/senha', limConta, exigirConta, assincrono(async (req, res) => {
     const { atual, nova } = req.body || {};
-    if (!Auth.validarSenha(nova)) return res.status(400).json({ erro: 'Senha nova: de 6 a 72 caracteres.' });
+    const fraca = Auth.problemaSenhaNova(nova, req.conta.nome);
+    if (fraca) return res.status(400).json({ erro: fraca.replace(/^Senha:/, 'Senha nova:'), codigo: 'senha' });
     const chave = Auth.chaveDoNome(req.conta.nome), tr = trancada(chave);
     if (tr) return respostaTrancada(res, tr);
     if (typeof atual !== 'string' || !(await Auth.conferirSenha(atual, req.conta))) return respostaSenhaErrada(res, 403, 'A senha atual não confere.', errouSenha(chave));
@@ -444,7 +446,7 @@ function criarApp({ banco, segredo, raiz = path.join(__dirname, '..'), tempos = 
     const sala = salas.salas.get(String(req.params.codigo).toUpperCase());
     if (!sala) return res.status(404).json({ erro: 'Sala não encontrada. O convite pode ter expirado.' });
     const r = salas.resumo(sala);   // quem não está na sala não precisa dos ids internos
-    res.json({ sala: { codigo: r.codigo, meta: r.meta, estado: r.estado, jogadores: r.jogadores.map(j => ({ nome: j.nome, rating: j.rating, icone: j.icone, conectado: j.conectado })) } });
+    res.json({ sala: { codigo: r.codigo, meta: r.meta, jogadores: r.jogadores.map(j => ({ nome: j.nome, rating: j.rating, icone: j.icone })) } });   // sem "conectado" nem "estado": a presença de quem está invisível não sai por aqui
   });
 
   // ---------- o jogo em si (arquivos estáticos; só o que o navegador precisa) ----------
@@ -485,16 +487,23 @@ function criarApp({ banco, segredo, raiz = path.join(__dirname, '..'), tempos = 
     // dá para chamar qualquer um que esteja online (com pouca gente jogando, é o jeito de começar uma partida);
     // quem não é amigo conta num limite por minuto, contra quem sai chamando todo mundo
     const rel = await banco.amizade(conta.id, alvo.id), amigo = !!(rel && rel.aceita);
-    if (!amigo && alvo.extras && alvo.extras.privacidade && alvo.extras.privacidade.chamadas === 'amigos') return aviso(`${alvo.nome} só aceita chamadas de amigos. Peça amizade primeiro.`);
-    if (!online(alvo.id)) return aviso(`${alvo.nome} não está com o jogo aberto agora. Mande o link do convite.`);
-    if (salas.estadoDe(alvo.id) === 'jogando') return aviso(`${alvo.nome} está no meio de uma partida.`);
     const k = `${conta.id}:${alvo.id}`, agora = Date.now();
-    if (agora - (chamadas.get(k) || 0) < INTERVALO_CHAMADA) return aviso(`Você acabou de chamar ${alvo.nome}.`);
     if (!amigo) {
+      // quem não é amigo: toda tentativa conta no limite (antes de qualquer resposta), e a resposta é uma só para
+      // "offline", "jogando", "invisível" e "só aceita amigos" — senão, chamar pelo console viraria um detector de presença
+      // que fura o "não aparecer no Online agora"
       const recentes = (chamadasDesconhecidos.get(conta.id) || []).filter(t => agora - t < 60_000);
       if (recentes.length >= MAX_CHAMADAS_DESCONHECIDOS) return aviso('Calma: muitas chamadas seguidas. Espere um minuto.');
       chamadasDesconhecidos.set(conta.id, recentes.concat(agora));
+      const pv = (alvo.extras && alvo.extras.privacidade) || {};
+      if (pv.visivel === false || pv.chamadas === 'amigos' || !online(alvo.id) || salas.estadoDe(alvo.id) === 'jogando') {
+        return aviso(`Não dá para chamar ${alvo.nome} agora. Mande o link do convite (ou peça amizade).`);
+      }
+    } else {
+      if (!online(alvo.id)) return aviso(`${alvo.nome} não está com o jogo aberto agora. Mande o link do convite.`);
+      if (salas.estadoDe(alvo.id) === 'jogando') return aviso(`${alvo.nome} está no meio de uma partida.`);
     }
+    if (agora - (chamadas.get(k) || 0) < INTERVALO_CHAMADA) return aviso(`Você acabou de chamar ${alvo.nome}.`);
     chamadas.set(k, agora);
     if (chamadas.size > 5000) for (const [x, t] of chamadas) if (agora - t > INTERVALO_CHAMADA) chamadas.delete(x);
     if (chamadasDesconhecidos.size > 5000) for (const [x, ts] of chamadasDesconhecidos) if (ts.every(t => agora - t > 60_000)) chamadasDesconhecidos.delete(x);

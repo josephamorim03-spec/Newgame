@@ -2148,7 +2148,7 @@
         <span class="segmento" role="group" aria-label="Quem pode me chamar"><button data-on="priv-todos" aria-pressed="${!soAmigos}">Todos</button><button data-on="priv-amigos" aria-pressed="${soAmigos}">Só amigos</button></span></div>
       <form class="form-conta" id="formSenha" autocomplete="off"><h3>Trocar a senha</h3>
         <label>Senha atual<span class="campo-senha"><input class="campo" name="atual" type="password" autocomplete="current-password" required maxlength="72"><button type="button" class="ver-senha" data-ver-senha aria-label="Mostrar a senha" aria-pressed="false">mostrar</button></span></label>
-        <label>Senha nova<span class="campo-senha"><input class="campo" name="nova" type="password" autocomplete="new-password" required minlength="6" maxlength="72" placeholder="6 caracteres ou mais"><button type="button" class="ver-senha" data-ver-senha aria-label="Mostrar a senha" aria-pressed="false">mostrar</button></span></label>
+        <label>Senha nova<span class="campo-senha"><input class="campo" name="nova" type="password" autocomplete="new-password" required minlength="8" maxlength="72" placeholder="8 caracteres ou mais"><button type="button" class="ver-senha" data-ver-senha aria-label="Mostrar a senha" aria-pressed="false">mostrar</button></span></label>
         ${botaoComTrava('btn btn-papel', 'Trocar a senha')}
         <p class="nota" style="margin:0">Os outros aparelhos saem da conta; este continua.</p></form>
       <div class="linha-botoes"><button class="btn btn-papel" data-on="sair-de-tudo">Sair de todos os aparelhos</button></div>
@@ -2234,7 +2234,7 @@
         <div class="abas" role="group" aria-label="Conta"><button data-on="aba-entrar" aria-pressed="${!criar}">Entrar</button><button data-on="aba-criar" aria-pressed="${criar}">Criar conta</button></div>
         <form class="form-conta" id="formConta" autocomplete="on">
           <label>Nome<input class="campo" name="nome" autocomplete="username" required minlength="3" maxlength="20" pattern="[A-Za-zÀ-ÖØ-öø-ÿ0-9_.\\-]{3,20}" placeholder="de 3 a 20 letras">${criar && Rede.nomeStatus ? `<small class="nome-status ${Rede.nomeStatus.livre ? 'livre' : 'ocupado'}" aria-live="polite">${esc(Rede.nomeStatus.livre ? '✓ Nome livre' : Rede.nomeStatus.erro)}</small>` : ''}</label>
-          <label>Senha<span class="campo-senha"><input class="campo" name="senha" type="password" autocomplete="${criar ? 'new-password' : 'current-password'}" required minlength="6" maxlength="72" placeholder="6 caracteres ou mais"><button type="button" class="ver-senha" data-ver-senha aria-label="Mostrar a senha" aria-pressed="false">mostrar</button></span></label>
+          <label>Senha<span class="campo-senha"><input class="campo" name="senha" type="password" autocomplete="${criar ? 'new-password' : 'current-password'}" required minlength="${criar ? 8 : 6}" maxlength="72" placeholder="${criar ? '8 caracteres ou mais' : 'sua senha'}"><button type="button" class="ver-senha" data-ver-senha aria-label="Mostrar a senha" aria-pressed="false">mostrar</button></span></label>
           ${botaoComTrava('btn btn-mel', criar ? 'Criar conta' : 'Entrar')}
         </form>
         ${criar ? '<p class="nota" style="margin:0">O que você ganhou neste aparelho vai junto para a conta (até 600 moedas e itens até um valor de 900).</p>' : ''}`;

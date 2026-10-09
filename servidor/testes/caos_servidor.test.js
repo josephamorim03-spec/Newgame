@@ -30,7 +30,7 @@ async function http(base, metodo, rota, corpo, cab = {}) {
 test('rotas: corpos malformados nunca dão 500, e arquivos do servidor não vazam', async () => {
   const s = await subir();
   try {
-    const conta = JSON.parse((await http(s.base, 'POST', '/api/contas', JSON.stringify({ nome: 'Caos', senha: 'senha123' }))).texto);
+    const conta = JSON.parse((await http(s.base, 'POST', '/api/contas', JSON.stringify({ nome: 'Caos', senha: 'dado-forte-7' }))).texto);
     const aut = { authorization: 'Bearer ' + conta.token };
     const rotas = [['POST', '/api/contas'], ['POST', '/api/entrar'], ['GET', '/api/eu'], ['PUT', '/api/eu/dados'], ['GET', '/api/ranking'],
       ['POST', '/api/loja/comprar'], ['POST', '/api/loja/usar'], ['POST', '/api/solo'], ['POST', '/api/salas'], ['GET', '/api/salas/ABCDEF'], ['GET', '/api/salas/%00'], ['DELETE', '/api/eu']];
@@ -67,7 +67,7 @@ function cliente(url) {
 test('WebSocket: lixo e mensagens fora de ordem não derrubam nem travam', async () => {
   const s = await subir();
   try {
-    const t = JSON.parse((await http(s.base, 'POST', '/api/contas', JSON.stringify({ nome: 'Lixo', senha: 'senha123' }))).texto).token;
+    const t = JSON.parse((await http(s.base, 'POST', '/api/contas', JSON.stringify({ nome: 'Lixo', senha: 'dado-forte-7' }))).texto).token;
     const c = await cliente(s.ws);
     for (const m of ['', 'nada', '[]', 'null', '{"tipo":1}', '{"tipo":"acao"}', '{"tipo":"entrar","sala":{}}', Buffer.from([0, 255, 3])]) c.enviar(m);
     c.enviar({ tipo: 'ola', token: { a: 1 } }); c.enviar({ tipo: 'ola', token: 'x.y' });
@@ -90,7 +90,7 @@ test('sequências ao acaso: 3 contas, 2 abas, quedas e voltas, e toda partida em
   try {
     const rng = rngDe(+process.env.CAOS_SEMENTE || 2024);
     const contas = [];
-    for (const nome of ['Xavi', 'Yara', 'Zeca']) contas.push(JSON.parse((await http(s.base, 'POST', '/api/contas', JSON.stringify({ nome, senha: 'senha123' }))).texto));
+    for (const nome of ['Xavi', 'Yara', 'Zeca']) contas.push(JSON.parse((await http(s.base, 'POST', '/api/contas', JSON.stringify({ nome, senha: 'dado-forte-7' }))).texto));
     const codigos = [];
     for (const c of contas.slice(0, 2)) codigos.push(JSON.parse((await http(s.base, 'POST', '/api/salas', '{}', { authorization: 'Bearer ' + c.token })).texto).sala.codigo);
     const abas = [];
@@ -132,8 +132,8 @@ test('sequências ao acaso: 3 contas, 2 abas, quedas e voltas, e toda partida em
 test('erros que tiram da sala vêm marcados (o cliente sai da partida fantasma)', async () => {
   const s = await subir();
   try {
-    const t = JSON.parse((await http(s.base, 'POST', '/api/contas', JSON.stringify({ nome: 'Duas', senha: 'senha123' }))).texto).token;
-    const u = JSON.parse((await http(s.base, 'POST', '/api/contas', JSON.stringify({ nome: 'Abas', senha: 'senha123' }))).texto).token;
+    const t = JSON.parse((await http(s.base, 'POST', '/api/contas', JSON.stringify({ nome: 'Duas', senha: 'dado-forte-7' }))).texto).token;
+    const u = JSON.parse((await http(s.base, 'POST', '/api/contas', JSON.stringify({ nome: 'Abas', senha: 'dado-forte-7' }))).texto).token;
     const codigo = JSON.parse((await http(s.base, 'POST', '/api/salas', '{}', { authorization: 'Bearer ' + t })).texto).sala.codigo;
     const a1 = await cliente(s.ws), a2 = await cliente(s.ws), b = await cliente(s.ws);
     for (const [c, tk] of [[a1, t], [a2, t], [b, u]]) c.enviar({ tipo: 'ola', token: tk });
@@ -157,7 +157,7 @@ test('nível de rival herdado (constructor), pico de texto na importação e COR
   await new Promise(r => servidor.listen(0, '127.0.0.1', r));
   const base = `http://127.0.0.1:${servidor.address().port}`;
   try {
-    const nova = JSON.parse((await http(base, 'POST', '/api/contas', JSON.stringify({ nome: 'Herdado', senha: 'senha123', importar: { rating: 1100, pico: 'muito' } }))).texto);
+    const nova = JSON.parse((await http(base, 'POST', '/api/contas', JSON.stringify({ nome: 'Herdado', senha: 'dado-forte-7', importar: { rating: 1100, pico: 'muito' } }))).texto);
     assert.strictEqual(nova.conta.solo_pico, 1100, 'pico de texto não vira NaN');
     const aut = { authorization: 'Bearer ' + nova.token };
     for (const nivel of ['constructor', 'toString', '__proto__', 'online']) {

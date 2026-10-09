@@ -9,7 +9,26 @@ const NOME_VALIDO = /^[A-Za-zÀ-ÖØ-öø-ÿ0-9_.-]{3,20}$/;
 const chaveDoNome = nome => String(nome).trim().normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[._-]/g, '');
 // a chave precisa de pelo menos 3 letras ou números (".a_" não é nome)
 const validarNome = nome => typeof nome === 'string' && NOME_VALIDO.test(nome.trim()) && chaveDoNome(nome).length >= 3;
+// para entrar: as senhas antigas (6+) continuam valendo
 const validarSenha = senha => typeof senha === 'string' && senha.length >= 6 && senha.length <= 72;
+// senhas que aparecem no topo das listas vazadas (Brasil e mundo): as primeiras que um robô tenta
+const SENHAS_COMUNS = new Set(['12345678', '123456789', '1234567890', '87654321', '11111111', '00000000', '12341234', '11223344', '01020304',
+  'senha123', 'senha1234', 'senha12345', 'minhasenha', 'mudar123', 'password', 'password1', 'password123', 'qwerty123', 'qwertyuiop', 'asdfghjkl',
+  'abcd1234', 'abc12345', 'abcdefgh', 'iloveyou', 'teamo123', 'euteamo1', 'brasil123', 'flamengo', 'corinthians', 'palmeiras', 'saopaulo', 'gremio123',
+  'vasco123', 'botafogo', 'santos123', 'cruzeiro', 'internacional', 'dragonball', 'pokemon1', 'minecraft', 'princesa', 'jesus123', 'deusefiel',
+  'admin123', 'administrador', 'welcome1', 'letmein1', 'football', 'baseball', 'sunshine', 'princess', 'superman', 'batman123', 'dicedue1', 'diceduel', 'dados123']);
+// "" se a senha nova serve; senão, o motivo (para a tela mostrar)
+function problemaSenhaNova(senha, nome = '') {
+  if (typeof senha !== 'string' || senha.length < 8 || senha.length > 72) return 'Senha: de 8 a 72 caracteres.';
+  const s = senha.toLowerCase(), k = chaveDoNome(senha), kn = chaveDoNome(nome || '');
+  if (SENHAS_COMUNS.has(s) || SENHAS_COMUNS.has(k)) return 'Essa senha está entre as mais usadas do mundo (é a primeira que um robô tenta). Escolha outra.';
+  if (/^(.)\1+$/.test(senha)) return 'Uma letra ou número repetido é fácil de adivinhar. Escolha outra.';
+  if (/^\d+$/.test(senha) && senha.length < 12) return 'Só números (como datas) é fácil de adivinhar: misture letras.';
+  if (kn.length >= 3 && k.includes(kn)) return 'A senha não pode ter o seu nome dentro.';
+  const seq = 'abcdefghijklmnopqrstuvwxyz0123456789', inv = [...seq].reverse().join('');
+  if (k.length >= 8 && (seq.includes(k) || inv.includes(k))) return 'Uma sequência (abcdefgh, 12345678) é fácil de adivinhar. Escolha outra.';
+  return '';
+}
 
 // scrypt fora da thread principal: com a versão síncrona, cada login travava o servidor inteiro (todas as partidas) por ~50-100 ms
 const scrypt = (senha, sal) => new Promise((ok, erro) => crypto.scrypt(senha, sal, 64, (e, k) => (e ? erro(e) : ok(k))));
@@ -66,4 +85,4 @@ function limitador({ janelaMs = 60_000, maximo = 10 } = {}) {
   };
 }
 
-module.exports = { tempoLegivel, chaveDoNome, validarNome, validarSenha, hashSenha, conferirSenha, criarToken, lerToken, lerSessao, sessaoValida, limitador };
+module.exports = { tempoLegivel, chaveDoNome, validarNome, validarSenha, problemaSenhaNova, hashSenha, conferirSenha, criarToken, lerToken, lerSessao, sessaoValida, limitador };

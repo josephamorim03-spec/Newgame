@@ -542,7 +542,10 @@
       t.armada[1] = 'oculta';
     }
     t.eventos = t.eventos.map(e => (e.tipo === 'armou' && e.p === 1 && e.c !== 'espelho' ? { ...e, c: null } : e));
-    if (t.fase !== 'fim') t.stats[1].blefes = 0;   // contar os blefes dele entregaria qual é a carta virada
+    // as estatísticas do rival vão por lista do que pode ir (um contador novo não vaza sozinho); os blefes nunca vão,
+    // nem no fim: contar os blefes dele entregaria qual "?" era blefe
+    const s = t.stats[1];
+    t.stats[1] = { disp: s.disp, rupt: s.rupt, maior: s.maior, maiorDisp: s.maiorDisp, compras: s.compras, guardou: s.guardou, trocou: s.trocou, cartas: s.cartas, blefes: 0 };
     if (t.mao && t.vez !== 0) t.mao = null;
     return t;
   }
