@@ -208,6 +208,8 @@ function criarApp({ banco, segredo, raiz = path.join(__dirname, '..'), tempos = 
         if (++c.n > lim.ws) { if (c.n === lim.ws + 1) salas.enviar(ws, { tipo: 'erro', erro: 'Calma: muitas jogadas de uma vez.' }); return; }
         let m; try { m = JSON.parse(dados); } catch (e) { return; }
         if (!m || typeof m !== 'object') return;
+        // o pulso do cliente: o navegador não vê os pings do servidor, então pergunta se a conexão ainda está viva
+        if (m.tipo === 'pulso') return salas.enviar(ws, { tipo: 'pulso' });
         try {
           if (m.tipo === 'ola') {
             const id = Auth.lerToken(m.token, segredo), conta = id && await banco.contaPorId(id);
@@ -226,8 +228,8 @@ function criarApp({ banco, segredo, raiz = path.join(__dirname, '..'), tempos = 
       });
       ws.on('close', () => salas.caiu(ws));
     });
-    // a Railway corta conexões paradas: um ping a cada 25 s mantém viva e descobre quem caiu
-    const batida = setInterval(() => wss.clients.forEach(ws => { if (!ws.vivo) return ws.terminate(); ws.vivo = false; ws.ping(); }), 25_000);
+    // a Railway corta conexões paradas: um ping a cada 15 s mantém viva e descobre quem caiu (em 15 a 30 s)
+    const batida = setInterval(() => wss.clients.forEach(ws => { if (!ws.vivo) return ws.terminate(); ws.vivo = false; ws.ping(); }), 15_000);
     batida.unref();
     wss.on('close', () => clearInterval(batida));
     return wss;
