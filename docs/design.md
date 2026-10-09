@@ -189,6 +189,18 @@ evitar o Bolso sem saber) perdeu mais do que as armadilhas tiram. O jogo diz iss
 | Virada (vencer depois de estar 4+ pontos atrás) | "Virada!" no fim |
 | Fim de partida | lista de **bons momentos** (repetições viram "×2"), **recordes** (maior disparo, maior corrente, melhor sequência) e confete na vitória |
 
+**Tocar escolhe, não pega (v0.9.2).** Um toque sem querer não pode custar a partida:
+- tocar num dado da Mesa só o **escolhe** (ele sobe com um aro dourado); nada sai da Mesa;
+- tocar em outro dado troca a escolha; "Cancelar" (ou Esc) desfaz sem gastar a vez;
+- o dado só é pego quando se escolhe o destino (corrente, guardar ou trocar), numa ação só;
+- tocar de novo no mesmo dado leva ao destino principal, mas **nunca** a uma ruptura nem a desperdiçar o próprio
+  Espelho: nesses casos é preciso apertar o botão do aviso;
+- as cartas que pedem um dado (Virar, Espelho, Ajuste) seguem a mesma regra: escolher, poder trocar de dado, e só
+  então confirmar; "Cancelar" devolve a carta para a mão;
+- no segundo dado da Pressa vale o mesmo, e "Dispensar o 2.º dado" continua lá.
+
+No online, a jogada vai ao servidor como `{tipo:'pegar', idx, modo}`: dado e destino juntos.
+
 **Perder também é aconchegante.** A ruptura é um "plonc" descendente com poeirinha caindo devagar, nunca um
 estrondo. A derrota diz "Fim de partida" e mostra os bons momentos da partida.
 

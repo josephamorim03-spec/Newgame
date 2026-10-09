@@ -103,7 +103,8 @@ const espera = ms => new Promise(r => setTimeout(r, ms));
         const bs = [...document.querySelectorAll('#mesa .pega:not([disabled])')];
         if (!bs.length) return false;
         const b = bs[Math.floor(Math.random() * bs.length)];
-        b.click(); if (DiceDuel.jogo.confirma) b.click();
+        b.click();   // tocar escolhe; o destino confirma
+        const dst = document.querySelector('#acoes [data-destino]'); if (dst) dst.click();
         return true;
       }
       return false;

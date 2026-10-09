@@ -69,7 +69,33 @@ const RAIZ = path.join(__dirname, '..');
   const etiqueta = await pg.textContent('.pega[data-i="0"] .tags');
   confere(etiqueta.includes('vira 5') && etiqueta.includes('Rompe'), `Espelho: o 2 marcado (sincronizaria) mostra "vira 5" e "Rompe" (mostrou "${etiqueta.trim()}")`);
   await dado(0); j = await J();
-  confere(j.confirma === 9401 && j.mesa.length === 2, 'Espelho: pegar o dado marcado que rompe pede confirmação');
+  confere(j.sel === 9401 && j.mesa.length === 2 && (await pg.textContent('#acoes')).includes('vai romper'), 'Espelho: o dado marcado que rompe só é escolhido, com o aviso de ruptura');
+  await dado(0); j = await J();
+  confere(j.mesa.length === 2 && j.cor[0].length === 3, 'Espelho: tocar de novo num dado que rompe não pega');
+
+  // 4b. Escolher não é pegar: trocar de dado, cancelar, tocar de novo pega
+  await cena([[], []], () => { const j = DiceDuel.jogo; j.vez = 0; j.fase = 'pegar'; j.cor[0] = [3]; j.bolso[0] = null; j.mesa = [{ id: 9451, v: 4 }, { id: 9452, v: 1 }, { id: 9453, v: 2 }]; });
+  await dado(0); await dado(1); j = await J();
+  confere(j.sel === 9452 && j.mesa.length === 3 && j.cor[0].length === 1, 'Escolha: tocar em outro dado troca a escolha e nada sai da Mesa');
+  await pg.click('[data-acao="cancelar"]'); j = await J();
+  confere(j.sel === null && j.mesa.length === 3 && j.vez === 0, 'Escolha: Cancelar desfaz sem gastar a vez');
+  await dado(2); await pg.click('[data-destino="guardar"]'); j = await J();
+  confere(j.bolso[0] === 2 && j.mesa.length === 2 && j.cor[0].join() === '3', 'Escolha: o botão do destino pega e guarda no Bolso');
+  await cena([[], []], () => { const j = DiceDuel.jogo; j.vez = 0; j.fase = 'pegar'; j.cor[0] = [3]; j.mesa = [{ id: 9461, v: 4 }, { id: 9462, v: 1 }]; });
+  await dado(0); await dado(0); j = await J();
+  confere(j.cor[0].join() === '3,4' && j.mesa.length === 1, 'Escolha: tocar duas vezes no mesmo dado põe na corrente');
+
+  // 4c. Cartas com alvo: escolher, trocar, confirmar (ou cancelar e a carta volta)
+  await cena([['virar'], []], () => { const j = DiceDuel.jogo; j.vez = 0; j.fase = 'pegar'; j.mesa = [{ id: 9471, v: 2 }, { id: 9472, v: 6 }]; });
+  await usar('virar'); await dado(0); await dado(1); j = await J();
+  confere(j.sel === 9472 && j.cartas[0].virar === 'pronta' && j.mesa[0].v === 2 && j.mesa[1].v === 6, 'Virar: escolher e trocar o dado não gasta a carta');
+  await pg.click('[data-acao="cancelar-alvo"]'); j = await J();
+  confere(j.cartas[0].virar === 'pronta' && j.fase === 'pegar', 'Virar: Cancelar devolve a carta para a mão');
+  await usar('virar'); await dado(1); await pg.click('[data-acao="confirmar-alvo"]'); j = await J();
+  confere(j.cartas[0].virar === 'usada' && j.mesa[1].v === 1, 'Virar: confirmar vira o dado escolhido');
+  await cena([['ajuste'], []], () => { const j = DiceDuel.jogo; j.vez = 0; j.fase = 'pegar'; j.mesa = [{ id: 9481, v: 2 }, { id: 9482, v: 5 }]; });
+  await usar('ajuste'); await dado(0); await dado(1); await pg.click('[data-ajuste="1"]'); j = await J();
+  confere(j.mesa[0].v === 2 && j.mesa[1].v === 6, 'Ajuste: dá para trocar de dado antes do ±1');
 
   // 5. Blefe: o efeito virado aparece como "?" para o rival e funciona normalmente depois
   await cena([['ajuste', 'interferencia'], []], () => { const j = DiceDuel.jogo; j.vez = 0; j.fase = 'pegar'; j.mesa = [{ id: 9501, v: 3 }, { id: 9502, v: 4 }]; });
