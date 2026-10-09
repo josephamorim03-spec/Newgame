@@ -16,7 +16,8 @@ e entra no jogo como WebP de 160 px em js/retratos_pintados.js, embutida em data
 file://, no servidor e no HTML único, sem pedido extra de rede. Quem não tem versão pintada usa o vetor
 de js/retratos.js. Para tirar um retrato pintado, apague arte/fonte/<id>.png e rode --embutir.
 Personagens claros (os de "fundo_opaco" em arte/retratos.json) somem no fundo transparente da API, que
-toma o pelo branco por fundo: esses vêm num magenta liso, que é recortado aqui.
+toma o pelo branco por fundo: esses vêm num verde-croma liso, que é recortado aqui (o pedido cru
+fica em builds/crus/ para conferir o recorte).
 """
 import base64
 import io
@@ -97,8 +98,8 @@ def gerar(prompt, qualidade, ref=None, fundo="transparent"):
             sys.exit(f"Sem conexão com a API: {e}")
 
 
-def recortar_fundo(png_bytes, tolerancia=90):
-    """apaga o fundo liso (magenta): a cor é lida nos cantos e sai da imagem toda, inclusive de vãos
+def recortar_fundo(png_bytes, tolerancia=70):
+    """apaga o fundo liso (verde-croma): a cor é lida nos cantos e sai da imagem toda, inclusive de vãos
     fechados como a alça da xícara; a borda serrilhada entre o fundo e o contorno fica meio transparente"""
     im = Image.open(io.BytesIO(png_bytes)).convert("RGBA")
     w, h = im.size
@@ -169,7 +170,10 @@ def main():
         ref = REFERENCIA / f"{id_}.png"
         ref = ref if ref.exists() else None
         if id_ in cfg.get("fundo_opaco", []):
-            png = recortar_fundo(gerar(p, qualidade, ref, fundo="opaque"))
+            cru = gerar(p, qualidade, ref, fundo="opaque")
+            (RAIZ / "builds" / "crus").mkdir(parents=True, exist_ok=True)
+            (RAIZ / "builds" / "crus" / f"{id_}.png").write_bytes(cru)
+            png = recortar_fundo(cru)
         else:
             png = gerar(p, qualidade, ref)
         (FONTE / f"{id_}.png").write_bytes(png)
