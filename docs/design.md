@@ -58,7 +58,7 @@ Antes da partida, cada um monta um deck de **até 3 cartas**, cada uma valendo *
 | Fundo Falso | armadilha | o próximo dado que o rival guardar no Bolso cai (na troca, caem os dois) | 54,5% (deck à mostra) |
 | Lacre (v0.11) | armadilha | o próximo efeito do rival é gasto sem agir (blefe desvirado e Sobrecarga também) | — |
 | Âncora | armadilha | protege sua corrente de 4+: o dado que romperia é jogado fora | 58,9% |
-| Interferência ⚡ | armadilha | o próximo disparo do rival com 4+ vale −1 | 59,0% |
+| Interferência ⚡ | armadilha | o próximo disparo do rival com 4+ vale −1, **se ele estiver na frente ou empatado** (v0.11); atrás, ela espera | 57,1% |
 | Pedágio ⚡ | armadilha | no próximo disparo do rival, você ganha **+2** (era +3 até a v0.10) | 57,3% |
 
 \* deck de 1 carta contra deck vazio; 50% = carta neutra (`sim/valor_cartas.py`).
@@ -68,9 +68,14 @@ em pares, contra a Dona Coruja e contra um jogador descuidado (`sim/escolhidas.p
 §9). Todas ficam dentro da faixa das antigas (médias de 48,4% a 50,2%) e nenhuma pune mais quem está aprendendo.
 A medição achou um problema antigo: na meta 16, o **Pedágio** dominava (24 dos 25 melhores decks; os +3 poupavam um
 disparo inteiro), e sozinho ele era a carta mais forte do jogo (61% contra deck vazio, na meta 12). Desde a v0.11
-o Pedágio dá **+2 em qualquer meta**: sozinho cai para 57%, como as outras. Na meta 12 isso deixa a Interferência um
-pouco mais forte (média de 54% para 55%; o melhor deck, Âncora + Coringa + Interferência, de 59,9% para 61,6%): é o
-próximo ajuste a medir. Empate não existe: se os dois passam da meta no mesmo disparo, vence quem disparou.
+o Pedágio dá **+2 em qualquer meta**: sozinho cai para 57%, como as outras. Empate não existe: se os dois passam da
+meta no mesmo disparo, vence quem disparou.
+
+**A Interferência só freia quem lidera (v0.11).** Valendo sempre, ela estava em 15 dos 20 decks mais fortes da meta
+12: o −1 no disparo automático de 6 obrigava o rival a disparar mais uma vez (dois disparos de 6 fecham a meta 12).
+Agora o −1 só vale se o rival estiver na frente ou empatado; atrás, o disparo não a gasta. Ela passa a ser uma carta
+de recuperação, e o simulador mostra a meta 12 mais variada (10 dos 20 melhores com ela) e a meta 16 sem nenhum deck
+acima de 58% (`docs/balanceamento-cartas.md` §12).
 
 ### Quando as cartas se cruzam (exceções explícitas)
 

@@ -904,6 +904,7 @@ button.vaga { cursor: pointer; border: 0; background: #fff3dc; color: var(--tint
         <ol class="cruzam">
           <li><b>Armadilhas não se anulam: cada uma olha a sua condição.</b> A Âncora do rival segurar a corrente dele não gasta a sua Interferência; ela continua esperando o próximo disparo dele de 4+.</li>
           <li><b>“4 ou mais” é sempre o tamanho da corrente na hora.</b> Interferência e Sobrecarga olham a corrente no disparo; a Âncora, a corrente no momento em que o dado ruim ia entrar. Com 3, nenhuma delas é gasta e elas continuam esperando.</li>
+          <li><b>Interferência:</b> só freia quem está na frente ou empatado (o placar de antes do disparo). Se o rival disparar atrás de você, ela não age e continua armada.</li>
           <li><b>Interferência + Sobrecarga:</b> as duas valem. Um disparo de 4 vale 2 + 2 − 1 = 3.</li>
           <li><b>Pedágio:</b> +2. Pega qualquer disparo, até o de 3 e o automático de 6. Se os dois passarem da meta, vence quem disparou.</li>
           <li><b>Coringa e Âncora:</b> com o Coringa ativo, nenhum dado rompe, então a Âncora não é gasta.</li>
@@ -1050,7 +1051,7 @@ button.vaga { cursor: pointer; border: 0; background: #fff3dc; color: var(--tint
   </div>
 </div>
 <script>
-/* Dice Duel · motor de regras compartilhado (navegador e servidor), regras v0.11 (blefe; Pausa, Reverso, Furto, Lacre; Pedágio +2)
+/* Dice Duel · motor de regras compartilhado (navegador e servidor), regras v0.11 (blefe; Pausa, Reverso, Furto, Lacre; Pedágio +2; Interferência só em quem lidera)
  * Tudo aqui é puro: recebe o estado da partida (um objeto serializável) e o altera.
  * Nada de DOM, som ou tempo. Quem desenha (o cliente) ou transmite (o servidor) lê
  * j.eventos, j.log e j.momentos depois de cada ação.
@@ -1081,7 +1082,7 @@ button.vaga { cursor: pointer; border: 0; background: #fff3dc; color: var(--tint
     fundo:         { nome: 'Fundo Falso', tipo: 'armadilha', verbo: 'o Bolso dele cai', texto: 'Na próxima vez que o rival guardar um dado no Bolso, o dado cai. Na troca, os dois caem e nada entra na corrente dele.' },
     lacre:         { nome: 'Lacre', tipo: 'armadilha', verbo: 'anula o próximo efeito', texto: 'O próximo efeito que o rival usar não funciona: a carta dele é gasta sem agir. Vale também para um blefe desvirado e para a Sobrecarga.' },
     ancora:        { nome: 'Âncora', tipo: 'armadilha', verbo: 'protege sua corrente', texto: 'Protege a sua corrente de 4 dados ou mais: se entrar nela um dado que não sincroniza, esse dado é jogado fora e a corrente continua inteira. Não mexe nos pontos. Com corrente de 3 ou menos, a ruptura acontece e a Âncora continua armada.' },
-    interferencia: { nome: 'Interferência', tipo: 'armadilha', pontos: true, verbo: '−1 no disparo dele', texto: 'O próximo disparo do rival com 4 dados ou mais vale 1 ponto a menos. Disparo de 3 não a gasta: ela continua armada.' },
+    interferencia: { nome: 'Interferência', tipo: 'armadilha', pontos: true, verbo: '−1 em quem lidera', texto: 'O próximo disparo do rival com 4 dados ou mais vale 1 ponto a menos, se ele estiver na sua frente ou empatado. Disparo de 3, ou com ele atrás, não a gasta: ela continua armada.' },
     pedagio:       { nome: 'Pedágio', tipo: 'armadilha', pontos: true, verbo: '+2 quando ele dispara', texto: 'No próximo disparo do rival, de qualquer tamanho, você ganha 2 pontos. Se os dois passarem da meta, vence quem disparou.' },
   };
   // Pedágio: +2 em qualquer meta (v0.11). Com +3 ele era a carta mais forte sozinha (61% contra deck vazio) e,
@@ -1472,7 +1473,9 @@ button.vaga { cursor: pointer; border: 0; background: #fff3dc; color: var(--tint
     const cor = j.cor[p], L = cor.length, n = j.nomes, antes = j.pts.slice();
     let ganho = pontos(L), extra = '';
     if (j.sobre[p] && L >= 4) { ganho += 2; j.sobre[p] = false; extra = ' com Sobrecarga'; }
-    if (L >= 4 && j.armada[1 - p] === 'interferencia') {
+    // Interferência (v0.11): só freia quem está na frente ou empatado (o placar de antes do disparo). Valendo sempre,
+    // ela estava em 15 dos 20 decks mais fortes da meta 12 (docs/balanceamento-cartas.md §12)
+    if (L >= 4 && j.armada[1 - p] === 'interferencia' && j.pts[p] >= j.pts[1 - p]) {
       const a = ganho; ganho = Math.max(0, ganho - 1);
       revelar(j, 1 - p, 'interferencia', `o disparo de ${L} de ${n[p]} valeu +${ganho} em vez de +${a}.`);
     }
@@ -3739,7 +3742,7 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
   // o que uma carta virada (?) do rival pode ser, com o que cada armadilha faria neste disparo
   function cartaViradaTxt(r, L) {
     const j = jogo, n = nomes();
-    const efeito = { interferencia: L >= 4 ? 'Interferência (−1 neste disparo)' : 'Interferência (não pega disparo de 3)', pedagio: `Pedágio (+${R.pedagioDe(jogo.meta)} para ele se você disparar)`,
+    const efeito = { interferencia: L < 4 ? 'Interferência (não pega disparo de 3)' : j.pts[1 - r] >= j.pts[r] ? 'Interferência (−1 neste disparo)' : 'Interferência (não pega: você está atrás)', pedagio: `Pedágio (+${R.pedagioDe(jogo.meta)} para ele se você disparar)`,
       fundo: 'Fundo Falso (só pega o Bolso)', ancora: 'Âncora (protege a corrente dele)' };
     const traps = armadilhasOcultas(r).map(c => efeito[c] || CARTAS[c].nome);
     const blefes = j.decks[r].filter(c => CARTAS[c].tipo === 'efeito' && ['pronta', 'armada'].includes(j.cartas[r][c])).map(c => CARTAS[c].nome);
@@ -3797,7 +3800,7 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
       const L = eu.length, rk = risco(p), vale = pontos(L) + (j.sobre[p] && L >= 4 ? 2 : 0);
       let nivel, txt;
       const ocultas = j.armada[1 - p] && j.armada[1 - p] !== 'espelho' ? armadilhasOcultas(1 - p) : [];
-      if (j.pts[p] + vale >= j.meta) { nivel = 'vence'; txt = `Disparar agora vence a partida${ocultas.includes('interferencia') && L >= 4 && j.pts[p] + vale - 1 < j.meta ? ', se a carta virada do rival não for a Interferência' : ''}.`; }
+      if (j.pts[p] + vale >= j.meta) { nivel = 'vence'; txt = `Disparar agora vence a partida${ocultas.includes('interferencia') && L >= 4 && j.pts[p] >= j.pts[1 - p] && j.pts[p] + vale - 1 < j.meta ? ', se a carta virada do rival não for a Interferência' : ''}.`; }
       else if (rk.bolso) { nivel = 'baixo'; txt = j.bolso[p] === null ? 'Seu Bolso está vazio: na próxima vez você sempre pode guardar o dado. Segurar não rompe.' : `O ${j.bolso[p]} do seu Bolso sincroniza com o seu ${frente(eu)}: segurar não rompe.`; }
       else if (rk.n >= 2) {
         if (rk.k === 0) { nivel = 'alto'; txt = `Nenhum dos ${rk.n} dados que ficam na Mesa sincroniza com o seu ${frente(eu)}. Se segurar, rompe na próxima vez.`; }

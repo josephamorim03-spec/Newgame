@@ -565,3 +565,41 @@ com as regras atuais (15 cartas, Mesa de 5, Pedágio +2).
   vem do −1 no disparo automático de 6 (na meta 12, dois disparos de 6 fecham a partida). Duas variantes simples
   não fecham: valer só em 4 ou 5 dados deixa a meta 12 mais variada, mas na meta 16 a Interferência passa a
   dominar (59,7% de média, decks de 65%); valer só em 5+, ou em qualquer disparo, não muda nada.
+
+## 12. Interferência: só em quem lidera (v0.11)
+
+Pedido do dono: medir tudo e deixar o melhor possível. Cada variante foi medida isolada (contra deck vazio,
+16 mil partidas), com todos os 402 decks e no torneio dos 20 melhores (`sim/torneio.py`), nas metas 12 e 16.
+
+**Isoladas, contra deck vazio:**
+
+| Interferência | Meta 12 | Meta 16 |
+|---|---|---|
+| Valendo sempre (até a v0.10) | **60,5%** | 52,1% |
+| Não pega o 6 (espera um disparo de 4 ou 5) | 54,3% | (na meta 16 domina: decks de 65%) |
+| O disparo de 6 a gasta sem tirar ponto | 51,8% | 52,1% (decks: a pior carta, 46,5%) |
+| Só em quem lidera; atrás o disparo a gasta | 53,4% | 51,4% |
+| **Só em quem lidera; atrás ela espera (adotada)** | **57,1%** | **55,0%** |
+| Para comparar: Pressa · Âncora · Pedágio +2 · Ajuste · Coringa | 58,6 · 58,1 · 57,3 · 56,7 · 55,8 | 54,4 · 52,3 · 55,5 · 55,9 · 55,1 |
+
+**Com todos os decks e no torneio dos fortes:**
+
+| | Até a v0.10 | Adotada |
+|---|---|---|
+| Meta 12: Interferência entre os 20 melhores | 15 | 10 |
+| Meta 12: melhor contra os outros 19 fortes | 57,5% | 57,8% |
+| Meta 12: média dos decks com Interferência | 55,4% | 53,5% |
+| Meta 16: decks acima de 58% (contra o campo) | 2 | **0** |
+| Meta 16: melhor contra os outros 19 fortes | 52,3% | 52,8% |
+| Meta 16: média dos decks com Interferência | 49,3% | 51,3% |
+
+- A regra: «O próximo disparo do rival com 4 dados ou mais vale 1 ponto a menos, se ele estiver na sua frente ou
+  empatado. Disparo de 3, ou com ele atrás, não a gasta: ela continua armada.» O placar olhado é o de antes do
+  disparo.
+- Ela vira uma carta de recuperação, como a regra de quem está atrás abrir a Mesa.
+- **A Âncora não muda.** Contra os outros decks fortes, os de Âncora ficam entre 45% e 53%, e o Fundo Falso é o
+  contra-jogo dela.
+- **Na meta 12, o teto fica onde estava:** os melhores decks fazem cerca de 58% contra os outros fortes (Coringa +
+  Interferência + Pausa e Ajuste + Interferência + Pausa), e todos têm um deck que os vence. Com degraus de pontos
+  grandes (1, 2, 4, 6) numa meta curta, esse teto apareceu em todas as variantes medidas.
+- No simulador: `BAL['interf_lider'] = 'espera'` (o padrão).

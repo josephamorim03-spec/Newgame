@@ -1,4 +1,4 @@
-/* Dice Duel · motor de regras compartilhado (navegador e servidor), regras v0.11 (blefe; Pausa, Reverso, Furto, Lacre; Pedágio +2)
+/* Dice Duel · motor de regras compartilhado (navegador e servidor), regras v0.11 (blefe; Pausa, Reverso, Furto, Lacre; Pedágio +2; Interferência só em quem lidera)
  * Tudo aqui é puro: recebe o estado da partida (um objeto serializável) e o altera.
  * Nada de DOM, som ou tempo. Quem desenha (o cliente) ou transmite (o servidor) lê
  * j.eventos, j.log e j.momentos depois de cada ação.
@@ -29,7 +29,7 @@
     fundo:         { nome: 'Fundo Falso', tipo: 'armadilha', verbo: 'o Bolso dele cai', texto: 'Na próxima vez que o rival guardar um dado no Bolso, o dado cai. Na troca, os dois caem e nada entra na corrente dele.' },
     lacre:         { nome: 'Lacre', tipo: 'armadilha', verbo: 'anula o próximo efeito', texto: 'O próximo efeito que o rival usar não funciona: a carta dele é gasta sem agir. Vale também para um blefe desvirado e para a Sobrecarga.' },
     ancora:        { nome: 'Âncora', tipo: 'armadilha', verbo: 'protege sua corrente', texto: 'Protege a sua corrente de 4 dados ou mais: se entrar nela um dado que não sincroniza, esse dado é jogado fora e a corrente continua inteira. Não mexe nos pontos. Com corrente de 3 ou menos, a ruptura acontece e a Âncora continua armada.' },
-    interferencia: { nome: 'Interferência', tipo: 'armadilha', pontos: true, verbo: '−1 no disparo dele', texto: 'O próximo disparo do rival com 4 dados ou mais vale 1 ponto a menos. Disparo de 3 não a gasta: ela continua armada.' },
+    interferencia: { nome: 'Interferência', tipo: 'armadilha', pontos: true, verbo: '−1 em quem lidera', texto: 'O próximo disparo do rival com 4 dados ou mais vale 1 ponto a menos, se ele estiver na sua frente ou empatado. Disparo de 3, ou com ele atrás, não a gasta: ela continua armada.' },
     pedagio:       { nome: 'Pedágio', tipo: 'armadilha', pontos: true, verbo: '+2 quando ele dispara', texto: 'No próximo disparo do rival, de qualquer tamanho, você ganha 2 pontos. Se os dois passarem da meta, vence quem disparou.' },
   };
   // Pedágio: +2 em qualquer meta (v0.11). Com +3 ele era a carta mais forte sozinha (61% contra deck vazio) e,
@@ -420,7 +420,9 @@
     const cor = j.cor[p], L = cor.length, n = j.nomes, antes = j.pts.slice();
     let ganho = pontos(L), extra = '';
     if (j.sobre[p] && L >= 4) { ganho += 2; j.sobre[p] = false; extra = ' com Sobrecarga'; }
-    if (L >= 4 && j.armada[1 - p] === 'interferencia') {
+    // Interferência (v0.11): só freia quem está na frente ou empatado (o placar de antes do disparo). Valendo sempre,
+    // ela estava em 15 dos 20 decks mais fortes da meta 12 (docs/balanceamento-cartas.md §12)
+    if (L >= 4 && j.armada[1 - p] === 'interferencia' && j.pts[p] >= j.pts[1 - p]) {
       const a = ganho; ganho = Math.max(0, ganho - 1);
       revelar(j, 1 - p, 'interferencia', `o disparo de ${L} de ${n[p]} valeu +${ganho} em vez de +${a}.`);
     }

@@ -239,3 +239,18 @@ test('Pedágio: +2 na meta 12 e na 16 (docs/balanceamento-cartas.md §10)', () =
     assert.strictEqual(Regras.pedagioDe(meta), ganho);
   }
 });
+
+test('Interferência: só tira ponto de quem está na frente ou empatado; atrás, continua armada', () => {
+  const caso = (ptsDisp, ptsDono) => {
+    const j = Regras.criarPartida({ decks: [['interferencia'], []], vez: 0, meta: 16, rng: rngDe(8) });
+    Regras.aplicar(j, 0, { tipo: 'carta', carta: 'interferencia' });
+    j.pts = [ptsDono, ptsDisp]; j.vez = 1; j.fase = 'decidir'; j.cor[1] = [1, 2, 3, 4];
+    Regras.aplicar(j, 1, { tipo: 'disparar' });
+    return j;
+  };
+  const frente = caso(5, 3), empate = caso(3, 3), atras = caso(2, 3);
+  assert.strictEqual(frente.pts[1], 5 + Regras.pontos(4) - 1); assert.strictEqual(frente.cartas[0].interferencia, 'usada');
+  assert.strictEqual(empate.pts[1], 3 + Regras.pontos(4) - 1); assert.strictEqual(empate.cartas[0].interferencia, 'usada');
+  assert.strictEqual(atras.pts[1], 2 + Regras.pontos(4), 'atrás: o disparo vale inteiro');
+  assert.strictEqual(atras.armada[0], 'interferencia', 'atrás: ela continua armada');
+});

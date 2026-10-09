@@ -677,7 +677,7 @@
   // o que uma carta virada (?) do rival pode ser, com o que cada armadilha faria neste disparo
   function cartaViradaTxt(r, L) {
     const j = jogo, n = nomes();
-    const efeito = { interferencia: L >= 4 ? 'Interferência (−1 neste disparo)' : 'Interferência (não pega disparo de 3)', pedagio: `Pedágio (+${R.pedagioDe(jogo.meta)} para ele se você disparar)`,
+    const efeito = { interferencia: L < 4 ? 'Interferência (não pega disparo de 3)' : j.pts[1 - r] >= j.pts[r] ? 'Interferência (−1 neste disparo)' : 'Interferência (não pega: você está atrás)', pedagio: `Pedágio (+${R.pedagioDe(jogo.meta)} para ele se você disparar)`,
       fundo: 'Fundo Falso (só pega o Bolso)', ancora: 'Âncora (protege a corrente dele)' };
     const traps = armadilhasOcultas(r).map(c => efeito[c] || CARTAS[c].nome);
     const blefes = j.decks[r].filter(c => CARTAS[c].tipo === 'efeito' && ['pronta', 'armada'].includes(j.cartas[r][c])).map(c => CARTAS[c].nome);
@@ -735,7 +735,7 @@
       const L = eu.length, rk = risco(p), vale = pontos(L) + (j.sobre[p] && L >= 4 ? 2 : 0);
       let nivel, txt;
       const ocultas = j.armada[1 - p] && j.armada[1 - p] !== 'espelho' ? armadilhasOcultas(1 - p) : [];
-      if (j.pts[p] + vale >= j.meta) { nivel = 'vence'; txt = `Disparar agora vence a partida${ocultas.includes('interferencia') && L >= 4 && j.pts[p] + vale - 1 < j.meta ? ', se a carta virada do rival não for a Interferência' : ''}.`; }
+      if (j.pts[p] + vale >= j.meta) { nivel = 'vence'; txt = `Disparar agora vence a partida${ocultas.includes('interferencia') && L >= 4 && j.pts[p] >= j.pts[1 - p] && j.pts[p] + vale - 1 < j.meta ? ', se a carta virada do rival não for a Interferência' : ''}.`; }
       else if (rk.bolso) { nivel = 'baixo'; txt = j.bolso[p] === null ? 'Seu Bolso está vazio: na próxima vez você sempre pode guardar o dado. Segurar não rompe.' : `O ${j.bolso[p]} do seu Bolso sincroniza com o seu ${frente(eu)}: segurar não rompe.`; }
       else if (rk.n >= 2) {
         if (rk.k === 0) { nivel = 'alto'; txt = `Nenhum dos ${rk.n} dados que ficam na Mesa sincroniza com o seu ${frente(eu)}. Se segurar, rompe na próxima vez.`; }

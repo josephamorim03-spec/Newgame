@@ -14,7 +14,7 @@ def opcoes(cor): return 6 if not cor else _opc(cor[-1])
 
 ARMADILHAS={'espelho','interferencia','fundo','pedagio','ancora'}
 # números das cartas (os valores finais, ajustados por simulação; docs/design.md §4)
-BAL=dict(interf_menos=1, interf_min=4, interf_max=9, interf_6='normal', interf_lider=False, pedagio=2, pedagio16=2, fundo_tudo=True, rerrolar_tudo=True, ancora_min=4, rerrolar_cor=2, coringa_cor=2, sobre=2, espelho_sem_bolso=True)
+BAL=dict(interf_menos=1, interf_min=4, interf_max=9, interf_6='normal', interf_lider='espera', pedagio=2, pedagio16=2, fundo_tudo=True, rerrolar_tudo=True, ancora_min=4, rerrolar_cor=2, coringa_cor=2, sobre=2, espelho_sem_bolso=True)
 import os, json
 BAL.update(json.loads(os.environ.get('BAL', '{}')))   # ex.: BAL='{"pedagio": 2}' para testar outro número
 EFEITOS={'rerrolar','virar','ajuste','pressa','coringa','sobrecarga'}
