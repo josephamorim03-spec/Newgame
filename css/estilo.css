@@ -723,3 +723,28 @@ button.vaga { cursor: pointer; border: 0; background: #fff3dc; color: var(--tint
 }
 #deckGrade h3 { margin-top: 16px; }
 #deckGrade h3:first-child { margin-top: 0; }
+
+/* ---------- amigos: lista com quem está online, pedidos, chamar para a sala; nome livre ao criar a conta ---------- */
+.nome-status { font-size: 13px; font-weight: 700; }
+.nome-status.livre { color: #2f7a4a; }
+.nome-status.ocupado { color: #7a2a24; }
+.amigos { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; max-height: 300px; overflow-y: auto; }
+.amigo { display: grid; grid-template-columns: 32px minmax(0, 1fr) auto auto; gap: 8px; align-items: center; padding: 6px 8px 6px 10px; border-radius: 12px; background: var(--papel-2); }
+.amigo .avatar { width: 32px; height: 32px; margin: 0; }
+.amigo .quem-rk { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
+.amigo .quem-rk small { display: flex; align-items: center; gap: 5px; font-weight: 600; font-size: 12px; color: var(--tinta-suave); }
+.amigo.pedido { box-shadow: inset 0 0 0 2px var(--mel); }
+.amigos .vazio { list-style: none; font-size: 13px; color: var(--tinta-suave); padding: 4px 2px; }
+.ponto-status { width: 8px; height: 8px; border-radius: 50%; background: #b7a99a; flex: none; }
+.ponto-status.online, .ponto-status.numa-sala { background: #3fa564; box-shadow: 0 0 0 3px rgba(63,165,100,.2); }
+.ponto-status.jogando { background: var(--mel); }
+.btn.btn-peq { min-height: 36px; padding: 0 12px; border-radius: 12px; font-size: 14px; box-shadow: 0 3px 0 var(--papel-2), inset 0 0 0 1.5px rgba(58,42,46,.12); }
+.btn-mel.btn-peq { box-shadow: 0 3px 0 var(--mel-escuro); }
+.selo { display: inline-grid; place-items: center; min-width: 20px; height: 20px; padding: 0 6px; margin-left: 4px; border-radius: 999px; background: var(--rival); color: #fff; font-size: 12px; letter-spacing: 0; vertical-align: middle; }
+.chamado-amigo { position: fixed; left: 50%; bottom: calc(16px + env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 70; width: min(440px, calc(100vw - 32px));
+  display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px 12px; align-items: center; padding: 12px 14px; border-radius: 18px; background: var(--papel); color: var(--tinta);
+  box-shadow: 0 6px 0 var(--papel-2), 0 18px 40px rgba(0,0,0,.45), 0 0 0 3px var(--mel); animation: caixaEntra .3s cubic-bezier(.2,1.3,.4,1); }
+.chamado-amigo .avatar { width: 44px; height: 44px; margin: 0; }
+.chamado-amigo .quem-chamou small { display: block; font-size: 12px; color: var(--tinta-suave); }
+.chamado-amigo .linha-botoes { grid-column: 1 / -1; }
+.chamado-amigo .linha-botoes .btn { flex: 1 1 120px; }
