@@ -99,13 +99,14 @@ const espera = ms => new Promise(r => setTimeout(r, ms));
     await espera(300);
     for (const pg of [ana, bia]) { await fechar(pg); await pg.evaluate(() => document.querySelectorAll('.versus').forEach(v => v.click())); }
     await ana.screenshot({ path: path.join(FOTOS, 'online-partida-celular.png') }); await layout(ana, 'partida'); await layout(bia, 'partida');
-    // Ajustes no meio da partida online: tocar em "Modo" (o marcado e o outro) não é desistência
+    // Ajustes no meio da partida online: tocar na meta (a marcada e a outra) não é desistência
     await ana.evaluate(() => document.getElementById('btnConfig').click());
-    await ana.click('#janelaConfig [data-cfg="modo"][data-v="bot"]'); await ana.click('#janelaConfig [data-cfg="modo"][data-v="local"]');
+    const metaAna = await ana.evaluate(() => DiceDuel.st.cfg.meta);
+    await ana.click(`#janelaConfig [data-cfg="meta"][data-v="${metaAna}"]`); await ana.click(`#janelaConfig [data-cfg="meta"][data-v="${metaAna === 12 ? 16 : 12}"]`);
     await espera(400);
     const depoisCfg = await ana.evaluate(() => ({ modo: DiceDuel.jogo.modo, fase: DiceDuel.jogo.fase, aviso: !document.getElementById('avisoCfg').hidden }));
     if (depoisCfg.modo !== 'online' || depoisCfg.fase === 'fim' || !depoisCfg.aviso) throw new Error('Ajustes no online mexeram na partida: ' + JSON.stringify(depoisCfg));
-    await ana.click('#janelaConfig [data-cfg="modo"][data-v="bot"]');
+    await ana.click(`#janelaConfig [data-cfg="meta"][data-v="${metaAna}"]`);
     await fechar(ana);
     const vistaBia = await bia.evaluate(() => ({ nomes: DiceDuel.jogo.nomes, deckRival: DiceDuel.jogo.decks[1], ritmo: DiceDuel.jogo.ritmo, limite: DiceDuel.jogo.limiteVez }));
     if (vistaBia.ritmo !== 'calma' || vistaBia.limite !== 120000) throw new Error('o tempo por vez escolhido não chegou à partida: ' + JSON.stringify(vistaBia));
@@ -166,6 +167,14 @@ const espera = ms => new Promise(r => setTimeout(r, ms));
     // depois de sair da sala, volta a jogar contra o rival do jogo
     const modo = await bia.evaluate(() => DiceDuel.jogo.modo);
     if (modo !== 'bot') throw new Error('depois de sair da sala esperava o modo contra o rival, veio ' + modo);
+    // a Ana (que desistiu, ainda na sala) vai ao menu principal e toca em Jogar: larga a sala e joga contra o rival
+    // (não pode virar um pedido de revanche)
+    await ana.waitForFunction(() => DiceDuel.jogo.fase === 'fim', null, { timeout: 5000 });
+    await ana.evaluate(() => { document.getElementById('janelaOnline').hidden = true; DiceDuel.abrirInicio(); });
+    await ana.click('[data-inicio="jogar"]');
+    await ana.waitForFunction(() => DiceDuel.jogo && DiceDuel.jogo.modo === 'bot', null, { timeout: 5000 });
+    const anaDepois = await ana.evaluate(() => ({ menu: !document.getElementById('inicio').hidden, sala: localStorage.getItem('diceduel.sala') }));
+    if (anaDepois.menu || anaDepois.sala) throw new Error('o Jogar do menu depois do online não começou a partida: ' + JSON.stringify(anaDepois));
     // recarregar mantém a conta
     await ana.reload(); await ana.waitForTimeout(500);
     const nome = await ana.evaluate(() => DiceDuel.st.conta.online && DiceDuel.st.conta.online.nome);

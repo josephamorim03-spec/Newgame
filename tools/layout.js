@@ -13,7 +13,7 @@ const LARGURAS = [[360, 740], [390, 844], [430, 932], [768, 1024], [1360, 900]];
 // roda dentro da página
 function verificar() {
   const probs = [];
-  const SOLTOS = '.elo, .alvo-rival, .marca-esp, .kbd, .fala, .pop';
+  const SOLTOS = '.elo, .alvo-rival, .marca-esp, .kbd, .fala, .pop, .cartas .raio';   // selos de canto: saem da borda de propósito
   // checkVisibility vê também a opacidade dos pais (os dados de uma ruptura caem e somem com opacity 0 no dado, não no pip)
   const visivel = el => { const r = el.getBoundingClientRect(); const cs = getComputedStyle(el); return r.width > 0 && r.height > 0 && cs.visibility !== 'hidden' && cs.display !== 'none' && cs.opacity !== '0' && (!el.checkVisibility || el.checkVisibility({ opacityProperty: true, visibilityProperty: true })); };
   const nome = el => el.tagName.toLowerCase() + (el.id ? '#' + el.id : '') + (typeof el.className === 'string' && el.className.trim() ? '.' + el.className.trim().split(/\s+/).slice(0, 3).join('.') : '');
@@ -118,7 +118,7 @@ if (require.main === module) (async () => {
     await pg.click('#btnFecharDeck');
     await pg.evaluate(() => document.getElementById('btnCarteira').click()); for (const aba of ['cartas', 'dados', 'icones', 'mesas']) { await pg.click(`[data-aba-loja="${aba}"]`); await olha('loja-' + aba, aba === 'cartas'); } await pg.click('#btnComoGanhar'); await olha('loja-ganhar', false); await pg.click('[data-voltar-loja]'); await pg.click('#btnFecharLoja');
     await pg.evaluate(() => document.getElementById('btnOnline').click()); await olha('online-sem-servidor', false); await pg.click('#btnFecharOnline');
-    await pg.evaluate(() => document.getElementById('btnConfig').click()); await olha('ajustes', true); await pg.click('[data-cfg="nivel"][data-v="esperto"]'); await pg.click('#btnFecharConfig');
+    await pg.evaluate(() => document.getElementById('btnConfig').click()); await olha('ajustes', true); await pg.click('#btnFecharConfig'); await pg.click('[data-inicio="rival"][data-v="esperto"]');
     if (w < 1040) { await pg.evaluate(() => document.getElementById('btnRegras').click()); await pg.waitForTimeout(350); await olha('regras', false); await pg.click('#btnFecharLado'); }
     await pg.evaluate(() => document.getElementById('btnDeck').click()); await pg.click('[data-pronto="1"]'); await pg.click('#btnJogarDeck');
     await pg.waitForTimeout(200);

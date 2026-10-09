@@ -51,13 +51,10 @@ fs.mkdirSync(FOTOS, { recursive: true });
       if (conta.dado !== 'dourado' || !conta.cartas.includes('espelho') || conta.icone !== 'raposa' || conta.moedas !== 1000 - 450 - 100 - 110) erros.push(`${r.nome}: a compra na loja não funcionou ${JSON.stringify(conta)}`);
       await pg.click('#btnFecharLoja');
     }
-    if (r.coruja || r.modo === 'local') {
-      await pg.evaluate(() => document.getElementById('btnConfig').click());
-      if (r.modo === 'local') await pg.click('[data-cfg="modo"][data-v="local"]');
-      else await pg.click('[data-cfg="nivel"][data-v="esperto"]');
-      await pg.click('#btnFecharConfig');
-    }
-    await pg.evaluate(() => document.getElementById('btnDeck').click());
+    // a sessão se monta no menu principal: o rival na escolha de cima; a dois, o botão abre os decks dos dois jogadores
+    if (r.coruja) await pg.click('[data-inicio="rival"][data-v="esperto"]');
+    if (r.modo === 'local') await pg.click('[data-inicio="dois"]');
+    else await pg.evaluate(() => document.getElementById('btnDeck').click());
     await pg.click(`[data-pronto="${r.pronto}"]`);
     if (r.modo === 'local') { await pg.click('[data-aba="1"]'); await pg.click('[data-pronto="1"]'); }
     await pg.click('#btnJogarDeck');

@@ -512,11 +512,20 @@ body.mesa-piquenique .ticker .cor0 { color: var(--voce-tinta); } body.mesa-pique
 .cartas .carta { min-width: 0; justify-content: center; padding: 0 8px; }
 .cartas .carta .cnome { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 .cartas .carta small { display: none; }
+/* o raio (carta de pontos) vira um selo no canto: não rouba a largura do nome */
+.cartas .carta { position: relative; }
+.cartas .carta .raio { position: absolute; top: -7px; right: -5px; display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: var(--marfim); box-shadow: 0 1px 3px rgba(58,42,46,.3), inset 0 0 0 1.5px rgba(58,42,46,.14); font-size: 12px; line-height: 1; pointer-events: none; }
 .cartas .carta.armada::after { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--mel); flex: none; }
 .cartas .vazio-cartas { grid-column: 1 / -1; font-size: 13px; color: var(--tinta-suave); }
 .estados { display: flex; flex-wrap: wrap; gap: 6px; }
 .estados:empty { display: none; }
 @media (max-width: 380px) { .cartas .carta svg.ico { display: none; } }
+/* no celular, os nomes compridos (Sobrecarga, Fundo Falso, Interferência) aparecem inteiros: sem o ícone, em 12 px */
+@media (max-width: 520px) {
+  .cartas .carta { font-size: 12px; }
+  .cartas .carta.nome-longo svg.ico { display: none; }
+}
+@media (max-width: 380px) { .cartas .carta { padding: 0 5px; } }
 /* botões: nunca quebram no meio; os de dois níveis têm rótulo e detalhe */
 .botoes .btn { flex: 1 1 auto; white-space: nowrap; padding: 0 14px; font-size: 15px; }
 .btn-duplo { flex-direction: column; gap: 0; line-height: 1.1; padding-block: 6px; white-space: nowrap; }
@@ -863,7 +872,11 @@ button.vaga { cursor: pointer; border: 0; background: #fff3dc; color: var(--tint
 /* fim da partida: Revanche, Compartilhar, Deck e Mesa presos no rodapé da janela, como no deck
    (antes ficavam depois da tabela de estatísticas: no celular era preciso rolar a janela inteira para jogar de novo) */
 #fim .botoes { position: sticky; bottom: -20px; margin: 0 -20px -20px; padding: 12px 20px calc(16px + env(safe-area-inset-bottom, 0px)); background: var(--papel); box-shadow: 0 -6px 8px -8px rgba(58,42,46,.35); z-index: 2; }
-@media (max-width: 520px) { #fim .botoes { display: grid; grid-template-columns: 1fr 1fr; } #fim .botoes .btn { padding: 0 10px; min-width: 0; } }
+/* fim: Jogar de novo inteiro em cima; Menu, Ver a Mesa e Compartilhar lado a lado embaixo */
+#fim .botoes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+#fim .botoes .fim-principal { grid-column: 1 / -1; }
+#fim .botoes .btn { padding: 0 6px; min-width: 0; }
+#fim .botoes .btn:not(.fim-principal) { font-size: 14px; }
 
 /* ---------- partida em foco (v0.11): durante a partida, a tela é só o jogo, centrada ---------- */
 /* o cabeçalho sai; no alto fica só a faixa com Som e Pausa; o tabuleiro fica no meio da tela (vertical e horizontal) */
@@ -902,9 +915,9 @@ button.vaga { cursor: pointer; border: 0; background: #fff3dc; color: var(--tint
 #btnSom .mudo { display: none; }
 #btnSom.sem-som .mudo { display: inline; } #btnSom.sem-som .ondas { display: none; }
 .caixa-menu { gap: 12px; }
-.menu-grade { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.menu-grade .btn { position: relative; }
-.menu-grade .ponto-online { position: absolute; top: 8px; right: 10px; }
+/* a Pausa é curta: voltar, ajudas, regras, ajustes, menu e desistir (o resto mora no menu principal) */
+.menu-lista { display: grid; gap: 8px; }
+.menu-lista [hidden] { display: none; }
 /* a fala do rival sai do retrato para a direita: cobre o nome por um instante, nunca o Bolso nem o placar */
 
 /* ---------- menu principal (v0.11): a primeira tela ---------- */
@@ -920,6 +933,7 @@ button.vaga { cursor: pointer; border: 0; background: #fff3dc; color: var(--tint
 .inicio-perfil b { font-size: 15px; } .inicio-perfil small { color: var(--texto-suave); }
 .inicio-jogar, .inicio-partida { width: 100%; display: grid; gap: 10px; justify-items: stretch; }
 .inicio-jogar .segmento { justify-self: center; margin: 0 auto; }
+.inicio-rival { margin: -4px 0 2px; font-size: 13px; color: var(--texto-suave); }
 .inicio-jogar [hidden] { display: none !important; }
 .inicio-linha:has(> [hidden]) > .btn:not([hidden]) { grid-column: 1 / -1; }
 .inicio-principal { min-height: 60px; font-size: 20px; }
@@ -934,7 +948,6 @@ button.vaga { cursor: pointer; border: 0; background: #fff3dc; color: var(--tint
 .inicio-mais { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; width: 100%; }
 .inicio-ico { display: grid; justify-items: center; gap: 4px; padding: 10px 4px; border: 0; border-radius: 14px; background: rgba(255,243,226,.06); color: var(--texto); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; box-shadow: inset 0 0 0 1.5px rgba(255,243,226,.14); }
 .inicio-ico .ico { width: 24px; height: 24px; }
-.menu-largo { grid-column: 1 / -1; }
 /* com o menu principal aberto, a lateral (regras) abre por cima dele, também no PC */
 .lado.aberto { z-index: 60; }
 @media (min-width: 1040px) {

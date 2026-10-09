@@ -598,7 +598,7 @@
       if (e === 'armada' && !meu && c !== 'espelho') e = 'pronta';
       const raio = k.pontos ? `<span class="raio" aria-label="carta de pontos">${RAIO}</span>` : '';
       const rotulo = e === 'armada' ? (k.tipo === 'efeito' ? 'virada' : 'armada') : '';
-      html += `<button class="carta ${k.tipo} ${e}" data-carta="${c}" data-dono="${p}" aria-label="${k.nome}: ${rotulo || e}">${k.ico}<span class="cnome">${k.nome}</span>${raio}${rotulo ? `<small>${rotulo}</small>` : ''}</button>`;
+      html += `<button class="carta ${k.tipo} ${e}${k.nome.length >= 10 ? ' nome-longo' : ''}" data-carta="${c}" data-dono="${p}" aria-label="${k.nome}: ${rotulo || e}">${k.ico}<span class="cnome">${k.nome}</span>${raio}${rotulo ? `<small>${rotulo}</small>` : ''}</button>`;
     }
     let estados = '';
     if (j.armada[p] && j.armada[p] !== 'espelho' && !meu) estados += `<span class="efeito-ativo oculta" style="background:var(--tinta);color:var(--papel)" title="Uma carta virada: pode ser uma armadilha ou um blefe">${VERSO} carta virada</span>`;
@@ -1226,8 +1226,6 @@
   function abrirConfig() {
     const p = st.pref;
     document.querySelectorAll('#janelaConfig [data-cfg]').forEach(b => b.setAttribute('aria-pressed', String(st.cfg[b.dataset.cfg] + '' === b.dataset.v)));
-    document.getElementById('linhaNivel').hidden = st.cfg.modo !== 'bot';
-    document.getElementById('rivalDesc').textContent = RIVAIS[st.cfg.nivel].desc;
     const marcar = (id, v) => { document.getElementById(id).checked = v; };
     marcar('opSom', p.som); marcar('opMusica', p.musica); marcar('opAnim', p.animacoes); marcar('opParticulas', p.particulas);
     marcar('opTremor', p.tremor); marcar('opVibrar', p.vibrar); marcar('opFalas', p.falas); marcar('opDicas', p.dicas); marcar('opLiberar', p.liberar);
@@ -1328,7 +1326,8 @@
   }
   function desenharInicio() {
     const c = st.conta, nome = st.sessao && st.sessao.perfil ? st.sessao.perfil.nome : 'Convidado';
-    document.getElementById('inicioPerfil').innerHTML = `${iconeSVG(c.icone)}<span><b>${esc(nome)}</b> <small>· nível ${nivelDe(c.xp)} · ${c.moedas} moedas</small></span>`;
+    document.getElementById('inicioPerfil').innerHTML = `${iconeSVG(c.icone)}<span><b>${esc(nome)}</b> <small>· rating ${c.rating} · nível ${nivelDe(c.xp)} · ${c.moedas} moedas</small></span>`;
+    document.getElementById('inicioRival').textContent = `${RIVAIS[st.cfg.nivel].desc} · meta ${st.cfg.meta}`;
     document.getElementById('pontoInicio').hidden = document.getElementById('pontoOnline').hidden;
     inicio.querySelectorAll('[data-inicio="rival"]').forEach(b => b.setAttribute('aria-pressed', String(st.cfg.nivel === b.dataset.v)));
     const g = partidaParaContinuar(), box = document.getElementById('inicioPartida');
@@ -1365,13 +1364,15 @@
     const b = e.target.closest('[data-inicio]'); if (!b) return;
     const a = b.dataset.inicio;
     if (a === 'rival') { st.cfg.nivel = b.dataset.v; salvar(); desenharInicio(); return; }
+    if (a === 'jogar' || a === 'dois') Online.sair();
     if (a === 'jogar') {
       st.cfg.modo = 'bot'; salvar();
       // primeira vez: o deck "Primeira mesa" abre por cima do menu (fechar sem jogar volta para ele)
       if (!st.deckVisto) { st.decks[0] = PRONTOS[0].cartas.slice(); abrirDeck(); return; }
       novaPartida(); return;
     }
-    if (a === 'dois') { st.cfg.modo = 'local'; salvar(); novaPartida(); return; }
+    // a dois, primeiro cada jogador escolhe o deck (as abas Jogador 1 e 2); o Jogar da janela começa
+    if (a === 'dois') { st.cfg.modo = 'local'; st.abaDeck = 0; salvar(); abrirDeck(); return; }
     if (a === 'continuar') {
       const g = partidaParaContinuar(); if (!g) return desenharInicio();
       if (jogo !== g) jogo = restaurarPartida(g);
@@ -1407,7 +1408,6 @@
   function abrirMenu() {
     document.getElementById('opDicasMenu').checked = st.pref.dicas;
     janelaMenu.querySelector('[data-menu="inicio"]').hidden = online() && jogo.fase !== 'fim';
-    document.getElementById('pontoMenu').hidden = document.getElementById('pontoOnline').hidden;
     const [txt, nota] = textoSair(), b = janelaMenu.querySelector('[data-menu="sair"]');
     document.getElementById('menuSairTxt').textContent = txt; b.dataset.certeza = '';
     document.getElementById('menuSairNota').textContent = (online() && jogo.fase !== 'fim' ? 'No online o relógio da vez continua correndo. ' : '') + nota;
@@ -1438,7 +1438,7 @@
     janelaMenu.hidden = true;
     if (m === 'inicio') { mostrarInicio(); return; }
     if (m === 'regras') { abrirLado(true); if (innerWidth >= 1040) lado.querySelector('.regras').scrollIntoView({ block: 'start' }); }
-    const botao = { ajustes: 'btnConfig', deck: 'btnDeck', loja: 'btnCarteira', online: 'btnOnline' }[m];
+    const botao = { ajustes: 'btnConfig' }[m];
     if (botao) document.getElementById(botao).click();
   });
 
@@ -1518,11 +1518,10 @@
     const aviso = document.getElementById('avisoCfg');
     if (online()) {
       // no meio de uma partida online, sair é desistir: isso fica só no botão Desistir (que pede confirmação)
-      if (jogo.fase !== 'fim') { aviso.textContent = 'Vale depois desta partida online. Para sair agora, use Desistir.'; aviso.hidden = false; return; }
-      if (k === 'modo') sairDaSala();
+      if (jogo.fase !== 'fim') { aviso.textContent = 'Vale depois desta partida online. Para sair agora, use Desistir.'; aviso.hidden = false; }
       return;
     }
-    aviso.textContent = 'Modo, rival e meta valem na próxima partida.';
+    aviso.textContent = 'A meta vale na próxima partida.';
     if (inicioAberto()) return;   // no menu principal, os ajustes valem para a próxima partida que começar
     if (!jogo || jogo.compras === 0) novaPartida();
     else aviso.hidden = false;
@@ -1546,7 +1545,6 @@
   });
   document.getElementById('btnFecharConfig').addEventListener('click', () => { document.getElementById('janelaConfig').hidden = true; });
 
-  document.getElementById('btnTrocarDeck').addEventListener('click', () => { document.getElementById('fim').hidden = true; abrirDeck(); });
   document.getElementById('btnDeNovo').addEventListener('click', novaPartida);
   document.getElementById('btnFechar').addEventListener('click', () => { document.getElementById('fim').hidden = true; });
   document.getElementById('btnMenuFim').addEventListener('click', () => { document.getElementById('fim').hidden = true; mostrarInicio(); });
@@ -1874,6 +1872,8 @@
   Online.enviar = acao => { if (enviarWs({ tipo: 'acao', acao })) { jogo.pensando = true; render(); } };
   Online.naSala = () => !!(Rede.sala && st.sessao);
   Online.desistir = () => { enviarWs({ tipo: 'desistir' }); };
+  // começar uma partida pelo menu principal larga a sala online (a partida dela já acabou; ali "jogar de novo" seria revanche)
+  Online.sair = () => { if (!Rede.sala) return; if (online()) jogo = null; sairDaSala(); };
   // trocou o deck esperando o amigo: o servidor guarda o deck da entrada, então entra de novo com o novo
   // (pela mesma conexão isso só atualiza o deck; com a partida já começada, o servidor ignora)
   Online.deckMudou = () => { if (Rede.sala && st.sessao && !online()) enviarWs({ tipo: 'entrar', sala: Rede.sala, deck: deckOnline() }); };

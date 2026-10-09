@@ -353,13 +353,20 @@ corrente que ela afeta, e só quando há decisão: dado escolhido (Na corrente, 
 vai o dado, disparar ou segurar, o segundo dado da Pressa, uma carta com alvo e o fim. Não há barra solta: o
 tabuleiro não se mexe. Escolher um dado não tem texto: o "sua vez" do painel e as etiquetas dos dados bastam; a vez
 do rival aparece no painel dele. O único caminho para fora da jogada é a **Pausa**: ela abre
-o menu com Continuar, a chave das ajudas, Regras, Ajustes, Deck, Loja, Online (com o pontinho quando há novidade)
-e Desistir, que pede um segundo toque quando conta como derrota (contra o rival, depois do primeiro dado, e
-online). Fora da partida, o cabeçalho volta. A fala do rival sai do retrato e nunca cobre o Bolso nem o placar.
+uma lista curta: Continuar, a chave das ajudas, Regras e registro, Ajustes, Menu principal (fora do online) e
+Desistir, que pede um segundo toque quando conta como derrota (contra o rival, depois do primeiro dado, e
+online). Deck, Loja e Online moram no menu principal. Fora da partida, o cabeçalho volta. A fala do rival sai do retrato e nunca cobre o Bolso nem o placar.
 
-**Menu principal (v0.11).** O jogo abre nele: logo, nome e rating, a escolha do rival (Diana ou Dona Coruja),
-**Jogar** grande, Online e 2 jogadores, e uma fileira de ícones (Deck, Loja, Regras, Ajustes). A Pausa tem
-"Menu principal" (fora das partidas online, onde sair é desistir) e o cartão do fim tem "Menu".
+**Menu principal (v0.11).** O jogo abre nele: logo, nome, rating, nível e moedas, a escolha do rival (Diana ou
+Dona Coruja, com uma linha sobre o jeito dela e a meta), **Jogar** grande, Online e 2 jogadores, e uma fileira de
+ícones (Deck, Loja, Regras, Ajustes). É ali que a sessão se monta: Jogar começa contra o rival marcado; 2 jogadores
+abre primeiro os decks dos dois (abas Jogador 1 e 2) e o Jogar da janela começa. Ajustes não repete modo nem
+rival: ficou com meta, ritmo do rival, som e imagem. O cartão do fim tem **Jogar de novo** inteiro em cima e, em
+baixo, Menu, Ver a Mesa e Compartilhar. Começar pelo menu depois de uma partida online larga a sala (ali, "jogar
+de novo" seria revanche).
+
+**Cartas no celular.** Os nomes compridos (Sobrecarga, Fundo Falso, Interferência) aparecem inteiros: sem o ícone e
+em 12 px; o raio das cartas de pontos virou um selo no canto, que não rouba a largura do nome.
 
 **Partida offline guardada.** A partida contra o rival ou a dois fica guardada no aparelho a cada jogada (desde o
 primeiro dado; acabar ou começar outra apaga). Fora da partida não há relógio: fechar a aba e voltar dias depois
@@ -368,9 +375,7 @@ Abandonar pede um segundo toque e diz o preço antes: contra o rival conta como 
 para 977"); a dois, não custa nada e só some. Online o relógio é o da sala (tempo por vez escolhido ao criá-la, em
 `docs/servidor.md`): quem cai tem o tempo de voltar e, se não volta, perde.
 
-**Partida:**
-- modo (contra um rival ou 2 jogadores);
-- rival (Diana ou Dona Coruja);
+**Partida** (modo e rival se escolhem no menu principal):
 - meta (12 ou 16);
 - ritmo do rival (calmo, normal, rápido).
 

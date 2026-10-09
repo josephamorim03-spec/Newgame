@@ -541,11 +541,20 @@ body.mesa-piquenique .ticker .cor0 { color: var(--voce-tinta); } body.mesa-pique
 .cartas .carta { min-width: 0; justify-content: center; padding: 0 8px; }
 .cartas .carta .cnome { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 .cartas .carta small { display: none; }
+/* o raio (carta de pontos) vira um selo no canto: não rouba a largura do nome */
+.cartas .carta { position: relative; }
+.cartas .carta .raio { position: absolute; top: -7px; right: -5px; display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: var(--marfim); box-shadow: 0 1px 3px rgba(58,42,46,.3), inset 0 0 0 1.5px rgba(58,42,46,.14); font-size: 12px; line-height: 1; pointer-events: none; }
 .cartas .carta.armada::after { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--mel); flex: none; }
 .cartas .vazio-cartas { grid-column: 1 / -1; font-size: 13px; color: var(--tinta-suave); }
 .estados { display: flex; flex-wrap: wrap; gap: 6px; }
 .estados:empty { display: none; }
 @media (max-width: 380px) { .cartas .carta svg.ico { display: none; } }
+/* no celular, os nomes compridos (Sobrecarga, Fundo Falso, Interferência) aparecem inteiros: sem o ícone, em 12 px */
+@media (max-width: 520px) {
+  .cartas .carta { font-size: 12px; }
+  .cartas .carta.nome-longo svg.ico { display: none; }
+}
+@media (max-width: 380px) { .cartas .carta { padding: 0 5px; } }
 /* botões: nunca quebram no meio; os de dois níveis têm rótulo e detalhe */
 .botoes .btn { flex: 1 1 auto; white-space: nowrap; padding: 0 14px; font-size: 15px; }
 .btn-duplo { flex-direction: column; gap: 0; line-height: 1.1; padding-block: 6px; white-space: nowrap; }
@@ -892,7 +901,11 @@ button.vaga { cursor: pointer; border: 0; background: #fff3dc; color: var(--tint
 /* fim da partida: Revanche, Compartilhar, Deck e Mesa presos no rodapé da janela, como no deck
    (antes ficavam depois da tabela de estatísticas: no celular era preciso rolar a janela inteira para jogar de novo) */
 #fim .botoes { position: sticky; bottom: -20px; margin: 0 -20px -20px; padding: 12px 20px calc(16px + env(safe-area-inset-bottom, 0px)); background: var(--papel); box-shadow: 0 -6px 8px -8px rgba(58,42,46,.35); z-index: 2; }
-@media (max-width: 520px) { #fim .botoes { display: grid; grid-template-columns: 1fr 1fr; } #fim .botoes .btn { padding: 0 10px; min-width: 0; } }
+/* fim: Jogar de novo inteiro em cima; Menu, Ver a Mesa e Compartilhar lado a lado embaixo */
+#fim .botoes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+#fim .botoes .fim-principal { grid-column: 1 / -1; }
+#fim .botoes .btn { padding: 0 6px; min-width: 0; }
+#fim .botoes .btn:not(.fim-principal) { font-size: 14px; }
 
 /* ---------- partida em foco (v0.11): durante a partida, a tela é só o jogo, centrada ---------- */
 /* o cabeçalho sai; no alto fica só a faixa com Som e Pausa; o tabuleiro fica no meio da tela (vertical e horizontal) */
@@ -931,9 +944,9 @@ button.vaga { cursor: pointer; border: 0; background: #fff3dc; color: var(--tint
 #btnSom .mudo { display: none; }
 #btnSom.sem-som .mudo { display: inline; } #btnSom.sem-som .ondas { display: none; }
 .caixa-menu { gap: 12px; }
-.menu-grade { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.menu-grade .btn { position: relative; }
-.menu-grade .ponto-online { position: absolute; top: 8px; right: 10px; }
+/* a Pausa é curta: voltar, ajudas, regras, ajustes, menu e desistir (o resto mora no menu principal) */
+.menu-lista { display: grid; gap: 8px; }
+.menu-lista [hidden] { display: none; }
 /* a fala do rival sai do retrato para a direita: cobre o nome por um instante, nunca o Bolso nem o placar */
 
 /* ---------- menu principal (v0.11): a primeira tela ---------- */
@@ -949,6 +962,7 @@ button.vaga { cursor: pointer; border: 0; background: #fff3dc; color: var(--tint
 .inicio-perfil b { font-size: 15px; } .inicio-perfil small { color: var(--texto-suave); }
 .inicio-jogar, .inicio-partida { width: 100%; display: grid; gap: 10px; justify-items: stretch; }
 .inicio-jogar .segmento { justify-self: center; margin: 0 auto; }
+.inicio-rival { margin: -4px 0 2px; font-size: 13px; color: var(--texto-suave); }
 .inicio-jogar [hidden] { display: none !important; }
 .inicio-linha:has(> [hidden]) > .btn:not([hidden]) { grid-column: 1 / -1; }
 .inicio-principal { min-height: 60px; font-size: 20px; }
@@ -963,7 +977,6 @@ button.vaga { cursor: pointer; border: 0; background: #fff3dc; color: var(--tint
 .inicio-mais { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; width: 100%; }
 .inicio-ico { display: grid; justify-items: center; gap: 4px; padding: 10px 4px; border: 0; border-radius: 14px; background: rgba(255,243,226,.06); color: var(--texto); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; box-shadow: inset 0 0 0 1.5px rgba(255,243,226,.14); }
 .inicio-ico .ico { width: 24px; height: 24px; }
-.menu-largo { grid-column: 1 / -1; }
 /* com o menu principal aberto, a lateral (regras) abre por cima dele, também no PC */
 .lado.aberto { z-index: 60; }
 @media (min-width: 1040px) {
@@ -989,6 +1002,7 @@ button.vaga { cursor: pointer; border: 0; background: #fff3dc; color: var(--tint
     <div class="inicio-partida" id="inicioPartida" hidden></div>
     <div class="inicio-jogar" id="inicioJogar">
       <span class="segmento" role="group" aria-label="Rival"><button data-inicio="rival" data-v="aprendiz">Diana</button><button data-inicio="rival" data-v="esperto">Dona Coruja</button></span>
+      <p class="inicio-rival" id="inicioRival"></p>
       <button class="btn btn-mel inicio-principal" data-inicio="jogar">Jogar</button>
       <div class="inicio-linha"><button class="btn btn-papel" data-inicio="online">Online<span class="ponto-online" id="pontoInicio" hidden></span></button><button class="btn btn-papel" data-inicio="dois">2 jogadores</button></div>
     </div>
@@ -1157,13 +1171,10 @@ button.vaga { cursor: pointer; border: 0; background: #fff3dc; color: var(--tint
       <h2 id="menuTitulo">Pausa</h2>
       <button class="btn btn-mel" data-menu="continuar">Continuar a partida</button>
       <div class="linha-cfg"><span><label for="opDicasMenu">Ajudas na partida</label><small>etiquetas nos dados, dicas e explicações</small></span><input class="chave-liga" type="checkbox" id="opDicasMenu"></div>
-      <div class="menu-grade">
-        <button class="btn btn-papel menu-largo" data-menu="inicio">Menu principal</button>
+      <div class="menu-lista">
         <button class="btn btn-papel" data-menu="regras">Regras e registro</button>
         <button class="btn btn-papel" data-menu="ajustes">Ajustes</button>
-        <button class="btn btn-papel" data-menu="deck">Deck</button>
-        <button class="btn btn-papel" data-menu="loja">Loja</button>
-        <button class="btn btn-papel menu-online" data-menu="online">Online<span class="ponto-online" id="pontoMenu" hidden></span></button>
+        <button class="btn btn-papel" data-menu="inicio">Menu principal</button>
         <button class="btn btn-papel perigo" data-menu="sair"><span id="menuSairTxt">Desistir</span></button>
       </div>
       <p class="nota" id="menuSairNota" style="margin:0"></p>
@@ -1175,14 +1186,6 @@ button.vaga { cursor: pointer; border: 0; background: #fff3dc; color: var(--tint
       <h2 id="cfgTitulo">Ajustes</h2>
       <h3>Partida</h3>
       <div class="cfg-grupo">
-        <div class="linha-cfg"><span><label>Modo</label></span>
-          <div class="segmento" role="group" aria-label="Modo">
-            <button data-cfg="modo" data-v="bot">Contra um rival</button><button data-cfg="modo" data-v="local">2 jogadores</button>
-          </div></div>
-        <div class="linha-cfg" id="linhaNivel"><span><label>Rival</label><small id="rivalDesc"></small></span>
-          <div class="segmento" role="group" aria-label="Rival">
-            <button data-cfg="nivel" data-v="aprendiz">Diana</button><button data-cfg="nivel" data-v="esperto">Dona Coruja</button>
-          </div></div>
         <div class="linha-cfg"><span><label>Meta</label><small>16 deixa a partida mais longa</small></span>
           <div class="segmento" role="group" aria-label="Pontos para vencer">
             <button data-cfg="meta" data-v="12">12</button><button data-cfg="meta" data-v="16">16</button>
@@ -1191,7 +1194,7 @@ button.vaga { cursor: pointer; border: 0; background: #fff3dc; color: var(--tint
           <div class="segmento" role="group" aria-label="Ritmo do rival">
             <button data-cfg="ritmo" data-v="calmo">Calmo</button><button data-cfg="ritmo" data-v="normal">Normal</button><button data-cfg="ritmo" data-v="rapido">Rápido</button>
           </div></div>
-        <p class="nota" id="avisoCfg" hidden>Modo, rival e meta valem na próxima partida.</p>
+        <p class="nota" id="avisoCfg" hidden>A meta vale na próxima partida.</p>
       </div>
       <h3>Som</h3>
       <div class="cfg-grupo">
@@ -1246,11 +1249,10 @@ button.vaga { cursor: pointer; border: 0; background: #fff3dc; color: var(--tint
       <ul class="momentos" id="fimMomentos"></ul>
       <table class="tabela" id="fimTabela"></table>
       <div class="botoes">
-        <button class="btn btn-mel" id="btnDeNovo">Jogar de novo</button>
-        <button class="btn btn-papel" id="btnCompartilhar">Compartilhar</button>
-        <button class="btn btn-papel" id="btnTrocarDeck">Deck</button>
-        <button class="btn btn-papel" id="btnFechar">Mesa</button>
+        <button class="btn btn-mel fim-principal" id="btnDeNovo">Jogar de novo</button>
         <button class="btn btn-papel" id="btnMenuFim">Menu</button>
+        <button class="btn btn-papel" id="btnFechar">Ver a Mesa</button>
+        <button class="btn btn-papel" id="btnCompartilhar">Compartilhar</button>
       </div>
     </div>
   </div>
@@ -3890,7 +3892,7 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
       if (e === 'armada' && !meu && c !== 'espelho') e = 'pronta';
       const raio = k.pontos ? `<span class="raio" aria-label="carta de pontos">${RAIO}</span>` : '';
       const rotulo = e === 'armada' ? (k.tipo === 'efeito' ? 'virada' : 'armada') : '';
-      html += `<button class="carta ${k.tipo} ${e}" data-carta="${c}" data-dono="${p}" aria-label="${k.nome}: ${rotulo || e}">${k.ico}<span class="cnome">${k.nome}</span>${raio}${rotulo ? `<small>${rotulo}</small>` : ''}</button>`;
+      html += `<button class="carta ${k.tipo} ${e}${k.nome.length >= 10 ? ' nome-longo' : ''}" data-carta="${c}" data-dono="${p}" aria-label="${k.nome}: ${rotulo || e}">${k.ico}<span class="cnome">${k.nome}</span>${raio}${rotulo ? `<small>${rotulo}</small>` : ''}</button>`;
     }
     let estados = '';
     if (j.armada[p] && j.armada[p] !== 'espelho' && !meu) estados += `<span class="efeito-ativo oculta" style="background:var(--tinta);color:var(--papel)" title="Uma carta virada: pode ser uma armadilha ou um blefe">${VERSO} carta virada</span>`;
@@ -4518,8 +4520,6 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
   function abrirConfig() {
     const p = st.pref;
     document.querySelectorAll('#janelaConfig [data-cfg]').forEach(b => b.setAttribute('aria-pressed', String(st.cfg[b.dataset.cfg] + '' === b.dataset.v)));
-    document.getElementById('linhaNivel').hidden = st.cfg.modo !== 'bot';
-    document.getElementById('rivalDesc').textContent = RIVAIS[st.cfg.nivel].desc;
     const marcar = (id, v) => { document.getElementById(id).checked = v; };
     marcar('opSom', p.som); marcar('opMusica', p.musica); marcar('opAnim', p.animacoes); marcar('opParticulas', p.particulas);
     marcar('opTremor', p.tremor); marcar('opVibrar', p.vibrar); marcar('opFalas', p.falas); marcar('opDicas', p.dicas); marcar('opLiberar', p.liberar);
@@ -4620,7 +4620,8 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
   }
   function desenharInicio() {
     const c = st.conta, nome = st.sessao && st.sessao.perfil ? st.sessao.perfil.nome : 'Convidado';
-    document.getElementById('inicioPerfil').innerHTML = `${iconeSVG(c.icone)}<span><b>${esc(nome)}</b> <small>· nível ${nivelDe(c.xp)} · ${c.moedas} moedas</small></span>`;
+    document.getElementById('inicioPerfil').innerHTML = `${iconeSVG(c.icone)}<span><b>${esc(nome)}</b> <small>· rating ${c.rating} · nível ${nivelDe(c.xp)} · ${c.moedas} moedas</small></span>`;
+    document.getElementById('inicioRival').textContent = `${RIVAIS[st.cfg.nivel].desc} · meta ${st.cfg.meta}`;
     document.getElementById('pontoInicio').hidden = document.getElementById('pontoOnline').hidden;
     inicio.querySelectorAll('[data-inicio="rival"]').forEach(b => b.setAttribute('aria-pressed', String(st.cfg.nivel === b.dataset.v)));
     const g = partidaParaContinuar(), box = document.getElementById('inicioPartida');
@@ -4657,13 +4658,15 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     const b = e.target.closest('[data-inicio]'); if (!b) return;
     const a = b.dataset.inicio;
     if (a === 'rival') { st.cfg.nivel = b.dataset.v; salvar(); desenharInicio(); return; }
+    if (a === 'jogar' || a === 'dois') Online.sair();
     if (a === 'jogar') {
       st.cfg.modo = 'bot'; salvar();
       // primeira vez: o deck "Primeira mesa" abre por cima do menu (fechar sem jogar volta para ele)
       if (!st.deckVisto) { st.decks[0] = PRONTOS[0].cartas.slice(); abrirDeck(); return; }
       novaPartida(); return;
     }
-    if (a === 'dois') { st.cfg.modo = 'local'; salvar(); novaPartida(); return; }
+    // a dois, primeiro cada jogador escolhe o deck (as abas Jogador 1 e 2); o Jogar da janela começa
+    if (a === 'dois') { st.cfg.modo = 'local'; st.abaDeck = 0; salvar(); abrirDeck(); return; }
     if (a === 'continuar') {
       const g = partidaParaContinuar(); if (!g) return desenharInicio();
       if (jogo !== g) jogo = restaurarPartida(g);
@@ -4699,7 +4702,6 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
   function abrirMenu() {
     document.getElementById('opDicasMenu').checked = st.pref.dicas;
     janelaMenu.querySelector('[data-menu="inicio"]').hidden = online() && jogo.fase !== 'fim';
-    document.getElementById('pontoMenu').hidden = document.getElementById('pontoOnline').hidden;
     const [txt, nota] = textoSair(), b = janelaMenu.querySelector('[data-menu="sair"]');
     document.getElementById('menuSairTxt').textContent = txt; b.dataset.certeza = '';
     document.getElementById('menuSairNota').textContent = (online() && jogo.fase !== 'fim' ? 'No online o relógio da vez continua correndo. ' : '') + nota;
@@ -4730,7 +4732,7 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     janelaMenu.hidden = true;
     if (m === 'inicio') { mostrarInicio(); return; }
     if (m === 'regras') { abrirLado(true); if (innerWidth >= 1040) lado.querySelector('.regras').scrollIntoView({ block: 'start' }); }
-    const botao = { ajustes: 'btnConfig', deck: 'btnDeck', loja: 'btnCarteira', online: 'btnOnline' }[m];
+    const botao = { ajustes: 'btnConfig' }[m];
     if (botao) document.getElementById(botao).click();
   });
 
@@ -4810,11 +4812,10 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     const aviso = document.getElementById('avisoCfg');
     if (online()) {
       // no meio de uma partida online, sair é desistir: isso fica só no botão Desistir (que pede confirmação)
-      if (jogo.fase !== 'fim') { aviso.textContent = 'Vale depois desta partida online. Para sair agora, use Desistir.'; aviso.hidden = false; return; }
-      if (k === 'modo') sairDaSala();
+      if (jogo.fase !== 'fim') { aviso.textContent = 'Vale depois desta partida online. Para sair agora, use Desistir.'; aviso.hidden = false; }
       return;
     }
-    aviso.textContent = 'Modo, rival e meta valem na próxima partida.';
+    aviso.textContent = 'A meta vale na próxima partida.';
     if (inicioAberto()) return;   // no menu principal, os ajustes valem para a próxima partida que começar
     if (!jogo || jogo.compras === 0) novaPartida();
     else aviso.hidden = false;
@@ -4838,7 +4839,6 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
   });
   document.getElementById('btnFecharConfig').addEventListener('click', () => { document.getElementById('janelaConfig').hidden = true; });
 
-  document.getElementById('btnTrocarDeck').addEventListener('click', () => { document.getElementById('fim').hidden = true; abrirDeck(); });
   document.getElementById('btnDeNovo').addEventListener('click', novaPartida);
   document.getElementById('btnFechar').addEventListener('click', () => { document.getElementById('fim').hidden = true; });
   document.getElementById('btnMenuFim').addEventListener('click', () => { document.getElementById('fim').hidden = true; mostrarInicio(); });
@@ -5166,6 +5166,8 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
   Online.enviar = acao => { if (enviarWs({ tipo: 'acao', acao })) { jogo.pensando = true; render(); } };
   Online.naSala = () => !!(Rede.sala && st.sessao);
   Online.desistir = () => { enviarWs({ tipo: 'desistir' }); };
+  // começar uma partida pelo menu principal larga a sala online (a partida dela já acabou; ali "jogar de novo" seria revanche)
+  Online.sair = () => { if (!Rede.sala) return; if (online()) jogo = null; sairDaSala(); };
   // trocou o deck esperando o amigo: o servidor guarda o deck da entrada, então entra de novo com o novo
   // (pela mesma conexão isso só atualiza o deck; com a partida já começada, o servidor ignora)
   Online.deckMudou = () => { if (Rede.sala && st.sessao && !online()) enviarWs({ tipo: 'entrar', sala: Rede.sala, deck: deckOnline() }); };

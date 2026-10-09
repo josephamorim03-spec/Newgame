@@ -85,6 +85,9 @@ function tocar([semente, modo]) {
       st.conta.moedas = 2000; st.deckVisto = true;
       DiceDuel.ajustar({ animacoes: c.anim, liberar: true, som: false, musica: false });
     }, r);
+    // começa pelo menu principal, como quem abre o jogo (depois o menu volta pela Pausa e pelo fim)
+    if (r.modo === 'local') { await pg.click('[data-inicio="dois"]'); await pg.click('#btnJogarDeck'); }
+    else await pg.click('[data-inicio="jogar"]');
     let ultimaSig = '', desde = Date.now(), partidas = 0, ultimo = '';
     const rastro = [];
     for (let i = 0; i < PASSOS; i++) {
@@ -92,10 +95,22 @@ function tocar([semente, modo]) {
       try { v = await pg.evaluate(vigiar); } catch (e) { erros.push(`${r.nome}: vigia: ${e.message}`); break; }
       v.prob.forEach(p => erros.push(`${r.nome} passo ${i}: ${p} (depois de: ${rastro.slice(-4).join(' → ')})`));
       if (v.prob.length) break;
-      if (v.sig !== ultimaSig) { ultimaSig = v.sig; desde = Date.now(); }
+      // o relógio do travamento só corre na vez do rival (no menu principal ele espera de propósito)
+      if (v.sig !== ultimaSig || !v.vezRival) { ultimaSig = v.sig; desde = Date.now(); }
       else if (v.vezRival && Date.now() - desde > 9000) { erros.push(`${r.nome} passo ${i}: o rival travou (depois de: ${rastro.slice(-5).join(' → ')})`); break; }
       if (v.fim && ultimo !== 'fim') partidas++;
       ultimo = v.fim ? 'fim' : '';
+      // parado no menu principal (sem janela por cima): de vez em quando continua ou começa, como faria alguém
+      if (i % 12 === 0 && await pg.$('#inicio:not([hidden])') && !(await pg.$('.janela:not([hidden]), .lado.aberto'))) {
+        const cont = await pg.$('[data-inicio="continuar"]'), voltar = await pg.$('[data-inicio="abandonar-nao"]');
+        try {
+          if (voltar) { await voltar.click(); rastro.push('menu voltar'); }
+          else if (cont) { await cont.click(); rastro.push('menu continuar'); }
+          else if (r.modo === 'local') { await pg.click('[data-inicio="dois"]'); await pg.click('#btnJogarDeck'); rastro.push('menu 2 jogadores'); }
+          else { await pg.click('[data-inicio="jogar"]'); rastro.push('menu jogar'); }
+        } catch (e) { erros.push(`${r.nome}: menu: ${e.message}`); }
+        continue;
+      }
       try { rastro.push(await pg.evaluate(tocar, [(i + 1) * 2654435761 % 4294967296, r.modo])); } catch (e) { erros.push(`${r.nome}: toque: ${e.message}`); }
       await pg.waitForTimeout(r.anim ? 60 : 25);
     }

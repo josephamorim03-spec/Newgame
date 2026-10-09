@@ -46,6 +46,7 @@
     <div class="inicio-partida" id="inicioPartida" hidden></div>
     <div class="inicio-jogar" id="inicioJogar">
       <span class="segmento" role="group" aria-label="Rival"><button data-inicio="rival" data-v="aprendiz">Diana</button><button data-inicio="rival" data-v="esperto">Dona Coruja</button></span>
+      <p class="inicio-rival" id="inicioRival"></p>
       <button class="btn btn-mel inicio-principal" data-inicio="jogar">Jogar</button>
       <div class="inicio-linha"><button class="btn btn-papel" data-inicio="online">Online<span class="ponto-online" id="pontoInicio" hidden></span></button><button class="btn btn-papel" data-inicio="dois">2 jogadores</button></div>
     </div>
@@ -214,13 +215,10 @@
       <h2 id="menuTitulo">Pausa</h2>
       <button class="btn btn-mel" data-menu="continuar">Continuar a partida</button>
       <div class="linha-cfg"><span><label for="opDicasMenu">Ajudas na partida</label><small>etiquetas nos dados, dicas e explicações</small></span><input class="chave-liga" type="checkbox" id="opDicasMenu"></div>
-      <div class="menu-grade">
-        <button class="btn btn-papel menu-largo" data-menu="inicio">Menu principal</button>
+      <div class="menu-lista">
         <button class="btn btn-papel" data-menu="regras">Regras e registro</button>
         <button class="btn btn-papel" data-menu="ajustes">Ajustes</button>
-        <button class="btn btn-papel" data-menu="deck">Deck</button>
-        <button class="btn btn-papel" data-menu="loja">Loja</button>
-        <button class="btn btn-papel menu-online" data-menu="online">Online<span class="ponto-online" id="pontoMenu" hidden></span></button>
+        <button class="btn btn-papel" data-menu="inicio">Menu principal</button>
         <button class="btn btn-papel perigo" data-menu="sair"><span id="menuSairTxt">Desistir</span></button>
       </div>
       <p class="nota" id="menuSairNota" style="margin:0"></p>
@@ -232,14 +230,6 @@
       <h2 id="cfgTitulo">Ajustes</h2>
       <h3>Partida</h3>
       <div class="cfg-grupo">
-        <div class="linha-cfg"><span><label>Modo</label></span>
-          <div class="segmento" role="group" aria-label="Modo">
-            <button data-cfg="modo" data-v="bot">Contra um rival</button><button data-cfg="modo" data-v="local">2 jogadores</button>
-          </div></div>
-        <div class="linha-cfg" id="linhaNivel"><span><label>Rival</label><small id="rivalDesc"></small></span>
-          <div class="segmento" role="group" aria-label="Rival">
-            <button data-cfg="nivel" data-v="aprendiz">Diana</button><button data-cfg="nivel" data-v="esperto">Dona Coruja</button>
-          </div></div>
         <div class="linha-cfg"><span><label>Meta</label><small>16 deixa a partida mais longa</small></span>
           <div class="segmento" role="group" aria-label="Pontos para vencer">
             <button data-cfg="meta" data-v="12">12</button><button data-cfg="meta" data-v="16">16</button>
@@ -248,7 +238,7 @@
           <div class="segmento" role="group" aria-label="Ritmo do rival">
             <button data-cfg="ritmo" data-v="calmo">Calmo</button><button data-cfg="ritmo" data-v="normal">Normal</button><button data-cfg="ritmo" data-v="rapido">Rápido</button>
           </div></div>
-        <p class="nota" id="avisoCfg" hidden>Modo, rival e meta valem na próxima partida.</p>
+        <p class="nota" id="avisoCfg" hidden>A meta vale na próxima partida.</p>
       </div>
       <h3>Som</h3>
       <div class="cfg-grupo">
@@ -303,11 +293,10 @@
       <ul class="momentos" id="fimMomentos"></ul>
       <table class="tabela" id="fimTabela"></table>
       <div class="botoes">
-        <button class="btn btn-mel" id="btnDeNovo">Jogar de novo</button>
-        <button class="btn btn-papel" id="btnCompartilhar">Compartilhar</button>
-        <button class="btn btn-papel" id="btnTrocarDeck">Deck</button>
-        <button class="btn btn-papel" id="btnFechar">Mesa</button>
+        <button class="btn btn-mel fim-principal" id="btnDeNovo">Jogar de novo</button>
         <button class="btn btn-papel" id="btnMenuFim">Menu</button>
+        <button class="btn btn-papel" id="btnFechar">Ver a Mesa</button>
+        <button class="btn btn-papel" id="btnCompartilhar">Compartilhar</button>
       </div>
     </div>
   </div>
