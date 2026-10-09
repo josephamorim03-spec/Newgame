@@ -16,7 +16,7 @@
     virar: svg('<path d="M4 12a8 8 0 0 1 14-5.3M20 12a8 8 0 0 1-14 5.3M18 3v4h-4M6 21v-4h4"/>'),
     rerrolar: svg('<path d="M3 12a9 9 0 1 0 3-6.7M3 4v4h4"/><circle cx="12" cy="12" r="1.5"/>'),
     pressa: svg('<path d="M5 6l6 6-6 6M13 6l6 6-6 6"/>'),
-    coringa: svg('<path d="M12 3l2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.8 6.7 19.4l1.2-6L3.4 9.3l6-.7z"/>'),
+    coringa: svg('<path d="M6.5 18c0-3.5-1-6-4-5.5.5-4.5 4.5-6.5 8-3.5.2-2.5.7-4.5 1.5-6 .8 1.5 1.3 3.5 1.5 6 3.5-3 7.5-1 8 3.5-3-.5-4 2-4 5.5z"/><path d="M5.5 20.5h13"/><circle cx="2.5" cy="14.6" r="1.4"/><circle cx="21.5" cy="14.6" r="1.4"/><circle cx="12" cy="2.4" r="1.2"/>'),
     sobrecarga: svg('<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>'),
     espelho: svg('<ellipse cx="12" cy="9" rx="6" ry="7"/><path d="M12 16v5M8.5 21h7M9.5 6.5l4 4M10 11l2 2"/>'),
     fundo: svg('<path d="M4 4h16M4 4v9M20 4v9M4 13l3 7M20 13l-3 7M9 9h6"/>'),
@@ -30,6 +30,12 @@
   const imgPintada = (id, cls) => `<img class="${cls}" src="${pintada(id)}" alt="" aria-hidden="true" draggable="false">`;
   const RAIO = pintada('raio') ? imgPintada('raio', 'raio-pintado') : '⚡';
   const VERSO = pintada('verso') ? imgPintada('verso', 'verso-pintado') : '?';
+  // os símbolos dos "Bons momentos" do fim da partida, pintados (js/momentos_pintados.js) quando existem
+  const MOMENTO_ID = { '☾': 'virada', '★': 'sinfonia', '✿': 'harmonia', '✧': 'truque', '❀': 'salvou', '↺': 'esquiva', '✦': 'bloqueio', '♪': 'nota', '✪': 'recorde' };
+  const simboloMomento = c => {
+    const src = c === '☕' ? (window.RETRATOS_PINTADOS || {}).xicara : (window.MOMENTOS_PINTADOS || {})[MOMENTO_ID[c]];
+    return src ? `<img src="${src}" alt="${c}" draggable="false">` : c;
+  };
   const CARTAS = Object.fromEntries(Object.entries(R.CARTAS).map(([k, v]) => [k, { ...v, ico: ICO_CARTA[k], arte: pintada(k) ? imgPintada(k, 'ico pintado') : ICO_CARTA[k] }]));
   const PRONTOS = [
     { nome: 'Primeira mesa', cartas: ['ajuste', 'coringa', 'pressa'], nota: 'só efeitos' },
@@ -838,9 +844,9 @@
     j.momentos.filter(m => humano(m.p)).forEach(m => { const k = m.p + m.txt; const g = grupos.get(k) || { ...m, vezes: 0 }; g.vezes++; grupos.set(k, g); });
     const ordemSimb = ['☾', '★', '✿', '✧', '❀', '↺', '✦', '♪'];
     const momentos = [...grupos.values()].sort((a, b) => ordemSimb.indexOf(a.simbolo) - ordemSimb.indexOf(b.simbolo)).slice(0, 6)
-      .map(m => `<li><span class="em">${m.simbolo}</span><span>${j.modo === 'local' ? `<span class="cor${m.p}">${n[m.p]}</span> ` : ''}${m.txt}${m.vezes > 1 ? ` <b>×${m.vezes}</b>` : ''}</span></li>`).join('');
-    const recs = (j.recordes || []).map(r => `<li class="recorde"><span class="em">✪</span>Novo: ${r}</li>`).join('');
-    document.getElementById('fimMomentos').innerHTML = recs + (momentos || '<li><span class="em">☕</span>Sem lances marcantes desta vez.</li>');
+      .map(m => `<li><span class="em">${simboloMomento(m.simbolo)}</span><span>${j.modo === 'local' ? `<span class="cor${m.p}">${n[m.p]}</span> ` : ''}${m.txt}${m.vezes > 1 ? ` <b>×${m.vezes}</b>` : ''}</span></li>`).join('');
+    const recs = (j.recordes || []).map(r => `<li class="recorde"><span class="em">${simboloMomento('✪')}</span>Novo: ${r}</li>`).join('');
+    document.getElementById('fimMomentos').innerHTML = recs + (momentos || `<li><span class="em">${simboloMomento('☕')}</span>Sem lances marcantes desta vez.</li>`);
     desenharRecompensas(j);
     const s = j.stats, linha = (rot, f) => `<tr><th>${rot}</th><td>${f(s[0], 0)}</td><td>${f(s[1], 1)}</td></tr>`;
     document.getElementById('fimTabela').innerHTML =

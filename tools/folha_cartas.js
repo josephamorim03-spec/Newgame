@@ -1,5 +1,6 @@
 // Folha de comparação dos ícones das cartas: traço (ICO_CARTA) × pintado (js/cartas_pintadas.js),
-// grande e nos tamanhos em que aparecem no jogo (18 px na mesa, 24 no deck, 34 na loja, 38 no detalhe).
+// grande e nos tamanhos em que aparecem no jogo (18 px na mesa, 24 no deck, 34 na loja, 38 no detalhe),
+// e dos símbolos dos "Bons momentos" do fim da partida: texto × pintado (js/momentos_pintados.js).
 // Uso: node tools/folha_cartas.js   (saída em builds/cartas-comparacao.png)
 const { chromium } = require('playwright');
 const fs = require('fs');
@@ -16,6 +17,10 @@ Object.assign(traco, JSON.parse(fs.readFileSync(path.join(RAIZ, 'arte', 'cartas.
 global.window = {};
 eval(fs.readFileSync(path.join(RAIZ, 'js', 'cartas_pintadas.js'), 'utf8'));
 const pintado = window.CARTAS_PINTADAS || {};
+eval(fs.readFileSync(path.join(RAIZ, 'js', 'momentos_pintados.js'), 'utf8'));
+const momentos = Object.entries(JSON.parse(fonte.match(/const MOMENTO_ID = (\{.*\});/)[1].replace(/'/g, '"')));
+const linhaMomento = ([c, id]) => `<tr><th>${id}</th><td class="g"><span style="font-size:72px">${c}</span></td><td class="g">${img(window.MOMENTOS_PINTADOS[id], 96)}</td>
+  <td colspan="4"><span style="font-size:18px">${c}</span>${img(window.MOMENTOS_PINTADOS[id], 28)}</td></tr>`;
 
 const svg = (d, t) => `<svg viewBox="0 0 24 24" width="${t}" height="${t}" fill="none" stroke="#c4843a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
 const img = (s, t) => s ? `<img src="${s}" width="${t}" height="${t}">` : `<span class="nada" style="width:${t}px;height:${t}px"></span>`;
@@ -30,7 +35,10 @@ const html = `<!doctype html><html><head><style>
   h1 { font-size: 20px; margin: 0 0 10px; } thead th { text-align: center; font-size: 12px; color: #7a6560; }
 </style></head><body><h1>Ícones das cartas: traço × pintado</h1><table>
   <thead><tr><th></th><th>traço</th><th>pintado</th>${TAMANHOS.map(t => `<th>${t} px<br>traço · pintado</th>`).join('')}</tr></thead>
-  <tbody>${Object.keys(traco).map(linha).join('')}</tbody></table></body></html>`;
+  <tbody>${Object.keys(traco).map(linha).join('')}</tbody></table>
+  <h1 style="margin-top:24px">Bons momentos (fim da partida): texto × pintado</h1><table>
+  <thead><tr><th></th><th>texto</th><th>pintado</th><th colspan="4">no jogo (18 px · 28 px)</th></tr></thead>
+  <tbody>${momentos.map(linhaMomento).join('')}</tbody></table></body></html>`;
 
 (async () => {
   const navegador = await chromium.launch(process.env.CHROMIUM ? { executablePath: process.env.CHROMIUM } : {});
