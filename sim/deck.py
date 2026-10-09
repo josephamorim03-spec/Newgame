@@ -14,7 +14,7 @@ def opcoes(cor): return 6 if not cor else _opc(cor[-1])
 
 ARMADILHAS={'espelho','interferencia','fundo','pedagio','ancora'}
 # números das cartas (os valores finais, ajustados por simulação; docs/design.md §4)
-BAL=dict(interf_menos=1, interf_min=4, pedagio=2, pedagio16=2, fundo_tudo=True, rerrolar_tudo=True, ancora_min=4, rerrolar_cor=2, coringa_cor=2, sobre=2, espelho_sem_bolso=True)
+BAL=dict(interf_menos=1, interf_min=4, interf_max=9, pedagio=2, pedagio16=2, fundo_tudo=True, rerrolar_tudo=True, ancora_min=4, rerrolar_cor=2, coringa_cor=2, sobre=2, espelho_sem_bolso=True)
 import os, json
 BAL.update(json.loads(os.environ.get('BAL', '{}')))   # ex.: BAL='{"pedagio": 2}' para testar outro número
 EFEITOS={'rerrolar','virar','ajuste','pressa','coringa','sobrecarga'}
@@ -98,7 +98,7 @@ class Partida:
         g=pontos(efL)+(BAL['sobre'] if bonus_sobre and isinstance(BAL['sobre'],int) else 0)
         if bonus_sobre and BAL['sobre']=='teto6': g=min(6,g)
         if bonus_sobre and BAL['sobre']=='curto2': g+=2
-        if L>=BAL['interf_min'] and r.armada=='interferencia':
+        if BAL['interf_min']<=L<=BAL['interf_max'] and r.armada=='interferencia':
             g=max(0,g-BAL['interf_menos']) if BAL['interf_menos']!=2 else pontos(efL-1); s.disparar_trap(1-p,'interferencia')
         if r.armada=='pedagio':
             # +2 nas duas metas desde a v0.11 (docs/balanceamento-cartas.md §10); pedagio16 separa a meta 16 para testes
