@@ -748,3 +748,13 @@ button.vaga { cursor: pointer; border: 0; background: #fff3dc; color: var(--tint
 .chamado-amigo .quem-chamou small { display: block; font-size: 12px; color: var(--tinta-suave); }
 .chamado-amigo .linha-botoes { grid-column: 1 / -1; }
 .chamado-amigo .linha-botoes .btn { flex: 1 1 120px; }
+
+/* ---------- quem está online agora: contador no botão Online e a lista para chamar ---------- */
+#btnOnline { position: relative; }
+.conta-online { min-width: 19px; height: 19px; padding: 0 5px; border-radius: 999px; display: inline-grid; place-items: center; flex: none;
+  background: #3fa564; color: #fff; font-size: 11px; font-weight: 800; line-height: 1; }
+#btnOnline:has(.conta-online:not([hidden])) .ponto-online { display: none; }
+.selo.selo-online { background: #3fa564; }
+.aviso-online .ponto-status { display: inline-block; vertical-align: middle; margin-right: 4px; }
+/* no celular os botões do topo são só ícone: o contador vira um selinho no canto, sem alargar o botão */
+@media (max-width: 520px) { .conta-online { position: absolute; top: 2px; right: 2px; min-width: 15px; height: 15px; padding: 0 3px; font-size: 10px; box-shadow: 0 0 0 1.5px var(--noite); } }

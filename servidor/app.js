@@ -13,7 +13,8 @@ const { Salas } = require('./salas');
 const { Fila } = require('./fila');
 
 const MAX_AMIGOS = 200;          // amigos + pedidos de uma conta
-const INTERVALO_CHAMADA = 10_000; // chamar o mesmo amigo para a sala de novo só depois disso
+const INTERVALO_CHAMADA = 10_000; // chamar a mesma pessoa para a sala de novo só depois disso
+const MAX_CHAMADAS_DESCONHECIDOS = 5; // por minuto, para quem não é amigo
 
 const TETO_SOLO_DIA = 300;   // moedas por dia vindas de partidas contra os rivais do jogo (o servidor não as vê)
 const TETO_IMPORTAR = { moedas: 600, xp: 1000, valor: 900 }; // valor: moedas + preço dos itens trazidos
@@ -81,6 +82,11 @@ function criarApp({ banco, segredo, raiz = path.join(__dirname, '..'), tempos = 
     const conta = id && await banco.contaPorId(id);
     if (!conta) return res.status(401).json({ erro: 'Entre na sua conta de novo.' });
     req.conta = conta; next();
+  });
+  // como exigirConta, mas sem conta também passa (req.conta fica null)
+  const contaSeHouver = assincrono(async (req, res, next) => {
+    const id = Auth.lerToken((req.get('authorization') || '').replace(/^Bearer\s+/i, ''), segredo);
+    req.conta = (id && await banco.contaPorId(id)) || null; next();
   });
   const responderConta = (res, conta, extra = {}) => res.json({ token: Auth.criarToken(conta.id, segredo), conta: perfil(conta), ...extra });
 
@@ -177,6 +183,23 @@ function criarApp({ banco, segredo, raiz = path.join(__dirname, '..'), tempos = 
     const eu = req.conta, alvo = await outraConta(req, res); if (!alvo) return;
     if (await travaPar(eu.id, alvo.id, () => banco.desfazerAmizade(eu.id, alvo.id))) avisar(alvo.id, { tipo: 'amigos', evento: 'removido' });
     res.json(await listaDeAmigos(eu.id));
+  }));
+
+  // ---------- quem está online agora: sem conta, só quantos (o convite para entrar); com conta, a lista para chamar ----------
+  app.get('/api/online', contaSeHouver, assincrono(async (req, res) => {
+    const total = presenca.size, eu = req.conta;
+    if (!eu) return res.json({ total });
+    const ids = [...presenca.keys()].filter(id => id !== eu.id).slice(0, 500);
+    const amigos = new Map((await banco.amizadesDe(eu.id)).map(a => [a.id, a]));
+    const jogadores = (await banco.contasPorIds(ids)).map(c => {
+      const rel = amigos.get(c.id);
+      return { nome: c.nome, rating: c.rating, icone: c.icone, titulo: Regras.tituloDe(c.rating), onde: salas.estadoDe(c.id),
+        amigo: !!(rel && rel.aceita), pedido: rel && !rel.aceita ? (rel.enviado ? 'enviado' : 'recebido') : null };
+    })
+      // primeiro quem pode jogar agora, depois os amigos, depois o rating mais perto do seu
+      .sort((a, b) => ((a.onde === 'jogando') - (b.onde === 'jogando')) || (b.amigo - a.amigo) || (Math.abs(a.rating - eu.rating) - Math.abs(b.rating - eu.rating)))
+      .slice(0, 50);
+    res.json({ total, jogadores });
   }));
 
   // ---------- o que este servidor oferece (a página esconde o que estiver desligado) ----------
@@ -302,20 +325,29 @@ function criarApp({ banco, segredo, raiz = path.join(__dirname, '..'), tempos = 
     if (s) { s.delete(ws); if (!s.size) presenca.delete(ws.contaId); }
   }
   const chamadas = new Map();   // "de:para" -> quando chamou (sem repetir a chamada a cada toque)
+  const chamadasDesconhecidos = new Map();   // id -> quando chamou quem não é amigo (no último minuto)
   async function chamarAmigo(ws, conta, nome) {
     const aviso = erro => salas.enviar(ws, { tipo: 'aviso', erro });
     const sala = salas.salaEsperandoDe(conta.id);
     if (!sala) return aviso('Crie uma sala primeiro: é para ela que o amigo vai.');
     const alvo = typeof nome === 'string' && Auth.validarNome(nome) && await banco.contaPorNome(nome);
-    const rel = alvo && await banco.amizade(conta.id, alvo.id);
-    if (!rel || !rel.aceita) return aviso('Só dá para chamar quem é seu amigo.');
+    if (!alvo || alvo.id === conta.id) return aviso('Ninguém com esse nome.');
+    // dá para chamar qualquer um que esteja online (com pouca gente jogando, é o jeito de começar uma partida);
+    // quem não é amigo conta num limite por minuto, contra quem sai chamando todo mundo
+    const rel = await banco.amizade(conta.id, alvo.id), amigo = !!(rel && rel.aceita);
     if (!online(alvo.id)) return aviso(`${alvo.nome} não está com o jogo aberto agora. Mande o link do convite.`);
     if (salas.estadoDe(alvo.id) === 'jogando') return aviso(`${alvo.nome} está no meio de uma partida.`);
     const k = `${conta.id}:${alvo.id}`, agora = Date.now();
     if (agora - (chamadas.get(k) || 0) < INTERVALO_CHAMADA) return aviso(`Você acabou de chamar ${alvo.nome}.`);
+    if (!amigo) {
+      const recentes = (chamadasDesconhecidos.get(conta.id) || []).filter(t => agora - t < 60_000);
+      if (recentes.length >= MAX_CHAMADAS_DESCONHECIDOS) return aviso('Calma: muitas chamadas seguidas. Espere um minuto.');
+      chamadasDesconhecidos.set(conta.id, recentes.concat(agora));
+    }
     chamadas.set(k, agora);
     if (chamadas.size > 5000) for (const [x, t] of chamadas) if (agora - t > INTERVALO_CHAMADA) chamadas.delete(x);
-    avisar(alvo.id, { tipo: 'chamado', de: conta.nome, icone: conta.ativo.icone, rating: conta.rating, sala: sala.codigo, meta: sala.meta });
+    if (chamadasDesconhecidos.size > 5000) for (const [x, ts] of chamadasDesconhecidos) if (ts.every(t => agora - t > 60_000)) chamadasDesconhecidos.delete(x);
+    avisar(alvo.id, { tipo: 'chamado', de: conta.nome, icone: conta.ativo.icone, rating: conta.rating, sala: sala.codigo, meta: sala.meta, amigo });
     salas.enviar(ws, { tipo: 'chamou', nome: alvo.nome });
   }
   async function procurarRival(ws, conta, m) {

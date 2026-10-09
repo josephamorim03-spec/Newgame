@@ -66,6 +66,25 @@ fs.mkdirSync(FOTOS, { recursive: true });
     await criarConta(bia, 'Bia');
     console.log('1) nomes: ANA, aná e a.na recusados como iguais a "Ana"');
 
+    // quem está online: o visitante sem conta vê quantos; a Bia vê a Ana na lista e o contador no botão
+    const visita = await abrir('visita', { width: 390, height: 844 });
+    await visita.click('#btnOnline');
+    await visita.waitForFunction(() => /2 pessoas estão com o jogo aberto/.test(document.getElementById('onlineConteudo').textContent), null, { timeout: 8000 });
+    await layout(visita, 'visitante-online');
+    await visita.close();
+    await bia.waitForFunction(() => [...document.querySelectorAll('.amigo')].some(x => /Ana/.test(x.textContent) && x.querySelector('[data-on="adicionar"]')), null, { timeout: 8000 });
+    await bia.waitForFunction(() => document.getElementById('contaOnline').textContent === '1' && !document.getElementById('contaOnline').hidden, null, { timeout: 35000 });
+    await layout(bia, 'online-agora');
+    // a Bia chama a Ana antes de serem amigas: o convite chega dizendo que ainda não é amiga; a Ana recusa
+    await bia.click('.amigo [data-on="chamar"]');
+    await ana.waitForSelector('#chamadoAmigo:not([hidden])', { timeout: 8000 });
+    if (!/ainda não é seu amigo/.test(await ana.textContent('#chamadoAmigo'))) throw new Error('o convite não disse que ainda não são amigas');
+    await ana.click('#chamadoAmigo [data-chamado="nao"]');
+    await bia.waitForSelector('[data-on="sair-sala"]', { timeout: 5000 });
+    await bia.click('[data-on="sair-sala"]');
+    await bia.waitForSelector('#formAmigo', { timeout: 5000 });
+    console.log('1b) online agora: visitante vê quantos, a lista mostra a Ana, contador no botão, chamar quem ainda não é amigo');
+
     // Bia pede Ana em amizade pelo nome (em minúsculas); Ana recebe ao vivo e aceita
     await bia.fill('#formAmigo [name=amigo]', 'ana');
     await bia.click('#formAmigo [type=submit]');

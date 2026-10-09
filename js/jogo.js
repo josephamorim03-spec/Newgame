@@ -1497,7 +1497,8 @@
     if (Rede.sala) sairDaSala();
     if (Rede.ws) { const ws = Rede.ws; Rede.ws = null; ws.close(); }
     st.sessao = null; guardarSessao();
-    Object.assign(Rede, { amigos: null, rankingAmigos: null, posGlobal: null, busca: null });
+    Object.assign(Rede, { amigos: null, rankingAmigos: null, posGlobal: null, busca: null, online: null });
+    carregarOnline();
     if (st.contaConvidado) { st.conta = st.contaConvidado; delete st.contaConvidado; }
     aplicarPrefs(); desenharOnline(); if (jogo) render();
   }
@@ -1797,9 +1798,46 @@
     if (!st.sessao || !API) return;
     pedir('GET', '/api/amigos').then(r => { Rede.amigos = r; desenharOnline(); }).catch(() => {});
     pedir('GET', '/api/ranking/amigos').then(r => { Rede.rankingAmigos = r.ranking; Rede.posGlobal = r.global; desenharOnline(); }).catch(() => {});
+    carregarOnline();
   }
   // a lista se atualiza sozinha enquanto a janela Online está aberta (quem entrou, quem está jogando)
   setInterval(() => { if (st.sessao && !document.hidden && !document.getElementById('janelaOnline').hidden) carregarAmigos(); }, 20_000);
+
+  // ---------- quem está online agora: o contador no botão Online (até sem conta) e a lista para chamar ----------
+  // Com pouca gente jogando, ver que tem alguém com o jogo aberto é o empurrão para começar uma partida.
+  function carregarOnline() {
+    if (!API) return;
+    pedir('GET', '/api/online').then(r => {
+      Rede.online = r;
+      // a própria conta conta no total; os outros são o que interessa
+      const outros = r.jogadores ? r.jogadores.length : Math.max(0, r.total - (st.sessao && Rede.ola ? 1 : 0));
+      const el = document.getElementById('contaOnline');
+      el.hidden = !outros; el.textContent = outros;
+      el.title = `${outros} ${outros === 1 ? 'pessoa' : 'pessoas'} com o jogo aberto agora`;
+      document.getElementById('btnOnline').setAttribute('aria-label', outros ? `Jogar online (${el.title})` : 'Jogar online');
+      if (!document.getElementById('janelaOnline').hidden) desenharOnline();
+    }).catch(() => {});
+  }
+  carregarOnline();
+  setInterval(() => { if (!document.hidden) carregarOnline(); }, 30_000);
+  // a lista de quem está online; na sala de espera (sala: true), só quem dá para chamar agora
+  function htmlOnlineAgora({ sala = false } = {}) {
+    const O = Rede.online;
+    if (!O || !O.jogadores) return '';
+    const podeChamar = x => x.onde !== 'jogando';
+    const lista = O.jogadores.filter(x => !sala || podeChamar(x));
+    const itens = lista.map(x => {
+      const n = esc(x.nome), status = x.onde === 'jogando' ? 'jogando' : x.onde === 'esperando' ? 'numa sala' : 'online';
+      const quem = x.amigo ? 'amigo' : x.pedido === 'enviado' ? 'pedido enviado' : x.pedido === 'recebido' ? 'quer ser seu amigo' : '';
+      const botoes = (podeChamar(x) ? `<button class="btn btn-mel btn-peq" data-on="chamar" data-nome="${n}">Chamar</button>` : '')
+        + (sala ? '' : x.pedido === 'recebido' ? `<button class="btn btn-papel btn-peq" data-on="aceitar-amigo" data-nome="${n}">Aceitar</button>`
+          : !x.amigo && !x.pedido ? `<button class="btn btn-papel btn-peq" data-on="adicionar" data-nome="${n}" aria-label="Adicionar ${n} como amigo">+ Amigo</button>` : '');
+      return `<li class="amigo on">${iconeSVG(x.icone)}<span class="quem-rk">${n}<small><i class="ponto-status ${status.replace(' ', '-')}"></i>${status} · ${x.rating}${quem ? ' · ' + quem : ''}</small></span>${botoes}</li>`;
+    }).join('');
+    if (sala) return itens ? `<h3>Chamar quem está online</h3><ul class="amigos">${itens}</ul>` : '<p class="nota" style="margin:0">Ninguém mais está com o jogo aberto agora. Mande o link: quem abrir aparece aqui.</p>';
+    return `<h3>Online agora <span class="selo selo-online">${lista.length}</span></h3>
+      <ul class="amigos">${itens || '<li class="vazio">Só você está com o jogo aberto agora. Chame alguém pelo link (ou deixe o jogo aberto: quem entrar aparece aqui).</li>'}</ul>`;
+  }
   function aoMudarAmigos(m) {
     carregarAmigos();
     if (m.evento === 'pedido') { Fx.chamada('Pedido de amizade', `${m.nome} quer ser seu amigo`, 'suave'); Som.tocar('momento'); }
@@ -1820,7 +1858,7 @@
         entrarNaSala(el.dataset.sala);
       });
     }
-    el.innerHTML = `${iconeSVG(m.icone)}<span class="quem-chamou"><b>${esc(m.de)}</b> te chamou para um duelo<small>meta ${m.meta} · rating ${m.rating}</small></span>
+    el.innerHTML = `${iconeSVG(m.icone)}<span class="quem-chamou"><b>${esc(m.de)}</b> te chamou para um duelo<small>meta ${m.meta} · rating ${m.rating}${m.amigo === false ? ' · ainda não é seu amigo' : ''}</small></span>
       <span class="linha-botoes"><button class="btn btn-mel btn-peq" data-chamado="entrar">Entrar</button><button class="btn btn-papel btn-peq" data-chamado="nao">Agora não</button></span>`;
     el.dataset.sala = m.sala; el.hidden = false;
     Som.tocar('momento'); vibrar([60, 40, 60]);
@@ -1934,6 +1972,7 @@
     if (!st.sessao) {
       const criar = Rede.aba === 'criar';
       el.innerHTML = `${Rede.convite ? `<p class="aviso-online">Você foi convidado para a sala <b>${esc(Rede.convite)}</b>. Entre ou crie uma conta para jogar.</p>` : '<p class="nota" style="margin:0">Com uma conta você joga com amigos por link, entra no ranking e guarda suas moedas e itens no servidor.</p>'}
+        ${Rede.online && Rede.online.total ? `<p class="aviso-online"><i class="ponto-status online"></i> ${Rede.online.total} ${Rede.online.total === 1 ? 'pessoa está' : 'pessoas estão'} com o jogo aberto agora. Entre para jogar com elas.</p>` : ''}
         <div class="abas" role="group" aria-label="Conta"><button data-on="aba-entrar" aria-pressed="${!criar}">Entrar</button><button data-on="aba-criar" aria-pressed="${criar}">Criar conta</button></div>
         <form class="form-conta" id="formConta" autocomplete="on">
           <label>Nome<input class="campo" name="nome" autocomplete="username" required minlength="3" maxlength="20" pattern="[A-Za-zÀ-ÖØ-öø-ÿ0-9_.\\-]{3,20}" placeholder="de 3 a 20 letras">${criar && Rede.nomeStatus ? `<small class="nome-status ${Rede.nomeStatus.livre ? 'livre' : 'ocupado'}" aria-live="polite">${esc(Rede.nomeStatus.livre ? '✓ Nome livre' : Rede.nomeStatus.erro)}</small>` : ''}</label>
@@ -1965,7 +2004,7 @@
           <div class="linha-botoes"><button class="btn btn-mel" data-on="compartilhar">Compartilhar</button><button class="btn btn-papel" data-on="copiar">Copiar convite</button></div>
           <ul class="lista-sala">${lista}</ul>
           <span class="esperando">Esperando o amigo<span class="pensando-pontos"></span></span></div>
-        ${htmlAmigos({ chamar: true })}
+        ${htmlOnlineAgora({ sala: true })}
         <p class="nota" style="margin:0">Meta ${sala ? sala.meta : st.cfg.meta} · seu deck: ${deckOnline().map(c => CARTAS[c].nome).join(', ') || 'sem cartas'}. Enquanto espera, dá para jogar contra o rival do jogo.</p>
         <div class="linha-botoes"><button class="btn btn-papel" data-on="deck">Trocar deck</button><button class="btn btn-papel" data-on="sair-sala">Cancelar a sala</button></div>`;
       return;
@@ -1974,6 +2013,7 @@
       <div class="linha-botoes"><button class="btn btn-mel" data-on="criar-sala">Chamar um amigo</button></div>
       <form class="linha-botoes" id="formCodigo"><input class="campo codigo" name="codigo" maxlength="6" placeholder="código" aria-label="Código da sala" autocomplete="off" style="flex:1 1 120px"><button class="btn btn-papel" type="submit">Entrar na sala</button></form>
       ${htmlBusca()}
+      ${htmlOnlineAgora()}
       ${htmlAmigos()}
       ${htmlRanking(pf)}
       <p class="nota" style="margin:0">Vitória online: ${BASE_MOEDAS.online} moedas × margem × rapidez, e vale mais vencer quem tem rating maior. O mesmo par vale rating e moedas 3 vezes por dia.</p>
@@ -2001,6 +2041,7 @@
     if (a === 'aba-entrar' || a === 'aba-criar') { Rede.aba = a.slice(4); Rede.nomeStatus = null; aviso(null); desenharOnline(); }
     if (a === 'rk-global' || a === 'rk-amigos') { Rede.abaRanking = a.slice(3); desenharOnline(); }
     if (a === 'chamar') chamarAmigo(b.dataset.nome);
+    if (a === 'adicionar') acaoAmigo('/api/amigos', b.dataset.nome, b);
     if (a === 'aceitar-amigo') acaoAmigo('/api/amigos/aceitar', b.dataset.nome, b);
     if (a === 'recusar-amigo') acaoAmigo('/api/amigos/remover', b.dataset.nome, b);
     if (a === 'remover-amigo') {

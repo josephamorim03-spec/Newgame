@@ -67,6 +67,8 @@ class BancoMemoria {
   async ranking(limite = 50) {
     return this.contas.filter(c => c.partidas > 0).sort((a, b) => b.rating - a.rating || b.vitorias - a.vitorias).slice(0, limite).map(publico);
   }
+  // o que é público de várias contas de uma vez (a lista de quem está online)
+  async contasPorIds(ids) { const s = new Set(ids); return this.contas.filter(c => s.has(c.id)).map(publico); }
   // posição no ranking global (null se a conta ainda não jogou online) e quantos estão nele
   async posicaoNoRanking(id) {
     const e = this.contas.find(x => x.id === id), noRanking = this.contas.filter(c => c.partidas > 0);
@@ -173,6 +175,11 @@ class BancoPostgres {
   }
   async ranking(limite = 50) {
     const r = await this.pool.query('SELECT id, nome, rating, partidas, vitorias, ativo FROM contas WHERE partidas > 0 ORDER BY rating DESC, vitorias DESC LIMIT $1', [limite]);
+    return r.rows.map(publico);
+  }
+  async contasPorIds(ids) {
+    if (!ids.length) return [];
+    const r = await this.pool.query('SELECT id, nome, rating, partidas, vitorias, ativo FROM contas WHERE id = ANY($1)', [ids]);
     return r.rows.map(publico);
   }
   async posicaoNoRanking(id) {

@@ -10,6 +10,7 @@ Banco: Postgres (o plugin da Railway). Sem `DATABASE_URL`, guarda tudo num arqui
 | **Conta** | nome (3 a 20 letras) e senha (6+). A senha vira hash `scrypt`. O login devolve um token assinado (HMAC, 30 dias), sem sessão no servidor. |
 | **Nome único** | dois nomes são o mesmo quando só mudam maiúsculas, acentos ou separadores: `Ana` = `ana` = `ANA` = `Aná` = `a.na`. A chave sem essas diferenças é `UNIQUE` no banco (duas criações ao mesmo tempo: só uma passa) e é por ela que o login procura. A tela de criar conta avisa enquanto a pessoa digita. Contas antigas migram sozinhas para a chave nova (se duas colidirem, a segunda continua entrando pelo nome exato). |
 | **Amigos** | pedido pelo nome; vira amizade quando o outro aceita (ou pede de volta). A lista mostra quem está online, numa sala ou jogando, e o pedido e o aceite chegam ao vivo. Quem está esperando numa sala chama um amigo online pelo nome, e ele recebe o convite com Entrar. Até 200 amigos e pedidos; 30 pedidos a cada 10 min. |
+| **Online agora** | com pouca gente jogando, ver que tem alguém com o jogo aberto é o empurrão para começar. O botão Online mostra quantos estão com o jogo aberto (até sem conta, e a janela diz "N pessoas estão com o jogo aberto agora"); com conta, a lista mostra quem é (quem pode jogar e os amigos primeiro, depois o rating mais perto do seu), com **Chamar** e **+ Amigo**. Dá para chamar quem ainda não é amigo (o convite avisa); para esses, até 5 chamadas por minuto. |
 | **Ranking** | Elo (K 32), começando em 1000. Duas abas: **Global** (os 50 melhores) e **Amigos** (você e seus amigos), com a sua posição no global. |
 | **Salas** | quem cria recebe um código de 6 letras e um link `/?sala=CODIGO`; ou chama um amigo direto pela lista. |
 | **Fila por rating** | pronta e testada, **desligada** (`FILA=1` liga): com pouca gente, juntar por rating só faria todo mundo esperar. Ligada, aparece "Procurar rival": a diferença de rating aceita começa em 100, cresce 5 por segundo de espera até 400, e depois de 90 s vale qualquer rival; a meta (12 ou 16) separa as filas. O par cai numa sala comum (rating, moedas e o limite por par valem igual). Ajustes em `servidor/fila.js`. |
@@ -109,6 +110,7 @@ A janela Online explica que precisa do servidor.
 | `POST /api/amigos` `{nome}` | pede amizade (se o outro já tinha pedido, aceita) |
 | `POST /api/amigos/aceitar` `{nome}` | aceita o pedido de `nome` |
 | `POST /api/amigos/remover` `{nome}` | recusa, cancela ou desfaz |
+| `GET /api/online` | `{total}`; com conta, também `jogadores` (até 50: `nome`, `rating`, `icone`, `onde`, `amigo`, `pedido`) |
 | `GET /api/config` | `{fila}`: o que este servidor oferece |
 | `POST /api/loja/comprar` `{tipo, id}` | `tipo`: `cartas`, `dados`, `icones` ou `mesas` |
 | `POST /api/loja/usar` `{tipo, id}` | troca o dado, o ícone ou a mesa em uso |
@@ -133,14 +135,14 @@ As rotas de conta pedem `Authorization: Bearer <token>`.
   - `{tipo:'revanche', deck?}`
   - `{tipo:'desistir'}`
   - `{tipo:'sair'}`
-  - `{tipo:'chamar', nome}`: chama um amigo online para a sala que você criou
+  - `{tipo:'chamar', nome}`: chama alguém online (amigo ou não) para a sala que você criou
   - `{tipo:'procurar', meta, deck}` e `{tipo:'cancelarBusca'}`: a fila por rating (quando ligada)
   - `{tipo:'pulso'}`: o servidor responde `pulso` (a página descobre conexão morta)
 - Com conta, a página fica conectada mesmo fora de uma sala: é a presença (online) dos amigos.
 - O servidor responde:
   - `ola`
   - `amigos` `{evento: 'pedido'|'aceito'|'removido', nome}`: a lista de amigos mudou;
-  - `chamado` `{de, icone, rating, sala, meta}`: um amigo chamou para a sala dele;
+  - `chamado` `{de, icone, rating, sala, meta, amigo}`: alguém chamou para a sala dele;
   - `chamou`, `procurando` `{janela, naFila}`, `buscaCancelada`, `achou` `{sala, rival, rating}` (logo depois vêm `sala` e `estado`);
   - `aviso` `{erro, codigo?}`: algo fora da partida não deu certo (chamar, procurar). Ao contrário de `erro`, não tira ninguém da sala;
   - `sala`: quem está e quem está conectado;
