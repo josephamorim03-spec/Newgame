@@ -99,7 +99,8 @@ veja o `vercel.json`) a partir da branch `DiceDuel`, e a conta, o ranking e as s
   ele a manda vazia, e a página fala com o mesmo endereço (é assim no computador e no endereço da Railway).
 - A página chama a API e o WebSocket **direto** na Railway (o Vercel não repassa WebSocket, e repassar a API faria todo mundo
   chegar com o IP do Vercel, estourando o limite de login por IP).
-- Na Railway, `ORIGENS` = `https://diceduel-game.vercel.app` libera o CORS da API para essa página. Mais de um endereço: separe por vírgula.
+- A página oficial (`https://diceduel-game.vercel.app`) é liberada no CORS e no WebSocket mesmo sem `ORIGENS`. Para outros
+  endereços, `ORIGENS` troca a lista (separe por vírgula e inclua a oficial); `ORIGENS` vazia libera só o próprio servidor.
 - O convite usa o endereço da página aberta: quem jogou pelo Vercel convida pelo Vercel.
 
 ## Rodar no computador

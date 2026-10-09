@@ -1,5 +1,5 @@
 /* Dice Duel · o jogo
- * Regras (v0.8): Mesa compartilhada de 5 dados, corrente que só cresce pela frente,
+ * Regras (v0.11; o motor está em shared/regras.js): Mesa compartilhada de 5 dados, corrente que só cresce pela frente,
  * sincronias Eco (=), Passo (±1) e Oposto (soma 7), Bolso de um dado, quem está atrás abre a Mesa,
  * deck de até 3 cartas (no máx. 2 armadilhas e 1 carta de pontos ⚡), blefe com efeito virado. Números medidos em simulação (sim/).
  * A lógica nunca espera animação: ela só enfileira eventos, e o desenho, o som e os efeitos os consomem.

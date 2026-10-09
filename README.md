@@ -68,6 +68,7 @@ e o amigo cai direto na sala. O servidor é a autoridade da partida e roda na Ra
 | `tools/layout.js` | verificador de layout em 5 larguras: texto vazando, fora da caixa, quebrado, descentralizado |
 | `tools/macaco.js` | o macaco: toques ao acaso em tudo, com vigia de travamento e de estado impossível |
 | `tools/online_e2e.js` | ponta a ponta do online: dois navegadores, conta, convite, partida, revanche, ranking |
+| `tools/vercel_local.js` | simula o Vercel (só o que o `.vercelignore` publica, com a CSP do `vercel.json`) e joga uma partida |
 | `docs/design.md` | regras, cartas, números, decisões e por quê |
 | `docs/pesquisa.md` | o que jogos de cartas no celular ensinam (deck pequeno, armadilhas, contra-jogo) |
 | `docs/progressao.md` | moedas, rating contra o farm, XP e níveis, loja, cosméticos, regras de monetização |
@@ -78,7 +79,8 @@ e o amigo cai direto na sala. O servidor é a autoridade da partida e roda na Ra
 ```bash
 cd sim && python3 valor_cartas.py      # valor de cada carta sozinha
 cd sim && python3 informacao.py        # armadilhas: oculto × à mostra
-cd sim && python3 decks.py             # todos os 133 decks: algum domina?
+cd sim && NOVAS=pausa,reverso,furto,lacre python3 decks.py   # os 402 decks das 15 cartas: algum domina? (META=16 também)
+cd sim && NOVAS=pausa,reverso,furto,lacre JSON=/tmp/d.json python3 decks.py && JSON=/tmp/d.json NOVAS=pausa,reverso,furto,lacre python3 torneio.py   # os 20 melhores uns contra os outros
 cd sim && python3 economia.py          # cartas compradas não superam as grátis; moedas por vitória
 npm install && npm test                        # motor, API, salas, quedas, limite por par
 export NODE_PATH=$(npm root -g)                # Playwright instalado globalmente (ou: npm i -D playwright)
@@ -87,16 +89,17 @@ node tools/regras.js                           # as cartas fazem o que o texto d
 node tools/layout.js                           # layout em 360, 390, 430, 768 e 1360 px
 node tools/online_e2e.js                       # online de ponta a ponta, com o servidor local
 node tools/macaco.js                           # toca em tudo ao acaso e vigia travamentos e estados impossíveis
+node tools/vercel_local.js                     # a página como o Vercel publica, com a CSP
 ```
 
 ## Estado
 
-**Protótipo v0.9, pronto para testes com gente, com online pronto para a Railway.** O resumo copiável do fim da partida traz:
+**v0.11, em produção:** a página no Vercel (`diceduel-game.vercel.app`) e o servidor na Railway, os dois publicados da branch `DiceDuel`. 15 cartas (Pausa, Reverso, Furto e Lacre na v0.11), Pedágio +2 e Interferência só em quem lidera (`docs/balanceamento-cartas.md`). O resumo copiável do fim da partida traz:
 - o deck de cada um;
 - as cartas que agiram;
 - as rupturas;
 - o uso do Bolso;
 - os blefes.
 
-Os números do balanceamento estão em `docs/design.md` §2–4. As exceções e combinações das cartas, os bugs
+Os números do balanceamento estão em `docs/design.md` §2–4 e `docs/balanceamento-cartas.md`. As exceções e combinações das cartas, os bugs
 corrigidos na v0.8 e o blefe estão em `docs/design.md` §3–4.
