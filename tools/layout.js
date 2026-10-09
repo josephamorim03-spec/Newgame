@@ -68,7 +68,31 @@ function verificar() {
     const centro = (esq + dir) / 2, meio = r.left + r.width / 2;
     if (Math.abs(centro - meio) > Math.max(6, r.width * 0.08) && !el.querySelector('svg, .moeda, .mini')) probs.push(`descentralizado: ${nome(el)} "${texto(el)}" (${Math.round(centro - meio)}px)`);
   }
-  // 5) texto de programa vazando para a tela
+  // 5) caixas coladas na vertical: botões, cartões e campos empilhados precisam de folga visível
+  //    (a sombra sólida embaixo dos botões conta como parte deles)
+  const temCaixa = el => { const cs = getComputedStyle(el); return (cs.backgroundColor !== 'rgba(0, 0, 0, 0)' && cs.backgroundColor !== 'transparent') || cs.backgroundImage !== 'none' || (cs.boxShadow !== 'none' && !/^inset/.test(cs.boxShadow)) || parseFloat(cs.borderTopWidth) > 0; };
+  const sombraSolida = el => {
+    const bs = getComputedStyle(el).boxShadow; if (!bs || bs === 'none') return 0;
+    let max = 0;
+    for (const parte of bs.split(/,(?![^(]*\))/)) {
+      if (/inset/.test(parte)) continue;
+      const n = (parte.match(/-?[\d.]+px/g) || []).map(parseFloat);
+      if (n.length >= 3 && n[2] === 0) max = Math.max(max, n[1] + (n[3] || 0));
+    }
+    return max;
+  };
+  for (const el of document.querySelectorAll('.caixa *, #acoes *, .lado *')) {
+    if (ignorar(el) || !visivel(el) || !temCaixa(el) || el.closest(SOLTOS)) continue;
+    let prox = el.nextElementSibling;
+    while (prox && (!visivel(prox) || ignorar(prox))) prox = prox.nextElementSibling;
+    if (!prox || !temCaixa(prox)) continue;
+    const a = el.getBoundingClientRect(), b = prox.getBoundingClientRect();
+    const sobrepoe = Math.min(a.right, b.right) - Math.max(a.left, b.left) > 8;
+    if (!sobrepoe || b.top < a.top + a.height / 2) continue;           // lado a lado, não empilhados
+    const folga = b.top - (a.bottom + sombraSolida(el));
+    if (folga < 6) probs.push(`colado na vertical: ${nome(el)} "${texto(el)}" e ${nome(prox)} (${Math.round(folga)}px)`);
+  }
+  // 6) texto de programa vazando para a tela
   const vazou = (document.body.innerText.match(/\bundefined\b|\bNaN\b|\[object Object\]|\bnull\b/g) || []);
   if (vazou.length) probs.push(`texto quebrado na tela: "${[...new Set(vazou)].join(', ')}"`);
   if (document.documentElement.scrollWidth > innerWidth + 1) probs.push(`a página rola para o lado (${document.documentElement.scrollWidth}>${innerWidth})`);
@@ -119,7 +143,7 @@ if (require.main === module) (async () => {
   await navegador.close();
   // agrupa por tela + tipo + elemento (o texto entre aspas varia)
   const grupos = new Map();
-  for (const [p, ws] of achados) { const k = p.replace(/ "[^"]*"$/, '').replace(/\(\d+>\d+\)|\(-?\d+px\)/g, ''); const g = grupos.get(k) || { ws: new Set(), ex: p.match(/"([^"]*)"$/)?.[1] || '' }; ws.forEach(x => g.ws.add(x)); grupos.set(k, g); }
+  for (const [p, ws] of achados) { const k = p.replace(/ "[^"]*"/, '').replace(/\(\d+>\d+\)|\(-?\d+px\)/g, ''); const g = grupos.get(k) || { ws: new Set(), ex: p.match(/"([^"]*)"$/)?.[1] || '' }; ws.forEach(x => g.ws.add(x)); grupos.set(k, g); }
   const lista = [...grupos.entries()].sort();
   for (const [k, g] of lista) console.log(`[${[...g.ws].sort((a, b) => a - b).join(',')}] ${k}${g.ex ? `  ex.: "${g.ex}"` : ''}`);
   console.log(lista.length ? `\n${lista.length} problemas de layout.` : 'Layout limpo em todas as larguras.');
