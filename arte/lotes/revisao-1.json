@@ -48,7 +48,7 @@
         "Furto card (steal the rival's pocket die): a sly gloved hand pulling a small ivory die out of a coral drawstring pouch.",
         "Furto card (pocket swap): a coral drawstring pouch wearing a tiny black bandit eye mask, cheeky, a die peeking out."
       ],
-      "texto_final": "Furto card (swap pockets with the rival): two small drawstring cloth pouches, one coral and one sky blue, each with a tiny ivory die peeking out, and two THICK honey-yellow curved arrows crossing between them. High contrast, arrows never blue."
+      "texto_final": "Furto card (swap pockets with the rival): just two small drawstring cloth pouches, one coral and one sky blue, and two THICK honey-yellow curved arrows crossing between them. NO dice anywhere: nothing peeking out of the pouches, no small icons attached. High contrast."
     },
     "convite": {
       "grupo": "cartas",
@@ -64,7 +64,8 @@
         "Convite card (you choose the die the rival must take): a hand presenting a single ivory die on an open palm, like an offering.",
         "Convite card (forced invitation): a small honey-gold ticket with a die printed on it, slightly tilted. No text."
       ],
-      "texto_final": "Convite card (an invitation the rival must accept): a cream envelope, flap open with a light cream or pale coral inner flap (no red triangle, nothing that looks like a wax seal), a small ivory die clearly sitting inside and peeking out of it."
+      "texto_final": "Convite card (an invitation the rival must accept): a cream envelope, flap open with a light cream or pale coral inner flap (no red triangle, nothing that looks like a wax seal), a small ivory die clearly sitting inside and peeking out of it.",
+      "_obs": "não vai ser usado (decisão do dono)"
     },
     "lacre": {
       "grupo": "cartas",
@@ -96,7 +97,8 @@
         "Ampulheta trap (punishes waiting, a points card): a wooden hourglass with honey sand and one tiny gold lightning spark beside it.",
         "Ampulheta trap: a slim glass hourglass with lavender sand and brass caps, slightly tilted."
       ],
-      "texto_final": "Ampulheta trap (punishes the rival for waiting): a wooden hourglass with chunky wooden caps, CLEAR light glass (pale, not green, not filled with liquid) and honey-gold sand flowing from the top bulb to the bottom."
+      "texto_final": "Ampulheta trap (punishes the rival for waiting): a wooden hourglass with chunky wooden caps, CLEAR light glass (pale, not green, not filled with liquid) and honey-gold sand flowing from the top bulb to the bottom.",
+      "_obs": "não vai ser usada (decisão do dono)"
     },
     "gordinho": {
       "grupo": "retratos",
