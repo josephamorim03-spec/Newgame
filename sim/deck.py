@@ -1,4 +1,4 @@
-# Dice Duel: implementação de referência das regras (v0.6) e robôs, para simular o balanceamento.
+# Dice Duel: implementação de referência das regras (v0.8) e robôs, para simular o balanceamento.
 # Regras: Mesa de 5 dados, corrente pela frente, Bolso, quem está atrás abre a Mesa, deck de até 3 cartas.
 # Deck de até 3 cartas, cada uma 1x por partida. Armadilhas: no máximo 1 armada por vez.
 import random
@@ -180,13 +180,17 @@ class Partida:
         if j.pronta('pressa') and len(j.cor)>=2 and len(s.mesa)>=2:
             ok=any('corrente' in s.destinos(p,a) and any(encaixa(j.cor+[a],b) for k,b in enumerate(s.mesa) if k!=i) for i,a in enumerate(s.mesa))
             if ok: s.usar(p,'pressa'); n_pegas=2
-        for _ in range(n_pegas):
+        for k in range(n_pegas):
             if not s.mesa: break
+            # o segundo dado da Pressa é opcional: sem saída segura, o robô dispensa
+            if k>0 and s.sem_saida(p): break
             i,m=s.planeja(p); v=s.tirar(p,i)
             ds=s.destinos(p,v); s.espelhado=False
             if m not in ds: m = max(ds,key=lambda x:s.nota(p,v,x)) if ds else 'corrente'
             s.colocar(p,v,m)
-            if len(j.cor)>=LIM: break
+            # com 6 a corrente dispara sozinha; o segundo dado da Pressa (se houver) começa outra
+            if len(j.cor)>=LIM: s.fire(p)
+            if max(x.pts for x in s.j)>=s.meta: return
         if s.quer_disparar(p):
             L=len(j.cor)
             if j.pronta('sobrecarga') and (L in (3,4) if BAL['sobre']=='curto2' else L in (4,5) if BAL['sobre']=='teto6' else L>=(5 if BAL['sobre']=='dado' else 4)): s.usar(p,'sobrecarga'); j.sobre=True

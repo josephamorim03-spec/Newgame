@@ -8,7 +8,8 @@ Os dois jogadores disputam a mesma Mesa de 5 dados e montam **correntes** de dad
 - **Oposto:** soma 7.
 
 Cada um guarda um dado no **Bolso**, escolhe a hora de **disparar** a corrente para marcar pontos e leva um
-**deck de até 3 cartas** com efeitos e armadilhas. A partida dura de 4 a 6 minutos.
+**deck de até 3 cartas** com efeitos e armadilhas. Um efeito virado para baixo vira **blefe**: para o rival, é um
+"?" igual ao de uma armadilha. A partida dura de 4 a 6 minutos.
 
 **Progressão sem pagar para vencer:**
 - moedas só vêm de vitórias, e rendem mais com margem maior e menos Mesas;
@@ -55,6 +56,7 @@ e o amigo cai direto na sala. O servidor é a autoridade da partida e roda na Ra
 | `sim/` | regras de referência em Python e os experimentos de balanceamento |
 | `tools/empacotar.py` | gera o HTML único |
 | `tools/fumaca.js` | teste de fumaça: joga partidas inteiras no navegador e falha com qualquer erro |
+| `tools/regras.js` | testes dirigidos das cartas (Pressa, Coringa, Espelho, blefe, Âncora × Interferência) |
 | `tools/layout.js` | verificador de layout em 5 larguras: texto vazando, fora da caixa, quebrado, descentralizado |
 | `tools/online_e2e.js` | ponta a ponta do online: dois navegadores, conta, convite, partida, revanche, ranking |
 | `docs/design.md` | regras, cartas, números, decisões e por quê |
@@ -72,6 +74,7 @@ cd sim && python3 economia.py          # cartas compradas não superam as gráti
 npm install && npm test                        # motor, API, salas, quedas, limite por par
 export NODE_PATH=$(npm root -g)                # Playwright instalado globalmente (ou: npm i -D playwright)
 node tools/fumaca.js                           # 4 partidas no navegador (celular, computador, Coruja, a dois)
+node tools/regras.js                           # as cartas fazem o que o texto delas diz
 node tools/layout.js                           # layout em 360, 390, 430, 768 e 1360 px
 node tools/online_e2e.js                       # online de ponta a ponta, com o servidor local
 ```
@@ -82,6 +85,8 @@ node tools/online_e2e.js                       # online de ponta a ponta, com o 
 - o deck de cada um;
 - as cartas que agiram;
 - as rupturas;
-- o uso do Bolso.
+- o uso do Bolso;
+- os blefes.
 
-Os números do balanceamento estão em `docs/design.md` §2–4.
+Os números do balanceamento estão em `docs/design.md` §2–4. As exceções e combinações das cartas, os bugs
+corrigidos na v0.8 e o blefe estão em `docs/design.md` §3–4.

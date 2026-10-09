@@ -1,7 +1,7 @@
 /* Dice Duel · o jogo
- * Regras (v0.6): Mesa compartilhada de 5 dados, corrente que só cresce pela frente,
+ * Regras (v0.8): Mesa compartilhada de 5 dados, corrente que só cresce pela frente,
  * sincronias Eco (=), Passo (±1) e Oposto (soma 7), Bolso de um dado, quem está atrás abre a Mesa,
- * deck de até 3 cartas (no máx. 2 armadilhas e 1 carta de pontos ⚡). Números medidos em simulação (sim/).
+ * deck de até 3 cartas (no máx. 2 armadilhas e 1 carta de pontos ⚡), blefe com efeito virado. Números medidos em simulação (sim/).
  * A lógica nunca espera animação: ela só enfileira eventos, e o desenho, o som e os efeitos os consomem.
  */
 (function () {
@@ -186,7 +186,14 @@
   const bolsoGarante = p => R.bolsoGarante(jogo, p);
   const encaixaP = (p, v) => R.encaixaP(jogo, p, v);
   const tirar = (p, idx) => R.tirar(jogo, p, idx);
-  function podeUsar(p, c) { return jogo.pensando ? { ok: false, motivo: 'Só na sua vez.' } : R.podeUsar(jogo, p, c); }
+  // quem espera o rival "pensar" é o clique (cartaBotoes), não a regra: senão o próprio rival nunca usava cartas
+  const podeUsar = (p, c) => R.podeUsar(jogo, p, c);
+  const blefando = (p, c) => R.blefando(jogo, p, c);
+  const usavel = (p, c) => R.usavel(jogo, p, c);
+  const armadilhasOcultas = p => R.armadilhasOcultas(jogo, p);
+  const marcadoContra = (p, d) => R.marcadoContra(jogo, p, d);
+  const valorAoPegar = (p, d) => R.valorAoPegar(jogo, p, d);
+  const seguroDado = (p, d) => R.seguroDado(jogo, p, d);
   function depois(r) {
     marcarNovos();
     if (r === 'proximo' || r === 'fim') { jogo.confirma = null; jogo.alvo = null; jogo.ajusteIdx = null; }
@@ -194,6 +201,18 @@
     render();
     if (r === 'proximo') talvezAutomato();
     return r;
+  }
+  // blefe: um efeito virado para baixo ocupa o lugar da armadilha e aparece ao rival como "?"
+  const podeVirar = (p, c) => R.podeVirar(jogo, p, c);
+  function virarCarta(p, c) {
+    if (online()) { Online.enviar({ tipo: 'virar', carta: c }); return; }
+    R.virarCarta(jogo, p, c);
+  }
+  // o segundo dado da Pressa é opcional
+  function dispensarSegundo(p) {
+    jogo.confirma = null;
+    if (online()) { Online.enviar({ tipo: 'dispensar' }); return 'online'; }
+    return depois(R.dispensarSegundo(jogo, p));
   }
   function usarCarta(p, c, idx, delta) {
     if (online()) { Online.enviar({ tipo: 'carta', carta: c, idx, delta }); return; }
@@ -255,7 +274,7 @@
     const esperto = j.nivel === 'esperto';
     const evitaBolso = esperto && j.armada[1 - p] && ['pronta', 'armada'].includes(j.cartas[1 - p].fundo);
     const marcado = j.marca && j.marca.dono !== p ? j.marca.id : null;
-    const alternativas = mesa.some(d => d.id !== marcado && seguro(p, d.v));
+    const alternativas = mesa.some(d => d.id !== marcado && seguroDado(p, d));
     let melhor = null, mv = -Infinity;
     mesa.forEach((d, i) => {
       const X = d.v;
@@ -285,7 +304,8 @@
     return ds.reduce((a, b) => notaDestino(p, v, b) > notaDestino(p, v, a) ? b : a);
   }
   function automatoCartas(p) {
-    const j = jogo, eu = j.cor[p], ele = j.cor[1 - p], m = j.mesa, usa = [], pronta = c => j.cartas[p][c] === 'pronta';
+    const j = jogo, eu = j.cor[p], ele = j.cor[1 - p], m = j.mesa, usa = [];
+    const pronta = c => j.cartas[p][c] === 'pronta', pode = c => usavel(p, c);   // "pode": efeito pronto ou virado como blefe
     if (j.nivel === 'aprendiz') {
       if (Math.random() > 0.2) return usa;
       const cs = j.decks[p].filter(c => pronta(c) && podeUsar(p, c).ok && c !== 'sobrecarga');
@@ -293,20 +313,20 @@
       return [{ carta: sorteia(cs), idx: Math.floor(Math.random() * m.length), delta: Math.random() < .5 ? 1 : -1 }];
     }
     let precisa = eu.length >= 2 && !m.some(d => encaixaP(p, d.v));
-    if (precisa && pronta('virar')) { const i = m.findIndex(d => encaixa(eu, 7 - d.v)); if (i >= 0) { usa.push({ carta: 'virar', idx: i }); precisa = false; } }
-    if (precisa && pronta('ajuste')) {
+    if (precisa && pode('virar')) { const i = m.findIndex(d => encaixa(eu, 7 - d.v)); if (i >= 0) { usa.push({ carta: 'virar', idx: i }); precisa = false; } }
+    if (precisa && pode('ajuste')) {
       for (let i = 0; i < m.length && precisa; i++) for (const dl of [1, -1]) {
         const x = m[i].v + dl; if (x >= 1 && x <= 6 && encaixa(eu, x)) { usa.push({ carta: 'ajuste', idx: i, delta: dl }); precisa = false; break; }
       }
     }
-    if (precisa && pronta('coringa')) { usa.push({ carta: 'coringa' }); precisa = false; }
-    if (precisa && pronta('rerrolar')) { usa.push({ carta: 'rerrolar' }); precisa = false; }
+    if (precisa && pode('coringa')) { usa.push({ carta: 'coringa' }); precisa = false; }
+    if (precisa && pode('rerrolar')) { usa.push({ carta: 'rerrolar' }); precisa = false; }
     if (ele.length >= 4 && m.length >= 2 && !usa.length) {
       const so = m.map((d, i) => i).filter(i => encaixa(ele, m[i].v));
       if (so.length === 1) {
         const i = so[0];
-        if (pronta('virar') && !encaixa(ele, 7 - m[i].v)) usa.push({ carta: 'virar', idx: i });
-        else if (pronta('rerrolar')) usa.push({ carta: 'rerrolar' });
+        if (pode('virar') && !encaixa(ele, 7 - m[i].v)) usa.push({ carta: 'virar', idx: i });
+        else if (pode('rerrolar')) usa.push({ carta: 'rerrolar' });
       }
     }
     if (!j.armada[p]) {
@@ -320,9 +340,14 @@
         if (i !== undefined) usa.push({ carta: 'espelho', idx: i });
       }
     }
-    if (pronta('pressa') && eu.length >= 2 && m.length >= 2 && !usa.some(u => u.carta === 'rerrolar')) {
+    if (pode('pressa') && eu.length >= 2 && m.length >= 2 && !usa.some(u => u.carta === 'rerrolar')) {
       const ok = m.some((a, i) => encaixaP(p, a.v) && m.some((b, k) => k !== i && encaixa(eu.concat(a.v), b.v)));
       if (ok) usa.push({ carta: 'pressa' });
+    }
+    // blefe: com uma armadilha ainda escondida no deck, às vezes vira para baixo um efeito que não precisa agora
+    if (!j.armada[p] && !usa.some(u => CARTAS[u.carta].tipo === 'armadilha') && ele.length >= 3 && Math.random() < 0.4) {
+      const c = j.decks[p].find(c => c !== 'pressa' && podeVirar(p, c).ok && !usa.some(u => u.carta === c));
+      if (c) usa.push({ carta: c, virar: true });
     }
     return usa;
   }
@@ -354,8 +379,9 @@
     if (j.fase === 'pegar') {
       await espera(800); if (tok !== jogo.token) return;
       for (const u of automatoCartas(p)) {
-        if (j.cartas[p][u.carta] !== 'pronta' || (CARTAS[u.carta].alvo && !j.mesa[u.idx])) continue;
-        usarCarta(p, u.carta, u.idx, u.delta || 1); render();
+        if (u.virar ? !podeVirar(p, u.carta).ok : (!podeUsar(p, u.carta).ok || (CARTAS[u.carta].alvo && !j.mesa[u.idx]))) continue;
+        if (u.virar) virarCarta(p, u.carta); else usarCarta(p, u.carta, u.idx, u.delta || 1);
+        render();
         await espera(1000); if (tok !== jogo.token) return;
       }
       for (;;) {
@@ -365,7 +391,11 @@
         j.destaque = null; j.pensando = false;
         const v = tirar(p, plano.idx);
         const res = colocar(p, v, automatoDestino(p, v, plano.modo));
-        if (res === 'extra') { j.pensando = true; render(); await espera(520); if (tok !== jogo.token) return; continue; }
+        if (res === 'extra') {
+          // o segundo dado da Pressa é opcional: sem nenhum dado seguro, o rival dispensa
+          if (!j.mesa.some(d => seguroDado(p, d))) { if (dispensarSegundo(p) !== 'decidir') return; break; }
+          j.pensando = true; render(); await espera(520); if (tok !== jogo.token) return; continue;
+        }
         if (res !== 'decidir') return;
         break;
       }
@@ -374,7 +404,7 @@
     await espera(650); if (tok !== jogo.token) return;
     j.pensando = false;
     if (automatoDispara(p)) {
-      if (j.cartas[p].sobrecarga === 'pronta' && j.cor[p].length >= 4 && j.nivel === 'esperto') { usarCarta(p, 'sobrecarga'); render(); await espera(700); if (tok !== jogo.token) return; }
+      if (j.decks[p].includes('sobrecarga') && podeUsar(p, 'sobrecarga').ok && j.cor[p].length >= 4 && j.nivel === 'esperto') { usarCarta(p, 'sobrecarga'); render(); await espera(700); if (tok !== jogo.token) return; }
       disparar(p);
     } else segurar(p);
   }
@@ -413,9 +443,9 @@
       usarCarta(p, c, idx); render(); return;
     }
     if (j.fase !== 'pegar') return;
-    const algumSeguro = j.mesa.some(x => seguro(p, x.v));
+    const algumSeguro = j.mesa.some(x => seguroDado(p, x));
     const proprioEspelho = j.marca && j.marca.id === d.id && j.marca.dono === p;
-    if (((!seguro(p, d.v) && algumSeguro) || proprioEspelho) && j.confirma !== d.id) { j.confirma = d.id; render(); return; }
+    if (((!seguroDado(p, d) && algumSeguro) || proprioEspelho) && j.confirma !== d.id) { j.confirma = d.id; render(); return; }
     j.confirma = null;
     if (online()) { Online.enviar({ tipo: 'pegar', idx }); return; }
     const r = R.pegar(j, p, idx);
@@ -428,13 +458,19 @@
     const meu = (j.modo !== 'local' && p === 0) || (j.modo === 'local' && j.vez === p);
     let e = j.cartas[p][c];
     if (!meu && e === 'armada' && c !== 'espelho') e = 'pronta';
+    const blefe = meu && blefando(p, c), pv = podeVirar(p, c);
+    const estado = { pronta: 'na mão', armada: blefe ? 'virada para baixo (blefe)' : 'armada', usada: 'usada', perdida: 'perdida' }[e] || e;
     document.getElementById('cartaDetalhe').innerHTML = `${k.ico}<div><h2 id="cartaTitulo">${k.nome}</h2>
-      <p class="nota">${k.tipo === 'armadilha' ? 'Armadilha' : 'Efeito'}${k.pontos ? ' · carta de pontos ⚡' : ''} · ${e}</p><p style="margin-top:8px">${k.texto}</p></div>`;
+      <p class="nota">${k.tipo === 'armadilha' ? 'Armadilha' : 'Efeito'}${k.pontos ? ' · carta de pontos ⚡' : ''} · ${estado}</p><p style="margin-top:8px">${k.texto}</p></div>`;
     const visivel = humano(p) && j.vez === p;
-    document.getElementById('cartaNota').textContent = !visivel ? 'O deck do rival fica à mostra; as armadilhas armadas, não.' : pu.ok ? '' : (pu.motivo || '');
-    const rot = k.alvo ? 'Escolher o dado' : k.tipo === 'armadilha' ? 'Armar' : 'Usar';
+    let nota = !meu ? 'O deck do rival fica à mostra. Uma carta virada (?) pode ser qualquer carta dele ainda não revelada: uma armadilha ou um blefe.'
+      : !visivel ? 'Só na sua vez.' : pu.ok ? '' : (pu.motivo || '');
+    if (visivel && e === 'pronta' && k.tipo === 'efeito' && pv.ok) nota = 'Virada para baixo, ela aparece para o rival como uma armadilha (?). Virada, não faz nada; quando você a usar, o blefe se revela.';
+    document.getElementById('cartaNota').textContent = nota;
+    const rot = blefe ? 'Usar (revela o blefe)' : k.alvo ? 'Escolher o dado' : k.tipo === 'armadilha' ? 'Armar' : 'Usar';
     document.getElementById('cartaBotoes').innerHTML =
-      (visivel && e === 'pronta' ? `<button class="btn btn-mel" data-usar="${c}" ${pu.ok ? '' : 'disabled'}>${rot}</button>` : '') +
+      (visivel && (e === 'pronta' || blefe) ? `<button class="btn btn-mel" data-usar="${c}" ${pu.ok ? '' : 'disabled'}>${rot}</button>` : '') +
+      (visivel && e === 'pronta' && pv.ok ? `<button class="btn btn-papel" data-virar="${c}">Virar para baixo (blefe)</button>` : '') +
       `<button class="btn btn-papel" data-fechar-carta="1">Fechar</button>`;
     document.getElementById('janelaCarta').hidden = false;
     Som.tocar('carta');
@@ -466,10 +502,11 @@
       let e = j.cartas[p][c];
       if (e === 'armada' && !meu && c !== 'espelho') e = 'pronta';
       const raio = k.pontos ? '<span class="raio" aria-label="carta de pontos">⚡</span>' : '';
-      html += `<button class="carta ${k.tipo} ${e}" data-carta="${c}" data-dono="${p}" aria-label="${k.nome}: ${e}">${k.ico}<span class="cnome">${k.nome}</span>${raio}${e === 'armada' ? '<small>armada</small>' : ''}</button>`;
+      const rotulo = e === 'armada' ? (k.tipo === 'efeito' ? 'virada' : 'armada') : '';
+      html += `<button class="carta ${k.tipo} ${e}" data-carta="${c}" data-dono="${p}" aria-label="${k.nome}: ${rotulo || e}">${k.ico}<span class="cnome">${k.nome}</span>${raio}${rotulo ? `<small>${rotulo}</small>` : ''}</button>`;
     }
     let estados = '';
-    if (j.armada[p] && j.armada[p] !== 'espelho' && !meu) estados += `<span class="efeito-ativo" style="background:var(--tinta);color:var(--papel)">? armadilha armada</span>`;
+    if (j.armada[p] && j.armada[p] !== 'espelho' && !meu) estados += `<span class="efeito-ativo oculta" style="background:var(--tinta);color:var(--papel)" title="Uma carta virada: pode ser uma armadilha ou um blefe">? carta virada</span>`;
     if (j.coringa[p]) estados += `<span class="efeito-ativo">Coringa ativo</span>`;
     if (j.sobre[p]) estados += `<span class="efeito-ativo">Sobrecarga +2</span>`;
     if (j.extra[p]) estados += `<span class="efeito-ativo">Pressa: +1 dado</span>`;
@@ -516,8 +553,10 @@
     const ativo = humano(j.vez) && ['pegar', 'alvo'].includes(j.fase) && !j.pensando && !j.intro;
     const dicas = st.pref.dicas;
     return j.mesa.map((d, i) => {
-      const r = eu.length ? rels(frente(eu), d.v) : [];
-      const cabe = encaixaP(p, d.v), salvo = seguro(p, d.v);
+      // um dado com o Espelho do rival chega virado: as dicas falam do valor que vai chegar
+      const vv = valorAoPegar(p, d), contra = marcadoContra(p, d);
+      const r = eu.length ? rels(frente(eu), vv) : [];
+      const cabe = encaixaP(p, vv), salvo = seguroDado(p, d);
       const marcado = j.marca && j.marca.id === d.id ? j.marca.dono : null;
       let tags = '';
       if (j.fase === 'alvo' && humano(j.vez)) {
@@ -531,14 +570,25 @@
         else if (cabe) tags = `<span class="tag r-coringa">★<span class="tnome curta"> Coringa</span></span>`;
         else if (salvo) tags = `<span class="tag inicio">Bolso</span>`;
         else tags = `<span class="tag rompe">✕<span class="tnome curta"> Rompe</span></span>`;
+        if (contra && j.confirma !== d.id && dicas) tags = `<span class="tag previa">vira ${vv}</span>` + tags;
       }
       if (j.fase === 'ajuste' && j.ajusteIdx === i) tags = `<span class="tag previa">ajustar</span>`;
-      const serveRival = dicas && ele.length && encaixa(ele, d.v) && j.fase !== 'fim';
+      const serveRival = dicas && ele.length && encaixa(ele, valorAoPegar(1 - p, d)) && j.fase !== 'fim';
       const cls = ['pega', d.novo ? 'novo' : '', !salvo && j.fase === 'pegar' && dicas ? 'nao-cabe' : '', j.confirma === d.id || (j.fase === 'ajuste' && j.ajusteIdx === i) ? 'armado' : '', j.destaque === d.id ? 'destaque' : '', j.virando === d.id ? 'virando' : ''].join(' ');
-      const rotulo = `${j.fase === 'alvo' ? 'Escolher' : 'Pegar'} ${d.v}${cabe ? (r.length ? ', ' + r.map(k => REL[k].nome).join(' e ') : '') : salvo ? ', só pelo Bolso' : ', rompe a corrente'}${serveRival ? ', serve ao rival' : ''}${marcado !== null ? ', marcado com Espelho' : ''}`;
+      const rotulo = `${j.fase === 'alvo' ? 'Escolher' : 'Pegar'} ${d.v}${contra ? `, chega virado como ${vv}` : ''}${cabe ? (r.length ? ', ' + r.map(k => REL[k].nome).join(' e ') : '') : salvo ? ', só pelo Bolso' : ', rompe a corrente'}${serveRival ? ', serve ao rival' : ''}${marcado !== null ? ', marcado com Espelho' : ''}`;
       return `<button class="${cls}" data-i="${i}" data-id="${d.id}" ${ativo ? '' : 'disabled'} aria-label="${rotulo}">
         <span class="kbd">${i + 1}</span><span class="face">${dadoHTML(d.v, skinMesa())}${serveRival ? '<span class="alvo-rival"></span>' : ''}${marcado !== null ? `<span class="marca-esp dono${marcado}" title="Marcado com Espelho">${CARTAS.espelho.ico}</span>` : ''}</span><span class="tags">${tags}</span></button>`;
     }).join('');
+  }
+
+  // o que uma carta virada (?) do rival pode ser, com o que cada armadilha faria neste disparo
+  function cartaViradaTxt(r, L) {
+    const j = jogo, n = nomes();
+    const efeito = { interferencia: L >= 4 ? 'Interferência (−1 neste disparo)' : 'Interferência (não pega disparo de 3)', pedagio: 'Pedágio (+3 para ele se você disparar)',
+      fundo: 'Fundo Falso (só pega o Bolso)', ancora: 'Âncora (protege a corrente dele)' };
+    const traps = armadilhasOcultas(r).map(c => efeito[c] || CARTAS[c].nome);
+    const blefes = j.decks[r].filter(c => CARTAS[c].tipo === 'efeito' && ['pronta', 'armada'].includes(j.cartas[r][c])).map(c => CARTAS[c].nome);
+    return `${n[r]} tem uma carta virada (?). Pode ser ${traps.join(' ou ')}${blefes.length ? `, ou um blefe com ${blefes.join(' ou ')}` : ''}.`;
   }
 
   function acoesHTML() {
@@ -577,11 +627,12 @@
       return `<div class="status">${quem} pegou ${mini(v, skinDe(p))} <b>${v}</b>. Para onde ele vai?${ds.length ? '' : ' Nenhuma opção sincroniza.'}</div>
         <div class="botoes">${botoes}</div>`;
     }
-    const sobreBtn = j.cartas[p].sobrecarga === 'pronta' && !j.sobre[p] && eu.length >= 4 ? `<button class="btn btn-duplo btn-papel" data-acao="sobrecarga"><span>Sobrecarga</span><small>+2 neste disparo</small></button>` : '';
+    const sobreBtn = j.decks[p].includes('sobrecarga') && usavel(p, 'sobrecarga') && !j.sobre[p] && eu.length >= 4 ? `<button class="btn btn-duplo btn-papel" data-acao="sobrecarga"><span>Sobrecarga</span><small>+2 neste disparo</small></button>` : '';
     if (j.fase === 'decidir') {
       const L = eu.length, rk = risco(p), vale = pontos(L) + (j.sobre[p] && L >= 4 ? 2 : 0);
       let nivel, txt;
-      if (j.pts[p] + vale >= j.meta) { nivel = 'vence'; txt = `Disparar agora vence a partida${j.armada[1 - p] && L >= 4 ? ', se a armadilha do rival não atrapalhar' : ''}.`; }
+      const ocultas = j.armada[1 - p] && j.armada[1 - p] !== 'espelho' ? armadilhasOcultas(1 - p) : [];
+      if (j.pts[p] + vale >= j.meta) { nivel = 'vence'; txt = `Disparar agora vence a partida${ocultas.includes('interferencia') && L >= 4 && j.pts[p] + vale - 1 < j.meta ? ', se a carta virada do rival não for a Interferência' : ''}.`; }
       else if (rk.bolso) { nivel = 'baixo'; txt = j.bolso[p] === null ? 'Seu Bolso está vazio: na próxima vez você sempre pode guardar o dado. Segurar não rompe.' : `O ${j.bolso[p]} do seu Bolso sincroniza com o seu ${frente(eu)}: segurar não rompe.`; }
       else if (rk.n >= 2) {
         if (rk.k === 0) { nivel = 'alto'; txt = `Nenhum dos ${rk.n} dados que ficam na Mesa sincroniza com o seu ${frente(eu)}. Se segurar, rompe na próxima vez.`; }
@@ -595,7 +646,7 @@
       }
       let extra = '';
       if (j.armada[p] === 'ancora' && L >= 4) extra += `<div class="risco baixo"><span>Sua Âncora está armada: uma ruptura seria evitada.</span></div>`;
-      if (j.armada[1 - p] && j.armada[1 - p] !== 'espelho') extra += `<div class="risco aviso"><span>${n[1 - p]} tem uma armadilha armada (${j.decks[1 - p].filter(c => CARTAS[c].tipo === 'armadilha' && c !== 'espelho' && !['usada', 'perdida'].includes(j.cartas[1 - p][c])).map(c => CARTAS[c].nome).join(' ou ')}).</span></div>`;
+      if (j.armada[1 - p] && j.armada[1 - p] !== 'espelho') extra += `<div class="risco aviso"><span>${cartaViradaTxt(1 - p, L)}</span></div>`;
       return `<div class="status">${quem}: corrente de <b>${L}</b>. Disparar ou segurar?</div>
         <div class="risco ${nivel}"><span>${txt}</span></div>${extra}
         <div class="botoes">
@@ -604,18 +655,23 @@
           ${sobreBtn}
         </div>`;
     }
-    const algumSeguro = j.mesa.some(x => seguro(p, x.v));
+    const algumSeguro = j.mesa.some(x => seguroDado(p, x));
     if (j.confirma) {
       const proprio = j.marca && j.marca.id === j.confirma && j.marca.dono === p;
-      return `<div class="status">${proprio ? 'Esse é o dado do seu <b>Espelho</b>: pegá-lo desperdiça a armadilha.' : `Esse dado não sincroniza e o Bolso não salva: sua corrente de <b>${eu.length}</b> vai romper.`} Toque nele de novo para pegar mesmo assim.</div>
+      const dc = j.mesa.find(x => x.id === j.confirma), contra = dc && marcadoContra(p, dc);
+      const salva = j.armada[p] === 'ancora' && eu.length >= 4 ? ' (a sua Âncora vai segurá-la)' : '';
+      return `<div class="status">${proprio ? 'Esse é o dado do seu <b>Espelho</b>: pegá-lo desperdiça a armadilha.'
+        : contra ? `Esse dado tem a marca do <b>Espelho</b> do rival: chega como <b>${7 - dc.v}</b>, que não sincroniza, e não pode ir para o Bolso. Sua corrente de <b>${eu.length}</b> vai romper${salva}.`
+        : `Esse dado não sincroniza e o Bolso não salva: sua corrente de <b>${eu.length}</b> vai romper${salva}.`} Toque nele de novo para pegar mesmo assim.</div>
         <div class="botoes"><button class="btn btn-papel" data-acao="cancelar">Cancelar</button></div>`;
     }
     let msg;
-    if (j.segundoDado) msg = 'pegue o segundo dado (Pressa).';
+    if (j.segundoDado) msg = `pegue o segundo dado (Pressa) ou dispense${eu.length >= 3 ? ' e vá para o disparo' : ''}.`;
     else if (!algumSeguro) msg = `<b>nenhum dado sincroniza</b> com o seu ${frente(eu)}, nem o do Bolso. Use uma carta ou pegue um: a corrente de ${eu.length} rompe${j.armada[p] === 'ancora' && eu.length >= 4 ? ', mas a sua Âncora está armada' : ''}.`;
     else msg = eu.length ? `pegue um dado. Sua frente é <b>${frente(eu)}</b>: sincronizam ${j.coringa[p] ? 'todos (Coringa)' : facesQueEncaixam(eu).join(', ')}.` : 'pegue um dado. Sua corrente está vazia: qualquer um começa.';
-    const prontas = j.decks[p].filter(c => j.cartas[p][c] === 'pronta').length;
-    return `<div class="status">${quem}, ${msg}</div>${prontas ? `<p class="nota" style="margin:0">Toque numa carta sua para usar (${prontas} ${prontas === 1 ? 'pronta' : 'prontas'}).</p>` : ''}`;
+    const prontas = j.decks[p].filter(c => usavel(p, c)).length;
+    const dispensa = j.segundoDado ? `<div class="botoes"><button class="btn btn-papel" data-acao="dispensar">Dispensar o 2.º dado</button></div>` : '';
+    return `<div class="status">${quem}, ${msg}</div>${dispensa}${prontas ? `<p class="nota" style="margin:0">Toque numa carta sua para usar (${prontas} ${prontas === 1 ? 'pronta' : 'prontas'}).</p>` : ''}`;
   }
 
   function render() {
@@ -699,14 +755,14 @@
         case 'salvo': Som.tocar('salvo'); Fx.chamada('Salvo!', e.txt, 'suave'); Fx.faiscas(qs(`#pj${e.p} .corrente`), 14, ['#cdeccf', '#fff6e6']); break;
         case 'bloqueio': Som.tocar('bloqueio'); Fx.texto(qs(`#pj${e.p} .corrente`) || null, 'Bloqueio!', 'pequeno'); break;
         case 'carta': Som.tocar('carta'); if (!humano(e.p) || j.modo === 'local') Fx.chamada(e.nome, `${n[e.p]} usou`, e.p === 1 && j.modo !== 'local' ? 'rival' : 'suave'); break;
-        case 'armou': Som.tocar('armou'); if (!humano(e.p) || j.modo === 'local') Fx.texto(painelEl, e.c === 'espelho' ? 'Espelho!' : 'Armadilha armada', 'pequeno'); break;
+        case 'armou': Som.tocar('armou'); if (!humano(e.p) || j.modo === 'local') Fx.texto(painelEl, e.c === 'espelho' ? 'Espelho!' : 'Carta virada!', 'pequeno'); break;
         case 'revelou': {
           Som.tocar('revelou'); Fx.chamada(CARTAS[e.c].nome + '!', e.txt, e.p === 1 && j.modo !== 'local' ? 'rival' : '');
           Fx.faiscas(painelEl, 22, ['#e2d6ff', '#fff6e6', '#ffe3a3']); vibrar([40, 60, 40]);
           break;
         }
         case 'virar': setTimeout(() => { if (jogo.virando === e.id) jogo.virando = null; }, 500); Som.tocar('virar'); break;
-        case 'chamada': Som.tocar('momento'); Fx.chamada(e.titulo, e.sub, e.tipo === 'esquiva' ? (e.p === 1 && j.modo !== 'local' ? 'rival' : '') : e.tipo); break;
+        case 'chamada': Som.tocar('momento'); Fx.chamada(e.titulo, e.sub, e.estilo === 'esquiva' ? (e.p === 1 && j.modo !== 'local' ? 'rival' : '') : e.estilo); break;
         case 'falar': if (j.modo === 'bot') falaDoEvento(e); break;
         case 'fim': {
           const venceuHumano = humano(e.p);
@@ -763,7 +819,7 @@
     document.getElementById('fimTexto').value =
       `Dice Duel v0.8 · ${j.modo === 'bot' ? 'contra ' + n[1] : online() ? 'online contra ' + n[1] : '2 jogadores'} · meta ${j.meta}${j.premio ? ` · moedas +${j.premio.moedas ? j.premio.moedas.total : 0} · rating ${j.premio.ratingAntes}→${j.premio.rating}` : ''}\n` +
       `${n[0]} ${j.pts[0]} × ${j.pts[1]} ${n[1]} · ${j.compras} dados pegos · ${j.rodada} rodadas\n` +
-      [0, 1].map(k => `${n[k]} [${j.decks[k].map(c => CARTAS[c].nome).join(', ') || 'sem cartas'}]: ${s[k].disp} disparos, maior ${s[k].maior}, ${s[k].rupt} rupturas, Bolso ${s[k].guardou}/${s[k].trocou}, cartas que agiram: ${s[k].cartas.join(', ') || 'nenhuma'}`).join('\n') +
+      [0, 1].map(k => `${n[k]} [${j.decks[k].map(c => CARTAS[c].nome).join(', ') || 'sem cartas'}]: ${s[k].disp} disparos, maior ${s[k].maior}, ${s[k].rupt} rupturas, Bolso ${s[k].guardou}/${s[k].trocou}, cartas que agiram: ${s[k].cartas.join(', ') || 'nenhuma'}, blefes ${s[k].blefes || 0}`).join('\n') +
       `\nComentário: `;
     document.getElementById('btnDeNovo').textContent = online() ? 'Revanche' : 'Jogar de novo';
     document.getElementById('fim').hidden = false;
@@ -943,8 +999,12 @@
   });
   document.getElementById('cartaBotoes').addEventListener('click', e => {
     if (e.target.closest('[data-fechar-carta]')) { document.getElementById('janelaCarta').hidden = true; return; }
+    const j = jogo, p = j.vez;
+    if (!humano(p) || j.pensando) return;
+    const bv = e.target.closest('[data-virar]');
+    if (bv) { if (podeVirar(p, bv.dataset.virar).ok) { document.getElementById('janelaCarta').hidden = true; virarCarta(p, bv.dataset.virar); render(); } return; }
     const b = e.target.closest('[data-usar]'); if (!b || b.disabled) return;
-    const j = jogo, p = j.vez, c = b.dataset.usar;
+    const c = b.dataset.usar;
     if (!podeUsar(p, c).ok) return;
     document.getElementById('janelaCarta').hidden = true;
     if (CARTAS[c].alvo) { j.fase = 'alvo'; j.alvo = c; j.confirma = null; }
@@ -962,6 +1022,7 @@
     if (a === 'nova') return novaPartida();
     if (a === 'deck') return abrirDeck();
     if (a === 'cancelar') { j.confirma = null; return render(); }
+    if (a === 'dispensar' && j.segundoDado && j.fase === 'pegar' && humano(j.vez)) { dispensarSegundo(j.vez); return; }
     if (a === 'cancelar-alvo') { j.fase = 'pegar'; j.alvo = null; j.ajusteIdx = null; return render(); }
     if (a === 'sobrecarga' && podeUsar(j.vez, 'sobrecarga').ok) { usarCarta(j.vez, 'sobrecarga'); return render(); }
     if (j.fase !== 'decidir' || !humano(j.vez)) return;

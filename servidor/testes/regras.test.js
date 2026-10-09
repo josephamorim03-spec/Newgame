@@ -86,3 +86,47 @@ test('nomes herdados de Object (constructor, __proto__) não passam por carta ne
   const j = Regras.criarPartida({ decks: [['ajuste'], []], vez: 0, rng: rngDe(2) });
   assert.strictEqual(Regras.aplicar(j, 0, { tipo: 'carta', carta: 'constructor' }).ok, false);
 });
+
+test('blefe: o efeito virado é um "?" igual ao de uma armadilha, e usá-lo revela', () => {
+  const j = Regras.criarPartida({ decks: [['coringa', 'interferencia'], []], vez: 0, nomes: ['Ana', 'Bia'], rng: rngDe(9) });
+  assert.strictEqual(Regras.aplicar(j, 0, { tipo: 'virar', carta: 'interferencia' }).ok, false); // só efeito vira
+  assert.ok(Regras.aplicar(j, 0, { tipo: 'virar', carta: 'coringa' }).ok);
+  const bia = Regras.visaoDe(j, 1);
+  assert.strictEqual(bia.armada[1], 'oculta');
+  assert.strictEqual(bia.cartas[1].coringa, 'pronta');
+  assert.strictEqual(bia.stats[1].blefes, 0);
+  assert.strictEqual(bia.log[0].txt, 'armou uma armadilha');
+  assert.strictEqual(Regras.aplicar(j, 0, { tipo: 'carta', carta: 'interferencia' }).ok, false); // o blefe ocupa o lugar
+  assert.ok(Regras.aplicar(j, 0, { tipo: 'carta', carta: 'coringa' }).ok);
+  assert.strictEqual(j.armada[0], null);
+  assert.strictEqual(j.cartas[0].coringa, 'usada');
+  assert.ok(j.eventos.some(e => e.tipo === 'chamada' && e.titulo === 'Blefe!'));
+  // sem armadilha escondida, não blefa
+  const k = Regras.criarPartida({ decks: [['ajuste', 'espelho'], []], vez: 0, rng: rngDe(9) });
+  assert.strictEqual(Regras.podeVirar(k, 0, 'ajuste').ok, false);
+});
+
+test('Pressa: o 6.º dado dispara e o segundo dado continua; dispensar leva à decisão', () => {
+  const j = Regras.criarPartida({ decks: [['pressa'], []], vez: 0, rng: rngDe(4) });
+  j.cor[0] = [1, 2, 3, 4, 5]; j.mesa = [{ id: 901, v: 5 }, { id: 902, v: 2 }, { id: 903, v: 3 }];
+  assert.ok(Regras.aplicar(j, 0, { tipo: 'carta', carta: 'pressa' }).ok);
+  let r = Regras.aplicar(j, 0, { tipo: 'pegar', idx: 0 });
+  if (r.resultado === 'destino') r = Regras.aplicar(j, 0, { tipo: 'destino', modo: 'corrente' });
+  assert.strictEqual(r.resultado, 'extra');
+  assert.strictEqual(j.pts[0], 6);
+  assert.ok(j.vez === 0 && j.segundoDado);
+  const k = Regras.criarPartida({ decks: [['pressa'], []], vez: 0, rng: rngDe(4) });
+  k.cor[0] = [3, 3]; k.bolso[0] = 6; k.mesa = [{ id: 911, v: 3 }, { id: 912, v: 1 }];
+  Regras.aplicar(k, 0, { tipo: 'carta', carta: 'pressa' });
+  Regras.aplicar(k, 0, { tipo: 'pegar', idx: 0 });
+  if (k.fase === 'destino') Regras.aplicar(k, 0, { tipo: 'destino', modo: 'corrente' });
+  assert.strictEqual(Regras.aplicar(k, 0, { tipo: 'dispensar' }).resultado, 'decidir');
+  assert.ok(k.vez === 0 && k.cor[0].length === 3 && !k.segundoDado);
+  // Coringa não se gasta no primeiro dado de uma corrente vazia
+  const c = Regras.criarPartida({ decks: [['coringa'], []], vez: 0, rng: rngDe(4) });
+  c.bolso[0] = 1; c.mesa = [{ id: 921, v: 4 }, { id: 922, v: 1 }];
+  Regras.aplicar(c, 0, { tipo: 'carta', carta: 'coringa' });
+  Regras.aplicar(c, 0, { tipo: 'pegar', idx: 0 });
+  if (c.fase === 'destino') Regras.aplicar(c, 0, { tipo: 'destino', modo: 'corrente' });
+  assert.strictEqual(c.coringa[0], true);
+});

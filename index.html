@@ -87,11 +87,24 @@
         <ol>
           <li>Antes da partida, monte um deck de <b>até 3 cartas</b>: no máximo <b>2 armadilhas</b> e no máximo <b>1 carta de pontos</b> (<span class="raio">⚡</span>). Cada carta vale <b>uma vez</b>.</li>
           <li><b>Efeitos</b> são usados na sua vez, antes de pegar, à vista do rival.</li>
-          <li><b>Armadilhas</b> são armadas na sua vez (uma por vez). Os dois decks ficam à mostra: o rival vê que há uma armada, mas não qual. O <b>Espelho</b> deixa a marca à vista.</li>
-          <li><b>Virar</b> e <b>Rerrolar</b> desfazem a marca de um Espelho.</li>
+          <li><b>Armadilhas</b> são armadas na sua vez, viradas para baixo (uma por vez). Os dois decks ficam à mostra: o rival vê um <b>?</b>, mas não qual carta é. O <b>Espelho</b> é a exceção: a marca fica à vista.</li>
+          <li><b>Blefe:</b> você também pode virar para baixo um <b>efeito</b>. Para o rival ele é um <b>?</b> igual ao de uma armadilha. Virado, não faz nada e ocupa o lugar da armadilha; quando você o usa, ele funciona normalmente e o blefe aparece. Só dá para blefar se o seu deck ainda esconde uma armadilha (sem contar o Espelho).</li>
           <li>As armadilhas se liberam depois da sua primeira partida (ou em Ajustes).</li>
         </ol>
         <div class="lista-cartas" id="listaCartas" style="margin-top:10px"></div>
+        <h3>Quando as cartas se cruzam</h3>
+        <ol class="cruzam">
+          <li><b>Armadilhas não se anulam: cada uma olha a sua condição.</b> A Âncora do rival segurar a corrente dele não gasta a sua Interferência; ela continua esperando o próximo disparo dele de 4+.</li>
+          <li><b>“4 ou mais” é sempre o tamanho da corrente na hora.</b> Interferência e Sobrecarga olham a corrente no disparo; a Âncora, a corrente no momento em que o dado ruim ia entrar. Com 3, nenhuma delas é gasta e elas continuam esperando.</li>
+          <li><b>Interferência + Sobrecarga:</b> as duas valem. Um disparo de 4 vale 2 + 2 − 1 = 3.</li>
+          <li><b>Pedágio:</b> pega qualquer disparo, até o de 3 e o automático de 6. Se os dois passarem da meta, vence quem disparou.</li>
+          <li><b>Coringa e Âncora:</b> com o Coringa ativo, nenhum dado rompe, então a Âncora não é gasta.</li>
+          <li><b>Coringa</b> é gasto no primeiro dado que entra numa corrente já começada, mesmo que esse dado já sincronizasse. Guardar no Bolso não gasta.</li>
+          <li><b>Pressa:</b> precisa de 2 dados na Mesa e não passa para a Mesa seguinte. Você não dispara entre os dois dados; o segundo é opcional (“Dispensar”). Se o primeiro completar 6, a corrente dispara sozinha e o segundo dado começa outra.</li>
+          <li><b>Espelho:</b> quem pega o dado marcado o recebe virado (7 − valor) e não pode guardá-lo; Bolso e troca ficam fechados, mas Coringa e Âncora ainda valem. As etiquetas da Mesa já mostram o valor virado. <b>Virar</b> no dado marcado e <b>Rerrolar</b> apagam a marca; <b>Ajuste</b> não.</li>
+          <li><b>Fundo Falso:</b> só pega quando o dado vai para o Bolso (guardar ou trocar). Na troca, os dois dados caem e a corrente não muda.</li>
+          <li><b>Uma carta armada por vez</b>, contando o blefe. Uma armadilha que nunca encontra a sua condição fica armada até o fim.</li>
+        </ol>
         <h3>Nem todo dado vale o mesmo</h3>
         <p class="nota">Quantas faces sincronizam depois de cada face. O <b>2</b> e o <b>5</b> são as melhores frentes.</p>
         <div class="valor" id="valorFaces"></div>
