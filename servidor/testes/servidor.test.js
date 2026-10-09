@@ -355,7 +355,7 @@ test('sala cheia e sala que não existe', { timeout: 20000 }, async () => {
 // o mesmo roteiro com Postgres de verdade, quando houver um (TESTE_DATABASE_URL)
 test('banco Postgres: contas, partidas e ranking', { skip: !process.env.TESTE_DATABASE_URL && 'defina TESTE_DATABASE_URL' }, async () => {
   const banco = await criarBanco({ url: process.env.TESTE_DATABASE_URL });
-  await banco.pool.query('TRUNCATE contas, partidas RESTART IDENTITY');
+  await banco.pool.query('TRUNCATE contas, partidas, amizades RESTART IDENTITY');   // amizades aponta para contas: vão juntas
   const s = await subir({ banco });
   try {
     const A = await conta(s, 'Olga'), B = await conta(s, 'Pedro');

@@ -2,8 +2,13 @@
 'use strict';
 const crypto = require('crypto');
 
-const NOME_VALIDO = /^[A-Za-zÀ-ÿ0-9_.-]{3,20}$/;
-const validarNome = nome => typeof nome === 'string' && NOME_VALIDO.test(nome.trim());
+// letras (com acento, sem × e ÷), números, ponto, traço e _
+const NOME_VALIDO = /^[A-Za-zÀ-ÖØ-öø-ÿ0-9_.-]{3,20}$/;
+// a chave que faz dois nomes serem "o mesmo nome": não importam maiúsculas, acentos nem separadores.
+// Ana = ana = ANA, José = Jose, ana.b = ana_b = anab. É ela que é única no banco e que o login procura.
+const chaveDoNome = nome => String(nome).trim().normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[._-]/g, '');
+// a chave precisa de pelo menos 3 letras ou números (".a_" não é nome)
+const validarNome = nome => typeof nome === 'string' && NOME_VALIDO.test(nome.trim()) && chaveDoNome(nome).length >= 3;
 const validarSenha = senha => typeof senha === 'string' && senha.length >= 6 && senha.length <= 72;
 
 function hashSenha(senha, sal = crypto.randomBytes(16).toString('hex')) {
@@ -48,4 +53,4 @@ function limitador({ janelaMs = 60_000, maximo = 10 } = {}) {
   };
 }
 
-module.exports = { validarNome, validarSenha, hashSenha, conferirSenha, criarToken, lerToken, limitador };
+module.exports = { chaveDoNome, validarNome, validarSenha, hashSenha, conferirSenha, criarToken, lerToken, limitador };

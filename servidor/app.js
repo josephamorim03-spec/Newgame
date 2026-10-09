@@ -10,6 +10,10 @@ const Regras = require('../shared/regras');
 const { perfil, hoje } = require('./banco');
 const Auth = require('./autenticacao');
 const { Salas } = require('./salas');
+const { Fila } = require('./fila');
+
+const MAX_AMIGOS = 200;          // amigos + pedidos de uma conta
+const INTERVALO_CHAMADA = 10_000; // chamar o mesmo amigo para a sala de novo só depois disso
 
 const TETO_SOLO_DIA = 300;   // moedas por dia vindas de partidas contra os rivais do jogo (o servidor não as vê)
 const TETO_IMPORTAR = { moedas: 600, xp: 1000, valor: 900 }; // valor: moedas + preço dos itens trazidos
@@ -27,11 +31,27 @@ function criarTrava() {
   };
 }
 
-function criarApp({ banco, segredo, raiz = path.join(__dirname, '..'), tempos = {}, limites = {}, origens = [] }) {
+// fila: liga a fila por rating (FILA=1); filaOpcoes ajusta as janelas (testes)
+function criarApp({ banco, segredo, raiz = path.join(__dirname, '..'), tempos = {}, limites = {}, origens = [], fila: filaAtiva = false, filaOpcoes = {} }) {
   if (!segredo || segredo.length < 16) throw new Error('SEGREDO precisa ter 16 caracteres ou mais');
   const app = express();
   const trava = criarTrava();
   const salas = new Salas({ banco, trava, tempos });
+
+  // ---------- presença: quem está com o jogo aberto (uma conta pode ter várias abas) ----------
+  const presenca = new Map();   // id da conta -> Set de sockets
+  const online = id => !!(presenca.get(id) && presenca.get(id).size);
+  const avisar = (id, msg) => { for (const ws of presenca.get(id) || []) salas.enviar(ws, msg); };
+
+  // ---------- fila por rating: forma o par, cria a sala e põe os dois nela ----------
+  const fila = new Fila({ ativa: filaAtiva, opcoes: filaOpcoes, aoParear: async par => {
+    const vivos = par.filter(e => e.dados.ws.readyState === 1);
+    if (vivos.length < 2) { vivos.forEach(e => fila.entrar(e)); return; }   // um saiu nesse meio-tempo: o outro volta para a fila
+    const contas = await Promise.all(par.map(e => banco.contaPorId(e.id)));
+    const sala = salas.criar(contas[0], { meta: par[0].meta });
+    par.forEach((e, i) => salas.enviar(e.dados.ws, { tipo: 'achou', sala: sala.codigo, rival: contas[1 - i].nome, rating: contas[1 - i].rating }));
+    for (let i = 0; i < 2; i++) await salas.entrar(par[i].dados.ws, contas[i], { sala: sala.codigo, deck: par[i].dados.deck });
+  } });
   app.set('trust proxy', 1); // Railway fica atrás de um proxy: o IP real vem no X-Forwarded-For
   app.disable('x-powered-by');
   app.use(compression());   // a página, o js e o css vão com gzip (~340 KB em vez de ~740 KB)
@@ -48,10 +68,12 @@ function criarApp({ banco, segredo, raiz = path.join(__dirname, '..'), tempos = 
   // depois do CORS: um corpo inválido (400) também chega à página do Vercel com a mensagem de erro
   app.use(express.json({ limit: '8kb' }));
 
-  const lim = { contas: 5, entrar: 10, solo: 20, ws: 120, ...limites };
+  const lim = { contas: 5, entrar: 10, solo: 20, ws: 120, amigos: 30, nomes: 60, ...limites };
   const limContas = Auth.limitador({ janelaMs: 10 * 60_000, maximo: lim.contas });
   const limEntrar = Auth.limitador({ janelaMs: 60_000, maximo: lim.entrar });
   const limSolo = Auth.limitador({ janelaMs: 10 * 60_000, maximo: lim.solo });
+  const limAmigos = Auth.limitador({ janelaMs: 10 * 60_000, maximo: lim.amigos });   // pedidos de amizade (contra spam)
+  const limNomes = Auth.limitador({ janelaMs: 60_000, maximo: lim.nomes });          // "esse nome está livre?" enquanto digita
   const assincrono = fn => (req, res, next) => fn(req, res, next).catch(next);
   const exigirConta = assincrono(async (req, res, next) => {
     const token = (req.get('authorization') || '').replace(/^Bearer\s+/i, '');
@@ -71,7 +93,7 @@ function criarApp({ banco, segredo, raiz = path.join(__dirname, '..'), tempos = 
     if (!Auth.validarNome(nome)) return res.status(400).json({ erro: 'Nome: de 3 a 20 letras, números, ponto, traço ou _.' });
     if (!Auth.validarSenha(senha)) return res.status(400).json({ erro: 'Senha: de 6 a 72 caracteres.' });
     const conta = await banco.criarConta(nome.trim(), Auth.hashSenha(senha));
-    if (!conta) return res.status(409).json({ erro: 'Esse nome já tem dono. Tente outro.' });
+    if (!conta) return res.status(409).json({ erro: await nomeOcupado(nome) });
     const final = importar ? await banco.atualizarConta(conta.id, importacao(conta, importar)) : conta;
     responderConta(res, final);
   }));
@@ -82,10 +104,83 @@ function criarApp({ banco, segredo, raiz = path.join(__dirname, '..'), tempos = 
     responderConta(res, conta);
   }));
   app.get('/api/eu', exigirConta, (req, res) => responderConta(res, req.conta));
+  // o nome está livre? (a tela de criar conta pergunta enquanto a pessoa digita). Igual para maiúsculas, acentos e separadores.
+  async function nomeOcupado(nome) {
+    const dono = await banco.contaPorNome(nome);
+    return dono && dono.nome !== nome.trim() ? `Esse nome é igual a "${dono.nome}", que já existe (maiúsculas, acentos, ponto, traço e _ não contam). Tente outro.`
+      : 'Esse nome já existe. Tente outro.';
+  }
+  app.get('/api/nomes/:nome', limNomes, assincrono(async (req, res) => {
+    const nome = String(req.params.nome);
+    if (!Auth.validarNome(nome)) return res.json({ livre: false, erro: 'De 3 a 20 letras, números, ponto, traço ou _.' });
+    const dono = await banco.contaPorNome(nome);
+    res.json(dono ? { livre: false, erro: await nomeOcupado(nome) } : { livre: true });
+  }));
+
+  // ---------- ranking: o global (top 50, público) e o entre amigos, com a sua posição nos dois ----------
+  const linhaRanking = r => ({ nome: r.nome, rating: r.rating, partidas: r.partidas, vitorias: r.vitorias, icone: r.icone, titulo: Regras.tituloDe(r.rating) });
+  const acima = (o, e) => o.rating > e.rating || (o.rating === e.rating && o.vitorias > e.vitorias);
   app.get('/api/ranking', assincrono(async (req, res) => {
     res.set('Cache-Control', 'public, max-age=15');
-    res.json({ ranking: (await banco.ranking(50)).map(r => ({ ...r, titulo: Regras.tituloDe(r.rating) })) });
+    res.json({ ranking: (await banco.ranking(50)).map(linhaRanking) });
   }));
+  app.get('/api/ranking/amigos', exigirConta, assincrono(async (req, res) => {
+    const eu = req.conta, amigos = (await banco.amizadesDe(eu.id)).filter(a => a.aceita);
+    const todos = [{ ...linhaRanking({ ...eu, icone: eu.ativo.icone }), eu: true }, ...amigos.map(linhaRanking)].sort((a, b) => (acima(a, b) ? -1 : acima(b, a) ? 1 : 0));
+    todos.forEach((x, i) => { x.posicao = i + 1; });
+    res.json({ ranking: todos, global: await banco.posicaoNoRanking(eu.id) });
+  }));
+
+  // ---------- amizades: pedir pelo nome, aceitar, desfazer; a lista mostra quem está online ----------
+  async function listaDeAmigos(id) {
+    const todas = await banco.amizadesDe(id);
+    const sem = x => ({ nome: x.nome, rating: x.rating, icone: x.icone, titulo: Regras.tituloDe(x.rating) });
+    const amigos = todas.filter(x => x.aceita).map(x => ({ ...sem(x), partidas: x.partidas, vitorias: x.vitorias, online: online(x.id), onde: salas.estadoDe(x.id) }))
+      .sort((a, b) => (b.online - a.online) || a.nome.localeCompare(b.nome, 'pt'));
+    return { amigos, recebidos: todas.filter(x => !x.aceita && !x.enviado).map(sem), enviados: todas.filter(x => !x.aceita && x.enviado).map(sem) };
+  }
+  // pedidos cruzados ao mesmo tempo (A pede B e B pede A) passam um de cada vez pela trava do par
+  const travaPar = (a, b, fn) => trava(`par:${Math.min(a, b)}:${Math.max(a, b)}`, fn);
+  const outraConta = async (req, res) => {
+    const nome = (req.body || {}).nome;
+    const alvo = typeof nome === 'string' && Auth.validarNome(nome) && await banco.contaPorNome(nome);
+    if (!alvo) { res.status(404).json({ erro: 'Ninguém com esse nome.' }); return null; }
+    if (alvo.id === req.conta.id) { res.status(400).json({ erro: 'Esse nome é o seu.' }); return null; }
+    return alvo;
+  };
+  app.get('/api/amigos', exigirConta, assincrono(async (req, res) => res.json(await listaDeAmigos(req.conta.id))));
+  app.post('/api/amigos', limAmigos, exigirConta, assincrono(async (req, res) => {
+    const eu = req.conta, alvo = await outraConta(req, res); if (!alvo) return;
+    const r = await travaPar(eu.id, alvo.id, async () => {
+      const rel = await banco.amizade(eu.id, alvo.id);
+      if (rel && rel.aceita) return { status: 409, erro: `Você e ${alvo.nome} já são amigos.` };
+      if (rel && rel.de === eu.id) return { status: 409, erro: `Pedido já enviado. Agora é com ${alvo.nome}.` };
+      // a outra pessoa já tinha pedido: pedir de volta é aceitar
+      if (rel) { await banco.aceitarAmizade(alvo.id, eu.id); return { estado: 'amigos' }; }
+      if ((await banco.amizadesDe(eu.id)).length >= MAX_AMIGOS) return { status: 409, erro: `Você chegou a ${MAX_AMIGOS} amigos e pedidos.` };
+      await banco.pedirAmizade(eu.id, alvo.id);
+      return { estado: 'pedido' };
+    });
+    if (r.erro) return res.status(r.status).json({ erro: r.erro });
+    avisar(alvo.id, { tipo: 'amigos', evento: r.estado === 'amigos' ? 'aceito' : 'pedido', nome: eu.nome });
+    res.json({ estado: r.estado, nome: alvo.nome, ...(await listaDeAmigos(eu.id)) });   // nome: como a conta se chama de verdade
+  }));
+  app.post('/api/amigos/aceitar', exigirConta, assincrono(async (req, res) => {
+    const eu = req.conta, alvo = await outraConta(req, res); if (!alvo) return;
+    const ok = await travaPar(eu.id, alvo.id, () => banco.aceitarAmizade(alvo.id, eu.id));
+    if (!ok) return res.status(404).json({ erro: `Não há pedido de ${alvo.nome}.` });
+    avisar(alvo.id, { tipo: 'amigos', evento: 'aceito', nome: eu.nome });
+    res.json(await listaDeAmigos(eu.id));
+  }));
+  // recusar um pedido, cancelar o que você mandou ou desfazer uma amizade
+  app.post('/api/amigos/remover', exigirConta, assincrono(async (req, res) => {
+    const eu = req.conta, alvo = await outraConta(req, res); if (!alvo) return;
+    if (await travaPar(eu.id, alvo.id, () => banco.desfazerAmizade(eu.id, alvo.id))) avisar(alvo.id, { tipo: 'amigos', evento: 'removido' });
+    res.json(await listaDeAmigos(eu.id));
+  }));
+
+  // ---------- o que este servidor oferece (a página esconde o que estiver desligado) ----------
+  app.get('/api/config', (req, res) => res.json({ fila: fila.ativa }));
 
   // ---------- o que segue a conta entre aparelhos: decks, recordes e o jeito de jogar ----------
   const REC = ['partidas', 'vitorias', 'seq', 'melhorSeq', 'maiorDisparo', 'maiorCorrente'];
@@ -200,7 +295,39 @@ function criarApp({ banco, segredo, raiz = path.join(__dirname, '..'), tempos = 
     res.status(500).json({ erro: 'Algo deu errado no servidor.' });
   });
 
-  // ---------- WebSocket: ola → entrar → acao/revanche/desistir/sair ----------
+  // ---------- WebSocket: ola → entrar → acao/revanche/desistir/sair; chamar (um amigo); procurar/cancelarBusca (fila) ----------
+  // Avisos que não são da partida vão como { tipo: 'aviso' }: um 'erro' faria a página largar a sala.
+  function sairDaPresenca(ws) {
+    const s = ws.contaId && presenca.get(ws.contaId);
+    if (s) { s.delete(ws); if (!s.size) presenca.delete(ws.contaId); }
+  }
+  const chamadas = new Map();   // "de:para" -> quando chamou (sem repetir a chamada a cada toque)
+  async function chamarAmigo(ws, conta, nome) {
+    const aviso = erro => salas.enviar(ws, { tipo: 'aviso', erro });
+    const sala = salas.salaEsperandoDe(conta.id);
+    if (!sala) return aviso('Crie uma sala primeiro: é para ela que o amigo vai.');
+    const alvo = typeof nome === 'string' && Auth.validarNome(nome) && await banco.contaPorNome(nome);
+    const rel = alvo && await banco.amizade(conta.id, alvo.id);
+    if (!rel || !rel.aceita) return aviso('Só dá para chamar quem é seu amigo.');
+    if (!online(alvo.id)) return aviso(`${alvo.nome} não está com o jogo aberto agora. Mande o link do convite.`);
+    if (salas.estadoDe(alvo.id) === 'jogando') return aviso(`${alvo.nome} está no meio de uma partida.`);
+    const k = `${conta.id}:${alvo.id}`, agora = Date.now();
+    if (agora - (chamadas.get(k) || 0) < INTERVALO_CHAMADA) return aviso(`Você acabou de chamar ${alvo.nome}.`);
+    chamadas.set(k, agora);
+    if (chamadas.size > 5000) for (const [x, t] of chamadas) if (agora - t > INTERVALO_CHAMADA) chamadas.delete(x);
+    avisar(alvo.id, { tipo: 'chamado', de: conta.nome, icone: conta.ativo.icone, rating: conta.rating, sala: sala.codigo, meta: sala.meta });
+    salas.enviar(ws, { tipo: 'chamou', nome: alvo.nome });
+  }
+  async function procurarRival(ws, conta, m) {
+    const aviso = erro => salas.enviar(ws, { tipo: 'aviso', erro, codigo: 'fila' });
+    if (!fila.ativa) return aviso('A busca por rival ainda não está aberta. Chame um amigo pelo convite.');
+    if (salas.estadoDe(conta.id) === 'jogando') return aviso('Termine a partida em andamento primeiro.');
+    const deck = Array.isArray(m.deck) ? m.deck : [];
+    if (!Regras.deckValido(deck) || deck.some(c => !conta.cartas.includes(c))) return aviso('Deck inválido para esta conta.');
+    const e = fila.entrar({ id: conta.id, rating: conta.rating, meta: m.meta, dados: { ws, deck: deck.slice() } });
+    salas.enviar(ws, { tipo: 'procurando', janela: fila.janela(e), naFila: fila.tamanho });
+  }
+
   function anexar(servidor) {
     const wss = new WebSocketServer({ server: servidor, path: '/ws', maxPayload: 4096 });
     wss.on('connection', ws => {
@@ -221,19 +348,29 @@ function criarApp({ banco, segredo, raiz = path.join(__dirname, '..'), tempos = 
           if (m.tipo === 'ola') {
             const id = Auth.lerToken(m.token, segredo), conta = id && await banco.contaPorId(id);
             if (!conta) return salas.enviar(ws, { tipo: 'erro', erro: 'Entre na sua conta de novo.', sair: true });
+            if (ws.contaId && ws.contaId !== conta.id) sairDaPresenca(ws);
             ws.contaId = conta.id;
+            if (!presenca.has(conta.id)) presenca.set(conta.id, new Set());
+            presenca.get(conta.id).add(ws);
             return salas.enviar(ws, { tipo: 'ola', conta: perfil(conta) });
           }
           if (!ws.contaId) return salas.enviar(ws, { tipo: 'erro', erro: 'Entre na sua conta primeiro.' });
           const conta = await banco.contaPorId(ws.contaId);
-          if (m.tipo === 'entrar') await salas.entrar(ws, conta, m);
+          if (m.tipo === 'chamar') await chamarAmigo(ws, conta, m.nome);
+          else if (m.tipo === 'procurar') await procurarRival(ws, conta, m);
+          else if (m.tipo === 'cancelarBusca') { if (fila.sair(conta.id)) salas.enviar(ws, { tipo: 'buscaCancelada' }); }
+          else if (m.tipo === 'entrar') await salas.entrar(ws, conta, m);
           else if (m.tipo === 'acao') await salas.acao(ws, conta, m.acao);
           else if (m.tipo === 'desistir') await salas.desistir(ws, conta);
           else if (m.tipo === 'revanche') salas.revanche(ws, conta, m);
           else if (m.tipo === 'sair') salas.sair(ws);
         } catch (e) { console.error('ws', e); salas.enviar(ws, { tipo: 'erro', erro: 'Algo deu errado no servidor.' }); }
       });
-      ws.on('close', () => salas.caiu(ws));
+      ws.on('close', () => {
+        salas.caiu(ws); sairDaPresenca(ws);
+        const naFila = ws.contaId && fila.entradas.get(ws.contaId);
+        if (naFila && naFila.dados.ws === ws) fila.sair(ws.contaId);   // fechou a aba que estava procurando rival
+      });
     });
     // a Railway corta conexões paradas: um ping a cada 15 s mantém viva e descobre quem caiu (em 15 a 30 s)
     const batida = setInterval(() => wss.clients.forEach(ws => { if (!ws.vivo) return ws.terminate(); ws.vivo = false; ws.ping(); }), 15_000);
@@ -267,7 +404,7 @@ function criarApp({ banco, segredo, raiz = path.join(__dirname, '..'), tempos = 
     return campos;
   }
 
-  return { app, anexar, salas, criarServidor: () => { const s = http.createServer(app); s.wss = anexar(s); return s; } };
+  return { app, anexar, salas, fila, criarServidor: () => { const s = http.createServer(app); s.wss = anexar(s); return s; } };
 }
 
 module.exports = { criarApp, criarTrava, TETO_SOLO_DIA };

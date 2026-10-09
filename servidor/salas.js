@@ -260,6 +260,22 @@ class Salas {
   }
 
   // ---------- utilidades ----------
+  // onde uma conta está agora (para a lista de amigos): 'jogando', 'esperando' (na própria sala, sem rival ainda) ou null
+  estadoDe(id) {
+    let estado = null;
+    for (const sala of this.salas.values()) {
+      const jg = sala.jogadores.find(j => j.id === id && j.ws);
+      if (!jg) continue;
+      if (sala.jogo && sala.jogo.fase !== 'fim') return 'jogando';
+      if (!sala.jogo) estado = 'esperando';
+    }
+    return estado;
+  }
+  // a sala esperando o rival que esta conta criou (para chamar um amigo para ela)
+  salaEsperandoDe(id) {
+    for (const sala of this.salas.values()) if (sala.dono === id && !sala.jogo && !sala.fechada && sala.jogadores.length < 2) return sala;
+    return null;
+  }
   // quanto tempo (ms) quem caiu no meio da partida ainda tem para voltar antes do W.O.; null se não caiu
   volta(sala, jg) {
     const emJogo = sala.jogo && sala.jogo.fase !== 'fim';

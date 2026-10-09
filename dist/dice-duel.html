@@ -753,6 +753,31 @@ button.vaga { cursor: pointer; border: 0; background: #fff3dc; color: var(--tint
 #deckGrade h3 { margin-top: 16px; }
 #deckGrade h3:first-child { margin-top: 0; }
 
+/* ---------- amigos: lista com quem está online, pedidos, chamar para a sala; nome livre ao criar a conta ---------- */
+.nome-status { font-size: 13px; font-weight: 700; }
+.nome-status.livre { color: #2f7a4a; }
+.nome-status.ocupado { color: #7a2a24; }
+.amigos { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; max-height: 300px; overflow-y: auto; }
+.amigo { display: grid; grid-template-columns: 32px minmax(0, 1fr) auto auto; gap: 8px; align-items: center; padding: 6px 8px 6px 10px; border-radius: 12px; background: var(--papel-2); }
+.amigo .avatar { width: 32px; height: 32px; margin: 0; }
+.amigo .quem-rk { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
+.amigo .quem-rk small { display: flex; align-items: center; gap: 5px; font-weight: 600; font-size: 12px; color: var(--tinta-suave); }
+.amigo.pedido { box-shadow: inset 0 0 0 2px var(--mel); }
+.amigos .vazio { list-style: none; font-size: 13px; color: var(--tinta-suave); padding: 4px 2px; }
+.ponto-status { width: 8px; height: 8px; border-radius: 50%; background: #b7a99a; flex: none; }
+.ponto-status.online, .ponto-status.numa-sala { background: #3fa564; box-shadow: 0 0 0 3px rgba(63,165,100,.2); }
+.ponto-status.jogando { background: var(--mel); }
+.btn.btn-peq { min-height: 36px; padding: 0 12px; border-radius: 12px; font-size: 14px; box-shadow: 0 3px 0 var(--papel-2), inset 0 0 0 1.5px rgba(58,42,46,.12); }
+.btn-mel.btn-peq { box-shadow: 0 3px 0 var(--mel-escuro); }
+.selo { display: inline-grid; place-items: center; min-width: 20px; height: 20px; padding: 0 6px; margin-left: 4px; border-radius: 999px; background: var(--rival); color: #fff; font-size: 12px; letter-spacing: 0; vertical-align: middle; }
+.chamado-amigo { position: fixed; left: 50%; bottom: calc(16px + env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 70; width: min(440px, calc(100vw - 32px));
+  display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px 12px; align-items: center; padding: 12px 14px; border-radius: 18px; background: var(--papel); color: var(--tinta);
+  box-shadow: 0 6px 0 var(--papel-2), 0 18px 40px rgba(0,0,0,.45), 0 0 0 3px var(--mel); animation: caixaEntra .3s cubic-bezier(.2,1.3,.4,1); }
+.chamado-amigo .avatar { width: 44px; height: 44px; margin: 0; }
+.chamado-amigo .quem-chamou small { display: block; font-size: 12px; color: var(--tinta-suave); }
+.chamado-amigo .linha-botoes { grid-column: 1 / -1; }
+.chamado-amigo .linha-botoes .btn { flex: 1 1 120px; }
+
 </style>
 </head>
 <body>
@@ -4442,12 +4467,13 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     aviso(criar ? `Conta criada. Bem-vindo, ${r.conta.nome}!` : `Olá de novo, ${r.conta.nome}!`);
     Som.tocar('momento');
     if (Rede.convite) { const c = Rede.convite; Rede.convite = null; entrarNaSala(c); }
-    else desenharOnline();
+    else { desenharOnline(); manterConectado(); carregarRanking(); }
   }
   function sairDaConta() {
     if (Rede.sala) sairDaSala();
     if (Rede.ws) { const ws = Rede.ws; Rede.ws = null; ws.close(); }
     st.sessao = null; guardarSessao();
+    Object.assign(Rede, { amigos: null, rankingAmigos: null, posGlobal: null, busca: null });
     if (st.contaConvidado) { st.conta = st.contaConvidado; delete st.contaConvidado; }
     aplicarPrefs(); desenharOnline(); if (jogo) render();
   }
@@ -4503,9 +4529,24 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
       return s && !s.acabou && Date.now() - s.em < VALIDADE_SALA ? s.codigo : null;
     } catch (e) { return null; }
   }
+  // quem chama conectar() ao mesmo tempo (a presença, a sala, a volta de uma queda) espera a mesma tentativa
+  let conectando = null;
   function conectar() {
+    if (Rede.ws && Rede.ws.readyState === 1 && Rede.ola) return Promise.resolve();
+    if (!conectando) conectando = abrirConexao().finally(() => { conectando = null; });
+    return conectando;
+  }
+  // com conta, o jogo fica conectado mesmo fora de uma sala: é assim que os amigos veem você online
+  // e que chegam pedidos de amizade e chamadas para a sala
+  function manterConectado() {
+    if (!st.sessao || !API || document.hidden || (Rede.ws && Rede.ws.readyState <= 1)) return;
+    conectar().catch(() => {});
+  }
+  setInterval(manterConectado, 20_000);
+  addEventListener('online', manterConectado);
+  document.addEventListener('visibilitychange', () => { if (!Rede.sala) manterConectado(); });
+  function abrirConexao() {
     return new Promise((ok, falha) => {
-      if (Rede.ws && Rede.ws.readyState === 1 && Rede.ola) return ok();
       if (Rede.ws) { const velho = Rede.ws; Rede.ws = null; velho.close(); }
       let ws;
       try { ws = new WebSocket(API.replace(/^http/, 'ws') + '/ws'); } catch (e) { return falha(new Error('Sem conexão com o servidor.')); }
@@ -4533,6 +4574,7 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
         // antes do "ola", quem chamou conectar() cuida da falha (e de tentar de novo); depois dele, a queda é tratada aqui
         if (!conectado) falha(new Error('Sem conexão com o servidor.'));
         else if (Rede.sala) reconectar();
+        else setTimeout(manterConectado, 3000);
       };
     });
   }
@@ -4542,7 +4584,7 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     if (!ws || !Rede.ola) return;
     Rede.ws = null; Rede.ola = false;
     ws.onclose = null; ws.onmessage = null; try { ws.close(); } catch (e) {}
-    reconectar(true);
+    if (Rede.sala) reconectar(true); else manterConectado();
   }
   // jaJa: tenta agora (a internet voltou, o app voltou para a frente) em vez de esperar a próxima tentativa
   function reconectar(jaJa = false) {
@@ -4583,7 +4625,7 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
   });
   // pulso de fundo: o servidor responde a cada um; 35 s sem ouvir nada dele é conexão morta
   setInterval(() => {
-    if (!Rede.sala || !Rede.ola || document.hidden) return;
+    if (!Rede.ola || document.hidden) return;
     if (Date.now() - Math.max(Rede.ultimaMsg, Rede.voltouEm) > 35_000) return derrubar();
     enviarWs({ tipo: 'pulso' });
   }, 15_000);
@@ -4627,6 +4669,14 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
   }
 
   function receber(m) {
+    // fora da partida: avisos (não largam a sala, ao contrário de 'erro'), amigos, chamadas e a busca de rival
+    if (m.tipo === 'aviso') { if (m.codigo === 'fila') Rede.busca = null; aviso(m.erro, true); desenharOnline(); return; }
+    if (m.tipo === 'amigos') return aoMudarAmigos(m);
+    if (m.tipo === 'chamado') return mostrarChamado(m);
+    if (m.tipo === 'chamou') { aviso(`Chamamos ${m.nome}. Agora é esperar entrar.`); return; }
+    if (m.tipo === 'procurando') { Rede.busca = { desde: (Rede.busca && Rede.busca.desde) || Date.now(), janela: m.janela, naFila: m.naFila }; desenharOnline(); return; }
+    if (m.tipo === 'buscaCancelada') { Rede.busca = null; desenharOnline(); return; }
+    if (m.tipo === 'achou') { Rede.busca = null; Rede.sala = m.sala; Rede.infoSala = null; lembrarSala(); aviso(`Rival encontrado: ${m.rival} (rating ${m.rating}).`); return; }
     if (m.tipo === 'sala') {
       Rede.infoSala = m.sala; Rede.voltando = false;
       const euId = st.sessao && st.sessao.perfil.id, outro = m.sala.jogadores.find(x => x.id !== euId);
@@ -4712,7 +4762,103 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
   }, 1000);
 
   // a janela Online
-  const carregarRanking = () => { if (st.sessao && !Rede.sala) pedir('GET', '/api/ranking').then(r => { Rede.ranking = r.ranking; desenharOnline(); }).catch(() => {}); };
+  const carregarRanking = () => {
+    if (!st.sessao) return;
+    carregarAmigos();
+    if (!Rede.sala) pedir('GET', '/api/ranking').then(r => { Rede.ranking = r.ranking; desenharOnline(); }).catch(() => {});
+  };
+
+  // ---------- amigos: pedir pelo nome, aceitar, chamar para a sala; ranking entre amigos ----------
+  function carregarAmigos() {
+    if (!st.sessao || !API) return;
+    pedir('GET', '/api/amigos').then(r => { Rede.amigos = r; desenharOnline(); }).catch(() => {});
+    pedir('GET', '/api/ranking/amigos').then(r => { Rede.rankingAmigos = r.ranking; Rede.posGlobal = r.global; desenharOnline(); }).catch(() => {});
+  }
+  // a lista se atualiza sozinha enquanto a janela Online está aberta (quem entrou, quem está jogando)
+  setInterval(() => { if (st.sessao && !document.hidden && !document.getElementById('janelaOnline').hidden) carregarAmigos(); }, 20_000);
+  function aoMudarAmigos(m) {
+    carregarAmigos();
+    if (m.evento === 'pedido') { Fx.chamada('Pedido de amizade', `${m.nome} quer ser seu amigo`, 'suave'); Som.tocar('momento'); }
+    if (m.evento === 'aceito') Fx.chamada('Amizade aceita', `${m.nome} agora é seu amigo`, 'suave');
+  }
+  // um amigo chamou você para a sala dele: aviso com Entrar / Agora não (não aparece no meio de uma partida online)
+  function mostrarChamado(m) {
+    if (online() && jogo.fase !== 'fim') return;
+    let el = document.getElementById('chamadoAmigo');
+    if (!el) {
+      el = document.createElement('div'); el.id = 'chamadoAmigo'; el.className = 'chamado-amigo'; el.setAttribute('role', 'alertdialog'); el.setAttribute('aria-live', 'assertive');
+      document.body.appendChild(el);
+      el.addEventListener('click', e => {
+        const b = e.target.closest('[data-chamado]'); if (!b) return;
+        el.hidden = true; clearTimeout(el.timer);
+        if (b.dataset.chamado !== 'entrar') return;
+        if (Rede.sala && Rede.sala !== el.dataset.sala) sairDaSala();
+        entrarNaSala(el.dataset.sala);
+      });
+    }
+    el.innerHTML = `${iconeSVG(m.icone)}<span class="quem-chamou"><b>${esc(m.de)}</b> te chamou para um duelo<small>meta ${m.meta} · rating ${m.rating}</small></span>
+      <span class="linha-botoes"><button class="btn btn-mel btn-peq" data-chamado="entrar">Entrar</button><button class="btn btn-papel btn-peq" data-chamado="nao">Agora não</button></span>`;
+    el.dataset.sala = m.sala; el.hidden = false;
+    Som.tocar('momento'); vibrar([60, 40, 60]);
+    clearTimeout(el.timer); el.timer = setTimeout(() => { el.hidden = true; }, 45_000);
+  }
+  async function acaoAmigo(rota, nome, b) {
+    if (b) b.disabled = true;
+    try {
+      const r = await pedir('POST', rota, { nome });
+      Rede.amigos = r;
+      if (r.estado === 'pedido') aviso(`Pedido enviado para ${r.nome || nome}.`);
+      if (r.estado === 'amigos') aviso(`Você e ${r.nome || nome} agora são amigos.`);
+      carregarAmigos();
+      return true;
+    } catch (e) { aviso(e.message, true); if (b) b.disabled = false; return false; }
+  }
+  // chamar um amigo: sem sala, cria uma primeiro (é para ela que ele vai)
+  async function chamarAmigo(nome) {
+    if (!Rede.sala) await criarSala();
+    if (Rede.sala) enviarWs({ tipo: 'chamar', nome });
+  }
+  const statusAmigo = a => (a.onde === 'jogando' ? 'jogando' : !a.online ? 'offline' : a.onde === 'esperando' ? 'numa sala' : 'online');
+  function htmlAmigos({ chamar = false } = {}) {
+    const A = Rede.amigos;
+    if (!A) return '<h3>Amigos</h3><p class="nota" style="margin:0">Carregando…</p>';
+    const nm = a => esc(a.nome);
+    const podeChamar = a => a.online && a.onde !== 'jogando';
+    const amigos = A.amigos.filter(a => !chamar || podeChamar(a)).map(a => `<li class="amigo ${a.online ? 'on' : ''}">${iconeSVG(a.icone)}
+        <span class="quem-rk">${nm(a)}<small><i class="ponto-status ${statusAmigo(a).replace(' ', '-')}"></i>${statusAmigo(a)} · ${a.rating}</small></span>
+        ${podeChamar(a) ? `<button class="btn btn-mel btn-peq" data-on="chamar" data-nome="${nm(a)}">Chamar</button>` : ''}
+        ${chamar ? '' : `<button class="btn btn-papel btn-peq" data-on="remover-amigo" data-nome="${nm(a)}" aria-label="Desfazer amizade com ${nm(a)}">×</button>`}</li>`).join('');
+    if (chamar) return amigos ? `<h3>Chamar um amigo online</h3><ul class="amigos">${amigos}</ul>` : '';
+    const recebidos = A.recebidos.map(a => `<li class="amigo pedido">${iconeSVG(a.icone)}<span class="quem-rk">${nm(a)}<small>quer ser seu amigo · ${a.rating}</small></span>
+        <button class="btn btn-mel btn-peq" data-on="aceitar-amigo" data-nome="${nm(a)}">Aceitar</button><button class="btn btn-papel btn-peq" data-on="recusar-amigo" data-nome="${nm(a)}">Recusar</button></li>`).join('');
+    const enviados = A.enviados.map(a => `<li class="amigo">${iconeSVG(a.icone)}<span class="quem-rk">${nm(a)}<small>pedido enviado</small></span>
+        <button class="btn btn-papel btn-peq" data-on="recusar-amigo" data-nome="${nm(a)}">Cancelar</button></li>`).join('');
+    const vazio = !amigos && !recebidos && !enviados ? '<li class="vazio">Adicione amigos pelo nome para ver quem está online e chamar direto para a sala.</li>' : '';
+    return `<h3>Amigos${A.recebidos.length ? ` <span class="selo">${A.recebidos.length}</span>` : ''}</h3>
+      <form class="linha-botoes" id="formAmigo"><input class="campo" name="amigo" maxlength="20" placeholder="nome do amigo" aria-label="Nome do amigo" autocomplete="off" style="flex:1 1 140px"><button class="btn btn-papel" type="submit">Adicionar</button></form>
+      <ul class="amigos">${recebidos}${amigos}${enviados}${vazio}</ul>`;
+  }
+  // o ranking: global (top 50) ou entre amigos, com a sua posição
+  function htmlRanking(pf) {
+    const amigos = Rede.abaRanking === 'amigos';
+    const lista = amigos ? Rede.rankingAmigos : Rede.ranking;
+    const linha = (x, pos) => `<li class="${x.eu || x.nome === pf.nome ? 'eu' : ''}"><span class="pos">${pos}</span>${iconeSVG(x.icone)}<span class="quem-rk">${esc(x.nome)}<small>${esc(x.titulo)}</small></span><span class="rk">${x.rating}</span></li>`;
+    const vazio = t => `<li><span></span><span></span><span class="quem-rk">${t}</span><span></span></li>`;
+    const itens = !lista ? vazio('Carregando…') : !lista.length ? vazio('Ninguém jogou ainda.') : lista.map((x, i) => linha(x, x.posicao || i + 1)).join('');
+    const pg = Rede.posGlobal;
+    const minha = !pg ? '' : pg.posicao ? `Você está em <b>${pg.posicao}º</b> de ${pg.total} no ranking global.` : 'Jogue uma partida online para entrar no ranking global.';
+    return `<h3>Ranking</h3>
+      <div class="abas" role="group" aria-label="Ranking"><button data-on="rk-global" aria-pressed="${!amigos}">Global</button><button data-on="rk-amigos" aria-pressed="${amigos}">Amigos</button></div>
+      <ol class="ranking">${itens}</ol>${minha ? `<p class="nota" style="margin:0">${minha}</p>` : ''}`;
+  }
+  // a busca de rival por rating (só aparece quando o servidor a liga)
+  function htmlBusca() {
+    if (!Rede.config || !Rede.config.fila) return '';
+    if (!Rede.busca) return '<div class="linha-botoes"><button class="btn btn-papel" data-on="procurar">Procurar rival</button></div>';
+    const s = Math.round((Date.now() - Rede.busca.desde) / 1000);
+    return `<div class="convite"><span class="esperando">Procurando um rival de rating parecido<span class="pensando-pontos"></span></span>
+      <span class="nota">${s} s · ${Rede.busca.naFila} na fila</span><button class="btn btn-papel" data-on="cancelar-busca">Cancelar</button></div>`;
+  }
   function abrirOnline() {
     // depois de desistir de reconectar, abrir o Online tenta de novo
     if (Rede.desistiu) tentarDeNovo();
@@ -4766,7 +4912,7 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
       el.innerHTML = `${Rede.convite ? `<p class="aviso-online">Você foi convidado para a sala <b>${esc(Rede.convite)}</b>. Entre ou crie uma conta para jogar.</p>` : '<p class="nota" style="margin:0">Com uma conta você joga com amigos por link, entra no ranking e guarda suas moedas e itens no servidor.</p>'}
         <div class="abas" role="group" aria-label="Conta"><button data-on="aba-entrar" aria-pressed="${!criar}">Entrar</button><button data-on="aba-criar" aria-pressed="${criar}">Criar conta</button></div>
         <form class="form-conta" id="formConta" autocomplete="on">
-          <label>Nome<input class="campo" name="nome" autocomplete="username" required minlength="3" maxlength="20" pattern="[A-Za-zÀ-ÿ0-9_.\\-]{3,20}" placeholder="de 3 a 20 letras"></label>
+          <label>Nome<input class="campo" name="nome" autocomplete="username" required minlength="3" maxlength="20" pattern="[A-Za-zÀ-ÖØ-öø-ÿ0-9_.\\-]{3,20}" placeholder="de 3 a 20 letras">${criar && Rede.nomeStatus ? `<small class="nome-status ${Rede.nomeStatus.livre ? 'livre' : 'ocupado'}" aria-live="polite">${esc(Rede.nomeStatus.livre ? '✓ Nome livre' : Rede.nomeStatus.erro)}</small>` : ''}</label>
           <label>Senha<input class="campo" name="senha" type="password" autocomplete="${criar ? 'new-password' : 'current-password'}" required minlength="6" maxlength="72" placeholder="6 caracteres ou mais"></label>
           <button class="btn btn-mel" type="submit">${criar ? 'Criar conta' : 'Entrar'}</button>
         </form>
@@ -4795,15 +4941,17 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
           <div class="linha-botoes"><button class="btn btn-mel" data-on="compartilhar">Compartilhar</button><button class="btn btn-papel" data-on="copiar">Copiar convite</button></div>
           <ul class="lista-sala">${lista}</ul>
           <span class="esperando">Esperando o amigo<span class="pensando-pontos"></span></span></div>
+        ${htmlAmigos({ chamar: true })}
         <p class="nota" style="margin:0">Meta ${sala ? sala.meta : st.cfg.meta} · seu deck: ${deckOnline().map(c => CARTAS[c].nome).join(', ') || 'sem cartas'}. Enquanto espera, dá para jogar contra o rival do jogo.</p>
         <div class="linha-botoes"><button class="btn btn-papel" data-on="deck">Trocar deck</button><button class="btn btn-papel" data-on="sair-sala">Cancelar a sala</button></div>`;
       return;
     }
-    const rk = Rede.ranking ? (Rede.ranking.length ? Rede.ranking.map((x, i) => `<li class="${x.nome === pf.nome ? 'eu' : ''}"><span class="pos">${i + 1}</span>${iconeSVG(x.icone)}<span class="quem-rk">${esc(x.nome)}<small>${esc(x.titulo)}</small></span><span class="rk">${x.rating}</span></li>`).join('') : '<li><span></span><span></span><span class="quem-rk">Ninguém jogou ainda.</span><span></span></li>') : '<li><span></span><span></span><span class="quem-rk">Carregando…</span><span></span></li>';
     el.innerHTML = `${eu}
       <div class="linha-botoes"><button class="btn btn-mel" data-on="criar-sala">Chamar um amigo</button></div>
       <form class="linha-botoes" id="formCodigo"><input class="campo codigo" name="codigo" maxlength="6" placeholder="código" aria-label="Código da sala" autocomplete="off" style="flex:1 1 120px"><button class="btn btn-papel" type="submit">Entrar na sala</button></form>
-      <h3>Ranking</h3><ol class="ranking">${rk}</ol>
+      ${htmlBusca()}
+      ${htmlAmigos()}
+      ${htmlRanking(pf)}
       <p class="nota" style="margin:0">Vitória online: ${BASE_MOEDAS.online} moedas × margem × rapidez, e vale mais vencer quem tem rating maior. O mesmo par vale rating e moedas 3 vezes por dia.</p>
       <div class="linha-botoes"><button class="btn btn-papel" data-on="sair-conta">Sair da conta</button></div>`;
   }
@@ -4813,6 +4961,12 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     e.preventDefault();
     const f = e.target, botao = f.querySelector('[type=submit]');
     if (f.id === 'formCodigo') return entrarNaSala(f.codigo.value);
+    if (f.id === 'formAmigo') {
+      const nome = f.amigo.value.trim(); if (!nome) return;
+      if (await acaoAmigo('/api/amigos', nome, botao)) f.amigo.value = '';
+      botao.disabled = false;
+      return;
+    }
     botao.disabled = true;
     try { await entrarNaConta(Rede.aba === 'criar', f.nome.value.trim(), f.senha.value); }
     catch (x) { aviso(x.message, true); botao.disabled = false; }
@@ -4820,7 +4974,21 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
   document.getElementById('onlineConteudo').addEventListener('click', async e => {
     const b = e.target.closest('[data-on]'); if (!b) return;
     const a = b.dataset.on;
-    if (a === 'aba-entrar' || a === 'aba-criar') { Rede.aba = a.slice(4); aviso(null); desenharOnline(); }
+    if (a === 'aba-entrar' || a === 'aba-criar') { Rede.aba = a.slice(4); Rede.nomeStatus = null; aviso(null); desenharOnline(); }
+    if (a === 'rk-global' || a === 'rk-amigos') { Rede.abaRanking = a.slice(3); desenharOnline(); }
+    if (a === 'chamar') chamarAmigo(b.dataset.nome);
+    if (a === 'aceitar-amigo') acaoAmigo('/api/amigos/aceitar', b.dataset.nome, b);
+    if (a === 'recusar-amigo') acaoAmigo('/api/amigos/remover', b.dataset.nome, b);
+    if (a === 'remover-amigo') {
+      if (b.dataset.certeza !== '1') { b.dataset.certeza = '1'; b.textContent = 'Desfazer?'; setTimeout(() => { b.dataset.certeza = ''; b.textContent = '×'; }, 3000); return; }
+      acaoAmigo('/api/amigos/remover', b.dataset.nome, b);
+    }
+    if (a === 'procurar') {
+      Rede.busca = { desde: Date.now(), janela: 0, naFila: 1 }; desenharOnline();
+      try { await conectar(); enviarWs({ tipo: 'procurar', meta: +st.cfg.meta, deck: deckOnline() }); }
+      catch (x) { Rede.busca = null; aviso(x.message, true); desenharOnline(); }
+    }
+    if (a === 'cancelar-busca') { enviarWs({ tipo: 'cancelarBusca' }); Rede.busca = null; desenharOnline(); }
     if (a === 'criar-sala') criarSala();
     if (a === 'sair-sala') sairDaSala();
     if (a === 'sair-conta') sairDaConta();
@@ -4842,6 +5010,21 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
       if (r === 'copiou' || r === 'baixou') { b.textContent = r === 'copiou' ? 'Link copiado' : 'Imagem salva'; setTimeout(() => { b.textContent = 'Compartilhar'; }, 2200); }
     }
   });
+  // criando a conta: o nome está livre? (pergunta ao servidor enquanto a pessoa digita; Ana = ana = ANA = Aná)
+  let esperaNome = null;
+  document.getElementById('onlineConteudo').addEventListener('input', e => {
+    if (e.target.name !== 'nome' || Rede.aba !== 'criar' || st.sessao) return;
+    clearTimeout(esperaNome);
+    const nome = e.target.value.trim();
+    if (nome.length < 3) { if (Rede.nomeStatus) { Rede.nomeStatus = null; desenharOnline(); } return; }
+    esperaNome = setTimeout(() => {
+      pedir('GET', '/api/nomes/' + encodeURIComponent(nome)).then(r => {
+        const agora = document.querySelector('#formConta [name=nome]');
+        if (!agora || agora.value.trim() !== nome) return;   // a pessoa já digitou outra coisa
+        Rede.nomeStatus = r; desenharOnline();
+      }).catch(() => {});
+    }, 350);
+  });
   // convite por link: /?sala=CODIGO
   (() => {
     let c = null;
@@ -4852,7 +5035,9 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     st.deckVisto = true; // quem chega por convite vai direto para a sala
   })();
   // com conta: atualiza o perfil (e renova o token) em segundo plano
-  if (st.sessao && API) pedir('GET', '/api/eu').then(r => { st.sessao.token = r.token; usarPerfil(r.conta); unirExtras(r.conta); if (jogo) render(); }).catch(() => {});
+  if (st.sessao && API) pedir('GET', '/api/eu').then(r => { st.sessao.token = r.token; usarPerfil(r.conta); unirExtras(r.conta); if (jogo) render(); manterConectado(); }).catch(() => {});
+  // o que este servidor oferece (a busca de rival por rating só aparece quando estiver ligada)
+  if (API) pedir('GET', '/api/config').then(c => { Rede.config = c; }).catch(() => {});
 
   // ---------- início ----------
   aplicarPrefs();
