@@ -16,7 +16,7 @@ e entra no jogo como WebP de 160 px em js/retratos_pintados.js, embutida em data
 file://, no servidor e no HTML único, sem pedido extra de rede. Quem não tem versão pintada usa o vetor
 de js/retratos.js. Para tirar um retrato pintado, apague arte/fonte/<id>.png e rode --embutir.
 Personagens claros (os de "fundo_opaco" em arte/retratos.json) somem no fundo transparente da API, que
-toma o pelo branco por fundo: esses vêm num verde liso e o verde é recortado aqui, a partir das bordas.
+toma o pelo branco por fundo: esses vêm num magenta liso, que é recortado aqui.
 """
 import base64
 import io
@@ -28,7 +28,7 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
-from PIL import Image, ImageDraw
+from PIL import Image
 
 RAIZ = Path(__file__).resolve().parent.parent
 PEDIDOS = RAIZ / "arte" / "retratos.json"
@@ -97,22 +97,22 @@ def gerar(prompt, qualidade, ref=None, fundo="transparent"):
             sys.exit(f"Sem conexão com a API: {e}")
 
 
-def recortar_fundo(png_bytes, tolerancia=70):
-    """apaga o fundo liso: inunda a partir das bordas (o contorno grosso segura) e torna transparente"""
+def recortar_fundo(png_bytes, tolerancia=90):
+    """apaga o fundo liso (magenta): a cor é lida nos cantos e sai da imagem toda, inclusive de vãos
+    fechados como a alça da xícara; a borda serrilhada entre o fundo e o contorno fica meio transparente"""
     im = Image.open(io.BytesIO(png_bytes)).convert("RGBA")
-    rgb = im.convert("RGB")
-    marca = (255, 0, 255)
-    w, h = rgb.size
-    for x, y in [(0, 0), (w - 1, 0), (0, h - 1), (w - 1, h - 1), (w // 2, 0), (w // 2, h - 1), (0, h // 2), (w - 1, h // 2)]:
-        if rgb.getpixel((x, y)) != marca:
-            ImageDraw.floodfill(rgb, (x, y), marca, thresh=tolerancia)
-    alfa = Image.new("L", im.size, 255)
-    px, pa = rgb.load(), alfa.load()
+    w, h = im.size
+    px = im.load()
+    cantos = [px[x, y][:3] for x, y in [(2, 2), (w - 3, 2), (2, h - 3), (w - 3, h - 3)]]
+    chave = tuple(sorted(c[i] for c in cantos)[1] for i in range(3))
     for y in range(h):
         for x in range(w):
-            if px[x, y] == marca:
-                pa[x, y] = 0
-    im.putalpha(alfa)
+            r, g, b, a = px[x, y]
+            d = max(abs(r - chave[0]), abs(g - chave[1]), abs(b - chave[2]))
+            if d < tolerancia:
+                px[x, y] = (r, g, b, 0)
+            elif d < tolerancia * 1.6:
+                px[x, y] = (r, g, b, int(255 * (d - tolerancia) / (tolerancia * 0.6)))
     buf = io.BytesIO()
     im.save(buf, "PNG")
     return buf.getvalue()
