@@ -9,6 +9,10 @@ const { perfil } = require('./banco');
 
 const LETRAS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // sem 0/O e 1/I, para ditar por voz
 const novoCodigo = () => Array.from(crypto.randomBytes(6), b => LETRAS[b % LETRAS.length]).join('');
+// dados do servidor com sorteio criptográfico (o Math.random do V8 é previsível com rolagens suficientes)
+const aleatorio = () => crypto.randomInt(0, 2 ** 32) / 2 ** 32;
+// desistir antes desta mesa não mexe no rating (contra contas descartáveis que desistem no primeiro lance)
+const MESAS_PARA_VALER = 3;
 const PARTIDAS_POR_PAR = 3; // por dia, valendo rating e moedas (contra duas contas combinando resultado)
 
 const PADRAO = {
@@ -54,6 +58,8 @@ class Salas {
     if (!Array.isArray(deck) || !Regras.deckValido(deck)) return this.erro(ws, 'Deck inválido.', 'sala');
     const faltam = deck.filter(c => !conta.cartas.includes(c));
     if (faltam.length) return this.erro(ws, 'Seu deck tem cartas que esta conta não possui.', 'sala');
+    const outra = this.partidaDe(conta.id);
+    if (outra && outra !== sala) return this.erro(ws, `Você já está numa partida (sala ${outra.codigo}). Termine ou desista dela primeiro.`, 'sala');
     // um socket fica numa sala só; reenviar "entrar" pela mesma conexão só reenvia o estado (sem contar como queda)
     const jaAqui = ws.sala === sala.codigo && sala.jogadores.some(j => j.ws === ws && j.id === conta.id);
     if (!jaAqui) this.sair(ws, { silencioso: true });
@@ -125,7 +131,8 @@ class Salas {
     const emJogo = sala.jogo && sala.jogo.fase !== 'fim';
     if (emJogo) {
       // saiu de propósito no meio: perde já
-      if (!silencioso) { Regras.desistir(sala.jogo, sala.jogadores.indexOf(eu)); this.depoisDaAcao(sala).catch(e => console.error('sair', e)); }
+      // devolve a promessa do prêmio: quem apaga a conta espera o resultado ser registrado antes de sumir
+      if (!silencioso) { Regras.desistir(sala.jogo, sala.jogadores.indexOf(eu)); return this.depoisDaAcao(sala).catch(e => console.error('sair', e)); }
       else eu.caiuEm = this.agora();
     } else if (!sala.jogo) {
       sala.jogadores = sala.jogadores.filter(j => j !== eu); // ainda esperando: libera a vaga
@@ -147,8 +154,16 @@ class Salas {
   // ---------- partida ----------
   comecar(sala) {
     const [a, b] = sala.jogadores;
+    // duas abas da mesma conta esperando em salas diferentes podiam começar duas partidas juntas
+    const ocupado = sala.jogadores.find(p => { const s = this.partidaDe(p.id); return s && s !== sala; });
+    if (ocupado) {
+      this.erro(ocupado.ws, 'Você já está numa partida em outra sala.', 'sala');
+      if (ocupado.ws) ocupado.ws.sala = null;
+      sala.jogadores = sala.jogadores.filter(p => p !== ocupado);
+      return this.avisarSala(sala);
+    }
     sala.revanche.clear();
-    sala.jogo = Regras.criarPartida({ decks: [a.deck, b.deck], vez: sala.primeiro, meta: sala.meta, nomes: [a.nome, b.nome], modo: 'online', nivel: 'online' });
+    sala.jogo = Regras.criarPartida({ decks: [a.deck, b.deck], vez: sala.primeiro, meta: sala.meta, nomes: [a.nome, b.nome], modo: 'online', nivel: 'online', rng: aleatorio });
     sala.primeiro = 1 - sala.primeiro;
     sala.partidas = (sala.partidas || 0) + 1;
     sala.premiada = false; sala.resultado = null;
@@ -204,28 +219,33 @@ class Salas {
     const doPar = await this.banco.partidasDoParHoje(ids[0], ids[1]);
     const amistosa = doPar >= PARTIDAS_POR_PAR;
     const porDesistencia = j.desistencia !== undefined;
+    const cedo = porDesistencia && j.rodada < MESAS_PARA_VALER;
     const contas = await Promise.all(ids.map(id => this.banco.contaPorId(id)));
-    const ratings = contas.map(c => c.rating);
+    // uma conta pode ter sido apagada no meio (LGPD): quem ficou recebe o prêmio normalmente; a apagada fica sem
+    const ratings = contas.map(c => (c ? c.rating : 1000));
     const premios = [null, null];
     let moedasDadas = 0;
     await Promise.all([0, 1].map(i => this.trava(ids[i], async () => {
       const c = await this.banco.contaPorId(ids[i]);
+      if (!c) return;
       const venceu = i === w;
       const p = { amistosa, porDesistencia, ratingAntes: c.rating, rating: c.rating, moedas: null, motivo: null };
-      const campos = { partidas: c.partidas + 1, vitorias: c.vitorias + (venceu ? 1 : 0) };
-      if (!amistosa) {
+      // amistosa não soma vitória (o desempate do ranking) nem XP: revanche e desistência em loop não sobem ninguém
+      const campos = { partidas: c.partidas + 1, vitorias: c.vitorias + (venceu && !amistosa && !cedo ? 1 : 0) };
+      if (cedo && !amistosa) p.motivo = `Desistência antes da ${MESAS_PARA_VALER}ª Mesa não mexe no rating.`;
+      else if (!amistosa) {
         campos.rating = Regras.elo(c.rating, ratings[1 - i], venceu ? 1 : 0);
         campos.pico = Math.max(c.pico, campos.rating);
         p.rating = campos.rating;
       } else p.motivo = `Vocês já jogaram ${PARTIDAS_POR_PAR} partidas valendo hoje: esta foi amistosa.`;
       if (venceu) {
         const m = Regras.moedasDaVitoria(Regras.BASE_MOEDAS.online, j.pts[i] - j.pts[1 - i], j.rodada, j.meta, Regras.ajusteRatingOnline(ratings[i], ratings[1 - i]));
-        if (porDesistencia) { m.total = 0; p.motivo = 'Vitória por desistência não rende moedas.'; }
+        if (porDesistencia) { m.total = 0; p.motivo = cedo ? `Desistência antes da ${MESAS_PARA_VALER}ª Mesa: não mexe no rating nem rende moedas.` : 'Vitória por desistência não rende moedas.'; }
         if (amistosa) m.total = 0;
         p.moedas = m; campos.moedas = c.moedas + m.total; moedasDadas = m.total;
       }
       const conta = { xp: c.xp, dados: c.dados.slice(), icones: c.icones.slice(), mesas: c.mesas.slice() };
-      const xp = Regras.ganharXp(conta, porDesistencia && !venceu ? 0 : Regras.xpDaPartida(venceu, j.momentos.filter(m => m.p === i).length));
+      const xp = Regras.ganharXp(conta, (porDesistencia && !venceu) || amistosa || cedo ? 0 : Regras.xpDaPartida(venceu, j.momentos.filter(m => m.p === i).length));
       Object.assign(campos, { xp: conta.xp, dados: conta.dados, icones: conta.icones, mesas: conta.mesas });
       Object.assign(p, xp);
       const nova = await this.banco.atualizarConta(c.id, campos);
@@ -270,6 +290,11 @@ class Salas {
       if (!sala.jogo) estado = 'esperando';
     }
     return estado;
+  }
+  // a sala onde esta conta tem uma partida em andamento (conectada ou caída); null se nenhuma
+  partidaDe(id) {
+    for (const sala of this.salas.values()) if (sala.jogo && sala.jogo.fase !== 'fim' && sala.jogadores.some(j => j.id === id)) return sala;
+    return null;
   }
   // a sala esperando o rival que esta conta criou (para chamar um amigo para ela)
   salaEsperandoDe(id) {

@@ -10,7 +10,8 @@ Banco: Postgres (o plugin da Railway). Sem `DATABASE_URL`, guarda tudo num arqui
 | **Conta** | nome (3 a 20 letras) e senha (6+). A senha vira hash `scrypt`. O login devolve um token assinado (HMAC, 30 dias), sem sessão no servidor. |
 | **Nome único** | dois nomes são o mesmo quando só mudam maiúsculas, acentos ou separadores: `Ana` = `ana` = `ANA` = `Aná` = `a.na`. A chave sem essas diferenças é `UNIQUE` no banco (duas criações ao mesmo tempo: só uma passa) e é por ela que o login procura. A tela de criar conta avisa enquanto a pessoa digita. Contas antigas migram sozinhas para a chave nova (se duas colidirem, a segunda continua entrando pelo nome exato). |
 | **Amigos** | pedido pelo nome; vira amizade quando o outro aceita (ou pede de volta). A lista mostra quem está online, numa sala ou jogando, e o pedido e o aceite chegam ao vivo. Quem está esperando numa sala chama um amigo online pelo nome, e ele recebe o convite com Entrar. Até 200 amigos e pedidos; 30 pedidos a cada 10 min. |
-| **Online agora** | com pouca gente jogando, ver que tem alguém com o jogo aberto é o empurrão para começar. O botão Online mostra quantos estão com o jogo aberto (até sem conta, e a janela diz "N pessoas estão com o jogo aberto agora"); com conta, a lista mostra quem é (quem pode jogar e os amigos primeiro, depois o rating mais perto do seu), com **Chamar** e **+ Amigo**. Dá para chamar quem ainda não é amigo (o convite avisa); para esses, até 5 chamadas por minuto. |
+| **Online agora** | com pouca gente jogando, ver que tem alguém com o jogo aberto é o empurrão para começar. O botão Online mostra quantos estão com o jogo aberto (até sem conta, e a janela diz "N pessoas estão com o jogo aberto agora"); com conta, a lista mostra quem é (quem pode jogar e os amigos primeiro, depois o rating mais perto do seu), com **Chamar** e **+ Amigo**. Dá para chamar quem ainda não é amigo (o convite avisa); para esses, até 5 chamadas por minuto. O contador anda na hora: o servidor avisa o total sempre que alguém entra ou sai. |
+| **Conta e privacidade** | na janela Online: aparecer ou não no Online agora (desligado, só os amigos veem), quem pode chamar para a sala (todos ou só amigos), **trocar a senha** (os outros aparelhos saem), **sair de todos os aparelhos** e **apagar a conta** (LGPD: some a conta, os itens, o rating e as amizades; uma partida em andamento conta como desistência e o rival recebe o prêmio normalmente). |
 | **Ranking** | Elo (K 32), começando em 1000. Duas abas: **Global** (os 50 melhores) e **Amigos** (você e seus amigos), com a sua posição no global. |
 | **Salas** | quem cria recebe um código de 6 letras e um link `/?sala=CODIGO`; ou chama um amigo direto pela lista. |
 | **Fila por rating** | pronta e testada, **desligada** (`FILA=1` liga): com pouca gente, juntar por rating só faria todo mundo esperar. Ligada, aparece "Procurar rival": a diferença de rating aceita começa em 100, cresce 5 por segundo de espera até 400, e depois de 90 s vale qualquer rival; a meta (12 ou 16) separa as filas. O par cai numa sala comum (rating, moedas e o limite por par valem igual). Ajustes em `servidor/fila.js`. |
@@ -22,10 +23,31 @@ Banco: Postgres (o plugin da Railway). Sem `DATABASE_URL`, guarda tudo num arqui
 
 - Moedas online só para quem vence. A conta é `22 × margem × rapidez × rating do rival` (×0,5 a ×1,5).
 - Vitória por desistência ou queda não rende moedas. O rating conta normalmente.
-- O mesmo par de contas vale rating e moedas 3 vezes por dia. Depois disso as partidas viram amistosas.
+- O mesmo par de contas vale rating e moedas 3 vezes por dia. Depois disso as partidas viram amistosas (sem rating, moedas, vitória no ranking nem XP).
+- Uma conta joga uma partida por vez: outra aba não entra em outra sala enquanto houver partida em andamento (sem isso, várias partidas
+  simultâneas da mesma dupla passavam todas pelo limite de 3).
+- Desistência (ou W.O.) antes da 3ª Mesa não mexe no rating nem rende moedas: contas descartáveis que desistem no primeiro lance não sobem ninguém.
+- Contra os rivais do jogo, o resultado vem do aparelho: além das 300 moedas por dia, no máximo 80 partidas e 800 de XP por conta por dia.
 - Contra os rivais do jogo (que rodam no aparelho), a conta recebe até 300 moedas por dia. O teto pelo maior rating de cada rival continua valendo.
 - Quem já jogava sem conta leva o progresso uma vez, ao criar a conta: até 600 moedas, e itens até um valor total de 900.
-- Login: 10 tentativas por minuto por IP. Criação de contas: 5 a cada 10 minutos.
+- Login: 10 tentativas por minuto por IP, e 5 senhas erradas seguidas trancam o login daquela conta por 15 minutos (mesmo trocando de IP).
+  Conta que não existe responde no mesmo tempo. Criação de contas: 5 a cada 10 minutos.
+- A API inteira: 1200 pedidos por minuto por IP (as rotas sensíveis têm limites próprios, mais apertados).
+- WebSocket: até 50 conexões por IP e 5 abas por conta; quem não se identifica em 15 s é desconectado; pelo navegador, só a página do jogo
+  (este endereço ou as ORIGENS) abre conexão.
+- Pedidos de amizade: até 100 esperando resposta por pessoa.
+
+### Segurança e operação
+
+- Senhas com scrypt fora da thread principal (um login não trava as partidas). O token leva a versão da sessão da conta: trocar a senha ou
+  "sair de todos os aparelhos" invalida todos os tokens antigos.
+- Cabeçalhos: CSP (só os scripts do próprio jogo rodam), `frame-ancestors 'none'`/X-Frame-Options (sem iframe alheio), HSTS, Referrer-Policy,
+  Permissions-Policy, nosniff, no servidor e no `vercel.json`.
+- Dados das partidas online com sorteio criptográfico (`crypto.randomInt`).
+- `/api/saude` consulta o banco (3 s): com o Postgres fora do ar responde 503.
+- Postgres com `statement_timeout` de 10 s; reinício automático sempre (`railway.json`).
+- **Backups do banco:** o volume do Postgres na Railway tem backup **diário** (guardado 6 dias) e **semanal** (27 dias). Restaurar:
+  painel da Railway → Postgres → Volume → Backups.
 - WebSocket: até 120 mensagens a cada 10 s.
 - Cada vez tem 2 minutos. Quem passa disso perde.
 
@@ -88,6 +110,7 @@ TESTE_DATABASE_URL=postgres://... npm test  # o mesmo, mais um roteiro contra um
 NODE_PATH=$(npm root -g) node tools/online_e2e.js   # dois navegadores: conta, convite, partida, revanche, ranking
 NODE_PATH=$(npm root -g) node tools/reconexao_e2e.js  # quedas: conexão morta, aba recarregada, sem internet
 NODE_PATH=$(npm root -g) node tools/amigos_e2e.js     # nome repetido, amizade, chamar pela lista, ranking de amigos, fila
+NODE_PATH=$(npm root -g) node tools/conta_e2e.js      # privacidade, trocar senha (o outro aparelho sai), apagar conta
 # sem baixar navegador: CHROMIUM="/caminho/do/chrome" usa o Chrome instalado
 python3 tools/empacotar.py                          # dist/dice-duel.html (arquivo único)
 ```
@@ -111,6 +134,10 @@ A janela Online explica que precisa do servidor.
 | `POST /api/amigos/aceitar` `{nome}` | aceita o pedido de `nome` |
 | `POST /api/amigos/remover` `{nome}` | recusa, cancela ou desfaz |
 | `GET /api/online` | `{total}`; com conta, também `jogadores` (até 50: `nome`, `rating`, `icone`, `onde`, `amigo`, `pedido`) |
+| `POST /api/eu/senha` `{atual, nova}` | troca a senha; devolve `{token, conta}` novos (os outros aparelhos saem) |
+| `POST /api/eu/sair-de-tudo` | invalida todos os tokens; devolve um novo para este aparelho |
+| `POST /api/eu/apagar` `{senha}` | apaga a conta |
+| `PUT /api/eu/privacidade` `{visivel?, chamadas?}` | `visivel`: aparecer no Online agora; `chamadas`: `'todos'` ou `'amigos'` |
 | `GET /api/config` | `{fila}`: o que este servidor oferece |
 | `POST /api/loja/comprar` `{tipo, id}` | `tipo`: `cartas`, `dados`, `icones` ou `mesas` |
 | `POST /api/loja/usar` `{tipo, id}` | troca o dado, o ícone ou a mesa em uso |
@@ -142,6 +169,8 @@ As rotas de conta pedem `Authorization: Bearer <token>`.
 - O servidor responde:
   - `ola`
   - `amigos` `{evento: 'pedido'|'aceito'|'removido', nome}`: a lista de amigos mudou;
+  - `online` `{total}`: quantos estão com o jogo aberto (sempre que muda);
+  - `sessao`: a sessão da conta mudou (senha nova, sair de tudo, conta apagada) e a conexão vai fechar;
   - `chamado` `{de, icone, rating, sala, meta, amigo}`: alguém chamou para a sala dele;
   - `chamou`, `procurando` `{janela, naFila}`, `buscaCancelada`, `achou` `{sala, rival, rating}` (logo depois vêm `sala` e `estado`);
   - `aviso` `{erro, codigo?}`: algo fora da partida não deu certo (chamar, procurar). Ao contrário de `erro`, não tira ninguém da sala;

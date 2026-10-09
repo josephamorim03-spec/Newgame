@@ -11,33 +11,39 @@ const chaveDoNome = nome => String(nome).trim().normalize('NFD').replace(/[̀-ͯ
 const validarNome = nome => typeof nome === 'string' && NOME_VALIDO.test(nome.trim()) && chaveDoNome(nome).length >= 3;
 const validarSenha = senha => typeof senha === 'string' && senha.length >= 6 && senha.length <= 72;
 
-function hashSenha(senha, sal = crypto.randomBytes(16).toString('hex')) {
-  const hash = crypto.scryptSync(senha, sal, 64).toString('hex');
-  return { hash, sal };
+// scrypt fora da thread principal: com a versão síncrona, cada login travava o servidor inteiro (todas as partidas) por ~50-100 ms
+const scrypt = (senha, sal) => new Promise((ok, erro) => crypto.scrypt(senha, sal, 64, (e, k) => (e ? erro(e) : ok(k))));
+async function hashSenha(senha, sal = crypto.randomBytes(16).toString('hex')) {
+  return { hash: (await scrypt(senha, sal)).toString('hex'), sal };
 }
-function conferirSenha(senha, conta) {
-  const { hash } = hashSenha(senha, conta.sal);
-  const a = Buffer.from(hash, 'hex'), b = Buffer.from(conta.senha_hash, 'hex');
+async function conferirSenha(senha, conta) {
+  const a = await scrypt(senha, conta.sal), b = Buffer.from(conta.senha_hash, 'hex');
   return a.length === b.length && crypto.timingSafeEqual(a, b);
 }
 
+// o token leva a versão da sessão da conta (v): trocar a senha ou "sair de todos os aparelhos" sobe a versão
+// e todos os tokens antigos deixam de valer, sem guardar sessão no servidor
 const b64 = s => Buffer.from(s).toString('base64url');
-function criarToken(id, segredo, dias = 30) {
-  const corpo = b64(JSON.stringify({ id, exp: Date.now() + dias * 864e5 }));
+function criarToken(id, segredo, dias = 30, v = 0) {
+  const corpo = b64(JSON.stringify({ id, v, exp: Date.now() + dias * 864e5 }));
   const assinatura = crypto.createHmac('sha256', segredo).update(corpo).digest('base64url');
   return `${corpo}.${assinatura}`;
 }
-function lerToken(token, segredo) {
-  if (typeof token !== 'string' || !token.includes('.')) return null;
+// { id, v } de um token válido e dentro do prazo; null se não
+function lerSessao(token, segredo) {
+  if (typeof token !== 'string' || token.length > 512 || !token.includes('.')) return null;
   const [corpo, assinatura] = token.split('.');
   const certa = crypto.createHmac('sha256', segredo).update(corpo).digest('base64url');
   const a = Buffer.from(assinatura || ''), b = Buffer.from(certa);
   if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return null;
   try {
     const dados = JSON.parse(Buffer.from(corpo, 'base64url').toString());
-    return dados.exp > Date.now() ? dados.id : null;
+    return dados.exp > Date.now() && Number.isInteger(dados.id) ? { id: dados.id, v: Number.isInteger(dados.v) ? dados.v : 0 } : null;
   } catch (e) { return null; }
 }
+const lerToken = (token, segredo) => { const s = lerSessao(token, segredo); return s ? s.id : null; };
+// o token vale para esta conta? (assinado, no prazo e da versão atual da sessão)
+const sessaoValida = (s, conta) => !!(s && conta && s.id === conta.id && s.v === (conta.versao_token || 0));
 
 // limite simples por IP (contra força bruta no login e na criação de contas)
 function limitador({ janelaMs = 60_000, maximo = 10 } = {}) {
@@ -53,4 +59,4 @@ function limitador({ janelaMs = 60_000, maximo = 10 } = {}) {
   };
 }
 
-module.exports = { chaveDoNome, validarNome, validarSenha, hashSenha, conferirSenha, criarToken, lerToken, limitador };
+module.exports = { chaveDoNome, validarNome, validarSenha, hashSenha, conferirSenha, criarToken, lerToken, lerSessao, sessaoValida, limitador };
