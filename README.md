@@ -16,6 +16,9 @@ Cada um guarda um dado no **Bolso**, escolhe a hora de **disparar** a corrente p
 - a experiência sobe em toda partida;
 - um rating evita que jogador forte farme o modo fácil.
 
+**Online:** conta com nome e senha, ranking, e salas para jogar com amigos. Você manda um link de convite (`/?sala=CODIGO`)
+e o amigo cai direto na sala. O servidor é a autoridade da partida e roda na Railway (`docs/servidor.md`).
+
 > Esta branch (`DiceDuel`) guarda só o Dice Duel. A `main` do repositório continua com o design do LIMIAR,
 > como manda a política de branches do projeto.
 
@@ -24,11 +27,13 @@ Cada um guarda um dado no **Bolso**, escolhe a hora de **disparar** a corrente p
 - **Direto:** abra `index.html` no navegador (funciona por `file://`, sem servidor).
 - **Arquivo único, bom para mandar a quem testa ou abrir no celular:** `dist/dice-duel.html`.
 - **Gerar o arquivo único de novo depois de mexer no código:** `python3 tools/empacotar.py`.
+- **Com o online:** `npm install && npm start` e abra `http://localhost:8080`. Na Railway, siga `docs/servidor.md`.
 
 **Contra quem:**
 - **Biscoito**, um gatinho, fácil;
 - **Dona Coruja**, que lê a Mesa;
-- **duas pessoas** no mesmo aparelho.
+- **duas pessoas** no mesmo aparelho;
+- **um amigo, online**, por link de convite (vale rating e moedas).
 
 **Em Ajustes dá para ligar e desligar:**
 - som e música, com volume;
@@ -42,15 +47,20 @@ Cada um guarda um dado no **Bolso**, escolhe a hora de **disparar** a corrente p
 |---|---|
 | `index.html` | a página do jogo |
 | `css/estilo.css` | o visual aconchegante (mesa de madeira, feltro, fichas de papel) |
-| `js/jogo.js` | regras, rivais, cartas, bons momentos, recordes, ajustes, moedas, rating, loja |
+| `js/jogo.js` | tela, rivais, bons momentos, recordes, ajustes, loja e a janela Online (conta, salas, ranking) |
+| `shared/regras.js` | o motor de regras, puro, usado pelo navegador e pelo servidor |
+| `servidor/` | API, contas, ranking, salas e partida online (Node, Express, WebSocket, Postgres) |
 | `js/audio.js` | efeitos e trilha lo-fi sintetizados na hora (Web Audio, sem arquivos de áudio) |
 | `js/efeitos.js` | partículas, dados voando, chamadas de "bom momento", contagem do placar |
 | `sim/` | regras de referência em Python e os experimentos de balanceamento |
 | `tools/empacotar.py` | gera o HTML único |
 | `tools/fumaca.js` | teste de fumaça: joga partidas inteiras no navegador e falha com qualquer erro |
+| `tools/layout.js` | verificador de layout em 5 larguras: texto vazando, fora da caixa, quebrado, descentralizado |
+| `tools/online_e2e.js` | ponta a ponta do online: dois navegadores, conta, convite, partida, revanche, ranking |
 | `docs/design.md` | regras, cartas, números, decisões e por quê |
 | `docs/pesquisa.md` | o que jogos de cartas no celular ensinam (deck pequeno, armadilhas, contra-jogo) |
 | `docs/progressao.md` | moedas, rating contra o farm, XP e níveis, loja, cosméticos, regras de monetização |
+| `docs/servidor.md` | o servidor: o que faz, regras contra abuso, como pôr na Railway, API |
 
 ## Verificar
 
@@ -59,12 +69,16 @@ cd sim && python3 valor_cartas.py      # valor de cada carta sozinha
 cd sim && python3 informacao.py        # armadilhas: oculto × à mostra
 cd sim && python3 decks.py             # todos os 133 decks: algum domina?
 cd sim && python3 economia.py          # cartas compradas não superam as grátis; moedas por vitória
-npm i -D playwright && node tools/fumaca.js   # 4 partidas no navegador (celular, computador, Coruja, a dois)
+npm install && npm test                        # motor, API, salas, quedas, limite por par
+export NODE_PATH=$(npm root -g)                # Playwright instalado globalmente (ou: npm i -D playwright)
+node tools/fumaca.js                           # 4 partidas no navegador (celular, computador, Coruja, a dois)
+node tools/layout.js                           # layout em 360, 390, 430, 768 e 1360 px
+node tools/online_e2e.js                       # online de ponta a ponta, com o servidor local
 ```
 
 ## Estado
 
-**Protótipo v0.7, pronto para testes com gente.** O resumo copiável do fim da partida traz:
+**Protótipo v0.8, pronto para testes com gente, com online pronto para a Railway.** O resumo copiável do fim da partida traz:
 - o deck de cada um;
 - as cartas que agiram;
 - as rupturas;

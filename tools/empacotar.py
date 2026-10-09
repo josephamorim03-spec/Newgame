@@ -19,7 +19,7 @@ def embutir(html: str) -> str:
         return "<script>\n" + (RAIZ / m.group(1)).read_text(encoding="utf-8") + "\n</script>"
 
     html = re.sub(r'<link rel="stylesheet" href="(css/[^"]+)">', css, html)
-    html = re.sub(r'<script src="(js/[^"]+)"></script>', js, html)
+    html = re.sub(r'<script src="((?:js|shared)/[^"]+)"></script>', js, html)
     return html
 
 

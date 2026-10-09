@@ -1,0 +1,299 @@
+'use strict';
+const test = require('node:test');
+const assert = require('node:assert');
+const WebSocket = require('ws');
+const { criarApp, TETO_SOLO_DIA } = require('../app');
+const { BancoMemoria, criarBanco } = require('../banco');
+const { jogadaAoAcaso } = require('./ajuda');
+
+const SEGREDO = 'segredo-de-teste-com-32-caracteres!!';
+
+async function subir({ banco = new BancoMemoria(), tempos = {}, limites = { contas: 1000, entrar: 1000, solo: 1000, ws: 100000 } } = {}) {
+  const { criarServidor, salas } = criarApp({ banco, segredo: SEGREDO, tempos, limites });
+  const servidor = criarServidor();
+  await new Promise(r => servidor.listen(0, r));
+  const base = `http://127.0.0.1:${servidor.address().port}`;
+  const api = async (metodo, rota, corpo, token) => {
+    const r = await fetch(base + rota, { method: metodo, headers: { 'content-type': 'application/json', ...(token ? { authorization: 'Bearer ' + token } : {}) }, body: corpo ? JSON.stringify(corpo) : undefined });
+    return { status: r.status, ...(await r.json().catch(() => ({}))) };
+  };
+  const fechar = async () => { salas.fechar(); servidor.wss.clients.forEach(c => c.terminate()); servidor.wss.close(); await new Promise(r => { servidor.closeAllConnections && servidor.closeAllConnections(); servidor.close(r); }); };
+  return { base, api, banco, salas, servidor, fechar, ws: base.replace('http', 'ws') + '/ws' };
+}
+
+// um jogador pela rede: guarda as mensagens e espera pelas que interessam
+async function cliente(url, token) {
+  const ws = new WebSocket(url), msgs = [];
+  let acordar = null;
+  ws.on('message', d => { msgs.push(JSON.parse(d)); if (acordar) acordar(); });
+  await new Promise((ok, erro) => { ws.once('open', ok); ws.once('error', erro); });
+  const c = {
+    ws, msgs,
+    enviar: m => ws.send(JSON.stringify(m)),
+    async esperar(pred, ms = 4000) {
+      const ate = Date.now() + ms;
+      for (;;) {
+        const i = msgs.findIndex(pred);
+        if (i >= 0) return msgs.splice(0, i + 1).pop();
+        if (Date.now() > ate) throw new Error('não chegou: ' + pred.toString() + '\núltimas: ' + JSON.stringify(msgs.slice(-3)).slice(0, 400));
+        await new Promise(r => { acordar = r; setTimeout(r, 50); });
+      }
+    },
+    fechar: () => ws.close(),
+  };
+  c.enviar({ tipo: 'ola', token });
+  await c.esperar(m => m.tipo === 'ola');
+  return c;
+}
+
+const conta = async (s, nome, extra = {}) => { const r = await s.api('POST', '/api/contas', { nome, senha: 'senha123', ...extra }); assert.strictEqual(r.status, 200, r.erro); return r; };
+
+// joga até o fim: cada lado, ao ver que é a sua vez, faz uma jogada legal ao acaso
+async function jogarAteOFim(a, b, { vigiar = () => {} } = {}) {
+  const lados = [a, b], ultimo = [null, null];
+  const fins = [null, null];
+  for (let passo = 0; passo < 4000 && fins.some(f => !f); passo++) {
+    for (let i = 0; i < 2; i++) {
+      const c = lados[i];
+      while (c.msgs.length) {
+        const m = c.msgs.shift();
+        if (m.tipo === 'estado') { vigiar(m.jogo, i); ultimo[i] = m.jogo; c.pronto = true; }
+        if (m.tipo === 'fim') fins[i] = m.premio;
+      }
+      const j = ultimo[i];
+      if (j && c.pronto && j.fase !== 'fim' && j.vez === 0) { c.pronto = false; c.enviar({ tipo: 'acao', acao: jogadaAoAcaso(j, 0) }); }
+    }
+    await new Promise(r => setTimeout(r, 2));
+  }
+  if (!(fins[0] && fins[1])) console.log('DEBUG', JSON.stringify(ultimo.map(j => j && { fase: j.fase, vez: j.vez, pts: j.pts, mesa: j.mesa.length, mao: j.mao, log: j.log.slice(0, 3) })), a.pronto, b.pronto, a.msgs.length, b.msgs.length);
+  assert.ok(fins[0] && fins[1], 'a partida não terminou');
+  return { fins, jogos: ultimo };
+}
+
+test('contas: criar, nome repetido, senha errada, entrar e /api/eu', { timeout: 20000 }, async () => {
+  const s = await subir();
+  try {
+    const r = await conta(s, 'Ana');
+    assert.ok(r.token);
+    assert.strictEqual(r.conta.moedas, 0);
+    assert.ok(!('senha_hash' in r.conta) && !('sal' in r.conta));
+    assert.strictEqual((await s.api('POST', '/api/contas', { nome: 'ana', senha: 'outra123' })).status, 409);
+    assert.strictEqual((await s.api('POST', '/api/contas', { nome: 'a', senha: 'senha123' })).status, 400);
+    assert.strictEqual((await s.api('POST', '/api/contas', { nome: 'Bruno', senha: '123' })).status, 400);
+    assert.strictEqual((await s.api('POST', '/api/entrar', { nome: 'Ana', senha: 'errada1' })).status, 401);
+    const e = await s.api('POST', '/api/entrar', { nome: 'ANA', senha: 'senha123' });
+    assert.strictEqual(e.status, 200);
+    assert.strictEqual((await s.api('GET', '/api/eu', null, e.token)).conta.nome, 'Ana');
+    assert.strictEqual((await s.api('GET', '/api/eu', null, 'lixo.lixo')).status, 401);
+    assert.strictEqual((await s.api('GET', '/api/eu')).status, 401);
+  } finally { await s.fechar(); }
+});
+
+test('limite de tentativas de login por IP', { timeout: 20000 }, async () => {
+  const s = await subir({ limites: { contas: 1000, entrar: 3, solo: 1000, ws: 100000 } });
+  try {
+    const st = [];
+    for (let i = 0; i < 5; i++) st.push((await s.api('POST', '/api/entrar', { nome: 'x', senha: 'y' })).status);
+    assert.deepStrictEqual(st, [401, 401, 401, 429, 429]);
+  } finally { await s.fechar(); }
+});
+
+test('loja: só compra com moedas, não repete, itens de nível não se vendem', { timeout: 20000 }, async () => {
+  const s = await subir();
+  try {
+    const { token, conta: c } = await conta(s, 'Caio');
+    assert.strictEqual((await s.api('POST', '/api/loja/comprar', { tipo: 'cartas', id: 'espelho' }, token)).status, 402);
+    await s.banco.atualizarConta(c.id, { moedas: 300 });
+    // duas compras ao mesmo tempo: a trava impede gastar a mesma moeda duas vezes
+    const [x, y] = await Promise.all([
+      s.api('POST', '/api/loja/comprar', { tipo: 'dados', id: 'pelucia' }, token),
+      s.api('POST', '/api/loja/comprar', { tipo: 'cartas', id: 'fundo' }, token),
+    ]);
+    assert.deepStrictEqual([x.status, y.status].sort(), [200, 402]);
+    const eu = (await s.api('GET', '/api/eu', null, token)).conta;
+    assert.strictEqual(eu.moedas, 80);
+    assert.strictEqual((await s.api('POST', '/api/loja/comprar', { tipo: 'dados', id: 'pelucia' }, token)).status, 409);
+    assert.strictEqual((await s.api('POST', '/api/loja/comprar', { tipo: 'dados', id: 'menta' }, token)).status, 400);
+    assert.strictEqual((await s.api('POST', '/api/loja/comprar', { tipo: 'senha_hash', id: 'x' }, token)).status, 400);
+    assert.strictEqual((await s.api('POST', '/api/loja/comprar', { tipo: 'cartas', id: 'constructor' }, token)).status, 400);
+    assert.strictEqual((await s.api('POST', '/api/loja/usar', { tipo: 'dados', id: 'diamante' }, token)).status, 400);
+    assert.strictEqual((await s.api('POST', '/api/loja/usar', { tipo: 'constructor', id: 'x' }, token)).status, 400);
+    const u = await s.api('POST', '/api/loja/usar', { tipo: 'dados', id: 'pelucia' }, token);
+    assert.strictEqual(u.conta.ativo.dado, 'pelucia');
+  } finally { await s.fechar(); }
+});
+
+test('partidas solo: moedas com teto por dia e pelo pico de rating', { timeout: 20000 }, async () => {
+  const s = await subir();
+  try {
+    const { token } = await conta(s, 'Duda');
+    const vitoria = { nivel: 'esperto', venceu: true, margem: 10, rodadas: 3, meta: 12, momentos: 2 };
+    assert.strictEqual((await s.api('POST', '/api/solo', { ...vitoria, margem: 99 }, token)).status, 400);
+    let total = 0, ultima;
+    for (let i = 0; i < 12; i++) { ultima = await s.api('POST', '/api/solo', vitoria, token); total += ultima.premio.moedas.total; }
+    const eu = ultima.conta;
+    assert.ok(total <= TETO_SOLO_DIA, `ganhou ${total}`);
+    assert.strictEqual(eu.moedas, total);
+    assert.ok(eu.solo_pico > 1000 && eu.rating === 1000, 'solo não mexe no rating do ranking');
+    const derrota = await s.api('POST', '/api/solo', { ...vitoria, venceu: false, margem: 0 }, token);
+    assert.strictEqual(derrota.premio.moedas, null);
+    assert.ok(derrota.premio.xpGanho >= 10);
+  } finally { await s.fechar(); }
+});
+
+test('convidado vira conta: progresso importado com teto', { timeout: 20000 }, async () => {
+  const s = await subir();
+  try {
+    const tudo = { moedas: 99999, xp: 99999, cartas: ['espelho', 'fundo', 'pedagio', 'rerrolar', 'sobrecarga', 'inventada'], dados: ['diamante', 'dourado', 'madeira', 'menta'], icones: ['raposa'], mesas: ['vinho'], ativo: { dado: 'diamante' }, rating: 5000 };
+    const { conta: c } = await conta(s, 'Eva', { importar: tudo });
+    assert.strictEqual(c.moedas, 600);
+    assert.strictEqual(c.xp, 1000);
+    assert.ok(!c.cartas.includes('inventada'));
+    const preco = { espelho: 110, fundo: 140, pedagio: 140, rerrolar: 90, sobrecarga: 120, diamante: 800, dourado: 450, madeira: 80, raposa: 100, vinho: 150 };
+    const valor = [...c.cartas, ...c.dados, ...c.icones, ...c.mesas].reduce((t, id) => t + (preco[id] || 0), 0);
+    assert.ok(valor + c.moedas <= 900, `valor importado ${valor + c.moedas}`);
+    assert.ok(c.dados.includes('menta') && c.icones.includes('xicara'), 'presentes de nível vêm do xp');
+    assert.ok(c.solo_rating <= 1400);
+  } finally { await s.fechar(); }
+});
+
+test('partida online completa: cada um vê só o que deve, e o fim paga rating e moedas', { timeout: 20000 }, async () => {
+  const s = await subir();
+  try {
+    const A = await conta(s, 'Fabi'), B = await conta(s, 'Gui');
+    await s.banco.atualizarConta(B.conta.id, { cartas: B.conta.cartas.concat('espelho', 'fundo') });
+    const sala = (await s.api('POST', '/api/salas', { meta: 12 }, A.token)).sala;
+    assert.match(sala.codigo, /^[A-Z2-9]{6}$/);
+    assert.strictEqual((await s.api('GET', '/api/salas/' + sala.codigo)).sala.estado, 'esperando');
+    const a = await cliente(s.ws, A.token), b = await cliente(s.ws, B.token);
+    // deck com carta que a conta não tem: recusado
+    a.enviar({ tipo: 'entrar', sala: sala.codigo, deck: ['espelho'] });
+    await a.esperar(m => m.tipo === 'erro' && /não possui/.test(m.erro));
+    a.enviar({ tipo: 'entrar', sala: sala.codigo, deck: ['ajuste', 'interferencia', 'pressa'] });
+    await a.esperar(m => m.tipo === 'sala');
+    b.enviar({ tipo: 'entrar', sala: sala.codigo.toLowerCase(), deck: ['espelho', 'fundo', 'coringa'] });
+    const ea = await a.esperar(m => m.tipo === 'estado');
+    a.msgs.unshift({ tipo: 'estado', jogo: ea.jogo });
+    assert.deepStrictEqual(ea.jogo.nomes, ['Fabi', 'Gui']);
+    assert.strictEqual(ea.jogo.perfis[1].nome, 'Gui');
+    // fora da vez: erro, e o estado volta
+    const quemNaoJoga = ea.jogo.vez === 0 ? b : a;
+    quemNaoJoga.enviar({ tipo: 'acao', acao: { tipo: 'pegar', idx: 0 } });
+    await quemNaoJoga.esperar(m => m.tipo === 'erro' && /vez/.test(m.erro));
+    let armadilhasVistas = 0;
+    const { fins } = await jogarAteOFim(a, b, {
+      vigiar: (j) => {
+        assert.ok([null, 'espelho', 'oculta'].includes(j.armada[1]), 'a armadilha do rival vazou: ' + j.armada[1]);
+        if (j.armada[1] === 'oculta') armadilhasVistas++;
+        assert.ok(!(j.mao && j.vez !== 0), 'a mão do rival vazou');
+      },
+    });
+    const venceuA = fins[0].moedas !== null;
+    assert.strictEqual(venceuA, fins[1].moedas === null, 'só quem venceu recebe moedas');
+    const w = venceuA ? 0 : 1;
+    assert.ok(fins[w].moedas.total > 0);
+    assert.ok(fins[w].rating > 1000 && fins[1 - w].rating < 1000);
+    assert.strictEqual(fins[w].conta.moedas, fins[w].moedas.total);
+    const rk = (await s.api('GET', '/api/ranking')).ranking;
+    assert.strictEqual(rk.length, 2);
+    assert.strictEqual(rk[0].nome, w === 0 ? 'Fabi' : 'Gui');
+    assert.ok(armadilhasVistas >= 0);
+    // revanche: os dois pedem e começa outra
+    a.enviar({ tipo: 'revanche' }); b.enviar({ tipo: 'revanche' });
+    const nova = await a.esperar(m => m.tipo === 'estado' && m.jogo.fase !== 'fim' && m.jogo.rodada === 1 && m.jogo.pts[0] === 0);
+    assert.ok(nova);
+    a.fechar(); b.fechar();
+  } finally { await s.fechar(); }
+});
+
+test('quem cai tem um tempo para voltar; depois perde por W.O. (sem moedas para ninguém)', { timeout: 20000 }, async () => {
+  const s = await subir({ tempos: { esperaReconexao: 400 } });
+  try {
+    const A = await conta(s, 'Hugo'), B = await conta(s, 'Iris');
+    const { sala } = await s.api('POST', '/api/salas', {}, A.token);
+    let a = await cliente(s.ws, A.token);
+    const b = await cliente(s.ws, B.token);
+    a.enviar({ tipo: 'entrar', sala: sala.codigo, deck: [] });
+    b.enviar({ tipo: 'entrar', sala: sala.codigo, deck: [] });
+    await a.esperar(m => m.tipo === 'estado');
+    // cai e volta a tempo: recebe o estado de novo, a partida segue
+    a.ws.terminate();
+    await b.esperar(m => m.tipo === 'sala' && m.sala.jogadores.some(j => !j.conectado));
+    a = await cliente(s.ws, A.token);
+    a.enviar({ tipo: 'entrar', sala: sala.codigo, deck: [] });
+    const volta = await a.esperar(m => m.tipo === 'estado');
+    assert.notStrictEqual(volta.jogo.fase, 'fim');
+    // cai e não volta: W.O.
+    a.ws.terminate();
+    const fim = await b.esperar(m => m.tipo === 'fim', 3000);
+    assert.strictEqual(fim.premio.porDesistencia, true);
+    assert.strictEqual(fim.premio.moedas.total, 0);
+    assert.ok(fim.premio.rating > 1000);
+    b.fechar();
+  } finally { await s.fechar(); }
+});
+
+test('o mesmo par só vale rating e moedas 3 vezes por dia', { timeout: 20000 }, async () => {
+  const s = await subir();
+  try {
+    const A = await conta(s, 'Juca'), B = await conta(s, 'Kika');
+    const { sala } = await s.api('POST', '/api/salas', {}, A.token);
+    const a = await cliente(s.ws, A.token), b = await cliente(s.ws, B.token);
+    a.enviar({ tipo: 'entrar', sala: sala.codigo, deck: [] });
+    b.enviar({ tipo: 'entrar', sala: sala.codigo, deck: [] });
+    const premios = [];
+    for (let k = 0; k < 4; k++) {
+      await b.esperar(m => m.tipo === 'estado' && m.jogo.fase !== 'fim');
+      a.msgs.length = 0;
+      a.enviar({ tipo: 'desistir' });
+      premios.push((await b.esperar(m => m.tipo === 'fim')).premio);
+      await a.esperar(m => m.tipo === 'fim');
+      if (k < 3) { a.enviar({ tipo: 'revanche' }); b.enviar({ tipo: 'revanche' }); }
+    }
+    assert.deepStrictEqual(premios.map(p => p.amistosa), [false, false, false, true]);
+    assert.strictEqual(premios[3].rating, premios[3].ratingAntes);
+    a.fechar(); b.fechar();
+  } finally { await s.fechar(); }
+});
+
+test('sala cheia e sala que não existe', { timeout: 20000 }, async () => {
+  const s = await subir();
+  try {
+    const [A, B, C] = await Promise.all(['Lia', 'Max', 'Nina'].map(n => conta(s, n)));
+    const { sala } = await s.api('POST', '/api/salas', {}, A.token);
+    const [a, b, c] = await Promise.all([A, B, C].map(x => cliente(s.ws, x.token)));
+    a.enviar({ tipo: 'entrar', sala: sala.codigo, deck: [] });
+    b.enviar({ tipo: 'entrar', sala: sala.codigo, deck: [] });
+    await b.esperar(m => m.tipo === 'estado');
+    c.enviar({ tipo: 'entrar', sala: sala.codigo, deck: [] });
+    await c.esperar(m => m.tipo === 'erro' && /cheia/.test(m.erro));
+    c.enviar({ tipo: 'entrar', sala: 'ZZZZZZ', deck: [] });
+    await c.esperar(m => m.tipo === 'erro' && /não encontrada/.test(m.erro));
+    assert.strictEqual((await s.api('GET', '/api/salas/ZZZZZZ')).status, 404);
+    [a, b, c].forEach(x => x.fechar());
+  } finally { await s.fechar(); }
+});
+
+// o mesmo roteiro com Postgres de verdade, quando houver um (TESTE_DATABASE_URL)
+test('banco Postgres: contas, partidas e ranking', { skip: !process.env.TESTE_DATABASE_URL && 'defina TESTE_DATABASE_URL' }, async () => {
+  const banco = await criarBanco({ url: process.env.TESTE_DATABASE_URL });
+  await banco.pool.query('TRUNCATE contas, partidas RESTART IDENTITY');
+  const s = await subir({ banco });
+  try {
+    const A = await conta(s, 'Olga'), B = await conta(s, 'Pedro');
+    assert.strictEqual((await s.api('POST', '/api/contas', { nome: 'olga', senha: 'senha123' })).status, 409);
+    await banco.atualizarConta(A.conta.id, { moedas: 200 });
+    const r = await s.api('POST', '/api/loja/comprar', { tipo: 'cartas', id: 'espelho' }, A.token);
+    assert.strictEqual(r.conta.moedas, 90);
+    assert.ok(r.conta.cartas.includes('espelho'));
+    const { sala } = await s.api('POST', '/api/salas', {}, A.token);
+    const a = await cliente(s.ws, A.token), b = await cliente(s.ws, B.token);
+    a.enviar({ tipo: 'entrar', sala: sala.codigo, deck: ['espelho', 'ajuste'] });
+    b.enviar({ tipo: 'entrar', sala: sala.codigo, deck: ['ancora'] });
+    const { fins } = await jogarAteOFim(a, b);
+    assert.ok(fins.some(f => f.moedas && f.moedas.total > 0));
+    assert.strictEqual(await banco.partidasDoParHoje(A.conta.id, B.conta.id), 1);
+    assert.strictEqual((await s.api('GET', '/api/ranking')).ranking.length, 2);
+    a.fechar(); b.fechar();
+  } finally { await s.fechar(); await banco.fechar(); }
+});

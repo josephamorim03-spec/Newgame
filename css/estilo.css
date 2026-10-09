@@ -439,3 +439,109 @@ body.mesa-piquenique .tabuleiro { background:
     repeating-linear-gradient(90deg, rgba(232,128,111,.28) 0 16px, transparent 16px 32px), #fbf1df; box-shadow: inset 0 0 50px rgba(120, 60, 40, .25); }
 body.mesa-piquenique .mesa-topo h2, body.mesa-piquenique .mesa-topo span, body.mesa-piquenique .ticker { color: var(--tinta); text-shadow: none; }
 body.mesa-piquenique .ticker .cor0 { color: var(--voce-tinta); } body.mesa-piquenique .ticker .cor1 { color: var(--rival-tinta); }
+
+/* ---------- v0.8: ajustes de layout (fichas, cartas, botões, ajustes) ---------- */
+/* cabeçalho da ficha em grade: avatar · nome e vez · Bolso · placar, sempre numa linha */
+.cab { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; column-gap: 8px; flex-wrap: nowrap; }
+.cab:not(:has(.avatar)) { grid-template-columns: minmax(0, 1fr) auto auto; }
+.quem { display: grid; gap: 2px; min-width: 0; justify-items: start; }
+.quem .nome { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: clamp(16px, 4.6vw, 20px); }
+.quem .vez-tag { font-size: 10px; padding: 2px 7px; }
+.placar { margin-left: 0; white-space: nowrap; }
+.placar b { font-size: clamp(22px, 6vw, 28px); }
+.placar small { font-size: 13px; color: var(--tinta-suave); }
+.bolso { padding: 3px 6px 3px 8px; gap: 5px; white-space: nowrap; }
+.bolso .rot { font-size: 10px; letter-spacing: .06em; }
+.avatar { width: clamp(38px, 10vw, 46px); height: clamp(38px, 10vw, 46px); }
+/* casa seguinte da corrente: ícone no lugar do texto */
+.slot.prox .prox-faces { font-size: clamp(9px, 2.4vw, 11px); max-width: 100%; overflow: hidden; }
+.prox-livre { width: 55%; height: 55%; color: rgba(255,243,226,.75); }
+/* cartas: três colunas iguais; o resto (armadilha armada, efeitos ativos) vem numa linha à parte */
+.cartas { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.cartas .rot { display: none; }
+.cartas .carta { min-width: 0; justify-content: center; padding: 0 8px; }
+.cartas .carta .cnome { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.cartas .carta small { display: none; }
+.cartas .carta.armada::after { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--mel); flex: none; }
+.cartas .vazio-cartas { grid-column: 1 / -1; font-size: 13px; color: var(--tinta-suave); }
+.estados { display: flex; flex-wrap: wrap; gap: 6px; }
+.estados:empty { display: none; }
+@media (max-width: 380px) { .cartas .carta svg.ico { display: none; } }
+/* botões: nunca quebram no meio; os de dois níveis têm rótulo e detalhe */
+.botoes .btn { flex: 1 1 auto; white-space: nowrap; padding: 0 14px; font-size: 15px; }
+.btn-duplo { flex-direction: column; gap: 0; line-height: 1.1; padding-block: 6px; white-space: nowrap; }
+.btn-duplo small { font-size: 12px; font-weight: 700; opacity: .75; }
+.item .btn { white-space: nowrap; }
+/* etiqueta dupla da Mesa: só os símbolos */
+.tag.duplo .tnome.curta { display: none; }
+.pega.destaque .face { transform: translateY(-9px); }
+/* ajustes: o controle desce para baixo do nome quando não cabe; o volume ganha uma linha própria */
+.linha-cfg { flex-wrap: wrap; row-gap: 8px; }
+.linha-cfg > span:first-child { flex: 1 1 150px; min-width: 0; }
+.linha-cfg label { white-space: nowrap; }
+.segmento { flex-wrap: nowrap; margin-left: auto; }
+.segmento button { white-space: nowrap; }
+.linha-som { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; }
+.linha-som .volume { grid-column: 1 / -1; width: 100%; }
+/* modais: título e conteúdo sempre dentro da caixa */
+.caixa { overflow-x: hidden; }
+.deck-topo h2 { min-width: 0; }
+/* as colunas da mesa não crescem com o conteúdo (o letreiro de jogadas não quebra de propósito) */
+.tabuleiro { grid-template-columns: minmax(0, 1fr); }
+.mesa-area { grid-template-columns: minmax(0, 1fr); }
+.ticker { width: 100%; }
+/* as casas da corrente encolhem um pouco em telas estreitas (continuam quadradas) */
+.corrente .slot { flex: 0 1 var(--d); width: auto; height: auto; aspect-ratio: 1; min-width: 0; }
+.corrente .slot > .dado { width: 100%; height: 100%; }
+@media (max-width: 380px) { .corrente { --gap: 9px; padding-inline: 8px; } .p1 .corrente { --gap: 8px; } }
+/* topo: o título nunca quebra; em telas estreitas o logo sai e os botões ficam compactos */
+.marca h1 { white-space: nowrap; }
+@media (max-width: 440px) {
+  .marca h1 { font-size: 24px; }
+  .btn-topo { min-height: 40px; min-width: 40px; padding: 0 9px; border-radius: 12px; }
+  .carteira { min-height: 40px; padding: 0 10px; font-size: 14px; }
+  .topo-botoes { gap: 5px; }
+}
+@media (max-width: 400px) { .logo { display: none; } }
+@media (max-width: 380px) {
+  .marca h1 { font-size: 22px; }
+  .btn-topo { min-width: 36px; padding: 0 7px; }
+  .carteira { padding: 0 8px; gap: 4px; }
+  .topo-botoes { gap: 4px; }
+}
+
+/* ---------- online (v0.8): conta, salas por convite e ranking ---------- */
+.btn-topo { position: relative; }
+.ponto-online { position: absolute; top: 6px; right: 6px; width: 8px; height: 8px; border-radius: 50%; background: #8fd19e; box-shadow: 0 0 0 2px var(--noite); }
+.aviso-online { margin: 0; padding: 10px 12px; border-radius: 12px; background: var(--papel-2); font-size: 14px; font-weight: 700; text-align: center; }
+.aviso-online.erro { background: #f6d2cf; color: #7a2a24; }
+.form-conta { display: grid; gap: 10px; }
+.form-conta label { display: grid; gap: 4px; font-size: 14px; font-weight: 800; }
+.campo { width: 100%; min-height: 46px; border: 0; border-radius: 12px; padding: 0 12px; background: var(--papel-2); color: var(--tinta); font: inherit; font-size: 16px; box-shadow: inset 0 0 0 1.5px rgba(0,0,0,.08); }
+.campo:focus-visible { outline: 3px solid var(--mel); outline-offset: 1px; }
+.campo.codigo { text-transform: uppercase; letter-spacing: .2em; font-weight: 800; text-align: center; }
+.linha-botoes { display: flex; flex-wrap: wrap; gap: 8px; }
+.linha-botoes .btn { flex: 1 1 140px; white-space: nowrap; }
+.eu-online { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 10px 12px; border-radius: 16px; background: var(--papel-2); }
+.eu-online .avatar { width: 44px; height: 44px; }
+.eu-online b { display: block; font-size: 17px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.eu-online small { display: block; color: var(--tinta-suave); font-size: 13px; }
+.eu-online .rating-grande { font-family: var(--f-titulo); font-size: 26px; font-weight: 700; text-align: center; line-height: 1; }
+.eu-online .rating-grande small { font-family: var(--f-corpo); font-size: 11px; text-transform: uppercase; letter-spacing: .08em; }
+.convite { display: grid; gap: 10px; justify-items: center; text-align: center; padding: 14px; border-radius: 18px; background: var(--papel-2); }
+.convite .codigo-grande { font-family: var(--f-titulo); font-size: 40px; font-weight: 700; letter-spacing: .14em; line-height: 1; }
+.convite .link { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; color: var(--tinta-suave); }
+.convite .linha-botoes { width: 100%; }
+.esperando { display: inline-flex; gap: 8px; align-items: center; font-weight: 700; }
+.lista-sala { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; width: 100%; }
+.lista-sala li { display: flex; justify-content: space-between; gap: 8px; padding: 8px 12px; border-radius: 12px; background: var(--papel); font-weight: 700; }
+.ranking { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; max-height: 260px; overflow-y: auto; }
+.ranking li { display: grid; grid-template-columns: 28px 28px minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 6px 10px; border-radius: 12px; font-size: 15px; }
+.ranking li:nth-child(odd) { background: var(--papel-2); }
+.ranking li.eu { box-shadow: inset 0 0 0 2px var(--mel); }
+.ranking .pos { font-weight: 800; color: var(--tinta-suave); text-align: right; }
+.ranking .avatar { width: 28px; height: 28px; }
+.ranking .quem-rk { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
+.ranking .quem-rk small { display: block; font-weight: 600; font-size: 12px; color: var(--tinta-suave); }
+.ranking .rk { font-weight: 800; }
+.prazo { font-weight: 800; color: var(--perigo, #c4553f); }

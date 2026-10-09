@@ -2,3 +2,4 @@ builds/
 node_modules/
 __pycache__/
 *.pyc
+dados/

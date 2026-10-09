@@ -103,3 +103,5 @@ As cartas chegam rápido; os cosméticos caros (Dourado, Diamante) ficam como me
 | **A margem incentiva humilhar o rival** | no online, o ajuste por rating (§3) já compensa |
 | **Os preços** | se as 5 cartas saírem em menos de 2 horas, encarecer os cosméticos, não as cartas |
 | **O teto de 1.400 deixa o jogador forte sem moedas antes do online existir** | no protótipo, a mensagem do fim de partida explica e aponta o online |
+| **Duas contas combinando resultado no online** | o mesmo par vale rating e moedas 3 vezes por dia; vitória por desistência não paga (docs/servidor.md) |
+| **Resultado falso contra os rivais do jogo** (eles rodam no aparelho) | com conta, essas vitórias pagam até 300 moedas por dia; o ranking só conta partidas online, que o servidor arbitra |
