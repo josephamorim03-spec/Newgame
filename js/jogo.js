@@ -837,7 +837,8 @@
     const grupos = new Map();
     j.momentos.filter(m => humano(m.p)).forEach(m => { const k = m.p + m.txt; const g = grupos.get(k) || { ...m, vezes: 0 }; g.vezes++; grupos.set(k, g); });
     const ordemSimb = ['☾', '★', '✿', '✧', '❀', '↺', '✦', '♪'];
-    const momentos = [...grupos.values()].sort((a, b) => ordemSimb.indexOf(a.simbolo) - ordemSimb.indexOf(b.simbolo)).slice(0, 6)
+    const lances = [...grupos.values()].sort((a, b) => ordemSimb.indexOf(a.simbolo) - ordemSimb.indexOf(b.simbolo)).slice(0, 6);
+    const momentos = lances
       .map(m => `<li><span class="em">${m.simbolo}</span><span>${j.modo === 'local' ? `<span class="cor${m.p}">${n[m.p]}</span> ` : ''}${m.txt}${m.vezes > 1 ? ` <b>×${m.vezes}</b>` : ''}</span></li>`).join('');
     const recs = (j.recordes || []).map(r => `<li class="recorde"><span class="em">✪</span>Novo: ${r}</li>`).join('');
     document.getElementById('fimMomentos').innerHTML = recs + (momentos || '<li><span class="em">☕</span>Sem lances marcantes desta vez.</li>');
@@ -849,17 +850,41 @@
       linha('Cartas que agiram', x => x.cartas.join(', ') || '–') +
       linha('Disparos', x => x.disp) + linha('Maior corrente', x => x.maior || '–') + linha('Rupturas', x => x.rupt) +
       linha('Bolso (guardou · trocou)', x => `${x.guardou} · ${x.trocou}`);
-    document.getElementById('fimTexto').value =
-      `Dice Duel v0.9 · ${j.modo === 'bot' ? 'contra ' + n[1] : online() ? 'online contra ' + n[1] : '2 jogadores'} · meta ${j.meta}${j.premio ? ` · moedas +${j.premio.moedas ? j.premio.moedas.total : 0} · rating ${j.premio.ratingAntes}→${j.premio.rating}` : ''}\n` +
-      `${n[0]} ${j.pts[0]} × ${j.pts[1]} ${n[1]} · ${j.compras} dados pegos · ${j.rodada} rodadas\n` +
-      [0, 1].map(k => `${n[k]} [${j.decks[k].map(c => CARTAS[c].nome).join(', ') || 'sem cartas'}]: ${s[k].disp} disparos, maior ${s[k].maior}, ${s[k].rupt} rupturas, Bolso ${s[k].guardou}/${s[k].trocou}, cartas que agiram: ${s[k].cartas.join(', ') || 'nenhuma'}, blefes ${s[k].blefes || 0}`).join('\n') +
-      `\nComentário: `;
+    prepararCartao(j, lances);
     document.getElementById('btnDeNovo').textContent = online() ? 'Revanche' : 'Jogar de novo';
     document.getElementById('fim').hidden = false;
     document.getElementById('btnDeNovo').focus();
   }
 
-  const fmt = x => String(x).replace('.', ',');
+  // o cartão do fim (imagem para o grupo). Fica pronto antes do toque: o iPhone só compartilha arquivo dentro do próprio toque.
+  let cartao = null;
+  function prepararCartao(j, lances) {
+    const n = nomes(), pr = j.premio, eu = st.sessao && st.sessao.perfil ? st.sessao.perfil.nome : n[0];
+    const quem = [j.modo === 'local' ? n[0] : eu, n[1]];
+    const icone = id => (ICONES[id] ? id : 'bolinha');
+    const dr = pr ? pr.rating - pr.ratingAntes : 0;
+    const d = {
+      titulo: `${quem[j.vencedor]} venceu!`,
+      modo: j.modo === 'bot' ? `contra ${n[1]} · meta ${j.meta}` : online() ? `duelo online · meta ${j.meta}` : `a dois na mesma mesa · meta ${j.meta}`,
+      nomes: quem, pts: j.pts.slice(), vencedor: j.vencedor,
+      retratos: [icone(st.conta.icone), j.modo === 'bot' ? RETRATO_RIVAL[j.nivel] : online() ? icone(j.perfis[1].icone) : 'raposa'],
+      destaque: online() && pr && !pr.amistosa ? `Rating online ${pr.ratingAntes} → ${pr.rating} (${dr >= 0 ? '+' : ''}${dr}) · ${tituloDe(pr.rating)}`
+        : (j.recordes || []).length ? `Novo recorde: ${j.recordes[0]}` : '',
+      linhas: lances.map(m => ({ simbolo: m.simbolo, txt: `${j.modo === 'local' ? n[m.p] + ': ' : ''}${m.txt}${m.vezes > 1 ? ` ×${m.vezes}` : ''}` })),
+      endereco: PAGINA ? location.host : 'diceduel-game.vercel.app',
+    };
+    const este = { blob: null };
+    este.promessa = Cartao.gerar(d).then(b => { este.blob = b; return b; });
+    este.promessa.catch(() => {});
+    cartao = este;
+  }
+  function baixar(blob, nome) {
+    const a = document.createElement('a'), url = URL.createObjectURL(blob);
+    a.href = url; a.download = nome; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+  }
+
+  const fmt =x => String(x).replace('.', ',');
   const nomeItem = (tipo, id) => ({ cartas: CARTAS, dados: DADOS, icones: ICONES, mesas: MESAS })[tipo][id].nome;
   function desenharRecompensas(j) {
     const el = document.getElementById('fimRecompensas');
@@ -1007,9 +1032,8 @@
   document.getElementById('listaCartas').innerHTML = ORDEM.map(c => `<div>${CARTAS[c].arte}<span><b>${CARTAS[c].nome}${CARTAS[c].pontos ? ` <span class="raio">${RAIO}</span>` : ''}</b> <span class="nota">(${CARTAS[c].tipo})</span>. ${CARTAS[c].texto}</span></div>`).join('');
 
   // ---------- eventos da interface ----------
-  // o áudio só pode começar depois de um toque
-  addEventListener('pointerdown', () => Som.desbloquear(), { capture: true });
-  addEventListener('keydown', () => Som.desbloquear(), { capture: true });
+  // o áudio só pode começar depois de um toque (no iPhone o toque só vale no fim dele: touchend/click, não pointerdown)
+  for (const ev of ['pointerdown', 'touchend', 'click', 'keydown']) addEventListener(ev, () => Som.desbloquear(), { capture: true });
   // um "tique" macio em todo botão
   document.addEventListener('click', e => { if (e.target.closest('button') && !e.target.closest('.pega')) Som.tocar('toque'); }, true);
 
@@ -1130,11 +1154,19 @@
     const b = e.target.closest('[data-pronto]'); if (!b) return;
     st.decks[st.abaDeck] = PRONTOS[+b.dataset.pronto].cartas.slice(); Som.tocar('carta'); salvar(); desenharDeck();
   });
-  document.getElementById('btnCopiar').addEventListener('click', async () => {
-    const t = document.getElementById('fimTexto'), b = document.getElementById('btnCopiar');
-    try { await navigator.clipboard.writeText(t.value); b.textContent = 'Copiado'; }
-    catch (e) { t.focus(); t.select(); b.textContent = 'Selecionado: copie com Ctrl+C'; }
-    setTimeout(() => { b.textContent = 'Copiar resumo'; }, 2200);
+  // compartilha a imagem do cartão (WhatsApp, Instagram…); onde não dá para compartilhar arquivo, ela é baixada
+  document.getElementById('btnCompartilhar').addEventListener('click', async () => {
+    const b = document.getElementById('btnCompartilhar');
+    const blob = cartao && (cartao.blob || await cartao.promessa.catch(() => null));
+    if (!blob) { Fx.chamada('Ops', 'Não deu para montar a imagem.', 'suave'); return; }
+    const arq = new File([blob], 'dice-duel.png', { type: 'image/png' });
+    if (navigator.canShare && navigator.canShare({ files: [arq] })) {
+      try { await navigator.share({ files: [arq] }); return; }
+      catch (e) { if (e.name === 'AbortError') return; }
+    }
+    baixar(blob, 'dice-duel.png');
+    b.textContent = 'Imagem salva';
+    setTimeout(() => { b.textContent = 'Compartilhar'; }, 2200);
   });
   document.addEventListener('keydown', e => {
     const alvo = e.target && e.target.closest ? e.target : document.body;   // tecla vinda do documento não tem .closest
@@ -1286,17 +1318,21 @@
       ws.onclose = () => {
         if (Rede.ws !== ws) return;
         Rede.ws = null;
-        if (!Rede.ola) falha(new Error('Sem conexão com o servidor.'));
-        Rede.ola = false;
-        if (Rede.sala) reconectar();
+        const conectado = Rede.ola; Rede.ola = false;
+        // antes do "ola", quem chamou conectar() cuida da falha (e de tentar de novo); depois dele, a queda é tratada aqui
+        if (!conectado) falha(new Error('Sem conexão com o servidor.'));
+        else if (Rede.sala) reconectar();
       };
     });
   }
   function reconectar() {
+    if (Rede.religando) return; // uma tentativa por vez
     if (Rede.tentativas >= 6) { aviso('A conexão caiu. Abra o Online para tentar de novo.', true); return; }
     const ms = Math.min(8000, 800 * 2 ** Rede.tentativas++);
+    Rede.religando = true;
     aviso('Reconectando…');
     setTimeout(() => {
+      Rede.religando = false;
       if (!Rede.sala || !st.sessao) return;
       conectar().then(() => { aviso(null); enviarWs({ tipo: 'entrar', sala: Rede.sala, deck: deckOnline() }); }).catch(() => reconectar());
     }, ms);
@@ -1347,12 +1383,16 @@
       j.premio = m.premio; usarPerfil(m.premio.conta);
       setTimeout(mostrarFim, st.pref.animacoes ? 1800 : 600);
     } else if (m.tipo === 'erro') {
+      const saiuDaSala = m.codigo === 'sala' || m.semSala;
       // jogada recusada: destrava e mostra por quê (o servidor manda o estado certo logo em seguida)
-      if (m.codigo !== 'sala' && online() && jogo.sala === Rede.sala) { jogo.pensando = false; Rede.pediuRevanche = false; render(); Fx.chamada('Ops', m.erro, 'suave'); return; }
+      if (!saiuDaSala && online() && jogo.sala === Rede.sala) { jogo.pensando = false; Rede.pediuRevanche = false; render(); Fx.chamada('Ops', m.erro, 'suave'); return; }
       // a sala não existe mais (ou recusou a entrada): sai da partida fantasma e volta ao jogo contra o rival
       const estavaJogando = online();
       Rede.sala = null; Rede.infoSala = null; Rede.pediuRevanche = false;
-      if (estavaJogando) { jogo = null; novaPartida(); }
+      if (estavaJogando) {
+        jogo = null; novaPartida();
+        if (m.semSala) { Fx.chamada('A sala fechou', 'O servidor reiniciou e esta partida se perdeu. Crie outra sala para jogar de novo.', 'suave'); aviso(m.erro, true); return; }
+      }
       aviso(m.erro, true); abrirOnline();
     }
   }
@@ -1386,6 +1426,8 @@
   // a janela Online
   const carregarRanking = () => { if (st.sessao && !Rede.sala) pedir('GET', '/api/ranking').then(r => { Rede.ranking = r.ranking; desenharOnline(); }).catch(() => {}); };
   function abrirOnline() {
+    // depois de desistir de reconectar, abrir o Online tenta de novo
+    if (Rede.sala && st.sessao && !Rede.ola && Rede.tentativas >= 6) { Rede.tentativas = 0; reconectar(); }
     desenharOnline();
     document.getElementById('janelaOnline').hidden = false;
     carregarRanking();

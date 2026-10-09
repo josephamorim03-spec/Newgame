@@ -47,7 +47,9 @@ class Salas {
   // ---------- mensagens de um jogador (ws já autenticado com a conta) ----------
   async entrar(ws, conta, { sala: codigo, deck }) {
     const sala = this.salas.get(String(codigo || '').toUpperCase());
-    if (!sala || sala.fechada) return this.erro(ws, 'Sala não encontrada. O convite pode ter expirado.', 'sala');
+    // codigo 'sala' (e semSala, que clientes anteriores já entendem): quem estava no meio da partida e voltou
+    // depois de um reinício larga a sala em vez de ficar travado
+    if (!sala || sala.fechada) { this.enviar(ws, { tipo: 'erro', erro: 'Sala não encontrada. O convite pode ter expirado.', codigo: 'sala', semSala: true }); return null; }
     if (!Array.isArray(deck) || !Regras.deckValido(deck)) return this.erro(ws, 'Deck inválido.', 'sala');
     const faltam = deck.filter(c => !conta.cartas.includes(c));
     if (faltam.length) return this.erro(ws, 'Seu deck tem cartas que esta conta não possui.', 'sala');
