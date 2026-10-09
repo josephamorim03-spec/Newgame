@@ -416,6 +416,7 @@
   }
   function terminar(j, p) {
     j.fase = 'fim'; j.vencedor = p;
+    j.mao = null; j.espelhado = false; j.segundoDado = false; j.extra = [0, 0];   // nada fica pela metade
     const virada = j.piorDiferenca[p] <= -4;
     if (virada) momento(j, p, '☾', `Virada: ${j.nomes[p]} esteve ${-j.piorDiferenca[p]} pontos atrás`);
     emitir(j, 'fim', { p, virada });

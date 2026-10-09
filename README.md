@@ -64,6 +64,7 @@ e o amigo cai direto na sala. O servidor é a autoridade da partida e roda na Ra
 | `tools/fumaca.js` | teste de fumaça: joga partidas inteiras no navegador e falha com qualquer erro |
 | `tools/regras.js` | testes dirigidos das cartas (Pressa, Coringa, Espelho, blefe, Âncora × Interferência) |
 | `tools/layout.js` | verificador de layout em 5 larguras: texto vazando, fora da caixa, quebrado, descentralizado |
+| `tools/macaco.js` | o macaco: toques ao acaso em tudo, com vigia de travamento e de estado impossível |
 | `tools/online_e2e.js` | ponta a ponta do online: dois navegadores, conta, convite, partida, revanche, ranking |
 | `docs/design.md` | regras, cartas, números, decisões e por quê |
 | `docs/pesquisa.md` | o que jogos de cartas no celular ensinam (deck pequeno, armadilhas, contra-jogo) |
@@ -83,6 +84,7 @@ node tools/fumaca.js                           # 4 partidas no navegador (celula
 node tools/regras.js                           # as cartas fazem o que o texto delas diz
 node tools/layout.js                           # layout em 360, 390, 430, 768 e 1360 px
 node tools/online_e2e.js                       # online de ponta a ponta, com o servidor local
+node tools/macaco.js                           # toca em tudo ao acaso e vigia travamentos e estados impossíveis
 ```
 
 ## Estado

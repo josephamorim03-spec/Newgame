@@ -107,7 +107,16 @@ As rotas de conta pedem `Authorization: Bearer <token>`.
   - `sala`: quem está e quem está conectado;
   - `estado`: a visão de quem recebe; quem recebe é sempre o jogador 0;
   - `fim`: prêmio e perfil novo;
-  - `erro`.
+  - `erro`. Com `codigo: 'sala'`, o jogador saiu da sala: ela não existe mais (o servidor reiniciou ou o convite
+    expirou), está cheia, recusou o deck, ou a mesma conta entrou por outra aba. O cliente sai da partida e volta
+    ao jogo contra o rival, com o aviso. Sem código, foi só a jogada que foi recusada: o cliente destrava e o
+    servidor manda o estado certo logo em seguida.
+
+**Estabilidade:**
+- Uma mensagem grande demais ou um quadro inválido fecha só aquela conexão.
+- O cliente que manda uma jogada e não recebe resposta em 7 s pede o estado de novo.
+- `servidor/testes/caos_*.test.js` mandam lixo para todas as rotas e para o WebSocket, e jogam milhares de ações
+  ao acaso no motor e no servidor (quedas, voltas, duas abas, revanches); nenhuma partida pode ficar presa.
 
 ## Arquivos
 

@@ -19,7 +19,10 @@ const RAIZ = path.join(__dirname, '..');
   });
   const cena = async (decks, montar) => {
     await pg.evaluate(d => { DiceDuel.st.decks = d; }, decks);
-    await pg.click('#btnDeck'); await pg.click('#btnJogarDeck'); await pg.waitForTimeout(80);
+    await pg.click('#btnDeck');
+    // com uma partida em andamento, o botão só salva o deck; recomeçar é o link de baixo
+    if (await pg.$('#deckEmAndamento:not([hidden]) #btnRecomecar:not([hidden])')) await pg.click('#btnRecomecar'); else await pg.click('#btnJogarDeck');
+    await pg.waitForTimeout(80);
     await pg.evaluate(montar);
     await pg.keyboard.press('Escape');   // Esc redesenha a tela
     await pg.waitForTimeout(50);
@@ -124,6 +127,18 @@ const RAIZ = path.join(__dirname, '..');
   await pegar(0); j = await J();
   confere(j.cor[1].length === 4 && j.cartas[1].ancora === 'usada' && j.armada[0] === 'interferencia', 'Âncora segura a corrente e a Interferência do rival continua armada');
 
+  // 7. Mexer no deck no meio da partida não a abandona; recomeçar contra o rival conta como derrota
+  await pg.evaluate(() => { DiceDuel.st.cfg.modo = 'bot'; });
+  await cena([['ajuste'], []], () => {});
+  await pegar(0); await pg.waitForTimeout(50);
+  const antes = await J();
+  await pg.click('#btnDeck');
+  confere((await pg.textContent('#btnJogarDeck')).includes('Salvar'), 'Deck: no meio da partida o botão vira "Salvar deck"');
+  await pg.click('#btnJogarDeck'); let depois = await J();
+  confere(depois.compras >= antes.compras && depois.fase !== 'fim' && depois.compras > 0, 'Deck: salvar no meio da partida não a abandona');
+  const rec = await pg.evaluate(() => DiceDuel.st.rec.partidas);
+  await pg.click('#btnDeck'); await pg.click('#btnRecomecar'); await pg.waitForTimeout(100); depois = await J();
+  confere(depois.fase === 'fim' && depois.vencedor === 1 && (await pg.evaluate(() => DiceDuel.st.rec.partidas)) === rec + 1 && depois.premio && depois.premio.xpGanho === 0, 'Deck: recomeçar contra o rival conta como derrota, sem experiência');
   await navegador.close();
   console.log(erros.length ? 'ERROS:\n' + erros.join('\n') : 'Tudo certo: as regras das cartas se comportam como o texto diz.');
   process.exit(erros.length ? 1 : 0);

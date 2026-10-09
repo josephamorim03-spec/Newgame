@@ -201,6 +201,11 @@ evitar o Bolso sem saber) perdeu mais do que as armadilhas tiram. O jogo diz iss
 
 No online, a jogada vai ao servidor como `{tipo:'pegar', idx, modo}`: dado e destino juntos.
 
+**O deck no meio da partida.** Abrir o deck e apertar o botão não abandona a partida: ele vira "Salvar deck", e o
+deck novo vale a partir da próxima. Para recomeçar já existe o link "Recomeçar agora". Contra a Diana e a Dona
+Coruja isso conta como derrota e não rende experiência. Sem essa regra, abandonar a partida seria um jeito de
+nunca perder rating.
+
 **Perder também é aconchegante.** A ruptura é um "plonc" descendente com poeirinha caindo devagar, nunca um
 estrondo. A derrota diz "Fim de partida" e mostra os bons momentos da partida.
 

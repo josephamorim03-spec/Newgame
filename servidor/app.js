@@ -159,7 +159,7 @@ function criarApp({ banco, segredo, raiz = path.join(__dirname, '..'), tempos = 
       }
       const ganho = ps.moedas ? ps.moedas.total : 0;
       const conta = { xp: c.xp, dados: c.dados.slice(), icones: c.icones.slice(), mesas: c.mesas.slice() };
-      const xp = Regras.ganharXp(conta, Regras.xpDaPartida(b.venceu, b.momentos));
+      const xp = Regras.ganharXp(conta, b.desistiu === true ? 0 : Regras.xpDaPartida(b.venceu, b.momentos));   // abandonar não rende experiência
       const nova = await banco.atualizarConta(c.id, {
         moedas: c.moedas + ganho, solo_rating: ps.rating, solo_pico: ps.picoNovo, solo_dia: dia, solo_hoje: jaHoje + ganho, ...conta,
       });
@@ -199,6 +199,9 @@ function criarApp({ banco, segredo, raiz = path.join(__dirname, '..'), tempos = 
     wss.on('connection', ws => {
       ws.vivo = true; ws.contaId = null; ws.sala = null; ws.cota = { inicio: Date.now(), n: 0 };
       ws.on('pong', () => { ws.vivo = true; });
+      // mensagem grande demais ou quadro inválido: o ws avisa com 'error' e fecha só esta conexão.
+      // Sem este ouvinte, o erro derrubaria o processo inteiro.
+      ws.on('error', () => {});
       ws.on('message', async dados => {
         const c = ws.cota, agora = Date.now();
         if (agora - c.inicio > 10_000) { c.inicio = agora; c.n = 0; }
