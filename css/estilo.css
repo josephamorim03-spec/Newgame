@@ -308,8 +308,8 @@ button.carta:hover { transform: translateY(-2px) rotate(-1deg); }
 .caixa textarea { width: 100%; min-height: 90px; resize: vertical; background: var(--papel-2); color: var(--tinta); border: 0; border-radius: 12px; padding: 8px; font-size: 12px; font-family: ui-monospace, Menlo, Consolas, monospace; }
 .momentos { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
 .momentos li { display: flex; gap: 10px; align-items: center; padding: 8px 10px; border-radius: 12px; background: var(--papel-2); font-weight: 700; }
-.momentos li span.em { font-size: 18px; width: 26px; text-align: center; }
-.momentos li span.em img { width: 28px; height: 28px; display: block; margin: -3px auto; }
+.momentos li span.em { font-size: 18px; width: 26px; text-align: center; flex: none; }
+.momentos li span.em img { width: 26px; height: 26px; display: block; margin: -2px auto; }
 .recorde { color: var(--mel-escuro); font-weight: 800; }
 
 /* montar o deck */
