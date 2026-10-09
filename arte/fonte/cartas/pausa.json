@@ -1,0 +1,7 @@
+{
+ "prompt": "The attached image is the chosen draft. Keep its design, pose, composition and colors, and redraw it as the clean finished version: crisp uniform outline, tidy flat shapes, no stray marks. Dice Duel game card icon: a cozy flat sticker illustration of ONE single object, like a polished vector game icon. Thick uniform dark cocoa outline (#3a2a2e) around the whole silhouette and every shape, flat color fills with only one soft cel-shaded shadow tone and one small highlight per shape, no painterly brush texture, no gradients, no noise, no 3D rendering. Palette of the game: warm cream #fbf1df, ivory #fffaf0, sage green #5f8f78, wood brown #a86c45, honey #f2b15e, dark honey #c4843a, coral #e8806f, rose #ec8fa8, sky blue #6fbfd3, lavender #b8a4f0, mint #8fd6a8. VERY simple, bold, chunky silhouette with few large shapes and no small details, so it stays instantly readable at 24 pixels wide; the object fills most of the canvas, centered, straight front view. No text, no letters, no numbers, no frame, no card, no badge background, no drop shadow on the ground, plain transparent background. Around the dark outline, one even thin cream (#fbf1df) sticker border following the silhouette. Pausa card (skip your turn, a calm break): a steaming cream teacup on a small saucer, the tea a flat honey color with only one shadow tone (no gradient), the saucer centered under the cup, one simple curl of steam.",
+ "qualidade": "medium",
+ "modo": "refino",
+ "referencia": "builds/arte/revisao-1/r1/pausa/D.png",
+ "fidelidade": "high"
+}

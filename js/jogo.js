@@ -64,7 +64,7 @@
   // ícones: o desenho mora em js/retratos.js (vetor, ou a versão pintada quando existe)
   const DESC_ICONES = { bolinha: 'o clássico', xicara: 'presente do nível 2', raposa: 'de cachecol', sapo: 'de chapéu de palha', urso: 'de gorro de lã',
     coelho: 'de gravata-borboleta', guaxinim: 'de moletom', cogumelo: 'do sub-bosque', monstera: 'em vaso de barro', cacto: 'em flor',
-    biscoito: 'cabelo dourado, sorriso largo', gordinho: 'barriga redonda, segundas intenções', cafu: 'de amarelo e verde', galgo: 'sagaz: já viu essa jogada antes', bandoleiro: 'sempre tem uma carta escondida' };
+    biscoito: 'cabelo dourado, sorriso largo', gordinho: 'barriga redonda, segundas intenções', cafu: 'de terno, óculos e cavanhaque', galgo: 'sagaz: já viu essa jogada antes', bandoleiro: 'sempre tem uma carta escondida' };
   const ICONES = Object.fromEntries(Object.entries(R.CATALOGO.icones).map(([k, v]) => [k, { ...v, desc: DESC_ICONES[k] || '' }]));
   const GRUPOS_ICONES = [['especial', 'Especiais'], ['animal', 'Animais'], ['natureza', 'Natureza'], ['basico', 'Básicos']];
   const MESAS_VISUAL = {
@@ -1117,7 +1117,7 @@
       botao.disabled = true;
       pedir('POST', '/api/loja/comprar', { tipo, id })
         .then(r => { usarPerfil(r.conta); festa(); return tipo !== 'cartas' && pedir('POST', '/api/loja/usar', { tipo, id }).then(x => { usarPerfil(x.conta); if (jogo) render(); }); })
-        .catch(e => { desenharLoja(); Fx.chamada('Loja', e.message, 'suave'); });
+        .catch(e => { desenharLoja(); Fx.chamada('Loja', esc(e.message), 'suave'); });
       return;
     }
     c.moedas -= info.preco; c[tipo].push(id);
@@ -1279,7 +1279,7 @@
     if (e.target.closest('[data-voltar-loja]')) { lojaVolta(); return; }
     const cb = e.target.closest('[data-comprar]'); if (cb) { const [t, id] = cb.dataset.comprar.split(':'); comprar(t, id, cb); return; }
     const ub = e.target.closest('[data-usar-item]');
-    if (ub && st.sessao) { const [t, id] = ub.dataset.usarItem.split(':'); pedir('POST', '/api/loja/usar', { tipo: t, id }).then(r => { usarPerfil(r.conta); if (jogo) render(); Som.tocar('momento'); }).catch(e => Fx.chamada('Loja', e.message, 'suave')); return; }
+    if (ub && st.sessao) { const [t, id] = ub.dataset.usarItem.split(':'); pedir('POST', '/api/loja/usar', { tipo: t, id }).then(r => { usarPerfil(r.conta); if (jogo) render(); Som.tocar('momento'); }).catch(e => Fx.chamada('Loja', esc(e.message), 'suave')); return; }
     if (ub) { const [t, id] = ub.dataset.usarItem.split(':'); st.conta[t === 'dados' ? 'dado' : t === 'icones' ? 'icone' : 'mesa'] = id; salvar(); aplicarPrefs(); desenharLoja(); if (jogo) render(); Som.tocar('momento'); }
   });
 
@@ -1497,7 +1497,7 @@
     Rede.aviso = txt ? { txt, erro } : null;
     const el = document.getElementById('onlineAviso');
     el.hidden = !txt; el.textContent = txt || ''; el.classList.toggle('erro', erro);
-    if (txt && erro && document.getElementById('janelaOnline').hidden) Fx.chamada('Online', txt, 'suave');
+    if (txt && erro && document.getElementById('janelaOnline').hidden) Fx.chamada('Online', esc(txt), 'suave');
   }
 
   // a conta: entrar, criar (o progresso do aparelho vai junto, com teto) e sair
@@ -1722,6 +1722,9 @@
     if (m.tipo === 'aviso') { if (m.codigo === 'fila') Rede.busca = null; aviso(m.erro, true); desenharOnline(); return; }
     if (m.tipo === 'amigos') return aoMudarAmigos(m);
     if (m.tipo === 'chamado') return mostrarChamado(m);
+    // o servidor avisa o total sempre que alguém entra ou sai: o contador anda na hora
+    if (m.tipo === 'online') { mostrarContador(Math.max(0, m.total - (st.sessao && Rede.ola ? 1 : 0))); if (!document.getElementById('janelaOnline').hidden) carregarOnlineLogo(); return; }
+    if (m.tipo === 'sessao') return;   // a sessão mudou (senha, sair de tudo): a conexão fecha e volta com o token deste aparelho
     if (m.tipo === 'chamou') { aviso(`Chamamos ${m.nome}. Agora é esperar entrar.`); return; }
     if (m.tipo === 'procurando') { Rede.busca = { desde: (Rede.busca && Rede.busca.desde) || Date.now(), janela: m.janela, naFila: m.naFila }; desenharOnline(); return; }
     if (m.tipo === 'buscaCancelada') { Rede.busca = null; desenharOnline(); return; }
@@ -1736,7 +1739,7 @@
         render();
       }
       const meuAssento = m.sala.jogadores.findIndex(x => x.id === euId);
-      if (m.revanche && m.revanche.includes(1 - meuAssento) && !Rede.pediuRevanche && outro) Fx.chamada('Revanche?', `${outro.nome} quer jogar de novo`, 'suave');
+      if (m.revanche && m.revanche.includes(1 - meuAssento) && !Rede.pediuRevanche && outro) Fx.chamada('Revanche?', `${esc(outro.nome)} quer jogar de novo`, 'suave');
       if (!document.getElementById('janelaOnline').hidden) desenharOnline();
     } else if (m.tipo === 'estado') receberEstado(m.jogo);
     else if (m.tipo === 'fim') {
@@ -1756,7 +1759,7 @@
         return;
       }
       // jogada recusada: destrava e mostra por quê (o servidor manda o estado certo logo em seguida)
-      if (!saiuDaSala && online() && jogo.sala === Rede.sala) { jogo.pensando = false; Rede.pediuRevanche = false; render(); Fx.chamada('Ops', m.erro, 'suave'); return; }
+      if (!saiuDaSala && online() && jogo.sala === Rede.sala) { jogo.pensando = false; Rede.pediuRevanche = false; render(); Fx.chamada('Ops', esc(m.erro), 'suave'); return; }
       // a sala não existe mais (ou recusou a entrada): sai da partida fantasma e volta ao jogo contra o rival
       const estavaJogando = online();
       Rede.sala = null; Rede.infoSala = null; Rede.pediuRevanche = false; Rede.voltando = false;
@@ -1829,16 +1832,21 @@
 
   // ---------- quem está online agora: o contador no botão Online (até sem conta) e a lista para chamar ----------
   // Com pouca gente jogando, ver que tem alguém com o jogo aberto é o empurrão para começar uma partida.
+  function mostrarContador(outros) {
+    const el = document.getElementById('contaOnline');
+    el.hidden = !outros; el.textContent = outros;
+    el.title = `${outros} ${outros === 1 ? 'pessoa' : 'pessoas'} com o jogo aberto agora`;
+    document.getElementById('btnOnline').setAttribute('aria-label', outros ? `Jogar online (${el.title})` : 'Jogar online');
+  }
+  // com a janela aberta, a lista acompanha as entradas e saídas (no máximo uma consulta a cada 3 s)
+  let esperaOnline = null;
+  const carregarOnlineLogo = () => { if (!esperaOnline) esperaOnline = setTimeout(() => { esperaOnline = null; carregarOnline(); }, 3000); };
   function carregarOnline() {
     if (!API) return;
     pedir('GET', '/api/online').then(r => {
       Rede.online = r;
       // a própria conta conta no total; os outros são o que interessa
-      const outros = r.jogadores ? r.jogadores.length : Math.max(0, r.total - (st.sessao && Rede.ola ? 1 : 0));
-      const el = document.getElementById('contaOnline');
-      el.hidden = !outros; el.textContent = outros;
-      el.title = `${outros} ${outros === 1 ? 'pessoa' : 'pessoas'} com o jogo aberto agora`;
-      document.getElementById('btnOnline').setAttribute('aria-label', outros ? `Jogar online (${el.title})` : 'Jogar online');
+      mostrarContador(r.jogadores ? r.jogadores.length : Math.max(0, r.total - (st.sessao && Rede.ola ? 1 : 0)));
       if (!document.getElementById('janelaOnline').hidden) desenharOnline();
     }).catch(() => {});
   }
@@ -1864,8 +1872,8 @@
   }
   function aoMudarAmigos(m) {
     carregarAmigos();
-    if (m.evento === 'pedido') { Fx.chamada('Pedido de amizade', `${m.nome} quer ser seu amigo`, 'suave'); Som.tocar('momento'); }
-    if (m.evento === 'aceito') Fx.chamada('Amizade aceita', `${m.nome} agora é seu amigo`, 'suave');
+    if (m.evento === 'pedido') { Fx.chamada('Pedido de amizade', `${esc(m.nome)} quer ser seu amigo`, 'suave'); Som.tocar('momento'); }
+    if (m.evento === 'aceito') Fx.chamada('Amizade aceita', `${esc(m.nome)} agora é seu amigo`, 'suave');
   }
   // um amigo chamou você para a sala dele: aviso com Entrar / Agora não (não aparece no meio de uma partida online)
   function mostrarChamado(m) {
@@ -1923,6 +1931,26 @@
     return `<h3>Amigos${A.recebidos.length ? ` <span class="selo">${A.recebidos.length}</span>` : ''}</h3>
       <form class="linha-botoes" id="formAmigo"><input class="campo" name="amigo" maxlength="20" placeholder="nome do amigo" aria-label="Nome do amigo" autocomplete="off" style="flex:1 1 140px"><button class="btn btn-papel" type="submit">Adicionar</button></form>
       <ul class="amigos">${recebidos}${amigos}${enviados}${vazio}</ul>`;
+  }
+  // "Conta e privacidade": aparecer no Online agora, quem pode chamar, trocar a senha, sair de todos os aparelhos, apagar a conta
+  function htmlContaOpcoes(pf) {
+    const pv = (pf.extras && pf.extras.privacidade) || {}, visivel = pv.visivel !== false, soAmigos = pv.chamadas === 'amigos';
+    return `<details class="conta-opcoes" ${Rede.contaAberta ? 'open' : ''}><summary>Conta e privacidade</summary>
+      <div class="linha-cfg"><span>Aparecer no Online agora<small>Desligado, só seus amigos veem você online.</small></span>
+        <input type="checkbox" class="chave-liga" data-priv="visivel" ${visivel ? 'checked' : ''} aria-label="Aparecer no Online agora"></div>
+      <div class="linha-cfg"><span>Quem pode me chamar para uma sala</span>
+        <span class="segmento" role="group" aria-label="Quem pode me chamar"><button data-on="priv-todos" aria-pressed="${!soAmigos}">Todos</button><button data-on="priv-amigos" aria-pressed="${soAmigos}">Só amigos</button></span></div>
+      <form class="form-conta" id="formSenha" autocomplete="off"><h3>Trocar a senha</h3>
+        <label>Senha atual<input class="campo" name="atual" type="password" autocomplete="current-password" required maxlength="72"></label>
+        <label>Senha nova<input class="campo" name="nova" type="password" autocomplete="new-password" required minlength="6" maxlength="72" placeholder="6 caracteres ou mais"></label>
+        <button class="btn btn-papel" type="submit">Trocar a senha</button>
+        <p class="nota" style="margin:0">Os outros aparelhos saem da conta; este continua.</p></form>
+      <div class="linha-botoes"><button class="btn btn-papel" data-on="sair-de-tudo">Sair de todos os aparelhos</button></div>
+      <form class="form-conta" id="formApagar" autocomplete="off"><h3>Apagar a conta</h3>
+        <p class="nota" style="margin:0">Some com a conta, as moedas, os itens, o rating e as amizades. Não tem volta.</p>
+        <label>Sua senha<input class="campo" name="senha" type="password" autocomplete="current-password" required maxlength="72"></label>
+        <button class="btn btn-papel perigo" type="submit">Apagar minha conta</button></form>
+    </details>`;
   }
   // o ranking: global (top 50) ou entre amigos, com a sua posição
   function htmlRanking(pf) {
@@ -2041,6 +2069,7 @@
       ${htmlAmigos()}
       ${htmlRanking(pf)}
       <p class="nota" style="margin:0">Vitória online: ${BASE_MOEDAS.online} moedas × margem × rapidez, e vale mais vencer quem tem rating maior. O mesmo par vale rating e moedas 3 vezes por dia.</p>
+      ${htmlContaOpcoes(pf)}
       <div class="linha-botoes"><button class="btn btn-papel" data-on="sair-conta">Sair da conta</button></div>`;
   }
   document.getElementById('btnOnline').addEventListener('click', abrirOnline);
@@ -2049,6 +2078,25 @@
     e.preventDefault();
     const f = e.target, botao = f.querySelector('[type=submit]');
     if (f.id === 'formCodigo') return entrarNaSala(f.codigo.value);
+    if (f.id === 'formSenha') {
+      botao.disabled = true;
+      try {
+        const r = await pedir('POST', '/api/eu/senha', { atual: f.atual.value, nova: f.nova.value });
+        st.sessao.token = r.token; usarPerfil(r.conta); f.atual.value = ''; f.nova.value = '';
+        aviso('Senha trocada. Os outros aparelhos saíram da conta.');
+      } catch (x) { aviso(x.message, true); }
+      botao.disabled = false; return;
+    }
+    if (f.id === 'formApagar') {
+      if (botao.dataset.certeza !== '1') { botao.dataset.certeza = '1'; botao.textContent = 'Toque de novo para apagar'; setTimeout(() => { botao.dataset.certeza = ''; botao.textContent = 'Apagar minha conta'; }, 4000); return; }
+      botao.disabled = true;
+      try {
+        await pedir('POST', '/api/eu/apagar', { senha: f.senha.value });
+        Rede.sala = null; lembrarSala(); Rede.contaAberta = false; sairDaConta();
+        aviso('Conta apagada. O progresso deste aparelho continua aqui, sem conta.');
+      } catch (x) { aviso(x.message, true); botao.disabled = false; }
+      return;
+    }
     if (f.id === 'formAmigo') {
       const nome = f.amigo.value.trim(); if (!nome) return;
       if (await acaoAmigo('/api/amigos', nome, botao)) f.amigo.value = '';
@@ -2081,6 +2129,12 @@
     if (a === 'criar-sala') criarSala();
     if (a === 'sair-sala') sairDaSala();
     if (a === 'sair-conta') sairDaConta();
+    if (a === 'priv-todos' || a === 'priv-amigos') salvarPrivacidade({ chamadas: a === 'priv-amigos' ? 'amigos' : 'todos' });
+    if (a === 'sair-de-tudo') {
+      if (b.dataset.certeza !== '1') { b.dataset.certeza = '1'; b.textContent = 'Toque de novo para confirmar'; setTimeout(() => { b.dataset.certeza = ''; b.textContent = 'Sair de todos os aparelhos'; }, 4000); return; }
+      try { const r = await pedir('POST', '/api/eu/sair-de-tudo', {}); st.sessao.token = r.token; usarPerfil(r.conta); aviso('Pronto: todos os outros aparelhos saíram da conta.'); }
+      catch (x) { aviso(x.message, true); }
+    }
     if (a === 'voltar') document.getElementById('janelaOnline').hidden = true;
     if (a === 'deck') { document.getElementById('janelaOnline').hidden = true; abrirDeck(); }
     if (a === 'revanche') Online.revanche();
@@ -2099,6 +2153,11 @@
       if (r === 'copiou' || r === 'baixou') { b.textContent = r === 'copiou' ? 'Link copiado' : 'Imagem salva'; setTimeout(() => { b.textContent = 'Compartilhar'; }, 2200); }
     }
   });
+  async function salvarPrivacidade(p) {
+    try { const r = await pedir('PUT', '/api/eu/privacidade', p); usarPerfil(r.conta); } catch (x) { aviso(x.message, true); }
+  }
+  document.getElementById('onlineConteudo').addEventListener('change', e => { if (e.target.dataset.priv === 'visivel') salvarPrivacidade({ visivel: e.target.checked }); });
+  document.getElementById('onlineConteudo').addEventListener('toggle', e => { if (e.target.classList.contains('conta-opcoes')) Rede.contaAberta = e.target.open; }, true);
   // criando a conta: o nome está livre? (pergunta ao servidor enquanto a pessoa digita; Ana = ana = ANA = Aná)
   let esperaNome = null;
   document.getElementById('onlineConteudo').addEventListener('input', e => {

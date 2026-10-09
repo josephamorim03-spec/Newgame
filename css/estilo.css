@@ -758,3 +758,15 @@ button.vaga { cursor: pointer; border: 0; background: #fff3dc; color: var(--tint
 .aviso-online .ponto-status { display: inline-block; vertical-align: middle; margin-right: 4px; }
 /* no celular os botões do topo são só ícone: o contador vira um selinho no canto, sem alargar o botão */
 @media (max-width: 520px) { .conta-online { position: absolute; top: 2px; right: 2px; min-width: 15px; height: 15px; padding: 0 3px; font-size: 10px; box-shadow: 0 0 0 1.5px var(--noite); } }
+
+/* ---------- conta e privacidade (janela Online) ---------- */
+.conta-opcoes { border-radius: 14px; background: var(--papel-2); padding: 4px 12px; }
+.conta-opcoes[open] { padding-bottom: 12px; display: grid; gap: 10px; }
+.conta-opcoes summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; font-weight: 800; font-size: 14px; list-style: none; }
+.conta-opcoes summary::-webkit-details-marker { display: none; }
+.conta-opcoes summary::after { content: "▾"; margin-left: auto; color: var(--tinta-suave); transition: transform .2s; }
+.conta-opcoes[open] summary::after { transform: rotate(180deg); }
+.conta-opcoes .linha-cfg { border-bottom-color: rgba(58,42,46,.1); }
+.conta-opcoes .form-conta { padding-top: 6px; border-top: 1px solid rgba(58,42,46,.1); }
+.conta-opcoes .form-conta h3 { margin: 4px 0 0; }
+.btn.perigo { color: #9b2f22; box-shadow: 0 4px 0 #e9c9c3, inset 0 0 0 1.5px rgba(155,47,34,.35); }

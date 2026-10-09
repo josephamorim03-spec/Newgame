@@ -242,7 +242,9 @@ test('quem cai tem um tempo para voltar; depois perde por W.O. (sem moedas para 
     const fim = await b.esperar(m => m.tipo === 'fim', 3000);
     assert.strictEqual(fim.premio.porDesistencia, true);
     assert.strictEqual(fim.premio.moedas.total, 0);
-    assert.ok(fim.premio.rating > 1000);
+    // W.O. logo na 1ª Mesa não mexe no rating (contra contas descartáveis que caem de propósito)
+    assert.strictEqual(fim.premio.rating, 1000);
+    assert.match(fim.premio.motivo, /não mexe no rating/);
     // quem perdeu por W.O. volta à sala e ainda recebe o fim (o estado final e o próprio resultado)
     a = await cliente(s.ws, A.token);
     a.enviar({ tipo: 'entrar', sala: sala.codigo, deck: [] });
@@ -250,7 +252,7 @@ test('quem cai tem um tempo para voltar; depois perde por W.O. (sem moedas para 
     assert.strictEqual(final.jogo.fase, 'fim');
     const meuFim = await a.esperar(m => m.tipo === 'fim');
     assert.strictEqual(meuFim.premio.porDesistencia, true);
-    assert.ok(meuFim.premio.rating < 1000);
+    assert.strictEqual(meuFim.premio.rating, 1000);
     a.fechar(); b.fechar();
   } finally { await s.fechar(); }
 });
