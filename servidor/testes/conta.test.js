@@ -200,13 +200,50 @@ test('senha errada 5 vezes tranca o login daquela conta (mesmo trocando de IP); 
   const s = await subir();
   try {
     await conta(s, 'Davi'); await conta(s, 'Eva');
-    for (let i = 0; i < 5; i++) assert.strictEqual((await s.api('POST', '/api/entrar', { nome: 'davi', senha: 'errada' + i })).status, 401);
+    // os dois primeiros erros só dizem que não confere; do 3º ao 4º, quantas tentativas restam; o 5º trava
+    const r = [];
+    for (let i = 0; i < 5; i++) r.push(await s.api('POST', '/api/entrar', { nome: 'davi', senha: 'errada' + i }));
+    assert.deepStrictEqual(r.map(x => x.status), [401, 401, 401, 401, 429]);
+    assert.strictEqual(r[0].erro, 'Nome ou senha não conferem.');
+    assert.match(r[2].erro, /Mais 2 tentativas antes de travar/);
+    assert.match(r[3].erro, /Mais 1 tentativa antes de travar/);
+    assert.match(r[4].erro, /travado por 15 minutos/);
+    assert.ok(r[4].trancadaAte > Date.now() + 14 * 60_000 && r[4].codigo === 'trancada');
+    // travada: nem a senha certa entra, e a resposta diz quanto falta (e manda Retry-After)
     const trancada = await s.api('POST', '/api/entrar', { nome: 'Davi', senha: 'senha123' });
     assert.strictEqual(trancada.status, 429);
-    assert.match(trancada.erro, /15 minutos/);
+    assert.match(trancada.erro, /travado por mais 15 min/);
+    assert.ok(+trancada.cabecalhos.get('retry-after') > 800);
     assert.strictEqual((await s.api('POST', '/api/entrar', { nome: 'Eva', senha: 'senha123' })).status, 200);
     // nome que não existe responde igual (sem tranca e sem revelar nada)
     assert.strictEqual((await s.api('POST', '/api/entrar', { nome: 'Ninguem', senha: 'x' })).status, 401);
+  } finally { await s.fechar(); }
+});
+
+test('trocar a senha e apagar a conta: senha atual errada conta para a trava, com aviso', async () => {
+  const s = await subir();
+  try {
+    const L = await conta(s, 'Lara');
+    let r;
+    for (let i = 0; i < 3; i++) r = await s.api('POST', '/api/eu/senha', { atual: 'errada' + i, nova: 'nova-senha' }, L.token);
+    assert.strictEqual(r.status, 403); assert.match(r.erro, /Mais 2 tentativas/);
+    r = await s.api('POST', '/api/eu/apagar', { senha: 'errada' }, L.token);
+    assert.match(r.erro, /Mais 1 tentativa/);
+    r = await s.api('POST', '/api/eu/apagar', { senha: 'errada' }, L.token);
+    assert.strictEqual(r.status, 429); assert.strictEqual(r.codigo, 'trancada');
+    assert.strictEqual((await s.api('POST', '/api/eu/apagar', { senha: 'senha123' }, L.token)).status, 429, 'travada, nem a certa apaga');
+    assert.strictEqual((await s.api('POST', '/api/entrar', { nome: 'Lara', senha: 'senha123' })).status, 429, 'o login também fica travado');
+  } finally { await s.fechar(); }
+});
+
+test('limite por IP diz quanto esperar', async () => {
+  const s = await subir({ limites: { entrar: 2 } });
+  try {
+    for (let i = 0; i < 2; i++) await s.api('POST', '/api/entrar', { nome: 'x', senha: 'y' });
+    const r = await s.api('POST', '/api/entrar', { nome: 'x', senha: 'y' });
+    assert.strictEqual(r.status, 429); assert.strictEqual(r.codigo, 'limite');
+    assert.ok(r.espera > 0 && r.espera <= 60); assert.match(r.erro, /Tente de novo em (\d+ s|1 min)/);
+    assert.strictEqual(r.cabecalhos.get('retry-after'), String(r.espera));
   } finally { await s.fechar(); }
 });
 

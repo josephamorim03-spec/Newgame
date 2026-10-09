@@ -155,21 +155,41 @@ function criarApp({ banco, segredo, raiz = path.join(__dirname, '..'), tempos = 
     const final = importar ? await banco.atualizarConta(conta.id, importacao(conta, importar)) : conta;
     responderConta(res, final);
   }));
-  // erros de senha por conta (além do limite por IP): quem troca de IP para adivinhar a senha de alguém esbarra aqui
-  const errosDeSenha = new Map();   // chave do nome -> { n, desde }
-  setInterval(() => { const agora = Date.now(); for (const [k, v] of errosDeSenha) if (agora - v.desde > TRANCA_SENHA.janela) errosDeSenha.delete(k); }, 60_000).unref();
+  // erros de senha por conta (além do limite por IP): quem troca de IP para adivinhar a senha de alguém esbarra aqui.
+  // Vale no login, em trocar a senha e em apagar a conta. A partir do 5º erro seguido, o login da conta trava por 15 min.
+  const errosDeSenha = new Map();   // chave do nome -> { n, primeiro, trancadaAte }
+  const vivo = (e, agora = Date.now()) => e && (e.trancadaAte ? agora < e.trancadaAte : agora - e.primeiro < TRANCA_SENHA.janela);
+  setInterval(() => { for (const [k, v] of errosDeSenha) if (!vivo(v)) errosDeSenha.delete(k); }, 60_000).unref();
+  const trancada = chave => { const e = errosDeSenha.get(chave); return vivo(e) && e.trancadaAte ? e : null; };
+  function errouSenha(chave) {
+    const agora = Date.now(), atual = errosDeSenha.get(chave);
+    const e = vivo(atual, agora) ? atual : { n: 0, primeiro: agora, trancadaAte: null };
+    e.n++;
+    if (e.n >= TRANCA_SENHA.erros) e.trancadaAte = agora + TRANCA_SENHA.janela;
+    errosDeSenha.set(chave, e);
+    return { restam: Math.max(0, TRANCA_SENHA.erros - e.n), trancadaAte: e.trancadaAte };
+  }
+  function respostaTrancada(res, e) {
+    const s = Math.max(1, Math.ceil((e.trancadaAte - Date.now()) / 1000));
+    res.set('Retry-After', String(s));
+    return res.status(429).json({ erro: `Muitas senhas erradas: o login desta conta está travado por mais ${Auth.tempoLegivel(s)}. Isso protege a conta de quem tenta adivinhar a senha.`, trancadaAte: e.trancadaAte, espera: s, codigo: 'trancada' });
+  }
+  // senha errada: diz quantas tentativas restam (nas 3 últimas) ou que a conta acabou de travar
+  function respostaSenhaErrada(res, status, base, r) {
+    const extra = r.trancadaAte ? ' Foram 5 erros seguidos: o login desta conta ficou travado por 15 minutos.'
+      : r.restam <= 3 ? ` Mais ${r.restam} ${r.restam === 1 ? 'tentativa' : 'tentativas'} antes de travar o login desta conta por 15 minutos.` : '';
+    return res.status(r.trancadaAte ? 429 : status).json({ erro: base + extra, restam: r.restam, ...(r.trancadaAte ? { trancadaAte: r.trancadaAte, espera: Math.ceil(TRANCA_SENHA.janela / 1000), codigo: 'trancada' } : {}) });
+  }
   const CONTA_FALSA = { sal: '00'.repeat(16), senha_hash: '00'.repeat(64) };   // a conta não existe: o scrypt roda igual (mesmo tempo de resposta)
   app.post('/api/entrar', limEntrar, assincrono(async (req, res) => {
     const { nome, senha } = req.body || {};
     if (typeof nome !== 'string' || typeof senha !== 'string' || nome.length > 40 || senha.length > 200) return res.status(401).json({ erro: 'Nome ou senha não conferem.' });
-    const chave = Auth.chaveDoNome(nome), e = errosDeSenha.get(chave);
-    if (e && e.n >= TRANCA_SENHA.erros && Date.now() - e.desde < TRANCA_SENHA.janela) return res.status(429).json({ erro: 'Muitas senhas erradas para esta conta. Espere 15 minutos.' });
+    const chave = Auth.chaveDoNome(nome), tr = trancada(chave);
+    if (tr) return respostaTrancada(res, tr);
     const conta = await banco.contaPorNome(nome.trim());
     const certa = await Auth.conferirSenha(senha, conta || CONTA_FALSA);
-    if (!conta || !certa) {
-      if (conta) { const v = e && Date.now() - e.desde < TRANCA_SENHA.janela ? e : { n: 0, desde: Date.now() }; v.n++; errosDeSenha.set(chave, v); }
-      return res.status(401).json({ erro: 'Nome ou senha não conferem.' });
-    }
+    if (!conta) return res.status(401).json({ erro: 'Nome ou senha não conferem.' });
+    if (!certa) return respostaSenhaErrada(res, 401, 'Nome ou senha não conferem.', errouSenha(chave));
     errosDeSenha.delete(chave);
     responderConta(res, conta);
   }));
@@ -178,7 +198,10 @@ function criarApp({ banco, segredo, raiz = path.join(__dirname, '..'), tempos = 
   app.post('/api/eu/senha', limConta, exigirConta, assincrono(async (req, res) => {
     const { atual, nova } = req.body || {};
     if (!Auth.validarSenha(nova)) return res.status(400).json({ erro: 'Senha nova: de 6 a 72 caracteres.' });
-    if (typeof atual !== 'string' || !(await Auth.conferirSenha(atual, req.conta))) return res.status(403).json({ erro: 'A senha atual não confere.' });
+    const chave = Auth.chaveDoNome(req.conta.nome), tr = trancada(chave);
+    if (tr) return respostaTrancada(res, tr);
+    if (typeof atual !== 'string' || !(await Auth.conferirSenha(atual, req.conta))) return respostaSenhaErrada(res, 403, 'A senha atual não confere.', errouSenha(chave));
+    errosDeSenha.delete(chave);
     const h = await Auth.hashSenha(nova);
     const conta = await trava(req.conta.id, async () => {
       const c = await banco.contaPorId(req.conta.id);
@@ -199,7 +222,9 @@ function criarApp({ banco, segredo, raiz = path.join(__dirname, '..'), tempos = 
   // apagar a conta (LGPD): pede a senha; sai das salas (uma partida em andamento conta como desistência) e da fila
   app.post('/api/eu/apagar', limConta, exigirConta, assincrono(async (req, res) => {
     const { senha } = req.body || {};
-    if (typeof senha !== 'string' || !(await Auth.conferirSenha(senha, req.conta))) return res.status(403).json({ erro: 'A senha não confere.' });
+    const chave = Auth.chaveDoNome(req.conta.nome), tr = trancada(chave);
+    if (tr) return respostaTrancada(res, tr);
+    if (typeof senha !== 'string' || !(await Auth.conferirSenha(senha, req.conta))) return respostaSenhaErrada(res, 403, 'A senha não confere.', errouSenha(chave));
     const id = req.conta.id;
     fila.sair(id);
     await encerrarSessoes(id, { sairDasSalas: true });

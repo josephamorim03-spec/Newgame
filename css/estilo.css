@@ -770,3 +770,14 @@ button.vaga { cursor: pointer; border: 0; background: #fff3dc; color: var(--tint
 .conta-opcoes .form-conta { padding-top: 6px; border-top: 1px solid rgba(58,42,46,.1); }
 .conta-opcoes .form-conta h3 { margin: 4px 0 0; }
 .btn.perigo { color: #9b2f22; box-shadow: 0 4px 0 #e9c9c3, inset 0 0 0 1.5px rgba(155,47,34,.35); }
+
+/* ---------- campos de senha: mostrar/ocultar, Caps Lock e senha fácil ---------- */
+.campo-senha { position: relative; display: block; }
+.campo-senha .campo { padding-right: 84px; }
+.ver-senha { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); min-height: 34px; padding: 0 10px; border: 0; border-radius: 10px;
+  background: var(--papel); color: var(--tinta-suave); font-size: 13px; font-weight: 800; cursor: pointer; box-shadow: inset 0 0 0 1.5px rgba(58,42,46,.12); }
+.ver-senha[aria-pressed="true"] { color: var(--tinta); }
+.caps-aviso, .dica-senha { font-size: 12px; font-weight: 700; }
+.caps-aviso { color: #9b2f22; }
+.dica-senha { color: #8a5a12; }
+.btn[data-trava]:disabled { font-variant-numeric: tabular-nums; }
