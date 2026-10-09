@@ -102,7 +102,19 @@
   const SONS = {
     toque: () => tom({ freq: 1320, dur: 0.05, ganho: 0.06, reverbAmt: 0 }),                // interface: confirma o toque
     rolar: () => { for (let i = 0; i < 6; i++) madeira(i * 0.055 + Math.random() * 0.03, 0.8 + Math.random() * 0.5); }, // dados chegando à mesa
-    pegar: () => madeira(0, 1.1),                                                            // o dado sai da Mesa
+    // a rolagem 3D (js/rolagem.js): cada batida gravada soa no quadro em que acontece; força = impulso da física
+    quique: ({ forca = 8, primeira = false } = {}) => {                                     // dado no feltro: toque abafado; o 1º pouso tem corpo
+      const f = Math.min(1, forca / 16);
+      if (primeira) { tom({ freq: 92 + Math.random() * 14, tipo: 'sine', dur: 0.12, ganho: 0.16 + 0.12 * f, reverbAmt: 0.04, glide: 0.7 }); ruido({ dur: 0.05, ganho: 0.1 + 0.08 * f, freq: 520, q: 0.8, tipo: 'lowpass', reverbAmt: 0.03 }); }
+      else ruido({ dur: 0.035, ganho: 0.03 + 0.07 * f, freq: 700 + 500 * (1 - f), q: 0.9, tipo: 'lowpass', reverbAmt: 0.02 });
+    },
+    choque: ({ forca = 3 } = {}) => {                                                        // dado contra dado: estalo seco de osso, sem grave
+      const f = Math.min(1, forca / 6), alto = 2600 + Math.random() * 2400;
+      ruido({ dur: 0.022, ganho: 0.07 + 0.1 * f, freq: alto, q: 6, reverbAmt: 0.06 });
+      if (Math.random() < 0.55) ruido({ ini: 0.012 + Math.random() * 0.016, dur: 0.016, ganho: 0.04 + 0.05 * f, freq: alto * 1.15, q: 7, reverbAmt: 0.04 });
+    },
+    aro: ({ forca = 4 } = {}) => madeira(0, 0.75 + Math.min(0.4, forca / 20)),             // dado na borda de madeira da mesa
+                                                            // o dado sai da Mesa
     elo: ({ n = 1 } = {}) => kalimba(notaPenta(n + 2), 0, 0.22),                            // cada elo sobe uma nota: a corrente "canta"
     bolso: () => tom({ freq: 520, glide: 0.55, dur: 0.12, ganho: 0.18, tipo: 'sine', reverbAmt: 0.1 }), // guardar no bolso: "pop" macio
     troca: () => { tom({ freq: 420, glide: 1.5, dur: 0.1, ganho: 0.15 }); tom({ freq: 640, glide: 0.6, ini: 0.07, dur: 0.12, ganho: 0.15 }); },

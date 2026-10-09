@@ -17,7 +17,7 @@ function verificar() {
   const visivel = el => { const r = el.getBoundingClientRect(); const cs = getComputedStyle(el); return r.width > 0 && r.height > 0 && cs.visibility !== 'hidden' && cs.display !== 'none' && cs.opacity !== '0'; };
   const nome = el => el.tagName.toLowerCase() + (el.id ? '#' + el.id : '') + (typeof el.className === 'string' && el.className.trim() ? '.' + el.className.trim().split(/\s+/).slice(0, 3).join('.') : '');
   const texto = el => (el.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 28);
-  const ignorar = el => el.closest('.fx-canvas, .voador, .texto-sobe, .chamada, .lado:not(.aberto), [hidden]');
+  const ignorar = el => el.closest('.fx-canvas, .voador, .texto-sobe, .chamada, .lado:not(.aberto), [hidden], .camada-rolagem');
   // linhas de texto de um elemento (agrupa retângulos que se sobrepõem na vertical)
   const linhas = el => {
     const rs = []; const w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT); let n;

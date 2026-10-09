@@ -224,6 +224,39 @@ vermelho no dorso do nariz.
 Os dois piscam, ficam felizes ou murcham, e soltam falas curtas (dá para desligar). A Dona Coruja leva um
 dos 9 melhores decks da simulação.
 
+### A rolagem (v0.10)
+
+A Mesa nova cai como **dados de verdade**. São cubos 3D que giram, se batem, quicam e assentam exatamente onde o
+dado parado fica, com a face que a regra já sorteou. A ideia e os dados vêm do Cronomotor
+(`steamdicegame`, docs/02-arte/06-rolagem-dos-dados.md).
+
+**A regra decide; a física só anima.** O motor sorteia as faces como sempre. Depois:
+- a tela sorteia (só para enfeite) um dos 40 lançamentos gravados com física 3D no Godot, de 1 a 5 dados
+  (`js/lancamentos.js`, 122 KB, 35 KB comprimido), às vezes espelhado;
+- cada dado ganha uma **correção de face**: uma simetria do cubo que leva a face sorteada para onde a face
+  gravada caiu, entre as 4 equivalentes a de menor giro;
+- nos últimos ~0,3 s entra o **ajuste final**: o dado desliza até a casa, gira até o ângulo do dado parado e
+  termina exatamente de pé. A troca pelo dado parado não dá salto.
+
+`servidor/testes/rolagem.test.js` confere todos os lançamentos × dados × faces × espelho (1.440 casos): a face da
+regra sempre termina para cima, de pé, no ângulo certo e na casa.
+
+**Na tela:**
+- cubos em CSS 3D, com a skin do jogador nas seis faces, luz por face e uma sombra que se afasta e clareia com a
+  altura;
+- cada batida gravada (feltro, dado contra dado, borda) soa no quadro em que acontece;
+- nada espera a rolagem: dá para escolher um dado ainda girando. Só a Diana e a Dona Coruja esperam os dados
+  assentarem antes de escolher (no máximo 2,5 s);
+- a primeira Mesa rola quando a tela de versus fecha. Sem animações (Ajustes ou "reduzir movimento"), os dados
+  aparecem parados, com o som de antes.
+
+**O que ficou de fora do Cronomotor, de propósito:** o copo de couro 3D (pede renderização 3D de verdade e
+pesaria no celular) e o desenho a nanquim (é a linguagem de outro jogo). A rolagem do Dice Duel usa os próprios
+dados e skins.
+
+**Regravar:** `tools/lancamentos/` (exportar do Godot e montar a versão enxuta; o passo a passo está no topo de
+`montar.py`).
+
 ## 7. Som e música (intenções)
 
 Tudo é sintetizado na hora com Web Audio: nenhum arquivo de áudio. Nada no som deve assustar.
@@ -239,6 +272,10 @@ Tudo é sintetizado na hora com Web Audio: nenhum arquivo de áudio. Nada no som
 | Armadilha revelada | "tchã-rã" mágico: surpresa curiosa, não punição |
 | Vitória / derrota | fanfarra pequena / três notas descendo com acorde acolhedor |
 | Falas do rival | "blá-blá" curto e macio |
+| Dado no feltro (1º pouso) | toque abafado com um grave curto: o dado chegou, com peso |
+| Dado no feltro (quiques seguintes) | o mesmo toque, mais agudo e mais baixo quanto mais fraco: o dado se acomodando |
+| Dado contra dado | estalo seco e agudo, sem grave, às vezes com um segundo toque logo depois: dois dados de osso se batendo |
+| Dado na borda | toque de madeira curto: a borda da mesa |
 
 **A música** é um lo-fi gerado na hora, a 72 bpm:
 - acordes de piano elétrico abafado (Cmaj7 – Am7 – Fmaj7 – G6) e um baixo macio;

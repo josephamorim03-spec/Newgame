@@ -55,10 +55,12 @@ e o amigo cai direto na sala. O servidor é a autoridade da partida e roda na Ra
 | `shared/regras.js` | o motor de regras, puro, usado pelo navegador e pelo servidor |
 | `servidor/` | API, contas, ranking, salas e partida online (Node, Express, WebSocket, Postgres) |
 | `js/retratos.js` | os rivais (Diana, Dona Coruja) e os ícones dos jogadores em vetor; a versão pintada, quando existe, vem de `js/retratos_pintados.js` |
+| `js/rolagem.js`, `shared/rolagem.js`, `js/lancamentos.js` | a rolagem 3D: lançamentos gravados com física (do Cronomotor), corrigidos para a face da regra |
 | `js/audio.js` | efeitos e trilha lo-fi sintetizados na hora (Web Audio, sem arquivos de áudio) |
 | `js/efeitos.js` | partículas, dados voando, chamadas de "bom momento", contagem do placar |
 | `sim/` | regras de referência em Python e os experimentos de balanceamento |
 | `tools/empacotar.py` | gera o HTML único |
+| `tools/lancamentos/` | exporta os lançamentos gravados do Godot e monta `js/lancamentos.js` |
 | `tools/arte_icones.py` | pinta os retratos com a API de imagem da OpenAI, no estilo do jogo (pedidos em `arte/retratos.json`, com o vetor de cada personagem como referência), e os embute no jogo |
 | `tools/referencias.js` | desenha os vetores de `js/retratos.js` em `arte/referencia/` (rode de novo quando mudar um vetor) |
 | `tools/fumaca.js` | teste de fumaça: joga partidas inteiras no navegador e falha com qualquer erro |

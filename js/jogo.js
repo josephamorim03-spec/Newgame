@@ -141,6 +141,7 @@
   const online = () => jogo && jogo.modo === 'online';
 
   function novaPartida() {
+    if (window.Rolagem) Rolagem.parar();
     // numa sala online: "jogar de novo" é pedir revanche; no meio da partida, só volta à mesa
     if (Online.naSala() && online()) {
       if (jogo.fase === 'fim') return Online.revanche();
@@ -371,6 +372,7 @@
     j.pensando = true; render();
     if (j.fase === 'pegar') {
       await espera(800); if (tok !== jogo.token) return;
+      if (window.Rolagem) { await Rolagem.esperar(); if (tok !== jogo.token) return; }   // escolhe com os dados já assentados
       for (const u of automatoCartas(p)) {
         if (u.virar ? !podeVirar(p, u.carta).ok : (!podeUsar(p, u.carta).ok || (CARTAS[u.carta].alvo && !j.mesa[u.idx]))) continue;
         if (u.virar) virarCarta(p, u.carta); else usarCarta(p, u.carta, u.idx, u.delta || 1);
@@ -596,7 +598,7 @@
       }
       if (j.fase === 'ajuste' && j.ajusteIdx === i) tags = `<span class="tag previa">ajustar</span>`;
       const serveRival = dicas && ele.length && encaixa(ele, valorAoPegar(1 - p, d)) && j.fase !== 'fim';
-      const cls = ['pega', d.novo ? 'novo' : '', !salvo && j.fase === 'pegar' && dicas ? 'nao-cabe' : '', j.sel === d.id || (j.fase === 'ajuste' && j.ajusteIdx === i) ? 'escolhido' : '', j.destaque === d.id ? 'destaque' : '', j.virando === d.id ? 'virando' : ''].join(' ');
+      const cls = ['pega', d.novo ? 'novo' : '', window.Rolagem && Rolagem.ativo(d.id) ? 'rolando' : '', !salvo && j.fase === 'pegar' && dicas ? 'nao-cabe' : '', j.sel === d.id || (j.fase === 'ajuste' && j.ajusteIdx === i) ? 'escolhido' : '', j.destaque === d.id ? 'destaque' : '', j.virando === d.id ? 'virando' : ''].join(' ');
       const rotulo = `${j.fase === 'alvo' ? 'Escolher' : 'Pegar'} ${d.v}${contra ? `, chega virado como ${vv}` : ''}${cabe ? (r.length ? ', ' + r.map(k => REL[k].nome).join(' e ') : '') : salvo ? ', só pelo Bolso' : ', rompe a corrente'}${serveRival ? ', serve ao rival' : ''}${marcado !== null ? ', marcado com Espelho' : ''}`;
       return `<button class="${cls}" data-i="${i}" data-id="${d.id}" ${ativo ? '' : 'disabled'} aria-label="${rotulo}" aria-pressed="${j.sel === d.id || (j.fase === 'ajuste' && j.ajusteIdx === i)}">
         <span class="kbd">${i + 1}</span><span class="face">${dadoHTML(d.v, skinMesa())}${serveRival ? '<span class="alvo-rival"></span>' : ''}${marcado !== null ? `<span class="marca-esp dono${marcado}" title="Marcado com Espelho">${CARTAS.espelho.ico}</span>` : ''}</span><span class="tags">${tags}</span></button>`;
@@ -740,6 +742,15 @@
     consumirEventos();
   }
 
+  // os dados caem como cubos 3D (física gravada, face da regra: js/rolagem.js); sem animação, o som de antes
+  function rolarNaTela(lista) {
+    const rolou = st.pref.animacoes && window.Rolagem && Rolagem.disponivel() && lista.length && lista.every(d => jogo.mesa.some(x => x.id === d.id)) && Rolagem.lancar(lista, {
+      faceHTML: v => dadoHTML(v, skinMesa()), som: (nome, dados) => Som.tocar(nome, dados),
+      velocidade: { calmo: 0.9, normal: 1, rapido: 1.2 }[st.cfg.ritmo] || 1,
+    });
+    if (!rolou) Som.tocar('rolar');
+  }
+
   // ---------- eventos → som, efeitos e recompensas ----------
   const qs = s => document.querySelector(s);
   function consumirEventos() {
@@ -760,7 +771,12 @@
     for (const e of evs) {
       const painelEl = qs(`#pj${e.p} .jogador`);
       switch (e.tipo) {
-        case 'rolar': Som.tocar('rolar'); break;
+        case 'rolar': {
+          const novos = jogo.mesa.filter(d => d.novo).map(d => ({ id: d.id, v: d.v }));
+          if (jogo.intro) { jogo.rolarDepois = novos; break; }      // a 1ª Mesa rola quando a tela de versus fecha
+          rolarNaTela(novos);
+          break;
+        }
         case 'pegar': Som.tocar('pegar'); break;
         case 'bolso': setTimeout(() => Som.tocar('bolso'), 250); break;
         case 'troca': setTimeout(() => Som.tocar('troca'), 250); break;
@@ -831,7 +847,7 @@
     document.body.appendChild(el);
     Som.tocar('carta');
     let fechou = false;
-    const fechar = () => { if (fechou) return; fechou = true; el.remove(); j.intro = false; render(); talvezAutomato(); };
+    const fechar = () => { if (fechou) return; fechou = true; el.remove(); j.intro = false; render(); if (j.rolarDepois && jogo === j) { rolarNaTela(j.rolarDepois); j.rolarDepois = null; } talvezAutomato(); };
     el.addEventListener('click', () => { Som.desbloquear(); fechar(); });
     setTimeout(fechar, 3200);
   }

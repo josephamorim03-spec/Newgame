@@ -139,6 +139,25 @@ const RAIZ = path.join(__dirname, '..');
   const rec = await pg.evaluate(() => DiceDuel.st.rec.partidas);
   await pg.click('#btnDeck'); await pg.click('#btnRecomecar'); await pg.waitForTimeout(100); depois = await J();
   confere(depois.fase === 'fim' && depois.vencedor === 1 && (await pg.evaluate(() => DiceDuel.st.rec.partidas)) === rec + 1 && depois.premio && depois.premio.xpGanho === 0, 'Deck: recomeçar contra o rival conta como derrota, sem experiência');
+  // 8. Rolagem 3D: os cubos caem, somem sozinhos e a face é a da regra; Rerrolar no meio da rolagem também
+  await pg.waitForTimeout(900);   // a tela de fim da cena anterior abre sozinha; fecha antes
+  await pg.evaluate(() => { ['fim', 'janelaDeck', 'janelaCarta'].forEach(id => { document.getElementById(id).hidden = true; }); DiceDuel.st.cfg.modo = 'local'; DiceDuel.ajustar({ animacoes: true }); });
+  await cena([['rerrolar'], []], () => {});
+  await pg.evaluate(() => { document.querySelectorAll('.versus').forEach(v => v.click()); });
+  await pg.waitForTimeout(150);
+  const rolando = await pg.evaluate(() => ({ cubos: document.querySelectorAll('.cubo-rolagem').length, mesa: DiceDuel.jogo.mesa.length, valores: DiceDuel.jogo.mesa.map(d => d.v).join() }));
+  confere(rolando.cubos === rolando.mesa && rolando.mesa === 5, `Rolagem: um cubo por dado da Mesa (${rolando.cubos})`);
+  await pg.evaluate(() => { const j = DiceDuel.jogo; j.vez = 0; j.fase = 'pegar'; });
+  await pg.keyboard.press('Escape');
+  await usar('rerrolar');
+  await pg.waitForTimeout(100);
+  const novos = await pg.evaluate(() => ({ cubos: document.querySelectorAll('.cubo-rolagem').length, valores: DiceDuel.jogo.mesa.map(d => d.v).join() }));
+  confere(novos.cubos === 5, 'Rolagem: Rerrolar no meio da rolagem relança os mesmos 5 cubos, sem sobrar cubo velho');
+  await pg.waitForTimeout(2600);
+  const fim = await pg.evaluate(() => ({ cubos: document.querySelectorAll('.cubo-rolagem').length, escondidos: document.querySelectorAll('.pega.rolando').length, valores: DiceDuel.jogo.mesa.map(d => d.v).join() }));
+  confere(fim.cubos === 0 && fim.escondidos === 0, 'Rolagem: no fim não sobra cubo nem dado escondido');
+  confere(fim.valores === novos.valores, 'Rolagem: a animação não muda nenhum valor (a regra decide)');
+  await pg.evaluate(() => DiceDuel.ajustar({ animacoes: false }));
   await navegador.close();
   console.log(erros.length ? 'ERROS:\n' + erros.join('\n') : 'Tudo certo: as regras das cartas se comportam como o texto diz.');
   process.exit(erros.length ? 1 : 0);
