@@ -4,4 +4,6 @@
 !/css
 !/js
 !/shared
+!/img
+!/manifest.webmanifest
 !/vercel.json

@@ -14,7 +14,8 @@ const LARGURAS = [[360, 740], [390, 844], [430, 932], [768, 1024], [1360, 900]];
 function verificar() {
   const probs = [];
   const SOLTOS = '.elo, .alvo-rival, .marca-esp, .kbd, .fala, .pop';
-  const visivel = el => { const r = el.getBoundingClientRect(); const cs = getComputedStyle(el); return r.width > 0 && r.height > 0 && cs.visibility !== 'hidden' && cs.display !== 'none' && cs.opacity !== '0'; };
+  // checkVisibility vê também a opacidade dos pais (os dados de uma ruptura caem e somem com opacity 0 no dado, não no pip)
+  const visivel = el => { const r = el.getBoundingClientRect(); const cs = getComputedStyle(el); return r.width > 0 && r.height > 0 && cs.visibility !== 'hidden' && cs.display !== 'none' && cs.opacity !== '0' && (!el.checkVisibility || el.checkVisibility({ opacityProperty: true, visibilityProperty: true })); };
   const nome = el => el.tagName.toLowerCase() + (el.id ? '#' + el.id : '') + (typeof el.className === 'string' && el.className.trim() ? '.' + el.className.trim().split(/\s+/).slice(0, 3).join('.') : '');
   const texto = el => (el.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 28);
   const ignorar = el => el.closest('.fx-canvas, .voador, .texto-sobe, .chamada, .lado:not(.aberto), [hidden], .camada-rolagem');
@@ -109,7 +110,8 @@ if (require.main === module) (async () => {
     await pg.goto('file://' + path.join(RAIZ, 'index.html'));
     await pg.evaluate(() => { DiceDuel.ajustar({ animacoes: false, liberar: true }); DiceDuel.st.conta.moedas = 400; });
     await pg.waitForTimeout(300);
-    const olha = async (tela, foto) => { anota(tela, w, await pg.evaluate(verificar)); if (foto) await pg.screenshot({ path: path.join(FOTOS, `${tela}-${w}.png`), fullPage: false }); };
+    // o mouse sai de cima antes de medir: o dado inclinado pelo :hover passa da borda de propósito e não é defeito
+    const olha = async (tela, foto) => { await pg.mouse.move(0, 0); await pg.waitForTimeout(220); anota(tela, w, await pg.evaluate(verificar)); if (foto) await pg.screenshot({ path: path.join(FOTOS, `${tela}-${w}.png`), fullPage: false }); };
     await olha('deck', true);
     await pg.click('#btnFecharDeck');
     await pg.click('#btnCarteira'); for (const aba of ['cartas', 'dados', 'icones', 'mesas']) { await pg.click(`[data-aba-loja="${aba}"]`); await olha('loja-' + aba, aba === 'cartas'); } await pg.click('#btnComoGanhar'); await olha('loja-ganhar', false); await pg.click('[data-voltar-loja]'); await pg.click('#btnFecharLoja');

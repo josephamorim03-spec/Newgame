@@ -139,6 +139,9 @@
   const nomes = () => jogo.modo === 'online' ? ['Você', jogo.nomes[1]] : jogo.nomes;
   const humano = p => jogo.modo === 'local' || p === 0;
   const online = () => jogo && jogo.modo === 'online';
+  // o rival online caiu no meio da partida; segundosVolta: quanto ele ainda tem para voltar (null se não se sabe)
+  const rivalCaiu = () => online() && jogo.fase !== 'fim' && jogo.perfis[1].conectado === false;
+  const segundosVolta = () => { const ate = jogo.perfis[1].voltaAte; return ate ? Math.max(0, Math.ceil((ate - Date.now()) / 1000)) : null; };
 
   function novaPartida() {
     if (window.Rolagem) Rolagem.parar();
@@ -596,7 +599,9 @@
     const valeAgora = L >= 3 ? `disparar vale <b>+${vale}</b>` : L ? `faltam <b>${3 - L}</b> para disparar` : 'qualquer dado começa';
     const seCrescer = L >= 3 && L < LIM ? ` · com ${L + 1}: <b>+${pontos(L + 1)}</b>` : '';
     const pensa = daVez && !humano(p) && !(online() && j.perfis[1].conectado === false);
-    const tag = j.fase === 'fim' ? (j.vencedor === p ? 'venceu' : '') : daVez ? (humano(p) ? (j.modo !== 'local' ? 'sua vez' : 'vez') : online() ? (j.perfis[1].conectado === false ? 'caiu, esperando' : 'jogando') : 'pensando') : '';
+    const caiu = p === 1 && rivalCaiu(), sv = caiu ? segundosVolta() : null;
+    const tag = j.fase === 'fim' ? (j.vencedor === p ? 'venceu' : '') : caiu ? (sv === null ? 'caiu' : `caiu · <span class="volta-rival">${sv}</span> s`)
+      : daVez ? (humano(p) ? (j.modo !== 'local' ? 'sua vez' : 'vez') : online() ? 'jogando' : 'pensando') : '';
     const avatar = j.modo === 'bot' && p === 1 ? Retratos.retrato(RETRATO_RIVAL[j.nivel], j.humor || '') : p === 0 ? iconeSVG(st.conta.icone) : online() ? iconeSVG(j.perfis[1].icone) : '';
     const fala = j.modo === 'bot' && p === 1 && j.fala ? `<div class="fala" aria-live="polite">${j.fala.txt}</div>` : '';
     return `<div class="jogador p${p}${daVez ? ' da-vez' : ''}">${fala}
@@ -657,7 +662,12 @@
       return `<div class="status"><b class="cor${j.vencedor}">${n[j.vencedor]}</b> venceu por ${j.pts[j.vencedor]} × ${j.pts[1 - j.vencedor]}.</div>
         <div class="botoes"><button class="btn btn-mel" data-acao="nova" ${online() && Rede.pediuRevanche ? 'disabled' : ''}>${online() ? (Rede.pediuRevanche ? 'Esperando o rival…' : 'Revanche') : 'Jogar de novo'}</button><button class="btn btn-papel" data-acao="deck">Trocar deck</button></div>`;
     }
-    if (!humano(p)) return `<div class="status">${quem} ${online() ? (j.perfis[1].conectado === false ? "caiu; esperando voltar (1 min)" : "está jogando") : "está pensando"}<span class="pensando-pontos"></span></div>`;
+    if (!humano(p)) {
+      const sv = rivalCaiu() ? segundosVolta() : null;
+      const oQue = !online() ? 'está pensando' : !rivalCaiu() ? 'está jogando'
+        : sv === null ? 'caiu; esperando voltar' : `caiu; tem <b class="volta-rival">${sv}</b> s para voltar`;
+      return `<div class="status">${quem} ${oQue}<span class="pensando-pontos"></span></div>`;
+    }
     const eu = j.cor[p];
     if (j.fase === 'alvo') {
       const k = CARTAS[j.alvo], ds = j.sel !== null && j.sel !== undefined ? j.mesa[idxDe(j.sel)] : null;
@@ -975,7 +985,12 @@
       linhas: lances.map(m => ({ simbolo: m.simbolo, src: srcMomento(m.simbolo), txt: `${j.modo === 'local' ? n[m.p] + ': ' : ''}${m.txt}${m.vezes > 1 ? ` ×${m.vezes}` : ''}` })),
       endereco: PAGINA ? location.host : 'diceduel-game.vercel.app',
     };
-    const este = { blob: null };
+    // a mensagem que vai junto da imagem, com o link do jogo
+    const venci = j.vencedor === 0, placar = `${j.pts[j.vencedor]} × ${j.pts[1 - j.vencedor]}`;
+    const texto = j.modo === 'local' ? `${quem[j.vencedor]} venceu ${quem[1 - j.vencedor]} por ${placar} no Dice Duel 🎲 Bora um duelo?`
+      : venci ? `Venci ${online() ? quem[1] : `a ${quem[1]}`} por ${placar} no Dice Duel 🎲 Duvido você me ganhar!`
+      : `Perdi para ${online() ? quem[1] : `a ${quem[1]}`} por ${placar} no Dice Duel 🎲 Me vinga?`;
+    const este = { blob: null, texto };
     este.promessa = Cartao.gerar(d).then(b => { este.blob = b; return b; });
     este.promessa.catch(() => {});
     cartao = este;
@@ -991,7 +1006,7 @@
   function desenharRecompensas(j) {
     const el = document.getElementById('fimRecompensas');
     if (j.modo === 'local') { el.innerHTML = '<span class="conta">Partidas a dois no mesmo aparelho não dão moedas nem rating (assim ninguém farma sozinho).</span>'; return; }
-    if (!j.premio) { el.innerHTML = '<span class="conta">Contando o prêmio…</span>'; return; }
+    if (!j.premio) { el.innerHTML = `<span class="conta">${esc(j.semPremio || 'Contando o prêmio…')}</span>`; return; }
     const pr = j.premio, m = pr.moedas, c = st.conta, rival = j.modo === 'bot' ? RIVAIS[j.nivel].nome : nomes()[1];
     let linhaMoedas;
     if (pr.motivo && !(m && m.total)) linhaMoedas = `<span class="conta">${pr.motivo}</span>`;
@@ -1337,19 +1352,33 @@
     const b = e.target.closest('[data-pronto]'); if (!b) return;
     st.decks[st.abaDeck] = PRONTOS[+b.dataset.pronto].cartas.slice(); Som.tocar('carta'); salvar(); desenharDeck();
   });
-  // compartilha a imagem do cartão (WhatsApp, Instagram…); onde não dá para compartilhar arquivo, ela é baixada
+  // compartilhar: imagem + texto com o link (WhatsApp, Instagram…). Sem como mandar arquivo, vai o texto com o link;
+  // no computador, o texto com o link é copiado e a imagem baixada. Devolve 'ok', 'cancelou' ou 'copiou'.
+  async function compartilhar({ blob, arquivo, titulo, texto, url }) {
+    const msg = `${texto}\n${url}`;
+    const arq = blob && new File([blob], arquivo, { type: 'image/png' });
+    if (arq && navigator.canShare && navigator.canShare({ files: [arq], text: msg })) {
+      try { await navigator.share({ files: [arq], title: titulo, text: msg }); return 'ok'; }
+      catch (e) { if (e.name === 'AbortError') return 'cancelou'; }
+    }
+    if (navigator.share) {
+      try { await navigator.share({ title: titulo, text: texto, url }); return 'ok'; }
+      catch (e) { if (e.name === 'AbortError') return 'cancelou'; }
+    }
+    let copiou = false;
+    try { await navigator.clipboard.writeText(msg); copiou = true; } catch (e) {}
+    if (blob) baixar(blob, arquivo);
+    return copiou ? 'copiou' : 'baixou';
+  }
+  // o endereço do jogo para mandar (aberto por arquivo, vale o do Vercel)
+  const linkJogo = () => (PAGINA ? PAGINA + '/' : 'https://diceduel-game.vercel.app/');
   document.getElementById('btnCompartilhar').addEventListener('click', async () => {
     const b = document.getElementById('btnCompartilhar');
     const blob = cartao && (cartao.blob || await cartao.promessa.catch(() => null));
-    if (!blob) { Fx.chamada('Ops', 'Não deu para montar a imagem.', 'suave'); return; }
-    const arq = new File([blob], 'dice-duel.png', { type: 'image/png' });
-    if (navigator.canShare && navigator.canShare({ files: [arq] })) {
-      try { await navigator.share({ files: [arq] }); return; }
-      catch (e) { if (e.name === 'AbortError') return; }
-    }
-    baixar(blob, 'dice-duel.png');
-    b.textContent = 'Imagem salva';
-    setTimeout(() => { b.textContent = 'Compartilhar'; }, 2200);
+    const r = await compartilhar({ blob, arquivo: 'dice-duel.png', titulo: 'Dice Duel', texto: (cartao && cartao.texto) || 'Bora um duelo no Dice Duel? 🎲', url: linkJogo() });
+    if (r === 'ok' || r === 'cancelou') return;
+    b.textContent = r === 'copiou' ? (blob ? 'Link copiado e imagem salva' : 'Link copiado') : 'Imagem salva';
+    setTimeout(() => { b.textContent = 'Compartilhar'; }, 2600);
   });
   document.addEventListener('keydown', e => {
     const alvo = e.target && e.target.closest ? e.target : document.body;   // tecla vinda do documento não tem .closest
@@ -1391,7 +1420,8 @@
   // a página com a meta vazia); por file:// não há online. O convite usa sempre o endereço da página.
   const PAGINA = /^https?:$/.test(location.protocol) ? location.origin : null;
   const API = PAGINA && ((document.querySelector('meta[name="dice-servidor"]') || {}).content || PAGINA).replace(/\/$/, '');
-  const Rede = { ws: null, ola: false, sala: null, infoSala: null, tentativas: 0, ranking: null, convite: null, aba: 'entrar', pediuRevanche: false, aviso: null };
+  const Rede = { ws: null, ola: false, sala: null, infoSala: null, tentativas: 0, ranking: null, convite: null, aba: 'entrar', pediuRevanche: false, aviso: null,
+    quedaDesde: null, desistiu: false, ultimaMsg: 0, voltouEm: 0, voltando: false };
   try { st.sessao = JSON.parse(localStorage.getItem('diceduel.sessao') || 'null'); } catch (e) { st.sessao = null; }
   const guardarSessao = () => { try { if (st.sessao) localStorage.setItem('diceduel.sessao', JSON.stringify(st.sessao)); else localStorage.removeItem('diceduel.sessao'); } catch (e) {} };
   const deServidor = pf => ({
@@ -1483,7 +1513,24 @@
     }
   };
 
-  // o canal da partida
+  // ---------- o canal da partida e a volta depois de uma queda ----------
+  // Quem cai tem 90 s (no servidor) para voltar antes do W.O. O aparelho tenta durante toda essa janela, tenta na hora
+  // em que a internet volta ou o app volta para a frente, e um pulso descobre conexões mortas que o navegador não percebe.
+  // A sala fica guardada no aparelho: se a aba recarregar (o iPhone faz isso em segundo plano), o jogo volta para ela sozinho.
+  const JANELA_VOLTA = 100_000, SALA_GUARDADA = 'diceduel.sala', VALIDADE_SALA = 3 * 3600_000;
+  let timerVolta = null, emVoo = false;
+  function lembrarSala(acabou = false) {
+    try {
+      if (Rede.sala) localStorage.setItem(SALA_GUARDADA, JSON.stringify({ codigo: Rede.sala, em: Date.now(), acabou }));
+      else localStorage.removeItem(SALA_GUARDADA);
+    } catch (e) {}
+  }
+  function salaGuardada() {
+    try {
+      const s = JSON.parse(localStorage.getItem(SALA_GUARDADA) || 'null');
+      return s && !s.acabou && Date.now() - s.em < VALIDADE_SALA ? s.codigo : null;
+    } catch (e) { return null; }
+  }
   function conectar() {
     return new Promise((ok, falha) => {
       if (Rede.ws && Rede.ws.readyState === 1 && Rede.ola) return ok();
@@ -1491,15 +1538,24 @@
       let ws;
       try { ws = new WebSocket(API.replace(/^http/, 'ws') + '/ws'); } catch (e) { return falha(new Error('Sem conexão com o servidor.')); }
       Rede.ws = ws; Rede.ola = false;
+      // rede ruim pode deixar a conexão "abrindo" para sempre: 8 s sem resposta contam como falha
+      const limite = setTimeout(() => {
+        if (Rede.ws !== ws || Rede.ola) return;
+        Rede.ws = null; ws.onclose = null; try { ws.close(); } catch (e) {}
+        falha(new Error('Sem conexão com o servidor.'));
+      }, 8000);
       ws.onopen = () => ws.send(JSON.stringify({ tipo: 'ola', token: st.sessao.token }));
       ws.onmessage = e => {
+        Rede.ultimaMsg = Date.now();
         let m; try { m = JSON.parse(e.data); } catch (x) { return; }
-        if (m.tipo === 'ola') { Rede.ola = true; Rede.tentativas = 0; usarPerfil(m.conta); ok(); return; }
-        if (m.tipo === 'erro' && m.sair) { sairDaConta(); falha(new Error(m.erro)); return; }
+        if (m.tipo === 'pulso') return;
+        if (m.tipo === 'ola') { clearTimeout(limite); Rede.ola = true; Rede.tentativas = 0; Rede.quedaDesde = null; Rede.desistiu = false; usarPerfil(m.conta); ok(); return; }
+        if (m.tipo === 'erro' && m.sair) { clearTimeout(limite); sairDaConta(); falha(new Error(m.erro)); return; }
         receber(m);
       };
       ws.onclose = () => {
         if (Rede.ws !== ws) return;
+        clearTimeout(limite);
         Rede.ws = null;
         const conectado = Rede.ola; Rede.ola = false;
         // antes do "ola", quem chamou conectar() cuida da falha (e de tentar de novo); depois dele, a queda é tratada aqui
@@ -1508,18 +1564,57 @@
       };
     });
   }
-  function reconectar() {
-    if (Rede.religando) return; // uma tentativa por vez
-    if (Rede.tentativas >= 6) { aviso('A conexão caiu. Abra o Online para tentar de novo.', true); return; }
-    const ms = Math.min(8000, 800 * 2 ** Rede.tentativas++);
-    Rede.religando = true;
+  // a conexão parece aberta mas não responde: larga e começa a voltar
+  function derrubar() {
+    const ws = Rede.ws;
+    if (!ws || !Rede.ola) return;
+    Rede.ws = null; Rede.ola = false;
+    ws.onclose = null; ws.onmessage = null; try { ws.close(); } catch (e) {}
+    reconectar(true);
+  }
+  // jaJa: tenta agora (a internet voltou, o app voltou para a frente) em vez de esperar a próxima tentativa
+  function reconectar(jaJa = false) {
+    if (!Rede.sala || !st.sessao || emVoo) return;
+    if (!Rede.quedaDesde) Rede.quedaDesde = Date.now();
+    if (Date.now() - Rede.quedaDesde > JANELA_VOLTA) {
+      clearTimeout(timerVolta); timerVolta = null; Rede.desistiu = true;
+      aviso('A conexão caiu. Abra o Online para tentar de novo.', true);
+      return;
+    }
+    if (timerVolta && !jaJa) return; // uma tentativa por vez
+    clearTimeout(timerVolta);
+    const ms = jaJa ? 0 : Math.min(5000, 800 * 2 ** Rede.tentativas++);
     aviso('Reconectando…');
-    setTimeout(() => {
-      Rede.religando = false;
+    timerVolta = setTimeout(() => {
+      timerVolta = null;
       if (!Rede.sala || !st.sessao) return;
-      conectar().then(() => { aviso(null); enviarWs({ tipo: 'entrar', sala: Rede.sala, deck: deckOnline() }); }).catch(() => reconectar());
+      emVoo = true;
+      conectar().then(
+        () => { emVoo = false; aviso(null); enviarWs({ tipo: 'entrar', sala: Rede.sala, deck: deckOnline() }); },
+        () => { emVoo = false; reconectar(); });
     }, ms);
   }
+  // recomeça a volta do zero (depois de desistir, ou quando a rede avisa que voltou)
+  function tentarDeNovo() {
+    if (!Rede.sala || !st.sessao || Rede.ola) return;
+    Rede.desistiu = false; Rede.quedaDesde = null; Rede.tentativas = 0;
+    reconectar(true);
+  }
+  addEventListener('online', tentarDeNovo);
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden || !Rede.sala || !st.sessao) return;
+    if (!Rede.ola) return tentarDeNovo();
+    // de volta à frente: um pulso confirma que a conexão sobreviveu; sem resposta em 4 s, ela tinha morrido
+    const pedido = Rede.voltouEm = Date.now();
+    enviarWs({ tipo: 'pulso' });
+    setTimeout(() => { if (Rede.ola && Rede.ultimaMsg < pedido) derrubar(); }, 4000);
+  });
+  // pulso de fundo: o servidor responde a cada um; 35 s sem ouvir nada dele é conexão morta
+  setInterval(() => {
+    if (!Rede.sala || !Rede.ola || document.hidden) return;
+    if (Date.now() - Math.max(Rede.ultimaMsg, Rede.voltouEm) > 35_000) return derrubar();
+    enviarWs({ tipo: 'pulso' });
+  }, 15_000);
   const deckOnline = () => st.decks[0].filter(possui);
   const enviarWs = m => { if (Rede.ws && Rede.ws.readyState === 1 && Rede.ola) { Rede.ws.send(JSON.stringify(m)); return true; } if (Rede.sala) reconectar(); return false; };
   Online.enviar = acao => { if (enviarWs({ tipo: 'acao', acao })) { jogo.pensando = true; render(); } };
@@ -1538,24 +1633,34 @@
     codigo = String(codigo || '').trim().toUpperCase();
     if (!/^[A-Z0-9]{6}$/.test(codigo)) return aviso('O código tem 6 letras ou números.', true);
     Rede.sala = codigo; Rede.infoSala = null; Rede.pediuRevanche = false;
+    lembrarSala();
     try {
       await conectar();
       enviarWs({ tipo: 'entrar', sala: codigo, deck: deckOnline() });
       aviso(null); desenharOnline();
-    } catch (e) { Rede.sala = null; aviso(e.message, true); desenharOnline(); }
+    } catch (e) {
+      if (Rede.voltando) return reconectar(); // voltando sozinho para a sala depois de recarregar: insiste como numa queda
+      Rede.sala = null; lembrarSala(); aviso(e.message, true); desenharOnline();
+    }
   }
   function sairDaSala() {
     enviarWs({ tipo: 'sair' });
-    Rede.sala = null; Rede.infoSala = null; Rede.pediuRevanche = false;
+    Rede.sala = null; Rede.infoSala = null; Rede.pediuRevanche = false; Rede.voltando = false;
+    lembrarSala();
     if (online()) { jogo = null; novaPartida(); }
     desenharOnline(); carregarRanking();
   }
 
   function receber(m) {
     if (m.tipo === 'sala') {
-      Rede.infoSala = m.sala;
+      Rede.infoSala = m.sala; Rede.voltando = false;
       const euId = st.sessao && st.sessao.perfil.id, outro = m.sala.jogadores.find(x => x.id !== euId);
-      if (online() && jogo.sala === m.sala.codigo && outro) { jogo.perfis[1].conectado = outro.conectado; render(); }
+      if (online() && jogo.sala === m.sala.codigo && outro) {
+        // o rival caiu: o relógio dele para e aparece quanto tempo ele ainda tem para voltar
+        jogo.perfis[1].conectado = outro.conectado;
+        jogo.perfis[1].voltaAte = outro.volta != null ? Date.now() + outro.volta : null;
+        render();
+      }
       const meuAssento = m.sala.jogadores.findIndex(x => x.id === euId);
       if (m.revanche && m.revanche.includes(1 - meuAssento) && !Rede.pediuRevanche && outro) Fx.chamada('Revanche?', `${outro.nome} quer jogar de novo`, 'suave');
       if (!document.getElementById('janelaOnline').hidden) desenharOnline();
@@ -1563,15 +1668,26 @@
     else if (m.tipo === 'fim') {
       const j = jogo;
       if (!online()) return;
-      j.premio = m.premio; usarPerfil(m.premio.conta);
-      setTimeout(mostrarFim, st.pref.animacoes ? 1800 : 600);
+      // o servidor reenvia o resultado a quem volta para a sala; quem já viu o fim desta partida não o vê de novo
+      const jaViu = j.premio !== undefined;
+      j.premio = m.premio; j.semPremio = m.erro || null;
+      if (m.premio) usarPerfil(m.premio.conta);
+      lembrarSala(true);
+      if (!jaViu) setTimeout(mostrarFim, st.pref.animacoes ? 1800 : 600);
     } else if (m.tipo === 'erro') {
       const saiuDaSala = m.codigo === 'sala' || m.semSala;
+      if (Rede.voltando && m.semSala) {
+        // voltando sozinho para a sala guardada, mas ela já não existe: esquece em silêncio
+        Rede.voltando = false; Rede.sala = null; Rede.infoSala = null; lembrarSala(); aviso(null);
+        return;
+      }
       // jogada recusada: destrava e mostra por quê (o servidor manda o estado certo logo em seguida)
       if (!saiuDaSala && online() && jogo.sala === Rede.sala) { jogo.pensando = false; Rede.pediuRevanche = false; render(); Fx.chamada('Ops', m.erro, 'suave'); return; }
       // a sala não existe mais (ou recusou a entrada): sai da partida fantasma e volta ao jogo contra o rival
       const estavaJogando = online();
-      Rede.sala = null; Rede.infoSala = null; Rede.pediuRevanche = false;
+      Rede.sala = null; Rede.infoSala = null; Rede.pediuRevanche = false; Rede.voltando = false;
+      // "entrou por outra janela": a sala guardada é da janela nova (a memória do aparelho é a mesma), fica onde está
+      if (m.semSala || m.codigo !== 'sala') lembrarSala();
       if (estavaJogando) {
         jogo = null; novaPartida();
         if (m.semSala) { Fx.chamada('A sala fechou', 'O servidor reiniciou e esta partida se perdeu. Crie outra sala para jogar de novo.', 'suave'); aviso(m.erro, true); return; }
@@ -1586,7 +1702,11 @@
     Object.assign(v, { alvo: null, ajusteIdx: null, sel: null, destaque: null, pensando: false, token: Math.random(), fala: null, humor: null, intro: false, virando: virou ? virou.id : null });
     v.prazoAte = v.prazoVez == null ? null : Date.now() + v.prazoVez;
     if (v.fase !== 'fim') Rede.pediuRevanche = false;
+    if (!nova && antes.premio !== undefined) { v.premio = antes.premio; v.semPremio = antes.semPremio; } // o prêmio só vem uma vez
+    v.perfis[1].voltaAte = v.perfis[1].volta != null ? Date.now() + v.perfis[1].volta : null;
+    Rede.voltando = false;
     jogo = v;
+    lembrarSala(v.fase === 'fim');
     marcarNovos();
     if (nova) {
       ['avisoCfg', 'fim', 'janelaCarta', 'janelaDeck', 'janelaOnline'].forEach(id => { document.getElementById(id).hidden = true; });
@@ -1594,15 +1714,25 @@
     }
     render();
   }
-  // o relógio da vez (o servidor dá 2 minutos; o aviso aparece nos últimos 30 s)
+  // o relógio da vez (o servidor dá 2 minutos; o aviso aparece nos últimos 30 s), a contagem de volta do rival que caiu
+  // e o aviso de quando é a nossa conexão que caiu
   setInterval(() => {
     // jogada enviada e nenhuma resposta em 7 s: pede o estado de novo (o servidor reenvia a partida)
     if (jogo && online() && jogo.pensando) {
       jogo.pensandoDesde = jogo.pensandoDesde || Date.now();
       if (Date.now() - jogo.pensandoDesde > 7000 && Rede.sala) { jogo.pensandoDesde = Date.now(); enviarWs({ tipo: 'entrar', sala: Rede.sala, deck: deckOnline() }); }
     } else if (jogo) jogo.pensandoDesde = 0;
-    if (!jogo || !online() || !jogo.prazoAte || jogo.fase === 'fim') return;
-    const s = Math.max(0, Math.ceil((jogo.prazoAte - Date.now()) / 1000)), el = document.getElementById('mesaInfo');
+    if (!jogo || !online() || jogo.fase === 'fim') return;
+    const el = document.getElementById('mesaInfo');
+    if (Rede.sala && !Rede.ola) { el.innerHTML = '<span class="prazo">sem conexão: voltando para a partida…</span>'; return; }
+    if (rivalCaiu()) {
+      // com o rival fora, o relógio da vez dele para: só conta o tempo que ele tem para voltar
+      const sv = segundosVolta();
+      if (sv !== null) document.querySelectorAll('.volta-rival').forEach(x => { x.textContent = sv; });
+      return;
+    }
+    if (!jogo.prazoAte) return;
+    const s = Math.max(0, Math.ceil((jogo.prazoAte - Date.now()) / 1000));
     if (s <= 30) el.innerHTML = `<span class="prazo">${jogo.vez === 0 ? 'sua vez' : 'vez do rival'}: ${s} s</span>`;
   }, 1000);
 
@@ -1610,7 +1740,7 @@
   const carregarRanking = () => { if (st.sessao && !Rede.sala) pedir('GET', '/api/ranking').then(r => { Rede.ranking = r.ranking; desenharOnline(); }).catch(() => {}); };
   function abrirOnline() {
     // depois de desistir de reconectar, abrir o Online tenta de novo
-    if (Rede.sala && st.sessao && !Rede.ola && Rede.tentativas >= 6) { Rede.tentativas = 0; reconectar(); }
+    if (Rede.desistiu) tentarDeNovo();
     desenharOnline();
     document.getElementById('janelaOnline').hidden = false;
     carregarRanking();
@@ -1619,6 +1749,18 @@
   }
   const esc = t => String(t).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
   const linkDaSala = c => `${PAGINA}/?sala=${c}`;
+  const meuNome = () => (st.sessao && st.sessao.perfil && st.sessao.perfil.nome) || (st.conta.online && st.conta.online.nome) || 'Um amigo';
+  const textoConvite = () => `${meuNome()} te chamou para um duelo no Dice Duel 🎲 Toque no link para entrar na sala ${Rede.sala}:`;
+  // a imagem do convite fica pronta quando a sala aparece (o iPhone só compartilha arquivo dentro do próprio toque)
+  let convitePronto = { sala: null };
+  function imagemConvite() {
+    if (convitePronto.sala === Rede.sala) return convitePronto;
+    const sala = Rede.infoSala, este = { sala: Rede.sala, blob: null };
+    este.promessa = Cartao.convite({ nome: meuNome(), retrato: ICONES[st.conta.icone] ? st.conta.icone : 'bolinha', sala: Rede.sala,
+      meta: sala && sala.meta ? sala.meta : st.cfg.meta, endereco: linkDaSala(Rede.sala).replace(/^https?:\/\//, '') }).then(b => { este.blob = b; return b; });
+    este.promessa.catch(() => {});
+    return (convitePronto = este);
+  }
   function desenharOnline() {
     document.getElementById('pontoOnline').hidden = !st.sessao;
     const el = document.getElementById('onlineConteudo');
@@ -1646,7 +1788,7 @@
       if (emJogo && jogo.fase !== 'fim') {
         el.innerHTML = `${eu}<p style="margin:0">Partida na sala <b>${Rede.sala}</b> contra <b>${esc(jogo.perfis[1].nome)}</b> (rating ${jogo.perfis[1].rating}).</p>
           <div class="linha-botoes"><button class="btn btn-mel" data-on="voltar">Voltar à mesa</button><button class="btn btn-papel" data-on="desistir">Desistir</button></div>
-          <p class="nota" style="margin:0">Desistir conta como derrota. Se a conexão cair, você tem 1 minuto para voltar.</p>`;
+          <p class="nota" style="margin:0">Desistir conta como derrota. Se a conexão cair, você tem 90 segundos para voltar (o jogo tenta sozinho).</p>`;
         return;
       }
       if (emJogo) {
@@ -1654,10 +1796,11 @@
           <div class="linha-botoes"><button class="btn btn-mel" data-on="revanche" ${Rede.pediuRevanche ? 'disabled' : ''}>${Rede.pediuRevanche ? 'Esperando o rival…' : 'Revanche'}</button><button class="btn btn-papel" data-on="sair-sala">Sair da sala</button></div>`;
         return;
       }
+      imagemConvite();
       const lista = sala ? sala.jogadores.map(x => `<li><span>${esc(x.nome)}</span><span>${x.rating}</span></li>`).join('') : '';
       el.innerHTML = `${eu}<div class="convite"><span class="nota">Mande o link (ou o código) para quem vai jogar com você</span>
           <span class="codigo-grande">${Rede.sala}</span><span class="link">${esc(linkDaSala(Rede.sala))}</span>
-          <div class="linha-botoes"><button class="btn btn-mel" data-on="copiar">Copiar convite</button>${navigator.share ? '<button class="btn btn-papel" data-on="compartilhar">Compartilhar</button>' : ''}</div>
+          <div class="linha-botoes"><button class="btn btn-mel" data-on="compartilhar">Compartilhar</button><button class="btn btn-papel" data-on="copiar">Copiar convite</button></div>
           <ul class="lista-sala">${lista}</ul>
           <span class="esperando">Esperando o amigo<span class="pensando-pontos"></span></span></div>
         <p class="nota" style="margin:0">Meta ${sala ? sala.meta : st.cfg.meta} · seu deck: ${deckOnline().map(c => CARTAS[c].nome).join(', ') || 'sem cartas'}. Enquanto espera, dá para jogar contra o rival do jogo.</p>
@@ -1697,11 +1840,15 @@
       enviarWs({ tipo: 'desistir' }); document.getElementById('janelaOnline').hidden = true;
     }
     if (a === 'copiar') {
-      const texto = `Vem jogar Dice Duel comigo! Sala ${Rede.sala}: ${linkDaSala(Rede.sala)}`;
+      const texto = `${textoConvite()}\n${linkDaSala(Rede.sala)}`;
       try { await navigator.clipboard.writeText(texto); b.textContent = 'Copiado!'; } catch (x) { b.textContent = 'Copie o link acima'; }
       setTimeout(() => { b.textContent = 'Copiar convite'; }, 2000);
     }
-    if (a === 'compartilhar') { try { await navigator.share({ title: 'Dice Duel', text: `Vem jogar Dice Duel comigo! Sala ${Rede.sala}`, url: linkDaSala(Rede.sala) }); } catch (x) {} }
+    if (a === 'compartilhar') {
+      const cv = imagemConvite(), blob = cv.blob || await cv.promessa.catch(() => null);
+      const r = await compartilhar({ blob, arquivo: `dice-duel-sala-${Rede.sala}.png`, titulo: 'Dice Duel', texto: textoConvite(), url: linkDaSala(Rede.sala) });
+      if (r === 'copiou' || r === 'baixou') { b.textContent = r === 'copiou' ? 'Link copiado' : 'Imagem salva'; setTimeout(() => { b.textContent = 'Compartilhar'; }, 2200); }
+    }
   });
   // convite por link: /?sala=CODIGO
   (() => {
@@ -1732,6 +1879,11 @@
       abrirDeck(); jogo.rolouAVista = false;   // a Mesa rola quando a janela do deck fechar
     } else novaPartida();
     if (Rede.convite) { abrirOnline(); if (st.sessao) { const c = Rede.convite; Rede.convite = null; entrarNaSala(c).then(abrirOnline); } }
+    else if (st.sessao && API) {
+      // a aba recarregou no meio de uma sala (queda, celular que fechou a aba): volta para ela sozinho
+      const guardada = salaGuardada();
+      if (guardada) { Rede.voltando = true; entrarNaSala(guardada); }
+    }
   }
   // o roteiro de teste automático (tools/) pode ler o estado
   window.DiceDuel = { get jogo() { return jogo; }, st, salvar, ajustar(p) { Object.assign(st.pref, p); aplicarPrefs(); if (jogo) render(); } };

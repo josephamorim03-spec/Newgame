@@ -92,5 +92,44 @@
     return new Promise((ok, erro) => cv.toBlob(b => (b ? ok(b) : erro(new Error('Não deu para montar a imagem.'))), 'image/png'));
   }
 
-  window.Cartao = { gerar };
+  // o convite da sala: uma imagem quadrada (1080×1080) com quem convida, o código e o endereço
+  // d: { nome, retrato, sala, meta, endereco }
+  async function convite(d) {
+    const T = 1080;
+    try { await Promise.all(['700 72px Fredoka', '600 46px Fredoka', '700 34px Nunito', '800 40px Nunito'].map(f => document.fonts.load(f))); } catch (e) {}
+    const im = await imagemDoRetrato(d.retrato);
+    const cv = document.createElement('canvas'); cv.width = T; cv.height = T;
+    const c = cv.getContext('2d');
+    c.fillStyle = COR.noite; c.fillRect(0, 0, T, T);
+    let g = c.createRadialGradient(T / 2, -60, 40, T / 2, -60, 860);
+    g.addColorStop(0, 'rgba(255, 207, 138, .45)'); g.addColorStop(1, 'rgba(255, 207, 138, 0)'); c.fillStyle = g; c.fillRect(0, 0, T, T);
+    c.textAlign = 'center'; c.textBaseline = 'alphabetic';
+    c.fillStyle = COR.luz; c.font = `700 72px ${TITULO}`; c.fillText('DICE DUEL', T / 2, 116);
+    c.fillStyle = COR.textoSuave; c.font = `700 34px ${CORPO}`; c.fillText('convite para um duelo de dados', T / 2, 166);
+
+    // a mesa: quem convida de um lado, a cadeira vazia do amigo do outro
+    caixa(c, 60, 210, 960, 470, 56); c.fillStyle = COR.madeira; c.fill();
+    caixa(c, 78, 228, 924, 434, 42);
+    g = c.createLinearGradient(0, 228, 0, 662); g.addColorStop(0, COR.feltro2); g.addColorStop(1, COR.feltroEscuro); c.fillStyle = g; c.fill();
+    const y = 400, r = 120;
+    c.beginPath(); c.arc(300, y, r + 14, 0, Math.PI * 2); c.fillStyle = COR.voce; c.fill();
+    c.beginPath(); c.arc(300, y, r, 0, Math.PI * 2); c.fillStyle = COR.papel2; c.fill();
+    if (im) { c.save(); c.beginPath(); c.arc(300, y, r, 0, Math.PI * 2); c.clip(); c.drawImage(im, 300 - r * 0.95, y - r * 0.95, r * 1.9, r * 1.9); c.restore(); }
+    c.save(); c.setLineDash([22, 16]); c.lineWidth = 10; c.strokeStyle = 'rgba(255, 243, 226, .55)';
+    c.beginPath(); c.arc(780, y, r + 6, 0, Math.PI * 2); c.stroke(); c.restore();
+    c.fillStyle = COR.texto; c.font = `700 150px ${TITULO}`; c.fillText('?', 780, y + 52);
+    c.fillStyle = COR.papel2; c.font = `700 64px ${TITULO}`; c.fillText('×', T / 2, y + 22);
+    c.fillStyle = COR.papel; c.font = `600 44px ${TITULO}`;
+    c.fillText(caber(c, d.nome, 400), 300, 610); c.fillText('você', 780, 610);
+
+    c.fillStyle = COR.texto; c.font = `700 64px ${TITULO}`; c.fillText(caber(c, `${d.nome} te chamou!`, 960), T / 2, 770);
+    caixa(c, T / 2 - 250, 805, 500, 120, 30); c.fillStyle = COR.papel; c.fill();
+    c.fillStyle = COR.noite; c.font = `800 30px ${CORPO}`; c.fillText('SALA', T / 2, 848);
+    c.font = `700 64px ${TITULO}`; c.fillText(d.sala, T / 2, 908);
+    c.fillStyle = COR.textoSuave; c.font = `700 32px ${CORPO}`; c.fillText(`meta ${d.meta} pontos · toque no link para entrar`, T / 2, 985);
+    c.fillStyle = COR.luz; c.font = `800 38px ${CORPO}`; c.fillText(caber(c, d.endereco, 980), T / 2, 1040);
+    return new Promise((ok, erro) => cv.toBlob(b => (b ? ok(b) : erro(new Error('Não deu para montar a imagem.'))), 'image/png'));
+  }
+
+  window.Cartao = { gerar, convite };
 })();

@@ -4,6 +4,7 @@
     python3 tools/empacotar.py              -> dist/dice-duel.html (página completa)
     python3 tools/empacotar.py --artefato   -> builds/artefato.html (sem <html>/<head>/<body>, para publicar como artefato)
 """
+import base64
 import re
 import sys
 from pathlib import Path
@@ -20,6 +21,10 @@ def embutir(html: str) -> str:
 
     html = re.sub(r'<link rel="stylesheet" href="(css/[^"]+)">', css, html)
     html = re.sub(r'<script src="((?:js|shared)/[^"]+)"></script>', js, html)
+    # no arquivo único não há pasta img/: o favicon vai embutido e os ícones de instalação saem
+    svg = (RAIZ / "img" / "icone.svg").read_text(encoding="utf-8")
+    html = html.replace('href="img/icone.svg"', 'href="data:image/svg+xml;base64,' + base64.b64encode(svg.encode()).decode() + '"')
+    html = re.sub(r'<link rel="(?:icon|apple-touch-icon|manifest)" href="(?:img/[^"]+\.png|manifest\.webmanifest)"[^>]*>\n?', "", html)
     return html
 
 

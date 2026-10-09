@@ -243,8 +243,72 @@ test('quem cai tem um tempo para voltar; depois perde por W.O. (sem moedas para 
     assert.strictEqual(fim.premio.porDesistencia, true);
     assert.strictEqual(fim.premio.moedas.total, 0);
     assert.ok(fim.premio.rating > 1000);
-    b.fechar();
+    // quem perdeu por W.O. volta à sala e ainda recebe o fim (o estado final e o próprio resultado)
+    a = await cliente(s.ws, A.token);
+    a.enviar({ tipo: 'entrar', sala: sala.codigo, deck: [] });
+    const final = await a.esperar(m => m.tipo === 'estado');
+    assert.strictEqual(final.jogo.fase, 'fim');
+    const meuFim = await a.esperar(m => m.tipo === 'fim');
+    assert.strictEqual(meuFim.premio.porDesistencia, true);
+    assert.ok(meuFim.premio.rating < 1000);
+    a.fechar(); b.fechar();
   } finally { await s.fechar(); }
+});
+
+test('queda na própria vez: o relógio da vez para, o rival vê o prazo de volta e quem volta tem um mínimo para jogar', { timeout: 20000 }, async () => {
+  const s = await subir({ tempos: { esperaReconexao: 2000, limiteVez: 600, minimoNaVolta: 400 } });
+  try {
+    const A = await conta(s, 'Nina'), B = await conta(s, 'Otto');
+    const { sala } = await s.api('POST', '/api/salas', {}, A.token);
+    const ca = await cliente(s.ws, A.token), cb = await cliente(s.ws, B.token);
+    ca.enviar({ tipo: 'entrar', sala: sala.codigo, deck: [] });
+    cb.enviar({ tipo: 'entrar', sala: sala.codigo, deck: [] });
+    const [ea, eb] = await Promise.all([ca.esperar(m => m.tipo === 'estado'), cb.esperar(m => m.tipo === 'estado')]);
+    // quem tem a vez cai (na visão de cada um, vez 0 = a própria)
+    const [daVez, outro, tokenDaVez] = ea.jogo.vez === 0 ? [ca, cb, A.token] : [cb, ca, B.token];
+    assert.strictEqual((ea.jogo.vez === 0 ? eb : ea).jogo.vez, 1);
+    daVez.ws.terminate();
+    const aviso = await outro.esperar(m => m.tipo === 'sala' && m.sala.jogadores.some(j => !j.conectado));
+    const caido = aviso.sala.jogadores.find(j => !j.conectado);
+    assert.ok(caido.volta > 1000 && caido.volta <= 2000, 'prazo de volta: ' + caido.volta);
+    // fica fora mais que o limite da vez (600 ms): sem W.O. por tempo, porque o relógio parou
+    await new Promise(r => setTimeout(r, 1100));
+    assert.ok(!outro.msgs.some(m => m.tipo === 'fim'), 'perdeu por tempo enquanto estava caído');
+    const volta = await cliente(s.ws, tokenDaVez);
+    volta.enviar({ tipo: 'entrar', sala: sala.codigo, deck: [] });
+    const est = await volta.esperar(m => m.tipo === 'estado');
+    assert.notStrictEqual(est.jogo.fase, 'fim');
+    assert.strictEqual(est.jogo.vez, 0);
+    assert.ok(est.jogo.prazoVez >= 350, 'tempo para jogar na volta: ' + est.jogo.prazoVez);
+    // o rival também recebe o estado novo (com o relógio ajustado)
+    await outro.esperar(m => m.tipo === 'estado');
+    // o pulso tem resposta (o navegador não vê os pings do servidor)
+    volta.enviar({ tipo: 'pulso' });
+    await volta.esperar(m => m.tipo === 'pulso');
+    // e o relógio volta a correr: parado de novo, agora perde por tempo
+    const fim = await outro.esperar(m => m.tipo === 'fim', 3000);
+    assert.strictEqual(fim.premio.porDesistencia, true);
+    volta.fechar(); outro.fechar();
+  } finally { await s.fechar(); }
+});
+
+test('se o banco falhar ao premiar, o fim chega assim mesmo (sem prêmio, com o motivo)', { timeout: 20000 }, async () => {
+  class BancoQueFalha extends BancoMemoria { async partidasDoParHoje() { throw new Error('banco fora do ar'); } }
+  const s = await subir({ banco: new BancoQueFalha(), tempos: { esperaReconexao: 300 } });
+  const erroOriginal = console.error; console.error = () => {};
+  try {
+    const A = await conta(s, 'Lia'), B = await conta(s, 'Rui');
+    const { sala } = await s.api('POST', '/api/salas', {}, A.token);
+    const a = await cliente(s.ws, A.token), b = await cliente(s.ws, B.token);
+    a.enviar({ tipo: 'entrar', sala: sala.codigo, deck: [] });
+    b.enviar({ tipo: 'entrar', sala: sala.codigo, deck: [] });
+    await a.esperar(m => m.tipo === 'estado');
+    a.ws.terminate();
+    const fim = await b.esperar(m => m.tipo === 'fim', 3000);
+    assert.strictEqual(fim.premio, null);
+    assert.match(fim.erro, /não conseguiu registrar/);
+    b.fechar();
+  } finally { console.error = erroOriginal; await s.fechar(); }
 });
 
 test('o mesmo par só vale rating e moedas 3 vezes por dia', { timeout: 20000 }, async () => {

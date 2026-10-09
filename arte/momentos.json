@@ -1,5 +1,5 @@
 {
-  "_leia": "Pedidos dos símbolos pintados dos 'Bons momentos' do fim da partida (shared/regras.js chama momento(j, p, símbolo, texto)). Gere com: python3 tools/arte_icones.py --pedidos arte/momentos.json [ids...]. Sem referência: vão só com o texto. Saída: arte/fonte/momentos/<id>.png e js/momentos_pintados.js (window.MOMENTOS_PINTADOS); o jogo troca o símbolo de texto pelo pintado (MOMENTO_ID em js/jogo.js). O '☕' (sem lances) usa o retrato pintado da xícara.",
+  "_leia": "Pedidos dos símbolos pintados dos 'Bons momentos' do fim da partida (shared/regras.js chama momento(j, p, símbolo, texto)). Gere com: python3 tools/arte_icones.py --pedidos arte/momentos.json [ids...]. Sem referência: vão só com o texto. Saída: arte/fonte/momentos/<id>.png e js/momentos_pintados.js (window.MOMENTOS_PINTADOS); o jogo troca o símbolo de texto pelo pintado (MOMENTO_ID em js/jogo.js). O '☕' (sem lances) usa o retrato pintado da xícara. Os de \"furos\" (a boia) têm o miolo aberto (transparente) na hora de embutir.",
   "fonte": "arte/fonte/momentos",
   "saida": "js/momentos_pintados.js",
   "variavel": "MOMENTOS_PINTADOS",
@@ -16,5 +16,8 @@
     "nota": "A single chunky eighth music note in dark cocoa with a honey highlight, meaning a five-dice chain.",
     "recorde": "A round gold medal (#f2b15e) with a rose (#ec8fa8) V-shaped ribbon on top and a small star embossed in the center, meaning a new personal record."
   },
-  "fundo_opaco": []
+  "fundo_opaco": [],
+  "furos": [
+    "salvou"
+  ]
 }
