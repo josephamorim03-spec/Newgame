@@ -6,7 +6,8 @@
 
 - **As cartas ampliam o estilo, não a força.**
   - Seis cartas vêm liberadas: Ajuste, Virar, Pressa, Coringa, Âncora e Interferência.
-  - Cinco se compram com moedas: Rerrolar, Espelho, Sobrecarga, Fundo Falso e Pedágio.
+  - Nove se compram com moedas: Rerrolar, Espelho, Sobrecarga, Fundo Falso, Pedágio e, desde a v0.11, Reverso,
+    Furto, Pausa e Lacre.
   - **Medido:** o melhor deck só com cartas grátis (Ajuste + Âncora + Interferência) vence **60,8%** contra o campo.
     **Nenhum dos 113 decks com carta comprada passa dele**; o melhor deles faz 57,5%.
 - **Moedas só vêm de vitórias,** e rendem mais quando a vitória é melhor.
@@ -67,7 +68,7 @@ Mestre do Bolso (1.300) e Grão-mestre da Mesa (1.450).
 
 | Categoria | Itens |
 |---|---|
-| **Cartas** | Rerrolar 90 · Espelho 110 · Sobrecarga 120 · Fundo Falso 140 · Pedágio 140 (total 600) |
+| **Cartas** | Rerrolar 90 · Reverso 90 · Furto 100 · Espelho 110 · Sobrecarga 120 · Pausa 130 · Fundo Falso 140 · Pedágio 140 · Lacre 140 (total 1.060) |
 | **Dados** | Marfim (grátis) · Madeira 80 · Rosa 120 · Pelúcia 220 · Dourado 450 (reluz) · Diamante 800 (reluz) · Menta (nível 3) |
 | **Ícones** | Bolinha (grátis) · Raposa 100 · Sapinho 100 · Cogumelo 140 · Xícara (nível 2) |
 | **Mesas** | Feltro sálvia (grátis) · Feltro vinho 150 · Piquenique 250 · Noite estrelada (nível 5) |

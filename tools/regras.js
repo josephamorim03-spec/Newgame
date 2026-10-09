@@ -14,7 +14,7 @@ const RAIZ = path.join(__dirname, '..');
   // partida a dois (ninguém joga sozinho no meio do teste), sem animação
   await pg.evaluate(() => {
     const st = DiceDuel.st; st.pref.liberar = true; st.pref.animacoes = false; st.deckVisto = true; st.cfg.modo = 'local';
-    st.conta.cartas = ['ajuste', 'virar', 'rerrolar', 'pressa', 'coringa', 'sobrecarga', 'espelho', 'fundo', 'ancora', 'interferencia', 'pedagio'];
+    st.conta.cartas = Regras.ORDEM.slice();
     document.getElementById('janelaDeck').hidden = true;
   });
   const cena = async (decks, montar) => {
@@ -157,6 +157,45 @@ const RAIZ = path.join(__dirname, '..');
   const fim = await pg.evaluate(() => ({ cubos: document.querySelectorAll('.cubo-rolagem').length, escondidos: document.querySelectorAll('.pega.rolando').length, valores: DiceDuel.jogo.mesa.map(d => d.v).join() }));
   confere(fim.cubos === 0 && fim.escondidos === 0, 'Rolagem: no fim não sobra cubo nem dado escondido');
   confere(fim.valores === novos.valores, 'Rolagem: a animação não muda nenhum valor (a regra decide)');
+  // 10. Cartas da v0.11, jogadas pela tela (a dois no mesmo aparelho)
+  await cena([['pausa', 'reverso', 'furto'], ['lacre', 'ajuste']], () => {
+    const j = DiceDuel.jogo; j.vez = 0; j.fase = 'pegar'; j.cor[0] = [6, 5, 3]; j.bolso = [null, 4]; j.mesa = [{ id: 9101, v: 6 }, { id: 9102, v: 1 }, { id: 9103, v: 2 }];
+  });
+  await usar('reverso');
+  let k = await J();
+  confere(k.cor[0].join() === '3,5,6' && k.vez === 0, `Reverso: a corrente virou ${k.cor[0].join()} e a vez continua`);
+  await usar('furto');
+  k = await J();
+  confere(k.bolso[0] === 4 && k.bolso[1] === null, `Furto: o 4 do Bolso do rival veio para o meu (${k.bolso.join()})`);
+  await usar('pausa');
+  k = await J();
+  confere(k.vez === 1 && k.mesa.length === 3 && k.cor[0].join() === '3,5,6', 'Pausa: a vez passou, a Mesa e a corrente ficaram como estavam');
+  // o jogador 2 arma o Lacre; o jogador 1 usa um efeito e ele não age
+  await cena([['ajuste'], ['lacre']], () => {
+    const j = DiceDuel.jogo; j.vez = 1; j.fase = 'pegar'; j.mesa = [{ id: 9201, v: 2 }, { id: 9202, v: 3 }];
+  });
+  await usar('lacre');
+  await pg.evaluate(() => { const j = DiceDuel.jogo; j.vez = 0; j.fase = 'pegar'; });
+  await pg.keyboard.press('Escape');
+  await usar('ajuste'); await dado(0);
+  if (await pg.$('[data-ajuste="1"]')) await pg.click('[data-ajuste="1"]');
+  await pg.waitForTimeout(100);
+  k = await J();
+  confere(k.mesa[0].v === 2 && k.cartas[0].ajuste === 'usada' && k.cartas[1].lacre === 'usada', `Lacre: o Ajuste foi gasto sem mudar o dado (${k.mesa[0].v})`);
+  // a Dona Coruja usa a Pausa quando qualquer dado romperia a corrente dela, e a vez volta para quem joga
+  await pg.evaluate(() => { DiceDuel.st.cfg.modo = 'bot'; DiceDuel.st.cfg.nivel = 'esperto'; });
+  await cena([[], ['pausa']], () => {
+    document.querySelectorAll('.versus').forEach(v => v.remove());
+    const j = DiceDuel.jogo; j.decks[1] = ['pausa']; j.cartas[1] = { pausa: 'pronta' }; j.intro = false;
+    j.vez = 1; j.fase = 'pegar'; j.cor[1] = [1, 3]; j.bolso[1] = 6; j.mesa = [{ id: 9301, v: 5 }, { id: 9302, v: 5 }];
+    j.pensando = false; j.token = Math.random();
+  });
+  await pg.evaluate(() => { DiceDuel.ajustar({}); DiceDuel.automato(); });
+  await pg.waitForFunction(() => DiceDuel.jogo.vez === 0, null, { timeout: 15000 }).catch(() => {});
+  k = await J();
+  confere(k.vez === 0 && k.cartas[1].pausa === 'usada' && k.cor[1].join() === '1,3', `Coruja: usou a Pausa (${k.cartas[1].pausa}) e a vez voltou (vez ${k.vez})`);
+  await pg.evaluate(() => { DiceDuel.st.cfg.modo = 'local'; DiceDuel.st.cfg.nivel = 'aprendiz'; });
+
   // 9. Toda skin rola com a própria cara: seis faces da skin, miolo da cor dela, canto igual ao do dado parado, nada sobra
   await pg.evaluate(() => { DiceDuel.st.cfg.modo = 'bot'; DiceDuel.st.conta.dados = ['marfim', 'madeira', 'rosa', 'menta', 'pelucia', 'dourado', 'diamante']; });
   await cena([[], []], () => {});

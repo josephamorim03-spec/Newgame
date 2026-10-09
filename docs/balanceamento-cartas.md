@@ -16,6 +16,9 @@
   - O melhor deck com carta nova (Coringa + Pausa + Pressa) faz 59,3% confirmado, abaixo do melhor só com
     cartas antigas (60,1%).
 - **Quatro ideias foram descartadas** (§6): Rede, Gêmeo, Convite "forte" e Pausa com disparo.
+- **O dono escolheu 4 cartas: Lacre, Pausa, Furto e Reverso** (§9). Elas entram como estão, nas metas 12 e 16.
+  - Na meta 16, o **Pedágio** (carta antiga) domina, com ou sem as novas.
+  - Ajuste adotado na v0.11: o Pedágio dá **+2 na meta 16** e continua +3 na meta 12.
 
 ## 2. Simulador × jogo (`sim/deck.py` × `shared/regras.js`)
 
@@ -385,7 +388,10 @@ Hoje: Rerrolar 90 · Espelho 110 · Sobrecarga 120 · Fundo Falso 140 · Pedági
 ## 8. Reproduzir
 
 ```
-python3 sim/decks.py                       # as 11 cartas (CONFIRMA=6000 confirma os 8 melhores)
+python3 sim/decks.py                       # as 11 cartas (CONFIRMA=6000 confirma os 8 melhores; CONFIRMA_N=10)
+NOVAS=lacre,pausa,furto,reverso META=16 JSON=/tmp/e16.json python3 sim/decks.py   # as 4 escolhidas, meta 16
+python3 sim/escolhidas.py pares|coruja|descuidado /tmp/e16.json          # pares, Dona Coruja, robô descuidado
+BAL='{"pedagio16": 2}' ...                 # o Pedágio da meta 16 (§9; já é o padrão)
 python3 sim/valor_cartas.py                # cada carta sozinha
 NOVAS=pausa,reverso,furto,convite,lacre,ampulheta python3 sim/decks.py
 NOVAS=ampulheta BALN='{"ampulheta": 4}' python3 sim/decks.py   # outro número
@@ -397,3 +403,123 @@ Tudo usa no máximo 4 processos (`PROCS=4`). As regras novas e os robôs delas e
 - se o Lacre deixa as pessoas com medo de usar efeitos (o robô não tem medo);
 - se a Ampulheta faz disparar de 3 cedo demais;
 - se o Convite é lido como "pegadinha" ou como jogada.
+
+## 9. As 4 cartas escolhidas (meta 16 e 12)
+
+Lacre, Pausa, Furto e Reverso entram com as regras e os números de §5; nada mudou nelas. O conjunto tem 15 cartas e
+402 decks válidos. A Mesa é sempre de 5 dados, como no jogo (`NA_MESA = 5`).
+
+### Os decks
+
+| | Meta 16 | Meta 12 |
+|---|---|---|
+| Faixa dos decks | 42,5% a 64,2% | 39,8% a 60,9% |
+| Acima de 58% (1.200 partidas) | 26 de 402 | 11 de 402 |
+| Média por carta | 48,1% (Interferência) a **56,7% (Pedágio)** | 47,8% (Espelho) a 54,1% (Interferência) |
+| Novas | Lacre 50,2 · Furto 49,5 · Reverso 48,9 · Pausa 48,7 | Pausa 50,2 · Lacre 49,9 · Reverso 48,5 · Furto 48,4 |
+| Top 25 | **Pedágio 24**; Ajuste 9, Coringa 9, Lacre 6, Furto 4, Reverso 3, Pausa 1 | Interferência 15, Pressa 15, Ajuste 10, Pausa 6, Lacre 3, Furto 1, Reverso 0 |
+
+**Confirmados com 6.000 partidas, meta 16** (todos têm Pedágio):
+
+| Deck | Vitória |
+|---|---|
+| Coringa + Lacre + Pedágio | 61,9% |
+| Ajuste + Fundo Falso + Pedágio | 61,9% |
+| Coringa + Pedágio + Pressa | 60,6% |
+| Fundo Falso + Furto + Pedágio | 60,0% |
+| Furto + Lacre + Pedágio | 59,9% |
+| Fundo Falso + Pedágio + Pressa | 59,5% |
+| Ajuste + Furto + Pedágio | 59,1% |
+| Coringa + Furto + Pedágio | 58,2% |
+| Ajuste + Pedágio + Reverso | 58,1% |
+| Ajuste + Pedágio + Rerrolar | 57,2% |
+
+**Confirmados com 6.000 partidas, meta 12:**
+
+| Deck | Vitória |
+|---|---|
+| Âncora + Coringa + Interferência | 59,9% |
+| Ajuste + Âncora + Coringa | 59,4% |
+| Ajuste + Âncora + Interferência | 59,2% |
+| Coringa + Interferência + Pressa | 59,1% |
+| Coringa + Pausa + Pressa | 58,5% |
+| Âncora + Interferência + Pressa | 58,4% |
+| Ajuste + Interferência + Pressa | 58,0% |
+| Ajuste + Coringa + Pausa | 57,9% |
+| Interferência + Lacre + Pressa | 56,7% |
+| Ajuste + Pausa + Pressa | 56,7% |
+
+**O Pedágio na meta 16 já dominava antes das cartas novas.** Só com as 11 cartas, na meta 16:
+- média de 57,1% e 23 dos 25 melhores decks;
+- Ajuste + Pedágio + Pressa confirma 60,8%;
+- sozinho contra deck vazio, ele vence 64,5% (61,3% na meta 12), enquanto quase todas as outras cartas perdem
+  força numa partida mais longa.
+
+Os pontos andam em degraus (1, 2, 4, 6). Na meta 16, os +3 costumam poupar um disparo inteiro, coisa que na
+meta 12 acontece menos. As cartas novas só o acompanham: Lacre + Pedágio dá +1,5 ponto de sinergia, e Furto +
+Pedágio, +1,1.
+
+### Pares
+
+A sinergia de um par é a média real dos decks com as duas cartas menos o que um modelo aditivo (deck = soma das
+cartas) prevê. Cada par aparece em 8 a 13 decks, com ruído de ~±0,5 ponto.
+
+| | Meta 16 | Meta 12 |
+|---|---|---|
+| Mais fortes | Fundo Falso + Pedágio +1,8 · Pressa + Sobrecarga +1,8 · Pausa + Rerrolar +1,7 · Ajuste + Pausa +1,6 · Lacre + Pedágio +1,5 · Pausa + Virar +1,5 · Coringa + Pausa +1,4 · Âncora + Pausa +1,3 · Pedágio + Rerrolar +1,2 · Furto + Pedágio +1,1 | Ajuste + Pausa +2,3 · Coringa + Pausa +2,1 · Ajuste + Âncora +2,0 · Pausa + Reverso +1,9 · Espelho + Pedágio +1,9 · Pausa + Rerrolar +1,8 · Âncora + Coringa +1,7 · Interferência + Pressa +1,5 · Espelho + Lacre +1,5 · Âncora + Reverso +1,5 |
+| Mais fracas | Pausa + Pedágio −5,7 · Pausa + Sobrecarga −3,1 · Âncora + Sobrecarga −3,0 · Fundo Falso + Lacre −1,7 · Âncora + Lacre −1,4 | Âncora + Pedágio −4,3 · Pausa + Pedágio −4,2 · Âncora + Sobrecarga −3,5 · Fundo Falso + Lacre −2,4 · Espelho + Pausa −1,8 |
+
+**O que os pares mostram:**
+- **Nenhuma sinergia passa de +2,3 pontos.** As mais fortes com carta nova são a Pausa com os efeitos de conserto
+  (Ajuste, Coringa, Rerrolar): a Pausa segura a corrente e o conserto a salva depois. As antigas fazem o mesmo
+  (Ajuste + Âncora +2,0).
+- **Pausa + carta ⚡ é a pior combinação** (com Pedágio −4 a −6, com Sobrecarga −3).
+  - Em parte é o estilo do robô: com a Pausa ele segura mais. Jogando com cuidado, Coringa + Pausa + Pedágio
+    sobe 1,7 ponto.
+  - Um deck ruim é escolha do jogador, não algo roubado.
+- **Trios acima de ~60% confirmados:** nenhum na meta 12 (o melhor com carta nova, Coringa + Pausa + Pressa,
+  faz 58,5%). Na meta 16, quatro decks passam, todos por causa do Pedágio.
+
+### Situação real de jogo
+
+**Contra a Dona Coruja** (deck sorteado de `DECKS_CORUJA`, como em `js/jogo.js`; 6.000 partidas por deck):
+
+| Meta | Resultados |
+|---|---|
+| 12 | Os melhores decks fazem 54,8% (Ajuste + Interferência + Pressa) e 54,4% (Interferência + Lacre + Pressa). Os decks com Pausa ficam entre 46,5% e 49,1%, porque 5 dos 9 decks dela têm Interferência ou Pedágio, que punem quem segura. |
+| 16 | Coringa + Lacre + Pedágio faz 61,2%, Furto + Lacre + Pedágio 59,9% e Coringa + Pedágio + Pressa 59,9%: de novo, o Pedágio. |
+
+**Contra quem está aprendendo:** um robô "descuidado" escolhe dado e destino ao acaso em 30% das vezes e usa um
+deck sorteado. Para cada carta, a tabela mostra quanto a média dos decks com ela sobe contra ele, em relação ao
+robô esperto.
+
+| Carta | Meta 16 | Meta 12 |
+|---|---|---|
+| Pausa | +19,0 | +15,9 |
+| Reverso | +18,5 | +15,7 |
+| Lacre | +18,2 | +15,6 |
+| Furto | +17,9 | +16,7 |
+| Antigas (da menor à maior) | +16,2 (Pedágio) a +19,6 (Interferência) | +15,2 (Pressa) a +16,6 (Âncora, Espelho) |
+
+Nenhuma carta nova pune mais quem está aprendendo do que as antigas: todas ficam dentro da faixa delas. Contra o
+descuidado, o deck médio vence 68% na meta 16 e 66% na meta 12.
+
+### Veredito e ajuste
+
+- **As 4 cartas entram como estão.**
+  - Médias de 48,4–50,2%, no meio da faixa das antigas.
+  - Não puxam nenhum deck acima do que já existia, e nenhuma pune quem está aprendendo.
+- **Ajuste mínimo, na carta antiga: Pedágio +2 na meta 16** (+3 na meta 12, como hoje). Medido na meta 16 com as
+  15 cartas:
+  - o Pedágio cai para 50,1% de média, com 8 dos 25 melhores decks;
+  - a faixa dos decks fica entre 42,4% e 58,7%, e só 2 decks passam de 58%;
+  - o melhor confirmado é Ajuste + Coringa + Pausa, com 58,5%; Coringa + Lacre + Pedágio cai para 55,2%;
+  - contra a Dona Coruja, o melhor deck faz 56,8%.
+- **Por que não +2 nas duas metas:** com +2 na meta 12, a Interferência passa a dominar (55,4% de média; Âncora +
+  Coringa + Interferência confirma 61,6%).
+- **Por que não "metade do disparo":** na meta 16, o Pedágio seguiria com 56,5% de média.
+- **No motor:** `j.pts[1 - p] += j.meta >= 16 ? 2 : 3` em `disparar`.
+  - Texto: «No próximo disparo do rival, de qualquer tamanho, você ganha 3 pontos (2 na meta 16). Se os dois
+    passarem da meta, vence quem disparou.»
+  - O verbo pode ser «+3 quando ele dispara» na meta 12 e «+2 quando ele dispara» na 16.
+  - No simulador: `BAL['pedagio16'] = 2`, igual ao jogo (v0.11).

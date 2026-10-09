@@ -51,13 +51,23 @@ Antes da partida, cada um monta um deck de **até 3 cartas**, cada uma valendo *
 | Pressa | efeito | pega 2 dados nesta vez (só com 2+ na Mesa; o 2.º é opcional) | 58,1% |
 | Coringa | efeito | o próximo dado que entra numa corrente já começada entra com qualquer frente | 56,3% |
 | Sobrecarga ⚡ | efeito | +2 no próximo disparo de 4+ | — |
+| Pausa (v0.11) | efeito | passa a vez sem pegar dado nem disparar; corrente e Bolso ficam | — |
+| Reverso (v0.11) | efeito | inverte a corrente: ela cresce pela outra ponta (2+ dados) | — |
+| Furto (v0.11) | efeito | troca os dados dos Bolsos (não é "guardar": o Fundo Falso não pega) | — |
 | Espelho | armadilha | marca à vista num dado; quem o pega recebe o dado virado e não pode guardá-lo | 53,7% (marca à vista) |
 | Fundo Falso | armadilha | o próximo dado que o rival guardar no Bolso cai (na troca, caem os dois) | 54,5% (deck à mostra) |
+| Lacre (v0.11) | armadilha | o próximo efeito do rival é gasto sem agir (blefe desvirado e Sobrecarga também) | — |
 | Âncora | armadilha | protege sua corrente de 4+: o dado que romperia é jogado fora | 58,9% |
 | Interferência ⚡ | armadilha | o próximo disparo do rival com 4+ vale −1 | 59,0% |
-| Pedágio ⚡ | armadilha | no próximo disparo do rival, você ganha +3 | — |
+| Pedágio ⚡ | armadilha | no próximo disparo do rival, você ganha +3 (**+2 na meta 16**, v0.11) | — |
 
 \* deck de 1 carta contra deck vazio; 50% = carta neutra (`sim/valor_cartas.py`).
+
+**As cartas da v0.11** (Pausa, Reverso, Furto, Lacre) foram medidas com as 15 cartas, Mesa de 5 dados, meta 12 e 16,
+em pares, contra a Dona Coruja e contra um jogador descuidado (`sim/escolhidas.py`, `docs/balanceamento-cartas.md`
+§9). Todas ficam dentro da faixa das antigas (médias de 48,4% a 50,2%) e nenhuma pune mais quem está aprendendo.
+A medição achou um problema antigo: na meta 16, o **Pedágio** dominava (24 dos 25 melhores decks; os +3 poupavam um
+disparo inteiro). Com **+2 na meta 16**, os decks ficam entre 42% e 59% e só 2 passam de 58%.
 
 ### Quando as cartas se cruzam (exceções explícitas)
 
