@@ -139,7 +139,8 @@
         "SPECIAL. Galgo, a shrewd and witty anthropomorphic greyhound seen STRAIGHT FROM THE FRONT, facing the viewer, symmetrical: long narrow muzzle seen head-on (foreshortened, the black nose at the center of the face), rose ears folded back on both sides, slate-gray short coat with a white blaze down the center of the face, narrowed amber eyes with a knowing look, a faint confident smirk, wide red martingale collar with a small gold tag. NOT in profile, NOT three-quarter view.",
         "SPECIAL. Galgo, a clever gentleman greyhound, front view facing the viewer, symmetrical: slender head, narrow muzzle pointing at the viewer, ears folded back like little rose petals, slate-gray coat, white chest and white blaze down the face, half-lidded amber eyes and one eyebrow raised, a small knowing smile, red collar with a gold tag. NOT in profile.",
         "SPECIAL. Galgo, a witty greyhound with a slate-gray coat seen from the front, looking straight at the viewer: long elegant muzzle foreshortened toward the viewer, folded-back ears, white blaze, amber eyes narrowed in amusement, confident smirk, a red bow tie instead of the collar. NOT in profile."
-      ]
+      ],
+      "texto_final": "SPECIAL. Keep this exact greyhound seen straight from the front: the long muzzle, folded ears, slate-gray coat with the white blaze, the red collar with the gold tag. Fixes: softer friendly brows (a clever, amused look, not angry); the medallion background is filled with clean white-ivory with an antique-gold rim (no dark background)."
     },
     "cacto": {
       "grupo": "retratos",
@@ -153,7 +154,8 @@
         "A cheerful little cactus character in a playful running pose, inspired by classic JRPG cactus creatures: a tall rounded green cactus body with soft vertical ribs, one arm raised up and the other bent down, two little legs mid-stride, a simple face of two black dot eyes and a small round 'o' mouth, three tiny tufts of spines on top. A small shadow of sand under its feet. No pot.",
         "A cute cactus creature striking a dynamic dance pose (arms up and down, one knee raised), smooth bright green body, simple face with two black dot eyes and an open round mouth, a tiny pink flower on its head. No pot.",
         "A small green cactus character sprinting to the side but facing the viewer, arms swinging, body slightly leaning, dot eyes and an 'o' mouth, a few spine tufts. Simple, iconic, friendly. No pot."
-      ]
+      ],
+      "texto_final": "Keep this exact running cactus character, pose and face (dot eyes, round 'o' mouth). Fixes: a softer sage green (#5f8f78 family) instead of bright green; the arms at slightly different angles than before, one more bent, so it is its own character."
     },
     "monstera": {
       "grupo": "retratos",
@@ -167,7 +169,8 @@
         "A monstera deliciosa houseplant in a terracotta pot: three large glossy heart-shaped leaves with the characteristic deep side splits and a few oval holes (fenestrations), sage and deep green, leaves fanning out. No face.",
         "A single big monstera leaf, heart-shaped with deep splits and holes, standing in a small terracotta pot with a cream band, plus one small young rolled leaf. No face.",
         "A lush monstera in a round cream ceramic pot, four split leaves of different sizes, clearly recognizable monstera fenestrations. No face."
-      ]
+      ],
+      "texto_final": "Keep this exact monstera plant and terracotta pot. Fix: the leaf holes have varied sizes and positions (not in symmetric pairs that read like little eyes); keep the deep side splits."
     },
     "catan": {
       "grupo": "retratos",
@@ -196,7 +199,8 @@
         "SPECIAL. Cavalo: a classic wooden knight chess piece as a character, polished walnut wood, carved horse head with a flowing mane, one friendly clever eye, round base. Facing the viewer at a slight angle as chess knights do. No text.",
         "SPECIAL. Cavalo: an ivory knight chess piece with a noble, witty expression, carved mane, round base with a thin gold ring, a tiny smile. No text.",
         "SPECIAL. Cavalo: a dark ebony knight chess piece with a bold confident look, carved mane highlighted in warm wood, one eye shining, round base. No text."
-      ]
+      ],
+      "texto_final": "SPECIAL. Keep this exact wooden knight chess piece character with its friendly eye, eyebrow and smile. Fixes: a thick uniform dark cocoa outline around every shape; the medallion background is filled with solid clean white-ivory (not translucent) with an antique-gold rim."
     },
     "ovelha": {
       "grupo": "retratos2",
@@ -210,7 +214,8 @@
         "A fluffy cream sheep standing on a pasture territory tile, homage to the sheep resource of hex-tile settlement board games. The whole portrait is a HEXAGON (not a circle): a pointy-topped hexagonal tile with a light-green meadow, a few tiny flowers, a thick wooden-brown hexagonal border. Friendly sheep with a dark face and dark legs, wool like a soft cloud, looking at the viewer. No logo, no text, no numbers.",
         "Head and shoulders of a friendly fluffy sheep inside a HEXAGONAL medallion (not a circle): a hexagon with a sage-green meadow background and a thick honey-wood hexagonal rim, the sheep's wool slightly overlapping the bottom edge of the hexagon. Dark face, big kind eyes, small ears sticking out. Homage to the sheep resource of hex-tile board games. No logo, no text.",
         "A cute sheep lying on a hexagonal pasture tile seen slightly from above, the tile like a board-game territory piece with a light-green grass top and a visible wooden side edge (thickness), a tiny bush beside it. HEXAGONAL shape, not circular. Dark face and legs, cloud-like cream wool. No logo, no text."
-      ]
+      ],
+      "texto_final": "Keep this exact sheep in the hexagonal pasture frame with the honey-wood rim. Fixes: eyes with dark pupils and a small cream highlight (no greenish glint); remove the stray yellow mark on the wool."
     },
     "cogumelo": {
       "grupo": "retratos2",
@@ -224,7 +229,8 @@
         "A mushroom that strongly evokes the classic red power-up mushroom of platform video games: a big round dome cap, bright coral-red with a few large white round spots (one big spot in front, two at the sides), a short wide cream stem with two simple tall black oval eyes. Friendly, iconic, front view. No text.",
         "A cute power-up style mushroom: wide red dome cap with three big white circles, short cream stem with two tall black oval eyes and a tiny smile, standing on a little tuft of grass. Front view. No text.",
         "A chunky red-capped mushroom with big white polka spots and a cream stem with two black oval eyes, slightly bouncing, a small sparkle beside it like a power-up. Front view. No text."
-      ]
+      ],
+      "texto_final": "Keep this exact red-capped mushroom with cream spots, cream stem and two tall black oval eyes. Fix: the edge of the cap closes neatly inside the silhouette (no brim line sticking out past the sides); cap a warm coral-red."
     },
     "cafu": {
       "grupo": "retratos3",
@@ -254,7 +260,8 @@
         "SPECIAL. Biscoito: a whole round chocolate-chip cookie (NOT bitten, perfectly round, no missing piece) with a humanized face drawn on it, NO hair, no hat. A lost, slightly dopey but very likable expression: big round eyes with small pupils looking a bit off to the side, eyebrows raised in mild confusion, a small open goofy smile. Golden-brown cookie with a few dark chocolate chips. No text.",
         "SPECIAL. Biscoito: a whole round chocolate-chip cookie (NOT bitten, perfectly round, no missing piece) with a humanized face drawn on it, NO hair, no hat. Goofy and sweet: one eyebrow higher than the other, big round eyes looking up as if trying to remember something, a wobbly open smile with the tip of the tongue showing. Golden cookie, chocolate chips around the face (not on the eyes). No text.",
         "SPECIAL. Biscoito: a whole round chocolate-chip cookie (NOT bitten, perfectly round, no missing piece) with a humanized face drawn on it, NO hair, no hat. Cheerfully confused: big round eyes slightly crossed, a small question-like tilt of the whole cookie, a soft open-mouth smile, rosy cheeks. Warm golden cookie with chocolate chips. No text."
-      ]
+      ],
+      "texto_final": "SPECIAL. Keep this exact cookie character and expression: eyes rolled up to one side and the tongue out in a crooked goofy smile, whole round cookie, no hair. Fixes: clean flat colors without grainy texture; all chocolate chips stay inside the cookie outline; the medallion background is filled with solid clean white-ivory and there is a single antique-gold rim (not three rings)."
     }
   }
 }

@@ -199,6 +199,39 @@ def candidatos(lote, escolhas, n, qualidade, fidelidade="high"):
     prancha(lote, rodada, list(escolhas))
 
 
+def preencher_medalhao(png_bytes, cor=(255, 250, 240)):
+    """retrato especial: o miolo do medalhão às vezes vem transparente (no fundo escuro do jogo ficaria escuro).
+    O transparente ligado à borda da imagem é o lado de fora; o que o aro cerca (e não chega à borda) é o miolo,
+    composto sobre marfim, junto com a borda suavizada dele. Aro aberto = nada muda."""
+    im = Image.open(io.BytesIO(png_bytes)).convert("RGBA")
+    w, h = im.size
+    px = im.load()
+    vazio = lambda x, y: px[x, y][3] < 200
+    fora = set()
+    pilha = [(x, y) for x in range(w) for y in (0, h - 1)] + [(x, y) for y in range(h) for x in (0, w - 1)]
+    while pilha:
+        x, y = pilha.pop()
+        if (x, y) in fora or not (0 <= x < w and 0 <= y < h) or not vazio(x, y):
+            continue
+        fora.add((x, y))
+        pilha += [(x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)]
+    miolo = {(x, y) for y in range(h) for x in range(w) if vazio(x, y) and (x, y) not in fora}
+    borda = {(x + dx, y + dy) for x, y in miolo for dx in (-2, -1, 0, 1, 2) for dy in (-2, -1, 0, 1, 2)}
+    for x, y in (miolo | borda):
+        if 0 <= x < w and 0 <= y < h and (x, y) not in fora:
+            cr, cg, cb, ca = px[x, y]
+            if ca < 255:
+                t = ca / 255
+                px[x, y] = (int(cr * t + cor[0] * (1 - t)), int(cg * t + cor[1] * (1 - t)), int(cb * t + cor[2] * (1 - t)), 255)
+    buf = io.BytesIO()
+    im.save(buf, "PNG")
+    return buf.getvalue()
+
+
+def especial(item, item_id):
+    return item["pedidos"].endswith("retratos.json") and item.get("texto", "").startswith("SPECIAL")
+
+
 def aprovar(lote, escolhas):
     feitos = set()
     for i, escolha in escolhas.items():
@@ -208,7 +241,10 @@ def aprovar(lote, escolhas):
         fonte = A.opcoes(cfg)[0]
         fonte.mkdir(parents=True, exist_ok=True)
         destino_id = item.get("id", i)
-        (fonte / f"{destino_id}.png").write_bytes(arq.read_bytes())
+        dados = arq.read_bytes()
+        if especial(item, i):           # medalhão claro e cheio (padrão dos especiais desde a revisão 1)
+            dados = preencher_medalhao(dados)
+        (fonte / f"{destino_id}.png").write_bytes(dados)
         (fonte / f"{destino_id}.json").write_text(arq.with_suffix(".json").read_text(encoding="utf-8"), encoding="utf-8")
         print(f"aprovado: {i} ← {arq.relative_to(RAIZ)} → {(fonte / destino_id).relative_to(RAIZ)}.png")
         feitos.add(item["pedidos"])
