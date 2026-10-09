@@ -22,7 +22,8 @@ const momentos = Object.entries(JSON.parse(fonte.match(/const MOMENTO_ID = (\{.*
 const linhaMomento = ([c, id]) => `<tr><th>${id}</th><td class="g"><span style="font-size:72px">${c}</span></td><td class="g">${img(window.MOMENTOS_PINTADOS[id], 96)}</td>
   <td colspan="4"><span style="font-size:18px">${c}</span>${img(window.MOMENTOS_PINTADOS[id], 28)}</td></tr>`;
 
-const svg = (d, t) => `<svg viewBox="0 0 24 24" width="${t}" height="${t}" fill="none" stroke="#c4843a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+// sem traço (a moeda é um círculo em CSS): mostra o círculo dourado do jogo
+const svg = (d, t) => d === undefined ? `<span style="display:inline-block;width:${t}px;height:${t}px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff3b0,#f2c14e 45%,#c8901c);box-shadow:inset 0 0 0 1.5px #a8740f"></span>` : `<svg viewBox="0 0 24 24" width="${t}" height="${t}" fill="none" stroke="#c4843a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
 const img = (s, t) => s ? `<img src="${s}" width="${t}" height="${t}">` : `<span class="nada" style="width:${t}px;height:${t}px"></span>`;
 const linha = id => `<tr><th>${id}</th>
   <td class="g">${svg(traco[id], 96)}</td><td class="g">${img(pintado[id], 96)}</td>
@@ -35,7 +36,7 @@ const html = `<!doctype html><html><head><style>
   h1 { font-size: 20px; margin: 0 0 10px; } thead th { text-align: center; font-size: 12px; color: #7a6560; }
 </style></head><body><h1>Ícones das cartas: traço × pintado</h1><table>
   <thead><tr><th></th><th>traço</th><th>pintado</th>${TAMANHOS.map(t => `<th>${t} px<br>traço · pintado</th>`).join('')}</tr></thead>
-  <tbody>${Object.keys(traco).map(linha).join('')}</tbody></table>
+  <tbody>${[...new Set([...Object.keys(traco), ...Object.keys(pintado)])].map(linha).join('')}</tbody></table>
   <h1 style="margin-top:24px">Bons momentos (fim da partida): texto × pintado</h1><table>
   <thead><tr><th></th><th>texto</th><th>pintado</th><th colspan="4">no jogo (18 px · 28 px)</th></tr></thead>
   <tbody>${momentos.map(linhaMomento).join('')}</tbody></table></body></html>`;

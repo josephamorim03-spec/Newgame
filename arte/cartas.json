@@ -5,10 +5,10 @@
   "variavel": "CARTAS_PINTADAS",
   "prefixo_referencia": "carta-",
   "lado": 96,
-  "estilo": "Dice Duel game card icon: a cozy flat sticker illustration of ONE single object, like a polished vector game icon. Thick uniform dark cocoa outline (#3a2a2e) around the whole silhouette and every shape, flat color fills with only one soft cel-shaded shadow tone and one small highlight per shape, no painterly brush texture, no gradients, no noise, no 3D rendering. Palette of the game: warm cream #fbf1df, ivory #fffaf0, sage green #5f8f78, wood brown #a86c45, honey #f2b15e, dark honey #c4843a, coral #e8806f, rose #ec8fa8, sky blue #6fbfd3, lavender #b8a4f0, mint #8fd6a8. VERY simple, bold, chunky silhouette with few large shapes and no small details, so it stays instantly readable at 24 pixels wide; the object fills most of the canvas, centered, straight front view. Around the dark outline, one even thin cream (#fbf1df) sticker border following the silhouette. No text, no letters, no numbers, no frame, no card, no badge background, no drop shadow on the ground, plain transparent background.",
+  "estilo": "Dice Duel game card icon: a cozy flat sticker illustration of ONE single object, like a polished vector game icon. Thick uniform dark cocoa outline (#3a2a2e) around the whole silhouette and every shape, flat color fills with only one soft cel-shaded shadow tone and one small highlight per shape, no painterly brush texture, no gradients, no noise, no 3D rendering. Palette of the game: warm cream #fbf1df, ivory #fffaf0, sage green #5f8f78, wood brown #a86c45, honey #f2b15e, dark honey #c4843a, coral #e8806f, rose #ec8fa8, sky blue #6fbfd3, lavender #b8a4f0, mint #8fd6a8. VERY simple, bold, chunky silhouette with few large shapes and no small details, so it stays instantly readable at 24 pixels wide; the object fills most of the canvas, centered, straight front view. No text, no letters, no numbers, no frame, no card, no badge background, no drop shadow on the ground, plain transparent background.",
   "referencia": "The attached line icon is the meaning and composition reference: keep the same idea and silhouette, and redraw it as a filled, colored sticker icon in the style described.",
   "itens": {
-    "ajuste": "An ivory rounded-square die face (#fffaf0) with a honey (#f2b15e) shadow side. On it, exactly two big bold dark cocoa symbols with the same thick stroke: a plus sign centered in the upper half and a minus sign centered in the lower half, both the same width, well apart from each other and from the edges, with generous even spacing, perfectly legible. Nothing else on the face.",
+    "ajuste": "An ivory rounded-square die face (#fffaf0) with a honey (#f2b15e) shadow side. On it, exactly two bold dark cocoa symbols drawn with the same thick stroke: in the upper half a perfectly symmetric plus sign (a cross whose vertical and horizontal arms have exactly the same length), and in the lower half a minus sign exactly as wide as the plus sign's horizontal bar. Both centered horizontally, the same size, well apart from each other and from the edges. Nothing else on the face.",
     "virar": "Two very thick chunky sky-blue (#6fbfd3) curved arrows chasing each other in a circle, one on top pointing right and one on the bottom pointing left, around one plain small ivory die face with a single pip in the center. Only these three shapes, big and bold, meaning the die is flipped to its opposite face.",
     "rerrolar": "One thick mint-green (#8fd6a8) circular arrow looping almost all the way around a small ivory die with one pip in the middle, meaning re-roll.",
     "pressa": "Exactly two chunky honey-yellow (#f2b15e) arrowheads (chevrons) pointing right, one right behind the other, both the same size, meaning hurry, take two. NOTHING else: no speed lines, no horizontal lines or bars in front of or behind the chevrons, no motion streaks, no sparkles.",
@@ -20,12 +20,17 @@
     "interferencia": "A very thick, chunky, filled lavender (#b8a4f0) zigzag wave shape, like a heartbeat line drawn as one fat solid ribbon (not a thin line) with the dark cocoa outline all around it and a darker lavender shadow side, meaning static that jams the rival.",
     "pedagio": "A thick round gold coin (#f2b15e with #c4843a rim) seen slightly from the side, stamped with a raised three-pip dice pattern in the middle, meaning a toll to pay.",
     "raio": "A single plain chunky honey-gold (#f2b15e) lightning bolt with a dark-honey (#c4843a) shadow side, meaning a points card.",
-    "verso": "The back of a playing card, upright, dark plum (#2e2330) with a rounded antique-gold (#e2b04a) border and one big cream (#fbf1df) question mark in the middle, meaning a hidden face-down card. The question mark is the only glyph."
+    "verso": "The back of a playing card, upright, dark plum (#2e2330) with a rounded antique-gold (#e2b04a) border and one big cream (#fbf1df) question mark in the middle, meaning a hidden face-down card. The question mark is the only glyph.",
+    "moeda": "The game's currency: one thick round gold coin seen straight from the front: honey (#f2b15e) face, a dark-honey (#c4843a) raised rim with a thin engraved inner ring, one soft shadow crescent on the lower right and one small white highlight on the upper left. The face is otherwise plain and smooth: no symbols, no dots, no holes, no pattern. It must read as a gold coin at 16 pixels. No sticker border: the dark outline is the outermost edge."
   },
   "simbolos_vetor": {
     "raio": "<path d=\"M13 2L5 13h6l-1 9 8-12h-6z\"/>",
     "verso": "<rect x=\"5\" y=\"2\" width=\"14\" height=\"20\" rx=\"2.5\"/><path d=\"M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1 .9-1 1.6V14M12 17.5v.1\"/>"
   },
   "fundo_opaco": [],
-  "fundo_opaco_texto": "Plain flat solid pure magenta background (#ff00ff) filling the whole image around the object and inside any gaps, with no shadow, no texture and no other objects. Do not use magenta or purple anywhere on the object itself."
+  "fundo_opaco_texto": "Plain flat solid pure magenta background (#ff00ff) filling the whole image around the object and inside any gaps, with no shadow, no texture and no other objects. Do not use magenta or purple anywhere on the object itself.",
+  "borda": "Around the dark outline, one even thin cream (#fbf1df) sticker border following the silhouette.",
+  "sem_borda": [
+    "moeda"
+  ]
 }

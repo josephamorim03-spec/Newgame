@@ -57,6 +57,8 @@ svg.ico { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-wi
 /* ícones pintados das cartas e símbolos (js/cartas_pintadas.js): mesmos lugares e tamanhos do traço */
 img.ico { width: 18px; height: 18px; flex: none; object-fit: contain; }
 .raio-pintado { width: 1.15em; height: 1.15em; vertical-align: -0.2em; }
+svg.ico.mini-ico { width: 1.25em; height: 1.25em; vertical-align: -0.25em; stroke-width: 2.2; }
+.moeda-pintada .moeda { background: var(--moeda-img) center / contain no-repeat; box-shadow: none; border-radius: 0; width: 1.15em; height: 1.15em; vertical-align: -0.2em; }
 .verso-pintado { width: 1.3em; height: 1.3em; vertical-align: -0.3em; margin: -2px 2px -2px -3px; }
 
 .app { max-width: 1240px; margin: 0 auto; padding: 12px 16px 28px; display: grid; gap: 12px; }

@@ -64,6 +64,8 @@ def prompt_de(cfg, id_):
         partes.append(cfg["fundo_opaco_texto"])
     else:
         partes.append(cfg["estilo"])
+    if cfg.get("borda") and id_ not in cfg.get("sem_borda", []):
+        partes.append(cfg["borda"])     # a borda de adesivo, menos nos que vão pequenos dentro de botões (a moeda)
     if texto.startswith("SPECIAL."):
         partes.append(cfg["especial"])
         texto = texto[len("SPECIAL."):].strip()

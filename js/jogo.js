@@ -12,7 +12,7 @@
     GRATIS, PRECO_CARTA, NIVEIS, PRESENTES, RATING_RIVAL, TETO_MOEDAS, BASE_MOEDAS, tituloDe, nivelDe, moedasDaVitoria } = R;
   const svg = d => `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true">${d}</svg>`;
   const ICO_CARTA = {
-    ajuste: svg('<path d="M12 4v7M8.5 7.5h7M8.5 17h7"/><rect x="3" y="3" width="18" height="18" rx="4"/>'),
+    ajuste: svg('<path d="M12 5.5v6M9 8.5h6M9 16h6"/><rect x="3" y="3" width="18" height="18" rx="4"/>'),
     virar: svg('<path d="M4 12a8 8 0 0 1 14-5.3M20 12a8 8 0 0 1-14 5.3M18 3v4h-4M6 21v-4h4"/>'),
     rerrolar: svg('<path d="M3 12a9 9 0 1 0 3-6.7M3 4v4h4"/><circle cx="12" cy="12" r="1.5"/>'),
     pressa: svg('<path d="M5 6l6 6-6 6M13 6l6 6-6 6"/>'),
@@ -30,6 +30,10 @@
   const imgPintada = (id, cls) => `<img class="${cls}" src="${pintada(id)}" alt="" aria-hidden="true" draggable="false">`;
   const RAIO = pintada('raio') ? imgPintada('raio', 'raio-pintado') : '⚡';
   const VERSO = pintada('verso') ? imgPintada('verso', 'verso-pintado') : '?';
+  // a marca do Coringa sobre o dado e na corrente: o chapéu de bobo em traço, do tamanho da letra
+  const CHAPEU = ICO_CARTA.coringa.replace('class="ico"', 'class="ico mini-ico"');
+  // a moeda pintada vale para todo <span class="moeda"> (o CSS usa a variável; sem ela, fica o círculo dourado)
+  if (pintada('moeda')) { document.documentElement.style.setProperty('--moeda-img', `url("${pintada('moeda')}")`); document.documentElement.classList.add('moeda-pintada'); }
   // os símbolos dos "Bons momentos" do fim da partida, pintados (js/momentos_pintados.js) quando existem
   const MOMENTO_ID = { '☾': 'virada', '★': 'sinfonia', '✿': 'harmonia', '✧': 'truque', '❀': 'salvou', '↺': 'esquiva', '✦': 'bloqueio', '♪': 'nota', '✪': 'recorde' };
   const srcMomento = c => (c === '☕' ? (window.RETRATOS_PINTADOS || {}).xicara : (window.MOMENTOS_PINTADOS || {})[MOMENTO_ID[c]]);
@@ -520,7 +524,7 @@
       const k = CARTAS[c];
       let e = j.cartas[p][c];
       if (e === 'armada' && !meu && c !== 'espelho') e = 'pronta';
-      const raio = k.pontos ? '<span class="raio" aria-label="carta de pontos">⚡</span>' : '';
+      const raio = k.pontos ? `<span class="raio" aria-label="carta de pontos">${RAIO}</span>` : '';
       const rotulo = e === 'armada' ? (k.tipo === 'efeito' ? 'virada' : 'armada') : '';
       html += `<button class="carta ${k.tipo} ${e}" data-carta="${c}" data-dono="${p}" aria-label="${k.nome}: ${rotulo || e}">${k.ico}<span class="cnome">${k.nome}</span>${raio}${rotulo ? `<small>${rotulo}</small>` : ''}</button>`;
     }
@@ -542,7 +546,7 @@
       if (i < cor.length) {
         const r = i > 0 ? rels(cor[i - 1], cor[i]) : [];
         const frenteCls = !fx && i === cor.length - 1 ? ' frente' : '';
-        slots += `<div class="slot${frenteCls}" data-slot="${i}">${r.length ? elo(r) : (i > 0 ? '<span class="elo r-coringa" title="Coringa">★</span>' : '')}${dadoHTML(cor[i], skinDe(p))}</div>`;
+        slots += `<div class="slot${frenteCls}" data-slot="${i}">${r.length ? elo(r) : (i > 0 ? `<span class="elo r-coringa" title="Coringa">${CHAPEU}</span>` : '')}${dadoHTML(cor[i], skinDe(p))}</div>`;
       } else if (i === cor.length && !fx) {
         const fs = facesQueEncaixam(cor);
         slots += `<div class="slot prox" title="Faces que sincronizam com a frente">${cor.length && !j.coringa[p] ? `<span class="prox-faces">${fs.join(' ')}</span>` : '<svg class="ico prox-livre" viewBox="0 0 24 24" aria-label="qualquer dado começa"><path d="M12 6v12M6 12h12"/></svg>'}</div>`;
@@ -585,7 +589,7 @@
         if (!dicas) tags = '';
         else if (!eu.length) tags = `<span class="tag inicio">Começa</span>`;
         else if (r.length) tags = `<span class="tag ${r.length > 1 ? 'duplo' : 'r-' + r[0]}">${r.map(k => `<span class="tnome">${REL[k].simb}</span><span class="tnome curta"> ${REL[k].nome}</span>`).join(' ')}</span>`;
-        else if (cabe) tags = `<span class="tag r-coringa">★<span class="tnome curta"> Coringa</span></span>`;
+        else if (cabe) tags = `<span class="tag r-coringa">${CHAPEU}<span class="tnome curta"> Coringa</span></span>`;
         else if (salvo) tags = `<span class="tag inicio">Bolso</span>`;
         else tags = `<span class="tag rompe">✕<span class="tnome curta"> Rompe</span></span>`;
         if (contra && dicas) tags = `<span class="tag previa">vira ${vv}</span>` + tags;
