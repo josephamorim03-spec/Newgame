@@ -29,7 +29,10 @@ const { criarApp } = require('./app');
     if (segredo) console.warn('SEGREDO curto demais (menos de 16 caracteres): usando o guardado no banco.');
     segredo = await banco.valorFixo('segredo', () => crypto.randomBytes(32).toString('hex'));
   }
-  const origens = (process.env.ORIGENS || '').split(',').map(s => s.trim().replace(/\/$/, '')).filter(Boolean);
+  // a página oficial (Vercel) vale mesmo sem ORIGENS: esquecer a variável na Railway não pode derrubar o online
+  // dela. ORIGENS troca a lista (ORIGENS vazia de propósito: só este endereço)
+  const PAGINA_OFICIAL = 'https://diceduel-game.vercel.app';
+  const origens = (process.env.ORIGENS === undefined ? PAGINA_OFICIAL : process.env.ORIGENS).split(',').map(s => s.trim().replace(/\/$/, '')).filter(Boolean);
   const { criarServidor, salas } = criarApp({ banco, segredo, origens, fila: process.env.FILA === '1' });
   const servidor = criarServidor();
   const porta = +process.env.PORT || 8080;
