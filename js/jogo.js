@@ -563,7 +563,7 @@
         slots += `<div class="slot${frenteCls}" data-slot="${i}">${r.length ? elo(r) : (i > 0 ? `<span class="elo r-coringa" title="Coringa">${CHAPEU}</span>` : '')}${dadoHTML(cor[i], skinDe(p))}</div>`;
       } else if (i === cor.length && !fx) {
         const fs = facesQueEncaixam(cor);
-        slots += `<div class="slot prox" title="Faces que sincronizam com a frente">${cor.length && !j.coringa[p] ? `<span class="prox-faces">${fs.join(' ')}</span>` : '<svg class="ico prox-livre" viewBox="0 0 24 24" aria-label="qualquer dado começa"><path d="M12 6v12M6 12h12"/></svg>'}</div>`;
+        slots += `<div class="slot prox" title="Faces que sincronizam com a frente">${cor.length && !j.coringa[p] ? `<span class="prox-faces n${fs.length}">${fs.map(f => `<i>${f}</i>`).join('')}</span>` : '<svg class="ico prox-livre" viewBox="0 0 24 24" aria-label="qualquer dado começa"><path d="M12 6v12M6 12h12"/></svg>'}</div>`;
       } else slots += `<div class="slot vazio"></div>`;
     }
     const pct = Math.min(100, j.pts[p] / j.meta * 100);
