@@ -3,7 +3,7 @@
 o dono escolhe, novos candidatos a partir da escolha e a aprovação final.
 
     python3 tools/arte_lote.py rascunhos arte/lotes/revisao-1.json [--so gordinho,galgo] [--seco]
-    python3 tools/arte_lote.py candidatos arte/lotes/revisao-1.json gordinho=C galgo=A [--n 3] [--qualidade medium]
+    python3 tools/arte_lote.py candidatos arte/lotes/revisao-1.json gordinho=C galgo=A [--n 3] [--qualidade medium] [--fidelidade low]
     python3 tools/arte_lote.py prancha arte/lotes/revisao-1.json r1 gordinho=CAD galgo=BEF   # só as que passaram
     python3 tools/arte_lote.py aprovar arte/lotes/revisao-1.json gordinho=r2/B cacto=r1/D
 
@@ -184,7 +184,7 @@ def localizar(lote, i, escolha):
     return arq
 
 
-def candidatos(lote, escolhas, n, qualidade):
+def candidatos(lote, escolhas, n, qualidade, fidelidade="high"):
     rodada = proxima_rodada(lote)
     tarefas = []
     for i, escolha in escolhas.items():
@@ -192,7 +192,7 @@ def candidatos(lote, escolhas, n, qualidade):
         ref = localizar(lote, i, escolha)
         texto = item.get("texto_final", item["texto"])
         for k in range(n):
-            tarefas.append((i, item, texto, "refino", ref, qualidade, pasta(lote, rodada) / i / f"{LETRAS[k]}.png", "high"))
+            tarefas.append((i, item, texto, "refino", ref, qualidade, pasta(lote, rodada) / i / f"{LETRAS[k]}.png", fidelidade))
     print(f"{len(tarefas)} candidatos em {qualidade} ({rodada})…", flush=True)
     with ThreadPoolExecutor(PARALELO) as ex:
         list(ex.map(lambda t: pintar(*t), tarefas))
@@ -231,7 +231,8 @@ def main():
     if acao == "rascunhos":
         rascunhos(lote, so, "--seco" in args)
     elif acao == "candidatos":
-        candidatos(lote, opc, n, qualidade)
+        # --fidelidade low: o refino pode mudar a estrutura (cabelo, encaixe de peças); o padrão high só acaba o desenho
+        candidatos(lote, opc, n, qualidade, args[args.index("--fidelidade") + 1] if "--fidelidade" in args else "high")
     elif acao == "prancha":     # prancha arte/lotes/x.json r1 gordinho=CAD galgo=BEF  (a peneira, só essas letras)
         rodada = args[2] if len(args) > 2 and "=" not in args[2] else "r1"
         prancha(lote, rodada, list(opc) or so or list(lote["itens"]), opc or None, "peneira" if opc else "")
