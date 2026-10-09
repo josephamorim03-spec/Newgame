@@ -27,8 +27,15 @@
     g.clearRect(0, 0, innerWidth, innerHeight);
     parts = parts.filter(p => p.vida > 0);
     for (const p of parts) {
-      p.vida -= 1; p.x += p.vx; p.y += p.vy; p.vy += p.gravidade; p.vx *= p.atrito; p.vy *= p.atrito; p.giro += p.vg;
-      const a = Math.min(1, p.vida / p.fade);
+      if (p.bez) {
+        // orbe guiado: curva de Bézier até o alvo, acelerando no fim; ao chegar, some e avisa
+        const b = p.bez, k = Math.min(1, Math.max(0, (performance.now() - b.t0) / b.dur)), e = k * k * (3 - 2 * k) * 0.4 + k * k * 0.6, u = 1 - e;
+        p.x = u * u * b.x0 + 2 * u * e * b.cx + e * e * b.x1; p.y = u * u * b.y0 + 2 * u * e * b.cy + e * e * b.y1;
+        p.vida = k >= 1 ? 0 : 99; p.giro += p.vg;
+        if (k >= 1 && b.chegou) { const f = b.chegou; b.chegou = null; f(); }
+        if (k <= 0) continue;
+      } else { p.vida -= 1; p.x += p.vx; p.y += p.vy; p.vy += p.gravidade; p.vx *= p.atrito; p.vy *= p.atrito; p.giro += p.vg; }
+      const a = p.bez ? 1 : Math.min(1, p.vida / p.fade);
       g.save(); g.globalAlpha = a; g.translate(p.x, p.y); g.rotate(p.giro); g.fillStyle = p.cor;
       if (p.forma === 'estrela') {
         g.beginPath();
@@ -78,6 +85,32 @@
     const { x, y } = alvo.nodeType ? centro(alvo) : alvo;
     soltar(Array.from({ length: n }, () => ({ x: x + sorte(-30, 30), y, vx: sorte(-0.4, 0.4), vy: sorte(-0.5, 0.2), gravidade: 0.05, atrito: 0.98,
       vida: sorte(30, 50), fade: 25, t: sorte(2, 4), cor: '#d9c3b0', forma: 'ponto', giro: 0, vg: 0 })));
+  }
+
+  // pontos que voam da corrente até o placar: um orbe por ponto; aoChegar(i) a cada um, e a promessa resolve no último
+  function orbes(deEl, paraEl, n, cor = '#ffe3a3', aoChegar = () => {}) {
+    if (!deEl || !paraEl || n <= 0) return Promise.resolve();
+    if (!cfg.particulas || !cfg.animacoes) { for (let i = 0; i < n; i++) aoChegar(i); return Promise.resolve(); }
+    const de = deEl.getBoundingClientRect(), para = centro(paraEl), agora = performance.now();
+    return new Promise(res => {
+      let chegaram = 0;
+      soltar(Array.from({ length: n }, (_, i) => {
+        const x0 = de.left + de.width * sorte(0.15, 0.85), y0 = de.top + de.height / 2;
+        const lado = x0 < para.x ? -1 : 1;
+        return { x: x0, y: y0, vx: 0, vy: 0, gravidade: 0, atrito: 1, vida: 99, fade: 1, t: sorte(9, 12), cor, forma: 'estrela', giro: 0, vg: sorte(0.1, 0.25),
+          bez: { x0, y0, x1: para.x, y1: para.y, cx: (x0 + para.x) / 2 + lado * sorte(40, 90), cy: Math.min(y0, para.y) - sorte(30, 80), t0: agora + i * 70, dur: sorte(420, 520),
+            chegou: () => { aoChegar(chegaram); if (++chegaram === n) res(); } } };
+      }));
+    });
+  }
+  // clarão macio no ponto de um disparo grande (a tela "respira" junto)
+  function clarao(alvo, forca = 1) {
+    if (!cfg.animacoes || !cfg.particulas) return;
+    const { x, y } = alvo && alvo.nodeType ? centro(alvo) : centro(null);
+    const el = document.createElement('div');
+    el.className = 'clarao'; el.style.left = x + 'px'; el.style.top = y + 'px';
+    document.body.appendChild(el);
+    el.animate([{ opacity: 0.55 * forca, transform: 'translate(-50%,-50%) scale(.4)' }, { opacity: 0, transform: 'translate(-50%,-50%) scale(1.6)' }], { duration: 420, easing: 'cubic-bezier(.2,.8,.3,1)' }).onfinish = () => el.remove();
   }
 
   // ---------- elementos que voam ----------
@@ -138,17 +171,22 @@
     el.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.18)' }, { transform: 'scale(1)' }], { duration: 380, easing: 'cubic-bezier(.3,1.6,.5,1)' });
   }
   // contagem do placar (o número sobe em vez de pular)
-  function contar(el, de, ate) {
+  // aoPasso(k) é chamado a cada número novo (o tique do placar)
+  function contar(el, de, ate, aoPasso = null) {
     if (!el) return;
     if (!cfg.animacoes || de === ate) { el.textContent = ate; return; }
-    const ini = performance.now(), dur = 520;
+    const ini = performance.now(), dur = Math.min(900, 160 + Math.abs(ate - de) * 90);
+    let ultimo = de;
     const passo = agora => {
       const k = Math.min(1, (agora - ini) / dur);
-      el.textContent = Math.round(de + (ate - de) * (1 - Math.pow(1 - k, 3)));
+      const v = Math.round(de + (ate - de) * (1 - Math.pow(1 - k, 3)));
+      el.textContent = v;
+      if (v !== ultimo && aoPasso) aoPasso(v - de);
+      ultimo = v;
       if (k < 1) requestAnimationFrame(passo);
     };
     requestAnimationFrame(passo);
   }
 
-  window.Fx = { cfg, faiscas, confete, poeira, voar, texto, chamada, tremer, pulsar, contar, centro };
+  window.Fx = { cfg, faiscas, confete, poeira, voar, texto, chamada, tremer, pulsar, contar, centro, orbes, clarao };
 })();

@@ -86,9 +86,10 @@
       while (g.proxima < g.batidas.length && g.batidas[g.proxima].t <= t) {
         const b = g.batidas[g.proxima++], id = g.ids[b.casa];
         if (!ativos.has(id) || t - b.t > 0.12) continue;
-        if (b.tipo === 1) g.som('choque', { forca: b.impulso });
-        else if (b.tipo === 0) { g.som('quique', { forca: b.impulso, primeira: !g.primeiros.has(b.casa) }); g.primeiros.add(b.casa); }
-        else g.som('aro', { forca: b.impulso });
+        const x = (b.casa - (g.ids.length - 1) / 2) * 0.3;   // no estéreo, cada dado soa do lado da sua casa
+        if (b.tipo === 1) g.som('choque', { forca: b.impulso, x });
+        else if (b.tipo === 0) { g.som('quique', { forca: b.impulso, primeira: !g.primeiros.has(b.casa), x }); g.primeiros.add(b.casa); }
+        else g.som('aro', { forca: b.impulso, x });
       }
       if (!g.ids.some(id => ativos.has(id) && ativos.get(id).grupo === g)) grupos.delete(g);
     }

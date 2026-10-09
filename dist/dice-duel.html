@@ -213,6 +213,7 @@ svg.ico.mini-ico { width: 1.25em; height: 1.25em; vertical-align: -0.25em; strok
 .pega { background: none; border: 0; padding: 9px 0 0; display: grid; justify-items: center; align-content: start; gap: 6px; cursor: pointer; position: relative; border-radius: 14px; }
 .pega .face { width: var(--d-mesa); height: var(--d-mesa); transition: transform .18s cubic-bezier(.3,1.5,.5,1); position: relative; display: block; }
 .pega:not(:disabled):hover .face { transform: translateY(-5px) rotate(-4deg); }
+.pega:not(:disabled):active .face { transform: translateY(2px) scale(.9); transition-duration: .06s; }
 .pega:not(:disabled):active .face { transform: translateY(-2px) scale(.96); }
 .pega:disabled { cursor: default; }
 .pega.nao-cabe .face { filter: saturate(.55) brightness(.82); }
@@ -238,9 +239,17 @@ svg.ico.mini-ico { width: 1.25em; height: 1.25em; vertical-align: -0.25em; strok
 @media (hover: none), (max-width: 599px) { .kbd { display: none; } }
 .ticker { font-size: 13px; color: var(--texto-suave); text-align: center; min-height: 19px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ticker .cor0 { color: #bfe8f2; } .ticker .cor1 { color: #ffd0dc; }
-.novo .face { animation: rola .65s cubic-bezier(.2,.9,.3,1.25) both; }
+.novo .face { animation: rola .6s linear both; animation-delay: calc(var(--i, 0) * 70ms); }
 .novo:nth-child(2) .face { animation-delay: .05s; } .novo:nth-child(3) .face { animation-delay: .1s; } .novo:nth-child(4) .face { animation-delay: .15s; } .novo:nth-child(5) .face { animation-delay: .2s; }
-@keyframes rola { 0% { transform: translateY(-40px) rotate(-220deg) scale(.5); opacity: 0; } 70% { transform: translateY(4px) rotate(10deg) scale(1.04); opacity: 1; } 100% { transform: none; } }
+/* cai girando, achata no feltro (45%: o som do primeiro toque), quica e assenta (78%: o segundo toque) */
+@keyframes rola {
+  0% { transform: translateY(-52px) rotate(-210deg) scale(.6); opacity: 0; animation-timing-function: cubic-bezier(.5,0,.9,.5); }
+  12% { opacity: 1; }
+  45% { transform: translateY(0) rotate(-8deg) scale(1.12, .86); animation-timing-function: cubic-bezier(.2,.6,.4,1); }
+  62% { transform: translateY(-9px) rotate(4deg) scale(.96, 1.05); animation-timing-function: cubic-bezier(.6,0,.9,.6); }
+  78% { transform: translateY(0) rotate(0) scale(1.04, .96); animation-timing-function: ease-out; }
+  100% { transform: none; opacity: 1; }
+}
 .virando .face { animation: vira .45s ease; }
 @keyframes vira { 50% { transform: rotateY(90deg) scale(.9); } }
 
@@ -405,8 +414,8 @@ button.carta:hover { transform: translateY(-2px) rotate(-1deg); }
 @keyframes rompe { 20% { transform: rotate(-8deg); } 40% { transform: rotate(6deg); } 100% { transform: translateY(16px) rotate(18deg) scale(.8); opacity: 0; } }
 
 /* sem animações: tudo para (a escolha também respeita o sistema) */
-.sem-animacoes *, .sem-animacoes *::before, .sem-animacoes *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
-@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; } }
+.sem-animacoes *, .sem-animacoes *::before, .sem-animacoes *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; animation-delay: 0s !important; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; animation-delay: 0s !important; } }
 
 /* ---------- progressão: carteira, loja, recompensas ---------- */
 .moeda { display: inline-block; width: 1em; height: 1em; border-radius: 50%; vertical-align: -0.12em; flex: none;
@@ -605,6 +614,7 @@ img.avatar { object-fit: contain; }
 .btn-link { border: 0; background: none; padding: 4px 2px; min-height: 32px; font: inherit; font-weight: 800; color: var(--tinta); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 .btn-link[hidden] { display: none; }
 
+<<<<<<< HEAD
 /* ---------- rolagem 3D dos dados (v0.10): cubos em CSS 3D numa camada sobre a Mesa (js/rolagem.js) ---------- */
 .camada-rolagem { position: fixed; inset: 0; pointer-events: none; z-index: 40; perspective: 1400px; transform-style: preserve-3d; }
 .cubo-rolagem, .sombra-rolagem { position: absolute; left: 0; top: 0; transform-style: preserve-3d; will-change: transform; }
@@ -618,6 +628,18 @@ img.avatar { object-fit: contain; }
 .pega.assentou .face > .dado { animation: assentou .16s ease-out; }
 @keyframes assentou { 0% { transform: scale(1.05, .95); } 100% { transform: none; } }
 .sem-animacoes .camada-rolagem { display: none; }
+=======
+/* ---------- gamefeel ---------- */
+/* corrente de 4 esquenta, de 5 ferve: um halo que respira (a fase continua entre os renders) */
+.corrente.quente, .corrente.fervendo { animation: aquece 1.8s ease-in-out infinite; animation-delay: var(--fase, 0ms); }
+.corrente.fervendo { animation-name: ferve; animation-duration: 1.2s; }
+@keyframes aquece { 50% { box-shadow: inset 0 3px 8px rgba(0,0,0,.35), 0 0 0 2px rgba(255,207,138,.45), 0 0 18px rgba(255,207,138,.35); } }
+@keyframes ferve { 50% { box-shadow: inset 0 3px 8px rgba(0,0,0,.35), 0 0 0 3px rgba(255,207,138,.75), 0 0 28px rgba(255,180,110,.55); } }
+/* clarão de disparo grande */
+.clarao { position: fixed; z-index: 56; pointer-events: none; width: 420px; height: 420px; border-radius: 50%; background: radial-gradient(circle, rgba(255,246,230,.95), rgba(255,207,138,.45) 35%, transparent 70%); transform: translate(-50%, -50%); mix-blend-mode: screen; }
+.sem-animacoes .corrente.quente, .sem-animacoes .corrente.fervendo { box-shadow: inset 0 3px 8px rgba(0,0,0,.35), 0 0 0 2px rgba(255,207,138,.6); }
+@media (prefers-reduced-motion: reduce) { .corrente.quente, .corrente.fervendo { animation: none; box-shadow: inset 0 3px 8px rgba(0,0,0,.35), 0 0 0 2px rgba(255,207,138,.6); } }
+>>>>>>> 037cb6a1d670cdb87ff92502e35276610fc5fd32
 
 </style>
 </head>
@@ -1659,107 +1681,234 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
 </script>
 <script>
 /* Dice Duel · som e música
- * Tudo é sintetizado com Web Audio: nenhum arquivo de áudio.
- * Intenção (cozy): madeira macia, sininhos de kalimba, acordes de piano elétrico abafado.
- * Nada assusta: até a ruptura é um "plonc" descendente, nunca um estrondo.
- * O jogo só chama Som.tocar(evento) e Som.musica.*; a lógica nunca espera o som.
+ * Tudo é sintetizado com Web Audio: nenhum arquivo de áudio (abre por file://, no HTML único e na Vercel sem
+ * pedido extra de rede). Intenção (cozy): dados de resina num feltro, kalimba, piano elétrico abafado, fita velha.
+ * Nada assusta: até a ruptura é um punhado de dados rolando para longe e duas notas descendo.
+ *
+ * A música e os efeitos dividem um relógio harmônico: cada nota de efeito (elo, disparo, sininho, contagem)
+ * sai do acorde que está tocando agora, então a corrente "canta" dentro da trilha.
+ * O jogo só chama Som.tocar(evento, dados), Som.musica.* e Som.abafar(); a lógica nunca espera o som.
  */
 (function () {
   'use strict';
   const cfg = { som: true, musica: true, volSom: 0.8, volMusica: 0.45 };
-  let ctx = null, mestre, busSom, busMusica, reverb, envioReverb;
+  let ctx = null, mestre, busSom, busMusica, duckMus, abafa, envioReverb, wow;
 
-  // escala pentatônica de dó maior (sempre soa bem, em qualquer ordem)
-  const PENTA = [0, 2, 4, 7, 9];
   const midi = n => 440 * Math.pow(2, (n - 69) / 12);
-  const notaPenta = (grau, base = 72) => midi(base + PENTA[((grau % 5) + 5) % 5] + 12 * Math.floor(grau / 5));
+  const sorte = (a, b) => a + Math.random() * (b - a);
+  const escolhe = l => l[Math.floor(Math.random() * l.length)];
 
+  // ---------- montagem ----------
+  function montar(c) {
+    ctx = c;
+    mestre = ctx.createGain(); mestre.gain.value = 0.85;
+    // limitador: os disparos grandes somam muitas vozes; nada estoura no alto-falante do celular
+    const lim = ctx.createDynamicsCompressor();
+    lim.threshold.value = -10; lim.knee.value = 6; lim.ratio.value = 12; lim.attack.value = 0.003; lim.release.value = 0.2;
+    mestre.connect(lim).connect(ctx.destination);
+    busSom = ctx.createGain(); busSom.connect(mestre);
+    // música: duck (abaixa sob os efeitos grandes) → abafa (passa-baixa quando uma janela abre) → volume
+    busMusica = ctx.createGain(); busMusica.connect(mestre);
+    abafa = ctx.createBiquadFilter(); abafa.type = 'lowpass'; abafa.frequency.value = 18000; abafa.Q.value = 0.5;
+    duckMus = ctx.createGain(); duckMus.connect(abafa).connect(busMusica);
+    // sala pequena de madeira: resposta ao impulso gerada, cauda que escurece com o tempo
+    const reverb = ctx.createConvolver();
+    const dur = 2.2, len = Math.floor(ctx.sampleRate * dur), pre = Math.floor(ctx.sampleRate * 0.012);
+    const ir = ctx.createBuffer(2, len, ctx.sampleRate);
+    for (let ch = 0; ch < 2; ch++) {
+      const d = ir.getChannelData(ch); let lp = 0;
+      for (let i = pre; i < len; i++) {
+        const k = (i - pre) / (len - pre);
+        const a = 0.55 + 0.4 * k;                       // o filtro fecha ao longo da cauda: os agudos somem antes
+        lp = lp * a + (Math.random() * 2 - 1) * (1 - a);
+        d[i] = lp * Math.pow(1 - k, 2.6) * 2.2;
+      }
+    }
+    reverb.buffer = ir;
+    const volta = ctx.createGain(); volta.gain.value = 0.32;
+    reverb.connect(volta).connect(mestre);
+    envioReverb = ctx.createGain(); envioReverb.connect(reverb);
+    // fita: um vibrato lento e raso em todas as notas da música (o "wow" do lo-fi)
+    const lfo = ctx.createOscillator(); lfo.frequency.value = 0.42;
+    wow = ctx.createGain(); wow.gain.value = 7;          // cents
+    lfo.connect(wow); lfo.start();
+    aplicarVolumes();
+  }
   function criar() {
     if (ctx) return true;
     const AC = window.AudioContext || window.webkitAudioContext;
     if (!AC) return false;
-    try { ctx = new AC(); } catch (e) { return false; }
-    mestre = ctx.createGain(); mestre.gain.value = 0.9;
-    const comp = ctx.createDynamicsCompressor();
-    comp.threshold.value = -18; comp.ratio.value = 3;
-    mestre.connect(comp).connect(ctx.destination);
-    busSom = ctx.createGain(); busSom.connect(mestre);
-    busMusica = ctx.createGain(); busMusica.connect(mestre);
-    // reverb suave: resposta ao impulso gerada (ruído com decaimento)
-    reverb = ctx.createConvolver();
-    const dur = 2.4, len = Math.floor(ctx.sampleRate * dur);
-    const ir = ctx.createBuffer(2, len, ctx.sampleRate);
-    for (let c = 0; c < 2; c++) {
-      const d = ir.getChannelData(c);
-      for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3.2);
-    }
-    reverb.buffer = ir;
-    const voltaReverb = ctx.createGain(); voltaReverb.gain.value = 0.35;
-    reverb.connect(voltaReverb).connect(mestre);
-    envioReverb = ctx.createGain(); envioReverb.gain.value = 1; envioReverb.connect(reverb);
-    aplicarVolumes();
+    try { montar(new AC({ latencyHint: 'interactive' })); } catch (e) { ctx = null; return false; }
     return true;
   }
   function aplicarVolumes() {
     if (!ctx) return;
     const t = ctx.currentTime;
     busSom.gain.setTargetAtTime(cfg.som ? cfg.volSom : 0, t, 0.05);
-    busMusica.gain.setTargetAtTime(cfg.musica ? cfg.volMusica * 0.55 : 0, t, 0.3);
+    busMusica.gain.setTargetAtTime(cfg.musica ? cfg.volMusica * 0.6 : 0, t, 0.3);
   }
-  // o navegador só libera áudio depois de um toque; o iPhone também usa "interrupted" (depois de uma ligação, por exemplo)
+  // o navegador só libera áudio depois de um toque; o iPhone também usa "interrupted" (depois de uma ligação)
   function desbloquear() {
     if (!criar()) return;
     if (ctx.state !== 'running' && ctx.state !== 'closed') ctx.resume().catch(() => {});
     if (cfg.musica) musica.iniciar();
   }
+  // música abaixa um pouco sob um efeito grande e volta sozinha
+  function duck(quanto = 0.5, volta = 0.9) {
+    if (!ctx) return;
+    const t = ctx.currentTime, g = duckMus.gain;
+    g.cancelScheduledValues(t); g.setValueAtTime(g.value, t);
+    g.linearRampToValueAtTime(1 - quanto, t + 0.04);
+    g.setTargetAtTime(1, t + 0.15, volta / 3);
+  }
+  function abafar(sim) {
+    if (!ctx) return;
+    abafa.frequency.setTargetAtTime(sim ? 650 : 18000, ctx.currentTime, sim ? 0.08 : 0.18);
+  }
+
+  // ---------- relógio harmônico ----------
+  // [baixo, voicing do piano, notas do acorde (classes, 0 = dó)]
+  const AC_ = {
+    Cmaj9: [36, [64, 67, 71, 74], [0, 4, 7, 11, 2]],
+    Am9:   [45, [60, 64, 67, 71], [9, 0, 4, 7, 11]],
+    Fmaj9: [41, [57, 60, 64, 67], [5, 9, 0, 4, 7]],
+    G69:   [43, [59, 62, 64, 69], [7, 11, 2, 4, 9]],
+    Em7:   [40, [59, 62, 64, 67], [4, 7, 11, 2]],
+    Dm9:   [38, [57, 60, 64, 65], [2, 5, 9, 0, 4]],
+    E7sus: [40, [59, 62, 64, 69], [4, 9, 11, 2]],
+    Fmaj7: [41, [57, 60, 64, 69], [5, 9, 0, 4]],
+  };
+  // cenas: começo calmo, partida com groove, reta final (alguém perto da meta) e o fim
+  const CENAS = {
+    menu:   { bpm: 66, partes: [['Cmaj9', 'Am9', 'Fmaj9', 'G69']] },
+    jogo:   { bpm: 76, partes: [['Cmaj9', 'Am9', 'Fmaj9', 'G69'], ['Fmaj9', 'Em7', 'Dm9', 'G69']] },
+    final:  { bpm: 82, partes: [['Am9', 'Fmaj9', 'Dm9', 'E7sus'], ['Am9', 'Fmaj7', 'Dm9', 'G69']] },
+    fim:    { bpm: 60, partes: [['Fmaj9', 'Cmaj9']] },
+  };
+  const PENTA = [0, 2, 4, 7, 9];
+  let acordeAgora = null;                              // o acorde que está soando (a música atualiza)
+  const classes = () => (acordeAgora ? AC_[acordeAgora][2] : PENTA);
+  // grau 0, 1, 2… sobe pelas notas do acorde a partir de 'base' (sempre consonante com a trilha)
+  function notaAcorde(grau, base = 72) {
+    const cl = classes().map(c => ((c - base) % 12 + 12) % 12).sort((a, b) => a - b);
+    const oit = Math.floor(grau / cl.length), i = ((grau % cl.length) + cl.length) % cl.length;
+    return midi(base + cl[i] + 12 * oit);
+  }
 
   // ---------- blocos de som ----------
-  function tom({ freq, tipo = 'sine', ini = 0, ataque = 0.005, dur = 0.4, ganho = 0.3, filtro = 0, reverbAmt = 0.25, destino = null, glide = 0 }) {
+  let ruidoBuf = null;
+  const ruido = () => {
+    if (!ruidoBuf) {
+      ruidoBuf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
+      const d = ruidoBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    }
+    return ruidoBuf;
+  };
+  function enviar(no, quanto) { if (quanto) { const s = ctx.createGain(); s.gain.value = quanto; no.connect(s).connect(envioReverb); } }
+  function pan(no, x) {
+    if (!x || !ctx.createStereoPanner) return no;
+    const p = ctx.createStereoPanner(); p.pan.value = Math.max(-1, Math.min(1, x)); no.connect(p); return p;
+  }
+  function tom({ freq, tipo = 'sine', ini = 0, ataque = 0.005, dur = 0.4, ganho = 0.3, filtro = 0, reverbAmt = 0.25, destino = null, glide = 0, x = 0, fita = false }) {
     if (!ctx) return;
-    const t = ctx.currentTime + ini;
+    const t = ctx.currentTime + Math.max(0, ini);
     const o = ctx.createOscillator(), g = ctx.createGain();
     o.type = tipo; o.frequency.setValueAtTime(freq, t);
     if (glide) o.frequency.exponentialRampToValueAtTime(Math.max(30, freq * glide), t + dur);
+    if (fita) wow.connect(o.detune);
     g.gain.setValueAtTime(0.0001, t);
     g.gain.exponentialRampToValueAtTime(ganho, t + ataque);
     g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
     let no = o;
     if (filtro) { const f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = filtro; o.connect(f); no = f; }
     no.connect(g);
-    const bus = destino || busSom;
-    g.connect(bus);
-    if (reverbAmt) { const s = ctx.createGain(); s.gain.value = reverbAmt; g.connect(s).connect(envioReverb); }
+    pan(g, x).connect(destino || busSom);
+    enviar(g, reverbAmt);
     o.start(t); o.stop(t + dur + 0.05);
   }
-  let ruidoBuf = null;
-  function ruido({ ini = 0, dur = 0.08, ganho = 0.2, freq = 2000, q = 1, tipo = 'bandpass', varre = 0, destino = null, reverbAmt = 0.1 }) {
+  function chiado({ ini = 0, dur = 0.08, ganho = 0.2, freq = 2000, q = 1, tipo = 'bandpass', varre = 0, destino = null, reverbAmt = 0.1, ataque = 0, x = 0 }) {
     if (!ctx) return;
-    if (!ruidoBuf) {
-      ruidoBuf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
-      const d = ruidoBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
-    }
-    const t = ctx.currentTime + ini;
-    const s = ctx.createBufferSource(); s.buffer = ruidoBuf;
+    const t = ctx.currentTime + Math.max(0, ini);
+    const s = ctx.createBufferSource(); s.buffer = ruido();
     const f = ctx.createBiquadFilter(); f.type = tipo; f.frequency.setValueAtTime(freq, t); f.Q.value = q;
     if (varre) f.frequency.exponentialRampToValueAtTime(varre, t + dur);
     const g = ctx.createGain();
-    g.gain.setValueAtTime(ganho, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    s.connect(f).connect(g).connect(destino || busSom);
-    if (reverbAmt) { const r = ctx.createGain(); r.gain.value = reverbAmt; g.connect(r).connect(envioReverb); }
+    if (ataque) { g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(ganho, t + ataque); }
+    else g.gain.setValueAtTime(ganho, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    s.connect(f).connect(g);
+    pan(g, x).connect(destino || busSom);
+    enviar(g, reverbAmt);
     s.start(t, Math.random() * 0.5); s.stop(t + dur + 0.02);
   }
-  // kalimba: seno com um parcial alto curto (o "tim" do metal)
-  function kalimba(freq, ini = 0, ganho = 0.22, destino = null) {
-    tom({ freq, tipo: 'sine', ini, dur: 0.9, ganho, reverbAmt: 0.35, destino });
-    tom({ freq: freq * 3.01, tipo: 'sine', ini, dur: 0.12, ganho: ganho * 0.25, reverbAmt: 0.2, destino });
+  // dado de resina batendo: um estalo curtíssimo que faz soar três ressonâncias do dado + o baque do feltro
+  function impacto({ ini = 0, forca = 1, brilho = 1, feltro = 1, x = 0 }) {
+    if (!ctx) return;
+    const t = ctx.currentTime + Math.max(0, ini);
+    const s = ctx.createBufferSource(); s.buffer = ruido();
+    const env = ctx.createGain();
+    env.gain.setValueAtTime(forca, t); env.gain.exponentialRampToValueAtTime(0.0001, t + 0.01);
+    s.connect(env);
+    const sai = ctx.createGain(); sai.gain.value = 2;
+    const k = sorte(0.92, 1.1) * brilho;
+    for (const [f, q, gn] of [[2150, 9, 1], [3480, 12, 0.7], [5300, 14, 0.45]]) {
+      const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = f * k; bp.Q.value = q;
+      const gg = ctx.createGain(); gg.gain.value = gn * 2.2;
+      env.connect(bp).connect(gg).connect(sai);
+    }
+    if (feltro) {
+      const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 320; lp.Q.value = 2;
+      const gg = ctx.createGain(); gg.gain.value = 2.4 * feltro;
+      env.connect(lp).connect(gg).connect(sai);
+    }
+    pan(sai, x).connect(busSom);
+    enviar(sai, 0.12);
+    s.start(t, Math.random() * 0.8); s.stop(t + 0.06);
   }
-  function madeira(ini = 0, alto = 1) {
-    ruido({ ini, dur: 0.045, ganho: 0.35, freq: 1700 * alto, q: 3 });
-    tom({ freq: 190 * alto, tipo: 'triangle', ini, dur: 0.09, ganho: 0.25, reverbAmt: 0.05 });
+  // um dado caindo e quicando: os quiques ficam mais curtos e mais fracos (bola quicando)
+  function quicar(ini, forca = 1, x = 0, quiques = 3, gap0 = 0) {
+    let t = ini, gap = gap0 || sorte(0.09, 0.12), f = forca;
+    for (let k = 0; k <= quiques; k++) {
+      impacto({ ini: t, forca: f, brilho: sorte(0.95, 1.08), feltro: k === 0 ? 1 : 0.5, x });
+      t += gap; gap *= 0.62; f *= 0.45;
+    }
   }
+  // kalimba: seno com um parcial alto curto (o "tim" da lâmina de metal)
+  function kalimba(freq, ini = 0, ganho = 0.22, destino = null, x = 0) {
+    tom({ freq, ini, dur: 1.0, ganho, reverbAmt: 0.35, destino, x, fita: !!destino });
+    tom({ freq: freq * 3.01, ini, dur: 0.1, ganho: ganho * 0.22, reverbAmt: 0.2, destino, x });
+    tom({ freq: freq * 5.4, ini, dur: 0.04, ganho: ganho * 0.08, reverbAmt: 0, destino, x });
+  }
+  // piano elétrico: FM com índice que cai rápido (o "tine" do Rhodes) e um passa-baixa morno
+  function pianoEl(freq, ini, dur, ganho, destino = busSom, brilho = 1) {
+    if (!ctx) return;
+    const t = ctx.currentTime + Math.max(0, ini);
+    const car = ctx.createOscillator(), mod = ctx.createOscillator(), mg = ctx.createGain(), g = ctx.createGain();
+    car.frequency.value = freq; mod.frequency.value = freq;
+    wow.connect(car.detune); wow.connect(mod.detune);
+    mg.gain.setValueAtTime(freq * 2.2 * brilho, t); mg.gain.exponentialRampToValueAtTime(freq * 0.25, t + 0.35);
+    mod.connect(mg).connect(car.frequency);
+    const f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 1500 + 900 * brilho;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(ganho, t + 0.012);
+    g.gain.exponentialRampToValueAtTime(ganho * 0.45, t + 0.4);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    car.connect(f).connect(g).connect(destino);
+    enviar(g, 0.3);
+    car.start(t); mod.start(t); car.stop(t + dur + 0.05); mod.stop(t + dur + 0.05);
+  }
+  // moeda: parciais inarmônicos de metal pequeno
+  function moedinha(freq, ini, ganho = 0.05) {
+    tom({ freq, ini, dur: 0.22, ganho, reverbAmt: 0.25 });
+    tom({ freq: freq * 2.76, ini, dur: 0.12, ganho: ganho * 0.5, reverbAmt: 0.2 });
+    tom({ freq: freq * 5.4, ini, dur: 0.05, ganho: ganho * 0.25, reverbAmt: 0 });
+  }
+  // papel: carta deslizando / virando
+  const papel = (ini = 0, sobe = true, ganho = 0.1) => chiado({ ini, dur: 0.16, ganho, freq: sobe ? 700 : 3200, varre: sobe ? 3600 : 800, q: 0.8, ataque: 0.02, reverbAmt: 0.08 });
 
   // ---------- efeitos (intenção de cada um ao lado) ----------
   const SONS = {
+<<<<<<< HEAD
     toque: () => tom({ freq: 1320, dur: 0.05, ganho: 0.06, reverbAmt: 0 }),                // interface: confirma o toque
     rolar: () => { for (let i = 0; i < 6; i++) madeira(i * 0.055 + Math.random() * 0.03, 0.8 + Math.random() * 0.5); }, // dados chegando à mesa
     // a rolagem 3D (js/rolagem.js): cada batida gravada soa no quadro em que acontece; força = impulso da física
@@ -1783,80 +1932,194 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
       const acorde = [60, 64, 67, 71].map(midi);
       acorde.forEach((f, k) => tom({ freq: f, tipo: 'triangle', ini: (L + 1) * 0.07, ataque: 0.04, dur: 1.4 + L * 0.15, ganho: 0.07, filtro: 2200, reverbAmt: 0.5 }));
       if (L >= 5) for (let i = 0; i < 6; i++) tom({ freq: notaPenta(10 + i, 72), ini: 0.45 + i * 0.05, dur: 0.5, ganho: 0.06, reverbAmt: 0.6 });
+=======
+    toque: () => { tom({ freq: 1500, dur: 0.04, ganho: 0.07, reverbAmt: 0 }); tom({ freq: 750, dur: 0.05, ganho: 0.05, reverbAmt: 0 }); }, // botão: clique de madeira fino
+    passar: ({ i = 0 } = {}) => tom({ freq: notaAcorde(i + 7, 72), dur: 0.08, ganho: 0.04, reverbAmt: 0.15, x: (i - 2) * 0.25 }),     // mouse por cima de um dado
+    rolar: ({ n = 5, atraso = 0.07, queda = 0.27 } = {}) => {                                       // dados chegando à mesa, cada um no seu tempo (bate com a animação .novo do CSS)
+      chiado({ dur: 0.35, ganho: 0.05, freq: 900, q: 0.6, ataque: 0.05, reverbAmt: 0 });            // a mão chacoalhando
+      for (let i = 0; i < n; i++) quicar(queda + i * atraso, sorte(0.35, 0.5), (i - (n - 1) / 2) * 0.3, 2, 0.2);
+>>>>>>> 037cb6a1d670cdb87ff92502e35276610fc5fd32
     },
-    ruptura: () => {                                                                          // perda gentil: "plonc" descendente, sem susto
-      tom({ freq: midi(67), tipo: 'triangle', dur: 0.35, ganho: 0.16, filtro: 1400, glide: 0.9 });
-      tom({ freq: midi(62), tipo: 'triangle', ini: 0.16, dur: 0.6, ganho: 0.16, filtro: 1100, glide: 0.85 });
-      ruido({ ini: 0.02, dur: 0.25, ganho: 0.06, freq: 600, tipo: 'lowpass' });
+    escolher: ({ n = 0, x = 0 } = {}) => {                                                          // escolheu um dado que sincroniza: a nota que ele vai somar, bem baixinho
+      impacto({ forca: 0.2, brilho: 1.15, feltro: 0, x });
+      tom({ freq: notaAcorde(n + 1), dur: 0.35, ganho: 0.05, reverbAmt: 0.35, x });
     },
-    salvo: () => { kalimba(notaPenta(5), 0, 0.18); kalimba(notaPenta(7), 0.09, 0.18); },      // ruptura evitada: alívio
-    carta: () => ruido({ dur: 0.22, ganho: 0.12, freq: 900, varre: 4500, q: 0.7 }),          // carta virando: papel
-    armou: () => { [84, 88, 91].forEach((n, i) => tom({ freq: midi(n), ini: i * 0.06, dur: 0.6, ganho: 0.05, reverbAmt: 0.7 })); }, // segredo guardado: brilho curto
-    revelou: () => {                                                                          // armadilha disparou: "tchã-rã" mágico, curioso
-      tom({ freq: midi(76), glide: 1.5, dur: 0.25, ganho: 0.08 });
-      [79, 83, 86, 91].forEach((n, i) => kalimba(midi(n), 0.12 + i * 0.06, 0.13));
+    perigo: ({ x = 0 } = {}) => {                                                                   // escolheu um dado que rompe: "hm-hm" grave e macio, um aviso, não uma bronca
+      impacto({ forca: 0.2, brilho: 0.8, feltro: 0.6, x });
+      tom({ freq: 196, tipo: 'triangle', dur: 0.16, ganho: 0.07, filtro: 700, reverbAmt: 0.05 });
+      tom({ freq: 185, tipo: 'triangle', ini: 0.14, dur: 0.22, ganho: 0.07, filtro: 600, reverbAmt: 0.1 });
     },
-    virar: () => ruido({ dur: 0.18, ganho: 0.1, freq: 500, varre: 2500, q: 0.8 }),
-    momento: () => { kalimba(notaPenta(8), 0, 0.14); kalimba(notaPenta(10), 0.08, 0.12); },  // "bom momento": sininho de recompensa
-    bloqueio: () => { madeira(0, 0.7); kalimba(notaPenta(4), 0.05, 0.15); },
-    vitoria: () => {                                                                          // vitória: fanfarra pequena e calorosa
-      [0, 2, 4, 5, 7].forEach((g, i) => kalimba(notaPenta(g + 2), i * 0.11, 0.22));
-      [60, 64, 67, 72].map(midi).forEach(f => tom({ freq: f, tipo: 'triangle', ini: 0.6, ataque: 0.05, dur: 2.4, ganho: 0.07, filtro: 2400, reverbAmt: 0.6 }));
+    pegar: () => { impacto({ forca: 0.8, brilho: 1.1, feltro: 0.3 }); chiado({ ini: 0.02, dur: 0.12, ganho: 0.03, freq: 1500, varre: 3000, q: 0.7 }); }, // o dado sai do feltro
+    elo: ({ n = 1 } = {}) => {                                                                       // dado assenta na corrente e soma uma nota do acorde: a corrente "canta"
+      impacto({ forca: 0.35, brilho: 1.2, feltro: 0.2 });
+      kalimba(notaAcorde(n + 1), 0.005, 0.2);
+      if (n >= 4) tom({ freq: notaAcorde(n + 1, 84), ini: 0.03, dur: 0.6, ganho: 0.035, reverbAmt: 0.6 });
     },
-    derrota: () => {                                                                          // derrota: "ah, quase", acolhedor
-      kalimba(notaPenta(5), 0, 0.16); kalimba(notaPenta(3), 0.22, 0.16); kalimba(notaPenta(2), 0.44, 0.18);
-      [57, 60, 64].map(midi).forEach(f => tom({ freq: f, tipo: 'triangle', ini: 0.5, ataque: 0.08, dur: 2, ganho: 0.06, filtro: 1500, reverbAmt: 0.6 }));
+    bolso: () => { chiado({ dur: 0.12, ganho: 0.2, freq: 380, tipo: 'lowpass', q: 1, reverbAmt: 0.02 }); tom({ freq: 330, glide: 0.6, dur: 0.12, ganho: 0.18, reverbAmt: 0.08 }); }, // guardar no bolso: "fump" de pano
+    troca: () => { tom({ freq: 420, glide: 1.5, dur: 0.1, ganho: 0.12 }); impacto({ ini: 0.05, forca: 0.25, feltro: 0 }); tom({ freq: 640, glide: 0.6, ini: 0.08, dur: 0.12, ganho: 0.12 }); },
+    disparo: ({ L = 3 } = {}) => {                                                                  // recompensa: a corrente sobe em arpejo e abre num acorde, maior quanto maior a corrente
+      duck(0.25 + L * 0.06, 0.6 + L * 0.15);
+      chiado({ dur: 0.28 + L * 0.03, ganho: 0.05 + L * 0.008, freq: 500, varre: 6000, q: 1.2, ataque: 0.2, reverbAmt: 0.3 }); // "fuuu" subindo
+      const passo = 0.055;
+      for (let i = 0; i < L + 1; i++) kalimba(notaAcorde(i + 1), 0.08 + i * passo, 0.18, null, (i / L - 0.5) * 0.6);
+      const fim = 0.08 + (L + 1) * passo;
+      [0, 1, 2, 3].forEach(k => pianoEl(notaAcorde(k, 60), fim + k * 0.012, 1.5 + L * 0.2, 0.06, busSom, 0.8));
+      tom({ freq: notaAcorde(0, 48), ini: fim, dur: 1.2, ganho: 0.1, reverbAmt: 0.1 });
+      if (L >= 5) for (let i = 0; i < 8; i++) tom({ freq: notaAcorde(8 + i, 84), ini: fim + 0.1 + i * 0.045, dur: 0.6, ganho: 0.035, reverbAmt: 0.7, x: sorte(-0.6, 0.6) });
+      if (L >= 6) chiado({ ini: fim, dur: 1.4, ganho: 0.03, freq: 9000, tipo: 'highpass', ataque: 0.05, reverbAmt: 0.5 });
     },
-    moeda: ({ n = 1 } = {}) => {                                                              // moedas entrando: tilintar curto, um por punhado
-      for (let i = 0; i < Math.min(8, n); i++) { tom({ freq: 1975 + (i % 3) * 220, ini: i * 0.07, dur: 0.18, ganho: 0.06, reverbAmt: 0.3 }); tom({ freq: 2637, ini: i * 0.07 + 0.02, dur: 0.1, ganho: 0.03, reverbAmt: 0.2 }); }
+    tique: ({ k = 0 } = {}) => { tom({ freq: notaAcorde(k + 2, 84), dur: 0.09, ganho: 0.1, reverbAmt: 0.2 }); impacto({ forca: 0.08, brilho: 1.4, feltro: 0 }); }, // cada ponto contado no placar
+    ruptura: ({ L = 3 } = {}) => {                                                                   // perda gentil: os dados se espalham pelo feltro e duas notas descem
+      duck(0.3, 0.8);
+      for (let i = 0; i < Math.min(6, L + 1); i++) quicar(0.04 + i * sorte(0.04, 0.07), sorte(0.25, 0.4), sorte(-0.6, 0.6), 2);
+      tom({ freq: notaAcorde(4, 60), tipo: 'triangle', ini: 0.05, dur: 0.4, ganho: 0.11, filtro: 1300, glide: 0.97 });
+      tom({ freq: notaAcorde(2, 60), tipo: 'triangle', ini: 0.25, dur: 0.7, ganho: 0.11, filtro: 1000, glide: 0.94 });
+      chiado({ ini: 0.02, dur: 0.3, ganho: 0.05, freq: 500, tipo: 'lowpass' });
     },
-    compra: () => { [0, 2, 4, 7].forEach((g, i) => kalimba(notaPenta(g + 5), i * 0.08, 0.18)); },  // compra feita: presente aberto
-    nivel: () => { [0, 1, 2, 4, 5, 7].forEach((g, i) => kalimba(notaPenta(g + 3), i * 0.09, 0.17)); },  // subiu de nível: escadinha alegre
-    falaRival: () => { [0, 1, 2].forEach(i => tom({ freq: 520 + Math.random() * 260, ini: i * 0.07, dur: 0.06, ganho: 0.04, tipo: 'triangle', reverbAmt: 0.05 })); }, // "blá-blá" fofinho
+    salvo: () => { kalimba(notaAcorde(3), 0, 0.16); kalimba(notaAcorde(5), 0.09, 0.16); kalimba(notaAcorde(7), 0.18, 0.12); }, // ruptura evitada: alívio
+    carta: () => { papel(0, true, 0.11); impacto({ ini: 0.12, forca: 0.2, brilho: 0.6, feltro: 0.8 }); },   // carta saindo da mão e batendo na mesa
+    armou: () => { papel(0, false, 0.08); [9, 10, 12].forEach((g, i) => tom({ freq: notaAcorde(g, 84), ini: 0.1 + i * 0.06, dur: 0.6, ganho: 0.04, reverbAmt: 0.7 })); }, // segredo guardado: brilho curto
+    revelou: () => {                                                                                // armadilha disparou: "tchã-rã" mágico, curioso
+      duck(0.35, 0.8);
+      chiado({ dur: 0.3, ganho: 0.06, freq: 2000, varre: 8000, q: 2, ataque: 0.15, reverbAmt: 0.4 });
+      tom({ freq: notaAcorde(0, 48), ini: 0.2, dur: 0.8, ganho: 0.1, reverbAmt: 0.3 });
+      [0, 1, 2, 3, 5].forEach((g, i) => kalimba(notaAcorde(g + 4), 0.2 + i * 0.05, 0.12, null, (i - 2) * 0.25));
+    },
+    virar: () => { papel(0, true, 0.08); papel(0.1, false, 0.07); impacto({ ini: 0.2, forca: 0.25, feltro: 0.5 }); },
+    momento: () => { kalimba(notaAcorde(7), 0, 0.13); kalimba(notaAcorde(9), 0.08, 0.11); },        // "bom momento": sininho de recompensa
+    vez: () => { tom({ freq: notaAcorde(5), dur: 0.5, ganho: 0.045, reverbAmt: 0.5 }); tom({ freq: notaAcorde(7), ini: 0.1, dur: 0.6, ganho: 0.04, reverbAmt: 0.5 }); }, // sua vez: aviso discreto
+    bloqueio: () => { impacto({ forca: 0.4, brilho: 0.85 }); kalimba(notaAcorde(4), 0.05, 0.14); },
+    abrir: () => { papel(0, true, 0.1); abafar(true); },                                           // janela abre: papel e a música vai para o fundo
+    fechar: () => { papel(0, false, 0.08); abafar(false); },
+    vitoria: () => {                                                                                // vitória: fanfarra pequena e calorosa, na tonalidade
+      duck(0.8, 3);
+      acordeAgora = 'Cmaj9';
+      [0, 1, 2, 3, 4, 5, 7].forEach((g, i) => kalimba(notaAcorde(g + 2), i * 0.09, 0.2, null, (i - 3) * 0.2));
+      [0, 1, 2, 3, 4].forEach(k => pianoEl(notaAcorde(k, 60), 0.65 + k * 0.03, 3, 0.06, busSom, 1));
+      tom({ freq: midi(36), ini: 0.65, dur: 2.5, ganho: 0.12, reverbAmt: 0.1 });
+      for (let i = 0; i < 10; i++) tom({ freq: notaAcorde(10 + i, 84), ini: 0.8 + i * 0.06, dur: 0.7, ganho: 0.03, reverbAmt: 0.7, x: sorte(-0.7, 0.7) });
+    },
+    derrota: () => {                                                                                // derrota: "ah, quase", acolhedor
+      duck(0.8, 3);
+      acordeAgora = 'Fmaj9';
+      kalimba(notaAcorde(6), 0, 0.15); kalimba(notaAcorde(4), 0.22, 0.15); kalimba(notaAcorde(2), 0.44, 0.17);
+      [0, 1, 2, 3].forEach(k => pianoEl(notaAcorde(k, 57), 0.6 + k * 0.04, 2.6, 0.055, busSom, 0.6));
+      tom({ freq: midi(41), ini: 0.6, dur: 2.2, ganho: 0.1, reverbAmt: 0.1 });
+    },
+    moeda: ({ n = 1 } = {}) => { for (let i = 0; i < Math.min(10, n); i++) moedinha(1700 * Math.pow(1.06, i), i * 0.065, 0.05); }, // moedas: tilintar que sobe
+    compra: () => { [0, 1, 2, 4].forEach((g, i) => kalimba(notaAcorde(g + 5), i * 0.08, 0.16)); moedinha(2100, 0, 0.04); },  // compra feita: presente aberto
+    nivel: () => { [0, 1, 2, 3, 4, 5, 7].forEach((g, i) => kalimba(notaAcorde(g + 3), i * 0.08, 0.15)); },  // subiu de nível: escadinha alegre
+    falaRival: ({ voz = 'diana' } = {}) => {                                                        // "blá-blá" com a voz do rival: a gata sobe no fim ("miau?"), a coruja é grave e redonda
+      const coruja = voz === 'coruja', base = coruja ? 300 : 560;
+      const n = 2 + Math.floor(Math.random() * 3);
+      for (let i = 0; i < n; i++) {
+        const f = base * sorte(0.85, 1.25), ini = i * sorte(0.07, 0.1);
+        tom({ freq: f, tipo: 'triangle', ini, dur: 0.07, ganho: 0.035, filtro: coruja ? 900 : 2200, glide: i === n - 1 && !coruja ? 1.35 : coruja ? 0.9 : 1.05, reverbAmt: 0.05 });
+      }
+    },
   };
+  const ultimo = {};
   function tocar(nome, dados) {
     if (!cfg.som || !ctx || ctx.state !== 'running') return;
-    const f = SONS[nome]; if (f) try { f(dados); } catch (e) { /* som nunca derruba o jogo */ }
+    const f = SONS[nome]; if (!f) return;
+    // o mesmo som duas vezes no mesmo instante vira um só (evita "metralhadora" e estouro)
+    const agora = ctx.currentTime;
+    if (nome !== 'tique' && ultimo[nome] && agora - ultimo[nome] < 0.03) return;
+    ultimo[nome] = agora;
+    try { f(dados || {}); } catch (e) { /* som nunca derruba o jogo */ }
   }
 
-  // ---------- música: lo-fi aconchegante gerada na hora ----------
-  // Cmaj7 – Am7 – Fmaj7 – G6, 72 bpm. Camadas: piano elétrico abafado, baixo, kalimba que passeia, chiado de vinil.
-  const ACORDES = [[48, [60, 64, 67, 71]], [45, [57, 60, 64, 67]], [41, [57, 60, 64, 65]], [43, [55, 59, 62, 64]]];
+  // ---------- música: lo-fi gerado na hora, em cenas ----------
+  // Camadas que entram com a intensidade da partida: piano elétrico e baixo sempre; chimbal a partir de 0,3;
+  // bumbo e vassourinha a partir de 0,5; contracanto e pad na reta final. A kalimba toca motivos de 1 compasso
+  // que se repetem com variação (soa composto, não aleatório) e se encaixam em cada acorde.
   const musica = (() => {
-    let tocando = false, timer = null, prox = 0, passo = 0, intens = 0.3, grauMel = 4;
-    const BPM = 72, colcheia = 60 / BPM / 2;
+    let tocando = false, timer = null, prox = 0, passo = 0, intens = 0.2, cena = 'jogo', proxCena = null;
+    let motivo = [], parte = 0;
+    const novoMotivo = () => {
+      const dens = cena === 'final' ? 0.55 : cena === 'menu' || cena === 'fim' ? 0.25 : 0.4;
+      let g = 4 + Math.floor(Math.random() * 3);
+      motivo = Array.from({ length: 8 }, (_, i) => {
+        if (i === 0 || Math.random() > dens) return null;
+        g = Math.max(2, Math.min(10, g + escolhe([-2, -1, -1, 1, 1, 2])));
+        return g;
+      });
+    };
+    const colcheia = () => 60 / CENAS[cena].bpm / 2;
     function agendar() {
       if (!ctx) return;
-      while (prox < ctx.currentTime + 0.4) {
-        const compasso = Math.floor(passo / 8) % ACORDES.length, noCompasso = passo % 8;
-        const [baixo, acorde] = ACORDES[compasso];
-        const ini = prox - ctx.currentTime;
-        if (noCompasso === 0) {
-          acorde.forEach((n, i) => tom({ freq: midi(n), tipo: 'triangle', ini: ini + i * 0.012, ataque: 0.03, dur: colcheia * 7.5, ganho: 0.045, filtro: 1200 + intens * 900, reverbAmt: 0.45, destino: busMusica }));
-          tom({ freq: midi(baixo), tipo: 'sine', ini, ataque: 0.02, dur: colcheia * 3.6, ganho: 0.12, reverbAmt: 0.05, destino: busMusica });
+      while (prox < ctx.currentTime + 0.35) {
+        const c = colcheia(), noCompasso = passo % 8, compasso = Math.floor(passo / 8);
+        if (noCompasso === 0 && proxCena) { cena = proxCena; proxCena = null; parte = 0; novoMotivo(); }
+        const partes = CENAS[cena].partes, prog = partes[parte % partes.length];
+        const nome = prog[compasso % prog.length];
+        if (noCompasso === 0 && compasso % prog.length === 0 && compasso > 0) { parte++; if (Math.random() < 0.6) novoMotivo(); }
+        const [baixo, voicing] = AC_[nome];
+        const swing = noCompasso % 2 === 1 ? c * 0.16 : 0;
+        const ini = prox - ctx.currentTime + swing;
+        if (noCompasso === 0) setTimeout(() => { acordeAgora = nome; }, Math.max(0, (prox - ctx.currentTime) * 1000));
+        const D = duckMus, grooveOn = cena === 'jogo' || cena === 'final';
+        // piano elétrico: acorde cheio no 1, "stab" curto no contratempo do 2 (groove)
+        if (noCompasso === 0) voicing.forEach((n, i) => pianoEl(midi(n), ini + i * 0.014, c * (grooveOn ? 5 : 7.6), 0.032, D, 0.5 + intens * 0.4));
+        if (grooveOn && noCompasso === 3 && intens > 0.15) voicing.slice(1).forEach((n, i) => pianoEl(midi(n), ini + i * 0.01, c * 1.4, 0.02, D, 0.4));
+        if (grooveOn && noCompasso === 6 && Math.random() < 0.5) pianoEl(midi(voicing[3] + 12), ini, c * 1.5, 0.014, D, 0.3);
+        // baixo macio (redondo, quase sem agudo)
+        if (noCompasso === 0) tom({ freq: midi(baixo), ini, ataque: 0.02, dur: c * 3.4, ganho: 0.13, filtro: 400, reverbAmt: 0.03, destino: D, fita: true });
+        if (grooveOn && noCompasso === 3) tom({ freq: midi(baixo + 12), ini, ataque: 0.01, dur: c * 0.8, ganho: 0.06, filtro: 500, reverbAmt: 0.02, destino: D });
+        if (noCompasso === 4) tom({ freq: midi(baixo + 7), ini, ataque: 0.02, dur: c * 2.6, ganho: 0.085, filtro: 400, reverbAmt: 0.03, destino: D, fita: true });
+        if (grooveOn && noCompasso === 7 && Math.random() < 0.6) {            // nota de passagem até o próximo baixo
+          const seg = AC_[prog[(compasso + 1) % prog.length]][0];
+          tom({ freq: midi(seg + escolhe([-1, 2])), ini, ataque: 0.01, dur: c * 0.9, ganho: 0.05, filtro: 450, reverbAmt: 0.02, destino: D });
         }
-        if (noCompasso === 4) tom({ freq: midi(baixo + 7), tipo: 'sine', ini, ataque: 0.02, dur: colcheia * 3, ganho: 0.08, reverbAmt: 0.05, destino: busMusica });
-        // kalimba passeando pela pentatônica (mais notas quando a partida esquenta)
-        if (Math.random() < 0.22 + intens * 0.25 && noCompasso !== 0) {
-          grauMel = Math.max(2, Math.min(11, grauMel + [-2, -1, 1, 1, 2][Math.floor(Math.random() * 5)]));
-          kalimba(notaPenta(grauMel, 60), ini, 0.07 + intens * 0.03, busMusica);
+        // bateria lo-fi
+        if (grooveOn) {
+          if (intens > 0.3) chiado({ ini, dur: 0.035, ganho: noCompasso % 2 ? 0.022 : 0.012, freq: 8000, tipo: 'highpass', destino: D, reverbAmt: 0 });
+          if (intens > 0.5) {
+            if (noCompasso === 0 || noCompasso === 5 || (cena === 'final' && noCompasso === 3)) tom({ freq: 120, glide: 0.38, ini, ataque: 0.003, dur: 0.22, ganho: 0.22, destino: D, reverbAmt: 0 });
+            if (noCompasso === 2 || noCompasso === 6) { chiado({ ini, dur: 0.16, ganho: 0.05, freq: 1800, q: 0.6, destino: D, reverbAmt: 0.15 }); tom({ freq: 190, ini, dur: 0.06, ganho: 0.03, tipo: 'triangle', destino: D, reverbAmt: 0 }); }
+          }
         }
-        // escovinha suave nos contratempos, só quando a partida esquenta
-        if (intens > 0.55 && noCompasso % 2 === 1) ruido({ ini, dur: 0.05, ganho: 0.025, freq: 7000, tipo: 'highpass', destino: busMusica, reverbAmt: 0 });
+        // kalimba: o motivo do compasso, em notas deste acorde (às vezes uma nota muda)
+        const g = motivo[noCompasso];
+        if (g != null) {
+          const gg = Math.random() < 0.15 ? g + escolhe([-1, 1]) : g;
+          const save = acordeAgora; acordeAgora = nome;
+          kalimba(notaAcorde(gg, 60), ini, 0.06 + intens * 0.025, D, sorte(-0.3, 0.3));
+          acordeAgora = save;
+        }
+        // reta final: contracanto agudo e pad que respira
+        if (cena === 'final' && noCompasso === 0) {
+          const save = acordeAgora; acordeAgora = nome;
+          tom({ freq: notaAcorde(2 + (compasso % 3), 72), tipo: 'triangle', ini: ini + c * 2, ataque: 0.15, dur: c * 4, ganho: 0.025, filtro: 1800, reverbAmt: 0.5, destino: D, fita: true });
+          voicing.forEach(n => tom({ freq: midi(n), tipo: 'sawtooth', ini, ataque: c * 2, dur: c * 8, ganho: 0.008, filtro: 900, reverbAmt: 0.4, destino: D, fita: true }));
+          acordeAgora = save;
+        }
+        // fim e menu: pad lento no lugar da bateria
+        if ((cena === 'fim' || cena === 'menu') && noCompasso === 0)
+          voicing.forEach(n => tom({ freq: midi(n), tipo: 'triangle', ini, ataque: c * 2.5, dur: c * 8, ganho: 0.016, filtro: 1100, reverbAmt: 0.5, destino: D, fita: true }));
         // chiado de vinil
-        if (Math.random() < 0.3) ruido({ ini: ini + Math.random() * colcheia, dur: 0.012, ganho: 0.02, freq: 3000, q: 0.5, destino: busMusica, reverbAmt: 0 });
-        prox += colcheia; passo++;
+        if (Math.random() < 0.35) chiado({ ini: ini + Math.random() * c, dur: 0.01, ganho: 0.018, freq: 3000, q: 0.5, destino: D, reverbAmt: 0 });
+        prox += c; passo++;
       }
     }
     return {
       iniciar() {
         if (tocando || !ctx || !cfg.musica) return;
-        tocando = true; prox = ctx.currentTime + 0.1; passo = 0;
-        timer = setInterval(agendar, 120);
+        tocando = true; prox = ctx.currentTime + 0.1; passo = 0; parte = 0; novoMotivo();
+        timer = setInterval(agendar, 100);
       },
-      parar() { tocando = false; clearInterval(timer); timer = null; },
-      intensidade(x) { intens = Math.max(0, Math.min(1, x)); },
+      parar() { tocando = false; clearInterval(timer); timer = null; acordeAgora = null; },
+      // 0 a 1: quão perto da meta está quem vai na frente
+      intensidade(x) {
+        intens = Math.max(0, Math.min(1, x));
+        const atual = proxCena || cena;                  // só alterna entre partida e reta final; o fim e o menu ficam
+        if (atual === 'jogo' && intens >= 0.75) this.cena('final');
+        else if (atual === 'final' && intens < 0.6) this.cena('jogo');
+      },
+      // troca de cena no começo do próximo compasso (nunca no meio de uma frase)
+      cena(nome) { if (CENAS[nome] && nome !== (proxCena || cena)) { if (!tocando) cena = nome; else proxCena = nome; } },
       get tocando() { return tocando; },
+      get cenaAtual() { return proxCena || cena; },
     };
   })();
 
@@ -1873,7 +2136,27 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     if (document.hidden) ctx.suspend(); else if (cfg.som || cfg.musica) ctx.resume();
   });
 
-  window.Som = { cfg, desbloquear, tocar, musica, configurar };
+  // para testes: toca um efeito num contexto offline e devolve o pico e o RMS (tools/fumaca.js confere que nada estoura)
+  async function medir(nome, dados = {}, dur = 3) {
+    const grafo = { ctx, mestre, busSom, busMusica, duckMus, abafa, envioReverb, wow, ruidoBuf, acordeAgora }, salvoCfg = { ...cfg };
+    const off = new OfflineAudioContext(2, Math.floor(44100 * dur), 44100);
+    ruidoBuf = null;
+    try {
+      montar(off); cfg.som = true; busSom.gain.value = cfg.volSom;
+      SONS[nome](dados);
+      const buf = await off.startRendering();
+      let pico = 0, soma = 0, n = 0;
+      for (let ch = 0; ch < buf.numberOfChannels; ch++) {
+        const d = buf.getChannelData(ch);
+        for (let i = 0; i < d.length; i++) { const a = Math.abs(d[i]); if (a > pico) pico = a; soma += d[i] * d[i]; n++; }
+      }
+      return { pico, rms: Math.sqrt(soma / n) };
+    } finally {
+      ({ ctx, mestre, busSom, busMusica, duckMus, abafa, envioReverb, wow, ruidoBuf, acordeAgora } = grafo); Object.assign(cfg, salvoCfg);
+    }
+  }
+
+  window.Som = { cfg, desbloquear, tocar, musica, configurar, abafar, medir, sons: Object.keys(SONS) };
 })();
 
 </script>
@@ -1907,8 +2190,15 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     g.clearRect(0, 0, innerWidth, innerHeight);
     parts = parts.filter(p => p.vida > 0);
     for (const p of parts) {
-      p.vida -= 1; p.x += p.vx; p.y += p.vy; p.vy += p.gravidade; p.vx *= p.atrito; p.vy *= p.atrito; p.giro += p.vg;
-      const a = Math.min(1, p.vida / p.fade);
+      if (p.bez) {
+        // orbe guiado: curva de Bézier até o alvo, acelerando no fim; ao chegar, some e avisa
+        const b = p.bez, k = Math.min(1, Math.max(0, (performance.now() - b.t0) / b.dur)), e = k * k * (3 - 2 * k) * 0.4 + k * k * 0.6, u = 1 - e;
+        p.x = u * u * b.x0 + 2 * u * e * b.cx + e * e * b.x1; p.y = u * u * b.y0 + 2 * u * e * b.cy + e * e * b.y1;
+        p.vida = k >= 1 ? 0 : 99; p.giro += p.vg;
+        if (k >= 1 && b.chegou) { const f = b.chegou; b.chegou = null; f(); }
+        if (k <= 0) continue;
+      } else { p.vida -= 1; p.x += p.vx; p.y += p.vy; p.vy += p.gravidade; p.vx *= p.atrito; p.vy *= p.atrito; p.giro += p.vg; }
+      const a = p.bez ? 1 : Math.min(1, p.vida / p.fade);
       g.save(); g.globalAlpha = a; g.translate(p.x, p.y); g.rotate(p.giro); g.fillStyle = p.cor;
       if (p.forma === 'estrela') {
         g.beginPath();
@@ -1958,6 +2248,32 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     const { x, y } = alvo.nodeType ? centro(alvo) : alvo;
     soltar(Array.from({ length: n }, () => ({ x: x + sorte(-30, 30), y, vx: sorte(-0.4, 0.4), vy: sorte(-0.5, 0.2), gravidade: 0.05, atrito: 0.98,
       vida: sorte(30, 50), fade: 25, t: sorte(2, 4), cor: '#d9c3b0', forma: 'ponto', giro: 0, vg: 0 })));
+  }
+
+  // pontos que voam da corrente até o placar: um orbe por ponto; aoChegar(i) a cada um, e a promessa resolve no último
+  function orbes(deEl, paraEl, n, cor = '#ffe3a3', aoChegar = () => {}) {
+    if (!deEl || !paraEl || n <= 0) return Promise.resolve();
+    if (!cfg.particulas || !cfg.animacoes) { for (let i = 0; i < n; i++) aoChegar(i); return Promise.resolve(); }
+    const de = deEl.getBoundingClientRect(), para = centro(paraEl), agora = performance.now();
+    return new Promise(res => {
+      let chegaram = 0;
+      soltar(Array.from({ length: n }, (_, i) => {
+        const x0 = de.left + de.width * sorte(0.15, 0.85), y0 = de.top + de.height / 2;
+        const lado = x0 < para.x ? -1 : 1;
+        return { x: x0, y: y0, vx: 0, vy: 0, gravidade: 0, atrito: 1, vida: 99, fade: 1, t: sorte(9, 12), cor, forma: 'estrela', giro: 0, vg: sorte(0.1, 0.25),
+          bez: { x0, y0, x1: para.x, y1: para.y, cx: (x0 + para.x) / 2 + lado * sorte(40, 90), cy: Math.min(y0, para.y) - sorte(30, 80), t0: agora + i * 70, dur: sorte(420, 520),
+            chegou: () => { aoChegar(chegaram); if (++chegaram === n) res(); } } };
+      }));
+    });
+  }
+  // clarão macio no ponto de um disparo grande (a tela "respira" junto)
+  function clarao(alvo, forca = 1) {
+    if (!cfg.animacoes || !cfg.particulas) return;
+    const { x, y } = alvo && alvo.nodeType ? centro(alvo) : centro(null);
+    const el = document.createElement('div');
+    el.className = 'clarao'; el.style.left = x + 'px'; el.style.top = y + 'px';
+    document.body.appendChild(el);
+    el.animate([{ opacity: 0.55 * forca, transform: 'translate(-50%,-50%) scale(.4)' }, { opacity: 0, transform: 'translate(-50%,-50%) scale(1.6)' }], { duration: 420, easing: 'cubic-bezier(.2,.8,.3,1)' }).onfinish = () => el.remove();
   }
 
   // ---------- elementos que voam ----------
@@ -2018,19 +2334,24 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     el.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.18)' }, { transform: 'scale(1)' }], { duration: 380, easing: 'cubic-bezier(.3,1.6,.5,1)' });
   }
   // contagem do placar (o número sobe em vez de pular)
-  function contar(el, de, ate) {
+  // aoPasso(k) é chamado a cada número novo (o tique do placar)
+  function contar(el, de, ate, aoPasso = null) {
     if (!el) return;
     if (!cfg.animacoes || de === ate) { el.textContent = ate; return; }
-    const ini = performance.now(), dur = 520;
+    const ini = performance.now(), dur = Math.min(900, 160 + Math.abs(ate - de) * 90);
+    let ultimo = de;
     const passo = agora => {
       const k = Math.min(1, (agora - ini) / dur);
-      el.textContent = Math.round(de + (ate - de) * (1 - Math.pow(1 - k, 3)));
+      const v = Math.round(de + (ate - de) * (1 - Math.pow(1 - k, 3)));
+      el.textContent = v;
+      if (v !== ultimo && aoPasso) aoPasso(v - de);
+      ultimo = v;
       if (k < 1) requestAnimationFrame(passo);
     };
     requestAnimationFrame(passo);
   }
 
-  window.Fx = { cfg, faiscas, confete, poeira, voar, texto, chamada, tremer, pulsar, contar, centro };
+  window.Fx = { cfg, faiscas, confete, poeira, voar, texto, chamada, tremer, pulsar, contar, centro, orbes, clarao };
 })();
 
 </script>
@@ -2601,7 +2922,8 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     st.primeiro = 1 - st.primeiro;
     ['avisoCfg', 'fim', 'janelaCarta', 'janelaDeck'].forEach(id => { document.getElementById(id).hidden = true; });
     marcarNovos();
-    if (st.pref.animacoes) mostrarVersus(); else { render(); talvezAutomato(); }
+    // sem "versus" e sem janela por cima, a Mesa já rolou à vista agora
+    if (st.pref.animacoes) mostrarVersus(); else { jogo.rolouAVista = !document.querySelector('.janela:not([hidden])'); render(); talvezAutomato(); }
   }
   function sorteiaDeck(semArmadilha) {
     const pool = ORDEM.filter(c => !semArmadilha || CARTAS[c].tipo !== 'armadilha');
@@ -2610,10 +2932,19 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
       if (deckValido(d)) return d;
     }
   }
+  // a primeira Mesa de cada partida rola quando dá para ver: atrás do "versus" ou de uma janela ela rolaria escondida
+  function rolarAVista() {
+    const j = jogo;
+    if (!j || j.rolouAVista || j.intro || j.compras || j.fase === 'fim' || document.querySelector('.janela:not([hidden])')) return false;
+    j.rolouAVista = true;
+    j.mesa.forEach(d => { d.novo = true; }); marcarNovos();
+    Som.tocar('rolar', { n: j.mesa.length });
+    return true;
+  }
   // os dados novos rolam na tela só uma vez
   function marcarNovos() {
     const ids = jogo.mesa.filter(d => d.novo).map(d => d.id);
-    if (ids.length) setTimeout(() => { if (jogo) jogo.mesa.forEach(d => { if (ids.includes(d.id)) d.novo = false; }); }, 900);
+    if (ids.length) setTimeout(() => { if (jogo) jogo.mesa.forEach(d => { if (ids.includes(d.id)) d.novo = false; }); }, 1000);
   }
 
   // ---------- ações: o motor muda o estado; aqui só se desenha e se passa a vez ao rival ----------
@@ -2855,7 +3186,7 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     if (!['inicio', 'venci', 'perdi'].includes(chave) && Math.random() > 0.55) return;
     j.fala = { id: uid++, txt: sorteia(lista) };
     j.humor = ['meuDisparo', 'armadilha', 'venci', 'inicio'].includes(chave) ? 'feliz' : ['minhaRuptura', 'perdi'].includes(chave) ? 'triste' : null;
-    Som.tocar('falaRival');
+    Som.tocar('falaRival', { voz: RETRATO_RIVAL[j.nivel] });
     const id = j.fala.id;
     setTimeout(() => { if (jogo === j) render(); }, 0);
     setTimeout(() => { if (jogo && jogo.fala && jogo.fala.id === id) { jogo.fala = null; jogo.humor = null; render(); } }, 2600);
@@ -2889,7 +3220,7 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     if (j.fase === 'alvo' || j.fase === 'ajuste') {
       if (j.alvo === 'ajuste') { j.ajusteIdx = idx; j.fase = 'ajuste'; render(); return; }
       if (j.sel === d.id) return confirmarAlvo();
-      j.sel = d.id; render(); return;
+      j.sel = d.id; Som.tocar('escolher', { n: 0, x: (idx - 2) * 0.3 }); render(); return;
     }
     if (j.fase !== 'pegar') return;
     if (j.sel === d.id) {
@@ -2898,6 +3229,10 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
       return;
     }
     j.sel = d.id;
+    // prévia sonora: quem sincroniza toca baixinho a nota que vai somar; quem rompe dá um "hm-hm" grave
+    const op = opcoesDoDado(j.vez, idx), x = (idx - 2) * 0.3;
+    if (op.rompe) Som.tocar('perigo', { x }); else Som.tocar('escolher', { n: op.principal === 'corrente' ? j.cor[j.vez].length + 1 : 0, x });
+    vibrar(6);
     render();
   }
   // pega o dado escolhido e já o põe no destino (uma ação só: nada fica pela metade)
@@ -3010,7 +3345,7 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
       <div class="cab">${avatar}<span class="quem"><span class="nome">${n[p]}</span>${tag ? `<span class="vez-tag${pensa ? ' pensando-pontos' : ''}">${tag}</span>` : ''}</span>
         ${bolsoHTML(p)}<span class="placar"><b data-placar="${p}">${j.pts[p]}</b><small>/${j.meta}</small></span></div>
       <div class="barra" role="progressbar" aria-valuemin="0" aria-valuemax="${j.meta}" aria-valuenow="${j.pts[p]}" aria-label="Pontos de ${n[p]}"><i style="width:${pct}%"></i>${prev ? `<span class="prev" style="left:${pct}%;width:${prev}%"></span>` : ''}</div>
-      <div class="corrente${fx ? ' fx-' + fx.tipo : ''}">${slots}</div>
+      <div class="corrente${fx ? ' fx-' + fx.tipo : L >= 5 ? ' fervendo' : L >= 4 ? ' quente' : ''}" style="--fase:-${Math.round(performance.now() % 1800)}ms">${slots}</div>
       <div class="info"><span>Corrente <b>${L}</b>/${LIM}</span><span>${valeAgora}${seCrescer}</span></div>
       ${cartasHTML(p)}
     </div>`;
@@ -3043,7 +3378,7 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
       const serveRival = dicas && ele.length && encaixa(ele, valorAoPegar(1 - p, d)) && j.fase !== 'fim';
       const cls = ['pega', d.novo ? 'novo' : '', window.Rolagem && Rolagem.ativo(d.id) ? 'rolando' : '', !salvo && j.fase === 'pegar' && dicas ? 'nao-cabe' : '', j.sel === d.id || (j.fase === 'ajuste' && j.ajusteIdx === i) ? 'escolhido' : '', j.destaque === d.id ? 'destaque' : '', j.virando === d.id ? 'virando' : ''].join(' ');
       const rotulo = `${j.fase === 'alvo' ? 'Escolher' : 'Pegar'} ${d.v}${contra ? `, chega virado como ${vv}` : ''}${cabe ? (r.length ? ', ' + r.map(k => REL[k].nome).join(' e ') : '') : salvo ? ', só pelo Bolso' : ', rompe a corrente'}${serveRival ? ', serve ao rival' : ''}${marcado !== null ? ', marcado com Espelho' : ''}`;
-      return `<button class="${cls}" data-i="${i}" data-id="${d.id}" ${ativo ? '' : 'disabled'} aria-label="${rotulo}" aria-pressed="${j.sel === d.id || (j.fase === 'ajuste' && j.ajusteIdx === i)}">
+      return `<button class="${cls}" style="--i:${i}" data-i="${i}" data-id="${d.id}" ${ativo ? '' : 'disabled'} aria-label="${rotulo}" aria-pressed="${j.sel === d.id || (j.fase === 'ajuste' && j.ajusteIdx === i)}">
         <span class="kbd">${i + 1}</span><span class="face">${dadoHTML(d.v, skinMesa())}${serveRival ? '<span class="alvo-rival"></span>' : ''}${marcado !== null ? `<span class="marca-esp dono${marcado}" title="Marcado com Espelho">${CARTAS.espelho.ico}</span>` : ''}</span><span class="tags">${tags}</span></button>`;
     }).join('');
   }
@@ -3177,7 +3512,18 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     const linha = l => `${l.p === null ? '' : `<span class="cor${l.p}">${n[l.p]}</span> `}${l.txt}`;
     document.getElementById('log').innerHTML = j.log.map(l => `<li class="${l.tipo}">${linha(l)}</li>`).join('');
     document.getElementById('ticker').innerHTML = j.log[0] ? linha(j.log[0]) : '';
+    if (j.fase !== 'fim' && Som.musica.cenaAtual === 'fim') Som.musica.cena('jogo');
     Som.musica.intensidade(Math.max(j.pts[0], j.pts[1]) / j.meta);
+    // a vez chegou a um humano: um sininho discreto e o painel dá um pulinho (no modo 2 jogadores, a cada troca)
+    const chave = j.fase === 'fim' || j.intro ? null : j.vez;
+    if (chave !== j.ultimaVez) {
+      const antes = j.ultimaVez; j.ultimaVez = chave;
+      if (chave !== null && antes !== undefined && humano(chave) && (j.modo === 'local' || antes !== null)) {
+        Som.tocar('vez');
+        const pj = document.getElementById('pj' + chave);
+        if (pj && Fx.cfg.animacoes) pj.animate([{ transform: 'none' }, { transform: 'translateY(-4px) scale(1.012)' }, { transform: 'none' }], { duration: 380, easing: 'cubic-bezier(.3,1.5,.5,1)' });
+      }
+    }
     if (j.fx && !j.fx.agendado) {
       const id = j.fx.id; j.fx.agendado = true;
       setTimeout(() => { if (jogo.fx && jogo.fx.id === id) { jogo.fx = null; render(); } }, st.pref.animacoes ? 900 : 10);
@@ -3214,6 +3560,7 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     for (const e of evs) {
       const painelEl = qs(`#pj${e.p} .jogador`);
       switch (e.tipo) {
+<<<<<<< HEAD
         case 'rolar': {
           const novos = jogo.mesa.filter(d => d.novo).map(d => ({ id: d.id, v: d.v }));
           if (jogo.intro) { jogo.rolarDepois = novos; break; }      // a 1ª Mesa rola quando a tela de versus fecha
@@ -3221,6 +3568,10 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
           break;
         }
         case 'pegar': Som.tocar('pegar'); break;
+=======
+        case 'rolar': Som.tocar('rolar', { n: j.mesa.length }); break;
+        case 'pegar': Som.tocar('pegar'); if (humano(e.p)) vibrar(8); break;
+>>>>>>> 037cb6a1d670cdb87ff92502e35276610fc5fd32
         case 'bolso': setTimeout(() => Som.tocar('bolso'), 250); break;
         case 'troca': setTimeout(() => Som.tocar('troca'), 250); break;
         case 'elo': {
@@ -3237,7 +3588,20 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
           const corEl = qs(`#pj${e.p} .corrente`), placar = qs(`[data-placar="${e.p}"]`);
           Som.tocar('disparo', { L: e.L });
           Fx.faiscas(corEl, 10 + e.L * 6, ['#ffe3a3', '#ffd0b5', '#fff6e6', e.p === 0 ? '#bfe8f2' : '#ffd0dc'], 2.5 + e.L * 0.5);
-          if (placar) { Fx.contar(placar, e.de, jogo.pts[e.p]); setTimeout(() => Fx.pulsar(placar), 300); Fx.texto(placar, `+${e.ganho}`); }
+          if (e.L >= 4) Fx.clarao(corEl, e.L >= 6 ? 1 : e.L === 5 ? 0.75 : 0.5);
+          if (humano(e.p)) vibrar(e.L >= 5 ? [20, 30, 40] : 15);
+          if (placar) {
+            // os pontos voam da corrente até o placar; o número sobe com um tique por ponto quando chegam
+            const ate = jogo.pts[e.p], de0 = e.de, ganho = ate - de0;
+            Fx.texto(placar, `+${e.ganho}`);
+            if (Fx.cfg.animacoes && Fx.cfg.particulas) placar.textContent = de0;
+            const orbes = Math.max(1, Math.min(6, ganho));
+            Fx.orbes(corEl, placar, orbes, e.p === 0 ? '#ffe3a3' : '#ffd0dc', i => {
+              Som.tocar('tique', { k: i });
+              const v = Math.min(ate, de0 + Math.round(ganho * (i + 1) / orbes));
+              placar.textContent = v; Fx.pulsar(placar);
+            }).then(() => { const pl = qs(`[data-placar="${e.p}"]`); if (pl) pl.textContent = jogo.pts[e.p]; });
+          }
           if (e.L >= 5) Fx.tremer(qs('#tabuleiro'), e.L === 6 ? 1.4 : 0.8);
           if (e.L === 6) { Fx.chamada('Sinfonia!', 'corrente completa de 6', e.p === 1 && j.modo !== 'local' ? 'rival' : ''); vibrar([30, 40, 60]); }
           else if (e.L === 5) Fx.chamada('Belo disparo!', `corrente de 5 · +${e.ganho}`, e.p === 1 && j.modo !== 'local' ? 'rival' : '');
@@ -3247,7 +3611,7 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
         }
         case 'placar': { const pl = qs(`[data-placar="${e.p}"]`); if (pl) { Fx.contar(pl, e.de, jogo.pts[e.p]); Fx.pulsar(pl); Fx.texto(pl, '+3'); } break; }
         case 'ruptura': {
-          Som.tocar('ruptura'); Fx.poeira(qs(`#pj${e.p} .corrente`), 8 + e.L * 2); if (humano(e.p)) vibrar(90);
+          Som.tocar('ruptura', { L: e.L }); Fx.poeira(qs(`#pj${e.p} .corrente`), 8 + e.L * 2); if (humano(e.p)) vibrar(90);
           if (painelEl) Fx.tremer(painelEl, 0.6);
           if (e.L >= 4 && humano(e.p)) Fx.texto(qs(`#pj${e.p} .corrente`), 'Rompeu', 'pequeno ruim');
           break;
@@ -3266,6 +3630,7 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
         case 'falar': if (j.modo === 'bot') falaDoEvento(e); break;
         case 'fim': {
           const venceuHumano = humano(e.p);
+          Som.musica.cena('fim');
           if (venceuHumano) { Som.tocar('vitoria'); Fx.confete(120); Fx.chamada(e.virada ? 'Virada!' : j.modo !== 'local' ? 'Vitória!' : `${n[e.p]} venceu!`, e.virada ? 'veio de trás e venceu' : 'partida bem jogada'); }
           else { Som.tocar('derrota'); Fx.chamada('Fim de partida', `${n[e.p]} venceu desta vez`, 'rival'); }
           break;
@@ -3290,7 +3655,15 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     document.body.appendChild(el);
     Som.tocar('carta');
     let fechou = false;
+<<<<<<< HEAD
     const fechar = () => { if (fechou) return; fechou = true; el.remove(); j.intro = false; render(); if (j.rolarDepois && jogo === j) { rolarNaTela(j.rolarDepois); j.rolarDepois = null; } talvezAutomato(); };
+=======
+    const fechar = () => {
+      if (fechou) return; fechou = true; el.remove(); j.intro = false;
+      if (jogo === j) rolarAVista();
+      render(); talvezAutomato();
+    };
+>>>>>>> 037cb6a1d670cdb87ff92502e35276610fc5fd32
     el.addEventListener('click', () => { Som.desbloquear(); fechar(); });
     setTimeout(fechar, 3200);
   }
@@ -3503,6 +3876,22 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
   for (const ev of ['pointerdown', 'touchend', 'click', 'keydown']) addEventListener(ev, () => Som.desbloquear(), { capture: true });
   // um "tique" macio em todo botão
   document.addEventListener('click', e => { if (e.target.closest('button') && !e.target.closest('.pega')) Som.tocar('toque'); }, true);
+  // janelas: papel ao abrir e fechar, e a música vai para o fundo enquanto alguma estiver aberta
+  const janelas = [...document.querySelectorAll('.janela')];
+  const algumaAberta = () => janelas.some(el => !el.hidden);
+  new MutationObserver(ms => {
+    for (const m of ms) if (m.target.classList.contains('janela') && (m.oldValue === null ? m.target.hidden : !m.target.hidden)) { Som.tocar(m.target.hidden ? 'fechar' : 'abrir'); break; }
+    Som.abafar(algumaAberta());
+    if (!algumaAberta() && rolarAVista()) render();
+  }).observe(document.body, { subtree: true, attributes: true, attributeFilter: ['hidden'], attributeOldValue: true });
+  // mouse por cima de um dado que dá para pegar: um tique bem baixinho, na nota do acorde
+  let passou = null;
+  document.getElementById('mesa').addEventListener('pointerover', e => {
+    if (e.pointerType !== 'mouse') return;
+    const b = e.target.closest('.pega'); const id = b && !b.disabled ? b.dataset.id : null;
+    if (id && id !== passou) Som.tocar('passar', { i: +b.dataset.i });
+    passou = id;
+  });
 
   const lado = document.getElementById('lado'), btnRegras = document.getElementById('btnRegras');
   const abrirLado = abre => {
@@ -4013,7 +4402,7 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
       // primeira visita: o deck "Primeira mesa" e a Diana; as armadilhas chegam depois da 1ª partida
       st.decks[0] = PRONTOS[0].cartas.slice(); st.cfg.nivel = 'aprendiz';
       const animar = st.pref.animacoes; st.pref.animacoes = false; novaPartida(); st.pref.animacoes = animar;
-      abrirDeck();
+      abrirDeck(); jogo.rolouAVista = false;   // a Mesa rola quando a janela do deck fechar
     } else novaPartida();
     if (Rede.convite) { abrirOnline(); if (st.sessao) { const c = Rede.convite; Rede.convite = null; entrarNaSala(c).then(abrirOnline); } }
   }

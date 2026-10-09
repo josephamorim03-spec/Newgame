@@ -158,7 +158,8 @@
     st.primeiro = 1 - st.primeiro;
     ['avisoCfg', 'fim', 'janelaCarta', 'janelaDeck'].forEach(id => { document.getElementById(id).hidden = true; });
     marcarNovos();
-    if (st.pref.animacoes) mostrarVersus(); else { render(); talvezAutomato(); }
+    // sem "versus" e sem janela por cima, a Mesa já rolou à vista agora
+    if (st.pref.animacoes) mostrarVersus(); else { jogo.rolouAVista = !document.querySelector('.janela:not([hidden])'); render(); talvezAutomato(); }
   }
   function sorteiaDeck(semArmadilha) {
     const pool = ORDEM.filter(c => !semArmadilha || CARTAS[c].tipo !== 'armadilha');
@@ -167,10 +168,19 @@
       if (deckValido(d)) return d;
     }
   }
+  // a primeira Mesa de cada partida rola quando dá para ver: atrás do "versus" ou de uma janela ela rolaria escondida
+  function rolarAVista() {
+    const j = jogo;
+    if (!j || j.rolouAVista || j.intro || j.compras || j.fase === 'fim' || document.querySelector('.janela:not([hidden])')) return false;
+    j.rolouAVista = true;
+    j.mesa.forEach(d => { d.novo = true; }); marcarNovos();
+    rolarNaTela(j.mesa.map(d => ({ id: d.id, v: d.v })));
+    return true;
+  }
   // os dados novos rolam na tela só uma vez
   function marcarNovos() {
     const ids = jogo.mesa.filter(d => d.novo).map(d => d.id);
-    if (ids.length) setTimeout(() => { if (jogo) jogo.mesa.forEach(d => { if (ids.includes(d.id)) d.novo = false; }); }, 900);
+    if (ids.length) setTimeout(() => { if (jogo) jogo.mesa.forEach(d => { if (ids.includes(d.id)) d.novo = false; }); }, 1000);
   }
 
   // ---------- ações: o motor muda o estado; aqui só se desenha e se passa a vez ao rival ----------
@@ -412,7 +422,7 @@
     if (!['inicio', 'venci', 'perdi'].includes(chave) && Math.random() > 0.55) return;
     j.fala = { id: uid++, txt: sorteia(lista) };
     j.humor = ['meuDisparo', 'armadilha', 'venci', 'inicio'].includes(chave) ? 'feliz' : ['minhaRuptura', 'perdi'].includes(chave) ? 'triste' : null;
-    Som.tocar('falaRival');
+    Som.tocar('falaRival', { voz: RETRATO_RIVAL[j.nivel] });
     const id = j.fala.id;
     setTimeout(() => { if (jogo === j) render(); }, 0);
     setTimeout(() => { if (jogo && jogo.fala && jogo.fala.id === id) { jogo.fala = null; jogo.humor = null; render(); } }, 2600);
@@ -446,7 +456,7 @@
     if (j.fase === 'alvo' || j.fase === 'ajuste') {
       if (j.alvo === 'ajuste') { j.ajusteIdx = idx; j.fase = 'ajuste'; render(); return; }
       if (j.sel === d.id) return confirmarAlvo();
-      j.sel = d.id; render(); return;
+      j.sel = d.id; Som.tocar('escolher', { n: 0, x: (idx - 2) * 0.3 }); render(); return;
     }
     if (j.fase !== 'pegar') return;
     if (j.sel === d.id) {
@@ -455,6 +465,10 @@
       return;
     }
     j.sel = d.id;
+    // prévia sonora: quem sincroniza toca baixinho a nota que vai somar; quem rompe dá um "hm-hm" grave
+    const op = opcoesDoDado(j.vez, idx), x = (idx - 2) * 0.3;
+    if (op.rompe) Som.tocar('perigo', { x }); else Som.tocar('escolher', { n: op.principal === 'corrente' ? j.cor[j.vez].length + 1 : 0, x });
+    vibrar(6);
     render();
   }
   // pega o dado escolhido e já o põe no destino (uma ação só: nada fica pela metade)
@@ -567,7 +581,7 @@
       <div class="cab">${avatar}<span class="quem"><span class="nome">${n[p]}</span>${tag ? `<span class="vez-tag${pensa ? ' pensando-pontos' : ''}">${tag}</span>` : ''}</span>
         ${bolsoHTML(p)}<span class="placar"><b data-placar="${p}">${j.pts[p]}</b><small>/${j.meta}</small></span></div>
       <div class="barra" role="progressbar" aria-valuemin="0" aria-valuemax="${j.meta}" aria-valuenow="${j.pts[p]}" aria-label="Pontos de ${n[p]}"><i style="width:${pct}%"></i>${prev ? `<span class="prev" style="left:${pct}%;width:${prev}%"></span>` : ''}</div>
-      <div class="corrente${fx ? ' fx-' + fx.tipo : ''}">${slots}</div>
+      <div class="corrente${fx ? ' fx-' + fx.tipo : L >= 5 ? ' fervendo' : L >= 4 ? ' quente' : ''}" style="--fase:-${Math.round(performance.now() % 1800)}ms">${slots}</div>
       <div class="info"><span>Corrente <b>${L}</b>/${LIM}</span><span>${valeAgora}${seCrescer}</span></div>
       ${cartasHTML(p)}
     </div>`;
@@ -600,7 +614,7 @@
       const serveRival = dicas && ele.length && encaixa(ele, valorAoPegar(1 - p, d)) && j.fase !== 'fim';
       const cls = ['pega', d.novo ? 'novo' : '', window.Rolagem && Rolagem.ativo(d.id) ? 'rolando' : '', !salvo && j.fase === 'pegar' && dicas ? 'nao-cabe' : '', j.sel === d.id || (j.fase === 'ajuste' && j.ajusteIdx === i) ? 'escolhido' : '', j.destaque === d.id ? 'destaque' : '', j.virando === d.id ? 'virando' : ''].join(' ');
       const rotulo = `${j.fase === 'alvo' ? 'Escolher' : 'Pegar'} ${d.v}${contra ? `, chega virado como ${vv}` : ''}${cabe ? (r.length ? ', ' + r.map(k => REL[k].nome).join(' e ') : '') : salvo ? ', só pelo Bolso' : ', rompe a corrente'}${serveRival ? ', serve ao rival' : ''}${marcado !== null ? ', marcado com Espelho' : ''}`;
-      return `<button class="${cls}" data-i="${i}" data-id="${d.id}" ${ativo ? '' : 'disabled'} aria-label="${rotulo}" aria-pressed="${j.sel === d.id || (j.fase === 'ajuste' && j.ajusteIdx === i)}">
+      return `<button class="${cls}" style="--i:${i}" data-i="${i}" data-id="${d.id}" ${ativo ? '' : 'disabled'} aria-label="${rotulo}" aria-pressed="${j.sel === d.id || (j.fase === 'ajuste' && j.ajusteIdx === i)}">
         <span class="kbd">${i + 1}</span><span class="face">${dadoHTML(d.v, skinMesa())}${serveRival ? '<span class="alvo-rival"></span>' : ''}${marcado !== null ? `<span class="marca-esp dono${marcado}" title="Marcado com Espelho">${CARTAS.espelho.ico}</span>` : ''}</span><span class="tags">${tags}</span></button>`;
     }).join('');
   }
@@ -734,7 +748,18 @@
     const linha = l => `${l.p === null ? '' : `<span class="cor${l.p}">${n[l.p]}</span> `}${l.txt}`;
     document.getElementById('log').innerHTML = j.log.map(l => `<li class="${l.tipo}">${linha(l)}</li>`).join('');
     document.getElementById('ticker').innerHTML = j.log[0] ? linha(j.log[0]) : '';
+    if (j.fase !== 'fim' && Som.musica.cenaAtual === 'fim') Som.musica.cena('jogo');
     Som.musica.intensidade(Math.max(j.pts[0], j.pts[1]) / j.meta);
+    // a vez chegou a um humano: um sininho discreto e o painel dá um pulinho (no modo 2 jogadores, a cada troca)
+    const chave = j.fase === 'fim' || j.intro ? null : j.vez;
+    if (chave !== j.ultimaVez) {
+      const antes = j.ultimaVez; j.ultimaVez = chave;
+      if (chave !== null && antes !== undefined && humano(chave) && (j.modo === 'local' || antes !== null)) {
+        Som.tocar('vez');
+        const pj = document.getElementById('pj' + chave);
+        if (pj && Fx.cfg.animacoes) pj.animate([{ transform: 'none' }, { transform: 'translateY(-4px) scale(1.012)' }, { transform: 'none' }], { duration: 380, easing: 'cubic-bezier(.3,1.5,.5,1)' });
+      }
+    }
     if (j.fx && !j.fx.agendado) {
       const id = j.fx.id; j.fx.agendado = true;
       setTimeout(() => { if (jogo.fx && jogo.fx.id === id) { jogo.fx = null; render(); } }, st.pref.animacoes ? 900 : 10);
@@ -748,7 +773,7 @@
       faceHTML: v => dadoHTML(v, skinMesa()), som: (nome, dados) => Som.tocar(nome, dados),
       velocidade: { calmo: 0.9, normal: 1, rapido: 1.2 }[st.cfg.ritmo] || 1,
     });
-    if (!rolou) Som.tocar('rolar');
+    if (!rolou) Som.tocar('rolar', { n: lista.length });
   }
 
   // ---------- eventos → som, efeitos e recompensas ----------
@@ -772,12 +797,13 @@
       const painelEl = qs(`#pj${e.p} .jogador`);
       switch (e.tipo) {
         case 'rolar': {
-          const novos = jogo.mesa.filter(d => d.novo).map(d => ({ id: d.id, v: d.v }));
-          if (jogo.intro) { jogo.rolarDepois = novos; break; }      // a 1ª Mesa rola quando a tela de versus fecha
-          rolarNaTela(novos);
+          // a 1ª Mesa da partida rola quando as janelas do começo (deck, versus) fecham: rolarAVista
+          if (jogo.intro || (!jogo.compras && document.querySelector('.janela:not([hidden])'))) break;
+          if (!jogo.compras) jogo.rolouAVista = true;   // já rolou à vista: as janelas fechando depois não repetem
+          rolarNaTela(jogo.mesa.filter(d => d.novo).map(d => ({ id: d.id, v: d.v })));
           break;
         }
-        case 'pegar': Som.tocar('pegar'); break;
+        case 'pegar': Som.tocar('pegar'); if (humano(e.p)) vibrar(8); break;
         case 'bolso': setTimeout(() => Som.tocar('bolso'), 250); break;
         case 'troca': setTimeout(() => Som.tocar('troca'), 250); break;
         case 'elo': {
@@ -794,7 +820,20 @@
           const corEl = qs(`#pj${e.p} .corrente`), placar = qs(`[data-placar="${e.p}"]`);
           Som.tocar('disparo', { L: e.L });
           Fx.faiscas(corEl, 10 + e.L * 6, ['#ffe3a3', '#ffd0b5', '#fff6e6', e.p === 0 ? '#bfe8f2' : '#ffd0dc'], 2.5 + e.L * 0.5);
-          if (placar) { Fx.contar(placar, e.de, jogo.pts[e.p]); setTimeout(() => Fx.pulsar(placar), 300); Fx.texto(placar, `+${e.ganho}`); }
+          if (e.L >= 4) Fx.clarao(corEl, e.L >= 6 ? 1 : e.L === 5 ? 0.75 : 0.5);
+          if (humano(e.p)) vibrar(e.L >= 5 ? [20, 30, 40] : 15);
+          if (placar) {
+            // os pontos voam da corrente até o placar; o número sobe com um tique por ponto quando chegam
+            const ate = jogo.pts[e.p], de0 = e.de, ganho = ate - de0;
+            Fx.texto(placar, `+${e.ganho}`);
+            if (Fx.cfg.animacoes && Fx.cfg.particulas) placar.textContent = de0;
+            const orbes = Math.max(1, Math.min(6, ganho));
+            Fx.orbes(corEl, placar, orbes, e.p === 0 ? '#ffe3a3' : '#ffd0dc', i => {
+              Som.tocar('tique', { k: i });
+              const v = Math.min(ate, de0 + Math.round(ganho * (i + 1) / orbes));
+              placar.textContent = v; Fx.pulsar(placar);
+            }).then(() => { const pl = qs(`[data-placar="${e.p}"]`); if (pl) pl.textContent = jogo.pts[e.p]; });
+          }
           if (e.L >= 5) Fx.tremer(qs('#tabuleiro'), e.L === 6 ? 1.4 : 0.8);
           if (e.L === 6) { Fx.chamada('Sinfonia!', 'corrente completa de 6', e.p === 1 && j.modo !== 'local' ? 'rival' : ''); vibrar([30, 40, 60]); }
           else if (e.L === 5) Fx.chamada('Belo disparo!', `corrente de 5 · +${e.ganho}`, e.p === 1 && j.modo !== 'local' ? 'rival' : '');
@@ -804,7 +843,7 @@
         }
         case 'placar': { const pl = qs(`[data-placar="${e.p}"]`); if (pl) { Fx.contar(pl, e.de, jogo.pts[e.p]); Fx.pulsar(pl); Fx.texto(pl, '+3'); } break; }
         case 'ruptura': {
-          Som.tocar('ruptura'); Fx.poeira(qs(`#pj${e.p} .corrente`), 8 + e.L * 2); if (humano(e.p)) vibrar(90);
+          Som.tocar('ruptura', { L: e.L }); Fx.poeira(qs(`#pj${e.p} .corrente`), 8 + e.L * 2); if (humano(e.p)) vibrar(90);
           if (painelEl) Fx.tremer(painelEl, 0.6);
           if (e.L >= 4 && humano(e.p)) Fx.texto(qs(`#pj${e.p} .corrente`), 'Rompeu', 'pequeno ruim');
           break;
@@ -823,6 +862,7 @@
         case 'falar': if (j.modo === 'bot') falaDoEvento(e); break;
         case 'fim': {
           const venceuHumano = humano(e.p);
+          Som.musica.cena('fim');
           if (venceuHumano) { Som.tocar('vitoria'); Fx.confete(120); Fx.chamada(e.virada ? 'Virada!' : j.modo !== 'local' ? 'Vitória!' : `${n[e.p]} venceu!`, e.virada ? 'veio de trás e venceu' : 'partida bem jogada'); }
           else { Som.tocar('derrota'); Fx.chamada('Fim de partida', `${n[e.p]} venceu desta vez`, 'rival'); }
           break;
@@ -847,7 +887,11 @@
     document.body.appendChild(el);
     Som.tocar('carta');
     let fechou = false;
-    const fechar = () => { if (fechou) return; fechou = true; el.remove(); j.intro = false; render(); if (j.rolarDepois && jogo === j) { rolarNaTela(j.rolarDepois); j.rolarDepois = null; } talvezAutomato(); };
+    const fechar = () => {
+      if (fechou) return; fechou = true; el.remove(); j.intro = false;
+      if (jogo === j) rolarAVista();
+      render(); talvezAutomato();
+    };
     el.addEventListener('click', () => { Som.desbloquear(); fechar(); });
     setTimeout(fechar, 3200);
   }
@@ -1060,6 +1104,22 @@
   for (const ev of ['pointerdown', 'touchend', 'click', 'keydown']) addEventListener(ev, () => Som.desbloquear(), { capture: true });
   // um "tique" macio em todo botão
   document.addEventListener('click', e => { if (e.target.closest('button') && !e.target.closest('.pega')) Som.tocar('toque'); }, true);
+  // janelas: papel ao abrir e fechar, e a música vai para o fundo enquanto alguma estiver aberta
+  const janelas = [...document.querySelectorAll('.janela')];
+  const algumaAberta = () => janelas.some(el => !el.hidden);
+  new MutationObserver(ms => {
+    for (const m of ms) if (m.target.classList.contains('janela') && (m.oldValue === null ? m.target.hidden : !m.target.hidden)) { Som.tocar(m.target.hidden ? 'fechar' : 'abrir'); break; }
+    Som.abafar(algumaAberta());
+    if (!algumaAberta() && rolarAVista()) render();
+  }).observe(document.body, { subtree: true, attributes: true, attributeFilter: ['hidden'], attributeOldValue: true });
+  // mouse por cima de um dado que dá para pegar: um tique bem baixinho, na nota do acorde
+  let passou = null;
+  document.getElementById('mesa').addEventListener('pointerover', e => {
+    if (e.pointerType !== 'mouse') return;
+    const b = e.target.closest('.pega'); const id = b && !b.disabled ? b.dataset.id : null;
+    if (id && id !== passou) Som.tocar('passar', { i: +b.dataset.i });
+    passou = id;
+  });
 
   const lado = document.getElementById('lado'), btnRegras = document.getElementById('btnRegras');
   const abrirLado = abre => {
@@ -1570,7 +1630,7 @@
       // primeira visita: o deck "Primeira mesa" e a Diana; as armadilhas chegam depois da 1ª partida
       st.decks[0] = PRONTOS[0].cartas.slice(); st.cfg.nivel = 'aprendiz';
       const animar = st.pref.animacoes; st.pref.animacoes = false; novaPartida(); st.pref.animacoes = animar;
-      abrirDeck();
+      abrirDeck(); jogo.rolouAVista = false;   // a Mesa rola quando a janela do deck fechar
     } else novaPartida();
     if (Rede.convite) { abrirOnline(); if (st.sessao) { const c = Rede.convite; Rede.convite = null; entrarNaSala(c).then(abrirOnline); } }
   }
