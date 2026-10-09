@@ -896,10 +896,17 @@ button.vaga { cursor: pointer; border: 0; background: #fff3dc; color: var(--tint
 .em-partida .app { padding-top: max(10px, env(safe-area-inset-top)); }
 /* no PC, o "Como se joga" sai da lateral (fica o Registro); "Regras", no menu, o traz de volta */
 @media (min-width: 1040px) { .em-partida .lado:not(.aberto) .regras { display: none; } .acoes { position: relative; } }
-.menu-partida { position: absolute; top: 5px; right: 6px; z-index: 2; width: 32px; height: 32px; display: grid; place-items: center; border: 0; border-radius: 12px; background: var(--papel-2); color: var(--tinta); cursor: pointer; }
+.acoes[hidden] { display: none; }
+.acoes:not([hidden]) { animation: barraSobe .18s ease-out; }
+@keyframes barraSobe { from { transform: translateY(14px); opacity: 0; } }
+/* o botão de pausa, na linha da Mesa: o único caminho para fora da jogada */
+.mesa-topo { align-items: center; }
+.menu-partida[hidden] { display: none; }
+.menu-partida { position: relative; margin-left: 4px; width: 34px; height: 34px; flex: none; display: grid; place-items: center; border: 0; border-radius: 12px; background: var(--papel-2); color: var(--tinta); cursor: pointer; }
 .menu-partida .ico { width: 18px; height: 18px; stroke-width: 3; }
+.mesa-topo .menu-partida { background: rgba(255,243,226,.12); color: var(--texto); box-shadow: inset 0 0 0 1.5px rgba(255,243,226,.22); }
+body.mesa-piquenique .mesa-topo .menu-partida { color: var(--tinta); }
 .menu-partida.com-aviso::after { content: ''; position: absolute; top: 4px; right: 4px; width: 9px; height: 9px; border-radius: 50%; background: var(--passo); box-shadow: 0 0 0 2px var(--papel); }
-.acoes > .menu-partida + .status { padding-right: 38px; }
 .caixa-menu { gap: 12px; }
 .menu-grade { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .menu-grade .btn { position: relative; }
@@ -951,7 +958,8 @@ button.vaga { cursor: pointer; border: 0; background: #fff3dc; color: var(--tint
     <section class="tabuleiro" id="tabuleiro" aria-label="Mesa de jogo">
       <div id="pj1"></div>
       <div class="mesa-area">
-        <div class="mesa-topo"><h2>Mesa</h2><span id="mesaInfo"></span></div>
+        <div class="mesa-topo"><h2>Mesa</h2><span id="mesaInfo"></span>
+          <button class="menu-partida" id="btnPausa" hidden aria-label="Pausa: ajudas, regras, ajustes e mais" title="Pausa"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6v12M15 6v12"/></svg></button></div>
         <div class="mesa" id="mesa"></div>
         <div class="ticker" id="ticker" aria-hidden="true"></div>
       </div>
@@ -3879,30 +3887,17 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     return `${n[r]} tem uma carta virada (?). Pode ser ${traps.join(' ou ')}${blefes.length ? `, ou um blefe com ${blefes.join(' ou ')}` : ''}.`;
   }
 
-  // durante a partida a tela é só o jogo: o que não é a jogada (ajudas, regras, ajustes, deck, loja, online, desistir)
-  // mora no menu de pausa, aberto pelo único botão fora do jogo, no canto da barra de jogada
-  const botaoMenu = () => {
-    const aviso = !document.getElementById('pontoOnline').hidden;
-    return `<button class="menu-partida${aviso ? ' com-aviso' : ''}" data-acao="menu" aria-label="Pausa: ajudas, regras, ajustes e mais${aviso ? ' (há novidade no Online)' : ''}" title="Pausa">
-      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6v12M15 6v12"/></svg></button>`;
-  };
-  function acoesHTML() {
-    const j = jogo;
-    const html = acoesConteudo();
-    return j.fase === 'fim' ? html : botaoMenu() + html;
-  }
+  // a barra de jogada só aparece quando há uma decisão (dado escolhido, para onde vai, disparar ou segurar, Pressa,
+  // carta com alvo, fim); escolher um dado não precisa de texto: o "sua vez" do painel e as etiquetas dos dados bastam.
+  // O que não é jogada (ajudas, regras, ajustes, deck, loja, online, desistir) mora no menu de pausa, na linha da Mesa
+  const acoesHTML = () => acoesConteudo();
   function acoesConteudo() {
     const j = jogo, p = j.vez, n = nomes(), quem = `<b class="cor${p}">${n[p]}</b>`, ajudas = st.pref.dicas;
     if (j.fase === 'fim') {
       return `<div class="status"><b class="cor${j.vencedor}">${n[j.vencedor]}</b> venceu por ${j.pts[j.vencedor]} × ${j.pts[1 - j.vencedor]}.</div>
         <div class="botoes"><button class="btn btn-mel" data-acao="nova" ${online() && Rede.pediuRevanche ? 'disabled' : ''}>${online() ? (Rede.pediuRevanche ? 'Esperando o rival…' : 'Revanche') : 'Jogar de novo'}</button><button class="btn btn-papel" data-acao="deck">Trocar deck</button></div>`;
     }
-    if (!humano(p)) {
-      const sv = rivalCaiu() ? segundosVolta() : null;
-      const oQue = !online() ? 'está pensando' : !rivalCaiu() ? 'está jogando'
-        : sv === null ? 'caiu; esperando voltar' : `caiu; tem <b class="volta-rival">${sv}</b> s para voltar`;
-      return `<div class="status">${quem} ${oQue}<span class="pensando-pontos"></span></div>`;
-    }
+    if (!humano(p)) return '';   // a vez do rival aparece no painel dele (pensando, jogando, caiu · N s)
     const eu = j.cor[p];
     if (j.fase === 'alvo') {
       const k = CARTAS[j.alvo], ds = j.sel !== null && j.sel !== undefined ? j.mesa[idxDe(j.sel)] : null;
@@ -3988,9 +3983,11 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
       const dica = op.principal ? 'Toque em outro dado para trocar, ou de novo neste para pegar.' : 'Toque em outro dado para trocar.';
       if (!ajudas) return `<div class="status">${mini(op.d.v, skinMesa())} <b>${op.d.v}</b>${op.contra ? ` → <b>${op.v}</b> (Espelho)` : ''}${aviso ? `. ${aviso}` : ''}</div>
         <div class="botoes">${botoes}<button class="btn btn-papel" data-acao="cancelar">Cancelar</button></div>`;
-      return `<div class="status">${quem}, você escolheu ${mini(op.d.v, skinMesa())} <b>${op.d.v}</b>${op.contra ? `, que chega virado como <b>${op.v}</b> (Espelho do rival) e não pode ir para o Bolso` : ''}. ${aviso}</div>
+      return `<div class="status">${quem} escolheu ${mini(op.d.v, skinMesa())} <b>${op.d.v}</b>${op.contra ? `, que chega virado como <b>${op.v}</b> (Espelho do rival) e não pode ir para o Bolso` : ''}. ${aviso}</div>
         <div class="botoes">${botoes}<button class="btn btn-papel" data-acao="cancelar">Cancelar</button></div>${ajudas ? `<p class="nota" style="margin:0">${dica}</p>` : ''}`;
     }
+    // sem dado escolhido não há decisão: nada de barra (a não ser o segundo dado da Pressa, que pode ser dispensado)
+    if (!j.segundoDado) return '';
     let msg;
     if (j.segundoDado) msg = `escolha o segundo dado (Pressa) ou dispense${eu.length >= 3 ? ' e vá para o disparo' : ''}.`;
     else if (!algumSeguro) msg = `<b>nenhum dado sincroniza</b> com o seu ${frente(eu)}, nem o do Bolso. Use uma carta ou escolha um: a corrente de ${eu.length} rompe${j.armada[p] === 'ancora' && eu.length >= 4 ? ', mas a sua Âncora está armada' : ''}.`;
@@ -4029,7 +4026,10 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     mesa.classList.toggle('alvo', j.fase === 'alvo');
     const resta = j.mesa.length;
     document.getElementById('mesaInfo').textContent = `rodada ${j.rodada} · ${resta} ${resta === 1 ? 'dado' : 'dados'}`;
-    document.getElementById('acoes').innerHTML = acoesHTML();
+    const acoes = document.getElementById('acoes'), barra = acoesHTML();
+    acoes.innerHTML = barra; acoes.hidden = !barra;
+    const pausa = document.getElementById('btnPausa'), novidade = !document.getElementById('pontoOnline').hidden;
+    pausa.hidden = j.fase === 'fim'; pausa.classList.toggle('com-aviso', novidade);
     const n = nomes();
     const linha = l => `${l.p === null ? '' : `<span class="cor${l.p}">${n[l.p]}</span> `}${l.txt}`;
     document.getElementById('log').innerHTML = j.log.map(l => `<li class="${l.tipo}">${linha(l)}</li>`).join('');
@@ -4501,6 +4501,7 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     janelaMenu.hidden = false;
     janelaMenu.querySelector('[data-menu="continuar"]').focus();
   }
+  document.getElementById('btnPausa').addEventListener('click', () => abrirMenu());
   document.getElementById('opDicasMenu').addEventListener('change', e => { st.pref.dicas = e.target.checked; salvar(); aplicarPrefs(); render(); });
   janelaMenu.addEventListener('click', e => {
     if (e.target === janelaMenu) { janelaMenu.hidden = true; return; }   // tocar fora fecha
@@ -4568,7 +4569,6 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
   });
   document.getElementById('acoes').addEventListener('click', e => {
     const j = jogo;
-    if (e.target.closest('[data-acao="menu"]')) { abrirMenu(); return; }
     const dst = e.target.closest('[data-destino]');
     if (dst && j.fase === 'pegar' && j.sel && humano(j.vez) && !j.pensando) { pegarDado(dst.dataset.destino); return; }
     if (dst && j.fase === 'destino' && j.mao && humano(j.vez)) { colocar(j.vez, j.mao.v, dst.dataset.destino); return; }

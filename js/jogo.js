@@ -686,30 +686,17 @@
     return `${n[r]} tem uma carta virada (?). Pode ser ${traps.join(' ou ')}${blefes.length ? `, ou um blefe com ${blefes.join(' ou ')}` : ''}.`;
   }
 
-  // durante a partida a tela é só o jogo: o que não é a jogada (ajudas, regras, ajustes, deck, loja, online, desistir)
-  // mora no menu de pausa, aberto pelo único botão fora do jogo, no canto da barra de jogada
-  const botaoMenu = () => {
-    const aviso = !document.getElementById('pontoOnline').hidden;
-    return `<button class="menu-partida${aviso ? ' com-aviso' : ''}" data-acao="menu" aria-label="Pausa: ajudas, regras, ajustes e mais${aviso ? ' (há novidade no Online)' : ''}" title="Pausa">
-      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6v12M15 6v12"/></svg></button>`;
-  };
-  function acoesHTML() {
-    const j = jogo;
-    const html = acoesConteudo();
-    return j.fase === 'fim' ? html : botaoMenu() + html;
-  }
+  // a barra de jogada só aparece quando há uma decisão (dado escolhido, para onde vai, disparar ou segurar, Pressa,
+  // carta com alvo, fim); escolher um dado não precisa de texto: o "sua vez" do painel e as etiquetas dos dados bastam.
+  // O que não é jogada (ajudas, regras, ajustes, deck, loja, online, desistir) mora no menu de pausa, na linha da Mesa
+  const acoesHTML = () => acoesConteudo();
   function acoesConteudo() {
     const j = jogo, p = j.vez, n = nomes(), quem = `<b class="cor${p}">${n[p]}</b>`, ajudas = st.pref.dicas;
     if (j.fase === 'fim') {
       return `<div class="status"><b class="cor${j.vencedor}">${n[j.vencedor]}</b> venceu por ${j.pts[j.vencedor]} × ${j.pts[1 - j.vencedor]}.</div>
         <div class="botoes"><button class="btn btn-mel" data-acao="nova" ${online() && Rede.pediuRevanche ? 'disabled' : ''}>${online() ? (Rede.pediuRevanche ? 'Esperando o rival…' : 'Revanche') : 'Jogar de novo'}</button><button class="btn btn-papel" data-acao="deck">Trocar deck</button></div>`;
     }
-    if (!humano(p)) {
-      const sv = rivalCaiu() ? segundosVolta() : null;
-      const oQue = !online() ? 'está pensando' : !rivalCaiu() ? 'está jogando'
-        : sv === null ? 'caiu; esperando voltar' : `caiu; tem <b class="volta-rival">${sv}</b> s para voltar`;
-      return `<div class="status">${quem} ${oQue}<span class="pensando-pontos"></span></div>`;
-    }
+    if (!humano(p)) return '';   // a vez do rival aparece no painel dele (pensando, jogando, caiu · N s)
     const eu = j.cor[p];
     if (j.fase === 'alvo') {
       const k = CARTAS[j.alvo], ds = j.sel !== null && j.sel !== undefined ? j.mesa[idxDe(j.sel)] : null;
@@ -795,9 +782,11 @@
       const dica = op.principal ? 'Toque em outro dado para trocar, ou de novo neste para pegar.' : 'Toque em outro dado para trocar.';
       if (!ajudas) return `<div class="status">${mini(op.d.v, skinMesa())} <b>${op.d.v}</b>${op.contra ? ` → <b>${op.v}</b> (Espelho)` : ''}${aviso ? `. ${aviso}` : ''}</div>
         <div class="botoes">${botoes}<button class="btn btn-papel" data-acao="cancelar">Cancelar</button></div>`;
-      return `<div class="status">${quem}, você escolheu ${mini(op.d.v, skinMesa())} <b>${op.d.v}</b>${op.contra ? `, que chega virado como <b>${op.v}</b> (Espelho do rival) e não pode ir para o Bolso` : ''}. ${aviso}</div>
+      return `<div class="status">${quem} escolheu ${mini(op.d.v, skinMesa())} <b>${op.d.v}</b>${op.contra ? `, que chega virado como <b>${op.v}</b> (Espelho do rival) e não pode ir para o Bolso` : ''}. ${aviso}</div>
         <div class="botoes">${botoes}<button class="btn btn-papel" data-acao="cancelar">Cancelar</button></div>${ajudas ? `<p class="nota" style="margin:0">${dica}</p>` : ''}`;
     }
+    // sem dado escolhido não há decisão: nada de barra (a não ser o segundo dado da Pressa, que pode ser dispensado)
+    if (!j.segundoDado) return '';
     let msg;
     if (j.segundoDado) msg = `escolha o segundo dado (Pressa) ou dispense${eu.length >= 3 ? ' e vá para o disparo' : ''}.`;
     else if (!algumSeguro) msg = `<b>nenhum dado sincroniza</b> com o seu ${frente(eu)}, nem o do Bolso. Use uma carta ou escolha um: a corrente de ${eu.length} rompe${j.armada[p] === 'ancora' && eu.length >= 4 ? ', mas a sua Âncora está armada' : ''}.`;
@@ -836,7 +825,10 @@
     mesa.classList.toggle('alvo', j.fase === 'alvo');
     const resta = j.mesa.length;
     document.getElementById('mesaInfo').textContent = `rodada ${j.rodada} · ${resta} ${resta === 1 ? 'dado' : 'dados'}`;
-    document.getElementById('acoes').innerHTML = acoesHTML();
+    const acoes = document.getElementById('acoes'), barra = acoesHTML();
+    acoes.innerHTML = barra; acoes.hidden = !barra;
+    const pausa = document.getElementById('btnPausa'), novidade = !document.getElementById('pontoOnline').hidden;
+    pausa.hidden = j.fase === 'fim'; pausa.classList.toggle('com-aviso', novidade);
     const n = nomes();
     const linha = l => `${l.p === null ? '' : `<span class="cor${l.p}">${n[l.p]}</span> `}${l.txt}`;
     document.getElementById('log').innerHTML = j.log.map(l => `<li class="${l.tipo}">${linha(l)}</li>`).join('');
@@ -1308,6 +1300,7 @@
     janelaMenu.hidden = false;
     janelaMenu.querySelector('[data-menu="continuar"]').focus();
   }
+  document.getElementById('btnPausa').addEventListener('click', () => abrirMenu());
   document.getElementById('opDicasMenu').addEventListener('change', e => { st.pref.dicas = e.target.checked; salvar(); aplicarPrefs(); render(); });
   janelaMenu.addEventListener('click', e => {
     if (e.target === janelaMenu) { janelaMenu.hidden = true; return; }   // tocar fora fecha
@@ -1375,7 +1368,6 @@
   });
   document.getElementById('acoes').addEventListener('click', e => {
     const j = jogo;
-    if (e.target.closest('[data-acao="menu"]')) { abrirMenu(); return; }
     const dst = e.target.closest('[data-destino]');
     if (dst && j.fase === 'pegar' && j.sel && humano(j.vez) && !j.pensando) { pegarDado(dst.dataset.destino); return; }
     if (dst && j.fase === 'destino' && j.mao && humano(j.vez)) { colocar(j.vez, j.mao.v, dst.dataset.destino); return; }

@@ -867,10 +867,17 @@ button.vaga { cursor: pointer; border: 0; background: #fff3dc; color: var(--tint
 .em-partida .app { padding-top: max(10px, env(safe-area-inset-top)); }
 /* no PC, o "Como se joga" sai da lateral (fica o Registro); "Regras", no menu, o traz de volta */
 @media (min-width: 1040px) { .em-partida .lado:not(.aberto) .regras { display: none; } .acoes { position: relative; } }
-.menu-partida { position: absolute; top: 5px; right: 6px; z-index: 2; width: 32px; height: 32px; display: grid; place-items: center; border: 0; border-radius: 12px; background: var(--papel-2); color: var(--tinta); cursor: pointer; }
+.acoes[hidden] { display: none; }
+.acoes:not([hidden]) { animation: barraSobe .18s ease-out; }
+@keyframes barraSobe { from { transform: translateY(14px); opacity: 0; } }
+/* o botão de pausa, na linha da Mesa: o único caminho para fora da jogada */
+.mesa-topo { align-items: center; }
+.menu-partida[hidden] { display: none; }
+.menu-partida { position: relative; margin-left: 4px; width: 34px; height: 34px; flex: none; display: grid; place-items: center; border: 0; border-radius: 12px; background: var(--papel-2); color: var(--tinta); cursor: pointer; }
 .menu-partida .ico { width: 18px; height: 18px; stroke-width: 3; }
+.mesa-topo .menu-partida { background: rgba(255,243,226,.12); color: var(--texto); box-shadow: inset 0 0 0 1.5px rgba(255,243,226,.22); }
+body.mesa-piquenique .mesa-topo .menu-partida { color: var(--tinta); }
 .menu-partida.com-aviso::after { content: ''; position: absolute; top: 4px; right: 4px; width: 9px; height: 9px; border-radius: 50%; background: var(--passo); box-shadow: 0 0 0 2px var(--papel); }
-.acoes > .menu-partida + .status { padding-right: 38px; }
 .caixa-menu { gap: 12px; }
 .menu-grade { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .menu-grade .btn { position: relative; }

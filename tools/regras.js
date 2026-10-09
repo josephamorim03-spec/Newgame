@@ -202,26 +202,30 @@ const RAIZ = path.join(__dirname, '..');
     const j = DiceDuel.jogo; j.vez = 0; j.fase = 'pegar'; j.cor[0] = [2]; j.mesa = [{ id: 9601, v: 3 }, { id: 9602, v: 6 }];
   });
   const vista = () => pg.evaluate(() => ({ tags: document.querySelectorAll('#mesa .tag').length, info: document.querySelectorAll('.jogador .info').length,
-    prox: document.querySelectorAll('.prox-faces').length, status: document.querySelector('#acoes .status').textContent.trim(), pref: DiceDuel.st.pref.dicas,
+    prox: document.querySelectorAll('.prox-faces').length, barra: !document.getElementById('acoes').hidden, pref: DiceDuel.st.pref.dicas,
     foco: document.body.classList.contains('em-partida') }));
   const com = await vista();
+  await dado(0);
+  const barraAoEscolher = await pg.evaluate(() => !document.getElementById('acoes').hidden && !!document.querySelector('#acoes [data-destino]'));
+  await pg.click('#acoes [data-acao="cancelar"]');
+  confere(barraAoEscolher && await pg.evaluate(() => document.getElementById('acoes').hidden), 'Barra de jogada: aparece ao escolher um dado (com os destinos) e some ao cancelar');
   const topoVisivel = await pg.evaluate(() => getComputedStyle(document.querySelector('.topo')).display !== 'none');
-  await pg.click('#acoes .menu-partida');
+  await pg.click('#btnPausa');
   const menuAberto = await pg.evaluate(() => !document.getElementById('janelaMenu').hidden);
   await pg.click('#opDicasMenu');
   await pg.click('[data-menu="continuar"]');
   const sem = await vista();
-  confere(com.tags > 0 && com.info > 0 && com.prox > 0 && /sincronizam/.test(com.status), 'Ajudas ligadas: etiquetas, linha da corrente, faces da próxima casa e a explicação');
-  confere(sem.tags === 0 && sem.info === 0 && sem.prox === 0 && !/sincronizam/.test(sem.status) && sem.pref === false, `Ajudas desligadas pelo menu: só o essencial ("${sem.status}")`);
+  confere(com.tags > 0 && com.info > 0 && com.prox > 0 && !com.barra, 'Ajudas ligadas: etiquetas, linha da corrente e faces da próxima casa; sem decisão, nada de barra');
+  confere(sem.tags === 0 && sem.info === 0 && sem.prox === 0 && !sem.barra && sem.pref === false, 'Ajudas desligadas pelo menu: só os dados, as correntes e as cartas');
   confere(com.foco && !topoVisivel && menuAberto, 'Partida em foco: sem cabeçalho; o botão de pausa abre o menu');
-  await pg.click('#acoes .menu-partida'); await pg.click('#opDicasMenu'); await pg.click('[data-menu="continuar"]');
+  await pg.click('#btnPausa'); await pg.click('#opDicasMenu'); await pg.click('[data-menu="continuar"]');
   confere((await vista()).pref === true, 'Ajudas: a mesma chave liga de novo');
   // pelo menu: Ajustes abre, e Desistir pede um segundo toque contra o rival do jogo
-  await pg.click('#acoes .menu-partida'); await pg.click('[data-menu="ajustes"]');
+  await pg.click('#btnPausa'); await pg.click('[data-menu="ajustes"]');
   confere(await pg.evaluate(() => !document.getElementById('janelaConfig').hidden && document.getElementById('janelaMenu').hidden), 'Menu de pausa: Ajustes abre no lugar do menu');
   await pg.click('#btnFecharConfig');
   await pg.evaluate(() => { DiceDuel.jogo.compras = 3; });
-  await pg.click('#acoes .menu-partida');
+  await pg.click('#btnPausa');
   const sairTxt = await pg.textContent('#menuSairTxt');
   await pg.click('[data-menu="sair"]');
   confere(sairTxt === 'Recomeçar' && (await pg.evaluate(() => DiceDuel.jogo.compras)) === 0, `Menu de pausa: a dois, "${sairTxt}" começa outra partida`);
