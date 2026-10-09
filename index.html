@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#241a24">
 <!-- onde mora o servidor (conta, ranking, salas) quando a página vem de fora dele, como no Vercel; o próprio servidor a serve vazia -->
 <meta name="dice-servidor" content="https://dice-duel-production-be6b.up.railway.app">
@@ -134,11 +134,12 @@
           <button data-aba="1" aria-pressed="false">Jogador 2</button>
         </div>
       </div>
-      <p class="nota">Até 3 cartas, cada uma vale uma vez. No máximo 2 armadilhas e no máximo 1 carta de pontos (<span class="raio">⚡</span>). O rival vê o seu deck no começo da partida.</p>
-      <div class="contador" id="deckContador"></div>
+      <div class="deck-escolhido" id="deckEscolhido" aria-label="Seu deck"></div>
+      <div class="deck-regras" id="deckContador" aria-live="polite"></div>
       <div><span class="rot">Decks prontos</span><div class="prontos" id="deckProntos" style="margin-top:6px"></div></div>
-      <div class="grade-cartas" id="deckGrade"></div>
-      <div class="botoes">
+      <div id="deckGrade"></div>
+      <p class="nota" style="margin:0">Cada carta vale uma vez por partida. O rival vê o seu deck no começo. Toque em <b>i</b> para ler a carta inteira.</p>
+      <div class="botoes deck-rodape">
         <button class="btn btn-mel" id="btnJogarDeck">Jogar</button>
         <button class="btn btn-papel" id="btnFecharDeck">Fechar</button>
       </div>
@@ -203,10 +204,10 @@
 
   <div class="janela" id="janelaLoja" hidden>
     <div class="caixa larga" role="dialog" aria-modal="true" aria-labelledby="lojaTitulo">
-      <div class="deck-topo"><h2 id="lojaTitulo">Loja</h2><span class="carteira" style="cursor:default"><span class="moeda" aria-hidden="true"></span><span id="saldoLoja">0</span></span></div>
+      <div class="deck-topo"><h2 id="lojaTitulo">Loja</h2><span class="topo-dir"><span class="carteira" style="cursor:default"><span class="moeda" aria-hidden="true"></span><span id="saldoLoja">0</span></span><button class="btn-ajuda" id="btnComoGanhar" aria-label="Como ganhar moedas" title="Como ganhar moedas">?</button></span></div>
       <div class="loja-perfil" id="lojaPerfil"></div>
       <div class="abas" id="abasLoja" role="group" aria-label="Seção da loja" style="flex-wrap:wrap">
-        <button data-aba-loja="cartas" aria-pressed="true">Cartas</button><button data-aba-loja="dados" aria-pressed="false">Dados</button><button data-aba-loja="icones" aria-pressed="false">Ícones</button><button data-aba-loja="mesas" aria-pressed="false">Mesas</button><button data-aba-loja="ganhar" aria-pressed="false">Como ganhar</button>
+        <button data-aba-loja="cartas" aria-pressed="true">Cartas</button><button data-aba-loja="dados" aria-pressed="false">Dados</button><button data-aba-loja="icones" aria-pressed="false">Ícones</button><button data-aba-loja="mesas" aria-pressed="false">Mesas</button>
       </div>
       <div id="lojaConteudo"></div>
       <button class="btn btn-papel" id="btnFecharLoja">Fechar</button>

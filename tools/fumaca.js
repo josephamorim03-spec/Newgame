@@ -26,7 +26,7 @@ fs.mkdirSync(FOTOS, { recursive: true });
     await pg.waitForTimeout(500);
     // primeira visita: a tela de montar o deck abre sozinha, com as armadilhas travadas
     const deckAberto = await pg.evaluate(() => !document.getElementById('janelaDeck').hidden);
-    const travadas = await pg.$$eval('.carta-op .cadeado', l => l.length);
+    const travadas = await pg.$$eval('.op .preco', l => l.length);
     if (r.nome === 'celular') await pg.screenshot({ path: path.join(FOTOS, 'deck-celular.png') });
     await pg.evaluate(() => { DiceDuel.st.pref.liberar = true; });       // libera tudo para testar as armadilhas
     await pg.click('#btnFecharDeck');

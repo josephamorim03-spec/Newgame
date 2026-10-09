@@ -147,19 +147,20 @@
 
   // chamada grande de bom momento, uma de cada vez
   const fila = []; let mostrando = false;
-  function chamada(titulo, sub = '', tipo = '') {
-    fila.push({ titulo, sub, tipo });
+  // op.ico: imagem/ícone ao lado do título; op.ms: quanto tempo fica (o padrão é curto, para festejar); op.classe: classe extra
+  function chamada(titulo, sub = '', tipo = '', op = {}) {
+    fila.push({ titulo, sub, tipo, ...op });
     if (!mostrando) proxima();
   }
   function proxima() {
     const c = fila.shift(); if (!c) { mostrando = false; return; }
     mostrando = true;
     const el = document.createElement('div');
-    el.className = 'chamada ' + c.tipo + (cfg.animacoes ? '' : ' sem-anim');
+    el.className = 'chamada ' + c.tipo + (c.classe ? ' ' + c.classe : '') + (cfg.animacoes ? '' : ' sem-anim');
     el.setAttribute('role', 'status');
-    el.innerHTML = `<b>${c.titulo}</b>${c.sub ? `<span>${c.sub}</span>` : ''}`;
+    el.innerHTML = `<b>${c.ico ? `<span class="ch-ico">${c.ico}</span>` : ''}${c.titulo}</b>${c.sub ? `<span>${c.sub}</span>` : ''}`;
     document.body.appendChild(el);
-    setTimeout(() => { el.classList.add('saindo'); setTimeout(() => { el.remove(); proxima(); }, cfg.animacoes ? 260 : 0); }, cfg.animacoes ? 1150 : 1400);
+    setTimeout(() => { el.classList.add('saindo'); setTimeout(() => { el.remove(); proxima(); }, cfg.animacoes ? 260 : 0); }, c.ms || (cfg.animacoes ? 1150 : 1400));
   }
 
   function tremer(el, forca = 1) {

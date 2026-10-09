@@ -40,7 +40,7 @@ function verificar() {
     }
   }
   // 2) filho saindo da caixa de um elemento com borda visível
-  const CAIXAS = '.slot, .carta, .btn, .tag, .bolso, .segmento button, .abas button, .carteira, .btn-topo, .item, .carta-op, .vez-tag, .prontos button, .efeito-ativo, .jogador, .caixa, .acoes';
+  const CAIXAS = '.slot, .carta, .btn, .tag, .bolso, .segmento button, .abas button, .carteira, .btn-topo, .item, .op, .vaga, .ficha, .vez-tag, .prontos button, .efeito-ativo, .jogador, .caixa, .acoes';
   for (const c of document.querySelectorAll(CAIXAS)) {
     if (ignorar(c) || !visivel(c)) continue;
     const r = c.getBoundingClientRect();
@@ -112,7 +112,7 @@ if (require.main === module) (async () => {
     const olha = async (tela, foto) => { anota(tela, w, await pg.evaluate(verificar)); if (foto) await pg.screenshot({ path: path.join(FOTOS, `${tela}-${w}.png`), fullPage: false }); };
     await olha('deck', true);
     await pg.click('#btnFecharDeck');
-    await pg.click('#btnCarteira'); for (const aba of ['cartas', 'dados', 'icones', 'mesas', 'ganhar']) { await pg.click(`[data-aba-loja="${aba}"]`); await olha('loja-' + aba, aba === 'cartas'); } await pg.click('#btnFecharLoja');
+    await pg.click('#btnCarteira'); for (const aba of ['cartas', 'dados', 'icones', 'mesas']) { await pg.click(`[data-aba-loja="${aba}"]`); await olha('loja-' + aba, aba === 'cartas'); } await pg.click('#btnComoGanhar'); await olha('loja-ganhar', false); await pg.click('[data-voltar-loja]'); await pg.click('#btnFecharLoja');
     await pg.click('#btnOnline'); await olha('online-sem-servidor', false); await pg.click('#btnFecharOnline');
     await pg.click('#btnConfig'); await olha('ajustes', true); await pg.click('[data-cfg="nivel"][data-v="esperto"]'); await pg.click('#btnFecharConfig');
     if (w < 1040) { await pg.click('#btnRegras'); await pg.waitForTimeout(350); await olha('regras', false); await pg.click('#btnFecharLado'); }

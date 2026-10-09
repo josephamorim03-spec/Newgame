@@ -232,12 +232,15 @@
       return;
     }
     j.cartas[p][c] = 'usada'; j.stats[p].cartas.push(k.nome);
+    const ev = { p, c, nome: k.nome };   // ajuste e virar levam o dado e os valores: a tela mostra o que mudou
     if (c === 'ajuste') {
       const d = j.mesa[idx], antes = d.v; d.v = Math.min(6, Math.max(1, d.v + (delta < 0 ? -1 : 1)));
       registrar(j, p, `usou Ajuste: o ${antes} da Mesa virou ${d.v}`, 'seg'); emitir(j, 'virar', { id: d.id });
+      Object.assign(ev, { id: d.id, antes, depois: d.v });
     } else if (c === 'virar') {
       const d = j.mesa[idx], antes = d.v; d.v = 7 - d.v;
       registrar(j, p, `usou Virar: o ${antes} da Mesa virou ${d.v}`, 'seg'); emitir(j, 'virar', { id: d.id });
+      Object.assign(ev, { id: d.id, antes, depois: d.v });
       if (j.marca && j.marca.id === d.id) desfazerEspelho(j, p);
     } else if (c === 'rerrolar') {
       j.mesa.forEach(d => { d.v = rolar(j); d.novo = true; }); emitir(j, 'rolar');
@@ -246,7 +249,7 @@
     } else if (c === 'pressa') { j.extra[p] = 1; registrar(j, p, 'usou Pressa: pega dois dados nesta vez', 'seg'); }
     else if (c === 'coringa') { j.coringa[p] = true; registrar(j, p, 'usou Coringa: o próximo dado entra com qualquer frente', 'seg'); }
     else if (c === 'sobrecarga') { j.sobre[p] = true; registrar(j, p, 'usou Sobrecarga: o próximo disparo de 4+ vale +2', 'seg'); }
-    emitir(j, 'carta', { p, c, nome: k.nome });
+    emitir(j, 'carta', ev);
   }
   function desfazerEspelho(j, quem) {
     const dono = j.marca.dono, n = j.nomes;

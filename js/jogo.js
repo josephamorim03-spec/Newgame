@@ -375,6 +375,27 @@
   }
 
   const espera = ms => new Promise(res => setTimeout(res, ms * ritmo()));
+  // ---------- quando alguém usa carta: o aviso explica e o dado que mudou fica marcado na Mesa ----------
+  const AVISO_CARTA = 2600;   // ms do aviso da carta do rival (o bot espera por ele antes de jogar)
+  function explicarCarta(e, quem) {
+    const mudou = e.antes != null ? `${quem} mudou um ${e.antes} da Mesa para ${e.depois}` : null;
+    return {
+      ajuste: mudou || `${quem} somou ou tirou 1 de um dado da Mesa`,
+      virar: e.antes != null ? `${quem} virou um ${e.antes} da Mesa: agora é ${e.depois}` : `${quem} virou um dado da Mesa`,
+      rerrolar: `${quem} rolou a Mesa de novo`,
+      pressa: `${quem} vai pegar dois dados nesta vez`,
+      coringa: `o próximo dado de ${quem} entra com qualquer frente`,
+      sobrecarga: `o próximo disparo de 4+ de ${quem} vale +2`,
+    }[e.c] || `${quem} usou`;
+  }
+  let marcaMudanca = null;   // { ids, antes, ate }
+  function marcarMudanca(ids, antes) {
+    const ate = Date.now() + AVISO_CARTA + 600;
+    marcaMudanca = { ids, antes, ate };
+    setTimeout(() => { if (marcaMudanca && marcaMudanca.ate === ate) { marcaMudanca = null; if (jogo) render(); } }, AVISO_CARTA + 650);
+    if (jogo) render();
+  }
+  const mudou = id => !!(marcaMudanca && marcaMudanca.ids.includes(id) && Date.now() < marcaMudanca.ate);
   async function talvezAutomato() {
     const j = jogo;
     if (!j || j.modo !== 'bot' || j.fase === 'fim' || humano(j.vez) || j.pensando || j.intro) return;
@@ -387,7 +408,8 @@
         if (u.virar ? !podeVirar(p, u.carta).ok : (!podeUsar(p, u.carta).ok || (CARTAS[u.carta].alvo && !j.mesa[u.idx]))) continue;
         if (u.virar) virarCarta(p, u.carta); else usarCarta(p, u.carta, u.idx, u.delta || 1);
         render();
-        await espera(1000); if (tok !== jogo.token) return;
+        // dá tempo de ler o aviso e ver o dado que mudou antes da próxima ação (não acelera no ritmo rápido)
+        await new Promise(r => setTimeout(r, Math.max(AVISO_CARTA + 300, (AVISO_CARTA + 300) * ritmo()))); if (tok !== jogo.token) return;
       }
       for (;;) {
         const plano = automatoEscolhe(p);
@@ -612,10 +634,10 @@
       }
       if (j.fase === 'ajuste' && j.ajusteIdx === i) tags = `<span class="tag previa">ajustar</span>`;
       const serveRival = dicas && ele.length && encaixa(ele, valorAoPegar(1 - p, d)) && j.fase !== 'fim';
-      const cls = ['pega', d.novo ? 'novo' : '', window.Rolagem && Rolagem.ativo(d.id) ? 'rolando' : '', !salvo && j.fase === 'pegar' && dicas ? 'nao-cabe' : '', j.sel === d.id || (j.fase === 'ajuste' && j.ajusteIdx === i) ? 'escolhido' : '', j.destaque === d.id ? 'destaque' : '', j.virando === d.id ? 'virando' : ''].join(' ');
+      const cls = ['pega', d.novo ? 'novo' : '', window.Rolagem && Rolagem.ativo(d.id) ? 'rolando' : '', !salvo && j.fase === 'pegar' && dicas ? 'nao-cabe' : '', j.sel === d.id || (j.fase === 'ajuste' && j.ajusteIdx === i) ? 'escolhido' : '', j.destaque === d.id ? 'destaque' : '', j.virando === d.id ? 'virando' : '', mudou(d.id) ? 'mudou' : ''].join(' ');
       const rotulo = `${j.fase === 'alvo' ? 'Escolher' : 'Pegar'} ${d.v}${contra ? `, chega virado como ${vv}` : ''}${cabe ? (r.length ? ', ' + r.map(k => REL[k].nome).join(' e ') : '') : salvo ? ', só pelo Bolso' : ', rompe a corrente'}${serveRival ? ', serve ao rival' : ''}${marcado !== null ? ', marcado com Espelho' : ''}`;
       return `<button class="${cls}" style="--i:${i}" data-i="${i}" data-id="${d.id}" ${ativo ? '' : 'disabled'} aria-label="${rotulo}" aria-pressed="${j.sel === d.id || (j.fase === 'ajuste' && j.ajusteIdx === i)}">
-        <span class="kbd">${i + 1}</span><span class="face">${dadoHTML(d.v, skinMesa())}${serveRival ? '<span class="alvo-rival"></span>' : ''}${marcado !== null ? `<span class="marca-esp dono${marcado}" title="Marcado com Espelho">${CARTAS.espelho.ico}</span>` : ''}</span><span class="tags">${tags}</span></button>`;
+        <span class="kbd">${i + 1}</span><span class="face">${dadoHTML(d.v, skinMesa())}${mudou(d.id) && marcaMudanca.antes != null ? `<span class="era">era ${marcaMudanca.antes}</span>` : ''}${serveRival ? '<span class="alvo-rival"></span>' : ''}${marcado !== null ? `<span class="marca-esp dono${marcado}" title="Marcado com Espelho">${CARTAS.espelho.ico}</span>` : ''}</span><span class="tags">${tags}</span></button>`;
     }).join('');
   }
 
@@ -850,8 +872,20 @@
         }
         case 'salvo': Som.tocar('salvo'); Fx.chamada('Salvo!', e.txt, 'suave'); Fx.faiscas(qs(`#pj${e.p} .corrente`), 14, ['#cdeccf', '#fff6e6']); break;
         case 'bloqueio': Som.tocar('bloqueio'); Fx.texto(qs(`#pj${e.p} .corrente`) || null, 'Bloqueio!', 'pequeno'); break;
-        case 'carta': Som.tocar('carta'); if (!humano(e.p) || j.modo === 'local') Fx.chamada(e.nome, `${n[e.p]} usou`, e.p === 1 && j.modo !== 'local' ? 'rival' : 'suave'); break;
-        case 'armou': Som.tocar('armou'); if (!humano(e.p) || j.modo === 'local') Fx.texto(painelEl, e.c === 'espelho' ? 'Espelho!' : 'Carta virada!', 'pequeno'); break;
+        case 'carta': {
+          Som.tocar('carta');
+          if (e.id != null && e.antes != null) marcarMudanca([e.id], e.antes);
+          else if (e.c === 'rerrolar') marcarMudanca(j.mesa.map(d => d.id), null);
+          if (!humano(e.p) || j.modo === 'local') Fx.chamada(e.nome, explicarCarta(e, n[e.p]), e.p === 1 && j.modo !== 'local' ? 'rival' : 'suave', { ico: CARTAS[e.c].arte, ms: AVISO_CARTA, classe: 'aviso-carta' });
+          break;
+        }
+        case 'armou': {
+          Som.tocar('armou');
+          if (humano(e.p) && j.modo !== 'local') break;
+          if (e.c === 'espelho' && j.marca) { marcarMudanca([j.marca.id], null); Fx.chamada('Espelho', `${n[e.p]} marcou um ${(j.mesa.find(d => d.id === j.marca.id) || {}).v || ''} da Mesa: se você pegá-lo, ele vira`, e.p === 1 && j.modo !== 'local' ? 'rival' : 'suave', { ico: CARTAS.espelho.arte, ms: AVISO_CARTA, classe: 'aviso-carta' }); }
+          else Fx.chamada('Carta virada', `${n[e.p]} virou uma carta para baixo: pode ser armadilha ou blefe`, e.p === 1 && j.modo !== 'local' ? 'rival' : 'suave', { ico: VERSO, ms: AVISO_CARTA, classe: 'aviso-carta' });
+          break;
+        }
         case 'revelou': {
           Som.tocar('revelou'); Fx.chamada(CARTAS[e.c].nome + '!', e.txt, e.p === 1 && j.modo !== 'local' ? 'rival' : '');
           Fx.faiscas(painelEl, 22, ['#e2d6ff', '#fff6e6', '#ffe3a3']); vibrar([40, 60, 40]);
@@ -983,6 +1017,7 @@
   // ---------- loja ----------
   function abrirLoja(aba) {
     if (aba) st.abaLoja = aba;
+    if (st.abaLoja === 'ganhar') st.abaLoja = 'cartas';
     desenharLoja();
     document.getElementById('janelaLoja').hidden = false;
   }
@@ -995,16 +1030,20 @@
       <span class="nota">${c.online ? `${esc(c.online.nome)} · online ${c.online.rating} · solo ${c.rating}` : `Rating ${c.rating}`} · Nível ${nv}</span>
       <div class="xp" title="experiência"><i style="width:${prox === null ? 100 : Math.round((c.xp - ant) / (prox - ant) * 100)}%"></i></div>`;
     document.querySelectorAll('#abasLoja [data-aba-loja]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.abaLoja === aba)));
+    // "Como ganhar" não é uma seção do catálogo: abre pelo "?" do canto e esconde as abas
+    document.getElementById('abasLoja').hidden = aba === 'ganhar';
+    document.getElementById('btnComoGanhar').setAttribute('aria-pressed', String(aba === 'ganhar'));
     const alvo = document.getElementById('lojaConteudo');
     if (aba === 'ganhar') {
-      alvo.innerHTML = `<table class="taxas">
+      alvo.innerHTML = `<h3 style="margin:0">Como ganhar moedas</h3><table class="taxas">
         <tr><th>Partida</th><th>Base</th><th>Paga moedas enquanto o seu maior rating estiver</th></tr>
         <tr><td>Diana (iniciante)</td><td>${BASE_MOEDAS.aprendiz}</td><td>rating abaixo de ${TETO_MOEDAS.aprendiz}</td></tr>
         <tr><td>Dona Coruja (avançado)</td><td>${BASE_MOEDAS.esperto}</td><td>rating abaixo de ${TETO_MOEDAS.esperto}</td></tr>
         <tr><td>Online, com amigos</td><td>${BASE_MOEDAS.online}</td><td>sempre; vale mais vencer quem tem rating maior</td></tr>
         <tr><td>A dois no aparelho</td><td>–</td><td>não paga</td></tr></table>
         <p class="nota" style="margin-top:10px">Só vitórias dão moedas. A base é multiplicada pela <b>margem</b> (×1 a ×2: vencer por 8 pontos ou mais, na meta 12, dobra) e pela <b>rapidez</b> (×1,5 em até 5 Mesas, ×1,25 em 6). Uma vitória típica rende cerca de 14 contra a Diana e 24 contra a Dona Coruja. Com conta, as vitórias contra os rivais do jogo rendem até 300 moedas por dia.</p>
-        <p class="nota">Experiência sobe em toda partida, ganhando ou perdendo, e os níveis 2, 3 e 5 dão presentes. Cartas nunca serão vendidas por dinheiro: elas ampliam o estilo, não a força (o melhor deck é feito só de cartas grátis).</p>`;
+        <p class="nota">Experiência sobe em toda partida, ganhando ou perdendo, e os níveis 2, 3 e 5 dão presentes. Cartas nunca serão vendidas por dinheiro: elas ampliam o estilo, não a força (o melhor deck é feito só de cartas grátis).</p>
+        <button class="btn btn-papel btn-voltar" data-voltar-loja="1">← Voltar à loja</button>`;
       return;
     }
     const item = (tipo, id, info, previa, sub) => {
@@ -1059,17 +1098,48 @@
     desenharDeck();
     document.getElementById('janelaDeck').hidden = false;
   }
-  function desenharDeck() {
+  // por que uma carta não entra no deck agora (ou null se entra)
+  function porQueNao(d, c) {
+    if (!possui(c)) return `Está na Loja por ${PRECO_CARTA[c]} moedas.`;
+    if (travada(c)) return 'As armadilhas chegam depois da sua 1ª partida (ou em Ajustes).';
+    if (d.includes(c) || deckValido(d.concat(c))) return null;
+    if (d.length >= 3) return 'Deck cheio: toque numa carta do seu deck, lá em cima, para tirá-la.';
+    if (CARTAS[c].tipo === 'armadilha' && d.filter(x => CARTAS[x].tipo === 'armadilha').length >= 2) return 'Já tem 2 armadilhas: tire uma para pôr esta.';
+    if (CARTAS[c].pontos) return `Já tem uma carta de pontos ${RAIO}: só cabe uma.`;
+    return 'Esta carta não cabe neste deck.';
+  }
+  function desenharDeck(aviso = '') {
     const d = st.decks[st.abaDeck] = st.decks[st.abaDeck].filter(disponivel);
     const nt = d.filter(c => CARTAS[c].tipo === 'armadilha').length, np = d.filter(c => CARTAS[c].pontos).length;
-    document.getElementById('deckContador').innerHTML = `<b>${d.length}/3</b> cartas · ${nt}/2 armadilhas · ${np}/1 de pontos <span class="raio">${RAIO}</span>${d.length ? ' · ' + d.map(c => CARTAS[c].nome).join(', ') : ''}`;
-    document.getElementById('deckProntos').innerHTML = PRONTOS.filter(k => k.cartas.every(disponivel)).map(k => `<button data-pronto="${PRONTOS.indexOf(k)}">${k.nome} <small>${k.cartas.map(c => CARTAS[c].nome).join(' · ')}${k.nota ? ' (' + k.nota + ')' : ''}</small></button>`).join('');
-    document.getElementById('deckGrade').innerHTML = ORDEM.map(c => {
-      const k = CARTAS[c], dentro = d.includes(c), trav = travada(c), aVenda = !possui(c);
-      const cabe = !trav && !aVenda && (dentro || deckValido(d.concat(c)));
-      const aviso = aVenda ? `<span class="cadeado"><span class="moeda"></span> ${PRECO_CARTA[c]} na Loja · toque para ver</span>` : trav ? '<span class="cadeado">Libera depois da sua 1ª partida</span>' : '';
-      return `<button class="carta-op" data-op="${c}" ${aVenda ? 'data-na-loja="1"' : ''} aria-pressed="${dentro}" ${cabe || aVenda ? '' : 'disabled'}>${k.arte}<b>${k.nome}${k.pontos ? ` <span class="raio">${RAIO}</span>` : ''}<span class="tipo">${k.tipo}</span></b><span class="txt">${k.texto}</span>${aviso}</button>`;
+    // as 3 vagas do deck: tocar numa carta escolhida a tira
+    document.getElementById('deckEscolhido').innerHTML = [0, 1, 2].map(i => {
+      const c = d[i];
+      if (!c) return `<span class="vaga">vaga ${i + 1}<br>escolha abaixo</span>`;
+      const k = CARTAS[c];
+      return `<button class="vaga" data-tirar="${c}" aria-label="Tirar ${k.nome} do deck">${k.arte}<b>${k.nome}${k.pontos ? ` <span class="raio">${RAIO}</span>` : ''}</b><span class="tirar" aria-hidden="true">✕</span></button>`;
     }).join('');
+    document.getElementById('deckContador').innerHTML =
+      `<span class="ficha${d.length === 3 ? ' cheia' : ''}">${d.length}/3 cartas</span><span class="ficha${nt === 2 ? ' cheia' : ''}">${nt}/2 armadilhas</span><span class="ficha${np === 1 ? ' cheia' : ''}">${np}/1 <span class="raio">${RAIO}</span> de pontos</span>` +
+      (aviso ? `<span class="deck-aviso">${aviso}</span>` : '');
+    document.getElementById('deckProntos').innerHTML = PRONTOS.filter(k => k.cartas.every(disponivel)).map(k => `<button data-pronto="${PRONTOS.indexOf(k)}">${k.nome} <small>${k.cartas.map(c => CARTAS[c].nome).join(' · ')}${k.nota ? ' (' + k.nota + ')' : ''}</small></button>`).join('');
+    const op = c => {
+      const k = CARTAS[c], dentro = d.includes(c), nao = porQueNao(d, c);
+      const extra = !possui(c) ? `<span class="preco"><span class="moeda"></span> ${PRECO_CARTA[c]} na Loja</span>` : travada(c) ? '<span class="preco">depois da 1ª partida</span>' : `<small>${k.verbo}</small>`;
+      return `<div class="op-wrap"><button class="op${nao && !dentro ? ' fora' : ''}" data-op="${c}" aria-pressed="${dentro}">${k.arte}<b>${k.nome}${k.pontos ? ` <span class="raio">${RAIO}</span>` : ''}</b>${extra}</button>` +
+        `<button class="op-info" data-info="${c}" aria-label="Ler a carta ${k.nome}">i</button></div>`;
+    };
+    document.getElementById('deckGrade').innerHTML = [['efeito', 'Efeitos'], ['armadilha', 'Armadilhas']]
+      .map(([t, titulo]) => `<h3>${titulo}</h3><div class="grade-op">${ORDEM.filter(c => CARTAS[c].tipo === t).map(op).join('')}</div>`).join('');
+  }
+  // a carta inteira, fora da partida (montar o deck)
+  function abrirInfoCarta(c) {
+    const k = CARTAS[c];
+    document.getElementById('cartaDetalhe').innerHTML = `${k.arte}<div><h2 id="cartaTitulo">${k.nome}</h2>
+      <p class="nota">${k.tipo === 'armadilha' ? 'Armadilha' : 'Efeito'}${k.pontos ? ` · carta de pontos <span class="raio">${RAIO}</span>` : ''}</p><p style="margin-top:8px">${k.texto}</p></div>`;
+    document.getElementById('cartaNota').textContent = porQueNao(st.decks[st.abaDeck], c) || '';
+    document.getElementById('cartaBotoes').innerHTML = `<button class="btn btn-papel" data-fechar-carta="1">Fechar</button>`;
+    document.getElementById('janelaCarta').hidden = false;
+    Som.tocar('carta');
   }
 
   // ---------- ajustes ----------
@@ -1098,6 +1168,22 @@
   }).join('');
   document.querySelectorAll('span.raio').forEach(el => { el.innerHTML = RAIO; });
   document.getElementById('listaCartas').innerHTML = ORDEM.map(c => `<div>${CARTAS[c].arte}<span><b>${CARTAS[c].nome}${CARTAS[c].pontos ? ` <span class="raio">${RAIO}</span>` : ''}</b> <span class="nota">(${CARTAS[c].tipo})</span>. ${CARTAS[c].texto}</span></div>`).join('');
+
+  // ---------- janelas: toda janela que abre começa pelo título ----------
+  function rolarAoTopo(janela) {
+    const caixa = janela.querySelector('.caixa');
+    janela.scrollTop = 0;
+    if (caixa) caixa.scrollTop = 0;
+    const titulo = janela.querySelector('h2');
+    if (titulo && titulo.getBoundingClientRect().top < 0) titulo.scrollIntoView({ block: 'start' });
+  }
+  const vigiaJanelas = new MutationObserver(ms => ms.forEach(m => { if (!m.target.hidden) rolarAoTopo(m.target); }));
+  document.querySelectorAll('.janela').forEach(el => vigiaJanelas.observe(el, { attributes: true, attributeFilter: ['hidden'] }));
+
+  // ---------- sem zoom de pinça (o Safari do iPhone ignora user-scalable=no) ----------
+  ['gesturestart', 'gesturechange', 'gestureend'].forEach(t => document.addEventListener(t, e => e.preventDefault(), { passive: false }));
+  document.addEventListener('touchmove', e => { if (e.touches.length > 1 || (e.scale !== undefined && e.scale !== 1)) e.preventDefault(); }, { passive: false });
+  // o toque duplo é desligado no CSS (touch-action: manipulation), sem engolir o segundo toque rápido
 
   // ---------- eventos da interface ----------
   // o áudio só pode começar depois de um toque (no iPhone o toque só vale no fim dele: touchend/click, não pointerdown)
@@ -1134,7 +1220,13 @@
   document.getElementById('btnCarteira').addEventListener('click', () => abrirLoja());
   document.getElementById('btnFecharLoja').addEventListener('click', () => { document.getElementById('janelaLoja').hidden = true; });
   document.getElementById('abasLoja').addEventListener('click', e => { const b = e.target.closest('[data-aba-loja]'); if (b) { st.abaLoja = b.dataset.abaLoja; desenharLoja(); } });
+  const lojaVolta = () => { st.abaLoja = st.abaLojaAntes && st.abaLojaAntes !== 'ganhar' ? st.abaLojaAntes : 'cartas'; desenharLoja(); };
+  document.getElementById('btnComoGanhar').addEventListener('click', () => {
+    if (st.abaLoja === 'ganhar') return lojaVolta();
+    st.abaLojaAntes = st.abaLoja; st.abaLoja = 'ganhar'; desenharLoja(); rolarAoTopo(document.getElementById('janelaLoja'));
+  });
   document.getElementById('lojaConteudo').addEventListener('click', e => {
+    if (e.target.closest('[data-voltar-loja]')) { lojaVolta(); return; }
     const cb = e.target.closest('[data-comprar]'); if (cb) { const [t, id] = cb.dataset.comprar.split(':'); comprar(t, id, cb); return; }
     const ub = e.target.closest('[data-usar-item]');
     if (ub && st.sessao) { const [t, id] = ub.dataset.usarItem.split(':'); pedir('POST', '/api/loja/usar', { tipo: t, id }).then(r => { usarPerfil(r.conta); if (jogo) render(); Som.tocar('momento'); }).catch(e => Fx.chamada('Loja', e.message, 'suave')); return; }
@@ -1228,11 +1320,18 @@
   });
   document.getElementById('abasDeck').addEventListener('click', e => { const b = e.target.closest('[data-aba]'); if (!b) return; st.abaDeck = +b.dataset.aba; abrirDeck(); });
   document.getElementById('deckGrade').addEventListener('click', e => {
-    const b = e.target.closest('[data-op]'); if (!b || b.disabled) return;
-    if (b.dataset.naLoja) { document.getElementById('janelaDeck').hidden = true; abrirLoja('cartas'); return; }
+    const info = e.target.closest('[data-info]'); if (info) { abrirInfoCarta(info.dataset.info); return; }
+    const b = e.target.closest('[data-op]'); if (!b) return;
     const d = st.decks[st.abaDeck], c = b.dataset.op;
-    st.decks[st.abaDeck] = d.includes(c) ? d.filter(x => x !== c) : d.concat(c);
-    Som.tocar('carta'); salvar(); desenharDeck();
+    if (!possui(c)) { document.getElementById('janelaDeck').hidden = true; abrirLoja('cartas'); return; }
+    if (d.includes(c)) { st.decks[st.abaDeck] = d.filter(x => x !== c); Som.tocar('carta'); salvar(); desenharDeck(); return; }
+    const nao = porQueNao(d, c);
+    if (nao) { desenharDeck(nao); return; }   // em vez de botão apagado, diz o que fazer
+    st.decks[st.abaDeck] = d.concat(c); Som.tocar('carta'); salvar(); desenharDeck();
+  });
+  document.getElementById('deckEscolhido').addEventListener('click', e => {
+    const b = e.target.closest('[data-tirar]'); if (!b) return;
+    st.decks[st.abaDeck] = st.decks[st.abaDeck].filter(x => x !== b.dataset.tirar); Som.tocar('carta'); salvar(); desenharDeck();
   });
   document.getElementById('deckProntos').addEventListener('click', e => {
     const b = e.target.closest('[data-pronto]'); if (!b) return;
