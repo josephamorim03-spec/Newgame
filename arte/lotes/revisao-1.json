@@ -210,6 +210,20 @@
         "A cute power-up style mushroom: wide red dome cap with three big white circles, short cream stem with two tall black oval eyes and a tiny smile, standing on a little tuft of grass. Front view. No text.",
         "A chunky red-capped mushroom with big white polka spots and a cream stem with two black oval eyes, slightly bouncing, a small sparkle beside it like a power-up. Front view. No text."
       ]
+    },
+    "cafu": {
+      "grupo": "retratos3",
+      "pedidos": "arte/retratos.json",
+      "estilo": [
+        "arte/fonte/biscoito.png",
+        "arte/fonte/galgo.png"
+      ],
+      "texto": "SPECIAL. An original Brazilian character (not a likeness of any real person): a white Brazilian man in his forties, fair skin, a retired football star turned elegant gentleman. Short dark hair, thin rectangular glasses, a neat mustache connected to a short chin goatee (no beard on the cheeks), a big confident friendly smile. Wearing a sharp suit in Brazil colors: a green suit jacket, canary-yellow shirt, blue tie. No text, no logo, no numbers.",
+      "variantes": [
+        "SPECIAL. An original Brazilian character (not a likeness of any real person): a white Brazilian man in his forties, fair skin, a retired football star turned elegant gentleman. Short dark hair, thin rectangular glasses, a neat mustache connected to a short chin goatee (no beard on the cheeks), a big confident friendly smile. Wearing a sharp green suit jacket, canary-yellow shirt and a blue tie with a tiny football tie pin. No text, no logo, no numbers.",
+        "SPECIAL. An original Brazilian character (not a likeness of any real person): a white Brazilian man in his forties, fair skin, a retired football star turned elegant gentleman. Short dark hair, thin rectangular glasses, a neat mustache connected to a short chin goatee (no beard on the cheeks), a big confident friendly smile. Wearing a canary-yellow suit jacket with a green shirt and a blue tie, and a captain's armband on the left sleeve. No text, no logo, no numbers.",
+        "SPECIAL. An original Brazilian character (not a likeness of any real person): a white Brazilian man in his forties, fair skin, a retired football star turned elegant gentleman. Short dark hair, thin rectangular glasses, a neat mustache connected to a short chin goatee (no beard on the cheeks), a big confident friendly smile. Wearing a navy-blue suit with a green lapel pin, canary-yellow shirt and green tie, holding a classic football under one arm. No text, no logo, no numbers."
+      ]
     }
   }
 }
