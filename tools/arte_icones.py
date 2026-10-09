@@ -15,6 +15,8 @@ Cada imagem fica em arte/fonte/<id>.png (1024 px, fundo transparente, para revis
 e entra no jogo como WebP de 160 px em js/retratos_pintados.js, embutida em data URI: funciona por
 file://, no servidor e no HTML único, sem pedido extra de rede. Quem não tem versão pintada usa o vetor
 de js/retratos.js. Para tirar um retrato pintado, apague arte/fonte/<id>.png e rode --embutir.
+Personagens claros (os de "fundo_opaco" em arte/retratos.json) somem no fundo transparente da API, que
+toma o pelo branco por fundo: esses vêm num verde liso e o verde é recortado aqui, a partir das bordas.
 """
 import base64
 import io
@@ -26,7 +28,7 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
-from PIL import Image
+from PIL import Image, ImageDraw
 
 RAIZ = Path(__file__).resolve().parent.parent
 PEDIDOS = RAIZ / "arte" / "retratos.json"
@@ -39,7 +41,11 @@ LADO = 160          # px do WebP no jogo (o maior retrato na tela tem ~120 px em
 def prompt_de(cfg, id_):
     texto = cfg["retratos"][id_]
     partes = [cfg["referencia"]] if (REFERENCIA / f"{id_}.png").exists() and cfg.get("referencia") else []
-    partes.append(cfg["estilo"])
+    if id_ in cfg.get("fundo_opaco", []):
+        partes.append(cfg["estilo"].replace("plain transparent background", "no transparency"))
+        partes.append(cfg["fundo_opaco_texto"])
+    else:
+        partes.append(cfg["estilo"])
     if texto.startswith("SPECIAL."):
         partes.append(cfg["especial"])
         texto = texto[len("SPECIAL."):].strip()
@@ -57,12 +63,12 @@ def multipart(campos, arquivo):
     return b"".join(partes), f"multipart/form-data; boundary={fronteira}"
 
 
-def gerar(prompt, qualidade, ref=None):
+def gerar(prompt, qualidade, ref=None, fundo="transparent"):
     chave = os.environ.get("OPENAI_API_KEY")
     if not chave:
         sys.exit("Falta OPENAI_API_KEY no ambiente.")
     campos = {"model": os.environ.get("ARTE_MODELO", "gpt-image-1"), "prompt": prompt, "size": "1024x1024",
-              "background": "transparent", "quality": qualidade, "n": 1}
+              "background": fundo, "quality": qualidade, "n": 1}
     if ref is not None:
         # com referência: edição a partir do vetor; "input_fidelity" alta segura o desenho original
         corpo, tipo = multipart({**campos, "input_fidelity": "high"}, ref)
@@ -81,7 +87,7 @@ def gerar(prompt, qualidade, ref=None):
             msg = e.read().decode(errors="replace")[:400]
             if e.code == 400 and ref is not None:
                 print(f"  a API recusou a edição com referência ({msg[:160]}); tentando só com o texto", flush=True)
-                return gerar(prompt, qualidade)
+                return gerar(prompt, qualidade, fundo=fundo)
             if e.code in (429, 500, 502, 503) and tentativa < 3:
                 time.sleep(2 ** (tentativa + 2)); continue
             sys.exit(f"A API recusou ({e.code}): {msg}")
@@ -89,6 +95,27 @@ def gerar(prompt, qualidade, ref=None):
             if tentativa < 3:
                 time.sleep(2 ** (tentativa + 2)); continue
             sys.exit(f"Sem conexão com a API: {e}")
+
+
+def recortar_fundo(png_bytes, tolerancia=70):
+    """apaga o fundo liso: inunda a partir das bordas (o contorno grosso segura) e torna transparente"""
+    im = Image.open(io.BytesIO(png_bytes)).convert("RGBA")
+    rgb = im.convert("RGB")
+    marca = (255, 0, 255)
+    w, h = rgb.size
+    for x, y in [(0, 0), (w - 1, 0), (0, h - 1), (w - 1, h - 1), (w // 2, 0), (w // 2, h - 1), (0, h // 2), (w - 1, h // 2)]:
+        if rgb.getpixel((x, y)) != marca:
+            ImageDraw.floodfill(rgb, (x, y), marca, thresh=tolerancia)
+    alfa = Image.new("L", im.size, 255)
+    px, pa = rgb.load(), alfa.load()
+    for y in range(h):
+        for x in range(w):
+            if px[x, y] == marca:
+                pa[x, y] = 0
+    im.putalpha(alfa)
+    buf = io.BytesIO()
+    im.save(buf, "PNG")
+    return buf.getvalue()
 
 
 def webp(png_bytes):
@@ -141,7 +168,11 @@ def main():
         print(f"pintando {id_}…", flush=True)
         ref = REFERENCIA / f"{id_}.png"
         ref = ref if ref.exists() else None
-        (FONTE / f"{id_}.png").write_bytes(gerar(p, qualidade, ref))
+        if id_ in cfg.get("fundo_opaco", []):
+            png = recortar_fundo(gerar(p, qualidade, ref, fundo="opaque"))
+        else:
+            png = gerar(p, qualidade, ref)
+        (FONTE / f"{id_}.png").write_bytes(png)
         (FONTE / f"{id_}.json").write_text(json.dumps({"prompt": p, "qualidade": qualidade, "referencia": bool(ref), "modelo": os.environ.get("ARTE_MODELO", "gpt-image-1")}, ensure_ascii=False, indent=1))
     if not seco:
         embutir()
