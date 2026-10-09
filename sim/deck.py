@@ -14,7 +14,10 @@ def opcoes(cor): return 6 if not cor else _opc(cor[-1])
 
 ARMADILHAS={'espelho','interferencia','fundo','pedagio','ancora'}
 # números das cartas (os valores finais, ajustados por simulação; docs/design.md §4)
-BAL=dict(interf_menos=1, interf_min=4, interf_max=9, interf_6='normal', interf_lider='espera', pedagio=2, pedagio16=2, fundo_tudo=True, rerrolar_tudo=True, ancora_min=4, rerrolar_cor=2, coringa_cor=2, sobre=2, espelho_sem_bolso=True)
+# interf_modo: 'lider' (hoje: −1 no disparo de 4+ de quem lidera) | 'vale1' (o disparo de 4+ de quem lidera vale como um de 3: 1 ponto)
+#              | 'grande' (−interf_grande no disparo de 5+, de qualquer um; descartada: quem sabe a gasta de graça com um 5)
+# pedagio_modo: 'sempre' (hoje: +2 no próximo disparo do rival) | 'pequeno' (+2 só num disparo de 3 ou 4; o de 5+ não paga)
+BAL=dict(interf_modo='lider', interf_grande=2, pedagio_modo='sempre', interf_menos=1, interf_min=4, interf_max=9, interf_6='normal', interf_lider='espera', pedagio=2, pedagio16=2, fundo_tudo=True, rerrolar_tudo=True, ancora_min=4, rerrolar_cor=2, coringa_cor=2, sobre=2, espelho_sem_bolso=True)
 import os, json
 BAL.update(json.loads(os.environ.get('BAL', '{}')))   # ex.: BAL='{"pedagio": 2}' para testar outro número
 EFEITOS={'rerrolar','virar','ajuste','pressa','coringa','sobrecarga'}
@@ -101,13 +104,20 @@ class Partida:
         # interf_6: 'normal' (o 6 perde 1, como no jogo) ou 'gasta' (o disparo de 6 gasta a Interferência sem tirar ponto)
         # interf_lider: a Interferência só tira ponto de quem está na frente (ou empatado); atrás, o disparo a gasta
         # (interf_lider='espera': atrás, o disparo não a gasta; ela espera um disparo dele na frente ou empatado)
-        if BAL['interf_lider'] and L>=BAL['interf_min'] and r.armada=='interferencia' and j.pts<r.pts:
+        if BAL['interf_modo']=='vale1':
+            # variante: o disparo de 4+ de quem está na frente (ou empatado) vale como um de 3; atrás, ela espera
+            if L>=4 and r.armada=='interferencia' and j.pts>=r.pts: g=pontos(3); s.disparar_trap(1-p,'interferencia')
+        elif BAL['interf_modo']=='grande':
+            # variante: a Interferência corta só o disparo grande (5+), de quem estiver na frente ou atrás
+            if L>=5 and r.armada=='interferencia': g=max(0,g-BAL['interf_grande']); s.disparar_trap(1-p,'interferencia')
+        elif BAL['interf_lider'] and L>=BAL['interf_min'] and r.armada=='interferencia' and j.pts<r.pts:
             if BAL['interf_lider']!='espera': s.disparar_trap(1-p,'interferencia')
         elif L>=6 and BAL['interf_6']=='gasta' and r.armada=='interferencia':
             s.disparar_trap(1-p,'interferencia')
         elif BAL['interf_min']<=L<=BAL['interf_max'] and r.armada=='interferencia':
             g=max(0,g-BAL['interf_menos']) if BAL['interf_menos']!=2 else pontos(efL-1); s.disparar_trap(1-p,'interferencia')
-        if r.armada=='pedagio':
+        if r.armada=='pedagio' and BAL['pedagio_modo']=='pequeno' and L>=5: pass   # variante: o disparo grande passa sem pagar
+        elif r.armada=='pedagio':
             # +2 nas duas metas desde a v0.11 (docs/balanceamento-cartas.md §10); pedagio16 separa a meta 16 para testes
             r.pts+= (g+1)//2 if BAL['pedagio']=='metade' else BAL['pedagio16'] if s.meta>=16 else BAL['pedagio']; s.disparar_trap(1-p,'pedagio')
         j.pts+=g; j.cor=[]
@@ -152,13 +162,21 @@ class Partida:
             k=sum(encaixa(j.cor,v) for v in s.mesa); return 1 if k==0 else .6 if k==1 else .1
         pf=opcoes(j.cor)/6
         return (1-pf)**4 if not s.mesa else (1-pf)**5
+    def pode_ser(s,p,c):
+        """o "?" do rival de p pode ser a armadilha c (ela está no deck dele e ainda não agiu)"""
+        r=s.j[1-p]; return r.armada not in (None,'espelho') and r.est.get(c) in ('pronto','armado')
     def quer_disparar(s,p):
         j=s.j[p]; L=len(j.cor)
         if L<3: return False
         if L>=LIM or j.pts+pontos(L)>=s.meta: return True
         r=s.risco(p)
         if j.armada=='ancora': r*=.2
-        return r*pontos(L) > (pontos(L+1)-pontos(L))*(1-r)
+        quer = r*pontos(L) > (pontos(L+1)-pontos(L))*(1-r)
+        # defesa contra as variantes (só com elas ligadas): diante de um "?" que pode ser...
+        if BAL['interf_modo']=='grande' and L==4 and s.pode_ser(p,'interferencia'): return True       # ... a Interferência: dispara antes do corte
+        if BAL['interf_modo']=='vale1' and L==4 and j.pts>=s.j[1-p].pts and s.pode_ser(p,'interferencia'): return True   # gasta (ou desmascara) com 4
+        if BAL['pedagio_modo']=='pequeno' and L in (3,4) and s.pode_ser(p,'pedagio') and r<.6: return False   # ... o Pedágio: cresce até 5
+        return quer
     def sem_saida(s,p):
         return all(not s.destinos(p,X) for X in s.mesa)
     def cartas_antes(s,p):
