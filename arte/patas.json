@@ -20,12 +20,12 @@
     "dorso": "The front paw of Diana, a pure white domestic cat (cool white fur #f8f6f2, not cream, not beige, not yellow), seen from directly above, resting flat on a table with the toes pointing down toward the bottom of the image. Only the paw itself, like a soft rounded mitten: a few soft fur tufts on the outline, two short dark cocoa toe grooves at the bottom tip separating three toes, one soft light-gray (#e4e1dc) shadow tone along the lower edge. No pads visible, no claws, no arm, no wrist.",
     "virando": "The same pure white cat front paw (cool white fur #f8f6f2) seen from the side in the middle of turning over: a narrow, tall rounded shape, white fur, with the pink (#f19bb3) edges of three toe beans and of the main pad just peeking out along its right side. A light-gray (#e4e1dc) shadow tone on the left side. No claws, no arm, no wrist.",
     "palma": "The underside (the palm) of the same pure white cat front paw (cool white fur #f8f6f2), raised and facing the viewer with the toes pointing up: one large soft pink (#f19bb3) three-lobed main pad in the lower center and four soft pink oval toe beans in an arc above it, each pad with a slightly darker pink (#d97894) edge and one tiny highlight, soft white fur around and between the pads. The paw is a soft rounded oval with NO wrist and NO leg: its outline is rounded all the way around, with no straight edge or cut at the bottom. Cute and squishy. No claws.",
-    "gancho": "The same pure white cat front paw (cool white fur #f8f6f2) seen from above, curled forward as if hooking the top edge of a die to drag it: the paw slightly foreshortened and wider than tall, two short dark cocoa toe grooves, and the four soft pink (#f19bb3) toe-bean tips peeking out along the bottom edge where the curled toes press down. A light-gray (#e4e1dc) shadow along the top. No claws, no arm, no wrist.",
+    "gancho": "The same pure white cat front paw (cool white fur #f8f6f2) seen from above while it curls its toes over the top edge of something to drag it toward itself, like a cat hooking a toy: a soft rounded paw wider than tall, with FOUR plump rounded toes in a gentle arc along the bottom edge, separated by three VERY short dark cocoa grooves that only mark the gaps between the toe tips (they do not reach up into the paw), all inside one single continuous outline like a real cat paw (not separate balls). Under the tip of each curled toe only a thin pink (#f19bb3) sliver of the toe bean peeks out where it presses down. A light-gray (#e4e1dc) shadow along the top. Soft, natural and cute, clearly a cat paw. No claws, no arm, no wrist.",
     "batida": "The subject is ONLY one small cartoon impact puff, seen from above: a soft round cream (#fffaf0) dust cloud made of three or four rounded bumps, with a light honey (#f2b15e) shadow tone, and four short honey motion ticks radiating outward around it. Nothing else in the image: no dice, no paw, no hand, no table, no other objects.",
     "rastro": "The subject is ONLY one cartoon motion swoosh: a single curved crescent streak in cream (#fffaf0) with a light honey (#f2b15e) inner edge, wide and rounded at the right end and tapering to a sharp point at the left end, like the speed trail of a quick swipe. Nothing else in the image: no dice, no paw, no fist, no hand, no other objects."
   },
   "pelo": {
-    "_leia": "o branco do pelo das patas é alinhado ao da cabeça pintada da Diana (o branco mais comum no retrato dela): os tons claros e neutros de cada pintura são multiplicados por alvo/branco-mais-comum",
+    "_leia": "o branco do pelo das patas é alinhado ao da cabeça pintada da Diana (o branco mais comum no retrato dela): os tons claros e neutros de cada pintura são multiplicados por alvo/branco-mais-comum; o contorno escuro (o mais comum entre os tons escuros) vai para o cacau do jogo, \"contorno\"",
     "alvo": [
       251,
       244,
@@ -36,6 +36,11 @@
       "virando",
       "palma",
       "gancho"
+    ],
+    "contorno": [
+      58,
+      42,
+      46
     ]
   }
 }

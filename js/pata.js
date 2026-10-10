@@ -74,17 +74,19 @@
       + el(0, 0, rx, ry, 'none', 0.2, L)
       + `<path d="M${-rx * 0.55} ${-ry * 0.5} q ${-rx * 0.35} ${ry * 0.5} 0 ${ry}" fill="none" stroke="${SOMBRA}" stroke-width="${L * 0.14}" stroke-linecap="round"/>`;
   }
-  // gancho: os dedos dobrados por cima da aresta do dado: o dorso encurtado (visto de cima, inclinado) e, por baixo da
-  // ponta, as quatro pontinhas rosa dos feijões apertando a face do dado
+  // gancho: os dedos dobrados por cima da aresta do dado. A palma (uma elipse larga) e quatro dedos redondos em arco
+  // na ponta, num contorno só (primeiro tudo em cacau, mais grosso; por cima, tudo em branco); entre os dedos, vãos
+  // curtos; embaixo de cada dedo, só uma lasquinha rosa da almofada, a parte que aperta a face do dado
   function gancho(L) {
-    const rx = L * 0.88, ry = L * 0.6;
-    // as pontinhas ficam por cima da beirada da pata: é o que encosta na face do dado
-    const ponta = x => el(x * L, ry * 0.86, L * 0.19, L * 0.16, ROSA, 0.09, L);
-    const vao = dx => `<path d="M${dx} ${ry * 0.3} l 0 ${ry * 0.3}" stroke="${CACAU}" stroke-width="${L * 0.11}" stroke-linecap="round"/>`;
-    return el(0, 0, rx, ry, PELO, 0.2, L)
-      + `<path d="M${-rx * 0.8} ${-ry * 0.25} q ${rx * 0.8} ${-ry * 0.6} ${rx * 1.6} 0" fill="none" stroke="${SOMBRA}" stroke-width="${L * 0.14}" stroke-linecap="round"/>`
-      + vao(-rx * 0.34) + vao(0) + vao(rx * 0.34)
-      + ponta(-0.52) + ponta(-0.18) + ponta(0.18) + ponta(0.52);
+    const borda = L * 0.2;
+    const formas = [[0, -L * 0.08, L * 0.88, L * 0.56], ...[[-0.62, 0.36], [-0.21, 0.47], [0.21, 0.47], [0.62, 0.36]].map(([x, y]) => [x * L, y * L, L * 0.27, L * 0.25])];
+    const contorno = formas.map(([x, y, rx, ry]) => el(x, y, rx + borda / 2, ry + borda / 2, CACAU)).join('');
+    const pelo = formas.map(([x, y, rx, ry]) => el(x, y, rx - borda / 2, ry - borda / 2, PELO)).join('');
+    const lasca = formas.slice(1).map(([x, y]) => el(x, y + L * 0.27, L * 0.15, L * 0.075, ROSA, 0.07, L)).join('');
+    const vao = (x, y) => `<path d="M${x * L} ${y * L} l 0 ${-L * 0.16}" stroke="${CACAU}" stroke-width="${L * 0.1}" stroke-linecap="round"/>`;
+    return contorno + lasca + pelo
+      + `<path d="M${-L * 0.62} ${-L * 0.32} q ${L * 0.62} ${-L * 0.3} ${L * 1.24} 0" fill="none" stroke="${SOMBRA}" stroke-width="${L * 0.13}" stroke-linecap="round"/>`
+      + vao(-0.42, 0.36) + vao(0, 0.4) + vao(0.42, 0.36);
   }
   const SPRITE = { dorso, virando, palma, gancho };
   // a arte pintada de cada pose e dos efeitos (o quadrado do webp, em larguras L: o desenho ocupa o lado maior dele)
