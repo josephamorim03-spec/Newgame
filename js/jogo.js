@@ -83,6 +83,12 @@
   // ---------- rivais ----------
   // os rivais do jogo: Diana (fácil) e Dona Coruja (difícil)
   const RETRATO_RIVAL = { aprendiz: 'diana', esperto: 'coruja' };
+  // cada bicho joga com os dados dele (as skins em css/estilo.css; docs/historia.md §5). O Coelho não tem tempo de
+  // escolher outro; a Raposa usa o verde do Sapo (pegou para combinar com o cachecol, dizem); o Guaxinim joga com
+  // um dado de cada um (DADOS_SUCATA)
+  const DADO_DO_BICHO = { diana: 'rosa', coruja: 'madeira', sapo: 'lagoa', coelho: 'marfim', raposa: 'lagoa', urso: 'mel', guaxinim: 'sucata', ovelha: 'la' };
+  const DADOS_SUCATA = { 1: 'rosa', 2: 'lagoa', 3: 'madeira', 4: 'mel', 5: 'la', 6: 'marfim' };
+  const dadoDoRival = k => DADO_DO_BICHO[RETRATO_RIVAL[k]] || 'marfim';
   const RIVAIS = {
     aprendiz: { nome: 'Diana', desc: 'gata branca de olhos azuis; joga solto e arrisca', falas: {
       inicio: ['Boa noite. Uma partida?', 'A Mesa está pronta. Comece quando quiser.'],
@@ -734,10 +740,17 @@
 
   // ---------- desenho ----------
   const PIPS = { 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] };
-  const dadoHTML = (v, skin = 'marfim') => `<span class="dado skin-${skin}" role="img" aria-label="${v}">${Array.from({ length: 9 }, (_, i) => `<i class="pip${PIPS[v].includes(i) ? ' on' : ''}"></i>`).join('')}</span>`;
+  const dadoHTML = (v, skin = 'marfim') => `<span class="dado skin-${skin === 'sucata' ? DADOS_SUCATA[v] : skin}" role="img" aria-label="${v}">${Array.from({ length: 9 }, (_, i) => `<i class="pip${PIPS[v].includes(i) ? ' on' : ''}"></i>`).join('')}</span>`;
   const mini = (v, skin) => `<span class="mini">${dadoHTML(v, skin)}</span>`;
+  // a face pintada (js/dados_pintados.js) entra por baixo do brilho, no lugar do degradê da skin; sem ela, vale o CSS
+  (function pintarDados() {
+    const pintados = window.DADOS_PINTADOS || {}, css = Object.entries(pintados).map(([id, src]) =>
+      `.dado.skin-${id}{background:radial-gradient(circle at 30% 25%,rgba(255,255,255,.3),transparent 55%),url("${src}") center/cover}`).join('');
+    if (!css) return;
+    const el = document.createElement('style'); el.id = 'dadosPintados'; el.textContent = css; document.head.appendChild(el);
+  })();
   // cada um vê os próprios dados com a própria skin; os rivais têm a sua; a Mesa usa a sua (ou marfim, a dois)
-  const skinDe = p => p === 0 ? st.conta.dado : jogo.modo === 'bot' ? (jogo.nivel === 'esperto' ? 'madeira' : 'rosa') : online() ? (jogo.perfis[1].dado || 'marfim') : 'marfim';
+  const skinDe = p => p === 0 ? st.conta.dado : jogo.modo === 'bot' ? dadoDoRival(jogo.nivel) : online() ? (jogo.perfis[1].dado || 'marfim') : 'marfim';
   const skinMesa = () => jogo.modo !== 'local' ? st.conta.dado : 'marfim';
   const iconeSVG = id => Retratos.retrato(ICONES[id] ? id : 'bolinha', ICONES[id] && ICONES[id].grupo === 'especial' ? 'especial' : '');
   const elo = r => `<span class="elo ${r.length > 1 ? 'duplo' : 'r-' + r[0]}" title="${r.map(k => REL[k].nome).join(' + ')}">${r.map(k => REL[k].simb).join('·')}</span>`;
@@ -1842,7 +1855,7 @@
     const el = document.getElementById('inicioCena'); if (!el) return;
     const k = rivalDaCena(), falas = RIVAIS[k].falas.inicio;
     const fala = (cena.fala || falas[0]).replace('Boa noite', saudacao());
-    const pele = k === 'esperto' ? 'madeira' : 'rosa';
+    const pele = dadoDoRival(k);
     el.innerHTML = `<button class="cena-rival${cena.feliz ? ' feliz' : ''}" data-cena="rival" tabindex="-1">${Retratos.retrato(RETRATO_RIVAL[k], cena.feliz ? 'feliz' : '')}</button>
       <p class="cena-fala">${esc(fala)}</p>
       <div class="cena-mesa">${cena.dados.map((v, i) => `<button class="cena-dado" data-cena="dado" data-i="${i}" tabindex="-1">${dadoHTML(v, i === 1 ? pele : st.conta.dado)}</button>`).join('')}</div>`;
@@ -1973,7 +1986,7 @@
     const i = +c.dataset.i, antes = cena.dados[i];
     let v; do { v = 1 + Math.floor(Math.random() * 6); } while (v === antes);
     cena.dados[i] = v;
-    c.innerHTML = dadoHTML(v, i === 1 ? (k === 'esperto' ? 'madeira' : 'rosa') : st.conta.dado);
+    c.innerHTML = dadoHTML(v, i === 1 ? dadoDoRival(k) : st.conta.dado);
     c.classList.remove('rola'); void c.offsetWidth; c.classList.add('rola');
     Som.tocar('quique', { forca: 7, primeira: true, x: (i - 1) * 0.5 }); vibrar(8);
     const [a, b2, d] = cena.dados;

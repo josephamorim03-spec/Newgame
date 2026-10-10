@@ -76,26 +76,33 @@ def prompt_de(cfg, id_):
     return " ".join(partes)
 
 
-def multipart(campos, arquivo):
-    """corpo multipart/form-data com os campos de texto e uma imagem (sem depender de requests)"""
+def multipart(campos, arquivos):
+    """corpo multipart/form-data com os campos de texto e uma ou mais imagens (sem depender de requests)"""
+    arquivos = arquivos if isinstance(arquivos, (list, tuple)) else [arquivos]
+    nome = "image" if len(arquivos) == 1 else "image[]"     # várias referências (os quadros da história) vão como lista
     fronteira = "----diceduel" + base64.b16encode(os.urandom(8)).decode()
     partes = [f'--{fronteira}\r\nContent-Disposition: form-data; name="{k}"\r\n\r\n{v}\r\n'.encode() for k, v in campos.items()]
-    partes.append(f'--{fronteira}\r\nContent-Disposition: form-data; name="image"; filename="{arquivo.name}"\r\n'
-                  f'Content-Type: image/png\r\n\r\n'.encode() + arquivo.read_bytes() + b"\r\n")
+    for arquivo in arquivos:
+        partes.append(f'--{fronteira}\r\nContent-Disposition: form-data; name="{nome}"; filename="{arquivo.name}"\r\n'
+                      f'Content-Type: image/png\r\n\r\n'.encode() + arquivo.read_bytes() + b"\r\n")
     partes.append(f"--{fronteira}--\r\n".encode())
     return b"".join(partes), f"multipart/form-data; boundary={fronteira}"
 
 
-def gerar(prompt, qualidade, ref=None, fundo="transparent", fidelidade="high"):
+def gerar(prompt, qualidade, ref=None, fundo="transparent", fidelidade="high", tamanho="1024x1024", modelo=None):
+    """ref: uma imagem ou uma lista delas (os quadros da história mandam o retrato de cada bicho do quadro).
+    O gpt-image-2 (os dados e os quadros) não tem fundo transparente nem input_fidelity: esses dois só vão ao 1"""
     chave = os.environ.get("OPENAI_API_KEY")
     if not chave:
         sys.exit("Falta OPENAI_API_KEY no ambiente.")
-    campos = {"model": os.environ.get("ARTE_MODELO", "gpt-image-1"), "prompt": prompt, "size": "1024x1024",
-              "background": fundo, "quality": qualidade, "n": 1}
+    modelo = modelo or os.environ.get("ARTE_MODELO", "gpt-image-1")
+    campos = {"model": modelo, "prompt": prompt, "size": tamanho, "quality": qualidade, "n": 1}
+    if modelo.startswith("gpt-image-1"):
+        campos["background"] = fundo
     if ref is not None:
         # com referência: edição a partir do vetor; "input_fidelity" alta segura o desenho original
         # (baixa quando a imagem é só referência de estilo, ver tools/arte_lote.py)
-        corpo, tipo = multipart({**campos, "input_fidelity": fidelidade}, ref)
+        corpo, tipo = multipart({**campos, "input_fidelity": fidelidade} if modelo.startswith("gpt-image-1") else campos, ref)
         url = "https://api.openai.com/v1/images/edits"
     else:
         corpo, tipo = json.dumps(campos).encode(), "application/json"
@@ -111,7 +118,7 @@ def gerar(prompt, qualidade, ref=None, fundo="transparent", fidelidade="high"):
             msg = e.read().decode(errors="replace")[:400]
             if e.code == 400 and ref is not None:
                 print(f"  a API recusou a edição com referência ({msg[:160]}); tentando só com o texto", flush=True)
-                return gerar(prompt, qualidade, fundo=fundo, fidelidade=fidelidade)
+                return gerar(prompt, qualidade, fundo=fundo, fidelidade=fidelidade, tamanho=tamanho, modelo=modelo)
             if e.code in (429, 500, 502, 503) and tentativa < 3:
                 time.sleep(2 ** (tentativa + 2)); continue
             sys.exit(f"A API recusou ({e.code}): {msg}")
