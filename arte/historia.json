@@ -711,7 +711,7 @@
       "e": 1,
       "d": 3
      },
-     "conferido": true
+     "conferido": false
     }
    ]
   },
@@ -736,7 +736,7 @@
       "e": 1,
       "d": 5
      },
-     "conferido": true
+     "conferido": false
     },
     {
      "caixa": [
@@ -766,7 +766,7 @@
       "e": 4,
       "d": 5
      },
-     "conferido": false
+     "conferido": true
     },
     {
      "caixa": [
@@ -817,7 +817,7 @@
       "e": 6,
       "d": 5
      },
-     "conferido": true
+     "conferido": false
     },
     {
      "caixa": [
@@ -862,7 +862,7 @@
       "e": 4,
       "d": 2
      },
-     "conferido": true
+     "conferido": false
     },
     {
      "caixa": [
@@ -1332,7 +1332,7 @@
       10.2,
       92.0
      ],
-     "conferido": true
+     "conferido": false
     },
     {
      "x": 13.8,
@@ -1383,7 +1383,7 @@
       33.2,
       99.4
      ],
-     "conferido": true
+     "conferido": false
     },
     {
      "x": 38.0,
@@ -1497,7 +1497,7 @@
       "e": 6,
       "d": 5
      },
-     "conferido": true
+     "conferido": false
     },
     {
      "caixa": [
@@ -1944,7 +1944,7 @@
       "e": 2,
       "d": 6
      },
-     "conferido": true
+     "conferido": false
     },
     {
      "caixa": [
@@ -1998,7 +1998,7 @@
       "e": 5,
       "d": 6
      },
-     "conferido": true
+     "conferido": false
     },
     {
      "caixa": [

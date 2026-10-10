@@ -290,7 +290,20 @@ def consertar(id_, arte):
         cruza = any(sum(Image.composite(mascaras[a], Image.new("1", im.size, 0), mascaras[b]).get_flattened_data()) > .12 * min(area(faces[a][2]), area(faces[b][2]))
                     for a in range(len(faces)) for b in range(a + 1, len(faces)))
         cobre = sum(area(f[2]) for f in faces) / max(1, (x1 - x0) * (y1 - y0))
-        boa = len(faces) >= min(2, quantas) and all(.72 < f[3] < 1.12 for f in faces) and not cruza and cobre > .38
+        def paralelogramo(q):                          # lados opostos com comprimento parecido e quase paralelos
+            ld = [(q[(i + 1) % 4][0] - q[i][0], q[(i + 1) % 4][1] - q[i][1]) for i in range(4)]
+            for a, b in ((ld[0], ld[2]), (ld[1], ld[3])):
+                la, lb = math.hypot(*a), math.hypot(*b)
+                if min(la, lb) < 1 or max(la, lb) / min(la, lb) > 1.3:
+                    return False
+                if abs(a[0] * b[1] - a[1] * b[0]) / (la * lb) > math.sin(math.radians(12)):
+                    return False
+            return True
+        # faces vizinhas encostam: cada face tem um canto a poucos pixels de um canto de outra
+        lado = math.sqrt(max(1, (x1 - x0) * (y1 - y0)))
+        encostam = all(any(min(math.dist(p, r) for r in g[2]) < .12 * lado for p in f[2]) for f in faces for g in faces if g is not f)
+        boa = (len(faces) >= min(2, quantas) and all(.72 < f[3] < 1.12 for f in faces) and not cruza and cobre > .38
+               and all(paralelogramo(f[2]) for f in faces) and encostam)
         dado["conferido"] = boa
         if not boa:
             poucas.append(n + 1)
