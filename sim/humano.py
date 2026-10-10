@@ -480,3 +480,12 @@ if __name__ == '__main__':
             print("    cartas no topo: " + ", ".join(f"{c} {top[c]}" for c in sorted(CARTAS, key=lambda c: -top[c]) if top[c]))
             print("    média dos decks com a carta: " + ", ".join(f"{c} {media[c]:.1%}" for c in sorted(CARTAS, key=lambda c: -media[c])), flush=True)
 
+    if 'mecanicas_p' in quais:
+        # as variantes com o bom jogador: quanto ele vence o casual (mais = mais habilidade em jogo) e como gasta as cartas
+        n = int(os.environ.get('NP', '240'))
+        print(f"\n## Variantes de deck com o pensador (simula {ROLL}x cada opção) contra o humano; {n} partidas cada")
+        print("  variante               | pensador x humano | Mesas | cartas usadas (pensador e humano) | sobram | usadas no 1º quarto | mediana do uso")
+        for nome in os.environ.get('VARIANTES', '3 cartas (hoje),2 cartas,3 no deck, usa só 2,3 cartas, 1 por Mesa,sem cartas').split(','):
+            v = VARIANTES[nome]; pool = decks_de(v['k']) if v['k'] else [[]]
+            r = mede('pensador', 'humano', n=n, pool_a=pool, mec=v['mec'])
+            print(f"  {nome:22s} | {fmt(r):17s} | {r['mesas']:5.1f} | {r['usos']:33.2f} | {r['sobra']:6.0%} | {r['cedo']:19.0%} | {r['quando']:.0%}", flush=True)
