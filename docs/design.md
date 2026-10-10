@@ -393,6 +393,18 @@ dois: é assim que `tools/regras.js` joga as duas mãos pela tela.
 **Menu principal (v0.11).** O jogo abre nele: logo, nome, rating, nível e moedas, **Jogar** grande, Online, e uma
 fileira de ícones (Deck, Loja, Regras, Ajustes).
 
+**Perfil e Loja (v0.12).** A Loja fazia dois papéis: vender e ser o lugar do perfil (título, rating, nível, XP) e do
+visual. Ficou assim:
+- **Tocar no seu nome na tela inicial abre o Perfil:** nome, título, nível com a barra de XP ("12 de 60 XP para o
+  nível 2"), moedas, ratings (contra os rivais e online), recordes (partidas, vitórias, melhor sequência, maior
+  disparo, maior corrente) e **Seu visual**: ícone, dado e mesa, **só com o que você já tem**, com um toque para vestir.
+  "Mais na Loja" leva à Loja. Sem conta, um "Entrar ou criar conta" lembra que o progresso fica só no aparelho.
+- **A Loja continua sendo a Loja:** as moedas precisam de um destino, e comprar é outra coisa que se arrumar. O ícone
+  dela virou uma lojinha com toldo (era uma moeda, que se confundia com o saldo).
+- **Bug do "Convidado":** o menu só se redesenhava ao abrir. Quem entrava na conta pela janela Online, aberta por cima
+  do menu, voltava a ver "Convidado" (e as moedas de antes da compra). Agora tudo o que mostra a conta se redesenha
+  quando ela muda, e o menu também sempre que uma janela por cima dele fecha. O `tools/online_e2e.js` confere.
+
 **Escolha do rival (v0.12).** A escolha Diana/Dona Coruja era um seletor pequeno no menu, com uma linha de texto: não
 dava para ver quem era cada uma nem o que mudava. Agora **Jogar** abre "Escolha o rival", no lugar dos botões do menu
 (o logo e o título saem, para caber sem rolar em 360×640):

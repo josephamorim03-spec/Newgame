@@ -62,6 +62,17 @@ const espera = ms => new Promise(r => setTimeout(r, ms));
     await ana.screenshot({ path: path.join(FOTOS, 'online-conta.png') }); await layout(ana, 'conta');
     // compra na loja com conta (o servidor desconta)
     await ana.click('#btnFecharOnline');
+    // o menu por baixo da janela mostra a conta, não "Convidado" (o bug: só se redesenhava ao abrir o menu)
+    const nomeMenu = await ana.evaluate(() => (document.getElementById('inicio').hidden ? null : document.querySelector('#inicioPerfil b').textContent));
+    if (nomeMenu !== ANA) throw new Error(`o menu mostra "${nomeMenu}" depois de entrar na conta (esperava ${ANA})`);
+    // e o Perfil (tocar no nome) mostra a conta
+    {
+      await ana.click('#inicioPerfil'); await ana.waitForSelector('#janelaPerfil:not([hidden])');
+      const pf = await ana.evaluate(() => ({ nome: document.querySelector('.perfil-nome').textContent, conta: !!document.querySelector('[data-perfil="conta"]') }));
+      if (pf.nome !== ANA || pf.conta) throw new Error('o Perfil não mostra a conta: ' + JSON.stringify(pf));
+      await layout(ana, 'perfil');
+      await ana.click('#btnFecharPerfil');
+    }
     await ana.evaluate(() => document.getElementById('btnCarteira').click());
     await ana.click('[data-aba-loja="dados"]');
     await ana.click('[data-comprar="dados:madeira"]'); await ana.click('[data-comprar="dados:madeira"]');

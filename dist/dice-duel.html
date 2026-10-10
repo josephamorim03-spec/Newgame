@@ -1102,6 +1102,37 @@ button.vaga { cursor: pointer; border: 0; background: #fff3dc; color: var(--tint
 .inicio-rivais .inicio-principal { margin-top: 2px; }
 .tela-inicio.escolhendo .inicio-logo, .tela-inicio.escolhendo #inicioTitulo { display: none; }
 
+/* ==========================================================================
+   Perfil (v0.12): tocar no seu nome na tela inicial. Nível, ratings, recordes e o seu visual (só o que você já tem)
+   ========================================================================== */
+button.inicio-perfil { border: 0; font: inherit; color: inherit; cursor: pointer; text-align: left; }
+button.inicio-perfil:active { transform: translateY(1px); }
+.inicio-perfil .perfil-seta { width: 16px; height: 16px; opacity: .7; margin-left: -2px; }
+.perfil-topo { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 14px; align-items: center; padding: 14px; border-radius: 16px; background: var(--papel-2); }
+.perfil-topo > .avatar { width: 72px; height: 72px; margin: 0; }
+.perfil-quem { display: grid; gap: 4px; min-width: 0; }
+.perfil-nome { font-family: var(--f-titulo); font-size: 24px; line-height: 1.1; overflow-wrap: anywhere; }
+.perfil-quem .nota { margin: 0; }
+.perfil-conta { display: grid; gap: 8px; margin-top: 12px; padding: 12px; border-radius: 14px; background: var(--marfim); box-shadow: inset 0 0 0 1.5px rgba(58,42,46,.1); font-size: 14px; }
+.perfil-numeros { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; margin-top: 12px; }
+.perfil-num { display: grid; gap: 2px; padding: 10px 8px; border-radius: 12px; background: var(--marfim); text-align: center; box-shadow: inset 0 0 0 1.5px rgba(58,42,46,.08); }
+.perfil-num b { font-family: var(--f-titulo); font-size: 22px; line-height: 1; font-variant-numeric: tabular-nums; }
+.perfil-num small { font-size: 11px; color: var(--tinta-suave); line-height: 1.25; }
+.perfil-secao { margin: 18px 0 4px; font-family: var(--f-titulo); }
+.perfil-grupo h3 { margin: 10px 0 6px; font-size: 15px; } .perfil-grupo h3 small { font-weight: 700; color: var(--tinta-suave); font-size: 12px; }
+.perfil-opcoes { display: grid; grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); gap: 8px; }
+.perfil-op { display: grid; justify-items: center; gap: 4px; padding: 8px 4px; border: 0; border-radius: 14px; background: var(--marfim); color: var(--tinta); font: inherit; cursor: pointer;
+  box-shadow: 0 3px 0 var(--papel-2), inset 0 0 0 1.5px rgba(58,42,46,.1); }
+.perfil-op.usando { box-shadow: 0 3px 0 var(--mel-escuro), inset 0 0 0 2.5px var(--mel); }
+.perfil-op small { font-size: 11px; font-weight: 700; line-height: 1.2; text-align: center; }
+.perfil-previa { width: 46px; height: 46px; display: grid; place-items: center; }
+.perfil-previa .avatar { width: 46px; height: 46px; margin: 0; }
+.perfil-dado { width: 40px; height: 40px; display: block; }
+.perfil-previa .amostra-mesa { width: 44px; height: 32px; }
+.perfil-loja { margin-top: 12px; }
+.inicio-perfil .perfil-texto { display: grid; gap: 1px; flex: 1; min-width: 0; line-height: 1.2; }
+.perfil-secao { font-size: 18px; text-transform: none; letter-spacing: 0; color: var(--tinta); }
+
 </style>
 </head>
 <body>
@@ -1115,7 +1146,7 @@ button.vaga { cursor: pointer; border: 0; background: #fff3dc; color: var(--tint
       <circle cx="40" cy="34" r="3" fill="#3a2a2e"/><circle cx="48" cy="42" r="3" fill="#3a2a2e"/>
     </svg>
     <h1 id="inicioTitulo">Dice <span>Duel</span></h1>
-    <div class="inicio-perfil" id="inicioPerfil"></div>
+    <button class="inicio-perfil" id="inicioPerfil" data-inicio="perfil" aria-label="Seu perfil: visual, nível e recordes"></button>
     <div class="inicio-partida" id="inicioPartida" hidden></div>
     <div class="inicio-jogar" id="inicioJogar">
       <button class="btn btn-mel inicio-principal" data-inicio="jogar">Jogar</button>
@@ -1132,7 +1163,7 @@ button.vaga { cursor: pointer; border: 0; background: #fff3dc; color: var(--tint
     </div>
     <div class="inicio-mais">
       <button class="inicio-ico" data-inicio="deck"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="6" width="11" height="15" rx="2"/><path d="M9 3h9a2 2 0 0 1 2 2v13"/></svg>Deck</button>
-      <button class="inicio-ico" data-inicio="loja"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 8v8M9.5 10.5h3.5a1.5 1.5 0 0 1 0 3h-2a1.5 1.5 0 0 0 0 3H14"/></svg>Loja</button>
+      <button class="inicio-ico" data-inicio="loja"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 9 6 4h12l1.5 5"/><path d="M4.5 9a1.9 1.9 0 0 0 3.75 0 1.9 1.9 0 0 0 3.75 0 1.9 1.9 0 0 0 3.75 0 1.9 1.9 0 0 0 3.75 0"/><path d="M5.5 11.5V20h13v-8.5"/><path d="M10 20v-4.5h4V20"/></svg>Loja</button>
       <button class="inicio-ico" data-inicio="regras"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11M9 8h6"/></svg>Regras</button>
       <button class="inicio-ico" data-inicio="ajustes"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>Ajustes</button>
     </div>
@@ -1338,6 +1369,14 @@ button.vaga { cursor: pointer; border: 0; background: #fff3dc; color: var(--tint
         <div class="linha-cfg"><span><label>Recordes</label><small id="resumoRecordes"></small></span><button class="btn btn-papel" id="btnZerar" style="min-height:40px">Apagar</button></div>
       </div>
       <button class="btn btn-mel" id="btnFecharConfig">Pronto</button>
+    </div>
+  </div>
+
+  <div class="janela" id="janelaPerfil" hidden>
+    <div class="caixa larga" role="dialog" aria-modal="true" aria-labelledby="perfilTitulo">
+      <div class="deck-topo"><h2 id="perfilTitulo">Perfil</h2></div>
+      <div id="perfilConteudo"></div>
+      <button class="btn btn-papel" id="btnFecharPerfil">Fechar</button>
     </div>
   </div>
 
@@ -4827,7 +4866,7 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     }
     c.moedas -= info.preco; c[tipo].push(id);
     if (tipo === 'dados') c.dado = id; if (tipo === 'icones') c.icone = id; if (tipo === 'mesas') c.mesa = id;
-    salvar(); aplicarPrefs(); desenharLoja(); festa();
+    salvar(); aplicarPrefs(); redesenharConta(); festa();
   }
 
   // ---------- montar o deck ----------
@@ -4986,7 +5025,11 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     const h = janela.querySelector('h2');
     if (h) { h.tabIndex = -1; h.focus({ preventScroll: true }); }
   };
-  const vigiaJanelas = new MutationObserver(ms => ms.forEach(m => { if (!m.target.hidden) { rolarAoTopo(m.target); setTimeout(() => { if (!m.target.hidden) focarJanela(m.target); }, 0); } }));
+  const vigiaJanelas = new MutationObserver(ms => ms.forEach(m => {
+    if (!m.target.hidden) { rolarAoTopo(m.target); setTimeout(() => { if (!m.target.hidden) focarJanela(m.target); }, 0); }
+    // fechou uma janela por cima do menu (Online, Loja, Perfil...): o menu mostra a conta de agora (antes ficava "Convidado")
+    else if (inicioAberto()) desenharInicio();
+  }));
   document.querySelectorAll('.janela').forEach(el => vigiaJanelas.observe(el, { attributes: true, attributeFilter: ['hidden'] }));
 
   // ---------- sem zoom de pinça (o Safari do iPhone ignora user-scalable=no) ----------
@@ -5052,7 +5095,7 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
   }
   function desenharInicio() {
     const c = st.conta, nome = st.sessao && st.sessao.perfil ? st.sessao.perfil.nome : 'Convidado';
-    document.getElementById('inicioPerfil').innerHTML = `${iconeSVG(c.icone)}<span><b>${esc(nome)}</b> <small>· rating ${c.rating} · nível ${nivelDe(c.xp)} · ${c.moedas} moedas</small></span>`;
+    document.getElementById('inicioPerfil').innerHTML = `${iconeSVG(c.icone)}<span class="perfil-texto"><b>${esc(nome)}</b><small>rating ${c.rating} · nível ${nivelDe(c.xp)} · ${c.moedas} moedas</small></span><svg class="ico perfil-seta" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>`;
     document.getElementById('pontoInicio').hidden = document.getElementById('pontoOnline').hidden;
     const g = partidaParaContinuar(), box = document.getElementById('inicioPartida');
     // a escolha do rival ocupa o lugar dos botões do menu (Jogar → Escolha o rival → Jogar contra ...)
@@ -5149,6 +5192,7 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
       if (jogo === g) jogo = null;
       desenharInicio(); return;
     }
+    if (a === 'perfil') { abrirPerfil(); return; }
     if (a === 'online') { document.getElementById('btnOnline').click(); return; }
     if (a === 'regras') { abrirLado(true); return; }
     const botao = { deck: 'btnDeck', loja: 'btnCarteira', ajustes: 'btnConfig' }[a];
@@ -5222,9 +5266,54 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     if (e.target.closest('[data-voltar-loja]')) { lojaVolta(); return; }
     const cb = e.target.closest('[data-comprar]'); if (cb) { const [t, id] = cb.dataset.comprar.split(':'); comprar(t, id, cb); return; }
     const ub = e.target.closest('[data-usar-item]');
-    if (ub && st.sessao) { const [t, id] = ub.dataset.usarItem.split(':'); pedir('POST', '/api/loja/usar', { tipo: t, id }).then(r => { usarPerfil(r.conta); if (jogo) render(); Som.tocar('momento'); }).catch(e => Fx.chamada('Loja', esc(e.message), 'suave')); return; }
-    if (ub) { const [t, id] = ub.dataset.usarItem.split(':'); st.conta[t === 'dados' ? 'dado' : t === 'icones' ? 'icone' : 'mesa'] = id; salvar(); aplicarPrefs(); desenharLoja(); if (jogo) render(); Som.tocar('momento'); }
+    if (ub) { const [t, id] = ub.dataset.usarItem.split(':'); usarItem(t, id); }
   });
+  // vestir um item que você já tem (da Loja ou do Perfil): com conta, o servidor confere; sem conta, fica no aparelho
+  function usarItem(t, id) {
+    const pronto = () => { redesenharConta(); if (jogo) render(); Som.tocar('momento'); };
+    if (st.sessao) { pedir('POST', '/api/loja/usar', { tipo: t, id }).then(r => { usarPerfil(r.conta); pronto(); }).catch(e => Fx.chamada('Visual', esc(e.message), 'suave')); return; }
+    if (!st.conta[t].includes(id)) return;
+    st.conta[t === 'dados' ? 'dado' : t === 'icones' ? 'icone' : 'mesa'] = id; salvar(); aplicarPrefs(); pronto();
+  }
+  // tudo o que mostra a conta (menu, Perfil, Loja) se redesenha quando ela muda
+  function redesenharConta() {
+    if (!document.getElementById('janelaLoja').hidden) desenharLoja();
+    if (!document.getElementById('janelaPerfil').hidden) desenharPerfil();
+    if (inicioAberto()) desenharInicio();
+  }
+
+  // ---------- Perfil: tocar no seu nome na tela inicial. O que você é (nível, ratings, recordes) e o seu visual, só com o
+  // que você já tem; comprar mais é na Loja ----------
+  function abrirPerfil() { desenharPerfil(); document.getElementById('janelaPerfil').hidden = false; Som.tocar('abrir'); }
+  function desenharPerfil() {
+    const c = st.conta, r = st.rec, nome = st.sessao && st.sessao.perfil ? st.sessao.perfil.nome : 'Convidado';
+    const nv = nivelDe(c.xp), prox = NIVEIS[nv] ?? null, ant = NIVEIS[nv - 1] || 0;
+    const xpTxt = prox === null ? 'nível máximo' : `${c.xp - ant} de ${prox - ant} XP para o nível ${nv + 1}`;
+    const num = (rot, v) => `<span class="perfil-num"><b>${v}</b><small>${rot}</small></span>`;
+    const op = (tipo, id, previa, nomeOp) => {
+      const usando = c[tipo === 'dados' ? 'dado' : tipo === 'icones' ? 'icone' : 'mesa'] === id;
+      return `<button class="perfil-op${usando ? ' usando' : ''}" data-usar-item="${tipo}:${id}" aria-pressed="${usando}"><span class="perfil-previa">${previa}</span><small>${nomeOp}</small></button>`;
+    };
+    const grupo = (titulo, tipo, html) => `<div class="perfil-grupo"><h3>${titulo} <small>${c[tipo].length} de ${Object.keys(tipo === 'dados' ? DADOS : tipo === 'icones' ? ICONES : MESAS).length}</small></h3><div class="perfil-opcoes">${html}</div></div>`;
+    document.getElementById('perfilConteudo').innerHTML = `
+      <div class="perfil-topo">${iconeSVG(c.icone)}<div class="perfil-quem"><b class="perfil-nome">${esc(nome)}</b><span class="titulo-rating">${tituloDe(c.rating)}</span>
+        <span class="nota">Nível ${nv} · <span class="moeda" aria-hidden="true"></span> ${c.moedas} moedas</span><div class="xp" title="experiência"><i style="width:${prox === null ? 100 : Math.round((c.xp - ant) / (prox - ant) * 100)}%"></i></div><small class="nota">${xpTxt}</small></div></div>
+      ${st.sessao ? '' : `<div class="perfil-conta"><span>Sem conta, o seu progresso fica só neste aparelho.</span><button class="btn btn-mel" data-perfil="conta">Entrar ou criar conta</button></div>`}
+      <div class="perfil-numeros">${num('rating contra os rivais', c.rating)}${c.online ? num('rating online', c.online.rating) : ''}${num('partidas', r.partidas)}${num('vitórias', r.vitorias)}${num('melhor sequência', r.melhorSeq)}${num('maior disparo', r.maiorDisparo)}${num('maior corrente', r.maiorCorrente)}</div>
+      <h3 class="perfil-secao">Seu visual</h3>
+      ${grupo('Ícone', 'icones', c.icones.filter(id => ICONES[id]).map(id => op('icones', id, iconeSVG(id), ICONES[id].nome)).join(''))}
+      ${grupo('Dado', 'dados', c.dados.filter(id => DADOS[id]).map(id => op('dados', id, `<span class="perfil-dado">${dadoHTML(5, id)}</span>`, DADOS[id].nome)).join(''))}
+      ${grupo('Mesa', 'mesas', c.mesas.filter(id => MESAS[id]).map(id => op('mesas', id, `<span class="amostra-mesa" style="background:${MESAS[id].amostra}"></span>`, MESAS[id].nome)).join(''))}
+      <p class="nota perfil-loja">Mais ícones, dados e mesas na <button class="btn-link" data-perfil="loja">Loja</button>.</p>`;
+  }
+  document.getElementById('perfilConteudo').addEventListener('click', e => {
+    const ub = e.target.closest('[data-usar-item]'); if (ub) { const [t, id] = ub.dataset.usarItem.split(':'); usarItem(t, id); return; }
+    const b = e.target.closest('[data-perfil]'); if (!b) return;
+    document.getElementById('janelaPerfil').hidden = true;
+    if (b.dataset.perfil === 'loja') abrirLoja('icones');
+    if (b.dataset.perfil === 'conta') document.getElementById('btnOnline').click();
+  });
+  document.getElementById('btnFecharPerfil').addEventListener('click', () => { document.getElementById('janelaPerfil').hidden = true; Som.tocar('fechar'); });
 
   document.getElementById('mesa').addEventListener('click', e => { const b = e.target.closest('.pega'); if (b && !b.disabled) clicarDado(+b.dataset.i); });
   document.getElementById('tabuleiro').addEventListener('click', e => {
@@ -5388,7 +5477,7 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     if (alvo.closest('textarea, input') && e.key !== 'Escape') return;
     if (e.key === 'Escape' && escolhendoRival && inicioAberto() && document.querySelectorAll('.janela:not([hidden])').length === 0) { escolhendoRival = false; desenharInicio(); return; }
     if (e.key === 'Escape') {
-      ['fim', 'janelaCarta', 'janelaDeck', 'janelaConfig', 'janelaLoja', 'janelaOnline', 'janelaMenu'].forEach(id => { const el = document.getElementById(id); if (el) el.hidden = true; }); abrirLado(false);
+      ['fim', 'janelaCarta', 'janelaDeck', 'janelaConfig', 'janelaLoja', 'janelaPerfil', 'janelaOnline', 'janelaMenu'].forEach(id => { const el = document.getElementById(id); if (el) el.hidden = true; }); abrirLado(false);
       return jogo ? cancelarEscolha() : undefined;
     }
     if (!jogo) return;
@@ -5438,7 +5527,7 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
   function usarPerfil(pf) {
     if (!st.sessao) return;
     st.sessao.perfil = pf; st.conta = deServidor(pf); guardarSessao(); aplicarPrefs();
-    if (!document.getElementById('janelaLoja').hidden) desenharLoja();
+    redesenharConta();
     if (!document.getElementById('janelaOnline').hidden) desenharOnline();
   }
   if (st.sessao && st.sessao.perfil) { st.contaConvidado = st.conta; st.conta = deServidor(st.sessao.perfil); }
@@ -5486,7 +5575,7 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     Object.assign(Rede, { amigos: null, rankingAmigos: null, posGlobal: null, busca: null, online: null });
     carregarOnline();
     if (st.contaConvidado) { st.conta = st.contaConvidado; delete st.contaConvidado; }
-    aplicarPrefs(); desenharOnline(); if (jogo) render();
+    aplicarPrefs(); desenharOnline(); redesenharConta(); if (jogo) render();
   }
   // o que segue a conta entre aparelhos (o som e a imagem ficam em cada aparelho)
   const extrasDoAparelho = () => ({ decks: st.decks, rec: st.rec, cfg: st.cfg, deckVisto: st.deckVisto });

@@ -1315,7 +1315,7 @@
     }
     c.moedas -= info.preco; c[tipo].push(id);
     if (tipo === 'dados') c.dado = id; if (tipo === 'icones') c.icone = id; if (tipo === 'mesas') c.mesa = id;
-    salvar(); aplicarPrefs(); desenharLoja(); festa();
+    salvar(); aplicarPrefs(); redesenharConta(); festa();
   }
 
   // ---------- montar o deck ----------
@@ -1474,7 +1474,11 @@
     const h = janela.querySelector('h2');
     if (h) { h.tabIndex = -1; h.focus({ preventScroll: true }); }
   };
-  const vigiaJanelas = new MutationObserver(ms => ms.forEach(m => { if (!m.target.hidden) { rolarAoTopo(m.target); setTimeout(() => { if (!m.target.hidden) focarJanela(m.target); }, 0); } }));
+  const vigiaJanelas = new MutationObserver(ms => ms.forEach(m => {
+    if (!m.target.hidden) { rolarAoTopo(m.target); setTimeout(() => { if (!m.target.hidden) focarJanela(m.target); }, 0); }
+    // fechou uma janela por cima do menu (Online, Loja, Perfil...): o menu mostra a conta de agora (antes ficava "Convidado")
+    else if (inicioAberto()) desenharInicio();
+  }));
   document.querySelectorAll('.janela').forEach(el => vigiaJanelas.observe(el, { attributes: true, attributeFilter: ['hidden'] }));
 
   // ---------- sem zoom de pinça (o Safari do iPhone ignora user-scalable=no) ----------
@@ -1540,7 +1544,7 @@
   }
   function desenharInicio() {
     const c = st.conta, nome = st.sessao && st.sessao.perfil ? st.sessao.perfil.nome : 'Convidado';
-    document.getElementById('inicioPerfil').innerHTML = `${iconeSVG(c.icone)}<span><b>${esc(nome)}</b> <small>· rating ${c.rating} · nível ${nivelDe(c.xp)} · ${c.moedas} moedas</small></span>`;
+    document.getElementById('inicioPerfil').innerHTML = `${iconeSVG(c.icone)}<span class="perfil-texto"><b>${esc(nome)}</b><small>rating ${c.rating} · nível ${nivelDe(c.xp)} · ${c.moedas} moedas</small></span><svg class="ico perfil-seta" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>`;
     document.getElementById('pontoInicio').hidden = document.getElementById('pontoOnline').hidden;
     const g = partidaParaContinuar(), box = document.getElementById('inicioPartida');
     // a escolha do rival ocupa o lugar dos botões do menu (Jogar → Escolha o rival → Jogar contra ...)
@@ -1637,6 +1641,7 @@
       if (jogo === g) jogo = null;
       desenharInicio(); return;
     }
+    if (a === 'perfil') { abrirPerfil(); return; }
     if (a === 'online') { document.getElementById('btnOnline').click(); return; }
     if (a === 'regras') { abrirLado(true); return; }
     const botao = { deck: 'btnDeck', loja: 'btnCarteira', ajustes: 'btnConfig' }[a];
@@ -1710,9 +1715,54 @@
     if (e.target.closest('[data-voltar-loja]')) { lojaVolta(); return; }
     const cb = e.target.closest('[data-comprar]'); if (cb) { const [t, id] = cb.dataset.comprar.split(':'); comprar(t, id, cb); return; }
     const ub = e.target.closest('[data-usar-item]');
-    if (ub && st.sessao) { const [t, id] = ub.dataset.usarItem.split(':'); pedir('POST', '/api/loja/usar', { tipo: t, id }).then(r => { usarPerfil(r.conta); if (jogo) render(); Som.tocar('momento'); }).catch(e => Fx.chamada('Loja', esc(e.message), 'suave')); return; }
-    if (ub) { const [t, id] = ub.dataset.usarItem.split(':'); st.conta[t === 'dados' ? 'dado' : t === 'icones' ? 'icone' : 'mesa'] = id; salvar(); aplicarPrefs(); desenharLoja(); if (jogo) render(); Som.tocar('momento'); }
+    if (ub) { const [t, id] = ub.dataset.usarItem.split(':'); usarItem(t, id); }
   });
+  // vestir um item que você já tem (da Loja ou do Perfil): com conta, o servidor confere; sem conta, fica no aparelho
+  function usarItem(t, id) {
+    const pronto = () => { redesenharConta(); if (jogo) render(); Som.tocar('momento'); };
+    if (st.sessao) { pedir('POST', '/api/loja/usar', { tipo: t, id }).then(r => { usarPerfil(r.conta); pronto(); }).catch(e => Fx.chamada('Visual', esc(e.message), 'suave')); return; }
+    if (!st.conta[t].includes(id)) return;
+    st.conta[t === 'dados' ? 'dado' : t === 'icones' ? 'icone' : 'mesa'] = id; salvar(); aplicarPrefs(); pronto();
+  }
+  // tudo o que mostra a conta (menu, Perfil, Loja) se redesenha quando ela muda
+  function redesenharConta() {
+    if (!document.getElementById('janelaLoja').hidden) desenharLoja();
+    if (!document.getElementById('janelaPerfil').hidden) desenharPerfil();
+    if (inicioAberto()) desenharInicio();
+  }
+
+  // ---------- Perfil: tocar no seu nome na tela inicial. O que você é (nível, ratings, recordes) e o seu visual, só com o
+  // que você já tem; comprar mais é na Loja ----------
+  function abrirPerfil() { desenharPerfil(); document.getElementById('janelaPerfil').hidden = false; Som.tocar('abrir'); }
+  function desenharPerfil() {
+    const c = st.conta, r = st.rec, nome = st.sessao && st.sessao.perfil ? st.sessao.perfil.nome : 'Convidado';
+    const nv = nivelDe(c.xp), prox = NIVEIS[nv] ?? null, ant = NIVEIS[nv - 1] || 0;
+    const xpTxt = prox === null ? 'nível máximo' : `${c.xp - ant} de ${prox - ant} XP para o nível ${nv + 1}`;
+    const num = (rot, v) => `<span class="perfil-num"><b>${v}</b><small>${rot}</small></span>`;
+    const op = (tipo, id, previa, nomeOp) => {
+      const usando = c[tipo === 'dados' ? 'dado' : tipo === 'icones' ? 'icone' : 'mesa'] === id;
+      return `<button class="perfil-op${usando ? ' usando' : ''}" data-usar-item="${tipo}:${id}" aria-pressed="${usando}"><span class="perfil-previa">${previa}</span><small>${nomeOp}</small></button>`;
+    };
+    const grupo = (titulo, tipo, html) => `<div class="perfil-grupo"><h3>${titulo} <small>${c[tipo].length} de ${Object.keys(tipo === 'dados' ? DADOS : tipo === 'icones' ? ICONES : MESAS).length}</small></h3><div class="perfil-opcoes">${html}</div></div>`;
+    document.getElementById('perfilConteudo').innerHTML = `
+      <div class="perfil-topo">${iconeSVG(c.icone)}<div class="perfil-quem"><b class="perfil-nome">${esc(nome)}</b><span class="titulo-rating">${tituloDe(c.rating)}</span>
+        <span class="nota">Nível ${nv} · <span class="moeda" aria-hidden="true"></span> ${c.moedas} moedas</span><div class="xp" title="experiência"><i style="width:${prox === null ? 100 : Math.round((c.xp - ant) / (prox - ant) * 100)}%"></i></div><small class="nota">${xpTxt}</small></div></div>
+      ${st.sessao ? '' : `<div class="perfil-conta"><span>Sem conta, o seu progresso fica só neste aparelho.</span><button class="btn btn-mel" data-perfil="conta">Entrar ou criar conta</button></div>`}
+      <div class="perfil-numeros">${num('rating contra os rivais', c.rating)}${c.online ? num('rating online', c.online.rating) : ''}${num('partidas', r.partidas)}${num('vitórias', r.vitorias)}${num('melhor sequência', r.melhorSeq)}${num('maior disparo', r.maiorDisparo)}${num('maior corrente', r.maiorCorrente)}</div>
+      <h3 class="perfil-secao">Seu visual</h3>
+      ${grupo('Ícone', 'icones', c.icones.filter(id => ICONES[id]).map(id => op('icones', id, iconeSVG(id), ICONES[id].nome)).join(''))}
+      ${grupo('Dado', 'dados', c.dados.filter(id => DADOS[id]).map(id => op('dados', id, `<span class="perfil-dado">${dadoHTML(5, id)}</span>`, DADOS[id].nome)).join(''))}
+      ${grupo('Mesa', 'mesas', c.mesas.filter(id => MESAS[id]).map(id => op('mesas', id, `<span class="amostra-mesa" style="background:${MESAS[id].amostra}"></span>`, MESAS[id].nome)).join(''))}
+      <p class="nota perfil-loja">Mais ícones, dados e mesas na <button class="btn-link" data-perfil="loja">Loja</button>.</p>`;
+  }
+  document.getElementById('perfilConteudo').addEventListener('click', e => {
+    const ub = e.target.closest('[data-usar-item]'); if (ub) { const [t, id] = ub.dataset.usarItem.split(':'); usarItem(t, id); return; }
+    const b = e.target.closest('[data-perfil]'); if (!b) return;
+    document.getElementById('janelaPerfil').hidden = true;
+    if (b.dataset.perfil === 'loja') abrirLoja('icones');
+    if (b.dataset.perfil === 'conta') document.getElementById('btnOnline').click();
+  });
+  document.getElementById('btnFecharPerfil').addEventListener('click', () => { document.getElementById('janelaPerfil').hidden = true; Som.tocar('fechar'); });
 
   document.getElementById('mesa').addEventListener('click', e => { const b = e.target.closest('.pega'); if (b && !b.disabled) clicarDado(+b.dataset.i); });
   document.getElementById('tabuleiro').addEventListener('click', e => {
@@ -1876,7 +1926,7 @@
     if (alvo.closest('textarea, input') && e.key !== 'Escape') return;
     if (e.key === 'Escape' && escolhendoRival && inicioAberto() && document.querySelectorAll('.janela:not([hidden])').length === 0) { escolhendoRival = false; desenharInicio(); return; }
     if (e.key === 'Escape') {
-      ['fim', 'janelaCarta', 'janelaDeck', 'janelaConfig', 'janelaLoja', 'janelaOnline', 'janelaMenu'].forEach(id => { const el = document.getElementById(id); if (el) el.hidden = true; }); abrirLado(false);
+      ['fim', 'janelaCarta', 'janelaDeck', 'janelaConfig', 'janelaLoja', 'janelaPerfil', 'janelaOnline', 'janelaMenu'].forEach(id => { const el = document.getElementById(id); if (el) el.hidden = true; }); abrirLado(false);
       return jogo ? cancelarEscolha() : undefined;
     }
     if (!jogo) return;
@@ -1926,7 +1976,7 @@
   function usarPerfil(pf) {
     if (!st.sessao) return;
     st.sessao.perfil = pf; st.conta = deServidor(pf); guardarSessao(); aplicarPrefs();
-    if (!document.getElementById('janelaLoja').hidden) desenharLoja();
+    redesenharConta();
     if (!document.getElementById('janelaOnline').hidden) desenharOnline();
   }
   if (st.sessao && st.sessao.perfil) { st.contaConvidado = st.conta; st.conta = deServidor(st.sessao.perfil); }
@@ -1974,7 +2024,7 @@
     Object.assign(Rede, { amigos: null, rankingAmigos: null, posGlobal: null, busca: null, online: null });
     carregarOnline();
     if (st.contaConvidado) { st.conta = st.contaConvidado; delete st.contaConvidado; }
-    aplicarPrefs(); desenharOnline(); if (jogo) render();
+    aplicarPrefs(); desenharOnline(); redesenharConta(); if (jogo) render();
   }
   // o que segue a conta entre aparelhos (o som e a imagem ficam em cada aparelho)
   const extrasDoAparelho = () => ({ decks: st.decks, rec: st.rec, cfg: st.cfg, deckVisto: st.deckVisto });
