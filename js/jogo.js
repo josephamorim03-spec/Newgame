@@ -319,7 +319,7 @@
       Conta.relatarSolo && Conta.relatarSolo(j);
     }
     render();
-    setTimeout(mostrarFim, st.pref.animacoes ? 1800 : 600);
+    setTimeout(mostrarFim, st.pref.animacoes ? 1800 + esperaFesta() : 600);
   }
 
   // ---------- o rival (a mesma lógica do simulador; não vê qual armadilha você armou) ----------
@@ -463,13 +463,34 @@
     if (jogo) render();
   }
   const mudou = id => !!(marcaMudanca && marcaMudanca.ids.includes(id) && Date.now() < marcaMudanca.ate);
+  // a presença do rival: antes de pegar, ele olha a Mesa. Cada olhada acende um dado de leve (com a Diana, a patinha
+  // passa por cima dele); a Diana, impulsiva, olha um dado no máximo, e às vezes nenhum; a Dona Coruja olha dois, e
+  // de preferência os que servem à sua corrente: ela lê a Mesa. As olhadas tomam o lugar de parte da espera de antes,
+  // então a vez do rival não fica mais longa. Devolve false se a partida mudou no meio
+  async function olharMesa(p, escolhido, tok) {
+    const j = jogo;
+    if (!st.pref.animacoes) return true;
+    const outros = j.mesa.map((d, i) => i).filter(i => i !== escolhido);
+    const servemAoOutro = i => j.cor[1 - p].length && encaixa(j.cor[1 - p], valorAoPegar(1 - p, j.mesa[i]));
+    const coruja = j.nivel === 'esperto';
+    const n = !outros.length ? 0 : coruja ? Math.min(2, outros.length) : Math.random() < 0.55 ? 1 : 0;
+    const ordem = outros.sort((a, b) => (coruja ? servemAoOutro(b) - servemAoOutro(a) : 0) || Math.random() - 0.5).slice(0, n);
+    for (const i of ordem) {
+      if (!j.mesa[i]) continue;
+      j.olhando = j.mesa[i].id; render();
+      Som.tocar('passar', { i });
+      await espera(coruja ? 380 : 260); if (tok !== jogo.token) return false;
+    }
+    j.olhando = null;
+    return true;
+  }
   async function talvezAutomato() {
     const j = jogo;
     if (!j || j.modo !== 'bot' || j.fase === 'fim' || humano(j.vez) || j.pensando || j.intro || inicioAberto()) return;
     const tok = j.token, p = j.vez;
     j.pensando = true; render();
     if (j.fase === 'pegar') {
-      await espera(800); if (tok !== jogo.token) return;
+      await espera(st.pref.animacoes ? 450 : 800); if (tok !== jogo.token) return;
       if (window.Rolagem) { await Rolagem.esperar(); if (tok !== jogo.token) return; }   // escolhe com os dados já assentados
       for (const u of automatoCartas(p)) {
         if (!podeUsar(p, u.carta).ok || (CARTAS[u.carta].alvo && !j.mesa[u.idx])) continue;
@@ -485,7 +506,9 @@
       }
       for (;;) {
         const plano = automatoEscolhe(p);
+        if (!(await olharMesa(p, plano.idx, tok))) return;
         j.destaque = j.mesa[plano.idx].id; render();
+        if (j.nivel === 'aprendiz' && st.pref.animacoes) Som.tocar('quique', { forca: 3, x: (plano.idx - 2) * 0.3 });   // a patinha bate no dado
         await espera(520); if (tok !== jogo.token) return;
         j.destaque = null; j.pensando = false;
         const v = tirar(p, plano.idx);
@@ -743,11 +766,22 @@
     return `<div class="cartas">${html}</div><div class="estados">${estados}</div>`;
   }
 
+  // quando a festa do último disparo acaba (cascata, impacto e os pontos chegando ao placar): o disparo que fecha a
+  // partida termina de contar antes de a vitória estourar, e a tela do fim espera por ele
+  let fimDoDisparo = 0;
+  const esperaFesta = () => Math.max(0, Math.round(fimDoDisparo - performance.now()));
   document.documentElement.style.setProperty('--passo-disparo', Math.round(Som.PASSO_DISPARO * 1000) + 'ms');   // a cascata do disparo (css)
   const inicioFx = new Map();   // id do efeito (disparo, ruptura) -> quando ele apareceu na tela
-  const placarSegurado = new Map();   // jogador -> o número que o placar mostra enquanto os pontos do disparo voam
+  const placarSegurado = new Map();
+  // a patinha da Diana sobre o dado que ela olha ou vai pegar (a mesma pelagem da pata da tela inicial)
+  const PATINHA = `<svg class="patinha" viewBox="0 0 40 40" aria-hidden="true"><ellipse cx="20" cy="25" rx="10" ry="8.5" fill="#f8f6f2" stroke="#3a2a2e" stroke-width="3"/><ellipse cx="9" cy="13" rx="4.2" ry="5" fill="#f8f6f2" stroke="#3a2a2e" stroke-width="2.6"/><ellipse cx="20" cy="9" rx="4.4" ry="5.2" fill="#f8f6f2" stroke="#3a2a2e" stroke-width="2.6"/><ellipse cx="31" cy="13" rx="4.2" ry="5" fill="#f8f6f2" stroke="#3a2a2e" stroke-width="2.6"/><ellipse cx="20" cy="26" rx="5" ry="3.6" fill="#f3b8c4"/></svg>`;   // jogador -> o número que o placar mostra enquanto os pontos do disparo voam
   // comDecisao: a decisão da vez (destinos, disparar ou segurar...) entra no painel no lugar da fileira de cartas,
   // logo abaixo da corrente que ela afeta; o tabuleiro não ganha barra solta e não se mexe
+  // o ponto de partida: quanto um disparo de L dados vale para p e se ele fecha a partida. "porUm": a corrente de p está a
+  // um dado de fechar (com o próximo elo, o disparo alcança a meta), e é aí que vale a pena olhar a Mesa dele
+  const valeCom = (p, L) => L < 3 ? 0 : pontos(Math.min(L, LIM)) + (jogo.sobre[p] && L >= 4 ? 2 : 0);
+  const disparoVence = p => jogo.cor[p].length >= 3 && jogo.pts[p] + valeCom(p, jogo.cor[p].length) >= jogo.meta;
+  const porUm = p => jogo.fase !== 'fim' && jogo.cor[p].length >= 2 && jogo.pts[p] + valeCom(p, jogo.cor[p].length + 1) >= jogo.meta;
   function painel(p, comDecisao = false) {
     const j = jogo, n = nomes(), daVez = j.vez === p && j.fase !== 'fim';
     const fx = j.fx && j.fx.p === p ? j.fx : null;
@@ -784,7 +818,7 @@
         ${bolsoHTML(p)}<span class="placar"><b data-placar="${p}">${placarSegurado.has(p) ? placarSegurado.get(p) : j.pts[p]}</b><small>/${j.meta}</small></span></div>
       <div class="barra" role="progressbar" aria-valuemin="0" aria-valuemax="${j.meta}" aria-valuenow="${j.pts[p]}" aria-label="Pontos de ${n[p]}"><i style="width:${pct}%"></i>${prev ? `<span class="prev" style="left:${pct}%;width:${prev}%"></span>` : ''}</div>
       ${(() => { const alvo = p === j.vez && !fx && dadoEscolhido(j) >= 0 ? previaAlvos(p, dadoEscolhido(j)).corrente : null;
-        return `<div class="corrente${fx ? ' fx-' + fx.tipo : L >= 5 ? ' fervendo' : L >= 4 ? ' quente' : ''}${alvo ? ` alvo-dado alvo-${alvo.cls}" data-alvo-dado="corrente" role="button" tabindex="0" aria-label="Corrente: ${alvo.txt}` : ''}" style="--fase:-${Math.round(performance.now() % 1800)}ms;--fx-t:-${fxT}ms">${slots}${alvo ? `<span class="alvo-chip">${alvo.txt}</span>` : ''}</div>`; })()}
+        return `<div class="corrente${fx ? ' fx-' + fx.tipo : L >= 5 ? ' fervendo' : L >= 4 ? ' quente' : ''}${!fx && (disparoVence(p) || porUm(p)) ? ' por-um' : ''}${alvo ? ` alvo-dado alvo-${alvo.cls}" data-alvo-dado="corrente" role="button" tabindex="0" aria-label="Corrente: ${alvo.txt}` : ''}" style="--fase:-${Math.round(performance.now() % 1800)}ms;--fx-t:-${fxT}ms;--n:${cor.length}">${slots}${alvo ? `<span class="alvo-chip">${alvo.txt}</span>` : ''}</div>`; })()}
       ${st.pref.dicas && !cartaEscolhida(j, p) ? `<div class="info"><span>Corrente <b>${L}</b>/${LIM}</span><span>${valeAgora}${seCrescer}</span></div>` : ''}
       ${comDecisao && !cartaEscolhida(j, p) ? '<div class="decisao-slot"></div>' : cartasHTML(p) + (comDecisao ? '<div class="decisao-slot"></div>' : '')}
     </div>`;
@@ -815,10 +849,11 @@
       }
       if (j.fase === 'ajuste' && j.ajusteIdx === i) tags = `<span class="tag previa">ajustar</span>`;
       const serveRival = dicas && ele.length && encaixa(ele, valorAoPegar(1 - p, d)) && j.fase !== 'fim';
-      const cls = ['pega', d.novo ? 'novo' : '', window.Rolagem && Rolagem.ativo(d.id) ? 'rolando' : '', window.Rolagem && Rolagem.pousando(d.id) ? 'pousando' : '', !salvo && j.fase === 'pegar' && dicas ? 'nao-cabe' : '', j.sel === d.id || (j.fase === 'ajuste' && j.ajusteIdx === i) ? 'escolhido' : '', j.destaque === d.id ? 'destaque' : '', j.virando === d.id ? 'virando' : '', mudou(d.id) ? 'mudou' : ''].join(' ');
-      const rotulo = `${j.fase === 'alvo' ? 'Escolher' : 'Pegar'} ${d.v}${contra ? `, chega virado como ${vv}` : ''}${cabe ? (r.length ? ', ' + r.map(k => REL[k].nome).join(' e ') : '') : salvo ? ', só pelo Bolso' : ', rompe a corrente'}${serveRival ? ', serve ao rival' : ''}${marcado !== null ? ', marcado com Espelho' : ''}`;
+      const fechaRival = serveRival && porUm(1 - p);
+      const cls = ['pega', d.novo ? 'novo' : '', window.Rolagem && Rolagem.ativo(d.id) ? 'rolando' : '', window.Rolagem && Rolagem.pousando(d.id) ? 'pousando' : '', !salvo && j.fase === 'pegar' && dicas ? 'nao-cabe' : '', j.sel === d.id || (j.fase === 'ajuste' && j.ajusteIdx === i) ? 'escolhido' : '', j.destaque === d.id ? 'destaque' : '', j.olhando === d.id ? 'olhado' : '', j.virando === d.id ? 'virando' : '', mudou(d.id) ? 'mudou' : ''].join(' ');
+      const rotulo = `${j.fase === 'alvo' ? 'Escolher' : 'Pegar'} ${d.v}${contra ? `, chega virado como ${vv}` : ''}${cabe ? (r.length ? ', ' + r.map(k => REL[k].nome).join(' e ') : '') : salvo ? ', só pelo Bolso' : ', rompe a corrente'}${fechaRival ? ', dá a vitória ao rival' : serveRival ? ', serve ao rival' : ''}${marcado !== null ? ', marcado com Espelho' : ''}`;
       return `<button class="${cls}" style="--i:${i}" data-i="${i}" data-id="${d.id}" ${ativo ? '' : 'disabled'} aria-label="${rotulo}" aria-pressed="${j.sel === d.id || (j.fase === 'ajuste' && j.ajusteIdx === i)}">
-        <span class="kbd">${i + 1}</span><span class="face">${dadoHTML(d.v, skinMesa())}${mudou(d.id) && marcaMudanca.antes != null ? `<span class="era">era ${marcaMudanca.antes}</span>` : ''}${serveRival ? '<span class="alvo-rival"></span>' : ''}${marcado !== null ? `<span class="marca-esp dono${marcado}" title="Marcado com Espelho">${CARTAS.espelho.ico}</span>` : ''}</span><span class="tags">${tags}</span></button>`;
+        <span class="kbd">${i + 1}</span><span class="face">${dadoHTML(d.v, skinMesa())}${mudou(d.id) && marcaMudanca.antes != null ? `<span class="era">era ${marcaMudanca.antes}</span>` : ''}${serveRival ? `<span class="alvo-rival${fechaRival ? ' fecha' : ''}"></span>` : ''}${j.modo === 'bot' && j.nivel === 'aprendiz' && (j.olhando === d.id || j.destaque === d.id) ? PATINHA : ''}${marcado !== null ? `<span class="marca-esp dono${marcado}" title="Marcado com Espelho">${CARTAS.espelho.ico}</span>` : ''}</span><span class="tags">${tags}</span></button>`;
     }).join('');
   }
 
@@ -910,6 +945,8 @@
       const L = eu.length, rk = risco(p), vale = pontos(L) + (j.sobre[p] && L >= 4 ? 2 : 0);
       let nivel, txt;
       const ocultas = j.armada[1 - p] && j.armada[1 - p] !== 'espelho' ? armadilhasOcultas(1 - p) : [];
+      // o botão diz "Disparar e vencer" só quando é certo; se a carta virada pode ser a Interferência, "pode fechar"
+      const talvez = j.pts[p] + vale >= j.meta, venceJa = talvez && !(ocultas.includes('interferencia') && L >= 4 && j.pts[p] >= j.pts[1 - p] && j.pts[p] + vale - 1 < j.meta);
       if (j.pts[p] + vale >= j.meta) { nivel = 'vence'; txt = `Disparar agora vence a partida${ocultas.includes('interferencia') && L >= 4 && j.pts[p] >= j.pts[1 - p] && j.pts[p] + vale - 1 < j.meta ? ', se a carta virada do rival não for a Interferência' : ''}.`; }
       else if (rk.bolso) { nivel = 'baixo'; txt = j.bolso[p] === null ? 'Seu Bolso está vazio: na próxima vez você sempre pode guardar o dado. Segurar não rompe.' : `O ${j.bolso[p]} do seu Bolso sincroniza com o seu ${frente(eu)}: segurar não rompe.`; }
       else if (rk.n >= 2) {
@@ -928,7 +965,7 @@
       return `<div class="status">${quem}: corrente de <b>${L}</b>. Disparar ou segurar?</div>
         ${ajudas ? `<div class="risco ${nivel}"><span>${txt}</span></div>${extra}` : ''}
         <div class="botoes">
-          <button class="btn btn-duplo btn-mel" data-acao="disparar"><span>Disparar</span><small>+${vale} agora</small></button>
+          <button class="btn btn-duplo btn-mel${venceJa ? ' vence' : ''}" data-acao="disparar"><span>${venceJa ? 'Disparar e vencer' : 'Disparar'}</span><small>+${vale} agora${venceJa ? '' : talvez ? ' · pode fechar' : ''}</small></button>
           <button class="btn btn-duplo btn-papel" data-acao="segurar"><span>Segurar</span><small>${L + 1 <= LIM ? `com ${L + 1} vale +${pontos(L + 1)}` : 'continuar'}</small></button>
           ${sobreBtn}
         </div>`;
@@ -1068,7 +1105,10 @@
     const som = document.getElementById('btnSom'); som.setAttribute('aria-pressed', String(somLigado)); som.classList.toggle('sem-som', !somLigado);
     const n = nomes();
     const linha = l => `${l.p === null ? '' : `<span class="cor${l.p}">${n[l.p]}</span> `}${l.txt}`;
-    const instrucao = humano(j.vez) ? instrucaoCarta(j) || instrucaoDado(j) : '', ticker = document.getElementById('ticker');
+    // o rival a um dado de fechar a partida: a linha da Mesa diz quais dados dão isso a ele (os do "!"), no lugar do último lance
+    const fecha = st.pref.dicas && j.modo !== 'local' && humano(j.vez) && j.fase === 'pegar' && mesa.querySelector('.alvo-rival.fecha')
+      ? `<span class="cor1">${n[1]}</span> fecha a partida com um dado marcado com <b class="fecha-txt">!</b>` : '';
+    const instrucao = humano(j.vez) ? instrucaoCarta(j) || instrucaoDado(j) || fecha : '', ticker = document.getElementById('ticker');
     ticker.innerHTML = instrucao || (j.log[0] ? linha(j.log[0]) : '');
     ticker.classList.toggle('instrucao', !!instrucao);
     mostrarCorrenteNaDecisao(j);
@@ -1109,6 +1149,24 @@
 
   // ---------- eventos → som, efeitos e recompensas ----------
   const qs = s => document.querySelector(s);
+  // o aviso da carta do rival (v0.14): a carta sai da mão dele e voa até o vão entre o painel dele e a Mesa, e o aviso,
+  // mais baixo que as chamadas de festa, aparece ali. Antes ele ficava no alto da tela, por cima do painel do rival:
+  // escondia justamente a carta, a corrente e o Bolso que a carta tinha acabado de mexer
+  function avisoCarta(p, c, titulo, sub, ico) {
+    const j = jogo, pain = qs(`#pj${p} .jogador`), mesaEl = document.getElementById('mesa');
+    const tipo = p === 1 && j.modo !== 'local' ? 'rival' : 'suave';
+    let y = null;
+    if (pain && mesaEl) {
+      const a = pain.getBoundingClientRect(), b = mesaEl.getBoundingClientRect();
+      if (b.top > a.bottom - 20 && b.left < a.right && b.right > a.left) y = Math.round((a.bottom + b.top) / 2);   // um em cima do outro: no vão entre os dois
+    }
+    // no vão cabe só a carta (ícone e nome): o que ela fez fica na linha do último lance, logo abaixo dos dados
+    const op = { ico, ms: AVISO_CARTA, classe: 'aviso-carta' + (y !== null ? ' compacta' : ''), y }, txt = y !== null ? '' : sub;
+    const deEl = qs(`#pj${p} [data-carta="${c}"]`);
+    if (!deEl || !Fx.cfg.animacoes) { Fx.chamada(titulo, txt, tipo, op); return; }
+    Fx.lancarCarta(deEl, innerWidth / 2, y ?? innerHeight * 0.27).then(() => Fx.chamada(titulo, txt, tipo, op));
+  }
+
   function consumirEventos() {
     const j = jogo, n = nomes();
     // o dado voa da Mesa até onde foi parar
@@ -1158,12 +1216,14 @@
           Som.tocar('disparo', { L: e.L });
           if (humano(e.p)) vibrar(15);
           const nota = k => 80 + k * Som.PASSO_DISPARO * 1000, fim = nota(e.L);
+          if (Fx.cfg.animacoes) fimDoDisparo = performance.now() + fim + (e.L === 6 ? 150 : e.L === 5 ? 90 : 0) + (Math.min(6, Math.max(1, e.ganho)) - 1) * 70 + 560;
           const passos = [];
           for (let k = 3; k <= e.L; k++) passos.push({ ms: nota(k - 1), txt: `+${pontos(k)}` });
           passos.push({ ms: fim, txt: `+${e.ganho}` });
           // o placar mostra o valor de antes até os pontos chegarem (um render no meio não o adianta)
           if (Fx.cfg.animacoes && Fx.cfg.particulas && placar) { placarSegurado.set(e.p, e.de); placar.textContent = e.de; setTimeout(() => { if (placarSegurado.delete(e.p)) render(); }, 5000); }
-          Fx.contagem(corEl, passos, `${quem} n${Math.min(6, e.L)}`).then(() => {
+          // 5 e 6: o tempo para por um instante antes do estouro (o selo fecha no valor, a corrente incha e espera)
+          Fx.contagem(corEl, passos, `${quem} n${Math.min(6, e.L)}`).then(() => e.L >= 5 ? Fx.impacto(qs(`#pj${e.p} .corrente`) || corEl, e.L === 6 ? 150 : 90, e.L === 6 ? 1.3 : 1) : null).then(() => {
             const cor = qs(`#pj${e.p} .corrente`) || corEl;
             Fx.faiscas(cor, 10 + e.L * 6, cores, 2.5 + e.L * 0.5);
             if (e.L >= 4) Fx.clarao(cor, e.L >= 6 ? 1 : e.L === 5 ? 0.75 : 0.5);
@@ -1213,19 +1273,22 @@
           Som.tocar('carta');
           if (e.id != null && e.antes != null) marcarMudanca([e.id], e.antes);
           else if (e.c === 'rerrolar') marcarMudanca(j.mesa.map(d => d.id), null);
-          if (!humano(e.p) || j.modo === 'local') Fx.chamada(e.nome, explicarCarta(e, n[e.p]), e.p === 1 && j.modo !== 'local' ? 'rival' : 'suave', { ico: CARTAS[e.c].arte, ms: AVISO_CARTA, classe: 'aviso-carta' });
+          if (!humano(e.p) || j.modo === 'local') avisoCarta(e.p, e.c, e.nome, explicarCarta(e, n[e.p]), CARTAS[e.c].arte);
           break;
         }
         case 'armou': {
           Som.tocar('armou');
           if (humano(e.p) && j.modo !== 'local') break;
-          if (e.c === 'espelho' && j.marca) { marcarMudanca([j.marca.id], null); Fx.chamada('Espelho', `${n[e.p]} marcou um ${(j.mesa.find(d => d.id === j.marca.id) || {}).v || ''} da Mesa: se você pegá-lo, ele vira`, e.p === 1 && j.modo !== 'local' ? 'rival' : 'suave', { ico: CARTAS.espelho.arte, ms: AVISO_CARTA, classe: 'aviso-carta' }); }
-          else Fx.chamada('Armadilha virada', `${n[e.p]} armou uma armadilha (?). Toque nela para ver o que pode ser`, e.p === 1 && j.modo !== 'local' ? 'rival' : 'suave', { ico: VERSO, ms: AVISO_CARTA, classe: 'aviso-carta' });
+          if (e.c === 'espelho' && j.marca) { marcarMudanca([j.marca.id], null); avisoCarta(e.p, e.c, 'Espelho', `${n[e.p]} marcou um ${(j.mesa.find(d => d.id === j.marca.id) || {}).v || ''} da Mesa: se você pegá-lo, ele vira`, CARTAS.espelho.arte); }
+          else avisoCarta(e.p, e.c, 'Armadilha virada', `${n[e.p]} armou uma armadilha (?). Toque nela para ver o que pode ser`, VERSO);
           break;
         }
         case 'revelou': {
-          Som.tocar('revelou'); Fx.chamada(CARTAS[e.c].nome + '!', e.txt, e.p === 1 && j.modo !== 'local' ? 'rival' : '', { classe: 'de-jogo' });
-          Fx.faiscas(painelEl, 22, ['#e2d6ff', '#fff6e6', '#ffe3a3']); vibrar([40, 60, 40]);
+          // a armadilha que pega: um instante parado no painel do dono, e então a revelação
+          Fx.impacto(painelEl, 80, 0.6).then(() => {
+            Som.tocar('revelou'); Fx.chamada(CARTAS[e.c].nome + '!', e.txt, e.p === 1 && j.modo !== 'local' ? 'rival' : '', { classe: 'de-jogo' });
+            Fx.faiscas(qs(`#pj${e.p} .jogador`) || painelEl, 22, ['#e2d6ff', '#fff6e6', '#ffe3a3']); vibrar([40, 60, 40]);
+          });
           break;
         }
         case 'virar': setTimeout(() => { if (jogo.virando === e.id) jogo.virando = null; }, 500); Som.tocar('virar'); break;
@@ -1233,9 +1296,13 @@
         case 'falar': if (j.modo === 'bot') falaDoEvento(e); break;
         case 'fim': {
           const venceuHumano = humano(e.p);
-          Som.musica.cena('fim');
-          if (venceuHumano) { Som.tocar('vitoria'); Fx.confete(120); Fx.chamada(e.virada ? 'Virada!' : j.modo !== 'local' ? 'Vitória!' : `${n[e.p]} venceu!`, e.virada ? 'veio de trás e venceu' : 'partida bem jogada', '', { classe: 'de-jogo' }); }
-          else { Som.tocar('derrota'); Fx.chamada('Fim de partida', `${n[e.p]} venceu desta vez`, 'rival', { classe: 'de-jogo' }); }
+          Fx.limparDica();
+          // o disparo que fecha a partida conta até o fim (a cascata e os pontos no placar) antes de a vitória estourar
+          setTimeout(() => {
+            Som.musica.cena('fim');
+            if (venceuHumano) { Som.tocar('vitoria'); Fx.confete(120); Fx.chamada(e.virada ? 'Virada!' : j.modo !== 'local' ? 'Vitória!' : `${n[e.p]} venceu!`, e.virada ? 'veio de trás e venceu' : 'partida bem jogada', '', { classe: 'de-jogo', furar: true, ms: 1700 }); }
+            else { Som.tocar('derrota'); Fx.chamada('Fim de partida', `${n[e.p]} venceu desta vez`, 'rival', { classe: 'de-jogo', furar: true, ms: 1700 }); }
+          }, esperaFesta());
           break;
         }
       }
@@ -1688,7 +1755,7 @@
     } catch (e) { return null; }
   }
   function restaurarPartida(g) {
-    Object.assign(g, { pensando: false, token: Math.random(), fx: null, eventos: [], intro: false, voo: null, sel: null, destaque: null, fala: null, rolouAVista: true });
+    Object.assign(g, { pensando: false, token: Math.random(), fx: null, eventos: [], intro: false, voo: null, sel: null, destaque: null, olhando: null, fala: null, rolouAVista: true });
     if (g.fase === 'alvo' || g.fase === 'ajuste') { g.fase = 'pegar'; g.alvo = null; g.ajusteIdx = null; }
     // guardada antes da v0.13: um efeito virado (o blefe, que saiu) volta para a mão
     [0, 1].forEach(p => { const c = g.armada[p]; if (c && CARTAS[c] && CARTAS[c].tipo === 'efeito') { g.cartas[p][c] = 'pronta'; g.armada[p] = null; } });
@@ -1793,7 +1860,7 @@
   function mostrarInicio() {
     confirmarAbandono = false; escolhendoRival = false;
     // a partida para atrás do menu: a jogada do rival que estava no meio recomeça do zero no Continuar
-    if (jogo && jogo.modo === 'bot' && jogo.pensando) { jogo.token = Math.random(); jogo.pensando = false; jogo.destaque = null; }
+    if (jogo && jogo.modo === 'bot' && jogo.pensando) { jogo.token = Math.random(); jogo.pensando = false; jogo.destaque = null; jogo.olhando = null; }
     ['fim', 'janelaMenu', 'janelaCarta'].forEach(id => { document.getElementById(id).hidden = true; });
     document.body.classList.add('inicio-aberto');
     desenharInicio();
@@ -2703,7 +2770,7 @@
       j.premio = m.premio; j.semPremio = m.erro || null;
       if (m.premio) usarPerfil(m.premio.conta);
       lembrarSala(true);
-      if (!jaViu) setTimeout(mostrarFim, st.pref.animacoes ? 1800 : 600);
+      if (!jaViu) setTimeout(mostrarFim, st.pref.animacoes ? 1800 + esperaFesta() : 600);
     } else if (m.tipo === 'erro') {
       const saiuDaSala = m.codigo === 'sala' || m.semSala;
       if (Rede.voltando && m.semSala) {
