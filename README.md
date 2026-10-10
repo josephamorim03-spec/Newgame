@@ -75,6 +75,7 @@ e o amigo cai direto na sala. O servidor é a autoridade da partida e roda na Ra
 | `docs/design.md` | regras, cartas, números, decisões e por quê |
 | `docs/pesquisa.md` | o que jogos de cartas no celular ensinam (deck pequeno, armadilhas, contra-jogo) |
 | `docs/historia.md` | o modo história "O Caderno da Diana": roteiro em quadros, a Diana e a cura, os rivais, as gags e como vira jogo |
+| `docs/arte-historia.md` | a arte do modo história: a API desenha as peças (fundo, pose, objeto), o código monta o gibi; o teste de modelos e o plano |
 | `js/historia.js`, `js/historia_falas.js` | o modo história: os capítulos, o leitor de gibi, o mapa; as falas aprovadas (geradas por `tools/historia/piadas_fonte.py`) |
 | `docs/progressao.md` | moedas, rating contra o farm, XP e níveis, loja, cosméticos, regras de monetização |
 | `docs/visual-impresso.md` | técnicas do Aranhaverso no Dice Duel: o que cabe, o que não cabe e o plano |
