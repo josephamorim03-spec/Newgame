@@ -41,7 +41,7 @@ main { display: grid; gap: 28px; }
 .q.meio .arte { aspect-ratio: 1 / 1; }
 @media (max-width: 560px) { .q.meio .arte { aspect-ratio: 4 / 3; } }
 .arte.pagina { aspect-ratio: 2 / 3; }
-.arte img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transform-origin: 0 0; transform: var(--cam, none); }
+.arte img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: var(--op, 50% 50%); transform-origin: 0 0; transform: var(--cam, none); }
 .arte.vazio { display: grid; place-items: center; text-align: center; padding: 16px; color: var(--tinta-suave); border-style: dashed; font-size: 13px; background: transparent; }
 /* retícula: pontinhos de impressão, mais densos num canto (a sombra do gibi barato) */
 .reticula { position: absolute; inset: 0; pointer-events: none; mix-blend-mode: multiply;
@@ -57,7 +57,7 @@ main { display: grid; gap: 28px; }
 .tinta { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; z-index: 2; }
 
 /* o balão: só o texto mora no HTML; o contorno e o rabinho são desenhados juntos no SVG (sem emenda) */
-.balao { position: absolute; z-index: 3; width: max-content; max-width: max(46%, 190px); padding: .7em 1.05em; color: #3a2a2e;
+.balao { position: absolute; z-index: 3; box-sizing: border-box; width: max-content; max-width: max(42%, 180px); padding: .7em 1.05em; color: #3a2a2e;
   font: 800 clamp(12.5px, 3.1cqw, 17px)/1.25 var(--f-texto); text-align: center; text-wrap: balance; }
 .q.meio .balao { max-width: 74%; font-size: clamp(12.5px, 4.4cqw, 16px); }
 .balao.nw { left: 4%; top: 5%; } .balao.ne { right: 4%; top: 5%; } .balao.sw { left: 4%; bottom: 6%; } .balao.se { right: 4%; bottom: 6%; }
@@ -252,18 +252,22 @@ function grade(qs) {
 // borda vazia. O foco padrão é a cabeça de quem fala (a boca marcada, um pouco acima), em % da imagem.
 function camera(el, img) {
   const W = el.clientWidth, H = el.clientHeight, z = +el.dataset.zoom || 1;
+  let foco = el.dataset.foco ? el.dataset.foco.split(',').map(Number) : null;
+  if (!foco) { const bal = el.querySelector('.balao:not(.caixa)'), b = bal && ((D.artes[el.dataset.arte] || {}).boca || {})[bal.dataset.quem]; foco = b && b[1] <= 100 ? [b[0], b[1] - 12] : [50, 35]; }
   let ox = 0, oy = 0, dw = W, dh = H;                       // o mural ocupa o quadro inteiro
   if (img) {
     if (!img.naturalWidth) return null;
     const k = Math.max(W / img.naturalWidth, H / img.naturalHeight);
-    dw = img.naturalWidth * k; dh = img.naturalHeight * k; ox = (W - dw) / 2; oy = (H - dh) / 2;
+    dw = img.naturalWidth * k; dh = img.naturalHeight * k;
+    // o recorte do object-fit já vai para o lado do foco (object-position); a imagem só pinta dentro da caixa dela
+    const fx = Math.max(0, Math.min(1, (foco[0] / 100 * dw - W / 2) / Math.max(1, dw - W))), fy = Math.max(0, Math.min(1, (foco[1] / 100 * dh - H / 2) / Math.max(1, dh - H)));
+    ox = (W - dw) * fx; oy = (H - dh) * fy;
+    el.style.setProperty('--op', `${fx * 100}% ${fy * 100}%`);
   }
-  let foco = el.dataset.foco ? el.dataset.foco.split(',').map(Number) : null;
-  if (!foco) { const bal = el.querySelector('.balao:not(.caixa)'), b = bal && ((D.artes[el.dataset.arte] || {}).boca || {})[bal.dataset.quem]; foco = b && b[1] <= 100 ? [b[0], b[1] - 12] : [50, 35]; }
   const px = ox + foco[0] / 100 * dw, py = oy + foco[1] / 100 * dh;
-  // tela = z · ponto + T; T leva o foco ao centro, preso para a imagem cobrir o quadro todo
-  const tx = Math.min(-z * ox, Math.max(W - z * (ox + dw), W / 2 - z * px));
-  const ty = Math.min(-z * oy, Math.max(H - z * (oy + dh), H / 2 - z * py));
+  // tela = z · ponto + T; T leva o foco ao centro, preso para a caixa da imagem (0..W) cobrir o quadro todo
+  const tx = Math.min(0, Math.max(W - z * W, W / 2 - z * px));
+  const ty = Math.min(0, Math.max(H - z * H, H / 2 - z * py));
   const cam = { z, tx, ty, ox, oy, dw, dh };
   el.style.setProperty('--cam', `translate(${cam.tx}px, ${cam.ty}px) scale(${z})`);
   el._cam = cam;
@@ -277,31 +281,55 @@ function bocaNoQuadro(el, img, quem) {
   return { x: c.z * x + c.tx, y: c.z * y + c.ty };
 }
 
-// o rosto de quem fala (uma caixa em volta da boca, do tamanho de uma cabeça no plano do quadro)
+// o rosto de quem fala: a caixa da cabeça marcada na arte ("cabeca", em % da imagem) ou, sem ela, uma estimativa pela boca
 function rosto(el, img, quem) {
-  const m = bocaNoQuadro(el, img, quem);
-  if (!m) return null;
-  const z = el._cam ? el._cam.z : 1, W = el.clientWidth, H = el.clientHeight;
-  const hw = W * .15 * z, hh = H * .3 * z;
-  return { boca: m, x0: m.x - hw, x1: m.x + hw, y0: m.y - hh, y1: m.y + hh * .3 };
+  const m = bocaNoQuadro(el, img, quem), c = el._cam;
+  if (!m || !c) return null;
+  const a = D.artes[el.dataset.arte] || {}, cab = (a.cabeca || {})[quem];
+  if (cab) {
+    const p = (x, y) => ({ x: c.z * (c.ox + x / 100 * c.dw) + c.tx, y: c.z * (c.oy + y / 100 * c.dh) + c.ty });
+    const A = p(cab[0], cab[1]), B = p(cab[2], cab[3]);
+    return { boca: m, x0: A.x, y0: A.y, x1: B.x, y1: B.y };
+  }
+  const hw = c.dw * .13 * c.z, hh = c.dh * .36 * c.z;
+  return { boca: m, x0: m.x - hw, x1: m.x + hw, y0: m.y - hh, y1: m.y + hh * .22 };
 }
 const sobra = (a, b) => Math.max(0, Math.min(a.x1, b.x1) - Math.max(a.x0, b.x0)) * Math.max(0, Math.min(a.y1, b.y1) - Math.max(a.y0, b.y0));
 const CANTOS = ['nw', 'ne', 'sw', 'se'];
-// cada balão vai para o canto que cobre menos rosto (e não cobre outro balão), começando pelo canto livre da arte
+// cada balão procura, no quadro todo, o lugar que não cobre rosto nem outro balão, perto de quem fala e de preferência no
+// alto (lê-se de cima para baixo); o canto livre da arte desempata
 function posicionar(el, img) {
-  const rostos = [...el.querySelectorAll('.balao')].map(b => rosto(el, img, b.dataset.quem)).filter(Boolean);   // um rosto fora do quadro não cobre nada
+  const W = el.clientWidth, H = el.clientHeight, m = Math.max(6, W * .025);
+  const rostos = [...el.querySelectorAll('.balao')].map(b => rosto(el, img, b.dataset.quem)).filter(Boolean);
   const postos = [];
+  const falas = [...el.querySelectorAll('.balao:not(.caixa)')];
   for (const bal of el.querySelectorAll('.balao')) {
+    CANTOS.forEach(k => bal.classList.remove(k));
     if (bal.classList.contains('caixa')) { postos.push(caixaDe(bal)); continue; }
-    const pref = bal.dataset.lugar || 'nw', ordem = [pref, ...CANTOS.filter(c => c !== pref)];
+    bal.style.left = '0px'; bal.style.top = '0px';
+    const w = bal.offsetWidth, h = bal.offsetHeight, f = rosto(el, img, bal.dataset.quem), pref = bal.dataset.lugar || 'nw';
     let melhor = null;
-    for (const c of ordem) {
-      CANTOS.forEach(k => bal.classList.remove(k)); bal.classList.add(c);
-      const r = caixaDe(bal), custo = rostos.reduce((s, f) => s + sobra(r, f), 0) + postos.reduce((s, p) => s + sobra(r, p) * 50, 0);
-      if (!melhor || custo < melhor.custo - 1) melhor = { c, custo };
+    for (let y = m; y <= H - h - m + .1; y += Math.max(4, (H - h - 2 * m) / 14)) {
+      for (let x = m; x <= W - w - m + .1; x += Math.max(4, (W - w - 2 * m) / 16)) {
+        const r = { x0: x, y0: y, x1: x + w, y1: y + h };
+        let custo = rostos.reduce((s, q) => s + sobra(r, q) * 40, 0) + postos.reduce((s, q) => s + sobra(r, q) * 60, 0);
+        if (f) {   // perto da cabeça, mas fora dela: a distância do balão até a borda do rosto
+          const dx = Math.max(f.x0 - r.x1, r.x0 - f.x1, 0), dy = Math.max(f.y0 - r.y1, r.y0 - f.y1, 0);
+          custo += Math.hypot(dx, dy) * 2.2;
+        }
+        custo += y * .6;                                                        // no alto
+        if (falas.length > 1) {                                                // vários balões: cada um na sua faixa de altura, na ordem da fala
+          const i = falas.indexOf(bal);
+          custo += Math.abs((y + h / 2) / H - (i + .5) / falas.length) * H * 1.4;
+        }
+        const antes = postos.filter(q => q.fala).at(-1);                        // a fala seguinte vem abaixo da anterior (ordem de leitura)
+        if (antes && y < antes.y0 + 4) custo += H * .6;
+        custo += ((pref[1] === 'w') === (x + w / 2 < W / 2) ? 0 : W * .04) + ((pref[0] === 'n') === (y + h / 2 < H / 2) ? 0 : H * .04);
+        if (!melhor || custo < melhor.custo) melhor = { x, y, custo };
+      }
     }
-    CANTOS.forEach(k => bal.classList.remove(k)); bal.classList.add(melhor.c);
-    postos.push(caixaDe(bal));
+    bal.style.left = `${melhor.x}px`; bal.style.top = `${melhor.y}px`;
+    postos.push({ ...caixaDe(bal), fala: true });
   }
 }
 const caixaDe = bal => ({ x0: bal.offsetLeft, y0: bal.offsetTop, x1: bal.offsetLeft + bal.offsetWidth, y1: bal.offsetTop + bal.offsetHeight });
@@ -324,18 +352,26 @@ function desenhar(el) {
     const f = caixa ? null : rosto(el, img, bal.dataset.quem);
     if (f) {
       const boca = f.boca, cx = r.x + r.w / 2, cy = r.y + r.h / 2;
-      // a base sai da borda do balão virada para o rosto; a ponta aponta para a boca e para antes da cabeça
-      const lado = Math.abs(boca.y - cy) / r.h > Math.abs(boca.x - cx) / r.w;
-      const bx = lado ? Math.max(r.x + rx, Math.min(r.x + r.w - rx, boca.x)) : (boca.x > cx ? r.x + r.w - 2 : r.x + 2);
-      const by = lado ? (boca.y > cy ? r.y + r.h - 2 : r.y + 2) : Math.max(r.y + rx * .6, Math.min(r.y + r.h - rx * .6, boca.y));
-      const dx = boca.x - bx, dy = boca.y - by, dist = Math.hypot(dx, dy) || 1;
-      const ateRosto = Math.max(14, Math.min(dist * .55, H * .2 + 14));
-      let tip = { x: bx + dx / dist * ateRosto, y: by + dy / dist * ateRosto };
-      // vindo de cima, o rabinho para no alto da cabeça: nunca entra no rosto (com a arte sem espaço, fica curtinho)
-      if (dy > 0 && tip.y > f.y0 - 4) { const k = Math.max(12, f.y0 - 4 - by) / Math.max(1, tip.y - by); if (k < 1) tip = { x: bx + (tip.x - bx) * k, y: by + (tip.y - by) * k }; }
-      const larg = Math.max(9, Math.min(20, Math.min(r.h, r.w) * .34)), nx = -dy / dist * larg, ny = dx / dist * larg;
-      const meio = { x: (bx + tip.x) / 2 + nx * .5, y: (by + tip.y) / 2 + ny * .5 };   // uma curva leve, como na mão
-      rabo = `M${bx - nx},${by - ny} Q${meio.x},${meio.y} ${tip.x},${tip.y} Q${meio.x - nx * .3},${meio.y - ny * .3} ${bx + nx},${by + ny} Z`;
+      const larg = Math.max(8, Math.min(18, Math.min(r.h, r.w) * .3));
+      // a base: no lado do balão virado para a boca, longe da curva do canto, um pouco para dentro (a emenda some no recheio)
+      const vertical = Math.abs(boca.y - cy) / r.h > Math.abs(boca.x - cx) / r.w;
+      const folga = rx * .75 + larg;
+      let bx, by;
+      if (vertical) { bx = Math.max(r.x + folga, Math.min(r.x + r.w - folga, boca.x)); by = boca.y > cy ? r.y + r.h - larg * .7 : r.y + larg * .7; }
+      else { by = Math.max(r.y + Math.min(folga, r.h / 2), Math.min(r.y + r.h - Math.min(folga, r.h / 2), boca.y)); bx = boca.x > cx ? r.x + r.w - larg * .7 : r.x + larg * .7; }
+      // a ponta: na direção da boca, parando na borda do rosto (por fora), nunca dentro da cabeça
+      const dx = boca.x - bx, dy = boca.y - by, dist = Math.hypot(dx, dy) || 1, ux = dx / dist, uy = dy / dist;
+      let ate = dist;
+      for (const [lim, comp, dir] of [[f.x0, bx, ux], [f.x1, bx, ux], [f.y0, by, uy], [f.y1, by, uy]]) {
+        if (dir === 0) continue;
+        const k = (lim - comp) / dir;
+        if (k > 0) { const px = bx + ux * k, py = by + uy * k; if (px >= f.x0 - 1 && px <= f.x1 + 1 && py >= f.y0 - 1 && py <= f.y1 + 1) ate = Math.min(ate, k); }
+      }
+      const fora = Math.max(larg * 1.6, Math.min(ate - 6, H * .22));          // pelo menos um rabinho visível
+      const tip = { x: bx + ux * fora, y: by + uy * fora };
+      const nx = -uy * larg, ny = ux * larg;
+      const meio = { x: (bx + tip.x) / 2 + nx * .45, y: (by + tip.y) / 2 + ny * .45 };   // uma curva leve, como na mão
+      rabo = `M${bx - nx},${by - ny} Q${meio.x},${meio.y} ${tip.x},${tip.y} Q${meio.x - nx * .25},${meio.y - ny * .25} ${bx + nx},${by + ny} Z`;
       el.style.setProperty('--bx', `${boca.x / W * 100}%`); el.style.setProperty('--by', `${boca.y / H * 100}%`);
     }
     const fill = caixa ? '#f8dc9a' : '#fffdf8', tracejado = bal.classList.contains('sussurro') ? ' stroke-dasharray="6 5"' : '';
