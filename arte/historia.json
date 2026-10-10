@@ -55,7 +55,8 @@
       83.5,
       53.52,
       93.07
-     ]
+     ],
+     "conferido": true
     },
     {
      "x": 59.2,
@@ -71,7 +72,8 @@
       87.11,
       62.04,
       96.88
-     ]
+     ],
+     "conferido": true
     },
     {
      "x": 68.8,
@@ -87,7 +89,8 @@
       86.23,
       71.68,
       95.61
-     ]
+     ],
+     "conferido": true
     }
    ],
    "cabeca": {
@@ -128,7 +131,8 @@
       81.1,
       24.6,
       91.5
-     ]
+     ],
+     "conferido": false
     },
     {
      "x": 71.8,
@@ -144,7 +148,8 @@
       79.79,
       75.26,
       90.82
-     ]
+     ],
+     "conferido": false
     },
     {
      "x": 79.8,
@@ -160,7 +165,8 @@
       83.89,
       83.4,
       95.31
-     ]
+     ],
+     "conferido": true
     }
    ],
    "cabeca": {
@@ -201,7 +207,8 @@
       89.55,
       47.07,
       99.9
-     ]
+     ],
+     "conferido": false
     },
     {
      "x": 54.0,
@@ -217,7 +224,8 @@
       87.11,
       57.03,
       97.56
-     ]
+     ],
+     "conferido": false
     },
     {
      "x": 63.6,
@@ -233,7 +241,8 @@
       89.16,
       66.41,
       99.9
-     ]
+     ],
+     "conferido": false
     }
    ],
    "cabeca": {
@@ -275,7 +284,8 @@
       84.77,
       40.36,
       96.48
-     ]
+     ],
+     "conferido": true
     },
     {
      "x": 44.3,
@@ -292,7 +302,8 @@
       80.27,
       47.79,
       91.89
-     ]
+     ],
+     "conferido": true
     }
    ],
    "cabeca": {
@@ -371,7 +382,8 @@
       "t": 4,
       "e": 2,
       "d": 1
-     }
+     },
+     "conferido": false
     },
     {
      "caixa": [
@@ -386,7 +398,8 @@
       "t": 5,
       "e": 4,
       "d": 1
-     }
+     },
+     "conferido": false
     },
     {
      "caixa": [
@@ -401,7 +414,8 @@
       "t": 6,
       "e": 5,
       "d": 3
-     }
+     },
+     "conferido": false
     },
     {
      "caixa": [
@@ -416,7 +430,8 @@
       "t": 2,
       "e": 1,
       "d": 4
-     }
+     },
+     "conferido": false
     }
    ]
   },
@@ -478,7 +493,8 @@
       "t": 2,
       "e": 1,
       "d": 4
-     }
+     },
+     "conferido": false
     },
     {
      "x": 67.8,
@@ -494,7 +510,8 @@
       "t": 3,
       "e": 2,
       "d": 6
-     }
+     },
+     "conferido": false
     },
     {
      "x": 74.85,
@@ -510,7 +527,8 @@
       "t": 4,
       "e": 5,
       "d": 6
-     }
+     },
+     "conferido": false
     }
    ],
    "dados_skin": "lagoa"
@@ -557,7 +575,7 @@
     "diana"
    ],
    "nariz": "x",
-   "texto": "Diana sits at her felt table holding up a damp notebook page with both front paws, reading it with narrowed eyes. The page FACES HER: the reader sees only the plain cream BACK of the page, slightly see-through at one wet corner, nothing drawn on the side we see. Behind her, only the edge of a cork board shows at the side of the frame, its content out of view (the board itself is shown in separate panels).",
+   "texto": "Diana sits at her felt table and holds a damp notebook page up in front of her face with both front paws, reading it with narrowed eyes. The page faces HER: we see only the plain cream BACK of the page, blank, with a faint wet stain showing through, and NOTHING drawn on the side we see (no tadpole, no writing). Her eyes peek over the top edge of the page. Behind her, only the edge of a cork board shows at the side of the frame.",
    "lugar": "nw",
    "dados_skin": "marfim",
    "dados": [
@@ -573,7 +591,8 @@
       "t": 1,
       "e": 2,
       "d": 3
-     }
+     },
+     "conferido": false
     }
    ]
   },
@@ -598,7 +617,8 @@
       "t": 6,
       "e": 3,
       "d": 2
-     }
+     },
+     "conferido": false
     },
     {
      "caixa": [
@@ -612,7 +632,8 @@
       "t": 1,
       "e": 4,
       "d": 2
-     }
+     },
+     "conferido": false
     },
     {
      "caixa": [
@@ -626,7 +647,8 @@
       "t": 2,
       "e": 6,
       "d": 3
-     }
+     },
+     "conferido": false
     },
     {
      "caixa": [
@@ -640,7 +662,8 @@
       "t": 4,
       "e": 1,
       "d": 5
-     }
+     },
+     "conferido": false
     }
    ]
   },
@@ -672,7 +695,8 @@
       "t": 3,
       "e": 6,
       "d": 5
-     }
+     },
+     "conferido": false
     },
     {
      "caixa": [
@@ -686,7 +710,8 @@
       "t": 5,
       "e": 1,
       "d": 3
-     }
+     },
+     "conferido": true
     }
    ]
   },
@@ -710,7 +735,8 @@
       "t": 4,
       "e": 1,
       "d": 5
-     }
+     },
+     "conferido": true
     },
     {
      "caixa": [
@@ -724,7 +750,8 @@
       "t": 5,
       "e": 3,
       "d": 6
-     }
+     },
+     "conferido": false
     },
     {
      "caixa": [
@@ -738,7 +765,8 @@
       "t": 6,
       "e": 4,
       "d": 5
-     }
+     },
+     "conferido": false
     },
     {
      "caixa": [
@@ -752,7 +780,8 @@
       "t": 1,
       "e": 5,
       "d": 4
-     }
+     },
+     "conferido": true
     }
    ]
   },
@@ -787,7 +816,8 @@
       "t": 3,
       "e": 6,
       "d": 5
-     }
+     },
+     "conferido": true
     },
     {
      "caixa": [
@@ -801,7 +831,8 @@
       "t": 5,
       "e": 1,
       "d": 3
-     }
+     },
+     "conferido": false
     },
     {
      "caixa": [
@@ -815,7 +846,8 @@
       "t": 6,
       "e": 3,
       "d": 2
-     }
+     },
+     "conferido": false
     },
     {
      "caixa": [
@@ -829,7 +861,8 @@
       "t": 1,
       "e": 4,
       "d": 2
-     }
+     },
+     "conferido": true
     },
     {
      "caixa": [
@@ -843,7 +876,8 @@
       "t": 2,
       "e": 6,
       "d": 3
-     }
+     },
+     "conferido": true
     }
    ]
   },
@@ -867,7 +901,8 @@
       "t": 3,
       "e": 5,
       "d": 1
-     }
+     },
+     "conferido": true
     },
     {
      "caixa": [
@@ -881,7 +916,8 @@
       "t": 4,
       "e": 6,
       "d": 2
-     }
+     },
+     "conferido": false
     }
    ]
   },
@@ -906,7 +942,8 @@
       "t": 2,
       "e": 6,
       "d": 3
-     }
+     },
+     "conferido": false
     },
     {
      "caixa": [
@@ -920,7 +957,8 @@
       "t": 4,
       "e": 1,
       "d": 5
-     }
+     },
+     "conferido": false
     },
     {
      "caixa": [
@@ -934,7 +972,8 @@
       "t": 5,
       "e": 3,
       "d": 6
-     }
+     },
+     "conferido": false
     }
    ]
   },
@@ -997,7 +1036,8 @@
       "t": 6,
       "e": 2,
       "d": 4
-     }
+     },
+     "conferido": false
     },
     {
      "caixa": [
@@ -1011,7 +1051,8 @@
       "t": 1,
       "e": 3,
       "d": 5
-     }
+     },
+     "conferido": false
     },
     {
      "caixa": [
@@ -1025,7 +1066,8 @@
       "t": 2,
       "e": 4,
       "d": 6
-     }
+     },
+     "conferido": false
     }
    ]
   },
@@ -1074,7 +1116,8 @@
       "t": 4,
       "e": 6,
       "d": 2
-     }
+     },
+     "conferido": true
     },
     {
      "caixa": [
@@ -1088,7 +1131,8 @@
       "t": 6,
       "e": 2,
       "d": 4
-     }
+     },
+     "conferido": true
     }
    ]
   },
@@ -1113,7 +1157,8 @@
       "t": 6,
       "e": 5,
       "d": 3
-     }
+     },
+     "conferido": false
     },
     {
      "caixa": [
@@ -1128,7 +1173,8 @@
       "t": 2,
       "e": 1,
       "d": 4
-     }
+     },
+     "conferido": false
     },
     {
      "caixa": [
@@ -1143,7 +1189,8 @@
       "t": 3,
       "e": 2,
       "d": 6
-     }
+     },
+     "conferido": false
     },
     {
      "caixa": [
@@ -1158,7 +1205,8 @@
       "t": 4,
       "e": 5,
       "d": 6
-     }
+     },
+     "conferido": false
     },
     {
      "caixa": [
@@ -1173,7 +1221,8 @@
       "t": 5,
       "e": 6,
       "d": 4
-     }
+     },
+     "conferido": false
     }
    ]
   },
@@ -1201,7 +1250,8 @@
       "t": 2,
       "e": 1,
       "d": 4
-     }
+     },
+     "conferido": true
     },
     {
      "caixa": [
@@ -1216,7 +1266,8 @@
       "t": 3,
       "e": 2,
       "d": 6
-     }
+     },
+     "conferido": true
     },
     {
      "caixa": [
@@ -1231,7 +1282,8 @@
       "t": 4,
       "e": 5,
       "d": 6
-     }
+     },
+     "conferido": false
     },
     {
      "caixa": [
@@ -1246,7 +1298,8 @@
       "t": 5,
       "e": 6,
       "d": 4
-     }
+     },
+     "conferido": false
     }
    ]
   },
@@ -1278,7 +1331,8 @@
       82.7,
       10.2,
       92.0
-     ]
+     ],
+     "conferido": true
     },
     {
      "x": 13.8,
@@ -1294,7 +1348,8 @@
       84.0,
       17.5,
       95.7
-     ]
+     ],
+     "conferido": true
     },
     {
      "x": 6.8,
@@ -1310,7 +1365,8 @@
       89.9,
       10.7,
       100
-     ]
+     ],
+     "conferido": false
     },
     {
      "x": 29.8,
@@ -1326,7 +1382,8 @@
       88.0,
       33.2,
       99.4
-     ]
+     ],
+     "conferido": true
     },
     {
      "x": 38.0,
@@ -1342,7 +1399,8 @@
       92.5,
       41.5,
       100
-     ]
+     ],
+     "conferido": false
     }
    ],
    "cabeca": {
@@ -1375,7 +1433,8 @@
       "t": 1,
       "e": 5,
       "d": 4
-     }
+     },
+     "conferido": true
     },
     {
      "caixa": [
@@ -1389,9 +1448,11 @@
       "t": 3,
       "e": 1,
       "d": 2
-     }
+     },
+     "conferido": true
     }
-   ]
+   ],
+   "edicao": "Keep everything identical (the sheep, her pose, the missing wool patch, the sky, the hills, the dice, the colors, the outline and the framing). Fix only the pasture: the grass is divided into a REGULAR honeycomb of identical flat hexagon tiles lying on the ground in perspective, with straight edges of equal length and evenly spaced lines, including the tiles under and around the sheep's feet; no warped, bent or irregular hexagons."
   },
   "c6-pag-a": {
    "quem": [],
@@ -1411,7 +1472,8 @@
       "t": 2,
       "e": 1,
       "d": 4
-     }
+     },
+     "conferido": false
     }
    ]
   },
@@ -1434,7 +1496,8 @@
       "t": 3,
       "e": 6,
       "d": 5
-     }
+     },
+     "conferido": true
     },
     {
      "caixa": [
@@ -1449,7 +1512,8 @@
       "t": 5,
       "e": 1,
       "d": 3
-     }
+     },
+     "conferido": false
     },
     {
      "caixa": [
@@ -1464,7 +1528,8 @@
       "t": 6,
       "e": 3,
       "d": 2
-     }
+     },
+     "conferido": false
     },
     {
      "caixa": [
@@ -1479,7 +1544,8 @@
       "t": 1,
       "e": 4,
       "d": 2
-     }
+     },
+     "conferido": true
     }
    ]
   },
@@ -1518,7 +1584,8 @@
       "t": 5,
       "e": 6,
       "d": 4
-     }
+     },
+     "conferido": false
     },
     {
      "caixa": [
@@ -1532,7 +1599,8 @@
       "t": 1,
       "e": 2,
       "d": 3
-     }
+     },
+     "conferido": false
     },
     {
      "caixa": [
@@ -1546,7 +1614,8 @@
       "t": 2,
       "e": 3,
       "d": 1
-     }
+     },
+     "conferido": true
     }
    ]
   },
@@ -1570,7 +1639,8 @@
       "t": 6,
       "e": 5,
       "d": 3
-     }
+     },
+     "conferido": false
     },
     {
      "caixa": [
@@ -1584,7 +1654,8 @@
       "t": 2,
       "e": 1,
       "d": 4
-     }
+     },
+     "conferido": false
     },
     {
      "caixa": [
@@ -1598,7 +1669,8 @@
       "t": 3,
       "e": 2,
       "d": 6
-     }
+     },
+     "conferido": true
     }
    ]
   },
@@ -1673,7 +1745,8 @@
       "t": 6,
       "e": 4,
       "d": 5
-     }
+     },
+     "conferido": false
     },
     {
      "caixa": [
@@ -1687,7 +1760,8 @@
       "t": 1,
       "e": 5,
       "d": 4
-     }
+     },
+     "conferido": true
     },
     {
      "caixa": [
@@ -1701,7 +1775,8 @@
       "t": 3,
       "e": 1,
       "d": 2
-     }
+     },
+     "conferido": false
     }
    ]
   },
@@ -1774,7 +1849,8 @@
       "t": 3,
       "e": 6,
       "d": 5
-     }
+     },
+     "conferido": false
     },
     {
      "x": 40.75,
@@ -1790,7 +1866,8 @@
       "t": 5,
       "e": 1,
       "d": 3
-     }
+     },
+     "conferido": false
     },
     {
      "x": 48.75,
@@ -1806,7 +1883,8 @@
       "t": 6,
       "e": 3,
       "d": 2
-     }
+     },
+     "conferido": false
     },
     {
      "x": 56.9,
@@ -1822,7 +1900,8 @@
       "t": 1,
       "e": 4,
       "d": 2
-     }
+     },
+     "conferido": false
     },
     {
      "x": 65.05,
@@ -1838,7 +1917,8 @@
       "t": 2,
       "e": 6,
       "d": 3
-     }
+     },
+     "conferido": false
     }
    ],
    "dados_skin": "rosa"
@@ -1863,7 +1943,8 @@
       "t": 3,
       "e": 2,
       "d": 6
-     }
+     },
+     "conferido": true
     },
     {
      "caixa": [
@@ -1877,7 +1958,8 @@
       "t": 4,
       "e": 5,
       "d": 6
-     }
+     },
+     "conferido": false
     }
    ]
   },
@@ -1915,7 +1997,8 @@
       "t": 4,
       "e": 5,
       "d": 6
-     }
+     },
+     "conferido": true
     },
     {
      "caixa": [
@@ -1929,7 +2012,8 @@
       "t": 5,
       "e": 6,
       "d": 4
-     }
+     },
+     "conferido": false
     }
    ]
   },
@@ -1953,7 +2037,8 @@
       "t": 3,
       "e": 5,
       "d": 1
-     }
+     },
+     "conferido": false
     },
     {
      "x": 44.75,
@@ -1970,7 +2055,8 @@
       "t": 4,
       "e": 6,
       "d": 2
-     }
+     },
+     "conferido": false
     },
     {
      "x": 74.35,
@@ -1987,7 +2073,8 @@
       "t": 6,
       "e": 2,
       "d": 4
-     }
+     },
+     "conferido": false
     },
     {
      "x": 82.80000000000001,
@@ -2004,7 +2091,8 @@
       "t": 1,
       "e": 3,
       "d": 5
-     }
+     },
+     "conferido": false
     }
    ]
   },
@@ -3281,6 +3369,6 @@
    ]
   }
  },
- "_refazer": "Quando houver crédito na API: primeiro python3 tools/historia/quadros.py narizes cachecol (o cachecol maior, a partir da v1); depois python3 tools/historia/quadros.py --qualidade high <ids> refaz no pedido novo (estilo chapado, folha do nariz, canto livre para o balão). Primeiro os pedidos do dono na 2.ª revisão: p-pata (ombro e contorno), i1-le (a página virada para a Diana), c3-raposa (o rabo), c1-pag-a (o girino de ré); depois os 6 antigos do piloto (p-caderno, p-close, c1-x, c1-sapo, c1-cha, c6-la) e o resto.",
+ "_refazer": "Quando houver crédito na API, nesta ordem: (1) python3 tools/historia/quadros.py narizes cachecol; (2) python3 tools/historia/quadros.py --qualidade high p-pata i1-le c3-raposa c1-pag-a c6-ovelha (o c6-ovelha é uma edição da arte atual: só os hexágonos); (3) python3 tools/historia/dados_ia.py rascunhos, o dono escolhe nas pranchas e python3 tools/historia/dados_ia.py aplicar ...; (4) os 6 antigos do piloto e o resto, no pedido novo.",
  "_dados": "Os dados dos quadros são conferidos depois de pintados: tools/historia/dados_quadros.py troca as bolinhas erradas pelas certas (anotações em 'dados' de cada arte)."
 }

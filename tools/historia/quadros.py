@@ -76,7 +76,21 @@ def tamanho_de(cfg, id_):
 
 
 def pintar(cfg, id_, qualidade):
+    a = cfg["artes"][id_]
+    if a.get("edicao"):                                # só corrige o que o dono apontou: a edição parte da arte atual (a original, sem a troca de bolinhas)
+        atual = QUADROS / "originais" / f"{id_}.webp"
+        atual = atual if atual.exists() else QUADROS / f"{id_}.webp"
+        base = RAIZ / "builds" / "edicao" / f"{id_}.png"
+        base.parent.mkdir(parents=True, exist_ok=True)
+        Image.open(atual).convert("RGB").save(base)
+        png = A.gerar("Edit the attached comic panel. " + a["edicao"], qualidade, base, fundo="opaque", tamanho=tamanho_de(cfg, id_), modelo=cfg["modelo"])
+        Image.open(io.BytesIO(png)).convert("RGB").save(QUADROS / f"{id_}.webp", "WEBP", quality=88, method=6)
+        (QUADROS / "originais" / f"{id_}.webp").unlink(missing_ok=True)   # a nova arte é a nova original (os dados são refeitos depois)
+        return id_
     png = A.gerar(prompt_de(cfg, id_), qualidade, refs_de(cfg, id_), fundo="opaque", tamanho=tamanho_de(cfg, id_), modelo=cfg["modelo"])
+    if (QUADROS / "originais" / f"{id_}.webp").exists():   # arte nova: os dados mudaram de lugar
+        (QUADROS / "originais" / f"{id_}.webp").unlink()
+        print(f"  {id_}: arte nova; marque de novo os dados dela (\"dados\" em arte/historia.json) e rode tools/historia/dados_quadros.py", flush=True)
     im = Image.open(io.BytesIO(png)).convert("RGB")
     im.save(QUADROS / f"{id_}.webp", "WEBP", quality=88, method=6)
     (QUADROS / f"{id_}.json").write_text(json.dumps({"prompt": prompt_de(cfg, id_), "referencias": [str(r.relative_to(RAIZ)) for r in refs_de(cfg, id_) or []],
