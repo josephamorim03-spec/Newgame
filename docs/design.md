@@ -78,6 +78,11 @@ Agora o −1 só vale se o rival estiver na frente ou empatado; atrás, o dispar
 de recuperação, e o simulador mostra a meta 12 mais variada (10 dos 20 melhores com ela) e a meta 16 sem nenhum deck
 acima de 58% (`docs/balanceamento-cartas.md` §12).
 
+**Os textos (v0.12).** Cada carta segue o mesmo formato: o que faz, quando vale (os dados na Mesa, o tamanho da
+corrente) e o detalhe que confunde, com exemplo ("o 2 vira 5"; "2-3-4 vira 4-3-2"). Os rótulos curtos não se repetem
+(Coringa "salva a corrente", Âncora "segura corrente de 4+"). O livro de regras deixa nas cartas o que é de cada uma
+e fica, em "Quando as cartas se cruzam", só com as interações.
+
 ### Quando as cartas se cruzam (exceções explícitas)
 
 Cada regra abaixo aparece também no painel de Regras do jogo e é conferida por `tools/regras.js`.

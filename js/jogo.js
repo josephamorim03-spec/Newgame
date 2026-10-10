@@ -445,7 +445,7 @@
       virar: e.antes != null ? `${quem} virou um ${e.antes} da Mesa: agora é ${e.depois}` : `${quem} virou um dado da Mesa`,
       rerrolar: `${quem} rolou a Mesa de novo`,
       pressa: `${quem} vai pegar dois dados nesta vez`,
-      coringa: `o próximo dado de ${quem} que romperia troca a frente da corrente`,
+      coringa: `a corrente de ${quem} está protegida: o próximo dado que romperia entra no lugar da frente`,
       sobrecarga: `o próximo disparo de 4+ de ${quem} vale +2`,
       pausa: `${quem} passou a vez sem pegar dado: ${nomes()[1 - e.p] === 'Você' ? 'você joga de novo' : `${nomes()[1 - e.p]} joga de novo`}`,
       reverso: `a corrente de ${quem} agora cresce pela outra ponta${e.frente ? ` (frente: ${e.frente})` : ''}`,
@@ -595,7 +595,7 @@
     const visivel = humano(p) && j.vez === p;
     let nota = !meu ? 'O deck do rival fica à mostra. Uma carta virada (?) pode ser qualquer carta dele ainda não revelada: uma armadilha ou um blefe.'
       : !visivel ? 'Só na sua vez.' : pu.ok ? '' : (pu.motivo || '');
-    if (visivel && e === 'pronta' && k.tipo === 'efeito' && pv.ok) nota = `Blefe: virada para baixo, ela aparece para o rival como uma armadilha (?) e não faz nada. Se ele desafiar, a carta se perde e ele ganha ${R.DESAFIO.acerto}. Se ninguém desafiar, quando você a usar (da próxima vez em diante) ela funciona e rende +${R.DESAFIO.bonus}.`;
+    if (visivel && e === 'pronta' && k.tipo === 'efeito' && pv.ok) nota = `Ou blefe: virada para baixo, para o rival ela parece uma armadilha (?) e não faz nada enquanto estiver virada. Se ele desafiar, ela se perde e ele ganha ${R.DESAFIO.acerto}. Se ninguém desafiar, da sua próxima vez em diante você a usa normalmente e ganha +${R.DESAFIO.bonus}.`;
     if (visivel && blefe) nota = pu.ok ? `Ninguém desafiou: usar agora revela o blefe, a carta funciona e rende +${R.DESAFIO.bonus}.` : (pu.motivo || '');
     document.getElementById('cartaNota').textContent = nota;
     const rot = blefe ? `Usar (blefe, +${R.DESAFIO.bonus})` : k.alvo ? 'Escolher o dado' : k.tipo === 'armadilha' ? 'Armar' : 'Usar';
@@ -660,7 +660,7 @@
       const pode = humano(j.vez) && j.vez !== p && podeDesafiar(j.vez).ok;
       estados += `<button class="efeito-ativo oculta${pode ? ' desafiavel' : ''}" data-virada="${p}" aria-label="Carta virada: pode ser armadilha ou blefe${pode ? '. Tocar para desafiar' : ''}">${VERSO} carta virada${pode ? ' · desafiar?' : ''}</button>`;
     }
-    if (j.coringa[p]) estados += `<span class="efeito-ativo">Coringa ativo</span>`;
+    if (j.coringa[p]) estados += `<span class="efeito-ativo" title="O próximo dado que romperia entra no lugar da frente">Coringa ativo</span>`;
     if (j.sobre[p]) estados += `<span class="efeito-ativo">Sobrecarga +2</span>`;
     if (j.extra[p]) estados += `<span class="efeito-ativo">Pressa: +1 dado</span>`;
     return `<div class="cartas">${html}</div><div class="estados">${estados}</div>`;
@@ -741,7 +741,7 @@
   function cartaViradaTxt(r, L) {
     const j = jogo, n = nomes();
     const efeito = { interferencia: L < 4 ? 'Interferência (não pega disparo de 3)' : j.pts[1 - r] >= j.pts[r] ? 'Interferência (−1 neste disparo)' : 'Interferência (não pega: você está atrás)', pedagio: `Pedágio (+${R.pedagioDe(jogo.meta)} para ele se você disparar)`,
-      fundo: 'Fundo Falso (só pega o Bolso)', ancora: 'Âncora (protege a corrente dele)' };
+      fundo: 'Fundo Falso (pega o próximo dado que você puser no Bolso)', ancora: 'Âncora (segura a corrente de 4+ dele)', lacre: 'Lacre (anula o próximo efeito que você usar)' };
     // desafiada e à vista: não há dúvida
     if (j.revelada && j.revelada[r] && j.armada[r]) return `${n[r]} tem ${efeito[j.armada[r]] || CARTAS[j.armada[r]].nome} armada, à vista (foi desafiada).`;
     const traps = armadilhasOcultas(r).map(c => efeito[c] || CARTAS[c].nome);
@@ -780,7 +780,7 @@
     }
     if (j.fase === 'destino' && j.mao) {
       const v = j.mao.v, ds = destinos(p, v), b = j.bolso[p];
-      const relTxt = x => { const r = eu.length ? rels(frente(eu), x) : []; return r.length ? r.map(k => REL[k].nome).join(' + ') : (eu.length && j.coringa[p] ? `Coringa: troca o ${frente(eu)}` : 'começa a corrente'); };
+      const relTxt = x => { const r = eu.length ? rels(frente(eu), x) : []; return r.length ? r.map(k => REL[k].nome).join(' + ') : (eu.length && j.coringa[p] ? `Coringa: entra no lugar do ${frente(eu)}` : 'começa a corrente'); };
       const bt = (modo, rot, sub, cls) => `<button class="btn btn-duplo ${cls}" data-destino="${modo}"><span>${rot}</span><small>${sub}</small></button>`;
       let botoes = '';
       if (ds.length) {
@@ -827,7 +827,7 @@
     const iSel = j.sel !== null && j.sel !== undefined ? idxDe(j.sel) : -1;
     if (j.fase === 'pegar' && iSel >= 0) {
       const op = opcoesDoDado(p, iSel), b = j.bolso[p], L = eu.length;
-      const relTxt = x => { const r = L ? rels(frente(eu), x) : []; return r.length ? r.map(k => REL[k].nome).join(' + ') : (L && j.coringa[p] ? `Coringa: troca o ${frente(eu)}` : 'começa a corrente'); };
+      const relTxt = x => { const r = L ? rels(frente(eu), x) : []; return r.length ? r.map(k => REL[k].nome).join(' + ') : (L && j.coringa[p] ? `Coringa: entra no lugar do ${frente(eu)}` : 'começa a corrente'); };
       const bt = (modo, rot, sub, cls) => `<button class="btn btn-duplo ${cls}" data-destino="${modo}"><span>${rot}</span><small>${sub}</small></button>`;
       const ancora = j.armada[p] === 'ancora' && L >= 4;
       let aviso = '', botoes = '';
@@ -854,7 +854,7 @@
     if (j.segundoDado) msg = `escolha o segundo dado (Pressa) ou dispense${eu.length >= 3 ? ' e vá para o disparo' : ''}.`;
     else if (!algumSeguro) msg = `<b>nenhum dado sincroniza</b> com o seu ${frente(eu)}, nem o do Bolso. Use uma carta ou escolha um: a corrente de ${eu.length} rompe${j.armada[p] === 'ancora' && eu.length >= 4 ? ', mas a sua Âncora está armada' : ''}.`;
     else if (!ajudas) msg = 'escolha um dado.';
-    else msg = eu.length ? `escolha um dado. Sua frente é <b>${frente(eu)}</b>: sincronizam ${facesQueEncaixam(eu).join(', ')}${j.coringa[p] ? '; os outros trocam a frente (Coringa)' : ''}.` : 'escolha um dado. Sua corrente está vazia: qualquer um começa.';
+    else msg = eu.length ? `escolha um dado. Sua frente é <b>${frente(eu)}</b>: sincronizam ${facesQueEncaixam(eu).join(', ')}${j.coringa[p] ? `; os outros entram no lugar do ${frente(eu)} (Coringa)` : ''}.` : 'escolha um dado. Sua corrente está vazia: qualquer um começa.';
     const prontas = j.decks[p].filter(c => usavel(p, c)).length;
     const dispensa = j.segundoDado ? `<div class="botoes"><button class="btn btn-papel" data-acao="dispensar">Dispensar o 2.º dado</button></div>` : '';
     return `<div class="status">${quem}, ${msg}</div>${dispensa}${prontas && ajudas ? `<p class="nota" style="margin:0">Toque numa carta sua para usar (${prontas} ${prontas === 1 ? 'pronta' : 'prontas'}).</p>` : ''}`;
