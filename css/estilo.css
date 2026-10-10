@@ -748,8 +748,8 @@ button.vaga { cursor: pointer; border: 0; background: #fff3dc; color: var(--tint
   .topo { gap: 6px; }
   .topo-botoes { gap: 3px; }
 }
-#deckGrade h3 { margin-top: 16px; }
-#deckGrade h3:first-child { margin-top: 0; }
+#deckGrade h3, .loja-cartas h3 { margin-top: 16px; }
+#deckGrade h3:first-child, .loja-cartas h3:first-child { margin-top: 0; }
 
 /* ---------- amigos: lista com quem está online, pedidos, chamar para a sala; nome livre ao criar a conta ---------- */
 .nome-status { font-size: 13px; font-weight: 700; }
@@ -1264,3 +1264,12 @@ button.inicio-perfil:active { transform: translateY(1px); }
 .item.item-carta { position: relative; }
 .item.item-carta .previa { cursor: pointer; }
 #janelaCarta { z-index: 61; }
+
+/* Loja: as cartas no mesmo cartão do montar o deck (Efeitos e Armadilhas), com o preço ou o Comprar embaixo */
+.op.op-loja { display: flex; flex-direction: column; align-items: center; cursor: default; }
+.op-loja .op-arte { cursor: pointer; display: grid; place-items: center; }
+.op-loja > .btn, .op-loja > .op-estado { margin-top: auto; width: 100%; }
+.op-loja > .btn { min-height: 40px; margin-top: 8px; }
+.op-loja > small { margin-bottom: 8px; }
+.op-loja .op-estado { font-size: 12.5px; font-weight: 800; color: var(--tinta-suave); padding: 10px 0 2px; }
+.op-loja.tem { background: #fff3dc; }

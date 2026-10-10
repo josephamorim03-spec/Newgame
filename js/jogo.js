@@ -1425,11 +1425,22 @@
       return `<div class="item${usando ? ' usando' : ''}${ler ? ' item-carta' : ''}">${ler}<div class="previa"${ler ? ` data-info-loja="${id}"` : ''}>${previa}</div><b>${info.nome}</b><small>${sub}</small>${botao}</div>`;
     };
     let html = '';
-    if (aba === 'cartas') html = ORDEM.map(id => item('cartas', id, { nome: CARTAS[id].nome, preco: PRECO_CARTA[id] || 0 }, CARTAS[id].arte, `${CARTAS[id].tipo}${CARTAS[id].pontos ? ` · <span class="raio">${RAIO}</span>` : ''} · ${CARTAS[id].verbo}`)).join('');
+    // as cartas, como no montar o deck: Efeitos e Armadilhas, o mesmo cartão (arte, nome, o que faz, "i"), e embaixo
+    // o preço, o Comprar ou "na coleção"
+    const cartaLoja = id => {
+      const k = CARTAS[id], tem = c.cartas.includes(id), preco = PRECO_CARTA[id] || 0;
+      const fim = tem ? `<span class="op-estado">${GRATIS.includes(id) ? 'Grátis' : '✓ Na coleção'}</span>`
+        : c.moedas < preco ? `<button class="btn btn-duplo btn-papel" disabled><span><span class="moeda"></span> ${preco}</span><small>faltam ${preco - c.moedas}</small></button>`
+        : `<button class="btn btn-mel" data-comprar="cartas:${id}"><span class="moeda"></span>${preco}</button>`;
+      return `<div class="op-wrap"><div class="op op-loja${tem ? ' tem' : ''}"><span class="op-arte" data-info-loja="${id}">${k.arte}</span><b>${k.nome}${k.pontos ? ` <span class="raio">${RAIO}</span>` : ''}</b><small>${k.verbo}</small>${fim}</div>` +
+        `<button class="op-info" data-info-loja="${id}" aria-label="Ler a carta ${k.nome}">i</button></div>`;
+    };
+    if (aba === 'cartas') html = [['efeito', 'Efeitos'], ['armadilha', 'Armadilhas']]
+      .map(([t, titulo]) => `<h3>${titulo}</h3><div class="grade-op">${ORDEM.filter(id => CARTAS[id].tipo === t).map(cartaLoja).join('')}</div>`).join('');
     if (aba === 'dados') html = Object.entries(DADOS).map(([id, d]) => item('dados', id, d, `<span style="width:52px;height:52px;display:block">${dadoHTML(5, id)}</span>`, d.desc)).join('');
     if (aba === 'icones') html = GRUPOS_ICONES.map(([g, titulo]) => `<h3 class="grupo-loja">${titulo}</h3>` + Object.entries(ICONES).filter(([, d]) => d.grupo === g).map(([id, d]) => item('icones', id, d, iconeSVG(id), d.desc)).join('')).join('');
     if (aba === 'mesas') html = Object.entries(MESAS).map(([id, d]) => item('mesas', id, d, `<span class="amostra-mesa" style="background:${d.amostra}"></span>`, d.nivel ? `presente do nível ${d.nivel}` : 'o feltro da sua mesa')).join('');
-    alvo.innerHTML = `<div class="itens">${html}</div>${aba === 'cartas' ? '<p class="nota" style="margin-top:10px">As cartas à venda são situacionais: dão jeitos novos de jogar, não mais força. Na simulação, nenhum deck com carta comprada supera o melhor deck de cartas grátis.</p>' : '<p class="nota" style="margin-top:10px">Só aparência. Na versão final, alguns cosméticos também poderão ser comprados com dinheiro; cartas, nunca.</p>'}`;
+    alvo.innerHTML = `<div class="${aba === 'cartas' ? 'loja-cartas' : 'itens'}">${html}</div>${aba === 'cartas' ? '<p class="nota" style="margin-top:10px">As cartas à venda são situacionais: dão jeitos novos de jogar, não mais força. Na simulação, nenhum deck com carta comprada supera o melhor deck de cartas grátis.</p>' : '<p class="nota" style="margin-top:10px">Só aparência. Na versão final, alguns cosméticos também poderão ser comprados com dinheiro; cartas, nunca.</p>'}`;
   }
   function comprar(tipo, id, botao) {
     const c = st.conta;
