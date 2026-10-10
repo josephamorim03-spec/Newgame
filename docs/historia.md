@@ -429,7 +429,7 @@ Para cada uma valer, ela muda um pouco a cada aparição e paga no fim.
 
 **O que já existe e serve:** a estreia (o Prólogo), o motor com meta e decks livres (`criarPartida`), os robôs
 (`automatoEscolhe`/`automatoDispara`), as falas por chave (`RIVAIS[].falas`), os retratos pintados de todos os bichos,
-a pata da Diana, a cascata, o impacto e as tarefas do dia.
+a cascata, o impacto e as tarefas do dia.
 
 **O que falta:**
 1. **`js/historia.js`:** os capítulos como dados, por exemplo

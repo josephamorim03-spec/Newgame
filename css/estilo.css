@@ -1303,12 +1303,6 @@ button.bolso.alvo-dado { position: relative; border: 0; font: inherit; color: in
 @keyframes cenaEspera { 0%, 86%, 100% { transform: none; } 90% { transform: translateY(-12px) rotate(-12deg); } 94% { transform: translateY(0) rotate(4deg); } 97% { transform: translateY(-3px); } }
 .cena-dado.rola .dado { animation: cenaRola .55s cubic-bezier(.3,.7,.3,1); }
 @keyframes cenaRola { 0% { transform: translateY(0) rotate(0); } 35% { transform: translateY(-26px) rotate(200deg) scale(1.1); } 70% { transform: translateY(0) rotate(350deg) scale(.95, 1.05); } 85% { transform: translateY(-5px) rotate(360deg); } 100% { transform: translateY(0) rotate(360deg); } }
-/* as patas da Diana (js/pata.js): só as patas, num SVG por cima da mesa e do queixo */
-.cena-pata { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
-.cena-dado.cutucado .dado { animation: cenaCutuca .32s ease-out; }
-@keyframes cenaCutuca { 0% { transform: translateY(2px) scale(1.06, .9); } 30% { transform: translate(-1.5px, -1px) rotate(-6deg); } 55% { transform: translate(1.5px, 0) rotate(5deg); } 80% { transform: rotate(-2deg); } 100% { transform: none; } }
-.cena-rival.travessa { animation: cenaTravessa .7s ease-in-out both; }
-@keyframes cenaTravessa { 40%, 70% { transform: rotate(-6deg) translateX(-3px); } }
 @media (max-height: 680px) { .inicio-cena { height: 128px; } .cena-rival { width: 84px; height: 84px; margin-left: -42px; } .cena-mesa { height: 54px; } .cena-dado { width: 32px; height: 32px; } }
 
 /* ==========================================================================
@@ -1379,14 +1373,9 @@ button.inicio-perfil:active { transform: translateY(1px); }
 /* "Disparar e vencer" */
 .btn.vence { box-shadow: 0 3px 0 var(--mel-escuro), 0 0 0 3px rgba(255,236,190,.9), 0 0 22px 4px rgba(255,207,138,.75); }
 .fecha-txt { display: inline-grid; place-items: center; width: 1.25em; height: 1.25em; border-radius: 50%; background: var(--rival); color: #fff; font-size: .85em; vertical-align: .05em; }
-/* a presença do rival: o dado que ele olha acende de leve; com a Diana, a patinha passa por cima e bate no que ela pega */
+/* a presença do rival: o dado que ele olha acende de leve */
 .pega.olhado .face { transform: translateY(-4px); transition: transform .18s ease-out; }
 .pega.olhado .dado { box-shadow: 0 0 0 2px rgba(236,143,168,.7), 0 6px 14px rgba(0,0,0,.35); }
-.patinha { position: absolute; left: 50%; top: -42%; width: 78%; height: 78%; transform: translateX(-50%); pointer-events: none; z-index: 3;
-  filter: drop-shadow(0 4px 3px rgba(0,0,0,.3)); animation: patinhaChega .22s ease-out both; }
-.pega.destaque .patinha { animation: patinhaBate .52s ease-in-out both; }
-@keyframes patinhaChega { from { opacity: 0; transform: translate(-50%, -14px) scale(1.15); } to { opacity: 1; transform: translate(-50%, 0) scale(1); } }
-@keyframes patinhaBate { 0% { transform: translate(-50%, -10px); } 30% { transform: translate(-50%, 6px) scale(.94); } 55% { transform: translate(-50%, -4px); } 75% { transform: translate(-50%, 5px) scale(.95); } 100% { transform: translate(-50%, 0); } }
 /* o aviso da carta do rival, no vão entre o painel dele e a Mesa: mais baixo que as chamadas de festa */
 .chamada.aviso-carta.compacta { transform: translate(-50%, -50%); animation-name: avisoEntra; padding: 6px 18px 7px; border-radius: 18px; max-width: min(340px, calc(100vw - 32px)); min-width: 0; }
 .chamada.aviso-carta.compacta b { font-size: clamp(20px, 5.6vw, 26px); }

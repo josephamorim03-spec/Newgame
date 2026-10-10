@@ -376,40 +376,10 @@ da contagem do placar saem do acorde que está tocando agora. A corrente "canta"
 **A tela inicial (v0.14).** Era um fundo escuro com o logo e os botões: a arte pintada só aparecia depois do primeiro
 toque. Agora o logo deu lugar a uma cena: a rival da vez (a Diana na estreia) espia por trás de uma mesinha de feltro e
 madeira, respira, e diz a saudação da hora ("Bom dia", "Boa tarde", "Boa noite"; as falas da partida também). Três dados
-descansam no feltro (o do meio, na pele da rival, dá um pulinho de vez em quando). **Tocar num dado o rola**; se os três
+descansam no feltro, **dois brancos e um rosa no meio, sempre dessas cores** (não seguem o dado do jogador nem o da
+rival); o do meio dá um pulinho de vez em quando. **Tocar num dado o rola**; se os três
 formarem uma corrente, a rival repara ("Olha: isso já é uma corrente."). **Tocar na rival**, ela sorri e fala outra
 frase. Em telas baixas (até 680 px) a cena encolhe; com "reduzir movimento", fica parada.
-
-**As patas da Diana** (`js/pata.js`). Gata que é, a Diana não deixa os dados em paz. As patas dela ficam escondidas
-atrás da mesa; a cada 4 a 8 s uma delas aparece:
-1. **sobe por trás da mesa mostrando a palma** (a almofada maior e os quatro feijõezinhos rosa), coberta pela borda até
-   sair inteira, e fica um instante no alto, de frente: a ameaça;
-2. **vira**: passa a ser vista de cima (o dorso), já fora da mesa;
-3. vai até um dado (no feltro, erguer é a pata crescer um pouco e a sombra se afastar), dá **uma ou duas batidinhas** (o
-   dado treme, a poeirinha sai embaixo da pata, um toque abafado no feltro e uma vibração leve, só depois de a pessoa já
-   ter tocado na tela, porque antes o navegador recusa) e **arrasta o dado** na direção dela, com a cabeça inclinada,
-   travessa; solta, e o dado volta para o lugar;
-4. volta para a beirada, **vira de novo para a palma** e afunda atrás da mesa.
-
-**Cada dado é da pata do lado dele:** o da esquerda, a pata da esquerda; o da direita, a da direita; o do meio, meio a
-meio. Às vezes ela comenta ("Esse aqui parece meu.", "Só estou olhando.", "Calma. Ainda não peguei."). Tocar num dado ou
-nela no meio do gesto faz as patas se esconderem depressa. Com a Dona Coruja escolhida, não há patas; com as animações
-desligadas, elas ficam escondidas.
-
-Duas poses, trocadas direto, sem quadros de giro: **palma** (a que sobe e desce atrás da mesa; o "atrás" é um corte do
-SVG na linha da borda) e **dorso** (a que anda no feltro e mexe no dado). Já houve outras, que ficavam estranhas e
-saíram: "virando" (o giro entre as duas) e "gancho" (os dedos dobrados por cima da aresta do dado). Antes disso, as
-patas ficavam apoiadas na borda, e a palma era a que batia no dado; a ordem certa é a de agora.
-
-**A arte pintada das patas** (`arte/patas.json` → `js/patas_pintadas.js`) vem da API de imagem da OpenAI, pela mesma
-ferramenta dos retratos e das cartas (`tools/arte_icones.py --pedidos arte/patas.json`). Cada pose vai junto do próprio
-sprite vetorial como referência (`arte/referencia/pata-<pose>.png`, desenhado por `tools/referencias_patas.js`), para a
-pintura manter o ângulo, as proporções e os dedos; o pelo branco é alinhado ao tom da cabeça pintada da Diana (o
-"pelo" de `arte/patas.json`), para pata e rosto serem do mesmo bicho. Pose sem pintura usa o vetor. Da mesma leva vêm
-dois efeitos: a **poeirinha da batida**, que sai embaixo das pontinhas rosa quando a pata aperta o dado, e o **rastro**
-da pata correndo até o dado. Os pedidos dos efeitos dizem "só isto, nada de dados": com "jogo de dados" no estilo, o
-gerador punha dados (e até um punho) no desenho. Com a Dona Coruja escolhida, não há patas; com as animações desligadas, elas ficam paradas
-na borda.
 
 **O impacto (v0.14).** Antes do estouro dos disparos de 5 e 6, o tempo para por um instante (90 ms; 150 na Sinfonia):
 o selo fecha no valor, a corrente incha e espera, a borda da tela escurece de leve, e só então vêm o clarão, os brilhos
@@ -431,8 +401,7 @@ se desfaz, em vez de sumir de uma vez.
 
 **O rival à mesa (v0.14).** Antes, a vez do rival era a etiqueta "pensando" e, de repente, um dado escolhido.
 - **Ele olha a Mesa.** Antes de pegar, um ou dois dados acendem de leve, um de cada vez, com uma notinha. A Diana, que
-  joga solto, olha um dado no máximo, e às vezes nenhum, e a **patinha** dela passa por cima e bate no dado que ela
-  pega; a Dona Coruja olha dois, de preferência os que servem à **sua** corrente: ela lê a Mesa. As olhadas tomam o
+  joga solto, olha um dado no máximo, e às vezes nenhum; a Dona Coruja olha dois, de preferência os que servem à **sua** corrente: ela lê a Mesa. As olhadas tomam o
   lugar de parte da espera de antes (800 → 450 ms), então a vez do rival não ficou mais longa.
 - **A carta sai da mão.** A carta jogada pelo rival voa da mão dele até o vão entre o painel dele e a Mesa, e o aviso
   aparece ali, só com a arte e o nome; o que ela fez está na linha do último lance, logo abaixo dos dados. Antes, o

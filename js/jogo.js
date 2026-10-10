@@ -475,8 +475,7 @@
     if (jogo) render();
   }
   const mudou = id => !!(marcaMudanca && marcaMudanca.ids.includes(id) && Date.now() < marcaMudanca.ate);
-  // a presença do rival: antes de pegar, ele olha a Mesa. Cada olhada acende um dado de leve (com a Diana, a patinha
-  // passa por cima dele); a Diana, impulsiva, olha um dado no máximo, e às vezes nenhum; a Dona Coruja olha dois, e
+  // a presença do rival: antes de pegar, ele olha a Mesa. Cada olhada acende um dado de leve; a Diana, impulsiva, olha um dado no máximo, e às vezes nenhum; a Dona Coruja olha dois, e
   // de preferência os que servem à sua corrente: ela lê a Mesa. As olhadas tomam o lugar de parte da espera de antes,
   // então a vez do rival não fica mais longa. Devolve false se a partida mudou no meio
   async function olharMesa(p, escolhido, tok) {
@@ -520,7 +519,7 @@
         const plano = automatoEscolhe(p);
         if (!(await olharMesa(p, plano.idx, tok))) return;
         j.destaque = j.mesa[plano.idx].id; render();
-        if (j.nivel === 'aprendiz' && st.pref.animacoes) Som.tocar('quique', { forca: 3, x: (plano.idx - 2) * 0.3 });   // a patinha bate no dado
+        if (j.nivel === 'aprendiz' && st.pref.animacoes) Som.tocar('quique', { forca: 3, x: (plano.idx - 2) * 0.3 });   // o toque no dado que ela vai pegar
         await espera(520); if (tok !== jogo.token) return;
         j.destaque = null; j.pensando = false;
         const v = tirar(p, plano.idx);
@@ -784,9 +783,7 @@
   const esperaFesta = () => Math.max(0, Math.round(fimDoDisparo - performance.now()));
   document.documentElement.style.setProperty('--passo-disparo', Math.round(Som.PASSO_DISPARO * 1000) + 'ms');   // a cascata do disparo (css)
   const inicioFx = new Map();   // id do efeito (disparo, ruptura) -> quando ele apareceu na tela
-  const placarSegurado = new Map();
-  // a patinha da Diana sobre o dado que ela olha ou vai pegar (a mesma pelagem da pata da tela inicial)
-  const PATINHA = `<svg class="patinha" viewBox="0 0 40 40" aria-hidden="true"><ellipse cx="20" cy="25" rx="10" ry="8.5" fill="#f8f6f2" stroke="#3a2a2e" stroke-width="3"/><ellipse cx="9" cy="13" rx="4.2" ry="5" fill="#f8f6f2" stroke="#3a2a2e" stroke-width="2.6"/><ellipse cx="20" cy="9" rx="4.4" ry="5.2" fill="#f8f6f2" stroke="#3a2a2e" stroke-width="2.6"/><ellipse cx="31" cy="13" rx="4.2" ry="5" fill="#f8f6f2" stroke="#3a2a2e" stroke-width="2.6"/><ellipse cx="20" cy="26" rx="5" ry="3.6" fill="#f3b8c4"/></svg>`;   // jogador -> o número que o placar mostra enquanto os pontos do disparo voam
+  const placarSegurado = new Map();   // jogador -> o número que o placar mostra enquanto os pontos do disparo voam
   // comDecisao: a decisão da vez (destinos, disparar ou segurar...) entra no painel no lugar da fileira de cartas,
   // logo abaixo da corrente que ela afeta; o tabuleiro não ganha barra solta e não se mexe
   // o ponto de partida: quanto um disparo de L dados vale para p e se ele fecha a partida. "porUm": a corrente de p está a
@@ -865,7 +862,7 @@
       const cls = ['pega', d.novo ? 'novo' : '', window.Rolagem && Rolagem.ativo(d.id) ? 'rolando' : '', window.Rolagem && Rolagem.pousando(d.id) ? 'pousando' : '', !salvo && j.fase === 'pegar' && dicas ? 'nao-cabe' : '', j.sel === d.id || (j.fase === 'ajuste' && j.ajusteIdx === i) ? 'escolhido' : '', j.destaque === d.id ? 'destaque' : '', j.olhando === d.id ? 'olhado' : '', j.virando === d.id ? 'virando' : '', mudou(d.id) ? 'mudou' : ''].join(' ');
       const rotulo = `${j.fase === 'alvo' ? 'Escolher' : 'Pegar'} ${d.v}${contra ? `, chega virado como ${vv}` : ''}${cabe ? (r.length ? ', ' + r.map(k => REL[k].nome).join(' e ') : '') : salvo ? ', só pelo Bolso' : ', rompe a corrente'}${fechaRival ? ', dá a vitória ao rival' : serveRival ? ', serve ao rival' : ''}${marcado !== null ? ', marcado com Espelho' : ''}`;
       return `<button class="${cls}" style="--i:${i}" data-i="${i}" data-id="${d.id}" ${ativo ? '' : 'disabled'} aria-label="${rotulo}" aria-pressed="${j.sel === d.id || (j.fase === 'ajuste' && j.ajusteIdx === i)}">
-        <span class="kbd">${i + 1}</span><span class="face">${dadoHTML(d.v, skinMesa())}${mudou(d.id) && marcaMudanca.antes != null ? `<span class="era">era ${marcaMudanca.antes}</span>` : ''}${serveRival ? `<span class="alvo-rival${fechaRival ? ' fecha' : ''}"></span>` : ''}${j.modo === 'bot' && j.nivel === 'aprendiz' && (j.olhando === d.id || j.destaque === d.id) ? PATINHA : ''}${marcado !== null ? `<span class="marca-esp dono${marcado}" title="Marcado com Espelho">${CARTAS.espelho.ico}</span>` : ''}</span><span class="tags">${tags}</span></button>`;
+        <span class="kbd">${i + 1}</span><span class="face">${dadoHTML(d.v, skinMesa())}${mudou(d.id) && marcaMudanca.antes != null ? `<span class="era">era ${marcaMudanca.antes}</span>` : ''}${serveRival ? `<span class="alvo-rival${fechaRival ? ' fecha' : ''}"></span>` : ''}${marcado !== null ? `<span class="marca-esp dono${marcado}" title="Marcado com Espelho">${CARTAS.espelho.ico}</span>` : ''}</span><span class="tags">${tags}</span></button>`;
     }).join('');
   }
 
@@ -1836,29 +1833,21 @@
   // ---------- a cena da tela inicial: a rival da vez à mesa (v0.14) ----------
   const saudacao = () => { const h = new Date().getHours(); return h >= 5 && h < 12 ? 'Bom dia' : h >= 12 && h < 18 ? 'Boa tarde' : 'Boa noite'; };
   const cena = { dados: [2, 5, 4], fala: null, k: 0, feliz: false };
+  // os três dados da mesinha: dois brancos e um rosa no meio, sempre (não seguem o dado do jogador nem o da rival)
+  const PELE_CENA = ['marfim', 'rosa', 'marfim'];
   // na estreia a rival é sempre a Diana; depois, a escolhida
   const rivalDaCena = () => (!st.guia.estreia ? 'aprendiz' : RIVAIS[st.cfg.nivel] ? st.cfg.nivel : 'aprendiz');
   function desenharCena() {
     const el = document.getElementById('inicioCena'); if (!el) return;
     const k = rivalDaCena(), falas = RIVAIS[k].falas.inicio;
     const fala = (cena.fala || falas[0]).replace('Boa noite', saudacao());
-    const pele = k === 'esperto' ? 'madeira' : 'rosa';
     el.innerHTML = `<button class="cena-rival${cena.feliz ? ' feliz' : ''}" data-cena="rival" tabindex="-1">${Retratos.retrato(RETRATO_RIVAL[k], cena.feliz ? 'feliz' : '')}</button>
       <p class="cena-fala">${esc(fala)}</p>
-      <div class="cena-mesa">${cena.dados.map((v, i) => `<button class="cena-dado" data-cena="dado" data-i="${i}" tabindex="-1">${dadoHTML(v, i === 1 ? pele : st.conta.dado)}</button>`).join('')}</div>`;
-    // a Diana, gata, mexe nos dados da mesa com a pata (js/pata.js); a Dona Coruja só observa
-    if (k === 'aprendiz' && window.Pata) Pata.ligar(el, PATA); else if (window.Pata) Pata.desligar();
+      <div class="cena-mesa">${cena.dados.map((v, i) => `<button class="cena-dado" data-cena="dado" data-i="${i}" tabindex="-1">${dadoHTML(v, PELE_CENA[i])}</button>`).join('')}</div>`;
   }
-  // a pata: cada batida soa no feltro e dá uma vibração leve (só depois de a pessoa já ter tocado na tela: antes disso o
-  // navegador recusa); às vezes, depois de soltar o dado, a Diana comenta
-  const FALAS_PATA = ['Esse aqui parece meu.', 'Só estou olhando.', 'Calma. Ainda não peguei.'];
-  const PATA = {
-    aoBater: i => { Som.tocar('quique', { forca: 3, x: (i - 1) * 0.5 }); if (navigator.userActivation && navigator.userActivation.hasBeenActive) vibrar(6); },
-    aoTerminar: () => { if (Math.random() < 0.3) falaDaCena(sorteia(FALAS_PATA)); },
-  };
   function falaDaCena(txt) {
     cena.fala = txt; cena.feliz = true;
-    // muda só o balão e o sorriso (redesenhar a cena inteira recolheria a pata no meio do gesto)
+    // muda só o balão e o sorriso (redesenhar a cena inteira interromperia o dado que está rolando)
     const balao = document.querySelector('#inicioCena .cena-fala'), cab = document.querySelector('#inicioCena .cena-rival');
     if (balao && cab) {
       balao.textContent = txt.replace('Boa noite', saudacao());
@@ -1967,13 +1956,12 @@
   inicio.addEventListener('click', e => {
     const c = e.target.closest('[data-cena]'); if (!c) return;
     Som.desbloquear();
-    if (window.Pata) Pata.susto();   // a pata recolhe depressa (e solta o dado que estava puxando)
     const k = rivalDaCena();
     if (c.dataset.cena === 'rival') { const l = RIVAIS[k].falas.inicio; cena.k = (cena.k + 1) % l.length; falaDaCena(l[cena.k]); return; }
     const i = +c.dataset.i, antes = cena.dados[i];
     let v; do { v = 1 + Math.floor(Math.random() * 6); } while (v === antes);
     cena.dados[i] = v;
-    c.innerHTML = dadoHTML(v, i === 1 ? (k === 'esperto' ? 'madeira' : 'rosa') : st.conta.dado);
+    c.innerHTML = dadoHTML(v, PELE_CENA[i]);
     c.classList.remove('rola'); void c.offsetWidth; c.classList.add('rola');
     Som.tocar('quique', { forca: 7, primeira: true, x: (i - 1) * 0.5 }); vibrar(8);
     const [a, b2, d] = cena.dados;

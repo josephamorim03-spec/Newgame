@@ -57,8 +57,6 @@ e o amigo cai direto na sala. O servidor é a autoridade da partida e roda na Ra
 | `js/rolagem.js`, `shared/rolagem.js`, `js/lancamentos.js` | a rolagem 3D: lançamentos gravados com física (do Cronomotor), corrigidos para a face da regra |
 | `js/audio.js` | efeitos e trilha lo-fi sintetizados na hora (Web Audio, sem arquivos de áudio) |
 | `js/efeitos.js` | partículas, dados voando, chamadas de "bom momento", contagem do placar |
-| `js/pata.js` | as patas da Diana na tela inicial, mexendo nos dados da mesinha |
-| `js/patas_pintadas.js` | a arte pintada das patas e dos efeitos delas (gerada de `arte/patas.json`; `tools/referencias_patas.js` desenha as referências) |
 | `sim/` | regras de referência em Python e os experimentos de balanceamento |
 | `tools/empacotar.py` | gera o HTML único |
 | `tools/lancamentos/` | exporta os lançamentos gravados do Godot e monta `js/lancamentos.js` |
@@ -112,13 +110,12 @@ node tools/vercel_local.js                     # a página como o Vercel publica
   Virada, as chapas azul e rosa fora do registro na armadilha e no "+N", onomatopeias ("FUUU!", "TCHÃ!", "ufa!",
   "plonc") e a cascata curta "em dois". `?impresso=0` desliga, para comparar.
 - **Juice:** o disparo em cascata (cada dado acende na nota dele, um selo conta +1, +2, +4... e o "+N" estoura no
-  placar do tamanho do lance); a tela inicial com a rival à mesa, a saudação da hora e dados que rolam ao toque, e as patas da Diana (pintadas:
-  a palma rosa sobe por trás da mesa, vira e, vista de cima, bate e puxa um dado) ameaçando pegá-los; a mesa
-  não pisca mais marrom no tremor.
+  placar do tamanho do lance); a tela inicial com a rival à mesa, a saudação da hora e três dados (dois brancos e um rosa no
+  meio) que rolam ao toque; a mesa não pisca mais marrom no tremor.
 - **Impacto e ponto de partida:** os disparos de 5 e 6 e a armadilha que pega param o tempo por um instante antes do
   estouro; a corrente a um dado de fechar a partida pulsa; o botão vira "Disparar e vencer"; os dados que dão a vitória
   ao rival ganham um "!"; o disparo que vence conta até o fim antes de a vitória estourar; a ruptura cai em dominó.
-- **O rival à mesa:** antes de pegar, ele olha a Mesa (a Diana com a patinha, a Coruja os dados que servem a você); a
+- **O rival à mesa:** antes de pegar, ele olha a Mesa (a Diana um dado no máximo, a Coruja os dados que servem a você); a
   carta dele sai da mão e voa até o vão acima da Mesa, sem cobrir o painel dele.
 - **O fim em sequência:** moedas, a barra de experiência enchendo de onde estava, o nível; a próxima coisa a ganhar;
   "Faltaram 2 pontos" na derrota apertada; "Revanche contra Diana"; recordes só quando dizem algo.
