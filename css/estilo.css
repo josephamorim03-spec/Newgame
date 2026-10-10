@@ -1236,3 +1236,34 @@ button.bolso.alvo-dado { position: relative; border: 0; font: inherit; color: in
 .rival-ajustes .btn-link { justify-self: auto; }
 .inicio-rivais .inicio-principal { margin-top: 2px; }
 .tela-inicio.escolhendo .inicio-logo, .tela-inicio.escolhendo #inicioTitulo { display: none; }
+
+/* ==========================================================================
+   Perfil (v0.12): tocar no seu nome na tela inicial. Nível, ratings, recordes e o seu visual (só o que você já tem)
+   ========================================================================== */
+button.inicio-perfil { border: 0; font: inherit; color: inherit; cursor: pointer; text-align: left; }
+button.inicio-perfil:active { transform: translateY(1px); }
+.inicio-perfil .perfil-seta { width: 16px; height: 16px; opacity: .7; margin-left: -2px; }
+.perfil-topo { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 14px; align-items: center; padding: 14px; border-radius: 16px; background: var(--papel-2); }
+.perfil-topo > .avatar { width: 72px; height: 72px; margin: 0; }
+.perfil-quem { display: grid; gap: 4px; min-width: 0; }
+.perfil-nome { font-family: var(--f-titulo); font-size: 24px; line-height: 1.1; overflow-wrap: anywhere; }
+.perfil-quem .nota { margin: 0; }
+.perfil-conta { display: grid; gap: 8px; margin-top: 12px; padding: 12px; border-radius: 14px; background: var(--marfim); box-shadow: inset 0 0 0 1.5px rgba(58,42,46,.1); font-size: 14px; }
+.perfil-numeros { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; margin-top: 12px; }
+.perfil-num { display: grid; gap: 2px; padding: 10px 8px; border-radius: 12px; background: var(--marfim); text-align: center; box-shadow: inset 0 0 0 1.5px rgba(58,42,46,.08); }
+.perfil-num b { font-family: var(--f-titulo); font-size: 22px; line-height: 1; font-variant-numeric: tabular-nums; }
+.perfil-num small { font-size: 11px; color: var(--tinta-suave); line-height: 1.25; }
+.perfil-secao { margin: 18px 0 4px; font-family: var(--f-titulo); }
+.perfil-grupo h3 { margin: 10px 0 6px; font-size: 15px; } .perfil-grupo h3 small { font-weight: 700; color: var(--tinta-suave); font-size: 12px; }
+.perfil-opcoes { display: grid; grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); gap: 8px; }
+.perfil-op { display: grid; justify-items: center; gap: 4px; padding: 8px 4px; border: 0; border-radius: 14px; background: var(--marfim); color: var(--tinta); font: inherit; cursor: pointer;
+  box-shadow: 0 3px 0 var(--papel-2), inset 0 0 0 1.5px rgba(58,42,46,.1); }
+.perfil-op.usando { box-shadow: 0 3px 0 var(--mel-escuro), inset 0 0 0 2.5px var(--mel); }
+.perfil-op small { font-size: 11px; font-weight: 700; line-height: 1.2; text-align: center; }
+.perfil-previa { width: 46px; height: 46px; display: grid; place-items: center; }
+.perfil-previa .avatar { width: 46px; height: 46px; margin: 0; }
+.perfil-dado { width: 40px; height: 40px; display: block; }
+.perfil-previa .amostra-mesa { width: 44px; height: 32px; }
+.perfil-loja { margin-top: 12px; }
+.inicio-perfil .perfil-texto { display: grid; gap: 1px; flex: 1; min-width: 0; line-height: 1.2; }
+.perfil-secao { font-size: 18px; text-transform: none; letter-spacing: 0; color: var(--tinta); }

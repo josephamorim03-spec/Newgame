@@ -462,7 +462,7 @@
       virar: e.antes != null ? `${quem} virou um ${e.antes} da Mesa: agora é ${e.depois}` : `${quem} virou um dado da Mesa`,
       rerrolar: `${quem} rolou a Mesa de novo`,
       pressa: `${quem} vai pegar dois dados nesta vez`,
-      coringa: `o próximo dado de ${quem} que romperia troca a frente da corrente`,
+      coringa: `a corrente de ${quem} está protegida: o próximo dado que romperia entra no lugar da frente`,
       sobrecarga: `o próximo disparo de 4+ de ${quem} vale +2`,
       pausa: `${quem} passou a vez sem pegar dado: ${nomes()[1 - e.p] === 'Você' ? 'você joga de novo' : `${nomes()[1 - e.p]} joga de novo`}`,
       reverso: `a corrente de ${quem} agora cresce pela outra ponta${e.frente ? ` (frente: ${e.frente})` : ''}`,
@@ -689,7 +689,7 @@
     const visivel = humano(p) && j.vez === p;
     let nota = !meu ? 'O deck do rival fica à mostra. Uma carta virada (?) pode ser qualquer carta dele ainda não revelada: uma armadilha ou um blefe.'
       : !visivel ? 'Só na sua vez.' : pu.ok ? '' : (pu.motivo || '');
-    if (visivel && e === 'pronta' && k.tipo === 'efeito' && pv.ok) nota = `Blefe: virada para baixo, ela aparece para o rival como uma armadilha (?) e não faz nada. Se ele desafiar, a carta se perde e ele ganha ${R.DESAFIO.acerto}. Se ninguém desafiar, quando você a usar (da próxima vez em diante) ela funciona e rende +${R.DESAFIO.bonus}.`;
+    if (visivel && e === 'pronta' && k.tipo === 'efeito' && pv.ok) nota = `Ou blefe: virada para baixo, para o rival ela parece uma armadilha (?) e não faz nada enquanto estiver virada. Se ele desafiar, ela se perde e ele ganha ${R.DESAFIO.acerto}. Se ninguém desafiar, da sua próxima vez em diante você a usa normalmente e ganha +${R.DESAFIO.bonus}.`;
     if (visivel && blefe) nota = pu.ok ? `Ninguém desafiou: usar agora revela o blefe, a carta funciona e rende +${R.DESAFIO.bonus}.` : (pu.motivo || '');
     document.getElementById('cartaNota').textContent = nota;
     const rot = blefe ? `Usar (blefe, +${R.DESAFIO.bonus})` : k.alvo ? 'Escolher o dado' : k.tipo === 'armadilha' ? 'Armar' : 'Usar';
@@ -764,7 +764,7 @@
       const pode = humano(j.vez) && j.vez !== p && podeDesafiar(j.vez).ok;
       estados += `<button class="efeito-ativo oculta${pode ? ' desafiavel' : ''}" data-virada="${p}" aria-label="Carta virada: pode ser armadilha ou blefe${pode ? '. Tocar para desafiar' : ''}">${VERSO} carta virada${pode ? ' · desafiar?' : ''}</button>`;
     }
-    if (j.coringa[p]) estados += `<span class="efeito-ativo">Coringa ativo</span>`;
+    if (j.coringa[p]) estados += `<span class="efeito-ativo" title="O próximo dado que romperia entra no lugar da frente">Coringa ativo</span>`;
     if (j.sobre[p]) estados += `<span class="efeito-ativo">Sobrecarga +2</span>`;
     if (j.extra[p]) estados += `<span class="efeito-ativo">Pressa: +1 dado</span>`;
     return `<div class="cartas">${html}</div><div class="estados">${estados}</div>`;
@@ -846,7 +846,7 @@
   function cartaViradaTxt(r, L) {
     const j = jogo, n = nomes();
     const efeito = { interferencia: L < 4 ? 'Interferência (não pega disparo de 3)' : j.pts[1 - r] >= j.pts[r] ? 'Interferência (−1 neste disparo)' : 'Interferência (não pega: você está atrás)', pedagio: `Pedágio (+${R.pedagioDe(jogo.meta)} para ele se você disparar)`,
-      fundo: 'Fundo Falso (só pega o Bolso)', ancora: 'Âncora (protege a corrente dele)' };
+      fundo: 'Fundo Falso (pega o próximo dado que você puser no Bolso)', ancora: 'Âncora (segura a corrente de 4+ dele)', lacre: 'Lacre (anula o próximo efeito que você usar)' };
     // desafiada e à vista: não há dúvida
     if (j.revelada && j.revelada[r] && j.armada[r]) return `${n[r]} tem ${efeito[j.armada[r]] || CARTAS[j.armada[r]].nome} armada, à vista (foi desafiada).`;
     const traps = armadilhasOcultas(r).map(c => efeito[c] || CARTAS[c].nome);
@@ -923,7 +923,7 @@
     }
     if (j.fase === 'destino' && j.mao) {
       const v = j.mao.v, ds = destinos(p, v), b = j.bolso[p];
-      const relTxt = x => { const r = eu.length ? rels(frente(eu), x) : []; return r.length ? r.map(k => REL[k].nome).join(' + ') : (eu.length && j.coringa[p] ? `Coringa: troca o ${frente(eu)}` : 'começa a corrente'); };
+      const relTxt = x => { const r = eu.length ? rels(frente(eu), x) : []; return r.length ? r.map(k => REL[k].nome).join(' + ') : (eu.length && j.coringa[p] ? `Coringa: entra no lugar do ${frente(eu)}` : 'começa a corrente'); };
       const bt = (modo, rot, sub, cls) => `<button class="btn btn-duplo ${cls}" data-destino="${modo}"><span>${rot}</span><small>${sub}</small></button>`;
       let botoes = '';
       if (ds.length) {
@@ -977,7 +977,7 @@
     if (j.segundoDado) msg = `escolha o segundo dado (Pressa) ou dispense${eu.length >= 3 ? ' e vá para o disparo' : ''}.`;
     else if (!algumSeguro) msg = `<b>nenhum dado sincroniza</b> com o seu ${frente(eu)}, nem o do Bolso. Use uma carta ou escolha um: a corrente de ${eu.length} rompe${j.armada[p] === 'ancora' && eu.length >= 4 ? ', mas a sua Âncora está armada' : ''}.`;
     else if (!ajudas) msg = 'escolha um dado.';
-    else msg = eu.length ? `escolha um dado. Sua frente é <b>${frente(eu)}</b>: sincronizam ${facesQueEncaixam(eu).join(', ')}${j.coringa[p] ? '; os outros trocam a frente (Coringa)' : ''}.` : 'escolha um dado. Sua corrente está vazia: qualquer um começa.';
+    else msg = eu.length ? `escolha um dado. Sua frente é <b>${frente(eu)}</b>: sincronizam ${facesQueEncaixam(eu).join(', ')}${j.coringa[p] ? `; os outros entram no lugar do ${frente(eu)} (Coringa)` : ''}.` : 'escolha um dado. Sua corrente está vazia: qualquer um começa.';
     const prontas = j.decks[p].filter(c => usavel(p, c)).length;
     const dispensa = j.segundoDado ? `<div class="botoes"><button class="btn btn-papel" data-acao="dispensar">Dispensar o 2.º dado</button></div>` : '';
     return `<div class="status">${quem}, ${msg}</div>${dispensa}${prontas && ajudas ? `<p class="nota" style="margin:0">Toque numa carta sua para usar (${prontas} ${prontas === 1 ? 'pronta' : 'prontas'}).</p>` : ''}`;
@@ -1445,7 +1445,7 @@
     }
     c.moedas -= info.preco; c[tipo].push(id);
     if (tipo === 'dados') c.dado = id; if (tipo === 'icones') c.icone = id; if (tipo === 'mesas') c.mesa = id;
-    salvar(); aplicarPrefs(); desenharLoja(); festa();
+    salvar(); aplicarPrefs(); redesenharConta(); festa();
   }
 
   // ---------- montar o deck ----------
@@ -1604,7 +1604,11 @@
     const h = janela.querySelector('h2');
     if (h) { h.tabIndex = -1; h.focus({ preventScroll: true }); }
   };
-  const vigiaJanelas = new MutationObserver(ms => ms.forEach(m => { if (!m.target.hidden) { rolarAoTopo(m.target); setTimeout(() => { if (!m.target.hidden) focarJanela(m.target); }, 0); } }));
+  const vigiaJanelas = new MutationObserver(ms => ms.forEach(m => {
+    if (!m.target.hidden) { rolarAoTopo(m.target); setTimeout(() => { if (!m.target.hidden) focarJanela(m.target); }, 0); }
+    // fechou uma janela por cima do menu (Online, Loja, Perfil...): o menu mostra a conta de agora (antes ficava "Convidado")
+    else if (inicioAberto()) desenharInicio();
+  }));
   document.querySelectorAll('.janela').forEach(el => vigiaJanelas.observe(el, { attributes: true, attributeFilter: ['hidden'] }));
 
   // ---------- sem zoom de pinça (o Safari do iPhone ignora user-scalable=no) ----------
@@ -1670,7 +1674,7 @@
   }
   function desenharInicio() {
     const c = st.conta, nome = st.sessao && st.sessao.perfil ? st.sessao.perfil.nome : 'Convidado';
-    document.getElementById('inicioPerfil').innerHTML = `${iconeSVG(c.icone)}<span><b>${esc(nome)}</b> <small>· rating ${c.rating} · nível ${nivelDe(c.xp)} · ${c.moedas} moedas</small></span>`;
+    document.getElementById('inicioPerfil').innerHTML = `${iconeSVG(c.icone)}<span class="perfil-texto"><b>${esc(nome)}</b><small>rating ${c.rating} · nível ${nivelDe(c.xp)} · ${c.moedas} moedas</small></span><svg class="ico perfil-seta" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>`;
     document.getElementById('pontoInicio').hidden = document.getElementById('pontoOnline').hidden;
     const g = partidaParaContinuar(), box = document.getElementById('inicioPartida');
     // a escolha do rival ocupa o lugar dos botões do menu (Jogar → Escolha o rival → Jogar contra ...)
@@ -1767,6 +1771,7 @@
       if (jogo === g) jogo = null;
       desenharInicio(); return;
     }
+    if (a === 'perfil') { abrirPerfil(); return; }
     if (a === 'online') { document.getElementById('btnOnline').click(); return; }
     if (a === 'regras') { abrirLado(true); return; }
     const botao = { deck: 'btnDeck', loja: 'btnCarteira', ajustes: 'btnConfig' }[a];
@@ -1840,9 +1845,54 @@
     if (e.target.closest('[data-voltar-loja]')) { lojaVolta(); return; }
     const cb = e.target.closest('[data-comprar]'); if (cb) { const [t, id] = cb.dataset.comprar.split(':'); comprar(t, id, cb); return; }
     const ub = e.target.closest('[data-usar-item]');
-    if (ub && st.sessao) { const [t, id] = ub.dataset.usarItem.split(':'); pedir('POST', '/api/loja/usar', { tipo: t, id }).then(r => { usarPerfil(r.conta); if (jogo) render(); Som.tocar('momento'); }).catch(e => Fx.chamada('Loja', esc(e.message), 'suave')); return; }
-    if (ub) { const [t, id] = ub.dataset.usarItem.split(':'); st.conta[t === 'dados' ? 'dado' : t === 'icones' ? 'icone' : 'mesa'] = id; salvar(); aplicarPrefs(); desenharLoja(); if (jogo) render(); Som.tocar('momento'); }
+    if (ub) { const [t, id] = ub.dataset.usarItem.split(':'); usarItem(t, id); }
   });
+  // vestir um item que você já tem (da Loja ou do Perfil): com conta, o servidor confere; sem conta, fica no aparelho
+  function usarItem(t, id) {
+    const pronto = () => { redesenharConta(); if (jogo) render(); Som.tocar('momento'); };
+    if (st.sessao) { pedir('POST', '/api/loja/usar', { tipo: t, id }).then(r => { usarPerfil(r.conta); pronto(); }).catch(e => Fx.chamada('Visual', esc(e.message), 'suave')); return; }
+    if (!st.conta[t].includes(id)) return;
+    st.conta[t === 'dados' ? 'dado' : t === 'icones' ? 'icone' : 'mesa'] = id; salvar(); aplicarPrefs(); pronto();
+  }
+  // tudo o que mostra a conta (menu, Perfil, Loja) se redesenha quando ela muda
+  function redesenharConta() {
+    if (!document.getElementById('janelaLoja').hidden) desenharLoja();
+    if (!document.getElementById('janelaPerfil').hidden) desenharPerfil();
+    if (inicioAberto()) desenharInicio();
+  }
+
+  // ---------- Perfil: tocar no seu nome na tela inicial. O que você é (nível, ratings, recordes) e o seu visual, só com o
+  // que você já tem; comprar mais é na Loja ----------
+  function abrirPerfil() { desenharPerfil(); document.getElementById('janelaPerfil').hidden = false; Som.tocar('abrir'); }
+  function desenharPerfil() {
+    const c = st.conta, r = st.rec, nome = st.sessao && st.sessao.perfil ? st.sessao.perfil.nome : 'Convidado';
+    const nv = nivelDe(c.xp), prox = NIVEIS[nv] ?? null, ant = NIVEIS[nv - 1] || 0;
+    const xpTxt = prox === null ? 'nível máximo' : `${c.xp - ant} de ${prox - ant} XP para o nível ${nv + 1}`;
+    const num = (rot, v) => `<span class="perfil-num"><b>${v}</b><small>${rot}</small></span>`;
+    const op = (tipo, id, previa, nomeOp) => {
+      const usando = c[tipo === 'dados' ? 'dado' : tipo === 'icones' ? 'icone' : 'mesa'] === id;
+      return `<button class="perfil-op${usando ? ' usando' : ''}" data-usar-item="${tipo}:${id}" aria-pressed="${usando}"><span class="perfil-previa">${previa}</span><small>${nomeOp}</small></button>`;
+    };
+    const grupo = (titulo, tipo, html) => `<div class="perfil-grupo"><h3>${titulo} <small>${c[tipo].length} de ${Object.keys(tipo === 'dados' ? DADOS : tipo === 'icones' ? ICONES : MESAS).length}</small></h3><div class="perfil-opcoes">${html}</div></div>`;
+    document.getElementById('perfilConteudo').innerHTML = `
+      <div class="perfil-topo">${iconeSVG(c.icone)}<div class="perfil-quem"><b class="perfil-nome">${esc(nome)}</b><span class="titulo-rating">${tituloDe(c.rating)}</span>
+        <span class="nota">Nível ${nv} · <span class="moeda" aria-hidden="true"></span> ${c.moedas} moedas</span><div class="xp" title="experiência"><i style="width:${prox === null ? 100 : Math.round((c.xp - ant) / (prox - ant) * 100)}%"></i></div><small class="nota">${xpTxt}</small></div></div>
+      ${st.sessao ? '' : `<div class="perfil-conta"><span>Sem conta, o seu progresso fica só neste aparelho.</span><button class="btn btn-mel" data-perfil="conta">Entrar ou criar conta</button></div>`}
+      <div class="perfil-numeros">${num('rating contra os rivais', c.rating)}${c.online ? num('rating online', c.online.rating) : ''}${num('partidas', r.partidas)}${num('vitórias', r.vitorias)}${num('melhor sequência', r.melhorSeq)}${num('maior disparo', r.maiorDisparo)}${num('maior corrente', r.maiorCorrente)}</div>
+      <h3 class="perfil-secao">Seu visual</h3>
+      ${grupo('Ícone', 'icones', c.icones.filter(id => ICONES[id]).map(id => op('icones', id, iconeSVG(id), ICONES[id].nome)).join(''))}
+      ${grupo('Dado', 'dados', c.dados.filter(id => DADOS[id]).map(id => op('dados', id, `<span class="perfil-dado">${dadoHTML(5, id)}</span>`, DADOS[id].nome)).join(''))}
+      ${grupo('Mesa', 'mesas', c.mesas.filter(id => MESAS[id]).map(id => op('mesas', id, `<span class="amostra-mesa" style="background:${MESAS[id].amostra}"></span>`, MESAS[id].nome)).join(''))}
+      <p class="nota perfil-loja">Mais ícones, dados e mesas na <button class="btn-link" data-perfil="loja">Loja</button>.</p>`;
+  }
+  document.getElementById('perfilConteudo').addEventListener('click', e => {
+    const ub = e.target.closest('[data-usar-item]'); if (ub) { const [t, id] = ub.dataset.usarItem.split(':'); usarItem(t, id); return; }
+    const b = e.target.closest('[data-perfil]'); if (!b) return;
+    document.getElementById('janelaPerfil').hidden = true;
+    if (b.dataset.perfil === 'loja') abrirLoja('icones');
+    if (b.dataset.perfil === 'conta') document.getElementById('btnOnline').click();
+  });
+  document.getElementById('btnFecharPerfil').addEventListener('click', () => { document.getElementById('janelaPerfil').hidden = true; Som.tocar('fechar'); });
 
   // tocar num espaço vazio da Mesa desfaz a escolha do dado (não há mais barra com Cancelar)
   document.getElementById('mesa').addEventListener('click', e => { const b = e.target.closest('.pega'); if (b && !b.disabled) clicarDado(+b.dataset.i); });
@@ -2191,7 +2241,7 @@
     if (alvo.closest('textarea, input') && e.key !== 'Escape') return;
     if (e.key === 'Escape' && escolhendoRival && inicioAberto() && document.querySelectorAll('.janela:not([hidden])').length === 0) { escolhendoRival = false; desenharInicio(); return; }
     if (e.key === 'Escape') {
-      ['fim', 'janelaCarta', 'janelaDeck', 'janelaConfig', 'janelaLoja', 'janelaOnline', 'janelaMenu'].forEach(id => { const el = document.getElementById(id); if (el) el.hidden = true; }); abrirLado(false);
+      ['fim', 'janelaCarta', 'janelaDeck', 'janelaConfig', 'janelaLoja', 'janelaPerfil', 'janelaOnline', 'janelaMenu'].forEach(id => { const el = document.getElementById(id); if (el) el.hidden = true; }); abrirLado(false);
       return jogo ? cancelarEscolha() : undefined;
     }
     if (!jogo) return;
@@ -2242,7 +2292,7 @@
   function usarPerfil(pf) {
     if (!st.sessao) return;
     st.sessao.perfil = pf; st.conta = deServidor(pf); guardarSessao(); aplicarPrefs();
-    if (!document.getElementById('janelaLoja').hidden) desenharLoja();
+    redesenharConta();
     if (!document.getElementById('janelaOnline').hidden) desenharOnline();
   }
   if (st.sessao && st.sessao.perfil) { st.contaConvidado = st.conta; st.conta = deServidor(st.sessao.perfil); }
@@ -2290,7 +2340,7 @@
     Object.assign(Rede, { amigos: null, rankingAmigos: null, posGlobal: null, busca: null, online: null });
     carregarOnline();
     if (st.contaConvidado) { st.conta = st.contaConvidado; delete st.contaConvidado; }
-    aplicarPrefs(); desenharOnline(); if (jogo) render();
+    aplicarPrefs(); desenharOnline(); redesenharConta(); if (jogo) render();
   }
   // o que segue a conta entre aparelhos (o som e a imagem ficam em cada aparelho)
   const extrasDoAparelho = () => ({ decks: st.decks, rec: st.rec, cfg: st.cfg, deckVisto: st.deckVisto });

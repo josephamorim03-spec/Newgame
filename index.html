@@ -42,7 +42,7 @@
       <circle cx="40" cy="34" r="3" fill="#3a2a2e"/><circle cx="48" cy="42" r="3" fill="#3a2a2e"/>
     </svg>
     <h1 id="inicioTitulo">Dice <span>Duel</span></h1>
-    <div class="inicio-perfil" id="inicioPerfil"></div>
+    <button class="inicio-perfil" id="inicioPerfil" data-inicio="perfil" aria-label="Seu perfil: visual, nível e recordes"></button>
     <div class="inicio-partida" id="inicioPartida" hidden></div>
     <div class="inicio-jogar" id="inicioJogar">
       <button class="btn btn-mel inicio-principal" data-inicio="jogar">Jogar</button>
@@ -59,7 +59,7 @@
     </div>
     <div class="inicio-mais">
       <button class="inicio-ico" data-inicio="deck"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="6" width="11" height="15" rx="2"/><path d="M9 3h9a2 2 0 0 1 2 2v13"/></svg>Deck</button>
-      <button class="inicio-ico" data-inicio="loja"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 8v8M9.5 10.5h3.5a1.5 1.5 0 0 1 0 3h-2a1.5 1.5 0 0 0 0 3H14"/></svg>Loja</button>
+      <button class="inicio-ico" data-inicio="loja"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 9 6 4h12l1.5 5"/><path d="M4.5 9a1.9 1.9 0 0 0 3.75 0 1.9 1.9 0 0 0 3.75 0 1.9 1.9 0 0 0 3.75 0 1.9 1.9 0 0 0 3.75 0"/><path d="M5.5 11.5V20h13v-8.5"/><path d="M10 20v-4.5h4V20"/></svg>Loja</button>
       <button class="inicio-ico" data-inicio="regras"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11M9 8h6"/></svg>Regras</button>
       <button class="inicio-ico" data-inicio="ajustes"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>Ajustes</button>
     </div>
@@ -128,60 +128,55 @@
       <div class="lado-topo"><strong>Regras e registro</strong><button class="btn-topo" id="btnFecharLado">Voltar ao jogo</button></div>
       <section class="card regras" aria-labelledby="tRegras">
         <h2 id="tRegras">Como se joga</h2>
-        <p>Chegue primeiro à meta de pontos montando correntes de dados que se sincronizam.</p>
-        <h3>A rodada</h3>
+        <p>Chegue primeiro a <b>16 pontos</b>. Os pontos vêm de <b>correntes</b>: filas de dados em que cada um sincroniza com o anterior.</p>
+        <h3>A vez</h3>
         <ol>
-          <li>Cinco dados ficam na <b>Mesa</b>. Vocês se alternam pegando <b>um dado por vez</b>. Quando a Mesa esvazia, rolam-se cinco novos, e <b>quem está atrás no placar abre</b>.</li>
-          <li>O dado entra <b>na frente</b> da sua corrente e precisa sincronizar com o último dado dela.</li>
-          <li>Ou ele vai para o <b>Bolso</b> (um espaço), ou você <b>troca</b>: o dado do Bolso entra e o novo fica guardado.</li>
-          <li>Com <b>3 dados ou mais</b>, você pode <b>Disparar</b> (marca pontos e zera a corrente) ou <b>Segurar</b>.</li>
-          <li>Se o dado que entra não sincroniza, acontece a <b>Ruptura</b>: você perde a corrente.</li>
+          <li>Cinco dados ficam na <b>Mesa</b>, e os dois a dividem: cada um pega <b>um dado por vez</b>. Quando a Mesa esvazia, rolam-se cinco novos, e <b>quem está atrás no placar abre</b> (no empate, segue a alternância).</li>
+          <li>O dado que você pega entra na <b>frente</b> da sua corrente e precisa sincronizar com o dado que está lá.</li>
+          <li>Em vez disso, você pode <b>guardar</b> o dado no <b>Bolso</b> (cabe um) ou <b>trocar</b>: o dado do Bolso entra na corrente e o novo fica guardado. O Bolso é o seu seguro.</li>
+          <li>Com <b>3 dados ou mais</b>, você escolhe: <b>Disparar</b> (marca os pontos e a corrente recomeça do zero) ou <b>Segurar</b> (para crescer e valer mais). Com <b>6</b>, ela dispara sozinha.</li>
+          <li>Se entrar um dado que não sincroniza, acontece a <b>Ruptura</b>: a corrente se perde (os pontos já marcados ficam).</li>
         </ol>
         <h3>As três sincronias</h3>
         <div class="rel" id="relacoes"></div>
-        <p class="nota" style="margin-top:10px">Na Mesa, a etiqueta de cada dado diz como ele sincroniza com a sua frente. O ponto <span class="legenda"></span> marca os dados que servem ao rival.</p>
+        <p class="nota" style="margin-top:10px">Na Mesa, a etiqueta de cada dado diz como ele sincroniza com a sua frente. O ponto <span class="legenda"></span> marca os dados que servem ao rival: pegar um deles também é uma jogada.</p>
         <h3>Quanto vale disparar</h3>
         <table class="tabela" aria-label="Pontos por tamanho da corrente">
           <tr><th>Dados na corrente</th><td class="k">3</td><td class="k">4</td><td class="k">5</td><td class="k">6</td></tr>
           <tr><th>Pontos</th><td>1</td><td>2</td><td>4</td><td>6</td></tr>
         </table>
+        <p class="nota" style="margin-top:6px">Cada dado a mais vale mais que o anterior: segurar compensa, enquanto o risco de romper for pequeno.</p>
         <h3>Cartas</h3>
         <ol>
-          <li>Antes da partida, monte um deck de <b>até 3 cartas</b>: no máximo <b>2 armadilhas</b> e no máximo <b>1 carta de pontos</b> (<span class="raio">⚡</span>). Cada carta vale <b>uma vez</b>.</li>
-          <li><b>Efeitos</b> são usados na sua vez, antes de pegar, à vista do rival.</li>
-          <li><b>Armadilhas</b> são armadas na sua vez, viradas para baixo (uma por vez). Os dois decks ficam à mostra: o rival vê um <b>?</b>, mas não qual carta é. O <b>Espelho</b> é a exceção: a marca fica à vista.</li>
-          <li><b>Blefe:</b> você também pode virar para baixo um <b>efeito</b>. Para o rival ele é um <b>?</b> igual ao de uma armadilha. Virado, não faz nada e ocupa o lugar da armadilha. A partir da sua vez seguinte, você pode usá-lo: ele funciona normalmente e, se ninguém desafiou, rende <b>+3</b>. Só dá para blefar se o seu deck ainda esconde uma armadilha (sem ser o Espelho); senão, todos saberiam que é blefe.</li>
-          <li><b>Desafiar:</b> na sua vez, antes de pegar o dado, toque na carta virada do rival. Se for <b>blefe</b>, a carta dele se perde e você ganha <b>2</b>. Se for <b>armadilha</b>, ela continua armada, agora à vista, e ele ganha <b>2</b>. Desafiar não gasta a sua vez. Vale ler o deck dele: quanto mais efeitos e menos armadilhas ainda escondidas, mais provável é o blefe.</li>
+          <li>Antes da partida, monte um deck de <b>até 3 cartas</b>: no máximo <b>2 armadilhas</b> e no máximo <b>1 carta de pontos</b> (<span class="raio">⚡</span>). Cada carta vale <b>uma vez</b> por partida. Os dois decks ficam à mostra.</li>
+          <li><b>Efeitos</b> são usados na sua vez, antes de pegar o dado, e o rival vê qual foi. Alguns pedem dados na Mesa: <b>Pressa</b> com 3 ou 4, <b>Ajuste</b> com 3 ou mais, <b>Coringa</b> com 2 ou mais.</li>
+          <li><b>Armadilhas</b> são armadas na sua vez, viradas para baixo, uma por vez. O rival vê um <b>?</b>, mas não qual carta é. Ela age sozinha quando a condição dela acontece. O <b>Espelho</b> é a exceção: a marca dele fica à vista.</li>
+          <li><b>Blefe:</b> você pode virar para baixo um <b>efeito</b> no lugar da armadilha. Para o rival é um <b>?</b> igual. Virado, ele não faz nada; da sua vez seguinte em diante, você pode usá-lo normalmente e, se ninguém desafiou, ganha <b>+3</b>. Só dá para blefar se o seu deck ainda esconde uma armadilha (sem ser o Espelho); senão, todos saberiam.</li>
+          <li><b>Desafiar:</b> na sua vez, antes de pegar o dado, toque no <b>?</b> do rival. Se for <b>blefe</b>, a carta dele se perde e você ganha <b>2</b>. Se for <b>armadilha</b>, ela fica à vista (e continua armada) e ele ganha <b>2</b>. Desafiar não gasta a sua vez. Conte o deck dele: quanto mais efeitos e menos armadilhas ainda escondidas, mais chance de ser blefe.</li>
           <li>As armadilhas se liberam depois da sua primeira partida (ou em Ajustes).</li>
         </ol>
         <div class="lista-cartas" id="listaCartas" style="margin-top:10px"></div>
         <h3>Quando as cartas se cruzam</h3>
         <ol class="cruzam">
-          <li><b>Armadilhas não se anulam: cada uma olha a sua condição.</b> A Âncora do rival segurar a corrente dele não gasta a sua Interferência; ela continua esperando o próximo disparo dele de 4+.</li>
-          <li><b>“4 ou mais” é sempre o tamanho da corrente na hora.</b> Interferência e Sobrecarga olham a corrente no disparo; a Âncora, a corrente no momento em que o dado ruim ia entrar. Com 3, nenhuma delas é gasta e elas continuam esperando.</li>
-          <li><b>Interferência:</b> só freia quem está na frente ou empatado (o placar de antes do disparo). Se o rival disparar atrás de você, ela não age e continua armada.</li>
+          <li><b>Armadilhas não se anulam:</b> cada uma olha a própria condição. A Âncora do rival segurar a corrente dele não gasta a sua Interferência; ela continua esperando o próximo disparo dele.</li>
+          <li><b>“4 ou mais” é o tamanho da corrente naquela hora:</b> no disparo (Interferência, Sobrecarga) ou quando o dado ruim ia entrar (Âncora). Com 3, nenhuma delas age nem é gasta.</li>
           <li><b>Interferência + Sobrecarga:</b> as duas valem. Um disparo de 4 vale 2 + 2 − 1 = 3.</li>
-          <li><b>Pedágio:</b> +2. Pega qualquer disparo, até o de 3 e o automático de 6. Se os dois passarem da meta, vence quem disparou.</li>
-          <li><b>Coringa e Âncora:</b> com o Coringa ativo, nenhum dado rompe, então a Âncora não é gasta.</li>
-          <li><b>Ajuste e Coringa no fim da Mesa:</b> o Ajuste só vale com 3 dados ou mais na Mesa; o Coringa, com 2 ou mais (no último dado, não).</li>
-          <li><b>Coringa</b> não alonga a corrente: o dado que romperia entra <b>no lugar da frente</b> e a corrente fica do mesmo tamanho. É gasto no primeiro dado que entra numa corrente já começada, mesmo que esse dado já sincronizasse (aí ele entra normal, como mais um elo). Guardar no Bolso não gasta.</li>
-          <li><b>Pressa:</b> só com 3 ou 4 dados na Mesa: nunca abre uma Mesa nova nem pega o último dado (ele fica para o rival). Você não dispara entre os dois dados; o segundo é opcional (“Dispensar”). Se o primeiro completar 6, a corrente dispara sozinha e o segundo dado começa outra.</li>
-          <li><b>Espelho:</b> quem pega o dado marcado o recebe virado (7 − valor) e não pode guardá-lo; Bolso e troca ficam fechados, mas Coringa e Âncora ainda valem. As etiquetas da Mesa já mostram o valor virado. <b>Virar</b> no dado marcado e <b>Rerrolar</b> apagam a marca; <b>Ajuste</b> não.</li>
-          <li><b>Fundo Falso:</b> só pega quando o dado vai para o Bolso (guardar ou trocar). Na troca, os dois dados caem e a corrente não muda.</li>
-          <li><b>Lacre:</b> anula o próximo efeito do rival, qualquer um: a carta é gasta sem agir (a Pressa não dá o segundo dado, a Pausa não passa a vez, a Sobrecarga não soma). Um blefe desvirado também conta. Não mexe em armadilhas.</li>
-          <li><b>Pausa:</b> passa a vez sem pegar dado e sem disparar; corrente, Bolso, Coringa e armadilhas ficam como estão. Não combina com a Pressa.</li>
-          <li><b>Reverso:</b> a corrente passa a crescer pela outra ponta. Os pontos, o Coringa ativo e a Âncora continuam valendo.</li>
-          <li><b>Furto:</b> troca os dados dos Bolsos sem “guardar”, então o Fundo Falso não pega. O dado que chega pode entrar depois na troca, como qualquer dado do Bolso.</li>
-          <li><b>Uma carta armada por vez</b>, contando o blefe. Uma armadilha que nunca encontra a sua condição fica armada até o fim.</li>
+          <li><b>Coringa:</b> o primeiro dado de uma corrente vazia não o gasta, nem guardar no Bolso. Com o Coringa ativo nenhum dado rompe, então a sua Âncora não é gasta.</li>
+          <li><b>Pressa:</b> se o primeiro dado completar 6, a corrente dispara sozinha e o segundo começa outra. No segundo dado, use “Dispensar” se nenhum servir.</li>
+          <li><b>Espelho:</b> o dado marcado chega virado e não pode ir para o Bolso (nem na troca); Coringa e Âncora ainda valem. As etiquetas da Mesa já mostram o valor virado. Virar (no dado marcado) e Rerrolar apagam a marca; Ajuste não.</li>
+          <li><b>Lacre:</b> pega o próximo efeito do rival, seja qual for: a Pressa não dá o segundo dado, a Pausa não passa a vez, a Sobrecarga não soma. Um blefe desvirado também conta.</li>
+          <li><b>Reverso:</b> o Coringa ativo e a Âncora armada continuam valendo para a corrente invertida.</li>
+          <li><b>Furto:</b> o dado que chega no seu Bolso pode entrar depois, na troca, como qualquer dado do Bolso.</li>
+          <li><b>Uma carta armada por vez</b>, contando o blefe. A armadilha que nunca encontra a sua condição fica armada até o fim.</li>
         </ol>
         <h3>Nem todo dado vale o mesmo</h3>
-        <p class="nota">Quantas faces sincronizam depois de cada face. O <b>2</b> e o <b>5</b> são as melhores frentes.</p>
+        <p class="nota">Quantas faces sincronizam com cada frente. O <b>2</b> e o <b>5</b> são as melhores frentes: mais dados da Mesa servem.</p>
         <div class="valor" id="valorFaces"></div>
         <h3>Dicas</h3>
         <ol>
-          <li>A Mesa que sobra depois da sua escolha é a do rival.</li>
+          <li>A Mesa que sobra depois da sua escolha é a do rival: às vezes vale pegar o dado que ele precisa.</li>
           <li>Armadilha armada do rival não é motivo para pânico: na simulação, jogar com medo perdeu mais do que as armadilhas tiram.</li>
-          <li>No teclado: <b>1–5</b> pegam o dado, <b>C</b> põe na corrente, <b>B</b> usa o Bolso, <b>D</b> dispara, <b>S</b> segura.</li>
+          <li>No teclado: <b>1–5</b> escolhem o dado, <b>C</b> põe na corrente, <b>B</b> usa o Bolso, <b>D</b> dispara, <b>S</b> segura.</li>
         </ol>
       </section>
       <section class="card registro" aria-labelledby="tReg">
@@ -265,6 +260,14 @@
         <div class="linha-cfg"><span><label>Recordes</label><small id="resumoRecordes"></small></span><button class="btn btn-papel" id="btnZerar" style="min-height:40px">Apagar</button></div>
       </div>
       <button class="btn btn-mel" id="btnFecharConfig">Pronto</button>
+    </div>
+  </div>
+
+  <div class="janela" id="janelaPerfil" hidden>
+    <div class="caixa larga" role="dialog" aria-modal="true" aria-labelledby="perfilTitulo">
+      <div class="deck-topo"><h2 id="perfilTitulo">Perfil</h2></div>
+      <div id="perfilConteudo"></div>
+      <button class="btn btn-papel" id="btnFecharPerfil">Fechar</button>
     </div>
   </div>
 
