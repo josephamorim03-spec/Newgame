@@ -220,6 +220,9 @@ def main():
                 antes[cod] = {**antes[cod], 'status': d['status'], 'nota': d.get('nota') or ''}
     # textos que o próprio dono escreveu numa nota de ajuste já nascem aprovados
     DO_DONO = {'R-05'}
+    # o dono aprovou as duas opções de cada par (2.ª rodada). As das páginas se completam e entram juntas (o título com
+    # os ingredientes e a nota da margem); nos pares que se excluem, a escolhida entra e a outra fica de reserva
+    RESERVA = {'G-03a', 'C3-04b', 'C4-04a', 'C2-14b', 'C7-10a', 'X-02b'}
     ids = [f[0] for f in F]
     assert len(ids) == len(set(ids)), 'código repetido'
     falas = []
@@ -230,8 +233,16 @@ def main():
         mudou = velho and velho.get('texto') != texto
         st = 'aprovada' if cod in DO_DONO else 'pendente' if mudou or not velho else velho.get('status', 'pendente')
         falas.append({'id': cod, 'cap': cap, 'capitulo': CAPS[cap], 'quem': quem, 'onde': onde, 'texto': texto, 'desenho': desenho,
-                      'gag': gag, 'status': st, 'nota': 'texto do dono' if cod in DO_DONO else '' if mudou else velho.get('nota', '')})
+                      'gag': gag, 'status': st, 'nota': 'texto do dono' if cod in DO_DONO else '' if mudou else velho.get('nota', ''),
+                      'usar': cod not in RESERVA})
     SAIDA.write_text(json.dumps({'gags': GAGS, 'falas': falas}, ensure_ascii=False, indent=1) + '\n', encoding='utf-8')
+    # js/historia_falas.js: o que o jogo carrega. Só entra fala aprovada e em uso (docs/historia.md §11)
+    jogo = {x['id']: x['texto'] for x in falas if x['status'] == 'aprovada' and x['usar']}
+    (RAIZ / 'js' / 'historia_falas.js').write_text(
+        '/* Dice Duel · as falas aprovadas do modo história (gerado por tools/historia/piadas_fonte.py; não editar) */\n'
+        f'window.HISTORIA_FALAS = {json.dumps(jogo, ensure_ascii=False, indent=0)};\n'
+        f'window.HISTORIA_CENAS = {json.dumps({x["id"]: x["desenho"] for x in falas if x["id"] in jogo and x["desenho"]}, ensure_ascii=False, indent=0)};\n',
+        encoding='utf-8')
     from collections import Counter
     print(f'{SAIDA.relative_to(RAIZ)}: {len(falas)} falas', dict(Counter(x['status'] for x in falas)))
 

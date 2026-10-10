@@ -96,6 +96,12 @@
       venci: ['Foi equilibrado. Outra?'], perdi: ['Excelente partida.'] } },
   };
 
+  // os bichos do modo história (js/historia.js): rivais como a Diana e a Coruja, com as falas aprovadas do capítulo
+  const RIVAIS_HISTORIA = { sapo: { nome: 'Sapo', desc: 'cavalheiro do lago, de chapéu de palha' }, coelho: { nome: 'Coelho', desc: 'sempre atrasado, família enorme' } };
+  if (window.Historia) for (const c of Historia.CAPS) if (RIVAIS_HISTORIA[c.rival]) {
+    RIVAIS[c.rival] = { ...RIVAIS_HISTORIA[c.rival], falas: Historia.falasRival(c) }; RETRATO_RIVAL[c.rival] = c.retrato;
+  }
+
   // o módulo online (mais abaixo) preenche estes dois
   const Online = { enviar() {} };
   const Conta = {};
@@ -188,17 +194,21 @@
       ['fim', 'janelaCarta', 'janelaDeck'].forEach(id => { document.getElementById(id).hidden = true; });
       return;
     }
-    const estreia = op.estreia ?? !st.guia.estreia;
-    const modo = estreia ? 'bot' : st.cfg.modo, nivel = estreia ? 'aprendiz' : st.cfg.nivel;
-    const deckRival = estreia ? [] : modo === 'local' ? st.decks[1].slice()
+    // um capítulo do modo história: o rival, o deck dele e a meta vêm do capítulo (js/historia.js)
+    const hc = op.historia && window.Historia ? Historia.cap(op.historia) : null;
+    const estreia = hc ? false : (op.estreia ?? !st.guia.estreia);
+    const semCartas = estreia || (hc && hc.semCartas);
+    const modo = estreia || hc ? 'bot' : st.cfg.modo, nivel = hc ? hc.rival : estreia ? 'aprendiz' : st.cfg.nivel;
+    const deckRival = semCartas ? [] : hc ? hc.deckRival.slice() : modo === 'local' ? st.decks[1].slice()
       : nivel === 'esperto' ? sorteia(DECKS_CORUJA).slice() : sorteiaDeck(!armadilhasLiberadas());
-    const decks = estreia ? [[], []] : [st.decks[0].filter(disponivel), modo === 'local' ? deckRival.filter(disponivel) : deckRival];
+    const decks = semCartas ? [[], []] : [st.decks[0].filter(disponivel), modo === 'local' ? deckRival.filter(disponivel) : deckRival];
     const nomesP = modo === 'bot' ? ['Você', RIVAIS[nivel].nome] : ['Jogador 1', 'Jogador 2'];
     // ids dos dados nunca se repetem entre partidas: um temporizador da partida anterior não marca dado da nova
     const idInicial = Math.max(uid, jogo && jogo.proxId ? jogo.proxId + 1 : 1);
     uid = idInicial + 1;
-    jogo = R.criarPartida({ decks, vez: estreia ? 0 : st.primeiro, meta: estreia ? META_ESTREIA : +st.cfg.meta, nomes: nomesP, modo, nivel, idInicial });
+    jogo = R.criarPartida({ decks, vez: semCartas ? 0 : st.primeiro, meta: hc ? hc.meta : estreia ? META_ESTREIA : +st.cfg.meta, nomes: nomesP, modo, nivel, idInicial });
     if (estreia) jogo.estreia = true;
+    if (hc) { jogo.historia = hc.id; jogo.ritmoRival = hc.ritmo || 1; if (hc.guia) jogo.historiaGuia = []; }
     Object.assign(jogo, { alvo: null, ajusteIdx: null, sel: null, destaque: null, pensando: false, token: Math.random(), fala: null, humor: null, intro: false });
     st.primeiro = 1 - st.primeiro;
     ['avisoCfg', 'fim', 'janelaCarta', 'janelaDeck'].forEach(id => { document.getElementById(id).hidden = true; });
@@ -298,9 +308,36 @@
   }
 
   // fim de partida: recordes, moedas, rating e experiência (contra os rivais do jogo; o online acerta isso no servidor)
+  // o fim de um capítulo: vencer dá a recompensa dele (uma vez, em ordem: R.concluirCapitulo); com conta, quem confere
+  // é o servidor. Não mexe em rating, moedas de vitória, recordes nem tarefas: a história é à parte
+  function aoFimHistoria(j) {
+    const cap = j.historia, venceu = j.vencedor === 0 && j.desistencia === undefined;
+    j.premio = { historia: { cap, venceu, premio: null, ja: R.estadoHistoria(st.conta.historia).feitos.includes(cap) } };
+    if (venceu) {
+      const fim = R.concluirCapitulo(st.conta, st.conta.historia, cap);
+      if (!fim.erro) { st.conta.historia = fim.estado; j.premio.historia.premio = fim.premio; }
+      salvar(); aplicarPrefs();
+      if (st.sessao) pedir('POST', '/api/historia', { capitulo: cap }).then(r => {
+        usarPerfil(r.conta); j.premio.historia.premio = r.premio;
+        if (jogo === j && !document.getElementById('fim').hidden) desenharRecompensas(j);
+      }).catch(() => {});
+    }
+    falar(j.vencedor === 1 ? 'venci' : 'perdi');
+  }
   function aoFim() {
     const j = jogo, p = j.vencedor;
     j.recordes = j.recordes || [];
+    if (j.historia) {
+      aoFimHistoria(j); render();
+      const c = Historia.cap(j.historia), espera = st.pref.animacoes ? 1800 + esperaFesta() : 600;
+      // venceu: a cena do depois (a página, o bicho) e só então a tela do fim
+      setTimeout(() => {
+        if (jogo !== j) return;
+        if (j.premio.historia.venceu && c) Historia.gibi(c.depois, { titulo: `${c.titulo} · ${c.nome}` }).then(() => { if (jogo === j) mostrarFim(); });
+        else mostrarFim();
+      }, espera);
+      return;
+    }
     if (j.modo === 'bot') {
       const r = st.rec, s = j.stats[0], liberadasAntes = armadilhasLiberadas();
       if (j.estreia) { st.guia.estreia = true; st.guia.jogou = true; }
@@ -450,7 +487,7 @@
     return r * pontos(L) > (pontos(L + 1) - pontos(L)) * (1 - r);
   }
 
-  const espera = ms => new Promise(res => setTimeout(res, ms * ritmo()));
+  const espera = ms => new Promise(res => setTimeout(res, ms * ritmo() * ((jogo && jogo.ritmoRival) || 1)));
   // ---------- quando alguém usa carta: o aviso explica e o dado que mudou fica marcado na Mesa ----------
   const AVISO_CARTA = 2600;   // ms do aviso da carta do rival (o bot espera por ele antes de jogar)
   function explicarCarta(e, quem) {
@@ -548,7 +585,7 @@
     const j = jogo;
     if (!j || j.modo !== 'bot' || !st.pref.falas) return;
     const lista = RIVAIS[j.nivel].falas[chave]; if (!lista) return;
-    if (!['inicio', 'venci', 'perdi'].includes(chave) && Math.random() > 0.55) return;
+    if (!['inicio', 'venci', 'perdi'].includes(chave) && !chave.startsWith('carta:') && Math.random() > 0.55) return;
     j.fala = { id: uid++, txt: sorteia(lista).replace('Boa noite', saudacao()) };
     j.humor = ['meuDisparo', 'armadilha', 'venci', 'inicio'].includes(chave) ? 'feliz' : ['minhaRuptura', 'perdi'].includes(chave) ? 'triste' : null;
     Som.tocar('falaRival', { voz: RETRATO_RIVAL[j.nivel] });
@@ -1206,7 +1243,7 @@
           break;
         }
         case 'pegar': Som.tocar('pegar'); if (humano(e.p)) vibrar(8); break;
-        case 'bolso': setTimeout(() => Som.tocar('bolso'), 250); break;
+        case 'bolso': setTimeout(() => Som.tocar('bolso'), 250); if (humano(e.p) && j.historiaGuia) ensinar('bolso'); break;
         case 'troca': setTimeout(() => Som.tocar('troca'), 250); break;
         case 'elo': {
           setTimeout(() => {
@@ -1215,7 +1252,7 @@
             if (alvo) Fx.faiscas(alvo, 5 + e.n * 2, undefined, 1.6 + e.n * 0.3);
             if (e.n === 4) Fx.texto(alvo, 'Corrente de 4', 'pequeno');
             if (e.n === 5) Fx.texto(alvo, 'Corrente de 5', 'pequeno');
-            const nova = humano(e.p) && (e.rels || []).find(k => !st.guia.vistos.includes(k));
+            const nova = humano(e.p) && (e.rels || []).find(k => !(jogo.historiaGuia || st.guia.vistos).includes(k));
             if (nova) ensinar(nova, e.de, e.v);
           }, 300);
           break;
@@ -1292,6 +1329,7 @@
         case 'bloqueio': Som.tocar('bloqueio'); Fx.texto(qs(`#pj${e.p} .corrente`) || null, 'Bloqueio!', 'pequeno'); break;
         case 'carta': {
           Som.tocar('carta');
+          if (e.p === 1 && j.modo === 'bot') setTimeout(() => falar('carta:' + e.c), AVISO_CARTA * 0.4);   // a fala do bicho sobre a carta dele
           if (e.id != null && e.antes != null) marcarMudanca([e.id], e.antes);
           else if (e.c === 'rerrolar') marcarMudanca(j.mesa.map(d => d.id), null);
           if (!humano(e.p) || j.modo === 'local') avisoCarta(e.p, e.c, e.nome, explicarCarta(e, n[e.p]), CARTAS[e.c].arte);
@@ -1346,6 +1384,16 @@
     ruptura: () => ['A corrente rompeu', 'O dado não sincronizava com a frente. Um dado guardado no Bolso pode salvar a corrente numa hora dessas.'],
   };
   function ensinar(chave, ...args) {
+    // no Prólogo da história, quem explica é a Diana, com as falas aprovadas (uma vez por partida)
+    if (jogo && jogo.historiaGuia) {
+      const txt = Historia.fala(Historia.GUIA[chave]);
+      if (!txt || jogo.historiaGuia.includes(chave)) return false;
+      jogo.historiaGuia.push(chave);
+      const limpo = txt.replace(/\(([^)]*)\)/g, '<i>($1)</i>'), corte = limpo.indexOf('. ');
+      Fx.dica(corte > 0 ? limpo.slice(0, corte + 1) : limpo, corte > 0 ? limpo.slice(corte + 2) : '', document.getElementById('pj0'), 5200);
+      jogo.humor = 'feliz'; setTimeout(() => { if (jogo && jogo.humor === 'feliz') { jogo.humor = null; render(); } }, 2400);
+      return true;
+    }
     if (!st.pref.dicas || st.guia.vistos.includes(chave)) return false;
     st.guia.vistos.push(chave); gravarLocal();
     const [titulo, sub] = GUIA_TXT[chave](...args);
@@ -1365,7 +1413,7 @@
     const el = document.createElement('div');
     el.className = 'versus'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Começo da partida');
     el.innerHTML = `<div class="caixa"><h2>Dice Duel</h2><div class="vs-linha">${lado(0)}<span class="vs-x">×</span>${lado(1)}</div>
-      <p class="nota">${j.estreia ? 'Primeira partida, sem cartas: ligue dados que sincronizam e dispare a corrente. As cartas chegam na próxima. ' : j.modo === 'bot' ? RIVAIS[j.nivel].desc + '. ' : online() ? `Rating ${j.perfis[1].rating}. ${tempoTxt(j.ritmo)}. ` : ''}Meta: ${j.meta} pontos. ${n[j.vez]} começa.</p><button class="btn btn-mel">Vamos lá</button></div>`;
+      <p class="nota">${j.estreia ? 'Primeira partida, sem cartas: ligue dados que sincronizam e dispare a corrente. As cartas chegam na próxima. ' : j.historia ? `${RIVAIS[j.nivel].desc}. ${(Historia.cap(j.historia) || {}).regra || ''} ` : j.modo === 'bot' ? RIVAIS[j.nivel].desc + '. ' : online() ? `Rating ${j.perfis[1].rating}. ${tempoTxt(j.ritmo)}. ` : ''}Meta: ${j.meta} pontos. ${n[j.vez]} começa.</p><button class="btn btn-mel">Vamos lá</button></div>`;
     document.body.appendChild(el);
     Som.tocar('carta');
     let fechou = false;
@@ -1414,7 +1462,10 @@
     prepararCartao(j, lances);
     // o botão diz o que vem: a revanche contra quem venceu, ou a sequência que está em jogo
     const seq = j.modo === 'bot' ? st.rec.seq : 0;
-    document.getElementById('btnDeNovo').textContent = online() ? 'Revanche' : j.modo !== 'bot' || j.estreia ? 'Jogar de novo'
+    const prox = j.historia && R.proximoCapitulo(st.conta.historia), proxCap = prox && Historia.cap(prox);
+    if (j.historia) document.getElementById('btnDeNovo').textContent = !(j.premio && j.premio.historia && j.premio.historia.venceu)
+      ? `Revanche contra ${RIVAIS[j.nivel].nome}` : proxCap ? `Próximo: ${proxCap.titulo}` : 'O caderno';
+    else document.getElementById('btnDeNovo').textContent = online() ? 'Revanche' : j.modo !== 'bot' || j.estreia ? 'Jogar de novo'
       : v === 1 ? `Revanche contra ${RIVAIS[j.nivel].nome}` : seq >= 2 ? `Mais uma · ${seq} vitórias seguidas` : 'Jogar de novo';
     document.getElementById('fim').hidden = false;
     document.getElementById('btnDeNovo').focus();
@@ -1458,6 +1509,22 @@
   const nomeItem = (tipo, id) => ({ cartas: CARTAS, dados: DADOS, icones: ICONES, mesas: MESAS })[tipo][id].nome;
   function desenharRecompensas(j) {
     const el = document.getElementById('fimRecompensas');
+    if (j.historia) {
+      const h = j.premio && j.premio.historia, c = Historia.cap(j.historia), rival = RIVAIS[j.nivel].nome;
+      const pr = h && h.premio, pag = c && c.depois.find(x => x.quem === 'pagina');
+      let html;
+      if (!h || !h.venceu) html = `<span class="conta">${pag ? `${rival} ficou com a página ${pag.n}.` : 'Ainda não foi desta vez.'} A revanche começa direto na Mesa.</span>`;
+      else {
+        html = pag ? `<div class="linha"><span>Página ${pag.n} do caderno</span><span class="sobe">no caderno</span></div>` : '';
+        if (pr && pr.carta) html += `<div class="linha"><span>Carta liberada: <b>${CARTAS[pr.carta].nome}</b></span><span class="sobe">nova!</span></div>`;
+        if (pr && pr.moedas) html += `<div class="grande"><span class="moeda" aria-hidden="true"></span><span>+${pr.moedas}</span></div>`;
+        if (!pr && h.ja) html += `<span class="conta">Capítulo já feito: jogar de novo não paga de novo.</span>`;
+        else if (!pr && !pag) { const prox = Historia.cap(R.proximoCapitulo(st.conta.historia)); html += `<span class="conta">${c.titulo} feito.${prox ? ` ${prox.titulo} aberto: ${prox.nome}.` : ''}</span>`; }
+      }
+      el.innerHTML = html;
+      [...el.children].forEach((x, k) => { x.classList.add('revela'); x.style.setProperty('--k', k); });
+      return;
+    }
     if (j.modo === 'local') { el.innerHTML = '<span class="conta">Partidas a dois no mesmo aparelho não dão moedas nem rating (assim ninguém farma sozinho).</span>'; return; }
     if (!j.premio) { el.innerHTML = `<span class="conta">${esc(j.semPremio || 'Contando o prêmio…')}</span>`; return; }
     const pr = j.premio, m = pr.moedas, c = st.conta, rival = j.modo === 'bot' ? RIVAIS[j.nivel].nome : nomes()[1];
@@ -1829,7 +1896,7 @@
   // a partida offline em andamento: a da mesa (se for offline e já tiver começado) ou a guardada no aparelho
   const partidaParaContinuar = () => (jogo && jogo.modo !== 'online' && jogo.fase !== 'fim' && jogo.compras ? jogo : lerPartidaGuardada());
   function custoAbandono(g) {
-    if (g.modo !== 'bot' || !g.compras) return null;
+    if (g.modo !== 'bot' || !g.compras || g.historia) return null;   // a história não mexe no rating
     const c = st.conta, ps = R.premioSolo({ rating: c.rating, pico: c.pico }, { nivel: g.nivel, venceu: false, margem: g.pts[0] - g.pts[1], rodadas: g.rodada, meta: g.meta });
     return { antes: c.rating, depois: ps.rating };
   }
@@ -1885,6 +1952,8 @@
     if (rivais) desenharRivais();
     // com uma partida offline em andamento, o caminho é continuar ou abandonar (começar outra é abandonar)
     inicio.querySelector('[data-inicio="jogar"]').hidden = !!g;
+    // a história aparece depois da estreia, e não com uma partida guardada (começar outra seria abandoná-la)
+    inicio.querySelector('[data-inicio="historia"]').hidden = !st.guia.estreia || !!g || !window.Historia;
     box.hidden = !g;
     if (!g) { box.innerHTML = ''; return; }   // sem partida guardada, nada de botões velhos escondidos
     const quem = g.modo === 'bot' ? ['Você', RIVAIS[g.nivel].nome] : ['Jogador 1', 'Jogador 2'];
@@ -1923,6 +1992,16 @@
       <p class="nota">As tarefas pagam também na derrota, contra os rivais e no online. ${t.vitoria ? 'A primeira vitória de hoje já rendeu em dobro.' : 'A primeira vitória do dia que render moedas rende <b>em dobro</b>.'} Amanhã tem tarefas novas.</p>`;
     document.getElementById('janelaTarefas').hidden = false; Som.tocar('abrir');
   }
+
+  // ---------- modo história (js/historia.js) ----------
+  function jogarCapitulo(id, { semAntes = false } = {}) {
+    const c = Historia.cap(id); if (!c) return;
+    Online.sair();
+    ['fim', 'janelaHistoria'].forEach(k => { document.getElementById(k).hidden = true; });
+    esconderInicio();
+    (semAntes ? Promise.resolve() : Historia.gibi(c.antes, { titulo: `${c.titulo} · ${c.nome}` })).then(() => novaPartida({ historia: id }));
+  }
+  if (window.Historia) Historia.ligar({ estado: () => R.estadoHistoria(st.conta.historia), jogar: jogarCapitulo, nomeCarta: c => CARTAS[c].nome });
 
   // ---------- a escolha do rival: o retrato, o jeito de jogar, a dificuldade e o que a vitória rende ----------
   let escolhendoRival = false;
@@ -2014,6 +2093,7 @@
     }
     if (a === 'perfil') { abrirPerfil(); return; }
     if (a === 'tarefas') { abrirTarefas(); return; }
+    if (a === 'historia') { Historia.abrirMapa(); return; }
     if (a === 'online') { document.getElementById('btnOnline').click(); return; }
     if (a === 'regras') { abrirLado(true); return; }
     const botao = { deck: 'btnDeck', 'trocar-deck': 'btnDeck', loja: 'btnCarteira', ajustes: 'btnConfig' }[a];
@@ -2441,7 +2521,15 @@
   });
   document.getElementById('btnFecharConfig').addEventListener('click', () => { document.getElementById('janelaConfig').hidden = true; });
 
-  document.getElementById('btnDeNovo').addEventListener('click', novaPartida);
+  document.getElementById('btnDeNovo').addEventListener('click', () => {
+    const j = jogo;
+    if (j && j.historia && j.fase === 'fim') {
+      const h = j.premio && j.premio.historia, prox = R.proximoCapitulo(st.conta.historia);
+      if (!h || !h.venceu) return jogarCapitulo(j.historia, { semAntes: true });   // a revanche vai direto à Mesa
+      return prox ? jogarCapitulo(prox) : (document.getElementById('fim').hidden = true, mostrarInicio(), Historia.abrirMapa());
+    }
+    novaPartida();
+  });
   document.getElementById('btnFechar').addEventListener('click', () => { document.getElementById('fim').hidden = true; });
   document.getElementById('btnMenuTopo').addEventListener('click', () => mostrarInicio());
   document.getElementById('btnMenuFim').addEventListener('click', () => { document.getElementById('fim').hidden = true; mostrarInicio(); });
@@ -2526,7 +2614,7 @@
     if (alvo.closest('textarea, input') && e.key !== 'Escape') return;
     if (e.key === 'Escape' && escolhendoRival && inicioAberto() && document.querySelectorAll('.janela:not([hidden])').length === 0) { escolhendoRival = false; desenharInicio(); return; }
     if (e.key === 'Escape') {
-      ['fim', 'janelaCarta', 'janelaDeck', 'janelaConfig', 'janelaLoja', 'janelaPerfil', 'janelaTarefas', 'janelaOnline', 'janelaMenu'].forEach(id => { const el = document.getElementById(id); if (el) el.hidden = true; }); abrirLado(false);
+      ['fim', 'janelaCarta', 'janelaDeck', 'janelaConfig', 'janelaLoja', 'janelaPerfil', 'janelaTarefas', 'janelaHistoria', 'janelaOnline', 'janelaMenu'].forEach(id => { const el = document.getElementById(id); if (el) el.hidden = true; }); abrirLado(false);
       return jogo ? cancelarEscolha() : undefined;
     }
     if (!jogo) return;
@@ -2574,6 +2662,7 @@
     dado: pf.ativo.dado, icone: pf.ativo.icone, mesa: pf.ativo.mesa, rating: pf.solo_rating, pico: pf.solo_pico,
     online: { nome: pf.nome, rating: pf.rating, partidas: pf.partidas, vitorias: pf.vitorias, titulo: pf.titulo },
     tarefas: (pf.extras || {}).tarefas || null,
+    historia: (pf.extras || {}).historia || null,
   });
   function usarPerfil(pf) {
     if (!st.sessao) return;

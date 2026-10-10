@@ -1457,6 +1457,63 @@ button.inicio-perfil:active { transform: translateY(1px); }
 .recompensas .tarefa-feita { flex-wrap: nowrap; }
 .recompensas .tarefa-feita span:first-child { flex: 1; min-width: 0; }
 
+/* ---------- modo história (v0.15): o leitor de gibi e o caderno ---------- */
+.gibi { position: fixed; inset: 0; z-index: 90; display: grid; grid-template-rows: auto 1fr auto; gap: 8px; cursor: pointer;
+  padding: calc(var(--seg-topo) + 12px) 16px calc(var(--seg-baixo) + 12px);
+  background: radial-gradient(circle at 1px 1px, rgba(255,243,226,.06) 1px, transparent 1.5px) 0 0 / 7px 7px, rgba(20,13,19,.97);
+  animation: gibiEntra .25s ease-out both; }
+@keyframes gibiEntra { from { opacity: 0; } }
+.gibi-topo { display: flex; justify-content: space-between; align-items: center; gap: 12px; max-width: 480px; width: 100%; margin: 0 auto; }
+.gibi-titulo { font-family: var(--f-titulo); font-weight: 700; color: var(--luz); font-size: 15px; letter-spacing: .02em; }
+.gibi-pular { color: var(--texto-suave); font-weight: 800; }
+.gibi-pagina { display: flex; flex-direction: column; justify-content: center; gap: 14px; max-width: 480px; width: 100%; margin: 0 auto; min-height: 0; overflow: hidden; }
+.gibi-dica { margin: 0; text-align: center; font-size: 12px; color: var(--texto-suave); opacity: .7; }
+.gq { background: var(--papel); color: var(--tinta); border: 3px solid var(--tinta); border-radius: 6px; padding: 12px 14px 14px; display: grid; gap: 10px;
+  box-shadow: 5px 5px 0 rgba(0,0,0,.45); transform: rotate(-.6deg); animation: gqEntra .32s cubic-bezier(.2,1.3,.4,1) both; }
+.gq:nth-child(even) { transform: rotate(.7deg); }
+.gq.saindo { opacity: .45; transform: scale(.94) rotate(-.6deg); transition: opacity .25s, transform .25s; max-height: 34vh; overflow: hidden; }
+@keyframes gqEntra { from { opacity: 0; transform: translateY(16px) scale(.96); } }
+.gq-topo { display: flex; align-items: center; gap: 10px; }
+.gq-topo .avatar { width: 52px; height: 52px; flex: none; }
+.gq-topo b { font-family: var(--f-titulo); font-size: 18px; }
+.gq-cena { margin: 0; padding: 6px 9px; background: #f6e3a8; border: 2px solid var(--tinta); font-size: 13px; font-style: italic; line-height: 1.35; color: #4a3a2a; }
+.gq-baloes { display: grid; gap: 8px; }
+.gq-balao { position: relative; margin: 0; padding: 9px 13px; background: #fffaf0; border: 2px solid var(--tinta); border-radius: 18px; font-size: 17px; font-weight: 700; line-height: 1.35;
+  animation: balaoEntra .22s cubic-bezier(.2,1.5,.4,1) both; justify-self: start; max-width: 100%; }
+.gq-balao::before { content: ''; position: absolute; left: 18px; top: -9px; width: 14px; height: 14px; background: #fffaf0; border-left: 2px solid var(--tinta); border-top: 2px solid var(--tinta); transform: rotate(45deg) skew(8deg, 8deg); }
+.gq-balao.pausa { font-size: 20px; color: var(--tinta-suave); padding: 4px 14px; }
+.gq-balao.caixa { border-radius: 2px; background: #f6e3a8; font-style: italic; font-weight: 600; }
+.gq-balao.caixa::before { display: none; }
+.gq-balao i { font-weight: 600; color: var(--tinta-suave); }
+.gq-quem { display: block; font-family: var(--f-titulo); font-size: 13px; color: var(--rival-tinta); }
+@keyframes balaoEntra { from { opacity: 0; transform: scale(.7); } }
+/* a página do caderno: papel pautado, o título em letra de mão e a nota da Diana na margem */
+.gq-pagina { background: transparent; border: 0; box-shadow: none; padding: 0; }
+.gq-folha { position: relative; background: repeating-linear-gradient(#fffaf0 0 27px, #d8e4ef 27px 28px); border: 2px solid var(--tinta); border-radius: 3px;
+  padding: 26px 18px 20px 44px; box-shadow: 5px 5px 0 rgba(0,0,0,.45); min-height: 140px; }
+.gq-folha::before { content: ''; position: absolute; left: 32px; top: 0; bottom: 0; width: 2px; background: rgba(232,128,111,.6); }
+.gq-num { position: absolute; top: 6px; right: 10px; font-size: 11px; font-weight: 800; color: var(--tinta-suave); text-transform: uppercase; letter-spacing: .08em; }
+.gq-linhas { display: grid; gap: 6px; }
+.gq-titulo-pag { margin: 0; font-family: var(--f-titulo); font-weight: 700; font-size: 20px; line-height: 1.2; animation: balaoEntra .22s both; }
+.gq-ingr { margin: 0; font-size: 16px; font-weight: 700; animation: balaoEntra .22s both; }
+.gq-margem { margin: 6px 0 0; font-family: var(--f-titulo); font-size: 17px; color: var(--rival-tinta); transform: rotate(-2deg); animation: balaoEntra .22s both; }
+.gq-margem small { display: block; font-family: var(--f-corpo); font-size: 11px; font-style: italic; color: var(--tinta-suave); transform: none; }
+.sem-animacoes .gq, .sem-animacoes .gq-balao, .sem-animacoes .gibi { animation: none; }
+
+/* o mapa do caderno */
+.historia-caps { list-style: none; margin: 0 0 12px; padding: 0; display: grid; gap: 8px; }
+.hc { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; padding: 10px 12px; border-radius: 14px; background: var(--papel-2); }
+.hc.atual { box-shadow: inset 0 0 0 2px var(--mel); }
+.hc.travado { opacity: .55; }
+.hc.em-breve { grid-template-columns: 1fr; }
+.hc-retrato .avatar { width: 46px; height: 46px; }
+.hc-txt { display: grid; gap: 2px; min-width: 0; }
+.hc-txt small { font-size: 12px; font-weight: 800; color: var(--tinta-suave); text-transform: uppercase; letter-spacing: .05em; }
+.hc-txt b { font-family: var(--f-titulo); font-size: 16px; line-height: 1.2; }
+.hc-txt span { font-size: 13px; color: var(--tinta-suave); }
+.hc.feito .hc-txt span { color: #2f7a52; font-weight: 800; }
+.hc .btn { min-height: 40px; padding: 0 14px; }
+
 </style>
 </head>
 <body>
@@ -1470,7 +1527,7 @@ button.inicio-perfil:active { transform: translateY(1px); }
     <div class="inicio-partida" id="inicioPartida" hidden></div>
     <div class="inicio-jogar" id="inicioJogar">
       <button class="btn btn-mel inicio-principal" data-inicio="jogar">Jogar</button>
-      <div class="inicio-linha"><button class="btn btn-papel" data-inicio="online">Online<span class="ponto-online" id="pontoInicio" hidden></span></button></div>
+      <div class="inicio-linha"><button class="btn btn-papel" data-inicio="historia" hidden>História</button><button class="btn btn-papel" data-inicio="online">Online<span class="ponto-online" id="pontoInicio" hidden></span></button></div>
       <button class="inicio-tarefas" id="inicioTarefas" data-inicio="tarefas" hidden></button>
     </div>
     <div class="inicio-rivais" id="inicioRivais" hidden>
@@ -1696,6 +1753,14 @@ button.inicio-perfil:active { transform: translateY(1px); }
       <div class="deck-topo"><h2 id="perfilTitulo">Perfil</h2></div>
       <div id="perfilConteudo"></div>
       <button class="btn btn-papel" id="btnFecharPerfil">Fechar</button>
+    </div>
+  </div>
+
+  <div class="janela" id="janelaHistoria" hidden>
+    <div class="caixa" role="dialog" aria-modal="true" aria-labelledby="historiaTitulo">
+      <div class="deck-topo"><h2 id="historiaTitulo">O Caderno da Diana</h2></div>
+      <div id="historiaConteudo"></div>
+      <button class="btn btn-papel" id="btnFecharHistoria">Fechar</button>
     </div>
   </div>
 
@@ -1934,6 +1999,36 @@ button.inicio-perfil:active { transform: translateY(1px); }
     if (!moedas || !(moedas.total > 0) || est.vitoria) return false;
     moedas.total *= 2; moedas.dobro = true; est.vitoria = true;
     return true;
+  }
+
+  // ---------- modo história, "O Caderno da Diana" (docs/historia.md) ----------
+  // Os capítulos andam em ordem; vencer um pela primeira vez dá a recompensa dele, uma vez só. A carta da história
+  // continua à venda: quem já a tem recebe o preço dela em moedas (§6.1). Vale igual no aparelho e no servidor.
+  const HISTORIA = {
+    ordem: ['P', 'C1', 'C2'],
+    recompensa: { P: null, C1: { carta: 'reverso' }, C2: { moedas: 40 } },
+  };
+  function estadoHistoria(est) {
+    const feitos = est && Array.isArray(est.feitos) ? est.feitos.filter(c => HISTORIA.ordem.includes(c)) : [];
+    return { feitos: HISTORIA.ordem.filter(c => feitos.includes(c)) };
+  }
+  // o capítulo que dá para jogar agora (o primeiro não feito), ou null com tudo feito
+  const proximoCapitulo = est => HISTORIA.ordem.find(c => !estadoHistoria(est).feitos.includes(c)) || null;
+  // venceu o capítulo: devolve o estado novo e o prêmio ({ carta?, moedas }), ou erro se o capítulo ainda está travado.
+  // conta: { cartas, moedas } (mexe nela)
+  function concluirCapitulo(conta, est, cap) {
+    const e = estadoHistoria(est);
+    if (!HISTORIA.ordem.includes(cap)) return { erro: 'Capítulo desconhecido.' };
+    if (e.feitos.includes(cap)) return { estado: e, premio: null };   // jogar de novo não paga de novo
+    if (proximoCapitulo(e) !== cap) return { erro: 'Este capítulo ainda está fechado.' };
+    const r = HISTORIA.recompensa[cap] || {}, premio = {};
+    if (r.carta) {
+      if (conta.cartas.includes(r.carta)) premio.moedas = PRECO_CARTA[r.carta] || 0;
+      else { conta.cartas.push(r.carta); premio.carta = r.carta; }
+    }
+    if (r.moedas) premio.moedas = (premio.moedas || 0) + r.moedas;
+    if (premio.moedas) conta.moedas += premio.moedas;
+    return { estado: { feitos: e.feitos.concat(cap) }, premio: Object.keys(premio).length ? premio : null };
   }
 
   // experiência: sobe sempre (vitória ou derrota); os níveis dão presentes cosméticos (conta: {xp, dados, icones, mesas})
@@ -2373,6 +2468,7 @@ button.inicio-perfil:active { transform: translateY(1px); }
     PONTOS, LIM, NA_MESA, REL, CARTAS, ORDEM, pedagioDe, deckValido, rels, sinc, frente, encaixa, facesQueEncaixam, opcoes, pontos, harmonica,
     GRATIS, PRECO_CARTA, CATALOGO, NIVEIS, PRESENTES, RATING_RIVAL, TETO_MOEDAS, BASE_MOEDAS, TITULOS, tituloDe, nivelDe,
     METAS, META_PADRAO, metaValida, moedasDaVitoria, ajusteRatingOnline, elo, premioSolo, xpDaPartida, ganharXp, precoDe,
+    HISTORIA, estadoHistoria, proximoCapitulo, concluirCapitulo,
     TAREFAS, MOEDAS_TAREFA, tarefasDoDia, estadoTarefas, resumoTarefas, resumoValido, avancarTarefas, dobrarPrimeiraVitoria,
     criarPartida, usarRng, encaixaP, destinos, destinosValidos, seguro, bolsoGarante, marcadoContra, valorAoPegar, seguroDado,
     usavel, armadilhasOcultas, podeUsar, usarCarta,
@@ -4339,6 +4435,366 @@ window.PATAS_PINTADAS = Object.assign(window.PATAS_PINTADAS || {}, {
 
 </script>
 <script>
+/* Dice Duel · as falas aprovadas do modo história (gerado por tools/historia/piadas_fonte.py; não editar) */
+window.HISTORIA_FALAS = {
+"P-01": "Boa noite. Você joga dados?",
+"P-02": "Não importa. Eu ensino. Sou ótima professora e péssima em deixar coisas em cima da mesa.",
+"P-03": "Não pergunte do nariz.",
+"P-04": "Você aprende rápido.",
+"P-05": "Ótimo. Preciso de um favor. Alguém levou sete páginas do meu caderno de receitas.",
+"P-06": "Sete. Como a soma dos opostos. Não é coincidência. Quase nada é.",
+"G-01": "Eco. O mesmo número. Gêmeos idênticos: mesmo código, opiniões diferentes.",
+"G-02": "Passo. Um a mais ou um a menos. Uma mutação pequena. A maioria passa despercebida. (toca no nariz) A minha, não.",
+"G-03b": "Oposto. Somam sete: um e seis, dois e cinco, três e quatro. Cada número tem o seu par. Quase romântico.",
+"G-04": "Três elos. Um códon: a menor frase que a vida sabe ler. Já dá para disparar.",
+"G-05": "Rompeu. Na natureza chamam isso de mutação. Aqui chamamos de \"arrisquei demais\".",
+"G-06": "O Bolso guarda um dado. A vida guarda duas fitas pelo mesmo motivo.",
+"C1-01": "Dobrei a dose.",
+"C1-02": "O Sapo está com a página um. Ele é educado. Vai te oferecer chá. / Não aceite. É água do lago.",
+"C1-03": "Boa noite. Aceita um chá?",
+"C1-04": "É do lago, sim. Orgânico.",
+"C1-05": "A página se chama \"Sopa de Girino ao Contrário\". Achei de mau gosto. Já fui girino.",
+"C1-06": "Ganhe e ela é sua. Perca, e você toma o chá.",
+"C1-07": "Calma. Aqui o tempo anda devagar.",
+"C1-08": "Reverso: a fita volta pela outra ponta. Já fui girino. Não volto nem com transcriptase.",
+"C1-09": "Que salto.",
+"C1-10": "Escorreguei na vitória-régia.",
+"C1-11": "Chá?",
+"C1-12": "Justo. A página é sua. O chá também, se quiser.",
+"C1-13a": "SOPA DE GIRINO AO CONTRÁRIO · Ingredientes: A, T, C e G. Nessa ordem. Ou na outra.",
+"C1-13b": "(margem, na letra da Diana) Ler no espelho. Ou com o Reverso.",
+"C1-14": "Sabe por que ela quer isso? Dizem que a salamandra regenera uma perna inteira. / Eu não. Sou sapo. Todo mundo confunde.",
+"I1-01": "Uma a menos.",
+"I1-02": "O que é o DNA, se não um conjunto de dados?",
+"I1-03": "…Coisa de receita. Próximo: o Coelho.",
+"C2-01": "O Coelho tem a página dois. Ele joga rápido.",
+"C2-02": "Ele faz tudo rápido. A família dele que o diga: são quarenta e três.",
+"C2-03": "Desculpe, estou atrasado. Para tudo. Sempre.",
+"C2-04": "A página? \"Pão que Cresce Sozinho\". Testei. Cresceu. Tivemos que mudar de toca.",
+"C2-05": "Jogo rápido, tá? Tenho reunião de família. É uma reunião grande.",
+"C2-06": "Valendo. Vai. Vai. Vai.",
+"C2-07": "Mais dois. Aqui em casa mais nunca é demais. É só… mais.",
+"C2-08": "Isso conta como multiplicação?",
+"C2-09": "Contei errado. De novo. Eram quarenta e quatro.",
+"C2-10": "Ganhei! Preciso ir. Atrasado.",
+"C2-11": "Toma a página. Corre que ainda dá tempo de… alguma coisa.",
+"C2-12a": "PÃO QUE CRESCE SOZINHO · Ingredientes: G, G, G e G. Fermento: sim.",
+"C2-12b": "(margem, na letra da Diana) Não deixar o Coelho ler.",
+"C2-13": "Ela é sua amiga? Avisa que o curativo está torto.",
+"C2-14a": "Ela tem outras receitas? Pergunto por um amigo. Quarenta e três amigos.",
+"C3-01": "Inspiração.",
+"C3-02": "A Raposa tem a página três. Ela vai mentir para você. / Não. Pior. Ela vai dizer a verdade de um jeito que parece mentira.",
+"C3-03": "E ela usa armadilhas. Eu também. Achei que era hora de contar.",
+"C3-04a": "Ah. Você deve ser o projeto da gata.",
+"C3-05": "No inverno eu fico branca, sabia? É genética. O cachecol é escolha.",
+"C3-06": "A página é \"Torta de Fundo Falso\". Adorei. Quase não devolvo. / … / Quase.",
+"C3-07": "Fique à vontade. Nada aqui é o que parece. Inclusive eu.",
+"C3-08": "Armei alguma coisa. Ou não. É uma raposa falando.",
+"C3-09": "O fundo era falso. A raposa, verdadeira.",
+"C3-10": "Hm. Você não é fácil de enganar.",
+"C3-11": "Que deselegante. Para mim.",
+"C3-12": "Volte quando quiser perder com estilo.",
+"C3-13": "Leve. E cuidado com a gata: ela é mais raposa do que eu.",
+"C3-14a": "TORTA DE FUNDO FALSO · Recheio: segredo. Até para quem come.",
+"C3-14b": "(debaixo de uma aba da página) Achou que ia ter receita aqui?",
+"C4-01": "É um acessório. / … / Está na moda. Em clínica veterinária.",
+"C4-02": "O Urso tem a página quatro. Está hibernando. Não acorde ele. / Quer dizer: acorde. Com educação.",
+"C4-03": "…É primavera?",
+"C4-04b": "Não? Então me acorda em março.",
+"C4-05": "CAIXA: Ursos hibernam meses e acordam sem perder músculo. A ciência quer muito esse segredo. / URSO: O segredo é não acordar.",
+"C4-06": "(bocejo) Vai você primeiro. Vai você sempre.",
+"C4-07": "Pausa. Não é preguiça. É estratégia de inverno.",
+"C4-08": "Hm. Isso foi… acordado.",
+"C4-09": "Cochilei no meio.",
+"C4-10": "Pronto. Posso voltar a dormir?",
+"C4-11": "Leva a página. Fecha a porta. Apaga a luz.",
+"C4-12a": "MEL EM BANHO-MARIA · Tempo de preparo: um inverno.",
+"C4-12b": "(margem, na letra da Diana) Não acordar o mel.",
+"C4-13": "(dormindo) …a gata… o nariz… ela pediu pra não contar… / (ronco)",
+"C5-01": "O cone sumiu. / Suspeito de alguém de máscara.",
+"C5-02": "Por coincidência, o Guaxinim tem a página cinco. Por coincidência, ele usa máscara. Eu não acredito em coincidência.",
+"C5-03": "Isso? Achei.",
+"C5-04": "Não roubei. Fiz uma transferência horizontal.",
+"C5-05": "Bactéria faz isso o tempo todo: pega o gene do vizinho e pronto. Ninguém prende bactéria.",
+"C5-06": "As páginas? Fui eu, sim. Todas. Depois vendi uma para cada bicho. / Modelo de assinatura.",
+"C5-07": "Bonito seu Bolso. Seria uma pena se…",
+"C5-08": "Troca justa. Para mim.",
+"C5-09": "Taxa de serviço.",
+"C5-10": "Ei. Isso era meu. Quer dizer. Ia ser.",
+"C5-11": "Lixo. Literalmente.",
+"C5-12": "Volte sempre. Traga coisas.",
+"C5-13": "Tá. Leva a página. E o cone. / …Fica com o cone? Não? Tá.",
+"C5-14a": "SALADA DE SOBRAS DOS OUTROS · Ingredientes: os do vizinho.",
+"C5-14b": "(etiqueta de preço colada na página) Página 5 · 4,99 por mês",
+"C5-15": "Pergunta pra gata quem deixou a janela aberta.",
+"C6-01": "Algodão. / … / É lã. Da Ovelha. Ela ainda não sabe.",
+"C6-02": "Página seis. Ela é simpática. Não fale de clonagem.",
+"C6-03": "Não sou a Dolly.",
+"C6-04": "Não sou parente da Dolly. Não lembro dela. Sim, todo mundo pergunta.",
+"C6-05": "Quer trocar? Dou duas pedras por um dado. / … / Ninguém nunca quer a ovelha. Eu sei.",
+"C6-06": "Rola. Vê se sai sete.",
+"C6-07": "Espelho: uma cópia de você, ao contrário. É o mais perto de clone que eu chego.",
+"C6-08": "Bééém jogado.",
+"C6-09": "Desmanchou. Igual tricô.",
+"C6-10": "Leva um pouco de lã de lembrança. Parece que alguém já levou.",
+"C6-11": "Toma a página. E diz pra gata devolver a minha lã.",
+"C6-12a": "PUDIM GÊMEO · Rende: duas porções idênticas. A segunda não lembra da primeira.",
+"C6-12b": "(margem, na letra da Diana) Uma delas é a cópia. Não pergunte qual.",
+"I6-01": "Cansei de disfarçar.",
+"I6-02": "Não é nada. É um lençol.",
+"I6-03": "Última página. Dona Coruja. Ela sabe ler. / Ler a Mesa. Ler gente. Ler… coisas que eu não contei.",
+"C7-01": "Boa noite. Sente-se. A Diana mandou você.",
+"C7-02": "Mandou você em todo mundo antes de mim. Esperta. Mandou você treinar.",
+"C7-03": "Ela vai te dizer que \"Dona Coruja\" também começa com D. Diga a ela que \"Dona\" é pronome de tratamento.",
+"C7-04": "Sem pressa. Quem escreve precisa saber ler.",
+"C7-05": "Lacre. Nem tudo que está escrito precisa ser dito.",
+"C7-06": "Jogada precisa. Você leu.",
+"C7-07": "Hum. Escrevi uma letra errada. Acontece com os melhores.",
+"C7-08": "Ainda não. Volte quando ler mais rápido.",
+"C7-09": "Agora sim. Sente-se. Precisamos falar da gata.",
+"C7-10b": "(quadro mudo: ela só entrega a página)",
+"C7-11": "Uma letra errada, no meio de quase três bilhões. Um Passo onde devia haver um Eco. Por isso não fecha.",
+"C7-12": "Ela não te ensinou a jogar por gentileza. Pergunte a ela.",
+"R-01": "Você acha que é coincidência tudo começar com D?",
+"R-02": "Meu nome. Dados. DNA. Está tudo conectado.",
+"R-03": "Até a Dona Coruja. / Ela diz que \"Dona\" é pronome de tratamento. / É o que um D diria.",
+"R-04": "Uma letra. Errada. Desde que eu nasci. O corte foi a quina de um dado. O não fechar é comigo.",
+"R-05": "Eu tentei sozinha. Mas com essas patas fica difícil.",
+"R-06": "Então eu ensinei alguém que monta correntes melhor do que eu. / … / Você.",
+"R-07": "Usei. Ensinei. Em gatês é a mesma palavra.",
+"R-08": "O Guaxinim levou. Eu deixei a janela aberta. Com um bilhete: \"por favor, não leve as páginas\". / Guaxinim não lê bilhete. Eu sabia.",
+"R-09": "E não: eu não estava brincando com os seus dados na tela inicial. / Estava sequenciando.",
+"R-10": "COELHO: Então… não é um livro de receitas? / DIANA: É. / A receita sou eu.",
+"R-11": "Falta escrever. A correção tem que ser feita contra a fita original. A fita original sou eu. / Jogue sério. Se eu facilitar, a cura sai com defeito.",
+"C8-01": "Boa noite. Uma partida? / (balão menor) Dessa vez vale.",
+"C8-02": "Par complementar. A com T. Bonito.",
+"C8-03": "Espelho. Você vai ter que ler ao contrário. Como eu.",
+"C8-04": "Isso. Escreve assim.",
+"C8-05": "Arrisquei demais. De novo. Está no meu DNA.",
+"C8-06": "Ainda não. Revanche? / Por favor.",
+"C8-07": "Mereceu.",
+"F-01": "Dois, cinco, dois, cinco. / …Parece senha de wi-fi.",
+"F-02": "O três e o quatro não dizem nada. São tipo \"hmm\". Todo texto tem.",
+"F-03": "Fechou. / Faz cócegas.",
+"F-A": "Fechou. Fechou. / Por que eu estou falando duas vezes? Vezes? / Você pôs um Eco. Eco. / …Passa amanhã. Manhã. / Revanche? Vanche?",
+"F-A2": "Fita complementar perfeita. Eu ensinei bem. Bem.",
+"X-01": "DianaDice não seria um nome melhor para esse jogo? / … / Seria.",
+"X-02a": "SAPO: Soube da cura. Trouxe chá. / DIANA: É do lago? / SAPO: Orgânico."
+};
+window.HISTORIA_CENAS = {
+"P-01": "A Diana atrás da mesinha de feltro. No nariz, um curativo com estampa de pips de dado.",
+"P-02": "A pata dela empurra um dado devagar até a beirada.",
+"P-03": "O dado cai para fora do quadro. Ela não olha.",
+"P-04": "Ela olhando o placar.",
+"P-05": "Um caderno \"RECEITAS DA DIANA\" com tocos de páginas arrancadas.",
+"P-06": "Close no rosto dela.",
+"C1-01": "Dois curativos cruzados em X no nariz.",
+"C1-03": "O Sapo numa vitória-régia, tirando o chapéu de palha.",
+"C1-04": "Uma xícara turva, com um girino dentro.",
+"C1-13a": "A página molhada.",
+"C1-13b": "A página molhada, com o título escrito espelhado: SOPA DE GIRINO AO CONTRÁRIO.",
+"I1-01": "Ela lê a página um. No fundo, pela primeira vez, um mural de cortiça com uma foto de dado e um barbante vermelho.",
+"I1-02": "Ela olha para o nada.",
+"I1-03": "Ela percebe você olhando o mural e cobre a cortiça com a pata.",
+"C2-01": "Curativo e, por cima, um adesivo: \"NÃO PERGUNTE\".",
+"C2-03": "O Coelho com uma planilha, cercado de silhuetas de coelhinhos.",
+"C2-12a": "Um pão saindo da fôrma e do quadro.",
+"C2-12b": "A página com o título PÃO QUE CRESCE SOZINHO e uma mancha de farinha em forma de pata de coelho.",
+"C3-01": "Um mini cachecol verde enrolado no nariz.",
+"C3-03": "A Diana vira uma carta para baixo: o \"?\".",
+"C3-04a": "A Raposa num sofá de toca, olhos semicerrados, satisfeita.",
+"C3-14a": "Uma torta inteira, sem corte.",
+"C3-14b": "A página TORTA DE FUNDO FALSO tem uma aba de papel colada; levantada, mostra só a frase.",
+"C4-01": "A Diana com um cone de veterinário no pescoço.",
+"C4-02": "O mural no fundo: três fotos e um bilhete \"DISPARO. DUELO. DOBRO. → D\".",
+"C4-03": "Caverna escura, um volume enorme de gorro vermelho; o ronco desenhado com pips. Um olho abre.",
+"C4-12a": "Um pote de mel de gorro, dormindo em banho-maria.",
+"C4-12b": "A página MEL EM BANHO-MARIA, com o pote de mel desenhado de olhos fechados.",
+"C4-13": "O Urso dormindo de novo; você puxa a página da pata dele.",
+"C5-01": "Uma meia enrolada no nariz.",
+"C5-03": "O Guaxinim num monte de tralha, usando o cone da Diana como abajur.",
+"C5-14a": "Uma tigela com folhas de várias hortas.",
+"C5-14b": "A página SALADA DE SOBRAS DOS OUTROS com uma etiqueta de preço por cima do título.",
+"C6-01": "Um tufo branco e fofo no nariz.",
+"C6-03": "A Ovelha num pasto de hexágonos, com uma falha na lã do ombro.",
+"C6-12a": "Dois pudins iguais.",
+"C6-12b": "Duas páginas PUDIM GÊMEO idênticas, grampeadas.",
+"I6-01": "A Diana sem nada no nariz: o ferimento à mostra. Primeiro quadro sério da história.",
+"I6-02": "O mural coberto por um lençol, o barbante vermelho saindo por baixo.",
+"C7-01": "Biblioteca de estantes altas. Lombadas: \"Volume A\", \"Volume T\", \"Volume C\", \"Volume G\".",
+"C7-03": "O Coelho numa mesa de leitura, ofegante, com uma pilha de livros de receitas e um pão que não cabe na mesa.",
+"C7-09": "Reescrita sem gênero (era \"Está pronta\").",
+"C7-10b": "Ela entrega a última página: só o desenho de um nariz de gato com um X.",
+"C7-12": "Reescrita sem gênero (tirei o \"querida\").",
+"R-01": "Ela puxa o lençol: o mural inteiro, barbante vermelho, a foto de cada bicho carimbada, a sua no meio, uma dupla hélice com dados no lugar dos degraus.",
+"R-02": "Três cartões ligados pelo barbante: DIANA · DADOS · DNA.",
+"R-03": "A foto da Coruja com um post-it \"D?\".",
+"R-04": "Ela sentada, séria.",
+"R-05": "A pata dela segurando uma pipeta, torta, pingando.",
+"R-10": "O Coelho na porta, abraçado a um pão do tamanho dele.",
+"R-11": "Ela na Mesa dela, os dados prontos.",
+"C8-01": "A primeira fala do jogo, palavra por palavra.",
+"C8-07": "Sem o \"Revanche?\" de sempre: vem a cena da cura.",
+"F-01": "A sua corrente vencedora vira uma fita impressa com as letras embaixo: 2 5 2 5 → C G C G.",
+"F-03": "O ferimento fechado; ela encosta a pata. Antes, um quadro mudo.",
+"X-01": "Ela risca \"Dice Duel\" com um pincel atômico e escreve por cima: \"DianaDice\".",
+"X-02a": "A Diana, curada, abre a porta. O Sapo de chapéu, com uma xícara turva."
+};
+
+</script>
+<script>
+/* Dice Duel · modo história, "O Caderno da Diana" (docs/historia.md)
+ * Os capítulos como dados, o leitor de gibi e o mapa. As falas vêm de js/historia_falas.js, que só tem as aprovadas
+ * pelo dono (docs/historia.md §11): aqui só aparecem códigos (P-01, C1-03…); um código sem fala aprovada some do quadro.
+ * O jogo (js/jogo.js) liga o resto por Historia.ligar({ jogar, estado, ... }).
+ *   Historia.CAPS   Historia.cap(id)   Historia.falasRival(cap)   Historia.gibi(quadros) → Promise
+ *   Historia.abrirMapa()   Historia.fala(id)
+ */
+(function () {
+  'use strict';
+  const FALAS = () => window.HISTORIA_FALAS || {};
+  const CENAS = () => window.HISTORIA_CENAS || {};
+  const fala = id => FALAS()[id];
+  const QUEM = { diana: 'Diana', sapo: 'Sapo', coelho: 'Coelho', coruja: 'Dona Coruja' };
+
+  // q(quem, códigos, humor): um quadro. Cada código é uma fala; " / " dentro dela separa os balões (um toque cada)
+  const q = (quem, ids, humor = '') => ({ quem, ids: [].concat(ids), humor });
+  // uma página do caderno: o título com os ingredientes (opção a) e a nota da margem (opção b), aprovadas juntas
+  const pagina = (n, ids) => ({ quem: 'pagina', n, ids });
+
+  const CAPS = [
+    { id: 'P', titulo: 'Prólogo', nome: 'Boa noite. Uma partida?', rival: 'aprendiz', retrato: 'diana', meta: 8, semCartas: true, guia: true,
+      antes: [q('diana', 'P-01'), q('diana', 'P-02', 'feliz'), q('diana', 'P-03')],
+      depois: [q('diana', 'P-04', 'feliz'), q('diana', 'P-05'), q('diana', 'P-06')] },
+    { id: 'C1', titulo: 'Capítulo 1', nome: 'Lagoa das Vitórias-Régias', rival: 'sapo', retrato: 'sapo', meta: 12,
+      deckRival: ['coringa', 'ajuste', 'reverso'], regra: 'O Sapo não usa armadilhas.',
+      antes: [q('diana', 'C1-01'), q('diana', 'C1-02'), q('sapo', 'C1-03'), q('sapo', 'C1-04'), q('sapo', 'C1-05'), q('sapo', 'C1-06')],
+      depois: [pagina(1, ['C1-13a', 'C1-13b']), q('sapo', 'C1-14')],
+      falas: { inicio: ['C1-07'], 'carta:reverso': ['C1-08'], seuDisparoGrande: ['C1-09'], minhaRuptura: ['C1-10'], venci: ['C1-11'], perdi: ['C1-12'] } },
+    { id: 'C2', titulo: 'Capítulo 2', nome: 'Toca Número 12', rival: 'coelho', retrato: 'coelho', meta: 16,
+      deckRival: ['pressa', 'sobrecarga', 'ajuste'], ritmo: 0.55, regra: 'O Coelho joga rápido.',
+      antes: [q('diana', 'I1-01'), q('diana', 'I1-02'), q('diana', 'I1-03'), q('diana', 'C2-01'), q('diana', 'C2-02'),
+        q('coelho', 'C2-03'), q('coelho', 'C2-04'), q('coelho', 'C2-05')],
+      depois: [pagina(2, ['C2-12a', 'C2-12b']), q('coelho', 'C2-13'), q('coelho', 'C2-14a')],
+      falas: { inicio: ['C2-06'], 'carta:sobrecarga': ['C2-07'], seuDisparoGrande: ['C2-08'], minhaRuptura: ['C2-09'], venci: ['C2-10'], perdi: ['C2-11'] } },
+  ];
+  const cap = id => CAPS.find(c => c.id === id) || null;
+  // as falas do rival na partida, no formato de RIVAIS[].falas (só as aprovadas)
+  function falasRival(c) {
+    const out = {};
+    for (const [k, ids] of Object.entries(c.falas || {})) { const l = ids.map(fala).filter(Boolean); if (l.length) out[k] = l; }
+    return out;
+  }
+  // o guia do Prólogo na voz da Diana (no lugar das explicações de sempre)
+  const GUIA = { eco: 'G-01', passo: 'G-02', oposto: 'G-03b', disparo: 'G-04', ruptura: 'G-05', bolso: 'G-06' };
+
+  // ---------- o leitor de gibi ----------
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  // um balão: "(direção)" no começo vira rubrica; "NOME:" no começo troca quem fala; "…" sozinho é uma pausa
+  function balao(txt, quem) {
+    let t = txt.trim(), rubrica = '', fala = quem, caixa = false;
+    const r = t.match(/^\(([^)]*)\)\s*/); if (r) { rubrica = r[1]; t = t.slice(r[0].length); }
+    const n = t.match(/^([A-ZÁÉÍÓÚÂÊÔÃÕÇ]{3,}(?: [A-ZÁÉÍÓÚÂÊÔÃÕÇ]+)?)(?: \(([^)]*)\))?:\s*/);
+    if (n) { fala = n[1].toLowerCase(); if (n[2]) rubrica = n[2]; t = t.slice(n[0].length); caixa = fala === 'caixa'; }
+    return { t, rubrica, quem: fala, caixa, pausa: /^…$/.test(t) };
+  }
+  function batidas(qd) {
+    const out = [];
+    for (const id of qd.ids) { const f = fala(id); if (!f) continue; f.split(' / ').forEach(b => out.push({ id, ...balao(b, qd.quem) })); }
+    return out;
+  }
+  function quadroHTML(qd) {
+    const cena = qd.ids.map(id => CENAS()[id]).find(Boolean) || '';
+    if (qd.quem === 'pagina') {
+      return `<div class="gq gq-pagina"><div class="gq-folha"><span class="gq-num">página ${qd.n}</span><div class="gq-linhas"></div></div>${cena ? `<p class="gq-cena">${esc(cena)}</p>` : ''}</div>`;
+    }
+    const ret = window.Retratos && QUEM[qd.quem] ? Retratos.retrato(qd.quem, qd.humor) : '';
+    return `<div class="gq"><div class="gq-topo">${ret}<b>${esc(QUEM[qd.quem] || '')}</b></div>${cena ? `<p class="gq-cena">${esc(cena)}</p>` : ''}<div class="gq-baloes"></div></div>`;
+  }
+  // mostra os quadros um a um; cada toque mostra o próximo balão. "Pular" termina na hora. Devolve quando acaba
+  function gibi(quadros, { titulo = '' } = {}) {
+    const fila = quadros.map(qd => ({ qd, bs: batidas(qd) })).filter(x => x.bs.length);
+    if (!fila.length) return Promise.resolve();
+    return new Promise(res => {
+      const el = document.createElement('div');
+      el.className = 'gibi'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', titulo || 'História');
+      el.innerHTML = `<div class="gibi-topo">${titulo ? `<span class="gibi-titulo">${esc(titulo)}</span>` : '<span></span>'}<button class="btn-link gibi-pular">Pular</button></div>
+        <div class="gibi-pagina" aria-live="polite"></div><p class="gibi-dica">toque para continuar</p>`;
+      document.body.appendChild(el);
+      if (window.Som) Som.tocar('abrir');
+      const pag = el.querySelector('.gibi-pagina');
+      let iq = -1, ib = 0, atual = null, acabou = false;
+      const fim = () => { if (acabou) return; acabou = true; document.removeEventListener('keydown', tecla, true); el.remove(); if (window.Som) Som.tocar('fechar'); res(); };
+      function proximo() {
+        if (iq >= 0 && ib < fila[iq].bs.length) return mostrarBatida();
+        iq++; ib = 0;
+        if (iq >= fila.length) return fim();
+        // um quadro novo: no máximo dois na tela (o anterior fica, apagado, acima)
+        pag.querySelectorAll('.gq.saindo').forEach(x => x.remove());
+        pag.querySelectorAll('.gq').forEach(x => x.classList.add('saindo'));
+        pag.insertAdjacentHTML('beforeend', quadroHTML(fila[iq].qd));
+        atual = pag.lastElementChild;
+        mostrarBatida();
+      }
+      function mostrarBatida() {
+        const b = fila[iq].bs[ib++], qd = fila[iq].qd;
+        if (qd.quem === 'pagina') {
+          const linhas = atual.querySelector('.gq-linhas');
+          const [titulo, ...resto] = b.t.split(' · ');
+          linhas.insertAdjacentHTML('beforeend', b.rubrica
+            ? `<p class="gq-margem"><small>${esc(b.rubrica)}</small>${esc(b.t)}</p>`
+            : `<p class="gq-titulo-pag">${esc(titulo)}</p>${resto.map(r => `<p class="gq-ingr">${esc(r)}</p>`).join('')}`);
+        } else {
+          const outro = b.quem !== qd.quem && !b.caixa ? `<b class="gq-quem">${esc(QUEM[b.quem] || b.quem[0].toUpperCase() + b.quem.slice(1))}</b>` : '';
+          atual.querySelector('.gq-baloes').insertAdjacentHTML('beforeend',
+            `<p class="gq-balao${b.caixa ? ' caixa' : ''}${b.pausa ? ' pausa' : ''}">${b.rubrica ? `<i>${esc(b.rubrica)}</i> ` : ''}${outro}${esc(b.t)}</p>`);
+        }
+        if (window.Som) Som.tocar(b.pausa ? 'toque' : 'falaRival', { voz: b.quem === 'diana' ? 'diana' : 'coruja' });
+      }
+      function tecla(e) {
+        if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); fim(); }
+        else if (['Enter', ' ', 'ArrowRight'].includes(e.key)) { e.preventDefault(); e.stopPropagation(); proximo(); }
+      }
+      document.addEventListener('keydown', tecla, true);
+      el.addEventListener('click', e => { if (e.target.closest('.gibi-pular')) fim(); else proximo(); });
+      proximo();
+    });
+  }
+
+  // ---------- o mapa ----------
+  let ligacao = null;   // { estado(): {feitos}, jogar(capId), retrato(id) }
+  function abrirMapa() {
+    const j = document.getElementById('janelaHistoria'); if (!j || !ligacao) return;
+    const est = ligacao.estado(), prox = R().proximoCapitulo(est);
+    const linhas = CAPS.map(c => {
+      const feito = est.feitos.includes(c.id), aberto = feito || c.id === prox;
+      const rec = R().HISTORIA.recompensa[c.id];
+      const premio = !rec ? '' : rec.carta ? `carta ${ligacao.nomeCarta(rec.carta)}` : `${rec.moedas} moedas`;
+      return `<li class="hc${feito ? ' feito' : ''}${aberto ? '' : ' travado'}${c.id === prox ? ' atual' : ''}">
+        <span class="hc-retrato">${Retratos.retrato(c.retrato)}</span>
+        <span class="hc-txt"><small>${esc(c.titulo)}</small><b>${esc(c.nome)}</b><span>${feito ? 'Feito' : aberto ? (premio ? `Vale: ${premio}` : 'Comece por aqui') : 'Fechado'}</span></span>
+        ${aberto ? `<button class="btn ${c.id === prox ? 'btn-mel' : 'btn-papel'}" data-cap="${c.id}">${feito ? 'Jogar de novo' : 'Jogar'}</button>` : ''}</li>`;
+    }).join('');
+    j.querySelector('#historiaConteudo').innerHTML = `<ol class="historia-caps">${linhas}<li class="hc travado em-breve"><span class="hc-txt"><small>Capítulos 3 a 8</small><b>Raposa, Urso, Guaxinim, Ovelha, Dona Coruja e…</b><span>Em breve</span></span></li></ol>`;
+    j.hidden = false;
+    if (window.Som) Som.tocar('abrir');
+  }
+  const R = () => window.Regras;
+  function ligar(l) {
+    ligacao = l;
+    const j = document.getElementById('janelaHistoria'); if (!j) return;
+    j.addEventListener('click', e => {
+      const b = e.target.closest('[data-cap]');
+      if (b) { j.hidden = true; ligacao.jogar(b.dataset.cap); return; }
+      if (e.target.closest('#btnFecharHistoria')) { j.hidden = true; if (window.Som) Som.tocar('fechar'); }
+    });
+  }
+
+  window.Historia = { CAPS, cap, falasRival, GUIA, fala, gibi, abrirMapa, ligar };
+})();
+
+</script>
+<script>
 /* Dice Duel · o jogo
  * Regras (v0.13; o motor está em shared/regras.js): Mesa compartilhada de 5 dados, corrente que só cresce pela frente,
  * sincronias Eco (=), Passo (±1) e Oposto (soma 7), Bolso de um dado, quem está atrás abre a Mesa,
@@ -4437,6 +4893,12 @@ window.PATAS_PINTADAS = Object.assign(window.PATAS_PINTADAS || {}, {
       venci: ['Foi equilibrado. Outra?'], perdi: ['Excelente partida.'] } },
   };
 
+  // os bichos do modo história (js/historia.js): rivais como a Diana e a Coruja, com as falas aprovadas do capítulo
+  const RIVAIS_HISTORIA = { sapo: { nome: 'Sapo', desc: 'cavalheiro do lago, de chapéu de palha' }, coelho: { nome: 'Coelho', desc: 'sempre atrasado, família enorme' } };
+  if (window.Historia) for (const c of Historia.CAPS) if (RIVAIS_HISTORIA[c.rival]) {
+    RIVAIS[c.rival] = { ...RIVAIS_HISTORIA[c.rival], falas: Historia.falasRival(c) }; RETRATO_RIVAL[c.rival] = c.retrato;
+  }
+
   // o módulo online (mais abaixo) preenche estes dois
   const Online = { enviar() {} };
   const Conta = {};
@@ -4529,17 +4991,21 @@ window.PATAS_PINTADAS = Object.assign(window.PATAS_PINTADAS || {}, {
       ['fim', 'janelaCarta', 'janelaDeck'].forEach(id => { document.getElementById(id).hidden = true; });
       return;
     }
-    const estreia = op.estreia ?? !st.guia.estreia;
-    const modo = estreia ? 'bot' : st.cfg.modo, nivel = estreia ? 'aprendiz' : st.cfg.nivel;
-    const deckRival = estreia ? [] : modo === 'local' ? st.decks[1].slice()
+    // um capítulo do modo história: o rival, o deck dele e a meta vêm do capítulo (js/historia.js)
+    const hc = op.historia && window.Historia ? Historia.cap(op.historia) : null;
+    const estreia = hc ? false : (op.estreia ?? !st.guia.estreia);
+    const semCartas = estreia || (hc && hc.semCartas);
+    const modo = estreia || hc ? 'bot' : st.cfg.modo, nivel = hc ? hc.rival : estreia ? 'aprendiz' : st.cfg.nivel;
+    const deckRival = semCartas ? [] : hc ? hc.deckRival.slice() : modo === 'local' ? st.decks[1].slice()
       : nivel === 'esperto' ? sorteia(DECKS_CORUJA).slice() : sorteiaDeck(!armadilhasLiberadas());
-    const decks = estreia ? [[], []] : [st.decks[0].filter(disponivel), modo === 'local' ? deckRival.filter(disponivel) : deckRival];
+    const decks = semCartas ? [[], []] : [st.decks[0].filter(disponivel), modo === 'local' ? deckRival.filter(disponivel) : deckRival];
     const nomesP = modo === 'bot' ? ['Você', RIVAIS[nivel].nome] : ['Jogador 1', 'Jogador 2'];
     // ids dos dados nunca se repetem entre partidas: um temporizador da partida anterior não marca dado da nova
     const idInicial = Math.max(uid, jogo && jogo.proxId ? jogo.proxId + 1 : 1);
     uid = idInicial + 1;
-    jogo = R.criarPartida({ decks, vez: estreia ? 0 : st.primeiro, meta: estreia ? META_ESTREIA : +st.cfg.meta, nomes: nomesP, modo, nivel, idInicial });
+    jogo = R.criarPartida({ decks, vez: semCartas ? 0 : st.primeiro, meta: hc ? hc.meta : estreia ? META_ESTREIA : +st.cfg.meta, nomes: nomesP, modo, nivel, idInicial });
     if (estreia) jogo.estreia = true;
+    if (hc) { jogo.historia = hc.id; jogo.ritmoRival = hc.ritmo || 1; if (hc.guia) jogo.historiaGuia = []; }
     Object.assign(jogo, { alvo: null, ajusteIdx: null, sel: null, destaque: null, pensando: false, token: Math.random(), fala: null, humor: null, intro: false });
     st.primeiro = 1 - st.primeiro;
     ['avisoCfg', 'fim', 'janelaCarta', 'janelaDeck'].forEach(id => { document.getElementById(id).hidden = true; });
@@ -4639,9 +5105,36 @@ window.PATAS_PINTADAS = Object.assign(window.PATAS_PINTADAS || {}, {
   }
 
   // fim de partida: recordes, moedas, rating e experiência (contra os rivais do jogo; o online acerta isso no servidor)
+  // o fim de um capítulo: vencer dá a recompensa dele (uma vez, em ordem: R.concluirCapitulo); com conta, quem confere
+  // é o servidor. Não mexe em rating, moedas de vitória, recordes nem tarefas: a história é à parte
+  function aoFimHistoria(j) {
+    const cap = j.historia, venceu = j.vencedor === 0 && j.desistencia === undefined;
+    j.premio = { historia: { cap, venceu, premio: null, ja: R.estadoHistoria(st.conta.historia).feitos.includes(cap) } };
+    if (venceu) {
+      const fim = R.concluirCapitulo(st.conta, st.conta.historia, cap);
+      if (!fim.erro) { st.conta.historia = fim.estado; j.premio.historia.premio = fim.premio; }
+      salvar(); aplicarPrefs();
+      if (st.sessao) pedir('POST', '/api/historia', { capitulo: cap }).then(r => {
+        usarPerfil(r.conta); j.premio.historia.premio = r.premio;
+        if (jogo === j && !document.getElementById('fim').hidden) desenharRecompensas(j);
+      }).catch(() => {});
+    }
+    falar(j.vencedor === 1 ? 'venci' : 'perdi');
+  }
   function aoFim() {
     const j = jogo, p = j.vencedor;
     j.recordes = j.recordes || [];
+    if (j.historia) {
+      aoFimHistoria(j); render();
+      const c = Historia.cap(j.historia), espera = st.pref.animacoes ? 1800 + esperaFesta() : 600;
+      // venceu: a cena do depois (a página, o bicho) e só então a tela do fim
+      setTimeout(() => {
+        if (jogo !== j) return;
+        if (j.premio.historia.venceu && c) Historia.gibi(c.depois, { titulo: `${c.titulo} · ${c.nome}` }).then(() => { if (jogo === j) mostrarFim(); });
+        else mostrarFim();
+      }, espera);
+      return;
+    }
     if (j.modo === 'bot') {
       const r = st.rec, s = j.stats[0], liberadasAntes = armadilhasLiberadas();
       if (j.estreia) { st.guia.estreia = true; st.guia.jogou = true; }
@@ -4791,7 +5284,7 @@ window.PATAS_PINTADAS = Object.assign(window.PATAS_PINTADAS || {}, {
     return r * pontos(L) > (pontos(L + 1) - pontos(L)) * (1 - r);
   }
 
-  const espera = ms => new Promise(res => setTimeout(res, ms * ritmo()));
+  const espera = ms => new Promise(res => setTimeout(res, ms * ritmo() * ((jogo && jogo.ritmoRival) || 1)));
   // ---------- quando alguém usa carta: o aviso explica e o dado que mudou fica marcado na Mesa ----------
   const AVISO_CARTA = 2600;   // ms do aviso da carta do rival (o bot espera por ele antes de jogar)
   function explicarCarta(e, quem) {
@@ -4889,7 +5382,7 @@ window.PATAS_PINTADAS = Object.assign(window.PATAS_PINTADAS || {}, {
     const j = jogo;
     if (!j || j.modo !== 'bot' || !st.pref.falas) return;
     const lista = RIVAIS[j.nivel].falas[chave]; if (!lista) return;
-    if (!['inicio', 'venci', 'perdi'].includes(chave) && Math.random() > 0.55) return;
+    if (!['inicio', 'venci', 'perdi'].includes(chave) && !chave.startsWith('carta:') && Math.random() > 0.55) return;
     j.fala = { id: uid++, txt: sorteia(lista).replace('Boa noite', saudacao()) };
     j.humor = ['meuDisparo', 'armadilha', 'venci', 'inicio'].includes(chave) ? 'feliz' : ['minhaRuptura', 'perdi'].includes(chave) ? 'triste' : null;
     Som.tocar('falaRival', { voz: RETRATO_RIVAL[j.nivel] });
@@ -5547,7 +6040,7 @@ window.PATAS_PINTADAS = Object.assign(window.PATAS_PINTADAS || {}, {
           break;
         }
         case 'pegar': Som.tocar('pegar'); if (humano(e.p)) vibrar(8); break;
-        case 'bolso': setTimeout(() => Som.tocar('bolso'), 250); break;
+        case 'bolso': setTimeout(() => Som.tocar('bolso'), 250); if (humano(e.p) && j.historiaGuia) ensinar('bolso'); break;
         case 'troca': setTimeout(() => Som.tocar('troca'), 250); break;
         case 'elo': {
           setTimeout(() => {
@@ -5556,7 +6049,7 @@ window.PATAS_PINTADAS = Object.assign(window.PATAS_PINTADAS || {}, {
             if (alvo) Fx.faiscas(alvo, 5 + e.n * 2, undefined, 1.6 + e.n * 0.3);
             if (e.n === 4) Fx.texto(alvo, 'Corrente de 4', 'pequeno');
             if (e.n === 5) Fx.texto(alvo, 'Corrente de 5', 'pequeno');
-            const nova = humano(e.p) && (e.rels || []).find(k => !st.guia.vistos.includes(k));
+            const nova = humano(e.p) && (e.rels || []).find(k => !(jogo.historiaGuia || st.guia.vistos).includes(k));
             if (nova) ensinar(nova, e.de, e.v);
           }, 300);
           break;
@@ -5633,6 +6126,7 @@ window.PATAS_PINTADAS = Object.assign(window.PATAS_PINTADAS || {}, {
         case 'bloqueio': Som.tocar('bloqueio'); Fx.texto(qs(`#pj${e.p} .corrente`) || null, 'Bloqueio!', 'pequeno'); break;
         case 'carta': {
           Som.tocar('carta');
+          if (e.p === 1 && j.modo === 'bot') setTimeout(() => falar('carta:' + e.c), AVISO_CARTA * 0.4);   // a fala do bicho sobre a carta dele
           if (e.id != null && e.antes != null) marcarMudanca([e.id], e.antes);
           else if (e.c === 'rerrolar') marcarMudanca(j.mesa.map(d => d.id), null);
           if (!humano(e.p) || j.modo === 'local') avisoCarta(e.p, e.c, e.nome, explicarCarta(e, n[e.p]), CARTAS[e.c].arte);
@@ -5687,6 +6181,16 @@ window.PATAS_PINTADAS = Object.assign(window.PATAS_PINTADAS || {}, {
     ruptura: () => ['A corrente rompeu', 'O dado não sincronizava com a frente. Um dado guardado no Bolso pode salvar a corrente numa hora dessas.'],
   };
   function ensinar(chave, ...args) {
+    // no Prólogo da história, quem explica é a Diana, com as falas aprovadas (uma vez por partida)
+    if (jogo && jogo.historiaGuia) {
+      const txt = Historia.fala(Historia.GUIA[chave]);
+      if (!txt || jogo.historiaGuia.includes(chave)) return false;
+      jogo.historiaGuia.push(chave);
+      const limpo = txt.replace(/\(([^)]*)\)/g, '<i>($1)</i>'), corte = limpo.indexOf('. ');
+      Fx.dica(corte > 0 ? limpo.slice(0, corte + 1) : limpo, corte > 0 ? limpo.slice(corte + 2) : '', document.getElementById('pj0'), 5200);
+      jogo.humor = 'feliz'; setTimeout(() => { if (jogo && jogo.humor === 'feliz') { jogo.humor = null; render(); } }, 2400);
+      return true;
+    }
     if (!st.pref.dicas || st.guia.vistos.includes(chave)) return false;
     st.guia.vistos.push(chave); gravarLocal();
     const [titulo, sub] = GUIA_TXT[chave](...args);
@@ -5706,7 +6210,7 @@ window.PATAS_PINTADAS = Object.assign(window.PATAS_PINTADAS || {}, {
     const el = document.createElement('div');
     el.className = 'versus'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Começo da partida');
     el.innerHTML = `<div class="caixa"><h2>Dice Duel</h2><div class="vs-linha">${lado(0)}<span class="vs-x">×</span>${lado(1)}</div>
-      <p class="nota">${j.estreia ? 'Primeira partida, sem cartas: ligue dados que sincronizam e dispare a corrente. As cartas chegam na próxima. ' : j.modo === 'bot' ? RIVAIS[j.nivel].desc + '. ' : online() ? `Rating ${j.perfis[1].rating}. ${tempoTxt(j.ritmo)}. ` : ''}Meta: ${j.meta} pontos. ${n[j.vez]} começa.</p><button class="btn btn-mel">Vamos lá</button></div>`;
+      <p class="nota">${j.estreia ? 'Primeira partida, sem cartas: ligue dados que sincronizam e dispare a corrente. As cartas chegam na próxima. ' : j.historia ? `${RIVAIS[j.nivel].desc}. ${(Historia.cap(j.historia) || {}).regra || ''} ` : j.modo === 'bot' ? RIVAIS[j.nivel].desc + '. ' : online() ? `Rating ${j.perfis[1].rating}. ${tempoTxt(j.ritmo)}. ` : ''}Meta: ${j.meta} pontos. ${n[j.vez]} começa.</p><button class="btn btn-mel">Vamos lá</button></div>`;
     document.body.appendChild(el);
     Som.tocar('carta');
     let fechou = false;
@@ -5755,7 +6259,10 @@ window.PATAS_PINTADAS = Object.assign(window.PATAS_PINTADAS || {}, {
     prepararCartao(j, lances);
     // o botão diz o que vem: a revanche contra quem venceu, ou a sequência que está em jogo
     const seq = j.modo === 'bot' ? st.rec.seq : 0;
-    document.getElementById('btnDeNovo').textContent = online() ? 'Revanche' : j.modo !== 'bot' || j.estreia ? 'Jogar de novo'
+    const prox = j.historia && R.proximoCapitulo(st.conta.historia), proxCap = prox && Historia.cap(prox);
+    if (j.historia) document.getElementById('btnDeNovo').textContent = !(j.premio && j.premio.historia && j.premio.historia.venceu)
+      ? `Revanche contra ${RIVAIS[j.nivel].nome}` : proxCap ? `Próximo: ${proxCap.titulo}` : 'O caderno';
+    else document.getElementById('btnDeNovo').textContent = online() ? 'Revanche' : j.modo !== 'bot' || j.estreia ? 'Jogar de novo'
       : v === 1 ? `Revanche contra ${RIVAIS[j.nivel].nome}` : seq >= 2 ? `Mais uma · ${seq} vitórias seguidas` : 'Jogar de novo';
     document.getElementById('fim').hidden = false;
     document.getElementById('btnDeNovo').focus();
@@ -5799,6 +6306,22 @@ window.PATAS_PINTADAS = Object.assign(window.PATAS_PINTADAS || {}, {
   const nomeItem = (tipo, id) => ({ cartas: CARTAS, dados: DADOS, icones: ICONES, mesas: MESAS })[tipo][id].nome;
   function desenharRecompensas(j) {
     const el = document.getElementById('fimRecompensas');
+    if (j.historia) {
+      const h = j.premio && j.premio.historia, c = Historia.cap(j.historia), rival = RIVAIS[j.nivel].nome;
+      const pr = h && h.premio, pag = c && c.depois.find(x => x.quem === 'pagina');
+      let html;
+      if (!h || !h.venceu) html = `<span class="conta">${pag ? `${rival} ficou com a página ${pag.n}.` : 'Ainda não foi desta vez.'} A revanche começa direto na Mesa.</span>`;
+      else {
+        html = pag ? `<div class="linha"><span>Página ${pag.n} do caderno</span><span class="sobe">no caderno</span></div>` : '';
+        if (pr && pr.carta) html += `<div class="linha"><span>Carta liberada: <b>${CARTAS[pr.carta].nome}</b></span><span class="sobe">nova!</span></div>`;
+        if (pr && pr.moedas) html += `<div class="grande"><span class="moeda" aria-hidden="true"></span><span>+${pr.moedas}</span></div>`;
+        if (!pr && h.ja) html += `<span class="conta">Capítulo já feito: jogar de novo não paga de novo.</span>`;
+        else if (!pr && !pag) { const prox = Historia.cap(R.proximoCapitulo(st.conta.historia)); html += `<span class="conta">${c.titulo} feito.${prox ? ` ${prox.titulo} aberto: ${prox.nome}.` : ''}</span>`; }
+      }
+      el.innerHTML = html;
+      [...el.children].forEach((x, k) => { x.classList.add('revela'); x.style.setProperty('--k', k); });
+      return;
+    }
     if (j.modo === 'local') { el.innerHTML = '<span class="conta">Partidas a dois no mesmo aparelho não dão moedas nem rating (assim ninguém farma sozinho).</span>'; return; }
     if (!j.premio) { el.innerHTML = `<span class="conta">${esc(j.semPremio || 'Contando o prêmio…')}</span>`; return; }
     const pr = j.premio, m = pr.moedas, c = st.conta, rival = j.modo === 'bot' ? RIVAIS[j.nivel].nome : nomes()[1];
@@ -6170,7 +6693,7 @@ window.PATAS_PINTADAS = Object.assign(window.PATAS_PINTADAS || {}, {
   // a partida offline em andamento: a da mesa (se for offline e já tiver começado) ou a guardada no aparelho
   const partidaParaContinuar = () => (jogo && jogo.modo !== 'online' && jogo.fase !== 'fim' && jogo.compras ? jogo : lerPartidaGuardada());
   function custoAbandono(g) {
-    if (g.modo !== 'bot' || !g.compras) return null;
+    if (g.modo !== 'bot' || !g.compras || g.historia) return null;   // a história não mexe no rating
     const c = st.conta, ps = R.premioSolo({ rating: c.rating, pico: c.pico }, { nivel: g.nivel, venceu: false, margem: g.pts[0] - g.pts[1], rodadas: g.rodada, meta: g.meta });
     return { antes: c.rating, depois: ps.rating };
   }
@@ -6226,6 +6749,8 @@ window.PATAS_PINTADAS = Object.assign(window.PATAS_PINTADAS || {}, {
     if (rivais) desenharRivais();
     // com uma partida offline em andamento, o caminho é continuar ou abandonar (começar outra é abandonar)
     inicio.querySelector('[data-inicio="jogar"]').hidden = !!g;
+    // a história aparece depois da estreia, e não com uma partida guardada (começar outra seria abandoná-la)
+    inicio.querySelector('[data-inicio="historia"]').hidden = !st.guia.estreia || !!g || !window.Historia;
     box.hidden = !g;
     if (!g) { box.innerHTML = ''; return; }   // sem partida guardada, nada de botões velhos escondidos
     const quem = g.modo === 'bot' ? ['Você', RIVAIS[g.nivel].nome] : ['Jogador 1', 'Jogador 2'];
@@ -6264,6 +6789,16 @@ window.PATAS_PINTADAS = Object.assign(window.PATAS_PINTADAS || {}, {
       <p class="nota">As tarefas pagam também na derrota, contra os rivais e no online. ${t.vitoria ? 'A primeira vitória de hoje já rendeu em dobro.' : 'A primeira vitória do dia que render moedas rende <b>em dobro</b>.'} Amanhã tem tarefas novas.</p>`;
     document.getElementById('janelaTarefas').hidden = false; Som.tocar('abrir');
   }
+
+  // ---------- modo história (js/historia.js) ----------
+  function jogarCapitulo(id, { semAntes = false } = {}) {
+    const c = Historia.cap(id); if (!c) return;
+    Online.sair();
+    ['fim', 'janelaHistoria'].forEach(k => { document.getElementById(k).hidden = true; });
+    esconderInicio();
+    (semAntes ? Promise.resolve() : Historia.gibi(c.antes, { titulo: `${c.titulo} · ${c.nome}` })).then(() => novaPartida({ historia: id }));
+  }
+  if (window.Historia) Historia.ligar({ estado: () => R.estadoHistoria(st.conta.historia), jogar: jogarCapitulo, nomeCarta: c => CARTAS[c].nome });
 
   // ---------- a escolha do rival: o retrato, o jeito de jogar, a dificuldade e o que a vitória rende ----------
   let escolhendoRival = false;
@@ -6355,6 +6890,7 @@ window.PATAS_PINTADAS = Object.assign(window.PATAS_PINTADAS || {}, {
     }
     if (a === 'perfil') { abrirPerfil(); return; }
     if (a === 'tarefas') { abrirTarefas(); return; }
+    if (a === 'historia') { Historia.abrirMapa(); return; }
     if (a === 'online') { document.getElementById('btnOnline').click(); return; }
     if (a === 'regras') { abrirLado(true); return; }
     const botao = { deck: 'btnDeck', 'trocar-deck': 'btnDeck', loja: 'btnCarteira', ajustes: 'btnConfig' }[a];
@@ -6782,7 +7318,15 @@ window.PATAS_PINTADAS = Object.assign(window.PATAS_PINTADAS || {}, {
   });
   document.getElementById('btnFecharConfig').addEventListener('click', () => { document.getElementById('janelaConfig').hidden = true; });
 
-  document.getElementById('btnDeNovo').addEventListener('click', novaPartida);
+  document.getElementById('btnDeNovo').addEventListener('click', () => {
+    const j = jogo;
+    if (j && j.historia && j.fase === 'fim') {
+      const h = j.premio && j.premio.historia, prox = R.proximoCapitulo(st.conta.historia);
+      if (!h || !h.venceu) return jogarCapitulo(j.historia, { semAntes: true });   // a revanche vai direto à Mesa
+      return prox ? jogarCapitulo(prox) : (document.getElementById('fim').hidden = true, mostrarInicio(), Historia.abrirMapa());
+    }
+    novaPartida();
+  });
   document.getElementById('btnFechar').addEventListener('click', () => { document.getElementById('fim').hidden = true; });
   document.getElementById('btnMenuTopo').addEventListener('click', () => mostrarInicio());
   document.getElementById('btnMenuFim').addEventListener('click', () => { document.getElementById('fim').hidden = true; mostrarInicio(); });
@@ -6867,7 +7411,7 @@ window.PATAS_PINTADAS = Object.assign(window.PATAS_PINTADAS || {}, {
     if (alvo.closest('textarea, input') && e.key !== 'Escape') return;
     if (e.key === 'Escape' && escolhendoRival && inicioAberto() && document.querySelectorAll('.janela:not([hidden])').length === 0) { escolhendoRival = false; desenharInicio(); return; }
     if (e.key === 'Escape') {
-      ['fim', 'janelaCarta', 'janelaDeck', 'janelaConfig', 'janelaLoja', 'janelaPerfil', 'janelaTarefas', 'janelaOnline', 'janelaMenu'].forEach(id => { const el = document.getElementById(id); if (el) el.hidden = true; }); abrirLado(false);
+      ['fim', 'janelaCarta', 'janelaDeck', 'janelaConfig', 'janelaLoja', 'janelaPerfil', 'janelaTarefas', 'janelaHistoria', 'janelaOnline', 'janelaMenu'].forEach(id => { const el = document.getElementById(id); if (el) el.hidden = true; }); abrirLado(false);
       return jogo ? cancelarEscolha() : undefined;
     }
     if (!jogo) return;
@@ -6915,6 +7459,7 @@ window.PATAS_PINTADAS = Object.assign(window.PATAS_PINTADAS || {}, {
     dado: pf.ativo.dado, icone: pf.ativo.icone, mesa: pf.ativo.mesa, rating: pf.solo_rating, pico: pf.solo_pico,
     online: { nome: pf.nome, rating: pf.rating, partidas: pf.partidas, vitorias: pf.vitorias, titulo: pf.titulo },
     tarefas: (pf.extras || {}).tarefas || null,
+    historia: (pf.extras || {}).historia || null,
   });
   function usarPerfil(pf) {
     if (!st.sessao) return;
