@@ -203,6 +203,11 @@ F = [
     ('C7-13', 'Coruja', 'Chegada · Q4 (depois do "pronome de tratamento")', 'Jogo com dado de madeira. A madeira guarda a idade nos anéis. / Não conte os meus.', 'A Dona Coruja girando o dado de madeira; os veios aparecem nas faces. Ciência: dendrocronologia, a idade de uma árvore lida nos anéis.', 'dados'),
     ('C7-14', 'Coruja', 'Partida · início (sorteada com a C7-04)', 'Coruja não mexe os olhos: vira a cabeça. Por isso vejo a Mesa inteira.', 'Ciência: os olhos da coruja são fixos no crânio; ela gira a cabeça até uns 270 graus.', 'dados'),
     ('C8-08', 'Diana', 'Partida · ruptura dela (sorteada com a C8-05)', 'Arrisquei demais. Em minha defesa, gato não enxerga o vermelho do perigo.', 'Retorno da P-07 (gato não enxerga rosa nem vermelho direito).', 'dados'),
+    # ---- a frase final da história (pedido do dono): o último quadro antes dos créditos; ele escolhe uma ----
+    ('F-Za', 'Diana', 'Frase final · opção a (antes dos créditos)', 'Agora cada célula minha guarda uma cópia do que você escreveu. São trilhões. / Você está em toda parte de mim. / Vamos não deixar isso estranho.', 'Close na Diana, curada, séria por um instante. Ciência: toda célula carrega o DNA inteiro; uma correção no DNA vai para cada célula nova.', 'final'),
+    ('F-Zb', 'Diana', 'Frase final · opção b (antes dos créditos)', 'Eu te ensinei a jogar para me curar. / Agora jogue só porque é bom. / …E porque eu ainda quero a revanche.', 'A Diana empurrando os dados de volta para o seu lado da mesa.', 'final'),
+    ('F-Zc', 'Diana', 'Frase final · opção c (antes dos créditos)', 'O DNA tem quatro letras. O dado tem seis faces. / Sobraram duas. / Guardei para a revanche.', 'A Diana segurando um dado com o 3 e o 4 virados para você. Ciência: A, T, C e G; no jogo, 1–6 e 2–5 viraram letras, o 3 e o 4 ficaram de fora.', 'final'),
+    ('F-Zd', 'Diana', 'Frase final · opção d (antes dos créditos)', 'Boa noite. Uma partida? / Dessa vez, sem segundas intenções. / …Quase nenhuma.', 'A cena da tela inicial de novo, a Diana sem ferimento: a primeira fala do jogo, palavra por palavra, fechando o círculo.', 'final'),
     # Pós-créditos
     ('X-01', 'Diana', 'Pós-créditos 1', 'DianaDice não seria um nome melhor para esse jogo? / … / Seria.', 'Ela risca "Dice Duel" com um pincel atômico e escreve por cima: "DianaDice".', 'letra-d'),
     ('X-02a', 'Sapo + Diana', 'Pós-créditos 2 · opção a', 'SAPO: Soube da cura. Trouxe chá. / DIANA: É do lago? / SAPO: Orgânico.', 'A Diana, curada, abre a porta. O Sapo de chapéu, com uma xícara turva.', 'cha'),
@@ -212,7 +217,7 @@ F = [
 GAGS = {
     'nariz': 'O nariz (o enfeite muda a cada capítulo)', 'mural': 'O mural', 'letra-d': 'A teoria do D', 'receitas': 'O caderno de "receitas"',
     'pao': 'O pão do Coelho', 'sabem': 'Quem sabe de alguma coisa', 'pata': 'A pata', 'revanche': '"Revanche?"', 'cha': 'O chá do Sapo',
-    'fecho': 'O fecho da história (o Eco)', 'dados': 'O dado de cada bicho (e a ciência por trás)',
+    'fecho': 'O fecho da história (o Eco)', 'dados': 'O dado de cada bicho (e a ciência por trás)', 'final': 'A frase final (escolha uma)',
 }
 
 

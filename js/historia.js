@@ -23,11 +23,11 @@
 
   const CAPS = [
     { id: 'P', titulo: 'Prólogo', nome: 'Boa noite. Uma partida?', rival: 'aprendiz', retrato: 'diana', meta: 8, semCartas: true, guia: true,
-      antes: [q('diana', 'P-01'), q('diana', 'P-02', 'feliz'), q('diana', 'P-03'), q('diana', 'P-07')],
+      antes: [q('diana', 'P-01'), q('diana', 'P-02', 'feliz'), q('diana', 'P-03')],
       depois: [q('diana', 'P-04', 'feliz'), q('diana', 'P-05'), q('diana', 'P-06')] },
     { id: 'C1', titulo: 'Capítulo 1', nome: 'Lagoa das Vitórias-Régias', rival: 'sapo', retrato: 'sapo', meta: 12,
       deckRival: ['coringa', 'ajuste', 'reverso'], regra: 'O Sapo não usa armadilhas.',
-      antes: [q('diana', 'C1-01'), q('diana', 'C1-02'), q('sapo', 'C1-03'), q('sapo', 'C1-04'), q('sapo', 'C1-05'), q('sapo', 'C1-06'), q('sapo', 'C1-15')],
+      antes: [q('diana', 'C1-01'), q('diana', 'C1-02'), q('sapo', 'C1-03'), q('sapo', 'C1-04'), q('sapo', 'C1-05'), q('sapo', 'C1-06')],
       depois: [pagina(1, ['C1-13a', 'C1-13b']), q('sapo', 'C1-14'), q('sapo', 'C1-16')],
       falas: { inicio: ['C1-07'], 'carta:reverso': ['C1-08'], seuDisparoGrande: ['C1-09'], minhaRuptura: ['C1-10'], venci: ['C1-11'], perdi: ['C1-12'] } },
     { id: 'C2', titulo: 'Capítulo 2', nome: 'Toca Número 12', rival: 'coelho', retrato: 'coelho', meta: 16,
@@ -53,19 +53,19 @@
       deckRival: ['furto', 'pedagio', 'fundo'], esperto: true, bolsoRival: true, regra: 'O Guaxinim começa com um dado no Bolso; você, sem.',
       antes: [q('diana', 'C5-01'), q('diana', 'C5-02'), q('guaxinim', 'C5-03'), q('guaxinim', 'C5-04'), q('guaxinim', 'C5-05'), q('guaxinim', 'C5-06')],
       depois: [pagina(5, ['C5-14a', 'C5-14b']), q('guaxinim', 'C5-15')],
-      falas: { inicio: ['C5-07', 'C5-16'], 'carta:furto': ['C5-08'], 'pegou:pedagio': ['C5-09'], seuDisparoGrande: ['C5-10'], minhaRuptura: ['C5-11'], venci: ['C5-12'], perdi: ['C5-13'] },
+      falas: { inicio: ['C5-07'], 'carta:furto': ['C5-08'], 'pegou:pedagio': ['C5-09'], seuDisparoGrande: ['C5-10'], minhaRuptura: ['C5-11'], venci: ['C5-12'], perdi: ['C5-13'] },
       estrelas: [['Termine com o Bolso cheio', c => c.bolsoCheio], ['Faça um Bloqueio', c => (c.simb['✦'] || 0) > 0]] },
     { id: 'C6', titulo: 'Capítulo 6', nome: 'Pasto Hexagonal', rival: 'ovelha', retrato: 'ovelha', meta: 16,
       deckRival: ['espelho', 'rerrolar', 'ancora'], esperto: true, regra: 'A Ovelha marca dados com o Espelho.',
-      antes: [q('diana', 'C6-01'), q('diana', 'C6-02'), q('ovelha', 'C6-03'), q('ovelha', 'C6-04'), q('ovelha', 'C6-05'), q('ovelha', 'C6-13')],
+      antes: [q('diana', 'C6-01'), q('diana', 'C6-02'), q('ovelha', 'C6-03'), q('ovelha', 'C6-04'), q('ovelha', 'C6-05')],
       depois: [pagina(6, ['C6-12a', 'C6-12b'])],
-      falas: { inicio: ['C6-06', 'C6-14'], meuDisparo: ['C6-15'], seuOposto: ['C6-16'], 'armou:espelho': ['C6-07'], seuDisparoGrande: ['C6-08'], minhaRuptura: ['C6-09'], venci: ['C6-10'], perdi: ['C6-11'] },
+      falas: { inicio: ['C6-06'], meuDisparo: ['C6-15'], seuOposto: ['C6-16'], 'armou:espelho': ['C6-07'], seuDisparoGrande: ['C6-08'], minhaRuptura: ['C6-09'], venci: ['C6-10'], perdi: ['C6-11'] },
       estrelas: [['Escape de um Espelho', c => (c.simb['↺'] || 0) > 0], ['Faça uma Harmonia', c => (c.simb['✿'] || 0) > 0]] },
     { id: 'C7', titulo: 'Capítulo 7', nome: 'A Biblioteca', rival: 'coruja', retrato: 'coruja', meta: 16,
       deckRival: ['lacre', 'ajuste', 'interferencia'], esperto: true, regra: 'Dona Coruja lê a Mesa.',
-      antes: [q('diana', 'I6-01'), q('diana', 'I6-02'), q('diana', 'I6-03'), q('coruja', 'C7-01'), q('coruja', 'C7-02'), q('coruja', 'C7-03'), q('coruja', 'C7-13')],
+      antes: [q('diana', 'I6-01'), q('diana', 'I6-02'), q('diana', 'I6-03'), q('coruja', 'C7-01'), q('coruja', 'C7-02'), q('coruja', 'C7-03')],
       depois: [q('coruja', 'C7-10b'), q('coruja', 'C7-11'), q('coruja', 'C7-12')],
-      falas: { inicio: ['C7-04', 'C7-14'], 'pegou:lacre': ['C7-05'], seuDisparoGrande: ['C7-06'], minhaRuptura: ['C7-07'], venci: ['C7-08'], perdi: ['C7-09'] },
+      falas: { inicio: ['C7-04'], 'pegou:lacre': ['C7-05'], seuDisparoGrande: ['C7-06'], minhaRuptura: ['C7-07'], venci: ['C7-08'], perdi: ['C7-09'] },
       estrelas: [['Faça um Bloqueio', c => (c.simb['✦'] || 0) > 0], semRuptura] },
     { id: 'C8', titulo: 'Capítulo 8', nome: 'Fita Dupla', rival: 'diana8', retrato: 'diana', meta: 16,
       deckRival: ['interferencia', 'espelho', 'pressa'], esperto: true, regra: 'Dessa vez vale.',
@@ -75,8 +75,9 @@
       // o final: a cura com a corrente de quem joga, o fecho do Eco, os créditos e os pós-créditos
       // a F-03b (sem o "Fechou." repetido) só entra quando o dono a aprovar; até lá, a F-03
       depois: [{ quem: 'diana', ids: [], cura: true }, q('diana', fala('F-03b') ? 'F-03b' : 'F-03'), q('diana', 'F-A'), { quem: 'diana', ids: ['F-A2'], se: 'fita' },
+        { quem: 'diana', ids: [], final: ['F-Za', 'F-Zb', 'F-Zc', 'F-Zd'] },   // a frase final: a 1.ª aprovada
         { quem: 'creditos', ids: [] }, { quem: 'titulo', ids: ['X-01'] }, q('sapo', 'X-02a')],
-      falas: { inicio: ['C8-01'], seuOposto: ['C8-02'], 'armou:espelho': ['C8-03'], seuDisparoGrande: ['C8-04'], minhaRuptura: ['C8-05', 'C8-08'], venci: ['C8-06'], perdi: ['C8-07'] },
+      falas: { inicio: ['C8-01'], seuOposto: ['C8-02'], 'armou:espelho': ['C8-03'], seuDisparoGrande: ['C8-04'], minhaRuptura: ['C8-05'], venci: ['C8-06'], perdi: ['C8-07'] },
       estrelas: [['Fita complementar: uma corrente de 4 ou mais só de Opostos', c => c.fita], semRuptura] },
   ];
   CAPS[1].estrelas = [['Dispare uma corrente de 4', c => c.maior >= 4], semRuptura];
@@ -107,6 +108,7 @@
   const BASE = { 1: 'A', 6: 'T', 2: 'C', 5: 'G', 3: '·', 4: '·' };
   function batidas(qd, ctx = {}) {
     if (qd.se && !ctx[qd.se]) return [];
+    if (qd.final) { const id = qd.final.find(fala); return id ? batidas({ ...qd, final: null, ids: [id] }, ctx) : []; }
     if (qd.escolha) return [{ escolha: qd.escolha }];
     if (qd.quem === 'creditos') return [{ creditos: true }];
     if (qd.cura) {
