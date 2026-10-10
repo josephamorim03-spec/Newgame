@@ -1914,12 +1914,16 @@ button.inicio-perfil:active { transform: translateY(1px); }
       marfim: { nome: 'Marfim', preco: 0 }, madeira: { nome: 'Madeira', preco: 80 }, rosa: { nome: 'Rosa', preco: 120 },
       menta: { nome: 'Menta', preco: 0, nivel: 3 }, pelucia: { nome: 'Pelúcia', preco: 220 }, dourado: { nome: 'Dourado', preco: 450 },
       diamante: { nome: 'Diamante', preco: 800 },
+      // os dados dos bichos só vêm do modo história (HISTORIA.recompensa); o do Sapo é "Lagoa", não "Verde": a Menta já é verde
+      lagoa: { nome: 'Lagoa', preco: 0, historia: true }, mel: { nome: 'Mel', preco: 0, historia: true },
+      sucata: { nome: 'Sucata', preco: 0, historia: true }, la: { nome: 'Lã', preco: 0, historia: true },
     },
     // grupo: basico, animal, natureza ou especial (os especiais têm moldura dourada)
     icones: {
       bolinha: { nome: 'Dado', preco: 0, grupo: 'basico' }, xicara: { nome: 'Xícara', preco: 0, nivel: 2, grupo: 'basico' },
       raposa: { nome: 'Raposa', preco: 100, grupo: 'animal' },
-      diana: { nome: 'Diana', preco: 0, grupo: 'especial', historia: true },   // só vem do fim do modo história sapo: { nome: 'Sapo', preco: 100, grupo: 'animal' },
+      diana: { nome: 'Diana', preco: 0, grupo: 'especial', historia: true },   // só vem do fim do modo história
+      sapo: { nome: 'Sapo', preco: 100, grupo: 'animal' },
       urso: { nome: 'Urso', preco: 120, grupo: 'animal' }, coelho: { nome: 'Coelho', preco: 120, grupo: 'animal' },
       guaxinim: { nome: 'Guaxinim', preco: 160, grupo: 'animal' },
       ovelha: { nome: 'Ovelha', preco: 160, grupo: 'animal' },
@@ -2033,11 +2037,14 @@ button.inicio-perfil:active { transform: translateY(1px); }
 
   // ---------- modo história, "O Caderno da Diana" (docs/historia.md) ----------
   // Os capítulos andam em ordem; vencer um pela primeira vez dá a recompensa dele, uma vez só. A carta da história
-  // continua à venda: quem já a tem recebe o preço dela em moedas (§6.1). Vale igual no aparelho e no servidor.
+  // continua à venda: quem já a tem recebe o preço dela em moedas (§6.1). O dado do bicho também: quem já comprou a
+  // Madeira ou o Rosa recebe o preço. Vale igual no aparelho e no servidor.
   const HISTORIA = {
     ordem: ['P', 'C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8'],
-    recompensa: { P: null, C1: { carta: 'reverso' }, C2: { moedas: 40 }, C3: { carta: 'fundo' }, C4: { moedas: 40 },
-      C5: { carta: 'furto' }, C6: { carta: 'espelho' }, C7: { moedas: 60 }, C8: { icone: 'diana' } },
+    // o dado de cada bicho vem junto (o Coelho joga com o Marfim e a Raposa com o dado roubado do Sapo: esses não dão dado)
+    recompensa: { P: null, C1: { carta: 'reverso', dado: 'lagoa' }, C2: { moedas: 40 }, C3: { carta: 'fundo' },
+      C4: { moedas: 40, dado: 'mel' }, C5: { carta: 'furto', dado: 'sucata' }, C6: { carta: 'espelho', dado: 'la' },
+      C7: { moedas: 60, dado: 'madeira' }, C8: { icone: 'diana', dado: 'rosa' } },
   };
   // estrelas: as melhores de cada capítulo (0 a 3; o Prólogo não tem)
   function estadoHistoria(est) {
@@ -2051,7 +2058,7 @@ button.inicio-perfil:active { transform: translateY(1px); }
   // o capítulo que dá para jogar agora (o primeiro não feito), ou null com tudo feito
   const proximoCapitulo = est => HISTORIA.ordem.find(c => !estadoHistoria(est).feitos.includes(c)) || null;
   // venceu o capítulo: devolve o estado novo e o prêmio ({ carta?, icone?, moedas? }), ou erro se o capítulo ainda está
-  // travado. As estrelas (0 a 3) guardam a melhor vez, também nas revanches. conta: { cartas, icones, moedas } (mexe nela)
+  // travado. As estrelas (0 a 3) guardam a melhor vez, também nas revanches. conta: { cartas, dados, icones, moedas } (mexe nela)
   function concluirCapitulo(conta, est, cap, estrelas = 0) {
     const e = estadoHistoria(est);
     if (!HISTORIA.ordem.includes(cap)) return { erro: 'Capítulo desconhecido.' };
@@ -2063,6 +2070,10 @@ button.inicio-perfil:active { transform: translateY(1px); }
     if (r.carta) {
       if (conta.cartas.includes(r.carta)) premio.moedas = PRECO_CARTA[r.carta] || 0;
       else { conta.cartas.push(r.carta); premio.carta = r.carta; }
+    }
+    if (r.dado && conta.dados) {
+      if (conta.dados.includes(r.dado)) premio.moedas = (premio.moedas || 0) + (CATALOGO.dados[r.dado].preco || 0);
+      else { conta.dados.push(r.dado); premio.dado = r.dado; }
     }
     if (r.icone && conta.icones && !conta.icones.includes(r.icone)) { conta.icones.push(r.icone); premio.icone = r.icone; }
     if (r.moedas) premio.moedas = (premio.moedas || 0) + r.moedas;
@@ -4329,7 +4340,6 @@ window.HISTORIA_FALAS = {
 "R-06": "Então eu ensinei alguém que monta correntes melhor do que eu. / … / Você.",
 "R-07": "Usei. Ensinei. Em gatês é a mesma palavra.",
 "R-08": "O Guaxinim levou. Eu deixei a janela aberta. Com um bilhete: \"por favor, não leve as páginas\". / Guaxinim não lê bilhete. Eu sabia.",
-"R-09": "E não: eu não estava brincando com os seus dados na tela inicial. / Estava sequenciando.",
 "R-10": "COELHO: Então… não é um livro de receitas? / DIANA: É. / A receita sou eu.",
 "R-11": "Falta escrever. A correção tem que ser feita contra a fita original. A fita original sou eu. / Jogue sério. Se eu facilitar, a cura sai com defeito.",
 "C8-01": "Boa noite. Uma partida? / (balão menor) Dessa vez vale.",
@@ -4500,7 +4510,7 @@ window.HISTORIA_CENAS = {
       deckRival: ['interferencia', 'espelho', 'pressa'], esperto: true, regra: 'Dessa vez vale.',
       antes: [q('diana', 'R-01'), q('diana', 'R-02'), q('diana', 'R-03'), q('diana', 'R-04'), q('diana', 'R-05'), q('diana', 'R-06'),
         escolha('diana', [{ rotulo: 'Você me usou.', id: 'R-07' }, { rotulo: 'E as páginas?', id: 'R-08' }]),
-        q('diana', 'R-09'), q('diana', 'R-10'), q('diana', 'R-11')],
+        q('diana', 'R-10'), q('diana', 'R-11')],
       // o final: a cura com a corrente de quem joga, o fecho do Eco, os créditos e os pós-créditos
       // a F-03b (sem o "Fechou." repetido) só entra quando o dono a aprovar; até lá, a F-03
       depois: [{ quem: 'diana', ids: [], cura: true }, q('diana', fala('F-03b') ? 'F-03b' : 'F-03'), q('diana', 'F-A'), { quem: 'diana', ids: ['F-A2'], se: 'fita' },
@@ -4643,7 +4653,8 @@ window.HISTORIA_CENAS = {
     const linhas = CAPS.map(c => {
       const feito = est.feitos.includes(c.id), aberto = feito || c.id === prox;
       const rec = R().HISTORIA.recompensa[c.id];
-      const premio = !rec ? '' : rec.carta ? `carta ${ligacao.nomeCarta(rec.carta)}` : rec.icone ? 'o ícone da Diana' : `${rec.moedas} moedas`;
+      const dado = rec && rec.dado ? `dado ${R().CATALOGO.dados[rec.dado].nome}` : '';
+      const premio = !rec ? '' : [rec.carta ? `carta ${ligacao.nomeCarta(rec.carta)}` : rec.icone ? 'o ícone da Diana' : `${rec.moedas} moedas`, dado].filter(Boolean).join(' e ');
       return `<li class="hc${feito ? ' feito' : ''}${aberto ? '' : ' travado'}${c.id === prox ? ' atual' : ''}">
         <span class="hc-retrato">${Retratos.retrato(c.retrato)}</span>
         <span class="hc-txt"><small>${esc(c.titulo)}${feito && c.estrelas ? ` <span class="hc-estrelas" aria-label="${est.estrelas[c.id] || 0} de 3 estrelas">${'★'.repeat(est.estrelas[c.id] || 0)}${'☆'.repeat(3 - (est.estrelas[c.id] || 0))}</span>` : ''}</small><b>${esc(c.nome)}</b><span>${feito ? 'Feito' : aberto ? (premio ? `Vale: ${premio}` : 'Comece por aqui') : 'Fechado'}</span></span>
@@ -4734,7 +4745,8 @@ window.HISTORIA_CENAS = {
     ['coringa', 'pedagio', 'pressa'], ['ancora', 'coringa', 'fundo'], ['coringa', 'fundo', 'interferencia'],
   ];
   // a parte visual do catálogo (os preços e níveis vêm do motor compartilhado)
-  const DESC_DADOS = { marfim: 'o clássico da mesa', madeira: 'nogueira encerada', rosa: 'quartzo rosa', menta: 'presente do nível 3', pelucia: 'veludo macio', dourado: 'reluz sob o abajur', diamante: 'lapidado, para quem tem paciência' };
+  const DESC_DADOS = { marfim: 'o clássico da mesa', madeira: 'nogueira encerada', rosa: 'quartzo rosa', menta: 'presente do nível 3', pelucia: 'veludo macio', dourado: 'reluz sob o abajur', diamante: 'lapidado, para quem tem paciência',
+    lagoa: 'o jade do Sapo, com sardas', mel: 'do pote do Urso', sucata: 'uma face de cada, como o Guaxinim', la: 'tricotado pela Ovelha' };
   const DADOS = Object.fromEntries(Object.entries(R.CATALOGO.dados).map(([k, v]) => [k, { ...v, desc: DESC_DADOS[k] }]));
   // ícones: o desenho mora em js/retratos.js (vetor, ou a versão pintada quando existe)
   const DESC_ICONES = { bolinha: 'o clássico', xicara: 'presente do nível 2', raposa: 'de cachecol', sapo: 'de chapéu de palha', urso: 'de gorro de lã',
@@ -6244,6 +6256,7 @@ window.HISTORIA_CENAS = {
       else {
         html = pag ? `<div class="linha"><span>Página ${pag.n} do caderno</span><span class="sobe">no caderno</span></div>` : '';
         if (pr && pr.carta) html += `<div class="linha"><span>Carta liberada: <b>${CARTAS[pr.carta].nome}</b></span><span class="sobe">nova!</span></div>`;
+        if (pr && pr.dado) html += `<div class="linha"><span>Dado liberado: <b>${DADOS[pr.dado] ? DADOS[pr.dado].nome : pr.dado}</b></span><span class="sobe">novo!</span></div>`;
         if (pr && pr.icone) html += `<div class="linha"><span>Ícone liberado: <b>${ICONES[pr.icone] ? ICONES[pr.icone].nome : pr.icone}</b></span><span class="sobe">novo!</span></div>`;
         if (c && c.estrelas) {
           const n = h.estrelas || 0, metas = [['Vencer', () => true], ...c.estrelas];
@@ -6350,12 +6363,17 @@ window.HISTORIA_CENAS = {
         <button class="btn btn-papel btn-voltar" data-voltar-loja="1">← Voltar à loja</button>`;
       return;
     }
+    const capDoPremio = (tipo, id) => {
+      const k = { dados: 'dado', icones: 'icone' }[tipo], cap = Object.keys(R.HISTORIA.recompensa).find(c => (R.HISTORIA.recompensa[c] || {})[k] === id);
+      return cap ? `História · Cap. ${cap.slice(1)}` : 'História';
+    };
     const item = (tipo, id, info, previa, sub) => {
       const tem = c[tipo].includes(id), usando = tipo !== 'cartas' && c[tipo.slice(0, -1) === 'icone' ? 'icone' : tipo === 'dados' ? 'dado' : 'mesa'] === id;
       let botao;
       if (tem && tipo === 'cartas') botao = `<button class="btn btn-papel" disabled>${GRATIS.includes(id) ? 'Grátis' : 'Sua'}</button>`;
       else if (tem) botao = usando ? `<button class="btn btn-papel" disabled>Usando</button>` : `<button class="btn btn-mel" data-usar-item="${tipo}:${id}">Usar</button>`;
       else if (info.nivel) botao = `<button class="btn btn-papel" disabled>Nível ${info.nivel}</button>`;
+      else if (info.historia) botao = `<button class="btn btn-papel" disabled>${capDoPremio(tipo, id)}</button>`;   // não se compra: vem da história
       else if (c.moedas < info.preco) botao = `<button class="btn btn-duplo btn-papel" disabled><span><span class="moeda"></span> ${info.preco}</span><small>faltam ${info.preco - c.moedas}</small></button>`;
       else botao = `<button class="btn btn-mel" data-comprar="${tipo}:${id}"><span class="moeda"></span>${info.preco}</button>`;
       // nas cartas, o "i" (e a própria arte) abre a carta inteira, com o preço e o Comprar

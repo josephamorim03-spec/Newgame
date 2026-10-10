@@ -206,7 +206,7 @@ test('modo história: o servidor dá a recompensa do capítulo em ordem e uma ve
     let r = await s.api('POST', '/api/historia', { capitulo: 'P' }, token);
     assert.strictEqual(r.premio, null);
     r = await s.api('POST', '/api/historia', { capitulo: 'C1' }, token);
-    assert.deepStrictEqual(r.premio, { carta: 'reverso' }); assert.ok(r.conta.cartas.includes('reverso'));
+    assert.deepStrictEqual(r.premio, { carta: 'reverso', dado: 'lagoa' }); assert.ok(r.conta.cartas.includes('reverso') && r.conta.dados.includes('lagoa'));
     const moedas = r.conta.moedas;
     r = await s.api('POST', '/api/historia', { capitulo: 'C1' }, token);
     assert.strictEqual(r.premio, null); assert.strictEqual(r.conta.moedas, moedas, 'de novo não paga');

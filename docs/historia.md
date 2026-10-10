@@ -568,11 +568,13 @@ cada uma com uma sacada científica de verdade:
 
 O dono aprovou 8 e recusou 8; as aprovadas estão nos lugares delas em `js/historia.js` e as recusadas saíram.
 
-**Pendente com o dono:**
+**Decidido com o dono:**
 - a **F-03b** foi aprovada e substituiu a F-03 (que ficou de reserva);
-- a **R-09** ("eu não estava brincando com os seus dados na tela inicial… estava sequenciando") lembrava a pata da
-  Diana mexendo nos dados da capa, que saiu do jogo. Os dados ainda estão na capa, mas ela não mexe mais neles, e a
-  piada perde o apoio. Fica, sai ou ganha outra versão?
+- a **R-09** ("eu não estava brincando com os seus dados na tela inicial… estava sequenciando") **saiu**: ela lembrava a
+  pata da Diana na capa, que saiu do jogo. A frase que o dono escolheu no lugar, a F-Zb, fecha o Cap. 8 (ela diz
+  "agora jogue só porque é bom", o que contradiria o "jogue sério" da revelação, logo depois de onde a R-09 ficava);
+- as 8 falas de dado recusadas não ganham substitutas: o dono achou que o que ficou basta;
+- **vencer um capítulo dá o dado do bicho** (§6.2).
 
 **Em fases (como foi planejado):**
 1. **Fatia vertical, 3 a 4 dias:** o leitor de gibi, o Prólogo com o guia na voz da Diana e os capítulos 1 e 2. É o

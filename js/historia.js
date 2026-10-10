@@ -71,7 +71,7 @@
       deckRival: ['interferencia', 'espelho', 'pressa'], esperto: true, regra: 'Dessa vez vale.',
       antes: [q('diana', 'R-01'), q('diana', 'R-02'), q('diana', 'R-03'), q('diana', 'R-04'), q('diana', 'R-05'), q('diana', 'R-06'),
         escolha('diana', [{ rotulo: 'Você me usou.', id: 'R-07' }, { rotulo: 'E as páginas?', id: 'R-08' }]),
-        q('diana', 'R-09'), q('diana', 'R-10'), q('diana', 'R-11')],
+        q('diana', 'R-10'), q('diana', 'R-11')],
       // o final: a cura com a corrente de quem joga, o fecho do Eco, os créditos e os pós-créditos
       // a F-03b (sem o "Fechou." repetido) só entra quando o dono a aprovar; até lá, a F-03
       depois: [{ quem: 'diana', ids: [], cura: true }, q('diana', fala('F-03b') ? 'F-03b' : 'F-03'), q('diana', 'F-A'), { quem: 'diana', ids: ['F-A2'], se: 'fita' },
@@ -214,7 +214,8 @@
     const linhas = CAPS.map(c => {
       const feito = est.feitos.includes(c.id), aberto = feito || c.id === prox;
       const rec = R().HISTORIA.recompensa[c.id];
-      const premio = !rec ? '' : rec.carta ? `carta ${ligacao.nomeCarta(rec.carta)}` : rec.icone ? 'o ícone da Diana' : `${rec.moedas} moedas`;
+      const dado = rec && rec.dado ? `dado ${R().CATALOGO.dados[rec.dado].nome}` : '';
+      const premio = !rec ? '' : [rec.carta ? `carta ${ligacao.nomeCarta(rec.carta)}` : rec.icone ? 'o ícone da Diana' : `${rec.moedas} moedas`, dado].filter(Boolean).join(' e ');
       return `<li class="hc${feito ? ' feito' : ''}${aberto ? '' : ' travado'}${c.id === prox ? ' atual' : ''}">
         <span class="hc-retrato">${Retratos.retrato(c.retrato)}</span>
         <span class="hc-txt"><small>${esc(c.titulo)}${feito && c.estrelas ? ` <span class="hc-estrelas" aria-label="${est.estrelas[c.id] || 0} de 3 estrelas">${'★'.repeat(est.estrelas[c.id] || 0)}${'☆'.repeat(3 - (est.estrelas[c.id] || 0))}</span>` : ''}</small><b>${esc(c.nome)}</b><span>${feito ? 'Feito' : aberto ? (premio ? `Vale: ${premio}` : 'Comece por aqui') : 'Fechado'}</span></span>

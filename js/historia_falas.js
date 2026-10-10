@@ -126,7 +126,6 @@ window.HISTORIA_FALAS = {
 "R-06": "Então eu ensinei alguém que monta correntes melhor do que eu. / … / Você.",
 "R-07": "Usei. Ensinei. Em gatês é a mesma palavra.",
 "R-08": "O Guaxinim levou. Eu deixei a janela aberta. Com um bilhete: \"por favor, não leve as páginas\". / Guaxinim não lê bilhete. Eu sabia.",
-"R-09": "E não: eu não estava brincando com os seus dados na tela inicial. / Estava sequenciando.",
 "R-10": "COELHO: Então… não é um livro de receitas? / DIANA: É. / A receita sou eu.",
 "R-11": "Falta escrever. A correção tem que ser feita contra a fita original. A fita original sou eu. / Jogue sério. Se eu facilitar, a cura sai com defeito.",
 "C8-01": "Boa noite. Uma partida? / (balão menor) Dessa vez vale.",

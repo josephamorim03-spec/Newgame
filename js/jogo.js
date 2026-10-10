@@ -62,7 +62,8 @@
     ['coringa', 'pedagio', 'pressa'], ['ancora', 'coringa', 'fundo'], ['coringa', 'fundo', 'interferencia'],
   ];
   // a parte visual do catálogo (os preços e níveis vêm do motor compartilhado)
-  const DESC_DADOS = { marfim: 'o clássico da mesa', madeira: 'nogueira encerada', rosa: 'quartzo rosa', menta: 'presente do nível 3', pelucia: 'veludo macio', dourado: 'reluz sob o abajur', diamante: 'lapidado, para quem tem paciência' };
+  const DESC_DADOS = { marfim: 'o clássico da mesa', madeira: 'nogueira encerada', rosa: 'quartzo rosa', menta: 'presente do nível 3', pelucia: 'veludo macio', dourado: 'reluz sob o abajur', diamante: 'lapidado, para quem tem paciência',
+    lagoa: 'o jade do Sapo, com sardas', mel: 'do pote do Urso', sucata: 'uma face de cada, como o Guaxinim', la: 'tricotado pela Ovelha' };
   const DADOS = Object.fromEntries(Object.entries(R.CATALOGO.dados).map(([k, v]) => [k, { ...v, desc: DESC_DADOS[k] }]));
   // ícones: o desenho mora em js/retratos.js (vetor, ou a versão pintada quando existe)
   const DESC_ICONES = { bolinha: 'o clássico', xicara: 'presente do nível 2', raposa: 'de cachecol', sapo: 'de chapéu de palha', urso: 'de gorro de lã',
@@ -1572,6 +1573,7 @@
       else {
         html = pag ? `<div class="linha"><span>Página ${pag.n} do caderno</span><span class="sobe">no caderno</span></div>` : '';
         if (pr && pr.carta) html += `<div class="linha"><span>Carta liberada: <b>${CARTAS[pr.carta].nome}</b></span><span class="sobe">nova!</span></div>`;
+        if (pr && pr.dado) html += `<div class="linha"><span>Dado liberado: <b>${DADOS[pr.dado] ? DADOS[pr.dado].nome : pr.dado}</b></span><span class="sobe">novo!</span></div>`;
         if (pr && pr.icone) html += `<div class="linha"><span>Ícone liberado: <b>${ICONES[pr.icone] ? ICONES[pr.icone].nome : pr.icone}</b></span><span class="sobe">novo!</span></div>`;
         if (c && c.estrelas) {
           const n = h.estrelas || 0, metas = [['Vencer', () => true], ...c.estrelas];
@@ -1678,12 +1680,17 @@
         <button class="btn btn-papel btn-voltar" data-voltar-loja="1">← Voltar à loja</button>`;
       return;
     }
+    const capDoPremio = (tipo, id) => {
+      const k = { dados: 'dado', icones: 'icone' }[tipo], cap = Object.keys(R.HISTORIA.recompensa).find(c => (R.HISTORIA.recompensa[c] || {})[k] === id);
+      return cap ? `História · Cap. ${cap.slice(1)}` : 'História';
+    };
     const item = (tipo, id, info, previa, sub) => {
       const tem = c[tipo].includes(id), usando = tipo !== 'cartas' && c[tipo.slice(0, -1) === 'icone' ? 'icone' : tipo === 'dados' ? 'dado' : 'mesa'] === id;
       let botao;
       if (tem && tipo === 'cartas') botao = `<button class="btn btn-papel" disabled>${GRATIS.includes(id) ? 'Grátis' : 'Sua'}</button>`;
       else if (tem) botao = usando ? `<button class="btn btn-papel" disabled>Usando</button>` : `<button class="btn btn-mel" data-usar-item="${tipo}:${id}">Usar</button>`;
       else if (info.nivel) botao = `<button class="btn btn-papel" disabled>Nível ${info.nivel}</button>`;
+      else if (info.historia) botao = `<button class="btn btn-papel" disabled>${capDoPremio(tipo, id)}</button>`;   // não se compra: vem da história
       else if (c.moedas < info.preco) botao = `<button class="btn btn-duplo btn-papel" disabled><span><span class="moeda"></span> ${info.preco}</span><small>faltam ${info.preco - c.moedas}</small></button>`;
       else botao = `<button class="btn btn-mel" data-comprar="${tipo}:${id}"><span class="moeda"></span>${info.preco}</button>`;
       // nas cartas, o "i" (e a própria arte) abre a carta inteira, com o preço e o Comprar

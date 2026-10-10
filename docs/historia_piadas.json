@@ -1726,8 +1726,8 @@
    "texto": "E não: eu não estava brincando com os seus dados na tela inicial. / Estava sequenciando.",
    "desenho": "",
    "gag": "pata",
-   "status": "aprovada",
-   "nota": "",
+   "status": "recusada",
+   "nota": "o dono pediu para tirar",
    "usar": true
   },
   {
@@ -2143,7 +2143,7 @@
    "desenho": "Close na Diana, curada, séria por um instante. Ciência: toda célula carrega o DNA inteiro; uma correção no DNA vai para cada célula nova.",
    "gag": "final",
    "status": "recusada",
-   "nota": "não escolhida (o dono escolheu a b)",
+   "nota": "",
    "usar": true
   },
   {
@@ -2169,7 +2169,7 @@
    "desenho": "A Diana segurando um dado com o 3 e o 4 virados para você. Ciência: A, T, C e G; no jogo, 1–6 e 2–5 viraram letras, o 3 e o 4 ficaram de fora.",
    "gag": "final",
    "status": "recusada",
-   "nota": "não escolhida (o dono escolheu a b)",
+   "nota": "",
    "usar": true
   },
   {
@@ -2182,7 +2182,7 @@
    "desenho": "A cena da tela inicial de novo, a Diana sem ferimento: a primeira fala do jogo, palavra por palavra, fechando o círculo.",
    "gag": "final",
    "status": "recusada",
-   "nota": "não escolhida (o dono escolheu a b)",
+   "nota": "",
    "usar": true
   },
   {

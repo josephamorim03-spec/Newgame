@@ -440,6 +440,16 @@ test('modo história: capítulos em ordem, recompensa uma vez, a carta que já s
   const comprou = { cartas: ['reverso'], moedas: 0 };
   const e = Regras.concluirCapitulo(comprou, null, 'P').estado;
   assert.deepStrictEqual(Regras.concluirCapitulo(comprou, e, 'C1').premio, { moedas: Regras.PRECO_CARTA.reverso });
+  // o dado de cada bicho: os novos só vêm da história; quem comprou a Madeira ou o Rosa recebe o preço
+  const comDados = { cartas: [], dados: ['marfim', 'rosa'], icones: [], moedas: 0 };
+  let e4 = null; const premios = {};
+  for (const k of Regras.HISTORIA.ordem) { const x = Regras.concluirCapitulo(comDados, e4, k); e4 = x.estado; premios[k] = x.premio; }
+  assert.deepStrictEqual(premios.C1, { carta: 'reverso', dado: 'lagoa' });
+  assert.deepStrictEqual(comDados.dados, ['marfim', 'rosa', 'lagoa', 'mel', 'sucata', 'la', 'madeira']);
+  assert.deepStrictEqual(premios.C8, { icone: 'diana', moedas: Regras.CATALOGO.dados.rosa.preco }, 'o Rosa já comprado vira moedas');
+  for (const d of ['lagoa', 'mel', 'sucata', 'la']) assert.strictEqual(Regras.precoDe('dados', d), null, `o dado ${d} não se compra`);
+  assert.notStrictEqual(Regras.CATALOGO.dados.lagoa.nome, Regras.CATALOGO.dados.menta.nome);
+  assert.ok(Regras.CATALOGO.icones.sapo, 'o ícone do Sapo continua na Loja');
   // estado estragado vira começo
   assert.deepStrictEqual(Regras.estadoHistoria({ feitos: ['C2', 'lixo'] }).feitos, ['C2']);
   assert.strictEqual(Regras.proximoCapitulo('lixo'), 'P');

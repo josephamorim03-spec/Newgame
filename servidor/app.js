@@ -451,10 +451,10 @@ function criarApp({ banco, segredo, raiz = path.join(__dirname, '..'), tempos = 
     if (estrelas !== undefined && !(Number.isInteger(estrelas) && estrelas >= 0 && estrelas <= 3)) return res.status(400).json({ erro: 'Estrelas inválidas.' });
     const r = await trava(req.conta.id, async () => {
       const c = await banco.contaPorId(req.conta.id);
-      const conta = { cartas: c.cartas.slice(), icones: c.icones.slice(), moedas: c.moedas };
+      const conta = { cartas: c.cartas.slice(), dados: c.dados.slice(), icones: c.icones.slice(), moedas: c.moedas };
       const fim = Regras.concluirCapitulo(conta, c.extras && c.extras.historia, cap, estrelas || 0);
       if (fim.erro) return { status: 400, erro: fim.erro };
-      const nova = await banco.atualizarConta(c.id, { cartas: conta.cartas, icones: conta.icones, moedas: conta.moedas, extras: { ...(c.extras || {}), historia: fim.estado } });
+      const nova = await banco.atualizarConta(c.id, { cartas: conta.cartas, dados: conta.dados, icones: conta.icones, moedas: conta.moedas, extras: { ...(c.extras || {}), historia: fim.estado } });
       return { premio: fim.premio, conta: nova };
     });
     if (r.erro) return res.status(r.status).json({ erro: r.erro });

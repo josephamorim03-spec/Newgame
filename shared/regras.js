@@ -73,12 +73,16 @@
       marfim: { nome: 'Marfim', preco: 0 }, madeira: { nome: 'Madeira', preco: 80 }, rosa: { nome: 'Rosa', preco: 120 },
       menta: { nome: 'Menta', preco: 0, nivel: 3 }, pelucia: { nome: 'Pelúcia', preco: 220 }, dourado: { nome: 'Dourado', preco: 450 },
       diamante: { nome: 'Diamante', preco: 800 },
+      // os dados dos bichos só vêm do modo história (HISTORIA.recompensa); o do Sapo é "Lagoa", não "Verde": a Menta já é verde
+      lagoa: { nome: 'Lagoa', preco: 0, historia: true }, mel: { nome: 'Mel', preco: 0, historia: true },
+      sucata: { nome: 'Sucata', preco: 0, historia: true }, la: { nome: 'Lã', preco: 0, historia: true },
     },
     // grupo: basico, animal, natureza ou especial (os especiais têm moldura dourada)
     icones: {
       bolinha: { nome: 'Dado', preco: 0, grupo: 'basico' }, xicara: { nome: 'Xícara', preco: 0, nivel: 2, grupo: 'basico' },
       raposa: { nome: 'Raposa', preco: 100, grupo: 'animal' },
-      diana: { nome: 'Diana', preco: 0, grupo: 'especial', historia: true },   // só vem do fim do modo história sapo: { nome: 'Sapo', preco: 100, grupo: 'animal' },
+      diana: { nome: 'Diana', preco: 0, grupo: 'especial', historia: true },   // só vem do fim do modo história
+      sapo: { nome: 'Sapo', preco: 100, grupo: 'animal' },
       urso: { nome: 'Urso', preco: 120, grupo: 'animal' }, coelho: { nome: 'Coelho', preco: 120, grupo: 'animal' },
       guaxinim: { nome: 'Guaxinim', preco: 160, grupo: 'animal' },
       ovelha: { nome: 'Ovelha', preco: 160, grupo: 'animal' },
@@ -192,11 +196,14 @@
 
   // ---------- modo história, "O Caderno da Diana" (docs/historia.md) ----------
   // Os capítulos andam em ordem; vencer um pela primeira vez dá a recompensa dele, uma vez só. A carta da história
-  // continua à venda: quem já a tem recebe o preço dela em moedas (§6.1). Vale igual no aparelho e no servidor.
+  // continua à venda: quem já a tem recebe o preço dela em moedas (§6.1). O dado do bicho também: quem já comprou a
+  // Madeira ou o Rosa recebe o preço. Vale igual no aparelho e no servidor.
   const HISTORIA = {
     ordem: ['P', 'C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8'],
-    recompensa: { P: null, C1: { carta: 'reverso' }, C2: { moedas: 40 }, C3: { carta: 'fundo' }, C4: { moedas: 40 },
-      C5: { carta: 'furto' }, C6: { carta: 'espelho' }, C7: { moedas: 60 }, C8: { icone: 'diana' } },
+    // o dado de cada bicho vem junto (o Coelho joga com o Marfim e a Raposa com o dado roubado do Sapo: esses não dão dado)
+    recompensa: { P: null, C1: { carta: 'reverso', dado: 'lagoa' }, C2: { moedas: 40 }, C3: { carta: 'fundo' },
+      C4: { moedas: 40, dado: 'mel' }, C5: { carta: 'furto', dado: 'sucata' }, C6: { carta: 'espelho', dado: 'la' },
+      C7: { moedas: 60, dado: 'madeira' }, C8: { icone: 'diana', dado: 'rosa' } },
   };
   // estrelas: as melhores de cada capítulo (0 a 3; o Prólogo não tem)
   function estadoHistoria(est) {
@@ -210,7 +217,7 @@
   // o capítulo que dá para jogar agora (o primeiro não feito), ou null com tudo feito
   const proximoCapitulo = est => HISTORIA.ordem.find(c => !estadoHistoria(est).feitos.includes(c)) || null;
   // venceu o capítulo: devolve o estado novo e o prêmio ({ carta?, icone?, moedas? }), ou erro se o capítulo ainda está
-  // travado. As estrelas (0 a 3) guardam a melhor vez, também nas revanches. conta: { cartas, icones, moedas } (mexe nela)
+  // travado. As estrelas (0 a 3) guardam a melhor vez, também nas revanches. conta: { cartas, dados, icones, moedas } (mexe nela)
   function concluirCapitulo(conta, est, cap, estrelas = 0) {
     const e = estadoHistoria(est);
     if (!HISTORIA.ordem.includes(cap)) return { erro: 'Capítulo desconhecido.' };
@@ -222,6 +229,10 @@
     if (r.carta) {
       if (conta.cartas.includes(r.carta)) premio.moedas = PRECO_CARTA[r.carta] || 0;
       else { conta.cartas.push(r.carta); premio.carta = r.carta; }
+    }
+    if (r.dado && conta.dados) {
+      if (conta.dados.includes(r.dado)) premio.moedas = (premio.moedas || 0) + (CATALOGO.dados[r.dado].preco || 0);
+      else { conta.dados.push(r.dado); premio.dado = r.dado; }
     }
     if (r.icone && conta.icones && !conta.icones.includes(r.icone)) { conta.icones.push(r.icone); premio.icone = r.icone; }
     if (r.moedas) premio.moedas = (premio.moedas || 0) + r.moedas;
