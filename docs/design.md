@@ -83,8 +83,8 @@ dado entrava "com qualquer frente". Desde que o dado ruim passou a entrar no lug
 coisa: ela remenda a corrente (não rompe, mas também não cresce). Primeiro o nome foi Boia, mas a boia já é o símbolo do
 "salvou" nos bons momentos do fim da partida (o Bolso ou a Âncora evitando uma ruptura): o mesmo desenho teria dois
 sentidos. O Remendo diz o mecanismo e tem desenho próprio, um retalho costurado. O id interno continua `coringa`: decks
-salvos, contas e partidas guardadas seguem valendo. O desenho é um vetor até a pintura nova sair de `arte/cartas.json`
-(`tools/arte_icones.py`); a pintura antiga, um palhaço, não é mais usada.
+salvos, contas e partidas guardadas seguem valendo. A pintura é um retalho mel costurado, com pontos creme e um X coral
+(`arte/cartas.json`, pintado por `tools/arte_icones.py`); a pintura antiga, um palhaço, saiu.
 
 **Os textos (v0.12).** Cada carta segue o mesmo formato: o que faz, quando vale (os dados na Mesa, o tamanho da
 corrente) e o detalhe que confunde, com exemplo ("o 2 vira 5"; "2-3-4 vira 4-3-2"). Os rótulos curtos não se repetem

@@ -15,7 +15,8 @@ fs.mkdirSync(SAIDA, { recursive: true });
 function iconesDeCarta() {
   const fonte = fs.readFileSync(path.join(RAIZ, 'js', 'jogo.js'), 'utf8');
   const bloco = fonte.match(/const ICO_CARTA = \{([\s\S]*?)\n  \};/)[1];
-  const ico = Object.fromEntries([...bloco.matchAll(/^\s*(\w+): svg\('(.*)'\),?$/gm)].map(m => [m[1], m[2]]));
+  // a linha pode terminar num comentário (o Remendo tem um): ele não entra no desenho
+  const ico = Object.fromEntries([...bloco.matchAll(/^\s*(\w+): svg\('(.*?)'\),?\s*(?:\/\/.*)?$/gm)].map(m => [m[1], m[2]]));
   const extras = JSON.parse(fs.readFileSync(path.join(RAIZ, 'arte', 'cartas.json'), 'utf8')).simbolos_vetor || {};
   return { ...ico, ...extras };
 }

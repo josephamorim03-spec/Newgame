@@ -30,8 +30,8 @@
   };
   // versão pintada (js/cartas_pintadas.js, feita por tools/arte_icones.py) onde o ícone aparece grande o bastante para ler
   // (deck, loja, detalhe, regras, versus); nos botões de 18 px da mesa e na marca do Espelho fica o traço. Sem pintura, traço em tudo.
-  // (a pintura do Coringa era um palhaço; o Remendo usa o vetor até ter a própria pintura: arte/cartas.json)
-  const pintada = id => id !== 'coringa' && (window.CARTAS_PINTADAS || {})[id];
+  // (o Remendo, ex-Coringa, já tem a própria pintura: um retalho mel costurado, de arte/cartas.json)
+  const pintada = id => (window.CARTAS_PINTADAS || {})[id];
   const imgPintada = (id, cls) => `<img class="${cls}" src="${pintada(id)}" alt="" aria-hidden="true" draggable="false">`;
   const RAIO = pintada('raio') ? imgPintada('raio', 'raio-pintado') : '⚡';
   const VERSO = pintada('verso') ? imgPintada('verso', 'verso-pintado') : '?';
@@ -43,14 +43,7 @@
   const MOMENTO_ID = { '☾': 'virada', '★': 'sinfonia', '✿': 'harmonia', '✧': 'truque', '❀': 'salvou', '↺': 'esquiva', '✦': 'bloqueio', '♪': 'nota', '✪': 'recorde' };
   const srcMomento = c => (c === '☕' ? (window.RETRATOS_PINTADOS || {}).xicara : (window.MOMENTOS_PINTADOS || {})[MOMENTO_ID[c]]);
   const simboloMomento = c => (srcMomento(c) ? `<img src="${srcMomento(c)}" alt="${c}" draggable="false">` : c);
-  // o Remendo (ex-Coringa) ainda não tem pintura: um retalho mel costurado em vetor, servido como imagem para se comportar
-  // como as cartas pintadas. (Não é uma boia: a boia é o símbolo do "salvou" nos bons momentos do fim da partida.)
-  const REMENDO_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="5 5 38 38"><g transform="rotate(-8 24 24)">'
-    + '<rect x="9" y="11" width="30" height="29" rx="5" fill="rgba(58,42,46,.18)"/><rect x="9" y="9" width="30" height="29" rx="5" fill="#f2b15e" stroke="#3a2a2e" stroke-width="2.6"/>'
-    + '<rect x="13.5" y="13.5" width="21" height="20" rx="3" fill="none" stroke="#fffaf0" stroke-width="2.2" stroke-dasharray="3.2 2.6" stroke-linecap="round"/>'
-    + '<path d="M19 19.5l10 8M29 19.5l-10 8" stroke="#e8806f" stroke-width="2.8" stroke-linecap="round"/></g></svg>';
-  const arteRemendo = () => `<img class="ico pintado" src="data:image/svg+xml;utf8,${encodeURIComponent(REMENDO_SVG)}" alt="" aria-hidden="true" draggable="false">`;
-  const CARTAS = Object.fromEntries(Object.entries(R.CARTAS).map(([k, v]) => [k, { ...v, ico: ICO_CARTA[k], arte: k === 'coringa' ? arteRemendo() : pintada(k) ? imgPintada(k, 'ico pintado') : ICO_CARTA[k] }]));
+  const CARTAS = Object.fromEntries(Object.entries(R.CARTAS).map(([k, v]) => [k, { ...v, ico: ICO_CARTA[k], arte: pintada(k) ? imgPintada(k, 'ico pintado') : ICO_CARTA[k] }]));
   const PRONTOS = [
     { nome: 'Primeira mesa', cartas: ['ajuste', 'coringa', 'pressa'], nota: 'só efeitos' },
     { nome: 'Muralha', cartas: ['ancora', 'coringa', 'interferencia'], nota: '' },
