@@ -1229,7 +1229,7 @@
           Som.tocar('disparo', { L: e.L });
           if (humano(e.p)) vibrar(15);
           const nota = k => 80 + k * Som.PASSO_DISPARO * 1000, fim = nota(e.L);
-          if (Fx.cfg.animacoes) fimDoDisparo = performance.now() + fim + (e.L === 6 ? 150 : e.L === 5 ? 90 : 0) + (Math.min(6, Math.max(1, e.ganho)) - 1) * 70 + 560;
+          if (Fx.cfg.animacoes) fimDoDisparo = performance.now() + fim + (e.L === 6 ? 150 + (Fx.cfg.impresso ? 260 : 0) : e.L === 5 ? 90 : 0) + (Math.min(6, Math.max(1, e.ganho)) - 1) * 70 + 560;
           const passos = [];
           for (let k = 3; k <= e.L; k++) passos.push({ ms: nota(k - 1), txt: `+${pontos(k)}` });
           passos.push({ ms: fim, txt: `+${e.ganho}` });
@@ -1239,14 +1239,19 @@
           Fx.contagem(corEl, passos, `${quem} n${Math.min(6, e.L)}`).then(() => e.L >= 5 ? Fx.impacto(qs(`#pj${e.p} .corrente`) || corEl, e.L === 6 ? 150 : 90, e.L === 6 ? 1.3 : 1) : null).then(() => {
             const cor = qs(`#pj${e.p} .corrente`) || corEl;
             Fx.faiscas(cor, 10 + e.L * 6, cores, 2.5 + e.L * 0.5);
-            if (e.L >= 4) Fx.clarao(cor, e.L >= 6 ? 1 : e.L === 5 ? 0.75 : 0.5);
-            // treme o que envolve a mesa, não a mesa: um transform na .tabuleiro a faz virar contexto de empilhamento, e a
-            // moldura de madeira (o ::before, z-index −1) passava por cima do feltro durante o tremor (a mesa piscava marrom)
-            if (e.L >= 5) Fx.tremer(qs('#tabuleiro').parentElement, e.L === 6 ? 1.4 : 0.8);
+            if (e.L >= 4) Fx.clarao(cor, e.L >= 6 ? 1 : e.L === 5 ? 0.75 : 0.5, e.p === 0 ? Fx.AZUL : Fx.ROSA);
+            // impresso: a Sinfonia para num quadro de gibi; o tremor e a chamada vêm quando a imagem volta a andar
+            const parou = e.L === 6 ? Fx.quadro() : 0;
             if (humano(e.p) && e.L >= 5) vibrar([20, 30, 40]);
-            if (e.L === 6) { Fx.chamada('Sinfonia!', 'corrente completa de 6', quem, { classe: 'de-jogo' }); vibrar([30, 40, 60]); }
-            else if (e.L === 5) Fx.chamada('Belo disparo!', `corrente de 5 · +${e.ganho}`, quem, { classe: 'de-jogo' });
-            if (e.harm) Fx.chamada('Harmonia!', `todos os elos em ${REL[e.harm].nome}`, 'suave', { classe: 'de-jogo' });
+            const festa = () => {
+              // treme o que envolve a mesa, não a mesa: um transform na .tabuleiro a faz virar contexto de empilhamento, e a
+              // moldura de madeira (o ::before, z-index −1) passava por cima do feltro durante o tremor (a mesa piscava marrom)
+              if (e.L >= 5) Fx.tremer(qs('#tabuleiro').parentElement, e.L === 6 ? 1.4 : 0.8);
+              if (e.L === 6) { Fx.chamada('Sinfonia!', 'corrente completa de 6', quem, { classe: 'de-jogo' }); vibrar([30, 40, 60]); }
+              else if (e.L === 5) Fx.chamada('Belo disparo!', `corrente de 5 · +${e.ganho}`, quem, { classe: 'de-jogo' });
+              if (e.harm) Fx.chamada('Harmonia!', `todos os elos em ${REL[e.harm].nome}`, 'suave', { classe: 'de-jogo' });
+            };
+            if (parou) setTimeout(festa, parou); else festa();
             if (e.L >= 4 && humano(e.p)) Som.tocar('momento');
             const pl0 = qs(`[data-placar="${e.p}"]`);
             if (!pl0) return;
@@ -1297,10 +1302,12 @@
           break;
         }
         case 'revelou': {
-          // a armadilha que pega: um instante parado no painel do dono, e então a revelação
+          // a armadilha que pega: um instante parado no painel do dono, e então a revelação (com o impresso, as chapas
+          // azul e rosa saem do registro na chamada e no painel)
           Fx.impacto(painelEl, 80, 0.6).then(() => {
-            Som.tocar('revelou'); Fx.chamada(CARTAS[e.c].nome + '!', e.txt, e.p === 1 && j.modo !== 'local' ? 'rival' : '', { classe: 'de-jogo' });
-            Fx.faiscas(qs(`#pj${e.p} .jogador`) || painelEl, 22, ['#e2d6ff', '#fff6e6', '#ffe3a3']); vibrar([40, 60, 40]);
+            const painel = qs(`#pj${e.p} .jogador`) || painelEl;
+            Som.tocar('revelou'); Fx.chamada(CARTAS[e.c].nome + '!', e.txt, e.p === 1 && j.modo !== 'local' ? 'rival' : '', { classe: 'de-jogo', desencaixe: true });
+            Fx.faiscas(painel, 22, ['#e2d6ff', '#fff6e6', '#ffe3a3']); Fx.desencaixe(painel); vibrar([40, 60, 40]);
           });
           break;
         }

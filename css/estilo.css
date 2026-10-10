@@ -728,6 +728,11 @@ img.avatar { object-fit: contain; }
 @keyframes ferve { 50% { box-shadow: inset 0 3px 8px rgba(0,0,0,.35), 0 0 0 3px rgba(255,207,138,.75), 0 0 28px rgba(255,180,110,.55); } }
 /* clarão de disparo grande */
 .clarao { position: fixed; z-index: 56; pointer-events: none; width: 420px; height: 420px; border-radius: 50%; background: radial-gradient(circle, rgba(255,246,230,.95), rgba(255,207,138,.45) 35%, transparent 70%); transform: translate(-50%, -50%); mix-blend-mode: screen; }
+/* impresso (docs/visual-impresso.md, atrás de ?impresso=1): o anel de retícula do clarão e o quadro congelado da Sinfonia */
+.clarao.reticula { background: center / 100% 100% no-repeat; mix-blend-mode: normal; border-radius: 0; }
+.quadro-gibi { position: fixed; inset: 0; z-index: 56; pointer-events: none; box-shadow: inset 0 0 0 12px var(--papel), inset 0 0 0 16px var(--tinta); }
+.quadro-gibi::before { content: ''; position: absolute; inset: 0; background: radial-gradient(circle, rgba(251,241,223,.45) 0 1.8px, transparent 2.3px) 0 0 / 9px 9px;
+  -webkit-mask-image: radial-gradient(closest-side, transparent 78%, #000 118%); mask-image: radial-gradient(closest-side, transparent 78%, #000 118%); }
 .sem-animacoes .corrente.quente, .sem-animacoes .corrente.fervendo { box-shadow: inset 0 3px 8px rgba(0,0,0,.35), 0 0 0 2px rgba(255,207,138,.6); }
 @media (prefers-reduced-motion: reduce) { .corrente.quente, .corrente.fervendo { animation: none; box-shadow: inset 0 3px 8px rgba(0,0,0,.35), 0 0 0 2px rgba(255,207,138,.6); } }
 

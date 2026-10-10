@@ -48,10 +48,20 @@
 
 ## 3. O plano
 
-### Fase 0: protótipo atrás de uma bandeira (meio dia)
-- `Fx.cfg.impresso` (ligado só com `?impresso=1` na URL ou em Ajustes escondido), para comparar lado a lado.
-- Só três coisas: retícula no clarão, desencaixe na armadilha revelada e o quadro congelado da Sinfonia.
-- Gravar a mesma partida com e sem (Playwright, celular 390 px) e decidir olhando. **Se não ficar melhor, para aqui.**
+### Fase 0: protótipo atrás de uma bandeira (feita)
+- `Fx.cfg.impresso`: `?impresso=1` na URL liga e fica guardado no aparelho (`diceduel.impresso`); `?impresso=0` desliga.
+  Sem a bandeira, nada muda (a ordem das chamadas e o tempo da festa são os de antes).
+- Três coisas, em `js/efeitos.js` (`reticula`, `desencaixe`, `quadro`) e no fim do bloco do clarão em `css/estilo.css`:
+  - **anel de retícula** no clarão do disparo de 4+, na cor de quem disparou (azul ou rosa), abrindo em 6 poses seguradas;
+  - **desencaixe** na armadilha revelada: a chamada e o painel de quem armou ganham as chapas azul e rosa fora do
+    registro, em 3 poses (420 ms), e voltam;
+  - **quadro congelado** na Sinfonia: 260 ms com tudo parado (as animações da página e as partículas; os orbes empurram
+    o relógio deles), moldura de papel com fio de tinta e retícula nas bordas. O tremor e as chamadas ("Sinfonia!",
+    "Harmonia!") vêm quando a imagem volta a andar. O relógio da vez, a rede e o motor não param.
+    Ele vem depois do impacto que a partida já tem (`Fx.impacto`, 150 ms na corrente de 6): o impacto incha a corrente,
+    o quadro congela a tela. Se, somados, os 410 ms parecerem travamento, o quadro passa a substituir o impacto.
+- `node tools/impresso_demo.js` grava a mesma sequência sem e com (celular, 390 px) em `builds/impresso/`
+  (`sem.webm`, `com.webm` e quadros). **Decidir olhando; se não ficar melhor, para aqui.**
 
 ### Fase 1: o sotaque no jogo de sempre (2 a 3 dias)
 Tudo em `js/efeitos.js` e `css/estilo.css`, sem tocar em regras nem no servidor:
