@@ -79,16 +79,24 @@ o 4 também somam 7, "mas a biologia não chamou eles. Acontece".
 
 Todos já têm retrato pintado no jogo (`arte/retratos.json`); a voz de cada um vem da roupa que a arte já deu.
 
-| Quem | Como é (da arte) | A voz | No capítulo |
-|---|---|---|---|
-| **Diana** | gata branca, olhos azuis, ferimento no nariz | seca, conspiratória, gata | mentora, depois a rival final |
-| **Sapo** | chapéu de palha, gravatinha ferrugem | cavalheiro lento do lago; oferece chá de lago | 1 · Reverso |
-| **Coelho** | cinza-claro, gravata-borboleta azul-marinho | contador ansioso, sempre atrasado, família enorme | 2 · Sobrecarga |
-| **Raposa** | olhos semicerrados, cachecol verde | satisfeita, elegante; diz a verdade de um jeito que parece mentira | 3 · Fundo Falso |
-| **Urso** | gorro vermelho de pompom | sonolento; tudo é "cinco minutos" | 4 · Pausa |
-| **Guaxinim** | máscara, moletom mostarda | ladrão com teoria econômica | 5 · Furto |
-| **Ovelha** | num pasto de hexágonos | cansada da mesma pergunta | 6 · Espelho |
-| **Dona Coruja** | a rival "desafiadora" do jogo | bibliotecária; lê a Mesa e lê gente | 7 · Lacre |
+| Quem | Como é (da arte) | A voz | Os dados | No capítulo |
+|---|---|---|---|---|
+| **Diana** | gata branca, olhos azuis, ferimento no nariz | seca, conspiratória, gata | **rosa** (quartzo rosa) | mentora, depois a rival final |
+| **Sapo** | chapéu de palha, gravatinha ferrugem | cavalheiro lento do lago; oferece chá de lago | **verde** (`lagoa`: esmalte verde-sapo, com sardas) | 1 · Reverso |
+| **Coelho** | cinza-claro, gravata-borboleta azul-marinho | contador ansioso, sempre atrasado, família enorme | **o marfim clássico**: não teve tempo de escolher outro | 2 · Sobrecarga |
+| **Raposa** | olhos semicerrados, cachecol verde | satisfeita, elegante; diz a verdade de um jeito que parece mentira | **o verde do Sapo**: pegou dele para combinar com o cachecol (ou é o que dizem) | 3 · Fundo Falso |
+| **Urso** | gorro vermelho de pompom | sonolento; tudo é "cinco minutos" | **mel** (âmbar, como o pote do banho-maria) | 4 · Pausa |
+| **Guaxinim** | máscara, moletom mostarda | ladrão com teoria econômica | **um de cada** (`sucata`): o 1 rosa, o 2 verde, o 3 de madeira, o 4 de mel, o 5 de lã e o 6 marfim, todos "achados" | 5 · Furto |
+| **Ovelha** | num pasto de hexágonos | cansada da mesma pergunta | **lã** (macia, de cantos redondos como a pelúcia) | 6 · Espelho |
+| **Dona Coruja** | a rival "desafiadora" do jogo | bibliotecária; lê a Mesa e lê gente | **madeira** (nogueira, de mesa de biblioteca) | 7 · Lacre |
+
+**Os dados de cada um** já estão no jogo (`DADO_DO_BICHO` em `js/jogo.js`; as skins em `css/estilo.css`): o rival rola os
+dele na corrente, no Bolso e no dado que voa (a capa continua fixa: marfim, rosa, marfim). Pela regra do
+retrato, a Diana do Cap. 8 rola os rosa e a Coruja da história os de madeira. A lã, a madeira e
+o verde têm a face pintada pela API de imagem (`tools/arte_dados.py`, `arte/dados.json`, `js/dados_pintados.js`); sem a
+pintura, vale o degradê do CSS. Os quadros também respeitam isso: a mesa da Diana tem dados rosa, a vitória-régia do Sapo
+tem dados verdes, a caverna do Urso tem dados de mel. **Em aberto (decisão do dono):** vencer um capítulo dá o dado
+daquele bicho? Hoje as skins dos bichos não estão na Loja (o Rosa e a Madeira estão, como sempre estiveram).
 
 Os especiais da casa (Biscoito, Gordinho, Cafú, Bandoleiro, Galgo) não entram na história (decisão do dono). A gag de
 fundo de quem acha que o caderno é de receitas de verdade ficou com o **Coelho**: ele testou a página dele, o pão
@@ -484,7 +492,10 @@ a cascata, o impacto e as tarefas do dia.
 2. **O leitor de gibi:** uma janela por cima de tudo que mostra 1 a 4 quadros por vez, com borda de tinta e retícula
    (o CSS do `visual-impresso.md`, Fase 1). Tocar avança, "Pular" leva à partida, e o texto respeita o `layout.js`.
    Os retratos vêm de `Retratos.retrato(id, humor)`.
-3. **Arte nova** (pelo `tools/arte_icones.py`, no estilo do jogo):
+3. **Arte nova** (os quadros já têm rascunho: `arte/historia.json` lista as 57 artes e as 31 páginas, e
+   `tools/historia/quadros.py` pinta cada uma com o gpt-image-2, usando o retrato pintado de cada bicho como referência,
+   e monta as páginas com as falas por cima para revisão, publicadas em **Quadros do Caderno da Diana**
+   (https://claude.ai/artifact/4LfMUuqa94bKGNzQKBH1u5); o que ainda falta, pelo `tools/arte_icones.py`):
    - o mural de cortiça, em três estados;
    - os 7 enfeites do nariz;
    - 8 fundos;

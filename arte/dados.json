@@ -1,0 +1,10 @@
+{
+ "_leia": "A face pintada das skins de dado que o CSS não faz bem (lã, veio de madeira, pele de sapo). Gere com: python3 tools/arte_dados.py [ids...] [--seco] [--qualidade medium]. Cada pedido é só a superfície de uma face, sem as bolinhas: as bolinhas continuam no CSS (css/estilo.css, skins de dado), e a pintura entra por cima do degradê da skin, que fica como reserva. Saída: arte/fonte/dados/<id>.png e js/dados_pintados.js. Textos em inglês porque o gerador entende melhor.",
+ "modelo": "gpt-image-2",
+ "estilo": "Texture for one flat square face of a six-sided game die, seen straight from above, orthographic. The material fills the ENTIRE image edge to edge, with no border, no rounded corners, no frame, no background, no shadow and no pips or dots of any kind. Evenly lit from the top-left, with a soft lighter area near the top-left corner and slightly darker toward the bottom-right, no hard highlights. Cozy hand-made look that matches a warm illustrated board game, soft cel-shaded rather than photographic, the detail calm and fine enough to still read when shrunk to 48 pixels. No text, no letters, no logo.",
+ "itens": {
+  "la": "Material: a die made of soft sheep wool. Dense, tight little curls of cream-white fleece (#f6efe2 with warm shadows #e3d4bd), fluffy and matte, like a felted wool toy. The curls are small and even across the whole surface.",
+  "madeira": "Material: a die carved from warm walnut wood, sanded smooth and waxed. Honey-brown (#c48a5a) with darker grain lines (#8a5634) running gently diagonally, one small knot near a corner, satin finish, like an old library desk.",
+  "lagoa": "Material: a die made of frog-green jade glaze, the green of a pond frog (#6fae7e to #4e8a62), smooth and slightly glossy like a glazed ceramic, with a few soft darker green freckles (#3f7552) scattered unevenly like frog skin, and a faint lighter lily-pad sheen."
+ }
+}
