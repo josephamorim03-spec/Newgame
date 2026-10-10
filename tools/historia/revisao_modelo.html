@@ -1,0 +1,295 @@
+<title>Falas da Fita Dupla</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700;800&display=swap">
+<style>
+/* Layout: uma coluna de fichas de papel sobre a mesa escura do jogo; o placar da revisão fica preso no alto. */
+:root {
+  --fundo: #241a24; --fundo-2: #35242f; --papel: #fbf1df; --papel-2: #f1dfc2; --tinta: #3a2a2e; --tinta-suave: #7a6560;
+  --texto: #fff3e2; --texto-suave: #ecdcc8; --mel: #f2b15e; --mel-escuro: #c4843a; --rival: #ec8fa8; --passo: #8fd6a8;
+  --passo-tinta: #2f7a52; --perigo: #e8806f; --perigo-tinta: #9a3b2e; --borda: rgba(255,243,226,.16);
+  --f-titulo: "Fredoka", "Baloo 2", "Trebuchet MS", sans-serif;
+  --f-corpo: "Nunito", "Segoe UI", Roboto, Arial, sans-serif;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) { :root:not([data-theme="dark"]) {
+  --fundo: #efe2cc; --fundo-2: #e4d2b6; --texto: #3a2a2e; --texto-suave: #6e5a54; --borda: rgba(58,42,46,.16); color-scheme: light; } }
+:root[data-theme="light"] { --fundo: #efe2cc; --fundo-2: #e4d2b6; --texto: #3a2a2e; --texto-suave: #6e5a54; --borda: rgba(58,42,46,.16); color-scheme: light; }
+* { box-sizing: border-box; }
+body { background: var(--fundo); color: var(--texto); font-family: var(--f-corpo); font-size: 15px; line-height: 1.45; margin: 0; }
+.pagina { max-width: 720px; margin: 0 auto; padding-inline: 16px; padding-block: 18px 80px; display: grid; gap: 22px; }
+h1, h2, h3 { font-family: var(--f-titulo); font-weight: 700; text-wrap: balance; margin: 0; line-height: 1.1; }
+h1 { font-size: 30px; } h1 span { color: var(--mel); }
+h2 { font-size: 22px; } h3 { font-size: 17px; }
+.intro { color: var(--texto-suave); max-width: 62ch; margin: 6px 0 0; }
+.aviso { padding: 10px 14px; border-radius: 12px; background: var(--fundo-2); color: var(--texto-suave); font-size: 14px; }
+.aviso[hidden] { display: none; }
+
+/* o placar da revisão */
+.placar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--fundo); padding-block: 10px; display: grid; gap: 8px; border-bottom: 1px solid var(--borda); }
+.barra { display: flex; height: 10px; border-radius: 99px; overflow: hidden; background: var(--fundo-2); }
+.barra i { display: block; height: 100%; transition: width .3s ease; }
+.barra .b-ok { background: var(--passo); } .barra .b-aj { background: var(--mel); } .barra .b-no { background: var(--perigo); }
+.filtros { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.chip { font: 700 13px/1 var(--f-corpo); padding: 8px 11px; border-radius: 99px; border: 1.5px solid var(--borda); background: transparent; color: var(--texto); cursor: pointer; font-variant-numeric: tabular-nums; }
+.chip[aria-pressed="true"] { background: var(--texto); color: var(--fundo); border-color: var(--texto); }
+.chip:focus-visible, .btn:focus-visible, select:focus-visible, textarea:focus-visible { outline: 3px solid var(--mel); outline-offset: 2px; }
+select { font: 700 13px var(--f-corpo); padding: 7px 10px; border-radius: 99px; border: 1.5px solid var(--borda); background: var(--fundo); color: var(--texto); max-width: 100%; }
+
+/* as decisões e as fichas */
+.secao { display: grid; gap: 12px; }
+.ficha { background: var(--papel); color: var(--tinta); border-radius: 16px; padding: 14px 14px 12px; display: grid; gap: 8px; box-shadow: 0 3px 0 var(--papel-2); border-left: 6px solid transparent; min-width: 0; }
+.ficha.st-aprovada { border-left-color: var(--passo); } .ficha.st-ajustar { border-left-color: var(--mel); } .ficha.st-recusada { border-left-color: var(--perigo); }
+.cab { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: baseline; font-size: 13px; color: var(--tinta-suave); }
+.cod { font: 700 12px/1 var(--f-titulo); letter-spacing: .04em; background: var(--tinta); color: var(--papel); padding: 4px 7px; border-radius: 6px; }
+.quem { font-weight: 800; color: var(--tinta); }
+.desenho { font-style: italic; font-size: 13px; color: var(--tinta-suave); margin: 0; }
+.baloes { display: grid; gap: 6px; }
+.balao { font-size: 17px; line-height: 1.4; font-weight: 600; margin: 0; overflow-wrap: anywhere; }
+.balao.pausa { color: var(--tinta-suave); }
+.gag { justify-self: start; font-size: 12px; font-weight: 700; padding: 3px 8px; border-radius: 99px; background: var(--papel-2); color: var(--tinta-suave); }
+.gag.tem-recusa { background: #f6d2cf; color: var(--perigo-tinta); }
+.acoes { display: flex; flex-wrap: wrap; gap: 6px; }
+.btn { font: 700 14px/1 var(--f-corpo); min-height: 40px; padding: 0 14px; border-radius: 12px; border: 1.5px solid rgba(58,42,46,.2); background: transparent; color: var(--tinta); cursor: pointer; }
+.btn[disabled] { opacity: .45; cursor: default; }
+.btn.ok[aria-pressed="true"] { background: var(--passo); border-color: var(--passo); color: #12331f; }
+.btn.aj[aria-pressed="true"] { background: var(--mel); border-color: var(--mel); color: #3d2405; }
+.btn.no[aria-pressed="true"] { background: var(--perigo); border-color: var(--perigo); color: #3b0f09; }
+.nota { display: grid; gap: 6px; }
+.nota[hidden] { display: none; }
+.nota label { font-size: 13px; font-weight: 700; color: var(--tinta-suave); }
+textarea { width: 100%; min-height: 64px; resize: vertical; font: 15px/1.4 var(--f-corpo); padding: 8px 10px; border-radius: 10px; border: 1.5px solid rgba(58,42,46,.25); background: #fffaf0; color: var(--tinta); }
+.salvo { font-size: 12px; color: var(--passo-tinta); font-weight: 700; min-height: 1em; }
+.cap-titulo { font-family: var(--f-titulo); font-size: 19px; margin: 8px 0 -2px; color: var(--texto); }
+.vazio { color: var(--texto-suave); padding: 18px; text-align: center; border: 1.5px dashed var(--borda); border-radius: 16px; }
+
+/* as escolhas (nome, fecho) */
+.opcoes { display: grid; gap: 8px; }
+.opcao { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: start; padding: 10px 12px; border-radius: 12px; border: 1.5px solid rgba(58,42,46,.18); cursor: pointer; }
+.opcao:has(input:checked) { border-color: var(--mel-escuro); background: #fde9c6; }
+.opcao input { margin-top: 3px; accent-color: var(--mel-escuro); width: 18px; height: 18px; }
+.opcao b { font-family: var(--f-titulo); font-size: 16px; }
+.opcao small { display: block; color: var(--tinta-suave); font-size: 13px; }
+.rec { font-size: 11px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; color: var(--mel-escuro); margin-left: 6px; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+td, th { text-align: left; padding: 6px 4px; border-bottom: 1px solid rgba(58,42,46,.12); vertical-align: top; }
+th { font-size: 12px; color: var(--tinta-suave); text-transform: uppercase; letter-spacing: .05em; }
+.tabela { overflow-x: auto; }
+@media (prefers-reduced-motion: reduce) { .barra i { transition: none; } }
+</style>
+
+<main class="pagina">
+  <header>
+    <h1>Falas da <span>Fita Dupla</span></h1>
+    <p class="intro">O roteiro do modo história do Dice Duel, uma fala por ficha. Nenhuma entra no jogo sem aprovação: aprove, peça um ajuste (diga o quê) ou recuse. As decisões ficam salvas aqui e o Claude as lê de volta.</p>
+  </header>
+  <p class="aviso" id="avisoDb" hidden></p>
+
+  <section class="secao" aria-labelledby="tDecisoes">
+    <h2 id="tDecisoes">Três decisões antes das falas</h2>
+    <div class="ficha" data-decisao="nome">
+      <h3>O nome do modo história</h3>
+      <div class="opcoes" id="opNome"></div>
+      <div class="nota"><label for="nota-nome">Outra ideia ou comentário</label><textarea id="nota-nome" data-nota="nome"></textarea></div>
+      <span class="salvo" data-salvo="nome"></span>
+    </div>
+    <div class="ficha" data-decisao="fecho">
+      <h3>O fecho da história (depois da cura)</h3>
+      <p class="desenho" style="font-style:normal">Todas as opções têm um final só para todo mundo; a 3.ª estrela do último capítulo dá no máximo um quadro a mais. As falas de cada opção estão nas fichas F-A a F-D, mais abaixo.</p>
+      <div class="opcoes" id="opFecho"></div>
+      <div class="nota"><label for="nota-fecho">Comentário</label><textarea id="nota-fecho" data-nota="fecho"></textarea></div>
+      <span class="salvo" data-salvo="fecho"></span>
+    </div>
+    <div class="ficha" data-decisao="cartas">
+      <h3>As cartas que a história libera</h3>
+      <p class="desenho" style="font-style:normal">Uma carta só quando a página do capítulo é a técnica dela. Todas continuam à venda na Loja; quem já comprou recebe as moedas de volta.</p>
+      <div class="tabela"><table>
+        <thead><tr><th>Capítulo</th><th>A página ensina</th><th>Libera</th></tr></thead>
+        <tbody>
+          <tr><td>1 · Sapo</td><td>ler a fita pela outra ponta</td><td><b>Reverso</b></td></tr>
+          <tr><td>2 · Coelho</td><td>fermento no máximo</td><td>moedas</td></tr>
+          <tr><td>3 · Raposa</td><td>a massa esconde o recheio</td><td><b>Fundo Falso</b></td></tr>
+          <tr><td>4 · Urso</td><td>deixar dormir</td><td>moedas</td></tr>
+          <tr><td>5 · Guaxinim</td><td>pegar do vizinho</td><td><b>Furto</b></td></tr>
+          <tr><td>6 · Ovelha</td><td>fazer dois iguais</td><td><b>Espelho</b></td></tr>
+          <tr><td>7 · Coruja</td><td>tampar o que não deve ferver</td><td>moedas</td></tr>
+          <tr><td>8 · Diana</td><td>—</td><td>cosméticos do fim</td></tr>
+        </tbody>
+      </table></div>
+      <div class="acoes" data-acoes="cartas"></div>
+      <div class="nota" data-nota-box="cartas" hidden><label for="nota-cartas">O que mudar</label><textarea id="nota-cartas" data-nota="cartas"></textarea></div>
+      <span class="salvo" data-salvo="cartas"></span>
+    </div>
+  </section>
+
+  <section class="secao" aria-labelledby="tFalas">
+    <h2 id="tFalas">As falas</h2>
+    <div class="placar">
+      <div class="barra" aria-hidden="true"><i class="b-ok"></i><i class="b-aj"></i><i class="b-no"></i></div>
+      <div class="filtros" role="group" aria-label="Mostrar">
+        <button class="chip" data-filtro="pendente" aria-pressed="true">Pendentes <span data-conta="pendente"></span></button>
+        <button class="chip" data-filtro="ajustar" aria-pressed="false">Ajustar <span data-conta="ajustar"></span></button>
+        <button class="chip" data-filtro="recusada" aria-pressed="false">Recusadas <span data-conta="recusada"></span></button>
+        <button class="chip" data-filtro="aprovada" aria-pressed="false">Aprovadas <span data-conta="aprovada"></span></button>
+        <button class="chip" data-filtro="todas" aria-pressed="false">Todas <span data-conta="todas"></span></button>
+        <select id="filtroCap" aria-label="Capítulo"><option value="">Todos os capítulos</option></select>
+      </div>
+    </div>
+    <div id="lista" class="secao"></div>
+  </section>
+</main>
+
+<script>
+const DADOS = /*DADOS*/null;
+const NOMES = [
+  ['O Caderno da Diana', 'a busca das páginas; não entrega nada antes da hora', true],
+  ['Fita Dupla', 'dupla hélice, as duas correntes na Mesa, a fita do lo-fi'],
+  ['Sete Receitas', 'as sete páginas e o disfarce'],
+  ['Uma Letra Errada', 'a ferida e a cura em três palavras; conta o mistério cedo'],
+  ['Tudo Começa com D', 'a teoria da Diana no título; entrega a piada do mural'],
+  ['Códon', 'curto e científico; frio, sem a Diana'],
+];
+const FECHOS = [
+  ['A', 'O Eco', 'a correção pôs um Eco a mais, e ela passa a repetir o fim das frases (F-A)', true],
+  ['B', 'Sem preço', 'fecha e pronto; o soco é ela levando o crédito (F-B)'],
+  ['C', 'A orelha, sempre', 'a ponta preta da orelha troca de lado em todo final, e ela gosta (F-C)'],
+  ['D', 'Como estava', 'a orelha troca no final comum e não troca com a 3.ª estrela (F-D)'],
+];
+const ROTULO = { aprovada: 'Aprovar', ajustar: 'Ajustar', recusada: 'Recusar' };
+const CLASSE = { aprovada: 'ok', ajustar: 'aj', recusada: 'no' };
+let decis = {}, db = null, filtro = 'pendente', cap = '';
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+// uma decisão vale para o texto que foi julgado: se a fala foi reescrita depois, ela volta a pendente
+const TEXTO = Object.fromEntries(DADOS.falas.map(f => [f.id, f.texto]));
+const status = id => { const d = decis[id]; if (!d || !d.status) return 'pendente'; return TEXTO[id] && d.texto && d.texto !== TEXTO[id] ? 'pendente' : d.status; };
+
+// ---------- as escolhas ----------
+function escolhas(el, nome, lista, rotulo) {
+  el.innerHTML = lista.map(([v, t, sub, rec]) => {
+    const valor = rotulo ? v : v, titulo = rotulo ? `${v}. ${t}` : v, desc = rotulo ? sub : t;
+    return `<label class="opcao"><input type="radio" name="${nome}" value="${esc(valor)}"><span><b>${esc(titulo)}</b>${(rotulo ? rec : sub) === true ? '<span class="rec">sugerido</span>' : ''}<small>${esc(desc)}</small></span></label>`;
+  }).join('');
+  el.addEventListener('change', e => salvar(nome, { escolha: e.target.value }));
+}
+escolhas($('#opNome'), 'nome', NOMES, false);
+escolhas($('#opFecho'), 'fecho', FECHOS, true);
+
+// ---------- as fichas ----------
+const caps = [...new Map(DADOS.falas.map(f => [f.cap, f.capitulo])).entries()];
+$('#filtroCap').innerHTML += caps.map(([c, t]) => `<option value="${c}">${esc(t)}</option>`).join('');
+function botoes(id) {
+  return Object.keys(ROTULO).map(s => `<button class="btn ${CLASSE[s]}" data-id="${id}" data-st="${s}" aria-pressed="false">${ROTULO[s]}</button>`).join('');
+}
+function fichaHTML(f) {
+  const baloes = f.texto.split(' / ').map(t => `<p class="balao${/^…$/.test(t.trim()) ? ' pausa' : ''}">${esc(t)}</p>`).join('');
+  return `<article class="ficha" data-ficha="${f.id}" data-cap="${f.cap}">
+    <div class="cab"><span class="cod">${f.id}</span><span class="quem">${esc(f.quem)}</span><span>${esc(f.onde)}</span></div>
+    ${f.desenho ? `<p class="desenho">${esc(f.desenho)}</p>` : ''}
+    <div class="baloes">${baloes}</div>
+    ${f.gag ? `<span class="gag" data-gag="${f.gag}">${esc(DADOS.gags[f.gag] || f.gag)}</span>` : ''}
+    <div class="acoes">${botoes(f.id)}</div>
+    <div class="nota" data-nota-box="${f.id}" hidden><label for="nota-${f.id}">O que mudar (ou por que não)</label><textarea id="nota-${f.id}" data-nota="${f.id}"></textarea></div>
+    <span class="salvo" data-salvo="${f.id}"></span>
+  </article>`;
+}
+function montarLista() {
+  let html = '', ultimo = null;
+  for (const f of DADOS.falas) {
+    if (f.cap !== ultimo) { html += `<h3 class="cap-titulo" data-titulo="${f.cap}">${esc(f.capitulo)}</h3>`; ultimo = f.cap; }
+    html += fichaHTML(f);
+  }
+  $('#lista').innerHTML = html + '<p class="vazio" id="vazio" hidden>Nada aqui com esse filtro.</p>';
+  document.querySelector('[data-acoes="cartas"]').innerHTML = botoes('cartas');
+}
+montarLista();
+
+// o estado de cada ficha, sem redesenhar a lista (a nota que está sendo digitada não se perde)
+function aplicar() {
+  const ids = DADOS.falas.map(f => f.id).concat('cartas');
+  for (const id of ids) {
+    const st = status(id), ficha = document.querySelector(`[data-ficha="${id}"]`) || document.querySelector(`[data-decisao="${id}"]`);
+    if (!ficha) continue;
+    ficha.classList.remove('st-aprovada', 'st-ajustar', 'st-recusada');
+    if (st !== 'pendente') ficha.classList.add('st-' + st);
+    ficha.querySelectorAll(`.btn[data-id="${id}"]`).forEach(b => b.setAttribute('aria-pressed', String(b.dataset.st === st)));
+    const box = ficha.querySelector(`[data-nota-box="${id}"]`), ta = ficha.querySelector(`[data-nota="${id}"]`), nota = (decis[id] && decis[id].nota) || '';
+    if (box) box.hidden = !(st === 'ajustar' || st === 'recusada' || nota);
+    if (ta && document.activeElement !== ta) ta.value = nota;
+  }
+  for (const k of ['nome', 'fecho']) {
+    const d = decis[k] || {};
+    document.querySelectorAll(`input[name="${k}"]`).forEach(r => { r.checked = r.value === d.escolha; });
+    const ta = document.querySelector(`[data-nota="${k}"]`); if (ta && document.activeElement !== ta) ta.value = d.nota || '';
+  }
+  // uma gag com fala recusada avisa nas outras falas dela
+  const recusadas = new Set(DADOS.falas.filter(f => f.gag && status(f.id) === 'recusada').map(f => f.gag));
+  document.querySelectorAll('.gag').forEach(g => {
+    const tem = recusadas.has(g.dataset.gag);
+    g.classList.toggle('tem-recusa', tem);
+    g.textContent = (DADOS.gags[g.dataset.gag] || g.dataset.gag) + (tem ? ' · uma fala desta gag foi recusada' : '');
+  });
+  filtrar();
+}
+function filtrar() {
+  const conta = { pendente: 0, ajustar: 0, recusada: 0, aprovada: 0, todas: DADOS.falas.length };
+  DADOS.falas.forEach(f => conta[status(f.id)]++);
+  document.querySelectorAll('[data-conta]').forEach(s => { s.textContent = conta[s.dataset.conta]; });
+  const n = DADOS.falas.length;
+  $('.b-ok').style.width = conta.aprovada / n * 100 + '%'; $('.b-aj').style.width = conta.ajustar / n * 100 + '%'; $('.b-no').style.width = conta.recusada / n * 100 + '%';
+  let visiveis = 0; const capsVisiveis = new Set();
+  DADOS.falas.forEach(f => {
+    const ok = (filtro === 'todas' || status(f.id) === filtro) && (!cap || f.cap === cap);
+    document.querySelector(`[data-ficha="${f.id}"]`).hidden = !ok;
+    if (ok) { visiveis++; capsVisiveis.add(f.cap); }
+  });
+  document.querySelectorAll('[data-titulo]').forEach(t => { t.hidden = !capsVisiveis.has(t.dataset.titulo); });
+  $('#vazio').hidden = visiveis > 0;
+}
+
+// ---------- salvar ----------
+const timers = {};
+async function salvar(id, patch) {
+  decis[id] = { ...(decis[id] || {}), ...patch, ...(TEXTO[id] ? { texto: TEXTO[id] } : {}) };
+  aplicar();
+  const marca = document.querySelector(`[data-salvo="${id}"]`);
+  if (!db) { if (marca) marca.textContent = 'Não salvo: abra a página no claude.ai, com a sua conta.'; return; }
+  try {
+    await db.collection('revisao').doc(id).set({ ...decis[id], em: Date.now() });
+    if (marca) { marca.textContent = 'Salvo'; clearTimeout(timers['s' + id]); timers['s' + id] = setTimeout(() => { marca.textContent = ''; }, 1800); }
+  } catch (e) {
+    if (marca) marca.textContent = 'Não deu para salvar agora. Tente de novo em instantes.';
+  }
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('.btn[data-st]');
+  if (b) {
+    const id = b.dataset.id, st = b.dataset.st === status(id) ? 'pendente' : b.dataset.st;   // tocar de novo desfaz
+    salvar(id, { status: st });
+    if (st === 'ajustar' || st === 'recusada') { const ta = document.querySelector(`[data-nota="${id}"]`); if (ta) setTimeout(() => ta.focus({ preventScroll: true }), 50); }
+    return;
+  }
+  const c = e.target.closest('.chip[data-filtro]');
+  if (c) { filtro = c.dataset.filtro; document.querySelectorAll('.chip[data-filtro]').forEach(x => x.setAttribute('aria-pressed', String(x === c))); filtrar(); }
+});
+$('#filtroCap').addEventListener('change', e => { cap = e.target.value; filtrar(); });
+document.addEventListener('input', e => {
+  const ta = e.target.closest('textarea[data-nota]'); if (!ta) return;
+  const id = ta.dataset.nota;
+  clearTimeout(timers[id]); timers[id] = setTimeout(() => salvar(id, { nota: ta.value.trim() }), 700);
+});
+
+aplicar();
+
+// ---------- o banco ----------
+(async () => {
+  try { db = window.claude && claude.use ? await claude.use('db') : null; } catch (e) { db = null; }
+  const aviso = $('#avisoDb');
+  if (!db) { aviso.hidden = false; aviso.textContent = 'As decisões só ficam salvas quando a página está aberta no claude.ai, com a sua conta. Aqui dá para ler as falas.'; return; }
+  db.collection('revisao').onSnapshot(snap => {
+    const novo = {};
+    snap.docs.forEach(d => { novo[d.id] = d.data(); });
+    decis = novo; aplicar();
+  }, () => { aviso.hidden = false; aviso.textContent = 'A conexão com as decisões salvas caiu. Recarregue a página.'; });
+})();
+</script>

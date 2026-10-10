@@ -1,7 +1,8 @@
 # Dice Duel: modo história, "Fita Dupla"
 
 > Roteiro e plano do modo história (proposta, v0.15). Nada daqui está no jogo ainda; o que falta para virar jogo está
-> no §9. O tom segue o `docs/design.md` §6: aconchegante, adulto, frases curtas. A arte segue o `docs/visual-impresso.md`
+> no §9. **Toda piada passa pela aprovação do dono antes de entrar no jogo** (§11): cada fala tem um código
+> (`docs/historia_piadas.json`) e só as aprovadas vão para o código. O tom segue o `docs/design.md` §6: aconchegante, adulto, frases curtas. A arte segue o `docs/visual-impresso.md`
 > (sotaque de gibi impresso: retícula, desencaixe azul e rosa, quadro congelado). As marcas da Diana valem em todo
 > quadro (`docs/design.md` §6): ponta da orelha direita dela preta, a esquerda branca, cinza leve acima dos olhos, dois
 > riscos escuros na testa e **o ferimento vermelho no dorso do nariz**.
@@ -23,8 +24,7 @@ receitas: a receita é ela. E você foi treinado para reescrever uma letra errad
   cada página virou um rival, e cada rival uma lição. A "busca das páginas" foi o treino.
 - **A cura:** a correção tem que ser escrita contra a fita original. A fita original é ela. Por isso o último duelo é
   contra a Diana, na Mesa dela, e ela não pode facilitar ("se eu facilitar, a cura sai com defeito").
-- **O preço:** a cura funciona, mas vira um dado a mais. A ponta preta da orelha troca de lado (o Virar: 7 − valor).
-  Só a fita complementar perfeita (a 3.ª estrela do último capítulo) cura sem efeito colateral.
+- **O preço:** em aberto (§7, Final): o dono não gostou de um final "melhor" preso a uma estrela. As opções estão lá.
 
 Tudo isso é plantado desde o começo, para quem jogar de novo achar (§8): o curativo que piora a cada capítulo, o
 mural que cresce no fundo dos quadros dela, as frases soltas sobre DNA e as frases dos rivais que sabem de alguma coisa.
@@ -89,10 +89,10 @@ Todos já têm retrato pintado no jogo (`arte/retratos.json`); a voz de cada um 
 | **Guaxinim** | máscara, moletom mostarda | ladrão com teoria econômica | 5 · Furto |
 | **Ovelha** | num pasto de hexágonos | cansada da mesma pergunta | 6 · Espelho |
 | **Dona Coruja** | a rival "desafiadora" do jogo | bibliotecária; lê a Mesa e lê gente | 7 · Lacre |
-| **Biscoito** | biscoito de gotas, meio perdido | a gag de fundo: acha que é um livro de receitas de verdade | aparece, não joga |
 
-Os outros especiais (Gordinho, Cafú, Bandoleiro, Galgo) ficam de fora do roteiro principal: são personagens da casa e
-merecem capítulos próprios, se o dono quiser (pergunta aberta no §10).
+Os especiais da casa (Biscoito, Gordinho, Cafú, Bandoleiro, Galgo) não entram na história (decisão do dono). A gag de
+fundo de quem acha que o caderno é de receitas de verdade ficou com o **Coelho**: ele testou a página dele, o pão
+cresceu, e desde então ele quer o caderno inteiro.
 
 ## 6. Estrutura
 
@@ -107,9 +107,28 @@ Mesa da Diana. Cada parada mostra o retrato, as estrelas e a página. O rival ve
   chaves de `RIVAIS[].falas`: início, carta, seu disparo grande, a ruptura dele, venceu, perdeu).
 - **Depois** (1 a 3 quadros): a página, que é uma "receita" com um desenho de gibi e uma nota da Diana na margem. Na
   derrota, só uma fala do rival e "Revanche".
-- **A recompensa:** a carta do capítulo, liberada de graça (é uma das que hoje se compram na Loja), e a página.
+- **A recompensa:** a página e, nos capítulos em que faz sentido, uma carta (§6.1). Nos outros, moedas.
 - **Três estrelas:** vencer; um objetivo do tema do capítulo; um objetivo de jogar bem. As estrelas não travam a
   história. Elas dão cosméticos (12 e 24 estrelas) e um final alternativo (§7, Cap. 8).
+
+### 6.1 As cartas que a história libera
+
+A história libera uma carta só quando **a página daquele capítulo é a própria técnica da carta**, e ela é uma das
+quatro que a cura usa no fim: ler a fita ao contrário, esconder, transferir e copiar. Todas continuam à venda na Loja
+para quem não joga a história, pelo preço de hoje.
+
+| Cap. | A página ensina | Libera |
+|---|---|---|
+| 1 · Sapo | ler a fita pela outra ponta | **Reverso** |
+| 2 · Coelho | fermento no máximo | moedas (a Sobrecarga é dose, não técnica) |
+| 3 · Raposa | a massa esconde o recheio | **Fundo Falso** |
+| 4 · Urso | deixar dormir | moedas (a Pausa é descanso, não técnica) |
+| 5 · Guaxinim | pegar do vizinho | **Furto** |
+| 6 · Ovelha | fazer dois iguais | **Espelho** |
+| 7 · Coruja | tampar o que não deve ferver | moedas e a página que falta (o Lacre segue na Loja) |
+| 8 · Diana | — | os cosméticos do fim (§9) |
+
+Quem já comprou a carta recebe as moedas dela de volta, para não ganhar repetido.
 
 **As regras da casa** usam o que o motor já aceita (meta, deck do rival, quem abre, Bolso inicial, ritmo do rival)
 ou um ajuste no robô. Todas passam pelo simulador antes (`sim/`), como qualquer carta (§9).
@@ -161,8 +180,6 @@ narração (pouca). Na partida, as falas aparecem no balão do retrato, como hoj
   DIANA: "Ótimo. Preciso de um favor. Alguém levou sete páginas do meu caderno de receitas."
 - **Q3.** *Close no rosto dela.*
   DIANA: "Sete. Como a soma dos opostos. Não é coincidência. Quase nada é."
-- **Q4.** *Na beirada do quadro, o Biscoito aparece com os olhos arregalados.*
-  BISCOITO: "Receitas?" DIANA: "Não é com você, Biscoito."
 
 ### Capítulo 1: O Sapo, "Lagoa das Vitórias-Régias" (Reverso)
 
@@ -186,8 +203,6 @@ vitória-régia." · venceu: "Chá?" · perdeu: "Justo. A página é sua. O chá
   outra ponta. Não deixe ferver." *Na margem, na letra da Diana: "Reverso? Testar."*
 - **Q2.** SAPO: "Sabe por que ela quer isso? Dizem que a salamandra regenera uma perna inteira."
 - **Q3.** SAPO: "Eu não. Sou sapo. Todo mundo confunde."
-- *(Biscoito, no fundo, olhando a lagoa)* BISCOITO: "Aqui é a cozinha?" SAPO: "É um lago." BISCOITO: "…Molhado demais
-  para cozinha."
 
 ### Interlúdio: "Coisa de receita"
 
@@ -216,6 +231,7 @@ quatro." · venceu: "Ganhei! Preciso ir. Atrasado." · perdeu: "Toma a página. 
 - **Q1.** *A página com um pão saindo da fôrma e do quadro.* "PÃO QUE CRESCE SOZINHO: fermento no máximo. Deixe dobrar.
   Dobre de novo. Não deixe o coelho ajudar." *Margem: "superexpressão".*
 - **Q2.** COELHO: "Ela é sua amiga? Avisa que o curativo está torto."
+- **Q3.** COELHO: "E pergunta se ela tem mais receitas. O pão ficou ótimo. Ainda está crescendo."
 
 ### Capítulo 3: A Raposa, "Toca de Inverno" (Fundo Falso)
 
@@ -287,7 +303,6 @@ venceu: "Volte sempre. Traga coisas." · perdeu: "Tá. Leva a página. E o cone.
 - **Q1.** *A página: uma tigela com folhas de várias hortas.* "SALADA DE SOBRAS DOS OUTROS: pegue do vizinho o que ele
   não está usando. Funciona com bactéria. Com guaxinim também."
 - **Q2.** GUAXINIM: "Pergunta pra gata quem deixou a janela aberta."
-- *(Biscoito, passando)* GUAXINIM: "Isso é comida?" BISCOITO: "Sou um personagem!" GUAXINIM: "Dá pra ser os dois."
 
 ### Capítulo 6: A Ovelha, "Pasto Hexagonal" (Espelho)
 
@@ -324,7 +339,7 @@ minha lã."
   noite. Sente-se. A Diana mandou você."
 - **Q2.** CORUJA: "Mandou você em todo mundo antes de mim. Esperta. Mandou você treinar."
 - **Q3.** CORUJA: "Ela vai te dizer que 'Dona Coruja' também começa com D. Diga a ela que 'Dona' é pronome de tratamento."
-- *(Biscoito, numa mesa de leitura, com um livro de cabeça para baixo: "Receitas da Vovó")*
+- *(o Coelho numa mesa de leitura, ofegante, com uma pilha de livros de receitas e um pão que não cabe na mesa)*
 
 **Na partida:** início: "Sem pressa. Quem escreve precisa saber ler." · Lacre: "Lacre. Nem tudo que está escrito
 precisa ser dito." · seu disparo grande: "Jogada precisa. Você leu." · ruptura dela: "Hum. Escrevi uma letra errada.
@@ -355,7 +370,7 @@ Precisamos falar da gata."
   - [E as páginas?] DIANA: "O Guaxinim levou. Eu deixei a janela aberta. Com um bilhete: 'por favor, não leve as
     páginas'." **(beat)** "Guaxinim não lê bilhete. Eu sabia."
 - **Q12.** DIANA: "E não: eu não estava brincando com os seus dados na tela inicial." **Q13.** "Estava sequenciando."
-- **Q14.** *O Biscoito na porta.* BISCOITO: "Então… não é um livro de receitas?" DIANA: "É." **Q15.** "A receita sou eu."
+- **Q14.** *O Coelho na porta, abraçado a um pão do tamanho dele.* COELHO: "Então… não é um livro de receitas?" DIANA: "É." **Q15.** "A receita sou eu."
 - **Q16.** *A Diana na Mesa dela, os dados prontos.* DIANA: "Falta escrever. A correção tem que ser feita contra a fita
   original. A fita original sou eu." **Q17.** "Jogue sério. Se eu facilitar, a cura sai com defeito."
 
@@ -375,11 +390,18 @@ De novo. Está no meu DNA." · venceu: "Ainda não. Revanche?" **(beat)** "Por f
 - **Q3.** *A fita encosta no nariz dela. Retícula, desencaixe azul e rosa, quadro congelado (`visual-impresso.md`).*
 - **Q4.** *Close: o ferimento fechado. Ela encosta a pata. Quadro mudo.*
 - **Q5.** DIANA: "Fechou." **Q6.** "Faz cócegas."
-- **Final comum (sem a 3.ª estrela):**
-  - **Q7.** *Ela no espelho. A ponta preta da orelha trocou de lado.* DIANA: "…Você virou o dado errado."
-  - **Q8.** DIANA: "Sete menos o valor. A orelha trocou de lado." **Q9.** "Tudo bem. Ninguém olha orelha." **Q10.** "Revanche?"
-- **Final perfeito (com a Fita complementar):**
-  - **Q7.** *No espelho, tudo no lugar.* DIANA: "Nem a orelha mexeu. Fita complementar perfeita." **Q8.** "Eu ensinei bem."
+**O fecho (em aberto: o dono escolhe uma das opções).** Todas têm um final só para todo mundo; a 3.ª estrela do Cap. 8
+dá no máximo um quadro a mais, nunca um final "certo".
+
+- **A. O Eco (recomendada).** A letra errada era "um Passo onde devia haver um Eco". A correção pôs um Eco. Talvez dois.
+  - **Q7.** DIANA: "Fechou. Fechou." **Q8.** *Ela para.* "Por que eu estou falando duas vezes? Vezes?"
+  - **Q9.** DIANA: "Você pôs um Eco. Eco." **Q10.** "…Passa amanhã. Manhã." **Q11.** "Revanche? Vanche?"
+  - *Com a 3.ª estrela, um quadro a mais:* DIANA: "Fita complementar perfeita. Eu ensinei bem. Bem."
+- **B. Sem preço.** A cura fecha e pronto; o soco vem dela levando o crédito.
+  - **Q7.** DIANA: "Fechou." **Q8.** "Eu sabia que ia dar certo. Eu escolhi a pessoa certa." **Q9.** "Eu sou ótima professora." **Q10.** "Revanche?"
+- **C. A orelha, sempre, sem condição.** A ponta preta da orelha troca de lado em todo final, e ela gosta.
+  - **Q7.** *No espelho.* DIANA: "…Você virou o dado errado. Sete menos o valor." **Q8.** "Gostei. Fica." **Q9.** "Revanche?"
+- **D. Como estava.** A orelha troca no final comum e não troca com a 3.ª estrela.
 
 **Créditos:** *o título "DICE DUEL" na tela.*
 
@@ -388,9 +410,9 @@ De novo. Está no meu DNA." · venceu: "Ainda não. Revanche?" **(beat)** "Por f
   DIANA: "DianaDice não seria um nome melhor para esse jogo?" **Q2.** "…" **Q3.** "Seria."
 
 **Pós-créditos 2**
-- **Q1.** BISCOITO: "Posso alterar a minha receita também?" DIANA: "Você não tem DNA, Biscoito."
-- **Q2.** *O Biscoito murcha.* **Q3.** DIANA: "Mas pode. Põe mais gotas de chocolate."
-- **Q4.** *O Biscoito chora de alegria. Uma gota de chocolate escorre.*
+- **Q1.** *A Diana, curada, abre a porta. Um pão enorme ocupa o quadro inteiro.*
+- **Q2.** COELHO *(de dentro do pão)*: "Fiz de novo! Com a página dois!"
+- **Q3.** DIANA: "Estava escrito: não deixe o coelho ajudar." **Q4.** COELHO: "Eu não ajudei. Eu fiz sozinho."
 
 ## 8. As gags que voltam
 
@@ -401,7 +423,7 @@ Para cada uma valer, ela muda um pouco a cada aparição e paga no fim.
 | **O nariz** | curativo de pips | dois em X | "NÃO PERGUNTE" | cachecol da Raposa | cone | meia (o cone sumiu) | lã da Ovelha | nada: "cansei de disfarçar" | Final: fechou |
 | **O mural** | — | uma foto e um barbante | (fundo) | (fundo) | "DISPARO. DUELO. DOBRO. → D" | (fundo) | (fundo) | coberto por lençol | Revelação |
 | **A letra D** | — | — | — | — | o bilhete no mural | — | — | — | Revelação: "É o que um D diria." · Pós-créditos: "DianaDice" |
-| **O Biscoito** | "Receitas?" | "Aqui é a cozinha?" | — | — | — | "Dá pra ser os dois." | — | lendo "Receitas da Vovó" | "A receita sou eu." · Pós-créditos 2 |
+| **O pão do Coelho** | — | — | testou a página, "ainda está crescendo" | *(um pão aparece na janela da Diana)* | *(maior)* | *(maior)* | *(pela porta)* | o Coelho na biblioteca, atrás de receitas | "A receita sou eu." · Pós-créditos 2 |
 | **Quem sabe de algo** | — | — | — | Raposa: "ela é mais raposa do que eu" | Urso dormindo: "ela pediu pra não contar" | Guaxinim: "quem deixou a janela aberta" | — | Coruja: "não foi por gentileza" | Revelação |
 | **A pata** | ela derruba um dado | — | — | — | — | — | — | — | "Eu estava sequenciando." |
 | **"Revanche?"** | a fala de sempre dela | — | — | — | — | — | — | — | Cap. 8: "…Por favor." · Final: "Revanche?" |
@@ -431,14 +453,17 @@ a pata da Diana, a cascata, o impacto e as tarefas do dia.
 4. **Robôs dos bichos:** o robô de hoje, com o deck do capítulo e um ou dois ajustes de jeito (o Urso só dispara de 5+;
    o Coelho no ritmo rápido; a Raposa arma cedo).
 5. **Regras da casa:** Bolso inicial (Guaxinim) e mesa visual (Ovelha, Diana). O resto já é parâmetro.
-6. **A cura:** a tradução da maior corrente (1 = A, 6 = T, 2 = C, 5 = G, 3 e 4 = "·"). O final perfeito depende da 3.ª
-   estrela do Cap. 8 (uma corrente de 4+ só com elos Oposto, que é a Harmonia em Oposto que o motor já detecta).
+6. **A cura:** a tradução da maior corrente (1 = A, 6 = T, 2 = C, 5 = G, 3 e 4 = "·"). A 3.ª estrela do Cap. 8 (uma
+   corrente de 4+ só com elos Oposto, a Harmonia em Oposto que o motor já detecta) dá no máximo um quadro a mais.
 7. **Progresso:** `st.historia = { capitulo, estrelas: {}, paginas: [] }`, guardado no aparelho e, com conta, nos extras
    (como os recordes). A carta liberada pela história, com conta, passa pelo servidor: ele a dá quando recebe o relato
    do capítulo vencido, com as mesmas travas das partidas contra os rivais (`docs/servidor.md`).
-8. **Menu:** "História" ao lado do "Online", com o retrato da Diana e o capítulo atual. O mapa abre por cima do menu.
-9. **Recompensas finais:**
-   - o ícone **Diana** (com a orelha do final que a pessoa teve);
+8. **Só falas aprovadas:** o `js/historia.js` lê as falas do `docs/historia_piadas.json` (montado no empacotamento) e
+   recusa, nos testes, qualquer fala sem `"status": "aprovada"`. Uma fala reprovada some do jogo, e o quadro dela fica
+   mudo até ganhar outra.
+9. **Menu:** "História" ao lado do "Online", com o retrato da Diana e o capítulo atual. O mapa abre por cima do menu.
+10. **Recompensas finais:**
+   - o ícone **Diana**;
    - a mesa **Mural**;
    - o dado **Hélice**;
    - nas 12 e nas 24 estrelas, os cosméticos do pasto de hexágonos e da biblioteca.
@@ -457,13 +482,36 @@ a pata da Diana, a cascata, o impacto e as tarefas do dia.
 - O simulador: as regras da casa ficam entre 40% e 60% para um jogador médio, com o rival um pouco mais difícil a cada
   capítulo.
 
-## 10. Perguntas para o dono
+## 10. Decisões do dono
 
-1. **Os especiais da casa** (Gordinho, Cafú, Bandoleiro, Galgo): entram como capítulos extras, depois da história?
-   Ficam de fora? O Biscoito já está no roteiro como gag de fundo; tudo bem usar ele assim?
-2. **As cartas da história:** liberar de graça as 7 cartas que hoje se compram (Reverso, Sobrecarga, Fundo Falso,
-   Pausa, Furto, Espelho, Lacre) muda a Loja. Elas continuam à venda para quem não joga a história? (A proposta é
-   sim.) Ou a história dá moedas em vez das cartas?
-3. **A orelha:** o final comum troca a marca da orelha da Diana. Isso fica só nos quadros do final, ou vale para a
-   Diana dali em diante (no menu e nas partidas), até a pessoa conseguir o final perfeito?
-4. **O nome:** "Fita Dupla" para o modo história? (Dupla hélice, as duas correntes na Mesa e a fita do lo-fi.)
+| Pergunta | Decisão |
+|---|---|
+| Os especiais da casa entram? | **Não.** O Biscoito também saiu; a gag das receitas ficou com o Coelho. |
+| A história libera cartas? | **Algumas, quando faz sentido**, e elas continuam à venda (§6.1: 4 de 7). |
+| A orelha trocada? | **Em aberto:** o dono não gostou da condição. Opções A a D no §7, Final. |
+| O nome? | **"Fita Dupla" serve**; outras opções abaixo. |
+| As piadas? | **Toda piada passa pela aprovação do dono** (§11). |
+
+**Nomes para o modo história:**
+
+| Nome | O que diz | Contra |
+|---|---|---|
+| **Fita Dupla** | dupla hélice, as duas correntes na Mesa, a fita do lo-fi | o jogador só entende no meio |
+| **O Caderno da Diana** | a busca das páginas; sem spoiler | não promete nada de genética |
+| **Sete Receitas** | as sete páginas e o disfarce | vira menos engraçado depois da revelação |
+| **Uma Letra Errada** | a ferida e a cura, em três palavras | conta o mistério antes da hora |
+| **Tudo Começa com D** | a teoria da Diana vira o título | entrega a piada do mural |
+| **Códon** | curto, estranho, científico | frio; não tem a Diana |
+
+Recomendação: **O Caderno da Diana** no menu (convida e não entrega nada) e **Fita Dupla** como título do último
+capítulo, quando o nome passa a fazer sentido.
+
+## 11. Aprovação das piadas
+
+- Toda fala e toda gag tem um código (`P-01`, `C1-04`, `R-07`…) em `docs/historia_piadas.json`.
+- O dono revisa na página **Falas da Fita Dupla** (https://claude.ai/artifact/FQDAAEvy5B9VeQEKawmGMT), montada por
+  `tools/historia/revisao.py` a partir do JSON, com as falas e três botões: **Aprovar**, **Ajustar** (com nota) e **Recusar**. As decisões
+  voltam para o JSON, com a nota.
+- Fala nova ou reescrita entra como **pendente** e passa de novo pela revisão. Nada entra no jogo pendente.
+- Uma piada recusada pode levar junto o retorno dela (§8): quando isso acontece, a página avisa ("a gag do nariz depende
+  desta").
