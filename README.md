@@ -66,6 +66,7 @@ e o amigo cai direto na sala. O servidor é a autoridade da partida e roda na Ra
 | `tools/referencias.js` | desenha os vetores de `js/retratos.js` em `arte/referencia/` (rode de novo quando mudar um vetor) |
 | `tools/fumaca.js` | teste de fumaça: joga partidas inteiras no navegador e falha com qualquer erro |
 | `tools/estreia_e2e.js` | a estreia e o guia: primeira partida sem cartas, explicações uma vez só, fim da derrota, a partida seguinte e quem já jogava |
+| `tools/impresso_demo.js` | grava o protótipo das técnicas de gibi (`?impresso=1`, `docs/visual-impresso.md`) sem e com, para comparar |
 | `tools/regras.js` | testes dirigidos das cartas (Pressa, Remendo, Espelho, armadilha virada, Âncora × Interferência) |
 | `tools/layout.js` | verificador de layout em 5 larguras: texto vazando, fora da caixa, quebrado, descentralizado |
 | `tools/macaco.js` | o macaco: toques ao acaso em tudo, com vigia de travamento e de estado impossível |

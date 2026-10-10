@@ -8,12 +8,20 @@
   const cfg = { animacoes: true, particulas: true, tremor: true };
   const reduzido = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (reduzido) { cfg.animacoes = false; cfg.tremor = false; }
+  // "impresso" (fase 0 de docs/visual-impresso.md): técnicas de gibi atrás de uma bandeira. ?impresso=1 liga e fica
+  // guardado no aparelho; ?impresso=0 desliga
+  try {
+    const q = new URLSearchParams(location.search).get('impresso');
+    if (q != null) { if (q === '0') localStorage.removeItem('diceduel.impresso'); else localStorage.setItem('diceduel.impresso', '1'); }
+    cfg.impresso = !!localStorage.getItem('diceduel.impresso');
+  } catch (e) { cfg.impresso = false; }
+  const AZUL = '#6fbfd3', ROSA = '#ec8fa8';   // as cores dos dois jogadores são as duas chapas da impressão
 
   // ---------- partículas ----------
   const canvas = document.createElement('canvas');
   canvas.className = 'fx-canvas'; canvas.setAttribute('aria-hidden', 'true');
   const g = canvas.getContext('2d');
-  let parts = [], rodando = false, dpr = 1;
+  let parts = [], rodando = false, dpr = 1, congeladoAte = 0, quadroAnt = 0;
   function ajustar() {
     dpr = Math.min(2, window.devicePixelRatio || 1);
     canvas.width = innerWidth * dpr; canvas.height = innerHeight * dpr;
@@ -26,8 +34,12 @@
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
     g.clearRect(0, 0, innerWidth, innerHeight);
     parts = parts.filter(p => p.vida > 0);
+    // no quadro congelado as partículas ficam onde estão (e os orbes guiados empurram o relógio deles)
+    const agora = performance.now(), parado = agora < congeladoAte, dt = quadroAnt ? agora - quadroAnt : 0;
+    quadroAnt = agora;
     for (const p of parts) {
-      if (p.bez) {
+      if (parado) { if (p.bez) { p.bez.t0 += dt; if (agora < p.bez.t0) continue; } }
+      else if (p.bez) {
         // orbe guiado: curva de Bézier até o alvo, acelerando no fim; ao chegar, some e avisa
         const b = p.bez, k = Math.min(1, Math.max(0, (performance.now() - b.t0) / b.dur)), e = k * k * (3 - 2 * k) * 0.4 + k * k * 0.6, u = 1 - e;
         p.x = u * u * b.x0 + 2 * u * e * b.cx + e * e * b.x1; p.y = u * u * b.y0 + 2 * u * e * b.cy + e * e * b.y1;
@@ -49,7 +61,7 @@
       }
       g.restore();
     }
-    if (parts.length) requestAnimationFrame(laco); else { rodando = false; g.clearRect(0, 0, innerWidth, innerHeight); }
+    if (parts.length) requestAnimationFrame(laco); else { rodando = false; quadroAnt = 0; g.clearRect(0, 0, innerWidth, innerHeight); }
   }
   function soltar(lista) {
     if (!cfg.particulas || !cfg.animacoes) return;
@@ -104,13 +116,68 @@
     });
   }
   // clarão macio no ponto de um disparo grande (a tela "respira" junto)
-  function clarao(alvo, forca = 1) {
+  function clarao(alvo, forca = 1, cor = null) {
     if (!cfg.animacoes || !cfg.particulas) return;
     const { x, y } = alvo && alvo.nodeType ? centro(alvo) : centro(null);
     const el = document.createElement('div');
     el.className = 'clarao'; el.style.left = x + 'px'; el.style.top = y + 'px';
     document.body.appendChild(el);
     el.animate([{ opacity: 0.55 * forca, transform: 'translate(-50%,-50%) scale(.4)' }, { opacity: 0, transform: 'translate(-50%,-50%) scale(1.6)' }], { duration: 420, easing: 'cubic-bezier(.2,.8,.3,1)' }).onfinish = () => el.remove();
+    if (!cfg.impresso) return;
+    // impresso: um anel de retícula na cor de quem disparou, que se abre "em dois" (a pose segura alguns quadros)
+    const r = document.createElement('div');
+    r.className = 'clarao reticula'; r.style.left = x + 'px'; r.style.top = y + 'px';
+    r.style.backgroundImage = `url(${reticula(cor || '#ffcf8a')})`;
+    document.body.appendChild(r);
+    r.animate([{ opacity: Math.min(1, 0.6 + 0.4 * forca), transform: 'translate(-50%,-50%) scale(.35) rotate(0deg)' }, { opacity: 0, transform: 'translate(-50%,-50%) scale(1.5) rotate(8deg)' }], { duration: 520, easing: 'steps(6, end)' }).onfinish = () => r.remove();
+  }
+
+  // ---------- impresso: retícula, desencaixe e quadro congelado ----------
+  // a retícula é desenhada uma vez por cor: pontos numa grade a 45°, maiores num anel e menores no centro e na borda
+  const reticulas = {};
+  function reticula(cor) {
+    if (reticulas[cor]) return reticulas[cor];
+    const T = 256, c = document.createElement('canvas'); c.width = c.height = T;
+    const k = c.getContext('2d'), passo = 9, R = T / 2;
+    k.fillStyle = cor; k.translate(R, R); k.rotate(Math.PI / 4);
+    for (let i = -T; i <= T; i += passo) for (let j = -T; j <= T; j += passo) {
+      const d = Math.hypot(i, j) / R; if (d >= 1) continue;
+      const raio = passo * 0.62 * Math.pow(Math.sin(Math.PI * Math.min(1, d * 1.15)), 1.3);
+      if (raio < 0.6) continue;
+      k.beginPath(); k.arc(i, j, raio, 0, Math.PI * 2); k.fill();
+    }
+    return (reticulas[cor] = c.toDataURL());
+  }
+  // as chapas azul e rosa saem do registro e voltam, em 3 poses seguradas
+  function desencaixe(el, texto = null) {
+    if (!cfg.impresso || !cfg.animacoes || !el) return;
+    const fim = getComputedStyle(el).boxShadow, base = fim === 'none' ? '' : ', ' + fim;
+    el.animate([
+      { boxShadow: `-9px -3px 0 ${AZUL}, 9px 3px 0 ${ROSA}${base}` },
+      { boxShadow: `5px 2px 0 ${AZUL}, -5px -2px 0 ${ROSA}${base}` },
+      { boxShadow: `-2px 0 0 ${AZUL}, 2px 0 0 ${ROSA}${base}` },
+      { boxShadow: `0 0 0 transparent, 0 0 0 transparent${base}` },
+    ], { duration: 420, easing: 'steps(1, end)' });
+    if (texto) texto.animate([
+      { textShadow: `-5px -2px 0 ${AZUL}, 5px 2px 0 ${ROSA}` },
+      { textShadow: `3px 1px 0 ${AZUL}, -3px -1px 0 ${ROSA}` },
+      { textShadow: `-1px 0 0 ${AZUL}, 1px 0 0 ${ROSA}` },
+      { textShadow: '0 0 0 transparent, 0 0 0 transparent' },
+    ], { duration: 420, easing: 'steps(1, end)' });
+  }
+  // o quadro congelado (hit-stop): tudo o que se mexe na tela para por um instante dentro de uma moldura de gibi.
+  // Só a imagem para: o relógio da vez, a rede e o motor seguem. Devolve quanto tempo ficou parado (0 se não parou)
+  function quadro(ms = 260) {
+    if (!cfg.impresso || !cfg.animacoes || !cfg.particulas) return 0;
+    const paradas = document.getAnimations().filter(a => a.playState === 'running');
+    paradas.forEach(a => a.pause());
+    congeladoAte = performance.now() + ms;
+    const el = document.createElement('div');
+    el.className = 'quadro-gibi'; el.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(el);
+    el.animate([{ opacity: 1 }, { opacity: 1, offset: ms / (ms + 200) }, { opacity: 0 }], { duration: ms + 200 }).onfinish = () => el.remove();
+    setTimeout(() => paradas.forEach(a => { if (a.playState === 'paused') a.play(); }), ms);
+    return ms;
   }
 
   // ---------- elementos que voam ----------
@@ -181,6 +248,7 @@
     if (c.y != null) el.style.top = c.y + 'px';   // op.y: onde fica o meio da chamada (o aviso da carta mora entre o painel e a Mesa)
     document.body.appendChild(el);
     atual = el;
+    if (c.desencaixe) desencaixe(el, el.querySelector('b'));
     // "minha": uma chamada que furou a fila já tomou o lugar desta; o relógio dela não chama a próxima
     setTimeout(() => { if (minha !== vez) return; el.classList.add('saindo'); setTimeout(() => { if (minha !== vez) return; el.remove(); proxima(); }, cfg.animacoes ? 260 : 0); }, c.ms || (cfg.animacoes ? 1150 : 1400));
   }
@@ -265,5 +333,5 @@
     return new Promise(res => setTimeout(res, ms));
   }
 
-  window.Fx = { cfg, faiscas, confete, poeira, voar, texto, chamada, dica, contagem, tremer, pulsar, contar, centro, orbes, clarao, impacto, limparDica, lancarCarta };
+  window.Fx = { cfg, faiscas, confete, poeira, voar, texto, chamada, dica, contagem, tremer, pulsar, contar, centro, orbes, clarao, impacto, limparDica, lancarCarta, desencaixe, quadro, AZUL, ROSA };
 })();
