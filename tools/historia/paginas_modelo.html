@@ -58,8 +58,9 @@ main { display: grid; gap: 28px; }
 
 /* o balão: só o texto mora no HTML; o contorno e o rabinho são desenhados juntos no SVG (sem emenda) */
 .balao { position: absolute; z-index: 3; box-sizing: border-box; width: max-content; max-width: max(44%, 190px); padding: .8em 1.35em; color: #3a2a2e;
-  font: 800 clamp(12.5px, 3.1cqw, 17px)/1.25 var(--f-texto); text-align: center; text-wrap: balance; }
-.q.meio .balao { max-width: 74%; font-size: clamp(12.5px, 4.4cqw, 16px); }
+  font: 800 calc(clamp(12.5px, 3.1cqw, 17px) * var(--fs, 1))/1.25 var(--f-texto); text-align: center; text-wrap: balance; }
+.q.meio .balao { max-width: 74%; font-size: calc(clamp(12.5px, 4.4cqw, 16px) * var(--fs, 1)); }
+.balao.ajustado { max-width: none; }
 .balao.nw { left: 4%; top: 5%; } .balao.ne { right: 4%; top: 5%; } .balao.sw { left: 4%; bottom: 6%; } .balao.se { right: 4%; bottom: 6%; }
 .balao.pausa { padding: .55em 1.1em; font-size: clamp(13px, 4cqw, 20px); letter-spacing: .1em; }
 .balao.caixa { left: 0; top: 0; max-width: 72%; padding: .6em .9em; text-align: left; font-weight: 700; font-style: italic; }
@@ -99,6 +100,20 @@ main { display: grid; gap: 28px; }
 .nota.cartao { padding: .6cqw 1.4cqw; background: #fffaf0 repeating-linear-gradient(transparent 0 1.5cqw, rgba(111,191,211,.5) 1.5cqw 1.65cqw); border: .25cqw solid #3a2a2e; font-family: var(--f-titulo); font-size: 2.6cqw; letter-spacing: .08em; }
 .alfinete { fill: #e8806f; stroke: #3a2a2e; stroke-width: .35; }
 
+/* o editor de balões (D.editor): arrastar o balão, a alça da largura, a bolinha da ponta do rabinho */
+.editor .balao { cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
+.editor .balao:hover, .editor .balao.ativo { outline: 2px dashed var(--azul); outline-offset: 4px; }
+.editor .balao.ajustado::before { content: "ajustado"; position: absolute; left: 50%; top: -1.9em; transform: translateX(-50%); font: 800 9px var(--f-texto); letter-spacing: .06em; text-transform: uppercase; color: #fff; background: #4e7d68; border-radius: 4px; padding: 1px 5px; white-space: nowrap; }
+.alca { position: absolute; right: -11px; top: 50%; width: 18px; height: 34px; margin-top: -17px; border-radius: 6px; background: var(--azul); border: 2px solid #3a2a2e; cursor: ew-resize; touch-action: none; }
+.ponta { position: absolute; z-index: 5; width: 22px; height: 22px; margin: -11px 0 0 -11px; border-radius: 50%; background: var(--rosa); border: 2.5px solid #3a2a2e; cursor: move; touch-action: none; box-shadow: 0 0 0 3px rgba(255,255,255,.7); }
+.ferramentas { position: absolute; z-index: 6; display: flex; gap: 4px; padding: 4px; background: #3a2a2e; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,.3); }
+.ferramentas button { font: 700 13px var(--f-texto); color: #3a2a2e; background: #fbf1df; border: 0; border-radius: 7px; padding: 6px 9px; cursor: pointer; min-width: 34px; }
+.ferramentas button:hover, .ferramentas button:focus-visible { background: var(--mel); outline: none; }
+.barra-editor { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; padding: 10px 14px; background: var(--folha); border: 3px solid var(--tinta); border-radius: 10px; box-shadow: 4px 4px 0 rgba(58,42,46,.18); font-size: 13px; }
+.barra-editor b { font-family: var(--f-titulo); font-size: 15px; }
+.barra-editor .estado-salvo { margin-left: auto; font-weight: 700; color: var(--tinta-suave); }
+.barra-editor .estado-salvo.ok { color: #4e7d68; } .barra-editor .estado-salvo.erro { color: var(--recusada); }
+
 .rodape { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; color: var(--tinta-suave); flex-wrap: wrap; }
 .rodape code { font: 600 12px ui-monospace, Menlo, monospace; color: var(--tinta); }
 .rodape .velha { font: 800 9px var(--f-texto); letter-spacing: .06em; text-transform: uppercase; color: var(--tinta-suave); border: 1.5px solid currentColor; border-radius: 4px; padding: 0 4px; margin-left: 6px; }
@@ -124,6 +139,8 @@ footer { font-size: 13px; color: var(--tinta-suave); max-width: 64ch; }
 
 <script>
 const D = /*DADOS*/null;
+// os ajustes de balão: posição (x, y), largura (w) e ponta do rabinho (tx, ty) em % do quadro; fs é a escala da letra
+const AJ = Object.assign({}, D.baloes || {});
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 const NOMES = { DIANA: 'diana', SAPO: 'sapo', COELHO: 'coelho', URSO: 'urso', CAIXA: 'caixa' };
 const ID_QUEM = { Diana: 'diana', Sapo: 'sapo', Coelho: 'coelho', Raposa: 'raposa', Urso: 'urso', Guaxinim: 'guaxinim', Ovelha: 'ovelha', Coruja: 'coruja' };
@@ -160,7 +177,7 @@ function trecho(codigo, parte) {
 const estadoTag = t => t.status === 'aprovada' ? '' : `<span class="estado ${t.status === 'recusada' ? 'recusada' : ''}">${t.status === 'recusada' ? 'recusada' : 'em revisão'}</span>`;
 
 // o que vai por cima da arte: balão, letreiros da página do caderno, onomatopeia
-function camada(arte, q, t) {
+function camada(arte, q, t, chave) {
   const a = D.artes[arte] || {};
   let h = '';
   if (a.pagina) {
@@ -172,7 +189,8 @@ function camada(arte, q, t) {
   for (const b of t ? (t.multi || [t]) : []) {
     if (['mudo', 'margem', 'receita'].includes(b.tipo)) continue;
     const lugar = b.tipo === 'caixa' ? '' : (a.lugar || 'nw');
-    h += `<div class="balao ${lugar} ${b.tipo}" data-lugar="${lugar}" data-quem="${esc(b.quem)}">${b.rub ? `<span class="rub">(${esc(b.rub)})</span>` : ''}${esc(b.txt)}${estadoTag(b)}</div>`;
+    const ch = `${chave}_${(t.multi || [t]).indexOf(b)}`;
+    h += `<div class="balao ${lugar} ${b.tipo}" data-lugar="${lugar}" data-quem="${esc(b.quem)}" data-chave="${ch}">${b.rub ? `<span class="rub">(${esc(b.rub)})</span>` : ''}${esc(b.txt)}${estadoTag(b)}</div>`;
   }
   if (q.som) h += `<div class="som" style="left:${q.som.x}%;top:${q.som.y}%;--rot:${q.som.rot || -10}deg">${esc(q.som.txt)}</div>`;
   return h;
@@ -208,17 +226,17 @@ function mural(id) {
 }
 
 const ZOOM = { perto: 1.3, detalhe: 1.65 };
-function painel(arte, q, t) {
+function painel(arte, q, t, chave) {
   if (!arte) return `<div class="arte vazio">sem este quadro</div>`;
   const src = D.imagens[arte], a = D.artes[arte] || {};
   if (a.mural) {
-    return `<div class="arte" data-arte="${esc(arte)}" data-zoom="${ZOOM[q.plano] || 1}" data-foco="${q.foco ? q.foco.join(',') : ''}">${mural(a.mural)}<div class="reticula"></div><svg class="tinta" aria-hidden="true"></svg>${camada(arte, q, t)}</div>`;
+    return `<div class="arte" data-arte="${esc(arte)}" data-zoom="${ZOOM[q.plano] || 1}" data-foco="${q.foco ? q.foco.join(',') : ''}">${mural(a.mural)}<div class="reticula"></div><svg class="tinta" aria-hidden="true"></svg>${camada(arte, q, t, chave)}</div>`;
   }
   if (!src) return `<div class="arte vazio">ainda sem arte<br><code>${esc(arte)}</code></div>`;
   const chapas = q.impacto ? `<img class="chapa azul" src="${src}" alt=""><img class="chapa rosa" src="${src}" alt="">` : '';
   return `<div class="arte${a.pagina ? ' pagina' : ''}" data-arte="${esc(arte)}" data-zoom="${ZOOM[q.plano] || 1}" data-foco="${q.foco ? q.foco.join(',') : ''}">
     <img class="base" src="${src}" alt="${esc(a.texto || arte)}">${chapas}<div class="reticula"></div>
-    <svg class="tinta" aria-hidden="true"></svg>${camada(arte, q, t)}</div>`;
+    <svg class="tinta" aria-hidden="true"></svg>${camada(arte, q, t, chave)}</div>`;
 }
 
 function rodape(arte, t) {
@@ -228,22 +246,22 @@ function rodape(arte, t) {
 }
 
 const ehMeio = q => !!(q && q.plano && q.plano !== 'inteiro' && !q.opcoes);
-function quadro(q, meio) {
+function quadro(q, meio, chave) {
   if (q.opcoes) {
     const ops = q.opcoes.map(([arte, codigo], k) => {
       const t = trecho(codigo);
-      return `<div class="opcao"><span class="rotulo-op">Opção ${'ab'[k]}</span>${painel(arte, q, t)}${rodape(arte, t)}</div>`;
+      return `<div class="opcao"><span class="rotulo-op">Opção ${'ab'[k]}</span>${painel(arte, q, t, `${chave}_o${k}`)}${rodape(arte, t)}</div>`;
     }).join('');
     return `<div class="q"><div class="opcoes">${ops}</div></div>`;
   }
   const t = q.fala ? trecho(q.fala, q.parte) : null;
-  return `<div class="q${meio ? ' meio' : ''}${q.impacto ? ' impacto' : ''}" data-linhas='${q.linhas ? JSON.stringify(q.linhas) : ''}'>${painel(q.arte, q, t)}${rodape(q.arte, t)}</div>`;
+  return `<div class="q${meio ? ' meio' : ''}${q.impacto ? ' impacto' : ''}" data-linhas='${q.linhas ? JSON.stringify(q.linhas) : ''}'>${painel(q.arte, q, t, chave)}${rodape(q.arte, t)}</div>`;
 }
-function grade(qs) {
+function grade(qs, pag) {
   const out = []; let i = 0;
   while (i < qs.length) {
-    if (ehMeio(qs[i]) && ehMeio(qs[i + 1])) { out.push(quadro(qs[i], true), quadro(qs[i + 1], true)); i += 2; }
-    else { out.push(quadro(qs[i], false)); i += 1; }
+    if (ehMeio(qs[i]) && ehMeio(qs[i + 1])) { out.push(quadro(qs[i], true, `${pag}_${i}`), quadro(qs[i + 1], true, `${pag}_${i + 1}`)); i += 2; }
+    else { out.push(quadro(qs[i], false, `${pag}_${i}`)); i += 1; }
   }
   return out.join('');
 }
@@ -308,6 +326,14 @@ function posicionar(el, img) {
   const falas = [...el.querySelectorAll('.balao:not(.caixa)')];
   for (const bal of el.querySelectorAll('.balao')) {
     CANTOS.forEach(k => bal.classList.remove(k));
+    const aj = AJ[bal.dataset.chave];
+    bal.classList.toggle('ajustado', !!aj);
+    bal.style.setProperty('--fs', aj && aj.fs ? aj.fs : 1);
+    bal.style.width = aj && aj.w ? `${aj.w}%` : '';
+    if (aj) {                                           // ajustado à mão: fica onde foi posto
+      bal.style.left = `${aj.x}%`; bal.style.top = `${aj.y}%`;
+      postos.push({ ...caixaDe(bal), fala: true }); continue;
+    }
     if (bal.classList.contains('caixa')) { postos.push(caixaDe(bal)); continue; }
     bal.style.left = '0px'; bal.style.top = '0px';
     const w = bal.offsetWidth, h = bal.offsetHeight, f = rosto(el, img, bal.dataset.quem), pref = bal.dataset.lugar || 'nw';
@@ -359,7 +385,14 @@ function desenhar(el) {
     }
     const caminho = pts => 'M' + pts.map(p => `${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' L') + ' Z';
     let rabo = '';
-    const f = caixa ? null : rosto(el, img, bal.dataset.quem);
+    const aj = AJ[bal.dataset.chave];
+    let f = caixa ? null : rosto(el, img, bal.dataset.quem);
+    if (!caixa && aj && aj.tx != null) {               // a ponta do rabinho posta à mão: vai até ela
+      const p = { x: aj.tx / 100 * W, y: aj.ty / 100 * H };
+      f = { boca: p, x0: p.x, x1: p.x, y0: p.y, y1: p.y, mao: true };
+    }
+    if (aj && aj.semRabo) f = null;
+    bal._ponta = null;
     if (f) {
       const boca = f.boca;
       // a base: o ponto da borda virado para a boca, e dois pontos a uma distância dele, andando pela própria borda
@@ -378,8 +411,9 @@ function desenhar(el) {
         if (q > 0) { const px = base[0] + ux * q, py = base[1] + uy * q; if (px >= f.x0 - 1 && px <= f.x1 + 1 && py >= f.y0 - 1 && py <= f.y1 + 1) ate = Math.min(ate, q); }
       }
       // o rabinho nunca entra na cabeça: para 6 px antes dela; colado na cabeça, fica curtinho (e aponta)
-      const comp = ate > 16 ? Math.min(ate - 6, H * .24, Math.max(r.h * .9, 30)) : Math.max(5, ate - 3);
+      const comp = f.mao ? Math.max(8, dist) : ate > 16 ? Math.min(ate - 6, H * .24, Math.max(r.h * .9, 30)) : Math.max(5, ate - 3);
       const tip = [base[0] + ux * comp, base[1] + uy * comp];
+      bal._ponta = tip;
       // os dois lados curvam para o mesmo lado, como o rabinho desenhado à mão
       const curva = comp * .14, px = -uy * curva, py = ux * curva;
       const c1 = [(A[0] + tip[0]) / 2 + px, (A[1] + tip[1]) / 2 + py], c2 = [(B[0] + tip[0]) / 2 + px, (B[1] + tip[1]) / 2 + py];
@@ -403,7 +437,122 @@ function desenhar(el) {
     }
   }
   svg.innerHTML = linhas.join('') + formas.join('');
+  if (D.editor) Editor.alcas(el);
 }
+
+// ---------- o editor de balões (só quando D.editor) ----------
+// cada ajuste é um documento do banco da página (coleção "baloes", um por balão); o Claude lê de volta e grava no
+// arte/historia.json. Sem o banco (fora do claude.ai), dá para ajustar mas nada fica salvo.
+const Editor = {
+  db: null, ativo: null, arrasto: null, pendentes: new Map(),
+  arte: ch => document.querySelector(`.balao[data-chave="${ch}"]`)?.closest('.arte'),
+  pct: (el, x, y) => { const r = el.getBoundingClientRect(); return [(x - r.left) / r.width * 100, (y - r.top) / r.height * 100]; },
+  // o ajuste atual de um balão; sem ajuste, nasce da posição automática dele
+  ajuste(bal) {
+    const ch = bal.dataset.chave, el = bal.closest('.arte');
+    if (!AJ[ch]) AJ[ch] = { x: bal.offsetLeft / el.clientWidth * 100, y: bal.offsetTop / el.clientHeight * 100, w: bal.offsetWidth / el.clientWidth * 100, fs: 1 };
+    return AJ[ch];
+  },
+  alcas(el) {
+    el.querySelectorAll('.alca, .ponta, .ferramentas').forEach(n => n.remove());
+    for (const bal of el.querySelectorAll('.balao')) {
+      bal.insertAdjacentHTML('beforeend', '<span class="alca" title="Arraste para mudar a largura"></span>');
+      if (bal._ponta && !bal.classList.contains('caixa')) {
+        el.insertAdjacentHTML('beforeend', `<span class="ponta" data-chave="${bal.dataset.chave}" title="Arraste a ponta do rabinho" style="left:${bal._ponta[0]}px;top:${bal._ponta[1]}px"></span>`);
+      }
+    }
+    const bal = Editor.ativo && el.querySelector(`.balao[data-chave="${Editor.ativo}"]`);
+    if (bal) {
+      bal.classList.add('ativo');
+      const x = Math.min(el.clientWidth - 260, Math.max(4, bal.offsetLeft)), y = bal.offsetTop + bal.offsetHeight + 10 > el.clientHeight - 44 ? Math.max(4, bal.offsetTop - 46) : bal.offsetTop + bal.offsetHeight + 10;
+      el.insertAdjacentHTML('beforeend', `<div class="ferramentas" style="left:${x}px;top:${y}px">
+        <button data-acao="menor" title="Letra menor">A−</button><button data-acao="maior" title="Letra maior">A+</button>
+        <button data-acao="rabo" title="Mostrar ou esconder o rabinho">${AJ[Editor.ativo]?.semRabo ? 'Com rabinho' : 'Sem rabinho'}</button>
+        <button data-acao="auto" title="Volta ao lugar automático">Automático</button></div>`);
+    }
+  },
+  redesenhar(ch) { const el = Editor.arte(ch); if (el) desenhar(el); },
+  marcar(ch) {                                          // salva quando a pessoa solta (uma escrita por balão de cada vez)
+    const aj = AJ[ch];
+    Editor.pendentes.set(ch, aj ? { ...aj } : null);
+    Editor.esvaziar();
+  },
+  async esvaziar() {
+    if (!Editor.db || Editor.salvando) { if (!Editor.db) Editor.estado('Sem conexão com o claude.ai: os ajustes não ficam salvos.', 'erro'); return; }
+    Editor.salvando = true;
+    while (Editor.pendentes.size) {
+      const [ch, aj] = Editor.pendentes.entries().next().value;
+      Editor.pendentes.delete(ch);
+      Editor.estado('Salvando…');
+      try {
+        const ref = Editor.db.collection('baloes').doc(ch);
+        if (aj) {
+          const r = n => n == null ? null : Math.round(n * 10) / 10;
+          await ref.set({ x: r(aj.x), y: r(aj.y), w: r(aj.w), fs: Math.round((aj.fs || 1) * 100) / 100, tx: r(aj.tx), ty: r(aj.ty), semRabo: !!aj.semRabo });
+        } else await ref.delete();
+        Editor.estado('Ajustes salvos', 'ok');
+      } catch (e) {
+        Editor.estado(e && e.code === 'resource_exhausted' ? 'Muitas mudanças seguidas: espere um pouco e mexa de novo.' : 'Não deu para salvar este ajuste. Tente de novo.', 'erro');
+      }
+    }
+    Editor.salvando = false;
+  },
+  estado(txt, cls = '') { const e = document.getElementById('estadoSalvo'); if (e) { e.textContent = txt; e.className = 'estado-salvo ' + cls; } },
+  ligar() {
+    document.body.classList.add('editor');
+    document.addEventListener('pointerdown', ev => {
+      const ponta = ev.target.closest('.ponta'), alca = ev.target.closest('.alca'), bal = ev.target.closest('.balao'), bt = ev.target.closest('.ferramentas button');
+      if (bt) return;
+      if (!ponta && !bal) { if (Editor.ativo && !ev.target.closest('.ferramentas')) { const ch = Editor.ativo; Editor.ativo = null; document.querySelectorAll('.balao.ativo').forEach(b => b.classList.remove('ativo')); Editor.redesenhar(ch); } return; }
+      ev.preventDefault();
+      const ch = (ponta || bal).dataset.chave, el = (ponta || bal).closest('.arte');
+      const b = el.querySelector(`.balao[data-chave="${ch}"]`), aj = Editor.ajuste(b);
+      const [px, py] = Editor.pct(el, ev.clientX, ev.clientY);
+      Editor.arrasto = { ch, el, tipo: ponta ? 'ponta' : alca ? 'largura' : 'mover', px, py, ini: { ...aj } };
+      if (Editor.ativo !== ch) { document.querySelectorAll('.balao.ativo').forEach(x => x.classList.remove('ativo')); Editor.ativo = ch; }
+      (ponta || bal).setPointerCapture?.(ev.pointerId);
+    });
+    document.addEventListener('pointermove', ev => {
+      const a = Editor.arrasto; if (!a) return;
+      const [px, py] = Editor.pct(a.el, ev.clientX, ev.clientY), aj = AJ[a.ch];
+      if (a.tipo === 'mover') { aj.x = Math.max(0, Math.min(98, a.ini.x + px - a.px)); aj.y = Math.max(0, Math.min(96, a.ini.y + py - a.py)); }
+      if (a.tipo === 'largura') aj.w = Math.max(12, Math.min(96 - aj.x, a.ini.w + px - a.px));
+      if (a.tipo === 'ponta') { aj.tx = Math.max(0, Math.min(100, px)); aj.ty = Math.max(0, Math.min(100, py)); aj.semRabo = false; }
+      desenhar(a.el);
+    });
+    const soltar = () => { const a = Editor.arrasto; if (!a) return; Editor.arrasto = null; Editor.marcar(a.ch); desenhar(a.el); };
+    document.addEventListener('pointerup', soltar); document.addEventListener('pointercancel', soltar);
+    document.addEventListener('click', ev => {
+      const bt = ev.target.closest('.ferramentas button'); if (!bt || !Editor.ativo) return;
+      const ch = Editor.ativo, b = document.querySelector(`.balao[data-chave="${ch}"]`);
+      if (bt.dataset.acao === 'auto') { delete AJ[ch]; Editor.marcar(ch); }
+      else {
+        const aj = Editor.ajuste(b);
+        if (bt.dataset.acao === 'maior') aj.fs = Math.min(1.8, (aj.fs || 1) + .1);
+        if (bt.dataset.acao === 'menor') aj.fs = Math.max(.6, (aj.fs || 1) - .1);
+        if (bt.dataset.acao === 'rabo') aj.semRabo = !aj.semRabo;
+        Editor.marcar(ch);
+      }
+      Editor.redesenhar(ch);
+    });
+  },
+  async conectar() {
+    const db = window.claude && await window.claude.use('db');
+    if (!db) { Editor.estado('Sem conexão com o claude.ai: dá para testar, mas os ajustes não ficam salvos.', 'erro'); return; }
+    Editor.db = db;
+    Editor.estado('Conectado: cada ajuste é salvo ao soltar.', 'ok');
+    db.collection('baloes').onSnapshot(snap => {
+      for (const mud of snap.docChanges()) {
+        const ch = mud.doc.id;
+        if (Editor.arrasto && Editor.arrasto.ch === ch) continue;
+        if (Editor.pendentes.has(ch)) continue;
+        if (mud.type === 'removed') delete AJ[ch];
+        else { const d = mud.doc.data(); AJ[ch] = { ...d, tx: d.tx ?? undefined, ty: d.ty ?? undefined }; if (d.tx == null) { delete AJ[ch].tx; delete AJ[ch].ty; } }
+        Editor.redesenhar(ch);
+      }
+    }, () => Editor.estado('A conexão caiu: recarregue a página para continuar salvando.', 'erro'));
+  },
+};
 
 const piloto = D.paginas.every(p => p.piloto);
 document.getElementById('lide').textContent = piloto
@@ -415,8 +564,14 @@ document.getElementById('legenda').innerHTML = `<span><b>${D.paginas.length}</b>
 document.getElementById('indice').innerHTML = D.paginas.map(p => `<a href="#${p.id}">${esc(p.titulo.split(' · ').slice(0, 2).join(' · '))}</a>`).join('');
 document.getElementById('paginas').innerHTML = D.paginas.map(p => `
   <section class="folha" id="${p.id}"><h2>${esc(p.titulo)}<small>${p.quadros.length} quadros</small></h2>
-  <div class="grade">${grade(p.quadros)}</div></section>`).join('');
+  <div class="grade">${grade(p.quadros, p.id)}</div></section>`).join('');
 
+if (D.editor) {
+  document.querySelector('h1').textContent = 'Balões do Caderno da Diana';
+  document.getElementById('lide').textContent = 'Arraste um balão para mudar o lugar. A alça azul muda a largura (o texto se rearruma sozinho). A bolinha rosa é a ponta do rabinho: arraste até quem fala. Tocando no balão aparecem A− e A+ para o tamanho da letra, o rabinho e "Automático", que desfaz o ajuste. Cada ajuste é salvo ao soltar e o Claude lê de volta para gravar nos quadros.';
+  document.getElementById('legenda').insertAdjacentHTML('beforebegin', '<div class="barra-editor"><b>Modo de ajuste</b><span>Toque num balão para ver as opções.</span><span class="estado-salvo" id="estadoSalvo">Conectando…</span></div>');
+  Editor.ligar(); Editor.conectar();
+}
 const todos = () => document.querySelectorAll('.arte[data-arte]').forEach(desenhar);
 document.querySelectorAll('img.base').forEach(i => { if (!i.complete) i.addEventListener('load', () => desenhar(i.closest('.arte'))); });
 (document.fonts ? document.fonts.ready : Promise.resolve()).then(todos);

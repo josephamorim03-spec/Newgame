@@ -6,7 +6,8 @@
     python3 tools/historia/quadros.py --refazer           # todas, de novo
     python3 tools/historia/quadros.py --seco [ids...]     # mostra os pedidos, não gasta nada
     python3 tools/historia/quadros.py --qualidade high    # low | medium (padrão) | high
-    python3 tools/historia/quadros.py paginas [SAIDA.html] [--piloto]   # monta as páginas (padrão: builds/historia-paginas.html)
+    python3 tools/historia/quadros.py paginas [SAIDA.html] [--piloto] [--editor]   # monta as páginas (padrão: builds/historia-paginas.html)
+                                                          # --editor: o editor de balões (arrastar, largura, rabinho, letra)
     python3 tools/historia/quadros.py narizes [ids...]        # a folha de modelo do nariz (arte/historia/narizes/)
     python3 tools/historia/quadros.py pagina-base            # o papel do caderno de receitas (arte/historia/pagina-base.png)
 
@@ -125,7 +126,7 @@ def gerar(cfg, argv):
             print(f"  {feito}", flush=True)
 
 
-def paginas(cfg, saida, piloto=False):
+def paginas(cfg, saida, piloto=False, editor=False):
     falas = {f["id"]: f for f in json.loads(FALAS.read_text(encoding="utf-8"))["falas"]}
     pags = [p for p in cfg["paginas"] if p.get("piloto") or not piloto]
     usadas = {q.get("arte") for p in pags for q in p["quadros"]} | {o[0] for p in pags for q in p["quadros"] for o in q.get("opcoes", [])}
@@ -156,7 +157,8 @@ def paginas(cfg, saida, piloto=False):
     dados = {"paginas": [p for p in cfg["paginas"] if p.get("piloto") or not piloto],
              "artes": {k: {**{c: v[c] for c in campos if c in v}, "nova": nova(k)} for k, v in cfg["artes"].items()},
              "falas": {k: {"quem": f["quem"], "texto": f["texto"], "status": f["status"], "onde": f["onde"]} for k, f in falas.items()},
-             "imagens": imagens, "murais": cfg.get("murais", {}), "retratos": retratos}
+             "imagens": imagens, "murais": cfg.get("murais", {}), "retratos": retratos,
+             "baloes": cfg.get("baloes", {}), "editor": editor}
     js = json.dumps(dados, ensure_ascii=False).replace("</", "<\\/")
     saida.parent.mkdir(parents=True, exist_ok=True)
     saida.write_text(MODELO_PAGINA.read_text(encoding="utf-8").replace("/*DADOS*/null", js), encoding="utf-8")
@@ -192,8 +194,8 @@ def main():
     if argv[:1] == ["narizes"]:
         return narizes(cfg, argv[1:])
     if argv[:1] == ["paginas"]:
-        resto = [a for a in argv[1:] if a != "--piloto"]
-        return paginas(cfg, Path(resto[0]) if resto else RAIZ / "builds" / "historia-paginas.html", "--piloto" in argv)
+        resto = [a for a in argv[1:] if a not in ("--piloto", "--editor")]
+        return paginas(cfg, Path(resto[0]) if resto else RAIZ / "builds" / "historia-paginas.html", "--piloto" in argv, "--editor" in argv)
     gerar(cfg, argv)
 
 
