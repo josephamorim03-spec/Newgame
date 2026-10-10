@@ -462,7 +462,7 @@ de volta à tela, se a vez era sua ou do rival (e no online o tempo da vez acaba
   "rodada · dados"), vermelho e pulsando nos 10 s finais.
 - **A Mesa acende na sua vez:** o feltro ganha um aro da sua cor que respira e um brilho sobre a madeira. Na vez do
   rival, os dados da Mesa e a sua ficha esmaecem: o que está aceso é de quem joga.
-- **No online, a vez que chega avisa:** chamada "Sua vez · 60 s para jogar", três sininhos e vibração. A aba do navegador
+- **No online, a vez que chega avisa:** chamada "Sua vez · 2:00 para jogar"; parado por metade da vez, "Você ainda está aí?" (a política de AFK, docs/servidor.md), três sininhos e vibração. A aba do navegador
   vira "● Sua vez · 38 s". A vez é lembrada na metade do tempo (se nada foi escolhido) e nos 10 s finais ("Ainda é sua
   vez: se o tempo acabar, você perde a partida"). Quem volta para a tela (outra aba, celular bloqueado) na sua vez vê
   e ouve o aviso de novo.

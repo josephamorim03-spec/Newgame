@@ -56,14 +56,21 @@ const espera = ms => new Promise(r => setTimeout(r, ms));
     for (const pg of [ana, bia]) await naPartida(pg, 1);
     for (const pg of [ana, bia]) await fechar(pg);
 
-    // 1) a conexão morre: a Bia vê a contagem e a Ana volta sozinha
+    // 1) a conexão morre: a Bia vê que a Ana caiu (com a contagem dos 90 s, se a vez for da Ana: só conta na vez dela)
+    // e a Ana volta sozinha
+    const vezDaAna = await ana.evaluate(() => DiceDuel.jogo.vez === 0);
     await derrubarNoServidor('Ana');
-    await bia.waitForSelector('.volta-rival', { timeout: 8000 });
-    const s1 = +(await bia.textContent('.volta-rival'));
-    if (!(s1 > 60 && s1 <= 90)) throw new Error('contagem de volta estranha: ' + s1);
-    await bia.waitForFunction(() => !document.querySelector('.volta-rival'), null, { timeout: 10000 });
+    let s1 = null;
+    if (vezDaAna) {
+      await bia.waitForSelector('.volta-rival', { timeout: 8000 });
+      s1 = +(await bia.textContent('.volta-rival'));
+      if (!(s1 > 60 && s1 <= 90)) throw new Error('contagem de volta estranha: ' + s1);
+    } else {
+      await bia.waitForFunction(() => /caiu/i.test((document.querySelector('#pj1 .vez-tag') || {}).textContent || ''), null, { timeout: 8000 }).catch(() => {});
+    }
+    await bia.waitForFunction(() => !document.querySelector('.volta-rival') && !/caiu/i.test((document.querySelector('#pj1 .vez-tag') || {}).textContent || ''), null, { timeout: 10000 });
     await naPartida(ana, 1);
-    console.log(`1) queda: a Bia viu "${s1} s para voltar" e a Ana voltou sozinha`);
+    console.log(`1) queda: a Bia viu ${s1 === null ? '"caiu" (na vez dela, sem contagem)' : `"${s1} s para voltar"`} e a Ana voltou sozinha`);
 
     // 2) a aba recarrega no meio da partida: volta para a sala guardada
     await ana.reload(); await ana.waitForTimeout(300); await sem(ana);

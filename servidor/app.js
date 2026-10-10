@@ -578,7 +578,7 @@ function criarApp({ banco, segredo, raiz = path.join(__dirname, '..'), tempos = 
           else if (m.tipo === 'revanche') salas.revanche(ws, conta, m);
           else if (m.tipo === 'deck') salas.escolher(ws, conta, m);
           else if (m.tipo === 'sair') salas.sair(ws);
-          else if (m.tipo === 'voltei') salas.voltei(ws, conta);   // tocou na tela ou voltou para o app: sai do "ausente"
+          else if (m.tipo === 'ativo') salas.ativo(ws, conta);   // sinal de vida (tocou na tela, respondeu ao "Você ainda está aí?")
         } catch (e) { console.error('ws', e); salas.enviar(ws, { tipo: 'erro', erro: 'Algo deu errado no servidor.' }); }
       });
       ws.on('close', () => {

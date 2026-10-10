@@ -135,7 +135,7 @@ const espera = ms => new Promise(r => setTimeout(r, ms));
     await ana.click(`#janelaConfig [data-cfg="ritmo"][data-v="${ritmoAna}"]`);
     await fechar(ana);
     const vistaBia = await bia.evaluate(() => ({ nomes: DiceDuel.jogo.nomes, deckRival: DiceDuel.jogo.decks[1], ritmo: DiceDuel.jogo.ritmo, limite: DiceDuel.jogo.limiteVez }));
-    if (vistaBia.ritmo !== 'calma' || vistaBia.limite !== 120000) throw new Error('o tempo por vez escolhido não chegou à partida: ' + JSON.stringify(vistaBia));
+    if (vistaBia.ritmo !== 'calma' || vistaBia.limite !== 180000) throw new Error('o tempo por vez escolhido não chegou à partida: ' + JSON.stringify(vistaBia));
     if (vistaBia.nomes[1] !== ANA || vistaBia.deckRival.join() !== 'espelho,ajuste,pressa') throw new Error('a Bia não vê a Ana direito: ' + JSON.stringify(vistaBia));
 
     // joga clicando: quem tem a vez escolhe um dado (às vezes confirma), um destino, ou dispara/segura
@@ -168,7 +168,7 @@ const espera = ms => new Promise(r => setTimeout(r, ms));
       const [sa, sb] = [await selo(ana), await selo(bia)];
       if (sa.fase === 'fim' || sb.fase === 'fim' || sa.intro || sb.intro || sa.vez === sb.vez) return;   // entre um estado e outro
       for (const [x, nome] of [[sa, ANA], [sb, BIA]]) {
-        const ok = x.vez === 0 ? !x.oculto && /^Sua vez\d+ s$/.test(x.txt) && x.minha && !x.rival && x.titulo.startsWith('● Sua vez')
+        const ok = x.vez === 0 ? !x.oculto && /^Sua vez(\d+ s|\d+:\d\d)$/.test(x.txt) && x.minha && !x.rival && x.titulo.startsWith('● Sua vez')
           : !x.oculto && x.txt.startsWith('Vez de ') && x.rival && !x.minha && !x.titulo.startsWith('●');
         if (!ok) throw new Error(`o selo de vez de ${nome} não diz de quem é a vez: ` + JSON.stringify(x));
       }

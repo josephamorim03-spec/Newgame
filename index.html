@@ -204,6 +204,15 @@
     </div>
   </div>
 
+  <!-- AFK no online: parado por metade da vez, o servidor pergunta; sem resposta no prazo, derrota por inatividade -->
+  <div class="janela janela-afk" id="janelaAfk" hidden>
+    <div class="caixa" role="alertdialog" aria-modal="true" aria-labelledby="afkTitulo" aria-describedby="afkTexto">
+      <h2 id="afkTitulo">Você ainda está aí?</h2>
+      <p id="afkTexto">É a sua vez e nada aconteceu por um tempo. Responda em <b data-afk>30</b> s, ou a partida acaba e conta como derrota.</p>
+      <div class="botoes"><button class="btn btn-mel" id="btnAfk">Estou aqui</button></div>
+    </div>
+  </div>
+
   <div class="janela" id="janelaMenu" hidden>
     <div class="caixa caixa-menu" role="dialog" aria-modal="true" aria-labelledby="menuTitulo">
       <h2 id="menuTitulo">Pausa</h2>

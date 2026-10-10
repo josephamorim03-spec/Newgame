@@ -4,8 +4,7 @@ const assert = require('node:assert');
 const WebSocket = require('ws');
 const { criarApp, TETO_SOLO_DIA } = require('../app');
 const { BancoMemoria, criarBanco } = require('../banco');
-const { jogadaAoAcaso } = require('./ajuda');
-const Regras = require('../../shared/regras');
+const { jogadaAoAcaso, jogadaSimples } = require('./ajuda');
 
 const SEGREDO = 'segredo-de-teste-com-32-caracteres!!';
 
@@ -23,11 +22,11 @@ async function subir({ banco = new BancoMemoria(), tempos = {}, limites = { cont
 }
 
 // um jogador pela rede: guarda as mensagens e espera pelas que interessam
-// o cliente joga as próprias vezes sozinho (a jogada simples do automático, mas mandada por ele: conta como jogada)
+// o cliente joga as próprias vezes sozinho (uma jogada simples, mandada por ele)
 function jogarSozinho(c) {
   c.ws.on('message', d => {
     const m = JSON.parse(d);
-    if (m.tipo === 'estado' && m.jogo.fase !== 'fim' && m.jogo.vez === 0) { const a = Regras.jogadaAutomatica(m.jogo, 0); if (a) c.enviar({ tipo: 'acao', acao: a }); }
+    if (m.tipo === 'estado' && m.jogo.fase !== 'fim' && m.jogo.vez === 0) { const a = jogadaSimples(m.jogo, 0); if (a) c.enviar({ tipo: 'acao', acao: a }); }
   });
 }
 async function cliente(url, token) {
@@ -230,8 +229,8 @@ test('partida online completa: cada um vê só o que deve, e o fim paga rating e
   } finally { await s.fechar(); }
 });
 
-test('quem cai tem um tempo para voltar; depois as vezes dele vão no automático e a 3ª seguida é W.O. (sem moedas para ninguém)', { timeout: 20000 }, async () => {
-  const s = await subir({ tempos: { esperaReconexao: 400 } });
+test('quem cai tem um tempo para voltar, contado na vez dele; depois perde por queda (sem moedas para ninguém)', { timeout: 20000 }, async () => {
+  const s = await subir({ tempos: { limiteVez: 1600 } });   // AFK: aviso aos 800 ms, derrota aos 1200 ms parado
   try {
     const A = await conta(s, 'Hugo'), B = await conta(s, 'Iris');
     const { sala } = await s.api('POST', '/api/salas', {}, A.token);
@@ -247,11 +246,9 @@ test('quem cai tem um tempo para voltar; depois as vezes dele vão no automátic
     a.enviar({ tipo: 'entrar', sala: sala.codigo, deck: [] });
     const volta = await a.esperar(m => m.tipo === 'estado');
     assert.notStrictEqual(volta.jogo.fase, 'fim');
-    // cai e não volta: passado o prazo, as vezes dele vão no automático na hora (a Iris vê "sem conexão"), e a 3ª é W.O.
+    // cai e não volta: a Iris joga a vez dela; na vez do Hugo, sem sinal de vida, acaba em derrota por queda
     jogarSozinho(b);
     a.ws.terminate();
-    const auto = await b.esperar(m => m.tipo === 'estado' && m.jogo.eventos.some(e => e.tipo === 'automatica' && e.p === 1), 4000);
-    assert.strictEqual(auto.jogo.eventos.find(e => e.tipo === 'automatica').motivo, 'queda');
     const fim = await b.esperar(m => m.tipo === 'fim', 6000);
     assert.strictEqual(fim.premio.porDesistencia, true);
     assert.strictEqual(fim.premio.moedas.total, 0);
@@ -270,8 +267,8 @@ test('quem cai tem um tempo para voltar; depois as vezes dele vão no automátic
   } finally { await s.fechar(); }
 });
 
-test('queda na própria vez: o relógio da vez para, o rival vê o prazo de volta e quem volta tem um mínimo para jogar', { timeout: 20000 }, async () => {
-  const s = await subir({ tempos: { esperaReconexao: 2000, limiteVez: 600, minimoNaVolta: 400 } });
+test('queda na própria vez: a vez continua correndo, o rival vê o prazo de volta; quem volta segue; parado, vem a pergunta e a derrota por inatividade', { timeout: 20000 }, async () => {
+  const s = await subir({ tempos: { limiteVez: 4000 } });   // AFK: aviso aos 2000 ms parado, derrota aos 3000 ms
   try {
     const A = await conta(s, 'Nina'), B = await conta(s, 'Otto');
     const { sala } = await s.api('POST', '/api/salas', {}, A.token);
@@ -285,34 +282,54 @@ test('queda na própria vez: o relógio da vez para, o rival vê o prazo de volt
     daVez.ws.terminate();
     const aviso = await outro.esperar(m => m.tipo === 'sala' && m.sala.jogadores.some(j => !j.conectado));
     const caido = aviso.sala.jogadores.find(j => !j.conectado);
-    assert.ok(caido.volta > 1000 && caido.volta <= 2000, 'prazo de volta: ' + caido.volta);
-    // fica fora mais que o limite da vez (600 ms): sem W.O. por tempo, porque o relógio parou
-    await new Promise(r => setTimeout(r, 1100));
-    assert.ok(!outro.msgs.some(m => m.tipo === 'fim'), 'perdeu por tempo enquanto estava caído');
+    assert.ok(caido.volta > 2000 && caido.volta <= 3000, 'prazo de volta: ' + caido.volta);
+    // fora por 800 ms: a vez andou esse tanto
+    await new Promise(r => setTimeout(r, 800));
     const volta = await cliente(s.ws, tokenDaVez);
     volta.enviar({ tipo: 'entrar', sala: sala.codigo, deck: [] });
     const est = await volta.esperar(m => m.tipo === 'estado');
     assert.notStrictEqual(est.jogo.fase, 'fim');
     assert.strictEqual(est.jogo.vez, 0);
-    assert.ok(est.jogo.prazoVez >= 350, 'tempo para jogar na volta: ' + est.jogo.prazoVez);
-    // o rival também recebe o estado novo (com o relógio ajustado)
+    assert.ok(est.jogo.prazoVez > 0 && est.jogo.prazoVez <= 4000 - 700, 'a vez correu durante a queda: ' + est.jogo.prazoVez);
+    assert.strictEqual(est.jogo.inatividade, null, 'voltar é sinal de vida');
     await outro.esperar(m => m.tipo === 'estado');
-    // o pulso tem resposta (o navegador não vê os pings do servidor)
+    // o pulso tem resposta (o navegador não vê os pings do servidor), mas não é sinal de vida
     volta.enviar({ tipo: 'pulso' });
     await volta.esperar(m => m.tipo === 'pulso');
-    // e o relógio volta a correr: parado de novo, o jogo joga por ele (o rival vê o aviso)...
-    const auto = await outro.esperar(m => m.tipo === 'estado' && m.jogo.eventos.some(e => e.tipo === 'automatica' && e.p === 1), 3000);
-    assert.strictEqual(auto.jogo.eventos.find(e => e.tipo === 'automatica').n, 1);
-    // ...e, ninguém jogando, a 3ª vez seguida no automático acaba a partida (W.O. por tempo)
-    const fim = await outro.esperar(m => m.tipo === 'fim', 8000);
+    // parado: a pergunta chega para ele e o rival vê que ele está inativo...
+    const pergunta = await volta.esperar(m => m.tipo === 'estado' && m.jogo.inatividade, 3500);
+    assert.strictEqual(pergunta.jogo.inatividade.quem, 0);
+    await outro.esperar(m => m.tipo === 'estado' && m.jogo.inatividade && m.jogo.inatividade.quem === 1, 1500);
+    // ...e sem resposta, derrota por inatividade
+    const fim = await outro.esperar(m => m.tipo === 'fim', 3000);
     assert.strictEqual(fim.premio.porDesistencia, true);
+    const final = await volta.esperar(m => m.tipo === 'estado' && m.jogo.fase === 'fim', 2000);
+    assert.strictEqual(final.jogo.motivoFim, 'inativo');
     volta.fechar(); outro.fechar();
+  } finally { await s.fechar(); }
+});
+
+test('o sinal de vida pela rede ("ativo") tira a pergunta da tela', { timeout: 20000 }, async () => {
+  const s = await subir({ tempos: { limiteVez: 4000 } });
+  try {
+    const A = await conta(s, 'Pia'), B = await conta(s, 'Quim');
+    const { sala } = await s.api('POST', '/api/salas', {}, A.token);
+    const ca = await cliente(s.ws, A.token), cb = await cliente(s.ws, B.token);
+    ca.enviar({ tipo: 'entrar', sala: sala.codigo, deck: [] });
+    cb.enviar({ tipo: 'entrar', sala: sala.codigo, deck: [] });
+    const [ea] = await Promise.all([ca.esperar(m => m.tipo === 'estado'), cb.esperar(m => m.tipo === 'estado')]);
+    const daVez = ea.jogo.vez === 0 ? ca : cb;
+    await daVez.esperar(m => m.tipo === 'estado' && m.jogo.inatividade && m.jogo.inatividade.quem === 0, 3500);
+    daVez.enviar({ tipo: 'ativo' });
+    const depois = await daVez.esperar(m => m.tipo === 'estado' && !m.jogo.inatividade, 1500);
+    assert.notStrictEqual(depois.jogo.fase, 'fim');
+    ca.fechar(); cb.fechar();
   } finally { await s.fechar(); }
 });
 
 test('se o banco falhar ao premiar, o fim chega assim mesmo (sem prêmio, com o motivo)', { timeout: 20000 }, async () => {
   class BancoQueFalha extends BancoMemoria { async partidasDoParHoje() { throw new Error('banco fora do ar'); } }
-  const s = await subir({ banco: new BancoQueFalha(), tempos: { esperaReconexao: 300 } });
+  const s = await subir({ banco: new BancoQueFalha() });
   const erroOriginal = console.error; console.error = () => {};
   try {
     const A = await conta(s, 'Lia'), B = await conta(s, 'Rui');
