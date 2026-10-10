@@ -31,7 +31,8 @@ const RAIZ = path.join(__dirname, '..');
   const usar = async (c) => { await pg.click(`.jogador.da-vez [data-carta="${c}"]`); if (await pg.$(`#acoes [data-usar="${c}"]`)) await pg.click(`#acoes [data-usar="${c}"]`); };
   const dado = async i => pg.click(`.pega[data-i="${i}"]`);
   // pega o dado e, se o jogo perguntar para onde vai, põe na corrente
-  const pegar = async i => { await dado(i); if (await pg.$('[data-destino="corrente"]')) await pg.click('[data-destino="corrente"]'); };
+  // pega o dado e põe na corrente: tocar no dado e na corrente (se o jogo perguntar, por romper, confirma)
+  const pegar = async i => { await dado(i); if (await pg.$('[data-alvo-dado="corrente"]')) { await pg.click('[data-alvo-dado="corrente"]'); if (await pg.$('[data-confirma="corrente"]')) await pg.click('[data-confirma="corrente"]'); } };
   const J = () => pg.evaluate(() => JSON.parse(JSON.stringify(DiceDuel.jogo, (k, v) => k === 'voo' ? undefined : v)));
   const confere = (ok, txt) => { if (!ok) erros.push(txt); console.log((ok ? 'ok   ' : 'FALHA ') + txt); };
 
@@ -81,18 +82,19 @@ const RAIZ = path.join(__dirname, '..');
   const etiqueta = await pg.textContent('.pega[data-i="0"] .tags');
   confere(etiqueta.includes('vira 5') && etiqueta.includes('Rompe'), `Espelho: o 2 marcado (sincronizaria) mostra "vira 5" e "Rompe" (mostrou "${etiqueta.trim()}")`);
   await dado(0); j = await J();
-  confere(j.sel === 9401 && j.mesa.length === 2 && (await pg.textContent('#acoes')).includes('vai romper'), 'Espelho: o dado marcado que rompe só é escolhido, com o aviso de ruptura');
+  confere(j.sel === 9401 && j.mesa.length === 2 && (await pg.textContent('.corrente[data-alvo-dado]')).includes('rompe') && (await pg.textContent('#ticker')).includes('Espelho'), 'Espelho: o dado marcado que rompe só é escolhido; a corrente avisa "rompe" e a linha da Mesa explica o Espelho');
   await dado(0); j = await J();
-  confere(j.mesa.length === 2 && j.cor[0].length === 3, 'Espelho: tocar de novo num dado que rompe não pega');
+  confere(j.mesa.length === 2 && j.cor[0].length === 3 && (await pg.textContent('#acoes')).includes('vai romper'), 'Espelho: tocar de novo num dado que rompe não pega: pergunta antes');
+  await pg.click('#acoes [data-acao="cancelar"]');
 
   // 4b. Escolher não é pegar: trocar de dado, cancelar, tocar de novo pega
   await cena([[], []], () => { const j = DiceDuel.jogo; j.vez = 0; j.fase = 'pegar'; j.cor[0] = [3]; j.bolso[0] = null; j.mesa = [{ id: 9451, v: 4 }, { id: 9452, v: 1 }, { id: 9453, v: 2 }]; });
   await dado(0); await dado(1); j = await J();
   confere(j.sel === 9452 && j.mesa.length === 3 && j.cor[0].length === 1, 'Escolha: tocar em outro dado troca a escolha e nada sai da Mesa');
-  await pg.click('[data-acao="cancelar"]'); j = await J();
-  confere(j.sel === null && j.mesa.length === 3 && j.vez === 0, 'Escolha: Cancelar desfaz sem gastar a vez');
-  await dado(2); await pg.click('[data-destino="guardar"]'); j = await J();
-  confere(j.bolso[0] === 2 && j.mesa.length === 2 && j.cor[0].join() === '3', 'Escolha: o botão do destino pega e guarda no Bolso');
+  await pg.click('.mesa-area', { position: { x: 6, y: 20 } }); j = await J();
+  confere(j.sel === null && j.mesa.length === 3 && j.vez === 0, 'Escolha: tocar num espaço vazio da Mesa desfaz sem gastar a vez');
+  await dado(2); await pg.click('[data-alvo-dado="bolso"]'); j = await J();
+  confere(j.bolso[0] === 2 && j.mesa.length === 2 && j.cor[0].join() === '3', 'Escolha: tocar no Bolso pega e guarda');
   await cena([[], []], () => { const j = DiceDuel.jogo; j.vez = 0; j.fase = 'pegar'; j.cor[0] = [3]; j.mesa = [{ id: 9461, v: 4 }, { id: 9462, v: 1 }]; });
   await dado(0); await dado(0); j = await J();
   confere(j.cor[0].join() === '3,4' && j.mesa.length === 1, 'Escolha: tocar duas vezes no mesmo dado põe na corrente');
@@ -255,9 +257,9 @@ const RAIZ = path.join(__dirname, '..');
     foco: document.body.classList.contains('em-partida') }));
   const com = await vista();
   await dado(0);
-  const barraAoEscolher = await pg.evaluate(() => !document.getElementById('acoes').hidden && !!document.querySelector('#acoes [data-destino]'));
-  await pg.click('#acoes [data-acao="cancelar"]');
-  confere(barraAoEscolher && await pg.evaluate(() => document.getElementById('acoes').hidden), 'Barra de jogada: aparece ao escolher um dado (com os destinos) e some ao cancelar');
+  const alvosAoEscolher = await pg.evaluate(() => document.getElementById('acoes').hidden && !!document.querySelector('[data-alvo-dado="corrente"]') && !!document.querySelector('[data-alvo-dado="bolso"]'));
+  await pg.keyboard.press('Escape');
+  confere(alvosAoEscolher && await pg.evaluate(() => !document.querySelector('[data-alvo-dado]')), 'Dado escolhido: sem barra de botões; a corrente e o Bolso viram alvos, e Esc desfaz');
   const topoVisivel = await pg.evaluate(() => getComputedStyle(document.querySelector('.topo')).display !== 'none');
   await pg.click('#btnPausa');
   const menuAberto = await pg.evaluate(() => !document.getElementById('janelaMenu').hidden);

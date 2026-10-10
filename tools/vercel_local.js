@@ -37,7 +37,8 @@ const servidor = http.createServer((req, res) => {
       const b = await pg.$('.pega:not(:disabled)');
       if (b && await pg.evaluate(() => DiceDuel.jogo.vez === 0 && !DiceDuel.jogo.pensando)) {
         await b.click().catch(() => {}); await pg.waitForTimeout(80);
-        const d = await pg.$('[data-destino="corrente"]') || await pg.$('[data-destino]'); if (d) await d.click().catch(() => {});
+        const d = await pg.$('[data-alvo-dado="corrente"]') || await pg.$('[data-destino]'); if (d) await d.click().catch(() => {});
+        const cf = await pg.$('[data-confirma]'); if (cf) await cf.click().catch(() => {});
         const disp = await pg.$('[data-acao="disparar"]'); if (disp) await disp.click().catch(() => {});
       }
       await pg.waitForTimeout(250);

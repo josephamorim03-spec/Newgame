@@ -41,7 +41,7 @@ function tocar([semente, modo]) {
   const rnd = () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 2 ** 32; };
   const visivel = el => { const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0 && getComputedStyle(el).visibility !== 'hidden'; };
   const grupos = [
-    [10, '.pega:not([disabled])'], [9, '#acoes button:not([disabled])'], [2, '.jogador button.carta'],
+    [10, '.pega:not([disabled])'], [8, '[data-alvo-dado]'], [9, '#acoes button:not([disabled])'], [2, '.jogador button.carta'],
     [3, '#cartaBotoes button:not([disabled])'], [2, '.janela:not([hidden]) button:not([disabled])'], [2, '.versus'],
     [1, '#btnRegras, #btnDeck, #btnConfig, #btnCarteira, #btnOnline, #btnFecharLado, .menu-partida, .janela:not([hidden]) [data-menu]'], [1, '.janela:not([hidden]) [data-aba-loja], .janela:not([hidden]) [data-op], .janela:not([hidden]) [data-pronto]'],
     [6, '.tela-inicio:not([hidden]) button'],

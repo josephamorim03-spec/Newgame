@@ -67,6 +67,9 @@ fs.mkdirSync(FOTOS, { recursive: true });
         const aj = await pg.$$('[data-ajuste]:not([disabled])'); if (aj.length) { await aj[0].click(); continue; }
         if (await pg.$('.mesa.alvo')) { const d = await pg.$('.pega:not([disabled])'); if (d) await d.click(); continue; }
         const dst = await pg.$$('[data-destino]'); if (dst.length) { await dst[Math.floor(Math.random() * dst.length)].click(); continue; }
+        // dado escolhido: tocar na corrente ou no Bolso; se o jogo perguntar, responder ao acaso (às vezes cancelar)
+        const cf = await pg.$$('[data-confirma]'); if (cf.length) { if (Math.random() < 0.85) await cf[Math.floor(Math.random() * cf.length)].click(); else await pg.click('#acoes [data-acao="cancelar"]'); continue; }
+        const alvos = await pg.$$('[data-alvo-dado]'); if (alvos.length) { await alvos[Math.floor(Math.random() * alvos.length)].click(); continue; }
         const disp = await pg.$('[data-acao="disparar"]');
         if (disp) { const t = await disp.innerText(); const L = +(t.match(/\+(\d+)/) || [0, 0])[1]; await pg.click(L >= 2 ? '[data-acao="disparar"]' : '[data-acao="segurar"]'); continue; }
         const minhas = await pg.$$('.jogador.da-vez button.carta.pronta');

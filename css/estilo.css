@@ -1012,7 +1012,7 @@ button.vaga { cursor: pointer; border: 0; background: #fff3dc; color: var(--tint
 @keyframes seloRespira { 50% { box-shadow: 0 3px 0 var(--voce-tinta), 0 0 0 8px rgba(111,191,211,0); transform: scale(1.04); } }
 @keyframes seloUrgente { 50% { transform: scale(1.08); } }
 /* com o selo, o título "Mesa" sai (o selo ocupa o lugar dele) */
-.vez-minha .mesa-topo h2, .vez-rival .mesa-topo h2 { display: none; }
+/* (o selo saiu do meio da Mesa: o título "Mesa" volta; ver "Corrente e Bolso como alvos" no fim) */
 /* na sua vez a Mesa acende: o feltro ganha um aro da sua cor que respira e um brilho sobre a madeira */
 .vez-minha .tabuleiro { animation: mesaAcesa 2.4s ease-in-out infinite; }
 @keyframes mesaAcesa {
@@ -1164,3 +1164,46 @@ button.vaga { cursor: pointer; border: 0; background: #fff3dc; color: var(--tint
 .ticker.instrucao b { color: var(--luz); }
 .so-leitor { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 body.mesa-piquenique .ticker.instrucao b { color: var(--mel-escuro); }
+
+/* ==========================================================================
+   A vez fica só no painel (v0.12): o selo do meio da Mesa sai; no online, o relógio vai para a etiqueta "sua vez"
+   ========================================================================== */
+#seloVez { display: none !important; }
+.relogio-vez { font-variant-numeric: tabular-nums; letter-spacing: .02em; }
+.vez-tag.urgente { background: var(--perigo); color: #fff; animation: seloUrgente .7s ease-in-out infinite; }
+.sem-animacoes .vez-tag.urgente { animation: none; }
+
+/* ==========================================================================
+   Corrente e Bolso como alvos (v0.12): sem botões de destino. Com um dado escolhido, os dois acendem com o que vai
+   acontecer (verde: serve; mel: pergunta antes; coral: rompe; apagado: não pode); tocar ou soltar o dado neles leva
+   ========================================================================== */
+.alvo-dado { cursor: pointer; transition: box-shadow .15s, transform .15s; }
+.corrente.alvo-dado.alvo-ok { box-shadow: inset 0 3px 8px rgba(0,0,0,.35), 0 0 0 3px var(--passo), 0 0 18px rgba(143,214,168,.5); }
+.corrente.alvo-dado.alvo-aviso { box-shadow: inset 0 3px 8px rgba(0,0,0,.35), 0 0 0 3px var(--mel); }
+.corrente.alvo-dado.alvo-perigo { box-shadow: inset 0 3px 8px rgba(0,0,0,.35), 0 0 0 3px var(--perigo); }
+.corrente.alvo-dado.mira { transform: scale(1.02); }
+.corrente.alvo-dado.alvo-ok.mira { box-shadow: inset 0 3px 8px rgba(0,0,0,.35), 0 0 0 4px var(--passo), 0 0 30px rgba(143,214,168,.8); }
+.corrente.alvo-dado.alvo-aviso.mira, .corrente.alvo-dado.alvo-perigo.mira { box-shadow: inset 0 3px 8px rgba(0,0,0,.35), 0 0 0 4px var(--mel), 0 0 26px rgba(242,177,94,.7); }
+button.bolso.alvo-dado { position: relative; border: 0; font: inherit; color: inherit; }
+.bolso.alvo-dado.alvo-ok { background: #e3f5e9; box-shadow: 0 0 0 3px var(--passo); }
+.bolso.alvo-dado.alvo-perigo { box-shadow: 0 0 0 3px var(--perigo); }
+.bolso.alvo-dado.alvo-nao { opacity: .6; }
+.bolso.alvo-dado.mira { transform: scale(1.08); box-shadow: 0 0 0 4px var(--passo), 0 0 22px rgba(143,214,168,.75); }
+.bolso.alvo-dado.alvo-perigo.mira, .bolso.alvo-dado.alvo-nao.mira { box-shadow: 0 0 0 4px var(--perigo); }
+/* a etiqueta do alvo: o que acontece se o dado for para lá */
+.alvo-chip { position: absolute; z-index: 3; pointer-events: none; white-space: nowrap; font-size: 11.5px; font-weight: 800; line-height: 1; padding: 4px 8px; border-radius: 999px; background: var(--marfim); color: var(--tinta); box-shadow: 0 2px 6px rgba(0,0,0,.25); }
+.corrente .alvo-chip { top: -10px; left: 12px; }
+.bolso .alvo-chip { top: calc(100% + 4px); right: 0; font-size: 11px; }
+.alvo-ok > .alvo-chip { background: var(--passo); }
+.alvo-aviso > .alvo-chip { background: var(--mel); }
+.alvo-perigo > .alvo-chip { background: var(--perigo); color: #fff; }
+.alvo-nao > .alvo-chip { background: var(--papel-2); color: var(--tinta-suave); }
+/* o dado arrastado segue o dedo, um pouco acima dele */
+.camada-dado .dado-fantasma { position: fixed; left: 0; top: 0; margin: 0; z-index: 60; pointer-events: none; filter: drop-shadow(0 12px 16px rgba(0,0,0,.45)); }
+.mesa .pega:not([disabled]) { touch-action: none; -webkit-touch-callout: none; user-select: none; -webkit-user-select: none; }
+.pergunta-dado { font-size: 15px; }
+/* no computador as cartas são largas: o leque inclina bem menos (3° numa carta de 370 px parece torta) */
+@media (min-width: 561px) {
+  .cartas .carta.grande:nth-of-type(1) { rotate: -1deg; translate: 0 2px; }
+  .cartas .carta.grande:nth-of-type(3) { rotate: 1deg; translate: 0 2px; }
+}

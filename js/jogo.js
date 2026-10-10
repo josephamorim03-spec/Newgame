@@ -557,6 +557,58 @@
     const principal = proprio ? null : seguros.includes('corrente') ? 'corrente' : (seguros[0] || null);
     return { d, v, ds, seguros, rompe: !seguros.length, contra, proprio, principal };
   }
+  // ---------- o dado escolhido: corrente ou Bolso, tocando, arrastando ou tocando de novo no dado ----------
+  // Sem botões de destino: a corrente e o Bolso acendem com o que vai acontecer em cada um. Só pergunta quando a jogada
+  // tem risco ou não é a que a pessoa apontou (dado que não serve solto na corrente: trocar, guardar ou romper).
+  let pergunta = null;   // { chave, id, txt, botoes: [[modo, rótulo]] }: a pergunta do destino, desta vez e deste dado
+  const dadoEscolhido = j => (j.fase === 'pegar' && humano(j.vez) && !j.pensando && j.sel != null && idxDe(j.sel) >= 0 ? idxDe(j.sel) : -1);
+  const perguntaValida = j => (pergunta && pergunta.chave === chaveVez(j) && pergunta.id === j.sel && dadoEscolhido(j) >= 0 ? pergunta : null);
+  const relDe = (p, x) => { const eu = jogo.cor[p], r = eu.length ? rels(frente(eu), x) : []; return r.length ? r.map(k => REL[k].nome).join(' + ') : (eu.length && jogo.coringa[p] ? 'Coringa' : 'começa'); };
+  // o que acontece em cada alvo com o dado escolhido: { corrente: {cls, txt}, bolso: {cls, txt} }
+  function previaAlvos(p, idx) {
+    const j = jogo, op = opcoesDoDado(p, idx), b = j.bolso[p], L = j.cor[p].length, ancora = j.armada[p] === 'ancora' && L >= 4;
+    const corrente = op.seguros.includes('corrente') ? { cls: 'ok', txt: relDe(p, op.v) }
+      : op.seguros.includes('trocar') ? { cls: 'aviso', txt: `troca: entra o ${b}` }
+      : op.seguros.includes('guardar') ? { cls: 'aviso', txt: 'não sincroniza' }
+      : { cls: 'perigo', txt: ancora ? 'a Âncora segura' : 'rompe' };
+    const bolso = op.contra ? { cls: 'nao', txt: 'não pode' }
+      : op.seguros.includes('guardar') ? { cls: 'ok', txt: 'guardar' }
+      : op.seguros.includes('trocar') ? { cls: 'ok', txt: `troca: entra o ${b}` }
+      : op.rompe && op.ds.includes('trocar') ? { cls: 'perigo', txt: `o ${b} rompe` }
+      : { cls: 'nao', txt: b !== null ? `o ${b} não serve` : 'não pode' };
+    return { corrente, bolso, op };
+  }
+  // levar o dado escolhido a um alvo ('corrente' ou 'bolso'): faz, ou pergunta quando há risco
+  function levarDado(alvo) {
+    const j = jogo, p = j.vez, idx = dadoEscolhido(j);
+    if (idx < 0) return;
+    const { op } = previaAlvos(p, idx), b = j.bolso[p], eu = j.cor[p], L = eu.length, v = op.v;
+    const ancora = j.armada[p] === 'ancora' && L >= 4, fr = L ? frente(eu) : null;
+    const perguntar = (txt, botoes) => { pergunta = { chave: chaveVez(j), id: j.sel, txt, botoes }; Som.tocar('perigo', { x: 0 }); vibrar([6, 40, 6]); render(); };
+    if (alvo === 'corrente') {
+      if (op.seguros.includes('corrente')) return pegarDado('corrente');
+      if (op.seguros.includes('trocar')) return perguntar(`O ${v} não sincroniza com o seu ${fr}. Trocar: o <b>${b}</b> do Bolso entra na corrente e o ${v} fica guardado?`, [['trocar', 'Trocar']]);
+      if (op.seguros.includes('guardar')) return perguntar(`O ${v} não sincroniza com o seu ${fr}. Guardar no Bolso?`, [['guardar', 'Guardar']]);
+      const txt = ancora ? `O ${v} não sincroniza${b !== null && !op.contra ? ', nem o do Bolso' : ''}: a corrente de ${L} romperia, mas a sua <b>Âncora</b> segura.`
+        : `O ${v} não sincroniza${b !== null && !op.contra ? ', nem o do Bolso' : ''}: a sua corrente de <b>${L}</b> vai romper.`;
+      return perguntar(txt, [['corrente', ancora ? 'Pegar' : 'Romper']].concat(op.ds.includes('trocar') ? [['trocar', `Trocar (o ${b} rompe)`]] : []));
+    }
+    if (op.contra) return perguntar(`Virado pelo Espelho, o ${v} não pode ir para o Bolso.`, op.ds.includes('corrente') && op.seguros.includes('corrente') ? [['corrente', 'Pôr na corrente']] : []);
+    if (op.seguros.includes('guardar')) return pegarDado('guardar');
+    if (op.seguros.includes('trocar')) return pegarDado('trocar');   // o do Bolso serve na corrente: troca sem perguntar
+    if (op.rompe && op.ds.includes('trocar')) return perguntar(`O ${b} do Bolso não sincroniza com o seu ${fr}: a corrente de <b>${L}</b> rompe e o ${v} fica guardado.`, [['trocar', 'Trocar e romper']]);
+    return perguntar(`O ${b} do Bolso não sincroniza com o seu ${fr}: trocar romperia a corrente.`, op.seguros.includes('corrente') ? [['corrente', `Pôr na corrente (${relDe(p, v)})`]] : []);
+  }
+  // a frase do dado escolhido, na linha da Mesa
+  function instrucaoDado(j) {
+    const idx = dadoEscolhido(j); if (idx < 0 || perguntaValida(j)) return '';
+    const op = opcoesDoDado(j.vez, idx), d = op.d;
+    if (op.proprio) return `Esse é o dado do seu <b>Espelho</b>: pegá-lo desperdiça a armadilha.`;
+    const virado = op.contra ? `Virado pelo Espelho, o ${d.v} chega como <b>${op.v}</b> e não pode ir para o Bolso. ` : '';
+    const de = { corrente: 'põe na corrente', guardar: 'guarda no Bolso', trocar: 'troca com o Bolso' }[op.principal];
+    return `${virado}Leve o <b>${op.v}</b> à corrente ou ao Bolso${st.pref.dicas ? ' (toque ou arraste)' : ''}${de ? `; tocar de novo nele ${de}` : ''}.`;
+  }
+
   function clicarDado(idx) {
     const j = jogo;
     if (!j || !humano(j.vez) || j.pensando || j.intro) return;
@@ -570,10 +622,10 @@
     foco = null;
     if (j.sel === d.id) {
       const op = opcoesDoDado(j.vez, idx);
-      if (op.principal) pegarDado(op.principal);
+      if (op.principal) pegarDado(op.principal); else if (!op.proprio) levarDado('corrente');
       return;
     }
-    j.sel = d.id;
+    j.sel = d.id; pergunta = null;
     // prévia sonora: quem sincroniza toca baixinho a nota que vai somar; quem rompe dá um "hm-hm" grave
     const op = opcoesDoDado(j.vez, idx), x = (idx - 2) * 0.3;
     if (op.rompe) Som.tocar('perigo', { x }); else Som.tocar('escolher', { n: op.principal === 'corrente' ? j.cor[j.vez].length + 1 : 0, x });
@@ -582,6 +634,7 @@
   }
   // pega o dado escolhido e já o põe no destino (uma ação só: nada fica pela metade)
   function pegarDado(modo) {
+    pergunta = null;
     const j = jogo, p = j.vez, idx = idxDe(j.sel);
     if (idx < 0 || !R.destinosDoDado(j, p, idx).includes(modo)) return;
     j.sel = null;
@@ -596,7 +649,7 @@
   }
   function soltarEscolha() {
     const j = jogo;
-    foco = null;
+    foco = null; pergunta = null;
     j.sel = null;
     if (j.fase === 'alvo' || j.fase === 'ajuste') { j.fase = 'pegar'; j.alvo = null; j.ajusteIdx = null; }
   }
@@ -678,6 +731,8 @@
   function bolsoHTML(p) {
     const j = jogo, b = j.bolso[p], util = b !== null && j.cor[p].length && encaixaP(p, b);
     const destaque = j.fase === 'destino' && j.vez === p ? ' ativo' : '';
+    const alvo = p === j.vez && dadoEscolhido(j) >= 0 ? previaAlvos(p, dadoEscolhido(j)).bolso : null;
+    if (alvo) return `<button class="bolso alvo-dado alvo-${alvo.cls}" data-alvo-dado="bolso" aria-label="Bolso: ${alvo.txt}"><span class="rot">Bolso</span>${b === null ? '<span class="bolso-vazio"></span>' : `<span class="mini${util ? ' util' : ''}">${dadoHTML(b, skinDe(p))}</span>`}<span class="alvo-chip">${alvo.txt}</span></button>`;
     return `<span class="bolso${destaque}" title="Bolso: guarda um dado"><span class="rot">Bolso</span>${b === null ? '<span class="bolso-vazio"></span>' : `<span class="mini${util ? ' util' : ''}">${dadoHTML(b, skinDe(p))}</span>`}</span>`;
   }
   function cartasHTML(p) {
@@ -741,14 +796,15 @@
     // os pontinhos de "pensando…" moram no selo de vez, no alto da Mesa (no painel, em 360 px, estouravam com placar de 2 dígitos)
     const caiu = p === 1 && rivalCaiu(), sv = caiu ? segundosVolta() : null;
     const tag = j.fase === 'fim' ? (j.vencedor === p ? 'venceu' : '') : caiu ? (sv === null ? 'caiu' : `caiu · <span class="volta-rival">${sv}</span> s`)
-      : daVez ? (humano(p) ? (j.modo !== 'local' ? 'sua vez' : 'vez') : online() ? 'jogando' : 'pensando') : '';
+      : daVez ? (humano(p) ? (j.modo !== 'local' ? 'sua vez' : 'vez') : online() ? 'jogando' : 'pensando') + (online() ? '<span class="relogio-vez" data-relogio></span>' : '') : '';
     const avatar = j.modo === 'bot' && p === 1 ? Retratos.retrato(RETRATO_RIVAL[j.nivel], j.humor || '') : p === 0 ? iconeSVG(st.conta.icone) : online() ? iconeSVG(j.perfis[1].icone) : '';
     const fala = j.modo === 'bot' && p === 1 && j.fala ? `<div class="fala" aria-live="polite">${j.fala.txt}</div>` : '';
     return `<div class="jogador p${p}${daVez ? ' da-vez' : ''}">${fala}
       <div class="cab">${avatar}<span class="quem"><span class="nome">${n[p]}</span>${tag ? `<span class="vez-tag">${tag}</span>` : ''}</span>
         ${bolsoHTML(p)}<span class="placar"><b data-placar="${p}">${j.pts[p]}</b><small>/${j.meta}</small></span></div>
       <div class="barra" role="progressbar" aria-valuemin="0" aria-valuemax="${j.meta}" aria-valuenow="${j.pts[p]}" aria-label="Pontos de ${n[p]}"><i style="width:${pct}%"></i>${prev ? `<span class="prev" style="left:${pct}%;width:${prev}%"></span>` : ''}</div>
-      <div class="corrente${fx ? ' fx-' + fx.tipo : L >= 5 ? ' fervendo' : L >= 4 ? ' quente' : ''}" style="--fase:-${Math.round(performance.now() % 1800)}ms">${slots}</div>
+      ${(() => { const alvo = p === j.vez && !fx && dadoEscolhido(j) >= 0 ? previaAlvos(p, dadoEscolhido(j)).corrente : null;
+        return `<div class="corrente${fx ? ' fx-' + fx.tipo : L >= 5 ? ' fervendo' : L >= 4 ? ' quente' : ''}${alvo ? ` alvo-dado alvo-${alvo.cls}" data-alvo-dado="corrente" role="button" tabindex="0" aria-label="Corrente: ${alvo.txt}` : ''}" style="--fase:-${Math.round(performance.now() % 1800)}ms">${slots}${alvo ? `<span class="alvo-chip">${alvo.txt}</span>` : ''}</div>`; })()}
       ${st.pref.dicas && !cartaEscolhida(j, p) ? `<div class="info"><span>Corrente <b>${L}</b>/${LIM}</span><span>${valeAgora}${seCrescer}</span></div>` : ''}
       ${comDecisao && !cartaEscolhida(j, p) ? '<div class="decisao-slot"></div>' : cartasHTML(p) + (comDecisao ? '<div class="decisao-slot"></div>' : '')}
     </div>`;
@@ -910,31 +966,11 @@
         </div>`;
     }
     const algumSeguro = j.mesa.some(x => seguroDado(p, x));
-    // um dado escolhido: para onde ele pode ir (nada saiu da Mesa ainda)
-    const iSel = j.sel !== null && j.sel !== undefined ? idxDe(j.sel) : -1;
-    if (j.fase === 'pegar' && iSel >= 0) {
-      const op = opcoesDoDado(p, iSel), b = j.bolso[p], L = eu.length;
-      const relTxt = x => { const r = L ? rels(frente(eu), x) : []; return r.length ? r.map(k => REL[k].nome).join(' + ') : (L && j.coringa[p] ? `Coringa: troca o ${frente(eu)}` : 'começa a corrente'); };
-      const bt = (modo, rot, sub, cls) => `<button class="btn btn-duplo ${cls}" data-destino="${modo}"><span>${rot}</span><small>${sub}</small></button>`;
-      const ancora = j.armada[p] === 'ancora' && L >= 4;
-      let aviso = '', botoes = '';
-      if (op.proprio) aviso = 'Esse é o dado do seu <b>Espelho</b>: pegá-lo desperdiça a armadilha.';
-      if (op.rompe) aviso = `${op.contra ? 'Virado, ele' : 'Ele'} não sincroniza${b !== null && !op.contra ? ', nem o do Bolso' : ''}: a sua corrente de <b>${L}</b> ${ancora ? 'romperia, mas a sua <b>Âncora</b> segura' : 'vai romper'}.`;
-      if (!op.rompe) {
-        const cls = m => (m === op.principal ? 'btn-mel' : 'btn-papel');
-        if (op.seguros.includes('corrente')) botoes += bt('corrente', 'Na corrente', relTxt(op.v), cls('corrente'));
-        if (op.seguros.includes('guardar')) botoes += bt('guardar', 'Guardar', 'no Bolso', cls('guardar'));
-        if (op.seguros.includes('trocar')) botoes += bt('trocar', 'Trocar', `entra o ${b} · ${relTxt(b)}`, cls('trocar'));
-      } else {
-        botoes += bt('corrente', ancora ? 'Pegar (a Âncora segura)' : 'Pegar e romper', ancora ? 'o dado ruim é jogado fora' : `a corrente de ${L} se perde`, 'btn-papel perigo');
-        if (op.ds.includes('trocar')) botoes += bt('trocar', 'Trocar', `o ${b} entra e rompe; o ${op.v} fica`, 'btn-papel perigo');
-      }
-      const dica = op.principal ? 'Toque em outro dado para trocar, ou de novo neste para pegar.' : 'Toque em outro dado para trocar.';
-      if (!ajudas) return `<div class="status">${mini(op.d.v, skinMesa())} <b>${op.d.v}</b>${op.contra ? ` → <b>${op.v}</b> (Espelho)` : ''}${aviso ? `. ${aviso}` : ''}</div>
-        <div class="botoes">${botoes}<button class="btn btn-papel" data-acao="cancelar">Cancelar</button></div>`;
-      return `<div class="status">${quem} escolheu ${mini(op.d.v, skinMesa())} <b>${op.d.v}</b>${op.contra ? `, que chega virado como <b>${op.v}</b> (Espelho do rival) e não pode ir para o Bolso` : ''}. ${aviso}</div>
-        <div class="botoes">${botoes}<button class="btn btn-papel" data-acao="cancelar">Cancelar</button></div>${ajudas ? `<p class="nota" style="margin:0">${dica}</p>` : ''}`;
-    }
+    // um dado escolhido: sem botões (a corrente e o Bolso são os alvos); só a pergunta, quando a jogada tem risco
+    const pg = perguntaValida(j);
+    // o que rompe a corrente nunca é o botão de destaque
+    if (pg) return `<div class="status pergunta-dado">${pg.txt}</div><div class="botoes">${pg.botoes.map(([m, r], i) => `<button class="btn ${/romp/i.test(r) ? 'btn-papel perigo' : i ? 'btn-papel' : 'btn-mel'}" data-confirma="${m}">${r}</button>`).join('')}${btnVoltar('cancelar')}</div>`;
+    if (dadoEscolhido(j) >= 0) return '';
     // sem dado escolhido não há decisão: nada de barra (a não ser o segundo dado da Pressa, que pode ser dispensado)
     if (!j.segundoDado) return '';
     let msg;
@@ -994,6 +1030,11 @@
     const s = segundosDaVez(j), tempo = s === null ? '' : `<span class="selo-tempo">${s} s</span>`;
     const pensa = quem === 'rival' && !rivalCaiu() && s === null ? '<span class="pensando-pontos" aria-hidden="true"></span>' : '';
     el.className = `selo-vez ${quem}${s !== null && s <= 10 ? ' urgente' : ''}`;
+    // o selo não aparece mais no meio da Mesa (a etiqueta "sua vez" do painel basta); no online o relógio mora nela
+    document.querySelectorAll('[data-relogio]').forEach(r => {
+      r.textContent = s === null ? '' : ` · ${s} s`;
+      r.closest('.vez-tag').classList.toggle('urgente', s !== null && s <= 10);
+    });
     el.innerHTML = quem === 'minha' ? `<b>Sua vez</b>${tempo}` : `<b>Vez de ${nomes()[1]}</b>${rivalCaiu() ? '<span class="selo-tempo">caiu</span>' : tempo}${pensa}`;
     document.title = online() && quem === 'minha' ? `● Sua vez${s === null ? '' : ` · ${s} s`} · ${TITULO}` : TITULO;
   }
@@ -1004,7 +1045,7 @@
     const s = segundosDaVez(jogo);
     Vez.aviso = { chave: Vez.chave, s: s === null ? Infinity : s };
     Som.tocar('suaVez'); vibrar(forte ? [60, 60, 60, 60, 90] : [40, 50, 40]);
-    pulinho(document.getElementById('seloVez'), true);
+    pulinho(document.querySelector('#pj0 .vez-tag'), true);
     if (!document.hidden && !inicioAberto()) Fx.chamada(titulo || (forte ? 'Ainda é sua vez' : 'Sua vez'), sub, 'vez-chamada de-jogo', { ms: forte ? 1800 : titulo ? 1600 : 1100 });
   }
   // deNovo: a vez anterior também era sua (você está atrás e abre a Mesa nova, ou o rival usou a Pausa): a chamada diz
@@ -1073,7 +1114,7 @@
     const n = nomes();
     const linha = l => `${l.p === null ? '' : `<span class="cor${l.p}">${n[l.p]}</span> `}${l.txt}`;
     document.getElementById('log').innerHTML = j.log.map(l => `<li class="${l.tipo}">${linha(l)}</li>`).join('');
-    const instrucao = humano(j.vez) ? instrucaoCarta(j) : '', ticker = document.getElementById('ticker');
+    const instrucao = humano(j.vez) ? instrucaoCarta(j) || instrucaoDado(j) : '', ticker = document.getElementById('ticker');
     ticker.innerHTML = instrucao || (j.log[0] ? linha(j.log[0]) : '');
     ticker.classList.toggle('instrucao', !!instrucao);
     mostrarCorrenteNaDecisao(j);
@@ -1769,9 +1810,14 @@
     if (ub) { const [t, id] = ub.dataset.usarItem.split(':'); st.conta[t === 'dados' ? 'dado' : t === 'icones' ? 'icone' : 'mesa'] = id; salvar(); aplicarPrefs(); desenharLoja(); if (jogo) render(); Som.tocar('momento'); }
   });
 
+  // tocar num espaço vazio da Mesa desfaz a escolha do dado (não há mais barra com Cancelar)
   document.getElementById('mesa').addEventListener('click', e => { const b = e.target.closest('.pega'); if (b && !b.disabled) clicarDado(+b.dataset.i); });
+  document.querySelector('.mesa-area').addEventListener('click', e => {
+    if (!e.target.closest('.pega') && jogo && jogo.fase === 'pegar' && jogo.sel != null && humano(jogo.vez)) cancelarEscolha();
+  });
   document.getElementById('tabuleiro').addEventListener('click', e => {
     const v = e.target.closest('[data-virada]'); if (v && jogo) { abrirVirada(+v.dataset.virada); return; }
+    const al = e.target.closest('[data-alvo-dado]'); if (al && jogo) { levarDado(al.dataset.alvoDado); return; }
     const b = e.target.closest('[data-carta]'); if (!b || !jogo) return;
     tocarCarta(+b.dataset.dono, b.dataset.carta);
   });
@@ -1907,6 +1953,53 @@
     const b = e.target.closest('.cartas [data-carta]'); if (!b || b.contains(e.relatedTarget)) return;
     clearTimeout(passarMouse); esconderEspiar();
   });
+  // arrastar um dado da Mesa: ele é escolhido ao sair do lugar (a corrente e o Bolso acendem com o que vai acontecer)
+  // e soltar num deles é o mesmo que tocar nele; soltar em outro lugar deixa o dado escolhido
+  let arrastoDado = null;
+  const camadaDado = document.createElement('div');
+  camadaDado.className = 'camada-arrasto camada-dado';
+  document.body.appendChild(camadaDado);
+  const alvoDadoSob = (x, y) => { const el = document.elementFromPoint(x, y); return el && el.closest('[data-alvo-dado]'); };
+  document.getElementById('mesa').addEventListener('pointerdown', e => {
+    const b = e.target.closest('.pega:not([disabled])'), j = jogo;
+    if (!b || !j || e.button > 0 || j.fase !== 'pegar' || !humano(j.vez) || j.pensando || j.intro || toque) return;
+    arrastoDado = { b, id: +b.dataset.id, idx: +b.dataset.i, x: e.clientX, y: e.clientY, pid: e.pointerId, fant: null };
+  });
+  addEventListener('pointermove', e => {
+    const a = arrastoDado; if (!a || e.pointerId !== a.pid) return;
+    if (!a.fant) {
+      if (Math.hypot(e.clientX - a.x, e.clientY - a.y) < 10) return;
+      const j = jogo, idx = idxDe(a.id);
+      if (!j || idx < 0 || j.fase !== 'pegar') { arrastoDado = null; return; }
+      const face = a.b.querySelector('.face .dado') || a.b.querySelector('.dado'), r = face.getBoundingClientRect();
+      if (j.sel !== a.id) { j.sel = a.id; pergunta = null; foco = null; const op = opcoesDoDado(j.vez, idx); Som.tocar(op.rompe ? 'perigo' : 'escolher', { n: 0, x: (idx - 2) * 0.3 }); }
+      a.fant = face.cloneNode(true); a.fant.classList.add('dado-fantasma');
+      // o miolo do dado é 15% da largura: fixo na tela, a porcentagem seria da tela inteira
+      Object.assign(a.fant.style, { width: `${r.width}px`, height: `${r.height}px`, padding: `${r.width * 0.15}px`, boxSizing: 'border-box' });
+      a.w = r.width; a.h = r.height;
+      camadaDado.appendChild(a.fant);
+      document.body.classList.add('arrastando-carta');
+      vibrar(6); render();
+    }
+    e.preventDefault();
+    a.fant.style.transform = `translate(${e.clientX - a.w / 2}px, ${e.clientY - a.h / 2 - 26}px) scale(1.12) rotate(${st.pref.animacoes ? Math.max(-12, Math.min(12, (e.movementX || 0) * 1.5)) : 0}deg)`;
+    document.querySelectorAll('[data-alvo-dado].mira').forEach(el => el.classList.remove('mira'));
+    const alvo = alvoDadoSob(e.clientX, e.clientY - 26);
+    if (alvo) { alvo.classList.add('mira'); if (a.ultAlvo !== alvo.dataset.alvoDado) { a.ultAlvo = alvo.dataset.alvoDado; vibrar(4); } } else a.ultAlvo = null;
+  }, { passive: false });
+  const fimArrastoDado = (e, valeu) => {
+    const a = arrastoDado; if (!a || e.pointerId !== a.pid) return;
+    arrastoDado = null;
+    if (!a.fant) return;   // um toque normal: o clique cuida
+    engolirClique = true; setTimeout(() => { engolirClique = false; }, 400);
+    a.fant.remove(); document.body.classList.remove('arrastando-carta');
+    document.querySelectorAll('[data-alvo-dado].mira').forEach(el => el.classList.remove('mira'));
+    const alvo = valeu && alvoDadoSob(e.clientX, e.clientY - 26);
+    if (alvo && jogo && jogo.sel === a.id) return levarDado(alvo.dataset.alvoDado);
+    render();
+  };
+  addEventListener('pointerup', e => fimArrastoDado(e, true));
+  addEventListener('pointercancel', e => fimArrastoDado(e, false));
   document.getElementById('cartaBotoes').addEventListener('click', e => {
     if (e.target.closest('[data-fechar-carta]')) { document.getElementById('janelaCarta').hidden = true; return; }
     const j = jogo, p = j.vez;
@@ -1921,6 +2014,7 @@
   });
   document.getElementById('acoes').addEventListener('click', e => {
     const j = jogo;
+    const cf = e.target.closest('[data-confirma]'); if (cf && j.fase === 'pegar' && dadoEscolhido(j) >= 0) { pegarDado(cf.dataset.confirma); return; }
     const dst = e.target.closest('[data-destino]');
     if (dst && j.fase === 'pegar' && j.sel && humano(j.vez) && !j.pensando) { pegarDado(dst.dataset.destino); return; }
     if (dst && j.fase === 'destino' && j.mao && humano(j.vez)) { colocar(j.vez, j.mao.v, dst.dataset.destino); return; }
@@ -2076,9 +2170,10 @@
       if (jogo.fase === 'alvo' && k === 'enter') return confirmarAlvo();
       if (jogo.fase === 'pegar') {
         const op = opcoesDoDado(jogo.vez, idxDe(jogo.sel));
+        if (k === 'enter' && alvo.closest('[data-alvo-dado]')) return levarDado(alvo.closest('[data-alvo-dado]').dataset.alvoDado);
         if (k === 'enter' && op.principal) return pegarDado(op.principal);
-        if (k === 'c' && op.ds.includes('corrente') && !op.rompe) return pegarDado('corrente');
-        if (k === 'b') { const m = op.seguros.find(x => x !== 'corrente'); if (m) return pegarDado(m); }
+        if (k === 'c') return levarDado('corrente');
+        if (k === 'b') return levarDado('bolso');
       }
     }
     if (jogo.fase === 'destino' && jogo.mao && humano(jogo.vez)) {

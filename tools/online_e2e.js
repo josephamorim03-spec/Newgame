@@ -141,7 +141,9 @@ const espera = ms => new Promise(r => setTimeout(r, ms));
         if (!bs.length) return false;
         const b = bs[Math.floor(Math.random() * bs.length)];
         b.click();   // tocar escolhe; o destino confirma
-        const dst = document.querySelector('#acoes [data-destino]'); if (dst) dst.click();
+        // tocar escolhe; tocar na corrente leva (e, se o jogo perguntar, confirma)
+        const al = document.querySelector('[data-alvo-dado="corrente"]'); if (al) al.click();
+        const cf = document.querySelector('[data-confirma]'); if (cf) cf.click();
         return true;
       }
       return false;

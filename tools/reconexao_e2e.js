@@ -93,7 +93,9 @@ const espera = ms => new Promise(r => setTimeout(r, ms));
       const bs = [...document.querySelectorAll('#mesa .pega:not([disabled])')];
       if (!bs.length) return false;
       bs[Math.floor(Math.random() * bs.length)].click();
-      const dst = document.querySelector('#acoes [data-destino]'); if (dst) dst.click();
+      // tocar escolhe; tocar na corrente leva (e, se o jogo perguntar, confirma)
+        const al = document.querySelector('[data-alvo-dado="corrente"]'); if (al) al.click();
+        const cf = document.querySelector('[data-confirma]'); if (cf) cf.click();
       return true;
     });
     for (let passos = 0; ; passos++) {

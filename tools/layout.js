@@ -14,7 +14,7 @@ const LARGURAS = [[320, 640], [360, 740], [390, 844], [430, 932], [768, 1024], [
 // roda dentro da página
 function verificar() {
   const probs = [];
-  const SOLTOS = '.elo, .alvo-rival, .marca-esp, .kbd, .fala, .pop, .cartas .raio';   // selos de canto: saem da borda de propósito
+  const SOLTOS = '.elo, .alvo-rival, .marca-esp, .kbd, .fala, .pop, .cartas .raio, .alvo-chip';   // selos de canto: saem da borda de propósito (.alvo-chip: o que acontece se o dado for para a corrente ou o Bolso)
   // checkVisibility vê também a opacidade dos pais (os dados de uma ruptura caem e somem com opacity 0 no dado, não no pip)
   const visivel = el => { const r = el.getBoundingClientRect(); const cs = getComputedStyle(el); return r.width > 0 && r.height > 0 && cs.visibility !== 'hidden' && cs.display !== 'none' && cs.opacity !== '0' && (!el.checkVisibility || el.checkVisibility({ opacityProperty: true, visibilityProperty: true })); };
   const nome = el => el.tagName.toLowerCase() + (el.id ? '#' + el.id : '') + (typeof el.className === 'string' && el.className.trim() ? '.' + el.className.trim().split(/\s+/).slice(0, 3).join('.') : '');
@@ -23,7 +23,7 @@ function verificar() {
   // linhas de texto de um elemento (agrupa retângulos que se sobrepõem na vertical)
   const linhas = el => {
     const rs = []; const w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT); let n;
-    while ((n = w.nextNode())) { if (!n.textContent.trim()) continue; const r = document.createRange(); r.selectNodeContents(n); for (const q of r.getClientRects()) if (q.width > 1) rs.push([q.top, q.bottom]); }
+    while ((n = w.nextNode())) { if (!n.textContent.trim() || (n.parentElement && n.parentElement.closest(SOLTOS))) continue; const r = document.createRange(); r.selectNodeContents(n); for (const q of r.getClientRects()) if (q.width > 1) rs.push([q.top, q.bottom]); }
     rs.sort((a, b) => a[0] - b[0]); let l = 0, fim = -1e9;
     for (const [t, b] of rs) { if (t > fim - 3) { l++; fim = b; } else fim = Math.max(fim, b); }
     return l;
@@ -173,6 +173,8 @@ if (require.main === module) (async () => {
         if (fase.startsWith('fim')) break;
         if (!vistas.has(fase) || passos % 25 === 0) { vistas.add(fase); await olha('partida-' + fase.replace('-longa', ''), !vistas.has('foto-' + fase) && (vistas.add('foto-' + fase), true)); }
         const dst = await pg.$$('[data-destino]'); if (dst.length) { await dst[0].click(); continue; }
+        const cf = await pg.$('[data-confirma]'); if (cf) { await olha('pergunta-dado', !vistas.has('foto-pergunta') && (vistas.add('foto-pergunta'), true)); await cf.click(); continue; }
+        const alvo = await pg.$('[data-alvo-dado="corrente"]'); if (alvo) { await olha('dado-escolhido', !vistas.has('foto-escolhido') && (vistas.add('foto-escolhido'), true)); await alvo.click(); continue; }
         const disp = await pg.$('[data-acao="segurar"]'); if (disp) { const L = await pg.evaluate(() => DiceDuel.jogo.cor[0].length); await pg.click(L >= 4 ? '[data-acao="disparar"]' : '[data-acao="segurar"]'); continue; }
         const minha = await pg.$('.jogador.da-vez button.carta.pronta');
         if (minha && !vistas.has('carta')) { vistas.add('carta'); await minha.click(); await olha('carta', true); await pg.click('[data-acao="fechar-carta"], #cartaBotoes [data-fechar-carta]'); continue; }

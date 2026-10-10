@@ -393,6 +393,19 @@ dados são objetos (rolam, pousam, voam); as cartas não eram. Agora:
 Referências: o "?" junto do retrato do Segredo de Hearthstone, a carta grande ao segurar do Marvel Snap, a carta
 que leva até o alvo do Slay the Spire, a inclinação e a vibração do Balatro, e Dicey Dungeons (dado e carta se tocam).
 
+**O dado sem botões (v0.12).** Os botões Na corrente / Guardar / Trocar, embaixo do painel, eram mais uma camada entre
+o dedo e o dado: a pessoa escolhia o dado na Mesa e lia três botões lá embaixo. Agora o dado vai direto ao lugar:
+- **tocar no dado** o escolhe: a **corrente** e o **Bolso** acendem, cada um com uma etiqueta do que acontece se o dado
+  for para lá (verde "Passo", "guardar", "troca: entra o 3"; mel quando vai perguntar; coral "rompe"; apagado "não pode");
+- **tocar na corrente ou no Bolso**, ou **arrastar o dado** até eles, leva o dado; **tocar de novo no dado** faz a
+  melhor jogada segura (como antes); tocar num espaço vazio da Mesa (ou Esc) desfaz a escolha;
+- **pergunta só quando há risco** ou quando o lugar apontado não é o que a regra deixa: o dado que não serve solto na
+  corrente pergunta se troca com o do Bolso, se guarda, ou (sem nenhuma jogada segura) se rompe. O dado novo solto no
+  Bolso cheio, com o do Bolso servindo na corrente, troca **sem perguntar**: o gesto já diz o que a pessoa quer.
+- A regra não muda: com uma jogada segura disponível, não dá para romper de propósito; a pergunta oferece a segura.
+- A vez não aparece mais num selo no meio da Mesa: a etiqueta "sua vez" do painel basta. No online, o relógio da vez
+  mora nela ("SUA VEZ · 23 s", vermelha nos 10 s finais).
+
 **De quem é a vez (v0.12): óbvio de longe.** No teste com gente, um segundo de desatenção bastava para não saber,
 de volta à tela, se a vez era sua ou do rival (e no online o tempo da vez acabar é derrota). Agora:
 - **Selo de vez** no alto da Mesa, no lugar do título: "Sua vez" na sua cor, respirando; "Vez de Diana…" apagado, com
