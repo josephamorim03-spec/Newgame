@@ -378,7 +378,17 @@ inclinada, travessa, e solta; o dado volta para o lugar e a pata volta para a bo
 o da esquerda, a pata da esquerda; o da direita, a da direita; o do meio, meio a meio. Às vezes ela comenta ("Esse aqui
 parece meu.", "Só estou olhando.", "Calma. Ainda não peguei."). Tocar num dado ou nela no meio do gesto faz as patas
 voltarem depressa para a borda. A pata não sobe pela tela (passaria pelo rosto): erguer é ela crescer um pouco e a
-sombra no feltro se afastar. Com a Dona Coruja escolhida, não há patas; com as animações desligadas, elas ficam paradas
+sombra no feltro se afastar.
+
+A pata é um **sprite de quatro poses**, trocadas como quadros (vetor, no traço de cacau e no branco da Diana):
+- **dorso:** vista de cima, apoiada na borda, com os vãos dos dedos;
+- **virando:** de lado, estreita, com a beirada rosa das almofadinhas aparecendo;
+- **palma:** erguida, de frente para quem olha: a almofada maior, de três lobos, e os quatro feijõezinhos rosa em arco;
+- **gancho:** os dedos dobrados por cima da aresta do dado, com as quatro pontinhas rosa apertando a face dele.
+
+A investida: dorso → virando → palma ao erguer (a palma fica no ar em cima do dado, a ameaça); palma → virando → gancho
+ao descer na aresta de cima do dado; uma ou duas apertadas; puxa o dado pela aresta (ele inclina, arrastado pela
+beirada); gancho → virando → dorso ao soltar, e a pata volta para a borda. A pata da direita é o espelho da da esquerda. Com a Dona Coruja escolhida, não há patas; com as animações desligadas, elas ficam paradas
 na borda.
 
 **A mesa não pisca mais marrom.** O tremor dos disparos de 5 e 6 movia a própria mesa; o transform a fazia virar um

@@ -105,8 +105,8 @@ node tools/vercel_local.js                     # a página como o Vercel publica
   ("Valeu esperar!" na hora). É o primeiro bom momento que premia uma decisão, não um resultado.
 - **Fim da derrota sem "+0":** os bons momentos vêm primeiro, depois a experiência e o rating.
 - **Juice:** o disparo em cascata (cada dado acende na nota dele, um selo conta +1, +2, +4... e o "+N" estoura no
-  placar do tamanho do lance); a tela inicial com a rival à mesa, a saudação da hora e dados que rolam ao toque, e as patas da Diana mexendo nos
-  dados e ameaçando pegá-los; a mesa
+  placar do tamanho do lance); a tela inicial com a rival à mesa, a saudação da hora e dados que rolam ao toque, e as patas da Diana (sprites:
+  dorso, virando, palma com as almofadinhas rosa e gancho na aresta) mexendo nos dados e ameaçando pegá-los; a mesa
   não pisca mais marrom no tremor.
 
 Detalhes em `docs/design.md` §5, §6 e §7; teste em `tools/estreia_e2e.js`.
