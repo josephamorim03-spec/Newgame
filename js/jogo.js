@@ -83,6 +83,12 @@
   // ---------- rivais ----------
   // os rivais do jogo: Diana (fácil) e Dona Coruja (difícil)
   const RETRATO_RIVAL = { aprendiz: 'diana', esperto: 'coruja' };
+  // cada bicho joga com os dados dele (as skins em css/estilo.css; docs/historia.md §5). O Coelho não tem tempo de
+  // escolher outro; a Raposa usa o verde do Sapo (pegou para combinar com o cachecol, dizem); o Guaxinim joga com
+  // um dado de cada um (DADOS_SUCATA)
+  const DADO_DO_BICHO = { diana: 'rosa', coruja: 'madeira', sapo: 'lagoa', coelho: 'marfim', raposa: 'lagoa', urso: 'mel', guaxinim: 'sucata', ovelha: 'la' };
+  const DADOS_SUCATA = { 1: 'rosa', 2: 'lagoa', 3: 'madeira', 4: 'mel', 5: 'la', 6: 'marfim' };
+  const dadoDoRival = k => DADO_DO_BICHO[RETRATO_RIVAL[k]] || 'marfim';
   const RIVAIS = {
     aprendiz: { nome: 'Diana', desc: 'gata branca de olhos azuis; joga solto e arrisca', falas: {
       inicio: ['Boa noite. Uma partida?', 'A Mesa está pronta. Comece quando quiser.'],
@@ -103,8 +109,6 @@
     coruja: { nome: 'Dona Coruja', desc: 'lê a Mesa e lê gente' }, diana8: { nome: 'Diana', desc: 'a fita original' } };
   // a voz do "blá-blá" de cada um (js/audio.js tem duas: a da gata, aguda, e a da coruja, grave e redonda)
   const VOZ_RIVAL = { sapo: 'coruja', urso: 'coruja', coruja: 'coruja', esperto: 'coruja' };
-  // o dado de cada rival (a skin): a Diana rosa, a Coruja madeira, os bichos no marfim
-  const DADO_RIVAL = { aprendiz: 'rosa', diana8: 'rosa', esperto: 'madeira', coruja: 'madeira' };
   // o robô joga no jeito da Diana (solto) ou no da Coruja (lê a Mesa); os bichos da história escolhem no capítulo
   const esperto = j => j.nivel === 'esperto' || !!j.esperto;
   if (window.Historia) for (const c of Historia.CAPS) if (RIVAIS_HISTORIA[c.rival]) {
@@ -804,10 +808,18 @@
 
   // ---------- desenho ----------
   const PIPS = { 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] };
-  const dadoHTML = (v, skin = 'marfim') => `<span class="dado skin-${skin}" role="img" aria-label="${v}">${Array.from({ length: 9 }, (_, i) => `<i class="pip${PIPS[v].includes(i) ? ' on' : ''}"></i>`).join('')}</span>`;
+  const dadoHTML = (v, skin = 'marfim') => `<span class="dado skin-${skin === 'sucata' ? DADOS_SUCATA[v] : skin}" role="img" aria-label="${v}">${Array.from({ length: 9 }, (_, i) => `<i class="pip${PIPS[v].includes(i) ? ' on' : ''}"></i>`).join('')}</span>`;
   const mini = (v, skin) => `<span class="mini">${dadoHTML(v, skin)}</span>`;
+  // a face pintada (js/dados_pintados.js) entra por baixo do brilho, no lugar do degradê da skin; sem ela, vale o CSS
+  // o verde do Sapo clareia um pouco: em cima do feltro da corrente, verde com verde some
+  (function pintarDados() {
+    const CLARO = { lagoa: 0.2 }, pintados = window.DADOS_PINTADOS || {}, css = Object.entries(pintados).map(([id, src]) =>
+      `.dado.skin-${id}{background:radial-gradient(circle at 30% 25%,rgba(255,255,255,.3),transparent 55%),linear-gradient(rgba(255,255,240,${CLARO[id] || 0}),rgba(255,255,240,${CLARO[id] || 0})),url("${src}") center/cover}`).join('');
+    if (!css) return;
+    const el = document.createElement('style'); el.id = 'dadosPintados'; el.textContent = css; document.head.appendChild(el);
+  })();
   // cada um vê os próprios dados com a própria skin; os rivais têm a sua; a Mesa usa a sua (ou marfim, a dois)
-  const skinDe = p => p === 0 ? st.conta.dado : jogo.modo === 'bot' ? (DADO_RIVAL[jogo.nivel] || 'marfim') : online() ? (jogo.perfis[1].dado || 'marfim') : 'marfim';
+  const skinDe = p => p === 0 ? st.conta.dado : jogo.modo === 'bot' ? dadoDoRival(jogo.nivel) : online() ? (jogo.perfis[1].dado || 'marfim') : 'marfim';
   const skinMesa = () => jogo.modo !== 'local' ? st.conta.dado : 'marfim';
   const iconeSVG = id => Retratos.retrato(ICONES[id] ? id : 'bolinha', ICONES[id] && ICONES[id].grupo === 'especial' ? 'especial' : '');
   const elo = r => `<span class="elo ${r.length > 1 ? 'duplo' : 'r-' + r[0]}" title="${r.map(k => REL[k].nome).join(' + ')}">${r.map(k => REL[k].simb).join('·')}</span>`;

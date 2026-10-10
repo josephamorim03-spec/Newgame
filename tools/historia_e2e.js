@@ -181,6 +181,7 @@ async function vencer(pg, cor, pts) {
   if (!/1A6T1A6T1A/.test(fita.replace(/\s/g, ''))) falha(`a fita da cura: "${fita}"`);
   if (!/Fechou\. Fechou\./.test(visto) || !/Eu ensinei bem\. Bem\./.test(visto)) falha(`o fecho do Eco (com o quadro da 3.ª estrela) não apareceu: ${visto}`);
   if (!/DianaDice/.test(visto) || !/Orgânico/.test(visto)) falha('os pós-créditos não apareceram');
+  if (!/quero a revanche/.test(visto)) falha(`a frase final (F-Zb) não apareceu: ${visto}`);
   await pf.waitForFunction(() => !document.getElementById('fim').hidden, null, { timeout: 6000 }).catch(() => falha('o fim do Capítulo 8 não abriu'));
   const f8 = await pf.evaluate(() => ({ icone: DiceDuel.st.conta.icones.includes('diana'), estrelas: DiceDuel.st.conta.historia.estrelas.C8, rec: document.getElementById('fimRecompensas').textContent }));
   if (!f8.icone || f8.estrelas !== 3 || !/Ícone liberado/.test(f8.rec)) falha(`o fim da história: ${JSON.stringify(f8)}`);

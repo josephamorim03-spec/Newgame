@@ -514,6 +514,15 @@ button.carta:hover { transform: translateY(-2px) rotate(-1deg); }
 .dado.skin-pelucia { border-radius: 34%; background: radial-gradient(circle, rgba(255,255,255,.4) 1px, transparent 1.6px) 0 0 / 5px 5px, radial-gradient(circle at 30% 25%, #fff6e8, #f0d6b8 50%, #ddb68c);
   box-shadow: inset 0 0 0 2px rgba(255,255,255,.55), inset 0 -5px 7px rgba(120,80,40,.25), 0 6px 12px rgba(0,0,0,.3); }
 .dado.skin-pelucia .pip { background: radial-gradient(circle at 35% 35%, #8a6250, #5b3d30); width: 80%; height: 80%; }
+/* os dados dos bichos da história (js/jogo.js, DADO_DO_BICHO): o Sapo e a Raposa no verde (ela pegou do Sapo), o Urso no
+   mel, a Ovelha na lã. A lã, a madeira e o verde ganham a face pintada por cima deste degradê (js/dados_pintados.js) */
+.dado.skin-lagoa { background: radial-gradient(circle, rgba(47,94,64,.35) 0 1px, transparent 1.6px) 3px 2px / 9px 11px, radial-gradient(circle at 30% 25%, #c9ecc8, #74b386 45%, #4e8a62); box-shadow: inset 0 -3px 0 rgba(30,70,45,.3), 0 6px 12px rgba(0,0,0,.32); }
+.dado.skin-lagoa .pip { background: radial-gradient(circle at 35% 35%, #2f5e40, #173523); }
+.dado.skin-mel { background: radial-gradient(circle at 28% 22%, rgba(255,255,255,.7), transparent 30%), radial-gradient(circle at 60% 70%, #e39a3c, #f2b15e 55%, #ffd88a); box-shadow: inset 0 -3px 0 rgba(140,80,15,.35), inset 0 0 0 1.5px rgba(255,236,190,.55), 0 6px 12px rgba(0,0,0,.32); }
+.dado.skin-mel .pip { background: radial-gradient(circle at 35% 35%, #8a4f14, #4f2a06); }
+.dado.skin-la { border-radius: 34%; background: radial-gradient(circle, rgba(255,255,255,.55) 1.4px, transparent 2px) 0 0 / 6px 6px, radial-gradient(circle at 30% 25%, #fffdf7, #f4ebdc 50%, #e2d3ba);
+  box-shadow: inset 0 0 0 2px rgba(255,255,255,.6), inset 0 -5px 7px rgba(120,95,60,.22), 0 6px 12px rgba(0,0,0,.3); }
+.dado.skin-la .pip { background: radial-gradient(circle at 35% 35%, #7b5b4b, #4a3229); width: 80%; height: 80%; }
 .dado.skin-dourado, .dado.skin-diamante { position: relative; overflow: hidden; }
 .dado.skin-dourado { background: linear-gradient(135deg, #fff2bf, #f2c14e 35%, #c8901c 62%, #ffe28a 88%); box-shadow: inset 0 -3px 0 rgba(120,80,10,.35), 0 6px 14px rgba(0,0,0,.35), 0 0 10px rgba(242,193,78,.35); }
 .dado.skin-dourado .pip { background: radial-gradient(circle at 35% 35%, #8a5c10, #4f3306); }
@@ -692,7 +701,7 @@ img.avatar { object-fit: contain; }
    Cheia, e não um box-shadow: com o dado no ar a sombra sai de baixo dele, e um box-shadow é oco por dentro.
    O brilho do dourado e do diamante vem por box-shadow (sutil, só aparece em volta) */
 .sombra-rolagem { border-radius: 24%; background: rgba(0,0,0,.3); filter: blur(5px); }
-.sombra-rolagem[data-skin="pelucia"] { border-radius: 34%; background: rgba(0,0,0,.28); }
+.sombra-rolagem[data-skin="pelucia"], .sombra-rolagem[data-skin="la"] { border-radius: 34%; background: rgba(0,0,0,.28); }
 .sombra-rolagem[data-skin="dourado"] { background: rgba(0,0,0,.33); box-shadow: 0 -6px 10px rgba(242,193,78,.35); }
 .sombra-rolagem[data-skin="diamante"] { background: rgba(0,0,0,.33); box-shadow: 0 -6px 12px rgba(190,230,255,.45); }
 .face-rolagem { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
@@ -702,12 +711,16 @@ img.avatar { object-fit: contain; }
 .cubo-rolagem[data-skin="madeira"] { --miolo: #b47b4d; } .cubo-rolagem[data-skin="rosa"] { --miolo: #f4b4c8; }
 .cubo-rolagem[data-skin="menta"] { --miolo: #a8e2c8; } .cubo-rolagem[data-skin="pelucia"] { --miolo: #e6c6a0; }
 .cubo-rolagem[data-skin="dourado"] { --miolo: #d7a433; } .cubo-rolagem[data-skin="diamante"] { --miolo: #d2ecfb; }
+.cubo-rolagem[data-skin="lagoa"] { --miolo: #5f9d71; } .cubo-rolagem[data-skin="mel"] { --miolo: #eaa54c; } .cubo-rolagem[data-skin="la"] { --miolo: #efe4d2; }
 /* o canto de cada face é o da própria skin (24%, a pelúcia 34%): o cubo pousa com o mesmo contorno do dado parado.
    Cada face guarda a parte de dentro do box-shadow da skin (a beirada de baixo que dá corpo ao dado); a de fora
    (a sombra no chão) mora na .sombra-rolagem */
 .face-rolagem .dado { width: 100%; height: 100%; position: relative; box-shadow: inset 0 -3px 0 rgba(120, 90, 60, .18); }
 .face-rolagem .dado.skin-madeira { box-shadow: inset 0 -3px 0 rgba(70,40,20,.3); }
 .face-rolagem .dado.skin-pelucia { box-shadow: inset 0 0 0 2px rgba(255,255,255,.55), inset 0 -5px 7px rgba(120,80,40,.25); }
+.face-rolagem .dado.skin-la { box-shadow: inset 0 0 0 2px rgba(255,255,255,.6), inset 0 -5px 7px rgba(120,95,60,.22); }
+.face-rolagem .dado.skin-lagoa { box-shadow: inset 0 -3px 0 rgba(30,70,45,.3); }
+.face-rolagem .dado.skin-mel { box-shadow: inset 0 -3px 0 rgba(140,80,15,.35), inset 0 0 0 1.5px rgba(255,236,190,.55); }
 .face-rolagem .dado.skin-dourado { box-shadow: inset 0 -3px 0 rgba(120,80,10,.35); }
 .face-rolagem .dado.skin-diamante { box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.9), inset 0 -3px 0 rgba(60,90,140,.25); }
 /* sombra por face (a luz vem de cima, à esquerda): por cima das bolinhas, com o canto da skin; o ::after é do brilho do dourado */

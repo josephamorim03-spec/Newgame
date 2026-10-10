@@ -543,6 +543,15 @@ button.carta:hover { transform: translateY(-2px) rotate(-1deg); }
 .dado.skin-pelucia { border-radius: 34%; background: radial-gradient(circle, rgba(255,255,255,.4) 1px, transparent 1.6px) 0 0 / 5px 5px, radial-gradient(circle at 30% 25%, #fff6e8, #f0d6b8 50%, #ddb68c);
   box-shadow: inset 0 0 0 2px rgba(255,255,255,.55), inset 0 -5px 7px rgba(120,80,40,.25), 0 6px 12px rgba(0,0,0,.3); }
 .dado.skin-pelucia .pip { background: radial-gradient(circle at 35% 35%, #8a6250, #5b3d30); width: 80%; height: 80%; }
+/* os dados dos bichos da história (js/jogo.js, DADO_DO_BICHO): o Sapo e a Raposa no verde (ela pegou do Sapo), o Urso no
+   mel, a Ovelha na lã. A lã, a madeira e o verde ganham a face pintada por cima deste degradê (js/dados_pintados.js) */
+.dado.skin-lagoa { background: radial-gradient(circle, rgba(47,94,64,.35) 0 1px, transparent 1.6px) 3px 2px / 9px 11px, radial-gradient(circle at 30% 25%, #c9ecc8, #74b386 45%, #4e8a62); box-shadow: inset 0 -3px 0 rgba(30,70,45,.3), 0 6px 12px rgba(0,0,0,.32); }
+.dado.skin-lagoa .pip { background: radial-gradient(circle at 35% 35%, #2f5e40, #173523); }
+.dado.skin-mel { background: radial-gradient(circle at 28% 22%, rgba(255,255,255,.7), transparent 30%), radial-gradient(circle at 60% 70%, #e39a3c, #f2b15e 55%, #ffd88a); box-shadow: inset 0 -3px 0 rgba(140,80,15,.35), inset 0 0 0 1.5px rgba(255,236,190,.55), 0 6px 12px rgba(0,0,0,.32); }
+.dado.skin-mel .pip { background: radial-gradient(circle at 35% 35%, #8a4f14, #4f2a06); }
+.dado.skin-la { border-radius: 34%; background: radial-gradient(circle, rgba(255,255,255,.55) 1.4px, transparent 2px) 0 0 / 6px 6px, radial-gradient(circle at 30% 25%, #fffdf7, #f4ebdc 50%, #e2d3ba);
+  box-shadow: inset 0 0 0 2px rgba(255,255,255,.6), inset 0 -5px 7px rgba(120,95,60,.22), 0 6px 12px rgba(0,0,0,.3); }
+.dado.skin-la .pip { background: radial-gradient(circle at 35% 35%, #7b5b4b, #4a3229); width: 80%; height: 80%; }
 .dado.skin-dourado, .dado.skin-diamante { position: relative; overflow: hidden; }
 .dado.skin-dourado { background: linear-gradient(135deg, #fff2bf, #f2c14e 35%, #c8901c 62%, #ffe28a 88%); box-shadow: inset 0 -3px 0 rgba(120,80,10,.35), 0 6px 14px rgba(0,0,0,.35), 0 0 10px rgba(242,193,78,.35); }
 .dado.skin-dourado .pip { background: radial-gradient(circle at 35% 35%, #8a5c10, #4f3306); }
@@ -721,7 +730,7 @@ img.avatar { object-fit: contain; }
    Cheia, e não um box-shadow: com o dado no ar a sombra sai de baixo dele, e um box-shadow é oco por dentro.
    O brilho do dourado e do diamante vem por box-shadow (sutil, só aparece em volta) */
 .sombra-rolagem { border-radius: 24%; background: rgba(0,0,0,.3); filter: blur(5px); }
-.sombra-rolagem[data-skin="pelucia"] { border-radius: 34%; background: rgba(0,0,0,.28); }
+.sombra-rolagem[data-skin="pelucia"], .sombra-rolagem[data-skin="la"] { border-radius: 34%; background: rgba(0,0,0,.28); }
 .sombra-rolagem[data-skin="dourado"] { background: rgba(0,0,0,.33); box-shadow: 0 -6px 10px rgba(242,193,78,.35); }
 .sombra-rolagem[data-skin="diamante"] { background: rgba(0,0,0,.33); box-shadow: 0 -6px 12px rgba(190,230,255,.45); }
 .face-rolagem { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
@@ -731,12 +740,16 @@ img.avatar { object-fit: contain; }
 .cubo-rolagem[data-skin="madeira"] { --miolo: #b47b4d; } .cubo-rolagem[data-skin="rosa"] { --miolo: #f4b4c8; }
 .cubo-rolagem[data-skin="menta"] { --miolo: #a8e2c8; } .cubo-rolagem[data-skin="pelucia"] { --miolo: #e6c6a0; }
 .cubo-rolagem[data-skin="dourado"] { --miolo: #d7a433; } .cubo-rolagem[data-skin="diamante"] { --miolo: #d2ecfb; }
+.cubo-rolagem[data-skin="lagoa"] { --miolo: #5f9d71; } .cubo-rolagem[data-skin="mel"] { --miolo: #eaa54c; } .cubo-rolagem[data-skin="la"] { --miolo: #efe4d2; }
 /* o canto de cada face é o da própria skin (24%, a pelúcia 34%): o cubo pousa com o mesmo contorno do dado parado.
    Cada face guarda a parte de dentro do box-shadow da skin (a beirada de baixo que dá corpo ao dado); a de fora
    (a sombra no chão) mora na .sombra-rolagem */
 .face-rolagem .dado { width: 100%; height: 100%; position: relative; box-shadow: inset 0 -3px 0 rgba(120, 90, 60, .18); }
 .face-rolagem .dado.skin-madeira { box-shadow: inset 0 -3px 0 rgba(70,40,20,.3); }
 .face-rolagem .dado.skin-pelucia { box-shadow: inset 0 0 0 2px rgba(255,255,255,.55), inset 0 -5px 7px rgba(120,80,40,.25); }
+.face-rolagem .dado.skin-la { box-shadow: inset 0 0 0 2px rgba(255,255,255,.6), inset 0 -5px 7px rgba(120,95,60,.22); }
+.face-rolagem .dado.skin-lagoa { box-shadow: inset 0 -3px 0 rgba(30,70,45,.3); }
+.face-rolagem .dado.skin-mel { box-shadow: inset 0 -3px 0 rgba(140,80,15,.35), inset 0 0 0 1.5px rgba(255,236,190,.55); }
 .face-rolagem .dado.skin-dourado { box-shadow: inset 0 -3px 0 rgba(120,80,10,.35); }
 .face-rolagem .dado.skin-diamante { box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.9), inset 0 -3px 0 rgba(60,90,140,.25); }
 /* sombra por face (a luz vem de cima, à esquerda): por cima das bolinhas, com o canto da skin; o ::after é do brilho do dourado */
@@ -2568,6 +2581,15 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
 
 </script>
   <script>
+/* gerado por tools/arte_dados.py a partir de arte/dados.json: a face pintada de algumas skins de dado (webp em data URI). Vazio = só o CSS. */
+window.DADOS_PINTADOS = Object.assign(window.DADOS_PINTADOS || {}, {
+  la: "data:image/webp;base64,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",
+  lagoa: "data:image/webp;base64,UklGRggCAABXRUJQVlA4IPwBAADwDQCdASpwAHAAPm02lkmmIqGkIKkAwA2JaWt08AXamvG4H9OyqAGR82O280joWlpXGn5/GAIz+eLIG1aMoUnDVvEJ+bE5qd6JSsvVSq8FnIuBRacO8rhnxaPxp/FRlWR7BTHTvSJNga7gaupK9Q4ScujwsPrQqAAA/u3D0vbmQP7oe+ryp7D6qp6/G51wmIK6RHccTNZcuD7r7Btn4nPHbkZQ/YefV+cyU8efkfbAgC9UAPZmONRAj/MlUrVTrDmEkbifZXi9mM3v4YCOa8mz7wfBK+XeEB7bVVTrIjKWgMQLO2dpYguRjjMAijWF/r8i8XTemg7X82/q+W78BLFpVneJmp7alOQdXb9ZmCAEgK1VrgH+rcOTrq+eiYjEsmBS28cNOiInGDCDcSL3Wt+cIlbWXb9hyBznn4GBaCvQk1d+fX/ZZRGpIlQSmo97nkTPjUfNTpVxJOFomL2vqxe9OdZ13dnuMHwyAExsA5F9pfCEsxkvnki245N8QZ5fDSKHEWX3VNprs+RO2ckaFRHymmau1puzCmjVbvcIw6XNqH/b10I5rtleK0FfpLdpqNLEmH0rAcEqh0LvXFTPCT+sf/uDisRFXYMXVvPTOp2OEz3U79GC9d+hJI9WeSYSlX2sqL0UU6nuYKc3GDQrez3nUyE6QMM2qVuYtYAA",
+  madeira: "data:image/webp;base64,UklGRjIDAABXRUJQVlA4ICYDAAAQGwCdASpwAHAAPm00lUkkIqGhIVgJ4IANiWdgX1gW4BrftnAywU7ffXvgF//l/4m0m2dgBNSZNnshelvSbn3vsVL/WtMjepOWQBg/D8jMtzKvxRMXfT+EsoQTF5DjP0PzgtEmRI5RsEwyRX8qnE2ejFZOAx4Cr+QSnGjigRNVgXccYBT9dEHljo1J1UjqOPv9nSOw9njYT5d4eW+TU9JPxKkNph0xJbndQ3YG7mnSZl2hf1VRKnQ+A5hKtq7dIqggcrDI2fmBQBNFKFdiba4e0JLMsYDAKXs+pDY7O5U1YAAA/sH1CTkZFWpcMnmf/yDHNPsa4Lf/wQV6DLRi8qZ6B0ZoUFB3WxUIGuajOscwOSUYmcB3F555t/bGPAmC4klC2uAsOWv4xAUB2KNficP3NWZy+TTjcYWfg7weWTzI0V4HwE5VshTa9wbyTpgVvwhwcE22e0eNUzXaJwjaWciXdXiyauIIPaUPeJA49DRZIz3CsLkhIdMgQHSnnZyO6ak+WYm2QXjXF9p88MlJUjJ5o1Cd0+60e/AZJsWVFDiMJjs+MPW45hd+FGAs6sgm9KMiTCpKUJzKgUUgvQpZu/RrouPcfjFnKqw3oIauTiYmc64MMR6ceZ4aigFLd2I08mvpCceOEbEvPDz4Q3qtqczoS5PvxEESwNvUbjvSrknEz8qz33rzK0l9H3g1rrNbuu760JOPRb+StL3DwNiI+4toCDFZ1hHekJo3LPzSTbwrKOreD5yWFbDM6I3+W3OMnKl6duTAeHs6PRXsghSeJtq0y4zL3CVyRiZINGRWL/k6e6fB4KQqVBk6l+qeDMn3bglYzkP8SXPCE6fkQgbF4bLAYMxYh5t9rEHc4Ha6sf+zuQc6NnpbjcQEiTK12MGBAsuIPYsRJqHMYv1IHslmzKVNJOxH4LTLZO5C3ewp5HJmSiPdIgzvB7mhg9/Pj9gFQQxbuJ1FHqIvUtBCfaoANWYrB9yHc9LJugu8IpUP7Cqvon5ZO80Oh0Iso2RUAnoroANW+ctYPE1hhxuZoP3YudrYp8/5k8DOJ2MrYRFHvmzJbINDxgAAAA==",
+});
+
+</script>
+  <script>
 /* Dice Duel · retratos: os rivais e os ícones dos jogadores.
  * Cada retrato tem uma versão em vetor (aqui) e pode ter uma versão pintada (js/retratos_pintados.js,
  * gerada por tools/arte_icones.py com a API de imagem). Quando a pintada existe, ela é usada.
@@ -4330,6 +4352,7 @@ window.HISTORIA_FALAS = {
 "C4-14": "Mel não estraga, sabia? Acharam mel de três mil anos ainda bom. / Eu pretendo durar igual. Dormindo.",
 "C6-15": "Cuidado comigo. Tenho cavalaria: três cavaleiros e o maior exército do pasto.",
 "C6-16": "Somou sete: hora de mexer no ladrão. / …O Guaxinim acabou de passar.",
+"F-Zb": "Eu te ensinei a jogar para me curar. / Agora jogue só porque é bom. / …E porque eu ainda quero a revanche.",
 "X-01": "DianaDice não seria um nome melhor para esse jogo? / … / Seria.",
 "X-02a": "SAPO: Soube da cura. Trouxe chá. / DIANA: É do lago? / SAPO: Orgânico."
 };
@@ -4397,6 +4420,7 @@ window.HISTORIA_CENAS = {
 "C4-14": "O Urso abraçado a um pote de mel, já fechando os olhos. Ciência: mel tem pouca água e é ácido; potes de milhares de anos foram achados comestíveis.",
 "C6-15": "Homenagem aos jogos de tabuleiro de hexágonos (os cavaleiros e o maior exército), sem nome de jogo.",
 "C6-16": "Homenagem: num jogo de hexágonos, o 7 move o ladrão; no Dice Duel, o 7 é o Oposto. Ciência: com dois dados, o sete é a soma mais provável (6 em 36).",
+"F-Zb": "A Diana empurrando os dados de volta para o seu lado da mesa.",
 "X-01": "Ela risca \"Dice Duel\" com um pincel atômico e escreve por cima: \"DianaDice\".",
 "X-02a": "A Diana, curada, abre a porta. O Sapo de chapéu, com uma xícara turva."
 };
@@ -4731,6 +4755,12 @@ window.HISTORIA_CENAS = {
   // ---------- rivais ----------
   // os rivais do jogo: Diana (fácil) e Dona Coruja (difícil)
   const RETRATO_RIVAL = { aprendiz: 'diana', esperto: 'coruja' };
+  // cada bicho joga com os dados dele (as skins em css/estilo.css; docs/historia.md §5). O Coelho não tem tempo de
+  // escolher outro; a Raposa usa o verde do Sapo (pegou para combinar com o cachecol, dizem); o Guaxinim joga com
+  // um dado de cada um (DADOS_SUCATA)
+  const DADO_DO_BICHO = { diana: 'rosa', coruja: 'madeira', sapo: 'lagoa', coelho: 'marfim', raposa: 'lagoa', urso: 'mel', guaxinim: 'sucata', ovelha: 'la' };
+  const DADOS_SUCATA = { 1: 'rosa', 2: 'lagoa', 3: 'madeira', 4: 'mel', 5: 'la', 6: 'marfim' };
+  const dadoDoRival = k => DADO_DO_BICHO[RETRATO_RIVAL[k]] || 'marfim';
   const RIVAIS = {
     aprendiz: { nome: 'Diana', desc: 'gata branca de olhos azuis; joga solto e arrisca', falas: {
       inicio: ['Boa noite. Uma partida?', 'A Mesa está pronta. Comece quando quiser.'],
@@ -4751,8 +4781,6 @@ window.HISTORIA_CENAS = {
     coruja: { nome: 'Dona Coruja', desc: 'lê a Mesa e lê gente' }, diana8: { nome: 'Diana', desc: 'a fita original' } };
   // a voz do "blá-blá" de cada um (js/audio.js tem duas: a da gata, aguda, e a da coruja, grave e redonda)
   const VOZ_RIVAL = { sapo: 'coruja', urso: 'coruja', coruja: 'coruja', esperto: 'coruja' };
-  // o dado de cada rival (a skin): a Diana rosa, a Coruja madeira, os bichos no marfim
-  const DADO_RIVAL = { aprendiz: 'rosa', diana8: 'rosa', esperto: 'madeira', coruja: 'madeira' };
   // o robô joga no jeito da Diana (solto) ou no da Coruja (lê a Mesa); os bichos da história escolhem no capítulo
   const esperto = j => j.nivel === 'esperto' || !!j.esperto;
   if (window.Historia) for (const c of Historia.CAPS) if (RIVAIS_HISTORIA[c.rival]) {
@@ -5452,10 +5480,18 @@ window.HISTORIA_CENAS = {
 
   // ---------- desenho ----------
   const PIPS = { 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] };
-  const dadoHTML = (v, skin = 'marfim') => `<span class="dado skin-${skin}" role="img" aria-label="${v}">${Array.from({ length: 9 }, (_, i) => `<i class="pip${PIPS[v].includes(i) ? ' on' : ''}"></i>`).join('')}</span>`;
+  const dadoHTML = (v, skin = 'marfim') => `<span class="dado skin-${skin === 'sucata' ? DADOS_SUCATA[v] : skin}" role="img" aria-label="${v}">${Array.from({ length: 9 }, (_, i) => `<i class="pip${PIPS[v].includes(i) ? ' on' : ''}"></i>`).join('')}</span>`;
   const mini = (v, skin) => `<span class="mini">${dadoHTML(v, skin)}</span>`;
+  // a face pintada (js/dados_pintados.js) entra por baixo do brilho, no lugar do degradê da skin; sem ela, vale o CSS
+  // o verde do Sapo clareia um pouco: em cima do feltro da corrente, verde com verde some
+  (function pintarDados() {
+    const CLARO = { lagoa: 0.2 }, pintados = window.DADOS_PINTADOS || {}, css = Object.entries(pintados).map(([id, src]) =>
+      `.dado.skin-${id}{background:radial-gradient(circle at 30% 25%,rgba(255,255,255,.3),transparent 55%),linear-gradient(rgba(255,255,240,${CLARO[id] || 0}),rgba(255,255,240,${CLARO[id] || 0})),url("${src}") center/cover}`).join('');
+    if (!css) return;
+    const el = document.createElement('style'); el.id = 'dadosPintados'; el.textContent = css; document.head.appendChild(el);
+  })();
   // cada um vê os próprios dados com a própria skin; os rivais têm a sua; a Mesa usa a sua (ou marfim, a dois)
-  const skinDe = p => p === 0 ? st.conta.dado : jogo.modo === 'bot' ? (DADO_RIVAL[jogo.nivel] || 'marfim') : online() ? (jogo.perfis[1].dado || 'marfim') : 'marfim';
+  const skinDe = p => p === 0 ? st.conta.dado : jogo.modo === 'bot' ? dadoDoRival(jogo.nivel) : online() ? (jogo.perfis[1].dado || 'marfim') : 'marfim';
   const skinMesa = () => jogo.modo !== 'local' ? st.conta.dado : 'marfim';
   const iconeSVG = id => Retratos.retrato(ICONES[id] ? id : 'bolinha', ICONES[id] && ICONES[id].grupo === 'especial' ? 'especial' : '');
   const elo = r => `<span class="elo ${r.length > 1 ? 'duplo' : 'r-' + r[0]}" title="${r.map(k => REL[k].nome).join(' + ')}">${r.map(k => REL[k].simb).join('·')}</span>`;

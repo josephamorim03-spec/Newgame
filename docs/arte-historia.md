@@ -174,3 +174,24 @@ Contando o que o roteiro pede, sem refazer o que o código monta:
 | O gibi pesa no celular | arte por capítulo, carregada sob demanda; o `tools/layout.js` e um teste de peso por capítulo |
 | A cara de IA (dedos a mais, olho torto) | o crítico reprova; poses simples, de meio corpo, sem mãos complicadas |
 | Peça parecida com personagem ou marca de alguém | nada de nome de obra no pedido; o pasto de hexágonos sem nada de marca (como a ovelha de hoje) |
+
+## Adendo: o outro caminho, testado (quadros inteiros)
+
+Em paralelo a esta proposta, os 57 desenhos descritos no roteiro saíram como **quadros inteiros** pelo `gpt-image-2`
+(`arte/historia.json`, `tools/historia/quadros.py`, `arte/historia/quadros/`), com o retrato aprovado de cada bicho como
+referência e o texto todo fora da imagem: as falas entram por cima, em balões, a partir do `docs/historia_piadas.json`.
+As páginas montadas estão em **Quadros do Caderno da Diana** (https://claude.ai/artifact/4LfMUuqa94bKGNzQKBH1u5). O
+que o teste mostrou, para pesar contra o §1:
+- **A Diana segurou a identidade nos 57**: a ponta preta na orelha certa, os dois riscos, os olhos azuis, e o enfeite
+  do nariz certo em cada capítulo. O medo de "a Diana muda de cara" não se confirmou com o 2.x.
+- **12 de 57 voltaram uma vez**: dados de outra cor ou de 20 faces nas cenas da Diana (agora o pedido diz que todo dado
+  é de seis faces e da cor do dono), o mural já cheio quando devia ter uma foto só, um enfeite pequeno demais e lombadas
+  escritas em inglês.
+- **Letreiros curtos saíram certos** ("RECEITAS DA DIANA", "DISPARO. DUELO. DOBRO. → D", "DIANA · DADOS · DNA", "D?",
+  "DianaDice"), inclusive o título espelhado. Ainda assim, o §2 tem razão em tirar texto da imagem quando ele pode mudar.
+- **O close sai do mesmo quadro** ("perto" e "detalhe" nas páginas), como no §1, e o balão fica numa faixa de papel em
+  cima da arte, porque os quadros não deixam céu livre de sobra.
+- **Contra:** cada quadro é uma imagem (cerca de 250 KB em WebP no tamanho cheio), e mudar o enfeite do nariz pede outro
+  quadro. As duas coisas o caminho em camadas resolve melhor.
+
+A escolha entre os dois (ou um misto: quadros inteiros para as cenas únicas, camadas para a Diana falando) é do dono.

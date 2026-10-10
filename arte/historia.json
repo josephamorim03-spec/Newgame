@@ -1,0 +1,1269 @@
+{
+ "_leia": "Os quadros do modo história (docs/historia.md §7): uma arte por desenho descrito no roteiro, sem texto. As falas entram por cima, em balões, a partir de docs/historia_piadas.json (só as aprovadas vão para o jogo); um quadro sem desenho próprio reusa a arte do anterior com outro plano ('perto', 'detalhe'), como no gibi. Gere com: python3 tools/historia/quadros.py [ids...] [--seco] [--qualidade medium] [--refazer]. Monte as páginas para revisar com: python3 tools/historia/quadros.py paginas [SAIDA.html]. Textos em inglês porque o gerador entende melhor; os letreiros dentro da cena (o caderno, o mural, as lombadas) vão em português, escritos como no roteiro.",
+ "modelo": "gpt-image-2",
+ "tamanho": "1536x1024",
+ "estilo": "A single comic-book panel from the cozy illustrated story mode of the game Dice Duel. Draw it in exactly the visual language of the attached character art: thick uniform dark cocoa outline (#3a2a2e) around every shape, flat colors with one soft cel-shaded shadow tone and a small highlight, warm palette (cream paper #fbf1df, sage felt green #5f8f78, wood browns #7a4b2f and #a86c45, honey #f2b15e, coral #e8806f, rose #ec8fa8, sky blue #6fbfd3), and a few printed-comic halftone dots only in shadows and backgrounds. Cozy, adult, dry understated humor; expressive faces, but not chibi and not childish. The art fills the whole image edge to edge: no panel border, no frame, no gutter, no white margin. No speech balloons, no captions, no sound effects, no signature and no lettering of any kind, except a sign or label that the scene below explicitly asks for, spelled exactly as given. Every die in the picture is a plain six-sided cube with round pips, never a twenty-sided or other polyhedral die. Dice belong to their owner and keep the owner's color: Diana's dice are always pink; do not add dice of any other color unless the scene asks for them. Keep the top fifth of the image calm and uncluttered (wall, sky or shadow) so a speech balloon can be placed there later.",
+ "referencia": "The attached images are the official character portraits: keep each character's design, colors, markings and accessories exactly as in their portrait (the portraits only show the head; draw the rest of the body to match). Ignore any badge, medallion or hexagon frame around a portrait: it is not part of the character.",
+ "personagens": {
+  "diana": "DIANA: a white domestic cat with cool white fur (not cream, not yellow), clear light-blue eyes; the upper third of the ear on the VIEWER'S LEFT is solid black, the other ear is all white with pink inside; exactly TWO short vertical charcoal-gray stripes in the middle of her forehead; faint light-gray shading above the eyes; small pink nose, white whiskers. She has real cat proportions (four paws, no clothes); only her expressions are human: dry, confident, a little conspiratorial.",
+  "sapo": "SAPO: an anthropomorphic green frog in a straw boater hat with a rust ribbon and a small rust bow tie; a slow, polite gentleman of the pond.",
+  "coelho": "COELHO: an anthropomorphic light-gray rabbit (cool pale gray, not beige) with long ears and pink inner ears, wearing a navy bow tie; an anxious accountant, always late.",
+  "raposa": "RAPOSA: an anthropomorphic red fox with half-closed contented eyes and a dark-green knitted scarf; elegant and pleased with herself.",
+  "urso": "URSO: an anthropomorphic brown bear in a red knitted beanie with a cream pompom and cream rim; very sleepy.",
+  "guaxinim": "GUAXINIM: an anthropomorphic raccoon with the black eye mask, wearing a mustard-yellow hoodie; a relaxed thief with an economic theory.",
+  "ovelha": "OVELHA: a sheep with fluffy cream wool and a brown face; tired of always being asked the same question.",
+  "coruja": "DONA CORUJA: an old, wise brown tawny owl lady with large round amber eyes behind thin round reading glasses, small ear tufts and a pale cream chest with feather chevrons; a librarian. No mouth line under the beak."
+ },
+ "narizes": {
+  "ferida": "On the flat bridge of Diana's nose, between the eyes and well above the pink nose pad, a small diagonal red scratch wound.",
+  "pips": "Over the bridge of Diana's nose (between the eyes, above the pink nose pad): one small cream adhesive bandage printed with tiny dark dice pips.",
+  "x": "Over the bridge of Diana's nose: TWO small cream adhesive bandages crossed in an X.",
+  "adesivo": "Over the bridge of Diana's nose: a small cream adhesive bandage, slightly crooked, with a tiny round white sticker stuck on top of it that reads 'NÃO PERGUNTE' in small hand lettering.",
+  "cachecol": "Wrapped once around the bridge of Diana's nose like a bandage: a tiny dark-green knitted scarf (the same green as the Fox's scarf), its little fringed ends hanging down.",
+  "cone": "Around Diana's neck: a large translucent plastic veterinary cone (Elizabethan collar). The small red scratch on the bridge of her nose is visible.",
+  "meia": "Wrapped around the bridge of Diana's nose and knotted: a small striped sock.",
+  "la": "Stuck on the bridge of Diana's nose: a small fluffy tuft of white sheep wool, like a cotton ball.",
+  "nada": "Nothing on Diana's nose: the small diagonal red scratch wound on the bridge of her nose is plainly visible, a little raw.",
+  "curada": "The bridge of Diana's nose is healed: clean white fur with only a faint pink line where the scratch used to be."
+ },
+ "artes": {
+  "p-mesa": {
+   "quem": [
+    "diana"
+   ],
+   "nariz": "pips",
+   "texto": "Diana sits behind a small round side table covered in sage-green felt, in a cozy dim living room at night lit by a warm lamp. Three pink dice rest on the felt in front of her. She looks at the reader, calm and confident, as if inviting them to sit down. Medium shot: her head, chest and front paws above the table."
+  },
+  "p-pata": {
+   "quem": [
+    "diana"
+   ],
+   "nariz": "pips",
+   "texto": "Closer shot of the felt table: Diana's white front paw slowly pushes one pink die toward the very edge of the table. Her face behind it, eyes half closed, unbothered, looking at the reader and not at the die. All the dice on her table are pink."
+  },
+  "p-cai": {
+   "quem": [
+    "diana"
+   ],
+   "nariz": "pips",
+   "texto": "The same felt table from a slightly wider angle: the pink die has gone over the edge and is falling, mid-air, about to leave the bottom of the frame, with a short motion line. Diana does not look at it at all: she gazes calmly at the reader, chin slightly raised. All the dice on her table are pink; nothing else on the table but the felt and the falling die."
+  },
+  "p-placar": {
+   "quem": [
+    "diana"
+   ],
+   "nariz": "pips",
+   "texto": "Diana sits beside the felt table looking sideways at a small wooden scoreboard with paper number cards, her black-tipped ear drooping a little: mildly impressed, despite herself. The only dice in the picture are pink."
+  },
+  "p-caderno": {
+   "quem": [
+    "diana"
+   ],
+   "nariz": "pips",
+   "texto": "Diana holds open an old notebook with a worn cloth cover; the cover reads 'RECEITAS DA DIANA' in neat hand lettering. Inside, between the pages, ragged stubs where several pages were torn out. Her face peeks over the top of the notebook, looking at the reader."
+  },
+  "p-close": {
+   "quem": [
+    "diana"
+   ],
+   "nariz": "pips",
+   "texto": "Close-up of Diana's face, slightly off center, eyes half lidded, dead serious and conspiratorial, looking straight at the reader. Warm lamplight on one side; dark cozy living room behind her, with blurred pink dice on the felt."
+  },
+  "c1-x": {
+   "quem": [
+    "diana"
+   ],
+   "nariz": "x",
+   "texto": "Medium close-up of Diana at her felt table, looking at the reader with flat deadpan eyes. An open little tin of adhesive bandages beside her."
+  },
+  "c1-sapo": {
+   "quem": [
+    "sapo"
+   ],
+   "nariz": "",
+   "texto": "Sapo the frog sits on a large lily pad in a moonlit pond full of water lilies, politely lifting his straw boater hat in greeting. A small porcelain teapot and a few green dice rest beside him on the lily pad. Fireflies over calm water."
+  },
+  "c1-cha": {
+   "quem": [
+    "sapo"
+   ],
+   "nariz": "",
+   "texto": "Close-up of a delicate porcelain teacup on a saucer, held out toward the reader by a green frog hand. The tea is murky pond water with a bit of duckweed, and a small tadpole swims in it. The frog's polite smile is partly visible at the edge of the frame."
+  },
+  "c1-pag-a": {
+   "quem": [],
+   "nariz": "",
+   "texto": "A single old cream notebook page, damp and wavy from pond water, with water stains and a small duckweed leaf stuck to it, lying on a dark wooden table. At the top, the hand-lettered title 'SOPA DE GIRINO AO CONTRÁRIO'. Below it, a small drawing of a soup bowl with a tadpole swimming backwards. The bottom third of the page is blank, for a handwritten line added later."
+  },
+  "c1-pag-b": {
+   "quem": [],
+   "nariz": "",
+   "texto": "A single old cream notebook page, damp and wavy from pond water, lying on a dark wooden table. At the top, the title is hand-lettered MIRRORED, written backwards as seen in a mirror: 'SOPA DE GIRINO AO CONTRÁRIO'. A small drawing of a tadpole. The right margin is blank, for a handwritten note added later."
+  },
+  "i1-le": {
+   "quem": [
+    "diana"
+   ],
+   "nariz": "x",
+   "texto": "Diana sits reading a damp notebook page held in her paws (it shows a little drawing of a tadpole). Behind her, for the first time, a cork board on the wall with a single photo of a die pinned to it and one red string hanging from the pin."
+  },
+  "i1-nada": {
+   "quem": [
+    "diana"
+   ],
+   "nariz": "x",
+   "texto": "Close-up of Diana staring into the middle distance past the reader, eyes unfocused, deep in thought; the cork board with the die photo and the red string slightly blurred behind her. The cork board holds ONLY ONE photo (a single die) and one red string: it is just beginning, nothing else is pinned on it."
+  },
+  "i1-cobre": {
+   "quem": [
+    "diana"
+   ],
+   "nariz": "x",
+   "texto": "Diana, caught: she has stretched one front paw flat over the cork board behind her, covering the die photo, and looks back at the reader with an innocent, far too calm face. The cork board holds ONLY ONE photo (a single die) and one red string: it is just beginning, nothing else is pinned on it."
+  },
+  "c2-adesivo": {
+   "quem": [
+    "diana"
+   ],
+   "nariz": "adesivo",
+   "texto": "Medium close-up of Diana at her felt table, deadpan, looking at the reader. A couple of pink dice on the felt; no other dice."
+  },
+  "c2-coelho": {
+   "quem": [
+    "coelho"
+   ],
+   "nariz": "",
+   "texto": "Coelho the rabbit stands in a cramped burrow office, flustered and in a hurry, holding a long spreadsheet that unrolls down to the floor and a pocket watch in the other paw. Around and behind him, dozens of small rabbit silhouettes in lighter gray fill every space, like a huge family crowding the room. White classic ivory dice on his desk."
+  },
+  "c2-pag-a": {
+   "quem": [],
+   "nariz": "",
+   "texto": "A loaf of bread rising enormous out of a small bread tin, puffing up and spilling past the top edge of the frame, over a cream notebook page whose hand-lettered title 'PÃO QUE CRESCE SOZINHO' is half covered by the dough. The bottom of the page is blank, for a handwritten line added later."
+  },
+  "c2-pag-b": {
+   "quem": [],
+   "nariz": "",
+   "texto": "A single cream notebook page on a wooden table, with the hand-lettered title 'PÃO QUE CRESCE SOZINHO' and a small drawing of a loaf of bread, and a big floury white rabbit paw print stamped across it. The margin is blank, for a handwritten note added later."
+  },
+  "c3-cachecol": {
+   "quem": [
+    "diana"
+   ],
+   "nariz": "cachecol",
+   "texto": "Medium close-up of Diana, chin up, eyes half closed, quietly pleased with herself."
+  },
+  "c3-carta": {
+   "quem": [
+    "diana"
+   ],
+   "nariz": "cachecol",
+   "texto": "Diana's white paw lays a game card face down on the green felt; the back of the card shows one large question mark. Diana watches the reader over the card with the hint of a sly smile."
+  },
+  "c3-raposa": {
+   "quem": [
+    "raposa"
+   ],
+   "nariz": "",
+   "texto": "Raposa the fox lounges on a plush old sofa inside a warm winter den, with a knitted throw and a little lamp, eyes half closed, satisfied and elegant, one paw draped over the armrest. A few green dice on a side table."
+  },
+  "c3-pag-a": {
+   "quem": [],
+   "nariz": "",
+   "texto": "A whole round pie with a golden lattice crust, perfectly uncut, on a cream notebook page with the hand-lettered title 'TORTA DE FUNDO FALSO'. The bottom of the page is blank, for a handwritten line added later. No dice in the picture."
+  },
+  "c3-pag-b": {
+   "quem": [],
+   "nariz": "",
+   "texto": "A single cream notebook page with the hand-lettered title 'TORTA DE FUNDO FALSO'. A paper flap is glued in the middle of the page, lifted up at one corner, revealing a blank area underneath (for a line of text added later)."
+  },
+  "c4-cone": {
+   "quem": [
+    "diana"
+   ],
+   "nariz": "cone",
+   "texto": "Diana sits upright with great dignity in a large translucent plastic veterinary cone, looking at the reader as if it were high fashion."
+  },
+  "c4-mural": {
+   "quem": [
+    "diana"
+   ],
+   "nariz": "cone",
+   "texto": "Wider shot: Diana in her veterinary cone in the foreground; behind her, the cork board on the wall now has three photos (a die, a frog, a rabbit) linked by red string and a pinned handwritten note that reads 'DISPARO. DUELO. DOBRO. → D'."
+  },
+  "c4-caverna": {
+   "quem": [
+    "urso"
+   ],
+   "nariz": "",
+   "texto": "A dark cave at night. The huge shape of a sleeping brown bear curled up, mostly in shadow, wearing a red knitted beanie with a cream pompom. Big drawn snore letters 'zZz' float above him, and the dots around them are dice pips. A few honey-amber dice on the cave floor."
+  },
+  "c4-olho": {
+   "quem": [
+    "urso"
+   ],
+   "nariz": "",
+   "texto": "Close-up in the dark cave: one sleepy eye of the brown bear cracks open under the rim of his red beanie, groggy and confused."
+  },
+  "c4-pag-a": {
+   "quem": [],
+   "nariz": "",
+   "texto": "A honey jar wearing a tiny red knitted beanie, sleeping with its eyes closed in a warm water bath inside a pot (bain-marie), drawn on a cream notebook page with the hand-lettered title 'MEL EM BANHO-MARIA'. The bottom of the page is blank, for a handwritten line added later."
+  },
+  "c4-pag-b": {
+   "quem": [],
+   "nariz": "",
+   "texto": "A single cream notebook page with the hand-lettered title 'MEL EM BANHO-MARIA' and a drawing of a honey jar with closed, sleeping eyes. The margin is blank, for a handwritten note added later."
+  },
+  "c4-dorme": {
+   "quem": [
+    "urso"
+   ],
+   "nariz": "",
+   "texto": "The brown bear in the red beanie is asleep again on his back in the cave, snoring, a notebook page loosely held in his big paw; the page is sliding out of his paw, being pulled gently from outside the bottom edge of the frame."
+  },
+  "c5-meia": {
+   "quem": [
+    "diana"
+   ],
+   "nariz": "meia",
+   "texto": "Medium close-up of Diana, narrowed suspicious eyes looking sideways. She sits at her felt table with two pink dice; no game board, no other dice."
+  },
+  "c5-tralha": {
+   "quem": [
+    "guaxinim"
+   ],
+   "nariz": "",
+   "texto": "Guaxinim the raccoon sits on top of a big pile of junk (old lamps, crates, a bicycle wheel, teacups and dice of every color) in a scrapyard at dusk. Next to him stands a floor lamp whose shade is a translucent plastic veterinary cone. He gestures at it casually, unbothered."
+  },
+  "c5-pag-a": {
+   "quem": [],
+   "nariz": "",
+   "texto": "A salad bowl full of leaves from different gardens, each leaf a different kind and color, on a cream notebook page with the hand-lettered title 'SALADA DE SOBRAS DOS OUTROS'. The bottom of the page is blank, for a handwritten line added later."
+  },
+  "c5-pag-b": {
+   "quem": [],
+   "nariz": "",
+   "texto": "A single cream notebook page with the hand-lettered title 'SALADA DE SOBRAS DOS OUTROS', with a white price sticker stuck across the title that reads 'Página 5 · 4,99 por mês'."
+  },
+  "c6-la": {
+   "quem": [
+    "diana"
+   ],
+   "nariz": "la",
+   "texto": "Medium close-up of Diana, deadpan, looking at the reader. The wool tuft is big and obvious, clearly the center of the joke, covering the bridge of her nose."
+  },
+  "c6-ovelha": {
+   "quem": [
+    "ovelha"
+   ],
+   "nariz": "",
+   "texto": "Ovelha the sheep stands in a pasture where the grass is divided into neat hexagon tiles, under a pale evening sky. Her fluffy cream wool has an obvious missing bald patch on one shoulder. She looks at the reader with a tired, patient expression. A couple of woolly dice in the grass."
+  },
+  "c6-pag-a": {
+   "quem": [],
+   "nariz": "",
+   "texto": "Two identical caramel puddings side by side on a cream notebook page with the hand-lettered title 'PUDIM GÊMEO'. The bottom of the page is blank, for a handwritten line added later."
+  },
+  "c6-pag-b": {
+   "quem": [],
+   "nariz": "",
+   "texto": "Two identical cream notebook pages, each titled 'PUDIM GÊMEO' with the same small pudding drawing, stapled together at one corner, slightly offset. The margin is blank, for a handwritten note added later."
+  },
+  "i6-ferida": {
+   "quem": [
+    "diana"
+   ],
+   "nariz": "nada",
+   "texto": "Close-up of Diana, serious for the first time, with no accessory on her nose, looking at the reader. Muted colors, softer light, the first quiet panel of the story."
+  },
+  "i6-lencol": {
+   "quem": [
+    "diana"
+   ],
+   "nariz": "nada",
+   "texto": "The cork board on the wall is now entirely covered by a white bedsheet, with many red strings poking out from under its edges. Diana sits in front of it as if nothing were there."
+  },
+  "c7-biblioteca": {
+   "quem": [
+    "coruja"
+   ],
+   "nariz": "",
+   "texto": "Dona Coruja the owl sits at a reading desk in a grand old library with very tall wooden bookshelves. On the nearest shelf, four big volumes whose spines read 'Volume A', 'Volume T', 'Volume C' and 'Volume G'. A warm reading lamp and a few wooden dice on the desk."
+  },
+  "c7-coelho": {
+   "quem": [
+    "coelho"
+   ],
+   "nariz": "",
+   "texto": "In a corner of the library, Coelho the rabbit sits at a reading table, out of breath, behind a tall pile of cookbooks, next to an enormous loaf of bread that doesn't fit on the table. The cookbook spines have no readable words, only little drawings of bread, cakes and pots."
+  },
+  "c7-pagina": {
+   "quem": [
+    "coruja"
+   ],
+   "nariz": "",
+   "texto": "Dona Coruja hands a single notebook page across the library desk toward the reader. The page has no recipe at all: only a simple drawing of a cat's nose with an X drawn over it."
+  },
+  "r-mural": {
+   "quem": [
+    "diana"
+   ],
+   "nariz": "nada",
+   "texto": "Diana pulls a white bedsheet off the cork board with one paw, revealing the whole conspiracy wall: red string everywhere, pinned photos of a frog, a rabbit, a fox, a bear, a raccoon, a sheep and an owl, each with a little stamp on it; in the middle, a photo of a silhouette holding dice; and a double helix drawn with dice as its rungs."
+  },
+  "r-cartoes": {
+   "quem": [
+    "diana"
+   ],
+   "nariz": "nada",
+   "texto": "Close-up on the cork board: three index cards pinned in a row and linked by red string, reading 'DIANA', 'DADOS' and 'DNA'. Diana's white paw points at them."
+  },
+  "r-postit": {
+   "quem": [
+    "coruja"
+   ],
+   "nariz": "",
+   "texto": "Close-up on a cork board: a pinned photo of Dona Coruja the owl, with a yellow sticky note on it that reads 'D?'. Red string leading away from the pin."
+  },
+  "r-sentada": {
+   "quem": [
+    "diana"
+   ],
+   "nariz": "nada",
+   "texto": "Diana sits alone on the floor in front of the conspiracy wall, serious, ears slightly lowered, looking at the reader. Quiet, muted palette."
+  },
+  "r-pipeta": {
+   "quem": [
+    "diana"
+   ],
+   "nariz": "nada",
+   "texto": "Close-up of Diana's white front paw clumsily holding a glass lab pipette, crooked, a drop dripping from its tip onto the felt. A few pink dice nearby."
+  },
+  "r-coelho-porta": {
+   "quem": [
+    "coelho",
+    "diana"
+   ],
+   "nariz": "nada",
+   "texto": "Coelho the rabbit stands in the open doorway of Diana's room hugging a loaf of bread as big as he is, confused. Diana sits in the foreground at the edge of the frame, looking at him."
+  },
+  "r-mesa": {
+   "quem": [
+    "diana"
+   ],
+   "nariz": "nada",
+   "texto": "Diana sits behind her own table covered in wine-red felt, five pink dice ready in front of her, looking at the reader, serious and determined, under a warm lamp."
+  },
+  "f-fita": {
+   "quem": [
+    "diana"
+   ],
+   "nariz": "nada",
+   "texto": "Diana holds up a long strip of printed paper tape, like a receipt from an old printer, with a row of empty square cells along it (leave them blank: dice and letters are added later). She reads it with her eyebrows raised."
+  },
+  "f-nariz": {
+   "quem": [
+    "diana"
+   ],
+   "nariz": "nada",
+   "texto": "Close-up: Diana holds a strip of printed paper tape (like a receipt from an old printer) so that its end touches the bridge of her nose. Comic-print effect: strong halftone dots radiating from the point of contact, the blue and pink color plates slightly out of register around her, a frozen moment. No cards, no other objects in the foreground."
+  },
+  "f-close": {
+   "quem": [
+    "diana"
+   ],
+   "nariz": "curada",
+   "texto": "Extreme close-up of the bridge of Diana's nose and her eyes: the wound has closed. Her own white paw touches the spot gently, in wonder. A silent panel."
+  },
+  "f-eco": {
+   "quem": [
+    "diana"
+   ],
+   "nariz": "curada",
+   "texto": "Diana stops mid-sentence, eyes wide, one paw raised near her mouth, puzzled at her own words."
+  },
+  "x-titulo": {
+   "quem": [],
+   "nariz": "",
+   "texto": "The title 'DICE DUEL' hand-lettered big on cream paper, like the cover of a comic book, with a few six-sided dice around it: one pink, one frog-green, one wooden, one ivory."
+  },
+  "x-risca": {
+   "quem": [
+    "diana"
+   ],
+   "nariz": "curada",
+   "texto": "Diana stands in front of a big hand-lettered title on cream paper and holds a thick black marker in her paw: she has crossed out the words 'DICE DUEL' with a line and written above them, in her own scrawl, 'DianaDice'. She looks at the reader, satisfied."
+  },
+  "x-cha": {
+   "quem": [
+    "diana",
+    "sapo"
+   ],
+   "nariz": "curada",
+   "texto": "Night. Diana, healed, has just opened her front door. On the doorstep, Sapo the frog in his straw boater hat holds out a porcelain teacup with murky pond tea."
+  }
+ },
+ "paginas": [
+  {
+   "id": "P-antes",
+   "titulo": "Prólogo · Antes",
+   "quadros": [
+    {
+     "arte": "p-mesa",
+     "fala": "P-01"
+    },
+    {
+     "arte": "p-pata",
+     "fala": "P-02"
+    },
+    {
+     "arte": "p-cai",
+     "fala": "P-03"
+    }
+   ]
+  },
+  {
+   "id": "P-depois",
+   "titulo": "Prólogo · Depois",
+   "quadros": [
+    {
+     "arte": "p-placar",
+     "fala": "P-04"
+    },
+    {
+     "arte": "p-caderno",
+     "fala": "P-05"
+    },
+    {
+     "arte": "p-close",
+     "fala": "P-06"
+    }
+   ]
+  },
+  {
+   "id": "C1-interludio",
+   "titulo": "Cap. 1 · Interlúdio",
+   "quadros": [
+    {
+     "arte": "c1-x",
+     "fala": "C1-01"
+    },
+    {
+     "arte": "c1-x",
+     "fala": "C1-02",
+     "parte": 0,
+     "plano": "perto"
+    },
+    {
+     "arte": "c1-x",
+     "fala": "C1-02",
+     "parte": 1,
+     "plano": "detalhe"
+    }
+   ]
+  },
+  {
+   "id": "C1-chegada",
+   "titulo": "Cap. 1 · O Sapo · Chegada",
+   "quadros": [
+    {
+     "arte": "c1-sapo",
+     "fala": "C1-03"
+    },
+    {
+     "arte": "c1-cha",
+     "fala": "C1-04"
+    },
+    {
+     "arte": "c1-sapo",
+     "fala": "C1-05",
+     "plano": "perto"
+    },
+    {
+     "arte": "c1-cha",
+     "fala": "C1-06",
+     "plano": "perto"
+    }
+   ]
+  },
+  {
+   "id": "C1-depois",
+   "titulo": "Cap. 1 · Depois",
+   "quadros": [
+    {
+     "arte": "c1-pag-a",
+     "opcoes": [
+      [
+       "c1-pag-a",
+       "C1-13a"
+      ],
+      [
+       "c1-pag-b",
+       "C1-13b"
+      ]
+     ]
+    },
+    {
+     "arte": "c1-sapo",
+     "fala": "C1-14",
+     "parte": 0,
+     "plano": "perto"
+    },
+    {
+     "arte": "c1-sapo",
+     "fala": "C1-14",
+     "parte": 1,
+     "plano": "detalhe"
+    }
+   ]
+  },
+  {
+   "id": "I1",
+   "titulo": "Interlúdio · Coisa de receita",
+   "quadros": [
+    {
+     "arte": "i1-le",
+     "fala": "I1-01"
+    },
+    {
+     "arte": "i1-nada",
+     "fala": "I1-02"
+    },
+    {
+     "arte": "i1-cobre",
+     "fala": "I1-03"
+    }
+   ]
+  },
+  {
+   "id": "C2-interludio",
+   "titulo": "Cap. 2 · Interlúdio",
+   "quadros": [
+    {
+     "arte": "c2-adesivo",
+     "fala": "C2-01"
+    },
+    {
+     "arte": "c2-adesivo",
+     "fala": "C2-02",
+     "plano": "perto"
+    }
+   ]
+  },
+  {
+   "id": "C2-chegada",
+   "titulo": "Cap. 2 · O Coelho · Chegada",
+   "quadros": [
+    {
+     "arte": "c2-coelho",
+     "fala": "C2-03"
+    },
+    {
+     "arte": "c2-coelho",
+     "fala": "C2-04",
+     "plano": "perto"
+    },
+    {
+     "arte": "c2-coelho",
+     "fala": "C2-05",
+     "plano": "detalhe"
+    }
+   ]
+  },
+  {
+   "id": "C2-depois",
+   "titulo": "Cap. 2 · Depois",
+   "quadros": [
+    {
+     "arte": "c2-pag-a",
+     "opcoes": [
+      [
+       "c2-pag-a",
+       "C2-12a"
+      ],
+      [
+       "c2-pag-b",
+       "C2-12b"
+      ]
+     ]
+    },
+    {
+     "arte": "c2-coelho",
+     "fala": "C2-13",
+     "plano": "perto"
+    },
+    {
+     "arte": "c2-coelho",
+     "plano": "detalhe",
+     "opcoes": [
+      [
+       "c2-coelho",
+       "C2-14a"
+      ],
+      [
+       "",
+       "C2-14b"
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "id": "C3-interludio",
+   "titulo": "Cap. 3 · Interlúdio",
+   "quadros": [
+    {
+     "arte": "c3-cachecol",
+     "fala": "C3-01"
+    },
+    {
+     "arte": "c3-cachecol",
+     "fala": "C3-02",
+     "parte": 0,
+     "plano": "perto"
+    },
+    {
+     "arte": "c3-cachecol",
+     "fala": "C3-02",
+     "parte": 1,
+     "plano": "detalhe"
+    },
+    {
+     "arte": "c3-carta",
+     "fala": "C3-03"
+    }
+   ]
+  },
+  {
+   "id": "C3-chegada",
+   "titulo": "Cap. 3 · A Raposa · Chegada",
+   "quadros": [
+    {
+     "arte": "c3-raposa",
+     "opcoes": [
+      [
+       "c3-raposa",
+       "C3-04a"
+      ],
+      [
+       "c3-raposa",
+       "C3-04b"
+      ]
+     ]
+    },
+    {
+     "arte": "c3-raposa",
+     "fala": "C3-05",
+     "plano": "perto"
+    },
+    {
+     "arte": "c3-raposa",
+     "fala": "C3-06",
+     "parte": 0
+    },
+    {
+     "arte": "c3-raposa",
+     "fala": "C3-06",
+     "parte": 1,
+     "plano": "perto"
+    },
+    {
+     "arte": "c3-raposa",
+     "fala": "C3-06",
+     "parte": 2,
+     "plano": "detalhe"
+    }
+   ]
+  },
+  {
+   "id": "C3-depois",
+   "titulo": "Cap. 3 · Depois",
+   "quadros": [
+    {
+     "arte": "c3-pag-a",
+     "opcoes": [
+      [
+       "c3-pag-a",
+       "C3-14a"
+      ],
+      [
+       "c3-pag-b",
+       "C3-14b"
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "id": "C4-interludio",
+   "titulo": "Cap. 4 · Interlúdio",
+   "quadros": [
+    {
+     "arte": "c4-cone",
+     "fala": "C4-01",
+     "parte": 0
+    },
+    {
+     "arte": "c4-cone",
+     "fala": "C4-01",
+     "parte": 1,
+     "plano": "perto"
+    },
+    {
+     "arte": "c4-cone",
+     "fala": "C4-01",
+     "parte": 2
+    },
+    {
+     "arte": "c4-mural",
+     "fala": "C4-02",
+     "parte": 0
+    },
+    {
+     "arte": "c4-mural",
+     "fala": "C4-02",
+     "parte": 1,
+     "plano": "perto"
+    }
+   ]
+  },
+  {
+   "id": "C4-chegada",
+   "titulo": "Cap. 4 · O Urso · Chegada",
+   "quadros": [
+    {
+     "arte": "c4-caverna"
+    },
+    {
+     "arte": "c4-olho",
+     "fala": "C4-03"
+    },
+    {
+     "arte": "c4-olho",
+     "plano": "perto",
+     "opcoes": [
+      [
+       "c4-olho",
+       "C4-04a"
+      ],
+      [
+       "c4-olho",
+       "C4-04b"
+      ]
+     ]
+    },
+    {
+     "arte": "c4-caverna",
+     "fala": "C4-05",
+     "plano": "perto"
+    }
+   ]
+  },
+  {
+   "id": "C4-depois",
+   "titulo": "Cap. 4 · Depois",
+   "quadros": [
+    {
+     "arte": "c4-pag-a",
+     "opcoes": [
+      [
+       "c4-pag-a",
+       "C4-12a"
+      ],
+      [
+       "c4-pag-b",
+       "C4-12b"
+      ]
+     ]
+    },
+    {
+     "arte": "c4-dorme"
+    },
+    {
+     "arte": "c4-dorme",
+     "fala": "C4-13",
+     "parte": 0,
+     "plano": "perto"
+    },
+    {
+     "arte": "c4-dorme",
+     "fala": "C4-13",
+     "parte": 1,
+     "plano": "detalhe"
+    }
+   ]
+  },
+  {
+   "id": "C5-interludio",
+   "titulo": "Cap. 5 · Interlúdio",
+   "quadros": [
+    {
+     "arte": "c5-meia",
+     "fala": "C5-01",
+     "parte": 0
+    },
+    {
+     "arte": "c5-meia",
+     "fala": "C5-01",
+     "parte": 1,
+     "plano": "perto"
+    },
+    {
+     "arte": "c5-meia",
+     "fala": "C5-02",
+     "plano": "detalhe"
+    }
+   ]
+  },
+  {
+   "id": "C5-chegada",
+   "titulo": "Cap. 5 · O Guaxinim · Chegada",
+   "quadros": [
+    {
+     "arte": "c5-tralha",
+     "fala": "C5-03"
+    },
+    {
+     "arte": "c5-tralha",
+     "fala": "C5-04",
+     "plano": "perto"
+    },
+    {
+     "arte": "c5-tralha",
+     "fala": "C5-05",
+     "plano": "perto"
+    },
+    {
+     "arte": "c5-tralha",
+     "fala": "C5-06",
+     "parte": 0
+    },
+    {
+     "arte": "c5-tralha",
+     "fala": "C5-06",
+     "parte": 1,
+     "plano": "detalhe"
+    }
+   ]
+  },
+  {
+   "id": "C5-depois",
+   "titulo": "Cap. 5 · Depois",
+   "quadros": [
+    {
+     "arte": "c5-pag-a",
+     "opcoes": [
+      [
+       "c5-pag-a",
+       "C5-14a"
+      ],
+      [
+       "c5-pag-b",
+       "C5-14b"
+      ]
+     ]
+    },
+    {
+     "arte": "c5-tralha",
+     "fala": "C5-15",
+     "plano": "detalhe"
+    }
+   ]
+  },
+  {
+   "id": "C6-interludio",
+   "titulo": "Cap. 6 · Interlúdio",
+   "quadros": [
+    {
+     "arte": "c6-la",
+     "fala": "C6-01",
+     "parte": 0
+    },
+    {
+     "arte": "c6-la",
+     "fala": "C6-01",
+     "parte": 1,
+     "plano": "perto"
+    },
+    {
+     "arte": "c6-la",
+     "fala": "C6-01",
+     "parte": 2,
+     "plano": "detalhe"
+    },
+    {
+     "arte": "c6-la",
+     "fala": "C6-02"
+    }
+   ]
+  },
+  {
+   "id": "C6-chegada",
+   "titulo": "Cap. 6 · A Ovelha · Chegada",
+   "quadros": [
+    {
+     "arte": "c6-ovelha",
+     "fala": "C6-03"
+    },
+    {
+     "arte": "c6-ovelha",
+     "fala": "C6-04",
+     "plano": "perto"
+    },
+    {
+     "arte": "c6-ovelha",
+     "fala": "C6-05",
+     "parte": 0
+    },
+    {
+     "arte": "c6-ovelha",
+     "fala": "C6-05",
+     "parte": 1,
+     "plano": "perto"
+    },
+    {
+     "arte": "c6-ovelha",
+     "fala": "C6-05",
+     "parte": 2,
+     "plano": "detalhe"
+    }
+   ]
+  },
+  {
+   "id": "C6-depois",
+   "titulo": "Cap. 6 · Depois",
+   "quadros": [
+    {
+     "arte": "c6-pag-a",
+     "opcoes": [
+      [
+       "c6-pag-a",
+       "C6-12a"
+      ],
+      [
+       "c6-pag-b",
+       "C6-12b"
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "id": "I6",
+   "titulo": "Interlúdio · Cansei de disfarçar",
+   "quadros": [
+    {
+     "arte": "i6-ferida",
+     "fala": "I6-01"
+    },
+    {
+     "arte": "i6-lencol",
+     "fala": "I6-02"
+    },
+    {
+     "arte": "i6-ferida",
+     "fala": "I6-03",
+     "parte": 0,
+     "plano": "perto"
+    },
+    {
+     "arte": "i6-ferida",
+     "fala": "I6-03",
+     "parte": 1,
+     "plano": "detalhe"
+    }
+   ]
+  },
+  {
+   "id": "C7-chegada",
+   "titulo": "Cap. 7 · Dona Coruja · Chegada",
+   "quadros": [
+    {
+     "arte": "c7-biblioteca",
+     "fala": "C7-01"
+    },
+    {
+     "arte": "c7-biblioteca",
+     "fala": "C7-02",
+     "plano": "perto"
+    },
+    {
+     "arte": "c7-biblioteca",
+     "fala": "C7-03",
+     "plano": "detalhe"
+    },
+    {
+     "arte": "c7-coelho"
+    }
+   ]
+  },
+  {
+   "id": "C7-depois",
+   "titulo": "Cap. 7 · Depois",
+   "quadros": [
+    {
+     "arte": "c7-pagina",
+     "opcoes": [
+      [
+       "c7-pagina",
+       "C7-10a"
+      ],
+      [
+       "c7-pagina",
+       "C7-10b"
+      ]
+     ]
+    },
+    {
+     "arte": "c7-pagina",
+     "fala": "C7-11",
+     "plano": "perto"
+    },
+    {
+     "arte": "c7-biblioteca",
+     "fala": "C7-12",
+     "plano": "detalhe"
+    }
+   ]
+  },
+  {
+   "id": "R-1",
+   "titulo": "A revelação · O mural",
+   "quadros": [
+    {
+     "arte": "r-mural",
+     "fala": "R-01"
+    },
+    {
+     "arte": "r-cartoes",
+     "fala": "R-02"
+    },
+    {
+     "arte": "r-postit",
+     "fala": "R-03",
+     "parte": 0
+    },
+    {
+     "arte": "r-postit",
+     "fala": "R-03",
+     "parte": 1,
+     "plano": "perto"
+    },
+    {
+     "arte": "r-mural",
+     "fala": "R-03",
+     "parte": 2,
+     "plano": "detalhe"
+    }
+   ]
+  },
+  {
+   "id": "R-2",
+   "titulo": "A revelação · Uma letra",
+   "quadros": [
+    {
+     "arte": "r-sentada",
+     "fala": "R-04"
+    },
+    {
+     "arte": "r-pipeta",
+     "fala": "R-05"
+    },
+    {
+     "arte": "r-sentada",
+     "fala": "R-06",
+     "parte": 0,
+     "plano": "perto"
+    },
+    {
+     "arte": "r-sentada",
+     "fala": "R-06",
+     "parte": 1,
+     "plano": "detalhe"
+    },
+    {
+     "arte": "r-sentada",
+     "fala": "R-06",
+     "parte": 2,
+     "plano": "detalhe"
+    }
+   ]
+  },
+  {
+   "id": "R-3",
+   "titulo": "A revelação · Você me usou",
+   "quadros": [
+    {
+     "arte": "r-sentada",
+     "fala": "R-07",
+     "plano": "perto"
+    },
+    {
+     "arte": "r-sentada",
+     "fala": "R-08",
+     "parte": 0
+    },
+    {
+     "arte": "r-sentada",
+     "fala": "R-08",
+     "parte": 1,
+     "plano": "perto"
+    },
+    {
+     "arte": "r-mural",
+     "fala": "R-09",
+     "parte": 0,
+     "plano": "perto"
+    },
+    {
+     "arte": "r-mural",
+     "fala": "R-09",
+     "parte": 1,
+     "plano": "detalhe"
+    }
+   ]
+  },
+  {
+   "id": "R-4",
+   "titulo": "A revelação · A receita sou eu",
+   "quadros": [
+    {
+     "arte": "r-coelho-porta",
+     "fala": "R-10",
+     "parte": 0
+    },
+    {
+     "arte": "r-coelho-porta",
+     "fala": "R-10",
+     "parte": 1,
+     "plano": "perto"
+    },
+    {
+     "arte": "r-coelho-porta",
+     "fala": "R-10",
+     "parte": 2,
+     "plano": "detalhe"
+    },
+    {
+     "arte": "r-mesa",
+     "fala": "R-11",
+     "parte": 0
+    },
+    {
+     "arte": "r-mesa",
+     "fala": "R-11",
+     "parte": 1,
+     "plano": "perto"
+    }
+   ]
+  },
+  {
+   "id": "F-1",
+   "titulo": "Final · Quase três bilhões e uma",
+   "quadros": [
+    {
+     "arte": "f-fita",
+     "fala": "F-01",
+     "parte": 0
+    },
+    {
+     "arte": "f-fita",
+     "fala": "F-01",
+     "parte": 1,
+     "plano": "perto"
+    },
+    {
+     "arte": "f-nariz"
+    },
+    {
+     "arte": "f-close"
+    },
+    {
+     "arte": "f-close",
+     "fala": "F-03",
+     "parte": 0,
+     "plano": "perto"
+    },
+    {
+     "arte": "f-close",
+     "fala": "F-03",
+     "parte": 1,
+     "plano": "detalhe"
+    }
+   ]
+  },
+  {
+   "id": "F-2",
+   "titulo": "Final · O Eco",
+   "quadros": [
+    {
+     "arte": "f-eco",
+     "fala": "F-A",
+     "parte": 0
+    },
+    {
+     "arte": "f-eco",
+     "fala": "F-A",
+     "parte": 1,
+     "plano": "perto"
+    },
+    {
+     "arte": "f-eco",
+     "fala": "F-A",
+     "parte": 2
+    },
+    {
+     "arte": "f-eco",
+     "fala": "F-A",
+     "parte": 3,
+     "plano": "perto"
+    },
+    {
+     "arte": "f-eco",
+     "fala": "F-A",
+     "parte": 4,
+     "plano": "detalhe"
+    }
+   ]
+  },
+  {
+   "id": "X",
+   "titulo": "Créditos e pós-créditos",
+   "quadros": [
+    {
+     "arte": "x-titulo"
+    },
+    {
+     "arte": "x-risca",
+     "fala": "X-01",
+     "parte": 0
+    },
+    {
+     "arte": "x-risca",
+     "fala": "X-01",
+     "parte": 1,
+     "plano": "perto"
+    },
+    {
+     "arte": "x-risca",
+     "fala": "X-01",
+     "parte": 2,
+     "plano": "detalhe"
+    },
+    {
+     "arte": "x-cha",
+     "opcoes": [
+      [
+       "x-cha",
+       "X-02a"
+      ],
+      [
+       "",
+       "X-02b"
+      ]
+     ]
+    }
+   ]
+  }
+ ]
+}
