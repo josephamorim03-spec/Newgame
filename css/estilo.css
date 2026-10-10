@@ -512,9 +512,11 @@ body.mesa-piquenique .ticker .cor0 { color: var(--voce-tinta); } body.mesa-pique
 .quem { display: grid; gap: 2px; min-width: 0; justify-items: start; }
 .quem .nome { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: clamp(15px, 4.3vw, 20px); }
 .quem .vez-tag { font-size: 10px; padding: 2px 7px; }
-/* a vez e as vezes seguidas no automático (online), lado a lado; quebram de linha se não couberem */
+/* a vez e o relógio parado de quem espera (online), lado a lado; quebram de linha se não couberem */
 .tags-vez { display: flex; flex-wrap: wrap; gap: 3px 4px; min-width: 0; }
-.auto-tag { white-space: nowrap; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; padding: 2px 7px; border-radius: 999px; background: var(--erro-fundo); color: var(--erro-tinta); }
+.relogio-parado, .relogio-vez { font-variant-numeric: tabular-nums; }
+/* celular estreito: "sua vez · 4:32" cabe entre o nome e o Bolso */
+@media (max-width: 374px) { .quem .vez-tag { letter-spacing: .02em; padding: 2px 5px; } }
 .placar { margin-left: 0; white-space: nowrap; }
 .placar b { font-size: clamp(22px, 6vw, 28px); }
 .placar small { font-size: 13px; color: var(--tinta-suave); }

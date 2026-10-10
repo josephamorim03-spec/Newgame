@@ -300,26 +300,15 @@ test('Pressa (v0.12): só com 3 ou 4 dados na Mesa; nunca abre uma Mesa nem pega
   }
 });
 
-// o tempo da vez acabou (online): o jogo joga por ele, nunca deixa a vez presa e quase nunca rompe a corrente
-test('vez no automático: termina a vez em qualquer situação; 3 seguidas = W.O. por tempo', () => {
-  let vezes = 0;
-  for (let semente = 1; semente <= 120; semente++) {
-    const rng = rngDe(semente), deck = () => { for (;;) { const d = [0, 1, 2].map(() => Regras.ORDEM[Math.floor(rng() * Regras.ORDEM.length)]); if (Regras.deckValido(d)) return d; } };
-    const j = Regras.criarPartida({ decks: [deck(), deck()], vez: 0, meta: 16, rng });
-    for (let k = 0; k < 600 && j.fase !== 'fim'; k++) {
-      const p = j.vez;
-      // às vezes o jogador já fez parte da vez (pegou o dado e ficou na escolha do destino, ou na de disparar)
-      if (rng() < 0.3) { const a = jogadaAoAcaso(j, p, rng); if (a.tipo !== 'carta') Regras.aplicar(j, p, a); if (j.fase === 'fim' || j.vez !== p) continue; }
-      const rodada = j.rodada; Regras.jogarNoAutomatico(j, p); vezes++;
-      assert.ok(j.fase === 'fim' || j.vez !== p || j.rodada !== rodada, `semente ${semente}: a vez ficou presa`);   // (na Mesa nova, quem está atrás abre)
-      if (j.auto) j.auto[p] = 0;   // aqui é sempre a 1ª: o W.O. por tempo tem o próprio caso, embaixo
-    }
-    assert.strictEqual(j.fase, 'fim', `semente ${semente}: a partida no automático termina`);
+// W.O. e o porquê (a tela do fim conta): saiu, caiu e não voltou, ou o relógio acabou (online: servidor/salas.js)
+test('desistir: o motivo do W.O. vai no estado e no registro', () => {
+  for (const [motivo, txt] of [['saiu', 'saiu da partida'], ['queda', 'caiu e não voltou a tempo'], ['tempo', 'ficou sem tempo no relógio'], ['qualquer', 'saiu da partida']]) {
+    const j = Regras.criarPartida({ decks: [[], []], vez: 0, rng: rngDe(3) });
+    Regras.desistir(j, 1, motivo);
+    assert.strictEqual(j.fase, 'fim'); assert.strictEqual(j.vencedor, 0); assert.strictEqual(j.desistencia, 1);
+    assert.strictEqual(j.motivoFim, motivo === 'qualquer' ? 'saiu' : motivo);
+    assert.strictEqual(j.log[0].txt, txt);
+    assert.strictEqual(Regras.visaoDe(j, 1).desistencia, 0, 'na visão de quem saiu, ele é o 0');
   }
-  assert.ok(vezes > 5000);
-  const k = Regras.criarPartida({ decks: [[], []], vez: 0, rng: rngDe(3) });
-  for (let n = 0; n < 5 && k.fase !== 'fim'; n++) Regras.jogarNoAutomatico(k, k.vez);
-  assert.strictEqual(k.fase, 'fim'); assert.strictEqual(k.motivoFim, 'tempo'); assert.strictEqual(k.desistencia, 0);
-  assert.strictEqual(k.log[0].txt, `ficou ${Regras.AUTO_MAX} vezes seguidas sem jogar a tempo`);
-  assert.deepStrictEqual(Regras.visaoDe(k, 1).auto, [2, 3]);   // a conta vai na visão de cada um, na ordem de quem vê
+  for (const f of ['perderVez', 'jogarNoAutomatico', 'jogadaAutomatica']) assert.strictEqual(Regras[f], undefined, 'ninguém joga por ninguém: ' + f);
 });

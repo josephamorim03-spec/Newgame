@@ -15,20 +15,18 @@ const aleatorio = () => crypto.randomInt(0, 2 ** 32) / 2 ** 32;
 const MESAS_PARA_VALER = 3;
 const PARTIDAS_POR_PAR = 3; // por dia, valendo rating e moedas (contra duas contas combinando resultado)
 
-// ritmo da sala (como o controle de tempo do chess.com, escolhido ao criar a sala): o tempo de cada vez.
-// AFK: quem estoura o tempo da própria vez joga no automático (uma jogada segura, Regras.jogarNoAutomatico) e fica
-// "ausente": enquanto não der sinal de vida (jogar, tocar na tela, voltar para o app, reconectar), as vezes dele têm só
-// vezAusente, para o rival não esperar o tempo inteiro por quem saiu. Na 3.ª vez seguida no automático, W.O.
-// Quem cai tem o prazo de volta, com o relógio da vez parado; passado o prazo, as vezes dele vão no automático na hora.
-const RITMOS = { relampago: 20_000, rapida: 60_000, calma: 120_000 };
+// ritmo da sala (como o controle de tempo do chess.com, escolhido ao criar a sala): um relógio por jogador para a partida
+// inteira, mais um acréscimo a cada vez jogada ("5 min + 5 s"). O relógio só corre na vez de cada um; acabou o relógio,
+// perde por tempo. Ninguém joga por ninguém e ninguém perde a vez: quem se ausenta só vê o próprio relógio correr, e numa
+// vez difícil dá para pensar um minuto ou mais. Quem cai: o relógio dele continua correndo na vez dele (como no chess.com)
+// e, fora por esperaReconexao contados só nas vezes dele, perde por abandono. Na vez do rival, a queda não conta.
+const RITMOS = { relampago: { base: 120_000, inc: 3_000 }, rapida: { base: 300_000, inc: 5_000 }, calma: { base: 600_000, inc: 10_000 } };
 const RITMO_PADRAO = 'rapida';
 const ritmoValido = r => (typeof r === 'string' && Object.hasOwn(RITMOS, r) ? r : RITMO_PADRAO);
 
 const PADRAO = {
-  esperaReconexao: 90_000,  // quem cai tem esse tempo para voltar antes de perder por W.O. (troca de rede, aba recarregada…)
-  limiteVez: null,          // null: o tempo da vez vem do ritmo da sala (RITMOS); um número fixa o mesmo para todas (testes)
-  minimoNaVolta: 30_000,    // quem volta de uma queda (ou do automático) na própria vez tem pelo menos isso para jogar
-  vezAusente: 15_000,       // a vez de quem entrou no automático e ainda não deu sinal de vida
+  esperaReconexao: 120_000, // quem cai tem esse tempo para voltar, contado só nas vezes dele (troca de rede, aba recarregada…)
+  relogio: null,            // null: o relógio vem do ritmo da sala (RITMOS); { base, inc } fixa o mesmo para todas (testes)
   salaParada: 30 * 60_000,  // sala sem ninguém conectado some
   conviteValido: 24 * 3600_000,
   escolha: 60_000,          // preparação: tempo para os dois escolherem o deck antes de cada partida (acaba antes se os dois confirmarem)
@@ -40,32 +38,23 @@ class Salas {
     this.banco = banco; this.trava = trava; this.agora = agora; this.aoMudarConta = aoMudarConta;
     this.t = { ...PADRAO, ...tempos };
     this.salas = new Map();
-    // a cada segundo: com o ritmo Relâmpago (20 s), conferir de 5 em 5 s daria até 5 s a mais na vez
+    // a cada segundo: o relógio que acaba é conferido com no máximo 1 s de atraso
     this.relogio = setInterval(() => this.verificar(), Math.min(1000, this.t.esperaReconexao / 4)).unref();
   }
   fechar() { clearInterval(this.relogio); }
 
-  // o tempo da vez desta sala (o do ritmo dela) e o mínimo de quem volta de uma queda (nunca mais que a vez inteira)
-  limiteDe(sala) { return this.t.limiteVez || RITMOS[sala.ritmo] || RITMOS[RITMO_PADRAO]; }
-  minimoDe(sala) { return Math.min(this.t.minimoNaVolta, this.limiteDe(sala)); }
-  // o tempo desta vez: o do ritmo, ou o curto de quem está ausente (entrou no automático e não voltou)
-  limiteDaVez(sala) {
-    const jg = sala.jogo && sala.jogadores[sala.jogo.vez];
-    return jg && jg.ausente ? Math.min(this.limiteDe(sala), this.t.vezAusente) : this.limiteDe(sala);
+  // o relógio desta sala: { base, inc } do ritmo (ou o fixo dos testes)
+  ritmoDe(sala) { return this.t.relogio || RITMOS[sala.ritmo] || RITMOS[RITMO_PADRAO]; }
+  // desconta do relógio de quem tem a vez o tempo desde a última conta
+  descontar(sala) {
+    const j = sala.jogo; if (!j || j.fase === 'fim' || !sala.relogios) return;
+    const agora = this.agora(); sala.relogios[j.vez] -= agora - sala.contaDesde; sala.contaDesde = agora;
   }
-  // sinal de vida de quem estava ausente: as vezes voltam a ter o tempo inteiro e, se a vez é dele, ele tem pelo
-  // menos o mínimo da volta (a conta das vezes seguidas no automático só zera quando ele joga)
-  presente(sala, jg) {
-    if (!jg.ausente) return false;
-    jg.ausente = false;
-    const j = sala.jogo;
-    if (j && j.fase !== 'fim' && sala.jogadores[j.vez] === jg) sala.vezDesde = Math.max(sala.vezDesde, this.agora() - this.limiteDe(sala) + this.minimoDe(sala));
-    return true;
-  }
-  voltei(ws, conta) {
-    const { sala, assento } = this.onde(ws, conta);
-    if (!sala || !sala.jogo || sala.jogo.fase === 'fim') return;
-    if (this.presente(sala, sala.jogadores[assento])) sala.jogadores.forEach((_, i) => this.mandarEstado(sala, i));
+  // os dois relógios agora, em ms (o de quem tem a vez já com o que passou), nunca negativos
+  relogiosAgora(sala) {
+    const r = sala.relogios.slice(), j = sala.jogo;
+    if (j && j.fase !== 'fim') r[j.vez] -= this.agora() - sala.contaDesde;
+    return r.map(x => Math.max(0, x));
   }
   criar(conta, { meta = Regras.META_PADRAO, ritmo } = {}) {
     // uma sala esperando por conta: criar outra fecha a anterior
@@ -77,7 +66,7 @@ class Salas {
   }
   resumo(sala) {
     return {
-      codigo: sala.codigo, meta: sala.meta, ritmo: sala.ritmo, limiteVez: this.limiteDe(sala), dono: sala.dono,
+      codigo: sala.codigo, meta: sala.meta, ritmo: sala.ritmo, relogio: this.ritmoDe(sala), dono: sala.dono,
       jogadores: sala.jogadores.map(j => ({ id: j.id, nome: j.nome, rating: j.rating, icone: j.icone, conectado: !!j.ws, volta: this.volta(sala, j) })),
       estado: sala.escolha ? 'escolhendo' : sala.jogo ? (sala.jogo.fase === 'fim' ? 'fim' : 'jogando') : 'esperando',
     };
@@ -104,18 +93,8 @@ class Salas {
       sala.jogadores.push(eu);
     } else if (!sala.jogo || sala.jogo.fase === 'fim') eu.deck = deck.slice();
     if (eu.ws && eu.ws !== ws) { this.enviar(eu.ws, { tipo: 'erro', erro: 'Você entrou nesta sala por outra janela.', codigo: 'sala' }); eu.ws.sala = null; }
-    // voltou de uma queda na própria vez: o relógio da vez, parado durante a queda, continua de onde estava.
-    // Contra cair e voltar sem fim para segurar a partida: numa mesma vez, o relógio para no máximo
-    // esperaReconexao no total, e o mínimo para jogar na volta vale uma vez só
-    if (eu.caiuEm && sala.jogo && sala.jogo.fase !== 'fim' && sala.jogo.vez === sala.jogadores.indexOf(eu)) {
-      const agora = this.agora();
-      const parado = Math.max(0, Math.min(agora - Math.max(eu.caiuEm, sala.vezDesde), this.t.esperaReconexao - (sala.pausaVez || 0)));
-      sala.pausaVez = (sala.pausaVez || 0) + parado;
-      sala.vezDesde += parado;
-      if (!sala.voltaDada) { sala.voltaDada = true; sala.vezDesde = Math.max(sala.vezDesde, agora - this.limiteDe(sala) + this.minimoDe(sala)); }
-    }
+    // voltou de uma queda: o relógio dele não parou (corre na vez dele, como no chess.com); nada a acertar
     eu.ws = ws; eu.caiuEm = null; ws.sala = sala.codigo;
-    this.presente(sala, eu);   // voltou (de uma queda ou do automático): as vezes dele voltam a ter o tempo inteiro
     sala.mexida = this.agora();
     if (sala.jogadores.length === 2 && !sala.jogo && !sala.escolha) this.iniciarEscolha(sala);
     else {
@@ -135,13 +114,13 @@ class Salas {
   async acao(ws, conta, acao) {
     const { sala, assento } = this.onde(ws, conta);
     if (!sala || !sala.jogo) return this.erro(ws, 'Nenhuma partida em andamento.');
+    this.descontar(sala);   // o relógio de quem tem a vez para aqui (um acerto: ele continua se a vez seguir com ele)
+    const vezAntes = sala.jogo.vez;
     const r = Regras.aplicar(sala.jogo, assento, acao);
     if (!r.ok) { this.erro(ws, r.erro); this.mandarEstado(sala, assento); return; }
-    if (sala.jogo.auto) sala.jogo.auto[assento] = 0;   // jogou: as vezes no automático deixam de ser seguidas
-    sala.jogadores[assento].ausente = false;
     sala.mexida = this.agora();
-    // o relógio recomeça quando a vez passa e também na Mesa nova (que pode começar com quem fechou a anterior)
-    if (sala.jogo.vez !== sala.ultimaVez || sala.jogo.rodada !== sala.ultimaRodada) this.novaVez(sala);
+    // a vez passou: quem jogou ganha o acréscimo, e a queda (se houver) do outro passa a contar a partir de agora
+    if (sala.jogo.vez !== vezAntes && sala.jogo.fase !== 'fim') { sala.relogios[vezAntes] += this.ritmoDe(sala).inc; sala.vezComecou = this.agora(); }
     await this.depoisDaAcao(sala);
   }
   async desistir(ws, conta) {
@@ -251,13 +230,10 @@ class Salas {
     sala.primeiro = 1 - sala.primeiro;
     sala.partidas = (sala.partidas || 0) + 1;
     sala.premiada = false; sala.resultado = null;
-    this.novaVez(sala);
+    const { base } = this.ritmoDe(sala);
+    sala.relogios = [base, base]; sala.contaDesde = this.agora(); sala.vezComecou = this.agora();
     this.avisarSala(sala);
     this.transmitir(sala);
-  }
-  novaVez(sala) {
-    sala.ultimaVez = sala.jogo.vez; sala.ultimaRodada = sala.jogo.rodada; sala.vezDesde = this.agora();
-    sala.pausaVez = 0; sala.voltaDada = false;
   }
   async depoisDaAcao(sala) {
     const fim = sala.jogo.fase === 'fim' && !sala.premiada;
@@ -288,13 +264,16 @@ class Salas {
     const visao = Regras.visaoDe(sala.jogo, assento);
     const outro = sala.jogadores[1 - assento];
     visao.perfis = [
-      { nome: jg.nome, rating: jg.rating, icone: jg.icone, dado: jg.dado, ausente: !!jg.ausente },
-      { nome: outro.nome, rating: outro.rating, icone: outro.icone, dado: outro.dado, conectado: !!outro.ws, volta: this.volta(sala, outro), ausente: !!outro.ausente },
+      { nome: jg.nome, rating: jg.rating, icone: jg.icone, dado: jg.dado },
+      { nome: outro.nome, rating: outro.rating, icone: outro.icone, dado: outro.dado, conectado: !!outro.ws, volta: this.volta(sala, outro) },
     ];
     visao.sala = sala.codigo;
     visao.partida = sala.partidas;
-    visao.prazoVez = sala.jogo.fase === 'fim' ? null : Math.max(0, this.limiteDaVez(sala) - (this.agora() - sala.vezDesde));
-    visao.limiteVez = this.limiteDaVez(sala); visao.ritmo = sala.ritmo; visao.vezAusente = this.t.vezAusente;
+    // os relógios de cada um, na ordem de quem vê (o próprio primeiro); prazoVez é o que resta a quem tem a vez
+    const rel = this.relogiosAgora(sala);
+    visao.relogios = [rel[assento], rel[1 - assento]];
+    visao.prazoVez = sala.jogo.fase === 'fim' ? null : rel[sala.jogo.vez];
+    visao.relogio = this.ritmoDe(sala); visao.ritmo = sala.ritmo;
     this.enviar(jg.ws, { tipo: 'estado', jogo: visao });
   }
 
@@ -352,15 +331,13 @@ class Salas {
       if (sala.escolha && agora >= sala.escolha.ate) { this.fecharEscolha(sala); continue; }
       const j = sala.jogo, emJogo = j && j.fase !== 'fim';
       if (emJogo) {
-        // a vez não vence enquanto quem joga está caído e dentro do prazo de volta (o relógio para); passado o prazo,
-        // a vez dele vai no automático na hora (sem W.O. direto: só na 3.ª seguida, como quem não joga a tempo)
-        const daVez = sala.jogadores[j.vez];
-        const foraDoPrazo = !daVez.ws && daVez.caiuEm && agora - daVez.caiuEm > this.t.esperaReconexao;
-        if (foraDoPrazo || (daVez.ws && agora - sala.vezDesde > this.limiteDaVez(sala))) {
-          // o tempo da vez acabou: o jogo joga por ele (e conta) e ele fica ausente; o relógio recomeça para quem joga agora
-          Regras.jogarNoAutomatico(j, j.vez, foraDoPrazo ? 'queda' : 'tempo');
-          daVez.ausente = true;
-          this.novaVez(sala);
+        // acabou o relógio de quem tem a vez: perde por tempo. Caído há mais que esperaReconexao contados na vez dele
+        // (desde a queda ou desde que a vez chegou, o que vier depois): perde por abandono
+        const daVez = sala.jogadores[j.vez], resta = this.relogiosAgora(sala)[j.vez];
+        const abandonou = !daVez.ws && daVez.caiuEm && agora - Math.max(daVez.caiuEm, sala.vezComecou) > this.t.esperaReconexao;
+        if (resta <= 0 || abandonou) {
+          this.descontar(sala);
+          Regras.desistir(j, j.vez, resta <= 0 ? 'tempo' : 'queda');
           this.depoisDaAcao(sala).catch(e => console.error('verificar', e));
           continue;
         }
@@ -395,9 +372,11 @@ class Salas {
     return null;
   }
   // quanto tempo (ms) quem caiu no meio da partida ainda tem para voltar antes do W.O.; null se não caiu
+  // (só conta na vez dele: na vez do rival, quem caiu não perde nada; null se não caiu ou se a vez não é dele)
   volta(sala, jg) {
-    const emJogo = sala.jogo && sala.jogo.fase !== 'fim';
-    return emJogo && !jg.ws && jg.caiuEm ? Math.max(0, this.t.esperaReconexao - (this.agora() - jg.caiuEm)) : null;
+    const j = sala.jogo, emJogo = j && j.fase !== 'fim';
+    if (!emJogo || jg.ws || !jg.caiuEm || sala.jogadores[j.vez] !== jg) return null;
+    return Math.max(0, this.t.esperaReconexao - (this.agora() - Math.max(jg.caiuEm, sala.vezComecou)));
   }
   onde(ws, conta) {
     const sala = ws.sala && this.salas.get(ws.sala);
