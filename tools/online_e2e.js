@@ -134,8 +134,8 @@ const espera = ms => new Promise(r => setTimeout(r, ms));
     if (depoisCfg.modo !== 'online' || depoisCfg.fase === 'fim') throw new Error('Ajustes no online mexeram na partida: ' + JSON.stringify(depoisCfg));
     await ana.click(`#janelaConfig [data-cfg="ritmo"][data-v="${ritmoAna}"]`);
     await fechar(ana);
-    const vistaBia = await bia.evaluate(() => ({ nomes: DiceDuel.jogo.nomes, deckRival: DiceDuel.jogo.decks[1], ritmo: DiceDuel.jogo.ritmo, relogio: DiceDuel.jogo.relogio, relogios: DiceDuel.jogo.relogios }));
-    if (vistaBia.ritmo !== 'calma' || !vistaBia.relogio || vistaBia.relogio.base !== 600000 || vistaBia.relogio.inc !== 10000 || !vistaBia.relogios || vistaBia.relogios.length !== 2) throw new Error('o relógio escolhido não chegou à partida: ' + JSON.stringify(vistaBia));
+    const vistaBia = await bia.evaluate(() => ({ nomes: DiceDuel.jogo.nomes, deckRival: DiceDuel.jogo.decks[1], ritmo: DiceDuel.jogo.ritmo, limite: DiceDuel.jogo.limiteVez }));
+    if (vistaBia.ritmo !== 'calma' || vistaBia.limite !== 180000) throw new Error('o tempo por vez escolhido não chegou à partida: ' + JSON.stringify(vistaBia));
     if (vistaBia.nomes[1] !== ANA || vistaBia.deckRival.join() !== 'espelho,ajuste,pressa') throw new Error('a Bia não vê a Ana direito: ' + JSON.stringify(vistaBia));
 
     // joga clicando: quem tem a vez escolhe um dado (às vezes confirma), um destino, ou dispara/segura

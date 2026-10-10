@@ -15,18 +15,19 @@ const aleatorio = () => crypto.randomInt(0, 2 ** 32) / 2 ** 32;
 const MESAS_PARA_VALER = 3;
 const PARTIDAS_POR_PAR = 3; // por dia, valendo rating e moedas (contra duas contas combinando resultado)
 
-// ritmo da sala (como o controle de tempo do chess.com, escolhido ao criar a sala): um relógio por jogador para a partida
-// inteira, mais um acréscimo a cada vez jogada ("5 min + 5 s"). O relógio só corre na vez de cada um; acabou o relógio,
-// perde por tempo. Ninguém joga por ninguém e ninguém perde a vez: quem se ausenta só vê o próprio relógio correr, e numa
-// vez difícil dá para pensar um minuto ou mais. Quem cai: o relógio dele continua correndo na vez dele (como no chess.com)
-// e, fora por esperaReconexao contados só nas vezes dele, perde por abandono. Na vez do rival, a queda não conta.
-const RITMOS = { relampago: { base: 120_000, inc: 3_000 }, rapida: { base: 300_000, inc: 5_000 }, calma: { base: 600_000, inc: 10_000 } };
+// ritmo da sala (escolhido ao criar): o tempo de cada vez. Rápida, o padrão: 2 min. Política de AFK, só na vez de cada um:
+// sem sinal de vida (tocar na tela, jogar, voltar para o app, reconectar) por metade do tempo da vez, o jogo pergunta
+// "Você ainda está aí?"; sem resposta em até 30 s (um quarto da vez, nos ritmos curtos), derrota por inatividade. No
+// Rápida: aviso aos 60 s, derrota aos 90 s parado. Quem está ativo e não joga perde quando a vez acaba (2 min). Queda de
+// internet é a mesma coisa (sem conexão, não há sinal de vida): 90 s sem voltar na própria vez, derrota. Na vez do rival,
+// nada disso conta. Ninguém joga por ninguém e ninguém perde a vez.
+const RITMOS = { relampago: 60_000, rapida: 120_000, calma: 180_000 };
 const RITMO_PADRAO = 'rapida';
 const ritmoValido = r => (typeof r === 'string' && Object.hasOwn(RITMOS, r) ? r : RITMO_PADRAO);
 
 const PADRAO = {
-  esperaReconexao: 120_000, // quem cai tem esse tempo para voltar, contado só nas vezes dele (troca de rede, aba recarregada…)
-  relogio: null,            // null: o relógio vem do ritmo da sala (RITMOS); { base, inc } fixa o mesmo para todas (testes)
+  limiteVez: null,          // null: o tempo da vez vem do ritmo da sala (RITMOS); um número fixa o mesmo para todas (testes)
+  respostaAfk: 30_000,      // depois do "Você ainda está aí?": o tempo para responder (no máximo um quarto da vez)
   salaParada: 30 * 60_000,  // sala sem ninguém conectado some
   conviteValido: 24 * 3600_000,
   escolha: 60_000,          // preparação: tempo para os dois escolherem o deck antes de cada partida (acaba antes se os dois confirmarem)
@@ -38,23 +39,33 @@ class Salas {
     this.banco = banco; this.trava = trava; this.agora = agora; this.aoMudarConta = aoMudarConta;
     this.t = { ...PADRAO, ...tempos };
     this.salas = new Map();
-    // a cada segundo: o relógio que acaba é conferido com no máximo 1 s de atraso
-    this.relogio = setInterval(() => this.verificar(), Math.min(1000, this.t.esperaReconexao / 4)).unref();
+    // a cada segundo (ou mais vezes, nos testes com vezes curtas): o tempo que acaba é conferido com pouco atraso
+    this.relogio = setInterval(() => this.verificar(), Math.min(1000, (this.t.limiteVez || 60_000) / 8)).unref();
   }
   fechar() { clearInterval(this.relogio); }
 
-  // o relógio desta sala: { base, inc } do ritmo (ou o fixo dos testes)
-  ritmoDe(sala) { return this.t.relogio || RITMOS[sala.ritmo] || RITMOS[RITMO_PADRAO]; }
-  // desconta do relógio de quem tem a vez o tempo desde a última conta
-  descontar(sala) {
-    const j = sala.jogo; if (!j || j.fase === 'fim' || !sala.relogios) return;
-    const agora = this.agora(); sala.relogios[j.vez] -= agora - sala.contaDesde; sala.contaDesde = agora;
+  // o tempo da vez desta sala (o do ritmo dela, ou o fixo dos testes)
+  limiteDe(sala) { return this.t.limiteVez || RITMOS[sala.ritmo] || RITMOS[RITMO_PADRAO]; }
+  // AFK: o aviso vem com metade da vez parada; a resposta tem 30 s (ou um quarto da vez, se for menos)
+  afkDe(sala) { const L = this.limiteDe(sala); return { aviso: L / 2, resposta: Math.min(this.t.respostaAfk, L / 4) }; }
+  // há quanto tempo quem tem a vez está sem sinal de vida (contado desde o começo da vez)
+  paradoHa(sala) { const jg = sala.jogadores[sala.jogo.vez]; return this.agora() - Math.max(sala.vezDesde, jg.vivoEm || 0); }
+  // a pergunta "Você ainda está aí?" em andamento: quanto falta para a derrota (ms), ou null
+  pergunta(sala) {
+    const j = sala.jogo; if (!j || j.fase === 'fim' || !sala.vezDesde) return null;
+    const { aviso, resposta } = this.afkDe(sala), parado = this.paradoHa(sala);
+    return parado >= aviso ? Math.max(0, aviso + resposta - parado) : null;
   }
-  // os dois relógios agora, em ms (o de quem tem a vez já com o que passou), nunca negativos
-  relogiosAgora(sala) {
-    const r = sala.relogios.slice(), j = sala.jogo;
-    if (j && j.fase !== 'fim') r[j.vez] -= this.agora() - sala.contaDesde;
-    return r.map(x => Math.max(0, x));
+  // sinal de vida (tocou na tela, respondeu ao aviso, voltou para o app): o jogador continua; se a pergunta estava na
+  // tela, ela some para os dois. Só a vez de quem joga importa, mas vale guardar sempre
+  ativo(ws, conta) {
+    const { sala, assento } = this.onde(ws, conta);
+    if (!sala) return;
+    this.vivo(sala, sala.jogadores[assento]);
+  }
+  vivo(sala, jg) {
+    jg.vivoEm = this.agora();
+    if (sala.perguntando && sala.jogo && sala.jogadores[sala.jogo.vez] === jg) { sala.perguntando = false; sala.jogadores.forEach((_, i) => this.mandarEstado(sala, i)); }
   }
   criar(conta, { meta = Regras.META_PADRAO, ritmo } = {}) {
     // uma sala esperando por conta: criar outra fecha a anterior
@@ -66,7 +77,7 @@ class Salas {
   }
   resumo(sala) {
     return {
-      codigo: sala.codigo, meta: sala.meta, ritmo: sala.ritmo, relogio: this.ritmoDe(sala), dono: sala.dono,
+      codigo: sala.codigo, meta: sala.meta, ritmo: sala.ritmo, limiteVez: this.limiteDe(sala), dono: sala.dono,
       jogadores: sala.jogadores.map(j => ({ id: j.id, nome: j.nome, rating: j.rating, icone: j.icone, conectado: !!j.ws, volta: this.volta(sala, j) })),
       estado: sala.escolha ? 'escolhendo' : sala.jogo ? (sala.jogo.fase === 'fim' ? 'fim' : 'jogando') : 'esperando',
     };
@@ -93,8 +104,9 @@ class Salas {
       sala.jogadores.push(eu);
     } else if (!sala.jogo || sala.jogo.fase === 'fim') eu.deck = deck.slice();
     if (eu.ws && eu.ws !== ws) { this.enviar(eu.ws, { tipo: 'erro', erro: 'Você entrou nesta sala por outra janela.', codigo: 'sala' }); eu.ws.sala = null; }
-    // voltou de uma queda: o relógio dele não parou (corre na vez dele, como no chess.com); nada a acertar
+    // voltou de uma queda: o tempo da vez não parou; voltar é sinal de vida (a pergunta de AFK, se havia, some)
     eu.ws = ws; eu.caiuEm = null; ws.sala = sala.codigo;
+    eu.vivoEm = this.agora(); sala.perguntando = false;
     sala.mexida = this.agora();
     if (sala.jogadores.length === 2 && !sala.jogo && !sala.escolha) this.iniciarEscolha(sala);
     else {
@@ -114,13 +126,13 @@ class Salas {
   async acao(ws, conta, acao) {
     const { sala, assento } = this.onde(ws, conta);
     if (!sala || !sala.jogo) return this.erro(ws, 'Nenhuma partida em andamento.');
-    this.descontar(sala);   // o relógio de quem tem a vez para aqui (um acerto: ele continua se a vez seguir com ele)
-    const vezAntes = sala.jogo.vez;
+    const vezAntes = sala.jogo.vez, rodadaAntes = sala.jogo.rodada;
     const r = Regras.aplicar(sala.jogo, assento, acao);
     if (!r.ok) { this.erro(ws, r.erro); this.mandarEstado(sala, assento); return; }
     sala.mexida = this.agora();
-    // a vez passou: quem jogou ganha o acréscimo, e a queda (se houver) do outro passa a contar a partir de agora
-    if (sala.jogo.vez !== vezAntes && sala.jogo.fase !== 'fim') { sala.relogios[vezAntes] += this.ritmoDe(sala).inc; sala.vezComecou = this.agora(); }
+    sala.jogadores[assento].vivoEm = this.agora(); sala.perguntando = false;   // jogar é sinal de vida
+    // o tempo da vez recomeça quando a vez passa e também na Mesa nova (que pode começar com quem fechou a anterior)
+    if (sala.jogo.vez !== vezAntes || sala.jogo.rodada !== rodadaAntes) this.novaVez(sala);
     await this.depoisDaAcao(sala);
   }
   async desistir(ws, conta) {
@@ -230,11 +242,11 @@ class Salas {
     sala.primeiro = 1 - sala.primeiro;
     sala.partidas = (sala.partidas || 0) + 1;
     sala.premiada = false; sala.resultado = null;
-    const { base } = this.ritmoDe(sala);
-    sala.relogios = [base, base]; sala.contaDesde = this.agora(); sala.vezComecou = this.agora();
+    this.novaVez(sala);
     this.avisarSala(sala);
     this.transmitir(sala);
   }
+  novaVez(sala) { sala.vezDesde = this.agora(); sala.perguntando = false; }
   async depoisDaAcao(sala) {
     const fim = sala.jogo.fase === 'fim' && !sala.premiada;
     if (fim) sala.premiada = true;
@@ -269,11 +281,11 @@ class Salas {
     ];
     visao.sala = sala.codigo;
     visao.partida = sala.partidas;
-    // os relógios de cada um, na ordem de quem vê (o próprio primeiro); prazoVez é o que resta a quem tem a vez
-    const rel = this.relogiosAgora(sala);
-    visao.relogios = [rel[assento], rel[1 - assento]];
-    visao.prazoVez = sala.jogo.fase === 'fim' ? null : rel[sala.jogo.vez];
-    visao.relogio = this.ritmoDe(sala); visao.ritmo = sala.ritmo;
+    visao.prazoVez = sala.jogo.fase === 'fim' ? null : Math.max(0, this.limiteDe(sala) - (this.agora() - sala.vezDesde));
+    visao.limiteVez = this.limiteDe(sala); visao.ritmo = sala.ritmo;
+    // a pergunta de AFK em andamento: de quem (0 = quem vê) e quanto falta para a derrota
+    const falta = this.pergunta(sala);
+    visao.inatividade = falta === null ? null : { quem: sala.jogo.vez === assento ? 0 : 1, prazo: falta, resposta: this.afkDe(sala).resposta };
     this.enviar(jg.ws, { tipo: 'estado', jogo: visao });
   }
 
@@ -331,16 +343,16 @@ class Salas {
       if (sala.escolha && agora >= sala.escolha.ate) { this.fecharEscolha(sala); continue; }
       const j = sala.jogo, emJogo = j && j.fase !== 'fim';
       if (emJogo) {
-        // acabou o relógio de quem tem a vez: perde por tempo. Caído há mais que esperaReconexao contados na vez dele
-        // (desde a queda ou desde que a vez chegou, o que vier depois): perde por abandono
-        const daVez = sala.jogadores[j.vez], resta = this.relogiosAgora(sala)[j.vez];
-        const abandonou = !daVez.ws && daVez.caiuEm && agora - Math.max(daVez.caiuEm, sala.vezComecou) > this.t.esperaReconexao;
-        if (resta <= 0 || abandonou) {
-          this.descontar(sala);
-          Regras.desistir(j, j.vez, resta <= 0 ? 'tempo' : 'queda');
+        // a vez acabou: perde por tempo. Parado (sem sinal de vida) por metade da vez: a pergunta "Você ainda está aí?"
+        // vai para os dois; sem resposta no prazo, derrota por inatividade (ou por queda, se estava sem conexão)
+        const daVez = sala.jogadores[j.vez], { aviso, resposta } = this.afkDe(sala), parado = this.paradoHa(sala);
+        const acabou = agora - sala.vezDesde >= this.limiteDe(sala), inativo = parado >= aviso + resposta;
+        if (acabou || inativo) {
+          Regras.desistir(j, j.vez, inativo ? (daVez.ws ? 'inativo' : 'queda') : 'tempo');
           this.depoisDaAcao(sala).catch(e => console.error('verificar', e));
           continue;
         }
+        if (parado >= aviso && !sala.perguntando) { sala.perguntando = true; sala.jogadores.forEach((_, i) => this.mandarEstado(sala, i)); }
       }
       const alguem = sala.jogadores.some(x => x.ws);
       if ((!alguem && agora - sala.mexida > this.t.salaParada) || (!j && agora - sala.criada > this.t.conviteValido)) {
@@ -372,11 +384,12 @@ class Salas {
     return null;
   }
   // quanto tempo (ms) quem caiu no meio da partida ainda tem para voltar antes do W.O.; null se não caiu
-  // (só conta na vez dele: na vez do rival, quem caiu não perde nada; null se não caiu ou se a vez não é dele)
+  // (só conta na vez dele, como o AFK: sem conexão não há sinal de vida; null se não caiu ou se a vez não é dele)
   volta(sala, jg) {
     const j = sala.jogo, emJogo = j && j.fase !== 'fim';
     if (!emJogo || jg.ws || !jg.caiuEm || sala.jogadores[j.vez] !== jg) return null;
-    return Math.max(0, this.t.esperaReconexao - (this.agora() - Math.max(jg.caiuEm, sala.vezComecou)));
+    const { aviso, resposta } = this.afkDe(sala);
+    return Math.max(0, aviso + resposta - this.paradoHa(sala));
   }
   onde(ws, conta) {
     const sala = ws.sala && this.salas.get(ws.sala);

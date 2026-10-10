@@ -86,7 +86,7 @@ test('WebSocket: lixo e mensagens fora de ordem não derrubam nem travam', async
 });
 
 test('sequências ao acaso: 3 contas, 2 abas, quedas e voltas, e toda partida em andamento termina', async () => {
-  const s = await subir({ esperaReconexao: 400, relogio: { base: 1500, inc: 0 } });
+  const s = await subir({ limiteVez: 1500 });
   try {
     const rng = rngDe(+process.env.CAOS_SEMENTE || 2024);
     const contas = [];

@@ -300,9 +300,9 @@ test('Pressa (v0.12): só com 3 ou 4 dados na Mesa; nunca abre uma Mesa nem pega
   }
 });
 
-// W.O. e o porquê (a tela do fim conta): saiu, caiu e não voltou, ou o relógio acabou (online: servidor/salas.js)
+// W.O. e o porquê (a tela do fim conta): saiu, caiu e não voltou, não jogou a tempo, ou ficou inativo (online: servidor/salas.js)
 test('desistir: o motivo do W.O. vai no estado e no registro', () => {
-  for (const [motivo, txt] of [['saiu', 'saiu da partida'], ['queda', 'caiu e não voltou a tempo'], ['tempo', 'ficou sem tempo no relógio'], ['qualquer', 'saiu da partida']]) {
+  for (const [motivo, txt] of [['saiu', 'saiu da partida'], ['queda', 'caiu e não voltou a tempo'], ['tempo', 'não jogou a tempo'], ['inativo', 'não respondeu ao "Você ainda está aí?"'], ['qualquer', 'saiu da partida']]) {
     const j = Regras.criarPartida({ decks: [[], []], vez: 0, rng: rngDe(3) });
     Regras.desistir(j, 1, motivo);
     assert.strictEqual(j.fase, 'fim'); assert.strictEqual(j.vencedor, 0); assert.strictEqual(j.desistencia, 1);

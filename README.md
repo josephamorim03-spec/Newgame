@@ -97,10 +97,10 @@ node tools/vercel_local.js                     # a página como o Vercel publica
 desafio saíram.** O "?" do rival é sempre uma armadilha de verdade; tocar nele mostra quais armadilhas do deck dele ele
 pode ser e o que cada uma faria agora. Sem os +2/+2/+3 do desafio, os pontos voltam a vir só dos dados e das cartas
 (o porquê e os números em `docs/balanceamento-cartas.md` §18). No online, antes de cada partida os dois montam o deck
-(preparação de 60 s, `docs/servidor.md`). O tempo é como no chess.com: cada um tem um
-relógio para a partida inteira (Rápida: 5 min + 5 s a cada vez), que só corre na sua vez; acabou, perde por tempo.
-Ninguém joga por você nem perde a vez. Quem cai tem 2 min para voltar, contados só nas vezes dele, e a tela do fim diz
-por que a partida acabou.
+(preparação de 60 s, `docs/servidor.md`). Cada vez tem 2 min (Rápida). Política de AFK: parado
+na sua vez por 60 s (sem tocar na tela), o jogo pergunta "Você ainda está aí?"; sem resposta em 30 s, derrota por
+inatividade (90 s parado). Queda de internet segue a mesma regra, só na sua vez. Ninguém joga por você nem perde a vez,
+e a tela do fim diz por que a partida acabou.
 
 **v0.12:** meta 16 (a 12 acabava
 cedo demais; 20 e 24 voltam quando tiverem o próprio ajuste); o Coringa virou Remendo: o dado que romperia entra no lugar da frente, em vez de alongar a corrente; Pressa

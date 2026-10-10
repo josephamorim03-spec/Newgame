@@ -150,10 +150,11 @@
   const online = () => jogo && jogo.modo === 'online';
   // o rival online caiu no meio da partida; segundosVolta: quanto ele ainda tem para voltar (null se não se sabe)
   const rivalCaiu = () => online() && jogo.fase !== 'fim' && jogo.perfis[1].conectado === false;
-  // o relógio do online: "4:32" com um minuto ou mais, "37 s" no fim (os dois relógios ficam nos painéis, como no xadrez)
+  // o tempo da vez no online: "1:47" com um minuto ou mais, "37 s" no fim
   const relogioTxt = s => (s >= 60 ? `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}` : `${s} s`);
-  // o relógio de quem não tem a vez (parado): na etiqueta do painel dele
-  const relogioParado = p => (online() && jogo.fase !== 'fim' && jogo.relogios && jogo.vez !== p ? `<span class="vez-tag relogio-parado" title="relógio de ${p === 0 ? 'você' : 'quem joga contra você'}">${relogioTxt(Math.ceil(jogo.relogios[p] / 1000))}</span>` : '');
+  // o rival parado por metade da vez: o servidor perguntou se ele ainda está aí (a contagem até a derrota dele)
+  const rivalInativo = () => online() && jogo.fase !== 'fim' && jogo.inatividade && jogo.inatividade.quem === 1;
+  const segundosAfk = () => (jogo.afkAte ? Math.max(0, Math.ceil((jogo.afkAte - Date.now()) / 1000)) : null);
   const segundosVolta = () => { const ate = jogo.perfis[1].voltaAte; return ate ? Math.max(0, Math.ceil((ate - Date.now()) / 1000)) : null; };
 
   function novaPartida() {
@@ -745,11 +746,12 @@
     // os pontinhos de "pensando…" moram no selo de vez, no alto da Mesa (no painel, em 360 px, estouravam com placar de 2 dígitos)
     const caiu = p === 1 && rivalCaiu(), sv = caiu ? segundosVolta() : null;
     const tag = j.fase === 'fim' ? (j.vencedor === p ? 'venceu' : '') : caiu ? (sv === null ? 'caiu' : sv === 0 ? 'sem conexão' : `caiu · <span class="volta-rival">${sv}</span> s`)
+      : p === 1 && rivalInativo() ? `ausente · <span data-afk>${segundosAfk()}</span> s`
       : daVez ? (humano(p) ? (j.modo !== 'local' ? 'sua vez' : 'vez') : online() ? 'jogando' : 'pensando') + (online() ? '<span class="relogio-vez" data-relogio></span>' : '') : '';
     const avatar = j.modo === 'bot' && p === 1 ? Retratos.retrato(RETRATO_RIVAL[j.nivel], j.humor || '') : p === 0 ? iconeSVG(st.conta.icone) : online() ? iconeSVG(j.perfis[1].icone) : '';
     const fala = j.modo === 'bot' && p === 1 && j.fala ? `<div class="fala" aria-live="polite">${j.fala.txt}</div>` : '';
     return `<div class="jogador p${p}${daVez ? ' da-vez' : ''}">${fala}
-      <div class="cab">${avatar}<span class="quem"><span class="nome">${n[p]}</span>${tag || relogioParado(p) ? `<span class="tags-vez">${tag ? `<span class="vez-tag">${tag}</span>` : ''}${relogioParado(p)}</span>` : ''}</span>
+      <div class="cab">${avatar}<span class="quem"><span class="nome">${n[p]}</span>${tag ? `<span class="tags-vez"><span class="vez-tag">${tag}</span></span>` : ''}</span>
         ${bolsoHTML(p)}<span class="placar"><b data-placar="${p}">${j.pts[p]}</b><small>/${j.meta}</small></span></div>
       <div class="barra" role="progressbar" aria-valuemin="0" aria-valuemax="${j.meta}" aria-valuenow="${j.pts[p]}" aria-label="Pontos de ${n[p]}"><i style="width:${pct}%"></i>${prev ? `<span class="prev" style="left:${pct}%;width:${prev}%"></span>` : ''}</div>
       ${(() => { const alvo = p === j.vez && !fx && dadoEscolhido(j) >= 0 ? previaAlvos(p, dadoEscolhido(j)).corrente : null;
@@ -989,16 +991,17 @@
       return;
     }
     const s = segundosDaVez(j);
-    avisarVez(motivo || (s === null ? '' : `${relogioTxt(s)} no seu relógio`), false, motivo ? 'Sua vez de novo' : null);
+    avisarVez(motivo || (s === null ? '' : `${relogioTxt(s)} para jogar`), false, motivo ? 'Sua vez de novo' : null);
   }
-  // os lembretes do relógio no online: quando ele passa de 1 min, de 30 s e de 10 s, na sua vez. Por faixa, não pelo
-  // segundo exato: com a aba em segundo plano o relógio pula segundos
+  // os lembretes da vez no online: na metade do tempo (se nada foi escolhido) e nos 10 s finais. Com o "Você ainda está
+  // aí?" na tela, ele é o aviso. Por faixa, não pelo segundo exato: com a aba em segundo plano o relógio pula segundos
   function lembrarVez(j) {
     const s = segundosDaVez(j);
-    if (s === null || vezDoAparelho(j) !== 'minha' || j.pensando) return;
+    if (s === null || vezDoAparelho(j) !== 'minha' || j.pensando || (j.inatividade && j.inatividade.quem === 0)) return;
     const ultimo = Vez.aviso && Vez.aviso.chave === Vez.chave ? Vez.aviso.s : Infinity;
-    if (s <= 10 && ultimo > 10) avisarVez(`${s} s no seu relógio: se ele acabar, você perde a partida`, true);
-    else for (const marca of [30, 60]) if (s > 10 && s <= marca && ultimo > marca) { avisarVez(`${relogioTxt(s)} no seu relógio`); break; }
+    const metade = Math.floor(Math.round((j.limiteVez || 120000) / 1000) / 2);
+    if (s <= 10 && ultimo > 10) avisarVez(`${s} s: se o tempo acabar, você perde a partida`, true);
+    else if (s > 10 && s <= metade && ultimo > metade && j.sel == null && j.fase === 'pegar') avisarVez(`${relogioTxt(s)} para jogar`);
   }
   document.addEventListener('visibilitychange', () => {
     if (!jogo) return;
@@ -1006,7 +1009,7 @@
     // de volta à tela na sua vez: o aviso de novo (antes passava despercebido)
     if (!document.hidden && online() && vezDoAparelho(jogo) === 'minha' && !jogo.pensando) {
       const s = segundosDaVez(jogo);
-      setTimeout(() => avisarVez(s === null ? '' : `${relogioTxt(s)} no seu relógio`, s !== null && s <= 10), 250);
+      setTimeout(() => avisarVez(s === null ? '' : `${relogioTxt(s)} para jogar`, s !== null && s <= 10), 250);
     }
   });
 
@@ -1210,7 +1213,7 @@
     document.getElementById('fimTitulo').textContent = j.modo !== 'local' ? (v === 0 ? 'Você venceu!' : `${n[1]} venceu`) : `${n[v]} venceu!`;
     // acabou antes da meta: por quê (sem isso, um 0 × 0 parece que a conexão caiu)
     const wo = j.desistencia, quem = wo === 0 && j.modo !== 'local' ? 'Você' : n[wo];
-    const motivo = wo === undefined ? '' : { tempo: `${quem} ficou sem tempo no relógio.`, queda: `${quem} caiu e não voltou a tempo.`, saiu: `${quem} saiu da partida.` }[j.motivoFim] || `${quem} saiu da partida.`;
+    const motivo = wo === undefined ? '' : { tempo: `${quem} não jogou a tempo.`, inativo: `${quem} não respondeu ao “Você ainda está aí?”.`, queda: `${quem} caiu e não voltou a tempo.`, saiu: `${quem} saiu da partida.` }[j.motivoFim] || `${quem} saiu da partida.`;
     document.getElementById('fimPlacar').innerHTML = `<span class="cor0">${n[0]} ${j.pts[0]}</span> × <span class="cor1">${j.pts[1]} ${n[1]}</span>${motivo ? `<small class="fim-motivo">${esc(motivo)}</small>` : ''}`;
     // repetições viram um item só ("×2"); os mais raros vêm primeiro
     const grupos = new Map();
@@ -2358,7 +2361,8 @@
   };
 
   // ---------- o canal da partida e a volta depois de uma queda ----------
-  // Quem cai tem 2 min (no servidor), contados só nas vezes dele, e o relógio dele corre na vez dele (como no chess.com).
+  // Quem cai na própria vez tem 90 s no servidor (é a regra do AFK: sem conexão, não há sinal de vida); na vez do rival,
+  // a queda não conta.
   // O aparelho tenta voltar por 5 min, tenta na hora
   // em que a internet volta ou o app volta para a frente, e um pulso descobre conexões mortas que o navegador não percebe.
   // A sala fica guardada no aparelho: se a aba recarregar (o iPhone faz isso em segundo plano), o jogo volta para ela sozinho.
@@ -2493,8 +2497,8 @@
 
   // o tempo de cada vez no online, escolhido ao criar a sala (como o controle de tempo do chess.com; servidor/salas.js)
   // os ritmos (servidor/salas.js RITMOS): minutos no relógio de cada um + segundos ganhos a cada vez jogada
-  const TEMPOS_ONLINE = { relampago: ['Relâmpago', '2 + 3'], rapida: ['Rápida', '5 + 5'], calma: ['Calma', '10 + 10'] };
-  const tempoTxt = r => { const t = TEMPOS_ONLINE[r] || TEMPOS_ONLINE.rapida, [m, i] = t[1].split(' + '); return `${t[0]} · ${m} min + ${i} s por vez`; };
+  const TEMPOS_ONLINE = { relampago: ['Relâmpago', '1 min'], rapida: ['Rápida', '2 min'], calma: ['Calma', '3 min'] };
+  const tempoTxt = r => { const t = TEMPOS_ONLINE[r] || TEMPOS_ONLINE.rapida; return `${t[0]} · ${t[1]} por vez`; };
   async function criarSala() {
     aviso('Criando a sala…');
     try { const r = await pedir('POST', '/api/salas', { meta: +st.cfg.meta, ritmo: st.cfg.tempoOnline }); await entrarNaSala(r.sala.codigo); }
@@ -2584,6 +2588,7 @@
     const virou = v.eventos.find(e => e.tipo === 'virar');
     Object.assign(v, { alvo: null, ajusteIdx: null, sel: null, destaque: null, pensando: false, token: Math.random(), fala: null, humor: null, intro: false, virando: virou ? virou.id : null });
     v.prazoAte = v.prazoVez == null ? null : Date.now() + v.prazoVez;
+    v.afkAte = v.inatividade ? Date.now() + v.inatividade.prazo : null;
     if (v.fase !== 'fim') Rede.pediuRevanche = false;
     if (!nova && antes.premio !== undefined) { v.premio = antes.premio; v.semPremio = antes.semPremio; } // o prêmio só vem uma vez
     v.perfis[1].voltaAte = v.perfis[1].volta != null ? Date.now() + v.perfis[1].volta : null;
@@ -2597,6 +2602,7 @@
       if (st.pref.animacoes && v.fase !== 'fim') return mostrarVersus();
     }
     render();
+    mostrarAfk(v);
   }
   // o relógio da vez (o tempo do ritmo da sala, no selo de vez), a contagem de volta do rival que caiu
   // e o aviso de quando é a nossa conexão que caiu
@@ -2619,6 +2625,7 @@
     if (el.querySelector('.prazo')) el.textContent = `rodada ${jogo.rodada} · ${jogo.mesa.length} ${jogo.mesa.length === 1 ? 'dado' : 'dados'}`;
     seloVez(jogo);
     lembrarVez(jogo);
+    mostrarAfk(jogo);
   }, 1000);
 
   // a janela Online
@@ -2854,7 +2861,7 @@
       if (emJogo && jogo.fase !== 'fim') {
         el.innerHTML = `${eu}<p style="margin:0">Partida na sala <b>${Rede.sala}</b> contra <b>${esc(jogo.perfis[1].nome)}</b> (rating ${jogo.perfis[1].rating}).</p>
           <div class="linha-botoes"><button class="btn btn-mel" data-on="voltar">Voltar à mesa</button><button class="btn btn-papel" data-on="desistir">Desistir</button></div>
-          <p class="nota" style="margin:0">Desistir conta como derrota. Se a conexão cair, você tem 2 minutos para voltar (o jogo tenta sozinho).</p>`;
+          <p class="nota" style="margin:0">Desistir conta como derrota. Se a conexão cair na sua vez, você tem 90 segundos para voltar (o jogo tenta sozinho).</p>`;
         return;
       }
       if (emJogo) {
@@ -2875,8 +2882,8 @@
       return;
     }
     el.innerHTML = `${eu}
-      <div class="linha-cfg tempo-online"><span><label>Relógio</label><small>minutos de cada um + segundos ganhos a cada vez; o relógio só corre na sua vez, e se ele acabar, você perde</small></span>
-        <span class="segmento" role="group" aria-label="Relógio">${Object.entries(TEMPOS_ONLINE).map(([k, t]) => `<button data-on="tempo" data-v="${k}" aria-pressed="${st.cfg.tempoOnline === k}">${t[0]} <small>${t[1]}</small></button>`).join('')}</span></div>
+      <div class="linha-cfg tempo-online"><span><label>Tempo por vez</label><small>parado por metade do tempo, o jogo pergunta se você ainda está aí; sem resposta em 30 s, a partida acaba</small></span>
+        <span class="segmento" role="group" aria-label="Tempo por vez">${Object.entries(TEMPOS_ONLINE).map(([k, t]) => `<button data-on="tempo" data-v="${k}" aria-pressed="${st.cfg.tempoOnline === k}">${t[0]} <small>${t[1]}</small></button>`).join('')}</span></div>
       <div class="linha-botoes"><button class="btn btn-mel" data-on="criar-sala">Chamar um amigo</button></div>
       <form class="linha-botoes" id="formCodigo"><input class="campo codigo" name="codigo" maxlength="6" placeholder="código" aria-label="Código da sala" autocomplete="off" style="flex:1 1 120px"><button class="btn btn-papel" type="submit">Entrar na sala</button></form>
       ${htmlBusca()}
@@ -3089,6 +3096,31 @@
     }
   }
   // o roteiro de teste automático (tools/) pode ler o estado
+  // ---------- AFK no online: o sinal de vida e o "Você ainda está aí?" ----------
+  // Na sua vez, tocar na tela, apertar uma tecla ou voltar para o app avisa o servidor (no máximo a cada 5 s; com a
+  // pergunta na tela, na hora). Parado por metade do tempo da vez, o servidor pergunta; sem resposta em 30 s, a partida
+  // acaba como derrota por inatividade (servidor/salas.js). Na vez do rival, nada disso conta.
+  let ultimoSinal = 0;
+  function sinalDeVida(jaJa = false) {
+    const j = jogo;
+    if (!j || !online() || j.fase === 'fim' || j.vez !== 0) return;
+    if (!jaJa && !j.inatividade && Date.now() - ultimoSinal < 5000) return;
+    ultimoSinal = Date.now(); enviarWs({ tipo: 'ativo' });
+  }
+  ['pointerdown', 'keydown', 'wheel'].forEach(ev => addEventListener(ev, () => sinalDeVida(), { capture: true, passive: true }));
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) sinalDeVida(true); });
+  document.getElementById('btnAfk').addEventListener('click', () => { sinalDeVida(true); document.getElementById('janelaAfk').hidden = true; });
+  function mostrarAfk(j) {
+    const el = document.getElementById('janelaAfk'), s = j && j.afkAte ? Math.max(0, Math.ceil((j.afkAte - Date.now()) / 1000)) : null;
+    document.querySelectorAll('[data-afk]').forEach(x => { if (s !== null) x.textContent = s; });
+    const minha = !!(j && online() && j.fase !== 'fim' && j.inatividade && j.inatividade.quem === 0);
+    if (!minha) { el.hidden = true; return; }
+    if (el.hidden) {
+      el.hidden = false; Som.tocar('perigo'); vibrar([90, 60, 90, 60, 140]);
+      document.getElementById('btnAfk').focus();
+    }
+    document.title = `● Você ainda está aí? · ${TITULO}`;
+  }
   window.DiceDuel = { get jogo() { return jogo; }, st, salvar, fecharInicio: () => esconderInicio(), abrirInicio: () => mostrarInicio(), ajustar(p) { Object.assign(st.pref, p); aplicarPrefs(); if (jogo) render(); }, automato: () => talvezAutomato() };
   window.claude?.hot?.ready ? window.claude.hot.ready(iniciar) : iniciar(window.claude?.hot?.data ?? {});
 })();

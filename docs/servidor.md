@@ -58,13 +58,11 @@ Banco: Postgres (o plugin da Railway). Sem `DATABASE_URL`, guarda tudo num arqui
 
 | O quê | Quanto |
 |---|---|
-| Relógio (o ritmo da sala, escolhido ao criar; como no chess.com) | **um relógio por jogador para a partida inteira**, mais um acréscimo a cada vez jogada: **Relâmpago 2 min + 3 s**, **Rápida 5 min + 5 s** (padrão; a fila usa este) ou **Calma 10 min + 10 s**. O relógio só corre na vez de cada um; numa vez difícil dá para pensar um minuto ou mais. O rating é um só para os três |
-| O relógio acabou | perde por tempo. Ninguém joga por ninguém nem perde a vez: quem se ausenta só vê o próprio relógio correr (no Rápida, uns 5 min sem jogar até perder) |
-| Os dois relógios | aparecem nos painéis ("sua vez · 4:32" para quem joga; o do outro, parado); lembretes quando o seu passa de 1 min, de 30 s e de 10 s |
-| A partida acabou por W.O. | a tela do fim diz o porquê: saiu da partida, ficou sem tempo no relógio, ou caiu e não voltou a tempo |
-| Quem cai no meio da partida tem para voltar | **2 min**, contados **só nas vezes dele** (desde a queda ou desde que a vez chegou), como no chess.com; depois perde por abandono (sem moedas para ninguém se for antes da 3.ª Mesa). Na vez do rival, a queda não conta |
-| Relógio de quem está caído | **continua correndo** na vez dele (como no chess.com): cair e voltar não segura a partida |
-| O rival de quem caiu vê | "caiu · N s" contando o tempo que falta para a volta, quando a vez é de quem caiu; na vez do próprio rival, só "caiu" |
+| Tempo por vez (o ritmo da sala, escolhido ao criar) | **Relâmpago 1 min**, **Rápida 2 min** (padrão; a fila usa este) ou **Calma 3 min**. Recomeça quando a vez passa e a cada Mesa nova. Acabou sem jogada: derrota ("não jogou a tempo"). O rating é um só para os três |
+| Política de AFK (só na sua vez) | **sinal de vida** = tocar na tela, apertar uma tecla, rolar, voltar para o app, reconectar ou jogar (o pulso automático da conexão não conta). Parado por **metade da vez** (60 s no Rápida), aparece para você "**Você ainda está aí?**" (com som, vibração e aviso na aba) e o rival vê "ausente · N s". Sem resposta em **30 s** (no máximo um quarto da vez): derrota por inatividade. No Rápida: aviso aos 60 s, derrota aos **90 s** parado. Ninguém joga por ninguém nem perde a vez |
+| A partida acabou por W.O. | a tela do fim diz o porquê: saiu da partida, não jogou a tempo, não respondeu ao "Você ainda está aí?", ou caiu e não voltou a tempo |
+| Quem cai no meio da partida | sem conexão não há sinal de vida: é a mesma regra do AFK, **só na vez dele** (90 s no Rápida, contados desde a última vez que deu sinal ou desde que a vez chegou). Na vez do rival, a queda não conta. O tempo da vez não para |
+| O rival de quem caiu vê | "caiu · N s" com o que falta para a derrota, quando a vez é de quem caiu; na vez do próprio rival, só "caiu" |
 | O servidor percebe uma conexão morta | em 15 a 30 s (ping a cada 15 s) |
 | O aparelho de quem caiu tenta voltar | durante 5 min, de 0,8 s a 5 s entre tentativas; **na hora** quando a internet volta ou o app volta para a frente |
 | Conexão "zumbi" (aberta, mas sem resposta) | o aparelho manda um pulso a cada 15 s; 35 s sem ouvir o servidor, ou 4 s sem resposta ao voltar para a frente, contam como queda |

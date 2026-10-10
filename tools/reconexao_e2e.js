@@ -56,7 +56,7 @@ const espera = ms => new Promise(r => setTimeout(r, ms));
     for (const pg of [ana, bia]) await naPartida(pg, 1);
     for (const pg of [ana, bia]) await fechar(pg);
 
-    // 1) a conexão morre: a Bia vê que a Ana caiu (com a contagem, se a vez for da Ana: o prazo só conta na vez dela)
+    // 1) a conexão morre: a Bia vê que a Ana caiu (com a contagem dos 90 s, se a vez for da Ana: só conta na vez dela)
     // e a Ana volta sozinha
     const vezDaAna = await ana.evaluate(() => DiceDuel.jogo.vez === 0);
     await derrubarNoServidor('Ana');
@@ -64,7 +64,7 @@ const espera = ms => new Promise(r => setTimeout(r, ms));
     if (vezDaAna) {
       await bia.waitForSelector('.volta-rival', { timeout: 8000 });
       s1 = +(await bia.textContent('.volta-rival'));
-      if (!(s1 > 90 && s1 <= 120)) throw new Error('contagem de volta estranha: ' + s1);
+      if (!(s1 > 60 && s1 <= 90)) throw new Error('contagem de volta estranha: ' + s1);
     } else {
       await bia.waitForFunction(() => /caiu/i.test((document.querySelector('#pj1 .vez-tag') || {}).textContent || ''), null, { timeout: 8000 }).catch(() => {});
     }

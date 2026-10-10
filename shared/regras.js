@@ -468,8 +468,8 @@
     emitir(j, 'fim', { p, virada });
   }
   // W.O. e o porquê (a tela do fim conta): 'saiu' (desistiu ou fechou a partida), 'queda' (caiu e não voltou a tempo),
-  // 'tempo' (o relógio dele acabou: online, um relógio por jogador para a partida inteira, servidor/salas.js)
-  const TXT_WO = { saiu: 'saiu da partida', queda: 'caiu e não voltou a tempo', tempo: 'ficou sem tempo no relógio' };
+  // 'tempo' (a vez acabou sem jogada), 'inativo' (não respondeu ao "Você ainda está aí?"); online: servidor/salas.js
+  const TXT_WO = { saiu: 'saiu da partida', queda: 'caiu e não voltou a tempo', tempo: 'não jogou a tempo', inativo: 'não respondeu ao "Você ainda está aí?"' };
   function desistir(j, p, motivo = 'saiu') {
     if (j.fase === 'fim') return;
     if (!tem(TXT_WO, motivo)) motivo = 'saiu';
