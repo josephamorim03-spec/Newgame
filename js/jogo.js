@@ -223,6 +223,23 @@
   }
   // blefe: um efeito virado para baixo ocupa o lugar da armadilha e aparece ao rival como "?"
   const podeVirar = (p, c) => R.podeVirar(jogo, p, c);
+  // a carta aberta no painel (toque numa carta sua, na sua vez): mora fora do jogo, porque no online cada estado do
+  // servidor é um objeto novo; vale só na vez em que foi aberta
+  let foco = null;
+  const chaveVez = j => `${j.vezes || 0}:${j.vez}`;
+  const podeAbrir = (j, p) => humano(p) && j.vez === p && j.fase === 'pegar' && !j.pensando && !j.intro && !j.segundoDado;
+  const cartaEmFoco = j => (foco && foco.chave === chaveVez(j) && podeAbrir(j, j.vez) && j.decks[j.vez].includes(foco.c) ? foco.c : null);
+  // quando uma carta muda de estado (usada, armada, perdida), ela faz um gesto curto; o atraso negativo deixa a
+  // animação seguir de onde estava se a tela for redesenhada no meio dela
+  const gestoCarta = { idp: null, ant: {}, t: {} };
+  function gesto(p, c, e) {
+    const j = jogo, idp = online() ? `${j.sala}:${j.partida}` : j, k = `${p}:${c}`;
+    if (gestoCarta.idp !== idp) { gestoCarta.idp = idp; gestoCarta.ant = {}; gestoCarta.t = {}; }
+    const antes = gestoCarta.ant[k]; gestoCarta.ant[k] = e;
+    if (antes && antes !== e && ['usada', 'perdida', 'armada'].includes(e)) gestoCarta.t[k] = { e, t: performance.now() };
+    const g = gestoCarta.t[k], dt = g && g.e === e ? performance.now() - g.t : Infinity;
+    return dt < 700 ? ` gesto-${e}" style="animation-delay:-${Math.round(dt)}ms` : '';
+  }
   function virarCarta(p, c) {
     if (online()) { Online.enviar({ tipo: 'virar', carta: c }); return; }
     R.virarCarta(jogo, p, c);
@@ -549,6 +566,7 @@
       j.sel = d.id; Som.tocar('escolher', { n: 0, x: (idx - 2) * 0.3 }); render(); return;
     }
     if (j.fase !== 'pegar') return;
+    foco = null;
     if (j.sel === d.id) {
       const op = opcoesDoDado(j.vez, idx);
       if (op.principal) pegarDado(op.principal);
@@ -577,6 +595,7 @@
   }
   function cancelarEscolha() {
     const j = jogo;
+    foco = null;
     j.sel = null;
     if (j.fase === 'alvo' || j.fase === 'ajuste') { j.fase = 'pegar'; j.alvo = null; j.ajusteIdx = null; }
     render();
@@ -642,14 +661,22 @@
     const j = jogo, deck = j.decks[p];
     if (!deck.length) return `<div class="cartas"><span class="vazio-cartas">sem cartas</span></div>`;
     const meu = j.modo !== 'local' && p === 0;
+    // as suas cartas são grandes (arte, nome e o que fazem); as do rival, fichas (dá para ler, tocar abre a carta)
+    const grande = p === 0 || j.modo === 'local';
+    const minhaVez = podeAbrir(j, p), aberta = minhaVez ? cartaEmFoco(j) : null;
     let html = '<span class="rot">Cartas</span>';
     for (const c of deck) {
       const k = CARTAS[c];
       let e = j.cartas[p][c];
       if (e === 'armada' && !meu && c !== 'espelho') e = 'pronta';
+      const blefe = meu && e === 'armada' && k.tipo === 'efeito';
       const raio = k.pontos ? `<span class="raio" aria-label="carta de pontos">${RAIO}</span>` : '';
       const rotulo = e === 'armada' ? (k.tipo === 'efeito' ? 'virada' : 'armada') : '';
-      html += `<button class="carta ${k.tipo} ${e}${k.nome.length >= 10 ? ' nome-longo' : ''}" data-carta="${c}" data-dono="${p}" aria-label="${k.nome}: ${rotulo || e}">${k.ico}<span class="cnome">${k.nome}</span>${raio}${rotulo ? `<small>${rotulo}</small>` : ''}</button>`;
+      const sub = e === 'armada' ? (blefe ? 'virada · blefe' : 'armada') : e === 'usada' ? 'usada' : e === 'perdida' ? 'perdida' : k.verbo;
+      // "agora": dá para usar (ou virar como blefe) nesta vez; "nao-agora": é a sua vez, mas ela não serve agora
+      const agora = minhaVez && (podeUsar(p, c).ok || (e === 'pronta' && podeVirar(p, c).ok));
+      const hora = minhaVez && (e === 'pronta' || blefe) ? (agora ? ' agora' : ' nao-agora') : '';
+      html += `<button class="carta ${k.tipo} ${e}${grande ? ' grande' : ' compacta'}${hora}${aberta === c ? ' aberta' : ''}${k.nome.length >= 10 ? ' nome-longo' : ''}${gesto(p, c, e)}" data-carta="${c}" data-dono="${p}" aria-label="${k.nome}: ${rotulo || (e === 'pronta' ? k.verbo : e)}"><span class="c-arte">${k.arte}</span><span class="c-txt"><span class="cnome">${k.nome}</span>${grande ? `<small class="cverbo">${sub}</small>` : ''}</span>${raio}</button>`;
     }
     let estados = '';
     // a carta virada do rival é um botão: tocar explica o que ela pode ser e, na sua vez, oferece o desafio;
@@ -748,6 +775,42 @@
     return `${n[r]} tem uma carta virada (?). Pode ser ${traps.join(' ou ')}${blefes.length ? `, ou um blefe com ${blefes.join(' ou ')}` : ''}.`;
   }
 
+  // a carta aberta no painel: arte, o texto inteiro e as ações dela, sem janela por cima (a Mesa continua à vista)
+  function cartaAbertaHTML(p, c) {
+    const j = jogo, k = CARTAS[c], e = j.cartas[p][c], pu = podeUsar(p, c), pv = podeVirar(p, c), blefe = blefando(p, c), D = R.DESAFIO;
+    const tipo = `${k.tipo === 'armadilha' ? 'Armadilha' : 'Efeito'}${k.pontos ? ` · <span class="raio">${RAIO}</span> pontos` : ''}`;
+    const estado = { armada: blefe ? 'virada para baixo (blefe)' : 'armada', usada: 'já usada', perdida: 'perdida' }[e];
+    let nota = '';
+    if (e === 'pronta' || blefe) nota = pu.ok ? (blefe ? `Ninguém desafiou: usar agora revela o blefe, a carta funciona e rende +${D.bonus}.` : '') : (pu.motivo || '');
+    else if (e === 'armada') nota = 'Ela age sozinha quando a condição acontecer.';
+    const rot = blefe ? ['Usar e revelar', `funciona e rende +${D.bonus}`] : k.alvo ? ['Usar', 'depois escolha o dado'] : k.tipo === 'armadilha' ? ['Armar', 'fica virada para baixo'] : ['Usar', k.verbo];
+    const usar = e === 'pronta' || blefe ? `<button class="btn btn-duplo btn-mel" data-usar="${c}" ${pu.ok ? '' : 'disabled'}><span>${rot[0]}</span><small>${rot[1]}</small></button>` : '';
+    const virar = e === 'pronta' && pv.ok ? `<button class="btn btn-duplo btn-papel" data-virar="${c}"><span>Blefar</span><small>virar para baixo · +${D.bonus}</small></button>` : '';
+    const blefeTxt = virar && st.pref.dicas ? `<p class="nota nota-carta"><b>Blefar:</b> virada, ela parece uma armadilha (?) e não faz nada. Se o rival desafiar, ela se perde e ele ganha ${D.acerto}; senão, ao usá-la depois, rende +${D.bonus}.</p>` : '';
+    // o nome e as ações primeiro (no celular, os botões ficam à vista); o texto inteiro vem embaixo
+    return `<div class="carta-aberta ${k.tipo}${e === 'armada' ? ' virada' : ''}">
+        <span class="c-arte">${k.arte}</span>
+        <span class="ca-topo"><b>${k.nome}</b><span class="ca-tipo">${tipo}${estado ? ` · ${estado}` : ''}</span><span class="ca-verbo">${k.verbo}</span></span>
+        ${nota ? `<p class="nota nota-carta">${nota}</p>` : ''}
+        <div class="botoes">${usar}${virar}<button class="btn btn-papel" data-acao="fechar-carta">Voltar</button></div>
+        <p class="ca-texto">${k.texto}</p>${blefeTxt}
+      </div>`;
+  }
+  // usar a carta (as que pedem um dado vão para a escolha na Mesa) e virar para baixo (blefe): do painel e da janela
+  function acionarCarta(c) {
+    const j = jogo, p = j.vez;
+    if (!humano(p) || j.pensando || !podeUsar(p, c).ok) return;
+    foco = null; j.sel = null;
+    if (CARTAS[c].alvo) { j.fase = 'alvo'; j.alvo = c; }
+    else if (usarCarta(p, c) === 'proximo') { depois('proximo'); return; }
+    render();
+  }
+  function virarParaBaixo(c) {
+    const j = jogo, p = j.vez;
+    if (!humano(p) || j.pensando || !podeVirar(p, c).ok) return;
+    foco = null; virarCarta(p, c); render();
+  }
+
   // a barra de jogada só aparece quando há uma decisão (dado escolhido, para onde vai, disparar ou segurar, Pressa,
   // carta com alvo, fim); escolher um dado não precisa de texto: o "sua vez" do painel e as etiquetas dos dados bastam.
   // O que não é jogada (ajudas, regras, ajustes, deck, loja, online, desistir) mora no menu de pausa, na linha da Mesa
@@ -759,6 +822,8 @@
         <div class="botoes"><button class="btn btn-mel" data-acao="nova" ${online() && Rede.pediuRevanche ? 'disabled' : ''}>${online() ? (Rede.pediuRevanche ? 'Esperando o rival…' : 'Revanche') : 'Jogar de novo'}</button><button class="btn btn-papel" data-acao="deck">Trocar deck</button></div>`;
     }
     if (!humano(p)) return '';   // a vez do rival aparece no painel dele (pensando, jogando, caiu · N s)
+    const cf = cartaEmFoco(j);
+    if (cf) return cartaAbertaHTML(p, cf);
     const eu = j.cor[p];
     if (j.fase === 'alvo') {
       const k = CARTAS[j.alvo], ds = j.sel !== null && j.sel !== undefined ? j.mesa[idxDe(j.sel)] : null;
@@ -1677,35 +1742,41 @@
   document.getElementById('tabuleiro').addEventListener('click', e => {
     const v = e.target.closest('[data-virada]'); if (v && jogo) { abrirVirada(+v.dataset.virada); return; }
     const b = e.target.closest('[data-carta]'); if (!b || !jogo) return;
-    abrirCarta(+b.dataset.dono, b.dataset.carta);
+    const j = jogo, p = +b.dataset.dono, c = b.dataset.carta;
+    if (podeAbrir(j, p)) {
+      foco = cartaEmFoco(j) === c ? null : { c, chave: chaveVez(j) };   // tocar de novo na aberta a fecha
+      j.sel = null;
+      if (foco) { Som.tocar('carta'); vibrar(6); }
+      render(); return;
+    }
+    abrirCarta(p, c);
   });
   document.getElementById('cartaBotoes').addEventListener('click', e => {
     if (e.target.closest('[data-fechar-carta]')) { document.getElementById('janelaCarta').hidden = true; return; }
     const j = jogo, p = j.vez;
     if (!humano(p) || j.pensando) return;
     const bv = e.target.closest('[data-virar]');
-    if (bv) { if (podeVirar(p, bv.dataset.virar).ok) { document.getElementById('janelaCarta').hidden = true; virarCarta(p, bv.dataset.virar); render(); } return; }
-    if (e.target.closest('[data-desafiar]')) { if (podeDesafiar(p).ok) { document.getElementById('janelaCarta').hidden = true; j.sel = null; desafiar(p); } return; }
+    if (bv) { if (podeVirar(p, bv.dataset.virar).ok) { document.getElementById('janelaCarta').hidden = true; virarParaBaixo(bv.dataset.virar); } return; }
+    if (e.target.closest('[data-desafiar]')) { if (podeDesafiar(p).ok) { document.getElementById('janelaCarta').hidden = true; j.sel = null; foco = null; desafiar(p); } return; }
     const b = e.target.closest('[data-usar]'); if (!b || b.disabled) return;
-    const c = b.dataset.usar;
-    if (!podeUsar(p, c).ok) return;
+    if (!podeUsar(p, b.dataset.usar).ok) return;
     document.getElementById('janelaCarta').hidden = true;
-    j.sel = null;
-    if (CARTAS[c].alvo) { j.fase = 'alvo'; j.alvo = c; }
-    else if (usarCarta(p, c) === 'proximo') { depois('proximo'); return; }
-    render();
+    acionarCarta(b.dataset.usar);
   });
   document.getElementById('acoes').addEventListener('click', e => {
     const j = jogo;
     const dst = e.target.closest('[data-destino]');
     if (dst && j.fase === 'pegar' && j.sel && humano(j.vez) && !j.pensando) { pegarDado(dst.dataset.destino); return; }
     if (dst && j.fase === 'destino' && j.mao && humano(j.vez)) { colocar(j.vez, j.mao.v, dst.dataset.destino); return; }
+    const bu = e.target.closest('[data-usar]'); if (bu) { if (!bu.disabled) acionarCarta(bu.dataset.usar); return; }
+    const bv = e.target.closest('[data-virar]'); if (bv) { virarParaBaixo(bv.dataset.virar); return; }
     const aj = e.target.closest('[data-ajuste]');
     if (aj && j.fase === 'ajuste') { const idx = j.ajusteIdx; j.fase = 'pegar'; j.alvo = null; j.ajusteIdx = null; usarCarta(j.vez, 'ajuste', idx, +aj.dataset.ajuste); render(); return; }
     const b = e.target.closest('[data-acao]'); if (!b) return;
     const a = b.dataset.acao;
     if (a === 'nova') return novaPartida();
     if (a === 'deck') return abrirDeck();
+    if (a === 'fechar-carta') { foco = null; return render(); }
     if (a === 'cancelar' || a === 'cancelar-alvo') return cancelarEscolha();
     if (a === 'confirmar-alvo') return confirmarAlvo();
     if (a === 'dispensar' && j.segundoDado && j.fase === 'pegar' && humano(j.vez)) { dispensarSegundo(j.vez); return; }

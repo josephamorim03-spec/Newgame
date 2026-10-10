@@ -54,8 +54,8 @@ function verificar() {
       if (q.left < r.left - 1.5 || q.right > r.right + 1.5 || q.top < r.top - 1.5 || q.bottom > r.bottom + 1.5) { probs.push(`fora da caixa: ${nome(f)} dentro de ${nome(c)} "${texto(f)}"`); break; }
     }
   }
-  // 3) rótulos que deviam caber numa linha só
-  const UMA_LINHA = '.marca h1, .tag, .vez-tag, .carta, .segmento button, .abas button, .btn-topo, .carteira, .rot, .prontos button b, .efeito-ativo, .nome, .placar, .bolso, .mesa-topo h2, .linha-cfg label, .item b, .titulo-rating, .btn';
+  // 3) rótulos que deviam caber numa linha só (na carta grande da partida, o nome; o "o que faz" embaixo pode quebrar)
+  const UMA_LINHA = '.marca h1, .tag, .vez-tag, .carta:not(.grande), .carta.grande .cnome, .segmento button, .abas button, .btn-topo, .carteira, .rot, .prontos button b, .efeito-ativo, .nome, .placar, .bolso, .mesa-topo h2, .linha-cfg label, .item b, .titulo-rating, .btn';
   for (const el of document.querySelectorAll(UMA_LINHA)) {
     if (ignorar(el) || !visivel(el) || el.classList.contains('btn-duplo')) continue;
     if (linhas(el) > 1) probs.push(`quebrou em ${linhas(el)} linhas: ${nome(el)} "${texto(el)}"`);
@@ -176,7 +176,7 @@ if (require.main === module) (async () => {
         const dst = await pg.$$('[data-destino]'); if (dst.length) { await dst[0].click(); continue; }
         const disp = await pg.$('[data-acao="segurar"]'); if (disp) { const L = await pg.evaluate(() => DiceDuel.jogo.cor[0].length); await pg.click(L >= 4 ? '[data-acao="disparar"]' : '[data-acao="segurar"]'); continue; }
         const minha = await pg.$('.jogador.da-vez button.carta.pronta');
-        if (minha && !vistas.has('carta')) { vistas.add('carta'); await minha.click(); await olha('carta', true); await pg.click('#cartaBotoes [data-fechar-carta]'); continue; }
+        if (minha && !vistas.has('carta')) { vistas.add('carta'); await minha.click(); await olha('carta', true); await pg.click('[data-acao="fechar-carta"], #cartaBotoes [data-fechar-carta]'); continue; }
         const conf = await pg.$('.pega.armado:not([disabled])'); if (conf) { await conf.click(); continue; }
         const bom = await pg.$('.pega:not([disabled]):not(.nao-cabe)'); const q = await pg.$('.pega:not([disabled])');
         if (bom) await bom.click(); else if (q) await q.click();

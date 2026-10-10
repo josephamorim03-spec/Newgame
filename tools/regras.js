@@ -27,7 +27,7 @@ const RAIZ = path.join(__dirname, '..');
     await pg.keyboard.press('Escape');   // Esc redesenha a tela
     await pg.waitForTimeout(50);
   };
-  const usar = async (c) => { await pg.click(`.jogador.da-vez [data-carta="${c}"]`); await pg.click(`#cartaBotoes [data-usar="${c}"]`); };
+  const usar = async (c) => { await pg.click(`.jogador.da-vez [data-carta="${c}"]`); await pg.click(`#acoes [data-usar="${c}"]`); };
   const dado = async i => pg.click(`.pega[data-i="${i}"]`);
   // pega o dado e, se o jogo perguntar para onde vai, põe na corrente
   const pegar = async i => { await dado(i); if (await pg.$('[data-destino="corrente"]')) await pg.click('[data-destino="corrente"]'); };
@@ -56,8 +56,8 @@ const RAIZ = path.join(__dirname, '..');
   // e com 1 dado na Mesa ela não pode ser usada
   await cena([['pressa'], []], () => { const j = DiceDuel.jogo; j.vez = 0; j.fase = 'pegar'; j.mesa = [{ id: 9201, v: 3 }]; });
   await pg.click('.jogador.da-vez [data-carta="pressa"]');
-  confere(await pg.$('#cartaBotoes [data-usar="pressa"][disabled]') !== null && (await pg.textContent('#cartaNota')).includes('Mesa seguinte'), 'Pressa: com 1 dado na Mesa fica bloqueada e diz por quê');
-  await pg.click('#cartaBotoes [data-fechar-carta]');
+  confere(await pg.$('#acoes [data-usar="pressa"][disabled]') !== null && (await pg.textContent('#acoes .carta-aberta')).includes('Mesa seguinte'), 'Pressa: com 1 dado na Mesa fica bloqueada e diz por quê');
+  await pg.click('[data-acao="fechar-carta"]');
 
   // 3. Coringa não é gasto no primeiro dado de uma corrente vazia
   await cena([['coringa'], []], () => { const j = DiceDuel.jogo; j.vez = 0; j.fase = 'pegar'; j.cor[0] = []; j.bolso[0] = 1; j.mesa = [{ id: 9301, v: 4 }, { id: 9302, v: 1 }]; });
@@ -110,23 +110,23 @@ const RAIZ = path.join(__dirname, '..');
 
   // 5. Blefe: o efeito virado aparece como "?" para o rival e funciona normalmente depois
   await cena([['ajuste', 'interferencia'], []], () => { const j = DiceDuel.jogo; j.vez = 0; j.fase = 'pegar'; j.mesa = [{ id: 9501, v: 3 }, { id: 9502, v: 4 }]; });
-  await pg.click('.jogador.da-vez [data-carta="ajuste"]'); await pg.click('#cartaBotoes [data-virar="ajuste"]');
+  await pg.click('.jogador.da-vez [data-carta="ajuste"]'); await pg.click('#acoes [data-virar="ajuste"]');
   j = await J();
   confere(j.armada[0] === 'ajuste' && j.cartas[0].ajuste === 'armada', 'Blefe: o Ajuste fica virado e ocupa o lugar da armadilha');
   confere(await pg.$('#pj0 .oculta') !== null && (await pg.textContent('#pj0 [data-carta="ajuste"]')).indexOf('virada') < 0, 'Blefe: a dois, a tela mostra só o "?" sem dizer qual carta é');
   await pg.click('.jogador.da-vez [data-carta="interferencia"]');
-  confere(await pg.$('#cartaBotoes [data-usar="interferencia"][disabled]') !== null, 'Blefe: com o blefe virado não dá para armar outra armadilha');
-  await pg.click('#cartaBotoes [data-fechar-carta]');
+  confere(await pg.$('#acoes [data-usar="interferencia"][disabled]') !== null, 'Blefe: com o blefe virado não dá para armar outra armadilha');
+  await pg.click('[data-acao="fechar-carta"]');
   // desvira a partir da vez seguinte (o rival precisa ter tido a chance de desafiar)
   await pg.evaluate(() => { const j = DiceDuel.jogo; Regras.proximo(j); Regras.proximo(j); j.mesa = [{ id: 9503, v: 3 }, { id: 9504, v: 4 }]; DiceDuel.ajustar({}); });
-  await pg.click('.jogador.da-vez [data-carta="ajuste"]'); await pg.click('#cartaBotoes [data-usar="ajuste"]'); await dado(0); await pg.click('[data-ajuste="1"]');
+  await pg.click('.jogador.da-vez [data-carta="ajuste"]'); await pg.click('#acoes [data-usar="ajuste"]'); await dado(0); await pg.click('[data-ajuste="1"]');
   j = await J();
   confere(j.cartas[0].ajuste === 'usada' && j.armada[0] === null && j.mesa[0].v === 4, 'Blefe: usar a carta virada faz o efeito e libera o lugar');
   // sem armadilha escondida no deck, não dá para blefar
   await cena([['ajuste', 'espelho'], []], () => { const j = DiceDuel.jogo; j.vez = 0; j.fase = 'pegar'; });
   await pg.click('.jogador.da-vez [data-carta="ajuste"]');
-  confere(await pg.$('#cartaBotoes [data-virar]') === null, 'Blefe: só com uma armadilha (sem ser o Espelho) ainda escondida');
-  await pg.click('#cartaBotoes [data-fechar-carta]');
+  confere(await pg.$('#acoes [data-virar]') === null, 'Blefe: só com uma armadilha (sem ser o Espelho) ainda escondida');
+  await pg.click('[data-acao="fechar-carta"]');
 
   // 6. Âncora e Interferência são independentes
   await cena([['interferencia'], ['ancora']], () => {
@@ -232,11 +232,11 @@ const RAIZ = path.join(__dirname, '..');
   // o blefe que passa
   await cena([['coringa', 'fundo'], ['pressa']], () => { const j = DiceDuel.jogo; j.vez = 0; j.fase = 'pegar'; j.pts = [0, 0]; j.mesa = [{ id: 9701, v: 3 }, { id: 9702, v: 4 }]; });
   await pg.click('.jogador.da-vez [data-carta="coringa"]');
-  confere(await pg.$('#cartaBotoes [data-virar="coringa"]') !== null && (await pg.textContent('#cartaNota')).includes('+3'), 'Blefe: a janela do efeito oferece virar e diz o que rende');
-  await pg.click('#cartaBotoes [data-virar="coringa"]'); await pg.waitForTimeout(60);
+  confere(await pg.$('#acoes [data-virar="coringa"]') !== null && (await pg.textContent('#acoes .carta-aberta')).includes('+3'), 'Blefe: a carta aberta oferece virar e diz o que rende');
+  await pg.click('#acoes [data-virar="coringa"]'); await pg.waitForTimeout(60);
   await pg.click('.jogador.da-vez [data-carta="coringa"]');
-  confere(await pg.$('#cartaBotoes [data-usar="coringa"][disabled]') !== null, 'Blefe: não desvira na mesma vez em que virou');
-  await pg.click('#cartaBotoes [data-fechar-carta]');
+  confere(await pg.$('#acoes [data-usar="coringa"][disabled]') !== null, 'Blefe: não desvira na mesma vez em que virou');
+  await pg.click('[data-acao="fechar-carta"]');
   await pg.evaluate(() => { const j = DiceDuel.jogo; Regras.proximo(j); Regras.proximo(j); j.mesa = [{ id: 9801, v: 3 }, { id: 9802, v: 4 }]; DiceDuel.ajustar({}); });
   await usar('coringa'); await pg.waitForTimeout(60);
   j = await J();

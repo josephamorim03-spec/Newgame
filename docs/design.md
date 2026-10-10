@@ -368,6 +368,21 @@ uma lista curta: Continuar, a chave das ajudas, Regras e registro, Ajustes, Menu
 Desistir, que pede um segundo toque quando conta como derrota (contra o rival, depois do primeiro dado, e
 online). Deck, Loja e Online moram no menu principal. Fora da partida, o cabeçalho volta. A fala do rival sai do retrato e nunca cobre o Bolso nem o placar.
 
+**Cartas na mão (v0.12): as cartas são cartas.** Na partida, as cartas eram pílulas de texto com um ícone de traço de
+18 px, iguais a um botão qualquer, e tocar abria uma janela por cima da Mesa com um parágrafo e "Usar/Fechar". Os
+dados são objetos (rolam, pousam, voam); as cartas não eram. Agora:
+- **as suas são cartas de verdade**, com a mesma arte pintada do deck, o nome e o que fazem ("±1 num dado",
+  "−1 em quem lidera"); as do rival são fichas mais baixas (arte e nome), para a sua mão ter o destaque;
+- **o estado se lê sem tocar**: na sua vez, a carta que dá para usar agora **sobe com o aro de mel**; a que não serve
+  agora fica rente e apagada; a armadilha armada (ou o blefe) fica **escura, virada para baixo**, como a carta virada
+  do rival; a usada fica cinza e riscada. Usar faz a carta dar um pulinho e apagar; armar faz ela virar;
+- **tocar numa carta sua, na sua vez, abre a carta no próprio painel**, no lugar da fileira (como as decisões),
+  com o nome, o que faz, os botões (**Usar/Armar**, **Blefar**, Voltar) e o texto inteiro embaixo, sem cobrir a Mesa:
+  dá para olhar os dados enquanto se decide o Ajuste ou o Virar. Tocar de novo na carta, num dado ou em Voltar a
+  fecha. As do rival, e as suas fora da vez, continuam abrindo a janela de leitura.
+- no celular baixo (até 700 de altura), e a dois em telas de até 760, o "o que faz" sai da carta para caber tudo; a
+  carta aberta continua com o texto inteiro.
+
 **De quem é a vez (v0.12): óbvio de longe.** No teste com gente, um segundo de desatenção bastava para não saber,
 de volta à tela, se a vez era sua ou do rival (e no online o tempo da vez acabar é derrota). Agora:
 - **Selo de vez** no alto da Mesa, no lugar do título: "Sua vez" na sua cor, respirando; "Vez de Diana…" apagado, com

@@ -560,31 +560,15 @@ body.mesa-piquenique .ticker .cor0 { color: var(--voce-tinta); } body.mesa-pique
 .avatar { width: clamp(38px, 10vw, 46px); height: clamp(38px, 10vw, 46px); }
 /* casa seguinte da corrente: ícone no lugar do texto */
 .prox-livre { width: 55%; height: 55%; color: rgba(255,243,226,.75); }
-/* cartas: três colunas iguais; o resto (armadilha armada, efeitos ativos) vem numa linha à parte */
-.cartas { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
-.cartas .rot { display: none; }
-.cartas .carta { min-width: 0; justify-content: center; padding: 0 8px; }
-.cartas .carta .cnome { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
-.cartas .carta small { display: none; }
-/* o raio (carta de pontos) vira um selo no canto: não rouba a largura do nome */
-.cartas .carta { position: relative; }
-.cartas .carta .raio { position: absolute; top: -7px; right: -5px; display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: var(--marfim); box-shadow: 0 1px 3px rgba(58,42,46,.3), inset 0 0 0 1.5px rgba(58,42,46,.14); font-size: 12px; line-height: 1; pointer-events: none; }
-.cartas .carta.armada::after { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--mel); flex: none; }
+/* cartas: três colunas iguais; o resto (armadilha armada, efeitos ativos) vem numa linha à parte (o desenho delas
+   mora em "Cartas na mão", no fim do arquivo) */
 .cartas .vazio-cartas { grid-column: 1 / -1; font-size: 13px; color: var(--tinta-suave); }
 .estados { display: flex; flex-wrap: wrap; gap: 6px; }
 .estados:empty { display: none; }
-@media (max-width: 380px) { .cartas .carta svg.ico { display: none; } }
-/* no celular, os nomes compridos (Sobrecarga, Fundo Falso, Interferência) aparecem inteiros: sem o ícone, em 12 px */
-@media (max-width: 520px) {
-  .cartas .carta { font-size: 12px; }
-  .cartas .carta.nome-longo svg.ico { display: none; }
-}
-@media (max-width: 380px) { .cartas .carta { padding: 0 5px; } }
 /* celular bem estreito (320): cartas um pouco mais justas e o Bolso sem a palavra (a caixa com o dado continua) */
 @media (max-width: 340px) {
   .app { padding-left: max(8px, var(--seg-esq)); padding-right: max(8px, var(--seg-dir)); }
   .jogador { padding-left: 8px; padding-right: 8px; }
-  .cartas .carta { padding: 0 4px; letter-spacing: -.02em; }
   .cab .bolso .rot { display: none; }
   .tabela th, .tabela td { padding: 6px 4px; }
   .tabela th { letter-spacing: .02em; }
@@ -1071,6 +1055,110 @@ button.vaga { cursor: pointer; border: 0; background: #fff3dc; color: var(--tint
 /* a chamada "Sua vez" (online): na sua cor */
 .chamada.vez-chamada { box-shadow: 0 8px 0 var(--papel-2), 0 20px 50px rgba(0,0,0,.45), 0 0 0 4px var(--voce); }
 .chamada.vez-chamada b { color: var(--voce-tinta); }
+
+/* ==========================================================================
+   Cartas na mão (v0.12): na partida, as cartas são cartas, como no deck — a arte pintada, o nome e o que fazem.
+   Tocar numa carta sua, na sua vez, abre a carta no próprio painel (a Mesa continua à vista); as do rival e as
+   suas fora da vez abrem a janela de leitura
+   ========================================================================== */
+.cartas { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; align-items: stretch; }
+.cartas .rot { display: none; }
+.cartas .carta { position: relative; min-width: 0; margin: 0; border: 0; font-family: inherit; color: var(--tinta); cursor: pointer;
+  display: flex; align-items: center; gap: 8px; text-align: left; padding: 6px 10px 6px 8px; min-height: 52px;
+  border-radius: 14px; background: var(--marfim); box-shadow: 0 3px 0 var(--marfim-2), inset 0 0 0 1.5px rgba(58,42,46,.12);
+  transition: transform .14s ease, box-shadow .14s ease, opacity .2s, filter .2s; }
+.cartas .carta:hover { transform: translateY(-2px); }
+.cartas .carta:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--marfim-2), inset 0 0 0 1.5px rgba(58,42,46,.12); }
+/* armadilha: papel lilás com o filete da cor do Eco por dentro (o tipo se lê de longe, sem listras atrás da arte) */
+.cartas .carta.armadilha { background: #f6f0ff; box-shadow: 0 3px 0 #e0d5f6, inset 0 0 0 1.5px rgba(126,99,196,.22); }
+.c-arte { flex: none; display: grid; place-items: center; width: 34px; height: 34px; }
+.c-arte img.ico, .c-arte svg.ico { width: 100%; height: 100%; color: var(--mel-escuro); }
+.c-arte svg.ico { width: 76%; height: 76%; }
+.c-txt { display: grid; min-width: 0; gap: 1px; }
+.cartas .carta .cnome { font-family: var(--f-titulo); font-weight: 600; font-size: 15px; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cartas .carta .cverbo { font-size: 12px; font-weight: 700; line-height: 1.15; color: var(--tinta-suave); }
+.cartas .carta .raio { position: absolute; top: -7px; right: -5px; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--marfim); box-shadow: 0 1px 3px rgba(58,42,46,.3), inset 0 0 0 1.5px rgba(58,42,46,.14); font-size: 12px; line-height: 1; pointer-events: none; }
+
+/* na sua vez: a carta que dá para usar agora sobe e ganha o aro de mel; a que não serve agora fica rente e apagada */
+.cartas .carta.agora { transform: translateY(-3px); box-shadow: 0 5px 0 var(--mel-escuro), inset 0 0 0 2.5px var(--mel), 0 8px 16px rgba(196,132,58,.28); }
+.cartas .carta.agora:hover { transform: translateY(-5px) rotate(-1deg); }
+.cartas .carta.agora:active { transform: translateY(0); box-shadow: 0 1px 0 var(--mel-escuro), inset 0 0 0 2.5px var(--mel); }
+.cartas .carta.nao-agora { opacity: .62; filter: saturate(.6); }
+.cartas .carta.aberta { transform: translateY(-3px); box-shadow: 0 5px 0 var(--voce-tinta), inset 0 0 0 2.5px var(--voce); }
+/* a sua carta virada para baixo (armada ou blefe): escura como a carta virada do rival, com a arte à vista só para você */
+.cartas .carta.armada { background: var(--tinta); color: var(--papel); box-shadow: 0 3px 0 #22181b, inset 0 0 0 2px var(--mel); animation: brilhaVirada 2.4s ease-in-out infinite; }
+.cartas .carta.armada .cverbo { color: var(--mel); }
+.cartas .carta.armada .c-arte { opacity: .9; }
+@keyframes brilhaVirada { 50% { box-shadow: 0 3px 0 #22181b, inset 0 0 0 2px var(--mel), 0 0 16px rgba(242,177,94,.55); } }
+/* gasta: fica na mesa, mas apagada e sem cor */
+.cartas .carta.usada, .cartas .carta.perdida { opacity: .45; filter: grayscale(1); box-shadow: inset 0 0 0 1.5px rgba(58,42,46,.14); background: var(--papel-2); }
+.cartas .carta.usada .cnome, .cartas .carta.perdida .cnome { text-decoration: line-through; text-decoration-thickness: 2px; }
+.cartas .carta.perdida .cverbo { color: var(--rival-tinta); }
+
+/* as do rival: fichas mais baixas, só a arte e o nome */
+.cartas .carta.compacta { min-height: 38px; padding: 4px 8px 4px 6px; gap: 6px; }
+.cartas .carta.compacta .c-arte { width: 24px; height: 24px; }
+.cartas .carta.compacta .cnome { font-size: 13.5px; }
+
+/* o gesto de quando a carta muda: usada some num giro curto, armada vira para baixo */
+.cartas .carta.gesto-usada, .cartas .carta.gesto-perdida { animation: cartaGasta .7s ease-out both; }
+@keyframes cartaGasta { 0% { opacity: 1; filter: none; transform: translateY(-10px) scale(1.08) rotate(-3deg); } 45% { opacity: 1; filter: none; transform: translateY(-14px) scale(1.1) rotate(2deg); } 100% { opacity: .45; filter: grayscale(1); transform: none; } }
+.cartas .carta.gesto-armada { animation: cartaVira .7s ease-out both, brilhaVirada 2.4s ease-in-out .7s infinite; }
+@keyframes cartaVira { 0% { transform: perspective(400px) rotateY(0) translateY(-6px); } 50% { transform: perspective(400px) rotateY(90deg) translateY(-8px); } 100% { transform: perspective(400px) rotateY(0); } }
+.sem-animacoes .cartas .carta, .sem-animacoes .cartas .carta.armada { animation: none; transition: none; }
+
+/* a carta aberta no painel, no lugar da fileira de cartas */
+.carta-aberta { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 12px; align-items: center; padding: 10px 12px; border-radius: 16px; background: var(--marfim); box-shadow: 0 3px 0 var(--marfim-2), inset 0 0 0 2.5px var(--voce); animation: cartaAbre .18s ease-out; }
+.carta-aberta.armadilha { background: #f6f0ff; }
+.carta-aberta .c-arte { width: 52px; height: 52px; }
+.carta-aberta .ca-topo { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 8px; min-width: 0; }
+.carta-aberta b { font-family: var(--f-titulo); font-weight: 600; font-size: 21px; line-height: 1.15; }
+.carta-aberta .ca-tipo { font-size: 12px; font-weight: 700; color: var(--tinta-suave); }
+.carta-aberta .ca-verbo { flex-basis: 100%; font-size: 14px; font-weight: 800; color: var(--mel-escuro); }
+.carta-aberta.armadilha .ca-verbo { color: #7e63c4; }
+.carta-aberta > p, .carta-aberta > .botoes { grid-column: 1 / -1; margin: 0; }
+.carta-aberta > .botoes { margin: 6px 0 2px; }
+.carta-aberta .ca-texto { font-size: 14px; line-height: 1.35; color: var(--tinta); }
+.carta-aberta .nota-carta { font-size: 12.5px; line-height: 1.3; }
+@keyframes cartaAbre { from { opacity: 0; transform: translateY(8px) scale(.97); } }
+.sem-animacoes .carta-aberta { animation: none; }
+.decisao-slot #acoes .nota-carta { margin: 0; }
+
+/* celular: as suas cartas em pé (a arte em cima, o nome e o que fazem embaixo), três lado a lado */
+@media (max-width: 560px) {
+  .cartas { gap: 6px; }
+  .cartas .carta.grande { flex-direction: column; justify-content: flex-start; text-align: center; gap: 2px; padding: 7px 4px 7px; min-height: 0; }
+  .cartas .carta.grande .c-arte { width: 32px; height: 32px; margin-bottom: 1px; }
+  .cartas .carta.grande .c-txt { justify-items: center; width: 100%; }
+  .cartas .carta.grande .cnome { font-size: 14px; max-width: 100%; }
+  .cartas .carta.grande .cverbo { font-size: 11px; text-wrap: balance; }
+  .cartas .carta.grande.nome-longo .cnome { font-size: 13px; letter-spacing: -.01em; }
+  .cartas .carta.compacta { justify-content: center; }
+  .cartas .carta.compacta.nome-longo .c-arte { display: none; }
+  .cartas .carta.compacta .cnome { font-size: 12.5px; }
+  .carta-aberta { padding: 10px; gap: 10px; }
+  .carta-aberta .c-arte { width: 44px; height: 44px; }
+  .carta-aberta .ca-texto { font-size: 13px; color: var(--tinta-suave); }
+  .carta-aberta b { font-size: 19px; }
+  .carta-aberta p { font-size: 13.5px; }
+}
+@media (max-width: 380px) {
+  .cartas .carta.compacta .c-arte { display: none; }
+  .cartas .carta.compacta { padding: 4px 3px; }
+  .cartas .carta.compacta .cnome { font-size: 12px; letter-spacing: -.02em; text-overflow: clip; }
+  .cartas .carta.grande .cnome, .cartas .carta.grande.nome-longo .cnome { font-size: 12.5px; letter-spacing: -.02em; }
+}
+/* celular baixo e deitado: a arte encolhe e o "o que faz" sai (a carta aberta tem o texto inteiro); a dois, com as
+   cartas dos dois jogadores grandes, isso já vale em telas de até 760 de altura */
+@media (max-width: 560px) and (max-height: 700px), (orientation: landscape) and (max-height: 520px) {
+  .cartas .carta.grande .cverbo { display: none; }
+  .cartas .carta.grande .c-arte { width: 26px; height: 26px; }
+}
+@media (max-width: 560px) and (max-height: 760px) {
+  .modo-local .cartas .carta.grande .cverbo { display: none; }
+  .modo-local .cartas .carta.grande .c-arte { width: 26px; height: 26px; }
+}
+.decisao-slot #acoes .botoes [data-acao="fechar-carta"] { flex: 0 0 auto; }
 
 </style>
 </head>
@@ -3696,6 +3784,23 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
   }
   // blefe: um efeito virado para baixo ocupa o lugar da armadilha e aparece ao rival como "?"
   const podeVirar = (p, c) => R.podeVirar(jogo, p, c);
+  // a carta aberta no painel (toque numa carta sua, na sua vez): mora fora do jogo, porque no online cada estado do
+  // servidor é um objeto novo; vale só na vez em que foi aberta
+  let foco = null;
+  const chaveVez = j => `${j.vezes || 0}:${j.vez}`;
+  const podeAbrir = (j, p) => humano(p) && j.vez === p && j.fase === 'pegar' && !j.pensando && !j.intro && !j.segundoDado;
+  const cartaEmFoco = j => (foco && foco.chave === chaveVez(j) && podeAbrir(j, j.vez) && j.decks[j.vez].includes(foco.c) ? foco.c : null);
+  // quando uma carta muda de estado (usada, armada, perdida), ela faz um gesto curto; o atraso negativo deixa a
+  // animação seguir de onde estava se a tela for redesenhada no meio dela
+  const gestoCarta = { idp: null, ant: {}, t: {} };
+  function gesto(p, c, e) {
+    const j = jogo, idp = online() ? `${j.sala}:${j.partida}` : j, k = `${p}:${c}`;
+    if (gestoCarta.idp !== idp) { gestoCarta.idp = idp; gestoCarta.ant = {}; gestoCarta.t = {}; }
+    const antes = gestoCarta.ant[k]; gestoCarta.ant[k] = e;
+    if (antes && antes !== e && ['usada', 'perdida', 'armada'].includes(e)) gestoCarta.t[k] = { e, t: performance.now() };
+    const g = gestoCarta.t[k], dt = g && g.e === e ? performance.now() - g.t : Infinity;
+    return dt < 700 ? ` gesto-${e}" style="animation-delay:-${Math.round(dt)}ms` : '';
+  }
   function virarCarta(p, c) {
     if (online()) { Online.enviar({ tipo: 'virar', carta: c }); return; }
     R.virarCarta(jogo, p, c);
@@ -4022,6 +4127,7 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
       j.sel = d.id; Som.tocar('escolher', { n: 0, x: (idx - 2) * 0.3 }); render(); return;
     }
     if (j.fase !== 'pegar') return;
+    foco = null;
     if (j.sel === d.id) {
       const op = opcoesDoDado(j.vez, idx);
       if (op.principal) pegarDado(op.principal);
@@ -4050,6 +4156,7 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
   }
   function cancelarEscolha() {
     const j = jogo;
+    foco = null;
     j.sel = null;
     if (j.fase === 'alvo' || j.fase === 'ajuste') { j.fase = 'pegar'; j.alvo = null; j.ajusteIdx = null; }
     render();
@@ -4115,14 +4222,22 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     const j = jogo, deck = j.decks[p];
     if (!deck.length) return `<div class="cartas"><span class="vazio-cartas">sem cartas</span></div>`;
     const meu = j.modo !== 'local' && p === 0;
+    // as suas cartas são grandes (arte, nome e o que fazem); as do rival, fichas (dá para ler, tocar abre a carta)
+    const grande = p === 0 || j.modo === 'local';
+    const minhaVez = podeAbrir(j, p), aberta = minhaVez ? cartaEmFoco(j) : null;
     let html = '<span class="rot">Cartas</span>';
     for (const c of deck) {
       const k = CARTAS[c];
       let e = j.cartas[p][c];
       if (e === 'armada' && !meu && c !== 'espelho') e = 'pronta';
+      const blefe = meu && e === 'armada' && k.tipo === 'efeito';
       const raio = k.pontos ? `<span class="raio" aria-label="carta de pontos">${RAIO}</span>` : '';
       const rotulo = e === 'armada' ? (k.tipo === 'efeito' ? 'virada' : 'armada') : '';
-      html += `<button class="carta ${k.tipo} ${e}${k.nome.length >= 10 ? ' nome-longo' : ''}" data-carta="${c}" data-dono="${p}" aria-label="${k.nome}: ${rotulo || e}">${k.ico}<span class="cnome">${k.nome}</span>${raio}${rotulo ? `<small>${rotulo}</small>` : ''}</button>`;
+      const sub = e === 'armada' ? (blefe ? 'virada · blefe' : 'armada') : e === 'usada' ? 'usada' : e === 'perdida' ? 'perdida' : k.verbo;
+      // "agora": dá para usar (ou virar como blefe) nesta vez; "nao-agora": é a sua vez, mas ela não serve agora
+      const agora = minhaVez && (podeUsar(p, c).ok || (e === 'pronta' && podeVirar(p, c).ok));
+      const hora = minhaVez && (e === 'pronta' || blefe) ? (agora ? ' agora' : ' nao-agora') : '';
+      html += `<button class="carta ${k.tipo} ${e}${grande ? ' grande' : ' compacta'}${hora}${aberta === c ? ' aberta' : ''}${k.nome.length >= 10 ? ' nome-longo' : ''}${gesto(p, c, e)}" data-carta="${c}" data-dono="${p}" aria-label="${k.nome}: ${rotulo || (e === 'pronta' ? k.verbo : e)}"><span class="c-arte">${k.arte}</span><span class="c-txt"><span class="cnome">${k.nome}</span>${grande ? `<small class="cverbo">${sub}</small>` : ''}</span>${raio}</button>`;
     }
     let estados = '';
     // a carta virada do rival é um botão: tocar explica o que ela pode ser e, na sua vez, oferece o desafio;
@@ -4221,6 +4336,42 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     return `${n[r]} tem uma carta virada (?). Pode ser ${traps.join(' ou ')}${blefes.length ? `, ou um blefe com ${blefes.join(' ou ')}` : ''}.`;
   }
 
+  // a carta aberta no painel: arte, o texto inteiro e as ações dela, sem janela por cima (a Mesa continua à vista)
+  function cartaAbertaHTML(p, c) {
+    const j = jogo, k = CARTAS[c], e = j.cartas[p][c], pu = podeUsar(p, c), pv = podeVirar(p, c), blefe = blefando(p, c), D = R.DESAFIO;
+    const tipo = `${k.tipo === 'armadilha' ? 'Armadilha' : 'Efeito'}${k.pontos ? ` · <span class="raio">${RAIO}</span> pontos` : ''}`;
+    const estado = { armada: blefe ? 'virada para baixo (blefe)' : 'armada', usada: 'já usada', perdida: 'perdida' }[e];
+    let nota = '';
+    if (e === 'pronta' || blefe) nota = pu.ok ? (blefe ? `Ninguém desafiou: usar agora revela o blefe, a carta funciona e rende +${D.bonus}.` : '') : (pu.motivo || '');
+    else if (e === 'armada') nota = 'Ela age sozinha quando a condição acontecer.';
+    const rot = blefe ? ['Usar e revelar', `funciona e rende +${D.bonus}`] : k.alvo ? ['Usar', 'depois escolha o dado'] : k.tipo === 'armadilha' ? ['Armar', 'fica virada para baixo'] : ['Usar', k.verbo];
+    const usar = e === 'pronta' || blefe ? `<button class="btn btn-duplo btn-mel" data-usar="${c}" ${pu.ok ? '' : 'disabled'}><span>${rot[0]}</span><small>${rot[1]}</small></button>` : '';
+    const virar = e === 'pronta' && pv.ok ? `<button class="btn btn-duplo btn-papel" data-virar="${c}"><span>Blefar</span><small>virar para baixo · +${D.bonus}</small></button>` : '';
+    const blefeTxt = virar && st.pref.dicas ? `<p class="nota nota-carta"><b>Blefar:</b> virada, ela parece uma armadilha (?) e não faz nada. Se o rival desafiar, ela se perde e ele ganha ${D.acerto}; senão, ao usá-la depois, rende +${D.bonus}.</p>` : '';
+    // o nome e as ações primeiro (no celular, os botões ficam à vista); o texto inteiro vem embaixo
+    return `<div class="carta-aberta ${k.tipo}${e === 'armada' ? ' virada' : ''}">
+        <span class="c-arte">${k.arte}</span>
+        <span class="ca-topo"><b>${k.nome}</b><span class="ca-tipo">${tipo}${estado ? ` · ${estado}` : ''}</span><span class="ca-verbo">${k.verbo}</span></span>
+        ${nota ? `<p class="nota nota-carta">${nota}</p>` : ''}
+        <div class="botoes">${usar}${virar}<button class="btn btn-papel" data-acao="fechar-carta">Voltar</button></div>
+        <p class="ca-texto">${k.texto}</p>${blefeTxt}
+      </div>`;
+  }
+  // usar a carta (as que pedem um dado vão para a escolha na Mesa) e virar para baixo (blefe): do painel e da janela
+  function acionarCarta(c) {
+    const j = jogo, p = j.vez;
+    if (!humano(p) || j.pensando || !podeUsar(p, c).ok) return;
+    foco = null; j.sel = null;
+    if (CARTAS[c].alvo) { j.fase = 'alvo'; j.alvo = c; }
+    else if (usarCarta(p, c) === 'proximo') { depois('proximo'); return; }
+    render();
+  }
+  function virarParaBaixo(c) {
+    const j = jogo, p = j.vez;
+    if (!humano(p) || j.pensando || !podeVirar(p, c).ok) return;
+    foco = null; virarCarta(p, c); render();
+  }
+
   // a barra de jogada só aparece quando há uma decisão (dado escolhido, para onde vai, disparar ou segurar, Pressa,
   // carta com alvo, fim); escolher um dado não precisa de texto: o "sua vez" do painel e as etiquetas dos dados bastam.
   // O que não é jogada (ajudas, regras, ajustes, deck, loja, online, desistir) mora no menu de pausa, na linha da Mesa
@@ -4232,6 +4383,8 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
         <div class="botoes"><button class="btn btn-mel" data-acao="nova" ${online() && Rede.pediuRevanche ? 'disabled' : ''}>${online() ? (Rede.pediuRevanche ? 'Esperando o rival…' : 'Revanche') : 'Jogar de novo'}</button><button class="btn btn-papel" data-acao="deck">Trocar deck</button></div>`;
     }
     if (!humano(p)) return '';   // a vez do rival aparece no painel dele (pensando, jogando, caiu · N s)
+    const cf = cartaEmFoco(j);
+    if (cf) return cartaAbertaHTML(p, cf);
     const eu = j.cor[p];
     if (j.fase === 'alvo') {
       const k = CARTAS[j.alvo], ds = j.sel !== null && j.sel !== undefined ? j.mesa[idxDe(j.sel)] : null;
@@ -5150,35 +5303,41 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
   document.getElementById('tabuleiro').addEventListener('click', e => {
     const v = e.target.closest('[data-virada]'); if (v && jogo) { abrirVirada(+v.dataset.virada); return; }
     const b = e.target.closest('[data-carta]'); if (!b || !jogo) return;
-    abrirCarta(+b.dataset.dono, b.dataset.carta);
+    const j = jogo, p = +b.dataset.dono, c = b.dataset.carta;
+    if (podeAbrir(j, p)) {
+      foco = cartaEmFoco(j) === c ? null : { c, chave: chaveVez(j) };   // tocar de novo na aberta a fecha
+      j.sel = null;
+      if (foco) { Som.tocar('carta'); vibrar(6); }
+      render(); return;
+    }
+    abrirCarta(p, c);
   });
   document.getElementById('cartaBotoes').addEventListener('click', e => {
     if (e.target.closest('[data-fechar-carta]')) { document.getElementById('janelaCarta').hidden = true; return; }
     const j = jogo, p = j.vez;
     if (!humano(p) || j.pensando) return;
     const bv = e.target.closest('[data-virar]');
-    if (bv) { if (podeVirar(p, bv.dataset.virar).ok) { document.getElementById('janelaCarta').hidden = true; virarCarta(p, bv.dataset.virar); render(); } return; }
-    if (e.target.closest('[data-desafiar]')) { if (podeDesafiar(p).ok) { document.getElementById('janelaCarta').hidden = true; j.sel = null; desafiar(p); } return; }
+    if (bv) { if (podeVirar(p, bv.dataset.virar).ok) { document.getElementById('janelaCarta').hidden = true; virarParaBaixo(bv.dataset.virar); } return; }
+    if (e.target.closest('[data-desafiar]')) { if (podeDesafiar(p).ok) { document.getElementById('janelaCarta').hidden = true; j.sel = null; foco = null; desafiar(p); } return; }
     const b = e.target.closest('[data-usar]'); if (!b || b.disabled) return;
-    const c = b.dataset.usar;
-    if (!podeUsar(p, c).ok) return;
+    if (!podeUsar(p, b.dataset.usar).ok) return;
     document.getElementById('janelaCarta').hidden = true;
-    j.sel = null;
-    if (CARTAS[c].alvo) { j.fase = 'alvo'; j.alvo = c; }
-    else if (usarCarta(p, c) === 'proximo') { depois('proximo'); return; }
-    render();
+    acionarCarta(b.dataset.usar);
   });
   document.getElementById('acoes').addEventListener('click', e => {
     const j = jogo;
     const dst = e.target.closest('[data-destino]');
     if (dst && j.fase === 'pegar' && j.sel && humano(j.vez) && !j.pensando) { pegarDado(dst.dataset.destino); return; }
     if (dst && j.fase === 'destino' && j.mao && humano(j.vez)) { colocar(j.vez, j.mao.v, dst.dataset.destino); return; }
+    const bu = e.target.closest('[data-usar]'); if (bu) { if (!bu.disabled) acionarCarta(bu.dataset.usar); return; }
+    const bv = e.target.closest('[data-virar]'); if (bv) { virarParaBaixo(bv.dataset.virar); return; }
     const aj = e.target.closest('[data-ajuste]');
     if (aj && j.fase === 'ajuste') { const idx = j.ajusteIdx; j.fase = 'pegar'; j.alvo = null; j.ajusteIdx = null; usarCarta(j.vez, 'ajuste', idx, +aj.dataset.ajuste); render(); return; }
     const b = e.target.closest('[data-acao]'); if (!b) return;
     const a = b.dataset.acao;
     if (a === 'nova') return novaPartida();
     if (a === 'deck') return abrirDeck();
+    if (a === 'fechar-carta') { foco = null; return render(); }
     if (a === 'cancelar' || a === 'cancelar-alvo') return cancelarEscolha();
     if (a === 'confirmar-alvo') return confirmarAlvo();
     if (a === 'dispensar' && j.segundoDado && j.fase === 'pegar' && humano(j.vez)) { dispensarSegundo(j.vez); return; }
