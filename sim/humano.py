@@ -210,7 +210,7 @@ class Partida(N.Partida):
         j = s.j[p]
         if s.passa(p): s.decidir(p); return
         n_pegas = 1
-        if j.pronta('pressa') and len(s.mesa) >= 2:
+        if j.pronta('pressa') and D.BAL['pressa_min'] <= len(s.mesa) <= D.BAL['pressa_max']:
             L = len(j.cor); alvo = (HUM['pressa_alvo'] - 1 if s.fim_perto(p) else HUM['pressa_alvo']) if HUM['pressa'] else 4
             ok = any('corrente' in s.destinos(p, a) and any(encaixa(j.cor + [a], b) for k, b in enumerate(s.mesa) if k != i)
                      for i, a in enumerate(s.mesa)) and L + 2 >= alvo
@@ -220,7 +220,7 @@ class Partida(N.Partida):
         for k in range(n_pegas):
             if not s.mesa: break
             if k > 0 and s.sem_saida(p): break
-            i, m = s.escolhe_dado(p, n_pegas == 1); v = s.tirar(p, i)
+            i, m = s.escolhe_dado(p, n_pegas == 1); s._k = k; v = s.tirar(p, i)
             ds = s.destinos(p, v); s.espelhado = False
             if m not in ds: m = max(ds, key=lambda x: s.nota(p, v, x)) if ds else 'corrente'
             s.colocar(p, v, m)
@@ -416,6 +416,24 @@ def _um_deck(args):
     return w / n
 
 
+
+def _pressa_bloco(args):
+    """[Pressa] contra deck vazio: vitórias da Pressa e partidas em que alguém pegou 3+ dados seguidos"""
+    bal, n, sem = args; D.BAL.update(bal or dict(pressa_min=2, pressa_max=5, pressa_abre='atras')); random.seed(sem)
+    out = dict(w=0, tres=0, tres_venceu=0, n=n)
+    for g in range(n):
+        lado = g % 2; decks = [[], []] if bal is None else [['pressa'], []] if lado == 0 else [[], ['pressa']]
+        P = Partida(decks, ('humano', 'humano'), inicia=(g // 2) % 2, meta=META); v = P.jogar()
+        out['w'] += v == lado
+        seq = getattr(P, 'seq', []); runs = []; run = 1
+        for a, b in zip(seq, seq[1:]):
+            if a == b: run += 1
+            else: runs.append((a, run)); run = 1
+        if seq: runs.append((seq[-1], run))
+        tres = [q for q, r in runs if r >= 3]
+        if tres: out['tres'] += 1; out['tres_venceu'] += v == tres[0]
+    return out
+
 if __name__ == '__main__':
     quais = sys.argv[1:] or ['forca']
     if 'forca' in quais:
@@ -448,8 +466,8 @@ if __name__ == '__main__':
     VARIANTES = {
         '3 cartas (hoje)':        dict(k=3, mec={}),
         '2 cartas':               dict(k=2, mec={}),
-        '3 no deck, usa só 2':    dict(k=3, mec=dict(usos=2)),
-        '3 cartas, 1 por Mesa':   dict(k=3, mec=dict(por_mesa=1)),
+        '3 no deck e usa só 2':    dict(k=3, mec=dict(usos=2)),
+        '3 cartas e 1 por Mesa':   dict(k=3, mec=dict(por_mesa=1)),
         '1 carta':                dict(k=1, mec={}),
         '4 cartas':               dict(k=4, mec={}),
         'sem cartas':             dict(k=0, mec={}),
@@ -467,7 +485,7 @@ if __name__ == '__main__':
         def varre(pool, mec, n):
             with Pool(PROCS) as pp: res = pp.map(_um_deck, [(k, pool, mec, n) for k in range(len(pool))], chunksize=2)
             return res
-        for nome in os.environ.get('VARIANTES', '3 cartas (hoje),2 cartas,3 no deck, usa só 2').split(','):
+        for nome in os.environ.get('VARIANTES', '3 cartas (hoje),2 cartas,3 no deck e usa só 2').split(','):
             v = VARIANTES[nome]; pool = decks_de(v['k'])
             res = varre(pool, v['mec'], int(os.environ.get('ND', '400')))
             ordem = sorted(range(len(pool)), key=lambda k: -res[k])
@@ -485,7 +503,18 @@ if __name__ == '__main__':
         n = int(os.environ.get('NP', '240'))
         print(f"\n## Variantes de deck com o pensador (simula {ROLL}x cada opção) contra o humano; {n} partidas cada")
         print("  variante               | pensador x humano | Mesas | cartas usadas (pensador e humano) | sobram | usadas no 1º quarto | mediana do uso")
-        for nome in os.environ.get('VARIANTES', '3 cartas (hoje),2 cartas,3 no deck, usa só 2,3 cartas, 1 por Mesa,sem cartas').split(','):
+        for nome in os.environ.get('VARIANTES', '3 cartas (hoje),2 cartas,3 no deck e usa só 2,3 cartas e 1 por Mesa,sem cartas').split(','):
             v = VARIANTES[nome]; pool = decks_de(v['k']) if v['k'] else [[]]
             r = mede('pensador', 'humano', n=n, pool_a=pool, mec=v['mec'])
             print(f"  {nome:22s} | {fmt(r):17s} | {r['mesas']:5.1f} | {r['usos']:33.2f} | {r['sobra']:6.0%} | {r['cedo']:19.0%} | {r['quando']:.0%}", flush=True)
+    if 'pressa' in quais:
+        # a Pressa no fim da Mesa: pegar o último dado (que era do rival) e, atrás no placar, abrir a Mesa seguinte
+        print(f"\n## Pressa: deck [Pressa] contra deck vazio (humano x humano, meta {META}, {NPART} partidas)")
+        for nome, bal in [('hoje (2+ dados na Mesa)', dict(pressa_min=2, pressa_abre='atras')),
+                          ('A: só com 3+ dados na Mesa', dict(pressa_min=3, pressa_abre='atras')),
+                          ('B: quem esvaziou com ela não abre', dict(pressa_min=2, pressa_abre='rival')),
+                          ('E: só com 3 ou 4 dados na Mesa', dict(pressa_min=3, pressa_max=4, pressa_abre='atras')),
+                          ('sem Pressa (deck vazio x vazio)', None)]:
+            with Pool(PROCS) as pp: rs = pp.map(_pressa_bloco, [(bal, NPART // 16, 900 + k) for k in range(16)])
+            w = sum(r['w'] for r in rs); n = sum(r['n'] for r in rs); t = sum(r['tres'] for r in rs); tv = sum(r['tres_venceu'] for r in rs)
+            print(f"  {nome:36s} Pressa vence {w / n:.1%} · partidas com 3+ dados seguidos de alguém: {t / n:.1%} · quem fez isso venceu {tv / max(1, t):.0%}", flush=True)

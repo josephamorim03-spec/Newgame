@@ -17,10 +17,13 @@ ARMADILHAS={'espelho','interferencia','fundo','pedagio','ancora'}
 # interf_modo: 'lider' (hoje: −1 no disparo de 4+ de quem lidera) | 'vale1' (o disparo de 4+ de quem lidera vale como um de 3: 1 ponto)
 #              | 'grande' (−interf_grande no disparo de 5+, de qualquer um; descartada: quem sabe a gasta de graça com um 5)
 # pedagio_modo: 'sempre' (hoje: +2 no próximo disparo do rival) | 'pequeno' (+2 só num disparo de 3 ou 4; o de 5+ não paga)
+# pressa_min: dados na Mesa para usar a Pressa (v0.12: 3 a 4; até a v0.11 era 2 a 5)
+# pressa_max: no máximo esses dados na Mesa (4: a Pressa nunca abre uma Mesa nova)
+# pressa_abre: 'atras' (quem está atrás abre a Mesa nova, como no jogo) | 'rival' (quem esvaziou a Mesa com a Pressa não abre)
 # coringa_modo: 'frente' (v0.12: o dado que romperia troca a frente) | 'entra' (até a v0.11: entrava como mais um elo)
 # coringa_max: maior corrente em que o Coringa pode ser usado; coringa_seguro: o robô conta com o Coringa na mão como
 #              seguro e segura a corrente de 5, como gente faz (não é regra; docs/balanceamento-cartas.md §14)
-BAL=dict(interf_modo='lider', interf_grande=2, pedagio_modo='sempre', interf_menos=1, interf_min=4, interf_max=9, interf_6='normal', interf_lider='espera', pedagio=2, pedagio16=2, fundo_tudo=True, rerrolar_tudo=True, ancora_min=4, rerrolar_cor=2, coringa_cor=2, coringa_max=5, coringa_seguro=False, coringa_modo='frente', sobre=2, espelho_sem_bolso=True)
+BAL=dict(interf_modo='lider', interf_grande=2, pedagio_modo='sempre', interf_menos=1, interf_min=4, interf_max=9, interf_6='normal', interf_lider='espera', pedagio=2, pedagio16=2, fundo_tudo=True, rerrolar_tudo=True, ancora_min=4, rerrolar_cor=2, coringa_cor=2, coringa_max=5, coringa_seguro=False, coringa_modo='frente', pressa_min=3, pressa_max=4, pressa_abre='atras', sobre=2, espelho_sem_bolso=True)
 import os, json
 BAL.update(json.loads(os.environ.get('BAL', '{}')))   # ex.: BAL='{"pedagio": 2}' para testar outro número
 EFEITOS={'rerrolar','virar','ajuste','pressa','coringa','sobrecarga'}
@@ -68,6 +71,9 @@ class Partida:
         j=s.j[p]; j.est[c]='usado'; j.armada=None; j.usou.append(c); s.ev.append((p,c))
     def tirar(s,p,i):
         v=s.mesa.pop(i)
+        if not s.mesa and getattr(s,'_k',0)>0: s._esvaziou_pressa=p
+        s._k=0
+        s.seq=getattr(s,'seq',[]); s.seq.append(p)
         if s.marca:
             dono,k=s.marca
             if k==i:
@@ -238,7 +244,7 @@ class Partida:
         s.cartas_antes(p)
         if s.passa(p): s.decidir(p); return
         n_pegas=1
-        if j.pronta('pressa') and len(j.cor)>=2 and len(s.mesa)>=2:
+        if j.pronta('pressa') and len(j.cor)>=2 and BAL['pressa_min']<=len(s.mesa)<=BAL['pressa_max']:
             ok=any('corrente' in s.destinos(p,a) and any(encaixa(j.cor+[a],b) for k,b in enumerate(s.mesa) if k!=i) for i,a in enumerate(s.mesa))
             if ok and s.efeito(p,'pressa'): n_pegas=2
         # Sobrecarga antes do 6.º dado: com corrente de 5 e um dado que entra, o disparo automático de 6 leva o +2
@@ -248,7 +254,7 @@ class Partida:
             if not s.mesa: break
             # o segundo dado da Pressa é opcional: sem saída segura, o robô dispensa
             if k>0 and s.sem_saida(p): break
-            i,m=s.planeja(p); v=s.tirar(p,i)
+            i,m=s.planeja(p); s._k=k; v=s.tirar(p,i)
             ds=s.destinos(p,v); s.espelhado=False
             if m not in ds: m = max(ds,key=lambda x:s.nota(p,v,x)) if ds else 'corrente'
             s.colocar(p,v,m)
@@ -270,6 +276,9 @@ class Partida:
                 for x in s.j:
                     if x.armada=='espelho': x.armada=None  # marca sem dono (não acontece na prática)
                 if s.j[0].pts!=s.j[1].pts: s.vez=0 if s.j[0].pts<s.j[1].pts else 1
+                # variante: quem esvaziou a Mesa com a Pressa não abre a seguinte
+                if BAL['pressa_abre']=='rival' and getattr(s,'_esvaziou_pressa',None) is not None: s.vez=1-s._esvaziou_pressa
+                s._esvaziou_pressa=None
             s.vez_de(s.vez)
             s.vez=1-s.vez; s.turnos+=1
         if s.vencedor is not None: return s.vencedor

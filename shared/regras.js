@@ -18,7 +18,7 @@
     ajuste:        { nome: 'Ajuste', tipo: 'efeito', alvo: true, verbo: '±1 num dado', texto: 'Some ou tire 1 de um dado da Mesa (o 6 não passa de 6, o 1 não desce de 1). Não desfaz a marca de um Espelho.' },
     virar:         { nome: 'Virar', tipo: 'efeito', alvo: true, verbo: 'vira um dado', texto: 'Vire um dado da Mesa para a face oposta (7 − valor). Se o dado tinha a marca de um Espelho, a marca some.' },
     rerrolar:      { nome: 'Rerrolar', tipo: 'efeito', verbo: 'rola a Mesa', texto: 'Role de novo todos os dados que estão na Mesa. Se havia a marca de um Espelho, ela some.' },
-    pressa:        { nome: 'Pressa', tipo: 'efeito', verbo: 'pega 2 dados', texto: 'Nesta vez você pega dois dados, um depois do outro, sem disparar no meio. Só com 2 dados ou mais na Mesa: não passa para a Mesa seguinte. O segundo dado é opcional.' },
+    pressa:        { nome: 'Pressa', tipo: 'efeito', verbo: 'pega 2 dados', texto: 'Nesta vez você pega dois dados, um depois do outro, sem disparar no meio. Só com 3 ou 4 dados na Mesa: ela nunca abre uma Mesa nova nem pega o último dado (esse fica para o rival). O segundo dado é opcional.' },
     // Coringa (v0.12): o dado que não sincronizava TROCA a frente (a corrente não cresce). Entrando como mais um elo, ele
     // garantia o 6.º dado de graça: com uso de gente (segurar a corrente de 5 contando com ele) vencia 64,9% sozinho na
     // meta 12; trocando a frente, 55,0% na meta 16, como Ajuste e Pressa (docs/balanceamento-cartas.md §14)
@@ -220,7 +220,10 @@
     if (c === 'sobrecarga' && (j.fase === 'pegar' || j.fase === 'decidir')) return j.sobre[p] ? { ok: false, motivo: 'A Sobrecarga já está ativa.' } : { ok: true };
     if (j.fase !== 'pegar') return { ok: false, motivo: 'Use antes de pegar o dado.' };
     if (k.tipo === 'armadilha' && j.armada[p]) return { ok: false, motivo: blefando(j, p, j.armada[p]) ? `Seu blefe (${CARTAS[j.armada[p]].nome}) ocupa o lugar da armadilha. Use essa carta antes.` : 'Já há uma armadilha sua armada. Ela precisa disparar antes.' };
-    if (c === 'pressa' && j.mesa.length < 2) return { ok: false, motivo: 'Precisa de 2 dados ou mais na Mesa: a Pressa não passa para a Mesa seguinte.' };
+    // Pressa (v0.12): só com 3 ou 4 dados na Mesa. Com 2 ela pegava o último dado, que era do rival, e quem está atrás
+    // abria a Mesa seguinte: 3 dados seguidos enquanto o rival assistia (24% das partidas com ela; balanceamento §16)
+    if (c === 'pressa' && j.mesa.length < 3) return { ok: false, motivo: 'Precisa de 3 ou 4 dados na Mesa: a Pressa nunca pega o último dado (ele fica para o rival).' };
+    if (c === 'pressa' && j.mesa.length > 4) return { ok: false, motivo: 'Com a Mesa cheia, não: a Pressa vale com 3 ou 4 dados (ela nunca abre uma Mesa).' };
     if (c === 'espelho' && j.mesa.length < 2) return { ok: false, motivo: 'Precisa de 2 dados ou mais na Mesa.' };
     if (c === 'pressa' && j.extra[p]) return { ok: false, motivo: 'A Pressa já está valendo nesta vez.' };
     if (c === 'pausa' && j.segundoDado) return { ok: false, motivo: 'No segundo dado da Pressa, use Dispensar.' };

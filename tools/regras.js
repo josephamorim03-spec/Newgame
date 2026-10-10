@@ -48,15 +48,15 @@ const RAIZ = path.join(__dirname, '..');
 
   // 2. Pressa: o segundo dado é opcional
   await cena([['pressa'], []], () => {
-    const j = DiceDuel.jogo; j.vez = 0; j.fase = 'pegar'; j.cor[0] = [3, 3]; j.bolso[0] = 6; j.mesa = [{ id: 9101, v: 3 }, { id: 9102, v: 1 }];
+    const j = DiceDuel.jogo; j.vez = 0; j.fase = 'pegar'; j.cor[0] = [3, 3]; j.bolso[0] = 6; j.mesa = [{ id: 9101, v: 3 }, { id: 9102, v: 1 }, { id: 9103, v: 1 }];
   });
   await usar('pressa'); await pegar(0);
   await pg.click('[data-acao="dispensar"]'); j = await J();
-  confere(j.fase === 'decidir' && j.vez === 0 && j.cor[0].length === 3 && j.mesa.length === 1, 'Pressa: dispensar o segundo dado leva à decisão sem romper');
+  confere(j.fase === 'decidir' && j.vez === 0 && j.cor[0].length === 3 && j.mesa.length === 2, 'Pressa: dispensar o segundo dado leva à decisão sem romper');
   // e com 1 dado na Mesa ela não pode ser usada
   await cena([['pressa'], []], () => { const j = DiceDuel.jogo; j.vez = 0; j.fase = 'pegar'; j.mesa = [{ id: 9201, v: 3 }]; });
   await pg.click('.jogador.da-vez [data-carta="pressa"]');
-  confere(await pg.$('#cartaBotoes [data-usar="pressa"][disabled]') !== null && (await pg.textContent('#cartaNota')).includes('Mesa seguinte'), 'Pressa: com 1 dado na Mesa fica bloqueada e diz por quê');
+  confere(await pg.$('#cartaBotoes [data-usar="pressa"][disabled]') !== null && (await pg.textContent('#cartaNota')).includes('último dado'), 'Pressa: com 1 dado na Mesa fica bloqueada e diz por quê');
   await pg.click('#cartaBotoes [data-fechar-carta]');
 
   // 3. Coringa não é gasto no primeiro dado de uma corrente vazia

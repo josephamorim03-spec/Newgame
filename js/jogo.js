@@ -402,7 +402,7 @@
         if (i !== undefined) usa.push({ carta: 'espelho', idx: i });
       }
     }
-    if (pode('pressa') && eu.length >= 2 && m.length >= 2 && !usa.some(u => u.carta === 'rerrolar')) {
+    if (pode('pressa') && eu.length >= 2 && m.length >= 3 && m.length <= 4 && !usa.some(u => u.carta === 'rerrolar')) {
       const ok = m.some((a, i) => encaixaP(p, a.v) && m.some((b, k) => k !== i && encaixa(eu.concat(a.v), b.v)));
       if (ok) usa.push({ carta: 'pressa' });
     }
