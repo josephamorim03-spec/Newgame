@@ -134,6 +134,23 @@
     });
   }
 
+  // a carta jogada sai da mão: uma cópia dela voa até (x, y), cresce, gira de leve e some onde o aviso vai aparecer
+  function lancarCarta(deEl, x, y) {
+    if (!cfg.animacoes || !deEl) return Promise.resolve();
+    const r = deEl.getBoundingClientRect(); if (!r.width) return Promise.resolve();
+    const v = deEl.cloneNode(true);
+    v.className += ' carta-voando'; v.removeAttribute('data-carta'); v.setAttribute('aria-hidden', 'true');
+    Object.assign(v.style, { position: 'fixed', left: r.left + 'px', top: r.top + 'px', width: r.width + 'px', height: r.height + 'px', margin: 0, zIndex: 58, pointerEvents: 'none' });
+    document.body.appendChild(v);
+    const dx = x - (r.left + r.width / 2), dy = y - (r.top + r.height / 2);
+    const anim = v.animate([
+      { transform: 'translate(0,0) scale(1) rotate(0deg)', opacity: 1 },
+      { transform: `translate(${dx * 0.6}px, ${dy * 0.6 - 18}px) scale(1.5) rotate(-7deg)`, opacity: 1, offset: 0.6 },
+      { transform: `translate(${dx}px, ${dy}px) scale(1.25) rotate(0deg)`, opacity: 0 },
+    ], { duration: 420, easing: 'cubic-bezier(.3,.7,.3,1)' });
+    return new Promise(res => { anim.onfinish = () => { v.remove(); res(); }; setTimeout(res, 300); });
+  }
+
   // texto que sobe ("+4", "Bloqueio!")
   function texto(alvo, txt, classe = '') {
     if (!cfg.animacoes) return;
@@ -146,21 +163,26 @@
   }
 
   // chamada grande de bom momento, uma de cada vez
-  const fila = []; let mostrando = false;
-  // op.ico: imagem/ícone ao lado do título; op.ms: quanto tempo fica (o padrão é curto, para festejar); op.classe: classe extra
+  const fila = []; let mostrando = false, atual = null, vez = 0;
+  // op.ico: imagem/ícone ao lado do título; op.ms: quanto tempo fica (o padrão é curto, para festejar); op.classe: classe extra;
+  // op.furar: passa na frente de tudo (a fila é descartada e a chamada da tela sai na hora), para o fim da partida
   function chamada(titulo, sub = '', tipo = '', op = {}) {
+    if (op.furar) { fila.length = 0; if (atual) { atual.remove(); atual = null; } mostrando = false; }
     fila.push({ titulo, sub, tipo, ...op });
     if (!mostrando) proxima();
   }
   function proxima() {
-    const c = fila.shift(); if (!c) { mostrando = false; return; }
+    const c = fila.shift(); if (!c) { mostrando = false; atual = null; return; }
     mostrando = true;
-    const el = document.createElement('div');
+    const el = document.createElement('div'), minha = ++vez;
     el.className = 'chamada ' + c.tipo + (c.classe ? ' ' + c.classe : '') + (cfg.animacoes ? '' : ' sem-anim');
     el.setAttribute('role', 'status');
     el.innerHTML = `<b${c.ico ? ' class="com-ico"' : ''}>${c.ico ? `<span class="ch-ico">${c.ico}</span>` : ''}<span>${c.titulo}</span></b>${c.sub ? `<span>${c.sub}</span>` : ''}`;
+    if (c.y != null) el.style.top = c.y + 'px';   // op.y: onde fica o meio da chamada (o aviso da carta mora entre o painel e a Mesa)
     document.body.appendChild(el);
-    setTimeout(() => { el.classList.add('saindo'); setTimeout(() => { el.remove(); proxima(); }, cfg.animacoes ? 260 : 0); }, c.ms || (cfg.animacoes ? 1150 : 1400));
+    atual = el;
+    // "minha": uma chamada que furou a fila já tomou o lugar desta; o relógio dela não chama a próxima
+    setTimeout(() => { if (minha !== vez) return; el.classList.add('saindo'); setTimeout(() => { if (minha !== vez) return; el.remove(); proxima(); }, cfg.animacoes ? 260 : 0); }, c.ms || (cfg.animacoes ? 1150 : 1400));
   }
 
   function tremer(el, forca = 1) {
@@ -204,6 +226,9 @@
     setTimeout(() => { if (dicaAtual !== el) return; el.classList.add('saindo'); setTimeout(() => { el.remove(); if (dicaAtual === el) dicaAtual = null; }, cfg.animacoes ? 260 : 0); }, ms);
   }
 
+  // tira a dica do guia da tela (o fim da partida não divide a tela com uma explicação)
+  function limparDica() { if (dicaAtual) { dicaAtual.remove(); dicaAtual = null; } }
+
   // a contagem do disparo: um selo sobre a corrente que sobe junto com os dados que acendem (+1, +2, +4...) e fecha
   // no valor de verdade. passos: [{ ms, txt }]; o último é o valor final. Devolve quando o último passo aparece
   function contagem(alvo, passos, classe = '') {
@@ -224,5 +249,21 @@
     });
   }
 
-  window.Fx = { cfg, faiscas, confete, poeira, voar, texto, chamada, dica, contagem, tremer, pulsar, contar, centro, orbes, clarao };
+  // o impacto (hit-stop): antes do estouro de um lance grande, o tempo para por um instante. O alvo incha e fica
+  // parado, a borda da tela escurece um pouco, e só então vem a festa. Devolve quando a pausa acaba
+  function impacto(alvo, ms = 90, forca = 1) {
+    if (!cfg.animacoes || !alvo) return Promise.resolve();
+    const s = 1 + 0.06 * forca;
+    alvo.animate([{ transform: 'scale(1)' }, { transform: `scale(${s})`, offset: 0.25 }, { transform: `scale(${s})`, offset: 0.7 }, { transform: 'scale(1)' }],
+      { duration: ms + 160, easing: 'cubic-bezier(.2,.9,.3,1)' });
+    if (cfg.particulas) {
+      const v = document.createElement('div');
+      v.className = 'impacto'; v.setAttribute('aria-hidden', 'true');
+      document.body.appendChild(v);
+      v.animate([{ opacity: 0 }, { opacity: Math.min(1, 0.7 * forca), offset: 0.3 }, { opacity: 0 }], { duration: ms + 320, easing: 'ease-out' }).onfinish = () => v.remove();
+    }
+    return new Promise(res => setTimeout(res, ms));
+  }
+
+  window.Fx = { cfg, faiscas, confete, poeira, voar, texto, chamada, dica, contagem, tremer, pulsar, contar, centro, orbes, clarao, impacto, limparDica, lancarCarta };
 })();

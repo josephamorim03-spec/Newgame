@@ -143,6 +143,9 @@
     gravarLocal();
     if (st.sessao && Conta.sincronizar) Conta.sincronizar();   // com conta, decks e recordes vão para o servidor
   };
+  // as tarefas do dia (shared/regras.js): o dia é o do servidor (UTC), para o aparelho e a conta contarem o mesmo dia
+  const hojeUTC = () => new Date().toISOString().slice(0, 10);
+  const tarefasHoje = () => R.estadoTarefas(st.conta.tarefas, hojeUTC());
   const armadilhasLiberadas = () => st.pref.liberar || st.rec.partidas - (st.guia.jogou ? 1 : 0) >= 1;
   const travada = c => CARTAS[c].tipo === 'armadilha' && !armadilhasLiberadas();
   const possui = c => st.conta.cartas.includes(c);
@@ -164,8 +167,11 @@
   const online = () => jogo && jogo.modo === 'online';
   // o rival online caiu no meio da partida; segundosVolta: quanto ele ainda tem para voltar (null se não se sabe)
   const rivalCaiu = () => online() && jogo.fase !== 'fim' && jogo.perfis[1].conectado === false;
-  // as vezes seguidas no automático (online): a etiqueta no painel de cada um
-  const autoTag = p => { const n = online() && jogo.fase !== 'fim' && jogo.auto ? jogo.auto[p] : 0; return n ? `<span class="auto-tag" title="vezes seguidas no automático (na ${R.AUTO_MAX}ª, a partida acaba)">auto ${n}/${R.AUTO_MAX}</span>` : ''; };
+  // o tempo da vez no online: "1:47" com um minuto ou mais, "37 s" no fim
+  const relogioTxt = s => (s >= 60 ? `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}` : `${s} s`);
+  // o rival parado por metade da vez: o servidor perguntou se ele ainda está aí (a contagem até a derrota dele)
+  const rivalInativo = () => online() && jogo.fase !== 'fim' && jogo.inatividade && jogo.inatividade.quem === 1;
+  const segundosAfk = () => (jogo.afkAte ? Math.max(0, Math.ceil((jogo.afkAte - Date.now()) / 1000)) : null);
   const segundosVolta = () => { const ate = jogo.perfis[1].voltaAte; return ate ? Math.max(0, Math.ceil((ate - Date.now()) / 1000)) : null; };
 
   // a estreia (docs/design.md §5): a primeira partida de quem nunca jogou é contra a Diana, até 8 pontos e sem cartas
@@ -302,21 +308,30 @@
       const liberouAgora = !liberadasAntes && armadilhasLiberadas();
       if (p === 0) { r.vitorias++; r.seq++; } else r.seq = 0;
       if (r.seq > r.melhorSeq) { r.melhorSeq = r.seq; if (r.seq >= 2) j.recordes.push(`Melhor sequência: ${r.seq} vitórias seguidas`); }
-      if (s.maiorDisp > r.maiorDisparo) { r.maiorDisparo = s.maiorDisp; j.recordes.push(`Maior disparo: +${s.maiorDisp}`); }
-      if (s.maior > r.maiorCorrente) { r.maiorCorrente = s.maior; j.recordes.push(`Maior corrente: ${s.maior}`); }
+      // o recorde sempre é guardado, mas só é festejado quando diz alguma coisa: nas primeiras partidas, qualquer
+      // disparo "batia o recorde" ("Novo: Maior disparo: +1" não é notícia)
+      const notavel = (x, min) => r.partidas > 5 || x >= min;
+      if (s.maiorDisp > r.maiorDisparo) { r.maiorDisparo = s.maiorDisp; if (notavel(s.maiorDisp, 4)) j.recordes.push(`Maior disparo: +${s.maiorDisp}`); }
+      if (s.maior > r.maiorCorrente) { r.maiorCorrente = s.maior; if (notavel(s.maior, 5)) j.recordes.push(`Maior corrente: ${s.maior}`); }
       if (liberouAgora) j.recordes.push('Armadilhas liberadas no deck!');
       // moedas (só vitórias, só abaixo do teto de rating do rival), rating e experiência: regras em shared/regras.js
       const c = st.conta, ps = R.premioSolo({ rating: c.rating, pico: c.pico }, { nivel: j.nivel, venceu: p === 0, margem: j.pts[0] - j.pts[1], rodadas: j.rodada, meta: j.meta });
+      // as tarefas do dia avançam (quem desistiu não avança) e a primeira vitória do dia que rende moedas dobra; com conta,
+      // o servidor refaz a conta e manda a dele (Conta.relatarSolo)
+      const tf = R.avancarTarefas(tarefasHoje(), hojeUTC(), j.desistencia === 0 ? null : R.resumoTarefas(j, 0));
+      R.dobrarPrimeiraVitoria(tf.estado, ps.moedas);
+      c.tarefas = tf.estado;
       if (ps.moedas) c.moedas += ps.moedas.total;
+      c.moedas += tf.moedas;
       c.rating = ps.rating; c.pico = ps.picoNovo;
       const xp = R.ganharXp(c, j.desistencia === 0 ? 0 : R.xpDaPartida(p === 0, j.momentos.filter(m => m.p === 0).length));
-      j.premio = { moedas: ps.moedas, ratingAntes: ps.ratingAntes, pico: ps.pico, rating: c.rating, ...xp };
+      j.premio = { moedas: ps.moedas, ratingAntes: ps.ratingAntes, pico: ps.pico, rating: c.rating, ...xp, tarefas: { concluidas: tf.concluidas, moedas: tf.moedas } };
       salvar(); aplicarPrefs();
       falar(p === 1 ? 'venci' : 'perdi');
       Conta.relatarSolo && Conta.relatarSolo(j);
     }
     render();
-    setTimeout(mostrarFim, st.pref.animacoes ? 1800 : 600);
+    setTimeout(mostrarFim, st.pref.animacoes ? 1800 + esperaFesta() : 600);
   }
 
   // ---------- o rival (a mesma lógica do simulador; não vê qual armadilha você armou) ----------
@@ -460,13 +475,34 @@
     if (jogo) render();
   }
   const mudou = id => !!(marcaMudanca && marcaMudanca.ids.includes(id) && Date.now() < marcaMudanca.ate);
+  // a presença do rival: antes de pegar, ele olha a Mesa. Cada olhada acende um dado de leve (com a Diana, a patinha
+  // passa por cima dele); a Diana, impulsiva, olha um dado no máximo, e às vezes nenhum; a Dona Coruja olha dois, e
+  // de preferência os que servem à sua corrente: ela lê a Mesa. As olhadas tomam o lugar de parte da espera de antes,
+  // então a vez do rival não fica mais longa. Devolve false se a partida mudou no meio
+  async function olharMesa(p, escolhido, tok) {
+    const j = jogo;
+    if (!st.pref.animacoes) return true;
+    const outros = j.mesa.map((d, i) => i).filter(i => i !== escolhido);
+    const servemAoOutro = i => j.cor[1 - p].length && encaixa(j.cor[1 - p], valorAoPegar(1 - p, j.mesa[i]));
+    const coruja = j.nivel === 'esperto';
+    const n = !outros.length ? 0 : coruja ? Math.min(2, outros.length) : Math.random() < 0.55 ? 1 : 0;
+    const ordem = outros.sort((a, b) => (coruja ? servemAoOutro(b) - servemAoOutro(a) : 0) || Math.random() - 0.5).slice(0, n);
+    for (const i of ordem) {
+      if (!j.mesa[i]) continue;
+      j.olhando = j.mesa[i].id; render();
+      Som.tocar('passar', { i });
+      await espera(coruja ? 380 : 260); if (tok !== jogo.token) return false;
+    }
+    j.olhando = null;
+    return true;
+  }
   async function talvezAutomato() {
     const j = jogo;
     if (!j || j.modo !== 'bot' || j.fase === 'fim' || humano(j.vez) || j.pensando || j.intro || inicioAberto()) return;
     const tok = j.token, p = j.vez;
     j.pensando = true; render();
     if (j.fase === 'pegar') {
-      await espera(800); if (tok !== jogo.token) return;
+      await espera(st.pref.animacoes ? 450 : 800); if (tok !== jogo.token) return;
       if (window.Rolagem) { await Rolagem.esperar(); if (tok !== jogo.token) return; }   // escolhe com os dados já assentados
       for (const u of automatoCartas(p)) {
         if (!podeUsar(p, u.carta).ok || (CARTAS[u.carta].alvo && !j.mesa[u.idx])) continue;
@@ -482,7 +518,9 @@
       }
       for (;;) {
         const plano = automatoEscolhe(p);
+        if (!(await olharMesa(p, plano.idx, tok))) return;
         j.destaque = j.mesa[plano.idx].id; render();
+        if (j.nivel === 'aprendiz' && st.pref.animacoes) Som.tocar('quique', { forca: 3, x: (plano.idx - 2) * 0.3 });   // a patinha bate no dado
         await espera(520); if (tok !== jogo.token) return;
         j.destaque = null; j.pensando = false;
         const v = tirar(p, plano.idx);
@@ -740,11 +778,22 @@
     return `<div class="cartas">${html}</div><div class="estados">${estados}</div>`;
   }
 
+  // quando a festa do último disparo acaba (cascata, impacto e os pontos chegando ao placar): o disparo que fecha a
+  // partida termina de contar antes de a vitória estourar, e a tela do fim espera por ele
+  let fimDoDisparo = 0;
+  const esperaFesta = () => Math.max(0, Math.round(fimDoDisparo - performance.now()));
   document.documentElement.style.setProperty('--passo-disparo', Math.round(Som.PASSO_DISPARO * 1000) + 'ms');   // a cascata do disparo (css)
   const inicioFx = new Map();   // id do efeito (disparo, ruptura) -> quando ele apareceu na tela
-  const placarSegurado = new Map();   // jogador -> o número que o placar mostra enquanto os pontos do disparo voam
+  const placarSegurado = new Map();
+  // a patinha da Diana sobre o dado que ela olha ou vai pegar (a mesma pelagem da pata da tela inicial)
+  const PATINHA = `<svg class="patinha" viewBox="0 0 40 40" aria-hidden="true"><ellipse cx="20" cy="25" rx="10" ry="8.5" fill="#f8f6f2" stroke="#3a2a2e" stroke-width="3"/><ellipse cx="9" cy="13" rx="4.2" ry="5" fill="#f8f6f2" stroke="#3a2a2e" stroke-width="2.6"/><ellipse cx="20" cy="9" rx="4.4" ry="5.2" fill="#f8f6f2" stroke="#3a2a2e" stroke-width="2.6"/><ellipse cx="31" cy="13" rx="4.2" ry="5" fill="#f8f6f2" stroke="#3a2a2e" stroke-width="2.6"/><ellipse cx="20" cy="26" rx="5" ry="3.6" fill="#f3b8c4"/></svg>`;   // jogador -> o número que o placar mostra enquanto os pontos do disparo voam
   // comDecisao: a decisão da vez (destinos, disparar ou segurar...) entra no painel no lugar da fileira de cartas,
   // logo abaixo da corrente que ela afeta; o tabuleiro não ganha barra solta e não se mexe
+  // o ponto de partida: quanto um disparo de L dados vale para p e se ele fecha a partida. "porUm": a corrente de p está a
+  // um dado de fechar (com o próximo elo, o disparo alcança a meta), e é aí que vale a pena olhar a Mesa dele
+  const valeCom = (p, L) => L < 3 ? 0 : pontos(Math.min(L, LIM)) + (jogo.sobre[p] && L >= 4 ? 2 : 0);
+  const disparoVence = p => jogo.cor[p].length >= 3 && jogo.pts[p] + valeCom(p, jogo.cor[p].length) >= jogo.meta;
+  const porUm = p => jogo.fase !== 'fim' && jogo.cor[p].length >= 2 && jogo.pts[p] + valeCom(p, jogo.cor[p].length + 1) >= jogo.meta;
   function painel(p, comDecisao = false) {
     const j = jogo, n = nomes(), daVez = j.vez === p && j.fase !== 'fim';
     const fx = j.fx && j.fx.p === p ? j.fx : null;
@@ -772,15 +821,16 @@
     // os pontinhos de "pensando…" moram no selo de vez, no alto da Mesa (no painel, em 360 px, estouravam com placar de 2 dígitos)
     const caiu = p === 1 && rivalCaiu(), sv = caiu ? segundosVolta() : null;
     const tag = j.fase === 'fim' ? (j.vencedor === p ? 'venceu' : '') : caiu ? (sv === null ? 'caiu' : sv === 0 ? 'sem conexão' : `caiu · <span class="volta-rival">${sv}</span> s`)
+      : p === 1 && rivalInativo() ? `ausente · <span data-afk>${segundosAfk()}</span> s`
       : daVez ? (humano(p) ? (j.modo !== 'local' ? 'sua vez' : 'vez') : online() ? 'jogando' : 'pensando') + (online() ? '<span class="relogio-vez" data-relogio></span>' : '') : '';
     const avatar = j.modo === 'bot' && p === 1 ? Retratos.retrato(RETRATO_RIVAL[j.nivel], j.humor || '') : p === 0 ? iconeSVG(st.conta.icone) : online() ? iconeSVG(j.perfis[1].icone) : '';
     const fala = j.modo === 'bot' && p === 1 && j.fala ? `<div class="fala" aria-live="polite">${j.fala.txt}</div>` : '';
     return `<div class="jogador p${p}${daVez ? ' da-vez' : ''}">${fala}
-      <div class="cab">${avatar}<span class="quem"><span class="nome">${n[p]}</span>${tag || autoTag(p) ? `<span class="tags-vez">${tag ? `<span class="vez-tag">${tag}</span>` : ''}${autoTag(p)}</span>` : ''}</span>
+      <div class="cab">${avatar}<span class="quem"><span class="nome">${n[p]}</span>${tag ? `<span class="tags-vez"><span class="vez-tag">${tag}</span></span>` : ''}</span>
         ${bolsoHTML(p)}<span class="placar"><b data-placar="${p}">${placarSegurado.has(p) ? placarSegurado.get(p) : j.pts[p]}</b><small>/${j.meta}</small></span></div>
       <div class="barra" role="progressbar" aria-valuemin="0" aria-valuemax="${j.meta}" aria-valuenow="${j.pts[p]}" aria-label="Pontos de ${n[p]}"><i style="width:${pct}%"></i>${prev ? `<span class="prev" style="left:${pct}%;width:${prev}%"></span>` : ''}</div>
       ${(() => { const alvo = p === j.vez && !fx && dadoEscolhido(j) >= 0 ? previaAlvos(p, dadoEscolhido(j)).corrente : null;
-        return `<div class="corrente${fx ? ' fx-' + fx.tipo : L >= 5 ? ' fervendo' : L >= 4 ? ' quente' : ''}${alvo ? ` alvo-dado alvo-${alvo.cls}" data-alvo-dado="corrente" role="button" tabindex="0" aria-label="Corrente: ${alvo.txt}` : ''}" style="--fase:-${Math.round(performance.now() % 1800)}ms;--fx-t:-${fxT}ms">${slots}${alvo ? `<span class="alvo-chip">${alvo.txt}</span>` : ''}</div>`; })()}
+        return `<div class="corrente${fx ? ' fx-' + fx.tipo : L >= 5 ? ' fervendo' : L >= 4 ? ' quente' : ''}${!fx && (disparoVence(p) || porUm(p)) ? ' por-um' : ''}${alvo ? ` alvo-dado alvo-${alvo.cls}" data-alvo-dado="corrente" role="button" tabindex="0" aria-label="Corrente: ${alvo.txt}` : ''}" style="--fase:-${Math.round(performance.now() % 1800)}ms;--fx-t:-${fxT}ms;--n:${cor.length}">${slots}${alvo ? `<span class="alvo-chip">${alvo.txt}</span>` : ''}</div>`; })()}
       ${st.pref.dicas && !cartaEscolhida(j, p) ? `<div class="info"><span>Corrente <b>${L}</b>/${LIM}</span><span>${valeAgora}${seCrescer}</span></div>` : ''}
       ${comDecisao && !cartaEscolhida(j, p) ? '<div class="decisao-slot"></div>' : cartasHTML(p) + (comDecisao ? '<div class="decisao-slot"></div>' : '')}
     </div>`;
@@ -811,10 +861,11 @@
       }
       if (j.fase === 'ajuste' && j.ajusteIdx === i) tags = `<span class="tag previa">ajustar</span>`;
       const serveRival = dicas && ele.length && encaixa(ele, valorAoPegar(1 - p, d)) && j.fase !== 'fim';
-      const cls = ['pega', d.novo ? 'novo' : '', window.Rolagem && Rolagem.ativo(d.id) ? 'rolando' : '', window.Rolagem && Rolagem.pousando(d.id) ? 'pousando' : '', !salvo && j.fase === 'pegar' && dicas ? 'nao-cabe' : '', j.sel === d.id || (j.fase === 'ajuste' && j.ajusteIdx === i) ? 'escolhido' : '', j.destaque === d.id ? 'destaque' : '', j.virando === d.id ? 'virando' : '', mudou(d.id) ? 'mudou' : ''].join(' ');
-      const rotulo = `${j.fase === 'alvo' ? 'Escolher' : 'Pegar'} ${d.v}${contra ? `, chega virado como ${vv}` : ''}${cabe ? (r.length ? ', ' + r.map(k => REL[k].nome).join(' e ') : '') : salvo ? ', só pelo Bolso' : ', rompe a corrente'}${serveRival ? ', serve ao rival' : ''}${marcado !== null ? ', marcado com Espelho' : ''}`;
+      const fechaRival = serveRival && porUm(1 - p);
+      const cls = ['pega', d.novo ? 'novo' : '', window.Rolagem && Rolagem.ativo(d.id) ? 'rolando' : '', window.Rolagem && Rolagem.pousando(d.id) ? 'pousando' : '', !salvo && j.fase === 'pegar' && dicas ? 'nao-cabe' : '', j.sel === d.id || (j.fase === 'ajuste' && j.ajusteIdx === i) ? 'escolhido' : '', j.destaque === d.id ? 'destaque' : '', j.olhando === d.id ? 'olhado' : '', j.virando === d.id ? 'virando' : '', mudou(d.id) ? 'mudou' : ''].join(' ');
+      const rotulo = `${j.fase === 'alvo' ? 'Escolher' : 'Pegar'} ${d.v}${contra ? `, chega virado como ${vv}` : ''}${cabe ? (r.length ? ', ' + r.map(k => REL[k].nome).join(' e ') : '') : salvo ? ', só pelo Bolso' : ', rompe a corrente'}${fechaRival ? ', dá a vitória ao rival' : serveRival ? ', serve ao rival' : ''}${marcado !== null ? ', marcado com Espelho' : ''}`;
       return `<button class="${cls}" style="--i:${i}" data-i="${i}" data-id="${d.id}" ${ativo ? '' : 'disabled'} aria-label="${rotulo}" aria-pressed="${j.sel === d.id || (j.fase === 'ajuste' && j.ajusteIdx === i)}">
-        <span class="kbd">${i + 1}</span><span class="face">${dadoHTML(d.v, skinMesa())}${mudou(d.id) && marcaMudanca.antes != null ? `<span class="era">era ${marcaMudanca.antes}</span>` : ''}${serveRival ? '<span class="alvo-rival"></span>' : ''}${marcado !== null ? `<span class="marca-esp dono${marcado}" title="Marcado com Espelho">${CARTAS.espelho.ico}</span>` : ''}</span><span class="tags">${tags}</span></button>`;
+        <span class="kbd">${i + 1}</span><span class="face">${dadoHTML(d.v, skinMesa())}${mudou(d.id) && marcaMudanca.antes != null ? `<span class="era">era ${marcaMudanca.antes}</span>` : ''}${serveRival ? `<span class="alvo-rival${fechaRival ? ' fecha' : ''}"></span>` : ''}${j.modo === 'bot' && j.nivel === 'aprendiz' && (j.olhando === d.id || j.destaque === d.id) ? PATINHA : ''}${marcado !== null ? `<span class="marca-esp dono${marcado}" title="Marcado com Espelho">${CARTAS.espelho.ico}</span>` : ''}</span><span class="tags">${tags}</span></button>`;
     }).join('');
   }
 
@@ -906,6 +957,8 @@
       const L = eu.length, rk = risco(p), vale = pontos(L) + (j.sobre[p] && L >= 4 ? 2 : 0);
       let nivel, txt;
       const ocultas = j.armada[1 - p] && j.armada[1 - p] !== 'espelho' ? armadilhasOcultas(1 - p) : [];
+      // o botão diz "Disparar e vencer" só quando é certo; se a carta virada pode ser a Interferência, "pode fechar"
+      const talvez = j.pts[p] + vale >= j.meta, venceJa = talvez && !(ocultas.includes('interferencia') && L >= 4 && j.pts[p] >= j.pts[1 - p] && j.pts[p] + vale - 1 < j.meta);
       if (j.pts[p] + vale >= j.meta) { nivel = 'vence'; txt = `Disparar agora vence a partida${ocultas.includes('interferencia') && L >= 4 && j.pts[p] >= j.pts[1 - p] && j.pts[p] + vale - 1 < j.meta ? ', se a carta virada do rival não for a Interferência' : ''}.`; }
       else if (rk.bolso) { nivel = 'baixo'; txt = j.bolso[p] === null ? 'Seu Bolso está vazio: na próxima vez você sempre pode guardar o dado. Segurar não rompe.' : `O ${j.bolso[p]} do seu Bolso sincroniza com o seu ${frente(eu)}: segurar não rompe.`; }
       else if (rk.n >= 2) {
@@ -924,7 +977,7 @@
       return `<div class="status">${quem}: corrente de <b>${L}</b>. Disparar ou segurar?</div>
         ${ajudas ? `<div class="risco ${nivel}"><span>${txt}</span></div>${extra}` : ''}
         <div class="botoes">
-          <button class="btn btn-duplo btn-mel" data-acao="disparar"><span>Disparar</span><small>+${vale} agora</small></button>
+          <button class="btn btn-duplo btn-mel${venceJa ? ' vence' : ''}" data-acao="disparar"><span>${venceJa ? 'Disparar e vencer' : 'Disparar'}</span><small>+${vale} agora${venceJa ? '' : talvez ? ' · pode fechar' : ''}</small></button>
           <button class="btn btn-duplo btn-papel" data-acao="segurar"><span>Segurar</span><small>${L + 1 <= LIM ? `com ${L + 1} vale +${pontos(L + 1)}` : 'continuar'}</small></button>
           ${sobreBtn}
         </div>`;
@@ -964,7 +1017,7 @@
   // ---------- de quem é a vez: óbvio de longe (v0.12) ----------
   // Na sua vez a Mesa acende (a moldura de feltro ganha a sua cor, respirando) e o selo no alto da Mesa diz "Sua vez";
   // na vez do rival a Mesa esmaece e o selo diz de quem é. No online o selo traz o relógio da vez, a aba do navegador
-  // avisa ("● Sua vez"), a vez é lembrada na metade do tempo e nos 10 s finais (o tempo acabar põe a vez no automático), e quem
+  // avisa ("● Sua vez"), a vez é lembrada na metade do tempo e nos 10 s finais (o tempo acabar faz perder a vez), e quem
   // volta para a tela (outra aba, celular bloqueado) na sua vez ouve e vê o aviso de novo.
   const TITULO = document.title;
   // aviso: em quantos segundos da vez foi o último aviso (os lembretes só tocam abaixo dele, uma vez cada)
@@ -978,16 +1031,16 @@
     document.body.classList.toggle('vez-rival', quem === 'rival');
     el.hidden = !quem;
     if (!quem) { document.title = TITULO; return; }
-    const s = segundosDaVez(j), tempo = s === null ? '' : `<span class="selo-tempo">${s} s</span>`;
+    const s = segundosDaVez(j), tempo = s === null ? '' : `<span class="selo-tempo">${relogioTxt(s)}</span>`;
     const pensa = quem === 'rival' && !rivalCaiu() && s === null ? '<span class="pensando-pontos" aria-hidden="true"></span>' : '';
     el.className = `selo-vez ${quem}${s !== null && s <= 10 ? ' urgente' : ''}`;
     // o selo não aparece mais no meio da Mesa (a etiqueta "sua vez" do painel basta); no online o relógio mora nela
     document.querySelectorAll('[data-relogio]').forEach(r => {
-      r.textContent = s === null ? '' : ` · ${s} s`;
+      r.textContent = s === null ? '' : ` · ${relogioTxt(s)}`;
       r.closest('.vez-tag').classList.toggle('urgente', s !== null && s <= 10);
     });
     el.innerHTML = quem === 'minha' ? `<b>Sua vez</b>${tempo}` : `<b>Vez de ${nomes()[1]}</b>${rivalCaiu() ? '<span class="selo-tempo">caiu</span>' : tempo}${pensa}`;
-    document.title = online() && quem === 'minha' ? `● Sua vez${s === null ? '' : ` · ${s} s`} · ${TITULO}` : TITULO;
+    document.title = online() && quem === 'minha' ? `● Sua vez${s === null ? '' : ` · ${relogioTxt(s)}`} · ${TITULO}` : TITULO;
   }
   function pulinho(el, forte = false) {
     if (el && Fx.cfg.animacoes) el.animate([{ transform: 'none' }, { transform: forte ? 'translateY(-6px) scale(1.03)' : 'translateY(-4px) scale(1.012)' }, { transform: 'none' }], { duration: forte ? 480 : 380, easing: 'cubic-bezier(.3,1.5,.5,1)' });
@@ -1016,17 +1069,17 @@
       return;
     }
     const s = segundosDaVez(j);
-    avisarVez(motivo || (s === null ? '' : `${s} s para jogar`), false, motivo ? 'Sua vez de novo' : null);
+    avisarVez(motivo || (s === null ? '' : `${relogioTxt(s)} para jogar`), false, motivo ? 'Sua vez de novo' : null);
   }
-  // os lembretes da vez no online: na metade do tempo (se nada foi escolhido) e nos 10 s finais (sempre). Por faixa, não
-  // pelo segundo exato: com a aba em segundo plano o relógio pula segundos
+  // os lembretes da vez no online: na metade do tempo (se nada foi escolhido) e nos 10 s finais. Com o "Você ainda está
+  // aí?" na tela, ele é o aviso. Por faixa, não pelo segundo exato: com a aba em segundo plano o relógio pula segundos
   function lembrarVez(j) {
     const s = segundosDaVez(j);
-    if (s === null || vezDoAparelho(j) !== 'minha' || j.pensando) return;
+    if (s === null || vezDoAparelho(j) !== 'minha' || j.pensando || (j.inatividade && j.inatividade.quem === 0)) return;
     const ultimo = Vez.aviso && Vez.aviso.chave === Vez.chave ? Vez.aviso.s : Infinity;
-    const metade = Math.floor(Math.round((j.limiteVez || 60000) / 1000) / 2);
-    if (s <= 10 && ultimo > 10) avisarVez(`${s} s: se o tempo acabar, o jogo joga por você`, true);
-    else if (s > 10 && s <= metade && ultimo > metade && j.sel == null && j.fase === 'pegar') avisarVez(`${s} s para jogar`);
+    const metade = Math.floor(Math.round((j.limiteVez || 120000) / 1000) / 2);
+    if (s <= 10 && ultimo > 10) avisarVez(`${s} s: se o tempo acabar, você perde a partida`, true);
+    else if (s > 10 && s <= metade && ultimo > metade && j.sel == null && j.fase === 'pegar') avisarVez(`${relogioTxt(s)} para jogar`);
   }
   document.addEventListener('visibilitychange', () => {
     if (!jogo) return;
@@ -1034,7 +1087,7 @@
     // de volta à tela na sua vez: o aviso de novo (antes passava despercebido)
     if (!document.hidden && online() && vezDoAparelho(jogo) === 'minha' && !jogo.pensando) {
       const s = segundosDaVez(jogo);
-      setTimeout(() => avisarVez(s === null ? '' : `${s} s para jogar`, s !== null && s <= 10), 250);
+      setTimeout(() => avisarVez(s === null ? '' : `${relogioTxt(s)} para jogar`, s !== null && s <= 10), 250);
     }
   });
 
@@ -1064,7 +1117,10 @@
     const som = document.getElementById('btnSom'); som.setAttribute('aria-pressed', String(somLigado)); som.classList.toggle('sem-som', !somLigado);
     const n = nomes();
     const linha = l => `${l.p === null ? '' : `<span class="cor${l.p}">${n[l.p]}</span> `}${l.txt}`;
-    const instrucao = humano(j.vez) ? instrucaoCarta(j) || instrucaoDado(j) : '', ticker = document.getElementById('ticker');
+    // o rival a um dado de fechar a partida: a linha da Mesa diz quais dados dão isso a ele (os do "!"), no lugar do último lance
+    const fecha = st.pref.dicas && j.modo !== 'local' && humano(j.vez) && j.fase === 'pegar' && mesa.querySelector('.alvo-rival.fecha')
+      ? `<span class="cor1">${n[1]}</span> fecha a partida com um dado marcado com <b class="fecha-txt">!</b>` : '';
+    const instrucao = humano(j.vez) ? instrucaoCarta(j) || instrucaoDado(j) || fecha : '', ticker = document.getElementById('ticker');
     ticker.innerHTML = instrucao || (j.log[0] ? linha(j.log[0]) : '');
     ticker.classList.toggle('instrucao', !!instrucao);
     mostrarCorrenteNaDecisao(j);
@@ -1105,6 +1161,25 @@
 
   // ---------- eventos → som, efeitos e recompensas ----------
   const qs = s => document.querySelector(s);
+  // o aviso da carta do rival (v0.14): a carta sai da mão dele e voa até o vão entre o painel dele e a Mesa, e o aviso,
+  // mais baixo que as chamadas de festa, aparece ali. Antes ele ficava no alto da tela, por cima do painel do rival:
+  // escondia justamente a carta, a corrente e o Bolso que a carta tinha acabado de mexer
+  function avisoCarta(p, c, titulo, sub, ico) {
+    const j = jogo, pain = qs(`#pj${p} .jogador`), mesaEl = document.getElementById('mesa');
+    const tipo = p === 1 && j.modo !== 'local' ? 'rival' : 'suave';
+    let y = null;
+    if (pain && mesaEl) {
+      const a = pain.getBoundingClientRect(), b = mesaEl.getBoundingClientRect();
+      if (b.top > a.bottom - 20 && b.left < a.right && b.right > a.left) y = Math.round((a.bottom + b.top) / 2);   // um em cima do outro: no vão entre os dois
+    }
+    // no vão cabe só a carta (ícone e nome): o que ela fez fica na linha do último lance, logo abaixo dos dados
+    const op = { ico, ms: AVISO_CARTA, classe: 'aviso-carta' + (y !== null ? ' compacta' : ''), y }, txt = y !== null ? '' : sub;
+    // a armadilha virada sai do "?" e não da carta: voar a carta da mão diria ao rival qual armadilha foi armada
+    const deEl = titulo === 'Armadilha virada' ? qs(`#pj${p} [data-virada]`) : qs(`#pj${p} [data-carta="${c}"]`);
+    if (!deEl || !Fx.cfg.animacoes) { Fx.chamada(titulo, txt, tipo, op); return; }
+    Fx.lancarCarta(deEl, innerWidth / 2, y ?? innerHeight * 0.27).then(() => Fx.chamada(titulo, txt, tipo, op));
+  }
+
   function consumirEventos() {
     const j = jogo, n = nomes();
     // o dado voa da Mesa até onde foi parar
@@ -1154,12 +1229,14 @@
           Som.tocar('disparo', { L: e.L });
           if (humano(e.p)) vibrar(15);
           const nota = k => 80 + k * Som.PASSO_DISPARO * 1000, fim = nota(e.L);
+          if (Fx.cfg.animacoes) fimDoDisparo = performance.now() + fim + (e.L === 6 ? 150 : e.L === 5 ? 90 : 0) + (Math.min(6, Math.max(1, e.ganho)) - 1) * 70 + 560;
           const passos = [];
           for (let k = 3; k <= e.L; k++) passos.push({ ms: nota(k - 1), txt: `+${pontos(k)}` });
           passos.push({ ms: fim, txt: `+${e.ganho}` });
           // o placar mostra o valor de antes até os pontos chegarem (um render no meio não o adianta)
           if (Fx.cfg.animacoes && Fx.cfg.particulas && placar) { placarSegurado.set(e.p, e.de); placar.textContent = e.de; setTimeout(() => { if (placarSegurado.delete(e.p)) render(); }, 5000); }
-          Fx.contagem(corEl, passos, `${quem} n${Math.min(6, e.L)}`).then(() => {
+          // 5 e 6: o tempo para por um instante antes do estouro (o selo fecha no valor, a corrente incha e espera)
+          Fx.contagem(corEl, passos, `${quem} n${Math.min(6, e.L)}`).then(() => e.L >= 5 ? Fx.impacto(qs(`#pj${e.p} .corrente`) || corEl, e.L === 6 ? 150 : 90, e.L === 6 ? 1.3 : 1) : null).then(() => {
             const cor = qs(`#pj${e.p} .corrente`) || corEl;
             Fx.faiscas(cor, 10 + e.L * 6, cores, 2.5 + e.L * 0.5);
             if (e.L >= 4) Fx.clarao(cor, e.L >= 6 ? 1 : e.L === 5 ? 0.75 : 0.5);
@@ -1209,39 +1286,36 @@
           Som.tocar('carta');
           if (e.id != null && e.antes != null) marcarMudanca([e.id], e.antes);
           else if (e.c === 'rerrolar') marcarMudanca(j.mesa.map(d => d.id), null);
-          if (!humano(e.p) || j.modo === 'local') Fx.chamada(e.nome, explicarCarta(e, n[e.p]), e.p === 1 && j.modo !== 'local' ? 'rival' : 'suave', { ico: CARTAS[e.c].arte, ms: AVISO_CARTA, classe: 'aviso-carta' });
+          if (!humano(e.p) || j.modo === 'local') avisoCarta(e.p, e.c, e.nome, explicarCarta(e, n[e.p]), CARTAS[e.c].arte);
           break;
         }
         case 'armou': {
           Som.tocar('armou');
           if (humano(e.p) && j.modo !== 'local') break;
-          if (e.c === 'espelho' && j.marca) { marcarMudanca([j.marca.id], null); Fx.chamada('Espelho', `${n[e.p]} marcou um ${(j.mesa.find(d => d.id === j.marca.id) || {}).v || ''} da Mesa: se você pegá-lo, ele vira`, e.p === 1 && j.modo !== 'local' ? 'rival' : 'suave', { ico: CARTAS.espelho.arte, ms: AVISO_CARTA, classe: 'aviso-carta' }); }
-          else Fx.chamada('Armadilha virada', `${n[e.p]} armou uma armadilha (?). Toque nela para ver o que pode ser`, e.p === 1 && j.modo !== 'local' ? 'rival' : 'suave', { ico: VERSO, ms: AVISO_CARTA, classe: 'aviso-carta' });
+          if (e.c === 'espelho' && j.marca) { marcarMudanca([j.marca.id], null); avisoCarta(e.p, e.c, 'Espelho', `${n[e.p]} marcou um ${(j.mesa.find(d => d.id === j.marca.id) || {}).v || ''} da Mesa: se você pegá-lo, ele vira`, CARTAS.espelho.arte); }
+          else avisoCarta(e.p, e.c, 'Armadilha virada', `${n[e.p]} armou uma armadilha (?). Toque nela para ver o que pode ser`, VERSO);
           break;
         }
         case 'revelou': {
-          Som.tocar('revelou'); Fx.chamada(CARTAS[e.c].nome + '!', e.txt, e.p === 1 && j.modo !== 'local' ? 'rival' : '', { classe: 'de-jogo' });
-          Fx.faiscas(painelEl, 22, ['#e2d6ff', '#fff6e6', '#ffe3a3']); vibrar([40, 60, 40]);
+          // a armadilha que pega: um instante parado no painel do dono, e então a revelação
+          Fx.impacto(painelEl, 80, 0.6).then(() => {
+            Som.tocar('revelou'); Fx.chamada(CARTAS[e.c].nome + '!', e.txt, e.p === 1 && j.modo !== 'local' ? 'rival' : '', { classe: 'de-jogo' });
+            Fx.faiscas(qs(`#pj${e.p} .jogador`) || painelEl, 22, ['#e2d6ff', '#fff6e6', '#ffe3a3']); vibrar([40, 60, 40]);
+          });
           break;
         }
         case 'virar': setTimeout(() => { if (jogo.virando === e.id) jogo.virando = null; }, 500); Som.tocar('virar'); break;
-        case 'automatica': {
-          // o tempo da vez acabou e o servidor jogou por alguém (na AUTO_MAX.ª seguida, a partida acaba)
-          // quem não jogou fica "ausente": a vez dele passa a ter só alguns segundos até ele dar sinal de vida (tocar na tela)
-          const meu = humano(e.p) && j.modo !== 'local', curto = Math.round((j.vezAusente || 15000) / 1000);
-          Som.tocar('perigo'); if (meu) vibrar([40, 60, 40]);
-          Fx.chamada(e.motivo === 'queda' && !meu ? 'Sem conexão' : 'Tempo!', meu ? `O tempo acabou e o jogo jogou por você (${e.n} de ${e.max}). Toque na tela para voltar a ter o tempo inteiro; na ${e.max}ª seguida, a partida acaba.`
-            : e.motivo === 'queda' ? `${n[e.p]} está sem conexão: a vez foi no automático (${e.n} de ${e.max}).`
-            : `${n[e.p]} não jogou a tempo: a vez foi no automático (${e.n} de ${e.max}). Até voltar, a vez de ${n[e.p]} tem só ${curto} s.`, meu ? '' : 'rival', { classe: 'de-jogo', ms: 5600 });
-          break;
-        }
         case 'chamada': Som.tocar('momento'); Fx.chamada(e.titulo, e.sub, e.estilo === 'esquiva' ? (e.p === 1 && j.modo !== 'local' ? 'rival' : '') : e.estilo, { classe: 'de-jogo' }); break;
         case 'falar': if (j.modo === 'bot') falaDoEvento(e); break;
         case 'fim': {
           const venceuHumano = humano(e.p);
-          Som.musica.cena('fim');
-          if (venceuHumano) { Som.tocar('vitoria'); Fx.confete(120); Fx.chamada(e.virada ? 'Virada!' : j.modo !== 'local' ? 'Vitória!' : `${n[e.p]} venceu!`, e.virada ? 'veio de trás e venceu' : 'partida bem jogada', '', { classe: 'de-jogo' }); }
-          else { Som.tocar('derrota'); Fx.chamada('Fim de partida', `${n[e.p]} venceu desta vez`, 'rival', { classe: 'de-jogo' }); }
+          Fx.limparDica();
+          // o disparo que fecha a partida conta até o fim (a cascata e os pontos no placar) antes de a vitória estourar
+          setTimeout(() => {
+            Som.musica.cena('fim');
+            if (venceuHumano) { Som.tocar('vitoria'); Fx.confete(120); Fx.chamada(e.virada ? 'Virada!' : j.modo !== 'local' ? 'Vitória!' : `${n[e.p]} venceu!`, e.virada ? 'veio de trás e venceu' : 'partida bem jogada', '', { classe: 'de-jogo', furar: true, ms: 1700 }); }
+            else { Som.tocar('derrota'); Fx.chamada('Fim de partida', `${n[e.p]} venceu desta vez`, 'rival', { classe: 'de-jogo', furar: true, ms: 1700 }); }
+          }, esperaFesta());
           break;
         }
       }
@@ -1297,8 +1371,11 @@
     document.getElementById('fimTitulo').textContent = j.modo !== 'local' ? (v === 0 ? 'Você venceu!' : `${n[1]} venceu`) : `${n[v]} venceu!`;
     // acabou antes da meta: por quê (sem isso, um 0 × 0 parece que a conexão caiu)
     const wo = j.desistencia, quem = wo === 0 && j.modo !== 'local' ? 'Você' : n[wo];
-    const motivo = wo === undefined ? '' : { tempo: `${quem} ficou ${R.AUTO_MAX} vezes seguidas sem jogar a tempo.`, queda: `${quem} caiu e não voltou a tempo.`, saiu: `${quem} saiu da partida.` }[j.motivoFim] || `${quem} saiu da partida.`;
-    document.getElementById('fimPlacar').innerHTML = `<span class="cor0">${n[0]} ${j.pts[0]}</span> × <span class="cor1">${j.pts[1]} ${n[1]}</span>${motivo ? `<small class="fim-motivo">${esc(motivo)}</small>` : ''}`;
+    const motivo = wo === undefined ? '' : { tempo: `${quem} não jogou a tempo.`, inativo: `${quem} não respondeu ao “Você ainda está aí?”.`, queda: `${quem} caiu e não voltou a tempo.`, saiu: `${quem} saiu da partida.` }[j.motivoFim] || `${quem} saiu da partida.`;
+    // perdeu por pouco: o fim diz quanto faltou (um "quase" chama a próxima; uma derrota seca, não)
+    const faltou = j.modo !== 'local' && v === 1 && wo === undefined ? j.meta - j.pts[0] : 0;
+    const quase = faltou > 0 && faltou <= 3 ? `<small class="fim-quase">Faltaram ${faltou === 1 ? 'só 1 ponto' : `${faltou} pontos`}</small>` : '';
+    document.getElementById('fimPlacar').innerHTML = `<span class="cor0">${n[0]} ${j.pts[0]}</span> × <span class="cor1">${j.pts[1]} ${n[1]}</span>${motivo ? `<small class="fim-motivo">${esc(motivo)}</small>` : quase}`;
     // repetições viram um item só ("×2"); os mais raros vêm primeiro
     const grupos = new Map();
     j.momentos.filter(m => humano(m.p)).forEach(m => { const k = m.p + m.txt; const g = grupos.get(k) || { ...m, vezes: 0 }; g.vezes++; grupos.set(k, g); });
@@ -1307,7 +1384,7 @@
     const momentos = lances
       .map(m => `<li><span class="em">${simboloMomento(m.simbolo)}</span><span>${j.modo === 'local' ? `<span class="cor${m.p}">${n[m.p]}</span> ` : ''}${m.txt}${m.vezes > 1 ? ` <b>×${m.vezes}</b>` : ''}</span></li>`).join('');
     const recs = (j.recordes || []).map(r => `<li class="recorde"><span class="em">${simboloMomento('✪')}</span>Novo: ${r}</li>`).join('');
-    document.getElementById('fimMomentos').innerHTML = recs + (momentos || `<li><span class="em">${simboloMomento('☕')}</span>Sem lances marcantes desta vez.</li>`);
+    document.getElementById('fimMomentos').innerHTML = recs + (momentos || (recs ? '' : `<li><span class="em">${simboloMomento('☕')}</span>Sem lances marcantes desta vez.</li>`));
     // perdeu e teve bons lances: eles vêm antes do prêmio (o que você fez de bom primeiro, o placar depois)
     const rec = document.getElementById('fimRecompensas'), tit = document.getElementById('fimMomentosTitulo'), lista = document.getElementById('fimMomentos');
     const momentosPrimeiro = j.modo !== 'local' && v !== 0 && !!(recs || momentos);
@@ -1322,7 +1399,10 @@
       linha('Disparos', x => x.disp) + linha('Maior corrente', x => x.maior || '–') + linha('Rupturas', x => x.rupt) +
       linha('Bolso (guardou · trocou)', x => `${x.guardou} · ${x.trocou}`);
     prepararCartao(j, lances);
-    document.getElementById('btnDeNovo').textContent = online() ? 'Revanche' : 'Jogar de novo';
+    // o botão diz o que vem: a revanche contra quem venceu, ou a sequência que está em jogo
+    const seq = j.modo === 'bot' ? st.rec.seq : 0;
+    document.getElementById('btnDeNovo').textContent = online() ? 'Revanche' : j.modo !== 'bot' || j.estreia ? 'Jogar de novo'
+      : v === 1 ? `Revanche contra ${RIVAIS[j.nivel].nome}` : seq >= 2 ? `Mais uma · ${seq} vitórias seguidas` : 'Jogar de novo';
     document.getElementById('fim').hidden = false;
     document.getElementById('btnDeNovo').focus();
   }
@@ -1373,24 +1453,57 @@
     else if (!m) linhaMoedas = `<span class="conta">Moedas vêm das vitórias. A próxima é sua.</span>`;
     else if (j.modo === 'bot' && !m.elegivel) linhaMoedas = `<span class="conta">Seu maior rating (${pr.pico}) já passou do que ${rival} paga (até ${TETO_MOEDAS[j.nivel] - 1}). ${j.nivel === 'aprendiz' ? 'A Dona Coruja ainda paga.' : 'As próximas moedas virão do online.'}</span>`;
     else if (m.tetoDia) linhaMoedas = `<span class="conta">Você chegou ao teto do dia contra os rivais do jogo. Amanhã tem mais; o online não tem teto.</span>`;
-    else linhaMoedas = `<span class="conta">vitória ${online() ? 'online' : 'contra ' + rival}: ${m.base} × margem ×${fmt(m.mm.toFixed(2))} × rapidez ×${fmt(m.mr)}${online() ? ` × rating do rival ×${fmt(m.mrat.toFixed(2))}` : ` (${j.rodada} Mesas)`}</span>`;
+    else linhaMoedas = `<span class="conta">vitória ${online() ? 'online' : 'contra ' + rival}: ${m.base} × margem ×${fmt(m.mm.toFixed(2))} × rapidez ×${fmt(m.mr)}${online() ? ` × rating do rival ×${fmt(m.mrat.toFixed(2))}` : ` (${j.rodada} Mesas)`}${m.dobro ? ' × 2 (primeira vitória do dia)' : ''}</span>`;
+    // as tarefas do dia que fecharam nesta partida (pagam também na derrota)
+    const tfp = pr.tarefas || { concluidas: [], moedas: 0 };
+    if (!m && tfp.moedas) linhaMoedas = '';
+    const linhasTarefa = tfp.concluidas.map(t => `<div class="linha tarefa-feita"><span>${ICO_FEITA} Tarefa do dia: ${t.txt}</span><span>+${t.moedas}</span></div>`).join('');
     const dr = pr.rating - pr.ratingAntes;
     const prox = NIVEIS[pr.nivelDepois] ?? null, ant = NIVEIS[pr.nivelDepois - 1];
     const pct = prox === null ? 100 : Math.round((c.xp - ant) / (prox - ant) * 100);
+    // a barra começa de onde estava antes da partida e enche (subiu de nível: começa do zero do nível novo)
+    const pct0 = pr.nivelDepois > pr.nivelAntes ? 0 : Math.max(0, Math.min(pct, Math.round((c.xp - pr.xpGanho - ant) / ((prox ?? c.xp) - ant || 1) * 100)));
     const presentes = pr.presentes.map(x => `<div class="linha"><span>Presente do nível: ${nomeItem(x.tipo, x.id)}</span><span class="sobe">novo!</span></div>`).join('');
-    const total = m ? m.total : 0;
+    const total = (m ? m.total : 0) + tfp.moedas;
     const linhaRating = `<div class="linha"><span>${online() ? 'Rating online' : 'Rating'} ${pr.ratingAntes} → <b>${pr.rating}</b> <span class="${dr >= 0 ? 'sobe' : 'desce'}">(${dr >= 0 ? '+' : ''}${dr})</span></span><span>${tituloDe(pr.rating)}</span></div>`;
     const linhaXp = `<div class="linha"><span>Nível ${pr.nivelDepois}${pr.nivelDepois > pr.nivelAntes ? ' <span class="sobe">subiu!</span>' : ''}</span><span>+${pr.xpGanho} XP</span></div>
-      <div class="xp"><i style="width:${pct}%"></i></div>${presentes}`;
+      <div class="xp"><i style="width:${Fx.cfg.animacoes ? pct0 : pct}%"></i></div>${presentes}`;
+    const meta = proximaMeta(c), linhaMeta = meta ? `<div class="linha meta-prox"><span>${meta.txt}</span><span>${meta.falta}</span></div>` : '';
     // sem moedas (derrota, teto do rival): a tela não abre com um "+0" grande. Primeiro o que se ganhou (experiência,
     // que sobe sempre), depois o rating e, miúda, a linha das moedas
-    el.innerHTML = total ? `<div class="grande"><span class="moeda" aria-hidden="true"></span><span id="contaMoedas">+0</span></div>${linhaMoedas}${linhaRating}${linhaXp}`
-      : `${linhaXp}${linhaRating}${linhaMoedas}`;
+    el.innerHTML = total ? `<div class="grande"><span class="moeda" aria-hidden="true"></span><span id="contaMoedas">+0</span></div>${linhaMoedas}${linhasTarefa}${linhaRating}${linhaXp}${linhaMeta}${linhaHoje()}`
+      : `${linhaXp}${linhaRating}${linhaMoedas}${linhaMeta}${linhaHoje()}`;
+    // em sequência (v0.14): cada linha entra uma depois da outra; as moedas contam, depois a barra de experiência enche
+    // com um tique e, se subiu de nível, a chamada e o presente. Antes, tudo aparecia de uma vez e já cheio
+    [...el.children].forEach((x, k) => { x.classList.add('revela'); x.style.setProperty('--k', k); });
     const alvo = document.getElementById('contaMoedas');
+    const tXp = total ? 1150 : 450;
     if (total) {
-      setTimeout(() => { Fx.contar(alvo, 0, total); setTimeout(() => { alvo.textContent = '+' + total; }, 600); Som.tocar('moeda', { n: Math.ceil(total / 5) }); Fx.faiscas(alvo, 18, ['#ffe3a3', '#f2c14e', '#fff6e6']); }, 350);
+      setTimeout(() => { Fx.contar(alvo, 0, total); setTimeout(() => { alvo.textContent = '+' + total; }, 950); Som.tocar('moeda', { n: Math.ceil(total / 5) }); Fx.faiscas(alvo, 18, ['#ffe3a3', '#f2c14e', '#fff6e6']); }, 350);
     }
-    if (pr.nivelDepois > pr.nivelAntes) setTimeout(() => { Som.tocar('nivel'); Fx.chamada(`Nível ${pr.nivelDepois}!`, pr.presentes.length ? 'você ganhou um presente na Loja' : 'continue assim', 'suave'); }, 900);
+    const barra = el.querySelector('.xp i');
+    if (barra && Fx.cfg.animacoes) setTimeout(() => { barra.style.width = pct + '%'; Som.tocar('tique', { k: 2 }); }, tXp);
+    if (pr.nivelDepois > pr.nivelAntes) setTimeout(() => { Som.tocar('nivel'); Fx.chamada(`Nível ${pr.nivelDepois}!`, pr.presentes.length ? 'você ganhou um presente na Loja' : 'continue assim', 'suave'); }, tXp + 650);
+  }
+  // a tarefa do dia que ainda falta (a primeira), com quanto já foi; ou "todas feitas"
+  const ICO_FEITA = '<svg class="ico ico-feita" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+  function linhaHoje() {
+    const t = tarefasHoje(), falta = t.ids.find(id => !t.feitas.includes(id) && R.TAREFAS[id]);
+    if (!falta) return `<div class="linha meta-prox"><span>Tarefas do dia</span><span>todas feitas ${ICO_FEITA}</span></div>`;
+    const k = R.TAREFAS[falta];
+    return `<div class="linha meta-prox"><span>Tarefa do dia: ${k.txt}</span><span>${k.alvo > 1 ? `${t.prog[falta] || 0}/${k.alvo} · ` : ''}+${R.MOEDAS_TAREFA}</span></div>`;
+  }
+  // a próxima coisa a ganhar, para a pessoa sair do fim sabendo para onde vai: o presente do próximo nível que tiver um,
+  // senão a carta (ou, com todas, o visual) mais barata que ela ainda não tem
+  function proximaMeta(c) {
+    const nv = nivelDe(c.xp), lv = Object.keys(PRESENTES).map(Number).sort((a, b) => a - b).find(x => x > nv);
+    if (lv && NIVEIS[lv - 1] != null) { const [tipo, id] = PRESENTES[lv]; return { txt: `Nível ${lv}: ${nomeItem(tipo, id)} de presente`, falta: `faltam ${NIVEIS[lv - 1] - c.xp} XP` }; }
+    const cartas = Object.keys(PRECO_CARTA).filter(id => !c.cartas.includes(id)).map(id => ({ tipo: 'cartas', id, preco: PRECO_CARTA[id] }));
+    const visuais = ['dados', 'icones', 'mesas'].flatMap(t => Object.entries(R.CATALOGO[t]).filter(([id, it]) => it.preco > 0 && !it.nivel && !(c[t] || []).includes(id)).map(([id, it]) => ({ tipo: t, id, preco: it.preco })));
+    const alvo = (cartas.length ? cartas : visuais).sort((a, b) => a.preco - b.preco)[0];
+    if (!alvo) return null;
+    const falta = alvo.preco - c.moedas;
+    return { txt: `Próximo na Loja: ${alvo.tipo === 'cartas' ? 'a carta ' : ''}${nomeItem(alvo.tipo, alvo.id)}`, falta: falta > 0 ? `faltam ${falta} moedas` : 'já dá para comprar' };
   }
 
   // ---------- loja ----------
@@ -1694,7 +1807,7 @@
     } catch (e) { return null; }
   }
   function restaurarPartida(g) {
-    Object.assign(g, { pensando: false, token: Math.random(), fx: null, eventos: [], intro: false, voo: null, sel: null, destaque: null, fala: null, rolouAVista: true });
+    Object.assign(g, { pensando: false, token: Math.random(), fx: null, eventos: [], intro: false, voo: null, sel: null, destaque: null, olhando: null, fala: null, rolouAVista: true });
     if (g.fase === 'alvo' || g.fase === 'ajuste') { g.fase = 'pegar'; g.alvo = null; g.ajusteIdx = null; }
     // guardada antes da v0.13: um efeito virado (o blefe, que saiu) volta para a mão
     [0, 1].forEach(p => { const c = g.armada[p]; if (c && CARTAS[c] && CARTAS[c].tipo === 'efeito') { g.cartas[p][c] = 'pronta'; g.armada[p] = null; } });
@@ -1747,6 +1860,7 @@
     const c = st.conta, nome = st.sessao && st.sessao.perfil ? st.sessao.perfil.nome : 'Convidado';
     document.getElementById('inicioPerfil').innerHTML = `${iconeSVG(c.icone)}<span class="perfil-texto"><b>${esc(nome)}</b><small>rating ${c.rating} · nível ${nivelDe(c.xp)} · ${c.moedas} moedas</small></span><svg class="ico perfil-seta" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>`;
     document.getElementById('pontoInicio').hidden = document.getElementById('pontoOnline').hidden;
+    desenharTarefasInicio();
     const g = partidaParaContinuar(), box = document.getElementById('inicioPartida');
     // a escolha do rival ocupa o lugar dos botões do menu (Jogar → Escolha o rival → Jogar contra ...)
     const rivais = escolhendoRival && !g;
@@ -1771,6 +1885,32 @@
         ? `<div class="inicio-linha"><button class="btn btn-papel perigo" data-inicio="abandonar-sim">Abandonar</button><button class="btn btn-papel" data-inicio="abandonar-nao">Voltar</button></div>`
         : `<button class="btn btn-mel inicio-principal" data-inicio="continuar">Continuar a partida</button><button class="btn-link" data-inicio="abandonar">Abandonar a partida</button>`}`;
   }
+  // ---------- tarefas do dia (v0.14) ----------
+  // no menu, uma linha só: as três bolinhas (cheias as feitas) e quanto ainda rende hoje; tocar abre a lista. Some na
+  // primeira visita (a estreia vem antes de tudo)
+  function desenharTarefasInicio() {
+    const el = document.getElementById('inicioTarefas'), t = tarefasHoje();
+    el.hidden = !st.guia.estreia;
+    if (el.hidden) return;
+    const feitas = t.feitas.length, resta = (t.ids.length - feitas) * R.MOEDAS_TAREFA;
+    el.innerHTML = `<span class="tf-titulo">Tarefas do dia</span><span class="tf-pontos" aria-hidden="true">${t.ids.map(id => `<i class="${t.feitas.includes(id) ? 'feita' : ''}"></i>`).join('')}</span>
+      <span class="tf-resta">${resta ? `<span class="moeda" aria-hidden="true"></span>+${resta}` : `${ICO_FEITA} feitas`}</span>`;
+    el.setAttribute('aria-label', `Tarefas do dia: ${feitas} de ${t.ids.length} feitas${resta ? `, ainda rendem ${resta} moedas` : ''}`);
+  }
+  function abrirTarefas() {
+    const t = tarefasHoje();
+    const item = id => {
+      const k = R.TAREFAS[id]; if (!k) return '';
+      const feita = t.feitas.includes(id), n = Math.min(k.alvo, t.prog[id] || 0);
+      return `<li class="${feita ? 'feita' : ''}"><span class="tf-marca">${feita ? ICO_FEITA : ''}</span><span class="tf-txt"><b>${k.txt}</b>
+        ${k.alvo > 1 && !feita ? `<span class="xp"><i style="width:${Math.round(n / k.alvo * 100)}%"></i></span><small>${n} de ${k.alvo}</small>` : ''}</span>
+        <span class="tf-premio">${feita ? 'feita' : `<span class="moeda" aria-hidden="true"></span>+${R.MOEDAS_TAREFA}`}</span></li>`;
+    };
+    document.getElementById('tarefasConteudo').innerHTML = `<ul class="lista-tarefas">${t.ids.map(item).join('')}</ul>
+      <p class="nota">As tarefas pagam também na derrota, contra os rivais e no online. ${t.vitoria ? 'A primeira vitória de hoje já rendeu em dobro.' : 'A primeira vitória do dia que render moedas rende <b>em dobro</b>.'} Amanhã tem tarefas novas.</p>`;
+    document.getElementById('janelaTarefas').hidden = false; Som.tocar('abrir');
+  }
+
   // ---------- a escolha do rival: o retrato, o jeito de jogar, a dificuldade e o que a vitória rende ----------
   let escolhendoRival = false;
   const NIVEL_RIVAL = { aprendiz: 'Para começar', esperto: 'Desafiadora' };
@@ -1799,7 +1939,7 @@
   function mostrarInicio() {
     confirmarAbandono = false; escolhendoRival = false;
     // a partida para atrás do menu: a jogada do rival que estava no meio recomeça do zero no Continuar
-    if (jogo && jogo.modo === 'bot' && jogo.pensando) { jogo.token = Math.random(); jogo.pensando = false; jogo.destaque = null; }
+    if (jogo && jogo.modo === 'bot' && jogo.pensando) { jogo.token = Math.random(); jogo.pensando = false; jogo.destaque = null; jogo.olhando = null; }
     ['fim', 'janelaMenu', 'janelaCarta'].forEach(id => { document.getElementById(id).hidden = true; });
     document.body.classList.add('inicio-aberto');
     desenharInicio();
@@ -1860,6 +2000,7 @@
       desenharInicio(); return;
     }
     if (a === 'perfil') { abrirPerfil(); return; }
+    if (a === 'tarefas') { abrirTarefas(); return; }
     if (a === 'online') { document.getElementById('btnOnline').click(); return; }
     if (a === 'regras') { abrirLado(true); return; }
     const botao = { deck: 'btnDeck', 'trocar-deck': 'btnDeck', loja: 'btnCarteira', ajustes: 'btnConfig' }[a];
@@ -1981,6 +2122,7 @@
     if (b.dataset.perfil === 'loja') abrirLoja('icones');
     if (b.dataset.perfil === 'conta') document.getElementById('btnOnline').click();
   });
+  document.getElementById('btnFecharTarefas').addEventListener('click', () => { document.getElementById('janelaTarefas').hidden = true; Som.tocar('fechar'); });
   document.getElementById('btnFecharPerfil').addEventListener('click', () => { document.getElementById('janelaPerfil').hidden = true; Som.tocar('fechar'); });
 
   // tocar num espaço vazio da Mesa desfaz a escolha do dado (não há mais barra com Cancelar)
@@ -2371,7 +2513,7 @@
     if (alvo.closest('textarea, input') && e.key !== 'Escape') return;
     if (e.key === 'Escape' && escolhendoRival && inicioAberto() && document.querySelectorAll('.janela:not([hidden])').length === 0) { escolhendoRival = false; desenharInicio(); return; }
     if (e.key === 'Escape') {
-      ['fim', 'janelaCarta', 'janelaDeck', 'janelaConfig', 'janelaLoja', 'janelaPerfil', 'janelaOnline', 'janelaMenu'].forEach(id => { const el = document.getElementById(id); if (el) el.hidden = true; }); abrirLado(false);
+      ['fim', 'janelaCarta', 'janelaDeck', 'janelaConfig', 'janelaLoja', 'janelaPerfil', 'janelaTarefas', 'janelaOnline', 'janelaMenu'].forEach(id => { const el = document.getElementById(id); if (el) el.hidden = true; }); abrirLado(false);
       return jogo ? cancelarEscolha() : undefined;
     }
     if (!jogo) return;
@@ -2418,6 +2560,7 @@
     moedas: pf.moedas, xp: pf.xp, cartas: pf.cartas, dados: pf.dados, icones: pf.icones, mesas: pf.mesas,
     dado: pf.ativo.dado, icone: pf.ativo.icone, mesa: pf.ativo.mesa, rating: pf.solo_rating, pico: pf.solo_pico,
     online: { nome: pf.nome, rating: pf.rating, partidas: pf.partidas, vitorias: pf.vitorias, titulo: pf.titulo },
+    tarefas: (pf.extras || {}).tarefas || null,
   });
   function usarPerfil(pf) {
     if (!st.sessao) return;
@@ -2497,11 +2640,12 @@
   // partidas contra os rivais do jogo, com conta: o servidor confere o teto e paga (o aparelho só mostra antes)
   Conta.relatarSolo = async j => {
     if (!st.sessao) return;
-    const antes = j.premio && j.premio.moedas ? j.premio.moedas.total : 0;
+    const somaMoedas = pr => (pr && pr.moedas ? pr.moedas.total : 0) + (pr && pr.tarefas ? pr.tarefas.moedas : 0);
+    const antes = somaMoedas(j.premio);
     try {
-      const r = await pedir('POST', '/api/solo', { desistiu: j.desistencia === 0, nivel: j.nivel, venceu: j.vencedor === 0, margem: Math.max(0, j.pts[0] - j.pts[1]), rodadas: j.rodada, meta: +j.meta, momentos: j.momentos.filter(m => m.p === 0).length });
+      const r = await pedir('POST', '/api/solo', { desistiu: j.desistencia === 0, nivel: j.nivel, venceu: j.vencedor === 0, margem: Math.max(0, j.pts[0] - j.pts[1]), rodadas: j.rodada, meta: +j.meta, momentos: j.momentos.filter(m => m.p === 0).length, resumo: R.resumoTarefas(j, 0) });
       j.premio = r.premio; usarPerfil(r.conta);
-      if ((r.premio.moedas ? r.premio.moedas.total : 0) !== antes && jogo === j && !document.getElementById('fim').hidden) desenharRecompensas(j);
+      if (somaMoedas(r.premio) !== antes && jogo === j && !document.getElementById('fim').hidden) desenharRecompensas(j);
     } catch (e) {
       if (st.sessao) usarPerfil(st.sessao.perfil); // volta ao que o servidor sabe
       j.premio.motivo = e.status === 429 || e.status === 400 ? e.message : 'Sem conexão: esta partida não entrou na sua conta.';
@@ -2510,10 +2654,12 @@
   };
 
   // ---------- o canal da partida e a volta depois de uma queda ----------
-  // Quem cai tem 90 s (no servidor) para voltar antes do W.O. O aparelho tenta durante toda essa janela, tenta na hora
+  // Quem cai na própria vez tem 90 s no servidor (é a regra do AFK: sem conexão, não há sinal de vida); na vez do rival,
+  // a queda não conta.
+  // O aparelho tenta voltar por 5 min, tenta na hora
   // em que a internet volta ou o app volta para a frente, e um pulso descobre conexões mortas que o navegador não percebe.
   // A sala fica guardada no aparelho: se a aba recarregar (o iPhone faz isso em segundo plano), o jogo volta para ela sozinho.
-  const JANELA_VOLTA = 100_000, SALA_GUARDADA = 'diceduel.sala', VALIDADE_SALA = 3 * 3600_000;
+  const JANELA_VOLTA = 300_000, SALA_GUARDADA = 'diceduel.sala', VALIDADE_SALA = 3 * 3600_000;
   let timerVolta = null, emVoo = false;
   function lembrarSala(acabou = false) {
     try {
@@ -2643,7 +2789,8 @@
   };
 
   // o tempo de cada vez no online, escolhido ao criar a sala (como o controle de tempo do chess.com; servidor/salas.js)
-  const TEMPOS_ONLINE = { relampago: ['Relâmpago', '20 s'], rapida: ['Rápida', '60 s'], calma: ['Calma', '2 min'] };
+  // os ritmos (servidor/salas.js RITMOS): minutos no relógio de cada um + segundos ganhos a cada vez jogada
+  const TEMPOS_ONLINE = { relampago: ['Relâmpago', '1 min'], rapida: ['Rápida', '2 min'], calma: ['Calma', '3 min'] };
   const tempoTxt = r => { const t = TEMPOS_ONLINE[r] || TEMPOS_ONLINE.rapida; return `${t[0]} · ${t[1]} por vez`; };
   async function criarSala() {
     aviso('Criando a sala…');
@@ -2706,7 +2853,7 @@
       j.premio = m.premio; j.semPremio = m.erro || null;
       if (m.premio) usarPerfil(m.premio.conta);
       lembrarSala(true);
-      if (!jaViu) setTimeout(mostrarFim, st.pref.animacoes ? 1800 : 600);
+      if (!jaViu) setTimeout(mostrarFim, st.pref.animacoes ? 1800 + esperaFesta() : 600);
     } else if (m.tipo === 'erro') {
       const saiuDaSala = m.codigo === 'sala' || m.semSala;
       if (Rede.voltando && m.semSala) {
@@ -2734,6 +2881,7 @@
     const virou = v.eventos.find(e => e.tipo === 'virar');
     Object.assign(v, { alvo: null, ajusteIdx: null, sel: null, destaque: null, pensando: false, token: Math.random(), fala: null, humor: null, intro: false, virando: virou ? virou.id : null });
     v.prazoAte = v.prazoVez == null ? null : Date.now() + v.prazoVez;
+    v.afkAte = v.inatividade ? Date.now() + v.inatividade.prazo : null;
     if (v.fase !== 'fim') Rede.pediuRevanche = false;
     if (!nova && antes.premio !== undefined) { v.premio = antes.premio; v.semPremio = antes.semPremio; } // o prêmio só vem uma vez
     v.perfis[1].voltaAte = v.perfis[1].volta != null ? Date.now() + v.perfis[1].volta : null;
@@ -2747,6 +2895,7 @@
       if (st.pref.animacoes && v.fase !== 'fim') return mostrarVersus();
     }
     render();
+    mostrarAfk(v);
   }
   // o relógio da vez (o tempo do ritmo da sala, no selo de vez), a contagem de volta do rival que caiu
   // e o aviso de quando é a nossa conexão que caiu
@@ -2769,6 +2918,7 @@
     if (el.querySelector('.prazo')) el.textContent = `rodada ${jogo.rodada} · ${jogo.mesa.length} ${jogo.mesa.length === 1 ? 'dado' : 'dados'}`;
     seloVez(jogo);
     lembrarVez(jogo);
+    mostrarAfk(jogo);
   }, 1000);
 
   // a janela Online
@@ -3004,7 +3154,7 @@
       if (emJogo && jogo.fase !== 'fim') {
         el.innerHTML = `${eu}<p style="margin:0">Partida na sala <b>${Rede.sala}</b> contra <b>${esc(jogo.perfis[1].nome)}</b> (rating ${jogo.perfis[1].rating}).</p>
           <div class="linha-botoes"><button class="btn btn-mel" data-on="voltar">Voltar à mesa</button><button class="btn btn-papel" data-on="desistir">Desistir</button></div>
-          <p class="nota" style="margin:0">Desistir conta como derrota. Se a conexão cair, você tem 90 segundos para voltar (o jogo tenta sozinho).</p>`;
+          <p class="nota" style="margin:0">Desistir conta como derrota. Se a conexão cair na sua vez, você tem 90 segundos para voltar (o jogo tenta sozinho).</p>`;
         return;
       }
       if (emJogo) {
@@ -3025,7 +3175,7 @@
       return;
     }
     el.innerHTML = `${eu}
-      <div class="linha-cfg tempo-online"><span><label>Tempo por vez</label><small>se o tempo acabar, o jogo joga por você; 3 vezes seguidas e a partida acaba</small></span>
+      <div class="linha-cfg tempo-online"><span><label>Tempo por vez</label><small>parado por metade do tempo, o jogo pergunta se você ainda está aí; sem resposta em 30 s, a partida acaba</small></span>
         <span class="segmento" role="group" aria-label="Tempo por vez">${Object.entries(TEMPOS_ONLINE).map(([k, t]) => `<button data-on="tempo" data-v="${k}" aria-pressed="${st.cfg.tempoOnline === k}">${t[0]} <small>${t[1]}</small></button>`).join('')}</span></div>
       <div class="linha-botoes"><button class="btn btn-mel" data-on="criar-sala">Chamar um amigo</button></div>
       <form class="linha-botoes" id="formCodigo"><input class="campo codigo" name="codigo" maxlength="6" placeholder="código" aria-label="Código da sala" autocomplete="off" style="flex:1 1 120px"><button class="btn btn-papel" type="submit">Entrar na sala</button></form>
@@ -3239,17 +3389,31 @@
     }
   }
   // o roteiro de teste automático (tools/) pode ler o estado
-  // AFK: quem entrou no automático e toca na tela, aperta uma tecla ou volta para o app avisa o servidor ("voltei"):
-  // a vez volta a ter o tempo inteiro (a conta das vezes seguidas no automático só zera quando a pessoa joga)
-  let ultimoVoltei = 0;
-  function talvezVoltei() {
+  // ---------- AFK no online: o sinal de vida e o "Você ainda está aí?" ----------
+  // Na sua vez, tocar na tela, apertar uma tecla ou voltar para o app avisa o servidor (no máximo a cada 5 s; com a
+  // pergunta na tela, na hora). Parado por metade do tempo da vez, o servidor pergunta; sem resposta em 30 s, a partida
+  // acaba como derrota por inatividade (servidor/salas.js). Na vez do rival, nada disso conta.
+  let ultimoSinal = 0;
+  function sinalDeVida(jaJa = false) {
     const j = jogo;
-    if (!j || !online() || j.fase === 'fim' || !j.perfis || !j.perfis[0].ausente || Date.now() - ultimoVoltei < 3000) return;
-    ultimoVoltei = Date.now(); enviarWs({ tipo: 'voltei' });
+    if (!j || !online() || j.fase === 'fim' || j.vez !== 0) return;
+    if (!jaJa && !j.inatividade && Date.now() - ultimoSinal < 5000) return;
+    ultimoSinal = Date.now(); enviarWs({ tipo: 'ativo' });
   }
-  addEventListener('pointerdown', talvezVoltei, true);
-  addEventListener('keydown', talvezVoltei, true);
-  document.addEventListener('visibilitychange', () => { if (!document.hidden) talvezVoltei(); });
+  ['pointerdown', 'keydown', 'wheel'].forEach(ev => addEventListener(ev, () => sinalDeVida(), { capture: true, passive: true }));
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) sinalDeVida(true); });
+  document.getElementById('btnAfk').addEventListener('click', () => { sinalDeVida(true); document.getElementById('janelaAfk').hidden = true; });
+  function mostrarAfk(j) {
+    const el = document.getElementById('janelaAfk'), s = j && j.afkAte ? Math.max(0, Math.ceil((j.afkAte - Date.now()) / 1000)) : null;
+    document.querySelectorAll('[data-afk]').forEach(x => { if (s !== null) x.textContent = s; });
+    const minha = !!(j && online() && j.fase !== 'fim' && j.inatividade && j.inatividade.quem === 0);
+    if (!minha) { el.hidden = true; return; }
+    if (el.hidden) {
+      el.hidden = false; Som.tocar('perigo'); vibrar([90, 60, 90, 60, 140]);
+      document.getElementById('btnAfk').focus();
+    }
+    document.title = `● Você ainda está aí? · ${TITULO}`;
+  }
   window.DiceDuel = { get jogo() { return jogo; }, st, salvar, fecharInicio: () => esconderInicio(), abrirInicio: () => mostrarInicio(), ajustar(p) { Object.assign(st.pref, p); aplicarPrefs(); if (jogo) render(); }, automato: () => talvezAutomato() };
   window.claude?.hot?.ready ? window.claude.hot.ready(iniciar) : iniciar(window.claude?.hot?.data ?? {});
 })();

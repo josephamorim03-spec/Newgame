@@ -93,7 +93,8 @@ fs.mkdirSync(FOTOS, { recursive: true });
         if (passos === 45) await pg.screenshot({ path: path.join(FOTOS, `meio-${r.nome}.png`) });
       } catch (e) { if (!/not attached|detached|not stable|not visible|intercepts|Target closed/.test(e.message)) throw e; }
     }
-    await pg.waitForTimeout(2600);
+    await pg.waitForFunction(() => !document.getElementById('fim').hidden, null, { timeout: 9000 }).catch(() => {});
+    await pg.waitForTimeout(1200);
     if (r.nome === 'celular') await pg.screenshot({ path: path.join(FOTOS, 'fim-celular.png') });
     const res = await pg.evaluate(() => ({
       fase: DiceDuel.jogo.fase, placar: DiceDuel.jogo.pts, fimAberto: !document.getElementById('fim').hidden,

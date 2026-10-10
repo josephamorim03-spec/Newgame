@@ -300,28 +300,17 @@ test('Pressa (v0.12): só com 3 ou 4 dados na Mesa; nunca abre uma Mesa nem pega
   }
 });
 
-// o tempo da vez acabou (online): o jogo joga por ele, nunca deixa a vez presa e quase nunca rompe a corrente
-test('vez no automático: termina a vez em qualquer situação; 3 seguidas = W.O. por tempo', () => {
-  let vezes = 0;
-  for (let semente = 1; semente <= 120; semente++) {
-    const rng = rngDe(semente), deck = () => { for (;;) { const d = [0, 1, 2].map(() => Regras.ORDEM[Math.floor(rng() * Regras.ORDEM.length)]); if (Regras.deckValido(d)) return d; } };
-    const j = Regras.criarPartida({ decks: [deck(), deck()], vez: 0, meta: 16, rng });
-    for (let k = 0; k < 600 && j.fase !== 'fim'; k++) {
-      const p = j.vez;
-      // às vezes o jogador já fez parte da vez (pegou o dado e ficou na escolha do destino, ou na de disparar)
-      if (rng() < 0.3) { const a = jogadaAoAcaso(j, p, rng); if (a.tipo !== 'carta') Regras.aplicar(j, p, a); if (j.fase === 'fim' || j.vez !== p) continue; }
-      const rodada = j.rodada; Regras.jogarNoAutomatico(j, p); vezes++;
-      assert.ok(j.fase === 'fim' || j.vez !== p || j.rodada !== rodada, `semente ${semente}: a vez ficou presa`);   // (na Mesa nova, quem está atrás abre)
-      if (j.auto) j.auto[p] = 0;   // aqui é sempre a 1ª: o W.O. por tempo tem o próprio caso, embaixo
-    }
-    assert.strictEqual(j.fase, 'fim', `semente ${semente}: a partida no automático termina`);
+// W.O. e o porquê (a tela do fim conta): saiu, caiu e não voltou, não jogou a tempo, ou ficou inativo (online: servidor/salas.js)
+test('desistir: o motivo do W.O. vai no estado e no registro', () => {
+  for (const [motivo, txt] of [['saiu', 'saiu da partida'], ['queda', 'caiu e não voltou a tempo'], ['tempo', 'não jogou a tempo'], ['inativo', 'não respondeu ao "Você ainda está aí?"'], ['qualquer', 'saiu da partida']]) {
+    const j = Regras.criarPartida({ decks: [[], []], vez: 0, rng: rngDe(3) });
+    Regras.desistir(j, 1, motivo);
+    assert.strictEqual(j.fase, 'fim'); assert.strictEqual(j.vencedor, 0); assert.strictEqual(j.desistencia, 1);
+    assert.strictEqual(j.motivoFim, motivo === 'qualquer' ? 'saiu' : motivo);
+    assert.strictEqual(j.log[0].txt, txt);
+    assert.strictEqual(Regras.visaoDe(j, 1).desistencia, 0, 'na visão de quem saiu, ele é o 0');
   }
-  assert.ok(vezes > 5000);
-  const k = Regras.criarPartida({ decks: [[], []], vez: 0, rng: rngDe(3) });
-  for (let n = 0; n < 5 && k.fase !== 'fim'; n++) Regras.jogarNoAutomatico(k, k.vez);
-  assert.strictEqual(k.fase, 'fim'); assert.strictEqual(k.motivoFim, 'tempo'); assert.strictEqual(k.desistencia, 0);
-  assert.strictEqual(k.log[0].txt, `ficou ${Regras.AUTO_MAX} vezes seguidas sem jogar a tempo`);
-  assert.deepStrictEqual(Regras.visaoDe(k, 1).auto, [2, 3]);   // a conta vai na visão de cada um, na ordem de quem vê
+  for (const f of ['perderVez', 'jogarNoAutomatico', 'jogadaAutomatica']) assert.strictEqual(Regras[f], undefined, 'ninguém joga por ninguém: ' + f);
 });
 
 // os bons momentos de decisão (docs/design.md §6): a Paciência premia segurar uma corrente que já podia disparar
@@ -372,4 +361,52 @@ test('o elo diz quais sincronias o dado fez e entre quais números (o guia da es
   assert.ok(Regras.aplicar(j, 0, { tipo: 'pegar', idx: 0, modo: 'corrente' }).ok);
   const elo = j.eventos.find(e => e.tipo === 'elo');
   assert.deepStrictEqual([elo.rels, elo.de, elo.v], [['passo', 'oposto'], 3, 4]);
+});
+
+test('tarefas do dia: três por dia (uma de cada grupo), avançam com a partida e pagam uma vez só', () => {
+  const dia = '2026-10-10';
+  const ids = Regras.tarefasDoDia(dia);
+  assert.strictEqual(ids.length, 3);
+  assert.deepStrictEqual(Regras.tarefasDoDia(dia), ids, 'o mesmo dia sorteia as mesmas tarefas');
+  ids.forEach(id => assert.ok(Regras.TAREFAS[id], id));
+  const varios = new Set(Array.from({ length: 30 }, (_, i) => Regras.tarefasDoDia(`2026-11-${String(i + 1).padStart(2, '0')}`).join()));
+  assert.ok(varios.size > 5, 'os dias variam');
+
+  // um estado de outro dia (ou estragado) vira o do dia novo
+  assert.deepStrictEqual(Regras.estadoTarefas({ dia: '2020-01-01', ids: ['x'], prog: {}, feitas: ['x'] }, dia).feitas, []);
+  assert.deepStrictEqual(Regras.estadoTarefas('lixo', dia).ids, ids);
+
+  const est = { dia, ids: ['pontos', 'corrente4', 'bloqueio'], prog: {}, feitas: [], vitoria: false };
+  const derrota = { venceu: false, pts: 12, maior: 4, disparos: 3, salvos: 0, bloqueios: 0 };
+  let r = Regras.avancarTarefas(est, dia, derrota);
+  assert.deepStrictEqual(r.concluidas.map(t => t.id), ['corrente4'], 'paga também na derrota');
+  assert.strictEqual(r.moedas, Regras.MOEDAS_TAREFA);
+  assert.strictEqual(r.estado.prog.pontos, 12);
+  assert.deepStrictEqual(est.feitas, [], 'não mexe no estado de antes');
+  r = Regras.avancarTarefas(r.estado, dia, derrota);
+  assert.deepStrictEqual(r.concluidas.map(t => t.id), ['pontos'], 'a de pontos acumula entre partidas');
+  assert.strictEqual(r.estado.prog.pontos, 20, 'o progresso para no alvo');
+  r = Regras.avancarTarefas(r.estado, dia, derrota);
+  assert.strictEqual(r.moedas, 0, 'tarefa feita não paga de novo');
+  assert.strictEqual(Regras.avancarTarefas(r.estado, dia, null).moedas, 0, 'sem resumo (desistência), nada avança');
+
+  // a primeira vitória do dia que rende moedas dobra, uma vez
+  const e2 = Regras.estadoTarefas(null, dia), zero = { total: 0 }, m1 = { total: 14 }, m2 = { total: 14 };
+  assert.strictEqual(Regras.dobrarPrimeiraVitoria(e2, zero), false, 'vitória sem moedas não gasta o dobro');
+  assert.strictEqual(Regras.dobrarPrimeiraVitoria(e2, m1), true);
+  assert.deepStrictEqual([m1.total, m1.dobro, e2.vitoria], [28, true, true]);
+  assert.strictEqual(Regras.dobrarPrimeiraVitoria(e2, m2), false);
+  assert.strictEqual(m2.total, 14);
+
+  // o resumo que vem do aparelho
+  assert.deepStrictEqual(Regras.resumoValido(derrota), derrota);
+  for (const ruim of [null, {}, { ...derrota, maior: 7 }, { ...derrota, pts: -1 }, { ...derrota, salvos: 1.5 }, { ...derrota, venceu: 'sim' }]) assert.strictEqual(Regras.resumoValido(ruim), null);
+});
+
+test('o resumo das tarefas sai da partida: pontos, maior corrente, disparos, salvos e bloqueios de cada um', () => {
+  const j = Regras.criarPartida({ decks: [[], []], vez: 0, meta: 16, rng: rngDe(3) });
+  j.pts = [9, 4]; j.vencedor = 0; j.stats[0].maior = 5; j.stats[0].disp = 3;
+  j.momentos.push({ p: 0, simbolo: '❀', txt: 'O Bolso salvou' }, { p: 0, simbolo: '✦', txt: 'Bloqueio' }, { p: 1, simbolo: '✦', txt: 'Bloqueio' });
+  assert.deepStrictEqual(Regras.resumoTarefas(j, 0), { venceu: true, pts: 9, maior: 5, disparos: 3, salvos: 1, bloqueios: 1 });
+  assert.strictEqual(Regras.resumoTarefas(j, 1).venceu, false);
 });

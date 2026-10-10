@@ -418,20 +418,25 @@ function criarApp({ banco, segredo, raiz = path.join(__dirname, '..'), tempos = 
       // o resultado vem do aparelho: além do teto de moedas, um teto de relatos e de XP por dia limita quem inventa vitórias
       const sd = c.extras && c.extras.soloDia && c.extras.soloDia.dia === dia ? c.extras.soloDia : { dia, n: 0, xp: 0 };
       if (sd.n >= SOLO_POR_DIA.relatos) return { status: 429, erro: 'Você já jogou muitas partidas contra os rivais hoje. Amanhã tem mais; o online não tem teto.' };
+      // tarefas do dia (v0.14): a primeira vitória do dia que rende moedas dobra (antes do teto do dia); as tarefas avançam
+      // com o resumo da partida e pagam também na derrota. Quem desistiu não avança
+      const tarefasAntes = Regras.estadoTarefas(c.extras && c.extras.tarefas, dia);
+      const tarefas = Regras.avancarTarefas(tarefasAntes, dia, b.desistiu === true ? null : Regras.resumoValido(b.resumo));
+      Regras.dobrarPrimeiraVitoria(tarefas.estado, ps.moedas);
       if (ps.moedas && ps.moedas.total > 0) {
         const cabe = Math.max(0, TETO_SOLO_DIA - jaHoje);
         if (ps.moedas.total > cabe) { ps.moedas.total = cabe; ps.moedas.tetoDia = true; }
       }
-      const ganho = ps.moedas ? ps.moedas.total : 0;
+      const ganho = (ps.moedas ? ps.moedas.total : 0) + tarefas.moedas;
       const conta = { xp: c.xp, dados: c.dados.slice(), icones: c.icones.slice(), mesas: c.mesas.slice() };
       const xpPedido = b.desistiu === true ? 0 : Regras.xpDaPartida(b.venceu, b.momentos);   // abandonar não rende experiência
       const xpDado = Math.max(0, Math.min(xpPedido, SOLO_POR_DIA.xp - sd.xp));
       const xp = Regras.ganharXp(conta, xpDado);
       const nova = await banco.atualizarConta(c.id, {
-        moedas: c.moedas + ganho, solo_rating: ps.rating, solo_pico: ps.picoNovo, solo_dia: dia, solo_hoje: jaHoje + ganho, ...conta,
-        extras: { ...(c.extras || {}), soloDia: { dia, n: sd.n + 1, xp: sd.xp + xpDado } },
+        moedas: c.moedas + ganho, solo_rating: ps.rating, solo_pico: ps.picoNovo, solo_dia: dia, solo_hoje: jaHoje + (ps.moedas ? ps.moedas.total : 0), ...conta,
+        extras: { ...(c.extras || {}), soloDia: { dia, n: sd.n + 1, xp: sd.xp + xpDado }, tarefas: tarefas.estado },
       });
-      return { premio: { moedas: ps.moedas, ratingAntes: ps.ratingAntes, pico: ps.pico, rating: ps.rating, ...xp }, conta: nova };
+      return { premio: { moedas: ps.moedas, ratingAntes: ps.ratingAntes, pico: ps.pico, rating: ps.rating, ...xp, tarefas: { concluidas: tarefas.concluidas, moedas: tarefas.moedas } }, conta: nova };
     });
     if (r.erro) return res.status(r.status).json({ erro: r.erro });
     res.json({ premio: r.premio, conta: perfil(r.conta) });
@@ -578,7 +583,7 @@ function criarApp({ banco, segredo, raiz = path.join(__dirname, '..'), tempos = 
           else if (m.tipo === 'revanche') salas.revanche(ws, conta, m);
           else if (m.tipo === 'deck') salas.escolher(ws, conta, m);
           else if (m.tipo === 'sair') salas.sair(ws);
-          else if (m.tipo === 'voltei') salas.voltei(ws, conta);   // tocou na tela ou voltou para o app: sai do "ausente"
+          else if (m.tipo === 'ativo') salas.ativo(ws, conta);   // sinal de vida (tocou na tela, respondeu ao "Você ainda está aí?")
         } catch (e) { console.error('ws', e); salas.enviar(ws, { tipo: 'erro', erro: 'Algo deu errado no servidor.' }); }
       });
       ws.on('close', () => {

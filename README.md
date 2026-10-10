@@ -110,16 +110,26 @@ node tools/vercel_local.js                     # a página como o Vercel publica
   placar do tamanho do lance); a tela inicial com a rival à mesa, a saudação da hora e dados que rolam ao toque, e as patas da Diana (sprites:
   dorso, virando, palma com as almofadinhas rosa e gancho na aresta) mexendo nos dados e ameaçando pegá-los; a mesa
   não pisca mais marrom no tremor.
+- **Impacto e ponto de partida:** os disparos de 5 e 6 e a armadilha que pega param o tempo por um instante antes do
+  estouro; a corrente a um dado de fechar a partida pulsa; o botão vira "Disparar e vencer"; os dados que dão a vitória
+  ao rival ganham um "!"; o disparo que vence conta até o fim antes de a vitória estourar; a ruptura cai em dominó.
+- **O rival à mesa:** antes de pegar, ele olha a Mesa (a Diana com a patinha, a Coruja os dados que servem a você); a
+  carta dele sai da mão e voa até o vão acima da Mesa, sem cobrir o painel dele.
+- **O fim em sequência:** moedas, a barra de experiência enchendo de onde estava, o nível; a próxima coisa a ganhar;
+  "Faltaram 2 pontos" na derrota apertada; "Revanche contra Diana"; recordes só quando dizem algo.
+- **Tarefas do dia:** três por dia, iguais para todos, 15 moedas cada, **também na derrota**; a primeira vitória do
+  dia que rende moedas rende em dobro. No menu e no fim da partida (`docs/progressao.md` §4.1).
 
-Detalhes em `docs/design.md` §5, §6 e §7; teste em `tools/estreia_e2e.js`.
+Detalhes em `docs/design.md` §5, §6 e §7 e `docs/progressao.md` §4.1; testes em `tools/estreia_e2e.js` e `npm test`.
 
 **v0.13, em produção** (a página no Vercel e o servidor na Railway, publicados da branch `DiceDuel`): **o blefe e o
 desafio saíram.** O "?" do rival é sempre uma armadilha de verdade; tocar nele mostra quais armadilhas do deck dele ele
 pode ser e o que cada uma faria agora. Sem os +2/+2/+3 do desafio, os pontos voltam a vir só dos dados e das cartas
 (o porquê e os números em `docs/balanceamento-cartas.md` §18). No online, antes de cada partida os dois montam o deck
-(preparação de 60 s, `docs/servidor.md`). Estourar o tempo da vez não perde mais a partida: o jogo joga por você e
-avisa os dois; só 3 vezes seguidas no automático viram W.O., e a tela do fim diz por que a partida acabou. A vez no ritmo Rápida tem
-60 s; quem entrou no automático e não voltou tem só 15 s por vez (o rival não espera à toa), até tocar na tela.
+(preparação de 60 s, `docs/servidor.md`). Cada vez tem 2 min (Rápida). Política de AFK: parado
+na sua vez por 60 s (sem tocar na tela), o jogo pergunta "Você ainda está aí?"; sem resposta em 30 s, derrota por
+inatividade (90 s parado). Queda de internet segue a mesma regra, só na sua vez. Ninguém joga por você nem perde a vez,
+e a tela do fim diz por que a partida acabou.
 
 **v0.12:** meta 16 (a 12 acabava
 cedo demais; 20 e 24 voltam quando tiverem o próprio ajuste); o Coringa virou Remendo: o dado que romperia entra no lugar da frente, em vez de alongar a corrente; Pressa
