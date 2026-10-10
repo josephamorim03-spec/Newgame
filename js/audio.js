@@ -52,10 +52,19 @@
     lfo.connect(wow); lfo.start();
     aplicarVolumes();
   }
+  // iPhone: sem isto o Web Audio fica na categoria "ambient" e some com a chave de silêncio ligada
+  // (no computador toca, no celular não). "playback" toca como um vídeo; com som e música desligados volta ao padrão.
+  function sessao() {
+    try {
+      const s = navigator.audioSession, tipo = cfg.som || cfg.musica ? 'playback' : 'auto';
+      if (s && s.type !== tipo) s.type = tipo;
+    } catch (e) {}
+  }
   function criar() {
     if (ctx) return true;
     const AC = window.AudioContext || window.webkitAudioContext;
     if (!AC) return false;
+    sessao();                                            // antes do contexto existir: o iPhone fixa a categoria ao começar
     try { montar(new AC({ latencyHint: 'interactive' })); } catch (e) { ctx = null; return false; }
     return true;
   }
@@ -68,7 +77,12 @@
   // o navegador só libera áudio depois de um toque; o iPhone também usa "interrupted" (depois de uma ligação)
   function desbloquear() {
     if (!criar()) return;
-    if (ctx.state !== 'running' && ctx.state !== 'closed') ctx.resume().catch(() => {});
+    sessao();
+    if (ctx.state !== 'running' && ctx.state !== 'closed') {
+      // o Safari só destrava de vez quando algo toca dentro do toque: uma amostra de silêncio basta
+      try { const b = ctx.createBufferSource(); b.buffer = ctx.createBuffer(1, 1, ctx.sampleRate); b.connect(ctx.destination); b.start(0); } catch (e) {}
+      ctx.resume().catch(() => {});
+    }
     if (cfg.musica) musica.iniciar();
   }
   // música abaixa um pouco sob um efeito grande e volta sozinha
@@ -429,6 +443,7 @@
   function configurar(novo) {
     Object.assign(cfg, novo);
     if (!ctx) return;
+    sessao();
     aplicarVolumes();
     if (cfg.musica && ctx.state === 'running') musica.iniciar();
     if (!cfg.musica) musica.parar();
