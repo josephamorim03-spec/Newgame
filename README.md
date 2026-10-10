@@ -73,6 +73,7 @@ e o amigo cai direto na sala. O servidor é a autoridade da partida e roda na Ra
 | `tools/vercel_local.js` | simula o Vercel (só o que o `.vercelignore` publica, com a CSP do `vercel.json`) e joga uma partida |
 | `docs/design.md` | regras, cartas, números, decisões e por quê |
 | `docs/pesquisa.md` | o que jogos de cartas no celular ensinam (deck pequeno, armadilhas, contra-jogo) |
+| `docs/historia.md` | o modo história "Fita Dupla": roteiro em quadros, a Diana e a cura, os rivais, as gags e como vira jogo |
 | `docs/progressao.md` | moedas, rating contra o farm, XP e níveis, loja, cosméticos, regras de monetização |
 | `docs/visual-impresso.md` | técnicas do Aranhaverso no Dice Duel: o que cabe, o que não cabe e o plano |
 | `docs/servidor.md` | o servidor: o que faz, regras contra abuso, como pôr na Railway, API |
