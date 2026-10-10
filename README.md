@@ -62,6 +62,7 @@ e o amigo cai direto na sala. O servidor é a autoridade da partida e roda na Ra
 | `tools/lancamentos/` | exporta os lançamentos gravados do Godot e monta `js/lancamentos.js` |
 | `tools/arte_icones.py` | pinta os retratos com a API de imagem da OpenAI, no estilo do jogo (pedidos em `arte/retratos.json`, com o vetor de cada personagem como referência), e os embute no jogo |
 | `tools/arte_dados.py` | pinta a face das skins de dado que o CSS não faz bem (a lã da Ovelha, a madeira da Coruja, o verde do Sapo) com o gpt-image-2 (`arte/dados.json`) e embute em `js/dados_pintados.js` |
+| `tools/historia/dados_quadros.py` | conserta os dados dos quadros da história: mantém o dado da arte e troca as bolinhas erradas pelas certas, na perspectiva de cada face, e recusa um dado impossível (faces vizinhas somando 7, canto espelhado) |
 | `tools/historia/quadros.py` | os quadros do modo história: pinta as artes de `arte/historia.json` (gpt-image-2, com os retratos de referência) em `arte/historia/quadros/` e monta as páginas com as falas por cima, para revisar |
 | `tools/referencias.js` | desenha os vetores de `js/retratos.js` em `arte/referencia/` (rode de novo quando mudar um vetor) |
 | `tools/fumaca.js` | teste de fumaça: joga partidas inteiras no navegador e falha com qualquer erro |

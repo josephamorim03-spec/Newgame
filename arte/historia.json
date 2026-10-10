@@ -2,7 +2,7 @@
  "_leia": "Os quadros do modo história (docs/historia.md §7): uma arte por desenho descrito no roteiro, sem texto. As falas entram por cima, em balões, a partir de docs/historia_piadas.json (só as aprovadas vão para o jogo); um quadro sem desenho próprio reusa a arte do anterior com outro plano ('perto', 'detalhe'), como no gibi. Gere com: python3 tools/historia/quadros.py [ids...] [--seco] [--qualidade medium] [--refazer]. Monte as páginas para revisar com: python3 tools/historia/quadros.py paginas [SAIDA.html]. Textos em inglês porque o gerador entende melhor; os letreiros dentro da cena (o caderno, o mural, as lombadas) vão em português, escritos como no roteiro.",
  "modelo": "gpt-image-2",
  "tamanho": "1536x1024",
- "estilo": "A single comic-book panel from the cozy story mode of the game Dice Duel. It must look like the game's own art, the attached character art: a flat sticker illustration with a thick uniform dark cocoa outline (#3a2a2e) around every shape, flat color fills with ONE soft cel-shaded shadow tone and one small highlight, no gradients, no glow, no painterly texture, no realistic lighting, no 3D rendering. Only the game's palette: cream paper #fbf1df and #f1dfc2, ivory #fffaf0, sage felt greens #4e7d68 and #5f8f78, wood browns #7a4b2f and #a86c45, honey #f2b15e, coral #e8806f, rose #ec8fa8, sky blue #6fbfd3, lavender #b8a4f0, mint #8fd6a8, cocoa #3a2a2e. Backgrounds are SIMPLE: a few big flat color shapes (a wall, a floor, a window) with at most three props, no clutter, no decorative plants or mugs unless the scene asks for them. Cozy, adult, dry humor; expressive faces, not chibi, not childish. No halftone dots (they are added later), no panel border, no frame, no gutter, no white margin: the art fills the image edge to edge. No speech balloons, no captions, no sound effects and no lettering, except a sign the scene explicitly asks for. Every die is a plain six-sided cube with round pips, in its owner's color (Diana's are pink).",
+ "estilo": "A single comic-book panel from the cozy story mode of the game Dice Duel. It must look like the game's own art, the attached character art: a flat sticker illustration with a thick uniform dark cocoa outline (#3a2a2e) around every shape, flat color fills with ONE soft cel-shaded shadow tone and one small highlight, no gradients, no glow, no painterly texture, no realistic lighting, no 3D rendering. Only the game's palette: cream paper #fbf1df and #f1dfc2, ivory #fffaf0, sage felt greens #4e7d68 and #5f8f78, wood browns #7a4b2f and #a86c45, honey #f2b15e, coral #e8806f, rose #ec8fa8, sky blue #6fbfd3, lavender #b8a4f0, mint #8fd6a8, cocoa #3a2a2e. Backgrounds are SIMPLE: a few big flat color shapes (a wall, a floor, a window) with at most three props, no clutter, no decorative plants or mugs unless the scene asks for them. Cozy, adult, dry humor; expressive faces, not chibi, not childish. No halftone dots (they are added later), no panel border, no frame, no gutter, no white margin: the art fills the image edge to edge. No speech balloons, no captions, no sound effects and no lettering, except a sign the scene explicitly asks for. Every die is a plain six-sided cube with round pips, in its owner's color (Diana's are pink). Draw few dice, and every visible face with a correct standard pip layout: 1 = one center pip; 2 = two pips on a diagonal; 3 = three pips on a diagonal; 4 = four corners; 5 = four corners and the center; 6 = two parallel rows of three. Never more than six pips on a face, never a blank face, and two faces of the same die never show numbers that add up to 7.",
  "referencia": "The attached images are the official character portraits: keep each character's design, colors, markings and accessories exactly as in their portrait (the portraits only show the head; draw the rest of the body to match). Ignore any badge, medallion or hexagon frame around a portrait: it is not part of the character.",
  "personagens": {
   "diana": "DIANA: a white domestic cat with cool white fur (not cream, not yellow), clear light-blue eyes; the upper third of the ear on the VIEWER'S LEFT is solid black, the other ear is all white with pink inside; exactly TWO short vertical charcoal-gray stripes in the middle of her forehead; faint light-gray shading above the eyes; small pink nose, white whiskers. She has real cat proportions (four paws, no clothes); only her expressions are human: dry, confident, a little conspiratorial.",
@@ -39,6 +39,46 @@
      63,
      54
     ]
+   },
+   "dados": [
+    {
+     "x": 50.7,
+     "y": 88.6,
+     "vista": "obliquo",
+     "faces": {
+      "t": 5,
+      "e": 1,
+      "d": 3
+     }
+    },
+    {
+     "x": 59.2,
+     "y": 92.3,
+     "vista": "obliquo",
+     "faces": {
+      "t": 2,
+      "e": 6,
+      "d": 3
+     }
+    },
+    {
+     "x": 68.8,
+     "y": 91.1,
+     "vista": "obliquo",
+     "faces": {
+      "t": 6,
+      "e": 2,
+      "d": 4
+     }
+    }
+   ],
+   "cabeca": {
+    "diana": [
+     45,
+     8,
+     81,
+     63
+    ]
    }
   },
   "p-pata": {
@@ -52,6 +92,52 @@
     "diana": [
      64,
      57
+    ]
+   },
+   "dados": [
+    {
+     "x": 21.5,
+     "y": 85.5,
+     "vista": "obliquo",
+     "faces": {
+      "t": 4,
+      "e": 1,
+      "d": 5
+     },
+     "caixa": [
+      17.9,
+      81.1,
+      24.6,
+      91.5
+     ]
+    },
+    {
+     "x": 71.8,
+     "y": 84.0,
+     "vista": "obliquo",
+     "faces": {
+      "t": 3,
+      "e": 2,
+      "d": 6
+     }
+    },
+    {
+     "x": 79.8,
+     "y": 89.4,
+     "vista": "obliquo",
+     "faces": {
+      "t": 1,
+      "e": 3,
+      "d": 5
+     }
+    }
+   ],
+   "cabeca": {
+    "diana": [
+     50,
+     10,
+     92,
+     62
     ]
    }
   },
@@ -67,6 +153,46 @@
      59,
      45
     ]
+   },
+   "dados": [
+    {
+     "x": 44.1,
+     "y": 94.5,
+     "vista": "obliquo",
+     "faces": {
+      "t": 2,
+      "e": 1,
+      "d": 4
+     }
+    },
+    {
+     "x": 54.0,
+     "y": 92.3,
+     "vista": "obliquo",
+     "faces": {
+      "t": 6,
+      "e": 5,
+      "d": 3
+     }
+    },
+    {
+     "x": 63.6,
+     "y": 94.4,
+     "vista": "obliquo",
+     "faces": {
+      "t": 5,
+      "e": 4,
+      "d": 1
+     }
+    }
+   ],
+   "cabeca": {
+    "diana": [
+     46,
+     8,
+     75,
+     52
+    ]
    }
   },
   "p-placar": {
@@ -80,6 +206,38 @@
     "diana": [
      35,
      48
+    ]
+   },
+   "dados": [
+    {
+     "x": 36.9,
+     "y": 90.7,
+     "vista": "canto",
+     "faces": {
+      "t": 5,
+      "e": 6,
+      "d": 4
+     },
+     "corte": 0.57
+    },
+    {
+     "x": 44.3,
+     "y": 86.2,
+     "vista": "canto",
+     "faces": {
+      "t": 1,
+      "e": 4,
+      "d": 2
+     },
+     "corte": 0.54
+    }
+   ],
+   "cabeca": {
+    "diana": [
+     16,
+     8,
+     50,
+     56
     ]
    }
   },
@@ -95,6 +253,14 @@
      49,
      55
     ]
+   },
+   "cabeca": {
+    "diana": [
+     33,
+     22,
+     67,
+     60
+    ]
    }
   },
   "p-close": {
@@ -108,6 +274,14 @@
     "diana": [
      54,
      82
+    ]
+   },
+   "cabeca": {
+    "diana": [
+     26,
+     5,
+     90,
+     96
     ]
    }
   },
@@ -123,6 +297,14 @@
      39,
      60
     ]
+   },
+   "cabeca": {
+    "diana": [
+     17,
+     18,
+     57,
+     70
+    ]
    }
   },
   "c1-sapo": {
@@ -137,6 +319,14 @@
      44,
      39
     ]
+   },
+   "cabeca": {
+    "sapo": [
+     32,
+     22,
+     58,
+     48
+    ]
    }
   },
   "c1-cha": {
@@ -150,6 +340,14 @@
     "sapo": [
      86,
      49
+    ]
+   },
+   "cabeca": {
+    "sapo": [
+     64,
+     10,
+     100,
+     60
     ]
    }
   },
@@ -338,6 +536,96 @@
      50,
      59
     ]
+   },
+   "dados": [
+    {
+     "x": 5.9,
+     "y": 86.9,
+     "vista": "canto",
+     "faces": {
+      "t": 5,
+      "e": 1,
+      "d": 3
+     },
+     "caixa": [
+      2.9,
+      82.7,
+      10.2,
+      92.0
+     ]
+    },
+    {
+     "x": 13.8,
+     "y": 89.5,
+     "vista": "canto",
+     "faces": {
+      "t": 2,
+      "e": 1,
+      "d": 4
+     },
+     "caixa": [
+      10.6,
+      84.0,
+      17.5,
+      95.7
+     ]
+    },
+    {
+     "x": 6.8,
+     "y": 95.0,
+     "vista": "canto",
+     "faces": {
+      "t": 6,
+      "e": 4,
+      "d": 5
+     },
+     "caixa": [
+      3.0,
+      89.9,
+      10.7,
+      100
+     ]
+    },
+    {
+     "x": 29.8,
+     "y": 94.2,
+     "vista": "canto",
+     "faces": {
+      "t": 4,
+      "e": 5,
+      "d": 6
+     },
+     "caixa": [
+      26.4,
+      88.0,
+      33.2,
+      99.4
+     ]
+    },
+    {
+     "x": 38.0,
+     "y": 96.7,
+     "vista": "canto",
+     "faces": {
+      "t": 3,
+      "e": 2,
+      "d": 6
+     },
+     "caixa": [
+      34.6,
+      92.5,
+      41.5,
+      100
+     ]
+    }
+   ],
+   "cabeca": {
+    "diana": [
+     36,
+     18,
+     66,
+     68
+    ]
    }
   },
   "c6-ovelha": {
@@ -405,7 +693,15 @@
      33
     ]
    },
-   "lugar": "ne"
+   "lugar": "ne",
+   "cabeca": {
+    "diana": [
+     8,
+     20,
+     30,
+     45
+    ]
+   }
   },
   "r-cartoes": {
    "quem": [
@@ -453,7 +749,21 @@
      63
     ]
    },
-   "lugar": "ne"
+   "lugar": "ne",
+   "cabeca": {
+    "coelho": [
+     14,
+     3,
+     34,
+     42
+    ],
+    "diana": [
+     58,
+     28,
+     86,
+     72
+    ]
+   }
   },
   "r-mesa": {
    "quem": [
@@ -467,7 +777,15 @@
      57
     ]
    },
-   "lugar": "ne"
+   "lugar": "ne",
+   "cabeca": {
+    "diana": [
+     32,
+     25,
+     68,
+     66
+    ]
+   }
   },
   "f-fita": {
    "quem": [
@@ -514,7 +832,15 @@
      56
     ]
    },
-   "lugar": "ne"
+   "lugar": "ne",
+   "cabeca": {
+    "diana": [
+     50,
+     36,
+     74,
+     64
+    ]
+   }
   },
   "x-cha": {
    "quem": [
@@ -533,7 +859,21 @@
      46
     ]
    },
-   "lugar": "nw"
+   "lugar": "nw",
+   "cabeca": {
+    "diana": [
+     22,
+     12,
+     48,
+     58
+    ],
+    "sapo": [
+     72,
+     28,
+     97,
+     56
+    ]
+   }
   },
   "mural-i1": {
    "quem": [],
@@ -1745,5 +2085,6 @@
    ]
   }
  },
- "_refazer": "Quando houver crédito na API: primeiro python3 tools/historia/quadros.py narizes cachecol (o cachecol maior, a partir da v1); depois python3 tools/historia/quadros.py --qualidade high <ids> refaz no pedido novo (estilo chapado, folha do nariz, canto livre para o balão). Primeiro os pedidos do dono na 2.ª revisão: p-pata (ombro e contorno), i1-le (a página virada para a Diana), c3-raposa (o rabo), c1-pag-a (o girino de ré); depois os 6 antigos do piloto (p-caderno, p-close, c1-x, c1-sapo, c1-cha, c6-la) e o resto."
+ "_refazer": "Quando houver crédito na API: primeiro python3 tools/historia/quadros.py narizes cachecol (o cachecol maior, a partir da v1); depois python3 tools/historia/quadros.py --qualidade high <ids> refaz no pedido novo (estilo chapado, folha do nariz, canto livre para o balão). Primeiro os pedidos do dono na 2.ª revisão: p-pata (ombro e contorno), i1-le (a página virada para a Diana), c3-raposa (o rabo), c1-pag-a (o girino de ré); depois os 6 antigos do piloto (p-caderno, p-close, c1-x, c1-sapo, c1-cha, c6-la) e o resto.",
+ "_dados": "Os dados dos quadros são conferidos depois de pintados: tools/historia/dados_quadros.py troca as bolinhas erradas pelas certas (anotações em 'dados' de cada arte)."
 }
