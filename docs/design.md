@@ -216,10 +216,12 @@ cabeça de quem ouve). São cinco:
 | Quando | Chamada |
 |---|---|
 | o primeiro Eco, Passo e Oposto da pessoa | "Passo!" · "4 e 3: um a mais ou um a menos sincroniza." (com os números do lance) |
-| a primeira corrente de 3, na hora de decidir | "Já dá para disparar" · disparar marca agora; segurar arrisca, mas vale mais (3 +1, 4 +2, 5 +4, 6 +6) |
+| a primeira corrente de 3, na hora de decidir | "Já dá para disparar" · disparar marca agora; segurar arrisca, mas cada dado a mais vale mais (os botões já dizem quanto) |
 | a primeira ruptura de 2 dados ou mais | "A corrente rompeu" · um dado guardado no Bolso pode salvar a corrente numa hora dessas |
 
 Valem em qualquer partida (também online), até aparecerem. Com as ajudas desligadas não aparecem e não ficam marcadas.
+Ficam numa faixa própria, logo acima do seu painel, e fora da fila das chamadas de festa: na fila, uma explicação de
+4 s atrasava o "Belo disparo!" do lance seguinte.
 O que já apareceu fica no aparelho (`guia` no `diceduel.v1`), não na conta.
 - **Prévia antes de confirmar:** ao escolher o alvo de Virar ou Ajuste, cada dado mostra como ficaria.
   Cancelar devolve a carta.
@@ -229,7 +231,7 @@ O que já apareceu fica no aparelho (`guia` no `diceduel.v1`), não na conta.
 | Momento | O que acontece |
 |---|---|
 | Cada elo da corrente | uma nota de kalimba que **sobe** a cada elo; brilhinhos no dado; "Boa corrente!" no 4.º e "Corrente de 5!" no 5.º |
-| Disparo | arpejo que cresce com a corrente; o placar **conta** até o valor novo; brilhos em volta; tremor leve com 5+ |
+| Disparo (v0.14: em cascata) | cada dado da corrente **acende na nota dele** do arpejo (80 ms + 85 ms por dado; era 55 ms, rápido demais para o olho), e um selo sobre a corrente **conta o valor** que ela vai somando (+1, +2, +4, +6) até fechar em mel no valor de verdade (com Sobrecarga ou Interferência). Só então: clarão, brilhos, tremor com 5+, e os pontos voam até o placar, que segura o número de antes até eles chegarem e **conta** tique a tique; o "+N" estoura no placar em mel, do tamanho do lance. Uns 1,3 s ao todo |
 | Sinfonia (6 dados) | chamada grande, vibração curta |
 | Harmonia (todos os elos do mesmo tipo, 4+) | chamada "Harmonia!" (só enfeite, não muda pontos) |
 | Bloqueio (levar o único dado que servia ao rival com corrente de 3+) | "Bloqueio!" |
@@ -360,6 +362,17 @@ da contagem do placar saem do acorde que está tocando agora. A corrente "canta"
 - **fim**: só piano e pad, devagar, até a próxima partida;
 - a kalimba toca motivos de um compasso que se repetem com variação, então soa composta, não aleatória;
 - a música abaixa sozinha sob disparos, armadilhas e o fim (e volta), e um limitador segura os picos.
+
+**A tela inicial (v0.14).** Era um fundo escuro com o logo e os botões: a arte pintada só aparecia depois do primeiro
+toque. Agora o logo deu lugar a uma cena: a rival da vez (a Diana na estreia) espia por trás de uma mesinha de feltro e
+madeira, respira, e diz a saudação da hora ("Bom dia", "Boa tarde", "Boa noite"; as falas da partida também). Três dados
+descansam no feltro (o do meio, na pele da rival, dá um pulinho de vez em quando). **Tocar num dado o rola**; se os três
+formarem uma corrente, a rival repara ("Olha: isso já é uma corrente."). **Tocar na rival**, ela sorri e fala outra
+frase. Em telas baixas (até 680 px) a cena encolhe; com "reduzir movimento", fica parada.
+
+**A mesa não pisca mais marrom.** O tremor dos disparos de 5 e 6 movia a própria mesa; o transform a fazia virar um
+contexto de empilhamento e a moldura de madeira (o `::before`, z-index −1) passava por cima do feltro por um quarto de
+segundo. Agora treme o que envolve a mesa.
 
 **Gamefeel:** o dado afunda quando é tocado; a corrente esquenta com 4 dados e ferve com 5; o disparo de 4+ solta um
 clarão; o celular vibra de leve ao escolher, pegar e disparar (dá para desligar). Com "reduzir movimento" ou as

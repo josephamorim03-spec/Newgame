@@ -511,7 +511,7 @@
     if (!j || j.modo !== 'bot' || !st.pref.falas) return;
     const lista = RIVAIS[j.nivel].falas[chave]; if (!lista) return;
     if (!['inicio', 'venci', 'perdi'].includes(chave) && Math.random() > 0.55) return;
-    j.fala = { id: uid++, txt: sorteia(lista) };
+    j.fala = { id: uid++, txt: sorteia(lista).replace('Boa noite', saudacao()) };
     j.humor = ['meuDisparo', 'armadilha', 'venci', 'inicio'].includes(chave) ? 'feliz' : ['minhaRuptura', 'perdi'].includes(chave) ? 'triste' : null;
     Som.tocar('falaRival', { voz: RETRATO_RIVAL[j.nivel] });
     const id = j.fala.id;
@@ -740,19 +740,25 @@
     return `<div class="cartas">${html}</div><div class="estados">${estados}</div>`;
   }
 
+  document.documentElement.style.setProperty('--passo-disparo', Math.round(Som.PASSO_DISPARO * 1000) + 'ms');   // a cascata do disparo (css)
+  const inicioFx = new Map();   // id do efeito (disparo, ruptura) -> quando ele apareceu na tela
+  const placarSegurado = new Map();   // jogador -> o número que o placar mostra enquanto os pontos do disparo voam
   // comDecisao: a decisão da vez (destinos, disparar ou segurar...) entra no painel no lugar da fileira de cartas,
   // logo abaixo da corrente que ela afeta; o tabuleiro não ganha barra solta e não se mexe
   function painel(p, comDecisao = false) {
     const j = jogo, n = nomes(), daVez = j.vez === p && j.fase !== 'fim';
     const fx = j.fx && j.fx.p === p ? j.fx : null;
     const cor = fx ? fx.dados : j.cor[p];
+    // quanto do efeito já passou: a cascata do disparo continua de onde estava quando o painel é redesenhado (no online,
+    // cada estado do servidor é um objeto novo: o relógio fica fora dele, pelo id do efeito)
+    const fxT = fx ? Math.round(performance.now() - (inicioFx.get(fx.id) ?? (inicioFx.set(fx.id, performance.now()), performance.now()))) : 0;
     const L = j.cor[p].length;
     let slots = '';
     for (let i = 0; i < LIM; i++) {
       if (i < cor.length) {
         const r = i > 0 ? rels(cor[i - 1], cor[i]) : [];
         const frenteCls = !fx && i === cor.length - 1 ? ' frente' : '';
-        slots += `<div class="slot${frenteCls}" data-slot="${i}">${r.length ? elo(r) : (i > 0 ? `<span class="elo r-coringa" title="Remendo: entrou no lugar da frente">${CHAPEU}</span>` : '')}${dadoHTML(cor[i], skinDe(p))}</div>`;
+        slots += `<div class="slot${frenteCls}" data-slot="${i}"${fx ? ` style="--i:${i}"` : ''}>${r.length ? elo(r) : (i > 0 ? `<span class="elo r-coringa" title="Remendo: entrou no lugar da frente">${CHAPEU}</span>` : '')}${dadoHTML(cor[i], skinDe(p))}</div>`;
       } else if (i === cor.length && !fx) {
         const fs = facesQueEncaixam(cor);
         slots += `<div class="slot prox" title="Faces que sincronizam com a frente">${!st.pref.dicas ? '' : cor.length && !j.coringa[p] ? `<span class="prox-faces n${fs.length}">${fs.map(f => `<i>${f}</i>`).join('')}</span>` : '<svg class="ico prox-livre" viewBox="0 0 24 24" aria-label="qualquer dado começa"><path d="M12 6v12M6 12h12"/></svg>'}</div>`;
@@ -771,10 +777,10 @@
     const fala = j.modo === 'bot' && p === 1 && j.fala ? `<div class="fala" aria-live="polite">${j.fala.txt}</div>` : '';
     return `<div class="jogador p${p}${daVez ? ' da-vez' : ''}">${fala}
       <div class="cab">${avatar}<span class="quem"><span class="nome">${n[p]}</span>${tag || autoTag(p) ? `<span class="tags-vez">${tag ? `<span class="vez-tag">${tag}</span>` : ''}${autoTag(p)}</span>` : ''}</span>
-        ${bolsoHTML(p)}<span class="placar"><b data-placar="${p}">${j.pts[p]}</b><small>/${j.meta}</small></span></div>
+        ${bolsoHTML(p)}<span class="placar"><b data-placar="${p}">${placarSegurado.has(p) ? placarSegurado.get(p) : j.pts[p]}</b><small>/${j.meta}</small></span></div>
       <div class="barra" role="progressbar" aria-valuemin="0" aria-valuemax="${j.meta}" aria-valuenow="${j.pts[p]}" aria-label="Pontos de ${n[p]}"><i style="width:${pct}%"></i>${prev ? `<span class="prev" style="left:${pct}%;width:${prev}%"></span>` : ''}</div>
       ${(() => { const alvo = p === j.vez && !fx && dadoEscolhido(j) >= 0 ? previaAlvos(p, dadoEscolhido(j)).corrente : null;
-        return `<div class="corrente${fx ? ' fx-' + fx.tipo : L >= 5 ? ' fervendo' : L >= 4 ? ' quente' : ''}${alvo ? ` alvo-dado alvo-${alvo.cls}" data-alvo-dado="corrente" role="button" tabindex="0" aria-label="Corrente: ${alvo.txt}` : ''}" style="--fase:-${Math.round(performance.now() % 1800)}ms">${slots}${alvo ? `<span class="alvo-chip">${alvo.txt}</span>` : ''}</div>`; })()}
+        return `<div class="corrente${fx ? ' fx-' + fx.tipo : L >= 5 ? ' fervendo' : L >= 4 ? ' quente' : ''}${alvo ? ` alvo-dado alvo-${alvo.cls}" data-alvo-dado="corrente" role="button" tabindex="0" aria-label="Corrente: ${alvo.txt}` : ''}" style="--fase:-${Math.round(performance.now() % 1800)}ms;--fx-t:-${fxT}ms">${slots}${alvo ? `<span class="alvo-chip">${alvo.txt}</span>` : ''}</div>`; })()}
       ${st.pref.dicas && !cartaEscolhida(j, p) ? `<div class="info"><span>Corrente <b>${L}</b>/${LIM}</span><span>${valeAgora}${seCrescer}</span></div>` : ''}
       ${comDecisao && !cartaEscolhida(j, p) ? '<div class="decisao-slot"></div>' : cartasHTML(p) + (comDecisao ? '<div class="decisao-slot"></div>' : '')}
     </div>`;
@@ -1081,7 +1087,9 @@
     }
     if (j.fx && !j.fx.agendado) {
       const id = j.fx.id; j.fx.agendado = true;
-      setTimeout(() => { if (jogo.fx && jogo.fx.id === id) { jogo.fx = null; render(); } }, st.pref.animacoes ? 900 : 10);
+      // o disparo fica na tela até o último dado da cascata subir (80 ms + um passo do arpejo por dado + 800 ms da animação)
+      const dura = j.fx.tipo === 'disparo' ? 80 + j.fx.dados.length * Som.PASSO_DISPARO * 1000 + 820 : 900;
+      setTimeout(() => { inicioFx.delete(id); if (jogo.fx && jogo.fx.id === id) { jogo.fx = null; render(); } }, st.pref.animacoes ? dura : 10);
     }
     consumirEventos();
   }
@@ -1138,28 +1146,50 @@
           break;
         }
         case 'disparo': {
-          const corEl = qs(`#pj${e.p} .corrente`), placar = qs(`[data-placar="${e.p}"]`);
+          // o disparo em cascata (v0.14): cada dado da corrente acende na nota dele do arpejo (js/audio.js: 80 ms e
+          // mais Som.PASSO_DISPARO por nota), um selo sobre a corrente conta o valor que ela vai somando (+1, +2, +4...) e fecha no
+          // valor de verdade; só então vêm o clarão e os pontos voando até o placar. A festa segue o tamanho do lance
+          const corEl = qs(`#pj${e.p} .corrente`), placar = qs(`[data-placar="${e.p}"]`), cores = ['#ffe3a3', '#ffd0b5', '#fff6e6', e.p === 0 ? '#bfe8f2' : '#ffd0dc'];
+          const quem = e.p === 1 && j.modo !== 'local' ? 'rival' : '';
           Som.tocar('disparo', { L: e.L });
-          Fx.faiscas(corEl, 10 + e.L * 6, ['#ffe3a3', '#ffd0b5', '#fff6e6', e.p === 0 ? '#bfe8f2' : '#ffd0dc'], 2.5 + e.L * 0.5);
-          if (e.L >= 4) Fx.clarao(corEl, e.L >= 6 ? 1 : e.L === 5 ? 0.75 : 0.5);
-          if (humano(e.p)) vibrar(e.L >= 5 ? [20, 30, 40] : 15);
-          if (placar) {
-            // os pontos voam da corrente até o placar; o número sobe com um tique por ponto quando chegam
+          if (humano(e.p)) vibrar(15);
+          const nota = k => 80 + k * Som.PASSO_DISPARO * 1000, fim = nota(e.L);
+          const passos = [];
+          for (let k = 3; k <= e.L; k++) passos.push({ ms: nota(k - 1), txt: `+${pontos(k)}` });
+          passos.push({ ms: fim, txt: `+${e.ganho}` });
+          // o placar mostra o valor de antes até os pontos chegarem (um render no meio não o adianta)
+          if (Fx.cfg.animacoes && Fx.cfg.particulas && placar) { placarSegurado.set(e.p, e.de); placar.textContent = e.de; setTimeout(() => { if (placarSegurado.delete(e.p)) render(); }, 5000); }
+          Fx.contagem(corEl, passos, `${quem} n${Math.min(6, e.L)}`).then(() => {
+            const cor = qs(`#pj${e.p} .corrente`) || corEl;
+            Fx.faiscas(cor, 10 + e.L * 6, cores, 2.5 + e.L * 0.5);
+            if (e.L >= 4) Fx.clarao(cor, e.L >= 6 ? 1 : e.L === 5 ? 0.75 : 0.5);
+            // treme o que envolve a mesa, não a mesa: um transform na .tabuleiro a faz virar contexto de empilhamento, e a
+            // moldura de madeira (o ::before, z-index −1) passava por cima do feltro durante o tremor (a mesa piscava marrom)
+            if (e.L >= 5) Fx.tremer(qs('#tabuleiro').parentElement, e.L === 6 ? 1.4 : 0.8);
+            if (humano(e.p) && e.L >= 5) vibrar([20, 30, 40]);
+            if (e.L === 6) { Fx.chamada('Sinfonia!', 'corrente completa de 6', quem, { classe: 'de-jogo' }); vibrar([30, 40, 60]); }
+            else if (e.L === 5) Fx.chamada('Belo disparo!', `corrente de 5 · +${e.ganho}`, quem, { classe: 'de-jogo' });
+            if (e.harm) Fx.chamada('Harmonia!', `todos os elos em ${REL[e.harm].nome}`, 'suave', { classe: 'de-jogo' });
+            if (e.L >= 4 && humano(e.p)) Som.tocar('momento');
+            const pl0 = qs(`[data-placar="${e.p}"]`);
+            if (!pl0) return;
+            // os pontos voam da corrente até o placar; o número sobe com um tique por ponto quando chegam, e o "+N"
+            // estoura no placar do tamanho do lance
             const ate = jogo.pts[e.p], de0 = e.de, ganho = ate - de0;
-            Fx.texto(placar, `+${e.ganho}`);
-            if (Fx.cfg.animacoes && Fx.cfg.particulas) placar.textContent = de0;
             const orbes = Math.max(1, Math.min(6, ganho));
-            Fx.orbes(corEl, placar, orbes, e.p === 0 ? '#ffe3a3' : '#ffd0dc', i => {
+            Fx.orbes(cor, pl0, orbes, e.p === 0 ? '#ffe3a3' : '#ffd0dc', i => {
               Som.tocar('tique', { k: i });
               const v = Math.min(ate, de0 + Math.round(ganho * (i + 1) / orbes));
-              placar.textContent = v; Fx.pulsar(placar);
-            }).then(() => { const pl = qs(`[data-placar="${e.p}"]`); if (pl) pl.textContent = jogo.pts[e.p]; });
-          }
-          if (e.L >= 5) Fx.tremer(qs('#tabuleiro'), e.L === 6 ? 1.4 : 0.8);
-          if (e.L === 6) { Fx.chamada('Sinfonia!', 'corrente completa de 6', e.p === 1 && j.modo !== 'local' ? 'rival' : '', { classe: 'de-jogo' }); vibrar([30, 40, 60]); }
-          else if (e.L === 5) Fx.chamada('Belo disparo!', `corrente de 5 · +${e.ganho}`, e.p === 1 && j.modo !== 'local' ? 'rival' : '', { classe: 'de-jogo' });
-          if (e.harm) Fx.chamada('Harmonia!', `todos os elos em ${REL[e.harm].nome}`, 'suave', { classe: 'de-jogo' });
-          if (e.L >= 4 && humano(e.p)) setTimeout(() => Som.tocar('momento'), 500);
+              if (placarSegurado.has(e.p)) placarSegurado.set(e.p, v);
+              const pl = qs(`[data-placar="${e.p}"]`); if (!pl) return;
+              pl.textContent = v; Fx.pulsar(pl);
+            }).then(() => {
+              placarSegurado.delete(e.p);
+              const pl = qs(`[data-placar="${e.p}"]`); if (!pl) return;
+              pl.textContent = jogo.pts[e.p];
+              Fx.texto(pl, `+${e.ganho}`, `pontos ${quem} v${Math.min(6, e.ganho)}`);
+            });
+          });
           break;
         }
         case 'placar': { const pl = qs(`[data-placar="${e.p}"]`); if (pl) { Fx.contar(pl, e.de, jogo.pts[e.p]); Fx.pulsar(pl); Fx.texto(pl, '+3'); } break; }
@@ -1225,14 +1255,14 @@
     eco: (a, b) => ['Eco!', `${a} e ${b}: o mesmo número sincroniza.`],
     passo: (a, b) => ['Passo!', `${a} e ${b}: um a mais ou um a menos sincroniza.`],
     oposto: (a, b) => ['Oposto!', `${a} e ${b} somam 7, como as faces opostas do dado.`],
-    disparo: () => ['Já dá para disparar', 'Disparar marca os pontos agora. Segurar arrisca a corrente, mas ela vale mais: 3 dados +1, 4 +2, 5 +4, 6 +6.'],
+    disparo: () => ['Já dá para disparar', 'Disparar marca os pontos agora. Segurar arrisca a corrente, mas cada dado a mais vale mais.'],
     ruptura: () => ['A corrente rompeu', 'O dado não sincronizava com a frente. Um dado guardado no Bolso pode salvar a corrente numa hora dessas.'],
   };
   function ensinar(chave, ...args) {
     if (!st.pref.dicas || st.guia.vistos.includes(chave)) return false;
     st.guia.vistos.push(chave); gravarLocal();
     const [titulo, sub] = GUIA_TXT[chave](...args);
-    Fx.chamada(titulo, sub, 'suave', { classe: 'de-jogo guia', ms: 4200 });
+    Fx.dica(titulo, sub, document.getElementById('pj0'));
     return true;
   }
 
@@ -1677,7 +1707,27 @@
     const c = st.conta, ps = R.premioSolo({ rating: c.rating, pico: c.pico }, { nivel: g.nivel, venceu: false, margem: g.pts[0] - g.pts[1], rodadas: g.rodada, meta: g.meta });
     return { antes: c.rating, depois: ps.rating };
   }
+  // ---------- a cena da tela inicial: a rival da vez à mesa (v0.14) ----------
+  const saudacao = () => { const h = new Date().getHours(); return h >= 5 && h < 12 ? 'Bom dia' : h >= 12 && h < 18 ? 'Boa tarde' : 'Boa noite'; };
+  const cena = { dados: [2, 5, 4], fala: null, k: 0, feliz: false };
+  // na estreia a rival é sempre a Diana; depois, a escolhida
+  const rivalDaCena = () => (!st.guia.estreia ? 'aprendiz' : RIVAIS[st.cfg.nivel] ? st.cfg.nivel : 'aprendiz');
+  function desenharCena() {
+    const el = document.getElementById('inicioCena'); if (!el) return;
+    const k = rivalDaCena(), falas = RIVAIS[k].falas.inicio;
+    const fala = (cena.fala || falas[0]).replace('Boa noite', saudacao());
+    const pele = k === 'esperto' ? 'madeira' : 'rosa';
+    el.innerHTML = `<button class="cena-rival${cena.feliz ? ' feliz' : ''}" data-cena="rival" tabindex="-1">${Retratos.retrato(RETRATO_RIVAL[k], cena.feliz ? 'feliz' : '')}</button>
+      <p class="cena-fala">${esc(fala)}</p>
+      <div class="cena-mesa">${cena.dados.map((v, i) => `<button class="cena-dado" data-cena="dado" data-i="${i}" tabindex="-1">${dadoHTML(v, i === 1 ? pele : st.conta.dado)}</button>`).join('')}</div>`;
+  }
+  function falaDaCena(txt) {
+    cena.fala = txt; cena.feliz = true; desenharCena();
+    if (st.pref.falas) Som.tocar('falaRival', { voz: RETRATO_RIVAL[rivalDaCena()] });
+    clearTimeout(cena.t); cena.t = setTimeout(() => { cena.feliz = false; const r = document.querySelector('.cena-rival'); if (r) r.classList.remove('feliz'); }, 1400);
+  }
   function desenharInicio() {
+    desenharCena();
     const c = st.conta, nome = st.sessao && st.sessao.perfil ? st.sessao.perfil.nome : 'Convidado';
     document.getElementById('inicioPerfil').innerHTML = `${iconeSVG(c.icone)}<span class="perfil-texto"><b>${esc(nome)}</b><small>rating ${c.rating} · nível ${nivelDe(c.xp)} · ${c.moedas} moedas</small></span><svg class="ico perfil-seta" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>`;
     document.getElementById('pontoInicio').hidden = document.getElementById('pontoOnline').hidden;
@@ -1744,6 +1794,21 @@
     if (inicio.hidden) return;
     inicio.hidden = true; document.body.classList.remove('inicio-aberto');
   }
+  // a cena: tocar num dado o rola (e, se os três formarem uma corrente, a rival repara); tocar na rival, ela fala
+  inicio.addEventListener('click', e => {
+    const c = e.target.closest('[data-cena]'); if (!c) return;
+    Som.desbloquear();
+    const k = rivalDaCena();
+    if (c.dataset.cena === 'rival') { const l = RIVAIS[k].falas.inicio; cena.k = (cena.k + 1) % l.length; falaDaCena(l[cena.k]); return; }
+    const i = +c.dataset.i, antes = cena.dados[i];
+    let v; do { v = 1 + Math.floor(Math.random() * 6); } while (v === antes);
+    cena.dados[i] = v;
+    c.innerHTML = dadoHTML(v, i === 1 ? (k === 'esperto' ? 'madeira' : 'rosa') : st.conta.dado);
+    c.classList.remove('rola'); void c.offsetWidth; c.classList.add('rola');
+    Som.tocar('quique', { forca: 7, primeira: true, x: (i - 1) * 0.5 }); vibrar(8);
+    const [a, b2, d] = cena.dados;
+    if (sinc(a, b2) && sinc(b2, d)) setTimeout(() => falaDaCena(k === 'esperto' ? 'Veja só: três dados, uma corrente.' : 'Olha: isso já é uma corrente.'), 450);
+  });
   inicio.addEventListener('click', e => {
     const b = e.target.closest('[data-inicio]'); if (!b) return;
     const a = b.dataset.inicio;

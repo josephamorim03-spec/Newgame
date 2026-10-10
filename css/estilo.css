@@ -413,6 +413,19 @@ button.carta:hover { transform: translateY(-2px) rotate(-1deg); }
 .texto-sobe { position: fixed; z-index: 58; pointer-events: none; transform: translate(-50%, -50%); font-family: var(--f-titulo); font-weight: 700; font-size: 28px; color: var(--marfim); text-shadow: 0 3px 0 rgba(58,42,46,.45), 0 0 18px rgba(255,207,138,.7); animation: sobe 1.25s cubic-bezier(.2,.8,.3,1) forwards; white-space: nowrap; }
 .texto-sobe.pequeno { font-size: 18px; }
 .texto-sobe.ruim { color: #ffd3cb; }
+/* o "+N" que estoura no placar quando os pontos chegam: mel com contorno de cacau, do tamanho do lance */
+.texto-sobe.pontos { color: #ffd27a; font-size: 30px; -webkit-text-stroke: 1.5px #3a2a2e; paint-order: stroke fill; text-shadow: 0 3px 0 rgba(58,42,46,.6), 0 0 22px rgba(255,190,110,.85); }
+.texto-sobe.pontos.rival { color: #ffc2d1; text-shadow: 0 3px 0 rgba(58,42,46,.6), 0 0 22px rgba(236,143,168,.8); }
+.texto-sobe.pontos.v1 { font-size: 26px; } .texto-sobe.pontos.v3, .texto-sobe.pontos.v4 { font-size: 36px; }
+.texto-sobe.pontos.v5, .texto-sobe.pontos.v6 { font-size: 44px; }
+/* o selo da contagem do disparo, sobre a corrente: sobe +1, +2, +4... e fecha no valor de verdade, em mel */
+.contagem { position: fixed; z-index: 58; pointer-events: none; transform: translate(-50%, -50%); padding: 2px 14px 3px; border-radius: 999px; font-family: var(--f-titulo); font-weight: 700; font-size: 24px; line-height: 1.15; color: var(--tinta); background: var(--papel); box-shadow: 0 4px 0 var(--papel-2), 0 0 0 3px var(--mel), 0 10px 24px rgba(0,0,0,.35); white-space: nowrap; }
+.contagem.rival { box-shadow: 0 4px 0 var(--papel-2), 0 0 0 3px var(--rival), 0 10px 24px rgba(0,0,0,.35); }
+.contagem.final { background: var(--mel); }
+.contagem.rival.final { background: #f6b3c5; }
+.contagem.n5.final { font-size: 30px; } .contagem.n6.final { font-size: 36px; }
+.contagem.saindo { animation: contagemSai .38s ease-in forwards; }
+@keyframes contagemSai { to { transform: translate(-50%, -140%) scale(.8); opacity: 0; } }
 @keyframes sobe { 0% { transform: translate(-50%, -30%) scale(.6); opacity: 0; } 20% { transform: translate(-50%, -60%) scale(1.1); opacity: 1; } 100% { transform: translate(-50%, -160%) scale(1); opacity: 0; } }
 .chamada { position: fixed; left: 50%; top: 36%; z-index: 61; pointer-events: none; transform: translate(-50%, -50%); text-align: center; padding: 14px 26px; border-radius: 22px; background: var(--papel); color: var(--tinta); box-shadow: 0 8px 0 var(--papel-2), 0 20px 50px rgba(0,0,0,.45), 0 0 0 4px var(--mel); animation: chamadaEntra .45s cubic-bezier(.2,1.5,.4,1) both; min-width: 220px; max-width: calc(100vw - 40px); }
 /* o que acontece na Mesa fica atrás das janelas (Loja, Ajustes...); o resto (erros, Loja, revanche) vem por cima delas */
@@ -435,11 +448,25 @@ button.carta:hover { transform: translateY(-2px) rotate(-1deg); }
 .chamada.guia { max-width: min(360px, calc(100vw - 40px)); }
 .chamada.guia b { font-size: clamp(24px, 6vw, 32px); }
 .chamada.guia > span { font-size: 15px; line-height: 1.35; }
+/* ancorada logo acima do painel de quem joga (o "top" vem do Fx.dica), fora do caminho das chamadas de festa */
+.chamada.guia { z-index: 57; padding: 12px 20px; }
+.chamada.guia.ancorada { animation-name: dicaEntra; }
+.chamada.guia.ancorada.saindo { animation: dicaSai .26s ease forwards; }
+@keyframes dicaEntra { 0% { transform: translate(-50%, -80%) scale(.85); opacity: 0; } 100% { transform: translate(-50%, -100%) scale(1); opacity: 1; } }
+@keyframes dicaSai { to { transform: translate(-50%, -112%) scale(.95); opacity: 0; } }
+.chamada.guia.ancorada.sem-anim { transform: translate(-50%, -100%); }
 @keyframes chamadaEntra { 0% { transform: translate(-50%, -30%) scale(.5) rotate(-6deg); opacity: 0; } 100% { transform: translate(-50%, -50%) scale(1) rotate(0); opacity: 1; } }
 @keyframes chamadaSai { to { transform: translate(-50%, -70%) scale(.9); opacity: 0; } }
-.fx-disparo .slot .dado { animation: dispara .8s ease-out forwards; }
+/* o disparo em cascata (v0.14): cada dado acende na nota dele do arpejo (80 ms + um passo por dado), brilha e sobe; o
+   --fx-t desconta o que já passou, para um render no meio não reiniciar a cascata */
+.fx-disparo .slot .dado { animation: disparaCascata .8s cubic-bezier(.3,.7,.3,1) both; animation-delay: calc(80ms + var(--i, 0) * var(--passo-disparo, 85ms) + var(--fx-t, 0ms)); }
+@keyframes disparaCascata {
+  0% { transform: none; opacity: 1; }
+  14% { transform: translateY(-8px) scale(1.22); opacity: 1; box-shadow: 0 0 0 3px #ffe3a3, 0 0 26px 8px rgba(255,207,138,.9); }
+  30%, 62% { transform: translateY(-4px) scale(1.06); opacity: 1; box-shadow: 0 0 0 2px #ffe3a3, 0 0 18px 6px rgba(255,207,138,.7); }
+  100% { transform: translateY(-34px) scale(.45); opacity: 0; box-shadow: 0 0 30px 10px rgba(255,207,138,0); }
+}
 .fx-ruptura .slot .dado { animation: rompe .8s ease-out forwards; }
-@keyframes dispara { 30% { transform: translateY(-12px) scale(1.1); box-shadow: 0 0 24px 8px rgba(255,207,138,.8); } 100% { transform: translateY(-30px) scale(.5); opacity: 0; } }
 @keyframes rompe { 20% { transform: rotate(-8deg); } 40% { transform: rotate(6deg); } 100% { transform: translateY(16px) rotate(18deg) scale(.8); opacity: 0; } }
 
 /* sem animações: tudo para (a escolha também respeita o sistema) */
@@ -948,7 +975,6 @@ button.vaga { cursor: pointer; border: 0; background: #fff3dc; color: var(--tint
   background: radial-gradient(ellipse 90% 60% at 50% 30%, rgba(255,207,138,.16), transparent 70%), var(--noite); color: var(--texto); }
 .tela-inicio[hidden] { display: none; }
 .inicio-caixa { width: min(400px, 100%); display: grid; gap: 16px; justify-items: center; text-align: center; }
-.inicio-logo { width: 84px; height: 84px; filter: drop-shadow(0 8px 16px rgba(0,0,0,.35)); }
 .tela-inicio h1 { font-family: var(--f-titulo); font-weight: 700; font-size: clamp(40px, 12vw, 56px); line-height: 1; margin: -6px 0 0; }
 .tela-inicio h1 span { color: var(--mel); }
 .inicio-perfil { display: flex; align-items: center; gap: 10px; padding: 6px 14px 6px 6px; border-radius: 999px; background: rgba(255,243,226,.08); box-shadow: inset 0 0 0 1.5px rgba(255,243,226,.16); font-size: 14px; }
@@ -1231,7 +1257,29 @@ button.bolso.alvo-dado { position: relative; border: 0; font: inherit; color: in
 .inicio-rivais .btn-link { color: var(--texto); justify-self: center; }
 .rival-ajustes .btn-link { justify-self: auto; }
 .inicio-rivais .inicio-principal { margin-top: 2px; }
-.tela-inicio.escolhendo .inicio-logo, .tela-inicio.escolhendo #inicioTitulo { display: none; }
+.tela-inicio.escolhendo .inicio-cena, .tela-inicio.escolhendo #inicioTitulo { display: none; }
+/* a cena da tela inicial (v0.14): a rival da vez atrás de uma mesinha de feltro e madeira, com a saudação e três dados.
+   Tocar num dado o rola; tocar na rival, ela fala. A arte pintada aparece antes de qualquer toque */
+.inicio-cena { position: relative; width: min(330px, 100%); height: clamp(136px, 23vh, 196px); margin-bottom: -4px; }
+.inicio-cena::before { content: ""; position: absolute; left: 50%; top: 42%; width: 120%; height: 120%; transform: translate(-50%, -50%); background: radial-gradient(closest-side, rgba(255,207,138,.22), transparent); pointer-events: none; }
+.cena-rival { position: absolute; left: 50%; bottom: 40px; width: clamp(92px, 15vh, 128px); height: clamp(92px, 15vh, 128px); margin-left: calc(clamp(92px, 15vh, 128px) / -2); padding: 0; border: 0; border-radius: 50%; background: none; cursor: pointer; animation: cenaRespira 4.2s ease-in-out infinite; -webkit-tap-highlight-color: transparent; }
+.cena-rival .avatar { width: 100%; height: 100%; display: block; filter: drop-shadow(0 6px 10px rgba(0,0,0,.35)); }
+.cena-rival.feliz { animation: cenaPulo .5s cubic-bezier(.3,1.6,.5,1); }
+@keyframes cenaRespira { 50% { transform: translateY(-3px) scale(1.015); } }
+@keyframes cenaPulo { 40% { transform: translateY(-10px) scale(1.06); } }
+.cena-fala { position: absolute; top: 2px; left: calc(50% + clamp(40px, 6vh, 56px)); right: 0; margin: 0; width: fit-content; max-width: calc(50% - 30px); padding: 7px 11px; border-radius: 14px 14px 14px 4px; background: var(--papel); color: var(--tinta); font-size: 13px; font-weight: 700; line-height: 1.25; text-align: left; box-shadow: 0 3px 0 var(--papel-2), 0 8px 18px rgba(0,0,0,.3); animation: cenaFala .4s cubic-bezier(.3,1.5,.5,1) both; }
+@keyframes cenaFala { from { transform: translateY(6px) scale(.85); opacity: 0; } }
+.cena-mesa { position: absolute; left: 0; right: 0; bottom: 0; height: 62px; display: flex; justify-content: center; align-items: center; gap: 16px; border-radius: 20px;
+  background: radial-gradient(ellipse 80% 70% at 50% 35%, var(--feltro-2), var(--feltro) 60%, var(--feltro-escuro));
+  box-shadow: inset 0 0 0 5px var(--madeira-claro), inset 0 0 0 7px var(--madeira), inset 0 6px 14px rgba(0,0,0,.35), 0 9px 0 var(--madeira-escuro), 0 18px 30px rgba(0,0,0,.45); }
+.cena-dado { width: 38px; height: 38px; padding: 0; border: 0; background: none; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.cena-dado .dado { width: 100%; height: 100%; }
+.cena-dado:nth-child(1) { transform: rotate(-9deg); } .cena-dado:nth-child(3) { transform: rotate(7deg); }
+.cena-dado:nth-child(2) .dado { animation: cenaEspera 7s ease-in-out infinite 2s; }
+@keyframes cenaEspera { 0%, 86%, 100% { transform: none; } 90% { transform: translateY(-12px) rotate(-12deg); } 94% { transform: translateY(0) rotate(4deg); } 97% { transform: translateY(-3px); } }
+.cena-dado.rola .dado { animation: cenaRola .55s cubic-bezier(.3,.7,.3,1); }
+@keyframes cenaRola { 0% { transform: translateY(0) rotate(0); } 35% { transform: translateY(-26px) rotate(200deg) scale(1.1); } 70% { transform: translateY(0) rotate(350deg) scale(.95, 1.05); } 85% { transform: translateY(-5px) rotate(360deg); } 100% { transform: translateY(0) rotate(360deg); } }
+@media (max-height: 680px) { .inicio-cena { height: 128px; } .cena-rival { width: 84px; height: 84px; margin-left: -42px; } .cena-mesa { height: 54px; } .cena-dado { width: 32px; height: 32px; } }
 
 /* ==========================================================================
    Perfil (v0.12): tocar no seu nome na tela inicial. Nível, ratings, recordes e o seu visual (só o que você já tem)

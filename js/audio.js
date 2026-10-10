@@ -239,6 +239,9 @@
   const papel = (ini = 0, sobe = true, ganho = 0.1) => chiado({ ini, dur: 0.16, ganho, freq: sobe ? 700 : 3200, varre: sobe ? 3600 : 800, q: 0.8, ataque: 0.02, reverbAmt: 0.08 });
 
   // ---------- efeitos (intenção de cada um ao lado) ----------
+  // o passo do arpejo do disparo (s): a cascata dos dados na tela acende no mesmo compasso (v0.14: 55 → 85 ms, para o
+  // olho acompanhar cada dado e o valor que a corrente soma)
+  const PASSO_DISPARO = 0.085;
   const SONS = {
     toque: () => { tom({ freq: 1500, dur: 0.04, ganho: 0.07, reverbAmt: 0 }); tom({ freq: 750, dur: 0.05, ganho: 0.05, reverbAmt: 0 }); }, // botão: clique de madeira fino
     passar: ({ i = 0 } = {}) => tom({ freq: notaAcorde(i + 7, 72), dur: 0.08, ganho: 0.04, reverbAmt: 0.15, x: (i - 2) * 0.25 }),     // mouse por cima de um dado
@@ -275,7 +278,7 @@
     disparo: ({ L = 3 } = {}) => {                                                                  // recompensa: a corrente sobe em arpejo e abre num acorde, maior quanto maior a corrente
       duck(0.25 + L * 0.06, 0.6 + L * 0.15);
       chiado({ dur: 0.28 + L * 0.03, ganho: 0.05 + L * 0.008, freq: 500, varre: 6000, q: 1.2, ataque: 0.2, reverbAmt: 0.3 }); // "fuuu" subindo
-      const passo = 0.055;
+      const passo = PASSO_DISPARO;   // a cascata do disparo na tela segue este passo (js/jogo.js)
       for (let i = 0; i < L + 1; i++) kalimba(notaAcorde(i + 1), 0.08 + i * passo, 0.18, null, (i / L - 0.5) * 0.6);
       const fim = 0.08 + (L + 1) * passo;
       [0, 1, 2, 3].forEach(k => pianoEl(notaAcorde(k, 60), fim + k * 0.012, 1.5 + L * 0.2, 0.06, busSom, 0.8));
@@ -479,5 +482,5 @@
     }
   }
 
-  window.Som = { cfg, desbloquear, tocar, musica, configurar, abafar, medir, sons: Object.keys(SONS) };
+  window.Som = { cfg, desbloquear, tocar, musica, configurar, abafar, medir, sons: Object.keys(SONS), PASSO_DISPARO };
 })();

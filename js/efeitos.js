@@ -189,5 +189,40 @@
     requestAnimationFrame(passo);
   }
 
-  window.Fx = { cfg, faiscas, confete, poeira, voar, texto, chamada, tremer, pulsar, contar, centro, orbes, clarao };
+  // a dica do guia: uma de cada vez, numa faixa própria (logo acima do painel de quem joga) e fora da fila das
+  // chamadas, para não atrasar a festa do lance seguinte. Uma dica nova substitui a que estiver na tela
+  let dicaAtual = null;
+  function dica(titulo, sub, acimaDe, ms = 4200) {
+    if (dicaAtual) { dicaAtual.remove(); dicaAtual = null; }
+    const el = document.createElement('div');
+    el.className = 'chamada guia' + (cfg.animacoes ? '' : ' sem-anim');
+    el.setAttribute('role', 'status');
+    el.innerHTML = `<b><span>${titulo}</span></b>${sub ? `<span>${sub}</span>` : ''}`;
+    if (acimaDe) { const r = acimaDe.getBoundingClientRect(); el.style.top = Math.max(80, r.top - 10) + 'px'; el.classList.add('ancorada'); }
+    document.body.appendChild(el);
+    dicaAtual = el;
+    setTimeout(() => { if (dicaAtual !== el) return; el.classList.add('saindo'); setTimeout(() => { el.remove(); if (dicaAtual === el) dicaAtual = null; }, cfg.animacoes ? 260 : 0); }, ms);
+  }
+
+  // a contagem do disparo: um selo sobre a corrente que sobe junto com os dados que acendem (+1, +2, +4...) e fecha
+  // no valor de verdade. passos: [{ ms, txt }]; o último é o valor final. Devolve quando o último passo aparece
+  function contagem(alvo, passos, classe = '') {
+    if (!cfg.animacoes || !alvo || !passos.length) return Promise.resolve();
+    const { x } = centro(alvo), y = alvo.getBoundingClientRect().top;
+    const el = document.createElement('div');
+    el.className = 'contagem ' + classe; el.style.left = x + 'px'; el.style.top = y + 'px';
+    el.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(el);
+    return new Promise(res => {
+      passos.forEach((p, i) => setTimeout(() => {
+        el.textContent = p.txt;
+        const ultimo = i === passos.length - 1;
+        el.classList.toggle('final', ultimo);
+        el.animate([{ transform: 'translate(-50%, -50%) scale(1.45)' }, { transform: 'translate(-50%, -50%) scale(1)' }], { duration: ultimo ? 320 : 200, easing: 'cubic-bezier(.3,1.6,.5,1)' });
+        if (ultimo) { res(); setTimeout(() => { el.classList.add('saindo'); setTimeout(() => el.remove(), 380); }, 520); }
+      }, p.ms));
+    });
+  }
+
+  window.Fx = { cfg, faiscas, confete, poeira, voar, texto, chamada, dica, contagem, tremer, pulsar, contar, centro, orbes, clarao };
 })();
