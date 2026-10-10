@@ -1326,7 +1326,7 @@ button.inicio-perfil:active { transform: translateY(1px); }
       <h2>Escolha o rival</h2>
       <div class="rival-cartas" id="rivalCartas" role="radiogroup" aria-label="Rival"></div>
       <div class="rival-ajustes">
-        <span class="rival-linha"><span class="rival-deck" id="rivalDeck"></span><button class="btn-link" data-inicio="deck">Trocar</button></span>
+        <span class="rival-linha"><span class="rival-deck" id="rivalDeck"></span><button class="btn-link" data-inicio="trocar-deck">Trocar</button></span>
       </div>
       <button class="btn btn-mel inicio-principal" data-inicio="comecar" id="rivalComecar">Jogar</button>
       <button class="btn-link" data-inicio="voltar">← Voltar</button>
@@ -1423,7 +1423,7 @@ button.inicio-perfil:active { transform: translateY(1px); }
         <h3>Cartas</h3>
         <ol>
           <li>Antes da partida, monte um deck de <b>até 3 cartas</b>: no máximo <b>2 armadilhas</b> e no máximo <b>1 carta de pontos</b> (<span class="raio">⚡</span>). Cada carta vale <b>uma vez</b> por partida. Os dois decks ficam à mostra.</li>
-          <li><b>Efeitos</b> são usados na sua vez, antes de pegar o dado, e o rival vê qual foi. Alguns pedem dados na Mesa: <b>Pressa</b> com 3 ou 4, <b>Ajuste</b> com 3 ou mais, <b>Coringa</b> com 2 ou mais.</li>
+          <li><b>Efeitos</b> são usados na sua vez, antes de pegar o dado, e o rival vê qual foi. Alguns pedem dados na Mesa: <b>Pressa</b> com 3 ou 4, <b>Ajuste</b> com 3 ou mais, <b>Remendo</b> com 2 ou mais.</li>
           <li><b>Armadilhas</b> são armadas na sua vez, viradas para baixo, uma por vez. O rival vê um <b>?</b>, mas não qual carta é. Ela age sozinha quando a condição dela acontece. O <b>Espelho</b> é a exceção: a marca dele fica à vista.</li>
           <li><b>Blefe:</b> você pode virar para baixo um <b>efeito</b> no lugar da armadilha. Para o rival é um <b>?</b> igual. Virado, ele não faz nada; da sua vez seguinte em diante, você pode usá-lo normalmente e, se ninguém desafiou, ganha <b>+3</b>. Só dá para blefar se o seu deck ainda esconde uma armadilha (sem ser o Espelho); senão, todos saberiam.</li>
           <li><b>Desafiar:</b> na sua vez, antes de pegar o dado, toque no <b>?</b> do rival. Se for <b>blefe</b>, a carta dele se perde e você ganha <b>2</b>. Se for <b>armadilha</b>, ela fica à vista (e continua armada) e ele ganha <b>2</b>. Desafiar não gasta a sua vez. Conte o deck dele: quanto mais efeitos e menos armadilhas ainda escondidas, mais chance de ser blefe.</li>
@@ -1435,11 +1435,11 @@ button.inicio-perfil:active { transform: translateY(1px); }
           <li><b>Armadilhas não se anulam:</b> cada uma olha a própria condição. A Âncora do rival segurar a corrente dele não gasta a sua Interferência; ela continua esperando o próximo disparo dele.</li>
           <li><b>“4 ou mais” é o tamanho da corrente naquela hora:</b> no disparo (Interferência, Sobrecarga) ou quando o dado ruim ia entrar (Âncora). Com 3, nenhuma delas age nem é gasta.</li>
           <li><b>Interferência + Sobrecarga:</b> as duas valem. Um disparo de 4 vale 2 + 2 − 1 = 3.</li>
-          <li><b>Coringa:</b> o primeiro dado de uma corrente vazia não o gasta, nem guardar no Bolso. Com o Coringa ativo nenhum dado rompe, então a sua Âncora não é gasta.</li>
+          <li><b>Remendo:</b> o primeiro dado de uma corrente vazia não o gasta, nem guardar no Bolso. Com o Remendo ativo nenhum dado rompe, então a sua Âncora não é gasta.</li>
           <li><b>Pressa:</b> se o primeiro dado completar 6, a corrente dispara sozinha e o segundo começa outra. No segundo dado, use “Dispensar” se nenhum servir.</li>
-          <li><b>Espelho:</b> o dado marcado chega virado e não pode ir para o Bolso (nem na troca); Coringa e Âncora ainda valem. As etiquetas da Mesa já mostram o valor virado. Virar (no dado marcado) e Rerrolar apagam a marca; Ajuste não.</li>
+          <li><b>Espelho:</b> o dado marcado chega virado e não pode ir para o Bolso (nem na troca); Remendo e Âncora ainda valem. As etiquetas da Mesa já mostram o valor virado. Virar (no dado marcado) e Rerrolar apagam a marca; Ajuste não.</li>
           <li><b>Lacre:</b> pega o próximo efeito do rival, seja qual for: a Pressa não dá o segundo dado, a Pausa não passa a vez, a Sobrecarga não soma. Um blefe desvirado também conta.</li>
-          <li><b>Reverso:</b> o Coringa ativo e a Âncora armada continuam valendo para a corrente invertida.</li>
+          <li><b>Reverso:</b> o Remendo ativo e a Âncora armada continuam valendo para a corrente invertida.</li>
           <li><b>Furto:</b> o dado que chega no seu Bolso pode entrar depois, na troca, como qualquer dado do Bolso.</li>
           <li><b>Uma carta armada por vez</b>, contando o blefe. A armadilha que nunca encontra a sua condição fica armada até o fim.</li>
         </ol>
@@ -1600,10 +1600,10 @@ button.inicio-perfil:active { transform: translateY(1px); }
     virar:         { nome: 'Virar', tipo: 'efeito', alvo: true, verbo: 'vira um dado', texto: 'Vire um dado da Mesa para a face de baixo, que soma 7 com ele (o 2 vira 5; o 6 vira 1). Se o dado tinha a marca de um Espelho, a marca some.' },
     rerrolar:      { nome: 'Rerrolar', tipo: 'efeito', verbo: 'rola a Mesa', texto: 'Role de novo todos os dados que estão na Mesa. Se havia a marca de um Espelho, ela some.' },
     pressa:        { nome: 'Pressa', tipo: 'efeito', verbo: 'pega 2 dados', texto: 'Pegue dois dados nesta vez, um depois do outro; o segundo é opcional. Não dá para disparar entre os dois. Só com 3 ou 4 dados na Mesa: o último dado sempre fica para o rival.' },
-    // Coringa (v0.12): o dado que não sincronizava TROCA a frente (a corrente não cresce). Entrando como mais um elo, ele
+    // Remendo, ex-Coringa (v0.12; o id interno continua 'coringa'): o dado que não sincronizava TROCA a frente (a corrente não cresce). Entrando como mais um elo, ele
     // garantia o 6.º dado de graça: com uso de gente (segurar a corrente de 5 contando com ele) vencia 64,9% sozinho na
     // meta 12; trocando a frente, 55,0% na meta 16, como Ajuste e Pressa (docs/balanceamento-cartas.md §14)
-    coringa:       { nome: 'Coringa', tipo: 'efeito', verbo: 'salva a corrente', texto: 'Salva a sua corrente uma vez: se o próximo dado que entrar nela não sincronizar, ele toma o lugar da frente em vez de romper (a corrente não cresce). Se esse dado já sincronizar, entra normal e o Coringa é gasto mesmo assim. Só com 2 dados ou mais na Mesa.' },
+    coringa:       { nome: 'Remendo', tipo: 'efeito', verbo: 'remenda a frente', texto: 'Remenda a sua corrente uma vez: se o próximo dado que entrar nela não sincronizar, ele toma o lugar da frente em vez de romper (a corrente não rompe, mas também não cresce). Se esse dado já sincronizar, entra normal e o Remendo é gasto mesmo assim. Só com 2 dados ou mais na Mesa.' },
     sobrecarga:    { nome: 'Sobrecarga', tipo: 'efeito', pontos: true, verbo: '+2 no disparo de 4+', texto: 'Seu próximo disparo de 4 dados ou mais vale 2 pontos a mais. Use antes de pegar o dado ou na hora de disparar. Um disparo de 3 não a gasta.' },
     // v0.11 (docs/balanceamento-cartas.md): medidas no simulador com meta 12 e 16
     pausa:         { nome: 'Pausa', tipo: 'efeito', verbo: 'passa a vez', texto: 'Passe a vez sem pegar dado e sem disparar: a sua corrente e o seu Bolso ficam como estão. Serve quando todo dado da Mesa romperia a sua corrente. Não vale no segundo dado da Pressa.' },
@@ -1811,7 +1811,7 @@ button.inicio-perfil:active { transform: translateY(1px); }
     // Ajuste e Coringa (v0.12): no fim da Mesa sobram poucas escolhas, e era ali que o conserto tirava todo o risco. Com
     // eles livres, o melhor deck (Ajuste + Coringa + Pressa) vencia 61,6%; assim, 58,2% (balanceamento §17)
     if (c === 'ajuste' && j.mesa.length < 3) return { ok: false, motivo: 'Precisa de 3 dados ou mais na Mesa.' };
-    if (c === 'coringa' && j.mesa.length < 2) return { ok: false, motivo: 'Precisa de 2 dados ou mais na Mesa: no último dado, o Coringa não vale.' };
+    if (c === 'coringa' && j.mesa.length < 2) return { ok: false, motivo: 'Precisa de 2 dados ou mais na Mesa: no último dado, o Remendo não vale.' };
     if (c === 'pressa' && j.extra[p]) return { ok: false, motivo: 'A Pressa já está valendo nesta vez.' };
     if (c === 'pausa' && j.segundoDado) return { ok: false, motivo: 'No segundo dado da Pressa, use Dispensar.' };
     if (c === 'pausa' && j.extra[p]) return { ok: false, motivo: 'A Pressa já está valendo nesta vez: pegue os dados.' };
@@ -1916,7 +1916,7 @@ button.inicio-perfil:active { transform: translateY(1px); }
       registrar(j, p, 'usou Rerrolar: a Mesa foi rolada de novo', 'seg');
       if (j.marca) desfazerEspelho(j, p);
     } else if (c === 'pressa') { j.extra[p] = 1; registrar(j, p, 'usou Pressa: pega dois dados nesta vez', 'seg'); }
-    else if (c === 'coringa') { j.coringa[p] = true; registrar(j, p, 'usou Coringa: o próximo dado que romperia troca a frente', 'seg'); }
+    else if (c === 'coringa') { j.coringa[p] = true; registrar(j, p, 'usou Remendo: o próximo dado que romperia entra no lugar da frente', 'seg'); }
     else if (c === 'sobrecarga') { j.sobre[p] = true; registrar(j, p, 'usou Sobrecarga: o próximo disparo de 4+ vale +2', 'seg'); }
     else if (c === 'reverso') {
       j.cor[p].reverse();
@@ -2027,7 +2027,7 @@ button.inicio-perfil:active { transform: translateY(1px); }
         // pelo Coringa, o dado troca a frente: a corrente fica do mesmo tamanho (v0.12)
         const trocada = viaCoringa ? eu[eu.length - 1] : null;
         if (viaCoringa) eu[eu.length - 1] = entra; else eu.push(entra);
-        registrar(j, p, viaCoringa ? `pôs ${entra}${deOnde} · Coringa: trocou a frente ${trocada} · corrente de ${eu.length}`
+        registrar(j, p, viaCoringa ? `pôs ${entra}${deOnde} · Remendo: entrou no lugar do ${trocada} · corrente de ${eu.length}`
           : `pôs ${entra}${deOnde} · ${r.length ? r.map(k => REL[k].nome).join(' + ') : 'começa a corrente'} · corrente de ${eu.length}`);
         emitir(j, 'elo', { p, n: eu.length, coringa: !!viaCoringa });
         if (salvouPeloBolso) { emitir(j, 'salvo', { p, txt: 'O Bolso salvou a corrente' }); momento(j, p, '❀', `O Bolso salvou uma corrente de ${eu.length - 1}`); }
@@ -3728,7 +3728,7 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     virar: svg('<path d="M4 12a8 8 0 0 1 14-5.3M20 12a8 8 0 0 1-14 5.3M18 3v4h-4M6 21v-4h4"/>'),
     rerrolar: svg('<path d="M3 12a9 9 0 1 0 3-6.7M3 4v4h4"/><circle cx="12" cy="12" r="1.5"/>'),
     pressa: svg('<path d="M5 6l6 6-6 6M13 6l6 6-6 6"/>'),
-    coringa: svg('<path d="M6.5 18c0-3.5-1-6-4-5.5.5-4.5 4.5-6.5 8-3.5.2-2.5.7-4.5 1.5-6 .8 1.5 1.3 3.5 1.5 6 3.5-3 7.5-1 8 3.5-3-.5-4 2-4 5.5z"/><path d="M5.5 20.5h13"/><circle cx="2.5" cy="14.6" r="1.4"/><circle cx="21.5" cy="14.6" r="1.4"/><circle cx="12" cy="2.4" r="1.2"/>'),
+    coringa: svg('<rect x="5" y="5" width="14" height="14" rx="3" transform="rotate(-8 12 12)"/><path d="M9.5 9.5l5 5M14.5 9.5l-5 5"/>'),   // o Remendo (ex-Coringa): um retalho costurado
     sobrecarga: svg('<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>'),
     pausa: svg('<circle cx="12" cy="12" r="9"/><path d="M10 8.5v7M14 8.5v7"/>'),
     reverso: svg('<path d="M4 8h15M15.5 4.5 19 8l-3.5 3.5M20 16H5M8.5 12.5 5 16l3.5 3.5"/>'),
@@ -3742,11 +3742,12 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
   };
   // versão pintada (js/cartas_pintadas.js, feita por tools/arte_icones.py) onde o ícone aparece grande o bastante para ler
   // (deck, loja, detalhe, regras, versus); nos botões de 18 px da mesa e na marca do Espelho fica o traço. Sem pintura, traço em tudo.
-  const pintada = id => (window.CARTAS_PINTADAS || {})[id];
+  // (a pintura do Coringa era um palhaço; o Remendo usa o vetor até ter a própria pintura: arte/cartas.json)
+  const pintada = id => id !== 'coringa' && (window.CARTAS_PINTADAS || {})[id];
   const imgPintada = (id, cls) => `<img class="${cls}" src="${pintada(id)}" alt="" aria-hidden="true" draggable="false">`;
   const RAIO = pintada('raio') ? imgPintada('raio', 'raio-pintado') : '⚡';
   const VERSO = pintada('verso') ? imgPintada('verso', 'verso-pintado') : '?';
-  // a marca do Coringa sobre o dado e na corrente: o chapéu de bobo em traço, do tamanho da letra
+  // a marca do Remendo (ex-Coringa) sobre o dado e na corrente: o retalho em traço, do tamanho da letra
   const CHAPEU = ICO_CARTA.coringa.replace('class="ico"', 'class="ico mini-ico"');
   // a moeda pintada vale para todo <span class="moeda"> (o CSS usa a variável; sem ela, fica o círculo dourado)
   if (pintada('moeda')) { document.documentElement.style.setProperty('--moeda-img', `url("${pintada('moeda')}")`); document.documentElement.classList.add('moeda-pintada'); }
@@ -3754,7 +3755,14 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
   const MOMENTO_ID = { '☾': 'virada', '★': 'sinfonia', '✿': 'harmonia', '✧': 'truque', '❀': 'salvou', '↺': 'esquiva', '✦': 'bloqueio', '♪': 'nota', '✪': 'recorde' };
   const srcMomento = c => (c === '☕' ? (window.RETRATOS_PINTADOS || {}).xicara : (window.MOMENTOS_PINTADOS || {})[MOMENTO_ID[c]]);
   const simboloMomento = c => (srcMomento(c) ? `<img src="${srcMomento(c)}" alt="${c}" draggable="false">` : c);
-  const CARTAS = Object.fromEntries(Object.entries(R.CARTAS).map(([k, v]) => [k, { ...v, ico: ICO_CARTA[k], arte: pintada(k) ? imgPintada(k, 'ico pintado') : ICO_CARTA[k] }]));
+  // o Remendo (ex-Coringa) ainda não tem pintura: um retalho mel costurado em vetor, servido como imagem para se comportar
+  // como as cartas pintadas. (Não é uma boia: a boia é o símbolo do "salvou" nos bons momentos do fim da partida.)
+  const REMENDO_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="5 5 38 38"><g transform="rotate(-8 24 24)">'
+    + '<rect x="9" y="11" width="30" height="29" rx="5" fill="rgba(58,42,46,.18)"/><rect x="9" y="9" width="30" height="29" rx="5" fill="#f2b15e" stroke="#3a2a2e" stroke-width="2.6"/>'
+    + '<rect x="13.5" y="13.5" width="21" height="20" rx="3" fill="none" stroke="#fffaf0" stroke-width="2.2" stroke-dasharray="3.2 2.6" stroke-linecap="round"/>'
+    + '<path d="M19 19.5l10 8M29 19.5l-10 8" stroke="#e8806f" stroke-width="2.8" stroke-linecap="round"/></g></svg>';
+  const arteRemendo = () => `<img class="ico pintado" src="data:image/svg+xml;utf8,${encodeURIComponent(REMENDO_SVG)}" alt="" aria-hidden="true" draggable="false">`;
+  const CARTAS = Object.fromEntries(Object.entries(R.CARTAS).map(([k, v]) => [k, { ...v, ico: ICO_CARTA[k], arte: k === 'coringa' ? arteRemendo() : pintada(k) ? imgPintada(k, 'ico pintado') : ICO_CARTA[k] }]));
   const PRONTOS = [
     { nome: 'Primeira mesa', cartas: ['ajuste', 'coringa', 'pressa'], nota: 'só efeitos' },
     { nome: 'Muralha', cartas: ['ancora', 'coringa', 'interferencia'], nota: '' },
@@ -4275,7 +4283,7 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
   let pergunta = null;   // { chave, id, txt, botoes: [[modo, rótulo]] }: a pergunta do destino, desta vez e deste dado
   const dadoEscolhido = j => (j.fase === 'pegar' && humano(j.vez) && !j.pensando && j.sel != null && idxDe(j.sel) >= 0 ? idxDe(j.sel) : -1);
   const perguntaValida = j => (pergunta && pergunta.chave === chaveVez(j) && pergunta.id === j.sel && dadoEscolhido(j) >= 0 ? pergunta : null);
-  const relDe = (p, x) => { const eu = jogo.cor[p], r = eu.length ? rels(frente(eu), x) : []; return r.length ? r.map(k => REL[k].nome).join(' + ') : (eu.length && jogo.coringa[p] ? 'Coringa' : 'começa'); };
+  const relDe = (p, x) => { const eu = jogo.cor[p], r = eu.length ? rels(frente(eu), x) : []; return r.length ? r.map(k => REL[k].nome).join(' + ') : (eu.length && jogo.coringa[p] ? 'Remendo' : 'começa'); };
   // o que acontece em cada alvo com o dado escolhido: { corrente: {cls, txt}, bolso: {cls, txt} }
   function previaAlvos(p, idx) {
     const j = jogo, op = opcoesDoDado(p, idx), b = j.bolso[p], L = j.cor[p].length, ancora = j.armada[p] === 'ancora' && L >= 4;
@@ -4476,7 +4484,7 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
       const pode = humano(j.vez) && j.vez !== p && podeDesafiar(j.vez).ok;
       estados += `<button class="efeito-ativo oculta${pode ? ' desafiavel' : ''}" data-virada="${p}" aria-label="Carta virada: pode ser armadilha ou blefe${pode ? '. Tocar para desafiar' : ''}">${VERSO} carta virada${pode ? ' · desafiar?' : ''}</button>`;
     }
-    if (j.coringa[p]) estados += `<span class="efeito-ativo" title="O próximo dado que romperia entra no lugar da frente">Coringa ativo</span>`;
+    if (j.coringa[p]) estados += `<span class="efeito-ativo" title="O próximo dado que romperia entra no lugar da frente">Remendo ativo</span>`;
     if (j.sobre[p]) estados += `<span class="efeito-ativo">Sobrecarga +2</span>`;
     if (j.extra[p]) estados += `<span class="efeito-ativo">Pressa: +1 dado</span>`;
     return `<div class="cartas">${html}</div><div class="estados">${estados}</div>`;
@@ -4494,7 +4502,7 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
       if (i < cor.length) {
         const r = i > 0 ? rels(cor[i - 1], cor[i]) : [];
         const frenteCls = !fx && i === cor.length - 1 ? ' frente' : '';
-        slots += `<div class="slot${frenteCls}" data-slot="${i}">${r.length ? elo(r) : (i > 0 ? `<span class="elo r-coringa" title="Coringa">${CHAPEU}</span>` : '')}${dadoHTML(cor[i], skinDe(p))}</div>`;
+        slots += `<div class="slot${frenteCls}" data-slot="${i}">${r.length ? elo(r) : (i > 0 ? `<span class="elo r-coringa" title="Remendo: entrou no lugar da frente">${CHAPEU}</span>` : '')}${dadoHTML(cor[i], skinDe(p))}</div>`;
       } else if (i === cor.length && !fx) {
         const fs = facesQueEncaixam(cor);
         slots += `<div class="slot prox" title="Faces que sincronizam com a frente">${!st.pref.dicas ? '' : cor.length && !j.coringa[p] ? `<span class="prox-faces n${fs.length}">${fs.map(f => `<i>${f}</i>`).join('')}</span>` : '<svg class="ico prox-livre" viewBox="0 0 24 24" aria-label="qualquer dado começa"><path d="M12 6v12M6 12h12"/></svg>'}</div>`;
@@ -4540,7 +4548,7 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
         if (!dicas) tags = '';
         else if (!eu.length) tags = `<span class="tag inicio">Começa</span>`;
         else if (r.length) tags = `<span class="tag ${r.length > 1 ? 'duplo' : 'r-' + r[0]}">${r.map(k => `<span class="tnome">${REL[k].simb}</span><span class="tnome curta"> ${REL[k].nome}</span>`).join(' ')}</span>`;
-        else if (cabe) tags = `<span class="tag r-coringa" title="Coringa: troca a frente">${CHAPEU}<span class="tnome curta"> Coringa</span></span>`;
+        else if (cabe) tags = `<span class="tag r-coringa" title="Remendo: entra no lugar da frente">${CHAPEU}<span class="tnome curta"> Remendo</span></span>`;
         else if (salvo) tags = `<span class="tag inicio">Bolso</span>`;
         else tags = `<span class="tag rompe">✕<span class="tnome curta"> Rompe</span></span>`;
         if (contra && dicas) tags = `<span class="tag previa">vira ${vv}</span>` + tags;
@@ -4635,7 +4643,7 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     }
     if (j.fase === 'destino' && j.mao) {
       const v = j.mao.v, ds = destinos(p, v), b = j.bolso[p];
-      const relTxt = x => { const r = eu.length ? rels(frente(eu), x) : []; return r.length ? r.map(k => REL[k].nome).join(' + ') : (eu.length && j.coringa[p] ? `Coringa: entra no lugar do ${frente(eu)}` : 'começa a corrente'); };
+      const relTxt = x => { const r = eu.length ? rels(frente(eu), x) : []; return r.length ? r.map(k => REL[k].nome).join(' + ') : (eu.length && j.coringa[p] ? `Remendo: entra no lugar do ${frente(eu)}` : 'começa a corrente'); };
       const bt = (modo, rot, sub, cls) => `<button class="btn btn-duplo ${cls}" data-destino="${modo}"><span>${rot}</span><small>${sub}</small></button>`;
       let botoes = '';
       if (ds.length) {
@@ -4689,7 +4697,7 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     if (j.segundoDado) msg = `escolha o segundo dado (Pressa) ou dispense${eu.length >= 3 ? ' e vá para o disparo' : ''}.`;
     else if (!algumSeguro) msg = `<b>nenhum dado sincroniza</b> com o seu ${frente(eu)}, nem o do Bolso. Use uma carta ou escolha um: a corrente de ${eu.length} rompe${j.armada[p] === 'ancora' && eu.length >= 4 ? ', mas a sua Âncora está armada' : ''}.`;
     else if (!ajudas) msg = 'escolha um dado.';
-    else msg = eu.length ? `escolha um dado. Sua frente é <b>${frente(eu)}</b>: sincronizam ${facesQueEncaixam(eu).join(', ')}${j.coringa[p] ? `; os outros entram no lugar do ${frente(eu)} (Coringa)` : ''}.` : 'escolha um dado. Sua corrente está vazia: qualquer um começa.';
+    else msg = eu.length ? `escolha um dado. Sua frente é <b>${frente(eu)}</b>: sincronizam ${facesQueEncaixam(eu).join(', ')}${j.coringa[p] ? `; os outros entram no lugar do ${frente(eu)} (Remendo)` : ''}.` : 'escolha um dado. Sua corrente está vazia: qualquer um começa.';
     const prontas = j.decks[p].filter(c => usavel(p, c)).length;
     const dispensa = j.segundoDado ? `<div class="botoes"><button class="btn btn-papel" data-acao="dispensar">Dispensar o 2.º dado</button></div>` : '';
     return `<div class="status">${quem}, ${msg}</div>${dispensa}${prontas && ajudas ? `<p class="nota" style="margin:0">Toque numa carta sua para usar (${prontas} ${prontas === 1 ? 'pronta' : 'prontas'}).</p>` : ''}`;
@@ -5507,7 +5515,7 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     if (a === 'perfil') { abrirPerfil(); return; }
     if (a === 'online') { document.getElementById('btnOnline').click(); return; }
     if (a === 'regras') { abrirLado(true); return; }
-    const botao = { deck: 'btnDeck', loja: 'btnCarteira', ajustes: 'btnConfig' }[a];
+    const botao = { deck: 'btnDeck', 'trocar-deck': 'btnDeck', loja: 'btnCarteira', ajustes: 'btnConfig' }[a];
     if (botao) document.getElementById(botao).click();
   });
 

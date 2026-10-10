@@ -94,8 +94,8 @@ node tools/vercel_local.js                     # a página como o Vercel publica
 ## Estado
 
 **v0.12, em produção** (a página no Vercel e o servidor na Railway, publicados da branch `DiceDuel`): meta 16 (a 12 acabava
-cedo demais; 20 e 24 voltam quando tiverem o próprio ajuste); o Coringa troca a frente da corrente em vez de alongá-la; Pressa
-só com 3 ou 4 dados na Mesa, Ajuste com 3+ e Coringa com 2+ (nenhum deck acima de ~58%, `docs/balanceamento-cartas.md` §17);
+cedo demais; 20 e 24 voltam quando tiverem o próprio ajuste); o Coringa virou Remendo: o dado que romperia entra no lugar da frente, em vez de alongar a corrente; Pressa
+só com 3 ou 4 dados na Mesa, Ajuste com 3+ e Remendo com 2+ (nenhum deck acima de ~58%, `docs/balanceamento-cartas.md` §17);
 no online fica óbvio de quem é a vez (o relógio na etiqueta "sua vez" do painel, a Mesa acesa na sua vez, chamada e sininhos
 quando a vez chega, lembretes, aviso na aba e de novo ao voltar para a tela). Jogar abre a escolha do rival, com o retrato, a
 dificuldade e o que a vitória rende de cada uma. Tocar no seu nome abre o Perfil (nível, recordes e o seu visual com o que
