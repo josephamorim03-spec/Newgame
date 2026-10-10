@@ -1,4 +1,4 @@
-# Dice Duel: modo história, "Fita Dupla"
+# Dice Duel: modo história, "O Caderno da Diana"
 
 > Roteiro e plano do modo história (proposta, v0.15). Nada daqui está no jogo ainda; o que falta para virar jogo está
 > no §9. **Toda piada passa pela aprovação do dono antes de entrar no jogo** (§11): cada fala tem um código
@@ -17,7 +17,7 @@ receitas: a receita é ela. E você foi treinado para reescrever uma letra errad
 
 - **A ferida:** um corte na quina de um dado, anos atrás. O corte é o de menos: o que impede de fechar é **uma letra
   errada no DNA dela**, "um Passo onde devia haver um Eco".
-- **O plano:** a Diana tentou corrigir sozinha. Patas não seguram pipeta. Então ela precisava de alguém que montasse
+- **O plano:** a Diana tentou corrigir sozinha, mas com aquelas patas fica difícil. Então ela precisava de alguém que montasse
   correntes melhor que ela, e treinou essa pessoa.
 - **As páginas:** o "caderno de receitas" é o caderno de pesquisa dela, com o protocolo disfarçado de receitas. Quem
   levou as páginas foi o Guaxinim, que vendeu uma para cada bicho. **A Diana deixou a janela aberta de propósito:**
@@ -168,7 +168,7 @@ narração (pouca). Na partida, as falas aparecem no balão do retrato, como hoj
 |---|---|
 | primeiro Eco | "Eco. O mesmo número. Gêmeos idênticos: mesmo código, opiniões diferentes." |
 | primeiro Passo | "Passo. Um a mais ou um a menos. Uma mutação pequena. A maioria passa despercebida." *(toca no nariz)* "A minha, não." |
-| primeiro Oposto | "Oposto. Somam sete. Como A e T, C e G na biologia. O dado sabia disso antes." |
+| primeiro Oposto | *em revisão (G-03a ou G-03b):* "…Os opostos se completam. Diz o dado." ou "…Cada número tem o seu par. Quase romântico." |
 | primeira corrente de 3 | "Três elos. Um códon: a menor frase que a vida sabe ler. Já dá para disparar." |
 | primeira ruptura | "Rompeu. Na natureza chamam isso de mutação. Aqui chamamos de 'arrisquei demais'." |
 | primeiro uso do Bolso | "O Bolso guarda um dado. A vida guarda duas fitas pelo mesmo motivo." |
@@ -199,8 +199,8 @@ girino. Não volto nem com transcriptase." · seu disparo grande: "Que salto." �
 vitória-régia." · venceu: "Chá?" · perdeu: "Justo. A página é sua. O chá também, se quiser."
 
 **Depois**
-- **Q1.** *A página molhada, com o desenho de uma fita voltando.* "SOPA DE GIRINO AO CONTRÁRIO: leve a fita de volta pela
-  outra ponta. Não deixe ferver." *Na margem, na letra da Diana: "Reverso? Testar."*
+- **Q1.** *A página um.* Em revisão: **C1-13a** "SOPA DE GIRINO AO CONTRÁRIO · Ingredientes: A, T, C e G. Nessa ordem. Ou na
+  outra." ou **C1-13b** *o título escrito espelhado; na margem:* "Ler no espelho. Ou com o Reverso."
 - **Q2.** SAPO: "Sabe por que ela quer isso? Dizem que a salamandra regenera uma perna inteira."
 - **Q3.** SAPO: "Eu não. Sou sapo. Todo mundo confunde."
 
@@ -228,10 +228,11 @@ mais." · seu disparo grande: "Isso conta como multiplicação?" · ruptura dele
 quatro." · venceu: "Ganhei! Preciso ir. Atrasado." · perdeu: "Toma a página. Corre que ainda dá tempo de… alguma coisa."
 
 **Depois**
-- **Q1.** *A página com um pão saindo da fôrma e do quadro.* "PÃO QUE CRESCE SOZINHO: fermento no máximo. Deixe dobrar.
-  Dobre de novo. Não deixe o coelho ajudar." *Margem: "superexpressão".*
+- **Q1.** *A página dois.* Em revisão: **C2-12a** "PÃO QUE CRESCE SOZINHO · Ingredientes: G, G, G e G. Fermento: sim." ou
+  **C2-12b** *uma mancha de farinha em forma de pata de coelho; na margem:* "Não deixar o Coelho ler."
 - **Q2.** COELHO: "Ela é sua amiga? Avisa que o curativo está torto."
-- **Q3.** COELHO: "E pergunta se ela tem mais receitas. O pão ficou ótimo. Ainda está crescendo."
+- **Q3.** Em revisão: **C2-14a** COELHO: "Ela tem outras receitas? Pergunto por um amigo. Quarenta e três amigos." ou
+  **C2-14b** sem esta fala.
 
 ### Capítulo 3: A Raposa, "Toca de Inverno" (Fundo Falso)
 
@@ -243,7 +244,8 @@ quatro." · venceu: "Ganhei! Preciso ir. Atrasado." · perdeu: "Toma a página. 
   contar."
 
 **Chegada**
-- **Q1.** *A Raposa num sofá de toca, olhos semicerrados, satisfeita.* RAPOSA: "Ah. A aluna da gata."
+- **Q1.** *A Raposa num sofá de toca, olhos semicerrados, satisfeita.* Em revisão (sem gênero): **C3-04a** "Ah. Você deve ser o
+  projeto da gata." ou **C3-04b** "Ah. Quem a gata anda treinando."
 - **Q2.** RAPOSA: "No inverno eu fico branca, sabia? É genética. O cachecol é escolha."
 - **Q3.** RAPOSA: "A página é 'Torta de Fundo Falso'. Adorei. Quase não devolvo." **Q4.** "…" **Q5.** "Quase."
 
@@ -253,8 +255,8 @@ não. É uma raposa falando." · Fundo Falso pegou: "O fundo era falso. A raposa
 com estilo." · perdeu: "Leve. E cuidado com a gata: ela é mais raposa do que eu."
 
 **Depois**
-- **Q1.** *A página: uma torta cortada, com o recheio escondido.* "TORTA DE FUNDO FALSO: a massa esconde o recheio.
-  Ninguém precisa saber o que vai dentro até morder."
+- **Q1.** *A página três.* Em revisão: **C3-14a** "TORTA DE FUNDO FALSO · Recheio: segredo. Até para quem come." ou **C3-14b**
+  *uma aba de papel colada; levantada:* "Achou que ia ter receita aqui?"
 
 ### Capítulo 4: O Urso, "Caverna do Gorro" (Pausa)
 
@@ -267,7 +269,8 @@ com estilo." · perdeu: "Leve. E cuidado com a gata: ela é mais raposa do que e
 **Chegada**
 - **Q1.** *Caverna escura. Um volume enorme com um gorro vermelho. O ronco desenhado: "zZz", com pips no lugar dos pingos.*
 - **Q2.** *Um olho abre.* URSO: "…É primavera?"
-- **Q3.** URSO: "Não? Então são cinco minutos. Ou cinco meses. O que vier primeiro."
+- **Q3.** Em revisão: **C4-04a** URSO: "Não? Então estou sonhando. Joga rápido, antes que eu acorde." ou **C4-04b** "Não?
+  Então me acorda em março."
 - **Q4.** CAIXA: "Ursos hibernam meses e acordam sem perder músculo. A ciência quer muito esse segredo." URSO: "O segredo
   é não acordar."
 
@@ -276,8 +279,8 @@ inverno." · seu disparo grande: "Hm. Isso foi… acordado." · ruptura dele: "C
 voltar a dormir?" · perdeu: "Leva a página. Fecha a porta. Apaga a luz."
 
 **Depois**
-- **Q1.** *A página: um pote de mel dormindo em banho-maria.* "MEL EM BANHO-MARIA: deixe dormir. O gene não some, só
-  fica quieto. Acorde com cuidado."
+- **Q1.** *A página quatro.* Em revisão: **C4-12a** "MEL EM BANHO-MARIA · Tempo de preparo: um inverno." ou **C4-12b** *o pote
+  de olhos fechados; na margem:* "Não acordar o mel."
 - **Q2.** *O Urso dormindo de novo, com a página na pata. Você a puxa devagar.*
 - **Q3.** URSO *(dormindo)*: "…a gata… o nariz… ela pediu pra não contar…" **Q4.** *(ronco)*
 
@@ -300,8 +303,8 @@ serviço." · seu disparo grande: "Ei. Isso era meu. Quer dizer. Ia ser." · rup
 venceu: "Volte sempre. Traga coisas." · perdeu: "Tá. Leva a página. E o cone." **(beat)** "…Fica com o cone? Não? Tá."
 
 **Depois**
-- **Q1.** *A página: uma tigela com folhas de várias hortas.* "SALADA DE SOBRAS DOS OUTROS: pegue do vizinho o que ele
-  não está usando. Funciona com bactéria. Com guaxinim também."
+- **Q1.** *A página cinco.* Em revisão: **C5-14a** "SALADA DE SOBRAS DOS OUTROS · Ingredientes: os do vizinho." ou **C5-14b**
+  *uma etiqueta de preço por cima do título:* "Página 5 · 4,99 por mês".
 - **Q2.** GUAXINIM: "Pergunta pra gata quem deixou a janela aberta."
 
 ### Capítulo 6: A Ovelha, "Pasto Hexagonal" (Espelho)
@@ -322,8 +325,8 @@ de clone que eu chego." · seu disparo grande: "Bééém jogado." · ruptura del
 minha lã."
 
 **Depois**
-- **Q1.** *A página: dois pudins, um de cabeça para baixo.* "PUDIM GÊMEO: faça dois iguais. Desenforme um ao contrário.
-  Se ficarem idênticos, alguma coisa deu errado."
+- **Q1.** *A página seis.* Em revisão: **C6-12a** "PUDIM GÊMEO · Rende: duas porções idênticas. A segunda não lembra da
+  primeira." ou **C6-12b** *duas páginas idênticas grampeadas; na margem:* "Uma delas é a cópia. Não pergunte qual."
 
 ### Interlúdio: "Cansei de disfarçar"
 
@@ -343,14 +346,14 @@ minha lã."
 
 **Na partida:** início: "Sem pressa. Quem escreve precisa saber ler." · Lacre: "Lacre. Nem tudo que está escrito
 precisa ser dito." · seu disparo grande: "Jogada precisa. Você leu." · ruptura dela: "Hum. Escrevi uma letra errada.
-Acontece com os melhores." · venceu: "Ainda não. Volte quando ler mais rápido." · perdeu: "Está pronta. Sente-se.
-Precisamos falar da gata."
+Acontece com os melhores." · venceu: "Ainda não. Volte quando ler mais rápido." · perdeu: "Agora sim. Sente-se.
+Precisamos falar da gata." *(sem gênero; em revisão)*
 
 **Depois** *(a virada começa)*
-- **Q1.** *A Coruja entrega a última página. Não tem receita: só o desenho de um nariz de gato com um X.* CORUJA: "Esta não
-  é uma receita."
+- **Q1.** *A Coruja entrega a última página: só o desenho de um nariz de gato com um X.* Em revisão: **C7-10a** CORUJA: "A
+  última. Não tem ingrediente nenhum." ou **C7-10b** quadro mudo.
 - **Q2.** CORUJA: "Uma letra errada, no meio de quase três bilhões. Um Passo onde devia haver um Eco. Por isso não fecha."
-- **Q3.** CORUJA: "Ela não te ensinou a jogar por gentileza, querida. Pergunte a ela."
+- **Q3.** CORUJA: "Ela não te ensinou a jogar por gentileza. Pergunte a ela." *(sem o "querida"; em revisão)*
 
 ### A revelação: "O mural"
 
@@ -363,7 +366,7 @@ Precisamos falar da gata."
   de tratamento." **Q5.** "É o que um D diria."
 - **Q6.** *A Diana sentada, séria.* DIANA: "Uma letra. Errada. Desde que eu nasci. O corte foi a quina de um dado. O não
   fechar é comigo."
-- **Q7.** *A pata dela segurando uma pipeta, torta, pingando.* DIANA: "Eu tentei sozinha. Patas não seguram pipeta."
+- **Q7.** *A pata dela segurando uma pipeta, torta, pingando.* DIANA: "Eu tentei sozinha. Mas com essas patas fica difícil." *(texto do dono)*
 - **Q8.** DIANA: "Então eu ensinei alguém que monta correntes melhor do que eu." **Q9.** "…" **Q10.** "Você."
 - **Q11.** *(o jogador escolhe um dos dois botões; o outro aparece em seguida)*
   - [Você me usou.] DIANA: "Usei. Ensinei. Em gatês é a mesma palavra."
@@ -374,7 +377,7 @@ Precisamos falar da gata."
 - **Q16.** *A Diana na Mesa dela, os dados prontos.* DIANA: "Falta escrever. A correção tem que ser feita contra a fita
   original. A fita original sou eu." **Q17.** "Jogue sério. Se eu facilitar, a cura sai com defeito."
 
-### Capítulo 8: Diana, "A Fita Original"
+### Capítulo 8: Diana, "Fita Dupla"
 
 **Na partida:** início: "Boa noite. Uma partida?" *(a primeira fala do jogo, palavra por palavra; logo depois, num
 balão menor:)* "Dessa vez vale." · primeiro Oposto seu: "Par complementar. A com T. Bonito." · Espelho: "Espelho. Você
@@ -390,18 +393,11 @@ De novo. Está no meu DNA." · venceu: "Ainda não. Revanche?" **(beat)** "Por f
 - **Q3.** *A fita encosta no nariz dela. Retícula, desencaixe azul e rosa, quadro congelado (`visual-impresso.md`).*
 - **Q4.** *Close: o ferimento fechado. Ela encosta a pata. Quadro mudo.*
 - **Q5.** DIANA: "Fechou." **Q6.** "Faz cócegas."
-**O fecho (em aberto: o dono escolhe uma das opções).** Todas têm um final só para todo mundo; a 3.ª estrela do Cap. 8
-dá no máximo um quadro a mais, nunca um final "certo".
-
-- **A. O Eco (recomendada).** A letra errada era "um Passo onde devia haver um Eco". A correção pôs um Eco. Talvez dois.
-  - **Q7.** DIANA: "Fechou. Fechou." **Q8.** *Ela para.* "Por que eu estou falando duas vezes? Vezes?"
-  - **Q9.** DIANA: "Você pôs um Eco. Eco." **Q10.** "…Passa amanhã. Manhã." **Q11.** "Revanche? Vanche?"
-  - *Com a 3.ª estrela, um quadro a mais:* DIANA: "Fita complementar perfeita. Eu ensinei bem. Bem."
-- **B. Sem preço.** A cura fecha e pronto; o soco vem dela levando o crédito.
-  - **Q7.** DIANA: "Fechou." **Q8.** "Eu sabia que ia dar certo. Eu escolhi a pessoa certa." **Q9.** "Eu sou ótima professora." **Q10.** "Revanche?"
-- **C. A orelha, sempre, sem condição.** A ponta preta da orelha troca de lado em todo final, e ela gosta.
-  - **Q7.** *No espelho.* DIANA: "…Você virou o dado errado. Sete menos o valor." **Q8.** "Gostei. Fica." **Q9.** "Revanche?"
-- **D. Como estava.** A orelha troca no final comum e não troca com a 3.ª estrela.
+**O fecho: o Eco (decisão do dono).** A letra errada era "um Passo onde devia haver um Eco". A correção pôs um Eco.
+Talvez dois. Um final só para todo mundo; a 3.ª estrela do Cap. 8 dá um quadro a mais.
+- **Q7.** DIANA: "Fechou. Fechou." **Q8.** *Ela para.* "Por que eu estou falando duas vezes? Vezes?"
+- **Q9.** DIANA: "Você pôs um Eco. Eco." **Q10.** "…Passa amanhã. Manhã." **Q11.** "Revanche? Vanche?"
+- *Com a 3.ª estrela, um quadro a mais:* DIANA: "Fita complementar perfeita. Eu ensinei bem. Bem."
 
 **Créditos:** *o título "DICE DUEL" na tela.*
 
@@ -409,10 +405,10 @@ dá no máximo um quadro a mais, nunca um final "certo".
 - **Q1.** *A Diana com um pincel atômico na frente do título. Ela risca "Dice Duel" e escreve por cima: "DianaDice".*
   DIANA: "DianaDice não seria um nome melhor para esse jogo?" **Q2.** "…" **Q3.** "Seria."
 
-**Pós-créditos 2**
-- **Q1.** *A Diana, curada, abre a porta. Um pão enorme ocupa o quadro inteiro.*
-- **Q2.** COELHO *(de dentro do pão)*: "Fiz de novo! Com a página dois!"
-- **Q3.** DIANA: "Estava escrito: não deixe o coelho ajudar." **Q4.** COELHO: "Eu não ajudei. Eu fiz sozinho."
+**Pós-créditos 2** *(em revisão: X-02a ou X-02b)*
+- **X-02a.** *A Diana, curada, abre a porta. O Sapo de chapéu, com uma xícara turva.* SAPO: "Soube da cura. Trouxe chá."
+  DIANA: "É do lago?" SAPO: "Orgânico."
+- **X-02b.** Sem o segundo pós-créditos: a história termina no "DianaDice".
 
 ## 8. As gags que voltam
 
@@ -423,11 +419,11 @@ Para cada uma valer, ela muda um pouco a cada aparição e paga no fim.
 | **O nariz** | curativo de pips | dois em X | "NÃO PERGUNTE" | cachecol da Raposa | cone | meia (o cone sumiu) | lã da Ovelha | nada: "cansei de disfarçar" | Final: fechou |
 | **O mural** | — | uma foto e um barbante | (fundo) | (fundo) | "DISPARO. DUELO. DOBRO. → D" | (fundo) | (fundo) | coberto por lençol | Revelação |
 | **A letra D** | — | — | — | — | o bilhete no mural | — | — | — | Revelação: "É o que um D diria." · Pós-créditos: "DianaDice" |
-| **O pão do Coelho** | — | — | testou a página, "ainda está crescendo" | *(um pão aparece na janela da Diana)* | *(maior)* | *(maior)* | *(pela porta)* | o Coelho na biblioteca, atrás de receitas | "A receita sou eu." · Pós-créditos 2 |
+| **O pão do Coelho** | — | — | testou a página, "mudar de toca" | *(um pão aparece na janela da Diana)* | *(maior)* | *(maior)* | *(pela porta)* | o Coelho na biblioteca, atrás de receitas | "A receita sou eu." |
 | **Quem sabe de algo** | — | — | — | Raposa: "ela é mais raposa do que eu" | Urso dormindo: "ela pediu pra não contar" | Guaxinim: "quem deixou a janela aberta" | — | Coruja: "não foi por gentileza" | Revelação |
 | **A pata** | ela derruba um dado | — | — | — | — | — | — | — | "Eu estava sequenciando." |
 | **"Revanche?"** | a fala de sempre dela | — | — | — | — | — | — | — | Cap. 8: "…Por favor." · Final: "Revanche?" |
-| **O chá do Sapo** | — | "É do lago, sim." | — | — | — | — | — | — | (fica no capítulo: "Chá?" quando ele vence) |
+| **O chá do Sapo** | — | "É do lago, sim." | — | — | — | — | — | — | "Chá?" quando ele vence · Pós-créditos 2, se o X-02a passar |
 
 ## 9. Como vira jogo
 
@@ -488,11 +484,12 @@ a pata da Diana, a cascata, o impacto e as tarefas do dia.
 |---|---|
 | Os especiais da casa entram? | **Não.** O Biscoito também saiu; a gag das receitas ficou com o Coelho. |
 | A história libera cartas? | **Algumas, quando faz sentido**, e elas continuam à venda (§6.1: 4 de 7). |
-| A orelha trocada? | **Em aberto:** o dono não gostou da condição. Opções A a D no §7, Final. |
-| O nome? | **"Fita Dupla" serve**; outras opções abaixo. |
+| A orelha trocada? | **Saiu.** O fecho é o **Eco** (§7, Final), um final só para todo mundo. |
+| O nome? | **"O Caderno da Diana"**. "Fita Dupla" fica como título do último capítulo. |
+| As cartas (§6.1)? | **Aprovadas:** Reverso, Fundo Falso, Furto e Espelho. |
 | As piadas? | **Toda piada passa pela aprovação do dono** (§11). |
 
-**Nomes para o modo história:**
+**Os nomes que estavam na mesa** (escolhido: O Caderno da Diana):
 
 | Nome | O que diz | Contra |
 |---|---|---|
@@ -503,8 +500,10 @@ a pata da Diana, a cascata, o impacto e as tarefas do dia.
 | **Tudo Começa com D** | a teoria da Diana vira o título | entrega a piada do mural |
 | **Códon** | curto, estranho, científico | frio; não tem a Diana |
 
-Recomendação: **O Caderno da Diana** no menu (convida e não entrega nada) e **Fita Dupla** como título do último
-capítulo, quando o nome passa a fazer sentido.
+A primeira rodada de revisão (140 falas) aprovou 128, pediu 2 ajustes e recusou 11: as sete páginas-receita
+(o formato "receita com instruções" não funcionou), duas falas do pão do Coelho, o "cinco minutos" do Urso e o Oposto
+do guia. Cada recusada voltou com duas opções (a e b) para a segunda rodada; o dono aprova uma e recusa a outra. Duas
+falas aprovadas da Coruja foram reescritas sem gênero ("Está pronta", "querida") e voltaram à revisão.
 
 ## 11. Aprovação das piadas
 

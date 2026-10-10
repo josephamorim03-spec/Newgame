@@ -9,7 +9,7 @@
   "pata": "A pata",
   "revanche": "\"Revanche?\"",
   "cha": "O chá do Sapo",
-  "fecho": "O fecho da história (escolha uma opção)"
+  "fecho": "O fecho da história (o Eco)"
  },
  "falas": [
   {
@@ -21,7 +21,7 @@
    "texto": "Boa noite. Você joga dados?",
    "desenho": "A Diana atrás da mesinha de feltro. No nariz, um curativo com estampa de pips de dado.",
    "gag": "nariz",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -33,7 +33,7 @@
    "texto": "Não importa. Eu ensino. Sou ótima professora e péssima em deixar coisas em cima da mesa.",
    "desenho": "A pata dela empurra um dado devagar até a beirada.",
    "gag": "pata",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -45,7 +45,7 @@
    "texto": "Não pergunte do nariz.",
    "desenho": "O dado cai para fora do quadro. Ela não olha.",
    "gag": "nariz",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -57,7 +57,7 @@
    "texto": "Você aprende rápido.",
    "desenho": "Ela olhando o placar.",
    "gag": "",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -69,7 +69,7 @@
    "texto": "Ótimo. Preciso de um favor. Alguém levou sete páginas do meu caderno de receitas.",
    "desenho": "Um caderno \"RECEITAS DA DIANA\" com tocos de páginas arrancadas.",
    "gag": "receitas",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -81,7 +81,7 @@
    "texto": "Sete. Como a soma dos opostos. Não é coincidência. Quase nada é.",
    "desenho": "Close no rosto dela.",
    "gag": "letra-d",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -93,7 +93,7 @@
    "texto": "Eco. O mesmo número. Gêmeos idênticos: mesmo código, opiniões diferentes.",
    "desenho": "",
    "gag": "",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -105,16 +105,28 @@
    "texto": "Passo. Um a mais ou um a menos. Uma mutação pequena. A maioria passa despercebida. (toca no nariz) A minha, não.",
    "desenho": "",
    "gag": "nariz",
+   "status": "aprovada",
+   "nota": ""
+  },
+  {
+   "id": "G-03a",
+   "cap": "G",
+   "capitulo": "Prólogo · o guia na voz da Diana",
+   "quem": "Diana",
+   "onde": "Primeiro Oposto · opção a",
+   "texto": "Oposto. Somam sete: as faces de lados contrários do dado. Os opostos se completam. Diz o dado.",
+   "desenho": "",
+   "gag": "",
    "status": "pendente",
    "nota": ""
   },
   {
-   "id": "G-03",
+   "id": "G-03b",
    "cap": "G",
    "capitulo": "Prólogo · o guia na voz da Diana",
    "quem": "Diana",
-   "onde": "Primeiro Oposto",
-   "texto": "Oposto. Somam sete. Como A e T, C e G na biologia. O dado sabia disso antes.",
+   "onde": "Primeiro Oposto · opção b",
+   "texto": "Oposto. Somam sete: um e seis, dois e cinco, três e quatro. Cada número tem o seu par. Quase romântico.",
    "desenho": "",
    "gag": "",
    "status": "pendente",
@@ -129,7 +141,7 @@
    "texto": "Três elos. Um códon: a menor frase que a vida sabe ler. Já dá para disparar.",
    "desenho": "",
    "gag": "",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -141,7 +153,7 @@
    "texto": "Rompeu. Na natureza chamam isso de mutação. Aqui chamamos de \"arrisquei demais\".",
    "desenho": "",
    "gag": "",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -153,7 +165,7 @@
    "texto": "O Bolso guarda um dado. A vida guarda duas fitas pelo mesmo motivo.",
    "desenho": "",
    "gag": "",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -165,7 +177,7 @@
    "texto": "Dobrei a dose.",
    "desenho": "Dois curativos cruzados em X no nariz.",
    "gag": "nariz",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -177,7 +189,7 @@
    "texto": "O Sapo está com a página um. Ele é educado. Vai te oferecer chá. / Não aceite. É água do lago.",
    "desenho": "",
    "gag": "cha",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -189,7 +201,7 @@
    "texto": "Boa noite. Aceita um chá?",
    "desenho": "O Sapo numa vitória-régia, tirando o chapéu de palha.",
    "gag": "cha",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -201,7 +213,7 @@
    "texto": "É do lago, sim. Orgânico.",
    "desenho": "Uma xícara turva, com um girino dentro.",
    "gag": "cha",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -213,7 +225,7 @@
    "texto": "A página se chama \"Sopa de Girino ao Contrário\". Achei de mau gosto. Já fui girino.",
    "desenho": "",
    "gag": "",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -225,7 +237,7 @@
    "texto": "Ganhe e ela é sua. Perca, e você toma o chá.",
    "desenho": "",
    "gag": "cha",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -237,7 +249,7 @@
    "texto": "Calma. Aqui o tempo anda devagar.",
    "desenho": "",
    "gag": "",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -249,7 +261,7 @@
    "texto": "Reverso: a fita volta pela outra ponta. Já fui girino. Não volto nem com transcriptase.",
    "desenho": "",
    "gag": "",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -261,7 +273,7 @@
    "texto": "Que salto.",
    "desenho": "",
    "gag": "",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -273,7 +285,7 @@
    "texto": "Escorreguei na vitória-régia.",
    "desenho": "",
    "gag": "",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -285,7 +297,7 @@
    "texto": "Chá?",
    "desenho": "",
    "gag": "cha",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -297,17 +309,29 @@
    "texto": "Justo. A página é sua. O chá também, se quiser.",
    "desenho": "",
    "gag": "cha",
+   "status": "aprovada",
+   "nota": ""
+  },
+  {
+   "id": "C1-13a",
+   "cap": "C1",
+   "capitulo": "Cap. 1 · O Sapo",
+   "quem": "Página 1",
+   "onde": "Depois · Q1 · opção a",
+   "texto": "SOPA DE GIRINO AO CONTRÁRIO · Ingredientes: A, T, C e G. Nessa ordem. Ou na outra.",
+   "desenho": "A página molhada.",
+   "gag": "receitas",
    "status": "pendente",
    "nota": ""
   },
   {
-   "id": "C1-13",
+   "id": "C1-13b",
    "cap": "C1",
    "capitulo": "Cap. 1 · O Sapo",
    "quem": "Página 1",
-   "onde": "Depois · Q1",
-   "texto": "SOPA DE GIRINO AO CONTRÁRIO: leve a fita de volta pela outra ponta. Não deixe ferver. (margem: \"Reverso? Testar.\")",
-   "desenho": "A página molhada, com o desenho de uma fita voltando.",
+   "onde": "Depois · Q1 · opção b",
+   "texto": "(margem, na letra da Diana) Ler no espelho. Ou com o Reverso.",
+   "desenho": "A página molhada, com o título escrito espelhado: SOPA DE GIRINO AO CONTRÁRIO.",
    "gag": "receitas",
    "status": "pendente",
    "nota": ""
@@ -321,7 +345,7 @@
    "texto": "Sabe por que ela quer isso? Dizem que a salamandra regenera uma perna inteira. / Eu não. Sou sapo. Todo mundo confunde.",
    "desenho": "",
    "gag": "",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -333,7 +357,7 @@
    "texto": "Uma a menos.",
    "desenho": "Ela lê a página um. No fundo, pela primeira vez, um mural de cortiça com uma foto de dado e um barbante vermelho.",
    "gag": "mural",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -345,7 +369,7 @@
    "texto": "O que é o DNA, se não um conjunto de dados?",
    "desenho": "Ela olha para o nada.",
    "gag": "letra-d",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -357,7 +381,7 @@
    "texto": "…Coisa de receita. Próximo: o Coelho.",
    "desenho": "Ela percebe você olhando o mural e cobre a cortiça com a pata.",
    "gag": "mural",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -369,7 +393,7 @@
    "texto": "O Coelho tem a página dois. Ele joga rápido.",
    "desenho": "Curativo e, por cima, um adesivo: \"NÃO PERGUNTE\".",
    "gag": "nariz",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -381,7 +405,7 @@
    "texto": "Ele faz tudo rápido. A família dele que o diga: são quarenta e três.",
    "desenho": "",
    "gag": "",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -393,7 +417,7 @@
    "texto": "Desculpe, estou atrasado. Para tudo. Sempre.",
    "desenho": "O Coelho com uma planilha, cercado de silhuetas de coelhinhos.",
    "gag": "",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -405,7 +429,7 @@
    "texto": "A página? \"Pão que Cresce Sozinho\". Testei. Cresceu. Tivemos que mudar de toca.",
    "desenho": "",
    "gag": "pao",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -417,7 +441,7 @@
    "texto": "Jogo rápido, tá? Tenho reunião de família. É uma reunião grande.",
    "desenho": "",
    "gag": "",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -429,7 +453,7 @@
    "texto": "Valendo. Vai. Vai. Vai.",
    "desenho": "",
    "gag": "",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -441,7 +465,7 @@
    "texto": "Mais dois. Aqui em casa mais nunca é demais. É só… mais.",
    "desenho": "",
    "gag": "",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -453,7 +477,7 @@
    "texto": "Isso conta como multiplicação?",
    "desenho": "",
    "gag": "",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -465,7 +489,7 @@
    "texto": "Contei errado. De novo. Eram quarenta e quatro.",
    "desenho": "",
    "gag": "",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -477,7 +501,7 @@
    "texto": "Ganhei! Preciso ir. Atrasado.",
    "desenho": "",
    "gag": "",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -489,18 +513,30 @@
    "texto": "Toma a página. Corre que ainda dá tempo de… alguma coisa.",
    "desenho": "",
    "gag": "",
+   "status": "aprovada",
+   "nota": ""
+  },
+  {
+   "id": "C2-12a",
+   "cap": "C2",
+   "capitulo": "Cap. 2 · O Coelho",
+   "quem": "Página 2",
+   "onde": "Depois · Q1 · opção a",
+   "texto": "PÃO QUE CRESCE SOZINHO · Ingredientes: G, G, G e G. Fermento: sim.",
+   "desenho": "Um pão saindo da fôrma e do quadro.",
+   "gag": "receitas",
    "status": "pendente",
    "nota": ""
   },
   {
-   "id": "C2-12",
+   "id": "C2-12b",
    "cap": "C2",
    "capitulo": "Cap. 2 · O Coelho",
    "quem": "Página 2",
-   "onde": "Depois · Q1",
-   "texto": "PÃO QUE CRESCE SOZINHO: fermento no máximo. Deixe dobrar. Dobre de novo. Não deixe o coelho ajudar. (margem: \"superexpressão\")",
-   "desenho": "Um pão saindo da fôrma e do quadro.",
-   "gag": "pao",
+   "onde": "Depois · Q1 · opção b",
+   "texto": "(margem, na letra da Diana) Não deixar o Coelho ler.",
+   "desenho": "A página com o título PÃO QUE CRESCE SOZINHO e uma mancha de farinha em forma de pata de coelho.",
+   "gag": "receitas",
    "status": "pendente",
    "nota": ""
   },
@@ -513,16 +549,28 @@
    "texto": "Ela é sua amiga? Avisa que o curativo está torto.",
    "desenho": "",
    "gag": "nariz",
+   "status": "aprovada",
+   "nota": ""
+  },
+  {
+   "id": "C2-14a",
+   "cap": "C2",
+   "capitulo": "Cap. 2 · O Coelho",
+   "quem": "Coelho",
+   "onde": "Depois · Q3 · opção a",
+   "texto": "Ela tem outras receitas? Pergunto por um amigo. Quarenta e três amigos.",
+   "desenho": "",
+   "gag": "pao",
    "status": "pendente",
    "nota": ""
   },
   {
-   "id": "C2-14",
+   "id": "C2-14b",
    "cap": "C2",
    "capitulo": "Cap. 2 · O Coelho",
    "quem": "Coelho",
-   "onde": "Depois · Q3",
-   "texto": "E pergunta se ela tem mais receitas. O pão ficou ótimo. Ainda está crescendo.",
+   "onde": "Depois · Q3 · opção b",
+   "texto": "(sem esta fala: o capítulo termina no Q2)",
    "desenho": "",
    "gag": "pao",
    "status": "pendente",
@@ -537,7 +585,7 @@
    "texto": "Inspiração.",
    "desenho": "Um mini cachecol verde enrolado no nariz.",
    "gag": "nariz",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -549,7 +597,7 @@
    "texto": "A Raposa tem a página três. Ela vai mentir para você. / Não. Pior. Ela vai dizer a verdade de um jeito que parece mentira.",
    "desenho": "",
    "gag": "",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -561,18 +609,30 @@
    "texto": "E ela usa armadilhas. Eu também. Achei que era hora de contar.",
    "desenho": "A Diana vira uma carta para baixo: o \"?\".",
    "gag": "",
+   "status": "aprovada",
+   "nota": ""
+  },
+  {
+   "id": "C3-04a",
+   "cap": "C3",
+   "capitulo": "Cap. 3 · A Raposa",
+   "quem": "Raposa",
+   "onde": "Chegada · Q1 · opção a",
+   "texto": "Ah. Você deve ser o projeto da gata.",
+   "desenho": "A Raposa num sofá de toca, olhos semicerrados, satisfeita.",
+   "gag": "sabem",
    "status": "pendente",
    "nota": ""
   },
   {
-   "id": "C3-04",
+   "id": "C3-04b",
    "cap": "C3",
    "capitulo": "Cap. 3 · A Raposa",
    "quem": "Raposa",
-   "onde": "Chegada · Q1",
-   "texto": "Ah. A aluna da gata.",
+   "onde": "Chegada · Q1 · opção b",
+   "texto": "Ah. Quem a gata anda treinando.",
    "desenho": "A Raposa num sofá de toca, olhos semicerrados, satisfeita.",
-   "gag": "",
+   "gag": "sabem",
    "status": "pendente",
    "nota": ""
   },
@@ -585,7 +645,7 @@
    "texto": "No inverno eu fico branca, sabia? É genética. O cachecol é escolha.",
    "desenho": "",
    "gag": "",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -597,7 +657,7 @@
    "texto": "A página é \"Torta de Fundo Falso\". Adorei. Quase não devolvo. / … / Quase.",
    "desenho": "",
    "gag": "",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -609,7 +669,7 @@
    "texto": "Fique à vontade. Nada aqui é o que parece. Inclusive eu.",
    "desenho": "",
    "gag": "",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -621,7 +681,7 @@
    "texto": "Armei alguma coisa. Ou não. É uma raposa falando.",
    "desenho": "",
    "gag": "",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -633,7 +693,7 @@
    "texto": "O fundo era falso. A raposa, verdadeira.",
    "desenho": "",
    "gag": "",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -645,7 +705,7 @@
    "texto": "Hm. Você não é fácil de enganar.",
    "desenho": "",
    "gag": "",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -657,7 +717,7 @@
    "texto": "Que deselegante. Para mim.",
    "desenho": "",
    "gag": "",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -669,7 +729,7 @@
    "texto": "Volte quando quiser perder com estilo.",
    "desenho": "",
    "gag": "",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -681,17 +741,29 @@
    "texto": "Leve. E cuidado com a gata: ela é mais raposa do que eu.",
    "desenho": "",
    "gag": "sabem",
+   "status": "aprovada",
+   "nota": ""
+  },
+  {
+   "id": "C3-14a",
+   "cap": "C3",
+   "capitulo": "Cap. 3 · A Raposa",
+   "quem": "Página 3",
+   "onde": "Depois · Q1 · opção a",
+   "texto": "TORTA DE FUNDO FALSO · Recheio: segredo. Até para quem come.",
+   "desenho": "Uma torta inteira, sem corte.",
+   "gag": "receitas",
    "status": "pendente",
    "nota": ""
   },
   {
-   "id": "C3-14",
+   "id": "C3-14b",
    "cap": "C3",
    "capitulo": "Cap. 3 · A Raposa",
    "quem": "Página 3",
-   "onde": "Depois · Q1",
-   "texto": "TORTA DE FUNDO FALSO: a massa esconde o recheio. Ninguém precisa saber o que vai dentro até morder.",
-   "desenho": "Uma torta cortada, com o recheio escondido.",
+   "onde": "Depois · Q1 · opção b",
+   "texto": "(debaixo de uma aba da página) Achou que ia ter receita aqui?",
+   "desenho": "A página TORTA DE FUNDO FALSO tem uma aba de papel colada; levantada, mostra só a frase.",
    "gag": "receitas",
    "status": "pendente",
    "nota": ""
@@ -705,7 +777,7 @@
    "texto": "É um acessório. / … / Está na moda. Em clínica veterinária.",
    "desenho": "A Diana com um cone de veterinário no pescoço.",
    "gag": "nariz",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -717,7 +789,7 @@
    "texto": "O Urso tem a página quatro. Está hibernando. Não acorde ele. / Quer dizer: acorde. Com educação.",
    "desenho": "O mural no fundo: três fotos e um bilhete \"DISPARO. DUELO. DOBRO. → D\".",
    "gag": "letra-d",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -729,16 +801,28 @@
    "texto": "…É primavera?",
    "desenho": "Caverna escura, um volume enorme de gorro vermelho; o ronco desenhado com pips. Um olho abre.",
    "gag": "",
+   "status": "aprovada",
+   "nota": ""
+  },
+  {
+   "id": "C4-04a",
+   "cap": "C4",
+   "capitulo": "Cap. 4 · O Urso",
+   "quem": "Urso",
+   "onde": "Chegada · Q3 · opção a",
+   "texto": "Não? Então estou sonhando. Joga rápido, antes que eu acorde.",
+   "desenho": "",
+   "gag": "",
    "status": "pendente",
    "nota": ""
   },
   {
-   "id": "C4-04",
+   "id": "C4-04b",
    "cap": "C4",
    "capitulo": "Cap. 4 · O Urso",
    "quem": "Urso",
-   "onde": "Chegada · Q3",
-   "texto": "Não? Então são cinco minutos. Ou cinco meses. O que vier primeiro.",
+   "onde": "Chegada · Q3 · opção b",
+   "texto": "Não? Então me acorda em março.",
    "desenho": "",
    "gag": "",
    "status": "pendente",
@@ -753,7 +837,7 @@
    "texto": "CAIXA: Ursos hibernam meses e acordam sem perder músculo. A ciência quer muito esse segredo. / URSO: O segredo é não acordar.",
    "desenho": "",
    "gag": "",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -765,7 +849,7 @@
    "texto": "(bocejo) Vai você primeiro. Vai você sempre.",
    "desenho": "",
    "gag": "",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -777,7 +861,7 @@
    "texto": "Pausa. Não é preguiça. É estratégia de inverno.",
    "desenho": "",
    "gag": "",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -789,7 +873,7 @@
    "texto": "Hm. Isso foi… acordado.",
    "desenho": "",
    "gag": "",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -801,7 +885,7 @@
    "texto": "Cochilei no meio.",
    "desenho": "",
    "gag": "",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -813,7 +897,7 @@
    "texto": "Pronto. Posso voltar a dormir?",
    "desenho": "",
    "gag": "",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -825,17 +909,29 @@
    "texto": "Leva a página. Fecha a porta. Apaga a luz.",
    "desenho": "",
    "gag": "",
+   "status": "aprovada",
+   "nota": ""
+  },
+  {
+   "id": "C4-12a",
+   "cap": "C4",
+   "capitulo": "Cap. 4 · O Urso",
+   "quem": "Página 4",
+   "onde": "Depois · Q1 · opção a",
+   "texto": "MEL EM BANHO-MARIA · Tempo de preparo: um inverno.",
+   "desenho": "Um pote de mel de gorro, dormindo em banho-maria.",
+   "gag": "receitas",
    "status": "pendente",
    "nota": ""
   },
   {
-   "id": "C4-12",
+   "id": "C4-12b",
    "cap": "C4",
    "capitulo": "Cap. 4 · O Urso",
    "quem": "Página 4",
-   "onde": "Depois · Q1",
-   "texto": "MEL EM BANHO-MARIA: deixe dormir. O gene não some, só fica quieto. Acorde com cuidado.",
-   "desenho": "Um pote de mel dormindo em banho-maria.",
+   "onde": "Depois · Q1 · opção b",
+   "texto": "(margem, na letra da Diana) Não acordar o mel.",
+   "desenho": "A página MEL EM BANHO-MARIA, com o pote de mel desenhado de olhos fechados.",
    "gag": "receitas",
    "status": "pendente",
    "nota": ""
@@ -849,7 +945,7 @@
    "texto": "(dormindo) …a gata… o nariz… ela pediu pra não contar… / (ronco)",
    "desenho": "O Urso dormindo de novo; você puxa a página da pata dele.",
    "gag": "sabem",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -861,7 +957,7 @@
    "texto": "O cone sumiu. / Suspeito de alguém de máscara.",
    "desenho": "Uma meia enrolada no nariz.",
    "gag": "nariz",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -873,7 +969,7 @@
    "texto": "Por coincidência, o Guaxinim tem a página cinco. Por coincidência, ele usa máscara. Eu não acredito em coincidência.",
    "desenho": "",
    "gag": "letra-d",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -885,7 +981,7 @@
    "texto": "Isso? Achei.",
    "desenho": "O Guaxinim num monte de tralha, usando o cone da Diana como abajur.",
    "gag": "nariz",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -897,7 +993,7 @@
    "texto": "Não roubei. Fiz uma transferência horizontal.",
    "desenho": "",
    "gag": "",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -909,7 +1005,7 @@
    "texto": "Bactéria faz isso o tempo todo: pega o gene do vizinho e pronto. Ninguém prende bactéria.",
    "desenho": "",
    "gag": "",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -921,7 +1017,7 @@
    "texto": "As páginas? Fui eu, sim. Todas. Depois vendi uma para cada bicho. / Modelo de assinatura.",
    "desenho": "",
    "gag": "",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -933,7 +1029,7 @@
    "texto": "Bonito seu Bolso. Seria uma pena se…",
    "desenho": "",
    "gag": "",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -945,7 +1041,7 @@
    "texto": "Troca justa. Para mim.",
    "desenho": "",
    "gag": "",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -957,7 +1053,7 @@
    "texto": "Taxa de serviço.",
    "desenho": "",
    "gag": "",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -969,7 +1065,7 @@
    "texto": "Ei. Isso era meu. Quer dizer. Ia ser.",
    "desenho": "",
    "gag": "",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -981,7 +1077,7 @@
    "texto": "Lixo. Literalmente.",
    "desenho": "",
    "gag": "",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -993,7 +1089,7 @@
    "texto": "Volte sempre. Traga coisas.",
    "desenho": "",
    "gag": "",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -1005,17 +1101,29 @@
    "texto": "Tá. Leva a página. E o cone. / …Fica com o cone? Não? Tá.",
    "desenho": "",
    "gag": "nariz",
+   "status": "aprovada",
+   "nota": ""
+  },
+  {
+   "id": "C5-14a",
+   "cap": "C5",
+   "capitulo": "Cap. 5 · O Guaxinim",
+   "quem": "Página 5",
+   "onde": "Depois · Q1 · opção a",
+   "texto": "SALADA DE SOBRAS DOS OUTROS · Ingredientes: os do vizinho.",
+   "desenho": "Uma tigela com folhas de várias hortas.",
+   "gag": "receitas",
    "status": "pendente",
    "nota": ""
   },
   {
-   "id": "C5-14",
+   "id": "C5-14b",
    "cap": "C5",
    "capitulo": "Cap. 5 · O Guaxinim",
    "quem": "Página 5",
-   "onde": "Depois · Q1",
-   "texto": "SALADA DE SOBRAS DOS OUTROS: pegue do vizinho o que ele não está usando. Funciona com bactéria. Com guaxinim também.",
-   "desenho": "Uma tigela com folhas de várias hortas.",
+   "onde": "Depois · Q1 · opção b",
+   "texto": "(etiqueta de preço colada na página) Página 5 · 4,99 por mês",
+   "desenho": "A página SALADA DE SOBRAS DOS OUTROS com uma etiqueta de preço por cima do título.",
    "gag": "receitas",
    "status": "pendente",
    "nota": ""
@@ -1029,7 +1137,7 @@
    "texto": "Pergunta pra gata quem deixou a janela aberta.",
    "desenho": "",
    "gag": "sabem",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -1041,7 +1149,7 @@
    "texto": "Algodão. / … / É lã. Da Ovelha. Ela ainda não sabe.",
    "desenho": "Um tufo branco e fofo no nariz.",
    "gag": "nariz",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -1053,7 +1161,7 @@
    "texto": "Página seis. Ela é simpática. Não fale de clonagem.",
    "desenho": "",
    "gag": "",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -1065,7 +1173,7 @@
    "texto": "Não sou a Dolly.",
    "desenho": "A Ovelha num pasto de hexágonos, com uma falha na lã do ombro.",
    "gag": "",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -1077,7 +1185,7 @@
    "texto": "Não sou parente da Dolly. Não lembro dela. Sim, todo mundo pergunta.",
    "desenho": "",
    "gag": "",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -1089,7 +1197,7 @@
    "texto": "Quer trocar? Dou duas pedras por um dado. / … / Ninguém nunca quer a ovelha. Eu sei.",
    "desenho": "",
    "gag": "",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -1101,7 +1209,7 @@
    "texto": "Rola. Vê se sai sete.",
    "desenho": "",
    "gag": "",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -1113,7 +1221,7 @@
    "texto": "Espelho: uma cópia de você, ao contrário. É o mais perto de clone que eu chego.",
    "desenho": "",
    "gag": "",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -1125,7 +1233,7 @@
    "texto": "Bééém jogado.",
    "desenho": "",
    "gag": "",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -1137,7 +1245,7 @@
    "texto": "Desmanchou. Igual tricô.",
    "desenho": "",
    "gag": "",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -1149,7 +1257,7 @@
    "texto": "Leva um pouco de lã de lembrança. Parece que alguém já levou.",
    "desenho": "",
    "gag": "nariz",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -1161,17 +1269,29 @@
    "texto": "Toma a página. E diz pra gata devolver a minha lã.",
    "desenho": "",
    "gag": "nariz",
+   "status": "aprovada",
+   "nota": ""
+  },
+  {
+   "id": "C6-12a",
+   "cap": "C6",
+   "capitulo": "Cap. 6 · A Ovelha",
+   "quem": "Página 6",
+   "onde": "Depois · Q1 · opção a",
+   "texto": "PUDIM GÊMEO · Rende: duas porções idênticas. A segunda não lembra da primeira.",
+   "desenho": "Dois pudins iguais.",
+   "gag": "receitas",
    "status": "pendente",
    "nota": ""
   },
   {
-   "id": "C6-12",
+   "id": "C6-12b",
    "cap": "C6",
    "capitulo": "Cap. 6 · A Ovelha",
    "quem": "Página 6",
-   "onde": "Depois · Q1",
-   "texto": "PUDIM GÊMEO: faça dois iguais. Desenforme um ao contrário. Se ficarem idênticos, alguma coisa deu errado.",
-   "desenho": "Dois pudins, um de cabeça para baixo.",
+   "onde": "Depois · Q1 · opção b",
+   "texto": "(margem, na letra da Diana) Uma delas é a cópia. Não pergunte qual.",
+   "desenho": "Duas páginas PUDIM GÊMEO idênticas, grampeadas.",
    "gag": "receitas",
    "status": "pendente",
    "nota": ""
@@ -1185,7 +1305,7 @@
    "texto": "Cansei de disfarçar.",
    "desenho": "A Diana sem nada no nariz: o ferimento à mostra. Primeiro quadro sério da história.",
    "gag": "nariz",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -1197,7 +1317,7 @@
    "texto": "Não é nada. É um lençol.",
    "desenho": "O mural coberto por um lençol, o barbante vermelho saindo por baixo.",
    "gag": "mural",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -1209,7 +1329,7 @@
    "texto": "Última página. Dona Coruja. Ela sabe ler. / Ler a Mesa. Ler gente. Ler… coisas que eu não contei.",
    "desenho": "",
    "gag": "sabem",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -1221,7 +1341,7 @@
    "texto": "Boa noite. Sente-se. A Diana mandou você.",
    "desenho": "Biblioteca de estantes altas. Lombadas: \"Volume A\", \"Volume T\", \"Volume C\", \"Volume G\".",
    "gag": "",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -1233,7 +1353,7 @@
    "texto": "Mandou você em todo mundo antes de mim. Esperta. Mandou você treinar.",
    "desenho": "",
    "gag": "sabem",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -1245,7 +1365,7 @@
    "texto": "Ela vai te dizer que \"Dona Coruja\" também começa com D. Diga a ela que \"Dona\" é pronome de tratamento.",
    "desenho": "O Coelho numa mesa de leitura, ofegante, com uma pilha de livros de receitas e um pão que não cabe na mesa.",
    "gag": "letra-d",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -1257,7 +1377,7 @@
    "texto": "Sem pressa. Quem escreve precisa saber ler.",
    "desenho": "",
    "gag": "",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -1269,7 +1389,7 @@
    "texto": "Lacre. Nem tudo que está escrito precisa ser dito.",
    "desenho": "",
    "gag": "",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -1281,7 +1401,7 @@
    "texto": "Jogada precisa. Você leu.",
    "desenho": "",
    "gag": "",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -1293,7 +1413,7 @@
    "texto": "Hum. Escrevi uma letra errada. Acontece com os melhores.",
    "desenho": "",
    "gag": "",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -1305,7 +1425,7 @@
    "texto": "Ainda não. Volte quando ler mais rápido.",
    "desenho": "",
    "gag": "",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -1314,19 +1434,31 @@
    "capitulo": "Cap. 7 · Dona Coruja",
    "quem": "Coruja",
    "onde": "Partida · ela perdeu",
-   "texto": "Está pronta. Sente-se. Precisamos falar da gata.",
-   "desenho": "",
+   "texto": "Agora sim. Sente-se. Precisamos falar da gata.",
+   "desenho": "Reescrita sem gênero (era \"Está pronta\").",
    "gag": "sabem",
    "status": "pendente",
    "nota": ""
   },
   {
-   "id": "C7-10",
+   "id": "C7-10a",
    "cap": "C7",
    "capitulo": "Cap. 7 · Dona Coruja",
    "quem": "Coruja",
-   "onde": "Depois · Q1",
-   "texto": "Esta não é uma receita.",
+   "onde": "Depois · Q1 · opção a",
+   "texto": "A última. Não tem ingrediente nenhum.",
+   "desenho": "Ela entrega a última página: só o desenho de um nariz de gato com um X.",
+   "gag": "receitas",
+   "status": "pendente",
+   "nota": ""
+  },
+  {
+   "id": "C7-10b",
+   "cap": "C7",
+   "capitulo": "Cap. 7 · Dona Coruja",
+   "quem": "Coruja",
+   "onde": "Depois · Q1 · opção b",
+   "texto": "(quadro mudo: ela só entrega a página)",
    "desenho": "Ela entrega a última página: só o desenho de um nariz de gato com um X.",
    "gag": "receitas",
    "status": "pendente",
@@ -1341,7 +1473,7 @@
    "texto": "Uma letra errada, no meio de quase três bilhões. Um Passo onde devia haver um Eco. Por isso não fecha.",
    "desenho": "",
    "gag": "",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -1350,8 +1482,8 @@
    "capitulo": "Cap. 7 · Dona Coruja",
    "quem": "Coruja",
    "onde": "Depois · Q3",
-   "texto": "Ela não te ensinou a jogar por gentileza, querida. Pergunte a ela.",
-   "desenho": "",
+   "texto": "Ela não te ensinou a jogar por gentileza. Pergunte a ela.",
+   "desenho": "Reescrita sem gênero (tirei o \"querida\").",
    "gag": "sabem",
    "status": "pendente",
    "nota": ""
@@ -1365,7 +1497,7 @@
    "texto": "Você acha que é coincidência tudo começar com D?",
    "desenho": "Ela puxa o lençol: o mural inteiro, barbante vermelho, a foto de cada bicho carimbada, a sua no meio, uma dupla hélice com dados no lugar dos degraus.",
    "gag": "letra-d",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -1377,7 +1509,7 @@
    "texto": "Meu nome. Dados. DNA. Está tudo conectado.",
    "desenho": "Três cartões ligados pelo barbante: DIANA · DADOS · DNA.",
    "gag": "letra-d",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -1389,7 +1521,7 @@
    "texto": "Até a Dona Coruja. / Ela diz que \"Dona\" é pronome de tratamento. / É o que um D diria.",
    "desenho": "A foto da Coruja com um post-it \"D?\".",
    "gag": "letra-d",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -1401,7 +1533,7 @@
    "texto": "Uma letra. Errada. Desde que eu nasci. O corte foi a quina de um dado. O não fechar é comigo.",
    "desenho": "Ela sentada, séria.",
    "gag": "nariz",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -1410,11 +1542,11 @@
    "capitulo": "A revelação · O mural",
    "quem": "Diana",
    "onde": "Q7",
-   "texto": "Eu tentei sozinha. Patas não seguram pipeta.",
+   "texto": "Eu tentei sozinha. Mas com essas patas fica difícil.",
    "desenho": "A pata dela segurando uma pipeta, torta, pingando.",
    "gag": "",
-   "status": "pendente",
-   "nota": ""
+   "status": "aprovada",
+   "nota": "texto do dono"
   },
   {
    "id": "R-06",
@@ -1425,7 +1557,7 @@
    "texto": "Então eu ensinei alguém que monta correntes melhor do que eu. / … / Você.",
    "desenho": "",
    "gag": "",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -1437,7 +1569,7 @@
    "texto": "Usei. Ensinei. Em gatês é a mesma palavra.",
    "desenho": "",
    "gag": "",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -1449,7 +1581,7 @@
    "texto": "O Guaxinim levou. Eu deixei a janela aberta. Com um bilhete: \"por favor, não leve as páginas\". / Guaxinim não lê bilhete. Eu sabia.",
    "desenho": "",
    "gag": "sabem",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -1461,7 +1593,7 @@
    "texto": "E não: eu não estava brincando com os seus dados na tela inicial. / Estava sequenciando.",
    "desenho": "",
    "gag": "pata",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -1473,7 +1605,7 @@
    "texto": "COELHO: Então… não é um livro de receitas? / DIANA: É. / A receita sou eu.",
    "desenho": "O Coelho na porta, abraçado a um pão do tamanho dele.",
    "gag": "pao",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -1485,7 +1617,7 @@
    "texto": "Falta escrever. A correção tem que ser feita contra a fita original. A fita original sou eu. / Jogue sério. Se eu facilitar, a cura sai com defeito.",
    "desenho": "Ela na Mesa dela, os dados prontos.",
    "gag": "",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -1497,7 +1629,7 @@
    "texto": "Boa noite. Uma partida? / (balão menor) Dessa vez vale.",
    "desenho": "A primeira fala do jogo, palavra por palavra.",
    "gag": "revanche",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -1509,7 +1641,7 @@
    "texto": "Par complementar. A com T. Bonito.",
    "desenho": "",
    "gag": "",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -1521,7 +1653,7 @@
    "texto": "Espelho. Você vai ter que ler ao contrário. Como eu.",
    "desenho": "",
    "gag": "",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -1533,7 +1665,7 @@
    "texto": "Isso. Escreve assim.",
    "desenho": "",
    "gag": "",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -1545,7 +1677,7 @@
    "texto": "Arrisquei demais. De novo. Está no meu DNA.",
    "desenho": "",
    "gag": "",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -1557,7 +1689,7 @@
    "texto": "Ainda não. Revanche? / Por favor.",
    "desenho": "",
    "gag": "revanche",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -1569,7 +1701,7 @@
    "texto": "Mereceu.",
    "desenho": "Sem o \"Revanche?\" de sempre: vem a cena da cura.",
    "gag": "revanche",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -1581,7 +1713,7 @@
    "texto": "Dois, cinco, dois, cinco. / …Parece senha de wi-fi.",
    "desenho": "A sua corrente vencedora vira uma fita impressa com as letras embaixo: 2 5 2 5 → C G C G.",
    "gag": "",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -1593,7 +1725,7 @@
    "texto": "O três e o quatro não dizem nada. São tipo \"hmm\". Todo texto tem.",
    "desenho": "",
    "gag": "",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -1605,7 +1737,7 @@
    "texto": "Fechou. / Faz cócegas.",
    "desenho": "O ferimento fechado; ela encosta a pata. Antes, um quadro mudo.",
    "gag": "nariz",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -1613,11 +1745,11 @@
    "cap": "F",
    "capitulo": "Final · a cura",
    "quem": "Diana",
-   "onde": "Fecho · opção A, o Eco",
+   "onde": "Fecho · o Eco",
    "texto": "Fechou. Fechou. / Por que eu estou falando duas vezes? Vezes? / Você pôs um Eco. Eco. / …Passa amanhã. Manhã. / Revanche? Vanche?",
    "desenho": "",
    "gag": "fecho",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -1625,47 +1757,11 @@
    "cap": "F",
    "capitulo": "Final · a cura",
    "quem": "Diana",
-   "onde": "Fecho · opção A, quadro da 3.ª estrela",
+   "onde": "Fecho · quadro da 3.ª estrela",
    "texto": "Fita complementar perfeita. Eu ensinei bem. Bem.",
    "desenho": "",
    "gag": "fecho",
-   "status": "pendente",
-   "nota": ""
-  },
-  {
-   "id": "F-B",
-   "cap": "F",
-   "capitulo": "Final · a cura",
-   "quem": "Diana",
-   "onde": "Fecho · opção B, sem preço",
-   "texto": "Fechou. / Eu sabia que ia dar certo. Eu escolhi a pessoa certa. / Eu sou ótima professora. / Revanche?",
-   "desenho": "",
-   "gag": "fecho",
-   "status": "pendente",
-   "nota": ""
-  },
-  {
-   "id": "F-C",
-   "cap": "F",
-   "capitulo": "Final · a cura",
-   "quem": "Diana",
-   "onde": "Fecho · opção C, a orelha sempre",
-   "texto": "…Você virou o dado errado. Sete menos o valor. / Gostei. Fica. / Revanche?",
-   "desenho": "No espelho: a ponta preta da orelha trocou de lado.",
-   "gag": "fecho",
-   "status": "pendente",
-   "nota": ""
-  },
-  {
-   "id": "F-D",
-   "cap": "F",
-   "capitulo": "Final · a cura",
-   "quem": "Diana",
-   "onde": "Fecho · opção D, como estava",
-   "texto": "Comum: \"…Você virou o dado errado. Sete menos o valor. A orelha trocou de lado. Tudo bem. Ninguém olha orelha. Revanche?\" · Com a 3.ª estrela: \"Nem a orelha mexeu. Fita complementar perfeita. Eu ensinei bem.\"",
-   "desenho": "",
-   "gag": "fecho",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": ""
   },
   {
@@ -1677,18 +1773,30 @@
    "texto": "DianaDice não seria um nome melhor para esse jogo? / … / Seria.",
    "desenho": "Ela risca \"Dice Duel\" com um pincel atômico e escreve por cima: \"DianaDice\".",
    "gag": "letra-d",
+   "status": "aprovada",
+   "nota": ""
+  },
+  {
+   "id": "X-02a",
+   "cap": "X",
+   "capitulo": "Pós-créditos",
+   "quem": "Sapo + Diana",
+   "onde": "Pós-créditos 2 · opção a",
+   "texto": "SAPO: Soube da cura. Trouxe chá. / DIANA: É do lago? / SAPO: Orgânico.",
+   "desenho": "A Diana, curada, abre a porta. O Sapo de chapéu, com uma xícara turva.",
+   "gag": "cha",
    "status": "pendente",
    "nota": ""
   },
   {
-   "id": "X-02",
+   "id": "X-02b",
    "cap": "X",
    "capitulo": "Pós-créditos",
-   "quem": "Coelho + Diana",
-   "onde": "Pós-créditos 2",
-   "texto": "COELHO (de dentro do pão): Fiz de novo! Com a página dois! / DIANA: Estava escrito: não deixe o coelho ajudar. / COELHO: Eu não ajudei. Eu fiz sozinho.",
-   "desenho": "A Diana, curada, abre a porta. Um pão enorme ocupa o quadro inteiro.",
-   "gag": "pao",
+   "quem": "—",
+   "onde": "Pós-créditos 2 · opção b",
+   "texto": "(sem o segundo pós-créditos: termina no DianaDice)",
+   "desenho": "",
+   "gag": "",
    "status": "pendente",
    "nota": ""
   }
