@@ -4465,31 +4465,31 @@ window.HISTORIA_CENAS = {
       antes: [q('diana', 'P-01'), q('diana', 'P-02', 'feliz'), q('diana', 'P-03')],
       depois: [q('diana', 'P-04', 'feliz'), q('diana', 'P-05'), q('diana', 'P-06')] },
     { id: 'C1', titulo: 'Capítulo 1', nome: 'Lagoa das Vitórias-Régias', rival: 'sapo', retrato: 'sapo', meta: 12,
-      deckRival: ['coringa', 'ajuste', 'reverso'], regra: 'O Sapo não usa armadilhas.',
+      deckRival: ['reverso'], regra: 'O Sapo só tem uma carta e não usa armadilhas.',
       antes: [q('diana', 'C1-01'), q('diana', 'C1-02'), q('sapo', 'C1-03'), q('sapo', 'C1-04'), q('sapo', 'C1-05'), q('sapo', 'C1-06')],
       depois: [pagina(1, ['C1-13a', 'C1-13b']), q('sapo', 'C1-14'), q('sapo', 'C1-16')],
       falas: { inicio: ['C1-07'], 'carta:reverso': ['C1-08'], seuDisparoGrande: ['C1-09'], minhaRuptura: ['C1-10'], venci: ['C1-11'], perdi: ['C1-12'] } },
-    { id: 'C2', titulo: 'Capítulo 2', nome: 'Toca Número 12', rival: 'coelho', retrato: 'coelho', meta: 16,
-      deckRival: ['pressa', 'sobrecarga', 'ajuste'], ritmo: 0.55, regra: 'O Coelho joga rápido.',
+    { id: 'C2', titulo: 'Capítulo 2', nome: 'Toca Número 12', rival: 'coelho', retrato: 'coelho', meta: 12,
+      deckRival: ['pressa', 'sobrecarga'], ritmo: 0.55, regra: 'O Coelho joga rápido: partida até 12.',
       antes: [q('diana', 'I1-01'), q('diana', 'I1-02'), q('diana', 'I1-03'), q('diana', 'C2-01'), q('diana', 'C2-02'),
         q('coelho', 'C2-03'), q('coelho', 'C2-04'), q('coelho', 'C2-05'), q('coelho', 'C2-15')],
       depois: [pagina(2, ['C2-12a', 'C2-12b']), q('coelho', 'C2-13'), q('coelho', 'C2-14a')],
       falas: { inicio: ['C2-06'], 'carta:sobrecarga': ['C2-07'], meuDisparo: ['C2-16'], seuDisparoGrande: ['C2-08'], minhaRuptura: ['C2-09'], venci: ['C2-10'], perdi: ['C2-11'] },
       estrelas: [['Dispare 4 correntes', c => c.disp >= 4], semRuptura] },
     { id: 'C3', titulo: 'Capítulo 3', nome: 'Toca de Inverno', rival: 'raposa', retrato: 'raposa', meta: 16,
-      deckRival: ['fundo', 'ancora', 'virar'], regra: 'A Raposa usa armadilhas.',
+      deckRival: ['fundo', 'virar'], regra: 'A Raposa usa armadilhas.',
       antes: [q('diana', 'C3-01'), q('diana', 'C3-02'), q('diana', 'C3-17'), q('diana', 'C3-03'), q('raposa', 'C3-04a'), q('raposa', 'C3-05'), q('raposa', 'C3-06'), q('raposa', 'C3-15')],
       depois: [pagina(3, ['C3-14a', 'C3-14b'])],
       falas: { inicio: ['C3-07'], armou: ['C3-08'], 'pegou:fundo': ['C3-09'], seuDisparoGrande: ['C3-10'], minhaRuptura: ['C3-11'], venci: ['C3-12'], perdi: ['C3-13'] },
       estrelas: [['Não perca dado para o Fundo Falso', c => !c.caiu.includes('fundo')], ['Vença por 4 pontos ou mais', c => c.margem >= 4]] },
     { id: 'C4', titulo: 'Capítulo 4', nome: 'Caverna do Gorro', rival: 'urso', retrato: 'urso', meta: 16,
-      deckRival: ['pausa', 'ancora', 'interferencia'], dispMin: 5, regra: 'O Urso só dispara com 5 dados ou mais.',
+      deckRival: ['pausa', 'ancora', 'ajuste'], dispMin: 5, regra: 'O Urso só dispara com 5 dados ou mais.',
       antes: [q('diana', 'C4-01'), q('diana', 'C4-02'), q('urso', 'C4-03'), q('urso', 'C4-04b'), q('urso', 'C4-05'), q('urso', 'C4-14')],
       depois: [pagina(4, ['C4-12a', 'C4-12b']), q('urso', 'C4-13')],
       falas: { inicio: ['C4-06'], 'carta:pausa': ['C4-07'], seuDisparoGrande: ['C4-08'], minhaRuptura: ['C4-09'], venci: ['C4-10'], perdi: ['C4-11'] },
       estrelas: [['Paciência: segure a corrente e dispare 2 pontos a mais', c => (c.simb['⧗'] || 0) > 0], ['Dispare uma corrente de 5', c => c.maior >= 5]] },
     { id: 'C5', titulo: 'Capítulo 5', nome: 'Ferro-Velho do Moletom', rival: 'guaxinim', retrato: 'guaxinim', meta: 16,
-      deckRival: ['furto', 'pedagio', 'fundo'], esperto: true, bolsoRival: true, regra: 'O Guaxinim começa com um dado no Bolso; você, sem.',
+      deckRival: ['furto', 'pedagio', 'ajuste'], esperto: true, bolsoRival: true, regra: 'O Guaxinim começa com um dado no Bolso; você, sem.',
       antes: [q('diana', 'C5-01'), q('diana', 'C5-02'), q('guaxinim', 'C5-03'), q('guaxinim', 'C5-04'), q('guaxinim', 'C5-05'), q('guaxinim', 'C5-06')],
       depois: [pagina(5, ['C5-14a', 'C5-14b']), q('guaxinim', 'C5-15')],
       falas: { inicio: ['C5-07'], 'carta:furto': ['C5-08'], 'pegou:pedagio': ['C5-09'], seuDisparoGrande: ['C5-10'], minhaRuptura: ['C5-11'], venci: ['C5-12'], perdi: ['C5-13'] },
@@ -4501,20 +4501,20 @@ window.HISTORIA_CENAS = {
       falas: { inicio: ['C6-06'], meuDisparo: ['C6-15'], seuOposto: ['C6-16'], 'armou:espelho': ['C6-07'], seuDisparoGrande: ['C6-08'], minhaRuptura: ['C6-09'], venci: ['C6-10'], perdi: ['C6-11'] },
       estrelas: [['Escape de um Espelho', c => (c.simb['↺'] || 0) > 0], ['Faça uma Harmonia', c => (c.simb['✿'] || 0) > 0]] },
     { id: 'C7', titulo: 'Capítulo 7', nome: 'A Biblioteca', rival: 'coruja', retrato: 'coruja', meta: 16,
-      deckRival: ['lacre', 'ajuste', 'interferencia'], esperto: true, regra: 'Dona Coruja lê a Mesa.',
+      deckRival: ['lacre', 'coringa', 'interferencia'], esperto: true, regra: 'Dona Coruja lê a Mesa.',
       antes: [q('diana', 'I6-01'), q('diana', 'I6-02'), q('diana', 'I6-03'), q('coruja', 'C7-01'), q('coruja', 'C7-02'), q('coruja', 'C7-03')],
-      depois: [q('coruja', 'C7-10b'), q('coruja', 'C7-11'), q('coruja', 'C7-12')],
+      depois: [q('coruja', 'C7-10b'), q('coruja', 'C7-11'), { quem: 'coruja', ids: [], opcoes: ['C7-15a', 'C7-15b'] }, q('coruja', 'C7-12')],
       falas: { inicio: ['C7-04'], 'pegou:lacre': ['C7-05'], seuDisparoGrande: ['C7-06'], minhaRuptura: ['C7-07'], venci: ['C7-08'], perdi: ['C7-09'] },
       estrelas: [['Faça um Bloqueio', c => (c.simb['✦'] || 0) > 0], semRuptura] },
     { id: 'C8', titulo: 'Capítulo 8', nome: 'Fita Dupla', rival: 'diana8', retrato: 'diana', meta: 16,
-      deckRival: ['interferencia', 'espelho', 'pressa'], esperto: true, regra: 'Dessa vez vale.',
+      deckRival: ['virar', 'espelho', 'pressa'], esperto: true, bolsoRival: true, regra: 'Dessa vez vale: a Diana começa com um dado no Bolso; você, sem.',
       antes: [q('diana', 'R-01'), q('diana', 'R-02'), q('diana', 'R-03'), q('diana', 'R-04'), q('diana', 'R-05'), q('diana', 'R-06'),
         escolha('diana', [{ rotulo: 'Você me usou.', id: 'R-07' }, { rotulo: 'E as páginas?', id: 'R-08' }]),
-        q('diana', 'R-10'), q('diana', 'R-11')],
+        q('diana', 'R-10'), q('diana', 'R-11'), { quem: 'diana', ids: [], opcoes: ['C8-09a', 'C8-09b'] }],
       // o final: a cura com a corrente de quem joga, o fecho do Eco, os créditos e os pós-créditos
       // a F-03b (sem o "Fechou." repetido) só entra quando o dono a aprovar; até lá, a F-03
       depois: [{ quem: 'diana', ids: [], cura: true }, q('diana', fala('F-03b') ? 'F-03b' : 'F-03'), q('diana', 'F-A'), { quem: 'diana', ids: ['F-A2'], se: 'fita' },
-        { quem: 'diana', ids: [], final: ['F-Za', 'F-Zb', 'F-Zc', 'F-Zd'] },   // a frase final: a 1.ª aprovada
+        { quem: 'diana', ids: [], opcoes: ['F-Za', 'F-Zb', 'F-Zc', 'F-Zd'] },   // a frase final: a 1.ª aprovada
         { quem: 'creditos', ids: [] }, { quem: 'titulo', ids: ['X-01'] }, q('sapo', 'X-02a')],
       falas: { inicio: ['C8-01'], seuOposto: ['C8-02'], 'armou:espelho': ['C8-03'], seuDisparoGrande: ['C8-04'], minhaRuptura: ['C8-05'], venci: ['C8-06'], perdi: ['C8-07'] },
       estrelas: [['Fita complementar: uma corrente de 4 ou mais só de Opostos', c => c.fita], semRuptura] },
@@ -4547,7 +4547,8 @@ window.HISTORIA_CENAS = {
   const BASE = { 1: 'A', 6: 'T', 2: 'C', 5: 'G', 3: '·', 4: '·' };
   function batidas(qd, ctx = {}) {
     if (qd.se && !ctx[qd.se]) return [];
-    if (qd.final) { const id = qd.final.find(fala); return id ? batidas({ ...qd, final: null, ids: [id] }, ctx) : []; }
+    // opções do dono: entra a 1.ª aprovada; nenhuma aprovada, o quadro não aparece
+    if (qd.opcoes) { const id = qd.opcoes.find(fala); return id ? batidas({ ...qd, opcoes: null, ids: [id] }, ctx) : []; }
     if (qd.escolha) return [{ escolha: qd.escolha }];
     if (qd.quem === 'creditos') return [{ creditos: true }];
     if (qd.cura) {
@@ -4908,7 +4909,7 @@ window.HISTORIA_CENAS = {
     if (hc) {
       Object.assign(jogo, { historia: hc.id, ritmoRival: hc.ritmo || 1, esperto: !!hc.esperto, dispMin: hc.dispMin || 0 });
       if (hc.guia) jogo.historiaGuia = [];
-      if (hc.bolsoRival) { jogo.bolso[1] = 1 + Math.floor(Math.random() * 6); jogo.bolso[0] = null; }   // a regra da casa do Guaxinim
+      if (hc.bolsoRival) { jogo.bolso[1] = 1 + Math.floor(Math.random() * 6); jogo.bolso[0] = null; }   // a regra da casa do Guaxinim e da Diana do Cap. 8
     }
     Object.assign(jogo, { alvo: null, ajusteIdx: null, sel: null, destaque: null, pensando: false, token: Math.random(), fala: null, humor: null, intro: false });
     st.primeiro = 1 - st.primeiro;

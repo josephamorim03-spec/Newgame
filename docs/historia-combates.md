@@ -1,8 +1,8 @@
 # Os combates do modo história
 
 Este é o plano de como cada bicho joga: as cartas dele, por que são essas, como o robô se comporta, o que a partida
-ensina e como se vence. É uma **proposta para o dono aprovar**. O jogo de hoje ainda usa os decks da tabela do
-`docs/historia.md` §6.1. Os números saem do simulador (`sim/`, explicado no fim).
+ensina e como se vence. **O dono aprovou e os decks já estão no jogo** (`js/historia.js`). Os números saem do
+simulador (`sim/`, explicado no fim).
 
 ## Os princípios
 
@@ -153,9 +153,10 @@ O que muda de hoje:
     complementar do DNA.
   - A **Pressa** é de quem esperou a vida inteira pela cura.
 - **A regra da casa nova:**
-  - ela começa com um dado no Bolso;
-  - é o dado que ela te deu no Prólogo, quando você jogava em segundo sem cartas;
-  - agora ela não dá mais nada: "Dessa vez vale."
+  - ela começa com um dado no Bolso, e você sem;
+  - é o mesmo dado do Prólogo: sem cartas, quem joga em segundo começa com um dado no Bolso, e quem jogava em
+    segundo era ela. Você nem reparou;
+  - "Dessa vez vale."
 - **Como joga:** robô esperto.
 - **O que ensina:** tudo. A estrela da fita complementar (uma corrente de 4 ou mais só de Opostos) fica mais fácil de
   enxergar contra quem joga com faces complementares.
@@ -173,9 +174,9 @@ O que muda de hoje:
 
 - Todas as falas ligadas a uma carta continuam com a carta no deck do bicho: C1 Reverso, C2 Sobrecarga, C3 Fundo
   Falso, C4 Pausa, C5 Furto e Pedágio, C6 Espelho, C7 Lacre, C8 Espelho. Nenhuma fala precisa mudar.
-- Duas falas novas seriam boas (passam pela sua revisão antes):
-  - a Coruja dando a dica do Lacre no fim do Cap. 7;
-  - a Diana mostrando o dado do Bolso no começo do Cap. 8.
+- Duas falas novas, com duas opções cada, estão na revisão (C7-15a/b e C8-09a/b). Entra a opção que o dono aprovar:
+  - a Coruja dando a dica do Lacre no fim do Cap. 7, entre a C7-11 e a C7-12;
+  - a Diana mostrando o dado do Bolso antes da partida do Cap. 8, depois da R-11.
 - As estrelas não mudam. A do Sapo ("dispare logo depois de um Reverso") continua fazendo sentido, já que o Reverso é
   a única carta dele.
 
@@ -204,8 +205,8 @@ Cada linha mostra:
 - o pior e o melhor deck dele;
 - as cartas do jogador que mais ajudam e as que mais atrapalham contra aquele bicho.
 
-## Depois da aprovação
+## Feito
 
-1. Os decks e a regra nova da Diana entram em `js/historia.js`, e a tabela do `docs/historia.md` §6.1 é atualizada.
-2. As duas falas novas vão para a revisão.
-3. O e2e da história joga de novo os capítulos com os decks novos.
+1. Os decks e a regra nova da Diana estão em `js/historia.js`, e a tabela do `docs/historia.md` §6.1 foi atualizada.
+2. As duas falas novas estão na revisão.
+3. Falta o teste com gente, que fecha a curva.

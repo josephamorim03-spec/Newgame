@@ -108,7 +108,7 @@ async function vencer(pg, cor, pts) {
   if (await pg.$('.gibi')) falha('"Pular" não fechou o gibi');
   await passarVersus(pg);
   const p1 = await pg.evaluate(() => ({ h: DiceDuel.jogo.historia, meta: DiceDuel.jogo.meta, rival: DiceDuel.jogo.nomes[1], deck: DiceDuel.jogo.decks[1] }));
-  if (p1.h !== 'C1' || p1.meta !== 12 || p1.rival !== 'Sapo' || p1.deck.join() !== 'coringa,ajuste,reverso') falha(`o Capítulo 1: ${JSON.stringify(p1)}`);
+  if (p1.h !== 'C1' || p1.meta !== 12 || p1.rival !== 'Sapo' || p1.deck.join() !== 'reverso') falha(`o Capítulo 1: ${JSON.stringify(p1)}`);
   await pg.screenshot({ path: path.join(FOTOS, 'historia-sapo.png') });
   // a fala do Sapo quando ele usa o Reverso
   const falou = await pg.evaluate(async () => {
@@ -131,8 +131,8 @@ async function vencer(pg, cor, pts) {
   const pag = await lerGibi(pg);
   if (!pag.some(t => /SOPA DE GIRINO/.test(t)) || !pag.some(t => /Reverso/.test(t))) falha(`a página 1: ${pag}`);
   await pg.waitForFunction(() => !document.getElementById('fim').hidden, null, { timeout: 6000 });
-  const f1 = await pg.evaluate(() => ({ reverso: DiceDuel.st.conta.cartas.includes('reverso'), rec: document.getElementById('fimRecompensas').textContent, botao: document.getElementById('btnDeNovo').textContent }));
-  if (!f1.reverso || !/Reverso/.test(f1.rec) || f1.botao !== 'Próximo: Capítulo 2') falha(`o fim do Capítulo 1: ${JSON.stringify(f1)}`);
+  const f1 = await pg.evaluate(() => ({ reverso: DiceDuel.st.conta.cartas.includes('reverso'), lagoa: DiceDuel.st.conta.dados.includes('lagoa'), rec: document.getElementById('fimRecompensas').textContent, botao: document.getElementById('btnDeNovo').textContent }));
+  if (!f1.reverso || !f1.lagoa || !/Reverso/.test(f1.rec) || !/Dado liberado: Lagoa/.test(f1.rec) || f1.botao !== 'Próximo: Capítulo 2') falha(`o fim do Capítulo 1: ${JSON.stringify(f1)}`);
   await pg.screenshot({ path: path.join(FOTOS, 'historia-fim.png') });
   await pg.close();
 
@@ -146,7 +146,7 @@ async function vencer(pg, cor, pts) {
   if (mapa2 !== 9) falha(`o mapa mostra os 9 capítulos, mostrou ${mapa2}`);
   if (!/4 de 24 estrelas/.test(await pf.textContent('#historiaConteudo'))) falha('o mapa soma as estrelas');
   await pf.click('#btnFecharHistoria');
-  for (const [cap, confere] of [['C4', j => j.dispMin === 5 && j.nomes[1] === 'Urso'], ['C5', j => j.bolso[1] !== null && j.bolso[0] === null && j.esperto], ['C7', j => j.nomes[1] === 'Dona Coruja' && j.decks[1].includes('lacre')]]) {
+  for (const [cap, confere] of [['C2', j => j.meta === 12 && j.ritmoRival < 1 && j.decks[1].join() === 'pressa,sobrecarga'], ['C4', j => j.dispMin === 5 && j.nomes[1] === 'Urso'], ['C5', j => j.bolso[1] !== null && j.bolso[0] === null && j.esperto], ['C7', j => j.nomes[1] === 'Dona Coruja' && j.decks[1].includes('lacre')]]) {
     await pf.evaluate(c => { document.getElementById('fim').hidden = true; window.__jogar = c; }, cap);
     await pf.evaluate(c => { const b = document.createElement('button'); b.dataset.cap = c; b.id = 'tmpCap'; document.getElementById('janelaHistoria').appendChild(b); b.click(); b.remove(); }, cap);
     await pf.waitForTimeout(200); if (await pf.$('.gibi')) await pf.click('.gibi-pular');
@@ -165,8 +165,8 @@ async function vencer(pg, cor, pts) {
   }
   if (!viuEscolha) falha('a revelação não ofereceu a escolha');
   await passarVersus(pf);
-  const c8 = await pf.evaluate(() => ({ h: DiceDuel.jogo.historia, rival: DiceDuel.jogo.nomes[1], deck: DiceDuel.jogo.decks[1] }));
-  if (c8.h !== 'C8' || c8.rival !== 'Diana' || c8.deck.join() !== 'interferencia,espelho,pressa') falha(`o Capítulo 8: ${JSON.stringify(c8)}`);
+  const c8 = await pf.evaluate(() => ({ h: DiceDuel.jogo.historia, rival: DiceDuel.jogo.nomes[1], deck: DiceDuel.jogo.decks[1], bolsoDela: DiceDuel.jogo.bolso[1] !== null && DiceDuel.jogo.bolso[0] === null }));
+  if (c8.h !== 'C8' || c8.rival !== 'Diana' || c8.deck.join() !== 'virar,espelho,pressa' || !c8.bolsoDela) falha(`o Capítulo 8: ${JSON.stringify(c8)}`);
   // vence com uma corrente só de Opostos (1-6-1-6-1): a fita complementar
   await vencer(pf, [1, 6, 1, 6, 1], [12, 3]);
   await pf.waitForSelector('.gibi', { timeout: 9000 }).catch(() => falha('vencer o Capítulo 8 não mostrou o final'));

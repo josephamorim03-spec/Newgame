@@ -139,7 +139,7 @@ para quem não joga a história, pelo preço de hoje.
 Quem já comprou a carta recebe as moedas dela de volta, para não ganhar repetido.
 
 **Os combates:** a proposta de deck de cada bicho, com o porquê de cada carta e a curva medida no simulador, está em
-`docs/historia-combates.md` (aguarda o dono). A tabela abaixo é a do jogo de hoje.
+`docs/historia-combates.md` (aprovada pelo dono e já no jogo).
 
 **As regras da casa** usam o que o motor já aceita (meta, deck do rival, quem abre, Bolso inicial, ritmo do rival)
 ou um ajuste no robô. Todas passam pelo simulador antes (`sim/`), como qualquer carta (§9).
@@ -147,14 +147,14 @@ ou um ajuste no robô. Todas passam pelo simulador antes (`sim/`), como qualquer
 | Cap. | Rival | Meta | Deck do rival | Regra da casa | Estrelas (além de vencer) |
 |---|---|---|---|---|---|
 | P | Diana | 8 | — | a estreia de hoje, sem cartas | — (é o tutorial) |
-| 1 | Sapo | 12 | Remendo, Ajuste, Reverso | nenhuma armadilha | dispare uma corrente de 4 · dispare logo depois de um Reverso |
-| 2 | Coelho | 16 | Pressa, Sobrecarga, Ajuste | o Coelho joga no ritmo rápido | dispare em duas Mesas seguidas · nenhuma ruptura |
-| 3 | Raposa | 16 | Fundo Falso, Âncora, Virar | as armadilhas aparecem (a Diana explica o "?" antes) | não perca dado para o Fundo Falso · vença por 4+ |
-| 4 | Urso | 16 | Pausa, Âncora, Interferência | o Urso só dispara com 5 ou mais | Paciência (segure e dispare 2 a mais) · corrente de 5 |
-| 5 | Guaxinim | 16 | Furto, Pedágio, Fundo Falso | ele começa com o Bolso cheio; você, vazio | termine com o Bolso cheio · um Bloqueio |
+| 1 | Sapo | 12 | Reverso | uma carta só, nenhuma armadilha | dispare uma corrente de 4 · dispare logo depois de um Reverso |
+| 2 | Coelho | 12 | Pressa, Sobrecarga | o Coelho joga no ritmo rápido | dispare em duas Mesas seguidas · nenhuma ruptura |
+| 3 | Raposa | 16 | Fundo Falso, Virar | as armadilhas aparecem (a Diana explica o "?" antes) | não perca dado para o Fundo Falso · vença por 4+ |
+| 4 | Urso | 16 | Pausa, Âncora, Ajuste | o Urso só dispara com 5 ou mais | Paciência (segure e dispare 2 a mais) · corrente de 5 |
+| 5 | Guaxinim | 16 | Furto, Pedágio, Ajuste | ele começa com o Bolso cheio; você, vazio | termine com o Bolso cheio · um Bloqueio |
 | 6 | Ovelha | 16 | Espelho, Rerrolar, Âncora | a mesa de hexágonos (só visual) | uma Esquiva · uma Harmonia |
-| 7 | Dona Coruja | 16 | o deck dela de hoje + Lacre | nenhuma: ela já é o teste | um Bloqueio · vença sem ruptura |
-| 8 | Diana | 16 | Interferência, Espelho, Pressa | a Mesa dela, feltro vinho | **Fita complementar:** dispare uma corrente de 4+ só de Opostos · vença |
+| 7 | Dona Coruja | 16 | Lacre, Remendo, Interferência | nenhuma: ela já é o teste | um Bloqueio · vença sem ruptura |
+| 8 | Diana | 16 | Virar, Espelho, Pressa | ela começa com um dado no Bolso (o do Prólogo); a Mesa dela, feltro vinho | **Fita complementar:** dispare uma corrente de 4+ só de Opostos · vença |
 
 ## 7. O roteiro
 

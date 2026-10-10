@@ -11,7 +11,8 @@
   "cha": "O chá do Sapo",
   "fecho": "O fecho da história (o Eco)",
   "dados": "O dado de cada bicho (e a ciência por trás)",
-  "final": "A frase final (escolha uma)"
+  "final": "A frase final (escolha uma)",
+  "combate": "Os combates novos (escolha uma de cada)"
  },
  "falas": [
   {
@@ -2182,6 +2183,58 @@
    "desenho": "A cena da tela inicial de novo, a Diana sem ferimento: a primeira fala do jogo, palavra por palavra, fechando o círculo.",
    "gag": "final",
    "status": "recusada",
+   "nota": "",
+   "usar": true
+  },
+  {
+   "id": "C7-15a",
+   "cap": "C7",
+   "capitulo": "Cap. 7 · Dona Coruja",
+   "quem": "Coruja",
+   "onde": "Depois · entre a C7-11 e a C7-12 · opção a",
+   "texto": "Um conselho de quem lê. Ela joga com as faces do avesso. / Leve um Lacre. Nem toda página precisa ser virada.",
+   "desenho": "A Dona Coruja batendo com a asa num lacre de cera vermelho em cima de um livro fechado.",
+   "gag": "combate",
+   "status": "pendente",
+   "nota": "",
+   "usar": true
+  },
+  {
+   "id": "C7-15b",
+   "cap": "C7",
+   "capitulo": "Cap. 7 · Dona Coruja",
+   "quem": "Coruja",
+   "onde": "Depois · entre a C7-11 e a C7-12 · opção b",
+   "texto": "Na célula, umas proteínas sentam em cima de um trecho do DNA, e ele não é lido. Chama-se silenciar um gene. / O Lacre faz isso com uma carta dela. Está na Loja.",
+   "desenho": "A Dona Coruja sentada em cima de um livro aberto, tampando a página. Ciência: proteínas repressoras se prendem ao DNA e impedem que um gene seja lido (transcrito).",
+   "gag": "combate",
+   "status": "pendente",
+   "nota": "",
+   "usar": true
+  },
+  {
+   "id": "C8-09a",
+   "cap": "C8",
+   "capitulo": "Cap. 8 · Diana, a fita original",
+   "quem": "Diana",
+   "onde": "Antes · depois da R-11 · opção a",
+   "texto": "No Prólogo, quem começou com um dado no Bolso fui eu. / Você nem reparou. / Hoje também.",
+   "desenho": "A Diana abre a pata: um dado rosa no Bolso dela. É verdade: no Prólogo, sem cartas, quem joga em segundo começa com um dado no Bolso, e quem jogava em segundo era ela.",
+   "gag": "combate",
+   "status": "pendente",
+   "nota": "",
+   "usar": true
+  },
+  {
+   "id": "C8-09b",
+   "cap": "C8",
+   "capitulo": "Cap. 8 · Diana, a fita original",
+   "quem": "Diana",
+   "onde": "Antes · depois da R-11 · opção b",
+   "texto": "Toda fita tem uma cópia de reserva: a outra fita. É com ela que a célula conserta os erros. / O meu Bolso é a minha. Começo com um dado.",
+   "desenho": "A Diana com um dado rosa no Bolso, a fita dupla do mural atrás dela. Ciência: no reparo do DNA, a célula usa a fita complementar como molde para refazer o trecho estragado.",
+   "gag": "combate",
+   "status": "pendente",
    "nota": "",
    "usar": true
   },

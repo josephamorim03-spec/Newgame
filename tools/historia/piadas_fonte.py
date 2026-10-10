@@ -208,6 +208,11 @@ F = [
     ('F-Zb', 'Diana', 'Frase final · opção b (antes dos créditos)', 'Eu te ensinei a jogar para me curar. / Agora jogue só porque é bom. / …E porque eu ainda quero a revanche.', 'A Diana empurrando os dados de volta para o seu lado da mesa.', 'final'),
     ('F-Zc', 'Diana', 'Frase final · opção c (antes dos créditos)', 'O DNA tem quatro letras. O dado tem seis faces. / Sobraram duas. / Guardei para a revanche.', 'A Diana segurando um dado com o 3 e o 4 virados para você. Ciência: A, T, C e G; no jogo, 1–6 e 2–5 viraram letras, o 3 e o 4 ficaram de fora.', 'final'),
     ('F-Zd', 'Diana', 'Frase final · opção d (antes dos créditos)', 'Boa noite. Uma partida? / Dessa vez, sem segundas intenções. / …Quase nenhuma.', 'A cena da tela inicial de novo, a Diana sem ferimento: a primeira fala do jogo, palavra por palavra, fechando o círculo.', 'final'),
+    # ---- os combates novos (docs/historia-combates.md): a dica do Lacre e o Bolso da Diana; o dono escolhe uma de cada ----
+    ('C7-15a', 'Coruja', 'Depois · entre a C7-11 e a C7-12 · opção a', 'Um conselho de quem lê. Ela joga com as faces do avesso. / Leve um Lacre. Nem toda página precisa ser virada.', 'A Dona Coruja batendo com a asa num lacre de cera vermelho em cima de um livro fechado.', 'combate'),
+    ('C7-15b', 'Coruja', 'Depois · entre a C7-11 e a C7-12 · opção b', 'Na célula, umas proteínas sentam em cima de um trecho do DNA, e ele não é lido. Chama-se silenciar um gene. / O Lacre faz isso com uma carta dela. Está na Loja.', 'A Dona Coruja sentada em cima de um livro aberto, tampando a página. Ciência: proteínas repressoras se prendem ao DNA e impedem que um gene seja lido (transcrito).', 'combate'),
+    ('C8-09a', 'Diana', 'Antes · depois da R-11 · opção a', 'No Prólogo, quem começou com um dado no Bolso fui eu. / Você nem reparou. / Hoje também.', 'A Diana abre a pata: um dado rosa no Bolso dela. É verdade: no Prólogo, sem cartas, quem joga em segundo começa com um dado no Bolso, e quem jogava em segundo era ela.', 'combate'),
+    ('C8-09b', 'Diana', 'Antes · depois da R-11 · opção b', 'Toda fita tem uma cópia de reserva: a outra fita. É com ela que a célula conserta os erros. / O meu Bolso é a minha. Começo com um dado.', 'A Diana com um dado rosa no Bolso, a fita dupla do mural atrás dela. Ciência: no reparo do DNA, a célula usa a fita complementar como molde para refazer o trecho estragado.', 'combate'),
     # Pós-créditos
     ('X-01', 'Diana', 'Pós-créditos 1', 'DianaDice não seria um nome melhor para esse jogo? / … / Seria.', 'Ela risca "Dice Duel" com um pincel atômico e escreve por cima: "DianaDice".', 'letra-d'),
     ('X-02a', 'Sapo + Diana', 'Pós-créditos 2 · opção a', 'SAPO: Soube da cura. Trouxe chá. / DIANA: É do lago? / SAPO: Orgânico.', 'A Diana, curada, abre a porta. O Sapo de chapéu, com uma xícara turva.', 'cha'),
@@ -218,6 +223,7 @@ GAGS = {
     'nariz': 'O nariz (o enfeite muda a cada capítulo)', 'mural': 'O mural', 'letra-d': 'A teoria do D', 'receitas': 'O caderno de "receitas"',
     'pao': 'O pão do Coelho', 'sabem': 'Quem sabe de alguma coisa', 'pata': 'A pata', 'revanche': '"Revanche?"', 'cha': 'O chá do Sapo',
     'fecho': 'O fecho da história (o Eco)', 'dados': 'O dado de cada bicho (e a ciência por trás)', 'final': 'A frase final (escolha uma)',
+    'combate': 'Os combates novos (escolha uma de cada)',
 }
 
 

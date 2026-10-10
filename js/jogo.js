@@ -225,7 +225,7 @@
     if (hc) {
       Object.assign(jogo, { historia: hc.id, ritmoRival: hc.ritmo || 1, esperto: !!hc.esperto, dispMin: hc.dispMin || 0 });
       if (hc.guia) jogo.historiaGuia = [];
-      if (hc.bolsoRival) { jogo.bolso[1] = 1 + Math.floor(Math.random() * 6); jogo.bolso[0] = null; }   // a regra da casa do Guaxinim
+      if (hc.bolsoRival) { jogo.bolso[1] = 1 + Math.floor(Math.random() * 6); jogo.bolso[0] = null; }   // a regra da casa do Guaxinim e da Diana do Cap. 8
     }
     Object.assign(jogo, { alvo: null, ajusteIdx: null, sel: null, destaque: null, pensando: false, token: Math.random(), fala: null, humor: null, intro: false });
     st.primeiro = 1 - st.primeiro;
