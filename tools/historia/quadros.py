@@ -20,6 +20,7 @@ Precisa de OPENAI_API_KEY (como o tools/arte_icones.py).
 import base64
 import io
 import json
+import re
 import sys
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -116,6 +117,8 @@ def paginas(cfg, saida, piloto=False):
     usadas = {q.get("arte") for p in pags for q in p["quadros"]} | {o[0] for p in pags for q in p["quadros"] for o in q.get("opcoes", [])}
     imagens = {}
     for id_ in sorted(usadas - {""}):
+        if cfg["artes"].get(id_, {}).get("mural"):
+            continue
         arq = QUADROS / f"{id_}.webp"
         if not arq.exists():
             continue
@@ -128,15 +131,22 @@ def paginas(cfg, saida, piloto=False):
     def nova(id_):   # a arte já saiu no pedido novo (estilo chapado, folha do nariz, espaço do balão, receita no papel)?
         meta = QUADROS / f"{id_}.json"
         return meta.exists() and ("SIMPLE: a few big flat" in meta.read_text(encoding="utf-8") or "DRAWN ON THE PAPER" in meta.read_text(encoding="utf-8"))
-    campos = ("texto", "quem", "nariz", "boca", "lugar", "titulo", "espelho", "aba", "pagina")
+    campos = ("texto", "quem", "nariz", "boca", "lugar", "titulo", "espelho", "aba", "pagina", "mural")
+    # o mural é montado na página com os retratos que o jogo já tem (a versão pintada, em data URI)
+    retratos = {}
+    if any(cfg["artes"].get(q.get("arte"), {}).get("mural") for p in pags for q in p["quadros"]):
+        for linha in (RAIZ / "js" / "retratos_pintados.js").read_text(encoding="utf-8").splitlines():
+            m = re.match(r'\s+([a-z]+): "(data:[^"]+)",', linha)
+            if m:
+                retratos[m.group(1)] = m.group(2)
     dados = {"paginas": [p for p in cfg["paginas"] if p.get("piloto") or not piloto],
              "artes": {k: {**{c: v[c] for c in campos if c in v}, "nova": nova(k)} for k, v in cfg["artes"].items()},
              "falas": {k: {"quem": f["quem"], "texto": f["texto"], "status": f["status"], "onde": f["onde"]} for k, f in falas.items()},
-             "imagens": imagens}
+             "imagens": imagens, "murais": cfg.get("murais", {}), "retratos": retratos}
     js = json.dumps(dados, ensure_ascii=False).replace("</", "<\\/")
     saida.parent.mkdir(parents=True, exist_ok=True)
     saida.write_text(MODELO_PAGINA.read_text(encoding="utf-8").replace("/*DADOS*/null", js), encoding="utf-8")
-    faltando = sorted(usadas - {""} - set(imagens))
+    faltando = sorted(i for i in usadas - {""} - set(imagens) if not cfg["artes"].get(i, {}).get("mural"))
     print(f"{saida}: {len(pags)} páginas, {len(imagens)} artes, {saida.stat().st_size // 1024} KB"
           + (f"; ainda sem arte: {', '.join(faltando)}" if faltando else ""))
 
@@ -146,8 +156,12 @@ def narizes(cfg, ids):
     ids = ids or list(m["itens"])
     NARIZES.mkdir(parents=True, exist_ok=True)
     def um(id_):
-        p = f'{m["regra"]} NOSE: {m["itens"][id_]}'
-        png = A.gerar(p, "high", RAIZ / "arte" / "fonte" / "diana.png", fundo="opaque", modelo=cfg["modelo"])
+        # um enfeite já aprovado só muda o que o dono pediu: a edição parte da imagem dele, não do retrato
+        if id_ in m.get("edicao", {}):
+            p, base = m["edicao"][id_], RAIZ / m["bases"][id_]
+        else:
+            p, base = f'{m["regra"]} NOSE: {m["itens"][id_]}', RAIZ / "arte" / "fonte" / "diana.png"
+        png = A.gerar(p, "high", base, fundo="opaque", modelo=cfg["modelo"])
         (NARIZES / f"{id_}.png").write_bytes(png)
         (NARIZES / f"{id_}.json").write_text(json.dumps({"prompt": p, "modelo": cfg["modelo"], "qualidade": "high"}, ensure_ascii=False, indent=1), encoding="utf-8")
         return id_

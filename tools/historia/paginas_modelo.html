@@ -41,7 +41,7 @@ main { display: grid; gap: 28px; }
 .q.meio .arte { aspect-ratio: 1 / 1; }
 @media (max-width: 560px) { .q.meio .arte { aspect-ratio: 4 / 3; } }
 .arte.pagina { aspect-ratio: 2 / 3; }
-.arte img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transform-origin: var(--fx, 50%) var(--fy, 30%); transform: scale(var(--zoom, 1)); }
+.arte img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transform-origin: 0 0; transform: var(--cam, none); }
 .arte.vazio { display: grid; place-items: center; text-align: center; padding: 16px; color: var(--tinta-suave); border-style: dashed; font-size: 13px; background: transparent; }
 /* retícula: pontinhos de impressão, mais densos num canto (a sombra do gibi barato) */
 .reticula { position: absolute; inset: 0; pointer-events: none; mix-blend-mode: multiply;
@@ -52,8 +52,8 @@ main { display: grid; gap: 28px; }
 .q.impacto .arte { transform: rotate(-1.2deg); border-width: 4px; box-shadow: -5px 4px 0 var(--azul), 5px -4px 0 var(--rosa); }
 .q.impacto .reticula { -webkit-mask-image: radial-gradient(circle at var(--bx, 50%) var(--by, 60%), transparent 22%, #000 80%); mask-image: radial-gradient(circle at var(--bx, 50%) var(--by, 60%), transparent 22%, #000 80%); opacity: .6; }
 .q.impacto img.chapa { mix-blend-mode: multiply; opacity: .28; }
-.q.impacto img.chapa.azul { transform: translate(-0.9cqw, 0.5cqw) scale(var(--zoom, 1)); filter: sepia(1) saturate(5) hue-rotate(150deg); }
-.q.impacto img.chapa.rosa { transform: translate(0.9cqw, -0.5cqw) scale(var(--zoom, 1)); filter: sepia(1) saturate(5) hue-rotate(290deg); }
+.q.impacto img.chapa.azul { transform: translate(-0.9cqw, 0.5cqw) var(--cam, none); filter: sepia(1) saturate(5) hue-rotate(150deg); }
+.q.impacto img.chapa.rosa { transform: translate(0.9cqw, -0.5cqw) var(--cam, none); filter: sepia(1) saturate(5) hue-rotate(290deg); }
 .tinta { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; z-index: 2; }
 
 /* o balão: só o texto mora no HTML; o contorno e o rabinho são desenhados juntos no SVG (sem emenda) */
@@ -82,6 +82,22 @@ main { display: grid; gap: 28px; }
   transform-origin: 50% 0; transform: perspective(500px) rotateX(64deg) rotate(-2deg); box-shadow: 0 6px 0 rgba(58,42,46,.12);
   background-image: repeating-linear-gradient(transparent 0 calc(7.2cqw - 1px), rgba(111,191,211,.45) calc(7.2cqw - 1px) 7.2cqw); }
 .debaixo { position: absolute; z-index: 3; left: 18%; right: 8%; top: 50%; text-align: center; font: 700 clamp(13px, 6.6cqw, 30px)/1.1 var(--f-mao); color: var(--caneta); }
+
+/* o mural (montado aqui, não pintado): cortiça, moldura de madeira, polaroides com os retratos do jogo, barbante, post-its */
+.mural { position: absolute; inset: 0; transform-origin: 0 0; transform: var(--cam, none);
+  background: radial-gradient(circle, rgba(92,56,30,.35) 0 .25cqw, transparent .4cqw) 0 0 / 1.3cqw 1.3cqw,
+    radial-gradient(circle, rgba(255,226,180,.3) 0 .2cqw, transparent .35cqw) .6cqw .7cqw / 1.7cqw 1.7cqw, #c48f5c;
+  box-shadow: inset 0 0 0 2.4cqw #8a5634, inset 0 0 0 2.8cqw #3a2a2e; }
+.mural svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.foto { position: absolute; width: 12cqw; padding: .7cqw .7cqw 2.4cqw; background: #fffaf0; border: .3cqw solid #3a2a2e; transform: translate(-50%, -50%) rotate(var(--r, 0deg)); }
+.foto img { position: static; display: block; width: 100%; height: auto; aspect-ratio: 1; object-fit: cover; transform: none; background: #f1dfc2; }
+.foto .leg { position: absolute; left: 0; right: 0; bottom: .1cqw; text-align: center; font: 700 2.2cqw/1 var(--f-mao); color: #3a2a2e; }
+.carimbo { position: absolute; left: 50%; top: 58%; transform: translate(-50%, -50%) rotate(-14deg); font: 700 2.1cqw/1 var(--f-titulo); color: #b2483a; border: .35cqw solid #b2483a; border-radius: .6cqw; padding: .3cqw .7cqw; letter-spacing: .06em; background: rgba(255,250,240,.55); white-space: nowrap; }
+.nota { position: absolute; transform: translate(-50%, -50%) rotate(var(--r, 0deg)); font: 700 2.6cqw/1.05 var(--f-mao); color: #3a2a2e; text-align: center; }
+.nota.postit { width: 13cqw; min-height: 11cqw; padding: 1cqw; background: #f8dc9a; border: .25cqw solid #3a2a2e; display: grid; place-items: center; }
+.nota.postit.pequeno { width: 7cqw; min-height: 6cqw; font-size: 3.4cqw; }
+.nota.cartao { padding: .6cqw 1.4cqw; background: #fffaf0 repeating-linear-gradient(transparent 0 1.5cqw, rgba(111,191,211,.5) 1.5cqw 1.65cqw); border: .25cqw solid #3a2a2e; font-family: var(--f-titulo); font-size: 2.6cqw; letter-spacing: .08em; }
+.alfinete { fill: #e8806f; stroke: #3a2a2e; stroke-width: .35; }
 
 .rodape { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; color: var(--tinta-suave); flex-wrap: wrap; }
 .rodape code { font: 600 12px ui-monospace, Menlo, monospace; color: var(--tinta); }
@@ -112,25 +128,34 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;',
 const NOMES = { DIANA: 'diana', SAPO: 'sapo', COELHO: 'coelho', URSO: 'urso', CAIXA: 'caixa' };
 const ID_QUEM = { Diana: 'diana', Sapo: 'sapo', Coelho: 'coelho', Raposa: 'raposa', Urso: 'urso', Guaxinim: 'guaxinim', Ovelha: 'ovelha', Coruja: 'coruja' };
 
-// uma fala (ou uma batida dela): quem fala, o texto, o tipo de balão e o estado da aprovação
-function trecho(codigo, parte) {
+// uma fala, batida a batida: cada " / " é um balão; "NOME:" troca quem fala e vale para as batidas seguintes
+function batidas(codigo) {
   const f = D.falas[codigo];
-  if (!f) return null;
-  let txt = parte == null ? f.texto : (f.texto.split(' / ')[parte] || '');
-  let quem = ID_QUEM[f.quem.replace(/ \+.*$/, '')] || f.quem, tipo = 'fala', rub = '';
-  const n = txt.match(/^([A-ZÇÃ]{3,}):\s*(.*)$/);
-  if (n) { quem = NOMES[n[1]] || n[1].toLowerCase(); txt = n[2]; }
-  if (quem === 'caixa') tipo = 'caixa';
-  const r = txt.match(/^\(([^)]*)\)\s*(.*)$/);
-  if (r) {
-    if (/^(sem |quadro mudo)/.test(r[1])) tipo = 'mudo';
-    else if (/margem|etiqueta|aba/.test(r[1])) tipo = 'margem';
-    else { rub = r[1]; if (/dormindo|baixo|sussurr/.test(r[1])) tipo = 'sussurro'; }
-    if (tipo !== 'mudo') txt = r[2];
-  }
-  if (/^Página/.test(f.quem) && tipo === 'fala') tipo = 'receita';
-  if (/^…$/.test(txt.trim())) tipo = 'pausa';
-  return { codigo, quem, txt, tipo, rub, status: f.status };
+  if (!f) return [];
+  let atual = ID_QUEM[f.quem.replace(/ \+.*$/, '')] || f.quem;
+  return f.texto.split(' / ').map(parte => {
+    let txt = parte, tipo = 'fala', rub = '', quem = atual;
+    const n = txt.match(/^([A-ZÇÃ]{3,}):\s*(.*)$/);
+    if (n) { txt = n[2]; if (n[1] === 'CAIXA') quem = 'caixa'; else quem = atual = NOMES[n[1]] || n[1].toLowerCase(); }
+    if (quem === 'caixa') tipo = 'caixa';
+    const r = txt.match(/^\(([^)]*)\)\s*(.*)$/);
+    if (r) {
+      if (/^(sem |quadro mudo)/.test(r[1])) tipo = 'mudo';
+      else if (/margem|etiqueta|aba/.test(r[1])) tipo = 'margem';
+      else { rub = r[1]; if (/dormindo|baixo|sussurr/.test(r[1])) tipo = 'sussurro'; }
+      if (tipo !== 'mudo') txt = r[2];
+    }
+    if (/^Página/.test(f.quem) && tipo === 'fala') tipo = 'receita';
+    if (/^…$/.test(txt.trim())) tipo = 'pausa';
+    return { codigo, quem, txt, tipo, rub, status: f.status };
+  });
+}
+// a batida pedida; sem parte, todas (um quadro com vários balões, como o chá do Sapo no pós-créditos)
+function trecho(codigo, parte) {
+  const l = batidas(codigo);
+  if (!l.length) return null;
+  if (parte != null) return l[parte] || null;
+  return l.length === 1 ? l[0] : { ...l[0], multi: l };
 }
 const estadoTag = t => t.status === 'aprovada' ? '' : `<span class="estado ${t.status === 'recusada' ? 'recusada' : ''}">${t.status === 'recusada' ? 'recusada' : 'em revisão'}</span>`;
 
@@ -144,22 +169,54 @@ function camada(arte, q, t) {
     if (t && t.tipo === 'margem') h += a.aba ? `<div class="debaixo">${esc(t.txt)}</div><div class="aba"></div><div class="mao margem">${estadoTag(t)}</div>` : `<div class="mao margem">${esc(t.txt)} ${estadoTag(t)}</div>`;
     return h;
   }
-  if (t && !['mudo', 'margem', 'receita'].includes(t.tipo)) {
-    const lugar = t.tipo === 'caixa' ? '' : (a.lugar || 'nw');
-    h += `<div class="balao ${lugar} ${t.tipo}" data-quem="${esc(t.quem)}">${t.rub ? `<span class="rub">(${esc(t.rub)})</span>` : ''}${esc(t.txt)}${estadoTag(t)}</div>`;
+  for (const b of t ? (t.multi || [t]) : []) {
+    if (['mudo', 'margem', 'receita'].includes(b.tipo)) continue;
+    const lugar = b.tipo === 'caixa' ? '' : (a.lugar || 'nw');
+    h += `<div class="balao ${lugar} ${b.tipo}" data-lugar="${lugar}" data-quem="${esc(b.quem)}">${b.rub ? `<span class="rub">(${esc(b.rub)})</span>` : ''}${esc(b.txt)}${estadoTag(b)}</div>`;
   }
   if (q.som) h += `<div class="som" style="left:${q.som.x}%;top:${q.som.y}%;--rot:${q.som.rot || -10}deg">${esc(q.som.txt)}</div>`;
   return h;
+}
+
+// o mural: as peças em % do quadro; o barbante vai de alfinete a alfinete (no alto de cada peça)
+function mural(id) {
+  const m = D.murais[id] || {}, pos = {};
+  const pecas = [];
+  for (const f of m.fotos || []) {
+    const src = D.retratos[f.id === 'voce' ? 'bolinha' : f.id] || '';
+    pos[f.id] = [f.x, f.y - 11];
+    pecas.push(`<div class="foto" style="left:${f.x}%;top:${f.y}%;--r:${f.rot || 0}deg"><img src="${src}" alt="${esc(f.id)}">${f.legenda ? `<span class="leg">${esc(f.legenda)}</span>` : ''}${f.carimbo ? `<span class="carimbo">${esc(f.carimbo)}</span>` : ''}</div>`);
+  }
+  for (const n of m.notas || []) {
+    pos[n.id] = [n.x, n.y - (n.tipo === 'postit' && !n.pequeno ? 8 : 4)];
+    pecas.push(`<div class="nota ${n.tipo}${n.pequeno ? ' pequeno' : ''}" style="left:${n.x}%;top:${n.y}%;--r:${n.rot || 0}deg">${esc(n.txt)}</div>`);
+  }
+  let helice = '';
+  if (m.helice) {   // a dupla hélice com dados no lugar dos degraus
+    const { x, y } = m.helice; pos.helice = [x, y - 14];
+    const a = [], b = [], degraus = [];
+    for (let i = 0; i <= 24; i++) { const t = i / 24, yy = y - 13 + t * 26, dx = Math.sin(t * Math.PI * 2.5) * 3.2; a.push(`${x + dx},${yy}`); b.push(`${x - dx},${yy}`); if (i % 4 === 2) degraus.push([x, yy, Math.abs(dx)]); }
+    helice = `<polyline points="${a.join(' ')}" fill="none" stroke="#3a2a2e" stroke-width=".5"/><polyline points="${b.join(' ')}" fill="none" stroke="#3a2a2e" stroke-width=".5"/>` +
+      degraus.map(([dx, dy, w]) => `<line x1="${dx - w}" y1="${dy}" x2="${dx + w}" y2="${dy}" stroke="#3a2a2e" stroke-width=".25"/><rect x="${dx - .9}" y="${dy - 1.35}" width="1.8" height="2.7" rx=".4" fill="#ec8fa8" stroke="#3a2a2e" stroke-width=".25"/>`).join('');
+  }
+  const ponto = k => Array.isArray(k) ? k : pos[k];
+  const fios = (m.fios || []).map(([a, b]) => { const p = ponto(a), q = ponto(b); if (!p || !q) return '';
+    const mx = (p[0] + q[0]) / 2, my = (p[1] + q[1]) / 2 + 3;   // o barbante cede um pouco
+    return `<path d="M${p[0]},${p[1]} Q${mx},${my} ${q[0]},${q[1]}" fill="none" stroke="#b2483a" stroke-width=".45" vector-effect="non-scaling-stroke" style="stroke-width:max(1.5px,.32cqw)"/>`; }).join('');
+  const alfinetes = Object.values(pos).map(([x, y]) => `<circle class="alfinete" cx="${x}" cy="${y}" r=".9"/>`).join('');
+  return `<div class="mural"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${helice}</svg>${pecas.join('')}<svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${fios}</svg><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true" style="z-index:1">${alfinetes}</svg></div>`;
 }
 
 const ZOOM = { perto: 1.3, detalhe: 1.65 };
 function painel(arte, q, t) {
   if (!arte) return `<div class="arte vazio">sem este quadro</div>`;
   const src = D.imagens[arte], a = D.artes[arte] || {};
+  if (a.mural) {
+    return `<div class="arte" data-arte="${esc(arte)}" data-zoom="${ZOOM[q.plano] || 1}" data-foco="${q.foco ? q.foco.join(',') : ''}">${mural(a.mural)}<div class="reticula"></div><svg class="tinta" aria-hidden="true"></svg>${camada(arte, q, t)}</div>`;
+  }
   if (!src) return `<div class="arte vazio">ainda sem arte<br><code>${esc(arte)}</code></div>`;
-  const foco = q.foco || [50, 30], zoom = ZOOM[q.plano] || 1;
   const chapas = q.impacto ? `<img class="chapa azul" src="${src}" alt=""><img class="chapa rosa" src="${src}" alt="">` : '';
-  return `<div class="arte${a.pagina ? ' pagina' : ''}" data-arte="${esc(arte)}" style="--fx:${foco[0]}%;--fy:${foco[1]}%;--zoom:${zoom}">
+  return `<div class="arte${a.pagina ? ' pagina' : ''}" data-arte="${esc(arte)}" data-zoom="${ZOOM[q.plano] || 1}" data-foco="${q.foco ? q.foco.join(',') : ''}">
     <img class="base" src="${src}" alt="${esc(a.texto || arte)}">${chapas}<div class="reticula"></div>
     <svg class="tinta" aria-hidden="true"></svg>${camada(arte, q, t)}</div>`;
 }
@@ -191,52 +248,103 @@ function grade(qs) {
   return out.join('');
 }
 
-// a boca de quem fala, em pixels do quadro: o recorte do object-fit e o zoom do plano entram na conta
+// a câmera do quadro: a imagem como o object-fit a mostra, aproximada (perto, detalhe) e levada até o foco, sem sobrar
+// borda vazia. O foco padrão é a cabeça de quem fala (a boca marcada, um pouco acima), em % da imagem.
+function camera(el, img) {
+  const W = el.clientWidth, H = el.clientHeight, z = +el.dataset.zoom || 1;
+  let ox = 0, oy = 0, dw = W, dh = H;                       // o mural ocupa o quadro inteiro
+  if (img) {
+    if (!img.naturalWidth) return null;
+    const k = Math.max(W / img.naturalWidth, H / img.naturalHeight);
+    dw = img.naturalWidth * k; dh = img.naturalHeight * k; ox = (W - dw) / 2; oy = (H - dh) / 2;
+  }
+  let foco = el.dataset.foco ? el.dataset.foco.split(',').map(Number) : null;
+  if (!foco) { const bal = el.querySelector('.balao:not(.caixa)'), b = bal && ((D.artes[el.dataset.arte] || {}).boca || {})[bal.dataset.quem]; foco = b && b[1] <= 100 ? [b[0], b[1] - 12] : [50, 35]; }
+  const px = ox + foco[0] / 100 * dw, py = oy + foco[1] / 100 * dh;
+  // tela = z · ponto + T; T leva o foco ao centro, preso para a imagem cobrir o quadro todo
+  const tx = Math.min(-z * ox, Math.max(W - z * (ox + dw), W / 2 - z * px));
+  const ty = Math.min(-z * oy, Math.max(H - z * (oy + dh), H / 2 - z * py));
+  const cam = { z, tx, ty, ox, oy, dw, dh };
+  el.style.setProperty('--cam', `translate(${cam.tx}px, ${cam.ty}px) scale(${z})`);
+  el._cam = cam;
+  return cam;
+}
+// a boca de quem fala, em pixels do quadro (pela câmera)
 function bocaNoQuadro(el, img, quem) {
-  const a = D.artes[el.dataset.arte] || {}, b = (a.boca || {})[quem];
-  if (!b || !img.naturalWidth) return null;
-  const W = el.clientWidth, H = el.clientHeight, k = Math.max(W / img.naturalWidth, H / img.naturalHeight);
-  const ox = (W - img.naturalWidth * k) / 2, oy = (H - img.naturalHeight * k) / 2;
-  const x = ox + b[0] / 100 * img.naturalWidth * k, y = oy + b[1] / 100 * img.naturalHeight * k;
-  const cs = getComputedStyle(el), z = parseFloat(cs.getPropertyValue('--zoom')) || 1;
-  const fx = parseFloat(cs.getPropertyValue('--fx')) / 100 * W, fy = parseFloat(cs.getPropertyValue('--fy')) / 100 * H;
-  return { x: fx + (x - fx) * z, y: fy + (y - fy) * z };
+  const b = ((D.artes[el.dataset.arte] || {}).boca || {})[quem], c = el._cam;
+  if (!b || !c) return null;
+  const x = c.ox + b[0] / 100 * c.dw, y = c.oy + b[1] / 100 * c.dh;
+  return { x: c.z * x + c.tx, y: c.z * y + c.ty };
 }
 
-// desenha o balão e o rabinho: primeiro tudo com o contorno grosso, depois o recheio por cima (assim não sobra emenda)
+// o rosto de quem fala (uma caixa em volta da boca, do tamanho de uma cabeça no plano do quadro)
+function rosto(el, img, quem) {
+  const m = bocaNoQuadro(el, img, quem);
+  if (!m) return null;
+  const z = el._cam ? el._cam.z : 1, W = el.clientWidth, H = el.clientHeight;
+  const hw = W * .15 * z, hh = H * .3 * z;
+  return { boca: m, x0: m.x - hw, x1: m.x + hw, y0: m.y - hh, y1: m.y + hh * .3 };
+}
+const sobra = (a, b) => Math.max(0, Math.min(a.x1, b.x1) - Math.max(a.x0, b.x0)) * Math.max(0, Math.min(a.y1, b.y1) - Math.max(a.y0, b.y0));
+const CANTOS = ['nw', 'ne', 'sw', 'se'];
+// cada balão vai para o canto que cobre menos rosto (e não cobre outro balão), começando pelo canto livre da arte
+function posicionar(el, img) {
+  const rostos = [...el.querySelectorAll('.balao')].map(b => rosto(el, img, b.dataset.quem)).filter(Boolean);   // um rosto fora do quadro não cobre nada
+  const postos = [];
+  for (const bal of el.querySelectorAll('.balao')) {
+    if (bal.classList.contains('caixa')) { postos.push(caixaDe(bal)); continue; }
+    const pref = bal.dataset.lugar || 'nw', ordem = [pref, ...CANTOS.filter(c => c !== pref)];
+    let melhor = null;
+    for (const c of ordem) {
+      CANTOS.forEach(k => bal.classList.remove(k)); bal.classList.add(c);
+      const r = caixaDe(bal), custo = rostos.reduce((s, f) => s + sobra(r, f), 0) + postos.reduce((s, p) => s + sobra(r, p) * 50, 0);
+      if (!melhor || custo < melhor.custo - 1) melhor = { c, custo };
+    }
+    CANTOS.forEach(k => bal.classList.remove(k)); bal.classList.add(melhor.c);
+    postos.push(caixaDe(bal));
+  }
+}
+const caixaDe = bal => ({ x0: bal.offsetLeft, y0: bal.offsetTop, x1: bal.offsetLeft + bal.offsetWidth, y1: bal.offsetTop + bal.offsetHeight });
+
+// desenha os balões e os rabinhos: primeiro tudo com o contorno grosso, depois o recheio por cima (assim não sobra emenda)
 function desenhar(el) {
   const svg = el.querySelector('svg.tinta'), img = el.querySelector('img.base');
   if (!svg) return;
   const W = el.clientWidth, H = el.clientHeight;
   svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
-  const formas = [], linhas = [];
-  const bal = el.querySelector('.balao');
-  if (bal) {
+  camera(el, img);
+  posicionar(el, img);
+  const contornos = [], recheios = [], linhas = [];
+  for (const bal of el.querySelectorAll('.balao')) {
     const r = { x: bal.offsetLeft, y: bal.offsetTop, w: bal.offsetWidth, h: bal.offsetHeight };
     const caixa = bal.classList.contains('caixa');
     const rx = caixa ? 2 : Math.min(r.h / 2, 34);
     const d = `M${r.x + rx},${r.y} H${r.x + r.w - rx} Q${r.x + r.w},${r.y} ${r.x + r.w},${r.y + rx} V${r.y + r.h - rx} Q${r.x + r.w},${r.y + r.h} ${r.x + r.w - rx},${r.y + r.h} H${r.x + rx} Q${r.x},${r.y + r.h} ${r.x},${r.y + r.h - rx} V${r.y + rx} Q${r.x},${r.y} ${r.x + rx},${r.y} Z`;
     let rabo = '';
-    const boca = caixa ? null : bocaNoQuadro(el, img, bal.dataset.quem);
-    if (boca) {
-      const cy = r.y + r.h / 2;
-      // a base sai da borda do balão mais perto da boca; a ponta para um pouco antes da boca
-      const bx = Math.max(r.x + rx, Math.min(r.x + r.w - rx, boca.x)), by = boca.y > cy ? r.y + r.h - 2 : r.y + 2;
+    const f = caixa ? null : rosto(el, img, bal.dataset.quem);
+    if (f) {
+      const boca = f.boca, cx = r.x + r.w / 2, cy = r.y + r.h / 2;
+      // a base sai da borda do balão virada para o rosto; a ponta aponta para a boca e para antes da cabeça
+      const lado = Math.abs(boca.y - cy) / r.h > Math.abs(boca.x - cx) / r.w;
+      const bx = lado ? Math.max(r.x + rx, Math.min(r.x + r.w - rx, boca.x)) : (boca.x > cx ? r.x + r.w - 2 : r.x + 2);
+      const by = lado ? (boca.y > cy ? r.y + r.h - 2 : r.y + 2) : Math.max(r.y + rx * .6, Math.min(r.y + r.h - rx * .6, boca.y));
       const dx = boca.x - bx, dy = boca.y - by, dist = Math.hypot(dx, dy) || 1;
-      // o rabinho aponta e para antes da cabeça: no máximo pouco mais da metade do caminho, e nunca longo
-      const comp = Math.min(dist * .55, H * .2 + 14);
-      const tip = { x: bx + dx / dist * comp, y: by + dy / dist * comp };
-      const larg = Math.max(9, Math.min(20, r.h * .34)), nx = -dy / dist * larg, ny = dx / dist * larg;
+      const ateRosto = Math.max(14, Math.min(dist * .55, H * .2 + 14));
+      let tip = { x: bx + dx / dist * ateRosto, y: by + dy / dist * ateRosto };
+      // vindo de cima, o rabinho para no alto da cabeça: nunca entra no rosto (com a arte sem espaço, fica curtinho)
+      if (dy > 0 && tip.y > f.y0 - 4) { const k = Math.max(12, f.y0 - 4 - by) / Math.max(1, tip.y - by); if (k < 1) tip = { x: bx + (tip.x - bx) * k, y: by + (tip.y - by) * k }; }
+      const larg = Math.max(9, Math.min(20, Math.min(r.h, r.w) * .34)), nx = -dy / dist * larg, ny = dx / dist * larg;
       const meio = { x: (bx + tip.x) / 2 + nx * .5, y: (by + tip.y) / 2 + ny * .5 };   // uma curva leve, como na mão
       rabo = `M${bx - nx},${by - ny} Q${meio.x},${meio.y} ${tip.x},${tip.y} Q${meio.x - nx * .3},${meio.y - ny * .3} ${bx + nx},${by + ny} Z`;
       el.style.setProperty('--bx', `${boca.x / W * 100}%`); el.style.setProperty('--by', `${boca.y / H * 100}%`);
     }
     const fill = caixa ? '#f8dc9a' : '#fffdf8', tracejado = bal.classList.contains('sussurro') ? ' stroke-dasharray="6 5"' : '';
-    formas.push(`<path d="${d}" fill="none" stroke="#3a2a2e" stroke-width="5"${tracejado} stroke-linejoin="round"/>`);
-    if (rabo) formas.push(`<path d="${rabo}" fill="#3a2a2e" stroke="#3a2a2e" stroke-width="5" stroke-linejoin="round"/>`);
-    formas.push(`<path d="${d}" fill="${fill}"/>`);
-    if (rabo) formas.push(`<path d="${rabo}" fill="${fill}"/>`);
+    contornos.push(`<path d="${d}" fill="none" stroke="#3a2a2e" stroke-width="5"${tracejado} stroke-linejoin="round"/>`);
+    if (rabo) contornos.push(`<path d="${rabo}" fill="#3a2a2e" stroke="#3a2a2e" stroke-width="5" stroke-linejoin="round"/>`);
+    recheios.push(`<path d="${d}" fill="${fill}"/>`);
+    if (rabo) recheios.push(`<path d="${rabo}" fill="${fill}"/>`);
   }
+  const formas = [...contornos, ...recheios];
   const q = el.closest('.q'), l = q && q.dataset.linhas ? JSON.parse(q.dataset.linhas) : null;
   if (l) {   // linhas de movimento atrás do que anda
     const x0 = l.x / 100 * W, y0 = l.y / 100 * H, ang = (l.ang || 0) * Math.PI / 180, c = Math.cos(ang), s = Math.sin(ang);
