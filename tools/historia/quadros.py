@@ -131,7 +131,7 @@ def paginas(cfg, saida, piloto=False):
     def nova(id_):   # a arte já saiu no pedido novo (estilo chapado, folha do nariz, espaço do balão, receita no papel)?
         meta = QUADROS / f"{id_}.json"
         return meta.exists() and ("SIMPLE: a few big flat" in meta.read_text(encoding="utf-8") or "DRAWN ON THE PAPER" in meta.read_text(encoding="utf-8"))
-    campos = ("texto", "quem", "nariz", "boca", "cabeca", "lugar", "titulo", "espelho", "aba", "pagina", "mural")
+    campos = ("texto", "quem", "nariz", "boca", "cabeca", "dados", "dados_skin", "evitar", "lugar", "titulo", "espelho", "aba", "pagina", "mural")
     # o mural é montado na página com os retratos que o jogo já tem (a versão pintada, em data URI)
     retratos = {}
     if any(cfg["artes"].get(q.get("arte"), {}).get("mural") for p in pags for q in p["quadros"]):

@@ -49,7 +49,13 @@
       "t": 5,
       "e": 1,
       "d": 3
-     }
+     },
+     "caixa": [
+      47.72,
+      83.5,
+      53.52,
+      93.07
+     ]
     },
     {
      "x": 59.2,
@@ -59,7 +65,13 @@
       "t": 2,
       "e": 6,
       "d": 3
-     }
+     },
+     "caixa": [
+      56.25,
+      87.11,
+      62.04,
+      96.88
+     ]
     },
     {
      "x": 68.8,
@@ -69,7 +81,13 @@
       "t": 6,
       "e": 2,
       "d": 4
-     }
+     },
+     "caixa": [
+      65.89,
+      86.23,
+      71.68,
+      95.61
+     ]
     }
    ],
    "cabeca": {
@@ -79,7 +97,8 @@
      81,
      63
     ]
-   }
+   },
+   "dados_skin": "rosa"
   },
   "p-pata": {
    "quem": [
@@ -119,7 +138,13 @@
       "t": 3,
       "e": 2,
       "d": 6
-     }
+     },
+     "caixa": [
+      67.77,
+      79.79,
+      75.26,
+      90.82
+     ]
     },
     {
      "x": 79.8,
@@ -129,7 +154,13 @@
       "t": 1,
       "e": 3,
       "d": 5
-     }
+     },
+     "caixa": [
+      76.11,
+      83.89,
+      83.4,
+      95.31
+     ]
     }
    ],
    "cabeca": {
@@ -139,7 +170,8 @@
      92,
      62
     ]
-   }
+   },
+   "dados_skin": "rosa"
   },
   "p-cai": {
    "quem": [
@@ -163,7 +195,13 @@
       "t": 2,
       "e": 1,
       "d": 4
-     }
+     },
+     "caixa": [
+      40.89,
+      89.55,
+      47.07,
+      99.9
+     ]
     },
     {
      "x": 54.0,
@@ -173,7 +211,13 @@
       "t": 6,
       "e": 5,
       "d": 3
-     }
+     },
+     "caixa": [
+      50.78,
+      87.11,
+      57.03,
+      97.56
+     ]
     },
     {
      "x": 63.6,
@@ -183,7 +227,13 @@
       "t": 5,
       "e": 4,
       "d": 1
-     }
+     },
+     "caixa": [
+      60.35,
+      89.16,
+      66.41,
+      99.9
+     ]
     }
    ],
    "cabeca": {
@@ -193,7 +243,8 @@
      75,
      52
     ]
-   }
+   },
+   "dados_skin": "rosa"
   },
   "p-placar": {
    "quem": [
@@ -218,7 +269,13 @@
       "e": 6,
       "d": 4
      },
-     "corte": 0.57
+     "corte": 0.57,
+     "caixa": [
+      33.4,
+      84.77,
+      40.36,
+      96.48
+     ]
     },
     {
      "x": 44.3,
@@ -229,7 +286,13 @@
       "e": 4,
       "d": 2
      },
-     "corte": 0.54
+     "corte": 0.54,
+     "caixa": [
+      40.69,
+      80.27,
+      47.79,
+      91.89
+     ]
     }
    ],
    "cabeca": {
@@ -239,7 +302,8 @@
      50,
      56
     ]
-   }
+   },
+   "dados_skin": "rosa"
   },
   "p-caderno": {
    "quem": [
@@ -261,7 +325,15 @@
      67,
      60
     ]
-   }
+   },
+   "evitar": [
+    [
+     40,
+     50,
+     72,
+     92
+    ]
+   ]
   },
   "p-close": {
    "quem": [
@@ -283,7 +355,70 @@
      90,
      96
     ]
-   }
+   },
+   "dados_skin": "rosa",
+   "dados": [
+    {
+     "caixa": [
+      84.4,
+      75.8,
+      89.4,
+      83.3
+     ],
+     "vista": "obliquo",
+     "desfoque": 2,
+     "faces": {
+      "t": 4,
+      "e": 2,
+      "d": 1
+     }
+    },
+    {
+     "caixa": [
+      89.4,
+      76.7,
+      95.3,
+      83.8
+     ],
+     "vista": "obliquo",
+     "desfoque": 2,
+     "faces": {
+      "t": 5,
+      "e": 4,
+      "d": 1
+     }
+    },
+    {
+     "caixa": [
+      87.2,
+      69.2,
+      91.1,
+      74.5
+     ],
+     "vista": "obliquo",
+     "desfoque": 3,
+     "faces": {
+      "t": 6,
+      "e": 5,
+      "d": 3
+     }
+    },
+    {
+     "caixa": [
+      95.6,
+      69.7,
+      99.8,
+      75.0
+     ],
+     "vista": "obliquo",
+     "desfoque": 3,
+     "faces": {
+      "t": 2,
+      "e": 1,
+      "d": 4
+     }
+    }
+   ]
   },
   "c1-x": {
    "quem": [
@@ -327,7 +462,58 @@
      58,
      48
     ]
-   }
+   },
+   "dados": [
+    {
+     "x": 61.75,
+     "y": 75.2,
+     "vista": "canto",
+     "caixa": [
+      58.5,
+      71.0,
+      65.0,
+      79.4
+     ],
+     "faces": {
+      "t": 2,
+      "e": 1,
+      "d": 4
+     }
+    },
+    {
+     "x": 67.8,
+     "y": 78.05,
+     "vista": "canto",
+     "caixa": [
+      65.3,
+      74.3,
+      70.3,
+      81.8
+     ],
+     "faces": {
+      "t": 3,
+      "e": 2,
+      "d": 6
+     }
+    },
+    {
+     "x": 74.85,
+     "y": 79.45,
+     "vista": "canto",
+     "caixa": [
+      72.2,
+      75.9,
+      77.5,
+      83.0
+     ],
+     "faces": {
+      "t": 4,
+      "e": 5,
+      "d": 6
+     }
+    }
+   ],
+   "dados_skin": "lagoa"
   },
   "c1-cha": {
    "quem": [
@@ -372,7 +558,24 @@
    ],
    "nariz": "x",
    "texto": "Diana sits at her felt table holding up a damp notebook page with both front paws, reading it with narrowed eyes. The page FACES HER: the reader sees only the plain cream BACK of the page, slightly see-through at one wet corner, nothing drawn on the side we see. Behind her, only the edge of a cork board shows at the side of the frame, its content out of view (the board itself is shown in separate panels).",
-   "lugar": "nw"
+   "lugar": "nw",
+   "dados_skin": "marfim",
+   "dados": [
+    {
+     "caixa": [
+      9.4,
+      21.2,
+      20.0,
+      37.0
+     ],
+     "vista": "canto",
+     "faces": {
+      "t": 1,
+      "e": 2,
+      "d": 3
+     }
+    }
+   ]
   },
   "i1-nada": {
    "quem": [
@@ -380,7 +583,66 @@
    ],
    "nariz": "x",
    "texto": "Close-up of Diana staring into the middle distance past the reader, eyes unfocused, deep in thought; the cork board with the die photo and the red string slightly blurred behind her. The cork board holds ONLY ONE photo (a single die) and one red string: it is just beginning, nothing else is pinned on it.",
-   "refazer": "o mural sai do quadro pintado e vai para os quadros montados pelo código (murais em arte/historia.json)"
+   "refazer": "o mural sai do quadro pintado e vai para os quadros montados pelo código (murais em arte/historia.json)",
+   "dados_skin": "rosa",
+   "dados": [
+    {
+     "caixa": [
+      66.4,
+      39.5,
+      73.6,
+      51.7
+     ],
+     "vista": "obliquo",
+     "faces": {
+      "t": 6,
+      "e": 3,
+      "d": 2
+     }
+    },
+    {
+     "caixa": [
+      73.6,
+      79.5,
+      81.7,
+      91.7
+     ],
+     "vista": "canto",
+     "faces": {
+      "t": 1,
+      "e": 4,
+      "d": 2
+     }
+    },
+    {
+     "caixa": [
+      82.2,
+      80.0,
+      90.2,
+      92.0
+     ],
+     "vista": "canto",
+     "faces": {
+      "t": 2,
+      "e": 6,
+      "d": 3
+     }
+    },
+    {
+     "caixa": [
+      77.8,
+      72.0,
+      85.8,
+      82.8
+     ],
+     "vista": "canto",
+     "faces": {
+      "t": 4,
+      "e": 1,
+      "d": 5
+     }
+    }
+   ]
   },
   "i1-cobre": {
    "quem": [
@@ -395,14 +657,104 @@
     "diana"
    ],
    "nariz": "adesivo",
-   "texto": "Medium close-up of Diana at her felt table, deadpan, looking at the reader. A couple of pink dice on the felt; no other dice."
+   "texto": "Medium close-up of Diana at her felt table, deadpan, looking at the reader. A couple of pink dice on the felt; no other dice.",
+   "dados_skin": "rosa",
+   "dados": [
+    {
+     "caixa": [
+      40.2,
+      79.0,
+      50.9,
+      96.5
+     ],
+     "vista": "obliquo",
+     "faces": {
+      "t": 3,
+      "e": 6,
+      "d": 5
+     }
+    },
+    {
+     "caixa": [
+      58.9,
+      79.0,
+      69.4,
+      96.5
+     ],
+     "vista": "obliquo",
+     "faces": {
+      "t": 5,
+      "e": 1,
+      "d": 3
+     }
+    }
+   ]
   },
   "c2-coelho": {
    "quem": [
     "coelho"
    ],
    "nariz": "",
-   "texto": "Coelho the rabbit stands in a cramped burrow office, flustered and in a hurry, holding a long spreadsheet that unrolls down to the floor and a pocket watch in the other paw. Around and behind him, dozens of small rabbit silhouettes in lighter gray fill every space, like a huge family crowding the room. White classic ivory dice on his desk."
+   "texto": "Coelho the rabbit stands in a cramped burrow office, flustered and in a hurry, holding a long spreadsheet that unrolls down to the floor and a pocket watch in the other paw. Around and behind him, dozens of small rabbit silhouettes in lighter gray fill every space, like a huge family crowding the room. White classic ivory dice on his desk.",
+   "dados_skin": "marfim",
+   "dados": [
+    {
+     "caixa": [
+      66.3,
+      64.5,
+      71.3,
+      72.0
+     ],
+     "vista": "obliquo",
+     "faces": {
+      "t": 4,
+      "e": 1,
+      "d": 5
+     }
+    },
+    {
+     "caixa": [
+      73.3,
+      63.7,
+      78.3,
+      70.3
+     ],
+     "vista": "obliquo",
+     "faces": {
+      "t": 5,
+      "e": 3,
+      "d": 6
+     }
+    },
+    {
+     "caixa": [
+      70.0,
+      67.8,
+      75.6,
+      76.2
+     ],
+     "vista": "obliquo",
+     "faces": {
+      "t": 6,
+      "e": 4,
+      "d": 5
+     }
+    },
+    {
+     "caixa": [
+      78.0,
+      67.8,
+      83.9,
+      76.2
+     ],
+     "vista": "obliquo",
+     "faces": {
+      "t": 1,
+      "e": 5,
+      "d": 4
+     }
+    }
+   ]
   },
   "c2-pag-a": {
    "quem": [],
@@ -420,14 +772,118 @@
    ],
    "nariz": "cachecol",
    "texto": "Medium close-up of Diana, chin up, eyes half closed, quietly pleased with herself. Through the window behind her, a loaf of bread is visible on the outside sill, a little too big.",
-   "lugar": "nw"
+   "lugar": "nw",
+   "dados_skin": "rosa",
+   "dados": [
+    {
+     "caixa": [
+      5.8,
+      88.6,
+      13.6,
+      100
+     ],
+     "vista": "obliquo",
+     "faces": {
+      "t": 3,
+      "e": 6,
+      "d": 5
+     }
+    },
+    {
+     "caixa": [
+      11.6,
+      91.6,
+      19.5,
+      100
+     ],
+     "vista": "obliquo",
+     "faces": {
+      "t": 5,
+      "e": 1,
+      "d": 3
+     }
+    },
+    {
+     "caixa": [
+      20.1,
+      93.3,
+      28.1,
+      100
+     ],
+     "vista": "obliquo",
+     "faces": {
+      "t": 6,
+      "e": 3,
+      "d": 2
+     }
+    },
+    {
+     "caixa": [
+      85.0,
+      85.8,
+      90.6,
+      93.3
+     ],
+     "vista": "obliquo",
+     "faces": {
+      "t": 1,
+      "e": 4,
+      "d": 2
+     }
+    },
+    {
+     "caixa": [
+      92.0,
+      84.2,
+      97.8,
+      93.3
+     ],
+     "vista": "obliquo",
+     "faces": {
+      "t": 2,
+      "e": 6,
+      "d": 3
+     }
+    }
+   ]
   },
   "c3-carta": {
    "quem": [
     "diana"
    ],
    "nariz": "cachecol",
-   "texto": "Diana's white paw lays a game card face down on the green felt; the back of the card shows one large question mark. Diana watches the reader over the card with the hint of a sly smile."
+   "texto": "Diana's white paw lays a game card face down on the green felt; the back of the card shows one large question mark. Diana watches the reader over the card with the hint of a sly smile.",
+   "dados_skin": "rosa",
+   "dados": [
+    {
+     "caixa": [
+      73.3,
+      75.7,
+      81.1,
+      88.7
+     ],
+     "vista": "canto",
+     "faces": {
+      "t": 3,
+      "e": 5,
+      "d": 1
+     }
+    },
+    {
+     "caixa": [
+      81.7,
+      78.7,
+      89.4,
+      91.7
+     ],
+     "vista": "canto",
+     "faces": {
+      "t": 4,
+      "e": 6,
+      "d": 2
+     }
+    }
+   ]
   },
   "c3-raposa": {
    "quem": [
@@ -435,7 +891,52 @@
    ],
    "nariz": "",
    "texto": "Raposa the fox lounges on a plush old sofa inside a warm winter den, eyes half closed, satisfied and elegant, one paw on the armrest. Her single big bushy tail curls ONCE around her body and rests on the sofa cushion in front of her, clearly attached at her lower back, white tip visible: one simple readable silhouette, nothing tangled. A few frog-green dice on a small side table.",
-   "lugar": "ne"
+   "lugar": "ne",
+   "dados_skin": "lagoa",
+   "dados": [
+    {
+     "caixa": [
+      79.4,
+      63.2,
+      84.2,
+      69.8
+     ],
+     "vista": "obliquo",
+     "faces": {
+      "t": 2,
+      "e": 6,
+      "d": 3
+     }
+    },
+    {
+     "caixa": [
+      76.7,
+      69.0,
+      81.7,
+      76.5
+     ],
+     "vista": "obliquo",
+     "faces": {
+      "t": 4,
+      "e": 1,
+      "d": 5
+     }
+    },
+    {
+     "caixa": [
+      83.3,
+      66.8,
+      88.3,
+      74.3
+     ],
+     "vista": "obliquo",
+     "faces": {
+      "t": 5,
+      "e": 3,
+      "d": 6
+     }
+    }
+   ]
   },
   "c3-pag-a": {
    "quem": [],
@@ -466,14 +967,67 @@
    ],
    "nariz": "cone",
    "texto": "Wider shot: Diana in her veterinary cone in the foreground; behind her, the cork board on the wall now has three photos (a die, a frog, a rabbit) linked by red string and a pinned handwritten note that reads 'DISPARO. DUELO. DOBRO. → D'.",
-   "refazer": "o mural sai do quadro pintado e vai para os quadros montados pelo código (murais em arte/historia.json)"
+   "refazer": "o mural sai do quadro pintado e vai para os quadros montados pelo código (murais em arte/historia.json)",
+   "evitar": [
+    [
+     50,
+     10,
+     98,
+     75
+    ]
+   ]
   },
   "c4-caverna": {
    "quem": [
     "urso"
    ],
    "nariz": "",
-   "texto": "A dark cave at night. The huge shape of a sleeping brown bear curled up, mostly in shadow, wearing a red knitted beanie with a cream pompom. Big drawn snore letters 'zZz' float above him, and the dots around them are dice pips. A few honey-amber dice on the cave floor."
+   "texto": "A dark cave at night. The huge shape of a sleeping brown bear curled up, mostly in shadow, wearing a red knitted beanie with a cream pompom. Big drawn snore letters 'zZz' float above him, and the dots around them are dice pips. A few honey-amber dice on the cave floor.",
+   "dados_skin": "mel",
+   "dados": [
+    {
+     "caixa": [
+      55.0,
+      85.8,
+      62.4,
+      96.7
+     ],
+     "vista": "obliquo",
+     "faces": {
+      "t": 6,
+      "e": 2,
+      "d": 4
+     }
+    },
+    {
+     "caixa": [
+      68.0,
+      82.5,
+      76.7,
+      95.0
+     ],
+     "vista": "obliquo",
+     "faces": {
+      "t": 1,
+      "e": 3,
+      "d": 5
+     }
+    },
+    {
+     "caixa": [
+      79.1,
+      77.0,
+      84.2,
+      84.2
+     ],
+     "vista": "obliquo",
+     "faces": {
+      "t": 2,
+      "e": 4,
+      "d": 6
+     }
+    }
+   ]
   },
   "c4-olho": {
    "quem": [
@@ -505,14 +1059,123 @@
    ],
    "nariz": "meia",
    "texto": "Medium close-up of Diana, narrowed suspicious eyes looking sideways. She sits at her felt table with two pink dice; no game board, no other dice. Through the window behind her, a huge loaf of bread fills half the window.",
-   "lugar": "nw"
+   "lugar": "nw",
+   "dados_skin": "rosa",
+   "dados": [
+    {
+     "caixa": [
+      50.6,
+      81.7,
+      58.3,
+      92.3
+     ],
+     "vista": "obliquo",
+     "faces": {
+      "t": 4,
+      "e": 6,
+      "d": 2
+     }
+    },
+    {
+     "caixa": [
+      61.1,
+      81.2,
+      68.9,
+      92.3
+     ],
+     "vista": "obliquo",
+     "faces": {
+      "t": 6,
+      "e": 2,
+      "d": 4
+     }
+    }
+   ]
   },
   "c5-tralha": {
    "quem": [
     "guaxinim"
    ],
    "nariz": "",
-   "texto": "Guaxinim the raccoon sits on top of a big pile of junk (old lamps, crates, a bicycle wheel, teacups and dice of every color) in a scrapyard at dusk. Next to him stands a floor lamp whose shade is a translucent plastic veterinary cone. He gestures at it casually, unbothered."
+   "texto": "Guaxinim the raccoon sits on top of a big pile of junk (old lamps, crates, a bicycle wheel, teacups and dice of every color) in a scrapyard at dusk. Next to him stands a floor lamp whose shade is a translucent plastic veterinary cone. He gestures at it casually, unbothered.",
+   "dados_skin": "marfim",
+   "dados": [
+    {
+     "caixa": [
+      54.7,
+      64.8,
+      59.1,
+      72.3
+     ],
+     "vista": "obliquo",
+     "skin": "marfim",
+     "faces": {
+      "t": 6,
+      "e": 5,
+      "d": 3
+     }
+    },
+    {
+     "caixa": [
+      58.0,
+      85.7,
+      63.9,
+      94.8
+     ],
+     "vista": "obliquo",
+     "skin": "rosa",
+     "faces": {
+      "t": 2,
+      "e": 1,
+      "d": 4
+     }
+    },
+    {
+     "caixa": [
+      7.8,
+      81.5,
+      12.8,
+      89.0
+     ],
+     "vista": "obliquo",
+     "skin": "mel",
+     "faces": {
+      "t": 3,
+      "e": 2,
+      "d": 6
+     }
+    },
+    {
+     "caixa": [
+      69.4,
+      85.7,
+      73.9,
+      92.3
+     ],
+     "vista": "obliquo",
+     "skin": "lagoa",
+     "faces": {
+      "t": 4,
+      "e": 5,
+      "d": 6
+     }
+    },
+    {
+     "caixa": [
+      85.3,
+      68.2,
+      88.9,
+      74.0
+     ],
+     "vista": "obliquo",
+     "skin": "la",
+     "faces": {
+      "t": 5,
+      "e": 6,
+      "d": 4
+     }
+    }
+   ]
   },
   "c5-pag-a": {
    "quem": [],
@@ -522,7 +1185,70 @@
   "c5-pag-b": {
    "quem": [],
    "nariz": "",
-   "texto": "A single cream notebook page with the hand-lettered title 'SALADA DE SOBRAS DOS OUTROS', with a white price sticker stuck across the title that reads 'Página 5 · 4,99 por mês'."
+   "texto": "A single cream notebook page with the hand-lettered title 'SALADA DE SOBRAS DOS OUTROS', with a white price sticker stuck across the title that reads 'Página 5 · 4,99 por mês'.",
+   "dados_skin": "rosa",
+   "dados": [
+    {
+     "caixa": [
+      80.2,
+      45.8,
+      86.1,
+      55.8
+     ],
+     "vista": "obliquo",
+     "skin": "mel",
+     "faces": {
+      "t": 2,
+      "e": 1,
+      "d": 4
+     }
+    },
+    {
+     "caixa": [
+      86.1,
+      55.0,
+      92.8,
+      65.8
+     ],
+     "vista": "obliquo",
+     "skin": "rosa",
+     "faces": {
+      "t": 3,
+      "e": 2,
+      "d": 6
+     }
+    },
+    {
+     "caixa": [
+      80.6,
+      61.7,
+      86.7,
+      71.7
+     ],
+     "vista": "obliquo",
+     "skin": "lagoa",
+     "faces": {
+      "t": 4,
+      "e": 5,
+      "d": 6
+     }
+    },
+    {
+     "caixa": [
+      2.8,
+      70.8,
+      10.6,
+      81.7
+     ],
+     "vista": "obliquo",
+     "skin": "marfim",
+     "faces": {
+      "t": 5,
+      "e": 6,
+      "d": 4
+     }
+    }
+   ]
   },
   "c6-la": {
    "quem": [
@@ -626,24 +1352,136 @@
      66,
      68
     ]
-   }
+   },
+   "dados_skin": "rosa"
   },
   "c6-ovelha": {
    "quem": [
     "ovelha"
    ],
    "nariz": "",
-   "texto": "Ovelha the sheep stands in a pasture where the grass is divided into neat hexagon tiles, under a pale evening sky. Her fluffy cream wool has an obvious missing bald patch on one shoulder. She looks at the reader with a tired, patient expression. A couple of woolly dice in the grass."
+   "texto": "Ovelha the sheep stands in a pasture where the grass is divided into neat hexagon tiles, under a pale evening sky. Her fluffy cream wool has an obvious missing bald patch on one shoulder. She looks at the reader with a tired, patient expression. A couple of woolly dice in the grass.",
+   "dados_skin": "la",
+   "dados": [
+    {
+     "caixa": [
+      19.4,
+      76.7,
+      31.1,
+      95.3
+     ],
+     "vista": "canto",
+     "faces": {
+      "t": 1,
+      "e": 5,
+      "d": 4
+     }
+    },
+    {
+     "caixa": [
+      64.7,
+      79.5,
+      77.8,
+      98.3
+     ],
+     "vista": "canto",
+     "faces": {
+      "t": 3,
+      "e": 1,
+      "d": 2
+     }
+    }
+   ]
   },
   "c6-pag-a": {
    "quem": [],
    "nariz": "",
-   "texto": "Two identical caramel puddings side by side on a cream notebook page with the hand-lettered title 'PUDIM GÊMEO'. The bottom of the page is blank, for a handwritten line added later."
+   "texto": "Two identical caramel puddings side by side on a cream notebook page with the hand-lettered title 'PUDIM GÊMEO'. The bottom of the page is blank, for a handwritten line added later.",
+   "dados_skin": "la",
+   "dados": [
+    {
+     "caixa": [
+      0.0,
+      48.3,
+      4.4,
+      57.5
+     ],
+     "vista": "obliquo",
+     "faces": {
+      "t": 2,
+      "e": 1,
+      "d": 4
+     }
+    }
+   ]
   },
   "c6-pag-b": {
    "quem": [],
    "nariz": "",
-   "texto": "Two identical cream notebook pages, each titled 'PUDIM GÊMEO' with the same small pudding drawing, stapled together at one corner, slightly offset. The margin is blank, for a handwritten note added later."
+   "texto": "Two identical cream notebook pages, each titled 'PUDIM GÊMEO' with the same small pudding drawing, stapled together at one corner, slightly offset. The margin is blank, for a handwritten note added later.",
+   "dados_skin": "la",
+   "dados": [
+    {
+     "caixa": [
+      7.5,
+      53.6,
+      13.6,
+      63.6
+     ],
+     "vista": "obliquo",
+     "skin": "la",
+     "faces": {
+      "t": 3,
+      "e": 6,
+      "d": 5
+     }
+    },
+    {
+     "caixa": [
+      1.7,
+      57.3,
+      8.5,
+      67.0
+     ],
+     "vista": "obliquo",
+     "skin": "lagoa",
+     "faces": {
+      "t": 5,
+      "e": 1,
+      "d": 3
+     }
+    },
+    {
+     "caixa": [
+      0,
+      64.3,
+      4.3,
+      73.7
+     ],
+     "vista": "obliquo",
+     "skin": "mel",
+     "faces": {
+      "t": 6,
+      "e": 3,
+      "d": 2
+     }
+    },
+    {
+     "caixa": [
+      0,
+      79.1,
+      9.6,
+      95.2
+     ],
+     "vista": "obliquo",
+     "skin": "rosa",
+     "faces": {
+      "t": 1,
+      "e": 4,
+      "d": 2
+     }
+    }
+   ]
   },
   "i6-ferida": {
    "quem": [
@@ -665,14 +1503,104 @@
     "coruja"
    ],
    "nariz": "",
-   "texto": "Dona Coruja the owl sits at a reading desk in a grand old library with very tall wooden bookshelves. On the nearest shelf, four big volumes whose spines read 'Volume A', 'Volume T', 'Volume C' and 'Volume G'. A warm reading lamp and a few wooden dice on the desk."
+   "texto": "Dona Coruja the owl sits at a reading desk in a grand old library with very tall wooden bookshelves. On the nearest shelf, four big volumes whose spines read 'Volume A', 'Volume T', 'Volume C' and 'Volume G'. A warm reading lamp and a few wooden dice on the desk.",
+   "dados_skin": "madeira",
+   "dados": [
+    {
+     "caixa": [
+      59.7,
+      72.3,
+      64.4,
+      80.7
+     ],
+     "vista": "obliquo",
+     "faces": {
+      "t": 5,
+      "e": 6,
+      "d": 4
+     }
+    },
+    {
+     "caixa": [
+      54.2,
+      77.0,
+      58.3,
+      82.7
+     ],
+     "vista": "obliquo",
+     "faces": {
+      "t": 1,
+      "e": 2,
+      "d": 3
+     }
+    },
+    {
+     "caixa": [
+      65.3,
+      76.0,
+      71.7,
+      84.3
+     ],
+     "vista": "obliquo",
+     "faces": {
+      "t": 2,
+      "e": 3,
+      "d": 1
+     }
+    }
+   ]
   },
   "c7-coelho": {
    "quem": [
     "coelho"
    ],
    "nariz": "",
-   "texto": "In a corner of the library, Coelho the rabbit sits at a reading table, out of breath, behind a tall pile of cookbooks, next to an enormous loaf of bread that doesn't fit on the table. The cookbook spines have no readable words, only little drawings of bread, cakes and pots."
+   "texto": "In a corner of the library, Coelho the rabbit sits at a reading table, out of breath, behind a tall pile of cookbooks, next to an enormous loaf of bread that doesn't fit on the table. The cookbook spines have no readable words, only little drawings of bread, cakes and pots.",
+   "dados_skin": "marfim",
+   "dados": [
+    {
+     "caixa": [
+      38.0,
+      82.0,
+      43.6,
+      90.0
+     ],
+     "vista": "obliquo",
+     "faces": {
+      "t": 6,
+      "e": 5,
+      "d": 3
+     }
+    },
+    {
+     "caixa": [
+      45.8,
+      80.0,
+      51.1,
+      87.5
+     ],
+     "vista": "obliquo",
+     "faces": {
+      "t": 2,
+      "e": 1,
+      "d": 4
+     }
+    },
+    {
+     "caixa": [
+      53.0,
+      84.2,
+      58.6,
+      92.5
+     ],
+     "vista": "obliquo",
+     "faces": {
+      "t": 3,
+      "e": 2,
+      "d": 6
+     }
+    }
+   ]
   },
   "c7-pagina": {
    "quem": [
@@ -730,7 +1658,52 @@
     "diana"
    ],
    "nariz": "nada",
-   "texto": "Close-up of Diana's white front paw clumsily holding a glass lab pipette, crooked, a drop dripping from its tip onto the felt. A few pink dice nearby."
+   "texto": "Close-up of Diana's white front paw clumsily holding a glass lab pipette, crooked, a drop dripping from its tip onto the felt. A few pink dice nearby.",
+   "dados_skin": "rosa",
+   "dados": [
+    {
+     "caixa": [
+      11.1,
+      69.8,
+      22.2,
+      87.3
+     ],
+     "vista": "obliquo",
+     "faces": {
+      "t": 6,
+      "e": 4,
+      "d": 5
+     }
+    },
+    {
+     "caixa": [
+      60.3,
+      76.5,
+      71.7,
+      94.8
+     ],
+     "vista": "obliquo",
+     "faces": {
+      "t": 1,
+      "e": 5,
+      "d": 4
+     }
+    },
+    {
+     "caixa": [
+      77.0,
+      72.0,
+      88.1,
+      89.8
+     ],
+     "vista": "obliquo",
+     "faces": {
+      "t": 3,
+      "e": 1,
+      "d": 2
+     }
+    }
+   ]
   },
   "r-coelho-porta": {
    "quem": [
@@ -785,14 +1758,128 @@
      68,
      66
     ]
-   }
+   },
+   "dados": [
+    {
+     "x": 32.349999999999994,
+     "y": 88.7,
+     "vista": "obliquo",
+     "caixa": [
+      28.9,
+      83.2,
+      35.8,
+      94.2
+     ],
+     "faces": {
+      "t": 3,
+      "e": 6,
+      "d": 5
+     }
+    },
+    {
+     "x": 40.75,
+     "y": 88.7,
+     "vista": "obliquo",
+     "caixa": [
+      37.3,
+      83.2,
+      44.2,
+      94.2
+     ],
+     "faces": {
+      "t": 5,
+      "e": 1,
+      "d": 3
+     }
+    },
+    {
+     "x": 48.75,
+     "y": 88.7,
+     "vista": "obliquo",
+     "caixa": [
+      45.3,
+      83.2,
+      52.2,
+      94.2
+     ],
+     "faces": {
+      "t": 6,
+      "e": 3,
+      "d": 2
+     }
+    },
+    {
+     "x": 56.9,
+     "y": 88.7,
+     "vista": "obliquo",
+     "caixa": [
+      53.4,
+      83.2,
+      60.4,
+      94.2
+     ],
+     "faces": {
+      "t": 1,
+      "e": 4,
+      "d": 2
+     }
+    },
+    {
+     "x": 65.05,
+     "y": 88.7,
+     "vista": "obliquo",
+     "caixa": [
+      61.5,
+      83.2,
+      68.6,
+      94.2
+     ],
+     "faces": {
+      "t": 2,
+      "e": 6,
+      "d": 3
+     }
+    }
+   ],
+   "dados_skin": "rosa"
   },
   "f-fita": {
    "quem": [
     "diana"
    ],
    "nariz": "nada",
-   "texto": "Diana holds up a long strip of printed paper tape, like a receipt from an old printer, with a row of empty square cells along it (leave them blank: dice and letters are added later). She reads it with her eyebrows raised."
+   "texto": "Diana holds up a long strip of printed paper tape, like a receipt from an old printer, with a row of empty square cells along it (leave them blank: dice and letters are added later). She reads it with her eyebrows raised.",
+   "dados_skin": "rosa",
+   "dados": [
+    {
+     "caixa": [
+      10.0,
+      81.3,
+      15.6,
+      90.8
+     ],
+     "vista": "obliquo",
+     "faces": {
+      "t": 3,
+      "e": 2,
+      "d": 6
+     }
+    },
+    {
+     "caixa": [
+      5.3,
+      85.8,
+      11.1,
+      95.0
+     ],
+     "vista": "obliquo",
+     "faces": {
+      "t": 4,
+      "e": 5,
+      "d": 6
+     }
+    }
+   ]
   },
   "f-nariz": {
    "quem": [
@@ -813,12 +1900,113 @@
     "diana"
    ],
    "nariz": "curada",
-   "texto": "Diana stops mid-sentence, eyes wide, one paw raised near her mouth, puzzled at her own words."
+   "texto": "Diana stops mid-sentence, eyes wide, one paw raised near her mouth, puzzled at her own words.",
+   "dados_skin": "rosa",
+   "dados": [
+    {
+     "caixa": [
+      65.3,
+      89.2,
+      71.1,
+      97.8
+     ],
+     "vista": "obliquo",
+     "faces": {
+      "t": 4,
+      "e": 5,
+      "d": 6
+     }
+    },
+    {
+     "caixa": [
+      71.3,
+      95.3,
+      77.2,
+      100
+     ],
+     "vista": "obliquo",
+     "faces": {
+      "t": 5,
+      "e": 6,
+      "d": 4
+     }
+    }
+   ]
   },
   "x-titulo": {
    "quem": [],
    "nariz": "",
-   "texto": "The title 'DICE DUEL' hand-lettered big on cream paper, like the cover of a comic book, with a few six-sided dice around it: one pink, one frog-green, one wooden, one ivory."
+   "texto": "The title 'DICE DUEL' hand-lettered big on cream paper, like the cover of a comic book, with a few six-sided dice around it: one pink, one frog-green, one wooden, one ivory.",
+   "dados": [
+    {
+     "x": 14.450000000000001,
+     "y": 71.7,
+     "vista": "obliquo",
+     "caixa": [
+      8.3,
+      61.7,
+      20.6,
+      81.7
+     ],
+     "skin": "rosa",
+     "faces": {
+      "t": 3,
+      "e": 5,
+      "d": 1
+     }
+    },
+    {
+     "x": 44.75,
+     "y": 84.2,
+     "vista": "canto",
+     "caixa": [
+      38.9,
+      74.7,
+      50.6,
+      93.7
+     ],
+     "skin": "lagoa",
+     "faces": {
+      "t": 4,
+      "e": 6,
+      "d": 2
+     }
+    },
+    {
+     "x": 74.35,
+     "y": 85.25,
+     "vista": "canto",
+     "caixa": [
+      68.9,
+      75.8,
+      79.8,
+      94.7
+     ],
+     "skin": "marfim",
+     "faces": {
+      "t": 6,
+      "e": 2,
+      "d": 4
+     }
+    },
+    {
+     "x": 82.80000000000001,
+     "y": 67.7,
+     "vista": "canto",
+     "caixa": [
+      76.7,
+      58.7,
+      88.9,
+      76.7
+     ],
+     "skin": "madeira",
+     "faces": {
+      "t": 1,
+      "e": 3,
+      "d": 5
+     }
+    }
+   ]
   },
   "x-risca": {
    "quem": [
@@ -840,7 +2028,15 @@
      74,
      64
     ]
-   }
+   },
+   "evitar": [
+    [
+     6,
+     18,
+     56,
+     56
+    ]
+   ]
   },
   "x-cha": {
    "quem": [
@@ -1861,7 +3057,7 @@
   "base": "One page of Diana's old recipe notebook, seen perfectly straight from above, filling the whole image edge to edge (no table, no background around it, no shadow). Warm cream paper (#fbf1df) with faint sky-blue ruled lines, a thin coral margin line on the left, a ragged torn edge along the left side where it was ripped out, a small coffee ring stain near a corner. Flat, illustrated in the game's flat style (cocoa outline only on the torn edge), no lettering, no drawings: a blank page.",
   "desenho": "Edit the attached blank notebook page: keep the page itself identical (paper, ruled lines, margin, torn edge, stain, framing). Add one drawing DRAWN ON THE PAPER by hand, in dark cocoa ink line with flat watercolor washes in the game's palette, like an illustration sketched in the notebook: completely flat on the page, no shadow, no volume, no 3D object sitting on the paper, the ruled lines faintly visible through the wash. The drawing sits in the middle of the page; leave the top quarter and the bottom quarter of the page blank (handwriting is added there later). No lettering. THE DRAWING: "
  },
- "_balao": "Cada arte com fala tem 'boca' (onde fica a boca de quem fala, em % da imagem: {quem: [x, y]}) e 'lugar' (o canto livre para o balão: nw, ne, sw, se). O rabinho do balão aponta para a boca, também nos planos 'perto' e 'detalhe'. Nos quadros: 'som' (onomatopeia), 'linhas' (movimento) e 'impacto' (quadro congelado com retícula forte e desencaixe azul e rosa).",
+ "_balao": "Cada arte com fala tem 'boca' (onde fica a boca de quem fala, em % da imagem: {quem: [x, y]}) e 'lugar' (o canto livre para o balão: nw, ne, sw, se). O rabinho do balão aponta para a boca, também nos planos 'perto' e 'detalhe'. Nos quadros: 'som' (onomatopeia), 'linhas' (movimento) e 'impacto' (quadro congelado com retícula forte e desencaixe azul e rosa). 'evitar': caixas (em % da imagem) que o balão não deve cobrir, como o letreiro da piada.",
  "_mural": "O mural é montado pelo código (tools/historia/paginas_modelo.html), não pintado: as fotos são os retratos que o jogo já tem (js/retratos_pintados.js), em polaroide, com barbante, post-its, cartões e carimbos. Assim ele é igual em todo quadro e cresce a cada capítulo. Coordenadas em % do quadro (3:2); 'fios' ligam os alfinetes pelos ids.",
  "murais": {
   "i1": {

@@ -57,11 +57,11 @@ main { display: grid; gap: 28px; }
 .tinta { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; z-index: 2; }
 
 /* o balão: só o texto mora no HTML; o contorno e o rabinho são desenhados juntos no SVG (sem emenda) */
-.balao { position: absolute; z-index: 3; box-sizing: border-box; width: max-content; max-width: max(42%, 180px); padding: .7em 1.05em; color: #3a2a2e;
+.balao { position: absolute; z-index: 3; box-sizing: border-box; width: max-content; max-width: max(44%, 190px); padding: .8em 1.35em; color: #3a2a2e;
   font: 800 clamp(12.5px, 3.1cqw, 17px)/1.25 var(--f-texto); text-align: center; text-wrap: balance; }
 .q.meio .balao { max-width: 74%; font-size: clamp(12.5px, 4.4cqw, 16px); }
 .balao.nw { left: 4%; top: 5%; } .balao.ne { right: 4%; top: 5%; } .balao.sw { left: 4%; bottom: 6%; } .balao.se { right: 4%; bottom: 6%; }
-.balao.pausa { padding: .45em 1em; font-size: clamp(13px, 4cqw, 20px); letter-spacing: .1em; }
+.balao.pausa { padding: .55em 1.1em; font-size: clamp(13px, 4cqw, 20px); letter-spacing: .1em; }
 .balao.caixa { left: 0; top: 0; max-width: 72%; padding: .6em .9em; text-align: left; font-weight: 700; font-style: italic; }
 .balao .rub { display: block; font: italic 700 .78em var(--f-texto); color: #7a6468; }
 .balao .estado { display: block; margin: .35em auto 0; width: max-content; }
@@ -98,6 +98,30 @@ main { display: grid; gap: 28px; }
 .nota.postit.pequeno { width: 7cqw; min-height: 6cqw; font-size: 3.4cqw; }
 .nota.cartao { padding: .6cqw 1.4cqw; background: #fffaf0 repeating-linear-gradient(transparent 0 1.5cqw, rgba(111,191,211,.5) 1.5cqw 1.65cqw); border: .25cqw solid #3a2a2e; font-family: var(--f-titulo); font-size: 2.6cqw; letter-spacing: .08em; }
 .alfinete { fill: #e8806f; stroke: #3a2a2e; stroke-width: .35; }
+
+/* os dados: o cubo do jogo (as skins de css/estilo.css), desenhado por cima da arte, onde estava o dado que o gerador errou */
+.sobre { position: absolute; left: 0; top: 0; width: 100%; height: 100%; transform-origin: 0 0; transform: var(--cam, none); pointer-events: none; z-index: 1; }
+.dado3d { position: absolute; }
+.dado3d .sombra-d { position: absolute; left: 8%; right: 0; bottom: -4%; height: 22%; border-radius: 50%; background: rgba(30,20,20,.3); filter: blur(2px); }
+.cubo { position: absolute; left: 50%; top: 50%; width: var(--s); height: var(--s); margin: calc(var(--s) / -2) 0 0 calc(var(--s) / -2); transform-style: preserve-3d; transform: var(--giro3d); }
+.fc { position: absolute; inset: 0; backface-visibility: hidden; }
+.fc.miolo { inset: 3%; background: #3a2a2e; }
+.f-front { transform: translateZ(calc(var(--s) / 2)); } .f-back { transform: rotateY(180deg) translateZ(calc(var(--s) / 2)); }
+.f-right { transform: rotateY(90deg) translateZ(calc(var(--s) / 2)); } .f-left { transform: rotateY(-90deg) translateZ(calc(var(--s) / 2)); }
+.f-top { transform: rotateX(90deg) translateZ(calc(var(--s) / 2)); } .f-bottom { transform: rotateX(-90deg) translateZ(calc(var(--s) / 2)); }
+.miolo.f-front { transform: translateZ(calc(var(--s) * .47)); } .miolo.f-right { transform: rotateY(90deg) translateZ(calc(var(--s) * .47)); }
+.miolo.f-top { transform: rotateX(90deg) translateZ(calc(var(--s) * .47)); }
+.fc .face { position: relative; width: 100%; height: 100%; box-sizing: border-box; border-radius: 14%; display: grid; grid-template: repeat(3, 1fr) / repeat(3, 1fr); padding: 15%;
+  border: calc(var(--s) * .07) solid #3a2a2e; background: radial-gradient(circle at 30% 25%, #ffffff, #fbf3e4 40%, #efe0c6); }
+.fc .face::after { content: ''; position: absolute; inset: 0; border-radius: inherit; background: #2a1a12; opacity: var(--sombra-face, 0); }
+.f-right .face { --sombra-face: .2; } .f-front .face { --sombra-face: .06; }
+.fc .pip { width: 74%; height: 74%; place-self: center; border-radius: 50%; visibility: hidden; background: radial-gradient(circle at 35% 35%, #6a5258, #3d2c31); }
+.fc .pip.on { visibility: visible; }
+.face.sk-rosa { background: radial-gradient(circle at 30% 25%, #fff3f7, #ffc9da 45%, #f3a3bd); } .face.sk-rosa .pip { background: radial-gradient(circle at 35% 35%, #b4567b, #7a2f4d); }
+.face.sk-lagoa { background: radial-gradient(circle at 30% 25%, #c9ecc8, #74b386 45%, #4e8a62); } .face.sk-lagoa .pip { background: radial-gradient(circle at 35% 35%, #2f5e40, #173523); }
+.face.sk-madeira { background: repeating-linear-gradient(78deg, rgba(0,0,0,.06) 0 2px, transparent 2px 6px), radial-gradient(circle at 30% 25%, #e0a877, #c48a5a 50%, #a46e44); } .face.sk-madeira .pip { background: radial-gradient(circle at 35% 35%, #6a4128, #3d2414); }
+.face.sk-mel { background: radial-gradient(circle at 28% 22%, rgba(255,255,255,.7), transparent 30%), radial-gradient(circle at 60% 70%, #e39a3c, #f2b15e 55%, #ffd88a); } .face.sk-mel .pip { background: radial-gradient(circle at 35% 35%, #8a4f14, #4f2a06); }
+.face.sk-la { border-radius: 24%; background: radial-gradient(circle, rgba(255,255,255,.55) 1.4px, transparent 2px) 0 0 / 6px 6px, radial-gradient(circle at 30% 25%, #fffdf7, #f4ebdc 50%, #e2d3ba); } .face.sk-la .pip { background: radial-gradient(circle at 35% 35%, #7b5b4b, #4a3229); }
 
 .rodape { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; color: var(--tinta-suave); flex-wrap: wrap; }
 .rodape code { font: 600 12px ui-monospace, Menlo, monospace; color: var(--tinta); }
@@ -207,6 +231,38 @@ function mural(id) {
   return `<div class="mural"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${helice}</svg>${pecas.join('')}<svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${fios}</svg><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true" style="z-index:1">${alfinetes}</svg></div>`;
 }
 
+// o dado do jogo: a face com as bolinhas do número; o cubo inteiro com as faces opostas somando 7
+const PIPS = { 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] };
+const faceHTML = (v, skin) => `<div class="face sk-${skin}">${Array.from({ length: 9 }, (_, i) => `<i class="pip${PIPS[v].includes(i) ? ' on' : ''}"></i>`).join('')}</div>`;
+const VISTAS = { obliquo: [-24, -26], canto: [-27, -45], frente: [-12, -10] };
+function dados3d(arte) {
+  const a = D.artes[arte] || {};
+  return (a.dados || []).map((d, n) => {
+    const f = d.faces, sk = d.skin || a.dados_skin || 'rosa';
+    const lados = { front: f.e, right: f.d, top: f.t, back: 7 - f.e, left: 7 - f.d, bottom: 7 - f.t };
+    return `<div class="dado3d" data-n="${n}"${d.desfoque ? ` style="filter: blur(${d.desfoque}px)"` : ''}><div class="sombra-d"></div><div class="cubo">` +
+      ['front', 'right', 'top'].map(k => `<div class="fc miolo f-${k}"></div>`).join('') +
+      Object.entries(lados).map(([k, v]) => `<div class="fc f-${k}">${faceHTML(v, sk)}</div>`).join('') + `</div></div>`;
+  }).join('');
+}
+// põe cada dado na caixa do dado da arte (em % da imagem, pela câmera) e acha o tamanho do cubo que cabe nela
+function posicionarDados(el) {
+  const a = D.artes[el.dataset.arte] || {}, c = el._cam;
+  if (!a.dados || !c) return;
+  el.querySelectorAll('.dado3d').forEach(div => {
+    const d = a.dados[+div.dataset.n], [x0, y0, x1, y1] = d.caixa;
+    const X0 = c.ox + x0 / 100 * c.dw, Y0 = c.oy + y0 / 100 * c.dh, X1 = c.ox + x1 / 100 * c.dw, Y1 = c.oy + y1 / 100 * c.dh;
+    const [ax, ay] = [d.ax ?? VISTAS[d.vista || 'obliquo'][0], d.ay ?? VISTAS[d.vista || 'obliquo'][1]];
+    const giro = `rotateZ(${d.giro || 0}deg) rotateX(${ax}deg) rotateY(${ay}deg)`;
+    const m = new DOMMatrix(giro);            // o tamanho do cubo de lado 1 visto assim
+    const cantos = [-.5, .5].flatMap(x => [-.5, .5].flatMap(y => [-.5, .5].map(z => m.transformPoint(new DOMPoint(x, y, z)))));
+    const pw = Math.max(...cantos.map(p => p.x)) - Math.min(...cantos.map(p => p.x)), ph = Math.max(...cantos.map(p => p.y)) - Math.min(...cantos.map(p => p.y));
+    const s = Math.min((X1 - X0) / pw, (Y1 - Y0) / ph);
+    Object.assign(div.style, { left: `${X0}px`, top: `${Y0}px`, width: `${X1 - X0}px`, height: `${Y1 - Y0}px` });
+    div.style.setProperty('--s', `${s}px`); div.style.setProperty('--giro3d', giro);
+  });
+}
+
 const ZOOM = { perto: 1.3, detalhe: 1.65 };
 function painel(arte, q, t) {
   if (!arte) return `<div class="arte vazio">sem este quadro</div>`;
@@ -217,7 +273,7 @@ function painel(arte, q, t) {
   if (!src) return `<div class="arte vazio">ainda sem arte<br><code>${esc(arte)}</code></div>`;
   const chapas = q.impacto ? `<img class="chapa azul" src="${src}" alt=""><img class="chapa rosa" src="${src}" alt="">` : '';
   return `<div class="arte${a.pagina ? ' pagina' : ''}" data-arte="${esc(arte)}" data-zoom="${ZOOM[q.plano] || 1}" data-foco="${q.foco ? q.foco.join(',') : ''}">
-    <img class="base" src="${src}" alt="${esc(a.texto || arte)}">${chapas}<div class="reticula"></div>
+    <img class="base" src="${src}" alt="${esc(a.texto || arte)}">${chapas}${a.dados ? `<div class="sobre" aria-hidden="true">${dados3d(arte)}</div>` : ''}<div class="reticula"></div>
     <svg class="tinta" aria-hidden="true"></svg>${camada(arte, q, t)}</div>`;
 }
 
@@ -301,6 +357,9 @@ const CANTOS = ['nw', 'ne', 'sw', 'se'];
 function posicionar(el, img) {
   const W = el.clientWidth, H = el.clientHeight, m = Math.max(6, W * .025);
   const rostos = [...el.querySelectorAll('.balao')].map(b => rosto(el, img, b.dataset.quem)).filter(Boolean);
+  // e o que a piada precisa que se veja ("evitar" na arte: o letreiro, a página, o mural)
+  const cam = el._cam, art = D.artes[el.dataset.arte] || {};
+  if (cam) for (const e of art.evitar || []) rostos.push({ x0: cam.z * (cam.ox + e[0] / 100 * cam.dw) + cam.tx, y0: cam.z * (cam.oy + e[1] / 100 * cam.dh) + cam.ty, x1: cam.z * (cam.ox + e[2] / 100 * cam.dw) + cam.tx, y1: cam.z * (cam.oy + e[3] / 100 * cam.dh) + cam.ty });
   const postos = [];
   const falas = [...el.querySelectorAll('.balao:not(.caixa)')];
   for (const bal of el.querySelectorAll('.balao')) {
@@ -315,12 +374,12 @@ function posicionar(el, img) {
         let custo = rostos.reduce((s, q) => s + sobra(r, q) * 40, 0) + postos.reduce((s, q) => s + sobra(r, q) * 60, 0);
         if (f) {   // perto da cabeça, mas fora dela: a distância do balão até a borda do rosto
           const dx = Math.max(f.x0 - r.x1, r.x0 - f.x1, 0), dy = Math.max(f.y0 - r.y1, r.y0 - f.y1, 0);
-          custo += Math.hypot(dx, dy) * 2.2;
+          custo += Math.hypot(dx, dy) * (falas.length > 1 ? 4 : 2.2);
         }
         custo += y * .6;                                                        // no alto
         if (falas.length > 1) {                                                // vários balões: cada um na sua faixa de altura, na ordem da fala
           const i = falas.indexOf(bal);
-          custo += Math.abs((y + h / 2) / H - (i + .5) / falas.length) * H * 1.4;
+          custo += Math.abs((y + h / 2) / H - (i + .5) / falas.length) * H * .5;
         }
         const antes = postos.filter(q => q.fala).at(-1);                        // a fala seguinte vem abaixo da anterior (ordem de leitura)
         if (antes && y < antes.y0 + 4) custo += H * .6;
@@ -341,43 +400,54 @@ function desenhar(el) {
   const W = el.clientWidth, H = el.clientHeight;
   svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
   camera(el, img);
+  posicionarDados(el);
   posicionar(el, img);
   const contornos = [], recheios = [], linhas = [];
   for (const bal of el.querySelectorAll('.balao')) {
     const r = { x: bal.offsetLeft, y: bal.offsetTop, w: bal.offsetWidth, h: bal.offsetHeight };
     const caixa = bal.classList.contains('caixa');
-    const rx = caixa ? 2 : Math.min(r.h / 2, 34);
-    const d = `M${r.x + rx},${r.y} H${r.x + r.w - rx} Q${r.x + r.w},${r.y} ${r.x + r.w},${r.y + rx} V${r.y + r.h - rx} Q${r.x + r.w},${r.y + r.h} ${r.x + r.w - rx},${r.y + r.h} H${r.x + rx} Q${r.x},${r.y + r.h} ${r.x},${r.y + r.h - rx} V${r.y + rx} Q${r.x},${r.y} ${r.x + rx},${r.y} Z`;
+    const cx = r.x + r.w / 2, cy = r.y + r.h / 2;
+    // o contorno do balão como uma lista de pontos: o oval de gibi (superelipse) inscrito na caixa do texto; a narração é retângulo
+    const borda = [];
+    if (caixa) borda.push([r.x, r.y], [r.x + r.w, r.y], [r.x + r.w, r.y + r.h], [r.x, r.y + r.h]);
+    else for (let i = 0; i < 180; i++) {
+      const t = i / 180 * Math.PI * 2, c = Math.cos(t), sn = Math.sin(t);
+      borda.push([cx + r.w / 2 * Math.sign(c) * Math.sqrt(Math.abs(c)), cy + r.h / 2 * Math.sign(sn) * Math.sqrt(Math.abs(sn))]);
+    }
+    const caminho = pts => 'M' + pts.map(p => `${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' L') + ' Z';
     let rabo = '';
     const f = caixa ? null : rosto(el, img, bal.dataset.quem);
     if (f) {
-      const boca = f.boca, cx = r.x + r.w / 2, cy = r.y + r.h / 2;
-      const larg = Math.max(8, Math.min(18, Math.min(r.h, r.w) * .3));
-      // a base: no lado do balão virado para a boca, longe da curva do canto, um pouco para dentro (a emenda some no recheio)
-      const vertical = Math.abs(boca.y - cy) / r.h > Math.abs(boca.x - cx) / r.w;
-      const folga = rx * .75 + larg;
-      let bx, by;
-      if (vertical) { bx = Math.max(r.x + folga, Math.min(r.x + r.w - folga, boca.x)); by = boca.y > cy ? r.y + r.h - larg * .7 : r.y + larg * .7; }
-      else { by = Math.max(r.y + Math.min(folga, r.h / 2), Math.min(r.y + r.h - Math.min(folga, r.h / 2), boca.y)); bx = boca.x > cx ? r.x + r.w - larg * .7 : r.x + larg * .7; }
-      // a ponta: na direção da boca, parando na borda do rosto (por fora), nunca dentro da cabeça
-      const dx = boca.x - bx, dy = boca.y - by, dist = Math.hypot(dx, dy) || 1, ux = dx / dist, uy = dy / dist;
+      const boca = f.boca;
+      // a base: o ponto da borda virado para a boca, e dois pontos a uma distância dele, andando pela própria borda
+      const ang = Math.atan2(boca.y - cy, boca.x - cx);
+      let k = 0, melhor = Infinity;
+      borda.forEach((p, i) => { const d = Math.abs(((Math.atan2(p[1] - cy, p[0] - cx) - ang) + 3 * Math.PI) % (2 * Math.PI) - Math.PI); if (d < melhor) { melhor = d; k = i; } });
+      const meiaBase = Math.max(7, Math.min(16, r.h * .2));
+      const andar = dir => { let i = k, L = 0; while (L < meiaBase) { const j = (i + dir + borda.length) % borda.length; L += Math.hypot(borda[j][0] - borda[i][0], borda[j][1] - borda[i][1]); i = j; } return borda[i]; };
+      const A = andar(-1), B = andar(1), base = borda[k];
+      // a ponta: na direção da boca, parando um pouco antes da cabeça (por fora); sempre um rabinho que se vê
+      const dx = boca.x - base[0], dy = boca.y - base[1], dist = Math.hypot(dx, dy) || 1, ux = dx / dist, uy = dy / dist;
       let ate = dist;
-      for (const [lim, comp, dir] of [[f.x0, bx, ux], [f.x1, bx, ux], [f.y0, by, uy], [f.y1, by, uy]]) {
-        if (dir === 0) continue;
-        const k = (lim - comp) / dir;
-        if (k > 0) { const px = bx + ux * k, py = by + uy * k; if (px >= f.x0 - 1 && px <= f.x1 + 1 && py >= f.y0 - 1 && py <= f.y1 + 1) ate = Math.min(ate, k); }
+      for (const [lim, comp, dir] of [[f.x0, base[0], ux], [f.x1, base[0], ux], [f.y0, base[1], uy], [f.y1, base[1], uy]]) {
+        if (Math.abs(dir) < 1e-6) continue;
+        const q = (lim - comp) / dir;
+        if (q > 0) { const px = base[0] + ux * q, py = base[1] + uy * q; if (px >= f.x0 - 1 && px <= f.x1 + 1 && py >= f.y0 - 1 && py <= f.y1 + 1) ate = Math.min(ate, q); }
       }
-      const fora = Math.max(larg * 1.6, Math.min(ate - 6, H * .22));          // pelo menos um rabinho visível
-      const tip = { x: bx + ux * fora, y: by + uy * fora };
-      const nx = -uy * larg, ny = ux * larg;
-      const meio = { x: (bx + tip.x) / 2 + nx * .45, y: (by + tip.y) / 2 + ny * .45 };   // uma curva leve, como na mão
-      rabo = `M${bx - nx},${by - ny} Q${meio.x},${meio.y} ${tip.x},${tip.y} Q${meio.x - nx * .25},${meio.y - ny * .25} ${bx + nx},${by + ny} Z`;
+      // o rabinho nunca entra na cabeça: para 6 px antes dela; colado na cabeça, fica curtinho (e aponta)
+      const comp = ate > 16 ? Math.min(ate - 6, H * .24, Math.max(r.h * .9, 30)) : Math.max(5, ate - 3);
+      const tip = [base[0] + ux * comp, base[1] + uy * comp];
+      // os dois lados curvam para o mesmo lado, como o rabinho desenhado à mão
+      const curva = comp * .14, px = -uy * curva, py = ux * curva;
+      const c1 = [(A[0] + tip[0]) / 2 + px, (A[1] + tip[1]) / 2 + py], c2 = [(B[0] + tip[0]) / 2 + px, (B[1] + tip[1]) / 2 + py];
+      rabo = `M${A[0]},${A[1]} Q${c1[0]},${c1[1]} ${tip[0]},${tip[1]} Q${c2[0]},${c2[1]} ${B[0]},${B[1]} Z`;
       el.style.setProperty('--bx', `${boca.x / W * 100}%`); el.style.setProperty('--by', `${boca.y / H * 100}%`);
     }
+    // primeiro todos os contornos, depois todos os recheios: a borda do balão entre os pés do rabinho some, sem emenda
     const fill = caixa ? '#f8dc9a' : '#fffdf8', tracejado = bal.classList.contains('sussurro') ? ' stroke-dasharray="6 5"' : '';
-    contornos.push(`<path d="${d}" fill="none" stroke="#3a2a2e" stroke-width="5"${tracejado} stroke-linejoin="round"/>`);
+    contornos.push(`<path d="${caminho(borda)}" fill="none" stroke="#3a2a2e" stroke-width="5"${tracejado} stroke-linejoin="round"/>`);
     if (rabo) contornos.push(`<path d="${rabo}" fill="#3a2a2e" stroke="#3a2a2e" stroke-width="5" stroke-linejoin="round"/>`);
-    recheios.push(`<path d="${d}" fill="${fill}"/>`);
+    recheios.push(`<path d="${caminho(borda)}" fill="${fill}"/>`);
     if (rabo) recheios.push(`<path d="${rabo}" fill="${fill}"/>`);
   }
   const formas = [...contornos, ...recheios];

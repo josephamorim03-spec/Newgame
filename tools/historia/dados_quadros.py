@@ -1,25 +1,23 @@
 #!/usr/bin/env python3
-"""Conserta os dados nos quadros da história: o gerador de imagem erra o arranjo das bolinhas (3 em "L", 5 torto, face
-lisa), e o dado é o coração do jogo. Aqui o dado da arte fica (o desenho, o contorno, o tom de cada face) e só as bolinhas
-mudam: as da arte somem na cor da face e as certas são desenhadas na perspectiva de cada face.
+"""Os dados dos quadros da história viram código: o gerador de imagem erra o arranjo das bolinhas (3 em "L", 5 torto, face
+lisa), e o dado é o coração do jogo. Esta ferramenta apaga o dado da arte (pinta com o fundo em volta) e completa a
+anotação dele; a página do gibi (tools/historia/paginas_modelo.html) desenha por cima o dado do próprio jogo, um cubo com a
+skin do dono, as bolinhas certas e o contorno de tinta, no mesmo lugar e acompanhando a câmera dos closes.
 
     python3 tools/historia/dados_quadros.py              # todos os quadros com "dados" em arte/historia.json
     python3 tools/historia/dados_quadros.py p-mesa c6-la # só estes
     python3 tools/historia/dados_quadros.py --conferir   # só valida as anotações (dado possível?), não mexe em nada
 
-Cada arte com dados tem, em arte/historia.json, "dados": uma lista; cada dado é {"x", "y"} (um ponto dentro dele, em %
-da imagem), "vista" ("obliquo": a frente e o lado direito, com o topo; "canto": a quina de frente, os dois lados e o
-topo; "frente": uma face só), "faces" ({"t": topo, "e": frente ou lado esquerdo, "d": lado direito}) e, se precisar,
-"giro" (graus), "topo" (a fração da altura que é topo), "corte" (onde a frente encontra o lado, na largura) e "caixa"
-([x0, y0, x1, y1] em %, quando a caixa achada sozinha não serve: dados encostados, um na frente do outro).
-A caixa do dado é achada sozinha: do ponto, anda para cada lado até sair do contorno escuro para o fundo. Faces vizinhas
-não somam 7 e, com topo, esquerda e direita, a ordem do 1, 2, 3 em volta do canto é a de um dado de verdade: o
---conferir recusa um dado impossível.
-A arte original fica em arte/historia/quadros/originais/<id>.webp (a correção parte sempre dela), e o resultado com a caixa
-de cada dado (azul) e as faces (magenta), para conferir, em builds/dados/<id>.png.
+Cada arte com dados tem, em arte/historia.json, "dados": uma lista; cada dado tem "caixa" ([x0, y0, x1, y1] em % da
+imagem; sem ela, "x" e "y", um ponto dentro do dado, e a caixa é achada sozinha e gravada), "vista" ("obliquo": a frente e
+o lado direito, com o topo; "canto": a quina de frente; "frente": quase só uma face), "faces" ({"t": topo, "e": frente ou
+lado esquerdo, "d": lado direito}; sem elas, a ferramenta escolhe uma posição possível e grava), e se precisar "giro"
+(graus) e "skin" (senão vale "dados_skin" da arte, ou rosa). Faces vizinhas não somam 7 e a ordem do 1, 2, 3 em volta do
+canto é a de um dado de verdade: o --conferir recusa um dado impossível.
+A arte original fica em arte/historia/quadros/originais/<id>.webp (a ferramenta parte sempre dela), e a arte sem os dados,
+com a caixa de cada um marcada, em builds/dados/<id>.png para conferir.
 """
 import json
-import math
 import sys
 from pathlib import Path
 
@@ -30,11 +28,8 @@ PEDIDOS = RAIZ / "arte" / "historia.json"
 QUADROS = RAIZ / "arte" / "historia" / "quadros"
 ORIGINAIS = QUADROS / "originais"
 CONFERIR = RAIZ / "builds" / "dados"
-MAGENTA = (255, 0, 255)
-TINTA = (58, 42, 46)
-PIPS = {1: [(.5, .5)], 2: [(.25, .25), (.75, .75)], 3: [(.25, .25), (.5, .5), (.75, .75)],
-        4: [(.25, .25), (.75, .25), (.25, .75), (.75, .75)], 5: [(.25, .25), (.75, .25), (.5, .5), (.25, .75), (.75, .75)],
-        6: [(.27, .23), (.27, .5), (.27, .77), (.73, .23), (.73, .5), (.73, .77)]}
+
+
 # ---------- o dado possível ----------
 def orientacoes():
     """as 24 posições de um dado de verdade: (topo, lado esquerdo visível, lado direito visível).
@@ -56,6 +51,12 @@ def orientacoes():
 VALIDAS = orientacoes()
 
 
+def escolher_faces(id_, n):
+    """sem números anotados, o dado ganha uma posição possível, diferente de um dado para o outro e sempre a mesma"""
+    t, e, d = sorted(VALIDAS)[(sum(map(ord, id_)) * 7 + n * 5) % len(VALIDAS)]
+    return {"t": t, "e": e, "d": d}
+
+
 def problema(dado):
     f = dado.get("faces", {})
     lista = list(f.values())
@@ -70,11 +71,9 @@ def problema(dado):
     return None
 
 
-# ---------- a geometria ----------
+# ---------- achar e apagar o dado da arte ----------
 def caixa(im, x, y):
-    """a caixa do dado: de um ponto dentro dele, anda em cada direção até sair do contorno escuro para o fundo.
-    Dentro do dado há linhas escuras entre as faces e as bolinhas; só é fora quando, depois do escuro, vem uma cor que
-    não é a do dado (a cor do dado é a do ponto de partida, com folga para o tom de cada face)"""
+    """a caixa do dado: de um ponto dentro dele, anda em cada direção até sair do contorno escuro para o fundo"""
     px, (W, H) = im.load(), im.size
     escuro = lambda c: sum(c[:3]) < 230
     base = px[x, y]
@@ -93,123 +92,85 @@ def caixa(im, x, y):
                 viu, n = False, 0
             elif viu:
                 n += 1
-                if n > 5:                      # fundo depois do contorno: saiu do dado
+                if n > 5:
                     return i - dx * n, j - dy * n
         return i, j
     return anda(-1, 0)[0], anda(0, -1)[1], anda(1, 0)[0], anda(0, 1)[1]
 
 
-def trocar_bolinhas(im, x0, y0, x1, y1):
-    """some com as bolinhas da arte: manchas escuras soltas dentro do dado (o contorno e as arestas encostam na borda da
-    caixa ou são grandes, e ficam) viram a cor da face em volta. Devolve a cor das bolinhas antigas."""
+def apagar(im, x0, y0, x1, y1):
+    """o dado some: o que, ligado ao meio da caixa, não parece o fundo em volta (a mediana de um anel de fora da caixa), e
+    a sombra dele (o fundo mais escuro, embaixo e ao lado) são apagados e preenchidos a partir do fundo mais próximo nas
+    quatro direções. A página desenha o dado novo e a sombra dele."""
     px, (W, H) = im.load(), im.size
-    escuro = lambda c: sum(c[:3]) < 260
-    x0, y0, x1, y1 = max(0, x0), max(0, y0), min(W - 1, x1), min(H - 1, y1)
-    area = (x1 - x0) * (y1 - y0)
-    vistos, cores = set(), []
-    for j in range(y0, y1 + 1):
-        for i in range(x0, x1 + 1):
-            if (i, j) in vistos or not escuro(px[i, j]):
-                continue
-            mancha, fila, borda = [], [(i, j)], False
-            while fila:
-                a, b = fila.pop()
-                if (a, b) in vistos or not (x0 <= a <= x1 and y0 <= b <= y1) or not escuro(px[a, b]):
-                    continue
-                vistos.add((a, b)); mancha.append((a, b))
-                borda |= a - x0 < 3 or x1 - a < 3 or b - y0 < 3 or y1 - b < 3
-                fila += [(a + 1, b), (a - 1, b), (a, b + 1), (a, b - 1)]
-            if borda or len(mancha) > area * .04 or len(mancha) < 4:
-                continue                               # contorno, aresta ou sujeira: fica
-            ms = set(mancha)
-            anel = [px[a + da, b + db] for a, b in mancha for da, db in ((3, 0), (-3, 0), (0, 3), (0, -3))
-                    if (a + da, b + db) not in ms and 0 <= a + da < W and 0 <= b + db < H and not escuro(px[a + da, b + db])]
-            if not anel:
-                continue
-            cores += [px[a, b] for a, b in mancha[::5]]
-            fundo = sorted(anel, key=sum)[len(anel) // 2]
-            for a, b in mancha:                        # a mancha e um anel fino em volta (a borda suavizada da bolinha)
-                for da in (-1, 0, 1):
-                    for db in (-1, 0, 1):
-                        if 0 <= a + da < W and 0 <= b + db < H:
-                            px[a + da, b + db] = fundo
-    return sorted(cores, key=sum)[len(cores) // 2] if cores else TINTA
-
-
-def faces_do_cubo(x0, y0, x1, y1, vista, topo, corte):
-    """as faces dentro da caixa, cada uma com os cantos na ordem A, B, C, D (A + u·(B−A) + w·(D−A) é o paralelogramo)"""
+    m = 4
+    anel = [px[min(W - 1, max(0, i)), min(H - 1, max(0, j))] for i in range(x0 - m, x1 + m, 2) for j in (y0 - m, y1 + m)] + \
+           [px[min(W - 1, max(0, i)), min(H - 1, max(0, j))] for j in range(y0 - m, y1 + m, 2) for i in (x0 - m, x1 + m)]
+    fundo = sorted(anel, key=sum)[len(anel) // 2]
+    luz = lambda c: c[0] + c[1] + c[2] + 1
+    longe = lambda c: max(abs(c[0] - fundo[0]), abs(c[1] - fundo[1]), abs(c[2] - fundo[2])) > 34
+    sombra = lambda c: luz(c) < luz(fundo) - 18 and all(abs(c[k] / luz(c) - fundo[k] / luz(fundo)) < .06 for k in range(3))
     w, h = x1 - x0, y1 - y0
-    t, m = topo * h, x0 + corte * w
-    if vista == "frente":
-        return {"e": [(x0, y0), (x1, y0), (x1, y1), (x0, y1)]}
-    if vista == "canto":                       # a quina de frente: a aresta vertical em m
-        return {"t": [(x0, y0 + t / 2), (x0 + (x1 - m), y0), (x1, y0 + t / 2), (m, y0 + t)],
-                "e": [(x0, y0 + t / 2), (m, y0 + t), (m, y1), (x0, y1 - t / 2)],
-                "d": [(m, y0 + t), (x1, y0 + t / 2), (x1, y1 - t / 2), (m, y1)]}
-    fundo = w - (m - x0)                       # oblíquo: a frente é um retângulo; o topo e o lado vão para trás e para a direita
-    return {"t": [(x0 + fundo, y0), (x1, y0), (m, y0 + t), (x0, y0 + t)],
-            "e": [(x0, y0 + t), (m, y0 + t), (m, y1), (x0, y1)],
-            "d": [(m, y0 + t), (x1, y0), (x1, y1 - t), (m, y1)]}
+    X0, Y0, X1, Y1 = max(0, x0 - int(w * .18) - 3), max(0, y0 - 3), min(W - 1, x1 + int(w * .08) + 3), min(H - 1, y1 + int(h * .2) + 3)
+    marca, fila = set(), [((x0 + x1) // 2, (y0 + y1) // 2)]
+    while fila:                                        # o dado e a sombra ligados a ele: a pata ao lado não some
+        i, j = fila.pop()
+        if (i, j) in marca or not (X0 <= i <= X1 and Y0 <= j <= Y1):
+            continue
+        c = px[i, j]
+        dentro = x0 - 3 <= i <= x1 + 3 and y0 - 3 <= j <= y1 + 3
+        if not ((dentro and longe(c)) or sombra(c)):
+            continue
+        marca.add((i, j))
+        fila += [(i + 1, j), (i - 1, j), (i, j + 1), (i, j - 1)]
+    apagados = set()                                   # e uma borda de 2 pixels em volta, para não sobrar fio do contorno
+    for i, j in marca:
+        for di in range(-2, 3):
+            for dj in range(-2, 3):
+                if 0 <= i + di < W and 0 <= j + dj < H:
+                    apagados.add((i + di, j + dj))
+    novo = {}
+    for i, j in apagados:                              # cada pixel: o fundo mais próximo à esquerda, à direita, acima e abaixo, pesado pela distância
+        soma, peso = [0, 0, 0], 0
+        for di, dj in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            k = 1
+            while (i + di * k, j + dj * k) in apagados:
+                k += 1
+            a, b = i + di * k, j + dj * k
+            if 0 <= a < W and 0 <= b < H:
+                c = px[a, b]
+                soma = [soma[n] + c[n] / k for n in range(3)]
+                peso += 1 / k
+        if peso:
+            novo[(i, j)] = tuple(round(v / peso) for v in soma)
+    for (i, j), cor in novo.items():
+        px[i, j] = cor
 
 
-def girar(pts, cx, cy, graus):
-    a = math.radians(graus)
-    return [(cx + (p[0] - cx) * math.cos(a) - (p[1] - cy) * math.sin(a), cy + (p[0] - cx) * math.sin(a) + (p[1] - cy) * math.cos(a)) for p in pts]
-
-
-def bolinhas(pts, v, papel):
-    """as bolinhas no paralelogramo da face; no topo do oblíquo os cantos vêm em outra ordem"""
-    if papel == "t":
-        a, b, d = pts[3], pts[2], pts[0]       # D, C, A: a beirada da frente é a de baixo
-    else:
-        a, b, d = pts[0], pts[1], pts[3]
-    mapa = lambda u, w: (a[0] + u * (b[0] - a[0]) + w * (d[0] - a[0]), a[1] + u * (b[1] - a[1]) + w * (d[1] - a[1]))
-    r = .11
-    return [[mapa(u + r * math.cos(k * math.pi / 16), w + r * math.sin(k * math.pi / 16)) for k in range(32)] for (u, w) in PIPS[v]]
-
-
-# ---------- pintar ----------
-def consertar(id_, dados):
+def consertar(id_, arte):
     ORIGINAIS.mkdir(parents=True, exist_ok=True)
     orig = ORIGINAIS / f"{id_}.webp"
     if not orig.exists():
         orig.write_bytes((QUADROS / f"{id_}.webp").read_bytes())
     im = Image.open(orig).convert("RGB")
     W, H = im.size
-    S = 4                                              # desenhado 4x maior e reduzido: borda lisa
-    camada = Image.new("RGBA", (W * S, H * S), (0, 0, 0, 0))
-    dc = ImageDraw.Draw(camada)
-    caixas, contornos = [], []                      # para a imagem de conferência
-    esc = lambda pts: [(p[0] * S, p[1] * S) for p in pts]
-    for dado in dados:
-        if dado.get("caixa"):
-            x0, y0, x1, y1 = [round(v / 100 * (W if i % 2 == 0 else H)) for i, v in enumerate(dado["caixa"])]
-        else:
+    caixas = []
+    for n, dado in enumerate(arte["dados"]):
+        if not dado.get("caixa"):                      # acha e grava, para a página saber onde desenhar
             x0, y0, x1, y1 = caixa(im, round(dado["x"] / 100 * W), round(dado["y"] / 100 * H))
-        cor_pip = trocar_bolinhas(im, x0, y0, x1, y1)
-        borda = max(2.5, (x1 - x0) * .07)              # o contorno da arte fica; as faces começam por dentro dele
-        vista = dado.get("vista", "obliquo")
-        faces = faces_do_cubo(x0 + borda, y0 + borda, x1 - borda, y1 - borda, vista, dado.get("topo", .28),
-                              dado.get("corte", .5 if vista == "canto" else .7))
-        if dado.get("giro"):
-            faces = {k: girar(v, (x0 + x1) / 2, (y0 + y1) / 2, dado["giro"]) for k, v in faces.items()}
-        for k, pts in faces.items():
-            if dado["faces"].get(k):
-                for b in bolinhas(pts, dado["faces"][k], k):
-                    dc.polygon(esc(b), fill=tuple(cor_pip[:3]) + (255,))
-            contornos.append(pts)
-        caixas.append((x0, y0, x1, y1))
-    camada = camada.resize((W, H), Image.LANCZOS)
-    Image.alpha_composite(im.convert("RGBA"), camada).convert("RGB").save(QUADROS / f"{id_}.webp", "WEBP", quality=88, method=6)
+            dado["caixa"] = [round(x0 / W * 100, 2), round(y0 / H * 100, 2), round(x1 / W * 100, 2), round(y1 / H * 100, 2)]
+        dado.setdefault("faces", escolher_faces(id_, n))
+        caixas.append(tuple(round(v / 100 * (W if i % 2 == 0 else H)) for i, v in enumerate(dado["caixa"])))
+    for c in caixas:                                   # apaga depois de achar todas (um dado apagado não atrapalha achar o outro)
+        apagar(im, *c)
+    im.save(QUADROS / f"{id_}.webp", "WEBP", quality=88, method=6)
     CONFERIR.mkdir(parents=True, exist_ok=True)
-    conf = Image.open(QUADROS / f"{id_}.webp").convert("RGB")
-    dconf = ImageDraw.Draw(conf)
+    conf = im.copy()
+    d = ImageDraw.Draw(conf)
     for c in caixas:
-        dconf.rectangle(c, outline=(0, 200, 255), width=2)
-    for pts in contornos:
-        dconf.polygon(pts, outline=MAGENTA, width=2)
+        d.rectangle(c, outline=(255, 0, 255), width=2)
     conf.save(CONFERIR / f"{id_}.png")
-    print(f"  {id_}: {len(dados)} dados")
+    print(f"  {id_}: {len(caixas)} dados")
 
 
 def main():
@@ -222,8 +183,8 @@ def main():
     if "--conferir" in sys.argv:
         return print(f"{len(ids)} quadros, todos os dados possíveis")
     for id_ in ids:
-        a = cfg["artes"][id_]
-        consertar(id_, a["dados"])
+        consertar(id_, cfg["artes"][id_])
+    PEDIDOS.write_text(json.dumps(cfg, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
 
 
 if __name__ == "__main__":
