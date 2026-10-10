@@ -9,7 +9,7 @@ Os dois jogadores disputam a mesma Mesa de 5 dados e montam **correntes** de dad
 
 Cada um guarda um dado no **Bolso**, escolhe a hora de **disparar** a corrente para marcar pontos e leva um
 **deck de até 3 cartas** com efeitos e armadilhas. Um efeito virado para baixo vira **blefe**: para o rival, é um
-"?" igual ao de uma armadilha. A partida vai a 16, 20 ou 24 pontos; na 16, o padrão, dura de 6 a 8 minutos.
+"?" igual ao de uma armadilha. A partida vai a 16 pontos e dura de 6 a 8 minutos.
 
 **Progressão sem pagar para vencer:**
 - moedas só vêm de vitórias, e rendem mais com margem maior e menos Mesas;
@@ -93,12 +93,15 @@ node tools/vercel_local.js                     # a página como o Vercel publica
 
 ## Estado
 
-**v0.12, em produção** (a página no Vercel e o servidor na Railway, publicados da branch `DiceDuel`): metas 16 (padrão),
-20 e 24, no lugar de 12 e 16; o Coringa troca a frente da corrente em vez de alongá-la; a Pressa só com 3 ou 4 dados na Mesa; e no online fica óbvio de quem é a vez (selo com relógio no alto da Mesa, a Mesa acesa na
-sua vez, chamada e sininhos quando a vez chega, lembretes, aviso na aba e de novo ao voltar para a tela). O modo a dois
-no mesmo aparelho saiu do jogo (o motor ainda o usa nos testes de regras, para ninguém jogar sozinho no meio do teste). As cartas na partida
-viraram cartas (arte, nome, o que fazem, estado à vista): segurar para olhar, tocar na carta e no dado para usar, ou
-arrastar até o dado ou a Mesa (`docs/design.md` §8, "Cartas na mão"). Números em
+**v0.12, em produção** (a página no Vercel e o servidor na Railway, publicados da branch `DiceDuel`): meta 16 (a 12 acabava
+cedo demais; 20 e 24 voltam quando tiverem o próprio ajuste); o Coringa troca a frente da corrente em vez de alongá-la; Pressa
+só com 3 ou 4 dados na Mesa, Ajuste com 3+ e Coringa com 2+ (nenhum deck acima de ~58%, `docs/balanceamento-cartas.md` §17);
+no online fica óbvio de quem é a vez (o relógio na etiqueta "sua vez" do painel, a Mesa acesa na sua vez, chamada e sininhos
+quando a vez chega, lembretes, aviso na aba e de novo ao voltar para a tela). Jogar abre a escolha do rival, com o retrato, a
+dificuldade e o que a vitória rende de cada uma. O modo a dois no mesmo aparelho saiu do jogo (o motor ainda o usa nos testes
+de regras, para ninguém jogar sozinho no meio do teste). As cartas na partida viraram cartas (arte, nome, o que fazem, estado à
+vista): segurar para olhar, tocar na carta e no dado para usar, ou arrastar até o dado ou a Mesa. O dado não tem mais botões
+de destino: tocar nele e na corrente ou no Bolso, arrastar até eles, ou tocar de novo nele (`docs/design.md` §8). Números em
 `docs/balanceamento-cartas.md` §14 e a vez em `docs/design.md` §8.
 
 **v0.11:** a página no Vercel (`diceduel-game.vercel.app`) e o servidor na Railway, os dois publicados da branch `DiceDuel`. 15 cartas (Pausa, Reverso, Furto e Lacre na v0.11), Pedágio +2 e Interferência só em quem lidera (`docs/balanceamento-cartas.md`). O resumo copiável do fim da partida traz:

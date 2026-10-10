@@ -109,12 +109,12 @@ const RAIZ = path.join(__dirname, '..');
   confere(j.cartas[0].virar === 'pronta' && j.fase === 'pegar', 'Virar: tocar de novo na carta também devolve');
   await usar('virar'); await dado(1); j = await J();
   confere(j.cartas[0].virar === 'usada' && j.mesa[1].v === 1 && j.fase === 'pegar', 'Virar: tocar no dado já vira');
-  await cena([['ajuste'], []], () => { const j = DiceDuel.jogo; j.vez = 0; j.fase = 'pegar'; j.mesa = [{ id: 9481, v: 2 }, { id: 9482, v: 5 }]; });
+  await cena([['ajuste'], []], () => { const j = DiceDuel.jogo; j.vez = 0; j.fase = 'pegar'; j.mesa = [{ id: 9481, v: 2 }, { id: 9482, v: 5 }, { id: 9483, v: 1 }]; });
   await usar('ajuste'); await dado(0); await dado(1); await pg.click('[data-ajuste="1"]'); j = await J();
   confere(j.mesa[0].v === 2 && j.mesa[1].v === 6, 'Ajuste: dá para trocar de dado antes do ±1');
 
   // 5. Blefe: o efeito virado aparece como "?" para o rival e funciona normalmente depois
-  await cena([['ajuste', 'interferencia'], []], () => { const j = DiceDuel.jogo; j.vez = 0; j.fase = 'pegar'; j.mesa = [{ id: 9501, v: 3 }, { id: 9502, v: 4 }]; });
+  await cena([['ajuste', 'interferencia'], []], () => { const j = DiceDuel.jogo; j.vez = 0; j.fase = 'pegar'; j.mesa = [{ id: 9501, v: 3 }, { id: 9502, v: 4 }, { id: 9505, v: 1 }]; });
   await pg.click('.jogador.da-vez [data-carta="ajuste"]'); await pg.click('#acoes [data-virar="ajuste"]');
   j = await J();
   confere(j.armada[0] === 'ajuste' && j.cartas[0].ajuste === 'armada', 'Blefe: o Ajuste fica virado e ocupa o lugar da armadilha');
@@ -123,7 +123,7 @@ const RAIZ = path.join(__dirname, '..');
   confere(await pg.$('#acoes [data-usar="interferencia"][disabled]') !== null, 'Blefe: com o blefe virado não dá para armar outra armadilha');
   await pg.click('[data-acao="fechar-carta"]');
   // desvira a partir da vez seguinte (o rival precisa ter tido a chance de desafiar)
-  await pg.evaluate(() => { const j = DiceDuel.jogo; Regras.proximo(j); Regras.proximo(j); j.mesa = [{ id: 9503, v: 3 }, { id: 9504, v: 4 }]; DiceDuel.ajustar({}); });
+  await pg.evaluate(() => { const j = DiceDuel.jogo; Regras.proximo(j); Regras.proximo(j); j.mesa = [{ id: 9503, v: 3 }, { id: 9504, v: 4 }, { id: 9506, v: 1 }]; DiceDuel.ajustar({}); });
   await usar('ajuste'); await dado(0); await pg.click('[data-ajuste="1"]');
   j = await J();
   confere(j.cartas[0].ajuste === 'usada' && j.armada[0] === null && j.mesa[0].v === 4, 'Blefe: usar a carta virada faz o efeito e libera o lugar');
@@ -187,7 +187,7 @@ const RAIZ = path.join(__dirname, '..');
   confere(k.vez === 1 && k.mesa.length === 3 && k.cor[0].join() === '3,5,6', 'Pausa: a vez passou, a Mesa e a corrente ficaram como estavam');
   // o jogador 2 arma o Lacre; o jogador 1 usa um efeito e ele não age
   await cena([['ajuste'], ['lacre']], () => {
-    const j = DiceDuel.jogo; j.vez = 1; j.fase = 'pegar'; j.mesa = [{ id: 9201, v: 2 }, { id: 9202, v: 3 }];
+    const j = DiceDuel.jogo; j.vez = 1; j.fase = 'pegar'; j.mesa = [{ id: 9201, v: 2 }, { id: 9202, v: 3 }, { id: 9203, v: 6 }];
   });
   await usar('lacre');
   await pg.evaluate(() => { const j = DiceDuel.jogo; j.vez = 0; j.fase = 'pegar'; });

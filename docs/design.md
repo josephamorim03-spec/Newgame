@@ -23,7 +23,7 @@ se **sincronizam**. Cada um escolhe a hora de **disparar** a corrente, e um deck
 4. **Disparar.** Com 3 dados ou mais, você dispara (marca pontos e zera a corrente) ou segura.
    Os pontos são 3 → 1, 4 → 2, 5 → 4, 6 → 6, e com 6 dados a corrente dispara sozinha.
 5. **Ruptura.** Se o dado que entra não sincroniza, a corrente se perde.
-6. **Vitória:** quem chega primeiro à meta (16, 20 ou 24 pontos; 16 é o padrão). Até a v0.11 havia a meta 12: curta
+6. **Vitória:** quem chega primeiro a **16 pontos** (v0.12; as metas 20 e 24 ficaram de fora por ora, §17 de `docs/balanceamento-cartas.md`). Até a v0.11 havia a meta 12: curta
    demais (~7 Mesas, dois disparos de 6 fechavam a partida) e as cartas eram queimadas cedo (`docs/balanceamento-cartas.md` §14).
 
 ### Por que é assim (medido)
@@ -46,11 +46,11 @@ Antes da partida, cada um monta um deck de **até 3 cartas**, cada uma valendo *
 
 | Carta | Tipo | Efeito | Vence sozinha* |
 |---|---|---|---|
-| Ajuste | efeito | ±1 num dado da Mesa | 56,6% |
+| Ajuste | efeito | ±1 num dado da Mesa (só com 3+ dados na Mesa, v0.12) | 56,6% |
 | Virar | efeito | vira um dado (7 − valor); desfaz uma marca de Espelho | 54,1% |
 | Rerrolar | efeito | rola a Mesa toda; desfaz uma marca de Espelho | 55,1% |
 | Pressa | efeito | pega 2 dados nesta vez (só com 3 ou 4 dados na Mesa, v0.12; o 2.º é opcional) | 58,1% |
-| Coringa | efeito | o próximo dado que romperia a corrente entra **no lugar da frente**: a corrente não rompe nem cresce (v0.12) | 55,0% (meta 16) |
+| Coringa | efeito | o próximo dado que romperia a corrente entra **no lugar da frente**: a corrente não rompe nem cresce; só com 2+ dados na Mesa (v0.12) | 55,0% (meta 16) |
 | Sobrecarga ⚡ | efeito | +2 no próximo disparo de 4+ | — |
 | Pausa (v0.11) | efeito | passa a vez sem pegar dado nem disparar; corrente e Bolso ficam | — |
 | Reverso (v0.11) | efeito | inverte a corrente: ela cresce pela outra ponta (2+ dados) | — |
@@ -428,9 +428,20 @@ de volta à tela, se a vez era sua ou do rival (e no online o tempo da vez acaba
 bom). Quem tinha o modo marcado volta para o rival; uma partida a dois guardada não volta. O motor ainda sabe jogar a
 dois: é assim que `tools/regras.js` joga as duas mãos pela tela.
 
-**Menu principal (v0.11).** O jogo abre nele: logo, nome, rating, nível e moedas, a escolha do rival (Diana ou
-Dona Coruja, com uma linha sobre o jeito dela e a meta), **Jogar** grande, Online, e uma fileira de
-ícones (Deck, Loja, Regras, Ajustes). É ali que a sessão se monta: Jogar começa contra o rival marcado. Ajustes não repete modo nem
+**Menu principal (v0.11).** O jogo abre nele: logo, nome, rating, nível e moedas, **Jogar** grande, Online, e uma
+fileira de ícones (Deck, Loja, Regras, Ajustes).
+
+**Escolha do rival (v0.12).** A escolha Diana/Dona Coruja era um seletor pequeno no menu, com uma linha de texto: não
+dava para ver quem era cada uma nem o que mudava. Agora **Jogar** abre "Escolha o rival", no lugar dos botões do menu
+(o logo e o título saem, para caber sem rolar em 360×640):
+- um cartão por rival, com o **retrato pintado**, o nome, a dificuldade ("Para começar", "Desafiadora"), o jeito de
+  jogar e o que a vitória rende (cerca de X moedas e o rating dela; ou "vitórias não rendem mais moedas", se o seu
+  rating já passou do teto daquela rival). Tocar escolhe; a escolhida ganha o contorno dourado e o retrato sorri;
+- embaixo, o **seu deck**, com "Trocar";
+- **Jogar contra Diana** (o botão diz quem) começa; "← Voltar" (ou Esc) volta ao menu. Na primeira visita, o deck
+  "Primeira mesa" abre por cima, e fechá-lo volta para a escolha.
+
+Ajustes não repete modo nem
 rival: ficou com meta, ritmo do rival, som e imagem. O cartão do fim tem **Jogar de novo** inteiro em cima e, em
 baixo, Menu e Ver a Mesa; Compartilhar é o ícone ao lado do título. Fora da partida, o cabeçalho tem só logo,
 moedas (a Loja) e **Menu**: Online, Regras, Deck e Ajustes moram no menu principal. Começar pelo menu depois de uma partida online larga a sala (ali, "jogar
@@ -458,7 +469,6 @@ para 977"). Online o relógio é o da sala (tempo por vez escolhido ao criá-la,
 `docs/servidor.md`): quem cai tem o tempo de voltar e, se não volta, perde.
 
 **Partida** (modo e rival se escolhem no menu principal):
-- meta (16, 20 ou 24; 20 e 24 rendem ×1,25 e ×1,5 de moedas na vitória);
 - ritmo do rival (calmo, normal, rápido).
 
 **Cartas e progresso:**

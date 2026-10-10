@@ -386,12 +386,12 @@
     }
     let precisa = eu.length >= 2 && !m.some(d => encaixaP(p, d.v));
     if (precisa && pode('virar')) { const i = m.findIndex(d => encaixa(eu, 7 - d.v)); if (i >= 0) { usa.push({ carta: 'virar', idx: i }); precisa = false; } }
-    if (precisa && pode('ajuste')) {
+    if (precisa && pode('ajuste') && m.length >= 3) {
       for (let i = 0; i < m.length && precisa; i++) for (const dl of [1, -1]) {
         const x = m[i].v + dl; if (x >= 1 && x <= 6 && encaixa(eu, x)) { usa.push({ carta: 'ajuste', idx: i, delta: dl }); precisa = false; break; }
       }
     }
-    if (precisa && pode('coringa')) { usa.push({ carta: 'coringa' }); precisa = false; }
+    if (precisa && pode('coringa') && m.length >= 2) { usa.push({ carta: 'coringa' }); precisa = false; }
     // Reverso: nada entra pela frente, mas algo da Mesa (ou o dado do Bolso) entra pela outra ponta
     if (precisa && pode('reverso')) {
       const outra = [eu[0]];
@@ -1408,7 +1408,7 @@
         <tr><td>Diana (iniciante)</td><td>${BASE_MOEDAS.aprendiz}</td><td>rating abaixo de ${TETO_MOEDAS.aprendiz}</td></tr>
         <tr><td>Dona Coruja (avançado)</td><td>${BASE_MOEDAS.esperto}</td><td>rating abaixo de ${TETO_MOEDAS.esperto}</td></tr>
         <tr><td>Online, com amigos</td><td>${BASE_MOEDAS.online}</td><td>sempre; vale mais vencer quem tem rating maior</td></tr></table>
-        <p class="nota" style="margin-top:10px">Só vitórias dão moedas. A base é multiplicada pela <b>margem</b> (×1 a ×2: vencer por 11 pontos ou mais, na meta 16, dobra), pela <b>rapidez</b> (na meta 16, ×1,5 em até 7 Mesas, ×1,25 em 8) e pela <b>duração</b> (meta 20: ×1,25; meta 24: ×1,5). Uma vitória típica rende cerca de 14 contra a Diana e 24 contra a Dona Coruja. Com conta, as vitórias contra os rivais do jogo rendem até 300 moedas por dia.</p>
+        <p class="nota" style="margin-top:10px">Só vitórias dão moedas. A base é multiplicada pela <b>margem</b> (×1 a ×2: vencer por 11 pontos ou mais dobra) e pela <b>rapidez</b> (×1,5 em até 7 Mesas, ×1,25 em 8). Uma vitória típica rende cerca de 12 contra a Diana e 21 contra a Dona Coruja. Com conta, as vitórias contra os rivais do jogo rendem até 300 moedas por dia.</p>
         <p class="nota">Experiência sobe em toda partida, ganhando ou perdendo, e os níveis 2, 3 e 5 dão presentes. Cartas nunca serão vendidas por dinheiro: elas ampliam o estilo, não a força (o melhor deck é feito só de cartas grátis).</p>
         <button class="btn btn-papel btn-voltar" data-voltar-loja="1">← Voltar à loja</button>`;
       return;
@@ -1671,12 +1671,18 @@
   function desenharInicio() {
     const c = st.conta, nome = st.sessao && st.sessao.perfil ? st.sessao.perfil.nome : 'Convidado';
     document.getElementById('inicioPerfil').innerHTML = `${iconeSVG(c.icone)}<span><b>${esc(nome)}</b> <small>· rating ${c.rating} · nível ${nivelDe(c.xp)} · ${c.moedas} moedas</small></span>`;
-    document.getElementById('inicioRival').textContent = `${RIVAIS[st.cfg.nivel].desc} · meta ${st.cfg.meta}`;
     document.getElementById('pontoInicio').hidden = document.getElementById('pontoOnline').hidden;
-    inicio.querySelectorAll('[data-inicio="rival"]').forEach(b => b.setAttribute('aria-pressed', String(st.cfg.nivel === b.dataset.v)));
     const g = partidaParaContinuar(), box = document.getElementById('inicioPartida');
+    // a escolha do rival ocupa o lugar dos botões do menu (Jogar → Escolha o rival → Jogar contra ...)
+    const rivais = escolhendoRival && !g;
+    document.getElementById('inicioRivais').hidden = !rivais;
+    document.getElementById('inicioJogar').hidden = rivais;
+    inicio.querySelector('.inicio-mais').hidden = rivais;
+    document.getElementById('inicioPerfil').hidden = rivais;
+    inicio.classList.toggle('escolhendo', rivais);   // na escolha do rival, o logo e o título saem (cabe sem rolar em 360×640)
+    if (rivais) desenharRivais();
     // com uma partida offline em andamento, o caminho é continuar ou abandonar (começar outra é abandonar)
-    ['[data-inicio="jogar"]', '.inicio-jogar .segmento'].forEach(sel => { inicio.querySelector(sel).hidden = !!g; });
+    inicio.querySelector('[data-inicio="jogar"]').hidden = !!g;
     box.hidden = !g;
     if (!g) { box.innerHTML = ''; return; }   // sem partida guardada, nada de botões velhos escondidos
     const quem = g.modo === 'bot' ? ['Você', RIVAIS[g.nivel].nome] : ['Jogador 1', 'Jogador 2'];
@@ -1690,8 +1696,33 @@
         ? `<div class="inicio-linha"><button class="btn btn-papel perigo" data-inicio="abandonar-sim">Abandonar</button><button class="btn btn-papel" data-inicio="abandonar-nao">Voltar</button></div>`
         : `<button class="btn btn-mel inicio-principal" data-inicio="continuar">Continuar a partida</button><button class="btn-link" data-inicio="abandonar">Abandonar a partida</button>`}`;
   }
+  // ---------- a escolha do rival: o retrato, o jeito de jogar, a dificuldade e o que a vitória rende ----------
+  let escolhendoRival = false;
+  const NIVEL_RIVAL = { aprendiz: 'Para começar', esperto: 'Desafiadora' };
+  const JEITO_RIVAL = { aprendiz: 'Gata branca de olhos azuis. Joga solto e arrisca: boa para aprender as correntes e as cartas.',
+    esperto: 'Joga com paciência, lê a Mesa e leva um dos melhores decks. Desafia os seus blefes pela conta.' };
+  function rendeRival(nivel) {
+    const c = st.conta, pico = Math.max(c.rating, c.pico || 0);
+    if (pico >= TETO_MOEDAS[nivel]) return `vitórias não rendem mais moedas (seu rating já passou de ${TETO_MOEDAS[nivel] - 1})`;
+    // uma vitória típica: margem de 5 pontos, no ritmo normal de Mesas da meta
+    const t = moedasDaVitoria(BASE_MOEDAS[nivel], 5, Math.round(+st.cfg.meta * 9.5 / 16), +st.cfg.meta).total;
+    return `vitória rende cerca de ${t} moedas · rating ${RATING_RIVAL[nivel]}`;
+  }
+  function desenharRivais() {
+    document.getElementById('rivalCartas').innerHTML = ['aprendiz', 'esperto'].map(k => {
+      const marcado = st.cfg.nivel === k;
+      return `<button class="rival-carta${marcado ? ' marcado' : ''}" data-inicio="rival" data-v="${k}" role="radio" aria-checked="${marcado}">
+        <span class="rival-retrato">${Retratos.retrato(RETRATO_RIVAL[k], marcado ? 'feliz' : '')}</span>
+        <span class="rival-texto"><span class="rival-topo"><b>${RIVAIS[k].nome}</b><span class="rival-nivel n-${k}">${NIVEL_RIVAL[k]}</span></span>
+          <span class="rival-jeito">${JEITO_RIVAL[k]}</span><small class="rival-rende">${rendeRival(k)}</small></span></button>`;
+    }).join('');
+    inicio.querySelectorAll('[data-inicio="meta"]').forEach(b => b.setAttribute('aria-pressed', String(+st.cfg.meta === +b.dataset.v)));
+    const deck = (st.deckVisto ? st.decks[0] : PRONTOS[0].cartas).filter(c => CARTAS[c]);
+    document.getElementById('rivalDeck').innerHTML = `Seu deck: <b>${deck.length ? deck.map(c => CARTAS[c].nome).join(', ') : 'sem cartas'}</b>`;
+    document.getElementById('rivalComecar').textContent = `Jogar contra ${RIVAIS[st.cfg.nivel].nome}`;
+  }
   function mostrarInicio() {
-    confirmarAbandono = false;
+    confirmarAbandono = false; escolhendoRival = false;
     // a partida para atrás do menu: a jogada do rival que estava no meio recomeça do zero no Continuar
     if (jogo && jogo.modo === 'bot' && jogo.pensando) { jogo.token = Math.random(); jogo.pensando = false; jogo.destaque = null; }
     ['fim', 'janelaMenu', 'janelaCarta'].forEach(id => { document.getElementById(id).hidden = true; });
@@ -1707,13 +1738,16 @@
   inicio.addEventListener('click', e => {
     const b = e.target.closest('[data-inicio]'); if (!b) return;
     const a = b.dataset.inicio;
-    if (a === 'rival') { st.cfg.nivel = b.dataset.v; salvar(); desenharInicio(); return; }
-    if (a === 'jogar') Online.sair();
-    if (a === 'jogar') {
+    if (a === 'rival') { st.cfg.nivel = b.dataset.v; salvar(); Som.tocar('toque'); desenharInicio(); return; }
+    if (a === 'meta') { st.cfg.meta = R.metaValida(b.dataset.v); salvar(); desenharInicio(); return; }
+    if (a === 'jogar') { escolhendoRival = true; desenharInicio(); const f = inicio.querySelector('.rival-carta.marcado'); if (f) f.focus({ preventScroll: true }); return; }
+    if (a === 'voltar') { escolhendoRival = false; desenharInicio(); return; }
+    if (a === 'comecar') {
+      Online.sair();
       st.cfg.modo = 'bot'; salvar();
-      // primeira vez: o deck "Primeira mesa" abre por cima do menu (fechar sem jogar volta para ele)
+      // primeira vez: o deck "Primeira mesa" abre por cima da escolha do rival (fechar sem jogar volta para ela)
       if (!st.deckVisto) { st.decks[0] = PRONTOS[0].cartas.slice(); abrirDeck(); return; }
-      novaPartida(); return;
+      escolhendoRival = false; novaPartida(); return;
     }
     if (a === 'continuar') {
       const g = partidaParaContinuar(); if (!g) return desenharInicio();
@@ -2155,6 +2189,7 @@
     // Esc fecha a janela aberta mesmo com o foco num campo (o login do Online abre com o foco no nome),
     // e também no menu principal, quando ainda não há partida
     if (alvo.closest('textarea, input') && e.key !== 'Escape') return;
+    if (e.key === 'Escape' && escolhendoRival && inicioAberto() && document.querySelectorAll('.janela:not([hidden])').length === 0) { escolhendoRival = false; desenharInicio(); return; }
     if (e.key === 'Escape') {
       ['fim', 'janelaCarta', 'janelaDeck', 'janelaConfig', 'janelaLoja', 'janelaOnline', 'janelaMenu'].forEach(id => { const el = document.getElementById(id); if (el) el.hidden = true; }); abrirLado(false);
       return jogo ? cancelarEscolha() : undefined;

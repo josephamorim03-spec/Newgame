@@ -276,16 +276,17 @@ test('Postgres: chaves antigas migram, nome único, amizades e posição no rank
   } finally { await s.fechar(); await banco.fechar(); }
 });
 
-test('fila por rating: a janela abre com a espera e a meta separa as filas', () => {
+test('fila por rating: a janela abre com a espera (a meta separa as filas quando houver mais de uma)', () => {
   let t = 0;
   const f = new Fila({ agora: () => t, opcoes: { janelaInicial: 100, crescePorSegundo: 10, janelaMaxima: 400, qualquerApos: 60_000 } });
-  f.entrar({ id: 1, rating: 1000 }); f.entrar({ id: 2, rating: 1250 }); f.entrar({ id: 3, rating: 1080, meta: 20 });
-  assert.deepStrictEqual(f.parear(), []);                   // 250 de diferença, janela 100; a meta 20 não junta com a 16
+  f.entrar({ id: 1, rating: 1000 }); f.entrar({ id: 2, rating: 1250 });
+  assert.strictEqual(f.entradas.get(1).meta, 16);          // meta de fora (20, 12, nada) vira a única de hoje
+  assert.deepStrictEqual(f.parear(), []);                   // 250 de diferença, janela 100
   t = 10_000;                                               // janela 200
   assert.deepStrictEqual(f.parear(), []);
   t = 15_000;                                               // janela 250
   assert.deepStrictEqual(f.parear().map(p => p.map(e => e.id)), [[1, 2]]);
-  assert.strictEqual(f.tamanho, 1);
+  assert.strictEqual(f.tamanho, 0);
   // o mais próximo em rating ganha, e entrar de novo não zera a espera
   t = 0; const g = new Fila({ agora: () => t });
   g.entrar({ id: 1, rating: 1000 }); g.entrar({ id: 2, rating: 1090 }); g.entrar({ id: 3, rating: 1010 });

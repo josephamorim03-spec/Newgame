@@ -17,13 +17,15 @@ ARMADILHAS={'espelho','interferencia','fundo','pedagio','ancora'}
 # interf_modo: 'lider' (hoje: −1 no disparo de 4+ de quem lidera) | 'vale1' (o disparo de 4+ de quem lidera vale como um de 3: 1 ponto)
 #              | 'grande' (−interf_grande no disparo de 5+, de qualquer um; descartada: quem sabe a gasta de graça com um 5)
 # pedagio_modo: 'sempre' (hoje: +2 no próximo disparo do rival) | 'pequeno' (+2 só num disparo de 3 ou 4; o de 5+ não paga)
+# coringa_mesa: dados na Mesa para usar o Coringa (v0.12: 2+) · ajuste_modo: 'mesa3' (v0.12: só com 3+ dados na Mesa) |
+#              'livre' (até a v0.11) | 'nao_pega' (o dado ajustado não pode ser pego por quem ajustou, na mesma vez)
 # pressa_min: dados na Mesa para usar a Pressa (v0.12: 3 a 4; até a v0.11 era 2 a 5)
 # pressa_max: no máximo esses dados na Mesa (4: a Pressa nunca abre uma Mesa nova)
 # pressa_abre: 'atras' (quem está atrás abre a Mesa nova, como no jogo) | 'rival' (quem esvaziou a Mesa com a Pressa não abre)
-# coringa_modo: 'frente' (v0.12: o dado que romperia troca a frente) | 'entra' (até a v0.11: entrava como mais um elo)
+# coringa_modo: 'frente' (v0.12: o dado que romperia troca a frente) | 'dispara' (troca a frente e a corrente de 3+ dispara na hora) | 'entra' (até a v0.11: entrava como mais um elo)
 # coringa_max: maior corrente em que o Coringa pode ser usado; coringa_seguro: o robô conta com o Coringa na mão como
 #              seguro e segura a corrente de 5, como gente faz (não é regra; docs/balanceamento-cartas.md §14)
-BAL=dict(interf_modo='lider', interf_grande=2, pedagio_modo='sempre', interf_menos=1, interf_min=4, interf_max=9, interf_6='normal', interf_lider='espera', pedagio=2, pedagio16=2, fundo_tudo=True, rerrolar_tudo=True, ancora_min=4, rerrolar_cor=2, coringa_cor=2, coringa_max=5, coringa_seguro=False, coringa_modo='frente', pressa_min=3, pressa_max=4, pressa_abre='atras', sobre=2, espelho_sem_bolso=True)
+BAL=dict(interf_modo='lider', interf_grande=2, pedagio_modo='sempre', interf_menos=1, interf_min=4, interf_max=9, interf_6='normal', interf_lider='espera', pedagio=2, pedagio16=2, fundo_tudo=True, rerrolar_tudo=True, ancora_min=4, rerrolar_cor=2, coringa_cor=2, coringa_max=5, coringa_seguro=False, coringa_modo='frente', coringa_mesa=2, ajuste_modo='mesa3', pressa_min=3, pressa_max=4, pressa_abre='atras', sobre=2, espelho_sem_bolso=True)
 import os, json
 BAL.update(json.loads(os.environ.get('BAL', '{}')))   # ex.: BAL='{"pedagio": 2}' para testar outro número
 EFEITOS={'rerrolar','virar','ajuste','pressa','coringa','sobrecarga'}
@@ -95,10 +97,12 @@ class Partida:
         if encaixa(j.cor,entra,j.coringa):
             # o Coringa só é gasto num dado que entra numa corrente já começada (como no jogo)
             # coringa_modo 'frente': o dado que não sincronizava troca a frente (a corrente não cresce)
-            troca = BAL['coringa_modo']=='frente' and j.coringa and j.cor and not sinc(j.cor[-1],entra)
+            troca = BAL['coringa_modo'] in ('frente','dispara') and j.coringa and j.cor and not sinc(j.cor[-1],entra)
             if j.cor: j.coringa=False
             if troca: j.cor[-1]=entra
             else: j.cor.append(entra)
+            # coringa_modo 'dispara': o resgate fecha a corrente (com 3+ ela dispara na hora)
+            if troca and BAL['coringa_modo']=='dispara' and len(j.cor)>=3: s.fire(p)
         elif j.armada=='ancora' and len(j.cor)>=BAL['ancora_min']:
             s.disparar_trap(p,'ancora')
         else:
@@ -169,7 +173,7 @@ class Partida:
         return (random.randrange(len(s.mesa)),'corrente')
     def coringa_pronto(s,p):
         """o Coringa ainda na mão e permitido com a corrente de agora (coringa_max: o maior tamanho em que ele pode ser usado)"""
-        j=s.j[p]; return j.pronta('coringa') and BAL['coringa_cor']<=len(j.cor)<=BAL['coringa_max']
+        j=s.j[p]; return j.pronta('coringa') and BAL['coringa_cor']<=len(j.cor)<=BAL['coringa_max'] and len(s.mesa)>=BAL['coringa_mesa']
     def risco(s,p):
         j=s.j[p]
         if s.garante(p): return .03
@@ -204,7 +208,7 @@ class Partida:
         if precisa and j.pronta('virar'):
             alvo=[i for i,X in enumerate(m) if encaixa(j.cor,7-X)]
             if alvo and s.efeito(p,'virar'): m[alvo[0]]=7-m[alvo[0]]; s.desarma(alvo[0]); precisa=False
-        if precisa and j.pronta('ajuste'):
+        if precisa and j.pronta('ajuste') and BAL['ajuste_modo']!='nao_pega' and (BAL['ajuste_modo']!='mesa3' or len(m)>=3):
             for i,X in enumerate(m):
                 for d in (1,-1):
                     if 1<=X+d<=6 and encaixa(j.cor,X+d):

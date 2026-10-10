@@ -45,10 +45,17 @@
     <div class="inicio-perfil" id="inicioPerfil"></div>
     <div class="inicio-partida" id="inicioPartida" hidden></div>
     <div class="inicio-jogar" id="inicioJogar">
-      <span class="segmento" role="group" aria-label="Rival"><button data-inicio="rival" data-v="aprendiz">Diana</button><button data-inicio="rival" data-v="esperto">Dona Coruja</button></span>
-      <p class="inicio-rival" id="inicioRival"></p>
       <button class="btn btn-mel inicio-principal" data-inicio="jogar">Jogar</button>
       <div class="inicio-linha"><button class="btn btn-papel" data-inicio="online">Online<span class="ponto-online" id="pontoInicio" hidden></span></button></div>
+    </div>
+    <div class="inicio-rivais" id="inicioRivais" hidden>
+      <h2>Escolha o rival</h2>
+      <div class="rival-cartas" id="rivalCartas" role="radiogroup" aria-label="Rival"></div>
+      <div class="rival-ajustes">
+        <span class="rival-linha"><span class="rival-deck" id="rivalDeck"></span><button class="btn-link" data-inicio="deck">Trocar</button></span>
+      </div>
+      <button class="btn btn-mel inicio-principal" data-inicio="comecar" id="rivalComecar">Jogar</button>
+      <button class="btn-link" data-inicio="voltar">← Voltar</button>
     </div>
     <div class="inicio-mais">
       <button class="inicio-ico" data-inicio="deck"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="6" width="11" height="15" rx="2"/><path d="M9 3h9a2 2 0 0 1 2 2v13"/></svg>Deck</button>
@@ -156,6 +163,7 @@
           <li><b>Interferência + Sobrecarga:</b> as duas valem. Um disparo de 4 vale 2 + 2 − 1 = 3.</li>
           <li><b>Pedágio:</b> +2. Pega qualquer disparo, até o de 3 e o automático de 6. Se os dois passarem da meta, vence quem disparou.</li>
           <li><b>Coringa e Âncora:</b> com o Coringa ativo, nenhum dado rompe, então a Âncora não é gasta.</li>
+          <li><b>Ajuste e Coringa no fim da Mesa:</b> o Ajuste só vale com 3 dados ou mais na Mesa; o Coringa, com 2 ou mais (no último dado, não).</li>
           <li><b>Coringa</b> não alonga a corrente: o dado que romperia entra <b>no lugar da frente</b> e a corrente fica do mesmo tamanho. É gasto no primeiro dado que entra numa corrente já começada, mesmo que esse dado já sincronizasse (aí ele entra normal, como mais um elo). Guardar no Bolso não gasta.</li>
           <li><b>Pressa:</b> só com 3 ou 4 dados na Mesa: nunca abre uma Mesa nova nem pega o último dado (ele fica para o rival). Você não dispara entre os dois dados; o segundo é opcional (“Dispensar”). Se o primeiro completar 6, a corrente dispara sozinha e o segundo dado começa outra.</li>
           <li><b>Espelho:</b> quem pega o dado marcado o recebe virado (7 − valor) e não pode guardá-lo; Bolso e troca ficam fechados, mas Coringa e Âncora ainda valem. As etiquetas da Mesa já mostram o valor virado. <b>Virar</b> no dado marcado e <b>Rerrolar</b> apagam a marca; <b>Ajuste</b> não.</li>
@@ -231,10 +239,6 @@
       <h2 id="cfgTitulo">Ajustes</h2>
       <h3>Partida</h3>
       <div class="cfg-grupo">
-        <div class="linha-cfg"><span><label>Meta</label><small>20 e 24: partidas mais longas</small></span>
-          <div class="segmento" role="group" aria-label="Pontos para vencer">
-            <button data-cfg="meta" data-v="16">16</button><button data-cfg="meta" data-v="20">20</button><button data-cfg="meta" data-v="24">24</button>
-          </div></div>
         <div class="linha-cfg"><span><label>Ritmo do rival</label></span>
           <div class="segmento" role="group" aria-label="Ritmo do rival">
             <button data-cfg="ritmo" data-v="calmo">Calmo</button><button data-cfg="ritmo" data-v="normal">Normal</button><button data-cfg="ritmo" data-v="rapido">Rápido</button>

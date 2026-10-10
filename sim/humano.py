@@ -43,8 +43,14 @@ def pronta(j, c):
 D.Jog.pronta = pronta
 
 
+# variantes de regra para o balanceamento: o Ajuste só para cima; no máximo N cartas de conserto por deck
+AJ = lambda: (1, -1) if D.BAL.get('ajuste_dir', 'ambos') == 'ambos' else (1,)
+CONSERTO = {'ajuste', 'virar', 'coringa', 'rerrolar', 'reverso'}
+MAXC = int(os.environ.get('MAXCONSERTO', '3'))
+SEM = set(c for c in os.environ.get('SEM', '').split(',') if c)   # cartas fora do jogo (para medir o peso de uma carta)
 def decks_de(k, maxp=1, maxa=2):
-    return [list(d) for d in itertools.combinations(CARTAS, k) if sum(c in ARM for c in d) <= maxa and sum(c in PTS for c in d) <= maxp]
+    return [list(d) for d in itertools.combinations(CARTAS, k) if sum(c in ARM for c in d) <= maxa and sum(c in PTS for c in d) <= maxp
+            and sum(c in CONSERTO for c in d) <= MAXC and not SEM & set(d)]
 
 
 class Partida(N.Partida):
@@ -76,9 +82,9 @@ class Partida(N.Partida):
     def seguro_na_mao(s, p):
         """quanto as cartas da mão diminuem o risco de segurar (1 = nada)"""
         j = s.j[p]; L = len(j.cor); f = 1.0
-        if j.coringa or j.pronta('coringa'): f = min(f, HUM['f_coringa'])          # o dado que romperia troca a frente
+        if j.coringa or (j.pronta('coringa') and L <= D.BAL['coringa_max']): f = min(f, HUM['f_coringa'])          # o dado que romperia troca a frente
         if L >= D.BAL['ancora_min'] and (j.armada == 'ancora' or (j.armada is None and j.pronta('ancora'))): f = min(f, .15)
-        if j.pronta('ajuste') or j.pronta('virar'): f = min(f, HUM['f_conserto'])     # consertam um dado da Mesa (se houver dado)
+        if (j.pronta('ajuste') and D.BAL['ajuste_modo'] == 'livre') or j.pronta('virar'): f = min(f, HUM['f_conserto'])     # consertam um dado da Mesa (se houver dado)
         if j.pronta('reverso') and L >= 2: f = min(f, .6)
         if j.pronta('rerrolar'): f = min(f, .65)
         return f
@@ -132,8 +138,8 @@ class Partida(N.Partida):
                 if meu != i:
                     if j.pronta('virar') and not encaixa(R.cor, 7 - m[i]):
                         if s.efeito(p, 'virar'): m[i] = 7 - m[i]; s.desarma(i)
-                    elif j.pronta('ajuste') and any(1 <= m[i] + d <= 6 and not encaixa(R.cor, m[i] + d) for d in (1, -1)):
-                        if s.efeito(p, 'ajuste'): m[i] = next(m[i] + d for d in (1, -1) if 1 <= m[i] + d <= 6 and not encaixa(R.cor, m[i] + d))
+                    elif j.pronta('ajuste') and (D.BAL['ajuste_modo'] != 'mesa3' or len(m) >= 3) and any(1 <= m[i] + d <= 6 and not encaixa(R.cor, m[i] + d) for d in AJ()):
+                        if s.efeito(p, 'ajuste'): m[i] = next(m[i] + d for d in AJ() if 1 <= m[i] + d <= 6 and not encaixa(R.cor, m[i] + d))
                     elif j.pronta('rerrolar') and len(R.cor) >= 5 and s.efeito(p, 'rerrolar'):
                         m[:] = [random.randint(1, 6) for _ in m]; s.desarma(None)
         # Furto: o Bolso dele salva a minha corrente grande, ou é o que segura a corrente grande dele
@@ -159,9 +165,10 @@ class Partida(N.Partida):
     def consertar(s, p):
         """nada entra na corrente: o conserto mais barato que resolve"""
         j = s.j[p]; m = s.mesa
-        if j.pronta('ajuste'):
+        aj = D.BAL['ajuste_modo']
+        if j.pronta('ajuste') and aj != 'nao_pega' and (aj != 'mesa3' or len(m) >= 3):
             for i, X in enumerate(m):
-                for d in (1, -1):
+                for d in AJ():
                     if 1 <= X + d <= 6 and encaixa(j.cor, X + d):
                         if s.efeito(p, 'ajuste'): m[i] = X + d
                         return
@@ -173,7 +180,7 @@ class Partida(N.Partida):
         if j.pronta('reverso') and len(j.cor) >= 2 and any(encaixa(j.cor[:1], X) for X in m):
             if s.efeito(p, 'reverso'): j.cor.reverse()
             return
-        if j.pronta('coringa') and not s.garante(p):   # o Coringa salva, mas não faz crescer
+        if j.pronta('coringa') and not s.garante(p) and len(m) >= D.BAL['coringa_mesa'] and len(j.cor) <= D.BAL['coringa_max']:   # o Coringa salva, mas não faz crescer
             if s.efeito(p, 'coringa'): j.coringa = True
             return
         if j.pronta('rerrolar') and len(m) >= 2:
@@ -266,7 +273,7 @@ class Partida(N.Partida):
                 else: ops.append((c,))
             elif c == 'ajuste':
                 for i, X in enumerate(m):
-                    for d in (1, -1):
+                    for d in AJ():
                         Y = X + d
                         if 1 <= Y <= 6 and ((not serve(j.cor, X) and serve(j.cor, Y)) or (len(R.cor) >= 2 and serve(R.cor, X) and not serve(R.cor, Y))): ops.append(('ajuste', i, d))
             elif c == 'virar':
@@ -407,8 +414,8 @@ def fmt(r): return f"{r['p']:6.1%} ±{r['erro']:.1%}"
 
 
 def _um_deck(args):
-    k, pool, mec, n = args
-    random.seed(5000 + k); MEC.update(dict(dict(usos=None, por_mesa=None), **mec)); w = 0
+    k, pool, mec, n = args[:4]
+    random.seed((args[4] if len(args) > 4 else 5000) + k); MEC.update(dict(dict(usos=None, por_mesa=None), **mec)); w = 0
     for g in range(n):
         lado = g % 2; d = pool[k]; r = random.choice(pool)
         decks = [d, r] if lado == 0 else [r, d]
@@ -491,12 +498,18 @@ if __name__ == '__main__':
             ordem = sorted(range(len(pool)), key=lambda k: -res[k])
             from collections import Counter
             top = Counter(c for k in ordem[:max(10, len(pool) // 16)] for c in pool[k])
-            media = {c: statistics.mean(res[k] for k in range(len(pool)) if c in pool[k]) for c in CARTAS}
+            media = {c: statistics.mean(res[k] for k in range(len(pool)) if c in pool[k]) for c in CARTAS if any(c in d for d in pool)}
             jog = sum(r >= .45 for r in res) / len(res)
             print(f"\n  {nome}: {len(pool)} decks · desvio {statistics.pstdev(res):.3f} · melhor {res[ordem[0]]:.1%} ({' + '.join(pool[ordem[0]])}) · acima de 58%: {sum(r > .58 for r in res)} · jogáveis (45%+): {jog:.0%}")
             print("    melhores: " + " | ".join(f"{res[k]:.1%} {'+'.join(pool[k])}" for k in ordem[:5]))
+            if os.environ.get('CONFIRMA'):
+                # com poucas partidas por deck, o "melhor" sai inflado pela sorte: os melhores jogam de novo, com outras sementes
+                nc, ntop = int(os.environ['CONFIRMA']), int(os.environ.get('CONFIRMA_N', '12'))
+                with Pool(PROCS) as pp: conf = pp.map(_um_deck, [(k, pool, v['mec'], nc, 90000) for k in ordem[:ntop]])
+                cs = sorted(zip(conf, ordem[:ntop]), reverse=True)
+                print(f"    confirmados ({nc} partidas): " + " | ".join(f"{c:.1%} {'+'.join(pool[k])}" for c, k in cs[:6]) + f" · acima de 58%: {sum(c > .58 for c, _ in cs)} de {ntop}")
             print("    cartas no topo: " + ", ".join(f"{c} {top[c]}" for c in sorted(CARTAS, key=lambda c: -top[c]) if top[c]))
-            print("    média dos decks com a carta: " + ", ".join(f"{c} {media[c]:.1%}" for c in sorted(CARTAS, key=lambda c: -media[c])), flush=True)
+            print("    média dos decks com a carta: " + ", ".join(f"{c} {media[c]:.1%}" for c in sorted(media, key=lambda c: -media[c])), flush=True)
 
     if 'mecanicas_p' in quais:
         # as variantes com o bom jogador: quanto ele vence o casual (mais = mais habilidade em jogo) e como gasta as cartas
@@ -518,3 +531,17 @@ if __name__ == '__main__':
             with Pool(PROCS) as pp: rs = pp.map(_pressa_bloco, [(bal, NPART // 16, 900 + k) for k in range(16)])
             w = sum(r['w'] for r in rs); n = sum(r['n'] for r in rs); t = sum(r['tres'] for r in rs); tv = sum(r['tres_venceu'] for r in rs)
             print(f"  {nome:36s} Pressa vence {w / n:.1%} · partidas com 3+ dados seguidos de alguém: {t / n:.1%} · quem fez isso venceu {tv / max(1, t):.0%}", flush=True)
+    if 'metas' in quais:
+        # a duração: o que muda com a meta (o jogo, a habilidade com as cartas, a virada, a queima e o equilíbrio)
+        print(f"\n## Metas (decks de 3 sorteados; humano x humano para o jogo, humano x robô para a habilidade; {NPART} partidas cada)")
+        print("  meta | Mesas | minutos* | habilidade (humano x robô) | quem começa | virada (3+ atrás no meio) | sobram | usadas no 1º quarto")
+        for meta in (12, 16, 20, 24):
+            jj = mede('humano', 'humano', meta=meta); hb = mede('humano', 'robo', meta=meta)
+            print(f"  {meta:4d} | {jj['mesas']:5.1f} | {jj['mesas'] * 35 / 60:3.0f} a {jj['mesas'] * 50 / 60:2.0f} | {fmt(hb):26s} | {jj['primeiro']:11.1%} | {jj['virada']:25.1%} | {jj['sobra']:6.0%} | {jj['cedo']:.0%}", flush=True)
+        print("  * de 35 a 50 s por Mesa (o que dava os 4 a 6 minutos da meta 12)")
+    if 'metas_p' in quais:
+        n = int(os.environ.get('NP', '240'))
+        print(f"\n## Metas com o pensador ({ROLL} simulações) x humano; {n} partidas cada")
+        for meta in (12, 16, 20, 24):
+            r = mede('pensador', 'humano', n=n, meta=meta, semente=int(os.environ.get('SEMENTE', '1')))
+            print(f"  meta {meta:2d}: pensador vence {fmt(r)} · Mesas {r['mesas']:.1f} · cartas usadas no 1º quarto {r['cedo']:.0%}", flush=True)
