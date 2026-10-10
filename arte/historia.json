@@ -1506,7 +1506,14 @@
    "la": "A fluffy tuft of cream-white sheep wool, real curly fleece with loose fibers, stuck on the bridge as if it had just been pulled from a sheep. The tuft is a little bigger than the other accessories: it covers the whole bridge between the eyes and puffs out slightly.",
    "nada": "No accessory: the small diagonal red scratch on the bridge of the nose is plainly visible and a little raw, slightly pinker around it.",
    "curada": "No accessory and no scratch: the bridge of the nose is healed, clean white fur with only a very faint thin pink line where the scratch was."
-  }
+  },
+  "bases": {
+   "cachecol": "arte/historia/narizes/cachecol-v1.png"
+  },
+  "edicao": {
+   "cachecol": "Edit the attached image. Keep EVERYTHING identical (the cat, the face, the ears, the stripes, the eyes, the colors, the outline, the cream background) and keep the same little dark-green knitted scarf on her nose, the same knit and the same green. Change only its size and how it sits: make it a little bigger, resting ON TOP of the bridge of the nose like a small saddle, with its two sides falling down on each side of the nose toward the cheeks, each side ending in a short fringe. It is still only on the nose: it does not cover the eyes or the pink nose pad."
+  },
+  "_cachecol": "Decisão do dono: o cachecol é o da 1.ª folha (cachecol-v1.png, recuperado do print dele), um pouco maior, apoiado em cima do nariz e com as laterais caindo. Enquanto o pedido não roda, cachecol.png é a v1."
  },
  "referencia_nariz": "The first attached image is the approved model sheet of Diana with the nose accessory of this scene: copy her face and that accessory EXACTLY (the same object, the same size relative to her face, the same position on the bridge of the nose and the same diagonal angle). Draw the rest of her body as a real white cat with the same flat style.",
  "pagina": {
@@ -1738,5 +1745,5 @@
    ]
   }
  },
- "_refazer": "Quando houver crédito na API: python3 tools/historia/quadros.py --qualidade high <ids> refaz no pedido novo (estilo chapado, folha do nariz, canto livre para o balão). Primeiro os pedidos do dono na 2.ª revisão: p-pata (ombro e contorno), i1-le (a página virada para a Diana), c3-raposa (o rabo), c1-pag-a (o girino de ré); depois os 6 antigos do piloto (p-caderno, p-close, c1-x, c1-sapo, c1-cha, c6-la) e o resto."
+ "_refazer": "Quando houver crédito na API: primeiro python3 tools/historia/quadros.py narizes cachecol (o cachecol maior, a partir da v1); depois python3 tools/historia/quadros.py --qualidade high <ids> refaz no pedido novo (estilo chapado, folha do nariz, canto livre para o balão). Primeiro os pedidos do dono na 2.ª revisão: p-pata (ombro e contorno), i1-le (a página virada para a Diana), c3-raposa (o rabo), c1-pag-a (o girino de ré); depois os 6 antigos do piloto (p-caderno, p-close, c1-x, c1-sapo, c1-cha, c6-la) e o resto."
 }

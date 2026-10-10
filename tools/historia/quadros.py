@@ -156,8 +156,12 @@ def narizes(cfg, ids):
     ids = ids or list(m["itens"])
     NARIZES.mkdir(parents=True, exist_ok=True)
     def um(id_):
-        p = f'{m["regra"]} NOSE: {m["itens"][id_]}'
-        png = A.gerar(p, "high", RAIZ / "arte" / "fonte" / "diana.png", fundo="opaque", modelo=cfg["modelo"])
+        # um enfeite já aprovado só muda o que o dono pediu: a edição parte da imagem dele, não do retrato
+        if id_ in m.get("edicao", {}):
+            p, base = m["edicao"][id_], RAIZ / m["bases"][id_]
+        else:
+            p, base = f'{m["regra"]} NOSE: {m["itens"][id_]}', RAIZ / "arte" / "fonte" / "diana.png"
+        png = A.gerar(p, "high", base, fundo="opaque", modelo=cfg["modelo"])
         (NARIZES / f"{id_}.png").write_bytes(png)
         (NARIZES / f"{id_}.json").write_text(json.dumps({"prompt": p, "modelo": cfg["modelo"], "qualidade": "high"}, ensure_ascii=False, indent=1), encoding="utf-8")
         return id_
