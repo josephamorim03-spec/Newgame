@@ -240,7 +240,7 @@ svg.ico.mini-ico { width: 1.25em; height: 1.25em; vertical-align: -0.25em; strok
 @media (hover: none), (max-width: 599px) { .kbd { display: none; } }
 .ticker { font-size: 13px; line-height: 1.45; color: var(--texto-suave); text-align: center; min-height: 19px; max-width: 100%; overflow: hidden; text-wrap: balance;
   display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
-/* no celular a linha do registro pode ocupar duas linhas: o espaço fica reservado para a Mesa não pular */
+/* no celular a linha do último lance pode ocupar duas linhas: o espaço fica reservado para a Mesa não pular */
 @media (max-width: 520px) { .ticker { min-height: calc(2 * 1.45em); display: -webkit-box; align-content: center; } }
 .ticker .cor0 { color: #bfe8f2; } .ticker .cor1 { color: #ffd0dc; }
 .novo .face { animation: rola .6s linear both; animation-delay: calc(var(--i, 0) * 70ms); }
@@ -295,15 +295,12 @@ button.carta:hover { transform: translateY(-2px) rotate(-1deg); }
 .arte-verso { display: grid; place-items: center; width: 72px; height: 72px; border-radius: 16px; background: var(--tinta); color: var(--papel); font-family: var(--f-titulo); font-size: 40px; flex: none; }
 .arte-verso img { width: 100%; height: 100%; object-fit: contain; }
 
-/* ---------- lateral (regras e registro) ---------- */
+/* ---------- lateral (regras) ---------- */
 .lado { display: grid; gap: 16px; min-width: 0; align-content: start; }
 .lado-topo { display: none; }
-/* no computador, a lateral acompanha a Mesa: fica parada ao rolar a página, com rolagem própria, e o Registro
-   (o que se consulta jogando) vem antes das regras (consulta de vez em quando) */
+/* no computador, a lateral acompanha a Mesa: fica parada ao rolar a página, com rolagem própria */
 @media (min-width: 1040px) {
   .lado { position: sticky; top: 12px; max-height: calc(100vh - 24px); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; border-radius: var(--raio); }
-  .lado .registro { order: -1; }
-  .lado .registro ol { max-height: 230px; }
 }
 @media (max-width: 1039px) {
   .lado { position: fixed; inset: 0; z-index: 20; overflow-y: auto; background: var(--noite); padding: 0 16px 24px; transform: translateY(105%); visibility: hidden; transition: transform .3s ease, visibility 0s .3s; }
@@ -337,12 +334,6 @@ button.carta:hover { transform: translateY(-2px) rotate(-1deg); }
 .lista-cartas .ico { margin-top: 2px; color: var(--mel-escuro); }
 .lista-cartas img.ico { width: 26px; height: 26px; margin-top: -2px; }
 .legenda { display: inline-flex; width: 12px; height: 12px; border-radius: 50%; background: var(--rival); vertical-align: -1px; }
-.registro ol { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 6px; max-height: 320px; overflow-y: auto; font-size: 14px; }
-.registro li { padding: 6px 10px; border-radius: 10px; background: var(--papel-2); }
-.registro li.ruim { box-shadow: inset 3px 0 0 var(--perigo); }
-.registro li.bom { box-shadow: inset 3px 0 0 var(--mel); }
-.registro li.seg { box-shadow: inset 3px 0 0 var(--eco); }
-.registro li.sis { color: var(--tinta-suave); background: transparent; }
 .cor0 { color: var(--voce-tinta); font-weight: 800; } .cor1 { color: var(--rival-tinta); font-weight: 800; }
 
 /* ---------- janelas ---------- */
@@ -909,7 +900,7 @@ button.vaga { cursor: pointer; border: 0; background: #fff3dc; color: var(--tint
 .em-partida .layout { grid-template-columns: minmax(0, 860px); justify-content: center; }
 .barra-partida { display: flex; justify-content: flex-end; gap: 8px; width: 100%; max-width: 860px; margin: 0 auto; padding: 0 8px; }
 .barra-partida[hidden] { display: none; }
-/* no PC, a lateral (Registro e regras) sai durante a partida; "Regras e registro", no menu de pausa, abre por cima */
+/* no PC, a lateral (as regras) sai durante a partida; "Regras", no menu de pausa, abre por cima */
 @media (min-width: 1040px) {
   .em-partida .lado:not(.aberto) { display: none; }
   .em-partida .lado.aberto { position: fixed; top: 0; right: 0; bottom: 0; width: min(420px, 100vw); max-height: none; z-index: 20; overflow-y: auto; background: var(--noite); padding: 0 16px 24px; box-shadow: -20px 0 40px rgba(0,0,0,.4); border-radius: 0; }

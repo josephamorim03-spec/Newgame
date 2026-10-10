@@ -362,14 +362,14 @@ animações desligadas, tudo isso vira instantâneo.
   menu de pausa (o botão no alto da tela).
 
 **Partida em foco (v0.11): o jogo é o jogo.** Durante a partida, a tela tem só os dois painéis e a Mesa. O cabeçalho
-inteiro sai (logo, moedas, Online, Regras, Deck, Ajustes) e no PC o "Como se joga" sai da lateral (Registro e regras abrem por cima, pela Pausa).
+inteiro sai (logo, moedas, Online, Regras, Deck, Ajustes) e no PC o "Como se joga" sai da lateral (as Regras abrem por cima, pela Pausa).
 O tabuleiro fica **centrado na tela** (vertical e horizontal) e, no alto, só uma faixa com **Som** (cala efeitos e
 música juntos) e **Pausa**. **A decisão aparece no seu painel, no lugar da fileira de cartas,** logo abaixo da
 corrente que ela afeta, e só quando há decisão: dado escolhido (Na corrente, Guardar, Trocar, Cancelar), para onde
 vai o dado, disparar ou segurar, o segundo dado da Pressa, uma carta com alvo e o fim. Não há barra solta: o
 tabuleiro não se mexe. Escolher um dado não tem texto: o "sua vez" do painel e as etiquetas dos dados bastam; a vez
 do rival aparece no painel dele. O único caminho para fora da jogada é a **Pausa**: ela abre
-uma lista curta: Continuar, a chave das ajudas, Regras e registro, Ajustes, Menu principal (fora do online) e
+uma lista curta: Continuar, a chave das ajudas, Regras, Ajustes, Menu principal (fora do online) e
 Desistir, que pede um segundo toque quando conta como derrota (contra o rival, depois do primeiro dado, e
 online). Deck, Loja e Online moram no menu principal. Fora da partida, o cabeçalho volta. A fala do rival sai do retrato e nunca cobre o Bolso nem o placar.
 
@@ -466,7 +466,7 @@ de novo" seria revanche).
 
 **Texto inteiro, sempre.** Nenhum texto de botão, etiqueta ou cartão é cortado com "…" nem encosta na borda, de
 320 px ao PC; o `tools/layout.js` reprova as duas coisas ("cortado com …", "texto sem respiro"). Onde falta largura,
-o texto quebra de linha (o miúdo dos botões da decisão, a linha do registro sobre a Mesa, que no celular tem duas
+o texto quebra de linha (o miúdo dos botões da decisão, a linha do último lance sobre a Mesa, que no celular tem duas
 linhas reservadas) ou a peça encolhe o que não é texto (em 320 px, o Bolso perde a palavra e fica a caixa do dado).
 
 **Margens de segurança (entalhe e barrinha).** Janelas, menu principal e a barra da partida ficam inteiros entre o

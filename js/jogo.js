@@ -1113,7 +1113,6 @@
     const som = document.getElementById('btnSom'); som.setAttribute('aria-pressed', String(somLigado)); som.classList.toggle('sem-som', !somLigado);
     const n = nomes();
     const linha = l => `${l.p === null ? '' : `<span class="cor${l.p}">${n[l.p]}</span> `}${l.txt}`;
-    document.getElementById('log').innerHTML = j.log.map(l => `<li class="${l.tipo}">${linha(l)}</li>`).join('');
     const instrucao = humano(j.vez) ? instrucaoCarta(j) || instrucaoDado(j) : '', ticker = document.getElementById('ticker');
     ticker.innerHTML = instrucao || (j.log[0] ? linha(j.log[0]) : '');
     ticker.classList.toggle('instrucao', !!instrucao);
@@ -1818,7 +1817,7 @@
     }
     janelaMenu.hidden = true;
     if (m === 'inicio') { mostrarInicio(); return; }
-    if (m === 'regras') { abrirLado(true); if (innerWidth >= 1040) lado.querySelector('.regras').scrollIntoView({ block: 'start' }); }
+    if (m === 'regras') { abrirLado(true); lado.scrollTop = 0; }   // as regras abrem do começo
     const botao = { ajustes: 'btnConfig' }[m];
     if (botao) document.getElementById(botao).click();
   });

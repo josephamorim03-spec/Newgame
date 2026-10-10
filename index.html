@@ -94,7 +94,7 @@
       <button class="btn-topo atalho" id="btnOnline" aria-label="Jogar online">
         <svg class="ico" viewBox="0 0 24 24"><circle cx="8" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 19a5 5 0 0 1 10 0M13.5 18.5a4 4 0 0 1 7.5-1"/></svg><span class="rotulo">Online</span><span class="ponto-online" id="pontoOnline" hidden></span><span class="conta-online" id="contaOnline" hidden></span>
       </button>
-      <button class="btn-topo atalho" id="btnRegras" aria-expanded="false" aria-controls="lado" aria-label="Regras e registro">
+      <button class="btn-topo atalho" id="btnRegras" aria-expanded="false" aria-controls="lado" aria-label="Regras">
         <svg class="ico" viewBox="0 0 24 24"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11M9 8h6"/></svg><span class="rotulo">Regras</span>
       </button>
       <button class="btn-topo atalho" id="btnDeck" aria-label="Montar deck">
@@ -124,8 +124,8 @@
       <div class="acoes" id="acoes" aria-live="polite"></div>
     </section>
 
-    <aside class="lado" id="lado" aria-label="Regras e registro">
-      <div class="lado-topo"><strong>Regras e registro</strong><button class="btn-topo" id="btnFecharLado">Voltar ao jogo</button></div>
+    <aside class="lado" id="lado" aria-label="Regras">
+      <div class="lado-topo"><strong>Regras</strong><button class="btn-topo" id="btnFecharLado">Voltar ao jogo</button></div>
       <section class="card regras" aria-labelledby="tRegras">
         <h2 id="tRegras">Como se joga</h2>
         <p>Chegue primeiro a <b>16 pontos</b>. Os pontos vêm de <b>correntes</b>: filas de dados em que cada um sincroniza com o anterior.</p>
@@ -179,10 +179,6 @@
           <li>No teclado: <b>1–5</b> escolhem o dado, <b>C</b> põe na corrente, <b>B</b> usa o Bolso, <b>D</b> dispara, <b>S</b> segura.</li>
         </ol>
       </section>
-      <section class="card registro" aria-labelledby="tReg">
-        <h2 id="tReg">Registro</h2>
-        <ol id="log"></ol>
-      </section>
     </aside>
   </main>
 
@@ -220,7 +216,7 @@
       <button class="btn btn-mel" data-menu="continuar">Continuar a partida</button>
       <div class="linha-cfg"><span><label for="opDicasMenu">Ajudas na partida</label><small>etiquetas nos dados, dicas e explicações</small></span><input class="chave-liga" type="checkbox" id="opDicasMenu"></div>
       <div class="menu-lista">
-        <button class="btn btn-papel" data-menu="regras">Regras e registro</button>
+        <button class="btn btn-papel" data-menu="regras">Regras</button>
         <button class="btn btn-papel" data-menu="ajustes">Ajustes</button>
         <button class="btn btn-papel" data-menu="inicio">Menu principal</button>
         <button class="btn btn-papel perigo" data-menu="sair"><span id="menuSairTxt">Desistir</span></button>
