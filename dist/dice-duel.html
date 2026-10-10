@@ -1073,6 +1073,35 @@ button.vaga { cursor: pointer; border: 0; background: #fff3dc; color: var(--tint
 .chamada.vez-chamada { box-shadow: 0 8px 0 var(--papel-2), 0 20px 50px rgba(0,0,0,.45), 0 0 0 4px var(--voce); }
 .chamada.vez-chamada b { color: var(--voce-tinta); }
 
+/* ==========================================================================
+   Escolha do rival (v0.12): Jogar → os retratos, o jeito de cada uma e o que a vitória rende → Jogar contra ...
+   ========================================================================== */
+.inicio-rivais { width: 100%; display: grid; gap: 12px; justify-items: stretch; text-align: left; }
+.inicio-rivais h2 { margin: 0; text-align: center; font-family: var(--f-titulo); font-weight: 700; font-size: 24px; color: var(--texto); }
+.rival-cartas { display: grid; gap: 10px; }
+.rival-carta { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px; align-items: center; padding: 12px; border: 0; border-radius: var(--raio); text-align: left; cursor: pointer;
+  background: var(--papel); color: var(--tinta); font: inherit; box-shadow: 0 5px 0 var(--papel-2), 0 10px 20px rgba(0,0,0,.25); transition: transform .18s, box-shadow .18s; }
+.rival-carta:active { transform: translateY(3px); }
+.rival-carta:not(.marcado) .rival-retrato { filter: saturate(.75); }
+.rival-carta.marcado { box-shadow: 0 5px 0 var(--papel-2), 0 0 0 3px var(--mel), 0 14px 26px rgba(0,0,0,.32); transform: translateY(-2px); }
+.rival-retrato { width: clamp(72px, 22vw, 96px); height: clamp(72px, 22vw, 96px); border-radius: 50%; overflow: hidden; display: block; background: var(--papel-2); box-shadow: inset 0 0 0 3px rgba(58,42,46,.08); }
+.rival-retrato .avatar { width: 100%; height: 100%; display: block; }
+.rival-texto { display: grid; gap: 4px; min-width: 0; }
+.rival-topo { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.rival-topo b { font-family: var(--f-titulo); font-size: 21px; line-height: 1.1; }
+.rival-nivel { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+.rival-nivel.n-aprendiz { background: var(--passo); color: #24533a; }
+.rival-nivel.n-esperto { background: var(--eco); color: #3d2e73; }
+.rival-jeito { font-size: 14px; line-height: 1.35; }
+.rival-rende { font-size: 12px; font-weight: 700; color: var(--tinta-suave); }
+.rival-ajustes { display: grid; gap: 8px; padding: 10px 12px; border-radius: 14px; background: rgba(255,243,226,.06); color: var(--texto-suave); font-size: 14px; }
+.rival-linha { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.rival-deck b { color: var(--texto); font-weight: 800; }
+.inicio-rivais .btn-link { color: var(--texto); justify-self: center; }
+.rival-ajustes .btn-link { justify-self: auto; }
+.inicio-rivais .inicio-principal { margin-top: 2px; }
+.tela-inicio.escolhendo .inicio-logo, .tela-inicio.escolhendo #inicioTitulo { display: none; }
+
 </style>
 </head>
 <body>
@@ -1089,10 +1118,18 @@ button.vaga { cursor: pointer; border: 0; background: #fff3dc; color: var(--tint
     <div class="inicio-perfil" id="inicioPerfil"></div>
     <div class="inicio-partida" id="inicioPartida" hidden></div>
     <div class="inicio-jogar" id="inicioJogar">
-      <span class="segmento" role="group" aria-label="Rival"><button data-inicio="rival" data-v="aprendiz">Diana</button><button data-inicio="rival" data-v="esperto">Dona Coruja</button></span>
-      <p class="inicio-rival" id="inicioRival"></p>
       <button class="btn btn-mel inicio-principal" data-inicio="jogar">Jogar</button>
       <div class="inicio-linha"><button class="btn btn-papel" data-inicio="online">Online<span class="ponto-online" id="pontoInicio" hidden></span></button></div>
+    </div>
+    <div class="inicio-rivais" id="inicioRivais" hidden>
+      <h2>Escolha o rival</h2>
+      <div class="rival-cartas" id="rivalCartas" role="radiogroup" aria-label="Rival"></div>
+      <div class="rival-ajustes">
+        <span class="rival-linha"><span>Partida até</span><span class="segmento" role="group" aria-label="Pontos para vencer"><button data-inicio="meta" data-v="16">16</button><button data-inicio="meta" data-v="20">20</button><button data-inicio="meta" data-v="24">24</button></span></span>
+        <span class="rival-linha"><span class="rival-deck" id="rivalDeck"></span><button class="btn-link" data-inicio="deck">Trocar</button></span>
+      </div>
+      <button class="btn btn-mel inicio-principal" data-inicio="comecar" id="rivalComecar">Jogar</button>
+      <button class="btn-link" data-inicio="voltar">← Voltar</button>
     </div>
     <div class="inicio-mais">
       <button class="inicio-ico" data-inicio="deck"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="6" width="11" height="15" rx="2"/><path d="M9 3h9a2 2 0 0 1 2 2v13"/></svg>Deck</button>
@@ -5014,12 +5051,18 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
   function desenharInicio() {
     const c = st.conta, nome = st.sessao && st.sessao.perfil ? st.sessao.perfil.nome : 'Convidado';
     document.getElementById('inicioPerfil').innerHTML = `${iconeSVG(c.icone)}<span><b>${esc(nome)}</b> <small>· rating ${c.rating} · nível ${nivelDe(c.xp)} · ${c.moedas} moedas</small></span>`;
-    document.getElementById('inicioRival').textContent = `${RIVAIS[st.cfg.nivel].desc} · meta ${st.cfg.meta}`;
     document.getElementById('pontoInicio').hidden = document.getElementById('pontoOnline').hidden;
-    inicio.querySelectorAll('[data-inicio="rival"]').forEach(b => b.setAttribute('aria-pressed', String(st.cfg.nivel === b.dataset.v)));
     const g = partidaParaContinuar(), box = document.getElementById('inicioPartida');
+    // a escolha do rival ocupa o lugar dos botões do menu (Jogar → Escolha o rival → Jogar contra ...)
+    const rivais = escolhendoRival && !g;
+    document.getElementById('inicioRivais').hidden = !rivais;
+    document.getElementById('inicioJogar').hidden = rivais;
+    inicio.querySelector('.inicio-mais').hidden = rivais;
+    document.getElementById('inicioPerfil').hidden = rivais;
+    inicio.classList.toggle('escolhendo', rivais);   // na escolha do rival, o logo e o título saem (cabe sem rolar em 360×640)
+    if (rivais) desenharRivais();
     // com uma partida offline em andamento, o caminho é continuar ou abandonar (começar outra é abandonar)
-    ['[data-inicio="jogar"]', '.inicio-jogar .segmento'].forEach(sel => { inicio.querySelector(sel).hidden = !!g; });
+    inicio.querySelector('[data-inicio="jogar"]').hidden = !!g;
     box.hidden = !g;
     if (!g) { box.innerHTML = ''; return; }   // sem partida guardada, nada de botões velhos escondidos
     const quem = g.modo === 'bot' ? ['Você', RIVAIS[g.nivel].nome] : ['Jogador 1', 'Jogador 2'];
@@ -5033,8 +5076,33 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
         ? `<div class="inicio-linha"><button class="btn btn-papel perigo" data-inicio="abandonar-sim">Abandonar</button><button class="btn btn-papel" data-inicio="abandonar-nao">Voltar</button></div>`
         : `<button class="btn btn-mel inicio-principal" data-inicio="continuar">Continuar a partida</button><button class="btn-link" data-inicio="abandonar">Abandonar a partida</button>`}`;
   }
+  // ---------- a escolha do rival: o retrato, o jeito de jogar, a dificuldade e o que a vitória rende ----------
+  let escolhendoRival = false;
+  const NIVEL_RIVAL = { aprendiz: 'Para começar', esperto: 'Desafiadora' };
+  const JEITO_RIVAL = { aprendiz: 'Gata branca de olhos azuis. Joga solto e arrisca: boa para aprender as correntes e as cartas.',
+    esperto: 'Joga com paciência, lê a Mesa e leva um dos melhores decks. Desafia os seus blefes pela conta.' };
+  function rendeRival(nivel) {
+    const c = st.conta, pico = Math.max(c.rating, c.pico || 0);
+    if (pico >= TETO_MOEDAS[nivel]) return `vitórias não rendem mais moedas (seu rating já passou de ${TETO_MOEDAS[nivel] - 1})`;
+    // uma vitória típica: margem de 5 pontos, no ritmo normal de Mesas da meta
+    const t = moedasDaVitoria(BASE_MOEDAS[nivel], 5, Math.round(+st.cfg.meta * 9.5 / 16), +st.cfg.meta).total;
+    return `vitória rende cerca de ${t} moedas · rating ${RATING_RIVAL[nivel]}`;
+  }
+  function desenharRivais() {
+    document.getElementById('rivalCartas').innerHTML = ['aprendiz', 'esperto'].map(k => {
+      const marcado = st.cfg.nivel === k;
+      return `<button class="rival-carta${marcado ? ' marcado' : ''}" data-inicio="rival" data-v="${k}" role="radio" aria-checked="${marcado}">
+        <span class="rival-retrato">${Retratos.retrato(RETRATO_RIVAL[k], marcado ? 'feliz' : '')}</span>
+        <span class="rival-texto"><span class="rival-topo"><b>${RIVAIS[k].nome}</b><span class="rival-nivel n-${k}">${NIVEL_RIVAL[k]}</span></span>
+          <span class="rival-jeito">${JEITO_RIVAL[k]}</span><small class="rival-rende">${rendeRival(k)}</small></span></button>`;
+    }).join('');
+    inicio.querySelectorAll('[data-inicio="meta"]').forEach(b => b.setAttribute('aria-pressed', String(+st.cfg.meta === +b.dataset.v)));
+    const deck = (st.deckVisto ? st.decks[0] : PRONTOS[0].cartas).filter(c => CARTAS[c]);
+    document.getElementById('rivalDeck').innerHTML = `Seu deck: <b>${deck.length ? deck.map(c => CARTAS[c].nome).join(', ') : 'sem cartas'}</b>`;
+    document.getElementById('rivalComecar').textContent = `Jogar contra ${RIVAIS[st.cfg.nivel].nome}`;
+  }
   function mostrarInicio() {
-    confirmarAbandono = false;
+    confirmarAbandono = false; escolhendoRival = false;
     // a partida para atrás do menu: a jogada do rival que estava no meio recomeça do zero no Continuar
     if (jogo && jogo.modo === 'bot' && jogo.pensando) { jogo.token = Math.random(); jogo.pensando = false; jogo.destaque = null; }
     ['fim', 'janelaMenu', 'janelaCarta'].forEach(id => { document.getElementById(id).hidden = true; });
@@ -5050,13 +5118,16 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
   inicio.addEventListener('click', e => {
     const b = e.target.closest('[data-inicio]'); if (!b) return;
     const a = b.dataset.inicio;
-    if (a === 'rival') { st.cfg.nivel = b.dataset.v; salvar(); desenharInicio(); return; }
-    if (a === 'jogar') Online.sair();
-    if (a === 'jogar') {
+    if (a === 'rival') { st.cfg.nivel = b.dataset.v; salvar(); Som.tocar('toque'); desenharInicio(); return; }
+    if (a === 'meta') { st.cfg.meta = R.metaValida(b.dataset.v); salvar(); desenharInicio(); return; }
+    if (a === 'jogar') { escolhendoRival = true; desenharInicio(); const f = inicio.querySelector('.rival-carta.marcado'); if (f) f.focus({ preventScroll: true }); return; }
+    if (a === 'voltar') { escolhendoRival = false; desenharInicio(); return; }
+    if (a === 'comecar') {
+      Online.sair();
       st.cfg.modo = 'bot'; salvar();
-      // primeira vez: o deck "Primeira mesa" abre por cima do menu (fechar sem jogar volta para ele)
+      // primeira vez: o deck "Primeira mesa" abre por cima da escolha do rival (fechar sem jogar volta para ela)
       if (!st.deckVisto) { st.decks[0] = PRONTOS[0].cartas.slice(); abrirDeck(); return; }
-      novaPartida(); return;
+      escolhendoRival = false; novaPartida(); return;
     }
     if (a === 'continuar') {
       const g = partidaParaContinuar(); if (!g) return desenharInicio();
@@ -5313,6 +5384,7 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     // Esc fecha a janela aberta mesmo com o foco num campo (o login do Online abre com o foco no nome),
     // e também no menu principal, quando ainda não há partida
     if (alvo.closest('textarea, input') && e.key !== 'Escape') return;
+    if (e.key === 'Escape' && escolhendoRival && inicioAberto() && document.querySelectorAll('.janela:not([hidden])').length === 0) { escolhendoRival = false; desenharInicio(); return; }
     if (e.key === 'Escape') {
       ['fim', 'janelaCarta', 'janelaDeck', 'janelaConfig', 'janelaLoja', 'janelaOnline', 'janelaMenu'].forEach(id => { const el = document.getElementById(id); if (el) el.hidden = true; }); abrirLado(false);
       return jogo ? cancelarEscolha() : undefined;

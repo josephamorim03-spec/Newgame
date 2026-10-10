@@ -390,9 +390,20 @@ de volta à tela, se a vez era sua ou do rival (e no online o tempo da vez acaba
 bom). Quem tinha o modo marcado volta para o rival; uma partida a dois guardada não volta. O motor ainda sabe jogar a
 dois: é assim que `tools/regras.js` joga as duas mãos pela tela.
 
-**Menu principal (v0.11).** O jogo abre nele: logo, nome, rating, nível e moedas, a escolha do rival (Diana ou
-Dona Coruja, com uma linha sobre o jeito dela e a meta), **Jogar** grande, Online, e uma fileira de
-ícones (Deck, Loja, Regras, Ajustes). É ali que a sessão se monta: Jogar começa contra o rival marcado. Ajustes não repete modo nem
+**Menu principal (v0.11).** O jogo abre nele: logo, nome, rating, nível e moedas, **Jogar** grande, Online, e uma
+fileira de ícones (Deck, Loja, Regras, Ajustes).
+
+**Escolha do rival (v0.12).** A escolha Diana/Dona Coruja era um seletor pequeno no menu, com uma linha de texto: não
+dava para ver quem era cada uma nem o que mudava. Agora **Jogar** abre "Escolha o rival", no lugar dos botões do menu
+(o logo e o título saem, para caber sem rolar em 360×640):
+- um cartão por rival, com o **retrato pintado**, o nome, a dificuldade ("Para começar", "Desafiadora"), o jeito de
+  jogar e o que a vitória rende (cerca de X moedas e o rating dela; ou "vitórias não rendem mais moedas", se o seu
+  rating já passou do teto daquela rival). Tocar escolhe; a escolhida ganha o contorno dourado e o retrato sorri;
+- embaixo, a **meta** (16, 20, 24) e o **seu deck**, com "Trocar";
+- **Jogar contra Diana** (o botão diz quem) começa; "← Voltar" (ou Esc) volta ao menu. Na primeira visita, o deck
+  "Primeira mesa" abre por cima, e fechá-lo volta para a escolha.
+
+Ajustes não repete modo nem
 rival: ficou com meta, ritmo do rival, som e imagem. O cartão do fim tem **Jogar de novo** inteiro em cima e, em
 baixo, Menu e Ver a Mesa; Compartilhar é o ícone ao lado do título. Fora da partida, o cabeçalho tem só logo,
 moedas (a Loja) e **Menu**: Online, Regras, Deck e Ajustes moram no menu principal. Começar pelo menu depois de uma partida online larga a sala (ali, "jogar

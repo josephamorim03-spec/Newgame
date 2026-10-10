@@ -45,10 +45,18 @@
     <div class="inicio-perfil" id="inicioPerfil"></div>
     <div class="inicio-partida" id="inicioPartida" hidden></div>
     <div class="inicio-jogar" id="inicioJogar">
-      <span class="segmento" role="group" aria-label="Rival"><button data-inicio="rival" data-v="aprendiz">Diana</button><button data-inicio="rival" data-v="esperto">Dona Coruja</button></span>
-      <p class="inicio-rival" id="inicioRival"></p>
       <button class="btn btn-mel inicio-principal" data-inicio="jogar">Jogar</button>
       <div class="inicio-linha"><button class="btn btn-papel" data-inicio="online">Online<span class="ponto-online" id="pontoInicio" hidden></span></button></div>
+    </div>
+    <div class="inicio-rivais" id="inicioRivais" hidden>
+      <h2>Escolha o rival</h2>
+      <div class="rival-cartas" id="rivalCartas" role="radiogroup" aria-label="Rival"></div>
+      <div class="rival-ajustes">
+        <span class="rival-linha"><span>Partida até</span><span class="segmento" role="group" aria-label="Pontos para vencer"><button data-inicio="meta" data-v="16">16</button><button data-inicio="meta" data-v="20">20</button><button data-inicio="meta" data-v="24">24</button></span></span>
+        <span class="rival-linha"><span class="rival-deck" id="rivalDeck"></span><button class="btn-link" data-inicio="deck">Trocar</button></span>
+      </div>
+      <button class="btn btn-mel inicio-principal" data-inicio="comecar" id="rivalComecar">Jogar</button>
+      <button class="btn-link" data-inicio="voltar">← Voltar</button>
     </div>
     <div class="inicio-mais">
       <button class="inicio-ico" data-inicio="deck"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="6" width="11" height="15" rx="2"/><path d="M9 3h9a2 2 0 0 1 2 2v13"/></svg>Deck</button>

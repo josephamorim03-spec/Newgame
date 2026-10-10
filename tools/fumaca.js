@@ -25,7 +25,10 @@ fs.mkdirSync(FOTOS, { recursive: true });
     await pg.waitForTimeout(500);
     // o jogo abre no menu principal; na primeira visita o Jogar leva à tela de montar o deck, com as armadilhas travadas
     if (r.nome === 'celular') await pg.screenshot({ path: path.join(FOTOS, 'inicio-celular.png') });
-    await pg.click('[data-inicio="jogar"]'); await pg.waitForTimeout(150);
+    await pg.click('[data-inicio="jogar"]'); await pg.waitForTimeout(150);   // Jogar abre a escolha do rival
+    if (await pg.$('#inicioRivais[hidden]')) erros.push(`${r.nome}: o Jogar não abriu a escolha do rival`);
+    if (r.nome === 'celular') await pg.screenshot({ path: path.join(FOTOS, 'rivais-celular.png') });
+    await pg.click('[data-inicio="comecar"]'); await pg.waitForTimeout(150);
     const deckAberto = await pg.evaluate(() => !document.getElementById('janelaDeck').hidden);
     const travadas = await pg.$$eval('.op .preco', l => l.length);
     if (r.nome === 'celular') await pg.screenshot({ path: path.join(FOTOS, 'deck-celular.png') });
@@ -51,7 +54,8 @@ fs.mkdirSync(FOTOS, { recursive: true });
       await pg.click('#btnFecharLoja');
     }
     // a sessão se monta no menu principal: o rival na escolha de cima
-    if (r.coruja) await pg.click('[data-inicio="rival"][data-v="esperto"]');
+    // (fechar o deck da primeira visita deixa a escolha do rival aberta: é dali que se joga)
+    if (r.coruja) { if (!(await pg.$('#inicioRivais:not([hidden])'))) await pg.click('[data-inicio="jogar"]'); await pg.click('[data-inicio="rival"][data-v="esperto"]'); await pg.click('[data-inicio="voltar"]'); }
     await pg.evaluate(() => document.getElementById('btnDeck').click());
     await pg.click(`[data-pronto="${r.pronto}"]`);
     if (await pg.$('[data-inicio="dois"]')) erros.push(`${r.nome}: o menu ainda oferece o modo a dois`);

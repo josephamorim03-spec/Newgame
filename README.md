@@ -95,7 +95,8 @@ node tools/vercel_local.js                     # a página como o Vercel publica
 
 **v0.12 (nesta branch, ainda não publicada):** metas 16 (padrão), 20 e 24, no lugar de 12 e 16; o Coringa troca a frente
 da corrente em vez de alongá-la; e no online fica óbvio de quem é a vez (selo com relógio no alto da Mesa, a Mesa acesa na
-sua vez, chamada e sininhos quando a vez chega, lembretes, aviso na aba e de novo ao voltar para a tela). O modo a dois
+sua vez, chamada e sininhos quando a vez chega, lembretes, aviso na aba e de novo ao voltar para a tela). Jogar abre a escolha do rival,
+com o retrato, a dificuldade e o que a vitória rende de cada uma. O modo a dois
 no mesmo aparelho saiu do jogo (o motor ainda o usa nos testes de regras, para ninguém jogar sozinho no meio do teste). Números em
 `docs/balanceamento-cartas.md` §14 e a vez em `docs/design.md` §8.
 
