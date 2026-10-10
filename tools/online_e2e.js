@@ -95,6 +95,21 @@ const espera = ms => new Promise(r => setTimeout(r, ms));
     await bia.fill('#formConta [name=nome]', BIA);
     await bia.fill('#formConta [name=senha]', 'senha-boa-2');
     await bia.click('#formConta [type=submit]');
+    // preparação: as duas montam o deck ao mesmo tempo; a Ana confirma, a Bia vê "confirmou" (sem as cartas) e confirma
+    const confirmarDeck = async (pg, quem) => {
+      await pg.waitForSelector('#deckEscolha:not([hidden])', { timeout: 8000 });
+      await pg.click('#btnJogarDeck');
+      await pg.waitForFunction(() => /Mudar o deck|Começando/.test(document.getElementById('btnJogarDeck').textContent + document.getElementById('deckEscolha').textContent) || !document.getElementById('deckEscolha').offsetParent, null, { timeout: 5000 });
+      void quem;
+    };
+    for (const pg of [ana, bia]) await pg.waitForSelector('#deckEscolha:not([hidden])', { timeout: 8000 });
+    await ana.screenshot({ path: path.join(FOTOS, 'online-preparacao-celular.png') }); await layout(ana, 'preparacao');
+    await confirmarDeck(ana, 'Ana');
+    await bia.waitForFunction(() => /confirmou/.test(document.getElementById('deckEscolha').textContent), null, { timeout: 5000 });
+    const doRival = await bia.evaluate(() => document.getElementById('deckEscolha').textContent);
+    if (/Espelho|Ajuste|Pressa/i.test(doRival)) throw new Error('as cartas da Ana apareceram para a Bia na preparação: ' + doRival);
+    await bia.screenshot({ path: path.join(FOTOS, 'online-preparacao-pc.png') }); await layout(bia, 'preparacao-rival');
+    await confirmarDeck(bia, 'Bia');
     for (const pg of [ana, bia]) await pg.waitForFunction(() => DiceDuel.jogo && DiceDuel.jogo.modo === 'online', null, { timeout: 8000 });
     await espera(300);
     for (const pg of [ana, bia]) { await fechar(pg); await pg.evaluate(() => document.querySelectorAll('.versus').forEach(v => v.click())); }
@@ -149,6 +164,8 @@ const espera = ms => new Promise(r => setTimeout(r, ms));
     if (vencedor.premio.rating <= 1000 || perdedor.premio.rating >= 1000) throw new Error('o rating não mudou como devia');
     // revanche pelos dois lados
     await ana.click('#btnDeNovo'); await bia.click('#btnDeNovo');
+    // a revanche passa pela preparação de novo (com o deck anterior marcado)
+    for (const pg of [ana, bia]) { await pg.waitForSelector('#deckEscolha:not([hidden])', { timeout: 8000 }); await pg.click('#btnJogarDeck'); }
     for (const pg of [ana, bia]) await pg.waitForFunction(() => DiceDuel.jogo.fase !== 'fim' && DiceDuel.jogo.partida === 2, null, { timeout: 5000 });
     // a Ana desiste pela janela Online: a Bia vence por W.O. (sem moedas)
     await ana.evaluate(() => document.querySelectorAll('.versus').forEach(v => v.click()));
@@ -200,6 +217,7 @@ const espera = ms => new Promise(r => setTimeout(r, ms));
       await ana.evaluate(() => document.getElementById('btnOnline').click());
       await ana.fill('#formCodigo [name=codigo]', cod.toLowerCase());
       await ana.click('#formCodigo [type=submit]');
+      for (const pg of [ana, bia]) { await pg.waitForSelector('#deckEscolha:not([hidden])', { timeout: 8000 }); await pg.click('#btnJogarDeck'); }   // a preparação
       for (const pg of [ana, bia]) await pg.waitForFunction(() => DiceDuel.jogo && DiceDuel.jogo.modo === 'online' && DiceDuel.jogo.fase !== 'fim', null, { timeout: 6000 })
         .catch(async e => { throw new Error('a partida nova não começou: ' + JSON.stringify(await pg.evaluate(() => ({ modo: DiceDuel.jogo && DiceDuel.jogo.modo, aviso: document.getElementById('onlineAviso').textContent, online: document.getElementById('onlineConteudo').innerText.slice(0, 200) })))); });
       salas.salas.clear(); servidor.wss.clients.forEach(c => c.terminate());

@@ -12,7 +12,7 @@ const FOTOS = path.join(__dirname, '..', 'builds', 'fotos');
 require('fs').mkdirSync(FOTOS, { recursive: true });
 
 (async () => {
-  const { criarServidor, salas, fila } = criarApp({ banco: new BancoMemoria(), segredo: 'segredo-do-teste-da-conta-1234', limites: { ws: 100000 } });
+  const { criarServidor, salas, fila } = criarApp({ banco: new BancoMemoria(), segredo: 'segredo-do-teste-da-conta-1234', tempos: { escolha: 0 }, limites: { ws: 100000 } });
   const servidor = criarServidor();
   await new Promise(r => servidor.listen(0, '127.0.0.1', r));
   const base = `http://127.0.0.1:${servidor.address().port}`;

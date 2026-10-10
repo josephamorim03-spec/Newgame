@@ -13,7 +13,7 @@ const espera = ms => new Promise(r => setTimeout(r, ms));
 
 async function subir(opcoes = {}) {
   const banco = opcoes.banco || new BancoMemoria();
-  const { criarServidor, salas, fila } = criarApp({ banco, segredo: SEGREDO, limites: { contas: 1000, entrar: 1000, amigos: 1000, nomes: 1000, ws: 100000 }, ...opcoes, banco });
+  const { criarServidor, salas, fila } = criarApp({ banco, segredo: SEGREDO, tempos: { escolha: 0 }, limites: { contas: 1000, entrar: 1000, amigos: 1000, nomes: 1000, ws: 100000 }, ...opcoes, banco });
   const servidor = criarServidor();
   await new Promise(r => servidor.listen(0, r));
   const base = `http://127.0.0.1:${servidor.address().port}`;

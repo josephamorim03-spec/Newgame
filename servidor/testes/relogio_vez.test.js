@@ -6,7 +6,7 @@ const Regras = require('../../shared/regras');
 const { Salas } = require('../salas');
 const { criarBanco } = require('../banco');
 
-const T = { esperaReconexao: 90_000, limiteVez: 120_000, minimoNaVolta: 30_000 };
+const T = { esperaReconexao: 90_000, limiteVez: 120_000, minimoNaVolta: 30_000, escolha: 0 };
 async function montar() {
   let agora = 1_000_000;
   const banco = await criarBanco({ url: '' });
@@ -85,7 +85,7 @@ test('ritmo da sala: o tempo da vez vem do ritmo escolhido ao criar (Relâmpago 
   const { Salas: S, RITMOS } = require('../salas');
   let agora = 5_000_000;
   const banco = await criarBanco({ url: '' });
-  const salas = new S({ banco, trava: (id, fn) => fn(), tempos: { esperaReconexao: 90_000, minimoNaVolta: 30_000 }, agora: () => agora });
+  const salas = new S({ banco, trava: (id, fn) => fn(), tempos: { esperaReconexao: 90_000, minimoNaVolta: 30_000, escolha: 0 }, agora: () => agora });
   const ws = () => ({ readyState: 1, msgs: [], send(m) { this.msgs.push(JSON.parse(m)); } });
   for (const [ritmo, ms] of [['relampago', 20_000], ['rapida', 45_000], ['calma', 120_000], ['qualquer', 45_000], [undefined, 45_000]]) {
     const a = await banco.criarConta('A' + ritmo + ms, 'x'), b = await banco.criarConta('B' + ritmo + ms, 'x'), wa = ws(), wb = ws();

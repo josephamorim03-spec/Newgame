@@ -564,7 +564,7 @@ function criarApp({ banco, segredo, raiz = path.join(__dirname, '..'), tempos = 
           if (!ws.contaId) return salas.enviar(ws, { tipo: 'erro', erro: 'Entre na sua conta primeiro.' });
           // a conta fica guardada na conexão por alguns segundos: não é preciso ir ao banco a cada jogada
           // (entrar, procurar e revanche conferem as cartas: esses sempre buscam a conta fresca, uma compra de agora já vale)
-          const fresca = m.tipo === 'entrar' || m.tipo === 'procurar' || m.tipo === 'revanche';
+          const fresca = m.tipo === 'entrar' || m.tipo === 'procurar' || m.tipo === 'revanche' || m.tipo === 'deck';
           if (fresca || !ws.conta || Date.now() - ws.contaEm > 5000) { ws.conta = await banco.contaPorId(ws.contaId); ws.contaEm = Date.now(); }
           const conta = ws.conta;
           if (!conta) { salas.enviar(ws, { tipo: 'erro', erro: 'Esta conta não existe mais.', sair: true }); return ws.close(4001, 'sessao'); }   // apagada
@@ -575,6 +575,7 @@ function criarApp({ banco, segredo, raiz = path.join(__dirname, '..'), tempos = 
           else if (m.tipo === 'acao') await salas.acao(ws, conta, m.acao);
           else if (m.tipo === 'desistir') await salas.desistir(ws, conta);
           else if (m.tipo === 'revanche') salas.revanche(ws, conta, m);
+          else if (m.tipo === 'deck') salas.escolher(ws, conta, m);
           else if (m.tipo === 'sair') salas.sair(ws);
         } catch (e) { console.error('ws', e); salas.enviar(ws, { tipo: 'erro', erro: 'Algo deu errado no servidor.' }); }
       });

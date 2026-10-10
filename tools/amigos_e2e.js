@@ -12,12 +12,12 @@ const FOTOS = path.join(__dirname, '..', 'builds', 'fotos');
 fs.mkdirSync(FOTOS, { recursive: true });
 
 (async () => {
-  const { criarServidor, salas, fila } = criarApp({ banco: new BancoMemoria(), segredo: 'segredo-do-teste-dos-amigos-123', limites: { ws: 100000 } });
+  const { criarServidor, salas, fila } = criarApp({ banco: new BancoMemoria(), segredo: 'segredo-do-teste-dos-amigos-123', tempos: { escolha: 0 }, limites: { ws: 100000 } });
   const servidor = criarServidor();
   await new Promise(r => servidor.listen(0, '127.0.0.1', r));
   const base = `http://127.0.0.1:${servidor.address().port}`;
   // um segundo servidor com a fila por rating ligada (no ar ela fica desligada até haver gente bastante)
-  const comFila = criarApp({ banco: new BancoMemoria(), segredo: 'segredo-do-teste-dos-amigos-123', limites: { ws: 100000 }, fila: true, filaOpcoes: { intervalo: 200 } });
+  const comFila = criarApp({ banco: new BancoMemoria(), segredo: 'segredo-do-teste-dos-amigos-123', tempos: { escolha: 0 }, limites: { ws: 100000 }, fila: true, filaOpcoes: { intervalo: 200 } });
   const servidorFila = comFila.criarServidor();
   await new Promise(r => servidorFila.listen(0, '127.0.0.1', r));
   const baseFila = `http://127.0.0.1:${servidorFila.address().port}`;

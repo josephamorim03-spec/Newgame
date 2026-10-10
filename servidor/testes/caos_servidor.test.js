@@ -13,7 +13,7 @@ async function subir(tempos = {}) {
   const errosServidor = [];
   const original = console.error;
   console.error = (...a) => { errosServidor.push(a.map(String).join(' ')); };
-  const { criarServidor, salas } = criarApp({ banco: new BancoMemoria(), segredo: 'segredo-de-caos-com-32-caracteres!!', tempos, limites: { contas: 1e4, entrar: 1e4, solo: 1e4, ws: 1e6 } });
+  const { criarServidor, salas } = criarApp({ banco: new BancoMemoria(), segredo: 'segredo-de-caos-com-32-caracteres!!', tempos: { escolha: 0, ...tempos }, limites: { contas: 1e4, entrar: 1e4, solo: 1e4, ws: 1e6 } });
   const servidor = criarServidor();
   await new Promise(r => servidor.listen(0, '127.0.0.1', r));
   const base = `http://127.0.0.1:${servidor.address().port}`;
@@ -152,7 +152,7 @@ test('erros que tiram da sala vêm marcados (o cliente sai da partida fantasma)'
 });
 
 test('nível de rival herdado (constructor), pico de texto na importação e CORS nos erros de JSON', async () => {
-  const { criarServidor, salas } = criarApp({ banco: new BancoMemoria(), segredo: 'segredo-de-caos-com-32-caracteres!!', origens: ['https://exemplo.app'], limites: { contas: 1e4, entrar: 1e4, solo: 1e4, ws: 1e6 } });
+  const { criarServidor, salas } = criarApp({ banco: new BancoMemoria(), segredo: 'segredo-de-caos-com-32-caracteres!!', tempos: { escolha: 0 }, origens: ['https://exemplo.app'], limites: { contas: 1e4, entrar: 1e4, solo: 1e4, ws: 1e6 } });
   const servidor = criarServidor();
   await new Promise(r => servidor.listen(0, '127.0.0.1', r));
   const base = `http://127.0.0.1:${servidor.address().port}`;

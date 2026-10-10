@@ -15,6 +15,7 @@ Banco: Postgres (o plugin da Railway). Sem `DATABASE_URL`, guarda tudo num arqui
 | **Ranking** | Elo (K 32), começando em 1000. Duas abas: **Global** (os 50 melhores) e **Amigos** (você e seus amigos), com a sua posição no global. |
 | **Salas** | quem cria recebe um código de 6 letras e um link `/?sala=CODIGO`; ou chama um amigo direto pela lista. |
 | **Fila por rating** | pronta e testada, **desligada** (`FILA=1` liga): com pouca gente, juntar por rating só faria todo mundo esperar. Ligada, aparece "Procurar rival": a diferença de rating aceita começa em 100, cresce 5 por segundo de espera até 400, e depois de 90 s vale qualquer rival; a meta (12 ou 16) separa as filas. O par cai numa sala comum (rating, moedas e o limite por par valem igual). Ajustes em `servidor/fila.js`. |
+| **Preparação** | antes de cada partida online (e de cada revanche), os dois montam o deck ao mesmo tempo, por até 60 s, partindo do deck que já tinham. Cada um vê o próprio deck; do rival, só quantas cartas já escolheu e se confirmou — nunca quais (nem pelo tráfego: `servidor/testes/escolha.test.js`). Começa quando os dois confirmam ou quando o tempo acaba (com o que cada um tiver escolhido). Se alguém sai ou cai, a preparação é cancelada e recomeça quando a sala tiver os dois de novo. |
 | **Partida** | o servidor é a autoridade: guarda o estado inteiro, aplica as jogadas com o mesmo motor do jogo (`shared/regras.js`) e manda a cada um só a visão dele. A armadilha armada do rival não sai do servidor; o Espelho, que é visível na mesa, sai. |
 | **Vários aparelhos** | entrar com o mesmo nome e senha no PC e no celular traz tudo: moedas, itens, rating, nível, decks, recordes e o jeito de jogar (rival, meta, ritmo). Som, música e animações ficam em cada aparelho. |
 | **Moedas e loja** | com conta, moedas e itens moram no servidor. Preço e posse são conferidos lá. Cartas que a conta não tem não entram no deck online. |
@@ -166,6 +167,7 @@ As rotas de conta pedem `Authorization: Bearer <token>`.
   - `{tipo:'revanche', deck?}`
   - `{tipo:'desistir'}`
   - `{tipo:'sair'}`
+  - `{tipo:'deck', deck, pronto?}`: na preparação, o deck escolhido; `pronto: true` confirma (mandar sem `pronto` desfaz)
   - `{tipo:'chamar', nome}`: chama alguém online (amigo ou não) para a sala que você criou
   - `{tipo:'procurar', meta, deck}` e `{tipo:'cancelarBusca'}`: a fila por rating (quando ligada)
   - `{tipo:'pulso'}`: o servidor responde `pulso` (a página descobre conexão morta)
@@ -173,6 +175,7 @@ As rotas de conta pedem `Authorization: Bearer <token>`.
 - O servidor responde:
   - `ola`
   - `amigos` `{evento: 'pedido'|'aceito'|'removido', nome}`: a lista de amigos mudou;
+  - `escolha` `{prazo, total, meta, eu: {deck, pronto}, rival: {nome, cartas, pronto}}` (do rival, só a contagem) ou `{cancelada: true, motivo}`;
   - `online` `{total}`: quantos estão com o jogo aberto (sempre que muda);
   - `sessao`: a sessão da conta mudou (senha nova, sair de tudo, conta apagada) e a conexão vai fechar;
   - `chamado` `{de, icone, rating, sala, meta, amigo}`: alguém chamou para a sala dele;
