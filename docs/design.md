@@ -382,6 +382,9 @@ de volta à tela, se a vez era sua ou do rival (e no online o tempo da vez acaba
 - **Bug corrigido:** o sininho da vez guardava a memória dentro do objeto do jogo; no online cada estado do servidor é
   um objeto novo, então o aviso **nunca tocava no online**. A memória saiu do jogo, e a chave conta as vezes: abrir a
   Mesa duas vezes seguidas (quem está atrás abre) também avisa.
+- **Sua vez de novo:** quando a vez volta para você em seguida, a chamada diz por quê ("você está atrás no placar e abre
+  a Mesa nova" ou "Diana usou a Pausa e passou a vez"); o aviso da Pausa do rival já diz "você joga de novo". Sem isso,
+  jogar duas ou três vezes seguidas parecia erro do jogo (`docs/balanceamento-cartas.md` §16).
 - No modo a dois no mesmo aparelho o selo não aparece (os dois são da casa); fica o pulinho do painel a cada troca.
 
 **Menu principal (v0.11).** O jogo abre nele: logo, nome, rating, nível e moedas, a escolha do rival (Diana ou

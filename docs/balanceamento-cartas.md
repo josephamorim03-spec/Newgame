@@ -817,3 +817,12 @@ dentro da faixa do Ajuste (55%).
 
 Reproduzir: `cd sim && N=24000 python3 humano.py pressa`; as variantes ficam em `deck.py` (`pressa_min`, `pressa_max`,
 `pressa_abre`).
+
+**E as 3 vezes seguidas com 4 dados?** Procurado por força bruta (6.000 partidas ao acaso com todas as cartas, nas
+duas regras da Pressa): jogar 3 vezes seguidas **só acontece com a Pausa do rival no meio**. Sem ela, ninguém joga
+mais de 2 vezes seguidas (pegar o último dado e, atrás no placar, abrir a Mesa nova: a regra de virada, §2 de
+`docs/design.md`). O caso relatado: pegar o último dado, abrir a Mesa nova (atrás), o rival usar a Pausa e você usar a
+Pressa com 4 dados na Mesa (0,1% das partidas). O rival não assistiu por regra: ele escolheu passar. A Pausa é a
+carta mais fraca dos 402 decks (média ~47%), então a regra fica. O que mudou foi a tela: o aviso da Pausa do rival diz
+"você joga de novo", e quando a vez volta para você em seguida aparece "Sua vez de novo" com o motivo ("você está
+atrás no placar e abre a Mesa nova" ou "Diana usou a Pausa e passou a vez").
