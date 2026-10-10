@@ -175,23 +175,19 @@ Contando o que o roteiro pede, sem refazer o que o código monta:
 | A cara de IA (dedos a mais, olho torto) | o crítico reprova; poses simples, de meio corpo, sem mãos complicadas |
 | Peça parecida com personagem ou marca de alguém | nada de nome de obra no pedido; o pasto de hexágonos sem nada de marca (como a ovelha de hoje) |
 
-## Adendo: o outro caminho, testado (quadros inteiros)
+## O caminho misto (decisão do dono, depois de ver as duas versões)
 
-Em paralelo a esta proposta, os 57 desenhos descritos no roteiro saíram como **quadros inteiros** pelo `gpt-image-2`
-(`arte/historia.json`, `tools/historia/quadros.py`, `arte/historia/quadros/`), com o retrato aprovado de cada bicho como
-referência e o texto todo fora da imagem: as falas entram por cima, em balões, a partir do `docs/historia_piadas.json`.
-As páginas montadas estão em **Quadros do Caderno da Diana** (https://claude.ai/artifact/4LfMUuqa94bKGNzQKBH1u5). O
-que o teste mostrou, para pesar contra o §1:
-- **A Diana segurou a identidade nos 57**: a ponta preta na orelha certa, os dois riscos, os olhos azuis, e o enfeite
-  do nariz certo em cada capítulo. O medo de "a Diana muda de cara" não se confirmou com o 2.x.
-- **12 de 57 voltaram uma vez**: dados de outra cor ou de 20 faces nas cenas da Diana (agora o pedido diz que todo dado
-  é de seis faces e da cor do dono), o mural já cheio quando devia ter uma foto só, um enfeite pequeno demais e lombadas
-  escritas em inglês.
-- **Letreiros curtos saíram certos** ("RECEITAS DA DIANA", "DISPARO. DUELO. DOBRO. → D", "DIANA · DADOS · DNA", "D?",
-  "DianaDice"), inclusive o título espelhado. Ainda assim, o §2 tem razão em tirar texto da imagem quando ele pode mudar.
-- **O close sai do mesmo quadro** ("perto" e "detalhe" nas páginas), como no §1, e o balão fica numa faixa de papel em
-  cima da arte, porque os quadros não deixam céu livre de sobra.
-- **Contra:** cada quadro é uma imagem (cerca de 250 KB em WebP no tamanho cheio), e mudar o enfeite do nariz pede outro
-  quadro. As duas coisas o caminho em camadas resolve melhor.
+O dono pediu o melhor dos dois mundos. Ficou assim:
 
-A escolha entre os dois (ou um misto: quadros inteiros para as cenas únicas, camadas para a Diana falando) é do dono.
+| Peça | Quem faz | Por quê |
+|---|---|---|
+| **A cena** (o bicho no lugar dele, a Diana à mesa) | a API, quadro inteiro (`tools/historia/quadros.py`, `arte/historia.json`) | é onde os quadros inteiros foram bem: a identidade dos bichos e a composição |
+| **O nariz da Diana** | a API, **uma vez** por enfeite, numa folha de modelo (`arte/historia/narizes/`); cada quadro da Diana a usa como referência | na 1.ª versão cada quadro inventava o enfeite; o dono pediu um padrão (a lã é o modelo) |
+| **As receitas** | o papel do caderno uma vez (`arte/historia/pagina-base.png`) e o desenho chapado nele; título e notas em letra de mão pelo código | os desenhos da 1.ª versão pareciam objetos em cima do livro, com sombra e volume |
+| **O mural** | **o código**, com os retratos que o jogo já tem (polaroide, barbante, post-it, cartão, carimbo, a hélice de dados) | é igual em todo quadro e cresce sozinho; nos quadros pintados ele aparece só de canto |
+| **Balão, rabinho, retícula, desencaixe, onomatopeia, linhas de movimento, close** | o código | o balão fica sobre a arte, do tamanho da fala, longe do rosto, com o rabinho apontando para a boca marcada em cada arte (`boca`); o close é uma câmera que leva a cabeça de quem fala ao centro |
+
+O pedido de arte agora pede o estilo do jogo sem desvio (fundo chapado, no máximo três objetos, só a paleta do jogo, sem
+retícula pintada) e um canto livre para o balão. O piloto (Prólogo, Cap. 1, receitas, mural, a revelação e o fim) está em
+**Quadros do Caderno da Diana** (https://claude.ai/artifact/4LfMUuqa94bKGNzQKBH1u5). Os quadros marcados "arte antiga" esperam
+crédito na API; a fila está em `arte/historia.json` (`_refazer`).

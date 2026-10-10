@@ -47,7 +47,7 @@
    ],
    "nariz": "pips",
    "lugar": "nw",
-   "texto": "Closer shot of the felt table: Diana's white front paw slowly pushes one pink die toward the very edge of the table, toward the left. Her face behind it, eyes half closed, unbothered, looking at the reader and not at the die. Composition: the characters stay in the right 60% of the frame; the upper-left area (a third of the width, top 40%) is empty plain wall or sky, kept free for a speech balloon.",
+   "texto": "Closer shot of the felt table: Diana, crouched low behind the table, stretches ONE front paw forward and gently pushes one pink die toward the table's left edge. Natural cat anatomy: a soft round shoulder, the foreleg curving smoothly out from the body (no straight tube, no stiff joint), every outline smooth and clean. Her face behind it, eyes half closed, unbothered, looking at the reader, not at the die.",
    "boca": {
     "diana": [
      64,
@@ -157,7 +157,7 @@
    "quem": [],
    "nariz": "",
    "pagina": true,
-   "texto": "a soup bowl seen from the side with a little tadpole swimming in it, backwards (tail first), with small motion marks.",
+   "texto": "a soup bowl seen from the side with a little tadpole swimming in it BACKWARDS: its tail leads the way and its head trails behind, small motion lines behind the head, so it clearly moves tail-first, like reversing.",
    "titulo": "SOPA DE GIRINO AO CONTRÁRIO"
   },
   "c1-pag-b": {
@@ -173,21 +173,24 @@
     "diana"
    ],
    "nariz": "x",
-   "texto": "Diana sits reading a damp notebook page held in her paws (it shows a little drawing of a tadpole). Behind her, for the first time, a cork board on the wall with a single photo of a die pinned to it and one red string hanging from the pin."
+   "texto": "Diana sits at her felt table holding up a damp notebook page with both front paws, reading it with narrowed eyes. The page FACES HER: the reader sees only the plain cream BACK of the page, slightly see-through at one wet corner, nothing drawn on the side we see. Behind her, only the edge of a cork board shows at the side of the frame, its content out of view (the board itself is shown in separate panels).",
+   "lugar": "nw"
   },
   "i1-nada": {
    "quem": [
     "diana"
    ],
    "nariz": "x",
-   "texto": "Close-up of Diana staring into the middle distance past the reader, eyes unfocused, deep in thought; the cork board with the die photo and the red string slightly blurred behind her. The cork board holds ONLY ONE photo (a single die) and one red string: it is just beginning, nothing else is pinned on it."
+   "texto": "Close-up of Diana staring into the middle distance past the reader, eyes unfocused, deep in thought; the cork board with the die photo and the red string slightly blurred behind her. The cork board holds ONLY ONE photo (a single die) and one red string: it is just beginning, nothing else is pinned on it.",
+   "refazer": "o mural sai do quadro pintado e vai para os quadros montados pelo código (murais em arte/historia.json)"
   },
   "i1-cobre": {
    "quem": [
     "diana"
    ],
    "nariz": "x",
-   "texto": "Diana, caught: she has stretched one front paw flat over the cork board behind her, covering the die photo, and looks back at the reader with an innocent, far too calm face. The cork board holds ONLY ONE photo (a single die) and one red string: it is just beginning, nothing else is pinned on it."
+   "texto": "Diana, caught: she has stretched one front paw flat over the cork board behind her, covering the die photo, and looks back at the reader with an innocent, far too calm face. The cork board holds ONLY ONE photo (a single die) and one red string: it is just beginning, nothing else is pinned on it.",
+   "refazer": "o mural sai do quadro pintado e vai para os quadros montados pelo código (murais em arte/historia.json)"
   },
   "c2-adesivo": {
    "quem": [
@@ -218,7 +221,8 @@
     "diana"
    ],
    "nariz": "cachecol",
-   "texto": "Medium close-up of Diana, chin up, eyes half closed, quietly pleased with herself."
+   "texto": "Medium close-up of Diana, chin up, eyes half closed, quietly pleased with herself. Through the window behind her, a loaf of bread is visible on the outside sill, a little too big.",
+   "lugar": "nw"
   },
   "c3-carta": {
    "quem": [
@@ -232,7 +236,8 @@
     "raposa"
    ],
    "nariz": "",
-   "texto": "Raposa the fox lounges on a plush old sofa inside a warm winter den, with a knitted throw and a little lamp, eyes half closed, satisfied and elegant, one paw draped over the armrest. A few green dice on a side table."
+   "texto": "Raposa the fox lounges on a plush old sofa inside a warm winter den, eyes half closed, satisfied and elegant, one paw on the armrest. Her single big bushy tail curls ONCE around her body and rests on the sofa cushion in front of her, clearly attached at her lower back, white tip visible: one simple readable silhouette, nothing tangled. A few frog-green dice on a small side table.",
+   "lugar": "ne"
   },
   "c3-pag-a": {
    "quem": [],
@@ -254,14 +259,16 @@
     "diana"
    ],
    "nariz": "cone",
-   "texto": "Diana sits upright with great dignity in a large translucent plastic veterinary cone, looking at the reader as if it were high fashion."
+   "texto": "Diana sits upright with great dignity in a large translucent plastic veterinary cone, looking at the reader as if it were high fashion. Through the window behind her, the loaf of bread outside is bigger now, pressing against the glass.",
+   "lugar": "nw"
   },
   "c4-mural": {
    "quem": [
     "diana"
    ],
    "nariz": "cone",
-   "texto": "Wider shot: Diana in her veterinary cone in the foreground; behind her, the cork board on the wall now has three photos (a die, a frog, a rabbit) linked by red string and a pinned handwritten note that reads 'DISPARO. DUELO. DOBRO. → D'."
+   "texto": "Wider shot: Diana in her veterinary cone in the foreground; behind her, the cork board on the wall now has three photos (a die, a frog, a rabbit) linked by red string and a pinned handwritten note that reads 'DISPARO. DUELO. DOBRO. → D'.",
+   "refazer": "o mural sai do quadro pintado e vai para os quadros montados pelo código (murais em arte/historia.json)"
   },
   "c4-caverna": {
    "quem": [
@@ -299,7 +306,8 @@
     "diana"
    ],
    "nariz": "meia",
-   "texto": "Medium close-up of Diana, narrowed suspicious eyes looking sideways. She sits at her felt table with two pink dice; no game board, no other dice."
+   "texto": "Medium close-up of Diana, narrowed suspicious eyes looking sideways. She sits at her felt table with two pink dice; no game board, no other dice. Through the window behind her, a huge loaf of bread fills half the window.",
+   "lugar": "nw"
   },
   "c5-tralha": {
    "quem": [
@@ -324,7 +332,7 @@
    ],
    "nariz": "la",
    "lugar": "ne",
-   "texto": "Medium close-up of Diana at her felt table, deadpan, looking at the reader. Composition: the characters stay in the right 60% of the frame; the upper-left area (a third of the width, top 40%) is empty plain wall or sky, kept free for a speech balloon.",
+   "texto": "Medium close-up of Diana at her felt table, deadpan, looking at the reader. Composition: the characters stay in the right 60% of the frame; the upper-left area (a third of the width, top 40%) is empty plain wall or sky, kept free for a speech balloon. Behind her, the door is ajar and a gigantic loaf of bread is squeezing through it.",
    "boca": {
     "diana": [
      50,
@@ -361,7 +369,8 @@
     "diana"
    ],
    "nariz": "nada",
-   "texto": "The cork board on the wall is now entirely covered by a white bedsheet, with many red strings poking out from under its edges. Diana sits in front of it as if nothing were there."
+   "texto": "The cork board on the wall is now entirely covered by a white bedsheet, with many red strings poking out from under its edges. Diana sits in front of it as if nothing were there.",
+   "refazer": "o mural sai do quadro pintado e vai para os quadros montados pelo código (murais em arte/historia.json)"
   },
   "c7-biblioteca": {
    "quem": [
@@ -389,7 +398,14 @@
     "diana"
    ],
    "nariz": "nada",
-   "texto": "Diana pulls a white bedsheet off the cork board with one paw, revealing the whole conspiracy wall: red string everywhere, pinned photos of a frog, a rabbit, a fox, a bear, a raccoon, a sheep and an owl, each with a little stamp on it; in the middle, a photo of a silhouette holding dice; and a double helix drawn with dice as its rungs."
+   "texto": "Diana pulls a white bedsheet off the cork board with one paw, revealing the whole conspiracy wall: red string everywhere, pinned photos of a frog, a rabbit, a fox, a bear, a raccoon, a sheep and an owl, each with a little stamp on it; in the middle, a photo of a silhouette holding dice; and a double helix drawn with dice as its rungs.",
+   "boca": {
+    "diana": [
+     21,
+     33
+    ]
+   },
+   "lugar": "ne"
   },
   "r-cartoes": {
    "quem": [
@@ -410,7 +426,8 @@
     "diana"
    ],
    "nariz": "nada",
-   "texto": "Diana sits alone on the floor in front of the conspiracy wall, serious, ears slightly lowered, looking at the reader. Quiet, muted palette."
+   "texto": "Diana sits alone on the floor in front of the conspiracy wall, serious, ears slightly lowered, looking at the reader. Quiet, muted palette.",
+   "refazer": "o mural sai do quadro pintado e vai para os quadros montados pelo código (murais em arte/historia.json)"
   },
   "r-pipeta": {
    "quem": [
@@ -425,14 +442,32 @@
     "diana"
    ],
    "nariz": "nada",
-   "texto": "Coelho the rabbit stands in the open doorway of Diana's room hugging a loaf of bread as big as he is, confused. Diana sits in the foreground at the edge of the frame, looking at him."
+   "texto": "Coelho the rabbit stands in the open doorway of Diana's room hugging a loaf of bread as big as he is, confused. Diana sits in the foreground at the edge of the frame, looking at him.",
+   "boca": {
+    "coelho": [
+     25,
+     32
+    ],
+    "diana": [
+     70,
+     63
+    ]
+   },
+   "lugar": "ne"
   },
   "r-mesa": {
    "quem": [
     "diana"
    ],
    "nariz": "nada",
-   "texto": "Diana sits behind her own table covered in wine-red felt, five pink dice ready in front of her, looking at the reader, serious and determined, under a warm lamp."
+   "texto": "Diana sits behind her own table covered in wine-red felt, five pink dice ready in front of her, looking at the reader, serious and determined, under a warm lamp.",
+   "boca": {
+    "diana": [
+     50,
+     57
+    ]
+   },
+   "lugar": "ne"
   },
   "f-fita": {
    "quem": [
@@ -472,7 +507,14 @@
     "diana"
    ],
    "nariz": "curada",
-   "texto": "Diana stands in front of a big hand-lettered title on cream paper and holds a thick black marker in her paw: she has crossed out the words 'DICE DUEL' with a line and written above them, in her own scrawl, 'DianaDice'. She looks at the reader, satisfied."
+   "texto": "Diana stands in front of a big hand-lettered title on cream paper and holds a thick black marker in her paw: she has crossed out the words 'DICE DUEL' with a line and written above them, in her own scrawl, 'DianaDice'. She looks at the reader, satisfied.",
+   "boca": {
+    "diana": [
+     61,
+     56
+    ]
+   },
+   "lugar": "ne"
   },
   "x-cha": {
    "quem": [
@@ -480,7 +522,47 @@
     "sapo"
    ],
    "nariz": "curada",
-   "texto": "Night. Diana, healed, has just opened her front door. On the doorstep, Sapo the frog in his straw boater hat holds out a porcelain teacup with murky pond tea."
+   "texto": "Night. Diana, healed, has just opened her front door. On the doorstep, Sapo the frog in his straw boater hat holds out a porcelain teacup with murky pond tea.",
+   "boca": {
+    "diana": [
+     35,
+     49
+    ],
+    "sapo": [
+     84,
+     46
+    ]
+   },
+   "lugar": "nw"
+  },
+  "mural-i1": {
+   "quem": [],
+   "mural": "i1",
+   "texto": "O mural no começo: uma foto de dado e um barbante solto."
+  },
+  "mural-c4": {
+   "quem": [],
+   "mural": "c4",
+   "texto": "O mural no Cap. 4: o dado, o Sapo e o Coelho, e o bilhete do D.",
+   "boca": {
+    "diana": [
+     50,
+     118
+    ]
+   },
+   "lugar": "nw"
+  },
+  "mural-r": {
+   "quem": [],
+   "mural": "r",
+   "texto": "O mural inteiro da revelação.",
+   "boca": {
+    "diana": [
+     50,
+     118
+    ]
+   },
+   "lugar": "sw"
   }
  },
  "paginas": [
@@ -822,10 +904,14 @@
      "parte": 0
     },
     {
-     "arte": "c4-mural",
+     "arte": "mural-c4",
      "fala": "C4-02",
      "parte": 1,
-     "plano": "perto"
+     "plano": "perto",
+     "foco": [
+      50,
+      60
+     ]
     }
    ]
   },
@@ -1135,30 +1221,45 @@
    "quadros": [
     {
      "arte": "r-mural",
-     "fala": "R-01"
+     "fala": "R-01",
+     "impacto": true
     },
     {
-     "arte": "r-cartoes",
-     "fala": "R-02"
+     "arte": "mural-r",
+     "fala": "R-02",
+     "plano": "detalhe",
+     "foco": [
+      51,
+      8
+     ]
     },
     {
-     "arte": "r-postit",
+     "arte": "mural-r",
      "fala": "R-03",
-     "parte": 0
+     "parte": 0,
+     "plano": "detalhe",
+     "foco": [
+      86,
+      24
+     ]
     },
     {
-     "arte": "r-postit",
+     "arte": "mural-r",
      "fala": "R-03",
      "parte": 1,
-     "plano": "perto"
+     "plano": "perto",
+     "foco": [
+      86,
+      30
+     ]
     },
     {
-     "arte": "r-mural",
+     "arte": "mural-r",
      "fala": "R-03",
-     "parte": 2,
-     "plano": "detalhe"
+     "parte": 2
     }
-   ]
+   ],
+   "piloto": true
   },
   {
    "id": "R-2",
@@ -1239,13 +1340,21 @@
      "arte": "r-coelho-porta",
      "fala": "R-10",
      "parte": 1,
-     "plano": "perto"
+     "plano": "perto",
+     "foco": [
+      72,
+      55
+     ]
     },
     {
      "arte": "r-coelho-porta",
      "fala": "R-10",
      "parte": 2,
-     "plano": "detalhe"
+     "plano": "detalhe",
+     "foco": [
+      72,
+      55
+     ]
     },
     {
      "arte": "r-mesa",
@@ -1256,9 +1365,14 @@
      "arte": "r-mesa",
      "fala": "R-11",
      "parte": 1,
-     "plano": "perto"
+     "plano": "perto",
+     "foco": [
+      50,
+      55
+     ]
     }
-   ]
+   ],
+   "piloto": true
   },
   {
    "id": "F-1",
@@ -1345,13 +1459,21 @@
      "arte": "x-risca",
      "fala": "X-01",
      "parte": 1,
-     "plano": "perto"
+     "plano": "perto",
+     "foco": [
+      61,
+      40
+     ]
     },
     {
      "arte": "x-risca",
      "fala": "X-01",
      "parte": 2,
-     "plano": "detalhe"
+     "plano": "detalhe",
+     "foco": [
+      61,
+      45
+     ]
     },
     {
      "arte": "x-cha",
@@ -1366,7 +1488,8 @@
       ]
      ]
     }
-   ]
+   ],
+   "piloto": true
   }
  ],
  "nariz_modelo": {
@@ -1391,5 +1514,229 @@
   "base": "One page of Diana's old recipe notebook, seen perfectly straight from above, filling the whole image edge to edge (no table, no background around it, no shadow). Warm cream paper (#fbf1df) with faint sky-blue ruled lines, a thin coral margin line on the left, a ragged torn edge along the left side where it was ripped out, a small coffee ring stain near a corner. Flat, illustrated in the game's flat style (cocoa outline only on the torn edge), no lettering, no drawings: a blank page.",
   "desenho": "Edit the attached blank notebook page: keep the page itself identical (paper, ruled lines, margin, torn edge, stain, framing). Add one drawing DRAWN ON THE PAPER by hand, in dark cocoa ink line with flat watercolor washes in the game's palette, like an illustration sketched in the notebook: completely flat on the page, no shadow, no volume, no 3D object sitting on the paper, the ruled lines faintly visible through the wash. The drawing sits in the middle of the page; leave the top quarter and the bottom quarter of the page blank (handwriting is added there later). No lettering. THE DRAWING: "
  },
- "_balao": "Cada arte com fala tem 'boca' (onde fica a boca de quem fala, em % da imagem: {quem: [x, y]}) e 'lugar' (o canto livre para o balão: nw, ne, sw, se). O rabinho do balão aponta para a boca, também nos planos 'perto' e 'detalhe'. Nos quadros: 'som' (onomatopeia), 'linhas' (movimento) e 'impacto' (quadro congelado com retícula forte e desencaixe azul e rosa)."
+ "_balao": "Cada arte com fala tem 'boca' (onde fica a boca de quem fala, em % da imagem: {quem: [x, y]}) e 'lugar' (o canto livre para o balão: nw, ne, sw, se). O rabinho do balão aponta para a boca, também nos planos 'perto' e 'detalhe'. Nos quadros: 'som' (onomatopeia), 'linhas' (movimento) e 'impacto' (quadro congelado com retícula forte e desencaixe azul e rosa).",
+ "_mural": "O mural é montado pelo código (tools/historia/paginas_modelo.html), não pintado: as fotos são os retratos que o jogo já tem (js/retratos_pintados.js), em polaroide, com barbante, post-its, cartões e carimbos. Assim ele é igual em todo quadro e cresce a cada capítulo. Coordenadas em % do quadro (3:2); 'fios' ligam os alfinetes pelos ids.",
+ "murais": {
+  "i1": {
+   "fotos": [
+    {
+     "id": "bolinha",
+     "x": 50,
+     "y": 46,
+     "rot": -3
+    }
+   ],
+   "fios": [
+    [
+     "bolinha",
+     [
+      61,
+      96
+     ]
+    ]
+   ]
+  },
+  "c4": {
+   "fotos": [
+    {
+     "id": "bolinha",
+     "x": 28,
+     "y": 40,
+     "rot": -4
+    },
+    {
+     "id": "sapo",
+     "x": 50,
+     "y": 33,
+     "rot": 3,
+     "carimbo": "PÁG. 1"
+    },
+    {
+     "id": "coelho",
+     "x": 72,
+     "y": 41,
+     "rot": -2,
+     "carimbo": "PÁG. 2"
+    }
+   ],
+   "notas": [
+    {
+     "id": "bilhete",
+     "tipo": "postit",
+     "txt": "DISPARO. DUELO. DOBRO. → D",
+     "x": 50,
+     "y": 76,
+     "rot": 2
+    }
+   ],
+   "fios": [
+    [
+     "bolinha",
+     "sapo"
+    ],
+    [
+     "sapo",
+     "coelho"
+    ],
+    [
+     "bolinha",
+     "bilhete"
+    ],
+    [
+     "coelho",
+     "bilhete"
+    ]
+   ]
+  },
+  "r": {
+   "fotos": [
+    {
+     "id": "sapo",
+     "x": 11,
+     "y": 30,
+     "rot": -4,
+     "carimbo": "PÁG. 1"
+    },
+    {
+     "id": "coelho",
+     "x": 27,
+     "y": 33,
+     "rot": 3,
+     "carimbo": "PÁG. 2"
+    },
+    {
+     "id": "raposa",
+     "x": 11,
+     "y": 72,
+     "rot": 3,
+     "carimbo": "PÁG. 3"
+    },
+    {
+     "id": "urso",
+     "x": 28,
+     "y": 76,
+     "rot": -3,
+     "carimbo": "PÁG. 4"
+    },
+    {
+     "id": "guaxinim",
+     "x": 72,
+     "y": 77,
+     "rot": 4,
+     "carimbo": "PÁG. 5"
+    },
+    {
+     "id": "ovelha",
+     "x": 89,
+     "y": 72,
+     "rot": -3,
+     "carimbo": "PÁG. 6"
+    },
+    {
+     "id": "coruja",
+     "x": 88,
+     "y": 31,
+     "rot": 3,
+     "carimbo": "LIDO"
+    },
+    {
+     "id": "voce",
+     "x": 50,
+     "y": 58,
+     "rot": -2,
+     "legenda": "você"
+    }
+   ],
+   "notas": [
+    {
+     "id": "c-diana",
+     "tipo": "cartao",
+     "txt": "DIANA",
+     "x": 38,
+     "y": 11,
+     "rot": -3
+    },
+    {
+     "id": "c-dados",
+     "tipo": "cartao",
+     "txt": "DADOS",
+     "x": 51,
+     "y": 9,
+     "rot": 1
+    },
+    {
+     "id": "c-dna",
+     "tipo": "cartao",
+     "txt": "DNA",
+     "x": 63,
+     "y": 11,
+     "rot": 3
+    },
+    {
+     "id": "d",
+     "tipo": "postit",
+     "txt": "D?",
+     "x": 79,
+     "y": 20,
+     "rot": 8,
+     "pequeno": true
+    }
+   ],
+   "helice": {
+    "x": 70,
+    "y": 42
+   },
+   "fios": [
+    [
+     "voce",
+     "sapo"
+    ],
+    [
+     "voce",
+     "coelho"
+    ],
+    [
+     "voce",
+     "raposa"
+    ],
+    [
+     "voce",
+     "urso"
+    ],
+    [
+     "voce",
+     "guaxinim"
+    ],
+    [
+     "voce",
+     "ovelha"
+    ],
+    [
+     "voce",
+     "coruja"
+    ],
+    [
+     "c-diana",
+     "c-dados"
+    ],
+    [
+     "c-dados",
+     "c-dna"
+    ],
+    [
+     "c-dna",
+     "helice"
+    ],
+    [
+     "d",
+     "coruja"
+    ],
+    [
+     "voce",
+     "c-dados"
+    ]
+   ]
+  }
+ },
+ "_refazer": "Quando houver crédito na API: python3 tools/historia/quadros.py --qualidade high <ids> refaz no pedido novo (estilo chapado, folha do nariz, canto livre para o balão). Primeiro os pedidos do dono na 2.ª revisão: p-pata (ombro e contorno), i1-le (a página virada para a Diana), c3-raposa (o rabo), c1-pag-a (o girino de ré); depois os 6 antigos do piloto (p-caderno, p-close, c1-x, c1-sapo, c1-cha, c6-la) e o resto."
 }
