@@ -757,14 +757,15 @@ experiente fica entre eles e o pensador.
 | 4 cartas | 9,0 | 56,4% | 28% | 20% | 37% |
 | sem cartas | 9,5 | 49,8% | 31% | – | – |
 
-**Com o bom jogador** (pensador com 12 simulações × humano; 240 partidas cada, ±6 pontos):
+**Com o bom jogador** (pensador com 12 simulações × humano; 240 partidas cada, ±6 pontos; as duas primeiras linhas com
+mais 480 partidas, ±3,4):
 
 | Variante | Pensador × humano | Cartas sobram | Usadas no 1º quarto |
 |---|---|---|---|
-| 3 cartas (hoje) | 65,4% | 13% | 56% |
+| 3 cartas (hoje) | 69,7% | 12% | 55% |
 | 2 cartas | 65,0% | 10% | 58% |
 | 3 no deck, usa só 2 | 61,3% | 35% | 70% |
-| 3 cartas, 1 por Mesa | 70,8% | 13% | 52% |
+| 3 cartas, 1 por Mesa | 71,5% | 14% | 51% |
 | sem cartas | 64,2% | 0% | – |
 
 **Equilíbrio dos decks** (cada deck contra decks sorteados, humano × humano, 500 partidas por deck):
@@ -779,7 +780,7 @@ experiente fica entre eles e o pensador.
 **Deck de 2 cartas: pior para o jogo.**
 - **Não resolve a queima:** 41% das cartas ainda saem no primeiro quarto (hoje, 40%); com o bom jogador, 58% (hoje, 56%).
   Quem queima não queima por ter carta demais: queima porque usar cedo não custa nada.
-- **Não muda a habilidade:** o bom jogador vence o casual igual (65,0% × 65,4%).
+- **Não muda a habilidade:** o bom jogador vence o casual igual (65,0% com 2 cartas; 65,4% com 3 nas mesmas 240 partidas).
 - **Fica mais equilibrado, mas por empobrecer:** sem trio, sem combo; e são 102 decks em vez de 402.
 - **Enfraquece o blefe:** ele precisa de um efeito para virar e de uma armadilha escondida; com 2 cartas isso existe
   em 42% dos decks (hoje, 70%), e o "?" vira cara ou coroa entre duas cartas (hoje, ~2,8 possibilidades). Depois que o
@@ -789,10 +790,11 @@ experiente fica entre eles e o pensador.
 **"3 no deck, usa só 2": a pior.** O casual gasta as duas cedo e fica com a terceira na mão (36% das cartas sobram;
 70% dos usos no primeiro quarto com o pensador). O dilema "qual eu queimo?" vira "queimo logo as duas".
 
-**"1 carta por Mesa": a única que mexe na queima** (34% no primeiro quarto; 52% com o pensador), e a que mais aumenta o
-peso da habilidade (casual 55,4% contra o robô; pensador 70,8% contra o casual). Custa uma regra a mais e uma marca na
-tela ("carta desta Mesa já usada"); o equilíbrio dos decks fica como o de hoje. Vale um teste com gente antes de virar
-regra.
+**"1 carta por Mesa": a única que mexe na queima** (34% no primeiro quarto com o casual, contra 40%; 51% com o
+pensador, contra 55%), e o casual que pensa nas cartas passa a vencer mais o robô (55,4% × 52,8%). Para o bom jogador o
+peso da habilidade não muda (71,5% × 69,7%, dentro do ruído: com 240 partidas parecia 70,8% × 65,4%, e era sorte).
+Custa uma regra a mais e uma marca na tela ("carta desta Mesa já usada"); o equilíbrio dos decks fica como o de hoje.
+É uma melhora pequena: vale um teste com gente antes de virar regra.
 
 ## 16. Pressa: 3 dados seguidos com o rival assistindo (v0.12)
 
