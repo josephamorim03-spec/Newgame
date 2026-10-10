@@ -27,6 +27,7 @@ const PADRAO = {
   minimoNaVolta: 30_000,    // quem volta de uma queda na própria vez tem pelo menos isso para jogar
   salaParada: 30 * 60_000,  // sala sem ninguém conectado some
   conviteValido: 24 * 3600_000,
+  escolha: 60_000,          // preparação: tempo para os dois escolherem o deck antes de cada partida (acaba antes se os dois confirmarem)
 };
 
 class Salas {
@@ -55,7 +56,7 @@ class Salas {
     return {
       codigo: sala.codigo, meta: sala.meta, ritmo: sala.ritmo, limiteVez: this.limiteDe(sala), dono: sala.dono,
       jogadores: sala.jogadores.map(j => ({ id: j.id, nome: j.nome, rating: j.rating, icone: j.icone, conectado: !!j.ws, volta: this.volta(sala, j) })),
-      estado: sala.jogo ? (sala.jogo.fase === 'fim' ? 'fim' : 'jogando') : 'esperando',
+      estado: sala.escolha ? 'escolhendo' : sala.jogo ? (sala.jogo.fase === 'fim' ? 'fim' : 'jogando') : 'esperando',
     };
   }
 
@@ -92,9 +93,10 @@ class Salas {
     }
     eu.ws = ws; eu.caiuEm = null; ws.sala = sala.codigo;
     sala.mexida = this.agora();
-    if (sala.jogadores.length === 2 && !sala.jogo) this.comecar(sala);
+    if (sala.jogadores.length === 2 && !sala.jogo && !sala.escolha) this.iniciarEscolha(sala);
     else {
       this.avisarSala(sala);
+      if (sala.escolha) this.enviar(ws, this.msgEscolha(sala, sala.jogadores.indexOf(eu)));
       if (sala.jogo) {
         const assento = sala.jogadores.indexOf(eu);
         // no meio da partida, os dois recebem o estado (o relógio da vez pode ter parado durante a queda)
@@ -128,7 +130,7 @@ class Salas {
     if (!sala.jogadores[1 - assento].ws) return this.erro(ws, `${sala.jogadores[1 - assento].nome} saiu da sala.`);
     if (Array.isArray(deck) && Regras.deckValido(deck) && deck.every(c => conta.cartas.includes(c))) sala.jogadores[assento].deck = deck.slice();
     sala.revanche.add(assento);
-    if (sala.revanche.size === 2) this.comecar(sala);
+    if (sala.revanche.size === 2) this.iniciarEscolha(sala);
     else this.avisarSala(sala, { revanche: [...sala.revanche] });
   }
   sair(ws, { silencioso = false } = {}) {
@@ -147,6 +149,7 @@ class Salas {
     } else if (!sala.jogo) {
       sala.jogadores = sala.jogadores.filter(j => j !== eu); // ainda esperando: libera a vaga
     }
+    this.cancelarEscolha(sala, `${eu.nome} saiu da sala.`);
     sala.revanche.clear();
     this.avisarSala(sala);
   }
@@ -158,7 +161,52 @@ class Salas {
     if (!eu) return;
     eu.ws = null; eu.caiuEm = this.agora();
     if (!sala.jogo) sala.jogadores = sala.jogadores.filter(j => j !== eu);
+    this.cancelarEscolha(sala, `A conexão de ${eu.nome} caiu.`);
     this.avisarSala(sala);
+  }
+
+  // ---------- preparação: os dois escolhem o deck ao mesmo tempo ----------
+  // Cada um vê o próprio deck; do rival, só quantas cartas já escolheu e se confirmou (nunca quais): ninguém monta o
+  // deck "contra" o do outro. Começa quando os dois confirmam ou quando o tempo acaba (com o que cada um tiver escolhido).
+  iniciarEscolha(sala) {
+    if (!(this.t.escolha > 0)) return this.comecar(sala);   // escolha: 0 desliga a preparação (testes que cuidam de outra coisa)
+    const ocupado = sala.jogadores.find(p => { const s = this.partidaDe(p.id); return s && s !== sala; });
+    if (ocupado) return this.comecar(sala);   // o comecar já trata quem está em outra partida
+    sala.revanche.clear();
+    sala.escolha = { ate: this.agora() + this.t.escolha, decks: sala.jogadores.map(p => p.deck.slice()), prontos: [false, false] };
+    sala.mexida = this.agora();
+    this.avisarSala(sala);
+    sala.jogadores.forEach((jg, i) => this.enviar(jg.ws, this.msgEscolha(sala, i)));
+  }
+  msgEscolha(sala, i) {
+    const e = sala.escolha, rival = sala.jogadores[1 - i];
+    return { tipo: 'escolha', prazo: Math.max(0, e.ate - this.agora()), total: this.t.escolha, meta: sala.meta, ritmo: sala.ritmo,
+      eu: { deck: e.decks[i].slice(), pronto: e.prontos[i] },
+      rival: { nome: rival ? rival.nome : '', cartas: e.decks[1 - i].length, pronto: e.prontos[1 - i] } };   // do rival, só a contagem
+  }
+  // deck: a escolha atual; pronto: true confirma (mandar de novo sem pronto desfaz a confirmação)
+  escolher(ws, conta, { deck, pronto } = {}) {
+    const { sala, assento } = this.onde(ws, conta);
+    const aviso = erro => this.enviar(ws, { tipo: 'aviso', erro });   // aviso, não erro: um erro tiraria o jogador da sala
+    if (!sala || !sala.escolha || assento === undefined) return aviso('A escolha do deck já acabou.');
+    if (!Array.isArray(deck) || !Regras.deckValido(deck) || deck.some(c => !conta.cartas.includes(c))) return aviso('Deck inválido para esta conta.');
+    sala.escolha.decks[assento] = deck.slice();
+    sala.escolha.prontos[assento] = pronto === true;
+    sala.mexida = this.agora();
+    if (sala.escolha.prontos.every(Boolean)) return this.fecharEscolha(sala);
+    sala.jogadores.forEach((jg, i) => this.enviar(jg.ws, this.msgEscolha(sala, i)));
+  }
+  fecharEscolha(sala) {
+    const e = sala.escolha;
+    if (!e) return;
+    sala.escolha = null;
+    sala.jogadores.forEach((p, i) => { p.deck = e.decks[i].slice(); });
+    this.comecar(sala);
+  }
+  cancelarEscolha(sala, motivo) {
+    if (!sala.escolha) return;
+    sala.escolha = null;
+    sala.jogadores.forEach(jg => this.enviar(jg.ws, { tipo: 'escolha', cancelada: true, motivo }));
   }
 
   // ---------- partida ----------
@@ -275,6 +323,7 @@ class Salas {
   verificar() {
     const agora = this.agora();
     for (const sala of this.salas.values()) {
+      if (sala.escolha && agora >= sala.escolha.ate) { this.fecharEscolha(sala); continue; }
       const j = sala.jogo, emJogo = j && j.fase !== 'fim';
       if (emJogo) {
         const caido = sala.jogadores.findIndex(x => !x.ws && x.caiuEm && agora - x.caiuEm > this.t.esperaReconexao);
@@ -297,14 +346,14 @@ class Salas {
     for (const sala of this.salas.values()) {
       const jg = sala.jogadores.find(j => j.id === id && j.ws);
       if (!jg) continue;
-      if (sala.jogo && sala.jogo.fase !== 'fim') return 'jogando';
+      if (sala.escolha || (sala.jogo && sala.jogo.fase !== 'fim')) return 'jogando';
       if (!sala.jogo) estado = 'esperando';
     }
     return estado;
   }
   // a sala onde esta conta tem uma partida em andamento (conectada ou caída); null se nenhuma
   partidaDe(id) {
-    for (const sala of this.salas.values()) if (sala.jogo && sala.jogo.fase !== 'fim' && sala.jogadores.some(j => j.id === id)) return sala;
+    for (const sala of this.salas.values()) if ((sala.escolha || (sala.jogo && sala.jogo.fase !== 'fim')) && sala.jogadores.some(j => j.id === id)) return sala;
     return null;
   }
   // a sala esperando o rival que esta conta criou (para chamar um amigo para ela)

@@ -9,7 +9,7 @@ const { jogadaAoAcaso } = require('./ajuda');
 const SEGREDO = 'segredo-de-teste-com-32-caracteres!!';
 
 async function subir({ banco = new BancoMemoria(), tempos = {}, limites = { contas: 1000, entrar: 1000, solo: 1000, ws: 100000 }, origens = [] } = {}) {
-  const { criarServidor, salas } = criarApp({ banco, segredo: SEGREDO, tempos, limites, origens });
+  const { criarServidor, salas } = criarApp({ banco, segredo: SEGREDO, tempos: { escolha: 0, ...tempos }, limites, origens });   // a preparação tem testes próprios (escolha.test.js)
   const servidor = criarServidor();
   await new Promise(r => servidor.listen(0, r));
   const base = `http://127.0.0.1:${servidor.address().port}`;

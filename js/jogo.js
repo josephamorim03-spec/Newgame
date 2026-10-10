@@ -1257,6 +1257,11 @@
     if (!local) st.abaDeck = 0;
     document.querySelectorAll('#abasDeck [data-aba]').forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.aba === st.abaDeck)));
     document.getElementById('deckTitulo').textContent = local ? `Deck do Jogador ${st.abaDeck + 1}` : 'Monte seu deck';
+    if (Rede.escolha) {
+      document.getElementById('deckTitulo').textContent = 'Monte o deck desta partida';
+      document.getElementById('deckEmAndamento').hidden = true;
+    }
+    desenharEscolha();
     desenharDeck();
     document.getElementById('janelaDeck').hidden = false;
   }
@@ -1292,7 +1297,61 @@
     };
     document.getElementById('deckGrade').innerHTML = [['efeito', 'Efeitos'], ['armadilha', 'Armadilhas']]
       .map(([t, titulo]) => `<h3>${titulo}</h3><div class="grade-op">${ORDEM.filter(c => CARTAS[c].tipo === t).map(op).join('')}</div>`).join('');
+    if (Rede.escolha) mandarEscolhaLogo();
   }
+
+  // ---------- preparação da partida online: os dois montam o deck ao mesmo tempo ----------
+  // Do rival aparece só quantas cartas ele já escolheu e se confirmou; as cartas dele só aparecem quando a partida começa.
+  let esperaEscolha = null;
+  const mesmoDeck = (a, b) => a.length === b.length && a.every((c, i) => c === b[i]);
+  function mandarEscolhaLogo() {
+    clearTimeout(esperaEscolha);
+    esperaEscolha = setTimeout(() => {
+      const e = Rede.escolha; if (!e) return;
+      const d = deckOnline();
+      if (mesmoDeck(d, e.eu.deck)) return;
+      e.eu = { deck: d.slice(), pronto: false };   // trocar uma carta desfaz a confirmação
+      enviarWs({ tipo: 'deck', deck: d });
+      desenharEscolha();
+    }, 200);
+  }
+  function abrirEscolha(m) {
+    const primeira = !Rede.escolha;
+    Rede.escolha = { ate: Date.now() + m.prazo, total: m.total, eu: m.eu, rival: m.rival, meta: m.meta };
+    if (primeira) {
+      st.decks[0] = m.eu.deck.filter(possui);
+      ['fim', 'janelaOnline', 'janelaCarta', 'janelaLoja', 'janelaConfig'].forEach(id => { document.getElementById(id).hidden = true; });
+      abrirDeck();
+      Som.tocar('vez');
+    } else desenharEscolha();
+  }
+  function fecharEscolha(motivo) {
+    if (!Rede.escolha) return;
+    Rede.escolha = null;
+    desenharEscolha();
+    if (motivo) { document.getElementById('janelaDeck').hidden = true; Fx.chamada('Preparação cancelada', esc(motivo), 'suave'); }
+  }
+  function desenharEscolha() {
+    const el = document.getElementById('deckEscolha'), e = Rede.escolha;
+    const jogar = document.getElementById('btnJogarDeck'), fechar = document.getElementById('btnFecharDeck');
+    el.hidden = !e;
+    if (!e) { jogar.classList.remove('pronto-ok'); fechar.textContent = 'Fechar'; return; }
+    const s = Math.max(0, Math.ceil((e.ate - Date.now()) / 1000));
+    const r = e.rival, quem = esc(r.nome || 'O rival');
+    const dele = r.pronto ? `<span class="rival-escolha pronto">${quem} confirmou ✓</span>`
+      : `<span class="rival-escolha">${quem}: ${r.cartas} de 3 ${r.cartas === 1 ? 'carta' : 'cartas'}<span class="pontinhos">${[0, 1, 2].map(i => `<i class="${i < r.cartas ? 'cheio' : ''}"></i>`).join('')}</span></span>`;
+    el.innerHTML = `<span class="tempo${s <= 10 ? ' acabando' : ''}" data-tempo-escolha>${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}</span>${dele}
+      <span class="nota-escolha">${e.eu.pronto ? (r.pronto ? 'Começando…' : 'Você confirmou. Esperando o rival.') : 'As cartas do rival aparecem quando a partida começar.'}</span>`;
+    jogar.textContent = e.eu.pronto ? 'Mudar o deck' : 'Confirmar deck';
+    jogar.classList.toggle('pronto-ok', !!e.eu.pronto);
+    fechar.textContent = 'Fechar (o tempo continua)';
+  }
+  // a contagem anda sozinha
+  setInterval(() => {
+    if (!Rede.escolha) return;
+    const s = Math.max(0, Math.ceil((Rede.escolha.ate - Date.now()) / 1000)), t = document.querySelector('[data-tempo-escolha]');
+    if (t) { t.textContent = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; t.classList.toggle('acabando', s <= 10); }
+  }, 1000);
   // a carta inteira, fora da partida (montar o deck)
   function abrirInfoCarta(c) {
     const k = CARTAS[c];
@@ -1637,9 +1696,19 @@
   document.getElementById('btnMenuFim').addEventListener('click', () => { document.getElementById('fim').hidden = true; mostrarInicio(); });
   document.getElementById('btnFecharDeck').addEventListener('click', () => {
     document.getElementById('janelaDeck').hidden = true;
+    document.getElementById('btnFecharDeck').textContent = 'Fechar';
     if (modoAntesDoDois) { st.cfg.modo = modoAntesDoDois; modoAntesDoDois = null; salvar(); }
   });
   document.getElementById('btnJogarDeck').addEventListener('click', () => {
+    if (Rede.escolha) {
+      clearTimeout(esperaEscolha);
+      const pronto = !Rede.escolha.eu.pronto, d = deckOnline();
+      Rede.escolha.eu = { deck: d.slice(), pronto };
+      enviarWs({ tipo: 'deck', deck: d, pronto });
+      Som.tocar(pronto ? 'momento' : 'toque');
+      desenharEscolha();
+      return;
+    }
     modoAntesDoDois = null;
     st.deckVisto = true; salvar();
     Online.deckMudou();
@@ -2013,6 +2082,7 @@
     // o servidor avisa o total sempre que alguém entra ou sai: o contador anda na hora
     if (m.tipo === 'online') { mostrarContador(Math.max(0, m.total - (st.sessao && Rede.ola ? 1 : 0))); if (!document.getElementById('janelaOnline').hidden) carregarOnlineLogo(); return; }
     if (m.tipo === 'sessao') return;   // a sessão mudou (senha, sair de tudo): a conexão fecha e volta com o token deste aparelho
+    if (m.tipo === 'escolha') { if (m.cancelada) fecharEscolha(m.motivo); else abrirEscolha(m); return; }
     if (m.tipo === 'chamou') { aviso(`Chamamos ${m.nome}. Agora é esperar entrar.`); return; }
     if (m.tipo === 'procurando') { Rede.busca = { desde: (Rede.busca && Rede.busca.desde) || Date.now(), janela: m.janela, naFila: m.naFila }; desenharOnline(); return; }
     if (m.tipo === 'buscaCancelada') { Rede.busca = null; desenharOnline(); return; }
@@ -2070,6 +2140,7 @@
     if (!nova && antes.premio !== undefined) { v.premio = antes.premio; v.semPremio = antes.semPremio; } // o prêmio só vem uma vez
     v.perfis[1].voltaAte = v.perfis[1].volta != null ? Date.now() + v.perfis[1].volta : null;
     Rede.voltando = false;
+    if (Rede.escolha) { Rede.escolha = null; desenharEscolha(); document.getElementById('btnFecharDeck').textContent = 'Fechar'; }
     jogo = v;
     lembrarSala(v.fase === 'fim');
     marcarNovos();
@@ -2326,6 +2397,11 @@
     const eu = `<div class="eu-online">${iconeSVG(pf.ativo.icone)}<span><b>${esc(pf.nome)}</b><small>${esc(pf.titulo)} · ${pf.vitorias} de ${pf.partidas} vencidas</small></span><span class="rating-grande">${pf.rating}<small>rating</small></span></div>`;
     if (Rede.sala) {
       const emJogo = online() && jogo.sala === Rede.sala;
+      if (Rede.escolha && !(emJogo && jogo.fase !== 'fim')) {
+        el.innerHTML = `${eu}<p style="margin:0">Montando os decks para a partida contra <b>${esc(Rede.escolha.rival.nome)}</b>.</p>
+          <div class="linha-botoes"><button class="btn btn-mel" data-on="deck">Abrir o deck</button><button class="btn btn-papel" data-on="sair-sala">Sair da sala</button></div>`;
+        return;
+      }
       if (emJogo && jogo.fase !== 'fim') {
         el.innerHTML = `${eu}<p style="margin:0">Partida na sala <b>${Rede.sala}</b> contra <b>${esc(jogo.perfis[1].nome)}</b> (rating ${jogo.perfis[1].rating}).</p>
           <div class="linha-botoes"><button class="btn btn-mel" data-on="voltar">Voltar à mesa</button><button class="btn btn-papel" data-on="desistir">Desistir</button></div>
