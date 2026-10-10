@@ -399,6 +399,8 @@ Talvez dois. Um final só para todo mundo; a 3.ª estrela do Cap. 8 dá um quadr
 - **Q9.** DIANA: "Você pôs um Eco. Eco." **Q10.** "…Passa amanhã. Manhã." **Q11.** "Revanche? Vanche?"
 - *Com a 3.ª estrela, um quadro a mais:* DIANA: "Fita complementar perfeita. Eu ensinei bem. Bem."
 
+**A frase final (F-Zb, escolhida pelo dono entre quatro):** DIANA: "Eu te ensinei a jogar para me curar. / Agora jogue só porque é bom. / …E porque eu ainda quero a revanche."
+
 **Créditos:** *o título "DICE DUEL" na tela.*
 
 **Pós-créditos 1**
