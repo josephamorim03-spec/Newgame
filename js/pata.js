@@ -6,11 +6,9 @@
  * Cada dado é da pata do lado dele: o da esquerda, a pata da esquerda; o da direita, a da direita; o do meio, qualquer
  * uma (meio a meio). Erguer a pata é ela crescer um pouco e a sombra no feltro se afastar, como se viesse na direção de
  * quem olha. Com as animações desligadas (Ajustes ou "reduzir movimento"), as patas ficam paradas na borda.
- * A pata é um sprite de quatro poses, trocadas como quadros: "dorso" (vista de cima, apoiada), "virando" (no meio do
- * giro de cima para baixo: larga e achatada, a ponta dos dedos de frente, um feijãozinho rosa em cada), "palma" (a pata erguida, de frente: a almofada maior e os quatro
- * feijõezinhos rosa) e "gancho" (os dedos dobrados por cima da aresta do dado, as pontinhas rosa pegando na face).
- * A investida: dorso → virando → palma ao erguer; palma → virando → gancho ao descer na aresta; puxa; gancho →
- * virando → dorso ao voltar. A pata da direita é o espelho da da esquerda.
+ * A pata tem duas poses: "dorso" (vista de cima, apoiada, e assim ela vai até o dado) e "gancho" (os dedos dobrados por
+ * cima da aresta do dado, as pontinhas rosa pegando na face). A troca é direta, sem quadros de giro no meio: as poses
+ * intermediárias (virando, palma) saíram porque a virada ficava estranha. A pata da direita é o espelho da da esquerda.
  * A arte pintada (js/patas_pintadas.js, gerada pela API de imagem com arte/patas.json e o vetor de cada pose como
  * referência) entra no lugar do vetor de cada pose que a tem; sem ela, fica o vetor. Dela vêm também os efeitos: a
  * poeirinha da batida, quando a pata encosta no dado, e o rastro da pata que corre até o dado.
@@ -18,8 +16,8 @@
  */
 (function () {
   'use strict';
-  const PELO = '#f8f6f2', SOMBRA = '#e4e1dc', CACAU = '#3a2a2e', ROSA = '#f19bb3', ROSA_SOMBRA = '#d97894';
-  const POSES = ['dorso', 'virando', 'palma', 'gancho'];
+  const PELO = '#f8f6f2', SOMBRA = '#e4e1dc', CACAU = '#3a2a2e', ROSA = '#f19bb3';
+  const POSES = ['dorso', 'gancho'];
   let atual = null;   // { cena, svg, cb, token, timer, P: [esquerda, direita], m, alvo }
 
   const esperar = ms => new Promise(r => setTimeout(r, ms));
@@ -40,7 +38,7 @@
     return { w: cr.width, h: cr.height, tam, larg, dados, repouso, chao: borda + larg * 0.55 };
   }
 
-  // ---------- o sprite da pata: quatro poses, centradas no meio da palma, os dedos para baixo (+y) ----------
+  // ---------- o sprite da pata: duas poses, centradas no meio da palma, os dedos para baixo (+y) ----------
   // L é a largura do traço do mundo da cena (~14 a 17 px): tudo se mede nele
   const el = (cx, cy, rx, ry, cor, borda = 0, L = 1, extra = '') => `<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="${cor}"${borda ? ` stroke="${CACAU}" stroke-width="${L * borda}"` : ''}${extra}/>`;
   // dorso: a pata vista de cima, apoiada; um pouco de sombra embaixo e os vãos dos dedos na ponta
@@ -50,34 +48,6 @@
     return el(0, ry * 0.12, rx, ry, PELO, 0.2, L)
       + `<path d="M${-rx * 0.82} ${ry * 0.35} q ${rx * 0.82} ${ry * 0.9} ${rx * 1.64} 0" fill="none" stroke="${SOMBRA}" stroke-width="${L * 0.16}" stroke-linecap="round"/>`
       + dedo(-rx * 0.34, -L * 0.05) + dedo(rx * 0.34, L * 0.05);
-  }
-  // a almofada maior (a "palma"): três lobos embaixo, como a de verdade
-  function almofada(L, cx, cy, s) {
-    const u = L * s, p = (x, y) => `${cx + x * u} ${cy + y * u}`;
-    return `<path d="M${p(-0.46, -0.02)} C${p(-0.44, -0.3)} ${p(0.44, -0.3)} ${p(0.46, -0.02)} C${p(0.5, 0.26)} ${p(0.34, 0.4)} ${p(0.17, 0.33)} C${p(0.08, 0.43)} ${p(-0.08, 0.43)} ${p(-0.17, 0.33)} C${p(-0.34, 0.4)} ${p(-0.5, 0.26)} ${p(-0.46, -0.02)}Z" fill="${ROSA}" stroke="${ROSA_SOMBRA}" stroke-width="${L * 0.06}"/>`;
-  }
-  // palma: a pata erguida, de frente para quem olha, com os dedos para cima: a almofada maior embaixo e os quatro
-  // feijõezinhos em arco por cima dela; pelo branco em volta
-  function palma(L) {
-    const rx = L * 0.92, ry = L * 0.86;
-    const feijao = (x, y, r) => el(x * L, y * L, L * 0.19 * r, L * 0.22 * r, ROSA, 0, L, ` stroke="${ROSA_SOMBRA}" stroke-width="${L * 0.05}"`);
-    return el(0, 0, rx, ry, PELO, 0.2, L)
-      + almofada(L, 0, L * 0.3, 0.95)
-      + feijao(-0.56, -0.2, 0.95) + feijao(-0.2, -0.5, 1) + feijao(0.2, -0.5, 1) + feijao(0.56, -0.2, 0.95);
-  }
-  // virando: o meio do giro entre o dorso (dedos para baixo, palma no feltro) e a palma (dedos para cima, almofadas de
-  // frente). O giro é de cima para baixo, num eixo deitado: no meio dele a pata aparece larga e achatada, com a ponta
-  // dos quatro dedos virada para quem olha e um feijãozinho rosa em cada um (a almofada maior ainda não aparece).
-  // Simétrica: serve às duas patas sem trocar de lado
-  function virando(L) {
-    const borda = L * 0.2;
-    const formas = [[0, -L * 0.14, L * 0.86, L * 0.44], ...[-0.6, -0.2, 0.2, 0.6].map(x => [x * L, L * 0.18, L * 0.29, L * 0.29])];
-    const contorno = formas.map(([x, y, rx, ry]) => el(x, y, rx + borda / 2, ry + borda / 2, CACAU)).join('');
-    const pelo = formas.map(([x, y, rx, ry]) => el(x, y, rx - borda / 2, ry - borda / 2, PELO)).join('');
-    const feijao = formas.slice(1).map(([x, y]) => el(x, y + L * 0.05, L * 0.1, L * 0.11, ROSA, 0, L, ` stroke="${ROSA_SOMBRA}" stroke-width="${L * 0.04}"`)).join('');
-    return contorno + pelo
-      + `<path d="M${-L * 0.6} ${-L * 0.36} q ${L * 0.6} ${-L * 0.22} ${L * 1.2} 0" fill="none" stroke="${SOMBRA}" stroke-width="${L * 0.12}" stroke-linecap="round"/>`
-      + feijao;
   }
   // gancho: os dedos dobrados por cima da aresta do dado. A palma (uma elipse larga) e quatro dedos redondos em arco
   // na ponta, num contorno só (primeiro tudo em cacau, mais grosso; por cima, tudo em branco); entre os dedos, vãos
@@ -93,10 +63,10 @@
       + `<path d="M${-L * 0.62} ${-L * 0.32} q ${L * 0.62} ${-L * 0.3} ${L * 1.24} 0" fill="none" stroke="${SOMBRA}" stroke-width="${L * 0.13}" stroke-linecap="round"/>`
       + vao(-0.42, 0.36) + vao(0, 0.4) + vao(0.42, 0.36);
   }
-  const SPRITE = { dorso, virando, palma, gancho };
+  const SPRITE = { dorso, gancho };
   // a arte pintada de cada pose e dos efeitos (o quadrado do webp, em larguras L: o desenho ocupa o lado maior dele)
   const pintada = id => (window.PATAS_PINTADAS || {})[id];
-  const LADO_PINTADA = { dorso: 2.15, virando: 2.05, palma: 2.25, gancho: 2.15, batida: 2.1, rastro: 2.2 };
+  const LADO_PINTADA = { dorso: 2.15, gancho: 2.15, batida: 2.1, rastro: 2.2 };
   const imagem = (id, L) => { const t = LADO_PINTADA[id] * L; return `<image href="${pintada(id)}" x="${-t / 2}" y="${-t / 2}" width="${t}" height="${t}"/>`; };
   const poseSVG = (p, L, k) => (pintada(p) ? imagem(p, L) : SPRITE[p](L, k));
 
@@ -187,9 +157,8 @@
     return i < meio ? 0 : 1;
   }
 
-  // uma investida: a pata ergue da borda virando a palma para quem olha (dorso → virando → palma), vai até o dado,
-  // desce na aresta de cima dele com os dedos dobrados (palma → virando → gancho), aperta uma ou duas vezes, puxa o
-  // dado pela aresta na direção dela e solta (gancho → virando → dorso), voltando para a borda
+  // uma investida: a pata ergue da borda (dorso), vai até o dado, desce na aresta de cima dele já com os dedos dobrados
+  // (gancho), aperta uma ou duas vezes, puxa o dado pela aresta na direção dela, solta (dorso) e volta para a borda
   async function investida(c) {
     if (!montar(c)) return;
     const m = c.m, i = Math.floor(Math.random() * m.dados.length), d = m.dados[i], k = pataDoDado(i, m.dados.length);
@@ -201,18 +170,15 @@
     const acima = { x: d.x + (casa.x - d.x) * 0.12, y: Math.max(m.chao, d.y - d.t * 0.45), e: 1 };
     // na aresta: a ponta dos dedos (os feijões) cobre um pouco da face de cima do dado
     const aresta = { x: d.x, y: Math.max(m.chao, d.y - d.t * 0.5 - m.larg * 0.25), e: 0 };
-    // ergue e vira a palma
-    if (!(await quadros(c, k, ['virando'], 60))) return;
+    // ergue
     if (!(await mover(c, k, ergue, 200, suave))) return;
-    if (!(await quadros(c, k, ['palma'], 0))) return;
     // o rastro da corrida até o dado, no meio do caminho e na direção dele
     // (o desenho aponta para a direita, a ponta fina atrás: indo para a esquerda, ele é espelhado em vez de virado)
     const rumo = Math.atan2(acima.y - ergue.y, acima.x - ergue.x) * 180 / Math.PI, praEsquerda = Math.abs(rumo) > 90;
     efeito(c, 'rastro', (ergue.x + acima.x) / 2, (ergue.y + acima.y) / 2, 360, praEsquerda ? rumo - 180 : rumo, 0.7, 1, praEsquerda);
     if (!(await mover(c, k, acima, 300, suave))) return;
-    await esperar(220 + Math.random() * 220);   // a ameaça: a palma no ar, em cima do dado
-    // desce virando até enganchar na aresta
-    if (!(await quadros(c, k, ['virando'], 60))) return;
+    await esperar(220 + Math.random() * 220);   // a ameaça: a pata no ar, em cima do dado
+    // desce e engancha na aresta
     if (!(await quadros(c, k, ['gancho'], 0))) return;
     const batidas = Math.random() < 0.5 ? 2 : 1;
     for (let b = 0; b < batidas; b++) {
@@ -233,7 +199,7 @@
     if (cab) cab.classList.remove('travessa');
     if (!ok) return;
     // solta, vira de volta e volta para a borda
-    if (!(await quadros(c, k, ['virando', 'dorso'], 70))) return;
+    if (!(await quadros(c, k, ['dorso'], 0))) return;
     if (!(await mover(c, k, { ...casa, e: 0.5 }, 280, suave))) return;
     await mover(c, k, casa, 120, t => t * t);
     if (c.cb.aoTerminar) c.cb.aoTerminar(i);

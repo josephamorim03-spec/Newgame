@@ -390,18 +390,14 @@ parece meu.", "Só estou olhando.", "Calma. Ainda não peguei."). Tocar num dado
 voltarem depressa para a borda. A pata não sobe pela tela (passaria pelo rosto): erguer é ela crescer um pouco e a
 sombra no feltro se afastar.
 
-A pata é um **sprite de quatro poses**, trocadas como quadros (vetor, no traço de cacau e no branco da Diana):
-- **dorso:** vista de cima, apoiada na borda, com os vãos dos dedos;
-- **virando:** o meio do giro entre o dorso e a palma. O giro é de cima para baixo, num eixo deitado (os dedos vão de
-  apontar para baixo a apontar para cima), então no meio dele a pata aparece larga e achatada, com a ponta dos quatro
-  dedos de frente e um feijãozinho rosa em cada. Até a v0.14 inicial era um giro de lado (estreita, o rosa na
-  lateral), que não casava com a virada de cima para baixo e, na pata direita espelhada, punha o rosa do lado errado;
-- **palma:** erguida, de frente para quem olha: a almofada maior, de três lobos, e os quatro feijõezinhos rosa em arco;
-- **gancho:** os dedos dobrados por cima da aresta do dado, com as quatro pontinhas rosa apertando a face dele.
+A pata tem **duas poses** (vetor e pintura, no traço de cacau e no branco da Diana):
+- **dorso:** vista de cima, apoiada na borda, com os vãos dos dedos; é assim que ela ergue e vai até o dado;
+- **gancho:** os dedos dobrados por cima da aresta do dado, num contorno só, com uma lasquinha rosa embaixo de cada
+  ponta apertando a face dele.
 
-A investida: dorso → virando → palma ao erguer (a palma fica no ar em cima do dado, a ameaça); palma → virando → gancho
-ao descer na aresta de cima do dado; uma ou duas apertadas; puxa o dado pela aresta (ele inclina, arrastado pela
-beirada); gancho → virando → dorso ao soltar, e a pata volta para a borda. A pata da direita é o espelho da da esquerda.
+A troca é direta: chegando no dado, dorso vira gancho; soltando, gancho vira dorso. Houve uma versão com quadros de
+giro no meio ("virando" e "palma", a pata mostrando as almofadinhas rosa ao erguer), mas a virada ficava estranha em
+qualquer eixo e saiu.
 
 **A arte pintada das patas** (`arte/patas.json` → `js/patas_pintadas.js`) vem da API de imagem da OpenAI, pela mesma
 ferramenta dos retratos e das cartas (`tools/arte_icones.py --pedidos arte/patas.json`). Cada pose vai junto do próprio
