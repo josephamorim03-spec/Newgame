@@ -57,7 +57,7 @@ e o amigo cai direto na sala. O servidor é a autoridade da partida e roda na Ra
 | `js/rolagem.js`, `shared/rolagem.js`, `js/lancamentos.js` | a rolagem 3D: lançamentos gravados com física (do Cronomotor), corrigidos para a face da regra |
 | `js/audio.js` | efeitos e trilha lo-fi sintetizados na hora (Web Audio, sem arquivos de áudio) |
 | `js/efeitos.js` | partículas, dados voando, chamadas de "bom momento", contagem do placar |
-| `js/pata.js` | a pata da Diana na tela inicial, mexendo nos dados da mesinha |
+| `js/pata.js` | as patas da Diana na tela inicial, mexendo nos dados da mesinha |
 | `sim/` | regras de referência em Python e os experimentos de balanceamento |
 | `tools/empacotar.py` | gera o HTML único |
 | `tools/lancamentos/` | exporta os lançamentos gravados do Godot e monta `js/lancamentos.js` |
@@ -105,7 +105,7 @@ node tools/vercel_local.js                     # a página como o Vercel publica
   ("Valeu esperar!" na hora). É o primeiro bom momento que premia uma decisão, não um resultado.
 - **Fim da derrota sem "+0":** os bons momentos vêm primeiro, depois a experiência e o rating.
 - **Juice:** o disparo em cascata (cada dado acende na nota dele, um selo conta +1, +2, +4... e o "+N" estoura no
-  placar do tamanho do lance); a tela inicial com a rival à mesa, a saudação da hora e dados que rolam ao toque, e a pata da Diana mexendo nos
+  placar do tamanho do lance); a tela inicial com a rival à mesa, a saudação da hora e dados que rolam ao toque, e as patas da Diana mexendo nos
   dados e ameaçando pegá-los; a mesa
   não pisca mais marrom no tremor.
 
