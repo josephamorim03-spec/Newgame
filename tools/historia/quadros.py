@@ -6,7 +6,9 @@
     python3 tools/historia/quadros.py --refazer           # todas, de novo
     python3 tools/historia/quadros.py --seco [ids...]     # mostra os pedidos, não gasta nada
     python3 tools/historia/quadros.py --qualidade high    # low | medium (padrão) | high
-    python3 tools/historia/quadros.py paginas [SAIDA.html]   # monta as páginas (padrão: builds/historia-paginas.html)
+    python3 tools/historia/quadros.py paginas [SAIDA.html] [--piloto]   # monta as páginas (padrão: builds/historia-paginas.html)
+    python3 tools/historia/quadros.py narizes [ids...]        # a folha de modelo do nariz (arte/historia/narizes/)
+    python3 tools/historia/quadros.py pagina-base            # o papel do caderno de receitas (arte/historia/pagina-base.png)
 
 Cada arte é um desenho descrito no roteiro (docs/historia.md §7), sem texto: o pedido junta o estilo, o retrato pintado de
 cada bicho do quadro (arte/fonte/<id>.png) como referência, o enfeite do nariz da Diana naquele capítulo e a cena.
@@ -30,15 +32,25 @@ import arte_icones as A  # noqa: E402  (a chamada à API mora lá)
 RAIZ = A.RAIZ
 PEDIDOS = RAIZ / "arte" / "historia.json"
 QUADROS = RAIZ / "arte" / "historia" / "quadros"
+NARIZES = RAIZ / "arte" / "historia" / "narizes"
 FALAS = RAIZ / "docs" / "historia_piadas.json"
 MODELO_PAGINA = RAIZ / "tools" / "historia" / "paginas_modelo.html"
 PARALELO = 4
 LADO_PAGINA = 960      # a largura de cada quadro nas páginas de revisão
 
 
+PAGINA_BASE = NARIZES.parent / "pagina-base.png"   # o papel do caderno de receitas: toda receita é desenhada em cima dele
+
+
 def prompt_de(cfg, id_):
     a = cfg["artes"][id_]
-    partes = [cfg["referencia"]] if a["quem"] else []
+    if a.get("pagina"):
+        return cfg["pagina"]["desenho"] + a["texto"]
+    partes = []
+    if a.get("nariz") and "diana" in a["quem"]:
+        partes.append(cfg["referencia_nariz"])       # a folha de modelo do nariz vem primeiro e manda no enfeite
+    if a["quem"]:
+        partes.append(cfg["referencia"])
     partes.append(cfg["estilo"])
     partes += [cfg["personagens"][p] for p in a["quem"]]
     if a.get("nariz"):
@@ -48,17 +60,35 @@ def prompt_de(cfg, id_):
 
 
 def refs_de(cfg, id_):
-    return [RAIZ / "arte" / "fonte" / f"{p}.png" for p in cfg["artes"][id_]["quem"]] or None
+    a = cfg["artes"][id_]
+    if a.get("pagina"):
+        return [PAGINA_BASE]
+    refs = []
+    for p in a["quem"]:
+        modelo = NARIZES / f"{a['nariz']}.png"
+        refs.append(modelo if p == "diana" and a.get("nariz") and modelo.exists() else RAIZ / "arte" / "fonte" / f"{p}.png")
+    return refs or None
+
+
+def tamanho_de(cfg, id_):
+    return "1024x1536" if cfg["artes"][id_].get("pagina") else cfg["tamanho"]
 
 
 def pintar(cfg, id_, qualidade):
-    png = A.gerar(prompt_de(cfg, id_), qualidade, refs_de(cfg, id_), fundo="opaque", tamanho=cfg["tamanho"], modelo=cfg["modelo"])
+    png = A.gerar(prompt_de(cfg, id_), qualidade, refs_de(cfg, id_), fundo="opaque", tamanho=tamanho_de(cfg, id_), modelo=cfg["modelo"])
     im = Image.open(io.BytesIO(png)).convert("RGB")
     im.save(QUADROS / f"{id_}.webp", "WEBP", quality=88, method=6)
-    (QUADROS / f"{id_}.json").write_text(json.dumps({"prompt": prompt_de(cfg, id_), "referencias": [p for p in cfg["artes"][id_]["quem"]],
-                                                       "qualidade": qualidade, "modelo": cfg["modelo"], "tamanho": cfg["tamanho"]},
+    (QUADROS / f"{id_}.json").write_text(json.dumps({"prompt": prompt_de(cfg, id_), "referencias": [str(r.relative_to(RAIZ)) for r in refs_de(cfg, id_) or []],
+                                                       "qualidade": qualidade, "modelo": cfg["modelo"], "tamanho": tamanho_de(cfg, id_)},
                                                       ensure_ascii=False, indent=1), encoding="utf-8")
     return id_
+
+
+def pagina_base(cfg):
+    png = A.gerar(cfg["pagina"]["base"], "high", fundo="opaque", tamanho="1024x1536", modelo=cfg["modelo"])
+    PAGINA_BASE.parent.mkdir(parents=True, exist_ok=True)
+    PAGINA_BASE.write_bytes(png)
+    print(PAGINA_BASE.relative_to(RAIZ))
 
 
 def gerar(cfg, argv):
@@ -80,35 +110,62 @@ def gerar(cfg, argv):
             print(f"  {feito}", flush=True)
 
 
-def paginas(cfg, saida):
+def paginas(cfg, saida, piloto=False):
     falas = {f["id"]: f for f in json.loads(FALAS.read_text(encoding="utf-8"))["falas"]}
-    usadas = {q.get("arte") for p in cfg["paginas"] for q in p["quadros"]} | {o[0] for p in cfg["paginas"] for q in p["quadros"] for o in q.get("opcoes", [])}
+    pags = [p for p in cfg["paginas"] if p.get("piloto") or not piloto]
+    usadas = {q.get("arte") for p in pags for q in p["quadros"]} | {o[0] for p in pags for q in p["quadros"] for o in q.get("opcoes", [])}
     imagens = {}
     for id_ in sorted(usadas - {""}):
         arq = QUADROS / f"{id_}.webp"
         if not arq.exists():
             continue
         im = Image.open(arq).convert("RGB")
-        im = im.resize((LADO_PAGINA, round(im.height * LADO_PAGINA / im.width)), Image.LANCZOS)
+        lado = LADO_PAGINA if im.width >= im.height else LADO_PAGINA * 2 // 3     # as páginas do caderno são em pé
+        im = im.resize((lado, round(im.height * lado / im.width)), Image.LANCZOS)
         buf = io.BytesIO()
         im.save(buf, "WEBP", quality=78, method=6)
         imagens[id_] = "data:image/webp;base64," + base64.b64encode(buf.getvalue()).decode()
-    dados = {"paginas": cfg["paginas"], "artes": {k: {"texto": v["texto"], "quem": v["quem"], "nariz": v.get("nariz", "")} for k, v in cfg["artes"].items()},
+    def nova(id_):   # a arte já saiu no pedido novo (estilo chapado, folha do nariz, espaço do balão, receita no papel)?
+        meta = QUADROS / f"{id_}.json"
+        return meta.exists() and ("SIMPLE: a few big flat" in meta.read_text(encoding="utf-8") or "DRAWN ON THE PAPER" in meta.read_text(encoding="utf-8"))
+    campos = ("texto", "quem", "nariz", "boca", "lugar", "titulo", "espelho", "aba", "pagina")
+    dados = {"paginas": [p for p in cfg["paginas"] if p.get("piloto") or not piloto],
+             "artes": {k: {**{c: v[c] for c in campos if c in v}, "nova": nova(k)} for k, v in cfg["artes"].items()},
              "falas": {k: {"quem": f["quem"], "texto": f["texto"], "status": f["status"], "onde": f["onde"]} for k, f in falas.items()},
              "imagens": imagens}
     js = json.dumps(dados, ensure_ascii=False).replace("</", "<\\/")
     saida.parent.mkdir(parents=True, exist_ok=True)
     saida.write_text(MODELO_PAGINA.read_text(encoding="utf-8").replace("/*DADOS*/null", js), encoding="utf-8")
     faltando = sorted(usadas - {""} - set(imagens))
-    print(f"{saida}: {len(cfg['paginas'])} páginas, {len(imagens)} artes, {saida.stat().st_size // 1024} KB"
+    print(f"{saida}: {len(pags)} páginas, {len(imagens)} artes, {saida.stat().st_size // 1024} KB"
           + (f"; ainda sem arte: {', '.join(faltando)}" if faltando else ""))
+
+
+def narizes(cfg, ids):
+    m = cfg["nariz_modelo"]
+    ids = ids or list(m["itens"])
+    NARIZES.mkdir(parents=True, exist_ok=True)
+    def um(id_):
+        p = f'{m["regra"]} NOSE: {m["itens"][id_]}'
+        png = A.gerar(p, "high", RAIZ / "arte" / "fonte" / "diana.png", fundo="opaque", modelo=cfg["modelo"])
+        (NARIZES / f"{id_}.png").write_bytes(png)
+        (NARIZES / f"{id_}.json").write_text(json.dumps({"prompt": p, "modelo": cfg["modelo"], "qualidade": "high"}, ensure_ascii=False, indent=1), encoding="utf-8")
+        return id_
+    with ThreadPoolExecutor(PARALELO) as ex:
+        for feito in ex.map(um, ids):
+            print(f"  {feito}", flush=True)
 
 
 def main():
     cfg = json.loads(PEDIDOS.read_text(encoding="utf-8"))
     argv = sys.argv[1:]
+    if argv[:1] == ["pagina-base"]:
+        return pagina_base(cfg)
+    if argv[:1] == ["narizes"]:
+        return narizes(cfg, argv[1:])
     if argv[:1] == ["paginas"]:
-        return paginas(cfg, Path(argv[1]) if len(argv) > 1 else RAIZ / "builds" / "historia-paginas.html")
+        resto = [a for a in argv[1:] if a != "--piloto"]
+        return paginas(cfg, Path(resto[0]) if resto else RAIZ / "builds" / "historia-paginas.html", "--piloto" in argv)
     gerar(cfg, argv)
 
 

@@ -2,7 +2,7 @@
  "_leia": "Os quadros do modo história (docs/historia.md §7): uma arte por desenho descrito no roteiro, sem texto. As falas entram por cima, em balões, a partir de docs/historia_piadas.json (só as aprovadas vão para o jogo); um quadro sem desenho próprio reusa a arte do anterior com outro plano ('perto', 'detalhe'), como no gibi. Gere com: python3 tools/historia/quadros.py [ids...] [--seco] [--qualidade medium] [--refazer]. Monte as páginas para revisar com: python3 tools/historia/quadros.py paginas [SAIDA.html]. Textos em inglês porque o gerador entende melhor; os letreiros dentro da cena (o caderno, o mural, as lombadas) vão em português, escritos como no roteiro.",
  "modelo": "gpt-image-2",
  "tamanho": "1536x1024",
- "estilo": "A single comic-book panel from the cozy illustrated story mode of the game Dice Duel. Draw it in exactly the visual language of the attached character art: thick uniform dark cocoa outline (#3a2a2e) around every shape, flat colors with one soft cel-shaded shadow tone and a small highlight, warm palette (cream paper #fbf1df, sage felt green #5f8f78, wood browns #7a4b2f and #a86c45, honey #f2b15e, coral #e8806f, rose #ec8fa8, sky blue #6fbfd3), and a few printed-comic halftone dots only in shadows and backgrounds. Cozy, adult, dry understated humor; expressive faces, but not chibi and not childish. The art fills the whole image edge to edge: no panel border, no frame, no gutter, no white margin. No speech balloons, no captions, no sound effects, no signature and no lettering of any kind, except a sign or label that the scene below explicitly asks for, spelled exactly as given. Every die in the picture is a plain six-sided cube with round pips, never a twenty-sided or other polyhedral die. Dice belong to their owner and keep the owner's color: Diana's dice are always pink; do not add dice of any other color unless the scene asks for them. Keep the top fifth of the image calm and uncluttered (wall, sky or shadow) so a speech balloon can be placed there later.",
+ "estilo": "A single comic-book panel from the cozy story mode of the game Dice Duel. It must look like the game's own art, the attached character art: a flat sticker illustration with a thick uniform dark cocoa outline (#3a2a2e) around every shape, flat color fills with ONE soft cel-shaded shadow tone and one small highlight, no gradients, no glow, no painterly texture, no realistic lighting, no 3D rendering. Only the game's palette: cream paper #fbf1df and #f1dfc2, ivory #fffaf0, sage felt greens #4e7d68 and #5f8f78, wood browns #7a4b2f and #a86c45, honey #f2b15e, coral #e8806f, rose #ec8fa8, sky blue #6fbfd3, lavender #b8a4f0, mint #8fd6a8, cocoa #3a2a2e. Backgrounds are SIMPLE: a few big flat color shapes (a wall, a floor, a window) with at most three props, no clutter, no decorative plants or mugs unless the scene asks for them. Cozy, adult, dry humor; expressive faces, not chibi, not childish. No halftone dots (they are added later), no panel border, no frame, no gutter, no white margin: the art fills the image edge to edge. No speech balloons, no captions, no sound effects and no lettering, except a sign the scene explicitly asks for. Every die is a plain six-sided cube with round pips, in its owner's color (Diana's are pink).",
  "referencia": "The attached images are the official character portraits: keep each character's design, colors, markings and accessories exactly as in their portrait (the portraits only show the head; draw the rest of the body to match). Ignore any badge, medallion or hexagon frame around a portrait: it is not part of the character.",
  "personagens": {
   "diana": "DIANA: a white domestic cat with cool white fur (not cream, not yellow), clear light-blue eyes; the upper third of the ear on the VIEWER'S LEFT is solid black, the other ear is all white with pink inside; exactly TWO short vertical charcoal-gray stripes in the middle of her forehead; faint light-gray shading above the eyes; small pink nose, white whiskers. She has real cat proportions (four paws, no clothes); only her expressions are human: dry, confident, a little conspiratorial.",
@@ -32,73 +32,141 @@
     "diana"
    ],
    "nariz": "pips",
-   "texto": "Diana sits behind a small round side table covered in sage-green felt, in a cozy dim living room at night lit by a warm lamp. Three pink dice rest on the felt in front of her. She looks at the reader, calm and confident, as if inviting them to sit down. Medium shot: her head, chest and front paws above the table."
+   "lugar": "nw",
+   "texto": "Diana sits behind a small round side table covered in sage-green felt, at night in her room (a plain wall with one warm lamp). Three pink dice on the felt. She looks at the reader, calm and confident, as if inviting them to sit. Medium shot: head, chest and front paws above the table. Composition: the characters stay in the right 60% of the frame; the upper-left area (a third of the width, top 40%) is empty plain wall or sky, kept free for a speech balloon.",
+   "boca": {
+    "diana": [
+     63,
+     54
+    ]
+   }
   },
   "p-pata": {
    "quem": [
     "diana"
    ],
    "nariz": "pips",
-   "texto": "Closer shot of the felt table: Diana's white front paw slowly pushes one pink die toward the very edge of the table. Her face behind it, eyes half closed, unbothered, looking at the reader and not at the die. All the dice on her table are pink."
+   "lugar": "nw",
+   "texto": "Closer shot of the felt table: Diana's white front paw slowly pushes one pink die toward the very edge of the table, toward the left. Her face behind it, eyes half closed, unbothered, looking at the reader and not at the die. Composition: the characters stay in the right 60% of the frame; the upper-left area (a third of the width, top 40%) is empty plain wall or sky, kept free for a speech balloon.",
+   "boca": {
+    "diana": [
+     64,
+     57
+    ]
+   }
   },
   "p-cai": {
    "quem": [
     "diana"
    ],
    "nariz": "pips",
-   "texto": "The same felt table from a slightly wider angle: the pink die has gone over the edge and is falling, mid-air, about to leave the bottom of the frame, with a short motion line. Diana does not look at it at all: she gazes calmly at the reader, chin slightly raised. All the dice on her table are pink; nothing else on the table but the felt and the falling die."
+   "lugar": "nw",
+   "texto": "Medium shot: Diana sits behind the felt table, gazing calmly at the reader, chin slightly raised. At the lower left, a pink die is falling off the table's edge, mid-air, about to leave the frame. She does not look at it. Composition: the characters stay in the right 60% of the frame; the upper-left area (a third of the width, top 40%) is empty plain wall or sky, kept free for a speech balloon.",
+   "boca": {
+    "diana": [
+     59,
+     45
+    ]
+   }
   },
   "p-placar": {
    "quem": [
     "diana"
    ],
    "nariz": "pips",
-   "texto": "Diana sits beside the felt table looking sideways at a small wooden scoreboard with paper number cards, her black-tipped ear drooping a little: mildly impressed, despite herself. The only dice in the picture are pink."
+   "lugar": "ne",
+   "texto": "Diana sits beside the felt table looking sideways at a small wooden flip scoreboard, her black-tipped ear drooping a little: mildly impressed, despite herself. Two pink dice on the felt. Composition: the characters stay in the left 60% of the frame; the upper-right area (a third of the width, top 40%) is empty plain wall or sky, kept free for a speech balloon.",
+   "boca": {
+    "diana": [
+     35,
+     48
+    ]
+   }
   },
   "p-caderno": {
    "quem": [
     "diana"
    ],
    "nariz": "pips",
-   "texto": "Diana holds open an old notebook with a worn cloth cover; the cover reads 'RECEITAS DA DIANA' in neat hand lettering. Inside, between the pages, ragged stubs where several pages were torn out. Her face peeks over the top of the notebook, looking at the reader."
+   "lugar": "nw",
+   "texto": "Diana holds open an old notebook with a worn cloth cover; the cover reads 'RECEITAS DA DIANA' in neat hand lettering. Between the pages, ragged stubs where several pages were torn out. Her face peeks over the notebook, looking at the reader. Composition: the characters stay in the right 60% of the frame; the upper-left area (a third of the width, top 40%) is empty plain wall or sky, kept free for a speech balloon.",
+   "boca": {
+    "diana": [
+     49,
+     55
+    ]
+   }
   },
   "p-close": {
    "quem": [
     "diana"
    ],
    "nariz": "pips",
-   "texto": "Close-up of Diana's face, slightly off center, eyes half lidded, dead serious and conspiratorial, looking straight at the reader. Warm lamplight on one side; dark cozy living room behind her, with blurred pink dice on the felt."
+   "lugar": "nw",
+   "texto": "Close-up of Diana's face, eyes half lidded, dead serious and conspiratorial, looking straight at the reader. Plain dark wall behind her. Composition: the characters stay in the right 60% of the frame; the upper-left area (a third of the width, top 40%) is empty plain wall or sky, kept free for a speech balloon.",
+   "boca": {
+    "diana": [
+     54,
+     82
+    ]
+   }
   },
   "c1-x": {
    "quem": [
     "diana"
    ],
    "nariz": "x",
-   "texto": "Medium close-up of Diana at her felt table, looking at the reader with flat deadpan eyes. An open little tin of adhesive bandages beside her."
+   "lugar": "ne",
+   "texto": "Medium close-up of Diana at her felt table, looking at the reader with flat deadpan eyes. An open little tin of adhesive bandages beside her. Composition: the characters stay in the right 60% of the frame; the upper-left area (a third of the width, top 40%) is empty plain wall or sky, kept free for a speech balloon.",
+   "boca": {
+    "diana": [
+     39,
+     60
+    ]
+   }
   },
   "c1-sapo": {
    "quem": [
     "sapo"
    ],
    "nariz": "",
-   "texto": "Sapo the frog sits on a large lily pad in a moonlit pond full of water lilies, politely lifting his straw boater hat in greeting. A small porcelain teapot and a few green dice rest beside him on the lily pad. Fireflies over calm water."
+   "lugar": "nw",
+   "texto": "Sapo the frog sits on a large lily pad in a pond at night, politely lifting his straw boater hat in greeting. A small porcelain teapot and three frog-green dice beside him on the lily pad. A few water lilies, a big moon. Composition: the characters stay in the right 60% of the frame; the upper-left area (a third of the width, top 40%) is empty plain wall or sky, kept free for a speech balloon.",
+   "boca": {
+    "sapo": [
+     44,
+     39
+    ]
+   }
   },
   "c1-cha": {
    "quem": [
     "sapo"
    ],
    "nariz": "",
-   "texto": "Close-up of a delicate porcelain teacup on a saucer, held out toward the reader by a green frog hand. The tea is murky pond water with a bit of duckweed, and a small tadpole swims in it. The frog's polite smile is partly visible at the edge of the frame."
+   "lugar": "nw",
+   "texto": "Sapo the frog, at the right, holds out a delicate porcelain teacup on a saucer toward the reader with a polite smile. The tea is murky pond water with a bit of duckweed, and a small tadpole swims in it. Pond at night behind him. Composition: the characters stay in the right 60% of the frame; the upper-left area (a third of the width, top 40%) is empty plain wall or sky, kept free for a speech balloon.",
+   "boca": {
+    "sapo": [
+     86,
+     49
+    ]
+   }
   },
   "c1-pag-a": {
    "quem": [],
    "nariz": "",
-   "texto": "A single old cream notebook page, damp and wavy from pond water, with water stains and a small duckweed leaf stuck to it, lying on a dark wooden table. At the top, the hand-lettered title 'SOPA DE GIRINO AO CONTRÁRIO'. Below it, a small drawing of a soup bowl with a tadpole swimming backwards. The bottom third of the page is blank, for a handwritten line added later."
+   "pagina": true,
+   "texto": "a soup bowl seen from the side with a little tadpole swimming in it, backwards (tail first), with small motion marks.",
+   "titulo": "SOPA DE GIRINO AO CONTRÁRIO"
   },
   "c1-pag-b": {
    "quem": [],
    "nariz": "",
-   "texto": "A single old cream notebook page, damp and wavy from pond water, lying on a dark wooden table. At the top, the title is hand-lettered MIRRORED, written backwards as seen in a mirror: 'SOPA DE GIRINO AO CONTRÁRIO'. A small drawing of a tadpole. The right margin is blank, for a handwritten note added later."
+   "pagina": true,
+   "texto": "a little tadpole and some duckweed, small, slightly to the right.",
+   "titulo": "SOPA DE GIRINO AO CONTRÁRIO",
+   "espelho": true
   },
   "i1-le": {
    "quem": [
@@ -169,12 +237,17 @@
   "c3-pag-a": {
    "quem": [],
    "nariz": "",
-   "texto": "A whole round pie with a golden lattice crust, perfectly uncut, on a cream notebook page with the hand-lettered title 'TORTA DE FUNDO FALSO'. The bottom of the page is blank, for a handwritten line added later. No dice in the picture."
+   "pagina": true,
+   "texto": "a whole round pie with a lattice crust, uncut.",
+   "titulo": "TORTA DE FUNDO FALSO"
   },
   "c3-pag-b": {
    "quem": [],
    "nariz": "",
-   "texto": "A single cream notebook page with the hand-lettered title 'TORTA DE FUNDO FALSO'. A paper flap is glued in the middle of the page, lifted up at one corner, revealing a blank area underneath (for a line of text added later)."
+   "pagina": true,
+   "texto": "a small round pie with a lattice crust, at the bottom right of the page (the middle of the page stays blank).",
+   "titulo": "TORTA DE FUNDO FALSO",
+   "aba": true
   },
   "c4-cone": {
    "quem": [
@@ -250,7 +323,14 @@
     "diana"
    ],
    "nariz": "la",
-   "texto": "Medium close-up of Diana, deadpan, looking at the reader. The wool tuft is big and obvious, clearly the center of the joke, covering the bridge of her nose."
+   "lugar": "ne",
+   "texto": "Medium close-up of Diana at her felt table, deadpan, looking at the reader. Composition: the characters stay in the right 60% of the frame; the upper-left area (a third of the width, top 40%) is empty plain wall or sky, kept free for a speech balloon.",
+   "boca": {
+    "diana": [
+     50,
+     59
+    ]
+   }
   },
   "c6-ovelha": {
    "quem": [
@@ -414,13 +494,25 @@
     },
     {
      "arte": "p-pata",
-     "fala": "P-02"
+     "fala": "P-02",
+     "linhas": {
+      "x": 14,
+      "y": 86,
+      "ang": 180
+     }
     },
     {
      "arte": "p-cai",
-     "fala": "P-03"
+     "fala": "P-03",
+     "som": {
+      "txt": "toc",
+      "x": 9,
+      "y": 80,
+      "rot": -14
+     }
     }
-   ]
+   ],
+   "piloto": true
   },
   {
    "id": "P-depois",
@@ -436,9 +528,11 @@
     },
     {
      "arte": "p-close",
-     "fala": "P-06"
+     "fala": "P-06",
+     "impacto": true
     }
-   ]
+   ],
+   "piloto": true
   },
   {
    "id": "C1-interludio",
@@ -460,7 +554,8 @@
      "parte": 1,
      "plano": "detalhe"
     }
-   ]
+   ],
+   "piloto": true
   },
   {
    "id": "C1-chegada",
@@ -482,9 +577,14 @@
     {
      "arte": "c1-cha",
      "fala": "C1-06",
-     "plano": "perto"
+     "plano": "perto",
+     "foco": [
+      80,
+      45
+     ]
     }
-   ]
+   ],
+   "piloto": true
   },
   {
    "id": "C1-depois",
@@ -515,7 +615,8 @@
      "parte": 1,
      "plano": "detalhe"
     }
-   ]
+   ],
+   "piloto": true
   },
   {
    "id": "I1",
@@ -692,7 +793,8 @@
       ]
      ]
     }
-   ]
+   ],
+   "piloto": true
   },
   {
    "id": "C4-interludio",
@@ -895,7 +997,8 @@
      "arte": "c6-la",
      "fala": "C6-02"
     }
-   ]
+   ],
+   "piloto": true
   },
   {
    "id": "C6-chegada",
@@ -1265,5 +1368,28 @@
     }
    ]
   }
- ]
+ ],
+ "nariz_modelo": {
+  "_leia": "A folha de modelo do nariz: o retrato aprovado da Diana com cada enfeite, desenhado uma vez só, sempre no mesmo lugar, tamanho e ângulo. Cada quadro da Diana manda a folha do enfeite dele como referência (arte/historia/narizes/<id>.png), em vez do retrato puro.",
+  "regra": "Edit the attached approved portrait of Diana the white cat. Keep EVERYTHING identical: same head, pose, framing, eyes, ear markings (black tip only on the ear on the viewer's left), the two vertical forehead stripes, outline weight, colors and flat sticker style. Plain flat cream background (#fbf1df). Change only the bridge of her nose, as described below. Every nose accessory in this series follows ONE pattern: it sits exactly on the flat bridge of the nose, centered between the eyes and above the pink nose pad, covering the spot of the small red diagonal scratch, tilted along the same diagonal as the scratch (from upper left to lower right), about as wide as the gap between her eyes, never bigger. It is a real little physical object stuck there (as if really taken from somewhere), drawn in the same flat style with the thick cocoa outline, one shadow tone and one small highlight, casting only a tiny contact shadow on the fur.",
+  "itens": {
+   "ferida": "No accessory: the small diagonal red scratch on the bridge of the nose is plainly visible, as in the portrait.",
+   "pips": "One small cream fabric adhesive bandage, rounded ends, printed with tiny dark dice pips (like the face of a die).",
+   "x": "Two small cream fabric adhesive bandages crossed in an X over the spot, the same bandage type as a plain first-aid strip.",
+   "adesivo": "One small cream fabric adhesive bandage, and stuck on its middle a tiny round coral sticker with a white question mark crossed out by a line.",
+   "cachecol": "A tiny strip of dark-green ribbed knitted scarf fabric (the same knit and green as the Fox's scarf), a flat band wrapped once over the bridge of the nose like a bandage, lying flat on the fur along the diagonal; its two little fringed ends hang loose on one side, next to her cheek. It must read clearly as a knitted scarf, not a hat.",
+   "cone": "NO bandage and nothing stuck on the nose: only the small diagonal red scratch, plainly visible. Around her neck, a large translucent plastic veterinary cone (Elizabethan collar) opening toward the viewer and framing her face.",
+   "meia": "A tiny striped sock (cream with coral and sky-blue stripes) folded and knotted over the bridge like a bandage.",
+   "la": "A fluffy tuft of cream-white sheep wool, real curly fleece with loose fibers, stuck on the bridge as if it had just been pulled from a sheep. The tuft is a little bigger than the other accessories: it covers the whole bridge between the eyes and puffs out slightly.",
+   "nada": "No accessory: the small diagonal red scratch on the bridge of the nose is plainly visible and a little raw, slightly pinker around it.",
+   "curada": "No accessory and no scratch: the bridge of the nose is healed, clean white fur with only a very faint thin pink line where the scratch was."
+  }
+ },
+ "referencia_nariz": "The first attached image is the approved model sheet of Diana with the nose accessory of this scene: copy her face and that accessory EXACTLY (the same object, the same size relative to her face, the same position on the bridge of the nose and the same diagonal angle). Draw the rest of her body as a real white cat with the same flat style.",
+ "pagina": {
+  "_leia": "As páginas do caderno de receitas: uma página base (pagina-base) e cada receita desenhada nela, chapada, na tinta e aquarela do caderno. O título, os ingredientes e as notas da Diana são escritos pelo código, em letra de mão.",
+  "base": "One page of Diana's old recipe notebook, seen perfectly straight from above, filling the whole image edge to edge (no table, no background around it, no shadow). Warm cream paper (#fbf1df) with faint sky-blue ruled lines, a thin coral margin line on the left, a ragged torn edge along the left side where it was ripped out, a small coffee ring stain near a corner. Flat, illustrated in the game's flat style (cocoa outline only on the torn edge), no lettering, no drawings: a blank page.",
+  "desenho": "Edit the attached blank notebook page: keep the page itself identical (paper, ruled lines, margin, torn edge, stain, framing). Add one drawing DRAWN ON THE PAPER by hand, in dark cocoa ink line with flat watercolor washes in the game's palette, like an illustration sketched in the notebook: completely flat on the page, no shadow, no volume, no 3D object sitting on the paper, the ruled lines faintly visible through the wash. The drawing sits in the middle of the page; leave the top quarter and the bottom quarter of the page blank (handwriting is added there later). No lettering. THE DRAWING: "
+ },
+ "_balao": "Cada arte com fala tem 'boca' (onde fica a boca de quem fala, em % da imagem: {quem: [x, y]}) e 'lugar' (o canto livre para o balão: nw, ne, sw, se). O rabinho do balão aponta para a boca, também nos planos 'perto' e 'detalhe'. Nos quadros: 'som' (onomatopeia), 'linhas' (movimento) e 'impacto' (quadro congelado com retícula forte e desencaixe azul e rosa)."
 }
