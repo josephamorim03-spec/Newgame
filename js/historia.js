@@ -64,14 +64,14 @@
     { id: 'C7', titulo: 'Capítulo 7', nome: 'A Biblioteca', rival: 'coruja', retrato: 'coruja', meta: 16,
       deckRival: ['lacre', 'coringa', 'interferencia'], esperto: true, regra: 'Dona Coruja lê a Mesa.',
       antes: [q('diana', 'I6-01'), q('diana', 'I6-02'), q('diana', 'I6-03'), q('coruja', 'C7-01'), q('coruja', 'C7-02'), q('coruja', 'C7-03')],
-      depois: [q('coruja', 'C7-10b'), q('coruja', 'C7-11'), { quem: 'coruja', ids: [], opcoes: ['C7-15a', 'C7-15b'] }, q('coruja', 'C7-12')],
+      depois: [q('coruja', 'C7-10b'), q('coruja', 'C7-11'), { quem: 'coruja', ids: [], opcoes: ['C7-15a', 'C7-15b'], sorteio: true }, q('coruja', 'C7-12')],
       falas: { inicio: ['C7-04'], 'pegou:lacre': ['C7-05'], seuDisparoGrande: ['C7-06'], minhaRuptura: ['C7-07'], venci: ['C7-08'], perdi: ['C7-09'] },
       estrelas: [['Faça um Bloqueio', c => (c.simb['✦'] || 0) > 0], semRuptura] },
     { id: 'C8', titulo: 'Capítulo 8', nome: 'Fita Dupla', rival: 'diana8', retrato: 'diana', meta: 16,
       deckRival: ['virar', 'espelho', 'pressa'], esperto: true, bolsoRival: true, regra: 'Dessa vez vale: a Diana começa com um dado no Bolso; você, sem.',
       antes: [q('diana', 'R-01'), q('diana', 'R-02'), q('diana', 'R-03'), q('diana', 'R-04'), q('diana', 'R-05'), q('diana', 'R-06'),
         escolha('diana', [{ rotulo: 'Você me usou.', id: 'R-07' }, { rotulo: 'E as páginas?', id: 'R-08' }]),
-        q('diana', 'R-10'), q('diana', 'R-11'), { quem: 'diana', ids: [], opcoes: ['C8-09a', 'C8-09b'] }],
+        q('diana', 'R-10'), q('diana', 'R-11'), { quem: 'diana', ids: [], opcoes: ['C8-09b', 'C8-09a'], todas: true }],
       // o final: a cura com a corrente de quem joga, o fecho do Eco, os créditos e os pós-créditos
       // a F-03b (sem o "Fechou." repetido) só entra quando o dono a aprovar; até lá, a F-03
       depois: [{ quem: 'diana', ids: [], cura: true }, q('diana', fala('F-03b') ? 'F-03b' : 'F-03'), q('diana', 'F-A'), { quem: 'diana', ids: ['F-A2'], se: 'fita' },
@@ -108,8 +108,12 @@
   const BASE = { 1: 'A', 6: 'T', 2: 'C', 5: 'G', 3: '·', 4: '·' };
   function batidas(qd, ctx = {}) {
     if (qd.se && !ctx[qd.se]) return [];
-    // opções do dono: entra a 1.ª aprovada; nenhuma aprovada, o quadro não aparece
-    if (qd.opcoes) { const id = qd.opcoes.find(fala); return id ? batidas({ ...qd, opcoes: null, ids: [id] }, ctx) : []; }
+    // opções do dono: entra a 1.ª aprovada (todas: as aprovadas em sequência; sorteio: uma delas a cada leitura);
+    // nenhuma aprovada, o quadro não aparece
+    if (qd.opcoes) {
+      const ok = qd.opcoes.filter(fala), ids = qd.todas ? ok : ok.length ? [qd.sorteio ? ok[Math.floor(Math.random() * ok.length)] : ok[0]] : [];
+      return ids.flatMap(id => batidas({ ...qd, opcoes: null, ids: [id] }, ctx));
+    }
     if (qd.escolha) return [{ escolha: qd.escolha }];
     if (qd.quem === 'creditos') return [{ creditos: true }];
     if (qd.cura) {

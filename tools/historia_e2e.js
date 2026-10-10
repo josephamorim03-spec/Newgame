@@ -157,13 +157,16 @@ async function vencer(pg, cor, pts) {
   // o Capítulo 8: a revelação
   await pf.evaluate(() => { const b = document.createElement('button'); b.dataset.cap = 'C8'; document.getElementById('janelaHistoria').appendChild(b); b.click(); b.remove(); });
   await pf.waitForTimeout(300);
-  let viuEscolha = false;
+  let viuEscolha = false; const revelacao = [];
   for (let i = 0; i < 60 && await pf.$('.gibi'); i++) {
     const bt = await pf.$('.gibi [data-escolha="1"]');
     if (bt) { viuEscolha = true; await bt.click(); await pf.waitForTimeout(80); continue; }
+    revelacao.push(...await pf.$$eval('.gibi .gq-balao', l => l.map(x => x.textContent)));
     await pf.click('.gibi'); await pf.waitForTimeout(50);
   }
   if (!viuEscolha) falha('a revelação não ofereceu a escolha');
+  const rv = [...new Set(revelacao)].join(' | ');
+  if (!/cópia de reserva/.test(rv) || !/nem reparou/.test(rv) || rv.indexOf('cópia de reserva') > rv.indexOf('nem reparou')) falha(`o Bolso da Diana (C8-09b e depois C8-09a): ${rv}`);
   await passarVersus(pf);
   const c8 = await pf.evaluate(() => ({ h: DiceDuel.jogo.historia, rival: DiceDuel.jogo.nomes[1], deck: DiceDuel.jogo.decks[1], bolsoDela: DiceDuel.jogo.bolso[1] !== null && DiceDuel.jogo.bolso[0] === null }));
   if (c8.h !== 'C8' || c8.rival !== 'Diana' || c8.deck.join() !== 'virar,espelho,pressa' || !c8.bolsoDela) falha(`o Capítulo 8: ${JSON.stringify(c8)}`);

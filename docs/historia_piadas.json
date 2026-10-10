@@ -1728,7 +1728,7 @@
    "desenho": "",
    "gag": "pata",
    "status": "recusada",
-   "nota": "o dono pediu para tirar",
+   "nota": "o dono pediu para tirar: a pata saiu da tela inicial; no lugar entrou a frase final F-Zb",
    "usar": true
   },
   {
@@ -2144,7 +2144,7 @@
    "desenho": "Close na Diana, curada, séria por um instante. Ciência: toda célula carrega o DNA inteiro; uma correção no DNA vai para cada célula nova.",
    "gag": "final",
    "status": "recusada",
-   "nota": "",
+   "nota": "não escolhida (o dono escolheu a b)",
    "usar": true
   },
   {
@@ -2170,7 +2170,7 @@
    "desenho": "A Diana segurando um dado com o 3 e o 4 virados para você. Ciência: A, T, C e G; no jogo, 1–6 e 2–5 viraram letras, o 3 e o 4 ficaram de fora.",
    "gag": "final",
    "status": "recusada",
-   "nota": "",
+   "nota": "não escolhida (o dono escolheu a b)",
    "usar": true
   },
   {
@@ -2183,7 +2183,7 @@
    "desenho": "A cena da tela inicial de novo, a Diana sem ferimento: a primeira fala do jogo, palavra por palavra, fechando o círculo.",
    "gag": "final",
    "status": "recusada",
-   "nota": "",
+   "nota": "não escolhida (o dono escolheu a b)",
    "usar": true
   },
   {
@@ -2195,7 +2195,7 @@
    "texto": "Um conselho de quem lê. Ela joga com as faces do avesso. / Leve um Lacre. Nem toda página precisa ser virada.",
    "desenho": "A Dona Coruja batendo com a asa num lacre de cera vermelho em cima de um livro fechado.",
    "gag": "combate",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": "",
    "usar": true
   },
@@ -2208,7 +2208,7 @@
    "texto": "Na célula, umas proteínas sentam em cima de um trecho do DNA, e ele não é lido. Chama-se silenciar um gene. / O Lacre faz isso com uma carta dela. Está na Loja.",
    "desenho": "A Dona Coruja sentada em cima de um livro aberto, tampando a página. Ciência: proteínas repressoras se prendem ao DNA e impedem que um gene seja lido (transcrito).",
    "gag": "combate",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": "",
    "usar": true
   },
@@ -2221,7 +2221,7 @@
    "texto": "No Prólogo, quem começou com um dado no Bolso fui eu. / Você nem reparou. / Hoje também.",
    "desenho": "A Diana abre a pata: um dado rosa no Bolso dela. É verdade: no Prólogo, sem cartas, quem joga em segundo começa com um dado no Bolso, e quem jogava em segundo era ela.",
    "gag": "combate",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": "",
    "usar": true
   },
@@ -2234,7 +2234,7 @@
    "texto": "Toda fita tem uma cópia de reserva: a outra fita. É com ela que a célula conserta os erros. / O meu Bolso é a minha. Começo com um dado.",
    "desenho": "A Diana com um dado rosa no Bolso, a fita dupla do mural atrás dela. Ciência: no reparo do DNA, a célula usa a fita complementar como molde para refazer o trecho estragado.",
    "gag": "combate",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": "",
    "usar": true
   },

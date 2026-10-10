@@ -174,9 +174,11 @@ O que muda de hoje:
 
 - Todas as falas ligadas a uma carta continuam com a carta no deck do bicho: C1 Reverso, C2 Sobrecarga, C3 Fundo
   Falso, C4 Pausa, C5 Furto e Pedágio, C6 Espelho, C7 Lacre, C8 Espelho. Nenhuma fala precisa mudar.
-- Duas falas novas, com duas opções cada, estão na revisão (C7-15a/b e C8-09a/b). Entra a opção que o dono aprovar:
-  - a Coruja dando a dica do Lacre no fim do Cap. 7, entre a C7-11 e a C7-12;
-  - a Diana mostrando o dado do Bolso antes da partida do Cap. 8, depois da R-11.
+- Duas falas novas, com duas opções cada; o dono aprovou as quatro:
+  - a Coruja dando a dica do Lacre no fim do Cap. 7, entre a C7-11 e a C7-12. As duas opções dizem a mesma coisa
+    (leve um Lacre), então ela diz uma delas, sorteada a cada leitura (C7-15a ou C7-15b);
+  - a Diana mostrando o dado do Bolso antes da partida do Cap. 8, depois da R-11. As duas se completam e entram em
+    sequência: primeiro a ciência (C8-09b), depois o Prólogo (C8-09a).
 - As estrelas não mudam. A do Sapo ("dispare logo depois de um Reverso") continua fazendo sentido, já que o Reverso é
   a única carta dele.
 
@@ -208,5 +210,5 @@ Cada linha mostra:
 ## Feito
 
 1. Os decks e a regra nova da Diana estão em `js/historia.js`, e a tabela do `docs/historia.md` §6.1 foi atualizada.
-2. As duas falas novas estão na revisão.
+2. As duas falas novas foram aprovadas e estão no jogo.
 3. Falta o teste com gente, que fecha a curva.

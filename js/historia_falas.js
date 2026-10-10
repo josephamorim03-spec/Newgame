@@ -149,6 +149,10 @@ window.HISTORIA_FALAS = {
 "C6-15": "Cuidado comigo. Tenho cavalaria: três cavaleiros e o maior exército do pasto.",
 "C6-16": "Somou sete: hora de mexer no ladrão. / …O Guaxinim acabou de passar.",
 "F-Zb": "Eu te ensinei a jogar para me curar. / Agora jogue só porque é bom. / …E porque eu ainda quero a revanche.",
+"C7-15a": "Um conselho de quem lê. Ela joga com as faces do avesso. / Leve um Lacre. Nem toda página precisa ser virada.",
+"C7-15b": "Na célula, umas proteínas sentam em cima de um trecho do DNA, e ele não é lido. Chama-se silenciar um gene. / O Lacre faz isso com uma carta dela. Está na Loja.",
+"C8-09a": "No Prólogo, quem começou com um dado no Bolso fui eu. / Você nem reparou. / Hoje também.",
+"C8-09b": "Toda fita tem uma cópia de reserva: a outra fita. É com ela que a célula conserta os erros. / O meu Bolso é a minha. Começo com um dado.",
 "X-01": "DianaDice não seria um nome melhor para esse jogo? / … / Seria.",
 "X-02a": "SAPO: Soube da cura. Trouxe chá. / DIANA: É do lago? / SAPO: Orgânico."
 };
@@ -217,6 +221,10 @@ window.HISTORIA_CENAS = {
 "C6-15": "Homenagem aos jogos de tabuleiro de hexágonos (os cavaleiros e o maior exército), sem nome de jogo.",
 "C6-16": "Homenagem: num jogo de hexágonos, o 7 move o ladrão; no Dice Duel, o 7 é o Oposto. Ciência: com dois dados, o sete é a soma mais provável (6 em 36).",
 "F-Zb": "A Diana empurrando os dados de volta para o seu lado da mesa.",
+"C7-15a": "A Dona Coruja batendo com a asa num lacre de cera vermelho em cima de um livro fechado.",
+"C7-15b": "A Dona Coruja sentada em cima de um livro aberto, tampando a página. Ciência: proteínas repressoras se prendem ao DNA e impedem que um gene seja lido (transcrito).",
+"C8-09a": "A Diana abre a pata: um dado rosa no Bolso dela. É verdade: no Prólogo, sem cartas, quem joga em segundo começa com um dado no Bolso, e quem jogava em segundo era ela.",
+"C8-09b": "A Diana com um dado rosa no Bolso, a fita dupla do mural atrás dela. Ciência: no reparo do DNA, a célula usa a fita complementar como molde para refazer o trecho estragado.",
 "X-01": "Ela risca \"Dice Duel\" com um pincel atômico e escreve por cima: \"DianaDice\".",
 "X-02a": "A Diana, curada, abre a porta. O Sapo de chapéu, com uma xícara turva."
 };
