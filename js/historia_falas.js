@@ -141,6 +141,14 @@ window.HISTORIA_FALAS = {
 "F-03b": "Faz cócegas. / Cócegas.",
 "F-A": "Fechou. Fechou. / Por que eu estou falando duas vezes? Vezes? / Você pôs um Eco. Eco. / …Passa amanhã. Manhã. / Revanche? Vanche?",
 "F-A2": "Fita complementar perfeita. Eu ensinei bem. Bem.",
+"C1-16": "Ah: se vir uma raposa de cachecol com um dado verde, / o dado é meu.",
+"C2-15": "Dado branco, clássico. Eu não escolhi: / com quarenta e três filhos, o dado é o que sobra.",
+"C2-16": "Um, um, dois, três, cinco… / Isso não é corrente. É a minha família.",
+"C3-17": "A Raposa está com um dado verde novo. O Sapo está procurando o dele. / Não é coincidência. Quase nada é.",
+"C3-15": "O dado verde? Combina com o cachecol. / O Sapo chama isso de roubo. Eu chamo de mimetismo.",
+"C4-14": "Mel não estraga, sabia? Acharam mel de três mil anos ainda bom. / Eu pretendo durar igual. Dormindo.",
+"C6-15": "Cuidado comigo. Tenho cavalaria: três cavaleiros e o maior exército do pasto.",
+"C6-16": "Somou sete: hora de mexer no ladrão. / …O Guaxinim acabou de passar.",
 "X-01": "DianaDice não seria um nome melhor para esse jogo? / … / Seria.",
 "X-02a": "SAPO: Soube da cura. Trouxe chá. / DIANA: É do lago? / SAPO: Orgânico."
 };
@@ -200,6 +208,14 @@ window.HISTORIA_CENAS = {
 "C8-07": "Sem o \"Revanche?\" de sempre: vem a cena da cura.",
 "F-01": "A sua corrente vencedora vira uma fita impressa com as letras embaixo: 2 5 2 5 → C G C G.",
 "F-03b": "O ferimento fechado; ela encosta a pata. Antes, um quadro mudo. (Com esta, o \"Fechou.\" sai daqui e fica só no \"Fechou. Fechou.\" do fecho, e o eco começa já no \"Cócegas.\")",
+"C1-16": "O Sapo apontando para fora do quadro, sério.",
+"C2-15": "O Coelho com um dado branco gasto na pata, cercado de coelhinhos com dados coloridos.",
+"C2-16": "Ciência: a sequência de Fibonacci nasceu de um problema sobre quantos coelhos nascem a cada mês (Liber Abaci, 1202).",
+"C3-17": "O mural no fundo: a foto do Sapo e a da Raposa ligadas por um barbante, com um dado verde desenhado no meio.",
+"C3-15": "A Raposa encostando o dado verde no cachecol verde: mesma cor. Ciência: mimetismo é quando um bicho imita a aparência de outro (ou do ambiente) para levar vantagem.",
+"C4-14": "O Urso abraçado a um pote de mel, já fechando os olhos. Ciência: mel tem pouca água e é ácido; potes de milhares de anos foram achados comestíveis.",
+"C6-15": "Homenagem aos jogos de tabuleiro de hexágonos (os cavaleiros e o maior exército), sem nome de jogo.",
+"C6-16": "Homenagem: num jogo de hexágonos, o 7 move o ladrão; no Dice Duel, o 7 é o Oposto. Ciência: com dois dados, o sete é a soma mais provável (6 em 36).",
 "X-01": "Ela risca \"Dice Duel\" com um pincel atômico e escreve por cima: \"DianaDice\".",
 "X-02a": "A Diana, curada, abre a porta. O Sapo de chapéu, com uma xícara turva."
 };

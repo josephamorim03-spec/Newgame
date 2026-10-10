@@ -10,7 +10,8 @@
   "revanche": "\"Revanche?\"",
   "cha": "O chá do Sapo",
   "fecho": "O fecho da história (o Eco)",
-  "dados": "O dado de cada bicho (e a ciência por trás)"
+  "dados": "O dado de cada bicho (e a ciência por trás)",
+  "final": "A frase final (escolha uma)"
  },
  "falas": [
   {
@@ -1933,7 +1934,7 @@
    "texto": "Eu jogo com o dado rosa. / Gato não enxerga rosa direito: a gente vê azul e amarelo. / Escolhi pelo que me disseram.",
    "desenho": "A Diana segurando o dado rosa contra a luz, apertando os olhos. Ciência: gatos são dicromatas (veem azul e amarelo; vermelho e rosa ficam apagados).",
    "gag": "dados",
-   "status": "pendente",
+   "status": "recusada",
    "nota": "",
    "usar": true
   },
@@ -1946,7 +1947,7 @@
    "texto": "Jogo com dado verde, como eu. / Meu verde, aliás, é azul com amarelo por cima: sapo não tem tinta verde. / O dado tem.",
    "desenho": "O Sapo erguendo o dado verde ao lado do próprio rosto, para comparar. Ciência: o verde dos sapos é luz azul refletida pela pele passando por um pigmento amarelo.",
    "gag": "dados",
-   "status": "pendente",
+   "status": "recusada",
    "nota": "",
    "usar": true
   },
@@ -1959,7 +1960,7 @@
    "texto": "Ah: se vir uma raposa de cachecol com um dado verde, / o dado é meu.",
    "desenho": "O Sapo apontando para fora do quadro, sério.",
    "gag": "dados",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": "",
    "usar": true
   },
@@ -1972,7 +1973,7 @@
    "texto": "Dado branco, clássico. Eu não escolhi: / com quarenta e três filhos, o dado é o que sobra.",
    "desenho": "O Coelho com um dado branco gasto na pata, cercado de coelhinhos com dados coloridos.",
    "gag": "dados",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": "",
    "usar": true
   },
@@ -1985,7 +1986,7 @@
    "texto": "Um, um, dois, três, cinco… / Isso não é corrente. É a minha família.",
    "desenho": "Ciência: a sequência de Fibonacci nasceu de um problema sobre quantos coelhos nascem a cada mês (Liber Abaci, 1202).",
    "gag": "dados",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": "",
    "usar": true
   },
@@ -1998,7 +1999,7 @@
    "texto": "A Raposa está com um dado verde novo. O Sapo está procurando o dele. / Não é coincidência. Quase nada é.",
    "desenho": "O mural no fundo: a foto do Sapo e a da Raposa ligadas por um barbante, com um dado verde desenhado no meio.",
    "gag": "dados",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": "",
    "usar": true
   },
@@ -2011,7 +2012,7 @@
    "texto": "O dado verde? Combina com o cachecol. / O Sapo chama isso de roubo. Eu chamo de mimetismo.",
    "desenho": "A Raposa encostando o dado verde no cachecol verde: mesma cor. Ciência: mimetismo é quando um bicho imita a aparência de outro (ou do ambiente) para levar vantagem.",
    "gag": "dados",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": "",
    "usar": true
   },
@@ -2024,7 +2025,7 @@
    "texto": "Mel não estraga, sabia? Acharam mel de três mil anos ainda bom. / Eu pretendo durar igual. Dormindo.",
    "desenho": "O Urso abraçado a um pote de mel, já fechando os olhos. Ciência: mel tem pouca água e é ácido; potes de milhares de anos foram achados comestíveis.",
    "gag": "dados",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": "",
    "usar": true
   },
@@ -2037,7 +2038,7 @@
    "texto": "Eu lavo o dado antes de jogar. / Não é mania: pata molhada sente melhor. Ciência.",
    "desenho": "Ciência: o guaxinim molha as patas porque a água deixa os receptores de tato delas mais sensíveis.",
    "gag": "dados",
-   "status": "pendente",
+   "status": "recusada",
    "nota": "",
    "usar": true
   },
@@ -2050,7 +2051,7 @@
    "texto": "Meu dado é de lã. / Lã é queratina, a mesma coisa de chifre e unha. É um chifre que decidiu ser fofo.",
    "desenho": "A Ovelha apertando o dado de lã, que afunda como pelúcia. Ciência: lã, cabelo, unha e chifre são feitos da mesma proteína, a queratina.",
    "gag": "dados",
-   "status": "pendente",
+   "status": "recusada",
    "nota": "",
    "usar": true
   },
@@ -2063,7 +2064,7 @@
    "texto": "Troco duas lãs por qualquer coisa. Tenho porto.",
    "desenho": "Homenagem aos jogos de tabuleiro de hexágonos (troca 2 por 1 no porto da lã), sem nome de jogo.",
    "gag": "dados",
-   "status": "pendente",
+   "status": "recusada",
    "nota": "",
    "usar": true
   },
@@ -2076,7 +2077,7 @@
    "texto": "Cuidado comigo. Tenho cavalaria: três cavaleiros e o maior exército do pasto.",
    "desenho": "Homenagem aos jogos de tabuleiro de hexágonos (os cavaleiros e o maior exército), sem nome de jogo.",
    "gag": "dados",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": "",
    "usar": true
   },
@@ -2089,7 +2090,7 @@
    "texto": "Somou sete: hora de mexer no ladrão. / …O Guaxinim acabou de passar.",
    "desenho": "Homenagem: num jogo de hexágonos, o 7 move o ladrão; no Dice Duel, o 7 é o Oposto. Ciência: com dois dados, o sete é a soma mais provável (6 em 36).",
    "gag": "dados",
-   "status": "pendente",
+   "status": "aprovada",
    "nota": "",
    "usar": true
   },
@@ -2102,7 +2103,7 @@
    "texto": "Jogo com dado de madeira. A madeira guarda a idade nos anéis. / Não conte os meus.",
    "desenho": "A Dona Coruja girando o dado de madeira; os veios aparecem nas faces. Ciência: dendrocronologia, a idade de uma árvore lida nos anéis.",
    "gag": "dados",
-   "status": "pendente",
+   "status": "recusada",
    "nota": "",
    "usar": true
   },
@@ -2115,7 +2116,7 @@
    "texto": "Coruja não mexe os olhos: vira a cabeça. Por isso vejo a Mesa inteira.",
    "desenho": "Ciência: os olhos da coruja são fixos no crânio; ela gira a cabeça até uns 270 graus.",
    "gag": "dados",
-   "status": "pendente",
+   "status": "recusada",
    "nota": "",
    "usar": true
   },
@@ -2128,6 +2129,58 @@
    "texto": "Arrisquei demais. Em minha defesa, gato não enxerga o vermelho do perigo.",
    "desenho": "Retorno da P-07 (gato não enxerga rosa nem vermelho direito).",
    "gag": "dados",
+   "status": "recusada",
+   "nota": "",
+   "usar": true
+  },
+  {
+   "id": "F-Za",
+   "cap": "F",
+   "capitulo": "Final · a cura",
+   "quem": "Diana",
+   "onde": "Frase final · opção a (antes dos créditos)",
+   "texto": "Agora cada célula minha guarda uma cópia do que você escreveu. São trilhões. / Você está em toda parte de mim. / Vamos não deixar isso estranho.",
+   "desenho": "Close na Diana, curada, séria por um instante. Ciência: toda célula carrega o DNA inteiro; uma correção no DNA vai para cada célula nova.",
+   "gag": "final",
+   "status": "pendente",
+   "nota": "",
+   "usar": true
+  },
+  {
+   "id": "F-Zb",
+   "cap": "F",
+   "capitulo": "Final · a cura",
+   "quem": "Diana",
+   "onde": "Frase final · opção b (antes dos créditos)",
+   "texto": "Eu te ensinei a jogar para me curar. / Agora jogue só porque é bom. / …E porque eu ainda quero a revanche.",
+   "desenho": "A Diana empurrando os dados de volta para o seu lado da mesa.",
+   "gag": "final",
+   "status": "pendente",
+   "nota": "",
+   "usar": true
+  },
+  {
+   "id": "F-Zc",
+   "cap": "F",
+   "capitulo": "Final · a cura",
+   "quem": "Diana",
+   "onde": "Frase final · opção c (antes dos créditos)",
+   "texto": "O DNA tem quatro letras. O dado tem seis faces. / Sobraram duas. / Guardei para a revanche.",
+   "desenho": "A Diana segurando um dado com o 3 e o 4 virados para você. Ciência: A, T, C e G; no jogo, 1–6 e 2–5 viraram letras, o 3 e o 4 ficaram de fora.",
+   "gag": "final",
+   "status": "pendente",
+   "nota": "",
+   "usar": true
+  },
+  {
+   "id": "F-Zd",
+   "cap": "F",
+   "capitulo": "Final · a cura",
+   "quem": "Diana",
+   "onde": "Frase final · opção d (antes dos créditos)",
+   "texto": "Boa noite. Uma partida? / Dessa vez, sem segundas intenções. / …Quase nenhuma.",
+   "desenho": "A cena da tela inicial de novo, a Diana sem ferimento: a primeira fala do jogo, palavra por palavra, fechando o círculo.",
+   "gag": "final",
    "status": "pendente",
    "nota": "",
    "usar": true
