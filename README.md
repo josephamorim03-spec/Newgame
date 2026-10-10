@@ -109,7 +109,7 @@ node tools/vercel_local.js                     # a página como o Vercel publica
 - **Fim da derrota sem "+0":** os bons momentos vêm primeiro, depois a experiência e o rating.
 - **Juice:** o disparo em cascata (cada dado acende na nota dele, um selo conta +1, +2, +4... e o "+N" estoura no
   placar do tamanho do lance); a tela inicial com a rival à mesa, a saudação da hora e dados que rolam ao toque, e as patas da Diana (pintadas:
-  apoiada vista de cima e a palma rosa em cima do dado) mexendo nos dados e ameaçando pegá-los; a mesa
+  a palma rosa sobe por trás da mesa, vira e, vista de cima, bate e puxa um dado) ameaçando pegá-los; a mesa
   não pisca mais marrom no tremor.
 - **Impacto e ponto de partida:** os disparos de 5 e 6 e a armadilha que pega param o tempo por um instante antes do
   estouro; a corrente a um dado de fechar a partida pulsa; o botão vira "Disparar e vencer"; os dados que dão a vitória
