@@ -96,7 +96,9 @@ node tools/vercel_local.js                     # a página como o Vercel publica
 
 **v0.12 (nesta branch, ainda não publicada):** metas 16 (padrão), 20 e 24, no lugar de 12 e 16; o Coringa troca a frente
 da corrente em vez de alongá-la; e no online fica óbvio de quem é a vez (selo com relógio no alto da Mesa, a Mesa acesa na
-sua vez, chamada e sininhos quando a vez chega, lembretes, aviso na aba e de novo ao voltar para a tela). Números em
+sua vez, chamada e sininhos quando a vez chega, lembretes, aviso na aba e de novo ao voltar para a tela). As cartas na partida
+viraram cartas (arte, nome, o que fazem, estado à vista): segurar para olhar, tocar na carta e no dado para usar, ou
+arrastar até o dado ou a Mesa (`docs/design.md` §8, "Cartas na mão"). Números em
 `docs/balanceamento-cartas.md` §14 e a vez em `docs/design.md` §8.
 
 **v0.11, em produção:** a página no Vercel (`diceduel-game.vercel.app`) e o servidor na Railway, os dois publicados da branch `DiceDuel`. 15 cartas (Pausa, Reverso, Furto e Lacre na v0.11), Pedágio +2 e Interferência só em quem lidera (`docs/balanceamento-cartas.md`). O resumo copiável do fim da partida traz:

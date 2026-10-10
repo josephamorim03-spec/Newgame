@@ -376,12 +376,22 @@ dados são objetos (rolam, pousam, voam); as cartas não eram. Agora:
 - **o estado se lê sem tocar**: na sua vez, a carta que dá para usar agora **sobe com o aro de mel**; a que não serve
   agora fica rente e apagada; a armadilha armada (ou o blefe) fica **escura, virada para baixo**, como a carta virada
   do rival; a usada fica cinza e riscada. Usar faz a carta dar um pulinho e apagar; armar faz ela virar;
-- **tocar numa carta sua, na sua vez, abre a carta no próprio painel**, no lugar da fileira (como as decisões),
-  com o nome, o que faz, os botões (**Usar/Armar**, **Blefar**, Voltar) e o texto inteiro embaixo, sem cobrir a Mesa:
-  dá para olhar os dados enquanto se decide o Ajuste ou o Virar. Tocar de novo na carta, num dado ou em Voltar a
-  fecha. As do rival, e as suas fora da vez, continuam abrindo a janela de leitura.
-- no celular baixo (até 700 de altura), e a dois em telas de até 760, o "o que faz" sai da carta para caber tudo; a
-  carta aberta continua com o texto inteiro.
+- **a mão em leque**: as três cartas um pouco abertas, como seguradas; a escolhida sobe reta.
+- **olhar sem usar**: **segurar** qualquer carta (sua ou do rival) mostra a carta grande, com o texto inteiro, acima
+  dela; soltar some e nada acontece. No computador, basta parar o mouse em cima. O botão **Ler** abre a janela de leitura.
+- **usar tocando**: tocar numa carta sua, na sua vez, a levanta. A que pede um dado (Ajuste, Virar, Espelho) já
+  espera o dado: as etiquetas da Mesa mostram como cada dado fica, e **tocar no dado já usa** (Virar e Espelho; o
+  Ajuste ainda pergunta −1 ou +1). As outras mostram **Usar/Armar**, **Blefar**, **Ler** e ✕ numa fileira embaixo.
+  Tocar de novo na carta, ou em Cancelar, a devolve. A frase do que fazer (ou por que ela não serve agora) aparece
+  na linha da Mesa, perto dos dados; a carta que não serve agora treme.
+- **usar arrastando**: arrastar a carta segue o dedo, inclinando com o movimento. A que pede um dado encolhe e fica
+  acima do dedo; o dado sob ele acende com a etiqueta do que vai acontecer, e soltar nele usa. As outras usam ao
+  soltar em qualquer lugar acima do seu painel (a Mesa acende). Soltar de volta no painel não faz nada.
+- As do rival, e as suas fora da vez, continuam abrindo a janela de leitura ao tocar.
+- no celular baixo (até 700 de altura), e a dois em telas de até 760, o "o que faz" sai da carta para caber tudo.
+
+Referências: o "?" junto do retrato do Segredo de Hearthstone, a carta grande ao segurar do Marvel Snap, a carta
+que leva até o alvo do Slay the Spire, a inclinação e a vibração do Balatro, e Dicey Dungeons (dado e carta se tocam).
 
 **De quem é a vez (v0.12): óbvio de longe.** No teste com gente, um segundo de desatenção bastava para não saber,
 de volta à tela, se a vez era sua ou do rival (e no online o tempo da vez acabar é derrota). Agora:

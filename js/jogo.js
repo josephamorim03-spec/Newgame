@@ -561,9 +561,9 @@
     if (!j || !humano(j.vez) || j.pensando || j.intro) return;
     const d = j.mesa[idx]; if (!d) return;
     if (j.fase === 'alvo' || j.fase === 'ajuste') {
-      if (j.alvo === 'ajuste') { j.ajusteIdx = idx; j.fase = 'ajuste'; render(); return; }
-      if (j.sel === d.id) return confirmarAlvo();
-      j.sel = d.id; Som.tocar('escolher', { n: 0, x: (idx - 2) * 0.3 }); render(); return;
+      if (j.alvo === 'ajuste') { j.ajusteIdx = idx; j.fase = 'ajuste'; Som.tocar('escolher', { n: 0, x: (idx - 2) * 0.3 }); vibrar(6); render(); return; }
+      // Virar e Espelho: tocar no dado já usa (a etiqueta de cada dado mostrou como ele fica)
+      j.sel = d.id; return confirmarAlvo();
     }
     if (j.fase !== 'pegar') return;
     foco = null;
@@ -593,12 +593,34 @@
     j.alvo = null; j.fase = 'pegar'; j.sel = null;
     usarCarta(j.vez, c, idx); render();
   }
-  function cancelarEscolha() {
+  function soltarEscolha() {
     const j = jogo;
     foco = null;
     j.sel = null;
     if (j.fase === 'alvo' || j.fase === 'ajuste') { j.fase = 'pegar'; j.alvo = null; j.ajusteIdx = null; }
+  }
+  function cancelarEscolha() { soltarEscolha(); render(); }
+  // a carta escolhida agora (a aberta, ou a que espera o dado), para ela ficar levantada na mão
+  const escolhendoDado = (j, p) => humano(p) && j.vez === p && (j.fase === 'alvo' || j.fase === 'ajuste') && !j.pensando;
+  const cartaEscolhida = (j, p) => (escolhendoDado(j, p) ? j.alvo : p === j.vez ? cartaEmFoco(j) : null);
+  // tocar numa carta sua, na sua vez: a que pede um dado já espera o dado (toque nele ou arraste a carta até ele);
+  // as outras sobem e mostram Usar/Armar e Blefar. Tocar de novo devolve. Fora da vez, e as do rival: a janela de leitura
+  function tocarCarta(p, c) {
+    const j = jogo;
+    if (escolhendoDado(j, p)) { const mesma = j.alvo === c; soltarEscolha(); if (mesma) return render(); }
+    if (!podeAbrir(j, p)) return abrirCarta(p, c);
+    if (cartaEmFoco(j) === c) { foco = null; return render(); }
+    j.sel = null;
+    Som.tocar('carta'); vibrar(6);
+    if (CARTAS[c].alvo && podeUsar(p, c).ok) { foco = null; j.fase = 'alvo'; j.alvo = c; return render(); }
+    foco = { c, chave: chaveVez(j) };
+    const serve = podeUsar(p, c).ok || (j.cartas[p][c] === 'pronta' && podeVirar(p, c).ok);
     render();
+    if (!serve) tremerCarta(p, c);
+  }
+  function tremerCarta(p, c) {
+    const el = document.querySelector(`.cartas [data-carta="${c}"][data-dono="${p}"]`); if (!el) return;
+    el.classList.remove('treme'); void el.offsetWidth; el.classList.add('treme'); vibrar([6, 40, 6]);
   }
 
   function abrirCarta(p, c) {
@@ -663,7 +685,7 @@
     const meu = j.modo !== 'local' && p === 0;
     // as suas cartas são grandes (arte, nome e o que fazem); as do rival, fichas (dá para ler, tocar abre a carta)
     const grande = p === 0 || j.modo === 'local';
-    const minhaVez = podeAbrir(j, p), aberta = minhaVez ? cartaEmFoco(j) : null;
+    const minhaVez = podeAbrir(j, p), aberta = cartaEscolhida(j, p);
     let html = '<span class="rot">Cartas</span>';
     for (const c of deck) {
       const k = CARTAS[c];
@@ -726,8 +748,8 @@
         ${bolsoHTML(p)}<span class="placar"><b data-placar="${p}">${j.pts[p]}</b><small>/${j.meta}</small></span></div>
       <div class="barra" role="progressbar" aria-valuemin="0" aria-valuemax="${j.meta}" aria-valuenow="${j.pts[p]}" aria-label="Pontos de ${n[p]}"><i style="width:${pct}%"></i>${prev ? `<span class="prev" style="left:${pct}%;width:${prev}%"></span>` : ''}</div>
       <div class="corrente${fx ? ' fx-' + fx.tipo : L >= 5 ? ' fervendo' : L >= 4 ? ' quente' : ''}" style="--fase:-${Math.round(performance.now() % 1800)}ms">${slots}</div>
-      ${st.pref.dicas ? `<div class="info"><span>Corrente <b>${L}</b>/${LIM}</span><span>${valeAgora}${seCrescer}</span></div>` : ''}
-      ${comDecisao ? '<div class="decisao-slot"></div>' : cartasHTML(p)}
+      ${st.pref.dicas && !cartaEscolhida(j, p) ? `<div class="info"><span>Corrente <b>${L}</b>/${LIM}</span><span>${valeAgora}${seCrescer}</span></div>` : ''}
+      ${comDecisao && !cartaEscolhida(j, p) ? '<div class="decisao-slot"></div>' : cartasHTML(p) + (comDecisao ? '<div class="decisao-slot"></div>' : '')}
     </div>`;
   }
 
@@ -775,26 +797,32 @@
     return `${n[r]} tem uma carta virada (?). Pode ser ${traps.join(' ou ')}${blefes.length ? `, ou um blefe com ${blefes.join(' ou ')}` : ''}.`;
   }
 
-  // a carta aberta no painel: arte, o texto inteiro e as ações dela, sem janela por cima (a Mesa continua à vista)
+  // a carta escolhida, embaixo da fileira: o que faz e as ações (Usar ou Armar, Blefar, Ler); o texto inteiro mora no
+  // Ler e no segurar a carta
+  // esperando o dado, a fase é "alvo": blefar conta como se a carta ainda estivesse na mão (a escolha é desfeita antes)
+  const podeBlefar = (p, c) => jogo.cartas[p][c] === 'pronta' && R.podeVirar(escolhendoDado(jogo, p) ? { ...jogo, fase: 'pegar' } : jogo, p, c).ok;
+  const btnBlefar = (p, c) => (podeBlefar(p, c) ? `<button class="btn btn-duplo btn-papel" data-virar="${c}"><span>Blefar</span><small>virada · +${R.DESAFIO.bonus}</small></button>` : '');
+  const btnLer = c => `<button class="btn btn-papel btn-ler" data-acao="ler-carta" data-ler="${c}">Ler</button>`;
+  const btnVoltar = acao => `<button class="btn btn-papel btn-x" data-acao="${acao}" aria-label="Voltar" title="Voltar">✕</button>`;
   function cartaAbertaHTML(p, c) {
-    const j = jogo, k = CARTAS[c], e = j.cartas[p][c], pu = podeUsar(p, c), pv = podeVirar(p, c), blefe = blefando(p, c), D = R.DESAFIO;
-    const tipo = `${k.tipo === 'armadilha' ? 'Armadilha' : 'Efeito'}${k.pontos ? ` · <span class="raio">${RAIO}</span> pontos` : ''}`;
-    const estado = { armada: blefe ? 'virada para baixo (blefe)' : 'armada', usada: 'já usada', perdida: 'perdida' }[e];
-    let nota = '';
-    if (e === 'pronta' || blefe) nota = pu.ok ? (blefe ? `Ninguém desafiou: usar agora revela o blefe, a carta funciona e rende +${D.bonus}.` : '') : (pu.motivo || '');
-    else if (e === 'armada') nota = 'Ela age sozinha quando a condição acontecer.';
-    const rot = blefe ? ['Usar e revelar', `funciona e rende +${D.bonus}`] : k.alvo ? ['Usar', 'depois escolha o dado'] : k.tipo === 'armadilha' ? ['Armar', 'fica virada para baixo'] : ['Usar', k.verbo];
+    const j = jogo, k = CARTAS[c], e = j.cartas[p][c], pu = podeUsar(p, c), blefe = blefando(p, c), D = R.DESAFIO;
+    const rot = blefe ? ['Usar e revelar', `rende +${D.bonus}`] : k.tipo === 'armadilha' ? ['Armar', 'vira para baixo'] : ['Usar', k.verbo];
     const usar = e === 'pronta' || blefe ? `<button class="btn btn-duplo btn-mel" data-usar="${c}" ${pu.ok ? '' : 'disabled'}><span>${rot[0]}</span><small>${rot[1]}</small></button>` : '';
-    const virar = e === 'pronta' && pv.ok ? `<button class="btn btn-duplo btn-papel" data-virar="${c}"><span>Blefar</span><small>virar para baixo · +${D.bonus}</small></button>` : '';
-    const blefeTxt = virar && st.pref.dicas ? `<p class="nota nota-carta"><b>Blefar:</b> virada, ela parece uma armadilha (?) e não faz nada. Se o rival desafiar, ela se perde e ele ganha ${D.acerto}; senão, ao usá-la depois, rende +${D.bonus}.</p>` : '';
-    // o nome e as ações primeiro (no celular, os botões ficam à vista); o texto inteiro vem embaixo
-    return `<div class="carta-aberta ${k.tipo}${e === 'armada' ? ' virada' : ''}">
-        <span class="c-arte">${k.arte}</span>
-        <span class="ca-topo"><b>${k.nome}</b><span class="ca-tipo">${tipo}${estado ? ` · ${estado}` : ''}</span><span class="ca-verbo">${k.verbo}</span></span>
-        ${nota ? `<p class="nota nota-carta">${nota}</p>` : ''}
-        <div class="botoes">${usar}${virar}<button class="btn btn-papel" data-acao="fechar-carta">Voltar</button></div>
-        <p class="ca-texto">${k.texto}</p>${blefeTxt}
-      </div>`;
+    return `<p class="so-leitor">${instrucaoCarta(j)}</p><div class="botoes">${usar}${btnBlefar(p, c)}${btnLer(c)}${btnVoltar('fechar-carta')}</div>`;
+  }
+  // a frase da carta escolhida, na linha da Mesa (no lugar do último lance): o que fazer agora, ou por que não dá
+  function instrucaoCarta(j) {
+    const p = j.vez, ajudas = st.pref.dicas;
+    if (escolhendoDado(j, p) && j.fase === 'alvo') {
+      const txt = { espelho: 'Toque no dado que vai receber a marca do <b>Espelho</b>', virar: 'Toque no dado que vai <b>virar</b>', ajuste: 'Toque no dado que vai receber o <b>Ajuste</b>' }[j.alvo];
+      return `${txt}${ajudas ? ', ou arraste a carta até ele' : ''}.`;
+    }
+    const c = p === j.vez ? cartaEmFoco(j) : null; if (!c) return '';
+    const k = CARTAS[c], e = j.cartas[p][c], pu = podeUsar(p, c), blefe = blefando(p, c);
+    if (e === 'armada') return blefe && pu.ok ? `<b>${k.nome}</b>: ninguém desafiou. Usar agora revela o blefe e rende +${R.DESAFIO.bonus}.` : `<b>${k.nome}</b>: ${blefe ? (pu.motivo || '') : 'armada, age sozinha quando a condição acontecer.'}`;
+    if (e !== 'pronta') return `<b>${k.nome}</b>: ${e === 'usada' ? 'já usada' : 'perdida'}.`;
+    if (!pu.ok) return `<b>${k.nome}</b>: ${pu.motivo || 'agora não dá.'}${podeVirar(p, c).ok ? ' Dá para blefar com ela.' : ''}`;
+    return `<b>${k.nome}</b>: ${k.verbo}.${ajudas ? ` Toque em ${k.tipo === 'armadilha' ? 'Armar' : 'Usar'} ou arraste a carta até a Mesa.` : ''}`;
   }
   // usar a carta (as que pedem um dado vão para a escolha na Mesa) e virar para baixo (blefe): do painel e da janela
   function acionarCarta(c) {
@@ -807,7 +835,8 @@
   }
   function virarParaBaixo(c) {
     const j = jogo, p = j.vez;
-    if (!humano(p) || j.pensando || !podeVirar(p, c).ok) return;
+    if (!humano(p) || j.pensando || !podeBlefar(p, c)) return;
+    soltarEscolha();
     foco = null; virarCarta(p, c); render();
   }
 
@@ -826,21 +855,14 @@
     if (cf) return cartaAbertaHTML(p, cf);
     const eu = j.cor[p];
     if (j.fase === 'alvo') {
-      const k = CARTAS[j.alvo], ds = j.sel !== null && j.sel !== undefined ? j.mesa[idxDe(j.sel)] : null;
-      if (ds) {
-        const efeito = { virar: [`Virar o ${ds.v}`, `ele vira ${7 - ds.v}`, 'Virar este dado'], espelho: [`Marcar o ${ds.v} com o Espelho`, 'a marca fica à vista do rival', 'Marcar este dado'] }[j.alvo];
-        return `<div class="status">${efeito[0]}: ${efeito[1]}.${ajudas ? ' Toque em outro dado para trocar.' : ''}</div>
-          <div class="botoes"><button class="btn btn-mel" data-acao="confirmar-alvo">${efeito[2]}</button><button class="btn btn-papel" data-acao="cancelar-alvo">Cancelar</button></div>`;
-      }
-      const txt = { espelho: 'Escolha o dado que vai receber a marca do <b>Espelho</b>.', virar: 'Escolha o dado que vai <b>virar</b>. A etiqueta mostra como ele fica.', ajuste: 'Escolha o dado que vai receber o <b>Ajuste</b>.' }[j.alvo];
-      return `<div class="status">${txt}${ajudas ? ' Nada acontece até você confirmar.' : ''}</div><div class="botoes"><button class="btn btn-papel" data-acao="cancelar-alvo">Cancelar (${k.nome} volta para a mão)</button></div>`;
+      return `<p class="so-leitor">${instrucaoCarta(j)}</p><div class="botoes">${btnBlefar(p, j.alvo)}${btnLer(j.alvo)}<button class="btn btn-papel" data-acao="cancelar-alvo">Cancelar</button></div>`;
     }
     if (j.fase === 'ajuste') {
       const d = j.mesa[j.ajusteIdx];
       return `<div class="status">Ajuste no ${mini(d.v, skinMesa())} <b>${d.v}</b>.${ajudas ? ' Toque em outro dado para trocar.' : ''}</div><div class="botoes">
         <button class="btn btn-duplo btn-mel" data-ajuste="-1" ${d.v <= 1 ? 'disabled' : ''}><span>−1</span><small>${d.v > 1 ? 'vira ' + (d.v - 1) : 'não dá'}</small></button>
         <button class="btn btn-duplo btn-mel" data-ajuste="1" ${d.v >= 6 ? 'disabled' : ''}><span>+1</span><small>${d.v < 6 ? 'vira ' + (d.v + 1) : 'não dá'}</small></button>
-        <button class="btn btn-papel" data-acao="cancelar-alvo">Cancelar</button></div>`;
+        ${btnVoltar('cancelar-alvo')}</div>`;
     }
     if (j.fase === 'destino' && j.mao) {
       const v = j.mao.v, ds = destinos(p, v), b = j.bolso[p];
@@ -1037,7 +1059,9 @@
     const n = nomes();
     const linha = l => `${l.p === null ? '' : `<span class="cor${l.p}">${n[l.p]}</span> `}${l.txt}`;
     document.getElementById('log').innerHTML = j.log.map(l => `<li class="${l.tipo}">${linha(l)}</li>`).join('');
-    document.getElementById('ticker').innerHTML = j.log[0] ? linha(j.log[0]) : '';
+    const instrucao = humano(j.vez) ? instrucaoCarta(j) : '', ticker = document.getElementById('ticker');
+    ticker.innerHTML = instrucao || (j.log[0] ? linha(j.log[0]) : '');
+    ticker.classList.toggle('instrucao', !!instrucao);
     mostrarCorrenteNaDecisao(j);
     guardarPartida();
     if (j.modo === 'online' && j.fase !== 'fim' && inicioAberto()) esconderInicio();
@@ -1742,14 +1766,139 @@
   document.getElementById('tabuleiro').addEventListener('click', e => {
     const v = e.target.closest('[data-virada]'); if (v && jogo) { abrirVirada(+v.dataset.virada); return; }
     const b = e.target.closest('[data-carta]'); if (!b || !jogo) return;
-    const j = jogo, p = +b.dataset.dono, c = b.dataset.carta;
-    if (podeAbrir(j, p)) {
-      foco = cartaEmFoco(j) === c ? null : { c, chave: chaveVez(j) };   // tocar de novo na aberta a fecha
-      j.sel = null;
-      if (foco) { Som.tocar('carta'); vibrar(6); }
-      render(); return;
+    tocarCarta(+b.dataset.dono, b.dataset.carta);
+  });
+  // ---------- espiar e arrastar as cartas ----------
+  // Espiar: segurar uma carta (ou parar o mouse em cima) mostra a carta grande, sem usar; soltar some.
+  // Arrastar: a sua carta, na sua vez, segue o dedo; a que pede um dado é solta num dado da Mesa (o dado sob o dedo
+  // acende, e as etiquetas mostram como ele fica); as outras, em qualquer lugar acima do seu painel
+  const espiar = document.createElement('div');
+  espiar.className = 'espiar-carta'; espiar.hidden = true; espiar.setAttribute('aria-hidden', 'true');
+  document.body.appendChild(espiar);
+  const camadaArrasto = document.createElement('div');
+  camadaArrasto.className = 'cartas camada-arrasto';
+  document.body.appendChild(camadaArrasto);
+  function mostrarEspiar(b) {
+    const j = jogo, p = +b.dataset.dono, c = b.dataset.carta, k = CARTAS[c];
+    if (!j || !k) return;
+    const meu = j.modo !== 'local' ? p === 0 : j.vez === p;
+    let e = j.cartas[p][c];
+    if (e === 'armada' && !meu && c !== 'espelho') e = 'pronta';
+    const estado = { armada: meu && k.tipo === 'efeito' ? 'virada (blefe)' : 'armada', usada: 'usada', perdida: 'perdida' }[e];
+    espiar.className = `espiar-carta ${k.tipo}`;
+    espiar.innerHTML = `<span class="c-arte">${k.arte}</span><b>${k.nome}</b><span class="ea-tipo">${k.tipo === 'armadilha' ? 'Armadilha' : 'Efeito'}${k.pontos ? ` · <span class="raio">${RAIO}</span> pontos` : ''}${estado ? ` · ${estado}` : ''}</span><span class="ea-verbo">${k.verbo}</span><p>${k.texto}</p>`;
+    espiar.hidden = false;
+    // acima da carta (o dedo cobre a própria carta), dentro da tela; sem espaço em cima, embaixo
+    const r = b.getBoundingClientRect(), w = espiar.offsetWidth, h = espiar.offsetHeight, m = 10;
+    const x = Math.max(m, Math.min(innerWidth - w - m, r.left + r.width / 2 - w / 2));
+    const y = r.top - h - 12 >= m ? r.top - h - 12 : Math.min(innerHeight - h - m, r.bottom + 12);
+    espiar.style.left = `${x}px`; espiar.style.top = `${Math.max(m, y)}px`;
+  }
+  const esconderEspiar = () => { espiar.hidden = true; };
+  const tab = document.getElementById('tabuleiro');
+  let toque = null, engolirClique = false, passarMouse = null;
+  const podeArrastar = (p, c) => { const j = jogo; return j && (podeAbrir(j, p) || escolhendoDado(j, p)) && j.vez === p && usavel(p, c); };
+  const cartaSob = (x, y) => { const el = document.elementFromPoint(x, y); return el && el.closest('.pega:not([disabled])'); };
+  function iniciarArrasto(t) {
+    const j = jogo, r = t.b.getBoundingClientRect();
+    soltarEscolha();
+    if (!podeUsar(t.p, t.c).ok) { render(); tremerCarta(t.p, t.c); return false; }
+    const k = CARTAS[t.c];
+    // a cópia que segue o dedo mora numa camada com a classe das cartas (o visual da carta vem dela)
+    const fant = t.b.cloneNode(true);
+    fant.removeAttribute('style'); fant.className = fant.className.replace(/\bgesto-\S+|\btreme\b/g, '');
+    fant.classList.add('fantasma');
+    Object.assign(fant.style, { width: `${r.width}px`, height: `${r.height}px`, rotate: '0deg', translate: 'none', scale: '1' });
+    camadaArrasto.appendChild(fant);
+    t.arrasta = { fant, w: r.width, h: r.height, ox: t.x - r.left, oy: t.y - r.top, vx: 0, ultX: t.x, alvo: !!k.alvo };
+    // a carta com alvo liga as etiquetas de prévia na Mesa enquanto é arrastada
+    if (k.alvo) { j.fase = 'alvo'; j.alvo = t.c; }
+    else foco = { c: t.c, chave: chaveVez(j) };
+    render();
+    document.body.classList.add('arrastando-carta');
+    Som.tocar('carta'); vibrar(8);
+    return true;
+  }
+  function moverArrasto(e) {
+    const a = toque.arrasta, inclina = st.pref.animacoes ? Math.max(-16, Math.min(16, (e.clientX - a.ultX) * 1.6)) : 0;
+    a.ultX = e.clientX;
+    // a carta com alvo encolhe e fica bem acima do dedo, para o dado sob ele (e a etiqueta dele) aparecerem
+    const esc = a.alvo ? 0.72 : 1.06;
+    const x = e.clientX - a.w / 2, y = a.alvo ? e.clientY - 40 - a.h * (0.5 + esc / 2) : e.clientY - a.oy;
+    a.fant.style.transform = `translate(${x}px, ${y}px) rotate(${inclina}deg) scale(${esc})`;
+    document.querySelectorAll('.pega.mira').forEach(el => el.classList.remove('mira'));
+    let pronto = false;
+    if (a.alvo) { const d = cartaSob(e.clientX, e.clientY); if (d) { d.classList.add('mira'); pronto = true; if (a.ultDado !== d.dataset.i) { a.ultDado = d.dataset.i; vibrar(4); } } else a.ultDado = null; }
+    else pronto = naZonaDeUso(e.clientY);
+    a.fant.classList.toggle('pronta-soltar', pronto);
+    tab.classList.toggle('soltar-aqui', !a.alvo && pronto);
+  }
+  function naZonaDeUso(y) {
+    const meu = document.querySelector('.jogador.da-vez');
+    return !!meu && y < meu.getBoundingClientRect().top + 8;
+  }
+  function terminarToque(e, valeu) {
+    if (!toque || e.pointerId !== toque.id) return;
+    clearTimeout(toque.timer);
+    const t = toque; toque = null;
+    if (t.espiou) { esconderEspiar(); engolirClique = true; setTimeout(() => { engolirClique = false; }, 400); return; }
+    if (!t.arrasta) return;   // um toque normal: o clique cuida
+    engolirClique = true; setTimeout(() => { engolirClique = false; }, 400);
+    const a = t.arrasta, j = jogo;
+    a.fant.remove(); tab.classList.remove('soltar-aqui'); document.body.classList.remove('arrastando-carta');
+    document.querySelectorAll('.pega.mira').forEach(el => el.classList.remove('mira'));
+    if (!j || j.vez !== t.p) return render();
+    if (a.alvo) {
+      const d = valeu && cartaSob(e.clientX, e.clientY);
+      if (!d) { soltarEscolha(); return render(); }
+      // usa a carta arrastada direto (no online, um estado novo do servidor no meio do arrasto apaga a escolha)
+      const idx = +d.dataset.i;
+      soltarEscolha();
+      if (!j.mesa[idx] || !podeUsar(t.p, t.c).ok) return render();
+      if (t.c === 'ajuste') { j.fase = 'ajuste'; j.alvo = 'ajuste'; j.ajusteIdx = idx; Som.tocar('escolher', { n: 0, x: (idx - 2) * 0.3 }); return render(); }
+      usarCarta(t.p, t.c, idx); return render();
     }
-    abrirCarta(p, c);
+    if (valeu && naZonaDeUso(e.clientY)) return acionarCarta(t.c);
+    foco = null; render();
+  }
+  // um toque novo encerra a janela de engolir o clique do arrasto anterior (que às vezes nem vem)
+  addEventListener('pointerdown', () => { engolirClique = false; }, true);
+  tab.addEventListener('pointerdown', e => {
+    const b = e.target.closest('.cartas [data-carta]');
+    if (!b || !jogo || e.button > 0 || toque) return;
+    clearTimeout(passarMouse); esconderEspiar();
+    toque = { b, p: +b.dataset.dono, c: b.dataset.carta, x: e.clientX, y: e.clientY, id: e.pointerId, arrasta: null, espiou: false };
+    const t = toque;
+    t.timer = setTimeout(() => { if (toque === t && !t.arrasta) { t.espiou = true; mostrarEspiar(b); vibrar(8); } }, 380);
+  });
+  addEventListener('pointermove', e => {
+    // a carta espiada pelo mouse some ao sair dela (mesmo que a tela tenha sido redesenhada embaixo do mouse parado)
+    if (!toque && e.pointerType === 'mouse' && !espiar.hidden && !(e.target.closest && e.target.closest('.cartas [data-carta]'))) { clearTimeout(passarMouse); esconderEspiar(); }
+    if (!toque || e.pointerId !== toque.id) return;
+    if (!toque.arrasta) {
+      if (toque.espiou || Math.hypot(e.clientX - toque.x, e.clientY - toque.y) < 10) return;
+      clearTimeout(toque.timer);
+      if (!podeArrastar(toque.p, toque.c) || !iniciarArrasto(toque)) { toque = null; return; }
+    }
+    e.preventDefault();
+    moverArrasto(e);
+  }, { passive: false });
+  addEventListener('pointerup', e => terminarToque(e, true));
+  addEventListener('pointercancel', e => terminarToque(e, false));
+  // o clique que vem depois de um arrasto ou de espiar não conta como toque na carta
+  document.addEventListener('click', e => { if (engolirClique && e.target.closest && e.target.closest('#tabuleiro')) { engolirClique = false; e.stopPropagation(); e.preventDefault(); } }, true);
+  // segurar no celular não abre o menu do sistema
+  tab.addEventListener('contextmenu', e => { if (e.target.closest('.cartas [data-carta]')) e.preventDefault(); });
+  // no computador: parar o mouse sobre a carta mostra a carta grande
+  tab.addEventListener('pointerover', e => {
+    if (e.pointerType !== 'mouse' || toque) return;
+    const b = e.target.closest('.cartas [data-carta]'); if (!b) return;
+    clearTimeout(passarMouse); passarMouse = setTimeout(() => { if (!toque && b.isConnected && b.matches(':hover')) mostrarEspiar(b); }, 450);
+  });
+  tab.addEventListener('pointerout', e => {
+    if (e.pointerType !== 'mouse') return;
+    const b = e.target.closest('.cartas [data-carta]'); if (!b || b.contains(e.relatedTarget)) return;
+    clearTimeout(passarMouse); esconderEspiar();
   });
   document.getElementById('cartaBotoes').addEventListener('click', e => {
     if (e.target.closest('[data-fechar-carta]')) { document.getElementById('janelaCarta').hidden = true; return; }
@@ -1777,6 +1926,7 @@
     if (a === 'nova') return novaPartida();
     if (a === 'deck') return abrirDeck();
     if (a === 'fechar-carta') { foco = null; return render(); }
+    if (a === 'ler-carta') { if (j.fase === 'alvo') { soltarEscolha(); render(); } return abrirCarta(j.vez, b.dataset.ler); }
     if (a === 'cancelar' || a === 'cancelar-alvo') return cancelarEscolha();
     if (a === 'confirmar-alvo') return confirmarAlvo();
     if (a === 'dispensar' && j.segundoDado && j.fase === 'pegar' && humano(j.vez)) { dispensarSegundo(j.vez); return; }

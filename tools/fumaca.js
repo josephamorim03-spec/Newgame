@@ -77,7 +77,8 @@ fs.mkdirSync(FOTOS, { recursive: true });
           // na sua vez a carta abre no painel; fora dela (decidir, 2.º dado da Pressa), na janela de leitura
           const usar = await pg.$('#acoes [data-usar]:not([disabled]), #cartaBotoes [data-usar]:not([disabled])'), virar = await pg.$('#acoes [data-virar], #cartaBotoes [data-virar]');
           if (virar && Math.random() < 0.4) { await virar.click(); blefes++; }
-          else if (usar) { await usar.click(); usosCarta++; } else await pg.click('[data-acao="fechar-carta"], #cartaBotoes [data-fechar-carta]');
+          else if (await pg.$('.mesa.alvo')) usosCarta++;   // carta com alvo: já espera o dado (o laço toca num dado)
+          else if (usar) { await usar.click(); usosCarta++; } else await pg.click('[data-acao="fechar-carta"], [data-acao="cancelar-alvo"], #cartaBotoes [data-fechar-carta]');
           continue;
         }
         const disp2 = await pg.$('[data-acao="dispensar"]'); if (disp2 && Math.random() < 0.3) { await disp2.click(); dispensas++; continue; }
