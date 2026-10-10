@@ -546,4 +546,6 @@ para 977"). Online o relógio é o da sala (tempo por vez escolhido ao criá-la,
 - **Medir a estreia com gente (v0.14):** quantos terminam a primeira partida e quantos começam a segunda; se as
   chamadas do guia (4,2 s, no alto da Mesa) são lidas ou atrapalham a vez da Diana; e se a Paciência aparece de vez em
   quando (rara demais, ninguém a vê; comum demais, perde o valor).
+- **Técnicas do Aranhaverso como sotaque (retícula, cores desencaixadas, quadro congelado, onomatopeias):** avaliação e
+  plano em `docs/visual-impresso.md`. Primeiro um protótipo atrás de uma bandeira; o estilo inteiro, só como cosmético (Mesa Gibi).
 - **Medir o "?" com gente:** se o rival passa a disparar de 3 para fugir da Interferência quando ela pode estar armada.
