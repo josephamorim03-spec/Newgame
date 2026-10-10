@@ -5305,9 +5305,10 @@ window.HISTORIA_CENAS = {
   const dadoHTML = (v, skin = 'marfim') => `<span class="dado skin-${skin === 'sucata' ? DADOS_SUCATA[v] : skin}" role="img" aria-label="${v}">${Array.from({ length: 9 }, (_, i) => `<i class="pip${PIPS[v].includes(i) ? ' on' : ''}"></i>`).join('')}</span>`;
   const mini = (v, skin) => `<span class="mini">${dadoHTML(v, skin)}</span>`;
   // a face pintada (js/dados_pintados.js) entra por baixo do brilho, no lugar do degradê da skin; sem ela, vale o CSS
+  // o verde do Sapo clareia um pouco: em cima do feltro da corrente, verde com verde some
   (function pintarDados() {
-    const pintados = window.DADOS_PINTADOS || {}, css = Object.entries(pintados).map(([id, src]) =>
-      `.dado.skin-${id}{background:radial-gradient(circle at 30% 25%,rgba(255,255,255,.3),transparent 55%),url("${src}") center/cover}`).join('');
+    const CLARO = { lagoa: 0.2 }, pintados = window.DADOS_PINTADOS || {}, css = Object.entries(pintados).map(([id, src]) =>
+      `.dado.skin-${id}{background:radial-gradient(circle at 30% 25%,rgba(255,255,255,.3),transparent 55%),linear-gradient(rgba(255,255,240,${CLARO[id] || 0}),rgba(255,255,240,${CLARO[id] || 0})),url("${src}") center/cover}`).join('');
     if (!css) return;
     const el = document.createElement('style'); el.id = 'dadosPintados'; el.textContent = css; document.head.appendChild(el);
   })();
