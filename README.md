@@ -108,8 +108,17 @@ node tools/vercel_local.js                     # a página como o Vercel publica
   placar do tamanho do lance); a tela inicial com a rival à mesa, a saudação da hora e dados que rolam ao toque, e a pata da Diana mexendo nos
   dados e ameaçando pegá-los; a mesa
   não pisca mais marrom no tremor.
+- **Impacto e ponto de partida:** os disparos de 5 e 6 e a armadilha que pega param o tempo por um instante antes do
+  estouro; a corrente a um dado de fechar a partida pulsa; o botão vira "Disparar e vencer"; os dados que dão a vitória
+  ao rival ganham um "!"; o disparo que vence conta até o fim antes de a vitória estourar; a ruptura cai em dominó.
+- **O rival à mesa:** antes de pegar, ele olha a Mesa (a Diana com a patinha, a Coruja os dados que servem a você); a
+  carta dele sai da mão e voa até o vão acima da Mesa, sem cobrir o painel dele.
+- **O fim em sequência:** moedas, a barra de experiência enchendo de onde estava, o nível; a próxima coisa a ganhar;
+  "Faltaram 2 pontos" na derrota apertada; "Revanche contra Diana"; recordes só quando dizem algo.
+- **Tarefas do dia:** três por dia, iguais para todos, 15 moedas cada, **também na derrota**; a primeira vitória do
+  dia que rende moedas rende em dobro. No menu e no fim da partida (`docs/progressao.md` §4.1).
 
-Detalhes em `docs/design.md` §5, §6 e §7; teste em `tools/estreia_e2e.js`.
+Detalhes em `docs/design.md` §5, §6 e §7 e `docs/progressao.md` §4.1; testes em `tools/estreia_e2e.js` e `npm test`.
 
 **v0.13, em produção** (a página no Vercel e o servidor na Railway, publicados da branch `DiceDuel`): **o blefe e o
 desafio saíram.** O "?" do rival é sempre uma armadilha de verdade; tocar nele mostra quais armadilhas do deck dele ele

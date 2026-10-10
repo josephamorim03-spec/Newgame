@@ -1372,6 +1372,77 @@ button.inicio-perfil:active { transform: translateY(1px); }
 .op-loja .op-estado { font-size: 12.5px; font-weight: 800; color: var(--tinta-suave); padding: 10px 0 2px; }
 .op-loja.tem { background: #fff3dc; }
 
+/* ---------- v0.14: impacto, ruptura em dominó, ponto de partida ---------- */
+/* o impacto (hit-stop) dos disparos de 5 e 6 e da armadilha que pega: a borda da tela escurece por um instante */
+.impacto { position: fixed; inset: 0; z-index: 55; pointer-events: none; opacity: 0;
+  background: radial-gradient(ellipse at center, transparent 45%, rgba(24,14,8,.55) 100%); }
+/* a ruptura desfaz a corrente da frente para trás, um dado depois do outro, como dominó */
+.fx-ruptura .slot .dado { animation-duration: .62s; animation-delay: calc((var(--n, 1) - 1 - var(--i, 0)) * 55ms); animation-fill-mode: both; }
+/* a um dado de fechar a partida (ou disparar já vence): a corrente pulsa na cor do dono */
+.corrente.por-um { animation: porUm 1.4s ease-in-out infinite; animation-delay: var(--fase, 0ms); }
+.p0 .corrente.por-um { --cor-ponto: rgba(255,207,138,.95); }
+.p1 .corrente.por-um { --cor-ponto: rgba(240,120,140,.9); }
+@keyframes porUm { 0%, 100% { box-shadow: inset 0 3px 8px rgba(0,0,0,.35), 0 0 0 2px var(--cor-ponto); }
+  50% { box-shadow: inset 0 3px 8px rgba(0,0,0,.35), 0 0 0 3px var(--cor-ponto), 0 0 18px 4px var(--cor-ponto); } }
+.sem-animacoes .corrente.por-um { animation: none; box-shadow: inset 0 3px 8px rgba(0,0,0,.35), 0 0 0 3px var(--cor-ponto); }
+@media (prefers-reduced-motion: reduce) { .corrente.por-um { animation: none; box-shadow: inset 0 3px 8px rgba(0,0,0,.35), 0 0 0 3px var(--cor-ponto); } }
+/* o dado da Mesa que dá a vitória ao rival: a bolinha dele cresce, ganha um "!" e pulsa */
+.alvo-rival.fecha { width: 20px; height: 20px; top: -7px; right: -7px; display: grid; place-items: center; color: #fff; font: 900 13px/1 inherit;
+  animation: fechaPulsa 1s ease-in-out infinite; }
+.alvo-rival.fecha::after { content: '!'; }
+@keyframes fechaPulsa { 50% { transform: scale(1.18); box-shadow: 0 0 0 2px var(--feltro), 0 0 10px 3px var(--rival); } }
+/* "Disparar e vencer" */
+.btn.vence { box-shadow: 0 3px 0 var(--mel-escuro), 0 0 0 3px rgba(255,236,190,.9), 0 0 22px 4px rgba(255,207,138,.75); }
+.fecha-txt { display: inline-grid; place-items: center; width: 1.25em; height: 1.25em; border-radius: 50%; background: var(--rival); color: #fff; font-size: .85em; vertical-align: .05em; }
+/* a presença do rival: o dado que ele olha acende de leve; com a Diana, a patinha passa por cima e bate no que ela pega */
+.pega.olhado .face { transform: translateY(-4px); transition: transform .18s ease-out; }
+.pega.olhado .dado { box-shadow: 0 0 0 2px rgba(236,143,168,.7), 0 6px 14px rgba(0,0,0,.35); }
+.patinha { position: absolute; left: 50%; top: -42%; width: 78%; height: 78%; transform: translateX(-50%); pointer-events: none; z-index: 3;
+  filter: drop-shadow(0 4px 3px rgba(0,0,0,.3)); animation: patinhaChega .22s ease-out both; }
+.pega.destaque .patinha { animation: patinhaBate .52s ease-in-out both; }
+@keyframes patinhaChega { from { opacity: 0; transform: translate(-50%, -14px) scale(1.15); } to { opacity: 1; transform: translate(-50%, 0) scale(1); } }
+@keyframes patinhaBate { 0% { transform: translate(-50%, -10px); } 30% { transform: translate(-50%, 6px) scale(.94); } 55% { transform: translate(-50%, -4px); } 75% { transform: translate(-50%, 5px) scale(.95); } 100% { transform: translate(-50%, 0); } }
+/* o aviso da carta do rival, no vão entre o painel dele e a Mesa: mais baixo que as chamadas de festa */
+.chamada.aviso-carta.compacta { transform: translate(-50%, -50%); animation-name: avisoEntra; padding: 6px 18px 7px; border-radius: 18px; max-width: min(340px, calc(100vw - 32px)); min-width: 0; }
+.chamada.aviso-carta.compacta b { font-size: clamp(20px, 5.6vw, 26px); }
+.chamada.aviso-carta.compacta > span { font-size: 13px; line-height: 1.3; margin-top: 2px; }
+.chamada.aviso-carta.compacta.saindo { animation: avisoSai .26s ease forwards; }
+.chamada.aviso-carta.compacta.sem-anim { animation: none; }
+@keyframes avisoEntra { 0% { transform: translate(-50%, -50%) scale(.6) rotate(-4deg); opacity: 0; } 100% { transform: translate(-50%, -50%) scale(1); opacity: 1; } }
+@keyframes avisoSai { to { transform: translate(-50%, -70%) scale(.94); opacity: 0; } }
+.carta-voando { transform-origin: 50% 50%; box-shadow: 0 14px 30px rgba(0,0,0,.4); }
+/* o fim em sequência (v0.14): as linhas do prêmio entram uma depois da outra */
+.recompensas > .revela { animation: revela .38s cubic-bezier(.2,.9,.3,1.2) both; animation-delay: calc(150ms + var(--k, 0) * 140ms); }
+@keyframes revela { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.fim-quase { display: block; margin-top: 4px; font-family: var(--f-corpo); font-size: 15px; font-weight: 800; color: var(--mel-escuro); }
+.recompensas .meta-prox { font-size: 13px; color: var(--tinta-suave); border-top: 1px dashed rgba(58,42,46,.18); padding-top: 8px; }
+.recompensas .meta-prox span:last-child { color: var(--tinta); }
+
+/* ---------- tarefas do dia (v0.14) ---------- */
+.inicio-tarefas { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 40px; padding: 6px 14px; border: 0; border-radius: 14px; cursor: pointer;
+  background: rgba(255,243,226,.08); box-shadow: inset 0 0 0 1.5px rgba(255,243,226,.16); color: var(--texto, #fff3e2); font: inherit; font-size: 14px; font-weight: 700; }
+.inicio-tarefas[hidden] { display: none; }
+.inicio-tarefas .tf-titulo { flex: 1; text-align: left; }
+.tf-pontos { display: inline-flex; gap: 5px; }
+.tf-pontos i { width: 10px; height: 10px; border-radius: 50%; box-shadow: inset 0 0 0 2px rgba(255,243,226,.45); }
+.tf-pontos i.feita { background: var(--passo); box-shadow: none; }
+.tf-resta { display: inline-flex; align-items: center; gap: 4px; font-variant-numeric: tabular-nums; color: #ffe3a3; }
+.tf-resta .ico-feita { width: 16px; height: 16px; }
+.ico-feita { width: 1.1em; height: 1.1em; vertical-align: -0.2em; stroke: var(--passo); stroke-width: 3; fill: none; }
+.lista-tarefas { list-style: none; margin: 0 0 12px; padding: 0; display: grid; gap: 8px; }
+.lista-tarefas li { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 14px; background: var(--papel-2); }
+.lista-tarefas li.feita { opacity: .7; }
+.lista-tarefas li.feita b { text-decoration: line-through; text-decoration-thickness: 1.5px; }
+.tf-marca { flex: none; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; box-shadow: inset 0 0 0 2px rgba(58,42,46,.25); }
+.lista-tarefas li.feita .tf-marca { box-shadow: inset 0 0 0 2px var(--passo); }
+.tf-txt { flex: 1; display: grid; gap: 4px; font-size: 15px; }
+.tf-txt small { font-size: 12px; color: var(--tinta-suave); }
+.tf-premio { flex: none; display: inline-flex; align-items: center; gap: 4px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.recompensas .tarefa-feita { color: var(--tinta); }
+.recompensas .tarefa-feita span:last-child { color: var(--mel-escuro); }
+.recompensas .tarefa-feita { flex-wrap: nowrap; }
+.recompensas .tarefa-feita span:first-child { flex: 1; min-width: 0; }
+
 </style>
 </head>
 <body>
@@ -1386,6 +1457,7 @@ button.inicio-perfil:active { transform: translateY(1px); }
     <div class="inicio-jogar" id="inicioJogar">
       <button class="btn btn-mel inicio-principal" data-inicio="jogar">Jogar</button>
       <div class="inicio-linha"><button class="btn btn-papel" data-inicio="online">Online<span class="ponto-online" id="pontoInicio" hidden></span></button></div>
+      <button class="inicio-tarefas" id="inicioTarefas" data-inicio="tarefas" hidden></button>
     </div>
     <div class="inicio-rivais" id="inicioRivais" hidden>
       <h2>Escolha o rival</h2>
@@ -1613,6 +1685,14 @@ button.inicio-perfil:active { transform: translateY(1px); }
     </div>
   </div>
 
+  <div class="janela" id="janelaTarefas" hidden>
+    <div class="caixa" role="dialog" aria-modal="true" aria-labelledby="tarefasTitulo">
+      <div class="deck-topo"><h2 id="tarefasTitulo">Tarefas do dia</h2></div>
+      <div id="tarefasConteudo"></div>
+      <button class="btn btn-papel" id="btnFecharTarefas">Fechar</button>
+    </div>
+  </div>
+
   <div class="janela" id="janelaLoja" hidden>
     <div class="caixa larga" role="dialog" aria-modal="true" aria-labelledby="lojaTitulo">
       <div class="deck-topo"><h2 id="lojaTitulo">Loja</h2><span class="topo-dir"><span class="carteira" style="cursor:default"><span class="moeda" aria-hidden="true"></span><span id="saldoLoja">0</span></span><button class="btn-ajuda" id="btnComoGanhar" aria-label="Como ganhar moedas" title="Como ganhar moedas">?</button></span></div>
@@ -1784,6 +1864,64 @@ button.inicio-perfil:active { transform: translateY(1px); }
     const novo = elo(rating, RATING_RIVAL[nivel], venceu ? 1 : 0);
     return { moedas, ratingAntes: rating, pico, rating: novo, picoNovo: Math.max(pico, novo) };
   }
+  // ---------- tarefas do dia (v0.14) ----------
+  // Três tarefas leves por dia, as mesmas para todo mundo (sorteadas pela data), uma de cada grupo: uma que sai jogando,
+  // uma que pede um lance comum e uma que pede um lance melhor. Cada uma paga MOEDAS_TAREFA, **também na derrota**: as
+  // moedas só da vitória deixavam quem perde muito sem nada (docs/progressao.md §7). E a primeira vitória do dia que
+  // rende moedas rende em dobro. As tarefas contam o que a partida mostra (o resumo abaixo), então valem igual contra os
+  // rivais do jogo e no online; quem desiste ou perde por desistência não avança.
+  const TAREFAS = {
+    jogar: { txt: 'Jogue 2 partidas', alvo: 2, conta: () => 1 },
+    pontos: { txt: 'Marque 20 pontos', alvo: 20, conta: r => r.pts },
+    disparos: { txt: 'Dispare 5 correntes', alvo: 5, conta: r => r.disparos },
+    vencer: { txt: 'Vença uma partida', alvo: 1, conta: r => (r.venceu ? 1 : 0) },
+    corrente4: { txt: 'Dispare uma corrente de 4', alvo: 1, conta: r => (r.maior >= 4 ? 1 : 0) },
+    salvo: { txt: 'Salve uma corrente (Bolso ou Âncora)', alvo: 1, conta: r => r.salvos },
+    corrente5: { txt: 'Dispare uma corrente de 5', alvo: 1, conta: r => (r.maior >= 5 ? 1 : 0) },
+    bloqueio: { txt: 'Faça um Bloqueio', alvo: 1, conta: r => r.bloqueios },
+  };
+  const GRUPOS_TAREFA = [['jogar', 'pontos', 'disparos'], ['vencer', 'corrente4', 'salvo'], ['corrente5', 'bloqueio']];
+  const MOEDAS_TAREFA = 15;
+  function tarefasDoDia(dia) {
+    let h = 2166136261;
+    for (const ch of String(dia)) h = Math.imul(h ^ ch.charCodeAt(0), 16777619) >>> 0;
+    return GRUPOS_TAREFA.map((g, i) => g[(h >>> (i * 5)) % g.length]);
+  }
+  // o estado do dia (guardado no aparelho ou na conta); um estado de outro dia (ou estragado) vira o do dia novo
+  function estadoTarefas(est, dia) {
+    if (est && est.dia === dia && Array.isArray(est.ids) && Array.isArray(est.feitas) && est.prog && typeof est.prog === 'object') return est;
+    return { dia, ids: tarefasDoDia(dia), prog: {}, feitas: [], vitoria: false };
+  }
+  // o que um jogador fez na partida, para as tarefas
+  function resumoTarefas(j, p) {
+    const s = j.stats[p], ms = j.momentos.filter(m => m.p === p);
+    return { venceu: j.vencedor === p, pts: j.pts[p], maior: s.maior || 0, disparos: s.disp || 0,
+      salvos: ms.filter(m => m.simbolo === '❀').length, bloqueios: ms.filter(m => m.simbolo === '✦').length };
+  }
+  // o resumo que chega do aparelho (partidas contra os rivais do jogo): números inteiros dentro do possível, ou null
+  function resumoValido(r) {
+    if (!r || typeof r !== 'object' || typeof r.venceu !== 'boolean') return null;
+    const n = (x, max) => (Number.isInteger(x) && x >= 0 && x <= max ? x : null);
+    const v = { venceu: r.venceu, pts: n(r.pts, 40), maior: n(r.maior, LIM), disparos: n(r.disparos, 40), salvos: n(r.salvos, 40), bloqueios: n(r.bloqueios, 40) };
+    return Object.values(v).some(x => x === null) ? null : v;
+  }
+  // avança as tarefas com uma partida: devolve o estado novo, as que fecharam agora e as moedas delas
+  function avancarTarefas(est, dia, r) {
+    const e = estadoTarefas(est, dia), novo = { ...e, prog: { ...e.prog }, feitas: e.feitas.slice() }, concluidas = [];
+    if (r) for (const id of novo.ids) {
+      const t = TAREFAS[id]; if (!t || novo.feitas.includes(id)) continue;
+      novo.prog[id] = Math.min(t.alvo, (novo.prog[id] || 0) + Math.max(0, t.conta(r) || 0));
+      if (novo.prog[id] >= t.alvo) { novo.feitas.push(id); concluidas.push({ id, txt: t.txt, moedas: MOEDAS_TAREFA }); }
+    }
+    return { estado: novo, concluidas, moedas: concluidas.length * MOEDAS_TAREFA };
+  }
+  // a primeira vitória do dia que rende moedas rende em dobro (moedas: o objeto de moedasDaVitoria; mexe nele e no estado)
+  function dobrarPrimeiraVitoria(est, moedas) {
+    if (!moedas || !(moedas.total > 0) || est.vitoria) return false;
+    moedas.total *= 2; moedas.dobro = true; est.vitoria = true;
+    return true;
+  }
+
   // experiência: sobe sempre (vitória ou derrota); os níveis dão presentes cosméticos (conta: {xp, dados, icones, mesas})
   const xpDaPartida = (venceu, nMomentos) => (venceu ? 20 : 10) + Math.min(15, nMomentos * 3);
   function ganharXp(conta, ganho) {
@@ -2221,6 +2359,7 @@ button.inicio-perfil:active { transform: translateY(1px); }
     PONTOS, LIM, NA_MESA, REL, CARTAS, ORDEM, pedagioDe, deckValido, rels, sinc, frente, encaixa, facesQueEncaixam, opcoes, pontos, harmonica,
     GRATIS, PRECO_CARTA, CATALOGO, NIVEIS, PRESENTES, RATING_RIVAL, TETO_MOEDAS, BASE_MOEDAS, TITULOS, tituloDe, nivelDe,
     METAS, META_PADRAO, metaValida, moedasDaVitoria, ajusteRatingOnline, elo, premioSolo, xpDaPartida, ganharXp, precoDe,
+    TAREFAS, MOEDAS_TAREFA, tarefasDoDia, estadoTarefas, resumoTarefas, resumoValido, avancarTarefas, dobrarPrimeiraVitoria,
     criarPartida, usarRng, encaixaP, destinos, destinosValidos, seguro, bolsoGarante, marcadoContra, valorAoPegar, seguroDado,
     usavel, armadilhasOcultas, podeUsar, usarCarta,
     tirar, pegar, pegarPara, destinosDoDado, colocar, dispensarSegundo, disparar, segurar, proximo, terminar, desistir, aplicar, visaoDe,
@@ -3152,6 +3291,23 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     });
   }
 
+  // a carta jogada sai da mão: uma cópia dela voa até (x, y), cresce, gira de leve e some onde o aviso vai aparecer
+  function lancarCarta(deEl, x, y) {
+    if (!cfg.animacoes || !deEl) return Promise.resolve();
+    const r = deEl.getBoundingClientRect(); if (!r.width) return Promise.resolve();
+    const v = deEl.cloneNode(true);
+    v.className += ' carta-voando'; v.removeAttribute('data-carta'); v.setAttribute('aria-hidden', 'true');
+    Object.assign(v.style, { position: 'fixed', left: r.left + 'px', top: r.top + 'px', width: r.width + 'px', height: r.height + 'px', margin: 0, zIndex: 58, pointerEvents: 'none' });
+    document.body.appendChild(v);
+    const dx = x - (r.left + r.width / 2), dy = y - (r.top + r.height / 2);
+    const anim = v.animate([
+      { transform: 'translate(0,0) scale(1) rotate(0deg)', opacity: 1 },
+      { transform: `translate(${dx * 0.6}px, ${dy * 0.6 - 18}px) scale(1.5) rotate(-7deg)`, opacity: 1, offset: 0.6 },
+      { transform: `translate(${dx}px, ${dy}px) scale(1.25) rotate(0deg)`, opacity: 0 },
+    ], { duration: 420, easing: 'cubic-bezier(.3,.7,.3,1)' });
+    return new Promise(res => { anim.onfinish = () => { v.remove(); res(); }; setTimeout(res, 300); });
+  }
+
   // texto que sobe ("+4", "Bloqueio!")
   function texto(alvo, txt, classe = '') {
     if (!cfg.animacoes) return;
@@ -3164,21 +3320,26 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
   }
 
   // chamada grande de bom momento, uma de cada vez
-  const fila = []; let mostrando = false;
-  // op.ico: imagem/ícone ao lado do título; op.ms: quanto tempo fica (o padrão é curto, para festejar); op.classe: classe extra
+  const fila = []; let mostrando = false, atual = null, vez = 0;
+  // op.ico: imagem/ícone ao lado do título; op.ms: quanto tempo fica (o padrão é curto, para festejar); op.classe: classe extra;
+  // op.furar: passa na frente de tudo (a fila é descartada e a chamada da tela sai na hora), para o fim da partida
   function chamada(titulo, sub = '', tipo = '', op = {}) {
+    if (op.furar) { fila.length = 0; if (atual) { atual.remove(); atual = null; } mostrando = false; }
     fila.push({ titulo, sub, tipo, ...op });
     if (!mostrando) proxima();
   }
   function proxima() {
-    const c = fila.shift(); if (!c) { mostrando = false; return; }
+    const c = fila.shift(); if (!c) { mostrando = false; atual = null; return; }
     mostrando = true;
-    const el = document.createElement('div');
+    const el = document.createElement('div'), minha = ++vez;
     el.className = 'chamada ' + c.tipo + (c.classe ? ' ' + c.classe : '') + (cfg.animacoes ? '' : ' sem-anim');
     el.setAttribute('role', 'status');
     el.innerHTML = `<b${c.ico ? ' class="com-ico"' : ''}>${c.ico ? `<span class="ch-ico">${c.ico}</span>` : ''}<span>${c.titulo}</span></b>${c.sub ? `<span>${c.sub}</span>` : ''}`;
+    if (c.y != null) el.style.top = c.y + 'px';   // op.y: onde fica o meio da chamada (o aviso da carta mora entre o painel e a Mesa)
     document.body.appendChild(el);
-    setTimeout(() => { el.classList.add('saindo'); setTimeout(() => { el.remove(); proxima(); }, cfg.animacoes ? 260 : 0); }, c.ms || (cfg.animacoes ? 1150 : 1400));
+    atual = el;
+    // "minha": uma chamada que furou a fila já tomou o lugar desta; o relógio dela não chama a próxima
+    setTimeout(() => { if (minha !== vez) return; el.classList.add('saindo'); setTimeout(() => { if (minha !== vez) return; el.remove(); proxima(); }, cfg.animacoes ? 260 : 0); }, c.ms || (cfg.animacoes ? 1150 : 1400));
   }
 
   function tremer(el, forca = 1) {
@@ -3222,6 +3383,9 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     setTimeout(() => { if (dicaAtual !== el) return; el.classList.add('saindo'); setTimeout(() => { el.remove(); if (dicaAtual === el) dicaAtual = null; }, cfg.animacoes ? 260 : 0); }, ms);
   }
 
+  // tira a dica do guia da tela (o fim da partida não divide a tela com uma explicação)
+  function limparDica() { if (dicaAtual) { dicaAtual.remove(); dicaAtual = null; } }
+
   // a contagem do disparo: um selo sobre a corrente que sobe junto com os dados que acendem (+1, +2, +4...) e fecha
   // no valor de verdade. passos: [{ ms, txt }]; o último é o valor final. Devolve quando o último passo aparece
   function contagem(alvo, passos, classe = '') {
@@ -3242,7 +3406,23 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     });
   }
 
-  window.Fx = { cfg, faiscas, confete, poeira, voar, texto, chamada, dica, contagem, tremer, pulsar, contar, centro, orbes, clarao };
+  // o impacto (hit-stop): antes do estouro de um lance grande, o tempo para por um instante. O alvo incha e fica
+  // parado, a borda da tela escurece um pouco, e só então vem a festa. Devolve quando a pausa acaba
+  function impacto(alvo, ms = 90, forca = 1) {
+    if (!cfg.animacoes || !alvo) return Promise.resolve();
+    const s = 1 + 0.06 * forca;
+    alvo.animate([{ transform: 'scale(1)' }, { transform: `scale(${s})`, offset: 0.25 }, { transform: `scale(${s})`, offset: 0.7 }, { transform: 'scale(1)' }],
+      { duration: ms + 160, easing: 'cubic-bezier(.2,.9,.3,1)' });
+    if (cfg.particulas) {
+      const v = document.createElement('div');
+      v.className = 'impacto'; v.setAttribute('aria-hidden', 'true');
+      document.body.appendChild(v);
+      v.animate([{ opacity: 0 }, { opacity: Math.min(1, 0.7 * forca), offset: 0.3 }, { opacity: 0 }], { duration: ms + 320, easing: 'ease-out' }).onfinish = () => v.remove();
+    }
+    return new Promise(res => setTimeout(res, ms));
+  }
+
+  window.Fx = { cfg, faiscas, confete, poeira, voar, texto, chamada, dica, contagem, tremer, pulsar, contar, centro, orbes, clarao, impacto, limparDica, lancarCarta };
 })();
 
 </script>
@@ -4086,6 +4266,9 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     gravarLocal();
     if (st.sessao && Conta.sincronizar) Conta.sincronizar();   // com conta, decks e recordes vão para o servidor
   };
+  // as tarefas do dia (shared/regras.js): o dia é o do servidor (UTC), para o aparelho e a conta contarem o mesmo dia
+  const hojeUTC = () => new Date().toISOString().slice(0, 10);
+  const tarefasHoje = () => R.estadoTarefas(st.conta.tarefas, hojeUTC());
   const armadilhasLiberadas = () => st.pref.liberar || st.rec.partidas - (st.guia.jogou ? 1 : 0) >= 1;
   const travada = c => CARTAS[c].tipo === 'armadilha' && !armadilhasLiberadas();
   const possui = c => st.conta.cartas.includes(c);
@@ -4248,21 +4431,30 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
       const liberouAgora = !liberadasAntes && armadilhasLiberadas();
       if (p === 0) { r.vitorias++; r.seq++; } else r.seq = 0;
       if (r.seq > r.melhorSeq) { r.melhorSeq = r.seq; if (r.seq >= 2) j.recordes.push(`Melhor sequência: ${r.seq} vitórias seguidas`); }
-      if (s.maiorDisp > r.maiorDisparo) { r.maiorDisparo = s.maiorDisp; j.recordes.push(`Maior disparo: +${s.maiorDisp}`); }
-      if (s.maior > r.maiorCorrente) { r.maiorCorrente = s.maior; j.recordes.push(`Maior corrente: ${s.maior}`); }
+      // o recorde sempre é guardado, mas só é festejado quando diz alguma coisa: nas primeiras partidas, qualquer
+      // disparo "batia o recorde" ("Novo: Maior disparo: +1" não é notícia)
+      const notavel = (x, min) => r.partidas > 5 || x >= min;
+      if (s.maiorDisp > r.maiorDisparo) { r.maiorDisparo = s.maiorDisp; if (notavel(s.maiorDisp, 4)) j.recordes.push(`Maior disparo: +${s.maiorDisp}`); }
+      if (s.maior > r.maiorCorrente) { r.maiorCorrente = s.maior; if (notavel(s.maior, 5)) j.recordes.push(`Maior corrente: ${s.maior}`); }
       if (liberouAgora) j.recordes.push('Armadilhas liberadas no deck!');
       // moedas (só vitórias, só abaixo do teto de rating do rival), rating e experiência: regras em shared/regras.js
       const c = st.conta, ps = R.premioSolo({ rating: c.rating, pico: c.pico }, { nivel: j.nivel, venceu: p === 0, margem: j.pts[0] - j.pts[1], rodadas: j.rodada, meta: j.meta });
+      // as tarefas do dia avançam (quem desistiu não avança) e a primeira vitória do dia que rende moedas dobra; com conta,
+      // o servidor refaz a conta e manda a dele (Conta.relatarSolo)
+      const tf = R.avancarTarefas(tarefasHoje(), hojeUTC(), j.desistencia === 0 ? null : R.resumoTarefas(j, 0));
+      R.dobrarPrimeiraVitoria(tf.estado, ps.moedas);
+      c.tarefas = tf.estado;
       if (ps.moedas) c.moedas += ps.moedas.total;
+      c.moedas += tf.moedas;
       c.rating = ps.rating; c.pico = ps.picoNovo;
       const xp = R.ganharXp(c, j.desistencia === 0 ? 0 : R.xpDaPartida(p === 0, j.momentos.filter(m => m.p === 0).length));
-      j.premio = { moedas: ps.moedas, ratingAntes: ps.ratingAntes, pico: ps.pico, rating: c.rating, ...xp };
+      j.premio = { moedas: ps.moedas, ratingAntes: ps.ratingAntes, pico: ps.pico, rating: c.rating, ...xp, tarefas: { concluidas: tf.concluidas, moedas: tf.moedas } };
       salvar(); aplicarPrefs();
       falar(p === 1 ? 'venci' : 'perdi');
       Conta.relatarSolo && Conta.relatarSolo(j);
     }
     render();
-    setTimeout(mostrarFim, st.pref.animacoes ? 1800 : 600);
+    setTimeout(mostrarFim, st.pref.animacoes ? 1800 + esperaFesta() : 600);
   }
 
   // ---------- o rival (a mesma lógica do simulador; não vê qual armadilha você armou) ----------
@@ -4406,13 +4598,34 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     if (jogo) render();
   }
   const mudou = id => !!(marcaMudanca && marcaMudanca.ids.includes(id) && Date.now() < marcaMudanca.ate);
+  // a presença do rival: antes de pegar, ele olha a Mesa. Cada olhada acende um dado de leve (com a Diana, a patinha
+  // passa por cima dele); a Diana, impulsiva, olha um dado no máximo, e às vezes nenhum; a Dona Coruja olha dois, e
+  // de preferência os que servem à sua corrente: ela lê a Mesa. As olhadas tomam o lugar de parte da espera de antes,
+  // então a vez do rival não fica mais longa. Devolve false se a partida mudou no meio
+  async function olharMesa(p, escolhido, tok) {
+    const j = jogo;
+    if (!st.pref.animacoes) return true;
+    const outros = j.mesa.map((d, i) => i).filter(i => i !== escolhido);
+    const servemAoOutro = i => j.cor[1 - p].length && encaixa(j.cor[1 - p], valorAoPegar(1 - p, j.mesa[i]));
+    const coruja = j.nivel === 'esperto';
+    const n = !outros.length ? 0 : coruja ? Math.min(2, outros.length) : Math.random() < 0.55 ? 1 : 0;
+    const ordem = outros.sort((a, b) => (coruja ? servemAoOutro(b) - servemAoOutro(a) : 0) || Math.random() - 0.5).slice(0, n);
+    for (const i of ordem) {
+      if (!j.mesa[i]) continue;
+      j.olhando = j.mesa[i].id; render();
+      Som.tocar('passar', { i });
+      await espera(coruja ? 380 : 260); if (tok !== jogo.token) return false;
+    }
+    j.olhando = null;
+    return true;
+  }
   async function talvezAutomato() {
     const j = jogo;
     if (!j || j.modo !== 'bot' || j.fase === 'fim' || humano(j.vez) || j.pensando || j.intro || inicioAberto()) return;
     const tok = j.token, p = j.vez;
     j.pensando = true; render();
     if (j.fase === 'pegar') {
-      await espera(800); if (tok !== jogo.token) return;
+      await espera(st.pref.animacoes ? 450 : 800); if (tok !== jogo.token) return;
       if (window.Rolagem) { await Rolagem.esperar(); if (tok !== jogo.token) return; }   // escolhe com os dados já assentados
       for (const u of automatoCartas(p)) {
         if (!podeUsar(p, u.carta).ok || (CARTAS[u.carta].alvo && !j.mesa[u.idx])) continue;
@@ -4428,7 +4641,9 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
       }
       for (;;) {
         const plano = automatoEscolhe(p);
+        if (!(await olharMesa(p, plano.idx, tok))) return;
         j.destaque = j.mesa[plano.idx].id; render();
+        if (j.nivel === 'aprendiz' && st.pref.animacoes) Som.tocar('quique', { forca: 3, x: (plano.idx - 2) * 0.3 });   // a patinha bate no dado
         await espera(520); if (tok !== jogo.token) return;
         j.destaque = null; j.pensando = false;
         const v = tirar(p, plano.idx);
@@ -4686,11 +4901,22 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     return `<div class="cartas">${html}</div><div class="estados">${estados}</div>`;
   }
 
+  // quando a festa do último disparo acaba (cascata, impacto e os pontos chegando ao placar): o disparo que fecha a
+  // partida termina de contar antes de a vitória estourar, e a tela do fim espera por ele
+  let fimDoDisparo = 0;
+  const esperaFesta = () => Math.max(0, Math.round(fimDoDisparo - performance.now()));
   document.documentElement.style.setProperty('--passo-disparo', Math.round(Som.PASSO_DISPARO * 1000) + 'ms');   // a cascata do disparo (css)
   const inicioFx = new Map();   // id do efeito (disparo, ruptura) -> quando ele apareceu na tela
-  const placarSegurado = new Map();   // jogador -> o número que o placar mostra enquanto os pontos do disparo voam
+  const placarSegurado = new Map();
+  // a patinha da Diana sobre o dado que ela olha ou vai pegar (a mesma pelagem da pata da tela inicial)
+  const PATINHA = `<svg class="patinha" viewBox="0 0 40 40" aria-hidden="true"><ellipse cx="20" cy="25" rx="10" ry="8.5" fill="#f8f6f2" stroke="#3a2a2e" stroke-width="3"/><ellipse cx="9" cy="13" rx="4.2" ry="5" fill="#f8f6f2" stroke="#3a2a2e" stroke-width="2.6"/><ellipse cx="20" cy="9" rx="4.4" ry="5.2" fill="#f8f6f2" stroke="#3a2a2e" stroke-width="2.6"/><ellipse cx="31" cy="13" rx="4.2" ry="5" fill="#f8f6f2" stroke="#3a2a2e" stroke-width="2.6"/><ellipse cx="20" cy="26" rx="5" ry="3.6" fill="#f3b8c4"/></svg>`;   // jogador -> o número que o placar mostra enquanto os pontos do disparo voam
   // comDecisao: a decisão da vez (destinos, disparar ou segurar...) entra no painel no lugar da fileira de cartas,
   // logo abaixo da corrente que ela afeta; o tabuleiro não ganha barra solta e não se mexe
+  // o ponto de partida: quanto um disparo de L dados vale para p e se ele fecha a partida. "porUm": a corrente de p está a
+  // um dado de fechar (com o próximo elo, o disparo alcança a meta), e é aí que vale a pena olhar a Mesa dele
+  const valeCom = (p, L) => L < 3 ? 0 : pontos(Math.min(L, LIM)) + (jogo.sobre[p] && L >= 4 ? 2 : 0);
+  const disparoVence = p => jogo.cor[p].length >= 3 && jogo.pts[p] + valeCom(p, jogo.cor[p].length) >= jogo.meta;
+  const porUm = p => jogo.fase !== 'fim' && jogo.cor[p].length >= 2 && jogo.pts[p] + valeCom(p, jogo.cor[p].length + 1) >= jogo.meta;
   function painel(p, comDecisao = false) {
     const j = jogo, n = nomes(), daVez = j.vez === p && j.fase !== 'fim';
     const fx = j.fx && j.fx.p === p ? j.fx : null;
@@ -4727,7 +4953,7 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
         ${bolsoHTML(p)}<span class="placar"><b data-placar="${p}">${placarSegurado.has(p) ? placarSegurado.get(p) : j.pts[p]}</b><small>/${j.meta}</small></span></div>
       <div class="barra" role="progressbar" aria-valuemin="0" aria-valuemax="${j.meta}" aria-valuenow="${j.pts[p]}" aria-label="Pontos de ${n[p]}"><i style="width:${pct}%"></i>${prev ? `<span class="prev" style="left:${pct}%;width:${prev}%"></span>` : ''}</div>
       ${(() => { const alvo = p === j.vez && !fx && dadoEscolhido(j) >= 0 ? previaAlvos(p, dadoEscolhido(j)).corrente : null;
-        return `<div class="corrente${fx ? ' fx-' + fx.tipo : L >= 5 ? ' fervendo' : L >= 4 ? ' quente' : ''}${alvo ? ` alvo-dado alvo-${alvo.cls}" data-alvo-dado="corrente" role="button" tabindex="0" aria-label="Corrente: ${alvo.txt}` : ''}" style="--fase:-${Math.round(performance.now() % 1800)}ms;--fx-t:-${fxT}ms">${slots}${alvo ? `<span class="alvo-chip">${alvo.txt}</span>` : ''}</div>`; })()}
+        return `<div class="corrente${fx ? ' fx-' + fx.tipo : L >= 5 ? ' fervendo' : L >= 4 ? ' quente' : ''}${!fx && (disparoVence(p) || porUm(p)) ? ' por-um' : ''}${alvo ? ` alvo-dado alvo-${alvo.cls}" data-alvo-dado="corrente" role="button" tabindex="0" aria-label="Corrente: ${alvo.txt}` : ''}" style="--fase:-${Math.round(performance.now() % 1800)}ms;--fx-t:-${fxT}ms;--n:${cor.length}">${slots}${alvo ? `<span class="alvo-chip">${alvo.txt}</span>` : ''}</div>`; })()}
       ${st.pref.dicas && !cartaEscolhida(j, p) ? `<div class="info"><span>Corrente <b>${L}</b>/${LIM}</span><span>${valeAgora}${seCrescer}</span></div>` : ''}
       ${comDecisao && !cartaEscolhida(j, p) ? '<div class="decisao-slot"></div>' : cartasHTML(p) + (comDecisao ? '<div class="decisao-slot"></div>' : '')}
     </div>`;
@@ -4758,10 +4984,11 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
       }
       if (j.fase === 'ajuste' && j.ajusteIdx === i) tags = `<span class="tag previa">ajustar</span>`;
       const serveRival = dicas && ele.length && encaixa(ele, valorAoPegar(1 - p, d)) && j.fase !== 'fim';
-      const cls = ['pega', d.novo ? 'novo' : '', window.Rolagem && Rolagem.ativo(d.id) ? 'rolando' : '', window.Rolagem && Rolagem.pousando(d.id) ? 'pousando' : '', !salvo && j.fase === 'pegar' && dicas ? 'nao-cabe' : '', j.sel === d.id || (j.fase === 'ajuste' && j.ajusteIdx === i) ? 'escolhido' : '', j.destaque === d.id ? 'destaque' : '', j.virando === d.id ? 'virando' : '', mudou(d.id) ? 'mudou' : ''].join(' ');
-      const rotulo = `${j.fase === 'alvo' ? 'Escolher' : 'Pegar'} ${d.v}${contra ? `, chega virado como ${vv}` : ''}${cabe ? (r.length ? ', ' + r.map(k => REL[k].nome).join(' e ') : '') : salvo ? ', só pelo Bolso' : ', rompe a corrente'}${serveRival ? ', serve ao rival' : ''}${marcado !== null ? ', marcado com Espelho' : ''}`;
+      const fechaRival = serveRival && porUm(1 - p);
+      const cls = ['pega', d.novo ? 'novo' : '', window.Rolagem && Rolagem.ativo(d.id) ? 'rolando' : '', window.Rolagem && Rolagem.pousando(d.id) ? 'pousando' : '', !salvo && j.fase === 'pegar' && dicas ? 'nao-cabe' : '', j.sel === d.id || (j.fase === 'ajuste' && j.ajusteIdx === i) ? 'escolhido' : '', j.destaque === d.id ? 'destaque' : '', j.olhando === d.id ? 'olhado' : '', j.virando === d.id ? 'virando' : '', mudou(d.id) ? 'mudou' : ''].join(' ');
+      const rotulo = `${j.fase === 'alvo' ? 'Escolher' : 'Pegar'} ${d.v}${contra ? `, chega virado como ${vv}` : ''}${cabe ? (r.length ? ', ' + r.map(k => REL[k].nome).join(' e ') : '') : salvo ? ', só pelo Bolso' : ', rompe a corrente'}${fechaRival ? ', dá a vitória ao rival' : serveRival ? ', serve ao rival' : ''}${marcado !== null ? ', marcado com Espelho' : ''}`;
       return `<button class="${cls}" style="--i:${i}" data-i="${i}" data-id="${d.id}" ${ativo ? '' : 'disabled'} aria-label="${rotulo}" aria-pressed="${j.sel === d.id || (j.fase === 'ajuste' && j.ajusteIdx === i)}">
-        <span class="kbd">${i + 1}</span><span class="face">${dadoHTML(d.v, skinMesa())}${mudou(d.id) && marcaMudanca.antes != null ? `<span class="era">era ${marcaMudanca.antes}</span>` : ''}${serveRival ? '<span class="alvo-rival"></span>' : ''}${marcado !== null ? `<span class="marca-esp dono${marcado}" title="Marcado com Espelho">${CARTAS.espelho.ico}</span>` : ''}</span><span class="tags">${tags}</span></button>`;
+        <span class="kbd">${i + 1}</span><span class="face">${dadoHTML(d.v, skinMesa())}${mudou(d.id) && marcaMudanca.antes != null ? `<span class="era">era ${marcaMudanca.antes}</span>` : ''}${serveRival ? `<span class="alvo-rival${fechaRival ? ' fecha' : ''}"></span>` : ''}${j.modo === 'bot' && j.nivel === 'aprendiz' && (j.olhando === d.id || j.destaque === d.id) ? PATINHA : ''}${marcado !== null ? `<span class="marca-esp dono${marcado}" title="Marcado com Espelho">${CARTAS.espelho.ico}</span>` : ''}</span><span class="tags">${tags}</span></button>`;
     }).join('');
   }
 
@@ -4853,6 +5080,8 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
       const L = eu.length, rk = risco(p), vale = pontos(L) + (j.sobre[p] && L >= 4 ? 2 : 0);
       let nivel, txt;
       const ocultas = j.armada[1 - p] && j.armada[1 - p] !== 'espelho' ? armadilhasOcultas(1 - p) : [];
+      // o botão diz "Disparar e vencer" só quando é certo; se a carta virada pode ser a Interferência, "pode fechar"
+      const talvez = j.pts[p] + vale >= j.meta, venceJa = talvez && !(ocultas.includes('interferencia') && L >= 4 && j.pts[p] >= j.pts[1 - p] && j.pts[p] + vale - 1 < j.meta);
       if (j.pts[p] + vale >= j.meta) { nivel = 'vence'; txt = `Disparar agora vence a partida${ocultas.includes('interferencia') && L >= 4 && j.pts[p] >= j.pts[1 - p] && j.pts[p] + vale - 1 < j.meta ? ', se a carta virada do rival não for a Interferência' : ''}.`; }
       else if (rk.bolso) { nivel = 'baixo'; txt = j.bolso[p] === null ? 'Seu Bolso está vazio: na próxima vez você sempre pode guardar o dado. Segurar não rompe.' : `O ${j.bolso[p]} do seu Bolso sincroniza com o seu ${frente(eu)}: segurar não rompe.`; }
       else if (rk.n >= 2) {
@@ -4871,7 +5100,7 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
       return `<div class="status">${quem}: corrente de <b>${L}</b>. Disparar ou segurar?</div>
         ${ajudas ? `<div class="risco ${nivel}"><span>${txt}</span></div>${extra}` : ''}
         <div class="botoes">
-          <button class="btn btn-duplo btn-mel" data-acao="disparar"><span>Disparar</span><small>+${vale} agora</small></button>
+          <button class="btn btn-duplo btn-mel${venceJa ? ' vence' : ''}" data-acao="disparar"><span>${venceJa ? 'Disparar e vencer' : 'Disparar'}</span><small>+${vale} agora${venceJa ? '' : talvez ? ' · pode fechar' : ''}</small></button>
           <button class="btn btn-duplo btn-papel" data-acao="segurar"><span>Segurar</span><small>${L + 1 <= LIM ? `com ${L + 1} vale +${pontos(L + 1)}` : 'continuar'}</small></button>
           ${sobreBtn}
         </div>`;
@@ -5011,7 +5240,10 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     const som = document.getElementById('btnSom'); som.setAttribute('aria-pressed', String(somLigado)); som.classList.toggle('sem-som', !somLigado);
     const n = nomes();
     const linha = l => `${l.p === null ? '' : `<span class="cor${l.p}">${n[l.p]}</span> `}${l.txt}`;
-    const instrucao = humano(j.vez) ? instrucaoCarta(j) || instrucaoDado(j) : '', ticker = document.getElementById('ticker');
+    // o rival a um dado de fechar a partida: a linha da Mesa diz quais dados dão isso a ele (os do "!"), no lugar do último lance
+    const fecha = st.pref.dicas && j.modo !== 'local' && humano(j.vez) && j.fase === 'pegar' && mesa.querySelector('.alvo-rival.fecha')
+      ? `<span class="cor1">${n[1]}</span> fecha a partida com um dado marcado com <b class="fecha-txt">!</b>` : '';
+    const instrucao = humano(j.vez) ? instrucaoCarta(j) || instrucaoDado(j) || fecha : '', ticker = document.getElementById('ticker');
     ticker.innerHTML = instrucao || (j.log[0] ? linha(j.log[0]) : '');
     ticker.classList.toggle('instrucao', !!instrucao);
     mostrarCorrenteNaDecisao(j);
@@ -5052,6 +5284,25 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
 
   // ---------- eventos → som, efeitos e recompensas ----------
   const qs = s => document.querySelector(s);
+  // o aviso da carta do rival (v0.14): a carta sai da mão dele e voa até o vão entre o painel dele e a Mesa, e o aviso,
+  // mais baixo que as chamadas de festa, aparece ali. Antes ele ficava no alto da tela, por cima do painel do rival:
+  // escondia justamente a carta, a corrente e o Bolso que a carta tinha acabado de mexer
+  function avisoCarta(p, c, titulo, sub, ico) {
+    const j = jogo, pain = qs(`#pj${p} .jogador`), mesaEl = document.getElementById('mesa');
+    const tipo = p === 1 && j.modo !== 'local' ? 'rival' : 'suave';
+    let y = null;
+    if (pain && mesaEl) {
+      const a = pain.getBoundingClientRect(), b = mesaEl.getBoundingClientRect();
+      if (b.top > a.bottom - 20 && b.left < a.right && b.right > a.left) y = Math.round((a.bottom + b.top) / 2);   // um em cima do outro: no vão entre os dois
+    }
+    // no vão cabe só a carta (ícone e nome): o que ela fez fica na linha do último lance, logo abaixo dos dados
+    const op = { ico, ms: AVISO_CARTA, classe: 'aviso-carta' + (y !== null ? ' compacta' : ''), y }, txt = y !== null ? '' : sub;
+    // a armadilha virada sai do "?" e não da carta: voar a carta da mão diria ao rival qual armadilha foi armada
+    const deEl = titulo === 'Armadilha virada' ? qs(`#pj${p} [data-virada]`) : qs(`#pj${p} [data-carta="${c}"]`);
+    if (!deEl || !Fx.cfg.animacoes) { Fx.chamada(titulo, txt, tipo, op); return; }
+    Fx.lancarCarta(deEl, innerWidth / 2, y ?? innerHeight * 0.27).then(() => Fx.chamada(titulo, txt, tipo, op));
+  }
+
   function consumirEventos() {
     const j = jogo, n = nomes();
     // o dado voa da Mesa até onde foi parar
@@ -5101,12 +5352,14 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
           Som.tocar('disparo', { L: e.L });
           if (humano(e.p)) vibrar(15);
           const nota = k => 80 + k * Som.PASSO_DISPARO * 1000, fim = nota(e.L);
+          if (Fx.cfg.animacoes) fimDoDisparo = performance.now() + fim + (e.L === 6 ? 150 : e.L === 5 ? 90 : 0) + (Math.min(6, Math.max(1, e.ganho)) - 1) * 70 + 560;
           const passos = [];
           for (let k = 3; k <= e.L; k++) passos.push({ ms: nota(k - 1), txt: `+${pontos(k)}` });
           passos.push({ ms: fim, txt: `+${e.ganho}` });
           // o placar mostra o valor de antes até os pontos chegarem (um render no meio não o adianta)
           if (Fx.cfg.animacoes && Fx.cfg.particulas && placar) { placarSegurado.set(e.p, e.de); placar.textContent = e.de; setTimeout(() => { if (placarSegurado.delete(e.p)) render(); }, 5000); }
-          Fx.contagem(corEl, passos, `${quem} n${Math.min(6, e.L)}`).then(() => {
+          // 5 e 6: o tempo para por um instante antes do estouro (o selo fecha no valor, a corrente incha e espera)
+          Fx.contagem(corEl, passos, `${quem} n${Math.min(6, e.L)}`).then(() => e.L >= 5 ? Fx.impacto(qs(`#pj${e.p} .corrente`) || corEl, e.L === 6 ? 150 : 90, e.L === 6 ? 1.3 : 1) : null).then(() => {
             const cor = qs(`#pj${e.p} .corrente`) || corEl;
             Fx.faiscas(cor, 10 + e.L * 6, cores, 2.5 + e.L * 0.5);
             if (e.L >= 4) Fx.clarao(cor, e.L >= 6 ? 1 : e.L === 5 ? 0.75 : 0.5);
@@ -5156,19 +5409,22 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
           Som.tocar('carta');
           if (e.id != null && e.antes != null) marcarMudanca([e.id], e.antes);
           else if (e.c === 'rerrolar') marcarMudanca(j.mesa.map(d => d.id), null);
-          if (!humano(e.p) || j.modo === 'local') Fx.chamada(e.nome, explicarCarta(e, n[e.p]), e.p === 1 && j.modo !== 'local' ? 'rival' : 'suave', { ico: CARTAS[e.c].arte, ms: AVISO_CARTA, classe: 'aviso-carta' });
+          if (!humano(e.p) || j.modo === 'local') avisoCarta(e.p, e.c, e.nome, explicarCarta(e, n[e.p]), CARTAS[e.c].arte);
           break;
         }
         case 'armou': {
           Som.tocar('armou');
           if (humano(e.p) && j.modo !== 'local') break;
-          if (e.c === 'espelho' && j.marca) { marcarMudanca([j.marca.id], null); Fx.chamada('Espelho', `${n[e.p]} marcou um ${(j.mesa.find(d => d.id === j.marca.id) || {}).v || ''} da Mesa: se você pegá-lo, ele vira`, e.p === 1 && j.modo !== 'local' ? 'rival' : 'suave', { ico: CARTAS.espelho.arte, ms: AVISO_CARTA, classe: 'aviso-carta' }); }
-          else Fx.chamada('Armadilha virada', `${n[e.p]} armou uma armadilha (?). Toque nela para ver o que pode ser`, e.p === 1 && j.modo !== 'local' ? 'rival' : 'suave', { ico: VERSO, ms: AVISO_CARTA, classe: 'aviso-carta' });
+          if (e.c === 'espelho' && j.marca) { marcarMudanca([j.marca.id], null); avisoCarta(e.p, e.c, 'Espelho', `${n[e.p]} marcou um ${(j.mesa.find(d => d.id === j.marca.id) || {}).v || ''} da Mesa: se você pegá-lo, ele vira`, CARTAS.espelho.arte); }
+          else avisoCarta(e.p, e.c, 'Armadilha virada', `${n[e.p]} armou uma armadilha (?). Toque nela para ver o que pode ser`, VERSO);
           break;
         }
         case 'revelou': {
-          Som.tocar('revelou'); Fx.chamada(CARTAS[e.c].nome + '!', e.txt, e.p === 1 && j.modo !== 'local' ? 'rival' : '', { classe: 'de-jogo' });
-          Fx.faiscas(painelEl, 22, ['#e2d6ff', '#fff6e6', '#ffe3a3']); vibrar([40, 60, 40]);
+          // a armadilha que pega: um instante parado no painel do dono, e então a revelação
+          Fx.impacto(painelEl, 80, 0.6).then(() => {
+            Som.tocar('revelou'); Fx.chamada(CARTAS[e.c].nome + '!', e.txt, e.p === 1 && j.modo !== 'local' ? 'rival' : '', { classe: 'de-jogo' });
+            Fx.faiscas(qs(`#pj${e.p} .jogador`) || painelEl, 22, ['#e2d6ff', '#fff6e6', '#ffe3a3']); vibrar([40, 60, 40]);
+          });
           break;
         }
         case 'virar': setTimeout(() => { if (jogo.virando === e.id) jogo.virando = null; }, 500); Som.tocar('virar'); break;
@@ -5176,9 +5432,13 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
         case 'falar': if (j.modo === 'bot') falaDoEvento(e); break;
         case 'fim': {
           const venceuHumano = humano(e.p);
-          Som.musica.cena('fim');
-          if (venceuHumano) { Som.tocar('vitoria'); Fx.confete(120); Fx.chamada(e.virada ? 'Virada!' : j.modo !== 'local' ? 'Vitória!' : `${n[e.p]} venceu!`, e.virada ? 'veio de trás e venceu' : 'partida bem jogada', '', { classe: 'de-jogo' }); }
-          else { Som.tocar('derrota'); Fx.chamada('Fim de partida', `${n[e.p]} venceu desta vez`, 'rival', { classe: 'de-jogo' }); }
+          Fx.limparDica();
+          // o disparo que fecha a partida conta até o fim (a cascata e os pontos no placar) antes de a vitória estourar
+          setTimeout(() => {
+            Som.musica.cena('fim');
+            if (venceuHumano) { Som.tocar('vitoria'); Fx.confete(120); Fx.chamada(e.virada ? 'Virada!' : j.modo !== 'local' ? 'Vitória!' : `${n[e.p]} venceu!`, e.virada ? 'veio de trás e venceu' : 'partida bem jogada', '', { classe: 'de-jogo', furar: true, ms: 1700 }); }
+            else { Som.tocar('derrota'); Fx.chamada('Fim de partida', `${n[e.p]} venceu desta vez`, 'rival', { classe: 'de-jogo', furar: true, ms: 1700 }); }
+          }, esperaFesta());
           break;
         }
       }
@@ -5235,7 +5495,10 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     // acabou antes da meta: por quê (sem isso, um 0 × 0 parece que a conexão caiu)
     const wo = j.desistencia, quem = wo === 0 && j.modo !== 'local' ? 'Você' : n[wo];
     const motivo = wo === undefined ? '' : { tempo: `${quem} não jogou a tempo.`, inativo: `${quem} não respondeu ao “Você ainda está aí?”.`, queda: `${quem} caiu e não voltou a tempo.`, saiu: `${quem} saiu da partida.` }[j.motivoFim] || `${quem} saiu da partida.`;
-    document.getElementById('fimPlacar').innerHTML = `<span class="cor0">${n[0]} ${j.pts[0]}</span> × <span class="cor1">${j.pts[1]} ${n[1]}</span>${motivo ? `<small class="fim-motivo">${esc(motivo)}</small>` : ''}`;
+    // perdeu por pouco: o fim diz quanto faltou (um "quase" chama a próxima; uma derrota seca, não)
+    const faltou = j.modo !== 'local' && v === 1 && wo === undefined ? j.meta - j.pts[0] : 0;
+    const quase = faltou > 0 && faltou <= 3 ? `<small class="fim-quase">Faltaram ${faltou === 1 ? 'só 1 ponto' : `${faltou} pontos`}</small>` : '';
+    document.getElementById('fimPlacar').innerHTML = `<span class="cor0">${n[0]} ${j.pts[0]}</span> × <span class="cor1">${j.pts[1]} ${n[1]}</span>${motivo ? `<small class="fim-motivo">${esc(motivo)}</small>` : quase}`;
     // repetições viram um item só ("×2"); os mais raros vêm primeiro
     const grupos = new Map();
     j.momentos.filter(m => humano(m.p)).forEach(m => { const k = m.p + m.txt; const g = grupos.get(k) || { ...m, vezes: 0 }; g.vezes++; grupos.set(k, g); });
@@ -5244,7 +5507,7 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     const momentos = lances
       .map(m => `<li><span class="em">${simboloMomento(m.simbolo)}</span><span>${j.modo === 'local' ? `<span class="cor${m.p}">${n[m.p]}</span> ` : ''}${m.txt}${m.vezes > 1 ? ` <b>×${m.vezes}</b>` : ''}</span></li>`).join('');
     const recs = (j.recordes || []).map(r => `<li class="recorde"><span class="em">${simboloMomento('✪')}</span>Novo: ${r}</li>`).join('');
-    document.getElementById('fimMomentos').innerHTML = recs + (momentos || `<li><span class="em">${simboloMomento('☕')}</span>Sem lances marcantes desta vez.</li>`);
+    document.getElementById('fimMomentos').innerHTML = recs + (momentos || (recs ? '' : `<li><span class="em">${simboloMomento('☕')}</span>Sem lances marcantes desta vez.</li>`));
     // perdeu e teve bons lances: eles vêm antes do prêmio (o que você fez de bom primeiro, o placar depois)
     const rec = document.getElementById('fimRecompensas'), tit = document.getElementById('fimMomentosTitulo'), lista = document.getElementById('fimMomentos');
     const momentosPrimeiro = j.modo !== 'local' && v !== 0 && !!(recs || momentos);
@@ -5259,7 +5522,10 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
       linha('Disparos', x => x.disp) + linha('Maior corrente', x => x.maior || '–') + linha('Rupturas', x => x.rupt) +
       linha('Bolso (guardou · trocou)', x => `${x.guardou} · ${x.trocou}`);
     prepararCartao(j, lances);
-    document.getElementById('btnDeNovo').textContent = online() ? 'Revanche' : 'Jogar de novo';
+    // o botão diz o que vem: a revanche contra quem venceu, ou a sequência que está em jogo
+    const seq = j.modo === 'bot' ? st.rec.seq : 0;
+    document.getElementById('btnDeNovo').textContent = online() ? 'Revanche' : j.modo !== 'bot' || j.estreia ? 'Jogar de novo'
+      : v === 1 ? `Revanche contra ${RIVAIS[j.nivel].nome}` : seq >= 2 ? `Mais uma · ${seq} vitórias seguidas` : 'Jogar de novo';
     document.getElementById('fim').hidden = false;
     document.getElementById('btnDeNovo').focus();
   }
@@ -5310,24 +5576,57 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     else if (!m) linhaMoedas = `<span class="conta">Moedas vêm das vitórias. A próxima é sua.</span>`;
     else if (j.modo === 'bot' && !m.elegivel) linhaMoedas = `<span class="conta">Seu maior rating (${pr.pico}) já passou do que ${rival} paga (até ${TETO_MOEDAS[j.nivel] - 1}). ${j.nivel === 'aprendiz' ? 'A Dona Coruja ainda paga.' : 'As próximas moedas virão do online.'}</span>`;
     else if (m.tetoDia) linhaMoedas = `<span class="conta">Você chegou ao teto do dia contra os rivais do jogo. Amanhã tem mais; o online não tem teto.</span>`;
-    else linhaMoedas = `<span class="conta">vitória ${online() ? 'online' : 'contra ' + rival}: ${m.base} × margem ×${fmt(m.mm.toFixed(2))} × rapidez ×${fmt(m.mr)}${online() ? ` × rating do rival ×${fmt(m.mrat.toFixed(2))}` : ` (${j.rodada} Mesas)`}</span>`;
+    else linhaMoedas = `<span class="conta">vitória ${online() ? 'online' : 'contra ' + rival}: ${m.base} × margem ×${fmt(m.mm.toFixed(2))} × rapidez ×${fmt(m.mr)}${online() ? ` × rating do rival ×${fmt(m.mrat.toFixed(2))}` : ` (${j.rodada} Mesas)`}${m.dobro ? ' × 2 (primeira vitória do dia)' : ''}</span>`;
+    // as tarefas do dia que fecharam nesta partida (pagam também na derrota)
+    const tfp = pr.tarefas || { concluidas: [], moedas: 0 };
+    if (!m && tfp.moedas) linhaMoedas = '';
+    const linhasTarefa = tfp.concluidas.map(t => `<div class="linha tarefa-feita"><span>${ICO_FEITA} Tarefa do dia: ${t.txt}</span><span>+${t.moedas}</span></div>`).join('');
     const dr = pr.rating - pr.ratingAntes;
     const prox = NIVEIS[pr.nivelDepois] ?? null, ant = NIVEIS[pr.nivelDepois - 1];
     const pct = prox === null ? 100 : Math.round((c.xp - ant) / (prox - ant) * 100);
+    // a barra começa de onde estava antes da partida e enche (subiu de nível: começa do zero do nível novo)
+    const pct0 = pr.nivelDepois > pr.nivelAntes ? 0 : Math.max(0, Math.min(pct, Math.round((c.xp - pr.xpGanho - ant) / ((prox ?? c.xp) - ant || 1) * 100)));
     const presentes = pr.presentes.map(x => `<div class="linha"><span>Presente do nível: ${nomeItem(x.tipo, x.id)}</span><span class="sobe">novo!</span></div>`).join('');
-    const total = m ? m.total : 0;
+    const total = (m ? m.total : 0) + tfp.moedas;
     const linhaRating = `<div class="linha"><span>${online() ? 'Rating online' : 'Rating'} ${pr.ratingAntes} → <b>${pr.rating}</b> <span class="${dr >= 0 ? 'sobe' : 'desce'}">(${dr >= 0 ? '+' : ''}${dr})</span></span><span>${tituloDe(pr.rating)}</span></div>`;
     const linhaXp = `<div class="linha"><span>Nível ${pr.nivelDepois}${pr.nivelDepois > pr.nivelAntes ? ' <span class="sobe">subiu!</span>' : ''}</span><span>+${pr.xpGanho} XP</span></div>
-      <div class="xp"><i style="width:${pct}%"></i></div>${presentes}`;
+      <div class="xp"><i style="width:${Fx.cfg.animacoes ? pct0 : pct}%"></i></div>${presentes}`;
+    const meta = proximaMeta(c), linhaMeta = meta ? `<div class="linha meta-prox"><span>${meta.txt}</span><span>${meta.falta}</span></div>` : '';
     // sem moedas (derrota, teto do rival): a tela não abre com um "+0" grande. Primeiro o que se ganhou (experiência,
     // que sobe sempre), depois o rating e, miúda, a linha das moedas
-    el.innerHTML = total ? `<div class="grande"><span class="moeda" aria-hidden="true"></span><span id="contaMoedas">+0</span></div>${linhaMoedas}${linhaRating}${linhaXp}`
-      : `${linhaXp}${linhaRating}${linhaMoedas}`;
+    el.innerHTML = total ? `<div class="grande"><span class="moeda" aria-hidden="true"></span><span id="contaMoedas">+0</span></div>${linhaMoedas}${linhasTarefa}${linhaRating}${linhaXp}${linhaMeta}${linhaHoje()}`
+      : `${linhaXp}${linhaRating}${linhaMoedas}${linhaMeta}${linhaHoje()}`;
+    // em sequência (v0.14): cada linha entra uma depois da outra; as moedas contam, depois a barra de experiência enche
+    // com um tique e, se subiu de nível, a chamada e o presente. Antes, tudo aparecia de uma vez e já cheio
+    [...el.children].forEach((x, k) => { x.classList.add('revela'); x.style.setProperty('--k', k); });
     const alvo = document.getElementById('contaMoedas');
+    const tXp = total ? 1150 : 450;
     if (total) {
-      setTimeout(() => { Fx.contar(alvo, 0, total); setTimeout(() => { alvo.textContent = '+' + total; }, 600); Som.tocar('moeda', { n: Math.ceil(total / 5) }); Fx.faiscas(alvo, 18, ['#ffe3a3', '#f2c14e', '#fff6e6']); }, 350);
+      setTimeout(() => { Fx.contar(alvo, 0, total); setTimeout(() => { alvo.textContent = '+' + total; }, 950); Som.tocar('moeda', { n: Math.ceil(total / 5) }); Fx.faiscas(alvo, 18, ['#ffe3a3', '#f2c14e', '#fff6e6']); }, 350);
     }
-    if (pr.nivelDepois > pr.nivelAntes) setTimeout(() => { Som.tocar('nivel'); Fx.chamada(`Nível ${pr.nivelDepois}!`, pr.presentes.length ? 'você ganhou um presente na Loja' : 'continue assim', 'suave'); }, 900);
+    const barra = el.querySelector('.xp i');
+    if (barra && Fx.cfg.animacoes) setTimeout(() => { barra.style.width = pct + '%'; Som.tocar('tique', { k: 2 }); }, tXp);
+    if (pr.nivelDepois > pr.nivelAntes) setTimeout(() => { Som.tocar('nivel'); Fx.chamada(`Nível ${pr.nivelDepois}!`, pr.presentes.length ? 'você ganhou um presente na Loja' : 'continue assim', 'suave'); }, tXp + 650);
+  }
+  // a tarefa do dia que ainda falta (a primeira), com quanto já foi; ou "todas feitas"
+  const ICO_FEITA = '<svg class="ico ico-feita" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+  function linhaHoje() {
+    const t = tarefasHoje(), falta = t.ids.find(id => !t.feitas.includes(id) && R.TAREFAS[id]);
+    if (!falta) return `<div class="linha meta-prox"><span>Tarefas do dia</span><span>todas feitas ${ICO_FEITA}</span></div>`;
+    const k = R.TAREFAS[falta];
+    return `<div class="linha meta-prox"><span>Tarefa do dia: ${k.txt}</span><span>${k.alvo > 1 ? `${t.prog[falta] || 0}/${k.alvo} · ` : ''}+${R.MOEDAS_TAREFA}</span></div>`;
+  }
+  // a próxima coisa a ganhar, para a pessoa sair do fim sabendo para onde vai: o presente do próximo nível que tiver um,
+  // senão a carta (ou, com todas, o visual) mais barata que ela ainda não tem
+  function proximaMeta(c) {
+    const nv = nivelDe(c.xp), lv = Object.keys(PRESENTES).map(Number).sort((a, b) => a - b).find(x => x > nv);
+    if (lv && NIVEIS[lv - 1] != null) { const [tipo, id] = PRESENTES[lv]; return { txt: `Nível ${lv}: ${nomeItem(tipo, id)} de presente`, falta: `faltam ${NIVEIS[lv - 1] - c.xp} XP` }; }
+    const cartas = Object.keys(PRECO_CARTA).filter(id => !c.cartas.includes(id)).map(id => ({ tipo: 'cartas', id, preco: PRECO_CARTA[id] }));
+    const visuais = ['dados', 'icones', 'mesas'].flatMap(t => Object.entries(R.CATALOGO[t]).filter(([id, it]) => it.preco > 0 && !it.nivel && !(c[t] || []).includes(id)).map(([id, it]) => ({ tipo: t, id, preco: it.preco })));
+    const alvo = (cartas.length ? cartas : visuais).sort((a, b) => a.preco - b.preco)[0];
+    if (!alvo) return null;
+    const falta = alvo.preco - c.moedas;
+    return { txt: `Próximo na Loja: ${alvo.tipo === 'cartas' ? 'a carta ' : ''}${nomeItem(alvo.tipo, alvo.id)}`, falta: falta > 0 ? `faltam ${falta} moedas` : 'já dá para comprar' };
   }
 
   // ---------- loja ----------
@@ -5631,7 +5930,7 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     } catch (e) { return null; }
   }
   function restaurarPartida(g) {
-    Object.assign(g, { pensando: false, token: Math.random(), fx: null, eventos: [], intro: false, voo: null, sel: null, destaque: null, fala: null, rolouAVista: true });
+    Object.assign(g, { pensando: false, token: Math.random(), fx: null, eventos: [], intro: false, voo: null, sel: null, destaque: null, olhando: null, fala: null, rolouAVista: true });
     if (g.fase === 'alvo' || g.fase === 'ajuste') { g.fase = 'pegar'; g.alvo = null; g.ajusteIdx = null; }
     // guardada antes da v0.13: um efeito virado (o blefe, que saiu) volta para a mão
     [0, 1].forEach(p => { const c = g.armada[p]; if (c && CARTAS[c] && CARTAS[c].tipo === 'efeito') { g.cartas[p][c] = 'pronta'; g.armada[p] = null; } });
@@ -5684,6 +5983,7 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     const c = st.conta, nome = st.sessao && st.sessao.perfil ? st.sessao.perfil.nome : 'Convidado';
     document.getElementById('inicioPerfil').innerHTML = `${iconeSVG(c.icone)}<span class="perfil-texto"><b>${esc(nome)}</b><small>rating ${c.rating} · nível ${nivelDe(c.xp)} · ${c.moedas} moedas</small></span><svg class="ico perfil-seta" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>`;
     document.getElementById('pontoInicio').hidden = document.getElementById('pontoOnline').hidden;
+    desenharTarefasInicio();
     const g = partidaParaContinuar(), box = document.getElementById('inicioPartida');
     // a escolha do rival ocupa o lugar dos botões do menu (Jogar → Escolha o rival → Jogar contra ...)
     const rivais = escolhendoRival && !g;
@@ -5708,6 +6008,32 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
         ? `<div class="inicio-linha"><button class="btn btn-papel perigo" data-inicio="abandonar-sim">Abandonar</button><button class="btn btn-papel" data-inicio="abandonar-nao">Voltar</button></div>`
         : `<button class="btn btn-mel inicio-principal" data-inicio="continuar">Continuar a partida</button><button class="btn-link" data-inicio="abandonar">Abandonar a partida</button>`}`;
   }
+  // ---------- tarefas do dia (v0.14) ----------
+  // no menu, uma linha só: as três bolinhas (cheias as feitas) e quanto ainda rende hoje; tocar abre a lista. Some na
+  // primeira visita (a estreia vem antes de tudo)
+  function desenharTarefasInicio() {
+    const el = document.getElementById('inicioTarefas'), t = tarefasHoje();
+    el.hidden = !st.guia.estreia;
+    if (el.hidden) return;
+    const feitas = t.feitas.length, resta = (t.ids.length - feitas) * R.MOEDAS_TAREFA;
+    el.innerHTML = `<span class="tf-titulo">Tarefas do dia</span><span class="tf-pontos" aria-hidden="true">${t.ids.map(id => `<i class="${t.feitas.includes(id) ? 'feita' : ''}"></i>`).join('')}</span>
+      <span class="tf-resta">${resta ? `<span class="moeda" aria-hidden="true"></span>+${resta}` : `${ICO_FEITA} feitas`}</span>`;
+    el.setAttribute('aria-label', `Tarefas do dia: ${feitas} de ${t.ids.length} feitas${resta ? `, ainda rendem ${resta} moedas` : ''}`);
+  }
+  function abrirTarefas() {
+    const t = tarefasHoje();
+    const item = id => {
+      const k = R.TAREFAS[id]; if (!k) return '';
+      const feita = t.feitas.includes(id), n = Math.min(k.alvo, t.prog[id] || 0);
+      return `<li class="${feita ? 'feita' : ''}"><span class="tf-marca">${feita ? ICO_FEITA : ''}</span><span class="tf-txt"><b>${k.txt}</b>
+        ${k.alvo > 1 && !feita ? `<span class="xp"><i style="width:${Math.round(n / k.alvo * 100)}%"></i></span><small>${n} de ${k.alvo}</small>` : ''}</span>
+        <span class="tf-premio">${feita ? 'feita' : `<span class="moeda" aria-hidden="true"></span>+${R.MOEDAS_TAREFA}`}</span></li>`;
+    };
+    document.getElementById('tarefasConteudo').innerHTML = `<ul class="lista-tarefas">${t.ids.map(item).join('')}</ul>
+      <p class="nota">As tarefas pagam também na derrota, contra os rivais e no online. ${t.vitoria ? 'A primeira vitória de hoje já rendeu em dobro.' : 'A primeira vitória do dia que render moedas rende <b>em dobro</b>.'} Amanhã tem tarefas novas.</p>`;
+    document.getElementById('janelaTarefas').hidden = false; Som.tocar('abrir');
+  }
+
   // ---------- a escolha do rival: o retrato, o jeito de jogar, a dificuldade e o que a vitória rende ----------
   let escolhendoRival = false;
   const NIVEL_RIVAL = { aprendiz: 'Para começar', esperto: 'Desafiadora' };
@@ -5736,7 +6062,7 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
   function mostrarInicio() {
     confirmarAbandono = false; escolhendoRival = false;
     // a partida para atrás do menu: a jogada do rival que estava no meio recomeça do zero no Continuar
-    if (jogo && jogo.modo === 'bot' && jogo.pensando) { jogo.token = Math.random(); jogo.pensando = false; jogo.destaque = null; }
+    if (jogo && jogo.modo === 'bot' && jogo.pensando) { jogo.token = Math.random(); jogo.pensando = false; jogo.destaque = null; jogo.olhando = null; }
     ['fim', 'janelaMenu', 'janelaCarta'].forEach(id => { document.getElementById(id).hidden = true; });
     document.body.classList.add('inicio-aberto');
     desenharInicio();
@@ -5797,6 +6123,7 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
       desenharInicio(); return;
     }
     if (a === 'perfil') { abrirPerfil(); return; }
+    if (a === 'tarefas') { abrirTarefas(); return; }
     if (a === 'online') { document.getElementById('btnOnline').click(); return; }
     if (a === 'regras') { abrirLado(true); return; }
     const botao = { deck: 'btnDeck', 'trocar-deck': 'btnDeck', loja: 'btnCarteira', ajustes: 'btnConfig' }[a];
@@ -5918,6 +6245,7 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     if (b.dataset.perfil === 'loja') abrirLoja('icones');
     if (b.dataset.perfil === 'conta') document.getElementById('btnOnline').click();
   });
+  document.getElementById('btnFecharTarefas').addEventListener('click', () => { document.getElementById('janelaTarefas').hidden = true; Som.tocar('fechar'); });
   document.getElementById('btnFecharPerfil').addEventListener('click', () => { document.getElementById('janelaPerfil').hidden = true; Som.tocar('fechar'); });
 
   // tocar num espaço vazio da Mesa desfaz a escolha do dado (não há mais barra com Cancelar)
@@ -6308,7 +6636,7 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     if (alvo.closest('textarea, input') && e.key !== 'Escape') return;
     if (e.key === 'Escape' && escolhendoRival && inicioAberto() && document.querySelectorAll('.janela:not([hidden])').length === 0) { escolhendoRival = false; desenharInicio(); return; }
     if (e.key === 'Escape') {
-      ['fim', 'janelaCarta', 'janelaDeck', 'janelaConfig', 'janelaLoja', 'janelaPerfil', 'janelaOnline', 'janelaMenu'].forEach(id => { const el = document.getElementById(id); if (el) el.hidden = true; }); abrirLado(false);
+      ['fim', 'janelaCarta', 'janelaDeck', 'janelaConfig', 'janelaLoja', 'janelaPerfil', 'janelaTarefas', 'janelaOnline', 'janelaMenu'].forEach(id => { const el = document.getElementById(id); if (el) el.hidden = true; }); abrirLado(false);
       return jogo ? cancelarEscolha() : undefined;
     }
     if (!jogo) return;
@@ -6355,6 +6683,7 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     moedas: pf.moedas, xp: pf.xp, cartas: pf.cartas, dados: pf.dados, icones: pf.icones, mesas: pf.mesas,
     dado: pf.ativo.dado, icone: pf.ativo.icone, mesa: pf.ativo.mesa, rating: pf.solo_rating, pico: pf.solo_pico,
     online: { nome: pf.nome, rating: pf.rating, partidas: pf.partidas, vitorias: pf.vitorias, titulo: pf.titulo },
+    tarefas: (pf.extras || {}).tarefas || null,
   });
   function usarPerfil(pf) {
     if (!st.sessao) return;
@@ -6434,11 +6763,12 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
   // partidas contra os rivais do jogo, com conta: o servidor confere o teto e paga (o aparelho só mostra antes)
   Conta.relatarSolo = async j => {
     if (!st.sessao) return;
-    const antes = j.premio && j.premio.moedas ? j.premio.moedas.total : 0;
+    const somaMoedas = pr => (pr && pr.moedas ? pr.moedas.total : 0) + (pr && pr.tarefas ? pr.tarefas.moedas : 0);
+    const antes = somaMoedas(j.premio);
     try {
-      const r = await pedir('POST', '/api/solo', { desistiu: j.desistencia === 0, nivel: j.nivel, venceu: j.vencedor === 0, margem: Math.max(0, j.pts[0] - j.pts[1]), rodadas: j.rodada, meta: +j.meta, momentos: j.momentos.filter(m => m.p === 0).length });
+      const r = await pedir('POST', '/api/solo', { desistiu: j.desistencia === 0, nivel: j.nivel, venceu: j.vencedor === 0, margem: Math.max(0, j.pts[0] - j.pts[1]), rodadas: j.rodada, meta: +j.meta, momentos: j.momentos.filter(m => m.p === 0).length, resumo: R.resumoTarefas(j, 0) });
       j.premio = r.premio; usarPerfil(r.conta);
-      if ((r.premio.moedas ? r.premio.moedas.total : 0) !== antes && jogo === j && !document.getElementById('fim').hidden) desenharRecompensas(j);
+      if (somaMoedas(r.premio) !== antes && jogo === j && !document.getElementById('fim').hidden) desenharRecompensas(j);
     } catch (e) {
       if (st.sessao) usarPerfil(st.sessao.perfil); // volta ao que o servidor sabe
       j.premio.motivo = e.status === 429 || e.status === 400 ? e.message : 'Sem conexão: esta partida não entrou na sua conta.';
@@ -6646,7 +6976,7 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
       j.premio = m.premio; j.semPremio = m.erro || null;
       if (m.premio) usarPerfil(m.premio.conta);
       lembrarSala(true);
-      if (!jaViu) setTimeout(mostrarFim, st.pref.animacoes ? 1800 : 600);
+      if (!jaViu) setTimeout(mostrarFim, st.pref.animacoes ? 1800 + esperaFesta() : 600);
     } else if (m.tipo === 'erro') {
       const saiuDaSala = m.codigo === 'sala' || m.semSala;
       if (Rede.voltando && m.semSala) {

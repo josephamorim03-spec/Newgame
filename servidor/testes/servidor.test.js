@@ -5,6 +5,7 @@ const WebSocket = require('ws');
 const { criarApp, TETO_SOLO_DIA } = require('../app');
 const { BancoMemoria, criarBanco } = require('../banco');
 const { jogadaAoAcaso, jogadaSimples } = require('./ajuda');
+const Regras = require('../../shared/regras');
 
 const SEGREDO = 'segredo-de-teste-com-32-caracteres!!';
 
@@ -162,6 +163,39 @@ test('partidas solo: moedas com teto por dia e pelo pico de rating', { timeout: 
   } finally { await s.fechar(); }
 });
 
+test('tarefas do dia nas partidas solo: pagam na derrota, uma vez só; a primeira vitória dobra; o aparelho não escreve as tarefas', { timeout: 20000 }, async () => {
+  const s = await subir();
+  try {
+    const { token } = await conta(s, 'Tina');
+    const eu0 = (await s.api('GET', '/api/eu', null, token)).conta;
+    const dia = new Date().toISOString().slice(0, 10), ids = Regras.tarefasDoDia(dia);
+    // um resumo que fecha toda tarefa de uma partida só (as que acumulam, como "Jogue 2 partidas", ficam no meio)
+    const tudo = { venceu: false, pts: 20, maior: 5, disparos: 5, salvos: 1, bloqueios: 1 };
+    const derrota = { nivel: 'aprendiz', venceu: false, margem: 0, rodadas: 8, meta: 16, momentos: 2, resumo: tudo };
+    let r = await s.api('POST', '/api/solo', derrota, token);
+    const esperadas = ids.filter(id => id !== 'jogar' && id !== 'vencer');
+    assert.deepStrictEqual(r.premio.tarefas.concluidas.map(t => t.id).sort(), esperadas.sort());
+    assert.strictEqual(r.conta.moedas, eu0.moedas + esperadas.length * Regras.MOEDAS_TAREFA, 'a derrota paga as tarefas');
+    r = await s.api('POST', '/api/solo', derrota, token);
+    assert.strictEqual(r.premio.tarefas.moedas, ids.includes('jogar') ? Regras.MOEDAS_TAREFA : 0, 'feita não paga de novo (só "Jogue 2" fecha agora)');
+    // a primeira vitória do dia dobra; a segunda, não
+    const vit = { ...derrota, venceu: true, margem: 4, resumo: { ...tudo, venceu: true } };
+    const v1 = await s.api('POST', '/api/solo', vit, token), v2 = await s.api('POST', '/api/solo', vit, token);
+    assert.ok(v1.premio.moedas.dobro && !v2.premio.moedas.dobro);
+    assert.strictEqual(v1.premio.moedas.total, v2.premio.moedas.total * 2);
+    // o aparelho manda os extras dele, mas as tarefas são do servidor
+    const antes = (await s.api('GET', '/api/eu', null, token)).conta.extras.tarefas;
+    await s.api('PUT', '/api/eu/dados', { tarefas: { dia, ids, prog: {}, feitas: [], vitoria: false } }, token);
+    assert.deepStrictEqual((await s.api('GET', '/api/eu', null, token)).conta.extras.tarefas, antes);
+    // quem desiste não avança
+    const d = await s.api('POST', '/api/solo', { ...derrota, desistiu: true }, token);
+    assert.strictEqual(d.premio.tarefas.moedas, 0);
+    // resumo inventado não avança nada (e o relato segue valendo)
+    const falso = await s.api('POST', '/api/solo', { ...derrota, resumo: { ...tudo, maior: 99 } }, token);
+    assert.strictEqual(falso.status, 200); assert.strictEqual(falso.premio.tarefas.moedas, 0);
+  } finally { await s.fechar(); }
+});
+
 test('convidado vira conta: progresso importado com teto', { timeout: 20000 }, async () => {
   const s = await subir();
   try {
@@ -216,7 +250,10 @@ test('partida online completa: cada um vê só o que deve, e o fim paga rating e
     const w = venceuA ? 0 : 1;
     assert.ok(fins[w].moedas.total > 0);
     assert.ok(fins[w].rating > 1000 && fins[1 - w].rating < 1000);
-    assert.strictEqual(fins[w].conta.moedas, fins[w].moedas.total);
+    // a conta recebe as moedas da vitória (a primeira do dia, em dobro) e as das tarefas do dia que fecharam (v0.14)
+    assert.ok(fins[w].moedas.dobro, 'a primeira vitória do dia rende em dobro');
+    assert.strictEqual(fins[w].conta.moedas, fins[w].moedas.total + fins[w].tarefas.moedas);
+    assert.strictEqual(fins[1 - w].conta.moedas, fins[1 - w].tarefas.moedas, 'quem perdeu recebe só as tarefas');
     const rk = (await s.api('GET', '/api/ranking')).ranking;
     assert.strictEqual(rk.length, 2);
     assert.strictEqual(rk[0].nome, w === 0 ? 'Fabi' : 'Gui');

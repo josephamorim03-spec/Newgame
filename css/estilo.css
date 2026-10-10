@@ -1388,3 +1388,28 @@ button.inicio-perfil:active { transform: translateY(1px); }
 .fim-quase { display: block; margin-top: 4px; font-family: var(--f-corpo); font-size: 15px; font-weight: 800; color: var(--mel-escuro); }
 .recompensas .meta-prox { font-size: 13px; color: var(--tinta-suave); border-top: 1px dashed rgba(58,42,46,.18); padding-top: 8px; }
 .recompensas .meta-prox span:last-child { color: var(--tinta); }
+
+/* ---------- tarefas do dia (v0.14) ---------- */
+.inicio-tarefas { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 40px; padding: 6px 14px; border: 0; border-radius: 14px; cursor: pointer;
+  background: rgba(255,243,226,.08); box-shadow: inset 0 0 0 1.5px rgba(255,243,226,.16); color: var(--texto, #fff3e2); font: inherit; font-size: 14px; font-weight: 700; }
+.inicio-tarefas[hidden] { display: none; }
+.inicio-tarefas .tf-titulo { flex: 1; text-align: left; }
+.tf-pontos { display: inline-flex; gap: 5px; }
+.tf-pontos i { width: 10px; height: 10px; border-radius: 50%; box-shadow: inset 0 0 0 2px rgba(255,243,226,.45); }
+.tf-pontos i.feita { background: var(--passo); box-shadow: none; }
+.tf-resta { display: inline-flex; align-items: center; gap: 4px; font-variant-numeric: tabular-nums; color: #ffe3a3; }
+.tf-resta .ico-feita { width: 16px; height: 16px; }
+.ico-feita { width: 1.1em; height: 1.1em; vertical-align: -0.2em; stroke: var(--passo); stroke-width: 3; fill: none; }
+.lista-tarefas { list-style: none; margin: 0 0 12px; padding: 0; display: grid; gap: 8px; }
+.lista-tarefas li { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 14px; background: var(--papel-2); }
+.lista-tarefas li.feita { opacity: .7; }
+.lista-tarefas li.feita b { text-decoration: line-through; text-decoration-thickness: 1.5px; }
+.tf-marca { flex: none; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; box-shadow: inset 0 0 0 2px rgba(58,42,46,.25); }
+.lista-tarefas li.feita .tf-marca { box-shadow: inset 0 0 0 2px var(--passo); }
+.tf-txt { flex: 1; display: grid; gap: 4px; font-size: 15px; }
+.tf-txt small { font-size: 12px; color: var(--tinta-suave); }
+.tf-premio { flex: none; display: inline-flex; align-items: center; gap: 4px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.recompensas .tarefa-feita { color: var(--tinta); }
+.recompensas .tarefa-feita span:last-child { color: var(--mel-escuro); }
+.recompensas .tarefa-feita { flex-wrap: nowrap; }
+.recompensas .tarefa-feita span:first-child { flex: 1; min-width: 0; }

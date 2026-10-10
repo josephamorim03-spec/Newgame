@@ -64,6 +64,35 @@ Mestre do Bolso (1.300) e Grão-mestre da Mesa (1.450).
 - nível 3: dado Menta;
 - nível 5: mesa Noite estrelada.
 
+## 4.1 Tarefas do dia e a primeira vitória (v0.14)
+
+O risco mais alto da §7 era "moeda só na vitória frustra quem perde muito". A resposta é leve, sem energia e sem
+insistência:
+- **Três tarefas por dia**, as mesmas para todo mundo (sorteadas pela data, `tarefasDoDia` em `shared/regras.js`), uma
+  de cada grupo:
+
+  | Grupo | Tarefas |
+  |---|---|
+  | jogando | Jogue 2 partidas · Marque 20 pontos · Dispare 5 correntes |
+  | um lance comum | Vença uma partida · Dispare uma corrente de 4 · Salve uma corrente (Bolso ou Âncora) |
+  | um lance melhor | Dispare uma corrente de 5 · Faça um Bloqueio |
+
+- **Cada uma paga 15 moedas, também na derrota.** São no máximo 45 por dia: uma vitória típica contra a Diana rende 14.
+- **A primeira vitória do dia que rende moedas rende em dobro** (antes do teto do dia das partidas contra os rivais).
+  Vitória sem moedas (acima do teto de rating da rival) não gasta o dobro.
+- Valem contra os rivais do jogo e no online. Não avançam: desistência, derrota por desistência, partida amistosa
+  (o mesmo par já jogou 3 valendo hoje) e desistência antes da 3.ª Mesa.
+- **O dia é o do servidor (UTC):** para o aparelho e a conta contarem o mesmo dia (no Brasil, as tarefas viram às 21 h).
+- **Quem guarda:** sem conta, o aparelho; com conta, o servidor (`extras.tarefas`). Contra os rivais do jogo o servidor
+  não vê a partida: o aparelho manda um resumo (pontos, maior corrente, disparos, salvos, bloqueios), conferido dentro
+  do possível (`resumoValido`); resumo inventado não avança nada. O aparelho não consegue escrever as tarefas pelos extras.
+- **Onde aparece:** no menu, uma linha "Tarefas do dia" com três bolinhas e quanto ainda rende (tocar abre a lista,
+  com o progresso); no fim da partida, as que fecharam ("Tarefa do dia: … +15") e a que falta.
+
+**O que medir:** se a derrota com tarefa feita leva a mais uma partida; se as tarefas do grupo "um lance melhor"
+fecham num dia comum (se não, trocar por outras); se alguém joga só para as tarefas e para (bom: é o ritmo de um jogo
+de 6 minutos).
+
 ## 5. Loja (preços em moedas)
 
 | Categoria | Itens |
@@ -100,7 +129,7 @@ As cartas chegam rápido; os cosméticos caros (Dourado, Diamante) ficam como me
 
 | Risco | O que observar |
 |---|---|
-| **Moeda só na vitória frustra quem perde muito** | quantas partidas até a 1ª vitória; abandono depois de 3 derrotas seguidas. Se pesar, dar 1–2 moedas por derrota contra a Coruja, ou missões diárias leves |
+| **Moeda só na vitória frustra quem perde muito** | quantas partidas até a 1ª vitória; abandono depois de 3 derrotas seguidas. Na v0.14 vieram as tarefas do dia (§4.1), que pagam também na derrota |
 | **A margem incentiva humilhar o rival** | no online, o ajuste por rating (§3) já compensa |
 | **Os preços** | se as 5 cartas saírem em menos de 2 horas, encarecer os cosméticos, não as cartas |
 | **O teto de 1.400 deixa o jogador forte sem moedas antes do online existir** | no protótipo, a mensagem do fim de partida explica e aponta o online |

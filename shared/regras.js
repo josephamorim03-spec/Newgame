@@ -131,6 +131,64 @@
     const novo = elo(rating, RATING_RIVAL[nivel], venceu ? 1 : 0);
     return { moedas, ratingAntes: rating, pico, rating: novo, picoNovo: Math.max(pico, novo) };
   }
+  // ---------- tarefas do dia (v0.14) ----------
+  // Três tarefas leves por dia, as mesmas para todo mundo (sorteadas pela data), uma de cada grupo: uma que sai jogando,
+  // uma que pede um lance comum e uma que pede um lance melhor. Cada uma paga MOEDAS_TAREFA, **também na derrota**: as
+  // moedas só da vitória deixavam quem perde muito sem nada (docs/progressao.md §7). E a primeira vitória do dia que
+  // rende moedas rende em dobro. As tarefas contam o que a partida mostra (o resumo abaixo), então valem igual contra os
+  // rivais do jogo e no online; quem desiste ou perde por desistência não avança.
+  const TAREFAS = {
+    jogar: { txt: 'Jogue 2 partidas', alvo: 2, conta: () => 1 },
+    pontos: { txt: 'Marque 20 pontos', alvo: 20, conta: r => r.pts },
+    disparos: { txt: 'Dispare 5 correntes', alvo: 5, conta: r => r.disparos },
+    vencer: { txt: 'Vença uma partida', alvo: 1, conta: r => (r.venceu ? 1 : 0) },
+    corrente4: { txt: 'Dispare uma corrente de 4', alvo: 1, conta: r => (r.maior >= 4 ? 1 : 0) },
+    salvo: { txt: 'Salve uma corrente (Bolso ou Âncora)', alvo: 1, conta: r => r.salvos },
+    corrente5: { txt: 'Dispare uma corrente de 5', alvo: 1, conta: r => (r.maior >= 5 ? 1 : 0) },
+    bloqueio: { txt: 'Faça um Bloqueio', alvo: 1, conta: r => r.bloqueios },
+  };
+  const GRUPOS_TAREFA = [['jogar', 'pontos', 'disparos'], ['vencer', 'corrente4', 'salvo'], ['corrente5', 'bloqueio']];
+  const MOEDAS_TAREFA = 15;
+  function tarefasDoDia(dia) {
+    let h = 2166136261;
+    for (const ch of String(dia)) h = Math.imul(h ^ ch.charCodeAt(0), 16777619) >>> 0;
+    return GRUPOS_TAREFA.map((g, i) => g[(h >>> (i * 5)) % g.length]);
+  }
+  // o estado do dia (guardado no aparelho ou na conta); um estado de outro dia (ou estragado) vira o do dia novo
+  function estadoTarefas(est, dia) {
+    if (est && est.dia === dia && Array.isArray(est.ids) && Array.isArray(est.feitas) && est.prog && typeof est.prog === 'object') return est;
+    return { dia, ids: tarefasDoDia(dia), prog: {}, feitas: [], vitoria: false };
+  }
+  // o que um jogador fez na partida, para as tarefas
+  function resumoTarefas(j, p) {
+    const s = j.stats[p], ms = j.momentos.filter(m => m.p === p);
+    return { venceu: j.vencedor === p, pts: j.pts[p], maior: s.maior || 0, disparos: s.disp || 0,
+      salvos: ms.filter(m => m.simbolo === '❀').length, bloqueios: ms.filter(m => m.simbolo === '✦').length };
+  }
+  // o resumo que chega do aparelho (partidas contra os rivais do jogo): números inteiros dentro do possível, ou null
+  function resumoValido(r) {
+    if (!r || typeof r !== 'object' || typeof r.venceu !== 'boolean') return null;
+    const n = (x, max) => (Number.isInteger(x) && x >= 0 && x <= max ? x : null);
+    const v = { venceu: r.venceu, pts: n(r.pts, 40), maior: n(r.maior, LIM), disparos: n(r.disparos, 40), salvos: n(r.salvos, 40), bloqueios: n(r.bloqueios, 40) };
+    return Object.values(v).some(x => x === null) ? null : v;
+  }
+  // avança as tarefas com uma partida: devolve o estado novo, as que fecharam agora e as moedas delas
+  function avancarTarefas(est, dia, r) {
+    const e = estadoTarefas(est, dia), novo = { ...e, prog: { ...e.prog }, feitas: e.feitas.slice() }, concluidas = [];
+    if (r) for (const id of novo.ids) {
+      const t = TAREFAS[id]; if (!t || novo.feitas.includes(id)) continue;
+      novo.prog[id] = Math.min(t.alvo, (novo.prog[id] || 0) + Math.max(0, t.conta(r) || 0));
+      if (novo.prog[id] >= t.alvo) { novo.feitas.push(id); concluidas.push({ id, txt: t.txt, moedas: MOEDAS_TAREFA }); }
+    }
+    return { estado: novo, concluidas, moedas: concluidas.length * MOEDAS_TAREFA };
+  }
+  // a primeira vitória do dia que rende moedas rende em dobro (moedas: o objeto de moedasDaVitoria; mexe nele e no estado)
+  function dobrarPrimeiraVitoria(est, moedas) {
+    if (!moedas || !(moedas.total > 0) || est.vitoria) return false;
+    moedas.total *= 2; moedas.dobro = true; est.vitoria = true;
+    return true;
+  }
+
   // experiência: sobe sempre (vitória ou derrota); os níveis dão presentes cosméticos (conta: {xp, dados, icones, mesas})
   const xpDaPartida = (venceu, nMomentos) => (venceu ? 20 : 10) + Math.min(15, nMomentos * 3);
   function ganharXp(conta, ganho) {
@@ -568,6 +626,7 @@
     PONTOS, LIM, NA_MESA, REL, CARTAS, ORDEM, pedagioDe, deckValido, rels, sinc, frente, encaixa, facesQueEncaixam, opcoes, pontos, harmonica,
     GRATIS, PRECO_CARTA, CATALOGO, NIVEIS, PRESENTES, RATING_RIVAL, TETO_MOEDAS, BASE_MOEDAS, TITULOS, tituloDe, nivelDe,
     METAS, META_PADRAO, metaValida, moedasDaVitoria, ajusteRatingOnline, elo, premioSolo, xpDaPartida, ganharXp, precoDe,
+    TAREFAS, MOEDAS_TAREFA, tarefasDoDia, estadoTarefas, resumoTarefas, resumoValido, avancarTarefas, dobrarPrimeiraVitoria,
     criarPartida, usarRng, encaixaP, destinos, destinosValidos, seguro, bolsoGarante, marcadoContra, valorAoPegar, seguroDado,
     usavel, armadilhasOcultas, podeUsar, usarCarta,
     tirar, pegar, pegarPara, destinosDoDado, colocar, dispensarSegundo, disparar, segurar, proximo, terminar, desistir, aplicar, visaoDe,

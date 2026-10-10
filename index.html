@@ -43,6 +43,7 @@
     <div class="inicio-jogar" id="inicioJogar">
       <button class="btn btn-mel inicio-principal" data-inicio="jogar">Jogar</button>
       <div class="inicio-linha"><button class="btn btn-papel" data-inicio="online">Online<span class="ponto-online" id="pontoInicio" hidden></span></button></div>
+      <button class="inicio-tarefas" id="inicioTarefas" data-inicio="tarefas" hidden></button>
     </div>
     <div class="inicio-rivais" id="inicioRivais" hidden>
       <h2>Escolha o rival</h2>
@@ -267,6 +268,14 @@
       <div class="deck-topo"><h2 id="perfilTitulo">Perfil</h2></div>
       <div id="perfilConteudo"></div>
       <button class="btn btn-papel" id="btnFecharPerfil">Fechar</button>
+    </div>
+  </div>
+
+  <div class="janela" id="janelaTarefas" hidden>
+    <div class="caixa" role="dialog" aria-modal="true" aria-labelledby="tarefasTitulo">
+      <div class="deck-topo"><h2 id="tarefasTitulo">Tarefas do dia</h2></div>
+      <div id="tarefasConteudo"></div>
+      <button class="btn btn-papel" id="btnFecharTarefas">Fechar</button>
     </div>
   </div>
 

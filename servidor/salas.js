@@ -314,12 +314,20 @@ class Salas {
         campos.pico = Math.max(c.pico, campos.rating);
         p.rating = campos.rating;
       } else p.motivo = `Vocês já jogaram ${PARTIDAS_POR_PAR} partidas valendo hoje: esta foi amistosa.`;
+      // tarefas do dia (v0.14): amistosa, desistência cedo e quem perdeu por desistência não avançam
+      const dia = new Date(this.agora()).toISOString().slice(0, 10);
+      const valeTarefa = !amistosa && !cedo && !(porDesistencia && !venceu);
+      const tarefas = Regras.avancarTarefas(c.extras && c.extras.tarefas, dia, valeTarefa ? Regras.resumoTarefas(j, i) : null);
       if (venceu) {
         const m = Regras.moedasDaVitoria(Regras.BASE_MOEDAS.online, j.pts[i] - j.pts[1 - i], j.rodada, j.meta, Regras.ajusteRatingOnline(ratings[i], ratings[1 - i]));
         if (porDesistencia) { m.total = 0; p.motivo = cedo ? `Desistência antes da ${MESAS_PARA_VALER}ª Mesa: não mexe no rating nem rende moedas.` : 'Vitória por desistência não rende moedas.'; }
         if (amistosa) m.total = 0;
-        p.moedas = m; campos.moedas = c.moedas + m.total; moedasDadas = m.total;
+        Regras.dobrarPrimeiraVitoria(tarefas.estado, m);
+        p.moedas = m; moedasDadas = m.total;
       }
+      campos.moedas = c.moedas + (p.moedas ? p.moedas.total : 0) + tarefas.moedas;
+      campos.extras = { ...(c.extras || {}), tarefas: tarefas.estado };
+      p.tarefas = { concluidas: tarefas.concluidas, moedas: tarefas.moedas };
       const conta = { xp: c.xp, dados: c.dados.slice(), icones: c.icones.slice(), mesas: c.mesas.slice() };
       const xp = Regras.ganharXp(conta, (porDesistencia && !venceu) || amistosa || cedo ? 0 : Regras.xpDaPartida(venceu, j.momentos.filter(m => m.p === i).length));
       Object.assign(campos, { xp: conta.xp, dados: conta.dados, icones: conta.icones, mesas: conta.mesas });

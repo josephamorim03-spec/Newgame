@@ -262,6 +262,16 @@ nunca perder rating.
 **Perder também é aconchegante.** A ruptura é um "plonc" descendente com poeirinha caindo devagar, nunca um
 estrondo. A derrota diz "Fim de partida" e mostra os bons momentos da partida.
 
+**O fim em sequência (v0.14).** O prêmio entra linha a linha: as moedas contam, a barra de experiência **enche de onde
+estava** (antes já aparecia cheia) com um tique e, se subiu de nível, vem o "Nível N!". Embaixo:
+- **a próxima coisa a ganhar:** o presente do próximo nível que tiver um ("Nível 3: Menta de presente · faltam 87 XP"),
+  senão a carta mais barata que falta (depois das cartas, o visual), com quantas moedas faltam;
+- **a tarefa do dia que falta** (`docs/progressao.md` §4.1) e as que fecharam nesta partida, com as moedas;
+- na derrota por até 3 pontos, **"Faltaram 2 pontos"** debaixo do placar;
+- o botão diz o que vem: **"Revanche contra Diana"** na derrota, **"Mais uma · 3 vitórias seguidas"** numa sequência;
+- **recordes que dizem algo:** maior disparo e maior corrente sempre são guardados, mas só são festejados com +4 ou
+  corrente de 5, ou depois de 5 partidas (na primeira, "Novo: Maior disparo: +1" não é notícia).
+
 **A tela do fim sem "+0" (v0.14).** Na derrota, a tela abria com uma moeda grande e "+0", e logo abaixo o rating
 caindo: a primeira coisa lida era o que não se ganhou (o risco que `docs/progressao.md` §7 já apontava). Agora, sem
 moedas (derrota, ou teto do rival), não há número grande: os **bons momentos vêm primeiro**, depois a experiência
@@ -379,6 +389,34 @@ Ainda não peguei."). Tocar num dado ou nela no meio do gesto faz a pata recolhe
 mesa, a pata nunca sobe acima da borda (passaria pelo rosto): erguer a pata é ela crescer um pouco e a sombra no feltro se
 afastar. O braço é um SVG redesenhado a cada quadro, do ombro até a pata. Com a Dona Coruja escolhida, não há pata; com
 as animações desligadas, ela fica parada na borda.
+
+**O impacto (v0.14).** Antes do estouro dos disparos de 5 e 6, o tempo para por um instante (90 ms; 150 na Sinfonia):
+o selo fecha no valor, a corrente incha e espera, a borda da tela escurece de leve, e só então vêm o clarão, os brilhos
+e os pontos voando. A armadilha que pega faz o mesmo, mais curto, no painel do dono. É o "hit-stop" dos jogos de luta:
+a pausa diz "isso foi grande" antes da festa.
+
+**O ponto de partida (v0.14).** A partida tinha a reta final na música, mas nada na tela dizia "agora decide":
+- a corrente que fecha a partida com mais um dado (ou que já vence se disparar) **pulsa** na cor do dono;
+- na decisão, o botão vira **"Disparar e vencer"**; se a carta virada do rival pode ser a Interferência e o −1 tiraria
+  a vitória, ele diz só "pode fechar";
+- os dados da Mesa que **dão a vitória ao rival** trocam a bolinha dele por uma maior, com "!", que pulsa; a linha da
+  Mesa diz "Diana fecha a partida com um dado marcado com !". Levar um deles é o Bloqueio que importa;
+- o disparo que vence **conta até o fim** (a cascata, o impacto, os pontos chegando ao placar) antes de a vitória
+  estourar; a chamada do fim fura a fila das chamadas (o "Belo disparo!" não a empurra para trás da tela do fim) e a
+  tela do fim espera a festa.
+
+**A ruptura em dominó (v0.14).** Os dados caem da frente para trás, um depois do outro (55 ms entre eles): a corrente
+se desfaz, em vez de sumir de uma vez.
+
+**O rival à mesa (v0.14).** Antes, a vez do rival era a etiqueta "pensando" e, de repente, um dado escolhido.
+- **Ele olha a Mesa.** Antes de pegar, um ou dois dados acendem de leve, um de cada vez, com uma notinha. A Diana, que
+  joga solto, olha um dado no máximo, e às vezes nenhum, e a **patinha** dela passa por cima e bate no dado que ela
+  pega; a Dona Coruja olha dois, de preferência os que servem à **sua** corrente: ela lê a Mesa. As olhadas tomam o
+  lugar de parte da espera de antes (800 → 450 ms), então a vez do rival não ficou mais longa.
+- **A carta sai da mão.** A carta jogada pelo rival voa da mão dele até o vão entre o painel dele e a Mesa, e o aviso
+  aparece ali, só com a arte e o nome; o que ela fez está na linha do último lance, logo abaixo dos dados. Antes, o
+  aviso grande ficava no alto da tela, por cima do painel do rival, e escondia justamente a carta, a corrente e o
+  Bolso que a carta tinha mexido. Onde o painel e a Mesa não ficam um em cima do outro, o aviso fica onde era.
 
 **A mesa não pisca mais marrom.** O tremor dos disparos de 5 e 6 movia a própria mesa; o transform a fazia virar um
 contexto de empilhamento e a moldura de madeira (o `::before`, z-index −1) passava por cima do feltro por um quarto de

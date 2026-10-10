@@ -362,3 +362,51 @@ test('o elo diz quais sincronias o dado fez e entre quais números (o guia da es
   const elo = j.eventos.find(e => e.tipo === 'elo');
   assert.deepStrictEqual([elo.rels, elo.de, elo.v], [['passo', 'oposto'], 3, 4]);
 });
+
+test('tarefas do dia: três por dia (uma de cada grupo), avançam com a partida e pagam uma vez só', () => {
+  const dia = '2026-10-10';
+  const ids = Regras.tarefasDoDia(dia);
+  assert.strictEqual(ids.length, 3);
+  assert.deepStrictEqual(Regras.tarefasDoDia(dia), ids, 'o mesmo dia sorteia as mesmas tarefas');
+  ids.forEach(id => assert.ok(Regras.TAREFAS[id], id));
+  const varios = new Set(Array.from({ length: 30 }, (_, i) => Regras.tarefasDoDia(`2026-11-${String(i + 1).padStart(2, '0')}`).join()));
+  assert.ok(varios.size > 5, 'os dias variam');
+
+  // um estado de outro dia (ou estragado) vira o do dia novo
+  assert.deepStrictEqual(Regras.estadoTarefas({ dia: '2020-01-01', ids: ['x'], prog: {}, feitas: ['x'] }, dia).feitas, []);
+  assert.deepStrictEqual(Regras.estadoTarefas('lixo', dia).ids, ids);
+
+  const est = { dia, ids: ['pontos', 'corrente4', 'bloqueio'], prog: {}, feitas: [], vitoria: false };
+  const derrota = { venceu: false, pts: 12, maior: 4, disparos: 3, salvos: 0, bloqueios: 0 };
+  let r = Regras.avancarTarefas(est, dia, derrota);
+  assert.deepStrictEqual(r.concluidas.map(t => t.id), ['corrente4'], 'paga também na derrota');
+  assert.strictEqual(r.moedas, Regras.MOEDAS_TAREFA);
+  assert.strictEqual(r.estado.prog.pontos, 12);
+  assert.deepStrictEqual(est.feitas, [], 'não mexe no estado de antes');
+  r = Regras.avancarTarefas(r.estado, dia, derrota);
+  assert.deepStrictEqual(r.concluidas.map(t => t.id), ['pontos'], 'a de pontos acumula entre partidas');
+  assert.strictEqual(r.estado.prog.pontos, 20, 'o progresso para no alvo');
+  r = Regras.avancarTarefas(r.estado, dia, derrota);
+  assert.strictEqual(r.moedas, 0, 'tarefa feita não paga de novo');
+  assert.strictEqual(Regras.avancarTarefas(r.estado, dia, null).moedas, 0, 'sem resumo (desistência), nada avança');
+
+  // a primeira vitória do dia que rende moedas dobra, uma vez
+  const e2 = Regras.estadoTarefas(null, dia), zero = { total: 0 }, m1 = { total: 14 }, m2 = { total: 14 };
+  assert.strictEqual(Regras.dobrarPrimeiraVitoria(e2, zero), false, 'vitória sem moedas não gasta o dobro');
+  assert.strictEqual(Regras.dobrarPrimeiraVitoria(e2, m1), true);
+  assert.deepStrictEqual([m1.total, m1.dobro, e2.vitoria], [28, true, true]);
+  assert.strictEqual(Regras.dobrarPrimeiraVitoria(e2, m2), false);
+  assert.strictEqual(m2.total, 14);
+
+  // o resumo que vem do aparelho
+  assert.deepStrictEqual(Regras.resumoValido(derrota), derrota);
+  for (const ruim of [null, {}, { ...derrota, maior: 7 }, { ...derrota, pts: -1 }, { ...derrota, salvos: 1.5 }, { ...derrota, venceu: 'sim' }]) assert.strictEqual(Regras.resumoValido(ruim), null);
+});
+
+test('o resumo das tarefas sai da partida: pontos, maior corrente, disparos, salvos e bloqueios de cada um', () => {
+  const j = Regras.criarPartida({ decks: [[], []], vez: 0, meta: 16, rng: rngDe(3) });
+  j.pts = [9, 4]; j.vencedor = 0; j.stats[0].maior = 5; j.stats[0].disp = 3;
+  j.momentos.push({ p: 0, simbolo: '❀', txt: 'O Bolso salvou' }, { p: 0, simbolo: '✦', txt: 'Bloqueio' }, { p: 1, simbolo: '✦', txt: 'Bloqueio' });
+  assert.deepStrictEqual(Regras.resumoTarefas(j, 0), { venceu: true, pts: 9, maior: 5, disparos: 3, salvos: 1, bloqueios: 1 });
+  assert.strictEqual(Regras.resumoTarefas(j, 1).venceu, false);
+});
