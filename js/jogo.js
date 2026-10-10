@@ -103,7 +103,14 @@
   };
 
   // os bichos do modo história (js/historia.js): rivais como a Diana e a Coruja, com as falas aprovadas do capítulo
-  const RIVAIS_HISTORIA = { sapo: { nome: 'Sapo', desc: 'cavalheiro do lago, de chapéu de palha' }, coelho: { nome: 'Coelho', desc: 'sempre atrasado, família enorme' } };
+  const RIVAIS_HISTORIA = { sapo: { nome: 'Sapo', desc: 'cavalheiro do lago, de chapéu de palha' }, coelho: { nome: 'Coelho', desc: 'sempre atrasado, família enorme' },
+    raposa: { nome: 'Raposa', desc: 'de cachecol; nada nela é o que parece' }, urso: { nome: 'Urso', desc: 'sonolento, de gorro' },
+    guaxinim: { nome: 'Guaxinim', desc: 'de máscara e moletom' }, ovelha: { nome: 'Ovelha', desc: 'num pasto de hexágonos' },
+    coruja: { nome: 'Dona Coruja', desc: 'lê a Mesa e lê gente' }, diana8: { nome: 'Diana', desc: 'a fita original' } };
+  // a voz do "blá-blá" de cada um (js/audio.js tem duas: a da gata, aguda, e a da coruja, grave e redonda)
+  const VOZ_RIVAL = { sapo: 'coruja', urso: 'coruja', coruja: 'coruja', esperto: 'coruja' };
+  // o robô joga no jeito da Diana (solto) ou no da Coruja (lê a Mesa); os bichos da história escolhem no capítulo
+  const esperto = j => j.nivel === 'esperto' || !!j.esperto;
   if (window.Historia) for (const c of Historia.CAPS) if (RIVAIS_HISTORIA[c.rival]) {
     RIVAIS[c.rival] = { ...RIVAIS_HISTORIA[c.rival], falas: Historia.falasRival(c) }; RETRATO_RIVAL[c.rival] = c.retrato;
   }
@@ -214,7 +221,11 @@
     uid = idInicial + 1;
     jogo = R.criarPartida({ decks, vez: semCartas ? 0 : st.primeiro, meta: hc ? hc.meta : estreia ? META_ESTREIA : +st.cfg.meta, nomes: nomesP, modo, nivel, idInicial });
     if (estreia) jogo.estreia = true;
-    if (hc) { jogo.historia = hc.id; jogo.ritmoRival = hc.ritmo || 1; if (hc.guia) jogo.historiaGuia = []; }
+    if (hc) {
+      Object.assign(jogo, { historia: hc.id, ritmoRival: hc.ritmo || 1, esperto: !!hc.esperto, dispMin: hc.dispMin || 0 });
+      if (hc.guia) jogo.historiaGuia = [];
+      if (hc.bolsoRival) { jogo.bolso[1] = 1 + Math.floor(Math.random() * 6); jogo.bolso[0] = null; }   // a regra da casa do Guaxinim
+    }
     Object.assign(jogo, { alvo: null, ajusteIdx: null, sel: null, destaque: null, pensando: false, token: Math.random(), fala: null, humor: null, intro: false });
     st.primeiro = 1 - st.primeiro;
     ['avisoCfg', 'fim', 'janelaCarta', 'janelaDeck'].forEach(id => { document.getElementById(id).hidden = true; });
@@ -316,14 +327,32 @@
   // fim de partida: recordes, moedas, rating e experiência (contra os rivais do jogo; o online acerta isso no servidor)
   // o fim de um capítulo: vencer dá a recompensa dele (uma vez, em ordem: R.concluirCapitulo); com conta, quem confere
   // é o servidor. Não mexe em rating, moedas de vitória, recordes nem tarefas: a história é à parte
+  // para o fim da história: a maior corrente disparada (vira a fita da cura) e a corrente só de Opostos. Roda quando o
+  // evento chega à tela e, no disparo que fecha a partida, antes dela (o fim é decidido antes de a tela ver o evento)
+  function rastrearDisparo(j, e) {
+    if (!j.historia || !humano(e.p) || e.rastreado) return;
+    e.rastreado = true;
+    const dados = j.fx && j.fx.p === e.p && j.fx.tipo === 'disparo' ? j.fx.dados : null;
+    if (dados && dados.length > (j.hCorrente || []).length) j.hCorrente = dados.slice();
+    if (e.harm === 'oposto' && e.L >= 4) j.hFita = true;
+  }
+  // o que a partida mostrou, para as estrelas e para o final (a corrente da cura)
+  function ctxEstrelas(j) {
+    const s = j.stats[0], simb = {};
+    j.momentos.filter(m => m.p === 0).forEach(m => { simb[m.simbolo] = (simb[m.simbolo] || 0) + 1; });
+    return { venceu: j.vencedor === 0 && j.desistencia === undefined, maior: s.maior || 0, rupt: s.rupt || 0, disp: s.disp || 0,
+      margem: j.pts[0] - j.pts[1], simb, caiu: j.hCaiu || [], bolsoCheio: j.bolso[0] !== null, fita: !!j.hFita, corrente: j.hCorrente || [] };
+  }
   function aoFimHistoria(j) {
-    const cap = j.historia, venceu = j.vencedor === 0 && j.desistencia === undefined;
-    j.premio = { historia: { cap, venceu, premio: null, ja: R.estadoHistoria(st.conta.historia).feitos.includes(cap) } };
+    j.eventos.filter(e => e.tipo === 'disparo').forEach(e => rastrearDisparo(j, e));
+    const cap = j.historia, ctx = ctxEstrelas(j), venceu = ctx.venceu, c = Historia.cap(cap);
+    const estrelas = c ? Historia.estrelasDe(c, ctx) : 0;
+    j.premio = { historia: { cap, venceu, premio: null, ja: R.estadoHistoria(st.conta.historia).feitos.includes(cap), estrelas, ctx } };
     if (venceu) {
-      const fim = R.concluirCapitulo(st.conta, st.conta.historia, cap);
+      const fim = R.concluirCapitulo(st.conta, st.conta.historia, cap, estrelas);
       if (!fim.erro) { st.conta.historia = fim.estado; j.premio.historia.premio = fim.premio; }
       salvar(); aplicarPrefs();
-      if (st.sessao) pedir('POST', '/api/historia', { capitulo: cap }).then(r => {
+      if (st.sessao) pedir('POST', '/api/historia', { capitulo: cap, estrelas }).then(r => {
         usarPerfil(r.conta); j.premio.historia.premio = r.premio;
         if (jogo === j && !document.getElementById('fim').hidden) desenharRecompensas(j);
       }).catch(() => {});
@@ -339,7 +368,7 @@
       // venceu: a cena do depois (a página, o bicho) e só então a tela do fim
       setTimeout(() => {
         if (jogo !== j) return;
-        if (j.premio.historia.venceu && c) Historia.gibi(c.depois, { titulo: `${c.titulo} · ${c.nome}` }).then(() => { if (jogo === j) mostrarFim(); });
+        if (j.premio.historia.venceu && c) Historia.gibi(c.depois, { titulo: `${c.titulo} · ${c.nome}`, ctx: j.premio.historia.ctx }).then(() => { if (jogo === j) mostrarFim(); });
         else mostrarFim();
       }, espera);
       return;
@@ -389,8 +418,8 @@
   }
   function automatoEscolhe(p) {
     const j = jogo, eu = j.cor[p], ele = j.cor[1 - p], mesa = j.mesa;
-    const esperto = j.nivel === 'esperto';
-    const evitaBolso = esperto && j.armada[1 - p] && ['pronta', 'armada'].includes(j.cartas[1 - p].fundo);
+    const esp = esperto(j);
+    const evitaBolso = esp && j.armada[1 - p] && ['pronta', 'armada'].includes(j.cartas[1 - p].fundo);
     const marcado = j.marca && j.marca.dono !== p ? j.marca.id : null;
     const alternativas = mesa.some(d => d.id !== marcado && seguroDado(p, d));
     let melhor = null, mv = -Infinity;
@@ -398,33 +427,33 @@
       const X = d.v;
       if (d.id === marcado && alternativas) return;
       let neg = 0;
-      if (esperto && ele.length >= 2 && encaixa(ele, X)) {
+      if (esp && ele.length >= 2 && encaixa(ele, X)) {
         const resto = mesa.filter((_, k) => k !== i).map(x => x.v);
         const rf = resto.filter(x => encaixa(ele, x)).length;
         neg = rf === 0 ? 4 : (rf === 1 && resto.length >= 2 ? 1 : 0);
       }
       let ds = destinos(p, X);
       if (evitaBolso && ds.includes('corrente')) ds = ['corrente'];
-      if (!esperto) ds = ds.filter(m => m === 'corrente' || !encaixaP(p, X));
+      if (!esp) ds = ds.filter(m => m === 'corrente' || !encaixaP(p, X));
       for (const m of ds) {
         const v = notaDestino(p, X, m) + neg + Math.random() * 0.01;
         if (v > mv) { mv = v; melhor = { idx: i, modo: m }; }
       }
     });
     if (melhor) return melhor;
-    if (esperto && ele.length >= 2) { const i = mesa.findIndex(d => encaixa(ele, d.v)); if (i >= 0) return { idx: i, modo: 'corrente' }; }
+    if (esp && ele.length >= 2) { const i = mesa.findIndex(d => encaixa(ele, d.v)); if (i >= 0) return { idx: i, modo: 'corrente' }; }
     return { idx: Math.floor(Math.random() * mesa.length), modo: 'corrente' };
   }
   function automatoDestino(p, v, planejado) {
     const ds = destinos(p, v);
     if (!ds.length) return 'corrente';
-    if (ds.includes(planejado) && jogo.nivel !== 'esperto') return planejado;
+    if (ds.includes(planejado) && !esperto(jogo)) return planejado;
     return ds.reduce((a, b) => notaDestino(p, v, b) > notaDestino(p, v, a) ? b : a);
   }
   function automatoCartas(p) {
     const j = jogo, eu = j.cor[p], ele = j.cor[1 - p], m = j.mesa, usa = [];
     const pronta = c => j.cartas[p][c] === 'pronta', pode = c => usavel(p, c);
-    if (j.nivel === 'aprendiz') {
+    if (!esperto(j)) {
       if (Math.random() > 0.2) return usa;
       const cs = j.decks[p].filter(c => pronta(c) && podeUsar(p, c).ok && c !== 'sobrecarga');
       if (!cs.length) return usa;
@@ -487,7 +516,8 @@
   function automatoDispara(p) {
     const j = jogo, L = j.cor[p].length;
     if (j.pts[p] + pontos(L) >= j.meta) return true;
-    if (j.nivel === 'aprendiz') return L >= 4;
+    if (j.dispMin && L < j.dispMin) return false;   // a regra da casa do Urso: só dispara com 5 ou mais
+    if (!esperto(j)) return L >= 4;
     let { r } = risco(p);
     if (j.armada[p] === 'ancora') r *= 0.2;
     return r * pontos(L) > (pontos(L + 1) - pontos(L)) * (1 - r);
@@ -526,7 +556,7 @@
     if (!st.pref.animacoes) return true;
     const outros = j.mesa.map((d, i) => i).filter(i => i !== escolhido);
     const servemAoOutro = i => j.cor[1 - p].length && encaixa(j.cor[1 - p], valorAoPegar(1 - p, j.mesa[i]));
-    const coruja = j.nivel === 'esperto';
+    const coruja = esperto(j);
     const n = !outros.length ? 0 : coruja ? Math.min(2, outros.length) : Math.random() < 0.55 ? 1 : 0;
     const ordem = outros.sort((a, b) => (coruja ? servemAoOutro(b) - servemAoOutro(a) : 0) || Math.random() - 0.5).slice(0, n);
     for (const i of ordem) {
@@ -562,7 +592,7 @@
         const plano = automatoEscolhe(p);
         if (!(await olharMesa(p, plano.idx, tok))) return;
         j.destaque = j.mesa[plano.idx].id; render();
-        if (j.nivel === 'aprendiz' && st.pref.animacoes) Som.tocar('quique', { forca: 3, x: (plano.idx - 2) * 0.3 });   // o toque no dado que ela vai pegar
+        if (!esperto(j) && st.pref.animacoes) Som.tocar('quique', { forca: 3, x: (plano.idx - 2) * 0.3 });   // o toque no dado que ela vai pegar
         await espera(520); if (tok !== jogo.token) return;
         j.destaque = null; j.pensando = false;
         const v = tirar(p, plano.idx);
@@ -580,7 +610,7 @@
     await espera(650); if (tok !== jogo.token) return;
     j.pensando = false;
     if (automatoDispara(p)) {
-      if (j.decks[p].includes('sobrecarga') && podeUsar(p, 'sobrecarga').ok && j.cor[p].length >= 4 && j.nivel === 'esperto') { usarCarta(p, 'sobrecarga'); render(); await espera(700); if (tok !== jogo.token) return; }
+      if (j.decks[p].includes('sobrecarga') && podeUsar(p, 'sobrecarga').ok && j.cor[p].length >= 4 && esperto(j)) { usarCarta(p, 'sobrecarga'); render(); await espera(700); if (tok !== jogo.token) return; }
       disparar(p);
     } else segurar(p);
   }
@@ -590,10 +620,10 @@
     const j = jogo;
     if (!j || j.modo !== 'bot' || !st.pref.falas) return;
     const lista = RIVAIS[j.nivel].falas[chave]; if (!lista) return;
-    if (!['inicio', 'venci', 'perdi'].includes(chave) && !chave.startsWith('carta:') && Math.random() > 0.55) return;
+    if (!['inicio', 'venci', 'perdi'].includes(chave) && !/^(carta:|armou|pegou:|seuOposto)/.test(chave) && Math.random() > 0.55) return;
     j.fala = { id: uid++, txt: sorteia(lista).replace('Boa noite', saudacao()) };
     j.humor = ['meuDisparo', 'armadilha', 'venci', 'inicio'].includes(chave) ? 'feliz' : ['minhaRuptura', 'perdi'].includes(chave) ? 'triste' : null;
-    Som.tocar('falaRival', { voz: RETRATO_RIVAL[j.nivel] });
+    Som.tocar('falaRival', { voz: VOZ_RIVAL[j.nivel] || 'diana' });
     const id = j.fala.id;
     setTimeout(() => { if (jogo === j) render(); }, 0);
     setTimeout(() => { if (jogo && jogo.fala && jogo.fala.id === id) { jogo.fala = null; jogo.humor = null; render(); } }, 2600);
@@ -1264,6 +1294,7 @@
             if (e.n === 4) Fx.texto(alvo, 'Corrente de 4', 'pequeno');
             if (e.n === 5) Fx.texto(alvo, 'Corrente de 5', 'pequeno');
             const nova = humano(e.p) && (e.rels || []).find(k => !(jogo.historiaGuia || st.guia.vistos).includes(k));
+            if (humano(e.p) && j.historia && (e.rels || []).includes('oposto') && !j.hOposto) { j.hOposto = true; falar('seuOposto'); }
             if (nova) ensinar(nova, e.de, e.v);
           }, 300);
           break;
@@ -1274,6 +1305,7 @@
           // valor de verdade; só então vêm o clarão e os pontos voando até o placar. A festa segue o tamanho do lance
           const corEl = qs(`#pj${e.p} .corrente`), placar = qs(`[data-placar="${e.p}"]`), cores = ['#ffe3a3', '#ffd0b5', '#fff6e6', e.p === 0 ? '#bfe8f2' : '#ffd0dc'];
           const quem = e.p === 1 && j.modo !== 'local' ? 'rival' : '';
+          rastrearDisparo(j, e);
           Som.tocar('disparo', { L: e.L });
           if (humano(e.p)) vibrar(15);
           const nota = k => 80 + k * Som.PASSO_DISPARO * 1000, fim = nota(e.L);
@@ -1348,12 +1380,15 @@
         }
         case 'armou': {
           Som.tocar('armou');
+          // o bicho comenta o que armou (o Espelho fica à vista; das outras, só que armou alguma coisa)
+          if (e.p === 1 && j.modo === 'bot') { const f = RIVAIS[j.nivel].falas; setTimeout(() => falar(f['armou:' + e.c] ? 'armou:' + e.c : 'armou'), AVISO_CARTA * 0.4); }
           if (humano(e.p) && j.modo !== 'local') break;
           if (e.c === 'espelho' && j.marca) { marcarMudanca([j.marca.id], null); avisoCarta(e.p, e.c, 'Espelho', `${n[e.p]} marcou um ${(j.mesa.find(d => d.id === j.marca.id) || {}).v || ''} da Mesa: se você pegá-lo, ele vira`, CARTAS.espelho.arte); }
           else avisoCarta(e.p, e.c, 'Armadilha virada', `${n[e.p]} armou uma armadilha (?). Toque nela para ver o que pode ser`, VERSO);
           break;
         }
         case 'revelou': {
+          if (e.p === 1 && j.historia) { (j.hCaiu = j.hCaiu || []).push(e.c); setTimeout(() => falar('pegou:' + e.c), 900); }
           // a armadilha que pega: um instante parado no painel do dono, e então a revelação (com o impresso, as chapas
           // azul e rosa saem do registro na chamada e no painel)
           Fx.impacto(painelEl, 80, 0.6).then(() => {
@@ -1528,6 +1563,12 @@
       else {
         html = pag ? `<div class="linha"><span>Página ${pag.n} do caderno</span><span class="sobe">no caderno</span></div>` : '';
         if (pr && pr.carta) html += `<div class="linha"><span>Carta liberada: <b>${CARTAS[pr.carta].nome}</b></span><span class="sobe">nova!</span></div>`;
+        if (pr && pr.icone) html += `<div class="linha"><span>Ícone liberado: <b>${ICONES[pr.icone] ? ICONES[pr.icone].nome : pr.icone}</b></span><span class="sobe">novo!</span></div>`;
+        if (c && c.estrelas) {
+          const n = h.estrelas || 0, metas = [['Vencer', () => true], ...c.estrelas];
+          html += `<div class="linha historia-estrelas"><span>${'★'.repeat(n)}${'☆'.repeat(3 - n)}</span><span>${n} de 3 estrelas</span></div>
+            <ul class="historia-metas">${metas.map(([t, ok]) => `<li class="${ok(h.ctx) ? 'ok' : ''}">${t}</li>`).join('')}</ul>`;
+        }
         if (pr && pr.moedas) html += `<div class="grande"><span class="moeda" aria-hidden="true"></span><span>+${pr.moedas}</span></div>`;
         if (!pr && h.ja) html += `<span class="conta">Capítulo já feito: jogar de novo não paga de novo.</span>`;
         else if (!pr && !pag) { const prox = Historia.cap(R.proximoCapitulo(st.conta.historia)); html += `<span class="conta">${c.titulo} feito.${prox ? ` ${prox.titulo} aberto: ${prox.nome}.` : ''}</span>`; }

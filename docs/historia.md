@@ -91,7 +91,8 @@ Todos já têm retrato pintado no jogo (`arte/retratos.json`); a voz de cada um 
 | **Dona Coruja** | a rival "desafiadora" do jogo | bibliotecária; lê a Mesa e lê gente | **madeira** (nogueira, de mesa de biblioteca) | 7 · Lacre |
 
 **Os dados de cada um** já estão no jogo (`DADO_DO_BICHO` em `js/jogo.js`; as skins em `css/estilo.css`): o rival rola os
-dele na corrente, no Bolso e no dado que voa, e a cena da tela inicial mostra o dado do rival escolhido. A lã, a madeira e
+dele na corrente, no Bolso e no dado que voa (a capa continua fixa: marfim, rosa, marfim). Pela regra do
+retrato, a Diana do Cap. 8 rola os rosa e a Coruja da história os de madeira. A lã, a madeira e
 o verde têm a face pintada pela API de imagem (`tools/arte_dados.py`, `arte/dados.json`, `js/dados_pintados.js`); sem a
 pintura, vale o degradê do CSS. Os quadros também respeitam isso: a mesa da Diana tem dados rosa, a vitória-régia do Sapo
 tem dados verdes, a caverna do Urso tem dados de mel. **Em aberto (decisão do dono):** vencer um capítulo dá o dado
@@ -434,7 +435,32 @@ Para cada uma valer, ela muda um pouco a cada aparição e paga no fim.
 
 ## 9. Como vira jogo
 
-**Feito (fase 1, v0.15):** o Prólogo e os capítulos 1 (Sapo) e 2 (Coelho) jogáveis.
+**Feito (fases 1 a 3, v0.15): a história inteira joga, do Prólogo aos pós-créditos, ainda sem a arte.**
+
+- **Fase 2 (capítulos 3 a 6) e fase 3 (Coruja, revelação, Cap. 8, final):** cada bicho com o deck, a meta e a regra da
+  casa do §6.
+  - O Urso só dispara com 5 ou mais.
+  - O Guaxinim começa com um dado no Bolso e você, sem.
+  - Do Guaxinim em diante, o robô joga no jeito da Coruja, que lê a Mesa.
+- **Falas na partida:** as do bicho saem quando ele usa ou arma a carta dele ("armou", com o Espelho à vista) e quando
+  a armadilha dele pega ("pegou"), sem revelar uma armadilha virada. No Cap. 8, a Diana comenta o seu primeiro Oposto.
+- **A revelação** (antes do Cap. 8) tem a escolha do Q11: o botão escolhido fala primeiro, o outro em seguida.
+- **A cura:** lê a maior corrente disparada por quem joga ("Um, seis, um, seis, um."), mostra a fita com as letras
+  (1 = A, 6 = T, 2 = C, 5 = G, 3 e 4 = "·") e, se houver 3 ou 4, a F-02. Depois vêm:
+  - o fecho do Eco;
+  - o quadro da 3.ª estrela (a fita complementar);
+  - os créditos;
+  - o "DianaDice" riscado;
+  - o chá do Sapo.
+- **As estrelas:** 3 por capítulo, guardando a melhor vez, também nas revanches. Uma é vencer e as outras duas são as
+  do §6, com ajustes para o jogo conseguir contar sozinho.
+  - O Cap. 1 pede corrente de 4 e vencer sem ruptura.
+  - O Cap. 2 pede 4 disparos e vencer sem ruptura.
+  - O mapa soma as estrelas, e o fim lista as metas cumpridas.
+- **As recompensas:** Fundo Falso no Cap. 3, 40 moedas no Cap. 4, Furto no Cap. 5, Espelho no Cap. 6, 60 moedas no
+  Cap. 7 e o ícone **Diana** no Cap. 8. O ícone só vem da história: não se compra nem se importa.
+
+**Fase 1 (v0.15):** o Prólogo e os capítulos 1 (Sapo) e 2 (Coelho) jogáveis.
 - **Onde:** o botão **História** no menu (aparece depois da estreia e some com uma partida guardada) abre o mapa do
   caderno, com os capítulos em ordem.
 - **O gibi** (`js/historia.js`): quadros de papel com borda de tinta, o retrato e a rubrica do desenho numa caixa
@@ -493,7 +519,60 @@ a cascata, o impacto e as tarefas do dia.
    - o dado **Hélice**;
    - nas 12 e nas 24 estrelas, os cosméticos do pasto de hexágonos e da biblioteca.
 
-**Em fases (cada uma jogável e testável):**
+**As fases que faltam** (a 1, a 2 e a 3 estão feitas; a arte é do dono):
+
+4. **A arte no leitor** (quando os lotes forem aprovados; `docs/arte-historia.md`):
+   - o gibi em camadas (fundo, personagem, objeto) no lugar das rubricas amarelas;
+   - o close sem arte nova;
+   - os efeitos de gibi da história (quadro mudo, quadro congelado na revelação e na cura, emanata, virar a página,
+     paralaxe);
+   - o mural montado com os retratos que o jogo já tem;
+   - a arte de cada capítulo num arquivo próprio, carregado quando o capítulo abre, com um teste de peso por capítulo.
+
+   O que já está pronto para isso: cada quadro tem o código das falas, quem fala e o humor; falta só a camada de imagem
+   por quadro (`arte` em `q(...)`).
+5. **O equilíbrio dos capítulos.**
+   - O simulador (`sim/`) com cada regra da casa e cada deck de bicho, para a dificuldade subir aos poucos: o Sapo
+     perto de 40% para o jogador médio, a Diana do Cap. 8 perto de 60%.
+   - As metas de estrela que quase ninguém cumpre (a fita complementar, a Esquiva) medidas antes de ficarem.
+6. **O teste com gente** (5 a 8 pessoas, `docs/design.md` §9):
+   - Onde as pessoas param? Quantas revanches por capítulo?
+   - Pulam o gibi? As piadas funcionam lidas no celular, sem a voz de ninguém?
+
+   Precisa das métricas mínimas (início e fim de capítulo, pular, revanche), que o jogo ainda não guarda.
+7. **O que as estrelas dão:**
+   - nas 12 e nas 24 estrelas, os cosméticos do §9.10 (a mesa Mural, o dado Hélice, o pasto de hexágonos, a
+     biblioteca);
+   - um selo no Perfil.
+
+   Pede a arte desses cosméticos.
+8. **Publicar:** a `DiceDuel-primeira-partida` volta para a `DiceDuel` como v0.15. A página vai para o Vercel e o
+   servidor para a Railway, que precisa da rota `/api/historia`.
+
+**O dado de cada bicho (4.ª rodada de falas, pendente):** o dono pediu que cada rival tenha o dado dele e que as
+falas conversem com isso: Sapo verde, Diana rosa, Coelho branco clássico, Coruja madeira, Ovelha de lã e Raposa verde
+(roubado do Sapo). Os dados (as skins) e os quadros desenhados são da sessão de arte. Aqui ficaram 16 falas novas,
+cada uma com uma sacada científica de verdade:
+- a Diana não enxerga rosa direito (gatos são dicromatas: veem azul e amarelo);
+- o verde do Sapo é azul com amarelo por cima (sapo não tem pigmento verde) e a cobrança do dado roubado;
+- a Raposa chama o roubo de mimetismo;
+- o Coelho e a sequência de Fibonacci, que nasceu de um problema sobre coelhos;
+- o mel que não estraga, do Urso;
+- a pata molhada do Guaxinim, que sente melhor;
+- a lã da Ovelha, que é queratina, como o chifre;
+- a Ovelha negociando "duas lãs por qualquer coisa, tenho porto", com a cavalaria e o maior exército, e o sete que
+  "move o ladrão" quando você soma um Oposto, sem nome de jogo;
+- a idade nos anéis da madeira da Coruja e os olhos fixos dela.
+
+Elas já estão nos lugares delas em `js/historia.js` e aparecem quando forem aprovadas.
+
+**Pendente com o dono:**
+- a **F-03b** foi aprovada e substituiu a F-03 (que ficou de reserva);
+- a **R-09** ("eu não estava brincando com os seus dados na tela inicial… estava sequenciando") lembrava a pata da
+  Diana mexendo nos dados da capa, que saiu do jogo. Os dados ainda estão na capa, mas ela não mexe mais neles, e a
+  piada perde o apoio. Fica, sai ou ganha outra versão?
+
+**Em fases (como foi planejado):**
 1. **Fatia vertical, 3 a 4 dias:** o leitor de gibi, o Prólogo com o guia na voz da Diana e os capítulos 1 e 2. É o
    suficiente para testar o humor com gente.
 2. **O miolo, 4 a 6 dias:** capítulos 3 a 6, as regras da casa, as estrelas, o mapa e as páginas.
