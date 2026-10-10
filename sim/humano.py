@@ -518,3 +518,17 @@ if __name__ == '__main__':
             with Pool(PROCS) as pp: rs = pp.map(_pressa_bloco, [(bal, NPART // 16, 900 + k) for k in range(16)])
             w = sum(r['w'] for r in rs); n = sum(r['n'] for r in rs); t = sum(r['tres'] for r in rs); tv = sum(r['tres_venceu'] for r in rs)
             print(f"  {nome:36s} Pressa vence {w / n:.1%} · partidas com 3+ dados seguidos de alguém: {t / n:.1%} · quem fez isso venceu {tv / max(1, t):.0%}", flush=True)
+    if 'metas' in quais:
+        # a duração: o que muda com a meta (o jogo, a habilidade com as cartas, a virada, a queima e o equilíbrio)
+        print(f"\n## Metas (decks de 3 sorteados; humano x humano para o jogo, humano x robô para a habilidade; {NPART} partidas cada)")
+        print("  meta | Mesas | minutos* | habilidade (humano x robô) | quem começa | virada (3+ atrás no meio) | sobram | usadas no 1º quarto")
+        for meta in (12, 16, 20, 24):
+            jj = mede('humano', 'humano', meta=meta); hb = mede('humano', 'robo', meta=meta)
+            print(f"  {meta:4d} | {jj['mesas']:5.1f} | {jj['mesas'] * 35 / 60:3.0f} a {jj['mesas'] * 50 / 60:2.0f} | {fmt(hb):26s} | {jj['primeiro']:11.1%} | {jj['virada']:25.1%} | {jj['sobra']:6.0%} | {jj['cedo']:.0%}", flush=True)
+        print("  * de 35 a 50 s por Mesa (o que dava os 4 a 6 minutos da meta 12)")
+    if 'metas_p' in quais:
+        n = int(os.environ.get('NP', '240'))
+        print(f"\n## Metas com o pensador ({ROLL} simulações) x humano; {n} partidas cada")
+        for meta in (12, 16, 20, 24):
+            r = mede('pensador', 'humano', n=n, meta=meta, semente=int(os.environ.get('SEMENTE', '1')))
+            print(f"  meta {meta:2d}: pensador vence {fmt(r)} · Mesas {r['mesas']:.1f} · cartas usadas no 1º quarto {r['cedo']:.0%}", flush=True)

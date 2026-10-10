@@ -155,7 +155,7 @@ if (require.main === module) (async () => {
     await pg.click('#btnFecharDeck');
     await pg.evaluate(() => document.getElementById('btnCarteira').click()); for (const aba of ['cartas', 'dados', 'icones', 'mesas']) { await pg.click(`[data-aba-loja="${aba}"]`); await olha('loja-' + aba, aba === 'cartas'); } await pg.click('#btnComoGanhar'); await olha('loja-ganhar', false); await pg.click('[data-voltar-loja]'); await pg.click('#btnFecharLoja');
     await pg.evaluate(() => document.getElementById('btnOnline').click()); await olha('online-sem-servidor', false); await pg.click('#btnFecharOnline');
-    await pg.evaluate(() => document.getElementById('btnConfig').click()); await olha('ajustes', true); await pg.click('#btnFecharConfig'); await pg.click('[data-inicio="jogar"]'); await pg.click('[data-inicio="rival"][data-v="esperto"]'); await olha('rivais-coruja', false); await pg.click('[data-inicio="voltar"]');
+    await pg.evaluate(() => document.getElementById('btnConfig').click()); await olha('ajustes', true); await pg.click('#btnFecharConfig'); if (!(await pg.$('#inicioRivais:not([hidden])'))) await pg.click('[data-inicio="jogar"]'); await pg.click('[data-inicio="rival"][data-v="esperto"]'); await olha('rivais-coruja', false); await pg.click('[data-inicio="voltar"]');
     if (w0 < 1040) { await pg.evaluate(() => document.getElementById('btnRegras').click()); await pg.waitForTimeout(350); await olha('regras', false); await pg.click('#btnFecharLado'); }
     await pg.evaluate(() => document.getElementById('btnDeck').click()); await pg.click('[data-pronto="1"]'); await pg.click('#btnJogarDeck');
     await pg.waitForTimeout(200);
