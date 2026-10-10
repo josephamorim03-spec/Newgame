@@ -8,8 +8,8 @@ Os dois jogadores disputam a mesma Mesa de 5 dados e montam **correntes** de dad
 - **Oposto:** soma 7.
 
 Cada um guarda um dado no **Bolso**, escolhe a hora de **disparar** a corrente para marcar pontos e leva um
-**deck de até 3 cartas** com efeitos e armadilhas. Um efeito virado para baixo vira **blefe**: para o rival, é um
-"?" igual ao de uma armadilha. A partida vai a 16 pontos e dura de 6 a 8 minutos.
+**deck de até 3 cartas** com efeitos e armadilhas. A armadilha fica virada para baixo: o rival vê um "?", sabe que é
+uma armadilha, mas não qual. A partida vai a 16 pontos e dura de 6 a 8 minutos.
 
 **Progressão sem pagar para vencer:**
 - moedas só vêm de vitórias, e rendem mais com margem maior e menos Mesas;
@@ -63,7 +63,7 @@ e o amigo cai direto na sala. O servidor é a autoridade da partida e roda na Ra
 | `tools/arte_icones.py` | pinta os retratos com a API de imagem da OpenAI, no estilo do jogo (pedidos em `arte/retratos.json`, com o vetor de cada personagem como referência), e os embute no jogo |
 | `tools/referencias.js` | desenha os vetores de `js/retratos.js` em `arte/referencia/` (rode de novo quando mudar um vetor) |
 | `tools/fumaca.js` | teste de fumaça: joga partidas inteiras no navegador e falha com qualquer erro |
-| `tools/regras.js` | testes dirigidos das cartas (Pressa, Coringa, Espelho, blefe, Âncora × Interferência) |
+| `tools/regras.js` | testes dirigidos das cartas (Pressa, Remendo, Espelho, armadilha virada, Âncora × Interferência) |
 | `tools/layout.js` | verificador de layout em 5 larguras: texto vazando, fora da caixa, quebrado, descentralizado |
 | `tools/macaco.js` | o macaco: toques ao acaso em tudo, com vigia de travamento e de estado impossível |
 | `tools/online_e2e.js` | ponta a ponta do online: dois navegadores, conta, convite, partida, revanche, ranking |
@@ -93,7 +93,13 @@ node tools/vercel_local.js                     # a página como o Vercel publica
 
 ## Estado
 
-**v0.12, em produção** (a página no Vercel e o servidor na Railway, publicados da branch `DiceDuel`): meta 16 (a 12 acabava
+**v0.13, em produção** (a página no Vercel e o servidor na Railway, publicados da branch `DiceDuel`): **o blefe e o
+desafio saíram.** O "?" do rival é sempre uma armadilha de verdade; tocar nele mostra quais armadilhas do deck dele ele
+pode ser e o que cada uma faria agora. Sem os +2/+2/+3 do desafio, os pontos voltam a vir só dos dados e das cartas
+(o porquê e os números em `docs/balanceamento-cartas.md` §18). No online, antes de cada partida os dois montam o deck
+(preparação de 60 s, `docs/servidor.md`).
+
+**v0.12:** meta 16 (a 12 acabava
 cedo demais; 20 e 24 voltam quando tiverem o próprio ajuste); o Coringa virou Remendo: o dado que romperia entra no lugar da frente, em vez de alongar a corrente; Pressa
 só com 3 ou 4 dados na Mesa, Ajuste com 3+ e Remendo com 2+ (nenhum deck acima de ~58%, `docs/balanceamento-cartas.md` §17);
 no online fica óbvio de quem é a vez (o relógio na etiqueta "sua vez" do painel, a Mesa acesa na sua vez, chamada e sininhos
@@ -109,8 +115,7 @@ de destino: tocar nele e na corrente ou no Bolso, arrastar até eles, ou tocar d
 - o deck de cada um;
 - as cartas que agiram;
 - as rupturas;
-- o uso do Bolso;
-- os blefes.
+- o uso do Bolso.
 
 Os números do balanceamento estão em `docs/design.md` §2–4 e `docs/balanceamento-cartas.md`. As exceções e combinações das cartas, os bugs
-corrigidos na v0.8 e o blefe estão em `docs/design.md` §3–4.
+corrigidos na v0.8 e a história do blefe (que saiu na v0.13) estão em `docs/design.md` §3–4.

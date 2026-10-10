@@ -1,9 +1,9 @@
 # Dice Duel: design
 
 > Versão 0.8 (a progressão, as moedas e a loja estão em `docs/progressao.md`). Os números saem do simulador em `sim/` (robôs jogando milhares de partidas).
-> Robôs não blefam nem leem o rival: os números dizem a direção, não as casas decimais.
+> Robôs não leem o rival: os números dizem a direção, não as casas decimais.
 > As regras moram em `shared/regras.js`, o mesmo motor no navegador e no servidor do online (`docs/servidor.md`).
-> No online, o "?" (armadilha ou blefe) nunca sai do servidor: cada jogador recebe só a própria visão.
+> No online, qual armadilha está por trás do "?" nunca sai do servidor: cada jogador recebe só a própria visão.
 
 ## 1. A ideia em uma frase
 
@@ -57,7 +57,7 @@ Antes da partida, cada um monta um deck de **até 3 cartas**, cada uma valendo *
 | Furto (v0.11) | efeito | troca os dados dos Bolsos (não é "guardar": o Fundo Falso não pega) | — |
 | Espelho | armadilha | marca à vista num dado; quem o pega recebe o dado virado e não pode guardá-lo | 53,7% (marca à vista) |
 | Fundo Falso | armadilha | o próximo dado que o rival guardar no Bolso cai (na troca, caem os dois) | 54,5% (deck à mostra) |
-| Lacre (v0.11) | armadilha | o próximo efeito do rival é gasto sem agir (blefe desvirado e Sobrecarga também) | — |
+| Lacre (v0.11) | armadilha | o próximo efeito do rival é gasto sem agir (a Sobrecarga também) | — |
 | Âncora | armadilha | protege sua corrente de 4+: o dado que romperia é jogado fora | 58,9% |
 | Interferência ⚡ | armadilha | o próximo disparo do rival com 4+ vale −1, **se ele estiver na frente ou empatado** (v0.11); atrás, ela espera | 57,1% |
 | Pedágio ⚡ | armadilha | no próximo disparo do rival, você ganha **+2** (era +3 até a v0.10) | 57,3% |
@@ -106,7 +106,7 @@ Cada regra abaixo aparece também no painel de Regras do jogo e é conferida por
 | Pressa | Só com 3 ou 4 dados na Mesa (v0.12): nunca abre uma Mesa nem pega o último dado. Com 2, ela pegava o último dado (que era do rival) e quem está atrás abria a Mesa seguinte: 3 dados seguidos com o rival só assistindo, em 24% das partidas com ela (`docs/balanceamento-cartas.md` §16). Não passa para a Mesa seguinte. Não se dispara entre os dois dados; o segundo é opcional ("Dispensar"). Se o primeiro completar 6, a corrente dispara sozinha e o segundo começa outra. |
 | Espelho | O dado chega virado (7 − valor) e não pode ir para o Bolso; Coringa e Âncora ainda valem. As etiquetas da Mesa e o aviso de ruptura já usam o valor virado. Virar (no dado marcado) e Rerrolar apagam a marca; Ajuste não. Pegar o próprio dado marcado desperdiça o Espelho. |
 | Fundo Falso | Só pega quando o dado vai para o Bolso. Na troca, os dois caem e a corrente não muda. |
-| Lugar da armadilha | Uma carta armada por vez, contando o blefe. Armadilha que nunca encontra a sua condição fica armada até o fim. |
+| Lugar da armadilha | Uma armadilha armada por vez. Armadilha que nunca encontra a sua condição fica armada até o fim. |
 
 ### Bugs corrigidos na v0.8
 
@@ -153,46 +153,30 @@ Olhar os resumos dos testes com gente antes de reforçar.
 |---|---|
 | O seu deck de 3 cartas | **sim**, desde o começo (tela de "versus") e durante a partida |
 | Que há uma carta virada | **sim** ("?") |
-| Qual carta está virada | **não**: pode ser qualquer carta sua ainda não revelada (armadilha ou blefe) |
+| Qual armadilha está virada | **não**: só que é uma das suas armadilhas ainda não reveladas (a tela lista quais) |
 | O dado marcado pelo Espelho | **sim** |
 | Efeitos usados | sim, na hora |
 
-### O blefe (v0.8)
+### O "?" (v0.13: sem blefe)
 
-**O problema que um teste com gente apontou.** Com o deck à mostra, um "?" de quem só tem uma armadilha
-(ou só uma que mexe em disparo) era certeza, não dúvida: "tenho corrente de 4, ele tem Interferência e armou
-algo, então é a Interferência". Não existia blefe.
-
-**A regra.** Qualquer **efeito** pode ser virado para baixo no lugar da armadilha. Para o rival é um "?" igual:
-- virado, ele não faz nada e ocupa o lugar da armadilha (uma carta armada por vez);
-- quando você o usa, ele funciona normalmente e o blefe se revela ("Blefe!");
-- só é permitido se o seu deck ainda esconde uma armadilha que gera "?" (não o Espelho, que é sempre à vista).
-  Sem isso, todos saberiam que é blefe.
-
-**O custo do blefe** é o lugar da armadilha: enquanto o efeito está virado, você não arma a sua armadilha de
-verdade. Por isso o "?" volta a ser uma leitura do rival (*yomi*, docs/pesquisa.md §2), não uma conta.
-
-**Como mostrar durante a partida:**
+A armadilha é armada virada para baixo: o rival vê um "?" e sabe que é uma armadilha, mas não qual. Com o deck à
+mostra, o "?" é uma das armadilhas dele ainda não reveladas (o Espelho nunca é "?": a marca fica à vista).
 - **Começo (versus):** os dois decks inteiros.
-- **Durante:** cada carta aparece como "na mão" até agir. A carta virada **não** é marcada no deck do dono
-  visto pelo rival; aparece só o "?" ao lado.
-- **Na hora de disparar:** o aviso lista o que o "?" pode ser e o que cada possibilidade faria **neste**
-  disparo, e lembra que pode ser blefe com tal e tal efeito.
-- **Quando age:** a carta se revela com o nome (armadilha) ou com "Blefe!" (efeito).
+- **Durante:** cada carta aparece como "na mão" até agir; a armadilha armada **não** é marcada no deck do dono
+  visto pelo rival, aparece só o "?" ("armadilha virada") ao lado. Tocar nele lista quais armadilhas ele pode ser e o
+  que cada uma faria agora.
+- **Na hora de disparar:** o aviso lista o que o "?" pode ser e o que cada possibilidade faria **neste** disparo.
+- **Quando age:** a carta se revela com o nome, para os dois.
 
-**O desafio (v0.11).** Medido em `sim/profundidade.py` (docs/balanceamento-cartas.md §13): sem poder pagar para ver,
-o "?" não mudava nenhuma jogada (saber o que era valia ~0) e blefar só custava. Agora, na sua vez, antes de pegar o
-dado, você toca na carta virada do rival e **desafia**: era **blefe** → a carta dele se perde e você ganha **2**; era
-**armadilha** → ela continua armada, agora **à vista**, e ele ganha **2**. Um blefe que ninguém desafiou rende **+3**
-quando o dono o desvira (a partir da vez seguinte à que virou). Com esses números nenhuma estratégia fixa vence
-(sempre ou nunca desafiar, sempre ou nunca blefar): ganha quem lê o deck do rival. Na tela: a etiqueta "carta virada"
-do rival é um botão (com contorno quando dá para desafiar) que abre a explicação e o **Desafiar**; a armadilha
-desafiada vira "… armada · à vista"; o aviso de disparo diz exatamente o que ela faz. Com as ajudas ligadas, uma dica
-única na primeira vez em que dá para blefar e na primeira em que dá para desafiar.
+**O blefe (v0.8 a v0.12) saiu na v0.13.** Ele nasceu de um teste com gente: com o deck à mostra, o "?" de quem só
+tinha uma armadilha era certeza. A regra deixava virar um **efeito** no lugar da armadilha; na v0.11 ganhou o
+**desafio** (pagar para ver: +2 por pegar o blefe, +2 para o dono da armadilha de verdade, +3 pelo blefe que passava).
+Saiu porque mudava pouco quem ganha (todas as estratégias entre 47,7% e 50,6%), só se sustentava com pontos fora dos
+dados (~17% dos pontos de uma partida), não tinha o que ler (deck de 3 à mostra; contra robô e no online, sem rosto,
+o desafio era cara ou coroa) e somava exceções (só com armadilha escondida, ocupava o lugar dela, só desvirava na
+vez seguinte, o Lacre o pegava). Números em `docs/balanceamento-cartas.md` §13 (o estudo) e §18 (a decisão).
 
-**Robôs:** a Dona Coruja blefa às vezes (quando o rival tem corrente de 3+ e ela não armou nada) e desafia com a chance de o "?" ser blefe pelo que resta no deck; a Diana blefa às vezes (25%) e desafia com metade dessa chance.
-O simulador não modela blefe (os robôs dele não leem o rival), então o efeito do blefe sai dos testes com gente:
-o resumo copiável agora conta os blefes de cada um.
+**Robôs:** a Diana e a Dona Coruja não blefam nem desafiam; armam as armadilhas como antes.
 
 Por quê (`sim/informacao.py`): mostrar quase não enfraquece as armadilhas.
 
@@ -387,14 +371,14 @@ dados são objetos (rolam, pousam, voam); as cartas não eram. Agora:
 - **as suas são cartas de verdade**, com a mesma arte pintada do deck, o nome e o que fazem ("±1 num dado",
   "−1 em quem lidera"); as do rival são fichas mais baixas (arte e nome), para a sua mão ter o destaque;
 - **o estado se lê sem tocar**: na sua vez, a carta que dá para usar agora **sobe com o aro de mel**; a que não serve
-  agora fica rente e apagada; a armadilha armada (ou o blefe) fica **escura, virada para baixo**, como a carta virada
+  agora fica rente e apagada; a armadilha armada fica **escura, virada para baixo**, como a carta virada
   do rival; a usada fica cinza e riscada. Usar faz a carta dar um pulinho e apagar; armar faz ela virar;
 - **a mão em leque**: as três cartas um pouco abertas, como seguradas; a escolhida sobe reta.
 - **olhar sem usar**: **segurar** qualquer carta (sua ou do rival) mostra a carta grande, com o texto inteiro, acima
   dela; soltar some e nada acontece. No computador, basta parar o mouse em cima. O botão **Ler** abre a janela de leitura.
 - **usar tocando**: tocar numa carta sua, na sua vez, a levanta. A que pede um dado (Ajuste, Virar, Espelho) já
   espera o dado: as etiquetas da Mesa mostram como cada dado fica, e **tocar no dado já usa** (Virar e Espelho; o
-  Ajuste ainda pergunta −1 ou +1). As outras mostram **Usar/Armar**, **Blefar**, **Ler** e ✕ numa fileira embaixo.
+  Ajuste ainda pergunta −1 ou +1). As outras mostram **Usar/Armar**, **Ler** e ✕ numa fileira embaixo.
   Tocar de novo na carta, ou em Cancelar, a devolve. A frase do que fazer (ou por que ela não serve agora) aparece
   na linha da Mesa, perto dos dados; a carta que não serve agora treme.
 - **usar arrastando**: arrastar a carta segue o dedo, inclinando com o movimento. A que pede um dado encolhe e fica
@@ -506,5 +490,4 @@ para 977"). Online o relógio é o da sala (tempo por vez escolhido ao criá-la,
   as rupturas e o uso do Bolso.
 - **Medir no teste** se a Interferência ainda pesa demais com gente e se Espelho, Rerrolar e Virar são fracos
   de verdade ou só no robô.
-- **Medir o blefe com gente:** quantas vezes o "?" era blefe e se o rival passou a disparar de 3 para fugir da
-  Interferência.
+- **Medir o "?" com gente:** se o rival passa a disparar de 3 para fugir da Interferência quando ela pode estar armada.

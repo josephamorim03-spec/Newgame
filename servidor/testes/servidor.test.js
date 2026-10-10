@@ -199,8 +199,7 @@ test('partida online completa: cada um vê só o que deve, e o fim paga rating e
     let armadilhasVistas = 0;
     const { fins } = await jogarAteOFim(a, b, {
       vigiar: (j) => {
-        // à vista, só a armadilha que foi desafiada (o desafio paga para ver)
-        assert.ok([null, 'espelho', 'oculta'].includes(j.armada[1]) || (j.revelada && j.revelada[1]), 'a armadilha do rival vazou: ' + j.armada[1]);
+        assert.ok([null, 'espelho', 'oculta'].includes(j.armada[1]), 'a armadilha do rival vazou: ' + j.armada[1]);
         if (j.armada[1] === 'oculta') armadilhasVistas++;
         assert.ok(!(j.mao && j.vez !== 0), 'a mão do rival vazou');
       },

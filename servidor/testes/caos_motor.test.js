@@ -40,9 +40,7 @@ function invariantes(j, passo) {
   for (const eu of [0, 1]) {
     const v = Regras.visaoDe(j, eu);
     JSON.parse(JSON.stringify(v));
-    // (a armadilha que foi desafiada fica à vista de propósito)
-    if (j.fase !== 'fim' && j.armada[1 - eu] && j.armada[1 - eu] !== 'espelho' && j.revelada && j.revelada[1 - eu]) assert.strictEqual(v.armada[1], j.armada[1 - eu], `${onde}: a armadilha desafiada não ficou à vista`);
-    else if (j.fase !== 'fim' && j.armada[1 - eu] && j.armada[1 - eu] !== 'espelho') {
+    if (j.fase !== 'fim' && j.armada[1 - eu] && j.armada[1 - eu] !== 'espelho') {
       assert.strictEqual(v.armada[1], 'oculta', `${onde}: a carta virada vazou`);
       assert.ok(!JSON.stringify(v.eventos).includes(`"c":"${j.armada[1 - eu]}"`) || v.decks[1].length === 0, `${onde}: evento entregou a carta virada`);
     }

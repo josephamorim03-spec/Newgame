@@ -1,4 +1,4 @@
-/* Dice Duel · motor de regras compartilhado (navegador e servidor), regras v0.11 (blefe; Pausa, Reverso, Furto, Lacre; Pedágio +2; Interferência só em quem lidera)
+/* Dice Duel · motor de regras compartilhado (navegador e servidor), regras v0.13 (sem blefe; Pausa, Reverso, Furto, Lacre; Pedágio +2; Interferência só em quem lidera)
  * Tudo aqui é puro: recebe o estado da partida (um objeto serializável) e o altera.
  * Nada de DOM, som ou tempo. Quem desenha (o cliente) ou transmite (o servidor) lê
  * j.eventos, j.log e j.momentos depois de cada ação.
@@ -30,7 +30,7 @@
     furto:         { nome: 'Furto', tipo: 'efeito', verbo: 'troca os Bolsos', texto: 'Troque o dado do seu Bolso pelo do Bolso do rival (se um deles estiver vazio, o dado só muda de lado). Não conta como guardar: o Fundo Falso não pega.' },
     espelho:       { nome: 'Espelho', tipo: 'armadilha', alvo: true, verbo: 'marca um dado', texto: 'Marque um dado da Mesa (o rival vê a marca). Se ele pegar esse dado, recebe a face de baixo (7 menos o valor: o 2 vira 5) e não pode guardá-lo no Bolso. Se você mesmo pegá-lo, a armadilha se perde.' },
     fundo:         { nome: 'Fundo Falso', tipo: 'armadilha', verbo: 'o Bolso dele cai', texto: 'Da próxima vez que o rival puser um dado no Bolso (guardar ou trocar), o dado cai e some. Na troca, caem os dois e nada entra na corrente dele.' },
-    lacre:         { nome: 'Lacre', tipo: 'armadilha', verbo: 'anula o próximo efeito', texto: 'O próximo efeito que o rival usar é gasto sem agir, qualquer um (até a Sobrecarga e um blefe desvirado). Não pega armadilhas.' },
+    lacre:         { nome: 'Lacre', tipo: 'armadilha', verbo: 'anula o próximo efeito', texto: 'O próximo efeito que o rival usar é gasto sem agir, qualquer um (até a Sobrecarga). Não pega armadilhas.' },
     ancora:        { nome: 'Âncora', tipo: 'armadilha', verbo: 'segura corrente de 4+', texto: 'Protege a sua corrente de 4 dados ou mais: se entrar nela um dado que não sincroniza, esse dado é jogado fora e a corrente fica inteira. Com 3 ou menos ela não age (a corrente rompe) e continua armada.' },
     interferencia: { nome: 'Interferência', tipo: 'armadilha', pontos: true, verbo: '−1 em quem lidera', texto: 'O próximo disparo de 4 dados ou mais do rival vale 1 ponto a menos, se ele estiver na sua frente ou empatado. Se ele disparar com 3, ou atrás de você, ela não age e continua armada.' },
     pedagio:       { nome: 'Pedágio', tipo: 'armadilha', pontos: true, verbo: '+2 quando ele dispara', texto: 'No próximo disparo do rival, de qualquer tamanho (até o automático de 6), você ganha 2 pontos. Se com isso os dois passarem da meta, vence quem disparou.' },
@@ -38,7 +38,6 @@
   // Pedágio: +2 em qualquer meta (v0.11). Com +3 ele era a carta mais forte sozinha (61% contra deck vazio) e,
   // na meta 16, estava em 24 dos 25 melhores decks; docs/balanceamento-cartas.md §9 e §10
   const PEDAGIO = 2;
-  const DESAFIO = { acerto: 2, erro: 2, bonus: 3 };   // desafio do blefe: acertou, errou, blefe que passou
   const pedagioDe = () => PEDAGIO;
   const tem = (o, k) => typeof k === 'string' && Object.prototype.hasOwnProperty.call(o, k);
   const ORDEM = ['ajuste', 'virar', 'rerrolar', 'pressa', 'coringa', 'sobrecarga', 'pausa', 'reverso', 'furto', 'espelho', 'fundo', 'ancora', 'lacre', 'interferencia', 'pedagio'];
@@ -154,7 +153,7 @@
   // rng não vai no estado (não é serializável): fica numa propriedade não enumerável
   const sorte = j => (j.__rng || Math.random)();
   const rolar = j => 1 + Math.floor(sorte(j) * 6);
-  const novoStats = () => ({ disp: 0, rupt: 0, maior: 0, maiorDisp: 0, compras: 0, guardou: 0, trocou: 0, cartas: [], blefes: 0 });
+  const novoStats = () => ({ disp: 0, rupt: 0, maior: 0, maiorDisp: 0, compras: 0, guardou: 0, trocou: 0, cartas: [] });
   const novoId = j => (j.proxId = (j.proxId || 1) + 1);
 
   function criarPartida({ decks, vez = 0, meta = META_PADRAO, nomes = ['Jogador 1', 'Jogador 2'], modo = 'bot', nivel = 'aprendiz', rng = null, idInicial = 1 }) {
@@ -165,9 +164,7 @@
       cor: [[], []], pts: [0, 0], mesa: [], vez, fase: 'pegar', bolso: [null, null], mao: null, voo: null,
       log: [], stats: [novoStats(), novoStats()], rodada: 0, compras: 0, fx: null, vencedor: null, marca: null,
       eventos: [], momentos: [], piorDiferenca: [0, 0], proxId: idInicial,
-      // desafio do blefe: a carta armada que foi desafiada e era armadilha fica à vista; vezes conta as vezes passadas
-      // (um blefe só desvira a partir da vez seguinte à que foi virado: o rival sempre tem a chance de desafiar)
-      revelada: [false, false], vezes: 0, viradaEm: [null, null],
+      vezes: 0,   // quantas vezes já passaram (a tela usa para saber quando a vez mudou)
     };
     if (rng) Object.defineProperty(j, '__rng', { value: rng, enumerable: false, writable: true });
     rolarMesa(j);
@@ -207,21 +204,19 @@
   const seguroDado = (j, p, d) => (marcadoContra(j, p, d) ? encaixaP(j, p, 7 - d.v) : seguro(j, p, d.v));
 
   // ---------- cartas ----------
-  // Blefe: um efeito pode ser virado para baixo e ocupa o lugar da armadilha ("?"). Virado, não faz nada;
-  // usá-lo depois funciona normalmente e revela o blefe.
-  const blefando = (j, p, c) => j.cartas[p][c] === 'armada' && tem(CARTAS, c) && CARTAS[c].tipo === 'efeito';
-  const usavel = (j, p, c) => j.cartas[p][c] === 'pronta' || blefando(j, p, c);
-  // armadilhas que um "?" pode esconder (o Espelho deixa marca à vista, então nunca é "?")
+  // Cartas: o efeito age na hora; a armadilha fica virada para baixo ("?") até a condição acontecer.
+  // (v0.13: o blefe saiu: o "?" é sempre uma armadilha de verdade; docs/balanceamento-cartas.md §18)
+  const usavel = (j, p, c) => j.cartas[p][c] === 'pronta';
+  // as armadilhas que o "?" do rival pode ser (o Espelho deixa marca à vista, então nunca é "?")
   const armadilhasOcultas = (j, p) => j.decks[p].filter(c => CARTAS[c].tipo === 'armadilha' && c !== 'espelho' && ['pronta', 'armada'].includes(j.cartas[p][c]));
   function podeUsar(j, p, c, idx) {
     const k = tem(CARTAS, c) && CARTAS[c], e = j.cartas[p] && tem(j.cartas[p], c) ? j.cartas[p][c] : null;
     if (!k || !e) return { ok: false, motivo: 'Esta carta não está no seu deck.' };
     if (!usavel(j, p, c)) return { ok: false, motivo: e === 'armada' ? 'Armada: ela age sozinha quando a condição acontecer.' : 'Esta carta já foi usada.' };
     if (j.vez !== p || j.fase === 'fim') return { ok: false, motivo: 'Só na sua vez.' };
-    if (blefando(j, p, c) && j.viradaEm && j.viradaEm[p] === (j.vezes || 0)) return { ok: false, motivo: 'Virada nesta vez: o blefe só desvira a partir da sua próxima vez (o rival precisa ter a chance de desafiar).' };
     if (c === 'sobrecarga' && (j.fase === 'pegar' || j.fase === 'decidir')) return j.sobre[p] ? { ok: false, motivo: 'A Sobrecarga já está ativa.' } : { ok: true };
     if (j.fase !== 'pegar') return { ok: false, motivo: 'Use antes de pegar o dado.' };
-    if (k.tipo === 'armadilha' && j.armada[p]) return { ok: false, motivo: blefando(j, p, j.armada[p]) ? `Seu blefe (${CARTAS[j.armada[p]].nome}) ocupa o lugar da armadilha. Use essa carta antes.` : 'Já há uma armadilha sua armada. Ela precisa disparar antes.' };
+    if (k.tipo === 'armadilha' && j.armada[p]) return { ok: false, motivo: 'Já há uma armadilha sua armada. Ela precisa disparar antes.' };
     // Pressa (v0.12): só com 3 ou 4 dados na Mesa. Com 2 ela pegava o último dado, que era do rival, e quem está atrás
     // abria a Mesa seguinte: 3 dados seguidos enquanto o rival assistia (24% das partidas com ela; balanceamento §16)
     if (c === 'pressa' && j.mesa.length < 3) return { ok: false, motivo: 'Precisa de 3 ou 4 dados na Mesa: a Pressa nunca pega o último dado (ele fica para o rival).' };
@@ -241,72 +236,12 @@
     if (k.alvo && idx !== undefined && !j.mesa[idx]) return { ok: false, motivo: 'Esse dado não está na Mesa.' };
     return { ok: true };
   }
-  function podeVirar(j, p, c) {
-    const k = tem(CARTAS, c) && CARTAS[c];
-    if (!k || k.tipo !== 'efeito' || !tem(j.cartas[p], c) || j.cartas[p][c] !== 'pronta' || j.vez !== p || j.fase !== 'pegar') return { ok: false };
-    if (j.armada[p]) return { ok: false, motivo: 'Já há uma carta sua armada.' };
-    // sem armadilha que um "?" possa esconder, o rival saberia que é blefe
-    if (!armadilhasOcultas(j, p).length) return { ok: false, motivo: 'Blefe só faz sentido com uma armadilha (sem ser o Espelho) ainda escondida no seu deck.' };
-    return { ok: true };
-  }
-  function virarCarta(j, p, c) {
-    j.cartas[p][c] = 'armada'; j.armada[p] = c; j.stats[p].blefes++; marcarVirada(j, p);
-    registrar(j, p, 'armou uma armadilha', 'seg');   // o registro é igual ao de uma armadilha de verdade
-    emitir(j, 'armou', { p, c });
-  }
-  // armou algo novo (armadilha ou blefe): volta a ser um "?" que pode ser desafiado
-  function marcarVirada(j, p) {
-    if (!j.revelada) j.revelada = [false, false];
-    if (!j.viradaEm) j.viradaEm = [null, null];
-    j.revelada[p] = false; j.viradaEm[p] = j.vezes || 0;
-  }
-  // Desafio: na sua vez, antes de pegar o dado, você pode desafiar a carta virada do rival.
-  //   blefe     -> a carta dele se perde e você ganha DESAFIO.acerto pontos
-  //   armadilha -> ela continua armada, agora à vista, e ele ganha DESAFIO.erro pontos
-  // Os números saem de sim/profundidade.py: com 2/2/3 nenhuma estratégia fixa vence (nem sempre desafiar, nem nunca,
-  // nem sempre blefar, nem nunca): quem lê o deck do rival é quem ganha (docs/balanceamento-cartas.md §13).
-  const desafiavel = (j, r) => !!(j.armada[r] && j.armada[r] !== 'espelho' && !(j.revelada && j.revelada[r]));
-  function podeDesafiar(j, p) {
-    if (j.fase === 'fim' || j.vez !== p) return { ok: false, motivo: 'Só na sua vez.' };
-    if (!desafiavel(j, 1 - p)) return { ok: false, motivo: 'O rival não tem carta virada para desafiar.' };
-    if (j.fase !== 'pegar' || j.segundoDado || j.extra[p]) return { ok: false, motivo: 'Desafie antes de pegar o dado.' };
-    return { ok: true };
-  }
-  function desafiar(j, p) {
-    const r = 1 - p, c = j.armada[r], k = CARTAS[c], n = j.nomes, antes = [j.pts[0], j.pts[1]];
-    if (!j.revelada) j.revelada = [false, false];
-    if (k.tipo === 'efeito') {
-      j.cartas[r][c] = 'perdida'; j.armada[r] = null; j.pts[p] += DESAFIO.acerto;
-      registrar(j, p, `desafiou a carta virada: era blefe com ${k.nome} (a carta se perde, +${DESAFIO.acerto})`, 'bom');
-      emitir(j, 'desafio', { p, c, blefe: true, nome: k.nome, pts: DESAFIO.acerto });
-      emitir(j, 'placar', { p, de: antes[p] });
-      momento(j, p, '✦', `Pegou o blefe: +${DESAFIO.acerto}`);
-      if (j.pts[p] >= j.meta) { terminar(j, p); return 'fim'; }
-    } else {
-      j.revelada[r] = true; j.pts[r] += DESAFIO.erro;
-      registrar(j, p, `desafiou a carta virada: era ${k.nome}, armada de verdade (agora à vista, +${DESAFIO.erro} para ${n[r]})`, 'ruim');
-      emitir(j, 'desafio', { p, c, blefe: false, nome: k.nome, pts: DESAFIO.erro });
-      emitir(j, 'placar', { p: r, de: antes[r] });
-      if (j.pts[r] >= j.meta) { terminar(j, r); return 'fim'; }
-    }
-    return 'carta';
-  }
 
   // devolve 'proximo' quando a carta passa a vez (Pausa), 'lacrada' quando o Lacre do rival a anulou
   function usarCarta(j, p, c, idx, delta = 1) {
     const k = CARTAS[c];
-    if (blefando(j, p, c)) {
-      // o blefe que ninguém desafiou rende pontos (sem isso, blefar nunca compensaria e desafiar perderia o sentido)
-      j.armada[p] = null;
-      const antes = j.pts[p]; j.pts[p] += DESAFIO.bonus;
-      registrar(j, p, `desvirou ${k.nome}: a carta armada era um blefe que ninguém desafiou (+${DESAFIO.bonus})`, 'seg');
-      emitir(j, 'chamada', { p, titulo: 'Blefe!', sub: `a carta virada de ${j.nomes[p]} era ${k.nome}: +${DESAFIO.bonus} pontos`, estilo: 'suave' });
-      emitir(j, 'placar', { p, de: antes });
-      momento(j, p, '✧', `Blefe que passou: +${DESAFIO.bonus}`);
-      if (j.pts[p] >= j.meta) { terminar(j, p); return 'fim'; }
-    }
     if (k.tipo === 'armadilha') {
-      j.cartas[p][c] = 'armada'; j.armada[p] = c; marcarVirada(j, p);
+      j.cartas[p][c] = 'armada'; j.armada[p] = c;
       if (c === 'espelho') {
         j.marca = { dono: p, id: j.mesa[idx].id };
         registrar(j, p, `marcou um ${j.mesa[idx].v} da Mesa com o Espelho`, 'seg');
@@ -315,7 +250,7 @@
       return;
     }
     j.cartas[p][c] = 'usada'; j.stats[p].cartas.push(k.nome);
-    // Lacre do rival: o efeito é gasto sem agir (inclusive um blefe desvirado e a Sobrecarga na hora de disparar)
+    // Lacre do rival: o efeito é gasto sem agir (inclusive a Sobrecarga na hora de disparar)
     if (j.armada[1 - p] === 'lacre' && j.cartas[1 - p].lacre === 'armada') {
       revelar(j, 1 - p, 'lacre', `${k.nome} de ${j.nomes[p]} não funcionou.`);
       return 'lacrada';
@@ -540,8 +475,8 @@
   }
 
   // ---------- ação genérica (o servidor recebe isto pela rede) ----------
-  // acao: {tipo:'pegar', idx, modo?} (com modo: pega e põe de uma vez) | {tipo:'destino', modo} | {tipo:'carta', carta, idx?, delta?} | {tipo:'virar', carta} (blefe)
-  //       | {tipo:'dispensar'} (2.º dado da Pressa) | {tipo:'disparar'} | {tipo:'segurar'} | {tipo:'desafiar'} (a carta virada do rival)
+  // acao: {tipo:'pegar', idx, modo?} (com modo: pega e põe de uma vez) | {tipo:'destino', modo} | {tipo:'carta', carta, idx?, delta?}
+  //       | {tipo:'dispensar'} (2.º dado da Pressa) | {tipo:'disparar'} | {tipo:'segurar'}
   function aplicar(j, p, acao) {
     if (!acao || typeof acao !== 'object') return { ok: false, erro: 'ação inválida' };
     if (j.fase === 'fim') return { ok: false, erro: 'a partida acabou' };
@@ -570,17 +505,6 @@
         const r = usarCarta(j, p, c, acao.idx, acao.delta);
         return { ok: true, resultado: r === 'proximo' ? 'proximo' : 'carta' };
       }
-      case 'virar': {
-        const pv = podeVirar(j, p, acao.carta);
-        if (!pv.ok) return { ok: false, erro: pv.motivo || 'não dá para virar essa carta' };
-        virarCarta(j, p, acao.carta);
-        return { ok: true, resultado: 'carta' };
-      }
-      case 'desafiar': {
-        const pd = podeDesafiar(j, p);
-        if (!pd.ok) return { ok: false, erro: pd.motivo };
-        return { ok: true, resultado: desafiar(j, p) };
-      }
       case 'dispensar':
         if (j.fase !== 'pegar' || !j.segundoDado) return { ok: false, erro: 'não há segundo dado para dispensar' };
         return { ok: true, resultado: dispensarSegundo(j, p) };
@@ -601,7 +525,7 @@
     const t = JSON.parse(JSON.stringify(j));
     const troca = a => (eu === 0 ? a : [a[1], a[0]]);
     const ip = p => (p === null || p === undefined ? p : eu === 0 ? p : 1 - p);
-    for (const k of ['decks', 'cartas', 'armada', 'coringa', 'sobre', 'extra', 'cor', 'pts', 'bolso', 'stats', 'piorDiferenca', 'nomes', 'revelada', 'viradaEm']) if (t[k]) t[k] = troca(t[k]);
+    for (const k of ['decks', 'cartas', 'armada', 'coringa', 'sobre', 'extra', 'cor', 'pts', 'bolso', 'stats', 'piorDiferenca', 'nomes']) if (t[k]) t[k] = troca(t[k]);
     t.vez = ip(t.vez); t.vencedor = ip(t.vencedor);
     if (t.desistencia !== undefined) t.desistencia = ip(t.desistencia);
     if (t.marca) t.marca.dono = ip(t.marca.dono);
@@ -611,16 +535,14 @@
     t.momentos = t.momentos.map(m => ({ ...m, p: ip(m.p) }));
     t.eventos = t.eventos.map(e => ({ ...e, p: ip(e.p), dono: ip(e.dono) }));
     // o rival: armadilha armada escondida
-    // (a armadilha que foi desafiada fica à vista: o rival já pagou para ver)
-    if (t.armada[1] && t.armada[1] !== 'espelho' && !(t.revelada && t.revelada[1])) {
+    if (t.armada[1] && t.armada[1] !== 'espelho') {
       t.cartas[1][t.armada[1]] = 'pronta';
       t.armada[1] = 'oculta';
     }
     t.eventos = t.eventos.map(e => (e.tipo === 'armou' && e.p === 1 && e.c !== 'espelho' ? { ...e, c: null } : e));
-    // as estatísticas do rival vão por lista do que pode ir (um contador novo não vaza sozinho); os blefes nunca vão,
-    // nem no fim: contar os blefes dele entregaria qual "?" era blefe
+    // as estatísticas do rival vão por lista do que pode ir (um contador novo não vaza sozinho)
     const s = t.stats[1];
-    t.stats[1] = { disp: s.disp, rupt: s.rupt, maior: s.maior, maiorDisp: s.maiorDisp, compras: s.compras, guardou: s.guardou, trocou: s.trocou, cartas: s.cartas, blefes: 0 };
+    t.stats[1] = { disp: s.disp, rupt: s.rupt, maior: s.maior, maiorDisp: s.maiorDisp, compras: s.compras, guardou: s.guardou, trocou: s.trocou, cartas: s.cartas };
     if (t.mao && t.vez !== 0) t.mao = null;
     return t;
   }
@@ -630,7 +552,7 @@
     GRATIS, PRECO_CARTA, CATALOGO, NIVEIS, PRESENTES, RATING_RIVAL, TETO_MOEDAS, BASE_MOEDAS, TITULOS, tituloDe, nivelDe,
     METAS, META_PADRAO, metaValida, moedasDaVitoria, ajusteRatingOnline, elo, premioSolo, xpDaPartida, ganharXp, precoDe,
     criarPartida, usarRng, encaixaP, destinos, destinosValidos, seguro, bolsoGarante, marcadoContra, valorAoPegar, seguroDado,
-    blefando, usavel, armadilhasOcultas, podeUsar, podeVirar, virarCarta, usarCarta, DESAFIO, desafiavel, podeDesafiar, desafiar,
+    usavel, armadilhasOcultas, podeUsar, usarCarta,
     tirar, pegar, pegarPara, destinosDoDado, colocar, dispensarSegundo, disparar, segurar, proximo, terminar, desistir, aplicar, visaoDe,
   };
 });

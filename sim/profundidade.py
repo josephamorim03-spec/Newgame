@@ -1,3 +1,4 @@
+# (v0.13: o blefe e o desafio saíram do jogo; este estudo fica como registro. docs/balanceamento-cartas.md §18)
 # Profundidade: as cartas mudam a melhor jogada? Quanto vale ler o "?" do rival, e quanto medo do blefe compensa?
 #
 # Joga o jogo de hoje (15 cartas: as 11 de deck.py + Pausa, Reverso, Furto, Lacre de novas.py, Mesa de 5 dados) com

@@ -1,5 +1,5 @@
 // Teste de fumaça do Dice Duel: joga partidas inteiras no navegador (celular e computador),
-// usa cartas (e blefa), dispensa o 2.º dado da Pressa, mexe nos Ajustes e falha se aparecer qualquer erro no console.
+// usa cartas, dispensa o 2.º dado da Pressa, mexe nos Ajustes e falha se aparecer qualquer erro no console.
 // Uso: npm i -D playwright && node tools/fumaca.js   (fotos em builds/fotos/)
 const { chromium } = require('playwright');
 const path = require('path');
@@ -63,7 +63,7 @@ fs.mkdirSync(FOTOS, { recursive: true });
     await pg.waitForTimeout(300);
     if (r.nome === 'celular') await pg.screenshot({ path: path.join(FOTOS, 'versus-celular.png') });
     const versus = await pg.$('.versus'); if (versus) await versus.click();
-    let passos = 0, usosCarta = 0, blefes = 0, dispensas = 0;
+    let passos = 0, usosCarta = 0, dispensas = 0;
     while (passos++ < 1200) {
       try {
         await pg.waitForTimeout(70);
@@ -80,9 +80,8 @@ fs.mkdirSync(FOTOS, { recursive: true });
         if (minhas.length && Math.random() < 0.25) {
           await minhas[Math.floor(Math.random() * minhas.length)].click(); await pg.waitForTimeout(50);
           // na sua vez a carta abre no painel; fora dela (decidir, 2.º dado da Pressa), na janela de leitura
-          const usar = await pg.$('#acoes [data-usar]:not([disabled]), #cartaBotoes [data-usar]:not([disabled])'), virar = await pg.$('#acoes [data-virar], #cartaBotoes [data-virar]');
-          if (virar && Math.random() < 0.4) { await virar.click(); blefes++; }
-          else if (await pg.$('.mesa.alvo')) usosCarta++;   // carta com alvo: já espera o dado (o laço toca num dado)
+          const usar = await pg.$('#acoes [data-usar]:not([disabled]), #cartaBotoes [data-usar]:not([disabled])');
+          if (await pg.$('.mesa.alvo')) usosCarta++;   // carta com alvo: já espera o dado (o laço toca num dado)
           else if (usar) { await usar.click(); usosCarta++; } else await pg.click('[data-acao="fechar-carta"], [data-acao="cancelar-alvo"], #cartaBotoes [data-fechar-carta]');
           continue;
         }
@@ -101,7 +100,7 @@ fs.mkdirSync(FOTOS, { recursive: true });
       premio: DiceDuel.jogo.premio && { moedas: DiceDuel.jogo.premio.moedas && DiceDuel.jogo.premio.moedas.total, rating: [DiceDuel.jogo.premio.ratingAntes, DiceDuel.jogo.premio.rating], nivel: DiceDuel.jogo.premio.nivelDepois },
       recompensas: document.getElementById('fimRecompensas').textContent.trim().slice(0, 140),
     }));
-    console.log(r.nome, { deckAberto, travadas, passos, usosCarta, blefes, dispensas, ...res });
+    console.log(r.nome, { deckAberto, travadas, passos, usosCarta, dispensas, ...res });
     if (res.fase !== 'fim') erros.push(`${r.nome}: a partida não terminou`);
     if (r.modo === 'bot' && !res.premio) erros.push(`${r.nome}: o fim da partida não deu recompensa`);
     if (res.largura[0] > res.largura[1]) erros.push(`${r.nome}: a página rola para o lado`);

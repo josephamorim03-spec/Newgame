@@ -2,7 +2,7 @@
 
 > Outubro de 2026. Números de `sim/` (robôs jogando entre si). Cada deck joga 1.200 partidas contra rivais
 > sorteados, com ruído de ±1,4 ponto; os melhores decks foram jogados de novo com 6.000 partidas ("confirmado").
-> Os robôs não blefam nem leem o rival: os números dizem a direção, não as casas decimais.
+> Os robôs não leem o rival: os números dizem a direção, não as casas decimais.
 
 ## 1. Resumo
 
@@ -16,6 +16,8 @@
   - O melhor deck com carta nova (Coringa + Pausa + Pressa) faz 59,3% confirmado, abaixo do melhor só com
     cartas antigas (60,1%).
 - **Quatro ideias foram descartadas** (§6): Rede, Gêmeo, Convite "forte" e Pausa com disparo.
+- **O blefe e o desafio saíram na v0.13** (§18): mudavam pouco quem ganha e só se sustentavam com pontos fora dos
+  dados. Os números de equilíbrio (§14–§17) não mudam: o simulador nunca os modelou.
 - **O dono escolheu 4 cartas: Lacre, Pausa, Furto e Reverso** (§9). Elas entram como estão, nas metas 12 e 16.
   - Na meta 16, o **Pedágio** (carta antiga) domina, com ou sem as novas.
   - Ajuste adotado na v0.11: o Pedágio dá **+2 em qualquer meta** (§10).
@@ -606,6 +608,8 @@ Pedido do dono: medir tudo e deixar o melhor possível. Cada variante foi medida
 
 ## 13. As cartas mudam a jogada? O blefe, o medo e o desafio (v0.11)
 
+> O blefe e o desafio saíram do jogo na v0.13 (§18). Esta seção fica como registro do estudo que levou a isso.
+
 **A pergunta.** "O objetivo é sempre fazer o máximo de pontos por rodada?" Se for, o jogo é raso: as cartas e o
 blefe não mudariam como se joga. Medido em `sim/profundidade.py` (o jogo de hoje com as 15 cartas e o blefe, que
 `deck.py` não modelava), com três jogadores: o **ganancioso** (só os próprios pontos; ignora o rival), o **robô do
@@ -884,3 +888,37 @@ ruidosos sai inflado em 8 a 10 pontos. Por isso, a cada rodada, os 12 melhores j
 Reproduzir: `cd sim && N=8000 python3 humano.py metas` e, para cada linha da primeira tabela,
 `CONFIRMA=3000 ND=200 BAL='{...}' VARIANTES="3 cartas (hoje)" python3 humano.py decks` (variantes em `deck.py`:
 `ajuste_modo`, `coringa_mesa`, `coringa_modo`; `SEM=coringa` tira uma carta; `MAXCONSERTO=2` limita os consertos).
+
+## 18. O blefe sai (v0.13)
+
+**A decisão.** O blefe e o desafio saíram do jogo. O "?" do rival agora é sempre uma armadilha de verdade; o mistério
+que fica é **qual** armadilha (o deck à mostra diz quais ainda podem ser, e a tela lista o que cada uma faria agora).
+
+**Por quê.**
+- **Mudava pouco quem ganha.** Na §13, todas as combinações de blefar e desafiar ficaram entre 47,7% e 50,6%, e
+  desafiar "pensando" rendia 50–51%. Muita regra (e muita atenção do jogador) para quase nenhum efeito no resultado.
+- **Só existia por causa de pontos fora dos dados.** Sem o desafio, blefar custava ~2 pontos de vitória e ninguém
+  temia o "?" (§13, item 3). O desafio e o bônus (2/2/3) faziam ~17% dos pontos de uma partida, pontos que não vêm
+  da corrente, o centro do jogo (o planejador vence o robô em 82,6%: a profundidade está nos dados).
+- **Não havia o que ler.** Com 3 cartas e o deck à mostra, "ler o rival" era contar os efeitos e as armadilhas que
+  sobraram. Contra o robô, e no online sem ver o rosto de ninguém, o desafio virava cara ou coroa valendo 2.
+- **Sensação ruim dos dois lados:** +3 por um blefe que não fez nada; carta perdida e 2 pontos para o rival no blefe
+  pego.
+- **Exceções:** só com uma armadilha escondida (sem ser o Espelho), ocupava o lugar da armadilha, só desvirava na vez
+  seguinte, o Lacre pegava o blefe desvirado.
+
+**O que muda no jogo.**
+- Efeitos só se usam (não se viram); armadilhas se armam viradas, uma por vez, como antes.
+- Somem o Desafiar, a armadilha desafiada "à vista", os +2/+2/+3, o Blefar e as dicas dos dois. Tocar no "?" do
+  rival mostra quais armadilhas ele pode ser e o que cada uma faria agora.
+- Robôs: a Diana e a Dona Coruja não blefam nem desafiam.
+- O motor recusa as ações `virar` e `desafiar` ("ação desconhecida"); uma partida guardada com um efeito virado
+  devolve a carta para a mão.
+- O segredo do online continua testado (`servidor/testes/segredo.test.js`): agora "armou X" × "armou Y", com 405 pares
+  de armadilhas (~8.800 jogadas comparadas) e 225 decks de 3 cartas (~4.600 jogadas); a visão do rival e as
+  respostas às ações dele (inclusive as velhas `virar` e `desafiar`) são iguais nas duas versões.
+
+**O equilíbrio não muda.** Os números da §14 à §17 saíram de `deck.py` e `humano.py`, que nunca modelaram o blefe nem o
+desafio: eles já descrevem o jogo sem blefe (meta 16: melhor deck confirmado 58,2%, médias das cartas de 47,4% a
+52,7%). O ponto em que o desafio mais mexia era o Pedágio (com desafio às cegas ia a 55%, §13); sem desafio, vale a
+§17. `sim/profundidade.py` fica como registro do estudo (o padrão dele já é sem blefe e sem desafio).

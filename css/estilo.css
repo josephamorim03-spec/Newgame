@@ -286,12 +286,8 @@ button.carta:hover { transform: translateY(-2px) rotate(-1deg); }
 .raio { color: var(--mel-escuro); }
 .carta.oculta { min-width: 44px; justify-content: center; background: var(--tinta); color: var(--papel); }
 .efeito-ativo { font-size: 12px; font-weight: 800; padding: 4px 9px; border-radius: 999px; background: var(--mel); color: var(--tinta); }
-/* a carta virada do rival: escura (é um segredo); tocável, e na sua vez com o contorno de "dá para desafiar" */
+/* a carta virada do rival (a armadilha armada): escura, é um segredo; tocável, para ler o que ela pode ser */
 .efeito-ativo.oculta { background: var(--tinta); color: var(--papel); border: 0; font-family: inherit; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; }
-.efeito-ativo.oculta.desafiavel { box-shadow: 0 0 0 2px var(--mel); animation: chamaDesafio 1.6s ease-in-out infinite; }
-@keyframes chamaDesafio { 50% { box-shadow: 0 0 0 4px rgba(242,177,94,.45); } }
-.sem-animacoes .efeito-ativo.oculta.desafiavel { animation: none; }
-.efeito-ativo.revelada { background: var(--papel-2); color: var(--tinta); box-shadow: inset 0 0 0 1.5px var(--perigo); }
 .arte-verso { display: grid; place-items: center; width: 72px; height: 72px; border-radius: 16px; background: var(--tinta); color: var(--papel); font-family: var(--f-titulo); font-size: 40px; flex: none; }
 .arte-verso img { width: 100%; height: 100%; object-fit: contain; }
 
@@ -1048,7 +1044,7 @@ button.vaga { cursor: pointer; border: 0; background: #fff3dc; color: var(--tint
 .cartas .carta.agora:active { transform: translateY(0); box-shadow: 0 1px 0 var(--mel-escuro), inset 0 0 0 2.5px var(--mel); }
 .cartas .carta.nao-agora { opacity: .62; filter: saturate(.6); }
 .cartas .carta.aberta { transform: translateY(-3px); box-shadow: 0 5px 0 var(--voce-tinta), inset 0 0 0 2.5px var(--voce); }
-/* a sua carta virada para baixo (armada ou blefe): escura como a carta virada do rival, com a arte à vista só para você */
+/* a sua carta virada para baixo (a armadilha armada): escura como a carta virada do rival, com a arte à vista só para você */
 .cartas .carta.armada { background: var(--tinta); color: var(--papel); box-shadow: 0 3px 0 #22181b, inset 0 0 0 2px var(--mel); animation: brilhaVirada 2.4s ease-in-out infinite; }
 .cartas .carta.armada .cverbo { color: var(--mel); }
 .cartas .carta.armada .c-arte { opacity: .9; }

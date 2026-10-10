@@ -16,7 +16,7 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Dice Duel">
 <meta property="og:title" content="Dice Duel · duelo de dados">
-<meta property="og:description" content="Monte correntes de dados, arme armadilhas e blefe. Uma partida de 6 a 8 minutos, no celular, contra um rival ou um amigo.">
+<meta property="og:description" content="Monte correntes de dados e arme armadilhas. Uma partida de 6 a 8 minutos, no celular, contra um rival ou um amigo.">
 <meta property="og:url" content="https://diceduel-game.vercel.app/">
 <meta property="og:image" content="https://diceduel-game.vercel.app/img/previa.png">
 <meta property="og:image:width" content="1200">
@@ -76,7 +76,7 @@
       </svg>
       <div>
         <h1>Dice <span>Duel</span></h1>
-        <p>duelo de dados aconchegante · v0.11</p>
+        <p>duelo de dados aconchegante · v0.13</p>
       </div>
     </div>
     <div class="topo-botoes">
@@ -150,9 +150,7 @@
         <ol>
           <li>Antes da partida, monte um deck de <b>até 3 cartas</b>: no máximo <b>2 armadilhas</b> e no máximo <b>1 carta de pontos</b> (<span class="raio">⚡</span>). Cada carta vale <b>uma vez</b> por partida. Os dois decks ficam à mostra.</li>
           <li><b>Efeitos</b> são usados na sua vez, antes de pegar o dado, e o rival vê qual foi. Alguns pedem dados na Mesa: <b>Pressa</b> com 3 ou 4, <b>Ajuste</b> com 3 ou mais, <b>Remendo</b> com 2 ou mais.</li>
-          <li><b>Armadilhas</b> são armadas na sua vez, viradas para baixo, uma por vez. O rival vê um <b>?</b>, mas não qual carta é. Ela age sozinha quando a condição dela acontece. O <b>Espelho</b> é a exceção: a marca dele fica à vista.</li>
-          <li><b>Blefe:</b> você pode virar para baixo um <b>efeito</b> no lugar da armadilha. Para o rival é um <b>?</b> igual. Virado, ele não faz nada; da sua vez seguinte em diante, você pode usá-lo normalmente e, se ninguém desafiou, ganha <b>+3</b>. Só dá para blefar se o seu deck ainda esconde uma armadilha (sem ser o Espelho); senão, todos saberiam.</li>
-          <li><b>Desafiar:</b> na sua vez, antes de pegar o dado, toque no <b>?</b> do rival. Se for <b>blefe</b>, a carta dele se perde e você ganha <b>2</b>. Se for <b>armadilha</b>, ela fica à vista (e continua armada) e ele ganha <b>2</b>. Desafiar não gasta a sua vez. Conte o deck dele: quanto mais efeitos e menos armadilhas ainda escondidas, mais chance de ser blefe.</li>
+          <li><b>Armadilhas</b> são armadas na sua vez, viradas para baixo, uma por vez. O rival vê um <b>?</b>: sabe que é uma armadilha, mas não qual (toque no <b>?</b> para ver o que ele pode ser pelo deck à mostra). Ela age sozinha quando a condição dela acontece e aí aparece para os dois. O <b>Espelho</b> é a exceção: a marca dele fica à vista.</li>
           <li>As armadilhas se liberam depois da sua primeira partida (ou em Ajustes).</li>
         </ol>
         <div class="lista-cartas" id="listaCartas" style="margin-top:10px"></div>
@@ -164,10 +162,10 @@
           <li><b>Remendo:</b> o primeiro dado de uma corrente vazia não o gasta, nem guardar no Bolso. Com o Remendo ativo nenhum dado rompe, então a sua Âncora não é gasta.</li>
           <li><b>Pressa:</b> se o primeiro dado completar 6, a corrente dispara sozinha e o segundo começa outra. No segundo dado, use “Dispensar” se nenhum servir.</li>
           <li><b>Espelho:</b> o dado marcado chega virado e não pode ir para o Bolso (nem na troca); Remendo e Âncora ainda valem. As etiquetas da Mesa já mostram o valor virado. Virar (no dado marcado) e Rerrolar apagam a marca; Ajuste não.</li>
-          <li><b>Lacre:</b> pega o próximo efeito do rival, seja qual for: a Pressa não dá o segundo dado, a Pausa não passa a vez, a Sobrecarga não soma. Um blefe desvirado também conta.</li>
+          <li><b>Lacre:</b> pega o próximo efeito do rival, seja qual for: a Pressa não dá o segundo dado, a Pausa não passa a vez, a Sobrecarga não soma.</li>
           <li><b>Reverso:</b> o Remendo ativo e a Âncora armada continuam valendo para a corrente invertida.</li>
           <li><b>Furto:</b> o dado que chega no seu Bolso pode entrar depois, na troca, como qualquer dado do Bolso.</li>
-          <li><b>Uma carta armada por vez</b>, contando o blefe. A armadilha que nunca encontra a sua condição fica armada até o fim.</li>
+          <li><b>Uma armadilha armada por vez.</b> A armadilha que nunca encontra a sua condição fica armada até o fim.</li>
         </ol>
         <h3>Nem todo dado vale o mesmo</h3>
         <p class="nota">Quantas faces sincronizam com cada frente. O <b>2</b> e o <b>5</b> são as melhores frentes: mais dados da Mesa servem.</p>
