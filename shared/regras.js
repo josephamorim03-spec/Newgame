@@ -77,7 +77,8 @@
     // grupo: basico, animal, natureza ou especial (os especiais têm moldura dourada)
     icones: {
       bolinha: { nome: 'Dado', preco: 0, grupo: 'basico' }, xicara: { nome: 'Xícara', preco: 0, nivel: 2, grupo: 'basico' },
-      raposa: { nome: 'Raposa', preco: 100, grupo: 'animal' }, sapo: { nome: 'Sapo', preco: 100, grupo: 'animal' },
+      raposa: { nome: 'Raposa', preco: 100, grupo: 'animal' },
+      diana: { nome: 'Diana', preco: 0, grupo: 'especial', historia: true },   // só vem do fim do modo história sapo: { nome: 'Sapo', preco: 100, grupo: 'animal' },
       urso: { nome: 'Urso', preco: 120, grupo: 'animal' }, coelho: { nome: 'Coelho', preco: 120, grupo: 'animal' },
       guaxinim: { nome: 'Guaxinim', preco: 160, grupo: 'animal' },
       ovelha: { nome: 'Ovelha', preco: 160, grupo: 'animal' },
@@ -193,30 +194,39 @@
   // Os capítulos andam em ordem; vencer um pela primeira vez dá a recompensa dele, uma vez só. A carta da história
   // continua à venda: quem já a tem recebe o preço dela em moedas (§6.1). Vale igual no aparelho e no servidor.
   const HISTORIA = {
-    ordem: ['P', 'C1', 'C2'],
-    recompensa: { P: null, C1: { carta: 'reverso' }, C2: { moedas: 40 } },
+    ordem: ['P', 'C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8'],
+    recompensa: { P: null, C1: { carta: 'reverso' }, C2: { moedas: 40 }, C3: { carta: 'fundo' }, C4: { moedas: 40 },
+      C5: { carta: 'furto' }, C6: { carta: 'espelho' }, C7: { moedas: 60 }, C8: { icone: 'diana' } },
   };
+  // estrelas: as melhores de cada capítulo (0 a 3; o Prólogo não tem)
   function estadoHistoria(est) {
     const feitos = est && Array.isArray(est.feitos) ? est.feitos.filter(c => HISTORIA.ordem.includes(c)) : [];
-    return { feitos: HISTORIA.ordem.filter(c => feitos.includes(c)) };
+    const e = est && est.estrelas && typeof est.estrelas === 'object' ? est.estrelas : {};
+    const estrelas = {};
+    for (const c of HISTORIA.ordem) if (feitos.includes(c) && Number.isInteger(e[c])) estrelas[c] = Math.max(0, Math.min(3, e[c]));
+    return { feitos: HISTORIA.ordem.filter(c => feitos.includes(c)), estrelas };
   }
+  const totalEstrelas = est => Object.values(estadoHistoria(est).estrelas).reduce((a, b) => a + b, 0);
   // o capítulo que dá para jogar agora (o primeiro não feito), ou null com tudo feito
   const proximoCapitulo = est => HISTORIA.ordem.find(c => !estadoHistoria(est).feitos.includes(c)) || null;
-  // venceu o capítulo: devolve o estado novo e o prêmio ({ carta?, moedas }), ou erro se o capítulo ainda está travado.
-  // conta: { cartas, moedas } (mexe nela)
-  function concluirCapitulo(conta, est, cap) {
+  // venceu o capítulo: devolve o estado novo e o prêmio ({ carta?, icone?, moedas? }), ou erro se o capítulo ainda está
+  // travado. As estrelas (0 a 3) guardam a melhor vez, também nas revanches. conta: { cartas, icones, moedas } (mexe nela)
+  function concluirCapitulo(conta, est, cap, estrelas = 0) {
     const e = estadoHistoria(est);
     if (!HISTORIA.ordem.includes(cap)) return { erro: 'Capítulo desconhecido.' };
-    if (e.feitos.includes(cap)) return { estado: e, premio: null };   // jogar de novo não paga de novo
+    const n = Number.isInteger(estrelas) ? Math.max(0, Math.min(3, estrelas)) : 0;
+    const comEstrelas = feitos => ({ feitos, estrelas: cap === 'P' ? e.estrelas : { ...e.estrelas, [cap]: Math.max(e.estrelas[cap] || 0, n) } });
+    if (e.feitos.includes(cap)) return { estado: comEstrelas(e.feitos), premio: null };   // jogar de novo não paga de novo
     if (proximoCapitulo(e) !== cap) return { erro: 'Este capítulo ainda está fechado.' };
     const r = HISTORIA.recompensa[cap] || {}, premio = {};
     if (r.carta) {
       if (conta.cartas.includes(r.carta)) premio.moedas = PRECO_CARTA[r.carta] || 0;
       else { conta.cartas.push(r.carta); premio.carta = r.carta; }
     }
+    if (r.icone && conta.icones && !conta.icones.includes(r.icone)) { conta.icones.push(r.icone); premio.icone = r.icone; }
     if (r.moedas) premio.moedas = (premio.moedas || 0) + r.moedas;
     if (premio.moedas) conta.moedas += premio.moedas;
-    return { estado: { feitos: e.feitos.concat(cap) }, premio: Object.keys(premio).length ? premio : null };
+    return { estado: comEstrelas(e.feitos.concat(cap)), premio: Object.keys(premio).length ? premio : null };
   }
 
   // experiência: sobe sempre (vitória ou derrota); os níveis dão presentes cosméticos (conta: {xp, dados, icones, mesas})
@@ -656,7 +666,7 @@
     PONTOS, LIM, NA_MESA, REL, CARTAS, ORDEM, pedagioDe, deckValido, rels, sinc, frente, encaixa, facesQueEncaixam, opcoes, pontos, harmonica,
     GRATIS, PRECO_CARTA, CATALOGO, NIVEIS, PRESENTES, RATING_RIVAL, TETO_MOEDAS, BASE_MOEDAS, TITULOS, tituloDe, nivelDe,
     METAS, META_PADRAO, metaValida, moedasDaVitoria, ajusteRatingOnline, elo, premioSolo, xpDaPartida, ganharXp, precoDe,
-    HISTORIA, estadoHistoria, proximoCapitulo, concluirCapitulo,
+    HISTORIA, estadoHistoria, proximoCapitulo, concluirCapitulo, totalEstrelas,
     TAREFAS, MOEDAS_TAREFA, tarefasDoDia, estadoTarefas, resumoTarefas, resumoValido, avancarTarefas, dobrarPrimeiraVitoria,
     criarPartida, usarRng, encaixaP, destinos, destinosValidos, seguro, bolsoGarante, marcadoContra, valorAoPegar, seguroDado,
     usavel, armadilhasOcultas, podeUsar, usarCarta,

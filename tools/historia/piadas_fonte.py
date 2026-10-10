@@ -182,6 +182,7 @@ F = [
     ('F-01', 'Diana', 'Q1–Q2', 'Dois, cinco, dois, cinco. / …Parece senha de wi-fi.', 'A sua corrente vencedora vira uma fita impressa com as letras embaixo: 2 5 2 5 → C G C G.', ''),
     ('F-02', 'Diana', 'Q2 · se a corrente tem 3 ou 4', 'O três e o quatro não dizem nada. São tipo "hmm". Todo texto tem.', '', ''),
     ('F-03', 'Diana', 'Q5–Q6', 'Fechou. / Faz cócegas.', 'O ferimento fechado; ela encosta a pata. Antes, um quadro mudo.', 'nariz'),
+    ('F-03b', 'Diana', 'Q5–Q6 · proposta para não repetir o "Fechou"', 'Faz cócegas. / Cócegas.', 'O ferimento fechado; ela encosta a pata. Antes, um quadro mudo. (Com esta, o "Fechou." sai daqui e fica só no "Fechou. Fechou." do fecho, e o eco começa já no "Cócegas.")', 'fecho'),
     ('F-A', 'Diana', 'Fecho · o Eco', 'Fechou. Fechou. / Por que eu estou falando duas vezes? Vezes? / Você pôs um Eco. Eco. / …Passa amanhã. Manhã. / Revanche? Vanche?', '', 'fecho'),
     ('F-A2', 'Diana', 'Fecho · quadro da 3.ª estrela', 'Fita complementar perfeita. Eu ensinei bem. Bem.', '', 'fecho'),
     # Pós-créditos

@@ -423,7 +423,19 @@ test('modo história: capítulos em ordem, recompensa uma vez, a carta que já s
   assert.strictEqual(de_novo.premio, null, 'jogar de novo não paga de novo');
   r = Regras.concluirCapitulo(c, r.estado, 'C2');
   assert.deepStrictEqual([r.premio, c.moedas], [{ moedas: 40 }, 40]);
-  assert.strictEqual(Regras.proximoCapitulo(r.estado), null);
+  assert.strictEqual(Regras.proximoCapitulo(r.estado), 'C3');
+  // até o fim: as cartas da história, as moedas e o ícone da Diana; as estrelas guardam a melhor vez
+  let e2 = r.estado;
+  for (const k of ['C3', 'C4', 'C5', 'C6', 'C7', 'C8']) { const x = Regras.concluirCapitulo(c, e2, k, 1); assert.ok(!x.erro, k); e2 = x.estado; }
+  assert.ok(['fundo', 'furto', 'espelho'].every(k => c.cartas.includes(k)));
+  assert.strictEqual(Regras.proximoCapitulo(e2), null);
+  e2 = Regras.concluirCapitulo(c, e2, 'C4', 3).estado; e2 = Regras.concluirCapitulo(c, e2, 'C4', 0).estado;
+  assert.strictEqual(e2.estrelas.C4, 3, 'a revanche com menos estrelas não apaga a melhor');
+  assert.strictEqual(Regras.totalEstrelas(e2), 5 * 1 + 3);   // C3, C5..C8 com 1, o C4 com 3; C1 e C2 com 0
+  const comIcone = { cartas: [], icones: ['bolinha'], moedas: 0 };
+  let e3 = null; for (const k of Regras.HISTORIA.ordem) e3 = Regras.concluirCapitulo(comIcone, e3, k).estado;
+  assert.ok(comIcone.icones.includes('diana'), 'o fim dá o ícone da Diana');
+  assert.strictEqual(Regras.precoDe('icones', 'diana'), null, 'o ícone da Diana não se compra');
   // quem comprou o Reverso antes recebe o preço dele em moedas
   const comprou = { cartas: ['reverso'], moedas: 0 };
   const e = Regras.concluirCapitulo(comprou, null, 'P').estado;

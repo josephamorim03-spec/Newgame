@@ -1473,3 +1473,27 @@ button.inicio-perfil:active { transform: translateY(1px); }
 .hc-txt span { font-size: 13px; color: var(--tinta-suave); }
 .hc.feito .hc-txt span { color: #2f7a52; font-weight: 800; }
 .hc .btn { min-height: 40px; padding: 0 14px; }
+/* a revelação (a escolha), a fita da cura, o quadro mudo, os créditos e o título riscado */
+.gq-escolha { display: grid; gap: 8px; margin-top: 4px; }
+.gq-escolha .btn { justify-self: stretch; min-height: 46px; font-size: 16px; }
+.gq-voce { margin: 0; justify-self: end; padding: 7px 12px; border-radius: 14px; background: var(--voce); color: #0f3340; font-weight: 800; font-size: 15px; animation: balaoEntra .22s both; }
+.gq-fita { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; padding: 10px; background: repeating-linear-gradient(90deg, #fffaf0 0 10px, #f6e3a8 10px 12px); border: 2px solid var(--tinta); border-radius: 4px; animation: balaoEntra .3s both; }
+.gq-fita span { display: grid; place-items: center; width: 40px; padding: 4px 0; background: #fffaf0; border: 2px solid var(--tinta); border-radius: 8px; }
+.gq-fita b { font-family: var(--f-titulo); font-size: 20px; line-height: 1; }
+.gq-fita i { font-style: normal; font-weight: 800; color: var(--rival-tinta); font-size: 15px; }
+.gq-mudo { margin: 0; font-style: italic; font-size: 13px; color: var(--tinta-suave); text-align: center; }
+.gq-creditos { text-align: center; padding: 34px 14px; background: var(--tinta); color: var(--papel); }
+.gq-cred-titulo { margin: 0; font-family: var(--f-titulo); font-weight: 700; font-size: 40px; color: var(--luz); }
+.gq-cred-sub { margin: 4px 0 18px; font-family: var(--f-titulo); font-size: 18px; }
+.gq-cred-fim { margin: 0; font-size: 13px; letter-spacing: .3em; text-transform: uppercase; color: var(--texto-suave); }
+.gq-titulo { text-align: center; }
+.gq-riscado { margin: 4px 0 6px; display: grid; gap: 0; }
+.gq-riscado s { font-family: var(--f-titulo); font-weight: 700; font-size: 34px; color: var(--tinta-suave); text-decoration-thickness: 4px; text-decoration-color: var(--rival-tinta); }
+.gq-marcador { font-family: var(--f-titulo); font-weight: 700; font-size: 38px; color: var(--rival-tinta); transform: rotate(-4deg); margin-top: -6px; }
+/* as estrelas no mapa e no fim */
+.hc-estrelas, .historia-estrelas span:first-child { color: var(--mel-escuro); letter-spacing: .08em; }
+.historia-total { margin: 0 0 8px; }
+.historia-metas { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px; font-size: 13px; color: var(--tinta-suave); }
+.historia-metas li::before { content: '☆ '; color: var(--mel-escuro); }
+.historia-metas li.ok { color: var(--tinta); font-weight: 700; }
+.historia-metas li.ok::before { content: '★ '; }

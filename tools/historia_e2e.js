@@ -34,7 +34,8 @@ async function lerGibi(pg, max = 80) {
   if (await pg.$('.gibi')) falha('o gibi não fechou');
   return [...new Set(vistos)];
 }
-async function passarVersus(pg) { await pg.waitForTimeout(300); const v = await pg.$('.versus'); if (v) await v.click(); await pg.waitForTimeout(2600); }
+// o "versus" fecha sozinho em ~3 s: se ele sumir no meio do clique, tudo bem
+async function passarVersus(pg) { await pg.waitForTimeout(300); const v = await pg.$('.versus'); if (v) await v.click({ timeout: 2000 }).catch(() => {}); await pg.waitForTimeout(2600); }
 async function vencer(pg, cor, pts) {
   await pg.evaluate(([cor, pts]) => { const j = DiceDuel.jogo; j.pensando = false; j.token = Math.random(); j.vez = 0; j.fase = 'decidir'; j.cor[0] = cor; j.pts = pts; DiceDuel.ajustar({}); }, [cor, pts]);
   await pg.click('[data-acao="disparar"]');
@@ -132,7 +133,58 @@ async function vencer(pg, cor, pts) {
   await pg.screenshot({ path: path.join(FOTOS, 'historia-fim.png') });
   await pg.close();
 
-  // 4. o gibi em 360×640: nada sai da tela
+  // 4. capítulos 3 a 8: as regras da casa, a revelação com a escolha, a cura com a corrente de quem joga, o fecho,
+  // os créditos, os pós-créditos e o ícone da Diana
+  const quase = { ...VETERANO, conta: { moedas: 0, rating: 1000, xp: 0, cartas: ['ajuste', 'virar', 'pressa', 'coringa', 'ancora', 'interferencia'], dados: ['marfim'], icones: ['bolinha'], mesas: ['salvia'], dado: 'marfim', icone: 'bolinha', mesa: 'salvia',
+    historia: { feitos: ['P', 'C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7'], estrelas: { C1: 3, C2: 1 } } } };
+  const pf = await nova(navegador, quase);
+  await pf.click('[data-inicio="historia"]'); await pf.waitForTimeout(250);
+  const mapa2 = await pf.$$eval('.hc', l => l.length);
+  if (mapa2 !== 9) falha(`o mapa mostra os 9 capítulos, mostrou ${mapa2}`);
+  if (!/4 de 24 estrelas/.test(await pf.textContent('#historiaConteudo'))) falha('o mapa soma as estrelas');
+  await pf.click('#btnFecharHistoria');
+  for (const [cap, confere] of [['C4', j => j.dispMin === 5 && j.nomes[1] === 'Urso'], ['C5', j => j.bolso[1] !== null && j.bolso[0] === null && j.esperto], ['C7', j => j.nomes[1] === 'Dona Coruja' && j.decks[1].includes('lacre')]]) {
+    await pf.evaluate(c => { document.getElementById('fim').hidden = true; window.__jogar = c; }, cap);
+    await pf.evaluate(c => { const b = document.createElement('button'); b.dataset.cap = c; b.id = 'tmpCap'; document.getElementById('janelaHistoria').appendChild(b); b.click(); b.remove(); }, cap);
+    await pf.waitForTimeout(200); if (await pf.$('.gibi')) await pf.click('.gibi-pular');
+    await passarVersus(pf);
+    const ok = await pf.evaluate(f => { const j = DiceDuel.jogo; return { ok: (0, eval)('(' + f + ')')(j), h: j.historia }; }, confere.toString());
+    if (!ok.ok || ok.h !== cap) falha(`a regra da casa do ${cap} não entrou`);
+  }
+  // o Capítulo 8: a revelação
+  await pf.evaluate(() => { const b = document.createElement('button'); b.dataset.cap = 'C8'; document.getElementById('janelaHistoria').appendChild(b); b.click(); b.remove(); });
+  await pf.waitForTimeout(300);
+  let viuEscolha = false;
+  for (let i = 0; i < 60 && await pf.$('.gibi'); i++) {
+    const bt = await pf.$('.gibi [data-escolha="1"]');
+    if (bt) { viuEscolha = true; await bt.click(); await pf.waitForTimeout(80); continue; }
+    await pf.click('.gibi'); await pf.waitForTimeout(50);
+  }
+  if (!viuEscolha) falha('a revelação não ofereceu a escolha');
+  await passarVersus(pf);
+  const c8 = await pf.evaluate(() => ({ h: DiceDuel.jogo.historia, rival: DiceDuel.jogo.nomes[1], deck: DiceDuel.jogo.decks[1] }));
+  if (c8.h !== 'C8' || c8.rival !== 'Diana' || c8.deck.join() !== 'interferencia,espelho,pressa') falha(`o Capítulo 8: ${JSON.stringify(c8)}`);
+  // vence com uma corrente só de Opostos (1-6-1-6-1): a fita complementar
+  await vencer(pf, [1, 6, 1, 6, 1], [12, 3]);
+  await pf.waitForSelector('.gibi', { timeout: 9000 }).catch(() => falha('vencer o Capítulo 8 não mostrou o final'));
+  const final = []; let fita = '';
+  for (let i = 0; i < 80 && await pf.$('.gibi'); i++) {
+    final.push(...await pf.$$eval('.gibi .gq-balao, .gibi .gq-cred-titulo, .gibi .gq-marcador', l => l.map(x => x.textContent)));
+    if (!fita) fita = await pf.$eval('.gibi .gq-fita', x => x.textContent).catch(() => '');
+    await pf.click('.gibi'); await pf.waitForTimeout(50);
+  }
+  const visto = [...new Set(final)].join(' | ');
+  if (!/Um, seis, um, seis, um\./.test(visto)) falha(`a cura não leu a corrente de quem jogou: ${visto}`);
+  if (!/1A6T1A6T1A/.test(fita.replace(/\s/g, ''))) falha(`a fita da cura: "${fita}"`);
+  if (!/Fechou\. Fechou\./.test(visto) || !/Eu ensinei bem\. Bem\./.test(visto)) falha(`o fecho do Eco (com o quadro da 3.ª estrela) não apareceu: ${visto}`);
+  if (!/DianaDice/.test(visto) || !/Orgânico/.test(visto)) falha('os pós-créditos não apareceram');
+  await pf.waitForFunction(() => !document.getElementById('fim').hidden, null, { timeout: 6000 }).catch(() => falha('o fim do Capítulo 8 não abriu'));
+  const f8 = await pf.evaluate(() => ({ icone: DiceDuel.st.conta.icones.includes('diana'), estrelas: DiceDuel.st.conta.historia.estrelas.C8, rec: document.getElementById('fimRecompensas').textContent }));
+  if (!f8.icone || f8.estrelas !== 3 || !/Ícone liberado/.test(f8.rec)) falha(`o fim da história: ${JSON.stringify(f8)}`);
+  await pf.screenshot({ path: path.join(FOTOS, 'historia-final.png') });
+  await pf.close();
+
+  // 5. o gibi em 360×640: nada sai da tela
   const pq = await nova(navegador, VETERANO, { width: 360, height: 640 });
   await pq.evaluate(() => { Historia.gibi(Historia.cap('C2').antes); });
   for (let i = 0; i < 6 && await pq.$('.gibi'); i++) { await pq.click('.gibi'); await pq.waitForTimeout(60); }

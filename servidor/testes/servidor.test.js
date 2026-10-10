@@ -212,8 +212,12 @@ test('modo história: o servidor dá a recompensa do capítulo em ordem e uma ve
     assert.strictEqual(r.premio, null); assert.strictEqual(r.conta.moedas, moedas, 'de novo não paga');
     await s.api('PUT', '/api/eu/dados', { historia: { feitos: ['P', 'C1', 'C2'] } }, token);
     assert.deepStrictEqual((await s.api('GET', '/api/eu', null, token)).conta.extras.historia.feitos, ['P', 'C1']);
-    r = await s.api('POST', '/api/historia', { capitulo: 'C2' }, token);
+    r = await s.api('POST', '/api/historia', { capitulo: 'C2', estrelas: 2 }, token);
     assert.deepStrictEqual(r.premio, { moedas: 40 });
+    assert.strictEqual(r.conta.extras.historia.estrelas.C2, 2);
+    assert.strictEqual((await s.api('POST', '/api/historia', { capitulo: 'C2', estrelas: 9 }, token)).status, 400, 'estrelas fora de 0 a 3');
+    r = await s.api('POST', '/api/historia', { capitulo: 'C2', estrelas: 1 }, token);
+    assert.strictEqual(r.conta.extras.historia.estrelas.C2, 2, 'a revanche com menos estrelas não apaga a melhor');
   } finally { await s.fechar(); }
 });
 

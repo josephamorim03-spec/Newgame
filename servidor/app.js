@@ -446,14 +446,15 @@ function criarApp({ banco, segredo, raiz = path.join(__dirname, '..'), tempos = 
   // Como as partidas contra os rivais do jogo, a partida roda no aparelho; a ordem dos capítulos e o "uma vez só" são
   // conferidos aqui, e a recompensa é pequena (uma carta que também se compra, ou poucas moedas)
   app.post('/api/historia', limSolo, exigirConta, assincrono(async (req, res) => {
-    const cap = (req.body || {}).capitulo;
+    const { capitulo: cap, estrelas } = req.body || {};
     if (typeof cap !== 'string') return res.status(400).json({ erro: 'Capítulo inválido.' });
+    if (estrelas !== undefined && !(Number.isInteger(estrelas) && estrelas >= 0 && estrelas <= 3)) return res.status(400).json({ erro: 'Estrelas inválidas.' });
     const r = await trava(req.conta.id, async () => {
       const c = await banco.contaPorId(req.conta.id);
-      const conta = { cartas: c.cartas.slice(), moedas: c.moedas };
-      const fim = Regras.concluirCapitulo(conta, c.extras && c.extras.historia, cap);
+      const conta = { cartas: c.cartas.slice(), icones: c.icones.slice(), moedas: c.moedas };
+      const fim = Regras.concluirCapitulo(conta, c.extras && c.extras.historia, cap, estrelas || 0);
       if (fim.erro) return { status: 400, erro: fim.erro };
-      const nova = await banco.atualizarConta(c.id, { cartas: conta.cartas, moedas: conta.moedas, extras: { ...(c.extras || {}), historia: fim.estado } });
+      const nova = await banco.atualizarConta(c.id, { cartas: conta.cartas, icones: conta.icones, moedas: conta.moedas, extras: { ...(c.extras || {}), historia: fim.estado } });
       return { premio: fim.premio, conta: nova };
     });
     if (r.erro) return res.status(r.status).json({ erro: r.erro });
