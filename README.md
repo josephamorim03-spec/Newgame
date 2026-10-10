@@ -100,7 +100,7 @@ node tools/vercel_local.js                     # a página como o Vercel publica
 
 ## Estado
 
-**v0.14, na branch `DiceDuel-primeira-partida` (ainda não publicada):** a primeira partida e a sensação de jogar bem.
+**v0.14, em produção** (a página no Vercel e o servidor na Railway, publicados da branch `DiceDuel`): a primeira partida e a sensação de jogar bem.
 - **A estreia:** na primeira visita, Jogar começa direto uma partida contra a Diana até 8 pontos, sem cartas (sem
   escolher rival nem montar deck). As cartas chegam na segunda; as armadilhas, depois dela.
 - **O guia:** o primeiro Eco, Passo e Oposto, a primeira corrente de 3 e a primeira ruptura ganham, uma vez só, uma
@@ -127,7 +127,7 @@ node tools/vercel_local.js                     # a página como o Vercel publica
 
 Detalhes em `docs/design.md` §5, §6 e §7 e `docs/progressao.md` §4.1; testes em `tools/estreia_e2e.js` e `npm test`.
 
-**v0.13, em produção** (a página no Vercel e o servidor na Railway, publicados da branch `DiceDuel`): **o blefe e o
+**v0.13:** **o blefe e o
 desafio saíram.** O "?" do rival é sempre uma armadilha de verdade; tocar nele mostra quais armadilhas do deck dele ele
 pode ser e o que cada uma faria agora. Sem os +2/+2/+3 do desafio, os pontos voltam a vir só dos dados e das cartas
 (o porquê e os números em `docs/balanceamento-cartas.md` §18). No online, antes de cada partida os dois montam o deck
