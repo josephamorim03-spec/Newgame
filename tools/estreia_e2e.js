@@ -2,7 +2,7 @@
 // contra a Diana, até 8 pontos, sem cartas; cada explicação do guia aparece uma vez; o fim da derrota abre pelos
 // bons momentos; a partida seguinte volta ao caminho de sempre (escolha do rival, deck "Primeira mesa", sem
 // armadilhas) e só depois dela as armadilhas são liberadas. Quem já jogava não passa pela estreia. E a pata da
-// Diana na tela inicial mexe nos dados e os devolve.
+// Diana na tela inicial mexem nos dados e os devolvem.
 // Uso: NODE_PATH=$(npm root -g) node tools/estreia_e2e.js   (fotos em builds/fotos/)
 const { chromium } = require('playwright');
 const path = require('path');
@@ -160,10 +160,10 @@ async function jogar(pg, { fotoGuia = null, maxPassos = 1500 } = {}) {
   if (r6.estreia || r6.meta !== 16 || !r6.guia.estreia || r6.guia.jogou) falha(`jogar pelo deck pula a estreia, veio ${JSON.stringify(r6)}`);
   await dk.close();
 
-  // 6. a pata da Diana na tela inicial: mexe num dado e o devolve ao lugar; tocar no meio a faz recolher e soltar o
-  // dado; com a Dona Coruja escolhida, não há pata
+  // 6. as patas da Diana na tela inicial: uma mexe num dado e o devolve ao lugar; tocar no meio as faz recolher e soltar o
+  // dado; com a Dona Coruja escolhida, não há patas
   const pt = await nova();
-  if (!(await pt.$('#inicioCena .cena-pata .mao'))) falha('a pata da Diana não está na tela inicial');
+  if (!(await pt.$('#inicioCena .cena-pata .mao0')) || !(await pt.$('#inicioCena .cena-pata .mao1'))) falha('as duas patas da Diana não estão na tela inicial');
   await pt.waitForSelector('.cena-dado.cutucado', { timeout: 12000 }).catch(() => falha('a pata não mexeu em nenhum dado em 12 s'));
   await pt.waitForTimeout(2600);
   if (!(await pt.evaluate(() => [...document.querySelectorAll('.cena-dado')].every(d => !d.style.transform)))) falha('depois da investida, os dados voltam para o lugar');

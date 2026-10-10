@@ -57,7 +57,8 @@ e o amigo cai direto na sala. O servidor é a autoridade da partida e roda na Ra
 | `js/rolagem.js`, `shared/rolagem.js`, `js/lancamentos.js` | a rolagem 3D: lançamentos gravados com física (do Cronomotor), corrigidos para a face da regra |
 | `js/audio.js` | efeitos e trilha lo-fi sintetizados na hora (Web Audio, sem arquivos de áudio) |
 | `js/efeitos.js` | partículas, dados voando, chamadas de "bom momento", contagem do placar |
-| `js/pata.js` | a pata da Diana na tela inicial, mexendo nos dados da mesinha |
+| `js/pata.js` | as patas da Diana na tela inicial, mexendo nos dados da mesinha |
+| `js/patas_pintadas.js` | a arte pintada das patas e dos efeitos delas (gerada de `arte/patas.json`; `tools/referencias_patas.js` desenha as referências) |
 | `sim/` | regras de referência em Python e os experimentos de balanceamento |
 | `tools/empacotar.py` | gera o HTML único |
 | `tools/lancamentos/` | exporta os lançamentos gravados do Godot e monta `js/lancamentos.js` |
@@ -73,6 +74,7 @@ e o amigo cai direto na sala. O servidor é a autoridade da partida e roda na Ra
 | `docs/design.md` | regras, cartas, números, decisões e por quê |
 | `docs/pesquisa.md` | o que jogos de cartas no celular ensinam (deck pequeno, armadilhas, contra-jogo) |
 | `docs/progressao.md` | moedas, rating contra o farm, XP e níveis, loja, cosméticos, regras de monetização |
+| `docs/visual-impresso.md` | técnicas do Aranhaverso no Dice Duel: o que cabe, o que não cabe e o plano |
 | `docs/servidor.md` | o servidor: o que faz, regras contra abuso, como pôr na Railway, API |
 
 ## Verificar
@@ -105,8 +107,8 @@ node tools/vercel_local.js                     # a página como o Vercel publica
   ("Valeu esperar!" na hora). É o primeiro bom momento que premia uma decisão, não um resultado.
 - **Fim da derrota sem "+0":** os bons momentos vêm primeiro, depois a experiência e o rating.
 - **Juice:** o disparo em cascata (cada dado acende na nota dele, um selo conta +1, +2, +4... e o "+N" estoura no
-  placar do tamanho do lance); a tela inicial com a rival à mesa, a saudação da hora e dados que rolam ao toque, e a pata da Diana mexendo nos
-  dados e ameaçando pegá-los; a mesa
+  placar do tamanho do lance); a tela inicial com a rival à mesa, a saudação da hora e dados que rolam ao toque, e as patas da Diana (sprites:
+  dorso, virando, palma com as almofadinhas rosa e gancho na aresta) mexendo nos dados e ameaçando pegá-los; a mesa
   não pisca mais marrom no tremor.
 - **Impacto e ponto de partida:** os disparos de 5 e 6 e a armadilha que pega param o tempo por um instante antes do
   estouro; a corrente a um dado de fechar a partida pulsa; o botão vira "Disparar e vencer"; os dados que dão a vitória

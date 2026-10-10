@@ -380,15 +380,35 @@ descansam no feltro (o do meio, na pele da rival, dá um pulinho de vez em quand
 formarem uma corrente, a rival repara ("Olha: isso já é uma corrente."). **Tocar na rival**, ela sorri e fala outra
 frase. Em telas baixas (até 680 px) a cena encolhe; com "reduzir movimento", fica parada.
 
-**A pata da Diana** (`js/pata.js`). Gata que é, a Diana não deixa os dados em paz: os ombros brancos aparecem dos lados
-da cabeça, por cima da borda, e a pata fica apoiada no feltro ao lado dos dados. A cada 4 a 8 s ela ergue a pata, desce
-num dado ao acaso, dá uma ou duas batidinhas (o dado treme, um toque abafado no feltro e uma vibração leve, só depois de
-a pessoa já ter tocado na tela, porque antes o navegador recusa), arrasta o dado na direção dela com a cabeça inclinada,
-travessa, e solta; o dado volta para o lugar. Às vezes ela comenta ("Esse aqui parece meu.", "Só estou olhando.", "Calma.
-Ainda não peguei."). Tocar num dado ou nela no meio do gesto faz a pata recolher depressa. Como a cabeça fica atrás da
-mesa, a pata nunca sobe acima da borda (passaria pelo rosto): erguer a pata é ela crescer um pouco e a sombra no feltro se
-afastar. O braço é um SVG redesenhado a cada quadro, do ombro até a pata. Com a Dona Coruja escolhida, não há pata; com
-as animações desligadas, ela fica parada na borda.
+**As patas da Diana** (`js/pata.js`). Gata que é, a Diana não deixa os dados em paz. Ela espia com as duas patas
+apoiadas na borda da mesa, uma de cada lado do queixo; só as patas, sem braço nem corpo. A cada 4 a 8 s uma delas sai da
+borda, desce num dado, dá uma ou duas batidinhas (o dado treme, um toque abafado no feltro e uma vibração leve, só depois
+de a pessoa já ter tocado na tela, porque antes o navegador recusa), arrasta o dado na direção dela com a cabeça
+inclinada, travessa, e solta; o dado volta para o lugar e a pata volta para a borda. **Cada dado é da pata do lado dele:**
+o da esquerda, a pata da esquerda; o da direita, a da direita; o do meio, meio a meio. Às vezes ela comenta ("Esse aqui
+parece meu.", "Só estou olhando.", "Calma. Ainda não peguei."). Tocar num dado ou nela no meio do gesto faz as patas
+voltarem depressa para a borda. A pata não sobe pela tela (passaria pelo rosto): erguer é ela crescer um pouco e a
+sombra no feltro se afastar.
+
+A pata é um **sprite de quatro poses**, trocadas como quadros (vetor, no traço de cacau e no branco da Diana):
+- **dorso:** vista de cima, apoiada na borda, com os vãos dos dedos;
+- **virando:** de lado, estreita, com a beirada rosa das almofadinhas aparecendo;
+- **palma:** erguida, de frente para quem olha: a almofada maior, de três lobos, e os quatro feijõezinhos rosa em arco;
+- **gancho:** os dedos dobrados por cima da aresta do dado, com as quatro pontinhas rosa apertando a face dele.
+
+A investida: dorso → virando → palma ao erguer (a palma fica no ar em cima do dado, a ameaça); palma → virando → gancho
+ao descer na aresta de cima do dado; uma ou duas apertadas; puxa o dado pela aresta (ele inclina, arrastado pela
+beirada); gancho → virando → dorso ao soltar, e a pata volta para a borda. A pata da direita é o espelho da da esquerda.
+
+**A arte pintada das patas** (`arte/patas.json` → `js/patas_pintadas.js`) vem da API de imagem da OpenAI, pela mesma
+ferramenta dos retratos e das cartas (`tools/arte_icones.py --pedidos arte/patas.json`). Cada pose vai junto do próprio
+sprite vetorial como referência (`arte/referencia/pata-<pose>.png`, desenhado por `tools/referencias_patas.js`), para a
+pintura manter o ângulo, as proporções e os dedos; o pelo branco é alinhado ao tom da cabeça pintada da Diana (o
+"pelo" de `arte/patas.json`), para pata e rosto serem do mesmo bicho. Pose sem pintura usa o vetor. Da mesma leva vêm
+dois efeitos: a **poeirinha da batida**, que sai embaixo das pontinhas rosa quando a pata aperta o dado, e o **rastro**
+da pata correndo até o dado. Os pedidos dos efeitos dizem "só isto, nada de dados": com "jogo de dados" no estilo, o
+gerador punha dados (e até um punho) no desenho. Com a Dona Coruja escolhida, não há patas; com as animações desligadas, elas ficam paradas
+na borda.
 
 **O impacto (v0.14).** Antes do estouro dos disparos de 5 e 6, o tempo para por um instante (90 ms; 150 na Sinfonia):
 o selo fecha no valor, a corrente incha e espera, a borda da tela escurece de leve, e só então vêm o clarão, os brilhos
@@ -583,4 +603,6 @@ para 977"). Online o relógio é o da sala (tempo por vez escolhido ao criá-la,
 - **Medir a estreia com gente (v0.14):** quantos terminam a primeira partida e quantos começam a segunda; se as
   chamadas do guia (4,2 s, no alto da Mesa) são lidas ou atrapalham a vez da Diana; e se a Paciência aparece de vez em
   quando (rara demais, ninguém a vê; comum demais, perde o valor).
+- **Técnicas do Aranhaverso como sotaque (retícula, cores desencaixadas, quadro congelado, onomatopeias):** avaliação e
+  plano em `docs/visual-impresso.md`. Primeiro um protótipo atrás de uma bandeira; o estilo inteiro, só como cosmético (Mesa Gibi).
 - **Medir o "?" com gente:** se o rival passa a disparar de 3 para fugir da Interferência quando ela pode estar armada.
