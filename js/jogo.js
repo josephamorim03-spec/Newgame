@@ -16,7 +16,7 @@
     virar: svg('<path d="M4 12a8 8 0 0 1 14-5.3M20 12a8 8 0 0 1-14 5.3M18 3v4h-4M6 21v-4h4"/>'),
     rerrolar: svg('<path d="M3 12a9 9 0 1 0 3-6.7M3 4v4h4"/><circle cx="12" cy="12" r="1.5"/>'),
     pressa: svg('<path d="M5 6l6 6-6 6M13 6l6 6-6 6"/>'),
-    coringa: svg('<path d="M6.5 18c0-3.5-1-6-4-5.5.5-4.5 4.5-6.5 8-3.5.2-2.5.7-4.5 1.5-6 .8 1.5 1.3 3.5 1.5 6 3.5-3 7.5-1 8 3.5-3-.5-4 2-4 5.5z"/><path d="M5.5 20.5h13"/><circle cx="2.5" cy="14.6" r="1.4"/><circle cx="21.5" cy="14.6" r="1.4"/><circle cx="12" cy="2.4" r="1.2"/>'),
+    coringa: svg('<rect x="5" y="5" width="14" height="14" rx="3" transform="rotate(-8 12 12)"/><path d="M9.5 9.5l5 5M14.5 9.5l-5 5"/>'),   // o Remendo (ex-Coringa): um retalho costurado
     sobrecarga: svg('<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>'),
     pausa: svg('<circle cx="12" cy="12" r="9"/><path d="M10 8.5v7M14 8.5v7"/>'),
     reverso: svg('<path d="M4 8h15M15.5 4.5 19 8l-3.5 3.5M20 16H5M8.5 12.5 5 16l3.5 3.5"/>'),
@@ -30,11 +30,12 @@
   };
   // versão pintada (js/cartas_pintadas.js, feita por tools/arte_icones.py) onde o ícone aparece grande o bastante para ler
   // (deck, loja, detalhe, regras, versus); nos botões de 18 px da mesa e na marca do Espelho fica o traço. Sem pintura, traço em tudo.
-  const pintada = id => (window.CARTAS_PINTADAS || {})[id];
+  // (a pintura do Coringa era um palhaço; o Remendo usa o vetor até ter a própria pintura: arte/cartas.json)
+  const pintada = id => id !== 'coringa' && (window.CARTAS_PINTADAS || {})[id];
   const imgPintada = (id, cls) => `<img class="${cls}" src="${pintada(id)}" alt="" aria-hidden="true" draggable="false">`;
   const RAIO = pintada('raio') ? imgPintada('raio', 'raio-pintado') : '⚡';
   const VERSO = pintada('verso') ? imgPintada('verso', 'verso-pintado') : '?';
-  // a marca do Coringa sobre o dado e na corrente: o chapéu de bobo em traço, do tamanho da letra
+  // a marca do Remendo (ex-Coringa) sobre o dado e na corrente: o retalho em traço, do tamanho da letra
   const CHAPEU = ICO_CARTA.coringa.replace('class="ico"', 'class="ico mini-ico"');
   // a moeda pintada vale para todo <span class="moeda"> (o CSS usa a variável; sem ela, fica o círculo dourado)
   if (pintada('moeda')) { document.documentElement.style.setProperty('--moeda-img', `url("${pintada('moeda')}")`); document.documentElement.classList.add('moeda-pintada'); }
@@ -42,7 +43,14 @@
   const MOMENTO_ID = { '☾': 'virada', '★': 'sinfonia', '✿': 'harmonia', '✧': 'truque', '❀': 'salvou', '↺': 'esquiva', '✦': 'bloqueio', '♪': 'nota', '✪': 'recorde' };
   const srcMomento = c => (c === '☕' ? (window.RETRATOS_PINTADOS || {}).xicara : (window.MOMENTOS_PINTADOS || {})[MOMENTO_ID[c]]);
   const simboloMomento = c => (srcMomento(c) ? `<img src="${srcMomento(c)}" alt="${c}" draggable="false">` : c);
-  const CARTAS = Object.fromEntries(Object.entries(R.CARTAS).map(([k, v]) => [k, { ...v, ico: ICO_CARTA[k], arte: pintada(k) ? imgPintada(k, 'ico pintado') : ICO_CARTA[k] }]));
+  // o Remendo (ex-Coringa) ainda não tem pintura: um retalho mel costurado em vetor, servido como imagem para se comportar
+  // como as cartas pintadas. (Não é uma boia: a boia é o símbolo do "salvou" nos bons momentos do fim da partida.)
+  const REMENDO_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="5 5 38 38"><g transform="rotate(-8 24 24)">'
+    + '<rect x="9" y="11" width="30" height="29" rx="5" fill="rgba(58,42,46,.18)"/><rect x="9" y="9" width="30" height="29" rx="5" fill="#f2b15e" stroke="#3a2a2e" stroke-width="2.6"/>'
+    + '<rect x="13.5" y="13.5" width="21" height="20" rx="3" fill="none" stroke="#fffaf0" stroke-width="2.2" stroke-dasharray="3.2 2.6" stroke-linecap="round"/>'
+    + '<path d="M19 19.5l10 8M29 19.5l-10 8" stroke="#e8806f" stroke-width="2.8" stroke-linecap="round"/></g></svg>';
+  const arteRemendo = () => `<img class="ico pintado" src="data:image/svg+xml;utf8,${encodeURIComponent(REMENDO_SVG)}" alt="" aria-hidden="true" draggable="false">`;
+  const CARTAS = Object.fromEntries(Object.entries(R.CARTAS).map(([k, v]) => [k, { ...v, ico: ICO_CARTA[k], arte: k === 'coringa' ? arteRemendo() : pintada(k) ? imgPintada(k, 'ico pintado') : ICO_CARTA[k] }]));
   const PRONTOS = [
     { nome: 'Primeira mesa', cartas: ['ajuste', 'coringa', 'pressa'], nota: 'só efeitos' },
     { nome: 'Muralha', cartas: ['ancora', 'coringa', 'interferencia'], nota: '' },
@@ -660,7 +668,7 @@
       const pode = humano(j.vez) && j.vez !== p && podeDesafiar(j.vez).ok;
       estados += `<button class="efeito-ativo oculta${pode ? ' desafiavel' : ''}" data-virada="${p}" aria-label="Carta virada: pode ser armadilha ou blefe${pode ? '. Tocar para desafiar' : ''}">${VERSO} carta virada${pode ? ' · desafiar?' : ''}</button>`;
     }
-    if (j.coringa[p]) estados += `<span class="efeito-ativo" title="O próximo dado que romperia entra no lugar da frente">Coringa ativo</span>`;
+    if (j.coringa[p]) estados += `<span class="efeito-ativo" title="O próximo dado que romperia entra no lugar da frente">Remendo ativo</span>`;
     if (j.sobre[p]) estados += `<span class="efeito-ativo">Sobrecarga +2</span>`;
     if (j.extra[p]) estados += `<span class="efeito-ativo">Pressa: +1 dado</span>`;
     return `<div class="cartas">${html}</div><div class="estados">${estados}</div>`;
@@ -678,7 +686,7 @@
       if (i < cor.length) {
         const r = i > 0 ? rels(cor[i - 1], cor[i]) : [];
         const frenteCls = !fx && i === cor.length - 1 ? ' frente' : '';
-        slots += `<div class="slot${frenteCls}" data-slot="${i}">${r.length ? elo(r) : (i > 0 ? `<span class="elo r-coringa" title="Coringa">${CHAPEU}</span>` : '')}${dadoHTML(cor[i], skinDe(p))}</div>`;
+        slots += `<div class="slot${frenteCls}" data-slot="${i}">${r.length ? elo(r) : (i > 0 ? `<span class="elo r-coringa" title="Remendo: entrou no lugar da frente">${CHAPEU}</span>` : '')}${dadoHTML(cor[i], skinDe(p))}</div>`;
       } else if (i === cor.length && !fx) {
         const fs = facesQueEncaixam(cor);
         slots += `<div class="slot prox" title="Faces que sincronizam com a frente">${!st.pref.dicas ? '' : cor.length && !j.coringa[p] ? `<span class="prox-faces n${fs.length}">${fs.map(f => `<i>${f}</i>`).join('')}</span>` : '<svg class="ico prox-livre" viewBox="0 0 24 24" aria-label="qualquer dado começa"><path d="M12 6v12M6 12h12"/></svg>'}</div>`;
@@ -723,7 +731,7 @@
         if (!dicas) tags = '';
         else if (!eu.length) tags = `<span class="tag inicio">Começa</span>`;
         else if (r.length) tags = `<span class="tag ${r.length > 1 ? 'duplo' : 'r-' + r[0]}">${r.map(k => `<span class="tnome">${REL[k].simb}</span><span class="tnome curta"> ${REL[k].nome}</span>`).join(' ')}</span>`;
-        else if (cabe) tags = `<span class="tag r-coringa" title="Coringa: troca a frente">${CHAPEU}<span class="tnome curta"> Coringa</span></span>`;
+        else if (cabe) tags = `<span class="tag r-coringa" title="Remendo: entra no lugar da frente">${CHAPEU}<span class="tnome curta"> Remendo</span></span>`;
         else if (salvo) tags = `<span class="tag inicio">Bolso</span>`;
         else tags = `<span class="tag rompe">✕<span class="tnome curta"> Rompe</span></span>`;
         if (contra && dicas) tags = `<span class="tag previa">vira ${vv}</span>` + tags;
@@ -780,7 +788,7 @@
     }
     if (j.fase === 'destino' && j.mao) {
       const v = j.mao.v, ds = destinos(p, v), b = j.bolso[p];
-      const relTxt = x => { const r = eu.length ? rels(frente(eu), x) : []; return r.length ? r.map(k => REL[k].nome).join(' + ') : (eu.length && j.coringa[p] ? `Coringa: entra no lugar do ${frente(eu)}` : 'começa a corrente'); };
+      const relTxt = x => { const r = eu.length ? rels(frente(eu), x) : []; return r.length ? r.map(k => REL[k].nome).join(' + ') : (eu.length && j.coringa[p] ? `Remendo: entra no lugar do ${frente(eu)}` : 'começa a corrente'); };
       const bt = (modo, rot, sub, cls) => `<button class="btn btn-duplo ${cls}" data-destino="${modo}"><span>${rot}</span><small>${sub}</small></button>`;
       let botoes = '';
       if (ds.length) {
@@ -827,7 +835,7 @@
     const iSel = j.sel !== null && j.sel !== undefined ? idxDe(j.sel) : -1;
     if (j.fase === 'pegar' && iSel >= 0) {
       const op = opcoesDoDado(p, iSel), b = j.bolso[p], L = eu.length;
-      const relTxt = x => { const r = L ? rels(frente(eu), x) : []; return r.length ? r.map(k => REL[k].nome).join(' + ') : (L && j.coringa[p] ? `Coringa: entra no lugar do ${frente(eu)}` : 'começa a corrente'); };
+      const relTxt = x => { const r = L ? rels(frente(eu), x) : []; return r.length ? r.map(k => REL[k].nome).join(' + ') : (L && j.coringa[p] ? `Remendo: entra no lugar do ${frente(eu)}` : 'começa a corrente'); };
       const bt = (modo, rot, sub, cls) => `<button class="btn btn-duplo ${cls}" data-destino="${modo}"><span>${rot}</span><small>${sub}</small></button>`;
       const ancora = j.armada[p] === 'ancora' && L >= 4;
       let aviso = '', botoes = '';
@@ -854,7 +862,7 @@
     if (j.segundoDado) msg = `escolha o segundo dado (Pressa) ou dispense${eu.length >= 3 ? ' e vá para o disparo' : ''}.`;
     else if (!algumSeguro) msg = `<b>nenhum dado sincroniza</b> com o seu ${frente(eu)}, nem o do Bolso. Use uma carta ou escolha um: a corrente de ${eu.length} rompe${j.armada[p] === 'ancora' && eu.length >= 4 ? ', mas a sua Âncora está armada' : ''}.`;
     else if (!ajudas) msg = 'escolha um dado.';
-    else msg = eu.length ? `escolha um dado. Sua frente é <b>${frente(eu)}</b>: sincronizam ${facesQueEncaixam(eu).join(', ')}${j.coringa[p] ? `; os outros entram no lugar do ${frente(eu)} (Coringa)` : ''}.` : 'escolha um dado. Sua corrente está vazia: qualquer um começa.';
+    else msg = eu.length ? `escolha um dado. Sua frente é <b>${frente(eu)}</b>: sincronizam ${facesQueEncaixam(eu).join(', ')}${j.coringa[p] ? `; os outros entram no lugar do ${frente(eu)} (Remendo)` : ''}.` : 'escolha um dado. Sua corrente está vazia: qualquer um começa.';
     const prontas = j.decks[p].filter(c => usavel(p, c)).length;
     const dispensa = j.segundoDado ? `<div class="botoes"><button class="btn btn-papel" data-acao="dispensar">Dispensar o 2.º dado</button></div>` : '';
     return `<div class="status">${quem}, ${msg}</div>${dispensa}${prontas && ajudas ? `<p class="nota" style="margin:0">Toque numa carta sua para usar (${prontas} ${prontas === 1 ? 'pronta' : 'prontas'}).</p>` : ''}`;
@@ -1644,7 +1652,7 @@
     if (a === 'perfil') { abrirPerfil(); return; }
     if (a === 'online') { document.getElementById('btnOnline').click(); return; }
     if (a === 'regras') { abrirLado(true); return; }
-    const botao = { deck: 'btnDeck', loja: 'btnCarteira', ajustes: 'btnConfig' }[a];
+    const botao = { deck: 'btnDeck', 'trocar-deck': 'btnDeck', loja: 'btnCarteira', ajustes: 'btnConfig' }[a];
     if (botao) document.getElementById(botao).click();
   });
 

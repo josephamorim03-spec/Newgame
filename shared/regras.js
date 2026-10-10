@@ -19,10 +19,10 @@
     virar:         { nome: 'Virar', tipo: 'efeito', alvo: true, verbo: 'vira um dado', texto: 'Vire um dado da Mesa para a face de baixo, que soma 7 com ele (o 2 vira 5; o 6 vira 1). Se o dado tinha a marca de um Espelho, a marca some.' },
     rerrolar:      { nome: 'Rerrolar', tipo: 'efeito', verbo: 'rola a Mesa', texto: 'Role de novo todos os dados que estão na Mesa. Se havia a marca de um Espelho, ela some.' },
     pressa:        { nome: 'Pressa', tipo: 'efeito', verbo: 'pega 2 dados', texto: 'Pegue dois dados nesta vez, um depois do outro; o segundo é opcional. Não dá para disparar entre os dois. Só com 3 ou 4 dados na Mesa: o último dado sempre fica para o rival.' },
-    // Coringa (v0.12): o dado que não sincronizava TROCA a frente (a corrente não cresce). Entrando como mais um elo, ele
+    // Remendo, ex-Coringa (v0.12; o id interno continua 'coringa'): o dado que não sincronizava TROCA a frente (a corrente não cresce). Entrando como mais um elo, ele
     // garantia o 6.º dado de graça: com uso de gente (segurar a corrente de 5 contando com ele) vencia 64,9% sozinho na
     // meta 12; trocando a frente, 55,0% na meta 16, como Ajuste e Pressa (docs/balanceamento-cartas.md §14)
-    coringa:       { nome: 'Coringa', tipo: 'efeito', verbo: 'salva a corrente', texto: 'Salva a sua corrente uma vez: se o próximo dado que entrar nela não sincronizar, ele toma o lugar da frente em vez de romper (a corrente não cresce). Se esse dado já sincronizar, entra normal e o Coringa é gasto mesmo assim. Só com 2 dados ou mais na Mesa.' },
+    coringa:       { nome: 'Remendo', tipo: 'efeito', verbo: 'remenda a frente', texto: 'Remenda a sua corrente uma vez: se o próximo dado que entrar nela não sincronizar, ele toma o lugar da frente em vez de romper (a corrente não rompe, mas também não cresce). Se esse dado já sincronizar, entra normal e o Remendo é gasto mesmo assim. Só com 2 dados ou mais na Mesa.' },
     sobrecarga:    { nome: 'Sobrecarga', tipo: 'efeito', pontos: true, verbo: '+2 no disparo de 4+', texto: 'Seu próximo disparo de 4 dados ou mais vale 2 pontos a mais. Use antes de pegar o dado ou na hora de disparar. Um disparo de 3 não a gasta.' },
     // v0.11 (docs/balanceamento-cartas.md): medidas no simulador com meta 12 e 16
     pausa:         { nome: 'Pausa', tipo: 'efeito', verbo: 'passa a vez', texto: 'Passe a vez sem pegar dado e sem disparar: a sua corrente e o seu Bolso ficam como estão. Serve quando todo dado da Mesa romperia a sua corrente. Não vale no segundo dado da Pressa.' },
@@ -230,7 +230,7 @@
     // Ajuste e Coringa (v0.12): no fim da Mesa sobram poucas escolhas, e era ali que o conserto tirava todo o risco. Com
     // eles livres, o melhor deck (Ajuste + Coringa + Pressa) vencia 61,6%; assim, 58,2% (balanceamento §17)
     if (c === 'ajuste' && j.mesa.length < 3) return { ok: false, motivo: 'Precisa de 3 dados ou mais na Mesa.' };
-    if (c === 'coringa' && j.mesa.length < 2) return { ok: false, motivo: 'Precisa de 2 dados ou mais na Mesa: no último dado, o Coringa não vale.' };
+    if (c === 'coringa' && j.mesa.length < 2) return { ok: false, motivo: 'Precisa de 2 dados ou mais na Mesa: no último dado, o Remendo não vale.' };
     if (c === 'pressa' && j.extra[p]) return { ok: false, motivo: 'A Pressa já está valendo nesta vez.' };
     if (c === 'pausa' && j.segundoDado) return { ok: false, motivo: 'No segundo dado da Pressa, use Dispensar.' };
     if (c === 'pausa' && j.extra[p]) return { ok: false, motivo: 'A Pressa já está valendo nesta vez: pegue os dados.' };
@@ -335,7 +335,7 @@
       registrar(j, p, 'usou Rerrolar: a Mesa foi rolada de novo', 'seg');
       if (j.marca) desfazerEspelho(j, p);
     } else if (c === 'pressa') { j.extra[p] = 1; registrar(j, p, 'usou Pressa: pega dois dados nesta vez', 'seg'); }
-    else if (c === 'coringa') { j.coringa[p] = true; registrar(j, p, 'usou Coringa: o próximo dado que romperia troca a frente', 'seg'); }
+    else if (c === 'coringa') { j.coringa[p] = true; registrar(j, p, 'usou Remendo: o próximo dado que romperia entra no lugar da frente', 'seg'); }
     else if (c === 'sobrecarga') { j.sobre[p] = true; registrar(j, p, 'usou Sobrecarga: o próximo disparo de 4+ vale +2', 'seg'); }
     else if (c === 'reverso') {
       j.cor[p].reverse();
@@ -446,7 +446,7 @@
         // pelo Coringa, o dado troca a frente: a corrente fica do mesmo tamanho (v0.12)
         const trocada = viaCoringa ? eu[eu.length - 1] : null;
         if (viaCoringa) eu[eu.length - 1] = entra; else eu.push(entra);
-        registrar(j, p, viaCoringa ? `pôs ${entra}${deOnde} · Coringa: trocou a frente ${trocada} · corrente de ${eu.length}`
+        registrar(j, p, viaCoringa ? `pôs ${entra}${deOnde} · Remendo: entrou no lugar do ${trocada} · corrente de ${eu.length}`
           : `pôs ${entra}${deOnde} · ${r.length ? r.map(k => REL[k].nome).join(' + ') : 'começa a corrente'} · corrente de ${eu.length}`);
         emitir(j, 'elo', { p, n: eu.length, coringa: !!viaCoringa });
         if (salvouPeloBolso) { emitir(j, 'salvo', { p, txt: 'O Bolso salvou a corrente' }); momento(j, p, '❀', `O Bolso salvou uma corrente de ${eu.length - 1}`); }

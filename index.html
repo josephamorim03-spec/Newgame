@@ -52,7 +52,7 @@
       <h2>Escolha o rival</h2>
       <div class="rival-cartas" id="rivalCartas" role="radiogroup" aria-label="Rival"></div>
       <div class="rival-ajustes">
-        <span class="rival-linha"><span class="rival-deck" id="rivalDeck"></span><button class="btn-link" data-inicio="deck">Trocar</button></span>
+        <span class="rival-linha"><span class="rival-deck" id="rivalDeck"></span><button class="btn-link" data-inicio="trocar-deck">Trocar</button></span>
       </div>
       <button class="btn btn-mel inicio-principal" data-inicio="comecar" id="rivalComecar">Jogar</button>
       <button class="btn-link" data-inicio="voltar">← Voltar</button>
@@ -149,7 +149,7 @@
         <h3>Cartas</h3>
         <ol>
           <li>Antes da partida, monte um deck de <b>até 3 cartas</b>: no máximo <b>2 armadilhas</b> e no máximo <b>1 carta de pontos</b> (<span class="raio">⚡</span>). Cada carta vale <b>uma vez</b> por partida. Os dois decks ficam à mostra.</li>
-          <li><b>Efeitos</b> são usados na sua vez, antes de pegar o dado, e o rival vê qual foi. Alguns pedem dados na Mesa: <b>Pressa</b> com 3 ou 4, <b>Ajuste</b> com 3 ou mais, <b>Coringa</b> com 2 ou mais.</li>
+          <li><b>Efeitos</b> são usados na sua vez, antes de pegar o dado, e o rival vê qual foi. Alguns pedem dados na Mesa: <b>Pressa</b> com 3 ou 4, <b>Ajuste</b> com 3 ou mais, <b>Remendo</b> com 2 ou mais.</li>
           <li><b>Armadilhas</b> são armadas na sua vez, viradas para baixo, uma por vez. O rival vê um <b>?</b>, mas não qual carta é. Ela age sozinha quando a condição dela acontece. O <b>Espelho</b> é a exceção: a marca dele fica à vista.</li>
           <li><b>Blefe:</b> você pode virar para baixo um <b>efeito</b> no lugar da armadilha. Para o rival é um <b>?</b> igual. Virado, ele não faz nada; da sua vez seguinte em diante, você pode usá-lo normalmente e, se ninguém desafiou, ganha <b>+3</b>. Só dá para blefar se o seu deck ainda esconde uma armadilha (sem ser o Espelho); senão, todos saberiam.</li>
           <li><b>Desafiar:</b> na sua vez, antes de pegar o dado, toque no <b>?</b> do rival. Se for <b>blefe</b>, a carta dele se perde e você ganha <b>2</b>. Se for <b>armadilha</b>, ela fica à vista (e continua armada) e ele ganha <b>2</b>. Desafiar não gasta a sua vez. Conte o deck dele: quanto mais efeitos e menos armadilhas ainda escondidas, mais chance de ser blefe.</li>
@@ -161,11 +161,11 @@
           <li><b>Armadilhas não se anulam:</b> cada uma olha a própria condição. A Âncora do rival segurar a corrente dele não gasta a sua Interferência; ela continua esperando o próximo disparo dele.</li>
           <li><b>“4 ou mais” é o tamanho da corrente naquela hora:</b> no disparo (Interferência, Sobrecarga) ou quando o dado ruim ia entrar (Âncora). Com 3, nenhuma delas age nem é gasta.</li>
           <li><b>Interferência + Sobrecarga:</b> as duas valem. Um disparo de 4 vale 2 + 2 − 1 = 3.</li>
-          <li><b>Coringa:</b> o primeiro dado de uma corrente vazia não o gasta, nem guardar no Bolso. Com o Coringa ativo nenhum dado rompe, então a sua Âncora não é gasta.</li>
+          <li><b>Remendo:</b> o primeiro dado de uma corrente vazia não o gasta, nem guardar no Bolso. Com o Remendo ativo nenhum dado rompe, então a sua Âncora não é gasta.</li>
           <li><b>Pressa:</b> se o primeiro dado completar 6, a corrente dispara sozinha e o segundo começa outra. No segundo dado, use “Dispensar” se nenhum servir.</li>
-          <li><b>Espelho:</b> o dado marcado chega virado e não pode ir para o Bolso (nem na troca); Coringa e Âncora ainda valem. As etiquetas da Mesa já mostram o valor virado. Virar (no dado marcado) e Rerrolar apagam a marca; Ajuste não.</li>
+          <li><b>Espelho:</b> o dado marcado chega virado e não pode ir para o Bolso (nem na troca); Remendo e Âncora ainda valem. As etiquetas da Mesa já mostram o valor virado. Virar (no dado marcado) e Rerrolar apagam a marca; Ajuste não.</li>
           <li><b>Lacre:</b> pega o próximo efeito do rival, seja qual for: a Pressa não dá o segundo dado, a Pausa não passa a vez, a Sobrecarga não soma. Um blefe desvirado também conta.</li>
-          <li><b>Reverso:</b> o Coringa ativo e a Âncora armada continuam valendo para a corrente invertida.</li>
+          <li><b>Reverso:</b> o Remendo ativo e a Âncora armada continuam valendo para a corrente invertida.</li>
           <li><b>Furto:</b> o dado que chega no seu Bolso pode entrar depois, na troca, como qualquer dado do Bolso.</li>
           <li><b>Uma carta armada por vez</b>, contando o blefe. A armadilha que nunca encontra a sua condição fica armada até o fim.</li>
         </ol>

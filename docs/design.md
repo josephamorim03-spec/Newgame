@@ -50,7 +50,7 @@ Antes da partida, cada um monta um deck de **até 3 cartas**, cada uma valendo *
 | Virar | efeito | vira um dado (7 − valor); desfaz uma marca de Espelho | 54,1% |
 | Rerrolar | efeito | rola a Mesa toda; desfaz uma marca de Espelho | 55,1% |
 | Pressa | efeito | pega 2 dados nesta vez (só com 3 ou 4 dados na Mesa, v0.12; o 2.º é opcional) | 58,1% |
-| Coringa | efeito | o próximo dado que romperia a corrente entra **no lugar da frente**: a corrente não rompe nem cresce; só com 2+ dados na Mesa (v0.12) | 55,0% (meta 16) |
+| Remendo (ex-Coringa) | efeito | o próximo dado que romperia a corrente entra **no lugar da frente**: a corrente não rompe nem cresce; só com 2+ dados na Mesa (v0.12) | 55,0% (meta 16) |
 | Sobrecarga ⚡ | efeito | +2 no próximo disparo de 4+ | — |
 | Pausa (v0.11) | efeito | passa a vez sem pegar dado nem disparar; corrente e Bolso ficam | — |
 | Reverso (v0.11) | efeito | inverte a corrente: ela cresce pela outra ponta (2+ dados) | — |
@@ -78,9 +78,17 @@ Agora o −1 só vale se o rival estiver na frente ou empatado; atrás, o dispar
 de recuperação, e o simulador mostra a meta 12 mais variada (10 dos 20 melhores com ela) e a meta 16 sem nenhum deck
 acima de 58% (`docs/balanceamento-cartas.md` §12).
 
+**Coringa virou Remendo (v0.12).** O nome prometia um curinga, uma carta que vale qualquer coisa, e era isso quando o
+dado entrava "com qualquer frente". Desde que o dado ruim passou a entrar no lugar da frente, a carta não vale qualquer
+coisa: ela remenda a corrente (não rompe, mas também não cresce). Primeiro o nome foi Boia, mas a boia já é o símbolo do
+"salvou" nos bons momentos do fim da partida (o Bolso ou a Âncora evitando uma ruptura): o mesmo desenho teria dois
+sentidos. O Remendo diz o mecanismo e tem desenho próprio, um retalho costurado. O id interno continua `coringa`: decks
+salvos, contas e partidas guardadas seguem valendo. O desenho é um vetor até a pintura nova sair de `arte/cartas.json`
+(`tools/arte_icones.py`); a pintura antiga, um palhaço, não é mais usada.
+
 **Os textos (v0.12).** Cada carta segue o mesmo formato: o que faz, quando vale (os dados na Mesa, o tamanho da
 corrente) e o detalhe que confunde, com exemplo ("o 2 vira 5"; "2-3-4 vira 4-3-2"). Os rótulos curtos não se repetem
-(Coringa "salva a corrente", Âncora "segura corrente de 4+"). O livro de regras deixa nas cartas o que é de cada uma
+(Remendo "remenda a frente", Âncora "segura corrente de 4+"). O livro de regras deixa nas cartas o que é de cada uma
 e fica, em "Quando as cartas se cruzam", só com as interações.
 
 ### Quando as cartas se cruzam (exceções explícitas)
