@@ -410,12 +410,14 @@ de volta à tela, se a vez era sua ou do rival (e no online o tempo da vez acaba
 - **Sua vez de novo:** quando a vez volta para você em seguida, a chamada diz por quê ("você está atrás no placar e abre
   a Mesa nova" ou "Diana usou a Pausa e passou a vez"); o aviso da Pausa do rival já diz "você joga de novo". Sem isso,
   jogar duas ou três vezes seguidas parecia erro do jogo (`docs/balanceamento-cartas.md` §16).
-- No modo a dois no mesmo aparelho o selo não aparece (os dois são da casa); fica o pulinho do painel a cada troca.
+
+**Sem modo a dois (v0.12).** O "2 jogadores" no mesmo aparelho saiu do menu (o dono não fazia questão e não estava
+bom). Quem tinha o modo marcado volta para o rival; uma partida a dois guardada não volta. O motor ainda sabe jogar a
+dois: é assim que `tools/regras.js` joga as duas mãos pela tela.
 
 **Menu principal (v0.11).** O jogo abre nele: logo, nome, rating, nível e moedas, a escolha do rival (Diana ou
-Dona Coruja, com uma linha sobre o jeito dela e a meta), **Jogar** grande, Online e 2 jogadores, e uma fileira de
-ícones (Deck, Loja, Regras, Ajustes). É ali que a sessão se monta: Jogar começa contra o rival marcado; 2 jogadores
-abre primeiro os decks dos dois (abas Jogador 1 e 2) e o Jogar da janela começa. Ajustes não repete modo nem
+Dona Coruja, com uma linha sobre o jeito dela e a meta), **Jogar** grande, Online, e uma fileira de
+ícones (Deck, Loja, Regras, Ajustes). É ali que a sessão se monta: Jogar começa contra o rival marcado. Ajustes não repete modo nem
 rival: ficou com meta, ritmo do rival, som e imagem. O cartão do fim tem **Jogar de novo** inteiro em cima e, em
 baixo, Menu e Ver a Mesa; Compartilhar é o ícone ao lado do título. Fora da partida, o cabeçalho tem só logo,
 moedas (a Loja) e **Menu**: Online, Regras, Deck e Ajustes moram no menu principal. Começar pelo menu depois de uma partida online larga a sala (ali, "jogar
@@ -435,11 +437,11 @@ além da altura máxima e o topo dela saía da tela no iPhone). O `tools/layout.
 **Cartas no celular.** Os nomes compridos (Sobrecarga, Fundo Falso, Interferência) aparecem inteiros: sem o ícone e
 em 12 px; o raio das cartas de pontos virou um selo no canto, que não rouba a largura do nome.
 
-**Partida offline guardada.** A partida contra o rival ou a dois fica guardada no aparelho a cada jogada (desde o
+**Partida offline guardada.** A partida contra o rival fica guardada no aparelho a cada jogada (desde o
 primeiro dado; acabar ou começar outra apaga). Fora da partida não há relógio: fechar a aba e voltar dias depois
 mostra, no menu, o placar com **Continuar** e **Abandonar**. Enquanto ela existe, o menu não oferece começar outra.
 Abandonar pede um segundo toque e diz o preço antes: contra o rival conta como derrota ("seu rating vai de 1000
-para 977"); a dois, não custa nada e só some. Online o relógio é o da sala (tempo por vez escolhido ao criá-la, em
+para 977"). Online o relógio é o da sala (tempo por vez escolhido ao criá-la, em
 `docs/servidor.md`): quem cai tem o tempo de voltar e, se não volta, perde.
 
 **Partida** (modo e rival se escolhem no menu principal):

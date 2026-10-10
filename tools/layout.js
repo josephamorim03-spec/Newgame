@@ -152,7 +152,6 @@ if (require.main === module) (async () => {
     await olha('deck', true);
     await pg.click('#janelaDeck [data-info="interferencia"]'); await olha('info-carta', false); await pg.click('#janelaCarta [data-fechar-carta]');
     await pg.click('#btnFecharDeck');
-    await pg.click('[data-inicio="dois"]'); await olha('deck-dois', false); await pg.click('#btnFecharDeck');
     await pg.evaluate(() => document.getElementById('btnCarteira').click()); for (const aba of ['cartas', 'dados', 'icones', 'mesas']) { await pg.click(`[data-aba-loja="${aba}"]`); await olha('loja-' + aba, aba === 'cartas'); } await pg.click('#btnComoGanhar'); await olha('loja-ganhar', false); await pg.click('[data-voltar-loja]'); await pg.click('#btnFecharLoja');
     await pg.evaluate(() => document.getElementById('btnOnline').click()); await olha('online-sem-servidor', false); await pg.click('#btnFecharOnline');
     await pg.evaluate(() => document.getElementById('btnConfig').click()); await olha('ajustes', true); await pg.click('#btnFecharConfig'); await pg.click('[data-inicio="rival"][data-v="esperto"]');

@@ -10,7 +10,6 @@ const PASSOS = +process.argv[2] || 700;
 const RODADAS = [
   { nome: 'celular-diana', vp: { width: 390, height: 844 }, modo: 'bot', nivel: 'aprendiz', anim: false },
   { nome: 'celular-coruja-animado', vp: { width: 390, height: 844 }, modo: 'bot', nivel: 'esperto', anim: true },
-  { nome: 'pc-dois', vp: { width: 1360, height: 900 }, modo: 'local', anim: false },
   { nome: 'pc-coruja', vp: { width: 1360, height: 900 }, modo: 'bot', nivel: 'esperto', anim: false },
 ];
 
@@ -39,8 +38,6 @@ function vigiar() {
 // roda na página: toca em algo ao acaso
 function tocar([semente, modo]) {
   let s = semente;
-  // no menu, só o botão de começar do modo desta rodada (o outro trocaria o modo, como o [data-cfg="modo"])
-  const outroModo = modo === 'local' ? '[data-inicio="jogar"], [data-inicio="rival"]' : '[data-inicio="dois"]';
   const rnd = () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 2 ** 32; };
   const visivel = el => { const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0 && getComputedStyle(el).visibility !== 'hidden'; };
   const grupos = [
@@ -56,7 +53,7 @@ function tocar([semente, modo]) {
     let x = rnd() * total, sel = grupos[0][1];
     for (const [w, q] of grupos) { if ((x -= w) < 0) { sel = q; break; } }
     const els = [...document.querySelectorAll(sel)].filter(visivel)
-      .filter(el => !el.closest('#btnZerar') && el.id !== 'btnZerar' && !el.matches('[data-cfg="modo"], [data-inicio="online"]') && !el.matches(outroModo)
+      .filter(el => !el.closest('#btnZerar') && el.id !== 'btnZerar' && !el.matches('[data-cfg="modo"], [data-inicio="online"]')
         // o que está coberto não recebe toque: com uma janela aberta, nada do menu; com o menu aberto, nada da Mesa atrás dele
         && !(el.closest('.tela-inicio') && document.querySelector('.janela:not([hidden])'))
         && !(!document.getElementById('inicio').hidden && !el.closest('.tela-inicio, .janela, .lado, .versus')));
@@ -86,8 +83,7 @@ function tocar([semente, modo]) {
       DiceDuel.ajustar({ animacoes: c.anim, liberar: true, som: false, musica: false });
     }, r);
     // começa pelo menu principal, como quem abre o jogo (depois o menu volta pela Pausa e pelo fim)
-    if (r.modo === 'local') { await pg.click('[data-inicio="dois"]'); await pg.click('#btnJogarDeck'); }
-    else await pg.click('[data-inicio="jogar"]');
+    await pg.click('[data-inicio="jogar"]');
     let ultimaSig = '', desde = Date.now(), partidas = 0, ultimo = '';
     const rastro = [];
     for (let i = 0; i < PASSOS; i++) {
@@ -107,7 +103,6 @@ function tocar([semente, modo]) {
           const T = { timeout: 3000 };
           if (voltar) { await voltar.click(T); rastro.push('menu voltar'); }
           else if (cont) { await cont.click(T); rastro.push('menu continuar'); }
-          else if (r.modo === 'local') { await pg.click('[data-inicio="dois"]', T); await pg.click('#btnJogarDeck', T); rastro.push('menu 2 jogadores'); }
           else { await pg.click('[data-inicio="jogar"]', T); rastro.push('menu jogar'); }
         } catch (e) {
           const estado = await pg.evaluate(() => ({ jogo: DiceDuel.jogo && { modo: DiceDuel.jogo.modo, fase: DiceDuel.jogo.fase, compras: DiceDuel.jogo.compras }, visiveis: [...document.querySelectorAll('#inicio [data-inicio]')].filter(b => b.offsetParent).map(b => b.dataset.inicio), deck: !document.getElementById('janelaDeck').hidden, versus: !!document.querySelector('.versus') })).catch(() => ({}));

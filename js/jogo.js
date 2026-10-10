@@ -115,6 +115,7 @@
     const s = JSON.parse(localStorage.getItem('diceduel.v1') || '{}');
     if (s.cfg) Object.assign(st.cfg, s.cfg);
     st.cfg.meta = R.metaValida(st.cfg.meta);   // v0.12: a meta 12 saiu (quem a tinha marcada passa para a 16)
+    if (st.cfg.modo !== 'bot') st.cfg.modo = 'bot';   // v0.12: o modo a dois no mesmo aparelho saiu do jogo
     if (s.pref) Object.assign(st.pref, s.pref);
     // v0.11: as ajudas voltam ligadas uma vez para todo mundo (são o padrão); quem desligar de novo, fica desligado
     if (s.pref && !s.pref.ajudasV11) { st.pref.dicas = true; st.pref.ajudasV11 = true; }
@@ -1365,8 +1366,7 @@
         <tr><th>Partida</th><th>Base</th><th>Paga moedas enquanto o seu maior rating estiver</th></tr>
         <tr><td>Diana (iniciante)</td><td>${BASE_MOEDAS.aprendiz}</td><td>rating abaixo de ${TETO_MOEDAS.aprendiz}</td></tr>
         <tr><td>Dona Coruja (avançado)</td><td>${BASE_MOEDAS.esperto}</td><td>rating abaixo de ${TETO_MOEDAS.esperto}</td></tr>
-        <tr><td>Online, com amigos</td><td>${BASE_MOEDAS.online}</td><td>sempre; vale mais vencer quem tem rating maior</td></tr>
-        <tr><td>A dois no aparelho</td><td>–</td><td>não paga</td></tr></table>
+        <tr><td>Online, com amigos</td><td>${BASE_MOEDAS.online}</td><td>sempre; vale mais vencer quem tem rating maior</td></tr></table>
         <p class="nota" style="margin-top:10px">Só vitórias dão moedas. A base é multiplicada pela <b>margem</b> (×1 a ×2: vencer por 11 pontos ou mais, na meta 16, dobra), pela <b>rapidez</b> (na meta 16, ×1,5 em até 7 Mesas, ×1,25 em 8) e pela <b>duração</b> (meta 20: ×1,25; meta 24: ×1,5). Uma vitória típica rende cerca de 14 contra a Diana e 24 contra a Dona Coruja. Com conta, as vitórias contra os rivais do jogo rendem até 300 moedas por dia.</p>
         <p class="nota">Experiência sobe em toda partida, ganhando ou perdendo, e os níveis 2, 3 e 5 dão presentes. Cartas nunca serão vendidas por dinheiro: elas ampliam o estilo, não a força (o melhor deck é feito só de cartas grátis).</p>
         <button class="btn btn-papel btn-voltar" data-voltar-loja="1">← Voltar à loja</button>`;
@@ -1411,16 +1411,13 @@
   // partida em andamento: mexer no deck não pode abandoná-la sem querer
   const partidaEmAndamento = () => !!(jogo && jogo.fase !== 'fim' && (jogo.compras > 0 || online()));
   function abrirDeck() {
-    const local = st.cfg.modo === 'local';
     const andando = partidaEmAndamento();
     document.getElementById('btnJogarDeck').textContent = andando ? 'Salvar deck' : 'Jogar';
     document.getElementById('deckEmAndamento').hidden = !andando;
     document.getElementById('btnRecomecar').hidden = online();
     document.getElementById('btnRecomecar').textContent = jogo && jogo.modo === 'bot' ? 'Recomeçar agora (conta como derrota)' : 'Recomeçar agora';
-    document.getElementById('abasDeck').hidden = !local;
-    if (!local) st.abaDeck = 0;
-    document.querySelectorAll('#abasDeck [data-aba]').forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.aba === st.abaDeck)));
-    document.getElementById('deckTitulo').textContent = local ? `Deck do Jogador ${st.abaDeck + 1}` : 'Monte seu deck';
+    st.abaDeck = 0;
+    document.getElementById('deckTitulo').textContent = 'Monte seu deck';
     if (Rede.escolha) {
       document.getElementById('deckTitulo').textContent = 'Monte o deck desta partida';
       document.getElementById('deckEmAndamento').hidden = true;
@@ -1597,13 +1594,12 @@
   });
 
   // ---------- menu principal (a primeira tela) e a partida offline guardada no aparelho ----------
-  // Contra a Diana, a Coruja ou a dois não há relógio: a partida fica guardada e continua depois, mesmo fechando o
+  // Contra a Diana ou a Coruja não há relógio: a partida fica guardada e continua depois, mesmo fechando o
   // app. Abandonar avisa antes quando custa rating (contra o rival, depois do primeiro dado, conta como derrota).
   const PARTIDA_GUARDADA = 'diceduel.partida';
   const inicio = document.getElementById('inicio');
   const inicioAberto = () => !inicio.hidden;
   let confirmarAbandono = false;
-  let modoAntesDoDois = null;   // o modo de antes de tocar em "2 jogadores" (volta se a janela fechar sem jogar)
   function guardarPartida() {
     try {
       if (!jogo || jogo.modo === 'online') return;
@@ -1615,7 +1611,8 @@
   function lerPartidaGuardada() {
     try {
       const g = JSON.parse(localStorage.getItem(PARTIDA_GUARDADA) || 'null');
-      return g && g.v === 8 && g.modo !== 'online' && g.fase !== 'fim' && Array.isArray(g.mesa) && Array.isArray(g.cor) ? g : null;
+      // (a partida a dois guardada antes da v0.12 não volta: o modo saiu do jogo)
+      return g && g.v === 8 && g.modo === 'bot' && g.fase !== 'fim' && Array.isArray(g.mesa) && Array.isArray(g.cor) ? g : null;
     } catch (e) { return null; }
   }
   function restaurarPartida(g) {
@@ -1638,14 +1635,14 @@
     inicio.querySelectorAll('[data-inicio="rival"]').forEach(b => b.setAttribute('aria-pressed', String(st.cfg.nivel === b.dataset.v)));
     const g = partidaParaContinuar(), box = document.getElementById('inicioPartida');
     // com uma partida offline em andamento, o caminho é continuar ou abandonar (começar outra é abandonar)
-    ['[data-inicio="jogar"]', '[data-inicio="dois"]', '.inicio-jogar .segmento'].forEach(sel => { inicio.querySelector(sel).hidden = !!g; });
+    ['[data-inicio="jogar"]', '.inicio-jogar .segmento'].forEach(sel => { inicio.querySelector(sel).hidden = !!g; });
     box.hidden = !g;
     if (!g) { box.innerHTML = ''; return; }   // sem partida guardada, nada de botões velhos escondidos
     const quem = g.modo === 'bot' ? ['Você', RIVAIS[g.nivel].nome] : ['Jogador 1', 'Jogador 2'];
     const custo = custoAbandono(g);
     const aviso = !confirmarAbandono ? '' : custo
       ? `<p class="aviso-abandono" style="margin:0">Abandonar conta como derrota: seu rating vai de ${custo.antes} para ${custo.depois}.</p>`
-      : `<p class="nota" style="margin:0">${g.modo === 'local' ? 'A partida a dois não vale rating: ' : 'Nenhum dado foi pego ainda: '}abandonar só apaga a partida.</p>`;
+      : '<p class="nota" style="margin:0">Nenhum dado foi pego ainda: abandonar só apaga a partida.</p>';
     box.innerHTML = `<span class="nota" style="margin:0">Partida em andamento · meta ${g.meta}</span>
       <span class="placar-guardado">${quem[0]} <b>${g.pts[0]}</b> × <b>${g.pts[1]}</b> ${quem[1]}</span>${aviso}
       ${confirmarAbandono
@@ -1670,16 +1667,13 @@
     const b = e.target.closest('[data-inicio]'); if (!b) return;
     const a = b.dataset.inicio;
     if (a === 'rival') { st.cfg.nivel = b.dataset.v; salvar(); desenharInicio(); return; }
-    if (a === 'jogar' || a === 'dois') Online.sair();
+    if (a === 'jogar') Online.sair();
     if (a === 'jogar') {
       st.cfg.modo = 'bot'; salvar();
       // primeira vez: o deck "Primeira mesa" abre por cima do menu (fechar sem jogar volta para ele)
       if (!st.deckVisto) { st.decks[0] = PRONTOS[0].cartas.slice(); abrirDeck(); return; }
       novaPartida(); return;
     }
-    // a dois, primeiro cada jogador escolhe o deck (as abas Jogador 1 e 2); o Jogar da janela começa
-    // (fechar a janela sem jogar devolve o modo de antes: o Deck do menu não começa uma partida a dois sem querer)
-    if (a === 'dois') { modoAntesDoDois = st.cfg.modo; st.cfg.modo = 'local'; st.abaDeck = 0; salvar(); abrirDeck(); return; }
     if (a === 'continuar') {
       const g = partidaParaContinuar(); if (!g) return desenharInicio();
       if (jogo !== g) jogo = restaurarPartida(g);
@@ -1993,7 +1987,6 @@
   document.getElementById('btnFecharDeck').addEventListener('click', () => {
     document.getElementById('janelaDeck').hidden = true;
     document.getElementById('btnFecharDeck').textContent = 'Fechar';
-    if (modoAntesDoDois) { st.cfg.modo = modoAntesDoDois; modoAntesDoDois = null; salvar(); }
   });
   document.getElementById('btnJogarDeck').addEventListener('click', () => {
     if (Rede.escolha) {
@@ -2005,7 +1998,6 @@
       desenharEscolha();
       return;
     }
-    modoAntesDoDois = null;
     st.deckVisto = true; salvar();
     Online.deckMudou();
     if ((partidaEmAndamento() || (!online() && lerPartidaGuardada())) && !online()) { document.getElementById('janelaDeck').hidden = true; Fx.chamada('Deck salvo', 'vale a partir da próxima partida', 'suave'); return; }
@@ -2018,7 +2010,6 @@
     if (jogo.modo === 'bot' && jogo.fase !== 'fim' && jogo.compras > 0) { jogo.token = Math.random(); jogo.pensando = false; R.desistir(jogo, 0); depois('fim'); return; }
     novaPartida();
   });
-  document.getElementById('abasDeck').addEventListener('click', e => { const b = e.target.closest('[data-aba]'); if (!b) return; st.abaDeck = +b.dataset.aba; abrirDeck(); });
   document.getElementById('deckGrade').addEventListener('click', e => {
     const info = e.target.closest('[data-info]'); if (info) { abrirInfoCarta(info.dataset.info); return; }
     const b = e.target.closest('[data-op]'); if (!b) return;
@@ -2072,7 +2063,6 @@
     if (alvo.closest('textarea, input') && e.key !== 'Escape') return;
     if (e.key === 'Escape') {
       ['fim', 'janelaCarta', 'janelaDeck', 'janelaConfig', 'janelaLoja', 'janelaOnline', 'janelaMenu'].forEach(id => { const el = document.getElementById(id); if (el) el.hidden = true; }); abrirLado(false);
-      if (modoAntesDoDois) { st.cfg.modo = modoAntesDoDois; modoAntesDoDois = null; salvar(); }
       return jogo ? cancelarEscolha() : undefined;
     }
     if (!jogo) return;
@@ -2178,7 +2168,7 @@
     if (!ex || !ex.em) return false;
     if (Array.isArray(ex.decks)) st.decks = [0, 1].map(i => (ex.decks[i] || []).filter(c => CARTAS[c]));
     if (ex.rec) Object.assign(st.rec, ex.rec);
-    if (ex.cfg) { Object.assign(st.cfg, ex.cfg); st.cfg.meta = R.metaValida(st.cfg.meta); }
+    if (ex.cfg) { Object.assign(st.cfg, ex.cfg); st.cfg.meta = R.metaValida(st.cfg.meta); st.cfg.modo = 'bot'; }
     if (typeof ex.deckVisto === 'boolean') st.deckVisto = st.deckVisto || ex.deckVisto;
     try { localStorage.setItem('diceduel.v1', JSON.stringify({ cfg: st.cfg, pref: st.pref, rec: st.rec, conta: st.contaConvidado || st.conta, decks: st.decks, deckVisto: st.deckVisto })); } catch (e) {}
     if (!document.getElementById('janelaDeck').hidden) desenharDeck();
