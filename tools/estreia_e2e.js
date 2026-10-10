@@ -1,7 +1,8 @@
 // A estreia e o guia no navegador (docs/design.md §5): quem nunca jogou toca em Jogar e cai direto numa partida
 // contra a Diana, até 8 pontos, sem cartas; cada explicação do guia aparece uma vez; o fim da derrota abre pelos
 // bons momentos; a partida seguinte volta ao caminho de sempre (escolha do rival, deck "Primeira mesa", sem
-// armadilhas) e só depois dela as armadilhas são liberadas. Quem já jogava não passa pela estreia.
+// armadilhas) e só depois dela as armadilhas são liberadas. Quem já jogava não passa pela estreia. E a pata da
+// Diana na tela inicial mexe nos dados e os devolve.
 // Uso: NODE_PATH=$(npm root -g) node tools/estreia_e2e.js   (fotos em builds/fotos/)
 const { chromium } = require('playwright');
 const path = require('path');
@@ -13,11 +14,13 @@ fs.mkdirSync(FOTOS, { recursive: true });
 const PAGINA = 'file://' + path.join(RAIZ, 'index.html');
 const GUIA_TODOS = ['eco', 'passo', 'oposto', 'disparo', 'ruptura'];
 
-// guarda as chamadas (Fx.chamada) para conferir o guia
+// guarda as chamadas (Fx.chamada) e as dicas do guia (Fx.dica) para conferir
 const espiarChamadas = pg => pg.evaluate(() => {
   window.__ch = [];
-  const orig = Fx.chamada;
+  const orig = Fx.chamada, origDica = Fx.dica;
   Fx.chamada = (t, s, tipo, op = {}) => { window.__ch.push({ t, s, classe: op.classe || '' }); return orig(t, s, tipo, op); };
+  // as explicações do guia têm faixa própria (Fx.dica), fora da fila das chamadas
+  Fx.dica = (t, s, ...resto) => { window.__ch.push({ t, s, classe: 'guia' }); return origDica(t, s, ...resto); };
 });
 
 // joga a partida até o fim pela tela: segura a corrente de 3 (para a Paciência poder aparecer) e dispara de 4 em diante
@@ -156,6 +159,20 @@ async function jogar(pg, { fotoGuia = null, maxPassos = 1500 } = {}) {
   const r6 = await dk.evaluate(() => ({ estreia: !!DiceDuel.jogo.estreia, meta: DiceDuel.jogo.meta, guia: DiceDuel.st.guia }));
   if (r6.estreia || r6.meta !== 16 || !r6.guia.estreia || r6.guia.jogou) falha(`jogar pelo deck pula a estreia, veio ${JSON.stringify(r6)}`);
   await dk.close();
+
+  // 6. a pata da Diana na tela inicial: mexe num dado e o devolve ao lugar; tocar no meio a faz recolher e soltar o
+  // dado; com a Dona Coruja escolhida, não há pata
+  const pt = await nova();
+  if (!(await pt.$('#inicioCena .cena-pata .mao'))) falha('a pata da Diana não está na tela inicial');
+  await pt.waitForSelector('.cena-dado.cutucado', { timeout: 12000 }).catch(() => falha('a pata não mexeu em nenhum dado em 12 s'));
+  await pt.waitForTimeout(2600);
+  if (!(await pt.evaluate(() => [...document.querySelectorAll('.cena-dado')].every(d => !d.style.transform)))) falha('depois da investida, os dados voltam para o lugar');
+  await pt.waitForSelector('.cena-dado.cutucado', { timeout: 12000 }).catch(() => {});
+  await pt.click('.cena-dado >> nth=1'); await pt.waitForTimeout(700);
+  if (!(await pt.evaluate(() => [...document.querySelectorAll('.cena-dado')].every(d => !d.style.transform)))) falha('tocar no meio da investida solta o dado');
+  await pt.evaluate(() => { DiceDuel.st.guia.estreia = true; DiceDuel.st.cfg.nivel = 'esperto'; DiceDuel.abrirInicio(); });
+  if (await pt.$('#inicioCena .cena-pata')) falha('com a Dona Coruja não há pata');
+  await pt.close();
 
   await navegador.close();
   console.log(`Paciência na estreia: ${tevePaciencia ? 'apareceu' : 'não apareceu nesta partida (depende dos dados)'}`);

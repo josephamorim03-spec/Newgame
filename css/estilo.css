@@ -1279,6 +1279,16 @@ button.bolso.alvo-dado { position: relative; border: 0; font: inherit; color: in
 @keyframes cenaEspera { 0%, 86%, 100% { transform: none; } 90% { transform: translateY(-12px) rotate(-12deg); } 94% { transform: translateY(0) rotate(4deg); } 97% { transform: translateY(-3px); } }
 .cena-dado.rola .dado { animation: cenaRola .55s cubic-bezier(.3,.7,.3,1); }
 @keyframes cenaRola { 0% { transform: translateY(0) rotate(0); } 35% { transform: translateY(-26px) rotate(200deg) scale(1.1); } 70% { transform: translateY(0) rotate(350deg) scale(.95, 1.05); } 85% { transform: translateY(-5px) rotate(360deg); } 100% { transform: translateY(0) rotate(360deg); } }
+/* a pata da Diana (js/pata.js): o braço num SVG por cima da mesa; os ombros, dois montinhos brancos atrás da cabeça */
+.cena-pata { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.cena-ombros { position: absolute; width: 0; height: 0; pointer-events: none; }
+.cena-ombros::before, .cena-ombros::after { content: ""; position: absolute; top: calc(var(--ombro) * -1); width: calc(var(--ombro) * 2); height: calc(var(--ombro) * 2); border-radius: 50%; background: #f8f6f2; box-shadow: 0 0 0 2.5px #3a2a2e, inset 0 -6px 0 #e4e1dc; }
+.cena-ombros::before { left: calc(var(--abre) * -1 - var(--ombro)); }
+.cena-ombros::after { left: calc(var(--abre) - var(--ombro)); }
+.cena-dado.cutucado .dado { animation: cenaCutuca .32s ease-out; }
+@keyframes cenaCutuca { 0% { transform: translateY(2px) scale(1.06, .9); } 30% { transform: translate(-1.5px, -1px) rotate(-6deg); } 55% { transform: translate(1.5px, 0) rotate(5deg); } 80% { transform: rotate(-2deg); } 100% { transform: none; } }
+.cena-rival.travessa { animation: cenaTravessa .7s ease-in-out both; }
+@keyframes cenaTravessa { 40%, 70% { transform: rotate(-6deg) translateX(-3px); } }
 @media (max-height: 680px) { .inicio-cena { height: 128px; } .cena-rival { width: 84px; height: 84px; margin-left: -42px; } .cena-mesa { height: 54px; } .cena-dado { width: 32px; height: 32px; } }
 
 /* ==========================================================================

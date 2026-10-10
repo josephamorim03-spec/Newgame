@@ -370,6 +370,16 @@ descansam no feltro (o do meio, na pele da rival, dá um pulinho de vez em quand
 formarem uma corrente, a rival repara ("Olha: isso já é uma corrente."). **Tocar na rival**, ela sorri e fala outra
 frase. Em telas baixas (até 680 px) a cena encolhe; com "reduzir movimento", fica parada.
 
+**A pata da Diana** (`js/pata.js`). Gata que é, a Diana não deixa os dados em paz: os ombros brancos aparecem dos lados
+da cabeça, por cima da borda, e a pata fica apoiada no feltro ao lado dos dados. A cada 4 a 8 s ela ergue a pata, desce
+num dado ao acaso, dá uma ou duas batidinhas (o dado treme, um toque abafado no feltro e uma vibração leve, só depois de
+a pessoa já ter tocado na tela, porque antes o navegador recusa), arrasta o dado na direção dela com a cabeça inclinada,
+travessa, e solta; o dado volta para o lugar. Às vezes ela comenta ("Esse aqui parece meu.", "Só estou olhando.", "Calma.
+Ainda não peguei."). Tocar num dado ou nela no meio do gesto faz a pata recolher depressa. Como a cabeça fica atrás da
+mesa, a pata nunca sobe acima da borda (passaria pelo rosto): erguer a pata é ela crescer um pouco e a sombra no feltro se
+afastar. O braço é um SVG redesenhado a cada quadro, do ombro até a pata. Com a Dona Coruja escolhida, não há pata; com
+as animações desligadas, ela fica parada na borda.
+
 **A mesa não pisca mais marrom.** O tremor dos disparos de 5 e 6 movia a própria mesa; o transform a fazia virar um
 contexto de empilhamento e a moldura de madeira (o `::before`, z-index −1) passava por cima do feltro por um quarto de
 segundo. Agora treme o que envolve a mesa.

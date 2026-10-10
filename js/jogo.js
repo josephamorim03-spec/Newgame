@@ -1720,9 +1720,25 @@
     el.innerHTML = `<button class="cena-rival${cena.feliz ? ' feliz' : ''}" data-cena="rival" tabindex="-1">${Retratos.retrato(RETRATO_RIVAL[k], cena.feliz ? 'feliz' : '')}</button>
       <p class="cena-fala">${esc(fala)}</p>
       <div class="cena-mesa">${cena.dados.map((v, i) => `<button class="cena-dado" data-cena="dado" data-i="${i}" tabindex="-1">${dadoHTML(v, i === 1 ? pele : st.conta.dado)}</button>`).join('')}</div>`;
+    // a Diana, gata, mexe nos dados da mesa com a pata (js/pata.js); a Dona Coruja só observa
+    if (k === 'aprendiz' && window.Pata) Pata.ligar(el, PATA); else if (window.Pata) Pata.desligar();
   }
+  // a pata: cada batida soa no feltro e dá uma vibração leve (só depois de a pessoa já ter tocado na tela: antes disso o
+  // navegador recusa); às vezes, depois de soltar o dado, a Diana comenta
+  const FALAS_PATA = ['Esse aqui parece meu.', 'Só estou olhando.', 'Calma. Ainda não peguei.'];
+  const PATA = {
+    aoBater: i => { Som.tocar('quique', { forca: 3, x: (i - 1) * 0.5 }); if (navigator.userActivation && navigator.userActivation.hasBeenActive) vibrar(6); },
+    aoTerminar: () => { if (Math.random() < 0.3) falaDaCena(sorteia(FALAS_PATA)); },
+  };
   function falaDaCena(txt) {
-    cena.fala = txt; cena.feliz = true; desenharCena();
+    cena.fala = txt; cena.feliz = true;
+    // muda só o balão e o sorriso (redesenhar a cena inteira recolheria a pata no meio do gesto)
+    const balao = document.querySelector('#inicioCena .cena-fala'), cab = document.querySelector('#inicioCena .cena-rival');
+    if (balao && cab) {
+      balao.textContent = txt.replace('Boa noite', saudacao());
+      balao.style.animation = 'none'; void balao.offsetWidth; balao.style.animation = '';
+      cab.classList.remove('feliz'); void cab.offsetWidth; cab.classList.add('feliz');
+    } else desenharCena();
     if (st.pref.falas) Som.tocar('falaRival', { voz: RETRATO_RIVAL[rivalDaCena()] });
     clearTimeout(cena.t); cena.t = setTimeout(() => { cena.feliz = false; const r = document.querySelector('.cena-rival'); if (r) r.classList.remove('feliz'); }, 1400);
   }
@@ -1798,6 +1814,7 @@
   inicio.addEventListener('click', e => {
     const c = e.target.closest('[data-cena]'); if (!c) return;
     Som.desbloquear();
+    if (window.Pata) Pata.susto();   // a pata recolhe depressa (e solta o dado que estava puxando)
     const k = rivalDaCena();
     if (c.dataset.cena === 'rival') { const l = RIVAIS[k].falas.inicio; cena.k = (cena.k + 1) % l.length; falaDaCena(l[cena.k]); return; }
     const i = +c.dataset.i, antes = cena.dados[i];
