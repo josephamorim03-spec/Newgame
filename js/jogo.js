@@ -233,13 +233,25 @@
     return depois(R.dispensarSegundo(jogo, p));
   }
   // devolve 'proximo' quando a carta passou a vez (Pausa): quem chamou não joga mais nesta vez
+  // ('fim' quando o blefe que passou fechou a partida)
   function usarCarta(p, c, idx, delta) {
     if (online()) { Online.enviar({ tipo: 'carta', carta: c, idx, delta }); return; }
     if ((c === 'virar' || c === 'ajuste') && jogo.mesa[idx]) jogo.virando = jogo.mesa[idx].id;
     const r = R.usarCarta(jogo, p, c, idx, delta);
     marcarNovos();
     if (r === 'proximo') { jogo.sel = null; jogo.alvo = null; jogo.ajusteIdx = null; }
+    if (jogo.fase === 'fim') { depois('fim'); return 'fim'; }
     return r;
+  }
+  // desafio: a carta virada do rival é revelada (blefe: a carta dele se perde e você ganha 2; armadilha: fica à vista
+  // e ele ganha 2). Não gasta a vez: depois do desafio, quem desafiou pega o dado normalmente
+  const podeDesafiar = p => R.podeDesafiar(jogo, p);
+  function desafiar(p) {
+    if (online()) { Online.enviar({ tipo: 'desafiar' }); return 'online'; }
+    const r = R.desafiar(jogo, p);
+    marcarNovos();
+    if (r === 'fim') return depois('fim');
+    render(); return r;
   }
   function colocar(p, v, modo) {
     if (online()) { Online.enviar({ tipo: 'destino', modo }); return 'online'; }
@@ -327,11 +339,31 @@
   function automatoCartas(p) {
     const j = jogo, eu = j.cor[p], ele = j.cor[1 - p], m = j.mesa, usa = [];
     const pronta = c => j.cartas[p][c] === 'pronta', pode = c => usavel(p, c);   // "pode": efeito pronto ou virado como blefe
+    // o blefe que passou fecha a partida: desvira (+3) se isso basta para vencer
+    const virada = j.armada[p];
+    if (virada && blefando(p, virada) && podeUsar(p, virada).ok && !CARTAS[virada].alvo && j.pts[p] + R.DESAFIO.bonus >= j.meta) return [{ carta: virada }];
+    // desafio: uma vez por carta virada do rival, com a chance de ela ser blefe pelo que ainda resta no deck dele
+    // (só o que é público: as armadilhas escondidas e os efeitos não usados; ninguém espia qual está virada).
+    // A Coruja segue a conta; a Diana desafia com metade dessa chance
+    const qual = String((j.viradaEm || [])[1 - p]);   // esta carta virada (a vez em que foi armada)
+    const visto = j.vistoDesafio || (j.vistoDesafio = [null, null]);   // a carta virada do rival que o robô já pensou em desafiar
+    if (podeDesafiar(p).ok && visto[p] !== qual) {
+      visto[p] = qual;
+      const traps = armadilhasOcultas(1 - p).length;
+      const efs = j.decks[1 - p].filter(c => CARTAS[c].tipo === 'efeito' && ['pronta', 'armada'].includes(j.cartas[1 - p][c])).length;
+      const blefe = efs ? 0.5 * efs / (0.5 * efs + traps) : 0;
+      if (Math.random() < blefe * (j.nivel === 'esperto' ? 1 : 0.5)) usa.push({ desafiar: true });
+    }
     if (j.nivel === 'aprendiz') {
+      // a Diana também blefa às vezes (para quem está aprendendo ter o que desafiar)
+      if (!j.armada[p] && ele.length >= 2 && Math.random() < 0.25) {
+        const c = j.decks[p].find(c => c !== 'pressa' && podeVirar(p, c).ok);
+        if (c) return usa.concat({ carta: c, virar: true });
+      }
       if (Math.random() > 0.2) return usa;
       const cs = j.decks[p].filter(c => pronta(c) && podeUsar(p, c).ok && c !== 'sobrecarga');
       if (!cs.length) return usa;
-      return [{ carta: sorteia(cs), idx: Math.floor(Math.random() * m.length), delta: Math.random() < .5 ? 1 : -1 }];
+      return usa.concat({ carta: sorteia(cs), idx: Math.floor(Math.random() * m.length), delta: Math.random() < .5 ? 1 : -1 });
     }
     let precisa = eu.length >= 2 && !m.some(d => encaixaP(p, d.v));
     if (precisa && pode('virar')) { const i = m.findIndex(d => encaixa(eu, 7 - d.v)); if (i >= 0) { usa.push({ carta: 'virar', idx: i }); precisa = false; } }
@@ -376,7 +408,7 @@
     // Pausa, por último (passa a vez): a corrente de 2+ romperia com qualquer dado e nada acima a salvou
     if (precisa && pode('pausa') && eu.length >= 2 && !m.some(d => seguroDado(p, d)) && !j.segundoDado && !j.extra[p]) { usa.push({ carta: 'pausa' }); return usa; }
     // blefe: com uma armadilha ainda escondida no deck, às vezes vira para baixo um efeito que não precisa agora
-    if (!j.armada[p] && !usa.some(u => CARTAS[u.carta].tipo === 'armadilha') && ele.length >= 3 && Math.random() < 0.4) {
+    if (!j.armada[p] && !usa.some(u => u.carta && CARTAS[u.carta].tipo === 'armadilha') && ele.length >= 3 && Math.random() < 0.4) {
       const c = j.decks[p].find(c => c !== 'pressa' && podeVirar(p, c).ok && !usa.some(u => u.carta === c));
       if (c) usa.push({ carta: c, virar: true });
     }
@@ -435,9 +467,10 @@
       await espera(800); if (tok !== jogo.token) return;
       if (window.Rolagem) { await Rolagem.esperar(); if (tok !== jogo.token) return; }   // escolhe com os dados já assentados
       for (const u of automatoCartas(p)) {
-        if (u.virar ? !podeVirar(p, u.carta).ok : (!podeUsar(p, u.carta).ok || (CARTAS[u.carta].alvo && !j.mesa[u.idx]))) continue;
-        if (u.virar) virarCarta(p, u.carta);
-        else if (usarCarta(p, u.carta, u.idx, u.delta || 1) === 'proximo') {
+        if (u.desafiar ? !podeDesafiar(p).ok : u.virar ? !podeVirar(p, u.carta).ok : (!podeUsar(p, u.carta).ok || (CARTAS[u.carta].alvo && !j.mesa[u.idx]))) continue;
+        const rc = u.virar ? virarCarta(p, u.carta) : u.desafiar ? desafiar(p) : usarCarta(p, u.carta, u.idx, u.delta || 1);
+        if (rc === 'fim' || jogo.fase === 'fim') { j.pensando = false; return; }   // o blefe que passou (ou o desafio) fechou a partida
+        if (rc === 'proximo') {
           // a Pausa passou a vez: o aviso fica um tempo e a vez segue para o outro lado
           j.pensando = false; depois('proximo'); return;
         }
@@ -560,9 +593,10 @@
     const visivel = humano(p) && j.vez === p;
     let nota = !meu ? 'O deck do rival fica à mostra. Uma carta virada (?) pode ser qualquer carta dele ainda não revelada: uma armadilha ou um blefe.'
       : !visivel ? 'Só na sua vez.' : pu.ok ? '' : (pu.motivo || '');
-    if (visivel && e === 'pronta' && k.tipo === 'efeito' && pv.ok) nota = 'Virada para baixo, ela aparece para o rival como uma armadilha (?). Virada, não faz nada; quando você a usar, o blefe se revela.';
+    if (visivel && e === 'pronta' && k.tipo === 'efeito' && pv.ok) nota = `Blefe: virada para baixo, ela aparece para o rival como uma armadilha (?) e não faz nada. Se ele desafiar, a carta se perde e ele ganha ${R.DESAFIO.acerto}. Se ninguém desafiar, quando você a usar (da próxima vez em diante) ela funciona e rende +${R.DESAFIO.bonus}.`;
+    if (visivel && blefe) nota = pu.ok ? `Ninguém desafiou: usar agora revela o blefe, a carta funciona e rende +${R.DESAFIO.bonus}.` : (pu.motivo || '');
     document.getElementById('cartaNota').textContent = nota;
-    const rot = blefe ? 'Usar (revela o blefe)' : k.alvo ? 'Escolher o dado' : k.tipo === 'armadilha' ? 'Armar' : 'Usar';
+    const rot = blefe ? `Usar (blefe, +${R.DESAFIO.bonus})` : k.alvo ? 'Escolher o dado' : k.tipo === 'armadilha' ? 'Armar' : 'Usar';
     document.getElementById('cartaBotoes').innerHTML =
       (visivel && (e === 'pronta' || blefe) ? `<button class="btn btn-mel" data-usar="${c}" ${pu.ok ? '' : 'disabled'}>${rot}</button>` : '') +
       (visivel && e === 'pronta' && pv.ok ? `<button class="btn btn-papel" data-virar="${c}">Virar para baixo (blefe)</button>` : '') +
@@ -570,6 +604,22 @@
     document.getElementById('janelaCarta').hidden = false;
     Som.tocar('carta');
     (document.querySelector('#cartaBotoes [data-usar]:not(:disabled)') || document.querySelector('#cartaBotoes [data-fechar-carta]')).focus();
+  }
+
+  // a carta virada do rival: o que ela pode ser e, na sua vez (antes de pegar o dado), o desafio
+  function abrirVirada(r) {
+    const j = jogo, eu = j.vez, n = nomes(), pd = podeDesafiar(eu), D = R.DESAFIO;
+    const pode = humano(eu) && eu !== r && pd.ok && !j.pensando;
+    document.getElementById('cartaDetalhe').innerHTML = `<span class="arte-verso" aria-hidden="true">${VERSO}</span><div><h2 id="cartaTitulo">Carta virada</h2>
+      <p class="nota">de ${esc(n[r])} · armadilha ou blefe</p><p style="margin-top:8px">${cartaViradaTxt(r, j.cor[eu === r ? 1 - r : eu].length)}</p>
+      <p style="margin-top:8px"><b>Desafiar</b> revela a carta. Se for <b>blefe</b>, ela se perde e você ganha <b>${D.acerto}</b>. Se for <b>armadilha</b>, ela continua armada, agora à vista, e ${esc(n[r])} ganha <b>${D.erro}</b>. Se ninguém desafiar um blefe, ele rende <b>${D.bonus}</b> a quem blefou.</p></div>`;
+    document.getElementById('cartaNota').textContent = pode ? 'Desafiar não gasta a sua vez: depois você pega o dado normalmente.'
+      : !humano(eu) || eu === r ? 'Só na sua vez.' : (pd.motivo || '');
+    document.getElementById('cartaBotoes').innerHTML = (pode ? `<button class="btn btn-mel" data-desafiar="1">Desafiar</button>` : '') +
+      `<button class="btn btn-papel" data-fechar-carta="1">Fechar</button>`;
+    document.getElementById('janelaCarta').hidden = false;
+    Som.tocar('carta');
+    (document.querySelector('#cartaBotoes [data-desafiar]') || document.querySelector('#cartaBotoes [data-fechar-carta]')).focus();
   }
 
   // ---------- desenho ----------
@@ -601,7 +651,13 @@
       html += `<button class="carta ${k.tipo} ${e}${k.nome.length >= 10 ? ' nome-longo' : ''}" data-carta="${c}" data-dono="${p}" aria-label="${k.nome}: ${rotulo || e}">${k.ico}<span class="cnome">${k.nome}</span>${raio}${rotulo ? `<small>${rotulo}</small>` : ''}</button>`;
     }
     let estados = '';
-    if (j.armada[p] && j.armada[p] !== 'espelho' && !meu) estados += `<span class="efeito-ativo oculta" style="background:var(--tinta);color:var(--papel)" title="Uma carta virada: pode ser uma armadilha ou um blefe">${VERSO} carta virada</span>`;
+    // a carta virada do rival é um botão: tocar explica o que ela pode ser e, na sua vez, oferece o desafio;
+    // a armadilha que foi desafiada fica à vista (para os dois)
+    if (j.armada[p] && j.armada[p] !== 'espelho' && j.revelada && j.revelada[p]) estados += `<span class="efeito-ativo revelada" title="Desafiada: era armadilha de verdade">${CARTAS[j.armada[p]].nome} armada · à vista</span>`;
+    else if (j.armada[p] && j.armada[p] !== 'espelho' && !meu) {
+      const pode = humano(j.vez) && j.vez !== p && podeDesafiar(j.vez).ok;
+      estados += `<button class="efeito-ativo oculta${pode ? ' desafiavel' : ''}" data-virada="${p}" aria-label="Carta virada: pode ser armadilha ou blefe${pode ? '. Tocar para desafiar' : ''}">${VERSO} carta virada${pode ? ' · desafiar?' : ''}</button>`;
+    }
     if (j.coringa[p]) estados += `<span class="efeito-ativo">Coringa ativo</span>`;
     if (j.sobre[p]) estados += `<span class="efeito-ativo">Sobrecarga +2</span>`;
     if (j.extra[p]) estados += `<span class="efeito-ativo">Pressa: +1 dado</span>`;
@@ -684,6 +740,8 @@
     const j = jogo, n = nomes();
     const efeito = { interferencia: L < 4 ? 'Interferência (não pega disparo de 3)' : j.pts[1 - r] >= j.pts[r] ? 'Interferência (−1 neste disparo)' : 'Interferência (não pega: você está atrás)', pedagio: `Pedágio (+${R.pedagioDe(jogo.meta)} para ele se você disparar)`,
       fundo: 'Fundo Falso (só pega o Bolso)', ancora: 'Âncora (protege a corrente dele)' };
+    // desafiada e à vista: não há dúvida
+    if (j.revelada && j.revelada[r] && j.armada[r]) return `${n[r]} tem ${efeito[j.armada[r]] || CARTAS[j.armada[r]].nome} armada, à vista (foi desafiada).`;
     const traps = armadilhasOcultas(r).map(c => efeito[c] || CARTAS[c].nome);
     const blefes = j.decks[r].filter(c => CARTAS[c].tipo === 'efeito' && ['pronta', 'armada'].includes(j.cartas[r][c])).map(c => CARTAS[c].nome);
     return `${n[r]} tem uma carta virada (?). Pode ser ${traps.join(' ou ')}${blefes.length ? `, ou um blefe com ${blefes.join(' ou ')}` : ''}.`;
@@ -814,6 +872,19 @@
       if (falta > 0 && cor.getBoundingClientRect().top - falta > 0) window.scrollBy({ top: falta, behavior: Fx.cfg.animacoes ? 'smooth' : 'auto' });
     });
   }
+  // dica única (com as ajudas ligadas): a primeira vez em que dá para desafiar, e a primeira em que dá para blefar
+  function dicaDoBlefe() {
+    const j = jogo, p = j.vez;
+    if (!st.pref.dicas || j.fase !== 'pegar' || j.pensando || j.intro || !humano(p) || inicioAberto() || document.querySelector('.janela:not([hidden]), .versus')) return;
+    const a = st.pref.aprendeu || (st.pref.aprendeu = {});
+    if (!a.desafio && podeDesafiar(p).ok) {
+      a.desafio = true; salvar();
+      Fx.chamada('Dá para desafiar', `toque na carta virada de ${nomes()[1 - p]}: se for blefe, você ganha ${R.DESAFIO.acerto}; se for armadilha, ${nomes()[1 - p]} ganha ${R.DESAFIO.erro}`, 'suave', { ms: 5200, classe: 'dica-baixo' });   // embaixo: não cobre a carta virada
+    } else if (!a.blefe && j.decks[p].some(c => podeVirar(p, c).ok)) {
+      a.blefe = true; salvar();
+      Fx.chamada('Dá para blefar', `toque num efeito e vire para baixo: para o rival é um "?"; se ninguém desafiar, ele rende +${R.DESAFIO.bonus}`, 'suave', { ms: 5200 });
+    }
+  }
   function render() {
     if (!jogo) return;
     const j = jogo;
@@ -862,6 +933,7 @@
       setTimeout(() => { if (jogo.fx && jogo.fx.id === id) { jogo.fx = null; render(); } }, st.pref.animacoes ? 900 : 10);
     }
     consumirEventos();
+    dicaDoBlefe();
   }
 
   // os dados caem como cubos 3D (física gravada, face da regra: js/rolagem.js); sem animação, o som de antes
@@ -958,7 +1030,7 @@
           Som.tocar('armou');
           if (humano(e.p) && j.modo !== 'local') break;
           if (e.c === 'espelho' && j.marca) { marcarMudanca([j.marca.id], null); Fx.chamada('Espelho', `${n[e.p]} marcou um ${(j.mesa.find(d => d.id === j.marca.id) || {}).v || ''} da Mesa: se você pegá-lo, ele vira`, e.p === 1 && j.modo !== 'local' ? 'rival' : 'suave', { ico: CARTAS.espelho.arte, ms: AVISO_CARTA, classe: 'aviso-carta' }); }
-          else Fx.chamada('Carta virada', `${n[e.p]} virou uma carta para baixo: pode ser armadilha ou blefe`, e.p === 1 && j.modo !== 'local' ? 'rival' : 'suave', { ico: VERSO, ms: AVISO_CARTA, classe: 'aviso-carta' });
+          else Fx.chamada('Carta virada', `${n[e.p]} virou uma carta para baixo: armadilha ou blefe? Toque nela para desafiar`, e.p === 1 && j.modo !== 'local' ? 'rival' : 'suave', { ico: VERSO, ms: AVISO_CARTA, classe: 'aviso-carta' });
           break;
         }
         case 'revelou': {
@@ -967,6 +1039,14 @@
           break;
         }
         case 'virar': setTimeout(() => { if (jogo.virando === e.id) jogo.virando = null; }, 500); Som.tocar('virar'); break;
+        case 'desafio': {
+          // quem desafiou acertou (era blefe) ou errou (era armadilha); o rival do jogo aparece com a cor dele
+          const r = 1 - e.p, deLado = q => (q === 1 && j.modo !== 'local' ? 'rival' : '');
+          if (e.blefe) { Som.tocar('momento'); Fx.chamada('Era blefe!', `${n[r]} blefava com ${e.nome}: a carta se perde e ${n[e.p]} ganha ${e.pts}`, deLado(e.p), { classe: 'de-jogo' }); Fx.faiscas(painelEl, 18, ['#fff6e6', '#ffe3a3']); }
+          else { Som.tocar('revelou'); Fx.chamada(`Era ${e.nome}!`, `armadilha de verdade: agora à vista, e ${n[r]} ganha ${e.pts}`, deLado(r), { classe: 'de-jogo' }); }
+          vibrar([30, 40, 30]);
+          break;
+        }
         case 'chamada': Som.tocar('momento'); Fx.chamada(e.titulo, e.sub, e.estilo === 'esquiva' ? (e.p === 1 && j.modo !== 'local' ? 'rival' : '') : e.estilo, { classe: 'de-jogo' }); break;
         case 'falar': if (j.modo === 'bot') falaDoEvento(e); break;
         case 'fim': {
@@ -1474,6 +1554,7 @@
 
   document.getElementById('mesa').addEventListener('click', e => { const b = e.target.closest('.pega'); if (b && !b.disabled) clicarDado(+b.dataset.i); });
   document.getElementById('tabuleiro').addEventListener('click', e => {
+    const v = e.target.closest('[data-virada]'); if (v && jogo) { abrirVirada(+v.dataset.virada); return; }
     const b = e.target.closest('[data-carta]'); if (!b || !jogo) return;
     abrirCarta(+b.dataset.dono, b.dataset.carta);
   });
@@ -1483,6 +1564,7 @@
     if (!humano(p) || j.pensando) return;
     const bv = e.target.closest('[data-virar]');
     if (bv) { if (podeVirar(p, bv.dataset.virar).ok) { document.getElementById('janelaCarta').hidden = true; virarCarta(p, bv.dataset.virar); render(); } return; }
+    if (e.target.closest('[data-desafiar]')) { if (podeDesafiar(p).ok) { document.getElementById('janelaCarta').hidden = true; j.sel = null; desafiar(p); } return; }
     const b = e.target.closest('[data-usar]'); if (!b || b.disabled) return;
     const c = b.dataset.usar;
     if (!podeUsar(p, c).ok) return;

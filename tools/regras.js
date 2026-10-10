@@ -109,6 +109,8 @@ const RAIZ = path.join(__dirname, '..');
   await pg.click('.jogador.da-vez [data-carta="interferencia"]');
   confere(await pg.$('#cartaBotoes [data-usar="interferencia"][disabled]') !== null, 'Blefe: com o blefe virado não dá para armar outra armadilha');
   await pg.click('#cartaBotoes [data-fechar-carta]');
+  // desvira a partir da vez seguinte (o rival precisa ter tido a chance de desafiar)
+  await pg.evaluate(() => { const j = DiceDuel.jogo; Regras.proximo(j); Regras.proximo(j); j.mesa = [{ id: 9503, v: 3 }, { id: 9504, v: 4 }]; DiceDuel.ajustar({}); });
   await pg.click('.jogador.da-vez [data-carta="ajuste"]'); await pg.click('#cartaBotoes [data-usar="ajuste"]'); await dado(0); await pg.click('[data-ajuste="1"]');
   j = await J();
   confere(j.cartas[0].ajuste === 'usada' && j.armada[0] === null && j.mesa[0].v === 4, 'Blefe: usar a carta virada faz o efeito e libera o lugar');
@@ -195,6 +197,42 @@ const RAIZ = path.join(__dirname, '..');
   k = await J();
   confere(k.vez === 0 && k.cartas[1].pausa === 'usada' && k.cor[1].join() === '1,3', `Coruja: usou a Pausa (${k.cartas[1].pausa}) e a vez voltou (vez ${k.vez})`);
   await pg.evaluate(() => { DiceDuel.st.cfg.modo = 'local'; DiceDuel.st.cfg.nivel = 'aprendiz'; });
+
+  // 10b. Desafio do blefe, pela tela (a dois): tocar na carta virada, desafiar; blefe -> +2 e a carta se perde;
+  //      armadilha -> à vista e +2 para o dono; o blefe que ninguém desafiou rende +3 e não desvira na mesma vez
+  const comVirada = async (virada) => {
+    await cena([['coringa', 'pressa'], ['ajuste', 'fundo', 'pausa']], () => {});
+    await pg.evaluate(v => {
+      const j = DiceDuel.jogo; j.vez = 1; j.fase = 'pegar'; j.pts = [0, 0];
+      if (Regras.CARTAS[v].tipo === 'efeito') Regras.virarCarta(j, 1, v); else Regras.usarCarta(j, 1, v);
+      Regras.proximo(j); j.mesa = [{ id: 9601, v: 3 }, { id: 9602, v: 4 }]; DiceDuel.ajustar({});
+    }, virada);
+  };
+  await comVirada('ajuste');
+  confere(await pg.$('[data-virada="1"].desafiavel') !== null, 'Desafio: a carta virada do rival é tocável e marcada na sua vez');
+  await pg.click('[data-virada="1"]');
+  confere((await pg.textContent('#cartaDetalhe')).includes('Desafiar') && await pg.$('#cartaBotoes [data-desafiar]') !== null, 'Desafio: a janela explica o que está em jogo e oferece Desafiar');
+  await pg.click('#cartaBotoes [data-desafiar]'); await pg.waitForTimeout(80);
+  j = await J();
+  confere(j.pts[0] === 2 && j.cartas[1].ajuste === 'perdida' && j.armada[1] === null && j.vez === 0 && j.fase === 'pegar', `Desafio: era blefe, +2 e a carta dele se perdeu; a vez continua (${j.pts})`);
+  confere(await pg.$('[data-virada]') === null, 'Desafio: a carta virada some do painel');
+  await comVirada('fundo');
+  await pg.click('[data-virada="1"]'); await pg.click('#cartaBotoes [data-desafiar]'); await pg.waitForTimeout(80);
+  j = await J();
+  confere(j.pts[1] === 2 && j.armada[1] === 'fundo' && j.revelada[1], `Desafio: era armadilha, +2 para o dono e ela fica armada (${j.pts})`);
+  confere((await pg.textContent('#pj1')).includes('Fundo Falso armada'), 'Desafio: a armadilha desafiada aparece à vista no painel');
+  // o blefe que passa
+  await cena([['coringa', 'fundo'], ['pressa']], () => { const j = DiceDuel.jogo; j.vez = 0; j.fase = 'pegar'; j.pts = [0, 0]; j.mesa = [{ id: 9701, v: 3 }, { id: 9702, v: 4 }]; });
+  await pg.click('.jogador.da-vez [data-carta="coringa"]');
+  confere(await pg.$('#cartaBotoes [data-virar="coringa"]') !== null && (await pg.textContent('#cartaNota')).includes('+3'), 'Blefe: a janela do efeito oferece virar e diz o que rende');
+  await pg.click('#cartaBotoes [data-virar="coringa"]'); await pg.waitForTimeout(60);
+  await pg.click('.jogador.da-vez [data-carta="coringa"]');
+  confere(await pg.$('#cartaBotoes [data-usar="coringa"][disabled]') !== null, 'Blefe: não desvira na mesma vez em que virou');
+  await pg.click('#cartaBotoes [data-fechar-carta]');
+  await pg.evaluate(() => { const j = DiceDuel.jogo; Regras.proximo(j); Regras.proximo(j); j.mesa = [{ id: 9801, v: 3 }, { id: 9802, v: 4 }]; DiceDuel.ajustar({}); });
+  await usar('coringa'); await pg.waitForTimeout(60);
+  j = await J();
+  confere(j.pts[0] === 3 && j.coringa[0] && j.armada[0] === null, `Blefe que passa: desvirado, funciona e rende +3 (${j.pts[0]})`);
 
   // 11. Ajudas: a chave do menu de pausa liga e desliga etiquetas, dicas e explicações (e lembra a escolha);
   //     durante a partida o cabeçalho some e o menu é o único caminho para fora da jogada

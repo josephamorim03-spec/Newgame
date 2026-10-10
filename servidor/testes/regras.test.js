@@ -98,6 +98,8 @@ test('blefe: o efeito virado é um "?" igual ao de uma armadilha, e usá-lo reve
   assert.strictEqual(bia.stats[1].blefes, 0);
   assert.strictEqual(bia.log[0].txt, 'armou uma armadilha');
   assert.strictEqual(Regras.aplicar(j, 0, { tipo: 'carta', carta: 'interferencia' }).ok, false); // o blefe ocupa o lugar
+  assert.strictEqual(Regras.aplicar(j, 0, { tipo: 'carta', carta: 'coringa' }).ok, false);      // e não desvira na mesma vez
+  Regras.proximo(j); Regras.proximo(j);                                                         // a Bia teve a vez dela (podia desafiar)
   assert.ok(Regras.aplicar(j, 0, { tipo: 'carta', carta: 'coringa' }).ok);
   assert.strictEqual(j.armada[0], null);
   assert.strictEqual(j.cartas[0].coringa, 'usada');
@@ -253,4 +255,67 @@ test('Interferência: só tira ponto de quem está na frente ou empatado; atrás
   assert.strictEqual(empate.pts[1], 3 + Regras.pontos(4) - 1); assert.strictEqual(empate.cartas[0].interferencia, 'usada');
   assert.strictEqual(atras.pts[1], 2 + Regras.pontos(4), 'atrás: o disparo vale inteiro');
   assert.strictEqual(atras.armada[0], 'interferencia', 'atrás: ela continua armada');
+});
+
+// Desafio do blefe (docs/balanceamento-cartas.md §13): 2 por acertar, 2 para o rival por errar, 3 pelo blefe que passa
+const rivalComVirada = (virada, deck1 = ['ajuste', 'fundo', 'pausa']) => {
+  const j = Regras.criarPartida({ decks: [['coringa', 'pressa', 'interferencia'], deck1], vez: 1, rng: rngDe(5) });
+  if (Regras.CARTAS[virada].tipo === 'efeito') Regras.virarCarta(j, 1, virada); else Regras.usarCarta(j, 1, virada);
+  Regras.proximo(j);
+  return j;
+};
+test('Desafio: era blefe -> a carta dele se perde e quem desafiou ganha 2', () => {
+  const j = rivalComVirada('ajuste');
+  assert.deepStrictEqual(Regras.podeDesafiar(j, 0), { ok: true });
+  assert.strictEqual(Regras.visaoDe(j, 0).armada[1], 'oculta');
+  const r = Regras.aplicar(j, 0, { tipo: 'desafiar' });
+  assert.ok(r.ok);
+  assert.deepStrictEqual(j.pts, [2, 0]);
+  assert.strictEqual(j.cartas[1].ajuste, 'perdida');
+  assert.strictEqual(j.armada[1], null);
+  assert.strictEqual(j.fase, 'pegar'); assert.strictEqual(j.vez, 0);   // desafiar não gasta a vez: depois pega o dado
+  assert.ok(j.eventos.some(e => e.tipo === 'desafio' && e.blefe));
+});
+test('Desafio: era armadilha -> ela continua armada, agora à vista, e o rival ganha 2; não se desafia duas vezes', () => {
+  const j = rivalComVirada('fundo');
+  assert.ok(Regras.aplicar(j, 0, { tipo: 'desafiar' }).ok);
+  assert.deepStrictEqual(j.pts, [0, 2]);
+  assert.strictEqual(j.armada[1], 'fundo');
+  assert.strictEqual(Regras.visaoDe(j, 0).armada[1], 'fundo');   // à vista para quem desafiou
+  assert.strictEqual(Regras.podeDesafiar(j, 0).ok, false);
+  assert.strictEqual(Regras.aplicar(j, 0, { tipo: 'desafiar' }).ok, false);
+  // e ela ainda age: guardar no Bolso faz o dado cair
+  const idx = 0; Regras.aplicar(j, 0, { tipo: 'pegar', idx, modo: 'guardar' });
+  assert.strictEqual(j.bolso[0], null);
+});
+test('Desafio: o Espelho (à vista), fora da vez, depois de pegar o dado ou no 2.º dado da Pressa não se desafia', () => {
+  const j = Regras.criarPartida({ decks: [['coringa'], ['espelho', 'ajuste']], vez: 1, rng: rngDe(6) });
+  Regras.usarCarta(j, 1, 'espelho', 0); Regras.proximo(j);
+  assert.strictEqual(Regras.podeDesafiar(j, 0).ok, false);
+  const k = rivalComVirada('ajuste');
+  assert.strictEqual(Regras.aplicar(k, 1, { tipo: 'desafiar' }).ok, false);   // fora da vez (e a carta é dele)
+  Regras.aplicar(k, 0, { tipo: 'pegar', idx: 0 });
+  if (k.fase === 'destino') assert.strictEqual(Regras.podeDesafiar(k, 0).ok, false);
+});
+test('Blefe que passa: desvirar um blefe que ninguém desafiou rende 3; só a partir da vez seguinte à que virou', () => {
+  const j = Regras.criarPartida({ decks: [['coringa'], ['pausa', 'fundo']], vez: 1, rng: rngDe(7) });
+  assert.ok(Regras.aplicar(j, 1, { tipo: 'virar', carta: 'pausa' }).ok);
+  assert.strictEqual(Regras.podeUsar(j, 1, 'pausa').ok, false);   // na mesma vez, não
+  Regras.proximo(j); Regras.proximo(j);
+  assert.strictEqual(j.vez, 1);
+  assert.strictEqual(Regras.aplicar(j, 1, { tipo: 'carta', carta: 'pausa' }).ok, true);
+  assert.deepStrictEqual(j.pts, [0, 3]);
+  assert.strictEqual(j.vez, 0);   // a Pausa agiu: passou a vez
+});
+test('Desafio e blefe podem fechar a partida', () => {
+  const j = rivalComVirada('ajuste'); j.pts = [11, 0];
+  assert.strictEqual(Regras.aplicar(j, 0, { tipo: 'desafiar' }).resultado, 'fim');
+  assert.strictEqual(j.vencedor, 0);
+  const k = rivalComVirada('fundo'); k.pts = [0, 10];
+  assert.strictEqual(Regras.aplicar(k, 0, { tipo: 'desafiar' }).resultado, 'fim');
+  assert.strictEqual(k.vencedor, 1);
+  const b = Regras.criarPartida({ decks: [['coringa'], ['pausa', 'fundo']], vez: 1, rng: rngDe(8) });
+  Regras.virarCarta(b, 1, 'pausa'); Regras.proximo(b); Regras.proximo(b); b.pts = [0, 9];
+  assert.strictEqual(Regras.usarCarta(b, 1, 'pausa'), 'fim');
+  assert.strictEqual(b.vencedor, 1);
 });

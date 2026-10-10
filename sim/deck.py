@@ -1,5 +1,5 @@
 # Dice Duel: implementação de referência das regras (v0.8, alinhada a shared/regras.js) e robôs, para simular o balanceamento.
-# Fora do modelo: o blefe (os robôs não leem o "?" do rival além do Fundo Falso; ver docs/balanceamento-cartas.md).
+# Fora do modelo aqui: o blefe e o desafio (estão em sim/profundidade.py, que estende este motor; docs/balanceamento-cartas.md §13).
 # Regras: Mesa de 5 dados, corrente pela frente, Bolso, quem está atrás abre a Mesa, deck de até 3 cartas.
 # Deck de até 3 cartas, cada uma 1x por partida. Armadilhas: no máximo 1 armada por vez.
 import random

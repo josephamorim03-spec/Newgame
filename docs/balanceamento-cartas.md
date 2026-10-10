@@ -603,3 +603,63 @@ Pedido do dono: medir tudo e deixar o melhor possível. Cada variante foi medida
   Interferência + Pausa e Ajuste + Interferência + Pausa), e todos têm um deck que os vence. Com degraus de pontos
   grandes (1, 2, 4, 6) numa meta curta, esse teto apareceu em todas as variantes medidas.
 - No simulador: `BAL['interf_lider'] = 'espera'` (o padrão).
+
+## 13. As cartas mudam a jogada? O blefe, o medo e o desafio (v0.11)
+
+**A pergunta.** "O objetivo é sempre fazer o máximo de pontos por rodada?" Se for, o jogo é raso: as cartas e o
+blefe não mudariam como se joga. Medido em `sim/profundidade.py` (o jogo de hoje com as 15 cartas e o blefe, que
+`deck.py` não modelava), com três jogadores: o **ganancioso** (só os próprios pontos; ignora o rival), o **robô do
+jogo** e um **planejador** que, em cada escolha de dado e em cada "disparar ou segurar", simula o resto da partida e
+fica com a opção que mais vence. Meta 12, decks sorteados.
+
+**1. Há muita habilidade no jogo de dados.** O planejador vence o robô em **82,6%** (±3,1) e discorda dele em 39%
+das decisões; o robô vence o ganancioso em só 54%. O que o planejador faz diferente: troca e guarda no Bolso de
+outro jeito (2/3 das discordâncias), abre mão de valor imediato em 38% delas e **dispara mais cedo** quando o risco é
+baixo e está atrás (corrente média 3,7). Negar dado ao rival quase não aparece (3%). "Máximo de pontos agora" não é
+a melhor jogada.
+
+**2. As cartas do rival mudam a melhor jogada.** O planejador que leva em conta o deck dele (à vista) vence 82,4%;
+o que planeja como se ele não tivesse cartas, **73,4%**: 9 pontos.
+
+**3. O segredo do "?" não mudava nada.** Saber qual carta está virada valia 2 a 4 pontos (dentro do ruído; no Fundo
+Falso, −0,2). Robôs com medo do "?" (0, metade, sempre) ficavam entre 49% e 52% contra blefadores de qualquer
+frequência, e blefar sempre **custava** ~2 pontos ao blefador (o blefe ocupa o lugar da armadilha e não assusta
+ninguém, porque não há o que temer). Armadilhas mais duras não resolveram: Interferência "vale como um de 3"
+(−5 num disparo de 6) e Pedágio só em disparo curto deixaram ler o "?" em 0 a 2 pontos e o medo em 49–51%; a
+Interferência de −2 só no disparo de 5+ virou trava (quem tem medo dispara com 4 para sempre; quem sabe a gasta de
+graça com um 5). As variantes ficam em `deck.py` (`interf_modo`, `pedagio_modo`), desligadas.
+
+**4. O desafio.** Como em Coup, Skull e o Dado Mentiroso: o que faz o blefe valer é poder **pagar para ver**. Na sua
+vez, antes do dado, você desafia a carta virada do rival: blefe → a carta dele se perde e você ganha `acerto`;
+armadilha → ela fica armada, à vista, e ele ganha `erro`; e o blefe que ninguém desafiou rende `bonus` quando o dono
+o desvira (sem isso, blefar nunca compensaria). Procuramos números em que **nenhuma estratégia fixa vence**: desafiar
+quem não blefa custa, desafiar quem blefa rende, blefar contra quem não desafia rende, blefar contra quem desafia
+custa. 4.800–14.400 partidas por célula (vitórias de quem lê):
+
+| acerto · erro · bônus | honesto, não desafia | honesto, desafia | blefa, não desafia | blefa, desafia | |
+|---|---|---|---|---|---|
+| 1 · 1 · 1 | 49,1% | 54,7% | 52,5% | 55,4% | desafiar sempre domina |
+| 2 · 2 · 2 | 50,6% | 48,7% | 49,8% | 50,7% | tudo perto de 50%: nada em jogo |
+| 3 · 3 · 3 | 50,5% | 39,5% | 47,8% | 46,4% | desafiar nunca compensa |
+| **2 · 2 · 3** | **50,5%** | **47,7%** | **47,8%** | **50,6%** | **as quatro condições, 2,7–2,9 pontos cada** |
+
+**Ler o deck é o que ganha.** Quem desafia com a chance de o "?" ser blefe pelo que resta no deck do rival
+(efeitos não usados contra armadilhas ainda escondidas) nunca fica abaixo de 50%:
+
+| o rival blefa… | nunca desafiar | sempre desafiar | desafiar pensando |
+|---|---|---|---|
+| nunca | 49,9% | 48,0% | **50,9%** |
+| metade das vezes | 48,5% | 49,5% | **50,0%** |
+| sempre | 46,9% | 50,7% | **50,4%** |
+
+**Equilíbrio dos decks** (402 decks × 400 partidas, os dois lados blefando metade das vezes e desafiando pensando):
+desvio 0,042 (hoje 0,043), 15 decks acima de 0,58 (hoje 13); o Pedágio vai a 52,4% de média (a Interferência, hoje a
+mais forte, tem 53,1%). Desafiando às cegas, o Pedágio ia a 55% (o "?" dele é quase sempre real, e revelado ele não
+tem defesa): ler o deck também protege o jogo. O desafio e o bônus fazem ~17% dos pontos de uma partida.
+
+**No jogo:** `DESAFIO = { acerto: 2, erro: 2, bonus: 3 }` em `shared/regras.js`; o blefe só desvira a partir da vez
+seguinte à que foi virado (o rival sempre tem a chance de desafiar). A Dona Coruja desafia pela conta acima e blefa
+como antes; a Diana desafia com metade da chance e blefa às vezes (25%), para quem aprende ter o que desafiar.
+
+Reproduzir: `cd sim && python3 profundidade.py profundidade leitura blefe decisoes cartas armadilhas` e
+`DESAFIO='{"acerto":2,"erro":2,"bonus":3}' python3 profundidade.py desafio` (N, ROLL, PROCS no topo do arquivo).

@@ -72,6 +72,13 @@ class Partida(N.Partida):
         super().usar(p, c)
     def armar(s, p, c, alvo=None):
         super().armar(p, c, alvo); s.revelada[p] = False; s._qid[p] += 1
+    def chance_desafio(s, p):
+        """desafia = número fixo, ou 'esperto': a chance de o "?" ser blefe, pelo que resta no deck do rival
+        (supondo que ele blefa com metade das oportunidades)"""
+        d = s.estilo[p]['desafia']
+        if d != 'esperto': return d
+        traps, efs = s.escondidas(1 - p)
+        return 0.0 if not efs else 0.5 * len(efs) / (0.5 * len(efs) + len(traps))
     def desafiar(s, p):
         r = s.j[1 - p]; c = r.armada; s.conta['desafios'][p] += 1
         if c in EFE:
@@ -90,7 +97,7 @@ class Partida(N.Partida):
         # desafio: decide uma vez por "?" do rival, na primeira vez em que o vê
         if DESAFIO['ligado'] and r.armada not in (None, 'espelho') and not s.revelada[1 - p] and s._visto[p] != s._qid[1 - p]:
             s._visto[p] = s._qid[1 - p]
-            if random.random() < e['desafia']: s.desafiar(p)
+            if random.random() < s.chance_desafio(p): s.desafiar(p)
             if s.vencedor is not None: return
         super().cartas_antes(p)
         if j.armada is None and e['blefe'] > 0 and len(r.cor) >= 2:

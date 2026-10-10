@@ -24,7 +24,7 @@ function diferenca(a, b, caminho = '') {
 }
 const partida = (semente, deck1, deck0 = DECKS_A[0]) => Regras.criarPartida({ decks: [deck0, deck1], vez: 1, meta: 12, nomes: ['A', 'B'], modo: 'online', nivel: 'online', rng: rngDe(semente) });
 // o dono do segredo (jogador 1) só pega dados, escolhe destino, dispara ou segura: usar cartas mudaria o jogo de propósito
-const semCarta = (j, p, rng) => { const a = jogadaAoAcaso(j, p, rng); return a.tipo === 'carta' || a.tipo === 'virar' || a.tipo === 'dispensar' ? (j.fase === 'pegar' ? { tipo: 'pegar', idx: 0 } : a) : a; };
+const semCarta = (j, p, rng) => { const a = jogadaAoAcaso(j, p, rng); return a.tipo === 'carta' || a.tipo === 'virar' || a.tipo === 'dispensar' || a.tipo === 'desafiar' ? (j.fase === 'pegar' ? { tipo: 'pegar', idx: 0 } : a) : a; };
 
 test('o rival não distingue armadilha de verdade, outra armadilha e blefe (nem pelo estado, nem por erro de ação)', () => {
   let casos = 0, passos = 0;

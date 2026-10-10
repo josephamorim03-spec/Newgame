@@ -166,7 +166,17 @@ verdade. Por isso o "?" volta a ser uma leitura do rival (*yomi*, docs/pesquisa.
   disparo, e lembra que pode ser blefe com tal e tal efeito.
 - **Quando age:** a carta se revela com o nome (armadilha) ou com "Blefe!" (efeito).
 
-**Robôs:** a Dona Coruja blefa às vezes (quando o rival tem corrente de 3+ e ela não armou nada); a Diana não.
+**O desafio (v0.11).** Medido em `sim/profundidade.py` (docs/balanceamento-cartas.md §13): sem poder pagar para ver,
+o "?" não mudava nenhuma jogada (saber o que era valia ~0) e blefar só custava. Agora, na sua vez, antes de pegar o
+dado, você toca na carta virada do rival e **desafia**: era **blefe** → a carta dele se perde e você ganha **2**; era
+**armadilha** → ela continua armada, agora **à vista**, e ele ganha **2**. Um blefe que ninguém desafiou rende **+3**
+quando o dono o desvira (a partir da vez seguinte à que virou). Com esses números nenhuma estratégia fixa vence
+(sempre ou nunca desafiar, sempre ou nunca blefar): ganha quem lê o deck do rival. Na tela: a etiqueta "carta virada"
+do rival é um botão (com contorno quando dá para desafiar) que abre a explicação e o **Desafiar**; a armadilha
+desafiada vira "… armada · à vista"; o aviso de disparo diz exatamente o que ela faz. Com as ajudas ligadas, uma dica
+única na primeira vez em que dá para blefar e na primeira em que dá para desafiar.
+
+**Robôs:** a Dona Coruja blefa às vezes (quando o rival tem corrente de 3+ e ela não armou nada) e desafia com a chance de o "?" ser blefe pelo que resta no deck; a Diana blefa às vezes (25%) e desafia com metade dessa chance.
 O simulador não modela blefe (os robôs dele não leem o rival), então o efeito do blefe sai dos testes com gente:
 o resumo copiável agora conta os blefes de cada um.
 
