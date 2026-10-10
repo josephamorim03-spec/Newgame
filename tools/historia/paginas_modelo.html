@@ -1,164 +1,268 @@
 <title>Quadros do Caderno da Diana</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700;800&family=Caveat:wght@600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700;800&family=Caveat:wght@600;700&display=swap">
 <style>
-/* layout: uma coluna de folhas de gibi (as páginas do roteiro), quadros com borda de tinta, balões por cima */
+/* layout: uma coluna de folhas de gibi; cada quadro é arte + camada de tinta (balão, rabinho, onomatopeia, retícula) por cima */
 :root {
   --papel: #fbf1df; --papel-2: #f1dfc2; --folha: #fffaf0; --tinta: #3a2a2e; --tinta-suave: #7a6468;
-  --mel: #f2b15e; --rosa: #ec8fa8; --azul: #6fbfd3; --pendente: #b8761c; --recusada: #b2483a;
-  --balao: #fffdf8; --caixa: #f8dc9a;
+  --mel: #f2b15e; --rosa: #ec8fa8; --azul: #6fbfd3; --pendente: #b8761c; --recusada: #b2483a; --caneta: #8a2f3a;
+  --nanquim: #3a2a2e;
   --f-titulo: "Fredoka", "Nunito", system-ui, sans-serif;
   --f-texto: "Nunito", system-ui, sans-serif;
   --f-mao: "Caveat", "Comic Sans MS", cursive;
 }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
   --papel: #1f2a25; --papel-2: #2b3a33; --folha: #2a2422; --tinta: #f1e6d6; --tinta-suave: #b9aa9c;
-  --mel: #f2b15e; --pendente: #f0b25c; --recusada: #f08a7a; color-scheme: dark } }
+  --pendente: #f0b25c; --recusada: #f08a7a; color-scheme: dark } }
 :root[data-theme="dark"] {
   --papel: #1f2a25; --papel-2: #2b3a33; --folha: #2a2422; --tinta: #f1e6d6; --tinta-suave: #b9aa9c;
-  --mel: #f2b15e; --pendente: #f0b25c; --recusada: #f08a7a; color-scheme: dark }
+  --pendente: #f0b25c; --recusada: #f08a7a; color-scheme: dark }
 body { background: var(--papel); color: var(--tinta); font-family: var(--f-texto); font-size: 15px; line-height: 1.5; }
 .tudo { max-width: 860px; margin: 0 auto; padding: 28px 16px 64px; display: grid; gap: 28px; }
 header { display: grid; gap: 10px; }
 h1 { font-family: var(--f-titulo); font-weight: 700; font-size: clamp(28px, 6vw, 40px); line-height: 1.1; margin: 0; text-wrap: balance; }
 .lide { margin: 0; max-width: 64ch; color: var(--tinta-suave); }
 .legenda { display: flex; flex-wrap: wrap; gap: 8px 16px; font-size: 13px; color: var(--tinta-suave); align-items: center; }
-.legenda .marca { margin-right: 4px; }
 nav { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: thin; }
 nav a { flex: none; font: 600 13px var(--f-titulo); color: var(--tinta); text-decoration: none; padding: 5px 11px; border: 2px solid var(--tinta); border-radius: 999px; background: var(--folha); }
 nav a:hover, nav a:focus-visible { background: var(--mel); color: #3a2a2e; outline: none; }
+main { display: grid; gap: 28px; }
 .folha { background: var(--folha); border: 3px solid var(--tinta); border-radius: 6px; padding: 14px; display: grid; gap: 12px; box-shadow: 6px 6px 0 rgba(58,42,46,.18); scroll-margin-top: 16px; }
 .folha h2 { font-family: var(--f-titulo); font-weight: 600; font-size: 20px; margin: 0; display: flex; justify-content: space-between; gap: 12px; align-items: baseline; flex-wrap: wrap; }
 .folha h2 small { font: 700 11px var(--f-texto); letter-spacing: .08em; text-transform: uppercase; color: var(--tinta-suave); }
-.grade { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.grade { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .q { grid-column: span 2; display: grid; gap: 4px; min-width: 0; }
 .q.meio { grid-column: span 1; }
 @media (max-width: 560px) { .q.meio { grid-column: span 2; } }
-.painel { border: 3px solid #3a2a2e; border-radius: 3px; background: #fffaf0; max-width: 100%; display: grid; }
-/* o balão mora numa faixa de papel em cima da arte (a arte não tem céu livre de sobra), com o rabinho entrando no quadro */
-.arte { position: relative; overflow: hidden; aspect-ratio: 3 / 2; background: var(--papel-2); }
+
+/* o quadro: borda de nanquim; a arte e a camada de tinta por cima */
+.arte { position: relative; overflow: hidden; aspect-ratio: 3 / 2; border: 3px solid var(--nanquim); border-radius: 2px; background: var(--papel-2); container-type: inline-size; max-width: 100%; }
 .q.meio .arte { aspect-ratio: 1 / 1; }
 @media (max-width: 560px) { .q.meio .arte { aspect-ratio: 4 / 3; } }
-.arte img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transform-origin: var(--fx, 50%) var(--fy, 30%); }
-.painel.perto img { transform: scale(1.3); }
-.painel.detalhe img { transform: scale(1.65); }
-.painel.vazio { place-items: center; text-align: center; padding: 16px; color: var(--tinta-suave); border-style: dashed; font-size: 13px; aspect-ratio: 3 / 2; background: transparent; }
-.balao { position: relative; z-index: 2; justify-self: start; margin: 8px 10px -4px; max-width: min(92%, 40ch); background: #fffdf8; color: #3a2a2e; border: 2.5px solid #3a2a2e; border-radius: 18px;
-  padding: 6px 12px; font: 700 14px/1.3 var(--f-texto); }
-.balao::after { content: ""; position: absolute; left: 26px; bottom: -10px; width: 13px; height: 13px; background: #fffdf8; border-right: 2.5px solid #3a2a2e; border-bottom: 2.5px solid #3a2a2e; transform: skewX(-25deg) rotate(45deg); }
-.balao.dir { justify-self: end; }
-.balao.dir::after { left: auto; right: 26px; }
-.balao.caixa { justify-self: stretch; border-radius: 2px; background: var(--caixa); font-weight: 600; font-style: italic; margin-bottom: 6px; }
-.balao.caixa::after { display: none; }
-.balao.nota { justify-self: stretch; margin: 6px 12px 4px; background: transparent; border: 0; font: 600 22px/1.1 var(--f-mao); color: #8a2f3a; }
-.balao.nota::after { display: none; }
-.quem { display: block; font: 700 10px var(--f-texto); letter-spacing: .08em; text-transform: uppercase; color: #8a7478; }
-.balao.pendente { border-style: dashed; border-color: var(--pendente); }
-.balao.recusada { text-decoration: line-through; opacity: .7; }
-.estado { display: inline-block; margin-left: 6px; font: 800 9px var(--f-texto); letter-spacing: .06em; text-transform: uppercase; color: #fff; background: var(--pendente); border-radius: 4px; padding: 1px 5px; vertical-align: 2px; }
+.arte.pagina { aspect-ratio: 2 / 3; }
+.arte img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transform-origin: var(--fx, 50%) var(--fy, 30%); transform: scale(var(--zoom, 1)); }
+.arte.vazio { display: grid; place-items: center; text-align: center; padding: 16px; color: var(--tinta-suave); border-style: dashed; font-size: 13px; background: transparent; }
+/* retícula: pontinhos de impressão, mais densos num canto (a sombra do gibi barato) */
+.reticula { position: absolute; inset: 0; pointer-events: none; mix-blend-mode: multiply;
+  background: radial-gradient(circle, rgba(58,42,46,.55) 0 28%, transparent 34%) 0 0 / 1.6cqw 1.6cqw;
+  -webkit-mask-image: linear-gradient(to top right, #000, transparent 42%); mask-image: linear-gradient(to top right, #000, transparent 42%); opacity: .45; }
+.arte.pagina .reticula { display: none; }
+/* quadro de impacto: congelado, retícula forte em volta de quem fala, e as chapas azul e rosa fora do registro */
+.q.impacto .arte { transform: rotate(-1.2deg); border-width: 4px; box-shadow: -5px 4px 0 var(--azul), 5px -4px 0 var(--rosa); }
+.q.impacto .reticula { -webkit-mask-image: radial-gradient(circle at var(--bx, 50%) var(--by, 60%), transparent 22%, #000 80%); mask-image: radial-gradient(circle at var(--bx, 50%) var(--by, 60%), transparent 22%, #000 80%); opacity: .6; }
+.q.impacto img.chapa { mix-blend-mode: multiply; opacity: .28; }
+.q.impacto img.chapa.azul { transform: translate(-0.9cqw, 0.5cqw) scale(var(--zoom, 1)); filter: sepia(1) saturate(5) hue-rotate(150deg); }
+.q.impacto img.chapa.rosa { transform: translate(0.9cqw, -0.5cqw) scale(var(--zoom, 1)); filter: sepia(1) saturate(5) hue-rotate(290deg); }
+.tinta { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; z-index: 2; }
+
+/* o balão: só o texto mora no HTML; o contorno e o rabinho são desenhados juntos no SVG (sem emenda) */
+.balao { position: absolute; z-index: 3; width: max-content; max-width: max(46%, 190px); padding: .7em 1.05em; color: #3a2a2e;
+  font: 800 clamp(12.5px, 3.1cqw, 17px)/1.25 var(--f-texto); text-align: center; text-wrap: balance; }
+.q.meio .balao { max-width: 74%; font-size: clamp(12.5px, 4.4cqw, 16px); }
+.balao.nw { left: 4%; top: 5%; } .balao.ne { right: 4%; top: 5%; } .balao.sw { left: 4%; bottom: 6%; } .balao.se { right: 4%; bottom: 6%; }
+.balao.pausa { padding: .45em 1em; font-size: clamp(13px, 4cqw, 20px); letter-spacing: .1em; }
+.balao.caixa { left: 0; top: 0; max-width: 72%; padding: .6em .9em; text-align: left; font-weight: 700; font-style: italic; }
+.balao .rub { display: block; font: italic 700 .78em var(--f-texto); color: #7a6468; }
+.balao .estado { display: block; margin: .35em auto 0; width: max-content; }
+.estado { font: 800 9px var(--f-texto); letter-spacing: .06em; text-transform: uppercase; color: #fff; background: var(--pendente); border-radius: 4px; padding: 1px 5px; }
 .estado.recusada { background: var(--recusada); }
+/* onomatopeia: letreiro de gibi, com as chapas fora do registro */
+.som { position: absolute; z-index: 3; font: 700 clamp(22px, 9cqw, 64px)/1 var(--f-titulo); color: var(--mel); -webkit-text-stroke: .12em #3a2a2e; paint-order: stroke fill;
+  text-shadow: -.06em .05em 0 var(--azul), .06em -.05em 0 var(--rosa); transform: translate(-50%, -50%) rotate(var(--rot, -10deg)); letter-spacing: .02em; }
+
+/* as páginas do caderno: o desenho é da arte; o título e as notas são letra de mão */
+.mao { position: absolute; z-index: 3; left: 14%; right: 6%; text-align: center; font: 700 clamp(14px, 7.4cqw, 34px)/1.05 var(--f-mao); color: #3a2a2e; }
+.mao.titulo { top: 7%; }
+.mao.titulo.espelho { transform: scaleX(-1); }
+.mao.corpo { bottom: 9%; font-weight: 600; font-size: clamp(13px, 6.4cqw, 28px); }
+.mao.margem { bottom: 6%; left: auto; right: 5%; width: 62%; color: var(--caneta); transform: rotate(-4deg); font-size: clamp(13px, 6.6cqw, 30px); text-align: right; }
+.mao .estado { font-family: var(--f-texto); vertical-align: middle; }
+.aba { position: absolute; z-index: 4; left: 20%; right: 10%; top: 30%; height: 30%; background: #fbf1df; border: 2px solid #3a2a2e; border-radius: 2px;
+  transform-origin: 50% 0; transform: perspective(500px) rotateX(64deg) rotate(-2deg); box-shadow: 0 6px 0 rgba(58,42,46,.12);
+  background-image: repeating-linear-gradient(transparent 0 calc(7.2cqw - 1px), rgba(111,191,211,.45) calc(7.2cqw - 1px) 7.2cqw); }
+.debaixo { position: absolute; z-index: 3; left: 18%; right: 8%; top: 50%; text-align: center; font: 700 clamp(13px, 6.6cqw, 30px)/1.1 var(--f-mao); color: var(--caneta); }
+
 .rodape { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; color: var(--tinta-suave); flex-wrap: wrap; }
 .rodape code { font: 600 12px ui-monospace, Menlo, monospace; color: var(--tinta); }
-.opcoes { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-@media (max-width: 560px) { .opcoes { grid-template-columns: 1fr; } }
-.opcao { display: grid; gap: 4px; min-width: 0; }
+.rodape .velha { font: 800 9px var(--f-texto); letter-spacing: .06em; text-transform: uppercase; color: var(--tinta-suave); border: 1.5px solid currentColor; border-radius: 4px; padding: 0 4px; margin-left: 6px; }
+.opcoes { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 420px) { .opcoes { grid-template-columns: 1fr; } }
+.opcao { display: grid; gap: 4px; min-width: 0; align-content: start; }
 .rotulo-op { font: 600 13px var(--f-titulo); }
-.mudo-txt { font-style: italic; color: var(--tinta-suave); font-size: 13px; }
-details.pedido { font-size: 12px; color: var(--tinta-suave); }
-details.pedido summary { cursor: pointer; }
 footer { font-size: 13px; color: var(--tinta-suave); max-width: 64ch; }
 :focus-visible { outline: 3px solid var(--azul); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { .q.impacto .arte { transform: none; } }
 </style>
 
 <div class="tudo">
   <header>
     <h1>O Caderno da Diana, em quadros</h1>
-    <p class="lide">Os rascunhos de arte do modo história, página por página, com as falas do roteiro por cima. A arte vem sem texto: os balões saem das falas do <code>docs/historia_piadas.json</code>, então trocar uma fala não exige pintar de novo. Quadros sem desenho próprio reaproveitam o anterior mais de perto, como no gibi.</p>
+    <p class="lide" id="lide"></p>
     <div class="legenda" id="legenda"></div>
   </header>
   <nav id="indice" aria-label="Páginas"></nav>
-  <main id="paginas" style="display:grid;gap:28px"></main>
-  <footer>Para pedir outra versão de um quadro, cite o código embaixo dele (por exemplo <code>c3-raposa</code>) e o que muda. As falas marcadas "em revisão" ainda esperam a sua decisão na página de falas.</footer>
+  <main id="paginas"></main>
+  <footer>Para pedir outra versão de um quadro, cite o código embaixo dele (por exemplo <code>p-mesa</code>) e o que muda. As falas marcadas "em revisão" ainda esperam a sua decisão na página de falas.</footer>
 </div>
 
 <script>
 const D = /*DADOS*/null;
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
-const NOMES = { DIANA: 'Diana', SAPO: 'Sapo', COELHO: 'Coelho', URSO: 'Urso', CAIXA: 'caixa' };
+const NOMES = { DIANA: 'diana', SAPO: 'sapo', COELHO: 'coelho', URSO: 'urso', CAIXA: 'caixa' };
+const ID_QUEM = { Diana: 'diana', Sapo: 'sapo', Coelho: 'coelho', Raposa: 'raposa', Urso: 'urso', Guaxinim: 'guaxinim', Ovelha: 'ovelha', Coruja: 'coruja' };
 
+// uma fala (ou uma batida dela): quem fala, o texto, o tipo de balão e o estado da aprovação
 function trecho(codigo, parte) {
   const f = D.falas[codigo];
   if (!f) return null;
-  const partes = f.texto.split(' / ');
-  let txt = parte == null ? f.texto : (partes[parte] || '');
-  let quem = f.quem.replace(/ \+.*$/, '');
-  const m = txt.match(/^([A-ZÇÃ]{3,}):\s*(.*)$/);
-  if (m) { quem = NOMES[m[1]] || m[1]; txt = m[2]; }
-  let tipo = 'fala';
+  let txt = parte == null ? f.texto : (f.texto.split(' / ')[parte] || '');
+  let quem = ID_QUEM[f.quem.replace(/ \+.*$/, '')] || f.quem, tipo = 'fala', rub = '';
+  const n = txt.match(/^([A-ZÇÃ]{3,}):\s*(.*)$/);
+  if (n) { quem = NOMES[n[1]] || n[1].toLowerCase(); txt = n[2]; }
   if (quem === 'caixa') tipo = 'caixa';
-  if (/^Página/.test(f.quem)) {
-    tipo = 'nota';
-    txt = txt.replace(/^\([^)]*\)\s*/, '');
+  const r = txt.match(/^\(([^)]*)\)\s*(.*)$/);
+  if (r) {
+    if (/^(sem |quadro mudo)/.test(r[1])) tipo = 'mudo';
+    else if (/margem|etiqueta|aba/.test(r[1])) tipo = 'margem';
+    else { rub = r[1]; if (/dormindo|baixo|sussurr/.test(r[1])) tipo = 'sussurro'; }
+    if (tipo !== 'mudo') txt = r[2];
   }
-  if (/^\((sem |quadro mudo)/.test(txt)) tipo = 'mudo';
-  return { codigo, quem, txt, tipo, status: f.status };
+  if (/^Página/.test(f.quem) && tipo === 'fala') tipo = 'receita';
+  if (/^…$/.test(txt.trim())) tipo = 'pausa';
+  return { codigo, quem, txt, tipo, rub, status: f.status };
+}
+const estadoTag = t => t.status === 'aprovada' ? '' : `<span class="estado ${t.status === 'recusada' ? 'recusada' : ''}">${t.status === 'recusada' ? 'recusada' : 'em revisão'}</span>`;
+
+// o que vai por cima da arte: balão, letreiros da página do caderno, onomatopeia
+function camada(arte, q, t) {
+  const a = D.artes[arte] || {};
+  let h = '';
+  if (a.pagina) {
+    h += `<div class="mao titulo${a.espelho ? ' espelho' : ''}">${esc(a.titulo || '')}</div>`;
+    if (t && t.tipo === 'receita') { const corpo = t.txt.split(' · ').slice(1).join(' · '); if (corpo) h += `<div class="mao corpo">${esc(corpo)} ${estadoTag(t)}</div>`; }
+    if (t && t.tipo === 'margem') h += a.aba ? `<div class="debaixo">${esc(t.txt)}</div><div class="aba"></div><div class="mao margem">${estadoTag(t)}</div>` : `<div class="mao margem">${esc(t.txt)} ${estadoTag(t)}</div>`;
+    return h;
+  }
+  if (t && !['mudo', 'margem', 'receita'].includes(t.tipo)) {
+    const lugar = t.tipo === 'caixa' ? '' : (a.lugar || 'nw');
+    h += `<div class="balao ${lugar} ${t.tipo}" data-quem="${esc(t.quem)}">${t.rub ? `<span class="rub">(${esc(t.rub)})</span>` : ''}${esc(t.txt)}${estadoTag(t)}</div>`;
+  }
+  if (q.som) h += `<div class="som" style="left:${q.som.x}%;top:${q.som.y}%;--rot:${q.som.rot || -10}deg">${esc(q.som.txt)}</div>`;
+  return h;
 }
 
-function balao(t, lado) {
-  if (!t || t.tipo === 'mudo') return '';
-  const estado = t.status === 'aprovada' ? '' : `<span class="estado ${t.status === 'recusada' ? 'recusada' : ''}">${t.status === 'recusada' ? 'recusada' : 'em revisão'}</span>`;
-  const quem = t.tipo === 'nota' ? '' : `<span class="quem">${esc(t.tipo === 'caixa' ? 'Narração' : t.quem)}${estado}</span>`;
-  return `<div class="balao ${t.tipo === 'fala' ? '' : t.tipo} ${t.status === 'aprovada' ? '' : t.status === 'recusada' ? 'recusada' : 'pendente'} ${lado}">${quem}${esc(t.txt)}${t.tipo === 'nota' && estado ? ' ' + estado : ''}</div>`;
-}
-
-function painel(arte, plano, foco, t, lado) {
-  if (!arte) return `<div class="painel vazio">sem este quadro</div>`;
-  const src = D.imagens[arte];
-  if (!src) return `<div class="painel vazio">ainda sem arte<br><code>${esc(arte)}</code></div>`;
-  const f = foco ? `--fx:${foco[0]}%;--fy:${foco[1]}%` : '';
-  const a = D.artes[arte];
-  return `<div class="painel ${plano || ''}" style="${f}">${balao(t, lado)}<div class="arte"><img src="${src}" alt="${esc(a ? a.texto : arte)}" loading="lazy"></div></div>`;
+const ZOOM = { perto: 1.3, detalhe: 1.65 };
+function painel(arte, q, t) {
+  if (!arte) return `<div class="arte vazio">sem este quadro</div>`;
+  const src = D.imagens[arte], a = D.artes[arte] || {};
+  if (!src) return `<div class="arte vazio">ainda sem arte<br><code>${esc(arte)}</code></div>`;
+  const foco = q.foco || [50, 30], zoom = ZOOM[q.plano] || 1;
+  const chapas = q.impacto ? `<img class="chapa azul" src="${src}" alt=""><img class="chapa rosa" src="${src}" alt="">` : '';
+  return `<div class="arte${a.pagina ? ' pagina' : ''}" data-arte="${esc(arte)}" style="--fx:${foco[0]}%;--fy:${foco[1]}%;--zoom:${zoom}">
+    <img class="base" src="${src}" alt="${esc(a.texto || arte)}">${chapas}<div class="reticula"></div>
+    <svg class="tinta" aria-hidden="true"></svg>${camada(arte, q, t)}</div>`;
 }
 
 function rodape(arte, t) {
-  const bits = [arte ? `<code>${esc(arte)}</code>` : ''];
-  if (t) bits.push(`<span>${esc(t.codigo)}${t.tipo === 'mudo' ? ' · ' + esc(t.txt) : ''}</span>`);
-  return `<div class="rodape">${bits.join('')}</div>`;
+  const a = D.artes[arte] || {};
+  const velha = arte && D.imagens[arte] && !a.nova ? '<span class="velha">arte antiga</span>' : '';
+  return `<div class="rodape"><span>${arte ? `<code>${esc(arte)}</code>${velha}` : ''}</span>${t ? `<span>${esc(t.codigo)}${t.tipo === 'mudo' ? ' · ' + esc(t.txt) : ''}</span>` : ''}</div>`;
 }
 
 const ehMeio = q => !!(q && q.plano && q.plano !== 'inteiro' && !q.opcoes);
-function quadro(q, i, meio) {
-  const lado = i % 2 ? 'dir' : '';
+function quadro(q, meio) {
   if (q.opcoes) {
     const ops = q.opcoes.map(([arte, codigo], k) => {
       const t = trecho(codigo);
-      return `<div class="opcao"><span class="rotulo-op">Opção ${'ab'[k]}</span>${painel(arte, q.plano, q.foco, t, lado)}${rodape(arte, t)}</div>`;
+      return `<div class="opcao"><span class="rotulo-op">Opção ${'ab'[k]}</span>${painel(arte, q, t)}${rodape(arte, t)}</div>`;
     }).join('');
     return `<div class="q"><div class="opcoes">${ops}</div></div>`;
   }
   const t = q.fala ? trecho(q.fala, q.parte) : null;
-  return `<div class="q${meio ? ' meio' : ''}">${painel(q.arte, q.plano, q.foco, t, lado)}${rodape(q.arte, t)}</div>`;
+  return `<div class="q${meio ? ' meio' : ''}${q.impacto ? ' impacto' : ''}" data-linhas='${q.linhas ? JSON.stringify(q.linhas) : ''}'>${painel(q.arte, q, t)}${rodape(q.arte, t)}</div>`;
 }
-
-// os quadros "meio" (perto/detalhe) andam em pares; um par incompleto ocupa a linha toda
 function grade(qs) {
   const out = []; let i = 0;
   while (i < qs.length) {
-    if (ehMeio(qs[i]) && ehMeio(qs[i + 1])) { out.push(quadro(qs[i], i, true), quadro(qs[i + 1], i + 1, true)); i += 2; }
-    else { out.push(quadro(qs[i], i, false)); i += 1; }
+    if (ehMeio(qs[i]) && ehMeio(qs[i + 1])) { out.push(quadro(qs[i], true), quadro(qs[i + 1], true)); i += 2; }
+    else { out.push(quadro(qs[i], false)); i += 1; }
   }
   return out.join('');
 }
 
-const contagem = { aprovada: 0, pendente: 0 };
-D.paginas.forEach(p => p.quadros.forEach(q => (q.opcoes ? q.opcoes.map(o => o[1]) : [q.fala]).forEach(c => { const f = D.falas[c]; if (f) contagem[f.status === 'aprovada' ? 'aprovada' : 'pendente']++; })));
-document.getElementById('legenda').innerHTML =
-  `<span><b>${D.paginas.length}</b> páginas</span><span><b>${Object.keys(D.imagens).length}</b> artes</span>` +
-  `<span><b>${D.paginas.reduce((n, p) => n + p.quadros.length, 0)}</b> quadros</span>` +
-  `<span><span class="estado marca">em revisão</span>fala que ainda espera a sua decisão</span>`;
-document.getElementById('indice').innerHTML = D.paginas.map(p => `<a href="#${p.id}">${esc(p.titulo.replace(/ · .*$/, '') === p.titulo ? p.titulo : p.titulo.split(' · ').slice(0, 2).join(' · '))}</a>`).join('');
+// a boca de quem fala, em pixels do quadro: o recorte do object-fit e o zoom do plano entram na conta
+function bocaNoQuadro(el, img, quem) {
+  const a = D.artes[el.dataset.arte] || {}, b = (a.boca || {})[quem];
+  if (!b || !img.naturalWidth) return null;
+  const W = el.clientWidth, H = el.clientHeight, k = Math.max(W / img.naturalWidth, H / img.naturalHeight);
+  const ox = (W - img.naturalWidth * k) / 2, oy = (H - img.naturalHeight * k) / 2;
+  const x = ox + b[0] / 100 * img.naturalWidth * k, y = oy + b[1] / 100 * img.naturalHeight * k;
+  const cs = getComputedStyle(el), z = parseFloat(cs.getPropertyValue('--zoom')) || 1;
+  const fx = parseFloat(cs.getPropertyValue('--fx')) / 100 * W, fy = parseFloat(cs.getPropertyValue('--fy')) / 100 * H;
+  return { x: fx + (x - fx) * z, y: fy + (y - fy) * z };
+}
+
+// desenha o balão e o rabinho: primeiro tudo com o contorno grosso, depois o recheio por cima (assim não sobra emenda)
+function desenhar(el) {
+  const svg = el.querySelector('svg.tinta'), img = el.querySelector('img.base');
+  if (!svg) return;
+  const W = el.clientWidth, H = el.clientHeight;
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  const formas = [], linhas = [];
+  const bal = el.querySelector('.balao');
+  if (bal) {
+    const r = { x: bal.offsetLeft, y: bal.offsetTop, w: bal.offsetWidth, h: bal.offsetHeight };
+    const caixa = bal.classList.contains('caixa');
+    const rx = caixa ? 2 : Math.min(r.h / 2, 34);
+    const d = `M${r.x + rx},${r.y} H${r.x + r.w - rx} Q${r.x + r.w},${r.y} ${r.x + r.w},${r.y + rx} V${r.y + r.h - rx} Q${r.x + r.w},${r.y + r.h} ${r.x + r.w - rx},${r.y + r.h} H${r.x + rx} Q${r.x},${r.y + r.h} ${r.x},${r.y + r.h - rx} V${r.y + rx} Q${r.x},${r.y} ${r.x + rx},${r.y} Z`;
+    let rabo = '';
+    const boca = caixa ? null : bocaNoQuadro(el, img, bal.dataset.quem);
+    if (boca) {
+      const cy = r.y + r.h / 2;
+      // a base sai da borda do balão mais perto da boca; a ponta para um pouco antes da boca
+      const bx = Math.max(r.x + rx, Math.min(r.x + r.w - rx, boca.x)), by = boca.y > cy ? r.y + r.h - 2 : r.y + 2;
+      const dx = boca.x - bx, dy = boca.y - by, dist = Math.hypot(dx, dy) || 1;
+      // o rabinho aponta e para antes da cabeça: no máximo pouco mais da metade do caminho, e nunca longo
+      const comp = Math.min(dist * .55, H * .2 + 14);
+      const tip = { x: bx + dx / dist * comp, y: by + dy / dist * comp };
+      const larg = Math.max(9, Math.min(20, r.h * .34)), nx = -dy / dist * larg, ny = dx / dist * larg;
+      const meio = { x: (bx + tip.x) / 2 + nx * .5, y: (by + tip.y) / 2 + ny * .5 };   // uma curva leve, como na mão
+      rabo = `M${bx - nx},${by - ny} Q${meio.x},${meio.y} ${tip.x},${tip.y} Q${meio.x - nx * .3},${meio.y - ny * .3} ${bx + nx},${by + ny} Z`;
+      el.style.setProperty('--bx', `${boca.x / W * 100}%`); el.style.setProperty('--by', `${boca.y / H * 100}%`);
+    }
+    const fill = caixa ? '#f8dc9a' : '#fffdf8', tracejado = bal.classList.contains('sussurro') ? ' stroke-dasharray="6 5"' : '';
+    formas.push(`<path d="${d}" fill="none" stroke="#3a2a2e" stroke-width="5"${tracejado} stroke-linejoin="round"/>`);
+    if (rabo) formas.push(`<path d="${rabo}" fill="#3a2a2e" stroke="#3a2a2e" stroke-width="5" stroke-linejoin="round"/>`);
+    formas.push(`<path d="${d}" fill="${fill}"/>`);
+    if (rabo) formas.push(`<path d="${rabo}" fill="${fill}"/>`);
+  }
+  const q = el.closest('.q'), l = q && q.dataset.linhas ? JSON.parse(q.dataset.linhas) : null;
+  if (l) {   // linhas de movimento atrás do que anda
+    const x0 = l.x / 100 * W, y0 = l.y / 100 * H, ang = (l.ang || 0) * Math.PI / 180, c = Math.cos(ang), s = Math.sin(ang);
+    for (const [o, comp] of [[-12, .09], [0, .13], [12, .08]]) {
+      const px = x0 - s * o, py = y0 + c * o;
+      linhas.push(`<line x1="${px + c * W * .02}" y1="${py + s * W * .02}" x2="${px + c * W * (.02 + comp)}" y2="${py + s * W * (.02 + comp)}" stroke="#3a2a2e" stroke-width="3" stroke-linecap="round"/>`);
+    }
+  }
+  svg.innerHTML = linhas.join('') + formas.join('');
+}
+
+const piloto = D.paginas.every(p => p.piloto);
+document.getElementById('lide').textContent = piloto
+  ? 'Piloto da segunda versão. O nariz da Diana segue uma folha de modelo única. As receitas são desenhadas no papel do caderno, e o título e as notas são letra de mão. Os balões ficam sobre a arte, do tamanho da fala, apontando para quem fala. A retícula, o desencaixe azul e rosa e as onomatopeias são os do jogo. Os quadros marcados "arte antiga" ainda são da primeira versão: a API ficou sem crédito antes de refazê-los.'
+  : 'Os rascunhos de arte do modo história, página por página, com as falas do roteiro por cima.';
+const nArtes = new Set(D.paginas.flatMap(p => p.quadros.flatMap(q => q.opcoes ? q.opcoes.map(o => o[0]) : [q.arte])).filter(a => D.imagens[a]));
+const novas = [...nArtes].filter(a => D.artes[a] && D.artes[a].nova).length;
+document.getElementById('legenda').innerHTML = `<span><b>${D.paginas.length}</b> páginas</span><span><b>${novas}</b> artes novas</span><span><b>${nArtes.size - novas}</b> antigas</span><span><span class="estado">em revisão</span> fala que ainda espera a sua decisão</span>`;
+document.getElementById('indice').innerHTML = D.paginas.map(p => `<a href="#${p.id}">${esc(p.titulo.split(' · ').slice(0, 2).join(' · '))}</a>`).join('');
 document.getElementById('paginas').innerHTML = D.paginas.map(p => `
   <section class="folha" id="${p.id}"><h2>${esc(p.titulo)}<small>${p.quadros.length} quadros</small></h2>
   <div class="grade">${grade(p.quadros)}</div></section>`).join('');
+
+const todos = () => document.querySelectorAll('.arte[data-arte]').forEach(desenhar);
+document.querySelectorAll('img.base').forEach(i => { if (!i.complete) i.addEventListener('load', () => desenhar(i.closest('.arte'))); });
+(document.fonts ? document.fonts.ready : Promise.resolve()).then(todos);
+todos();
+let espera; addEventListener('resize', () => { clearTimeout(espera); espera = setTimeout(todos, 80); });
 </script>

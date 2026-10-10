@@ -104,7 +104,12 @@ function tocar([semente, modo]) {
           const T = { timeout: 3000 };
           if (voltar) { await voltar.click(T); rastro.push('menu voltar'); }
           else if (cont) { await cont.click(T); rastro.push('menu continuar'); }
-          else { if (!(await pg.$('#inicioRivais:not([hidden])'))) await pg.click('[data-inicio="jogar"]', T); await pg.click('[data-inicio="comecar"]', T); rastro.push('menu jogar'); }
+          else {
+            // enquanto a estreia não acontece, o Jogar começa direto (sem a escolha do rival)
+            if (!(await pg.$('#inicioRivais:not([hidden])'))) await pg.click('[data-inicio="jogar"]', T);
+            if (await pg.$('#inicioRivais:not([hidden])')) await pg.click('[data-inicio="comecar"]', T);
+            rastro.push('menu jogar');
+          }
         } catch (e) {
           const estado = await pg.evaluate(() => ({ jogo: DiceDuel.jogo && { modo: DiceDuel.jogo.modo, fase: DiceDuel.jogo.fase, compras: DiceDuel.jogo.compras }, visiveis: [...document.querySelectorAll('#inicio [data-inicio]')].filter(b => b.offsetParent).map(b => b.dataset.inicio), deck: !document.getElementById('janelaDeck').hidden, versus: !!document.querySelector('.versus') })).catch(() => ({}));
           erros.push(`${r.nome}: menu: ${e.message.split('\n')[0]} ${JSON.stringify(estado)} (depois de: ${rastro.slice(-4).join(' → ')})`);

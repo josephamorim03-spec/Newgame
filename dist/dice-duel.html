@@ -6162,7 +6162,19 @@ window.HISTORIA_CENAS = {
       if (performance.now() < armadoEm || (espera && !e.target.closest('.btn'))) return;
       Som.desbloquear(); fechar();
     });
+    // no teclado, Enter e espaço são o "Vamos lá"
+    const tecla = e => {
+      if (!el.isConnected) return document.removeEventListener('keydown', tecla, true);
+      if ((e.key === 'Enter' || e.key === ' ') && performance.now() >= armadoEm) { e.preventDefault(); e.stopPropagation(); fechar(); }
+    };
+    document.addEventListener('keydown', tecla, true);
     if (!espera) setTimeout(fechar, 3200);
+  }
+  // o menu principal por cima de um versus aberto (o Esc, por exemplo): o versus sai, sem começar a partida; a primeira
+  // Mesa rola quando a partida voltar à tela (Continuar). Sem isso, o versus que espera o "Vamos lá" ficava por cima do menu
+  function largarVersus() {
+    document.querySelectorAll('.versus').forEach(v => v.remove());
+    if (jogo && jogo.intro) jogo.intro = false;
   }
 
   function mostrarFim() {
@@ -6776,6 +6788,7 @@ window.HISTORIA_CENAS = {
     // a partida para atrás do menu: a jogada do rival que estava no meio recomeça do zero no Continuar
     if (jogo && jogo.modo === 'bot' && jogo.pensando) { jogo.token = Math.random(); jogo.pensando = false; jogo.destaque = null; jogo.olhando = null; }
     ['fim', 'janelaMenu', 'janelaCarta'].forEach(id => { document.getElementById(id).hidden = true; });
+    largarVersus();
     document.body.classList.add('inicio-aberto');
     desenharInicio();
     inicio.hidden = false;
