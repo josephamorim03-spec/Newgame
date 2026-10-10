@@ -1281,6 +1281,9 @@ button.bolso.alvo-dado { position: relative; border: 0; font: inherit; color: in
 .inicio-rivais .btn-link { color: var(--texto); justify-self: center; }
 .rival-ajustes .btn-link { justify-self: auto; }
 .inicio-rivais .inicio-principal { margin-top: 2px; }
+/* o Jogar e o Voltar da escolha do rival: um em cima do outro, da mesma largura, como o Jogar e o Online da tela
+   inicial; o Voltar é o botão de papel */
+.inicio-rivais .inicio-principal, .inicio-rivais [data-inicio="voltar"] { justify-self: stretch; width: 100%; }
 .tela-inicio.escolhendo .inicio-cena, .tela-inicio.escolhendo #inicioTitulo { display: none; }
 /* a cena da tela inicial (v0.14): a rival da vez atrás de uma mesinha de feltro e madeira, com a saudação e três dados.
    Tocar num dado o rola; tocar na rival, ela fala. A arte pintada aparece antes de qualquer toque */

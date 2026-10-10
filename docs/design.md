@@ -201,7 +201,9 @@ batalha do Clash Royale tem deck fixo e sem relógio, o Marvel Snap libera os ti
 pela própria partida. Agora:
 - **Primeira partida:** o Jogar começa direto uma partida contra a Diana, **até 8 pontos e sem cartas** dos dois lados
   (sem escolha de rival, sem deck). Você começa; a Diana, que joga em segundo, ganha o dado no Bolso de sempre das
-  partidas sem cartas. O versus diz o que fazer em uma frase. Ela vale como uma partida contra a Diana (rating,
+  partidas sem cartas. O versus diz o que fazer em uma frase e espera o "Vamos lá" (não fecha sozinho, como
+  nas outras partidas, e ignora o primeiro meio segundo; vale também para os capítulos da história, que têm a regra do
+  capítulo para ler). Ela vale como uma partida contra a Diana (rating,
   moedas na vitória, experiência, recordes).
 - **Segunda partida:** o caminho de antes: a escolha do rival e o deck "Primeira mesa" (só efeitos) por cima dela.
 - **Armadilhas:** chegam depois da primeira partida **com cartas** (a estreia não conta), ou em Ajustes → "Todas as
@@ -480,6 +482,9 @@ o dedo e o dado: a pessoa escolhia o dado na Mesa e lia três botões lá embaix
 - **pergunta só quando há risco** ou quando o lugar apontado não é o que a regra deixa: o dado que não serve solto na
   corrente pergunta se troca com o do Bolso, se guarda, ou (sem nenhuma jogada segura) se rompe. O dado novo solto no
   Bolso cheio, com o do Bolso servindo na corrente, troca **sem perguntar**: o gesto já diz o que a pessoa quer.
+- **Romper é um botão só (v0.14).** Quando nenhuma jogada salva a corrente (o dado não sincroniza, nem o do Bolso), a
+  pergunta tem só "Romper" (e o ✕): trocar com o Bolso também romperia, e as duas opções eram uma escolha que não muda
+  nada que importe. O dado do Bolso fica onde está; o Bolso, apontado, também diz "rompe".
 - A regra não muda: com uma jogada segura disponível, não dá para romper de propósito; a pergunta oferece a segura.
 - A vez não aparece mais num selo no meio da Mesa: a etiqueta "sua vez" do painel basta. No online, o relógio da vez
   mora nela ("SUA VEZ · 23 s", vermelha nos 10 s finais).
@@ -528,7 +533,8 @@ dava para ver quem era cada uma nem o que mudava. Agora **Jogar** abre "Escolha 
   jogar e o que a vitória rende (cerca de X moedas e o rating dela; ou "vitórias não rendem mais moedas", se o seu
   rating já passou do teto daquela rival). Tocar escolhe; a escolhida ganha o contorno dourado e o retrato sorri;
 - embaixo, o **seu deck**, com "Trocar";
-- **Jogar contra Diana** (o botão diz quem) começa; "← Voltar" (ou Esc) volta ao menu. Na primeira visita, o deck
+- **Jogar contra Diana** (o botão diz quem) começa; "Voltar" (ou Esc) volta ao menu: um botão de papel logo abaixo do Jogar, da mesma largura
+  (v0.14; era um link sublinhado ao lado, fora da linguagem do jogo). Na primeira visita, o deck
   "Primeira mesa" abre por cima, e fechá-lo volta para a escolha.
 
 Ajustes não repete modo nem

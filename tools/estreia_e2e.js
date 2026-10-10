@@ -76,7 +76,12 @@ async function jogar(pg, { fotoGuia = null, maxPassos = 1500 } = {}) {
   if (ini.rivais || ini.deck) falha('a estreia não passa pela escolha do rival nem pelo deck');
   if (!/Primeira partida/.test(ini.versus)) falha('o versus da estreia não explica a partida');
   await pg.screenshot({ path: path.join(FOTOS, 'estreia-versus.png') });
-  const vs = await pg.$('.versus'); if (vs) await vs.click();
+  // o versus da estreia tem o que ler: não fecha sozinho nem com um toque fora do "Vamos lá"
+  await pg.waitForTimeout(3600);
+  await pg.mouse.click(30, 30); await pg.waitForTimeout(200);
+  if (!(await pg.$('.versus'))) falha('o versus da estreia fechou sozinho ou com um toque fora do "Vamos lá"');
+  await pg.click('.versus .btn'); await pg.waitForTimeout(200);
+  if (await pg.$('.versus')) falha('o "Vamos lá" não fechou o versus da estreia');
 
   const passos = await jogar(pg, { fotoGuia: 'estreia-guia.png' });
   // a tela do fim espera a festa do disparo que fechou a partida (v0.14): espera por ela, não um tempo fixo
@@ -142,7 +147,7 @@ async function jogar(pg, { fotoGuia = null, maxPassos = 1500 } = {}) {
   await sem.evaluate(() => DiceDuel.ajustar({ dicas: false }));
   await espiarChamadas(sem);
   await sem.click('[data-inicio="jogar"]'); await sem.waitForTimeout(300);
-  const vs3 = await sem.$('.versus'); if (vs3) await vs3.click();
+  await sem.waitForTimeout(400); const vs3 = await sem.$('.versus .btn'); if (vs3) await vs3.click();
   await jogar(sem, { maxPassos: 120 });
   const s = await sem.evaluate(() => ({ vistos: DiceDuel.st.guia.vistos, guiaCh: window.__ch.filter(c => c.classe.includes('guia')).length }));
   if (s.vistos.length || s.guiaCh) falha(`ajudas desligadas: o guia não aparece, veio ${JSON.stringify(s)}`);

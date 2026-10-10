@@ -663,7 +663,7 @@
     const bolso = op.contra ? { cls: 'nao', txt: 'não pode' }
       : op.seguros.includes('guardar') ? { cls: 'ok', txt: 'guardar' }
       : op.seguros.includes('trocar') ? { cls: 'ok', txt: `troca: entra o ${b}` }
-      : op.rompe && op.ds.includes('trocar') ? { cls: 'perigo', txt: `o ${b} rompe` }
+      : op.rompe && op.ds.includes('trocar') ? { cls: 'perigo', txt: 'rompe' }
       : { cls: 'nao', txt: b !== null ? `o ${b} não serve` : 'não pode' };
     return { corrente, bolso, op };
   }
@@ -674,18 +674,20 @@
     const { op } = previaAlvos(p, idx), b = j.bolso[p], eu = j.cor[p], L = eu.length, v = op.v;
     const ancora = j.armada[p] === 'ancora' && L >= 4, fr = L ? frente(eu) : null;
     const perguntar = (txt, botoes) => { pergunta = { chave: chaveVez(j), id: j.sel, txt, botoes }; Som.tocar('perigo', { x: 0 }); vibrar([6, 40, 6]); render(); };
+    // nenhuma jogada salva a corrente: ela rompe e pronto. Um botão só (o dado do Bolso fica onde está); trocar com o
+    // Bolso também romperia, e oferecer as duas era uma escolha que não muda nada que importe
+    const romper = () => perguntar(ancora ? `O ${v} não sincroniza${b !== null && !op.contra ? ', nem o do Bolso' : ''}: a corrente de ${L} romperia, mas a sua <b>Âncora</b> segura.`
+      : `O ${v} não sincroniza${b !== null && !op.contra ? ', nem o do Bolso' : ''}: a sua corrente de <b>${L}</b> vai romper.`, [['corrente', ancora ? 'Pegar' : 'Romper']]);
     if (alvo === 'corrente') {
       if (op.seguros.includes('corrente')) return pegarDado('corrente');
       if (op.seguros.includes('trocar')) return perguntar(`O ${v} não sincroniza com o seu ${fr}. Trocar: o <b>${b}</b> do Bolso entra na corrente e o ${v} fica guardado?`, [['trocar', 'Trocar']]);
       if (op.seguros.includes('guardar')) return perguntar(`O ${v} não sincroniza com o seu ${fr}. Guardar no Bolso?`, [['guardar', 'Guardar']]);
-      const txt = ancora ? `O ${v} não sincroniza${b !== null && !op.contra ? ', nem o do Bolso' : ''}: a corrente de ${L} romperia, mas a sua <b>Âncora</b> segura.`
-        : `O ${v} não sincroniza${b !== null && !op.contra ? ', nem o do Bolso' : ''}: a sua corrente de <b>${L}</b> vai romper.`;
-      return perguntar(txt, [['corrente', ancora ? 'Pegar' : 'Romper']].concat(op.ds.includes('trocar') ? [['trocar', `Trocar (o ${b} rompe)`]] : []));
+      return romper();
     }
     if (op.contra) return perguntar(`Virado pelo Espelho, o ${v} não pode ir para o Bolso.`, op.ds.includes('corrente') && op.seguros.includes('corrente') ? [['corrente', 'Pôr na corrente']] : []);
     if (op.seguros.includes('guardar')) return pegarDado('guardar');
     if (op.seguros.includes('trocar')) return pegarDado('trocar');   // o do Bolso serve na corrente: troca sem perguntar
-    if (op.rompe && op.ds.includes('trocar')) return perguntar(`O ${b} do Bolso não sincroniza com o seu ${fr}: a corrente de <b>${L}</b> rompe e o ${v} fica guardado.`, [['trocar', 'Trocar e romper']]);
+    if (op.rompe && op.ds.includes('trocar')) return romper();
     return perguntar(`O ${b} do Bolso não sincroniza com o seu ${fr}: trocar romperia a corrente.`, op.seguros.includes('corrente') ? [['corrente', `Pôr na corrente (${relDe(p, v)})`]] : []);
   }
   // a frase do dado escolhido, na linha da Mesa
@@ -1012,8 +1014,8 @@
         if (ds.includes('guardar')) botoes += bt('guardar', 'Guardar', 'no Bolso', ds.includes('corrente') ? 'btn-papel' : 'btn-mel');
         if (ds.includes('trocar')) botoes += bt('trocar', 'Trocar', `entra o ${b} · ${relTxt(b)}`, ds.includes('corrente') ? 'btn-papel' : 'btn-mel');
       } else {
-        botoes += bt('corrente', 'Na corrente', b !== null ? `rompe e guarda o ${b}` : 'rompe a corrente', 'btn-papel');
-        if (b !== null) botoes += bt('trocar', 'Trocar', `o ${b} rompe, o ${v} fica`, 'btn-papel');
+        // nenhuma opção salva a corrente: um botão só (o dado do Bolso fica onde está)
+        botoes += bt('corrente', 'Romper', b !== null ? `o ${b} fica no Bolso` : 'a corrente se perde', 'btn-papel');
       }
       return `<div class="status">${quem} pegou ${mini(v, skinDe(p))} <b>${v}</b>. Para onde ele vai?${ds.length ? '' : ' Nenhuma opção sincroniza.'}</div>
         <div class="botoes">${botoes}</div>`;
@@ -1456,8 +1458,15 @@
       if (jogo === j) rolarAVista();
       render(); talvezAutomato();
     };
-    el.addEventListener('click', () => { Som.desbloquear(); fechar(); });
-    setTimeout(fechar, j.estreia ? 6500 : 3200);   // a estreia tem uma frase a mais para ler
+    // na estreia e nos capítulos da história há o que ler (a regra do capítulo): o versus espera o "Vamos lá", não fecha
+    // sozinho, e os toques do primeiro meio segundo não contam (o toque que fechou o gibi caía nele e já começava a
+    // partida). Nas outras partidas, qualquer toque fecha, e ele fecha sozinho em 3,2 s
+    const espera = !!(j.estreia || j.historia), armadoEm = performance.now() + (espera ? 500 : 0);
+    el.addEventListener('click', e => {
+      if (performance.now() < armadoEm || (espera && !e.target.closest('.btn'))) return;
+      Som.desbloquear(); fechar();
+    });
+    if (!espera) setTimeout(fechar, 3200);
   }
 
   function mostrarFim() {

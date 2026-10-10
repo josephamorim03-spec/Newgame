@@ -34,8 +34,8 @@ async function lerGibi(pg, max = 80) {
   if (await pg.$('.gibi')) falha('o gibi não fechou');
   return [...new Set(vistos)];
 }
-// o "versus" fecha sozinho em ~3 s: se ele sumir no meio do clique, tudo bem
-async function passarVersus(pg) { await pg.waitForTimeout(300); const v = await pg.$('.versus'); if (v) await v.click({ timeout: 2000 }).catch(() => {}); await pg.waitForTimeout(2600); }
+// o "versus" dos capítulos espera o "Vamos lá" (há a regra do capítulo para ler) e ignora o primeiro meio segundo
+async function passarVersus(pg) { await pg.waitForTimeout(600); const v = await pg.$('.versus .btn'); if (v) await v.click({ timeout: 2000 }).catch(() => {}); await pg.waitForTimeout(400); }
 async function vencer(pg, cor, pts) {
   await pg.evaluate(([cor, pts]) => { const j = DiceDuel.jogo; j.pensando = false; j.token = Math.random(); j.vez = 0; j.fase = 'decidir'; j.cor[0] = cor; j.pts = pts; DiceDuel.ajustar({}); }, [cor, pts]);
   await pg.click('[data-acao="disparar"]');
