@@ -138,6 +138,9 @@ para quem não joga a história, pelo preço de hoje.
 
 Quem já comprou a carta recebe as moedas dela de volta, para não ganhar repetido.
 
+**Os combates:** a proposta de deck de cada bicho, com o porquê de cada carta e a curva medida no simulador, está em
+`docs/historia-combates.md` (aguarda o dono). A tabela abaixo é a do jogo de hoje.
+
 **As regras da casa** usam o que o motor já aceita (meta, deck do rival, quem abre, Bolso inicial, ritmo do rival)
 ou um ajuste no robô. Todas passam pelo simulador antes (`sim/`), como qualquer carta (§9).
 
