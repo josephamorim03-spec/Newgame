@@ -7,7 +7,7 @@
 
 ## 1. A ideia em uma frase
 
-Um duelo de dados 1×1, de 4 a 6 minutos. Os dois disputam a mesma Mesa e montam correntes de dados que
+Um duelo de dados 1×1, de 6 a 8 minutos (na meta 16). Os dois disputam a mesma Mesa e montam correntes de dados que
 se **sincronizam**. Cada um escolhe a hora de **disparar** a corrente, e um deck de até 3 cartas dá o tempero.
 
 ## 2. Regras
@@ -23,7 +23,8 @@ se **sincronizam**. Cada um escolhe a hora de **disparar** a corrente, e um deck
 4. **Disparar.** Com 3 dados ou mais, você dispara (marca pontos e zera a corrente) ou segura.
    Os pontos são 3 → 1, 4 → 2, 5 → 4, 6 → 6, e com 6 dados a corrente dispara sozinha.
 5. **Ruptura.** Se o dado que entra não sincroniza, a corrente se perde.
-6. **Vitória:** quem chega primeiro à meta (12 ou 16 pontos).
+6. **Vitória:** quem chega primeiro à meta (16, 20 ou 24 pontos; 16 é o padrão). Até a v0.11 havia a meta 12: curta
+   demais (~7 Mesas, dois disparos de 6 fechavam a partida) e as cartas eram queimadas cedo (`docs/balanceamento-cartas.md` §14).
 
 ### Por que é assim (medido)
 
@@ -49,7 +50,7 @@ Antes da partida, cada um monta um deck de **até 3 cartas**, cada uma valendo *
 | Virar | efeito | vira um dado (7 − valor); desfaz uma marca de Espelho | 54,1% |
 | Rerrolar | efeito | rola a Mesa toda; desfaz uma marca de Espelho | 55,1% |
 | Pressa | efeito | pega 2 dados nesta vez (só com 2+ na Mesa; o 2.º é opcional) | 58,1% |
-| Coringa | efeito | o próximo dado que entra numa corrente já começada entra com qualquer frente | 56,3% |
+| Coringa | efeito | o próximo dado que romperia a corrente entra **no lugar da frente**: a corrente não rompe nem cresce (v0.12) | 55,0% (meta 16) |
 | Sobrecarga ⚡ | efeito | +2 no próximo disparo de 4+ | — |
 | Pausa (v0.11) | efeito | passa a vez sem pegar dado nem disparar; corrente e Bolso ficam | — |
 | Reverso (v0.11) | efeito | inverte a corrente: ela cresce pela outra ponta (2+ dados) | — |
@@ -88,7 +89,7 @@ Cada regra abaixo aparece também no painel de Regras do jogo e é conferida por
 | Interferência + Sobrecarga | As duas valem: um disparo de 4 vale 2 + 2 − 1 = 3. |
 | Pedágio | Pega qualquer disparo, inclusive o de 3 e o automático de 6. Se os dois passarem da meta no mesmo disparo, vence quem disparou. |
 | Coringa + Âncora | Com o Coringa ativo nenhum dado rompe, então a Âncora não é gasta. |
-| Coringa | É gasto no primeiro dado que entra numa corrente **já começada**, mesmo que esse dado já sincronizasse. Corrente vazia e Bolso não gastam. |
+| Coringa | Não alonga a corrente (v0.12): o dado que romperia **troca a frente** e a corrente fica do mesmo tamanho (não completa o 6.º dado). É gasto no primeiro dado que entra numa corrente **já começada**, mesmo que esse dado já sincronizasse (aí ele entra normal, como mais um elo). Corrente vazia e Bolso não gastam. Até a v0.11 o dado entrava como mais um elo: jogando como gente (segurar a corrente de 5 contando com ele), o Coringa vencia 64,9% sozinho na meta 12 e estava nos 25 melhores decks da 16 (`docs/balanceamento-cartas.md` §14). |
 | Pressa | Precisa de 2+ dados na Mesa e não passa para a Mesa seguinte. Não se dispara entre os dois dados; o segundo é opcional ("Dispensar"). Se o primeiro completar 6, a corrente dispara sozinha e o segundo começa outra. |
 | Espelho | O dado chega virado (7 − valor) e não pode ir para o Bolso; Coringa e Âncora ainda valem. As etiquetas da Mesa e o aviso de ruptura já usam o valor virado. Virar (no dado marcado) e Rerrolar apagam a marca; Ajuste não. Pegar o próprio dado marcado desperdiça o Espelho. |
 | Fundo Falso | Só pega quando o dado vai para o Bolso. Na troca, os dois caem e a corrente não muda. |
@@ -316,7 +317,7 @@ da contagem do placar saem do acorde que está tocando agora. A corrente "canta"
 | Bolso / troca | "fump" de pano: guardado em segurança |
 | Disparo | um "fuuu" que sobe, arpejo da corrente e um acorde morno; os pontos voam até o placar com um tique por ponto |
 | Ruptura | os dados se espalham pelo feltro e duas notas descem: "ah, quase", sem susto |
-| Sua vez | dois sininhos discretos e o painel dá um pulinho |
+| Sua vez | dois sininhos discretos e o painel dá um pulinho; no online, três sininhos que sobem e um acorde (para ouvir de longe), também nos lembretes da vez |
 | Armadilha armada / revelada | brilho curto / "tchã-rã" mágico: surpresa curiosa, não punição |
 | Janela abrindo | papel; a música vai para o fundo (abafada) enquanto ela estiver aberta |
 | Vitória / derrota | fanfarra pequena / três notas descendo com acorde acolhedor |
@@ -367,6 +368,22 @@ uma lista curta: Continuar, a chave das ajudas, Regras e registro, Ajustes, Menu
 Desistir, que pede um segundo toque quando conta como derrota (contra o rival, depois do primeiro dado, e
 online). Deck, Loja e Online moram no menu principal. Fora da partida, o cabeçalho volta. A fala do rival sai do retrato e nunca cobre o Bolso nem o placar.
 
+**De quem é a vez (v0.12): óbvio de longe.** No teste com gente, um segundo de desatenção bastava para não saber,
+de volta à tela, se a vez era sua ou do rival (e no online o tempo da vez acabar é derrota). Agora:
+- **Selo de vez** no alto da Mesa, no lugar do título: "Sua vez" na sua cor, respirando; "Vez de Diana…" apagado, com
+  o contorno do rival. No online ele traz o relógio da vez sempre à vista (antes só nos 30 s finais, escondido no
+  "rodada · dados"), vermelho e pulsando nos 10 s finais.
+- **A Mesa acende na sua vez:** o feltro ganha um aro da sua cor que respira e um brilho sobre a madeira. Na vez do
+  rival, os dados da Mesa e a sua ficha esmaecem: o que está aceso é de quem joga.
+- **No online, a vez que chega avisa:** chamada "Sua vez · 45 s para jogar", três sininhos e vibração. A aba do navegador
+  vira "● Sua vez · 38 s". A vez é lembrada na metade do tempo (se nada foi escolhido) e nos 10 s finais ("Ainda é sua
+  vez: se o tempo acabar, você perde a partida"). Quem volta para a tela (outra aba, celular bloqueado) na sua vez vê
+  e ouve o aviso de novo.
+- **Bug corrigido:** o sininho da vez guardava a memória dentro do objeto do jogo; no online cada estado do servidor é
+  um objeto novo, então o aviso **nunca tocava no online**. A memória saiu do jogo, e a chave conta as vezes: abrir a
+  Mesa duas vezes seguidas (quem está atrás abre) também avisa.
+- No modo a dois no mesmo aparelho o selo não aparece (os dois são da casa); fica o pulinho do painel a cada troca.
+
 **Menu principal (v0.11).** O jogo abre nele: logo, nome, rating, nível e moedas, a escolha do rival (Diana ou
 Dona Coruja, com uma linha sobre o jeito dela e a meta), **Jogar** grande, Online e 2 jogadores, e uma fileira de
 ícones (Deck, Loja, Regras, Ajustes). É ali que a sessão se monta: Jogar começa contra o rival marcado; 2 jogadores
@@ -398,7 +415,7 @@ para 977"); a dois, não custa nada e só some. Online o relógio é o da sala (
 `docs/servidor.md`): quem cai tem o tempo de voltar e, se não volta, perde.
 
 **Partida** (modo e rival se escolhem no menu principal):
-- meta (12 ou 16);
+- meta (16, 20 ou 24; 20 e 24 rendem ×1,25 e ×1,5 de moedas na vitória);
 - ritmo do rival (calmo, normal, rápido).
 
 **Cartas e progresso:**

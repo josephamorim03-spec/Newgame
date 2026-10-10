@@ -19,7 +19,10 @@
     virar:         { nome: 'Virar', tipo: 'efeito', alvo: true, verbo: 'vira um dado', texto: 'Vire um dado da Mesa para a face oposta (7 − valor). Se o dado tinha a marca de um Espelho, a marca some.' },
     rerrolar:      { nome: 'Rerrolar', tipo: 'efeito', verbo: 'rola a Mesa', texto: 'Role de novo todos os dados que estão na Mesa. Se havia a marca de um Espelho, ela some.' },
     pressa:        { nome: 'Pressa', tipo: 'efeito', verbo: 'pega 2 dados', texto: 'Nesta vez você pega dois dados, um depois do outro, sem disparar no meio. Só com 2 dados ou mais na Mesa: não passa para a Mesa seguinte. O segundo dado é opcional.' },
-    coringa:       { nome: 'Coringa', tipo: 'efeito', verbo: 'próximo dado entra', texto: 'O próximo dado que entrar na sua corrente sincroniza com qualquer frente. Fica ativo até um dado entrar numa corrente já começada, e é gasto nele mesmo que ele já sincronizasse.' },
+    // Coringa (v0.12): o dado que não sincronizava TROCA a frente (a corrente não cresce). Entrando como mais um elo, ele
+    // garantia o 6.º dado de graça: com uso de gente (segurar a corrente de 5 contando com ele) vencia 64,9% sozinho na
+    // meta 12; trocando a frente, 55,0% na meta 16, como Ajuste e Pressa (docs/balanceamento-cartas.md §14)
+    coringa:       { nome: 'Coringa', tipo: 'efeito', verbo: 'troca a frente', texto: 'O próximo dado que não sincronizaria com a sua corrente entra no lugar da frente: a corrente não rompe, mas também não cresce. Fica ativo até um dado entrar numa corrente já começada, e é gasto nele mesmo que ele já sincronizasse (aí ele entra normal, como mais um elo).' },
     sobrecarga:    { nome: 'Sobrecarga', tipo: 'efeito', pontos: true, verbo: '+2 no disparo', texto: 'Seu próximo disparo de 4 dados ou mais vale +2. Disparo de 3 não a gasta. Pode ser usada também na hora de disparar.' },
     // v0.11 (docs/balanceamento-cartas.md): medidas no simulador com meta 12 e 16
     pausa:         { nome: 'Pausa', tipo: 'efeito', verbo: 'passa a vez', texto: 'Nesta vez você não pega dado nem dispara: a vez passa ao rival, e a sua corrente e o seu Bolso ficam como estão. Não vale no segundo dado da Pressa.' },
@@ -99,12 +102,19 @@
   const TITULOS = [[0, 'Aprendiz de mesa'], [1000, 'Jogador de chá'], [1150, 'Tecelão de correntes'], [1300, 'Mestre do Bolso'], [1450, 'Grão-mestre da Mesa']];
   const tituloDe = r => TITULOS.filter(t => r >= t[0]).pop()[1];
   const nivelDe = xp => NIVEIS.filter(x => xp >= x).length;
-  // moedas de uma vitória: base × margem (×1 a ×2) × rapidez em Mesas (×1 a ×1,5) [× rating do rival, no online]
+  // metas da partida (v0.12): 16, 20 ou 24 pontos. Na meta 12, dois disparos de 6 fechavam a partida em ~7 Mesas e
+  // queimar as cartas cedo compensava; a 16 é o padrão (~9,5 Mesas), 20 e 24 são partidas longas (~12 e ~14 Mesas).
+  // A 12 só existe para terminar uma partida guardada de antes (docs/balanceamento-cartas.md §14)
+  const METAS = [16, 20, 24], META_PADRAO = 16;
+  const metaValida = m => (METAS.includes(+m) ? +m : META_PADRAO);
+  // moedas de uma vitória: base × margem (×1 a ×2) × rapidez em Mesas (×1 a ×1,5) × duração (meta/16: a 20 rende ×1,25,
+  // a 24, ×1,5) [× rating do rival, no online]
   function moedasDaVitoria(base, margem, mesas, meta, ajusteRating = 1) {
     const mm = 1 + Math.min(1, Math.max(0, margem) / (meta * 2 / 3));
     const rapida = Math.round(meta * 5 / 12), normal = Math.round(meta * 6 / 12);
     const mr = mesas <= rapida ? 1.5 : mesas <= normal ? 1.25 : 1;
-    return { base, mm, mr, mrat: ajusteRating, total: Math.round(base * mm * mr * ajusteRating) };
+    const md = Math.max(1, meta / META_PADRAO);
+    return { base, mm, mr, md, mrat: ajusteRating, total: Math.round(base * mm * mr * md * ajusteRating) };
   }
   // online: vencer quem tem rating maior vale até ×1,5; atropelar quem tem rating bem menor, ×0,5 (contra smurf)
   const ajusteRatingOnline = (meu, rival) => 1 + Math.max(-0.5, Math.min(0.5, (rival - meu) / 400));
@@ -145,7 +155,7 @@
   const novoStats = () => ({ disp: 0, rupt: 0, maior: 0, maiorDisp: 0, compras: 0, guardou: 0, trocou: 0, cartas: [], blefes: 0 });
   const novoId = j => (j.proxId = (j.proxId || 1) + 1);
 
-  function criarPartida({ decks, vez = 0, meta = 12, nomes = ['Jogador 1', 'Jogador 2'], modo = 'bot', nivel = 'aprendiz', rng = null, idInicial = 1 }) {
+  function criarPartida({ decks, vez = 0, meta = META_PADRAO, nomes = ['Jogador 1', 'Jogador 2'], modo = 'bot', nivel = 'aprendiz', rng = null, idInicial = 1 }) {
     const j = {
       v: 8, modo, nivel, meta, nomes, decks: decks.map(d => d.slice()),
       cartas: decks.map(d => Object.fromEntries(d.map(c => [c, 'pronta']))),
@@ -316,7 +326,7 @@
       registrar(j, p, 'usou Rerrolar: a Mesa foi rolada de novo', 'seg');
       if (j.marca) desfazerEspelho(j, p);
     } else if (c === 'pressa') { j.extra[p] = 1; registrar(j, p, 'usou Pressa: pega dois dados nesta vez', 'seg'); }
-    else if (c === 'coringa') { j.coringa[p] = true; registrar(j, p, 'usou Coringa: o próximo dado entra com qualquer frente', 'seg'); }
+    else if (c === 'coringa') { j.coringa[p] = true; registrar(j, p, 'usou Coringa: o próximo dado que romperia troca a frente', 'seg'); }
     else if (c === 'sobrecarga') { j.sobre[p] = true; registrar(j, p, 'usou Sobrecarga: o próximo disparo de 4+ vale +2', 'seg'); }
     else if (c === 'reverso') {
       j.cor[p].reverse();
@@ -424,9 +434,12 @@
         const viaCoringa = eu.length && !r.length && j.coringa[p];
         // o Coringa só é gasto num dado que entra numa corrente já começada (o primeiro dado não precisa dele)
         if (eu.length) j.coringa[p] = false;
-        eu.push(entra);
-        registrar(j, p, `pôs ${entra}${deOnde} · ${viaCoringa ? 'Coringa' : r.length ? r.map(k => REL[k].nome).join(' + ') : 'começa a corrente'} · corrente de ${eu.length}`);
-        emitir(j, 'elo', { p, n: eu.length });
+        // pelo Coringa, o dado troca a frente: a corrente fica do mesmo tamanho (v0.12)
+        const trocada = viaCoringa ? eu[eu.length - 1] : null;
+        if (viaCoringa) eu[eu.length - 1] = entra; else eu.push(entra);
+        registrar(j, p, viaCoringa ? `pôs ${entra}${deOnde} · Coringa: trocou a frente ${trocada} · corrente de ${eu.length}`
+          : `pôs ${entra}${deOnde} · ${r.length ? r.map(k => REL[k].nome).join(' + ') : 'começa a corrente'} · corrente de ${eu.length}`);
+        emitir(j, 'elo', { p, n: eu.length, coringa: !!viaCoringa });
         if (salvouPeloBolso) { emitir(j, 'salvo', { p, txt: 'O Bolso salvou a corrente' }); momento(j, p, '❀', `O Bolso salvou uma corrente de ${eu.length - 1}`); }
       } else if (j.armada[p] === 'ancora' && eu.length >= 4) {
         revelar(j, p, 'ancora', `o ${entra} não sincronizava com ${frente(eu)}: foi descartado e a corrente de ${eu.length} ficou.`);
@@ -606,7 +619,7 @@
   return {
     PONTOS, LIM, NA_MESA, REL, CARTAS, ORDEM, pedagioDe, deckValido, rels, sinc, frente, encaixa, facesQueEncaixam, opcoes, pontos, harmonica,
     GRATIS, PRECO_CARTA, CATALOGO, NIVEIS, PRESENTES, RATING_RIVAL, TETO_MOEDAS, BASE_MOEDAS, TITULOS, tituloDe, nivelDe,
-    moedasDaVitoria, ajusteRatingOnline, elo, premioSolo, xpDaPartida, ganharXp, precoDe,
+    METAS, META_PADRAO, metaValida, moedasDaVitoria, ajusteRatingOnline, elo, premioSolo, xpDaPartida, ganharXp, precoDe,
     criarPartida, usarRng, encaixaP, destinos, destinosValidos, seguro, bolsoGarante, marcadoContra, valorAoPegar, seguroDado,
     blefando, usavel, armadilhasOcultas, podeUsar, podeVirar, virarCarta, usarCarta, DESAFIO, desafiavel, podeDesafiar, desafiar,
     tirar, pegar, pegarPara, destinosDoDado, colocar, dispensarSegundo, disparar, segurar, proximo, terminar, desistir, aplicar, visaoDe,

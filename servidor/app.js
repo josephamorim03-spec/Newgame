@@ -360,7 +360,7 @@ function criarApp({ banco, segredo, raiz = path.join(__dirname, '..'), tempos = 
     if (b.cfg && typeof b.cfg === 'object') {
       const um = (v, ok, padrao) => (ok.includes(v) ? v : padrao);
       ex.cfg = { modo: um(b.cfg.modo, ['bot', 'local'], 'bot'), nivel: um(b.cfg.nivel, ['aprendiz', 'esperto'], 'aprendiz'),
-        meta: b.cfg.meta === 16 ? 16 : 12, ritmo: um(b.cfg.ritmo, ['calmo', 'normal', 'rapido'], 'normal') };
+        meta: Regras.metaValida(b.cfg.meta), ritmo: um(b.cfg.ritmo, ['calmo', 'normal', 'rapido'], 'normal') };
     }
     if (typeof b.deckVisto === 'boolean') ex.deckVisto = b.deckVisto;
     ex.em = Date.now();
@@ -404,7 +404,8 @@ function criarApp({ banco, segredo, raiz = path.join(__dirname, '..'), tempos = 
   // ---------- partidas contra os rivais do jogo (jogadas no aparelho; teto diário de moedas) ----------
   app.post('/api/solo', limSolo, exigirConta, assincrono(async (req, res) => {
     const b = req.body || {};
-    const meta = b.meta === 16 ? 16 : 12;
+    // a meta 12 ainda chega de uma partida guardada antes da v0.12
+    const meta = b.meta === 12 ? 12 : Regras.metaValida(b.meta);
     const ok = typeof b.nivel === 'string' && Object.hasOwn(Regras.RATING_RIVAL, b.nivel) && typeof b.venceu === 'boolean'
       && Number.isInteger(b.margem) && b.margem >= 0 && b.margem <= meta + 9
       && Number.isInteger(b.rodadas) && b.rodadas >= 1 && b.rodadas <= 80

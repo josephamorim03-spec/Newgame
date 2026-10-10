@@ -663,3 +663,57 @@ como antes; a Diana desafia com metade da chance e blefa às vezes (25%), para q
 
 Reproduzir: `cd sim && python3 profundidade.py profundidade leitura blefe decisoes cartas armadilhas` e
 `DESAFIO='{"acerto":2,"erro":2,"bonus":3}' python3 profundidade.py desafio` (N, ROLL, PROCS no topo do arquivo).
+
+## 14. Meta 16, 20 ou 24 e o Coringa que troca a frente (v0.12)
+
+**O que o teste com gente disse.** Na meta 12 a partida acaba cedo (~7 Mesas): dois disparos de 6 fecham o jogo, e
+o jogador "queima" as cartas logo, porque não há tempo para guardá-las. E o Coringa pareceu roubado.
+
+**Por que o simulador não via o Coringa.** O robô só usava o Coringa quando nenhum dado da Mesa servia. Gente usa de
+outro jeito: com o Coringa na mão, segura a corrente de 5 sem medo, porque ele garante o 6.º dado (e o 6.º vale +6 e
+dispara sozinho). O robô ganhou esse jeito de jogar (`coringa_seguro` em `sim/deck.py`: o Coringa na mão conta como
+seguro, como um Bolso que serve) e o número apareceu.
+
+**Coringa sozinho contra deck vazio** (12.000 partidas; 50% = carta neutra):
+
+| Meta | Coringa até a v0.11, robô | até a v0.11, jogando como gente | só até corrente de 4 | só até corrente de 3 | **troca a frente (v0.12)** |
+|---|---|---|---|---|---|
+| 12 | 56,5% | **64,9%** | 63,3% | 62,4% | 58,9% |
+| 16 | 53,9% | 58,2% | 60,0% | 59,4% | **55,0%** |
+| 20 | 53,6% | 55,3% | 56,0% | 56,4% | 52,8% |
+| 24 | 52,9% | 55,5% | 55,3% | 56,0% | 53,0% |
+
+Para comparar, na meta 16: Ajuste 55,0%, Virar 53,9%, Pressa 53,8%, Âncora 51,7%.
+- **Limitar o tamanho da corrente não resolve:** o problema não é o 6.º dado, é o Coringa tirar todo o risco de
+  segurar. Com o limite, ele só muda de lugar (garante o 5.º).
+- **Trocar a frente resolve:** o dado que romperia entra **no lugar da frente**, e a corrente fica do mesmo tamanho.
+  O Coringa continua salvando uma corrente grande da ruptura (o que ele sempre prometeu), mas não dá mais um elo de
+  graça. O dado que já sincroniza entra normal e gasta o Coringa (a regra de gasto não mudou).
+
+**Os 402 decks** (as 15 cartas, 1.200 partidas por deck, o robô usando o Coringa como gente; os 8 melhores confirmados
+com 6.000):
+
+| | Coringa antigo, meta 16 | **Coringa novo, meta 16** | Coringa novo, meta 20 | Coringa novo, meta 24 |
+|---|---|---|---|---|
+| Coringa nos 25 melhores | **25 de 25** | 12 | 12 | 12 |
+| Vitória média dos decks com ele | **53,8%** (a maior) | 50,7% (5.ª) | 49,5% | 50,9% |
+| Melhor deck (confirmado) | 62,7% Ajuste + Coringa + Pressa | 59,2% Ajuste + Coringa + Pressa | 61,1% Ajuste + Âncora + Sobrecarga | 59,0% Ajuste + Âncora + Coringa |
+| Decks acima de 58% (1.200 partidas) | 10 | **0** | 15 | 4 |
+| Desvio entre decks | 0,037 | 0,029 | 0,046 | 0,029 |
+
+**Duração** (Mesas por partida, média): meta 12 → 7,0; **16 → 9,5**; 20 → 11,8; 24 → 14,0. Com 35 a 50 s por Mesa (o que
+dava os 4 a 6 minutos da 12), a 16 fica em 6 a 8 minutos.
+
+**A decisão:**
+- **Metas 16 (padrão), 20 e 24.** A 12 saiu: quem a tinha marcada passa para a 16. Uma partida guardada na 12 ainda
+  termina na 12 (o servidor aceita esse resultado), mas nenhuma partida nova começa nela.
+- **Coringa troca a frente** em qualquer meta.
+- **Moedas por duração:** a vitória na meta 20 rende ×1,25 e na 24, ×1,5 (a rapidez em Mesas já escala com a meta).
+
+**A observar na meta 20.** As cartas ⚡ ficam fortes: Sobrecarga em 13 e Pedágio em 12 dos 25 melhores decks (médias
+54,8% e 54,9%). A conta: 20 = 6 + 6 + 6 + 2, então um +2 poupa um disparo inteiro (na 16 e na 24, múltiplos de 4 e de
+6, isso acontece menos). Se o teste com gente confirmar, o caminho é o mesmo do Pedágio na v0.11: mexer no número só
+dessa meta.
+
+Reproduzir: `cd sim && BAL='{"coringa_seguro":true}' NOVAS=pausa,reverso,furto,lacre CONFIRMA=6000 python3 decks.py`
+(com `META=20` ou `META=24`; `BAL='{"coringa_modo":"entra","coringa_seguro":true}'` é o Coringa antigo).

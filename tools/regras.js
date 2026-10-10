@@ -63,6 +63,14 @@ const RAIZ = path.join(__dirname, '..');
   await cena([['coringa'], []], () => { const j = DiceDuel.jogo; j.vez = 0; j.fase = 'pegar'; j.cor[0] = []; j.bolso[0] = 1; j.mesa = [{ id: 9301, v: 4 }, { id: 9302, v: 1 }]; });
   await usar('coringa'); await pegar(0); j = await J();
   confere(j.coringa[0] === true && j.cor[0].join() === '4', 'Coringa: continua ativo depois do primeiro dado da corrente');
+  // 3b. Coringa (v0.12): o dado que romperia troca a frente, e a corrente não cresce (não completa o 6.º dado de graça)
+  await cena([['coringa'], []], () => { const j = DiceDuel.jogo; j.vez = 0; j.fase = 'pegar'; j.cor[0] = [1, 2, 3, 4, 5]; j.bolso[0] = 3; j.mesa = [{ id: 9311, v: 1 }, { id: 9312, v: 1 }]; });
+  await usar('coringa'); await pegar(0); j = await J();
+  confere(j.coringa[0] === false && j.cor[0].join() === '1,2,3,4,1' && j.pts[0] === 0, `Coringa: o dado que romperia troca a frente e a corrente fica com 5 (${j.cor[0].join()})`);
+  // 3c. ... e um dado que já sincroniza entra normal, como mais um elo (o Coringa é gasto nele)
+  await cena([['coringa'], []], () => { const j = DiceDuel.jogo; j.vez = 0; j.fase = 'pegar'; j.cor[0] = [2, 3]; j.bolso[0] = 6; j.mesa = [{ id: 9321, v: 4 }, { id: 9322, v: 1 }]; });
+  await usar('coringa'); await pegar(0); j = await J();
+  confere(j.coringa[0] === false && j.cor[0].join() === '2,3,4', `Coringa: um dado que já sincroniza entra como mais um elo (${j.cor[0].join()})`);
 
   // 4. Espelho: as dicas e o aviso usam o valor virado
   await cena([[], ['espelho']], () => {

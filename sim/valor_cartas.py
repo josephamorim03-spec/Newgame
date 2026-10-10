@@ -9,7 +9,7 @@ if NOVAS:
 else:
     import deck as D
 N = int(sys.argv[1]) if len(sys.argv) > 1 else 16000
-META = int(os.environ.get("META", "12"))   # meta da partida (12 ou 16)
+META = int(os.environ.get("META", "16"))   # meta da partida (16, 20 ou 24; 12 era a de antes da v0.12)
 def valor(c):
     random.seed(9); w = 0; usos = 0
     for i in range(N):

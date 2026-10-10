@@ -303,6 +303,10 @@
     virar: () => { papel(0, true, 0.08); papel(0.1, false, 0.07); impacto({ ini: 0.2, forca: 0.25, feltro: 0.5 }); },
     momento: () => { kalimba(notaAcorde(7), 0, 0.13); kalimba(notaAcorde(9), 0.08, 0.11); },        // "bom momento": sininho de recompensa
     vez: () => { tom({ freq: notaAcorde(5), dur: 0.5, ganho: 0.045, reverbAmt: 0.5 }); tom({ freq: notaAcorde(7), ini: 0.1, dur: 0.6, ganho: 0.04, reverbAmt: 0.5 }); }, // sua vez: aviso discreto
+    suaVez: () => {                                                                                 // sua vez no online: três sininhos que sobem e um acorde, para ouvir de longe
+      [3, 5, 7].forEach((g, i) => kalimba(notaAcorde(g + 2), i * 0.09, 0.16, null, (i - 1) * 0.3));
+      tom({ freq: notaAcorde(5), ini: 0.2, dur: 0.8, ganho: 0.06, reverbAmt: 0.5 }); tom({ freq: notaAcorde(7), ini: 0.26, dur: 0.9, ganho: 0.05, reverbAmt: 0.5 });
+    },
     bloqueio: () => { impacto({ forca: 0.4, brilho: 0.85 }); kalimba(notaAcorde(4), 0.05, 0.14); },
     abrir: () => { papel(0, true, 0.1); abafar(true); },                                           // janela abre: papel e a música vai para o fundo
     fechar: () => { papel(0, false, 0.08); abafar(false); },

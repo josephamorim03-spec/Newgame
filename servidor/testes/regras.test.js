@@ -308,14 +308,39 @@ test('Blefe que passa: desvirar um blefe que ninguém desafiou rende 3; só a pa
   assert.strictEqual(j.vez, 0);   // a Pausa agiu: passou a vez
 });
 test('Desafio e blefe podem fechar a partida', () => {
-  const j = rivalComVirada('ajuste'); j.pts = [11, 0];
+  const j = rivalComVirada('ajuste'); j.pts = [j.meta - 1, 0];
   assert.strictEqual(Regras.aplicar(j, 0, { tipo: 'desafiar' }).resultado, 'fim');
   assert.strictEqual(j.vencedor, 0);
-  const k = rivalComVirada('fundo'); k.pts = [0, 10];
+  const k = rivalComVirada('fundo'); k.pts = [0, k.meta - 2];
   assert.strictEqual(Regras.aplicar(k, 0, { tipo: 'desafiar' }).resultado, 'fim');
   assert.strictEqual(k.vencedor, 1);
   const b = Regras.criarPartida({ decks: [['coringa'], ['pausa', 'fundo']], vez: 1, rng: rngDe(8) });
-  Regras.virarCarta(b, 1, 'pausa'); Regras.proximo(b); Regras.proximo(b); b.pts = [0, 9];
+  Regras.virarCarta(b, 1, 'pausa'); Regras.proximo(b); Regras.proximo(b); b.pts = [0, b.meta - 3];
   assert.strictEqual(Regras.usarCarta(b, 1, 'pausa'), 'fim');
   assert.strictEqual(b.vencedor, 1);
+});
+
+// ---------- v0.12: metas 16, 20 e 24; o Coringa troca a frente ----------
+test('Metas: 16, 20 e 24 (16 é o padrão); 12 e lixo viram 16; partidas longas rendem mais moedas', () => {
+  assert.deepStrictEqual(Regras.METAS, [16, 20, 24]);
+  assert.strictEqual(Regras.criarPartida({ decks: [[], []], rng: rngDe(1) }).meta, 16);
+  for (const [m, v] of [[16, 16], [20, 20], [24, 24], ['24', 24], [12, 16], [undefined, 16], ['muito', 16]]) assert.strictEqual(Regras.metaValida(m), v);
+  const a = Regras.moedasDaVitoria(10, 0, 30, 16).total, b = Regras.moedasDaVitoria(10, 0, 30, 20).total, c = Regras.moedasDaVitoria(10, 0, 30, 24).total;
+  assert.deepStrictEqual([a, b, c], [10, 13, 15]);
+  assert.strictEqual(Regras.moedasDaVitoria(10, 0, 30, 12).total, 10);   // partida guardada de antes da v0.12: sem desconto
+});
+test('Coringa: o dado que romperia troca a frente; a corrente não cresce nem completa o 6.º', () => {
+  const j = Regras.criarPartida({ decks: [['coringa'], []], vez: 0, rng: rngDe(3) });
+  j.cor[0] = [1, 2, 3, 4, 5]; j.bolso[0] = 3; j.mesa = [{ id: 70, v: 1 }, { id: 71, v: 1 }];
+  Regras.usarCarta(j, 0, 'coringa');
+  Regras.pegarPara(j, 0, 0, 'corrente');
+  assert.deepStrictEqual(j.cor[0], [1, 2, 3, 4, 1]);
+  assert.strictEqual(j.coringa[0], false);
+  assert.strictEqual(j.pts[0], 0);
+  // um dado que já sincroniza entra normal (e gasta o Coringa)
+  const k = Regras.criarPartida({ decks: [['coringa'], []], vez: 0, rng: rngDe(4) });
+  k.cor[0] = [2, 3]; k.mesa = [{ id: 72, v: 4 }, { id: 73, v: 1 }];
+  Regras.usarCarta(k, 0, 'coringa'); Regras.pegarPara(k, 0, 0, 'corrente');
+  assert.deepStrictEqual(k.cor[0], [2, 3, 4]);
+  assert.strictEqual(k.coringa[0], false);
 });

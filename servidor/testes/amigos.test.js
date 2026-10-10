@@ -279,8 +279,8 @@ test('Postgres: chaves antigas migram, nome único, amizades e posição no rank
 test('fila por rating: a janela abre com a espera e a meta separa as filas', () => {
   let t = 0;
   const f = new Fila({ agora: () => t, opcoes: { janelaInicial: 100, crescePorSegundo: 10, janelaMaxima: 400, qualquerApos: 60_000 } });
-  f.entrar({ id: 1, rating: 1000 }); f.entrar({ id: 2, rating: 1250 }); f.entrar({ id: 3, rating: 1080, meta: 16 });
-  assert.deepStrictEqual(f.parear(), []);                   // 250 de diferença, janela 100; a meta 16 não junta com a 12
+  f.entrar({ id: 1, rating: 1000 }); f.entrar({ id: 2, rating: 1250 }); f.entrar({ id: 3, rating: 1080, meta: 20 });
+  assert.deepStrictEqual(f.parear(), []);                   // 250 de diferença, janela 100; a meta 20 não junta com a 16
   t = 10_000;                                               // janela 200
   assert.deepStrictEqual(f.parear(), []);
   t = 15_000;                                               // janela 250

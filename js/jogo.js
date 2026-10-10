@@ -101,7 +101,7 @@
   let uid = 1;
   const PREF_PADRAO = { som: true, musica: true, volSom: 0.8, volMusica: 0.45, animacoes: true, particulas: true, tremor: true, vibrar: true, falas: true, dicas: true, liberar: false, ajudasV11: true };
   const st = {
-    cfg: { modo: 'bot', nivel: 'aprendiz', meta: 12, ritmo: 'normal', tempoOnline: 'rapida' },
+    cfg: { modo: 'bot', nivel: 'aprendiz', meta: R.META_PADRAO, ritmo: 'normal', tempoOnline: 'rapida' },
     pref: { ...PREF_PADRAO },
     decks: [['ajuste', 'coringa', 'pressa'], ['ancora', 'coringa', 'interferencia']],
     rec: { partidas: 0, vitorias: 0, seq: 0, melhorSeq: 0, maiorDisparo: 0, maiorCorrente: 0 },
@@ -114,6 +114,7 @@
   try {
     const s = JSON.parse(localStorage.getItem('diceduel.v1') || '{}');
     if (s.cfg) Object.assign(st.cfg, s.cfg);
+    st.cfg.meta = R.metaValida(st.cfg.meta);   // v0.12: a meta 12 saiu (quem a tinha marcada passa para a 16)
     if (s.pref) Object.assign(st.pref, s.pref);
     // v0.11: as ajudas voltam ligadas uma vez para todo mundo (são o padrão); quem desligar de novo, fica desligado
     if (s.pref && !s.pref.ajudasV11) { st.pref.dicas = true; st.pref.ajudasV11 = true; }
@@ -443,7 +444,7 @@
       virar: e.antes != null ? `${quem} virou um ${e.antes} da Mesa: agora é ${e.depois}` : `${quem} virou um dado da Mesa`,
       rerrolar: `${quem} rolou a Mesa de novo`,
       pressa: `${quem} vai pegar dois dados nesta vez`,
-      coringa: `o próximo dado de ${quem} entra com qualquer frente`,
+      coringa: `o próximo dado de ${quem} que romperia troca a frente da corrente`,
       sobrecarga: `o próximo disparo de 4+ de ${quem} vale +2`,
       pausa: `${quem} passou a vez sem pegar dado`,
       reverso: `a corrente de ${quem} agora cresce pela outra ponta${e.frente ? ` (frente: ${e.frente})` : ''}`,
@@ -687,14 +688,14 @@
     const vale = pontos(L) + (j.sobre[p] && L >= 4 ? 2 : 0);
     const valeAgora = L >= 3 ? `disparar vale <b>+${vale}</b>` : L ? `faltam <b>${3 - L}</b> para disparar` : 'qualquer dado começa';
     const seCrescer = L >= 3 && L < LIM ? ` · com ${L + 1}: <b>+${pontos(L + 1)}</b>` : '';
-    const pensa = daVez && !humano(p) && !(online() && j.perfis[1].conectado === false);
+    // os pontinhos de "pensando…" moram no selo de vez, no alto da Mesa (no painel, em 360 px, estouravam com placar de 2 dígitos)
     const caiu = p === 1 && rivalCaiu(), sv = caiu ? segundosVolta() : null;
     const tag = j.fase === 'fim' ? (j.vencedor === p ? 'venceu' : '') : caiu ? (sv === null ? 'caiu' : `caiu · <span class="volta-rival">${sv}</span> s`)
       : daVez ? (humano(p) ? (j.modo !== 'local' ? 'sua vez' : 'vez') : online() ? 'jogando' : 'pensando') : '';
     const avatar = j.modo === 'bot' && p === 1 ? Retratos.retrato(RETRATO_RIVAL[j.nivel], j.humor || '') : p === 0 ? iconeSVG(st.conta.icone) : online() ? iconeSVG(j.perfis[1].icone) : '';
     const fala = j.modo === 'bot' && p === 1 && j.fala ? `<div class="fala" aria-live="polite">${j.fala.txt}</div>` : '';
     return `<div class="jogador p${p}${daVez ? ' da-vez' : ''}">${fala}
-      <div class="cab">${avatar}<span class="quem"><span class="nome">${n[p]}</span>${tag ? `<span class="vez-tag${pensa ? ' pensando-pontos' : ''}">${tag}</span>` : ''}</span>
+      <div class="cab">${avatar}<span class="quem"><span class="nome">${n[p]}</span>${tag ? `<span class="vez-tag">${tag}</span>` : ''}</span>
         ${bolsoHTML(p)}<span class="placar"><b data-placar="${p}">${j.pts[p]}</b><small>/${j.meta}</small></span></div>
       <div class="barra" role="progressbar" aria-valuemin="0" aria-valuemax="${j.meta}" aria-valuenow="${j.pts[p]}" aria-label="Pontos de ${n[p]}"><i style="width:${pct}%"></i>${prev ? `<span class="prev" style="left:${pct}%;width:${prev}%"></span>` : ''}</div>
       <div class="corrente${fx ? ' fx-' + fx.tipo : L >= 5 ? ' fervendo' : L >= 4 ? ' quente' : ''}" style="--fase:-${Math.round(performance.now() % 1800)}ms">${slots}</div>
@@ -721,7 +722,7 @@
         if (!dicas) tags = '';
         else if (!eu.length) tags = `<span class="tag inicio">Começa</span>`;
         else if (r.length) tags = `<span class="tag ${r.length > 1 ? 'duplo' : 'r-' + r[0]}">${r.map(k => `<span class="tnome">${REL[k].simb}</span><span class="tnome curta"> ${REL[k].nome}</span>`).join(' ')}</span>`;
-        else if (cabe) tags = `<span class="tag r-coringa">${CHAPEU}<span class="tnome curta"> Coringa</span></span>`;
+        else if (cabe) tags = `<span class="tag r-coringa" title="Coringa: troca a frente">${CHAPEU}<span class="tnome curta"> Coringa</span></span>`;
         else if (salvo) tags = `<span class="tag inicio">Bolso</span>`;
         else tags = `<span class="tag rompe">✕<span class="tnome curta"> Rompe</span></span>`;
         if (contra && dicas) tags = `<span class="tag previa">vira ${vv}</span>` + tags;
@@ -778,7 +779,7 @@
     }
     if (j.fase === 'destino' && j.mao) {
       const v = j.mao.v, ds = destinos(p, v), b = j.bolso[p];
-      const relTxt = x => { const r = eu.length ? rels(frente(eu), x) : []; return r.length ? r.map(k => REL[k].nome).join(' + ') : (eu.length && j.coringa[p] ? 'Coringa' : 'começa a corrente'); };
+      const relTxt = x => { const r = eu.length ? rels(frente(eu), x) : []; return r.length ? r.map(k => REL[k].nome).join(' + ') : (eu.length && j.coringa[p] ? `Coringa: troca o ${frente(eu)}` : 'começa a corrente'); };
       const bt = (modo, rot, sub, cls) => `<button class="btn btn-duplo ${cls}" data-destino="${modo}"><span>${rot}</span><small>${sub}</small></button>`;
       let botoes = '';
       if (ds.length) {
@@ -825,7 +826,7 @@
     const iSel = j.sel !== null && j.sel !== undefined ? idxDe(j.sel) : -1;
     if (j.fase === 'pegar' && iSel >= 0) {
       const op = opcoesDoDado(p, iSel), b = j.bolso[p], L = eu.length;
-      const relTxt = x => { const r = L ? rels(frente(eu), x) : []; return r.length ? r.map(k => REL[k].nome).join(' + ') : (L && j.coringa[p] ? 'Coringa' : 'começa a corrente'); };
+      const relTxt = x => { const r = L ? rels(frente(eu), x) : []; return r.length ? r.map(k => REL[k].nome).join(' + ') : (L && j.coringa[p] ? `Coringa: troca o ${frente(eu)}` : 'começa a corrente'); };
       const bt = (modo, rot, sub, cls) => `<button class="btn btn-duplo ${cls}" data-destino="${modo}"><span>${rot}</span><small>${sub}</small></button>`;
       const ancora = j.armada[p] === 'ancora' && L >= 4;
       let aviso = '', botoes = '';
@@ -852,7 +853,7 @@
     if (j.segundoDado) msg = `escolha o segundo dado (Pressa) ou dispense${eu.length >= 3 ? ' e vá para o disparo' : ''}.`;
     else if (!algumSeguro) msg = `<b>nenhum dado sincroniza</b> com o seu ${frente(eu)}, nem o do Bolso. Use uma carta ou escolha um: a corrente de ${eu.length} rompe${j.armada[p] === 'ancora' && eu.length >= 4 ? ', mas a sua Âncora está armada' : ''}.`;
     else if (!ajudas) msg = 'escolha um dado.';
-    else msg = eu.length ? `escolha um dado. Sua frente é <b>${frente(eu)}</b>: sincronizam ${j.coringa[p] ? 'todos (Coringa)' : facesQueEncaixam(eu).join(', ')}.` : 'escolha um dado. Sua corrente está vazia: qualquer um começa.';
+    else msg = eu.length ? `escolha um dado. Sua frente é <b>${frente(eu)}</b>: sincronizam ${facesQueEncaixam(eu).join(', ')}${j.coringa[p] ? '; os outros trocam a frente (Coringa)' : ''}.` : 'escolha um dado. Sua corrente está vazia: qualquer um começa.';
     const prontas = j.decks[p].filter(c => usavel(p, c)).length;
     const dispensa = j.segundoDado ? `<div class="botoes"><button class="btn btn-papel" data-acao="dispensar">Dispensar o 2.º dado</button></div>` : '';
     return `<div class="status">${quem}, ${msg}</div>${dispensa}${prontas && ajudas ? `<p class="nota" style="margin:0">Toque numa carta sua para usar (${prontas} ${prontas === 1 ? 'pronta' : 'prontas'}).</p>` : ''}`;
@@ -885,6 +886,65 @@
       Fx.chamada('Dá para blefar', `toque num efeito e vire para baixo: para o rival é um "?"; se ninguém desafiar, ele rende +${R.DESAFIO.bonus}`, 'suave', { ms: 5200 });
     }
   }
+  // ---------- de quem é a vez: óbvio de longe (v0.12) ----------
+  // Na sua vez a Mesa acende (a moldura de feltro ganha a sua cor, respirando) e o selo no alto da Mesa diz "Sua vez";
+  // na vez do rival a Mesa esmaece e o selo diz de quem é. No online o selo traz o relógio da vez, a aba do navegador
+  // avisa ("● Sua vez"), a vez é lembrada na metade do tempo e nos 10 s finais (o tempo acabar é derrota), e quem
+  // volta para a tela (outra aba, celular bloqueado) na sua vez ouve e vê o aviso de novo.
+  const TITULO = document.title;
+  // aviso: em quantos segundos da vez foi o último aviso (os lembretes só tocam abaixo dele, uma vez cada)
+  const Vez = { idp: undefined, chave: undefined, aviso: null };
+  // 'minha' | 'rival' | null (no modo a dois, os dois são da casa: o selo não aparece)
+  const vezDoAparelho = j => (!j || j.fase === 'fim' || j.intro || j.modo === 'local' ? null : j.vez === 0 ? 'minha' : 'rival');
+  const segundosDaVez = j => (online() && j.prazoAte && !rivalCaiu() ? Math.max(0, Math.ceil((j.prazoAte - Date.now()) / 1000)) : null);
+  function seloVez(j) {
+    const el = document.getElementById('seloVez'), quem = vezDoAparelho(j);
+    document.body.classList.toggle('vez-minha', quem === 'minha');
+    document.body.classList.toggle('vez-rival', quem === 'rival');
+    el.hidden = !quem;
+    if (!quem) { document.title = TITULO; return; }
+    const s = segundosDaVez(j), tempo = s === null ? '' : `<span class="selo-tempo">${s} s</span>`;
+    const pensa = quem === 'rival' && !rivalCaiu() && s === null ? '<span class="pensando-pontos" aria-hidden="true"></span>' : '';
+    el.className = `selo-vez ${quem}${s !== null && s <= 10 ? ' urgente' : ''}`;
+    el.innerHTML = quem === 'minha' ? `<b>Sua vez</b>${tempo}` : `<b>Vez de ${nomes()[1]}</b>${rivalCaiu() ? '<span class="selo-tempo">caiu</span>' : tempo}${pensa}`;
+    document.title = online() && quem === 'minha' ? `● Sua vez${s === null ? '' : ` · ${s} s`} · ${TITULO}` : TITULO;
+  }
+  function pulinho(el, forte = false) {
+    if (el && Fx.cfg.animacoes) el.animate([{ transform: 'none' }, { transform: forte ? 'translateY(-6px) scale(1.03)' : 'translateY(-4px) scale(1.012)' }, { transform: 'none' }], { duration: forte ? 480 : 380, easing: 'cubic-bezier(.3,1.5,.5,1)' });
+  }
+  function avisarVez(sub = '', forte = false) {
+    const s = segundosDaVez(jogo);
+    Vez.aviso = { chave: Vez.chave, s: s === null ? Infinity : s };
+    Som.tocar('suaVez'); vibrar(forte ? [60, 60, 60, 60, 90] : [40, 50, 40]);
+    pulinho(document.getElementById('seloVez'), true);
+    if (!document.hidden && !inicioAberto()) Fx.chamada(forte ? 'Ainda é sua vez' : 'Sua vez', sub, 'vez-chamada de-jogo', { ms: forte ? 1800 : 1100 });
+  }
+  function chegouAVez(j) {
+    pulinho(document.getElementById('pj' + (j.modo === 'local' ? j.vez : 0)));
+    if (!online()) { Som.tocar('vez'); return; }
+    const s = segundosDaVez(j);
+    avisarVez(s === null ? '' : `${s} s para jogar`);
+  }
+  // os lembretes da vez no online: na metade do tempo (se nada foi escolhido) e nos 10 s finais (sempre). Por faixa, não
+  // pelo segundo exato: com a aba em segundo plano o relógio pula segundos
+  function lembrarVez(j) {
+    const s = segundosDaVez(j);
+    if (s === null || vezDoAparelho(j) !== 'minha' || j.pensando) return;
+    const ultimo = Vez.aviso && Vez.aviso.chave === Vez.chave ? Vez.aviso.s : Infinity;
+    const metade = Math.floor(Math.round((j.limiteVez || 45000) / 1000) / 2);
+    if (s <= 10 && ultimo > 10) avisarVez(`${s} s: se o tempo acabar, você perde a partida`, true);
+    else if (s > 10 && s <= metade && ultimo > metade && j.sel == null && j.fase === 'pegar') avisarVez(`${s} s para jogar`);
+  }
+  document.addEventListener('visibilitychange', () => {
+    if (!jogo) return;
+    seloVez(jogo);
+    // de volta à tela na sua vez: o aviso de novo (antes passava despercebido)
+    if (!document.hidden && online() && vezDoAparelho(jogo) === 'minha' && !jogo.pensando) {
+      const s = segundosDaVez(jogo);
+      setTimeout(() => avisarVez(s === null ? '' : `${s} s para jogar`, s !== null && s <= 10), 250);
+    }
+  });
+
   function render() {
     if (!jogo) return;
     const j = jogo;
@@ -918,15 +978,17 @@
     if (j.modo === 'online' && j.fase !== 'fim' && inicioAberto()) esconderInicio();
     if (j.fase !== 'fim' && Som.musica.cenaAtual === 'fim') Som.musica.cena('jogo');
     Som.musica.intensidade(Math.max(j.pts[0], j.pts[1]) / j.meta);
-    // a vez chegou a um humano: um sininho discreto e o painel dá um pulinho (no modo 2 jogadores, a cada troca)
-    const chave = j.fase === 'fim' || j.intro ? null : j.vez;
-    if (chave !== j.ultimaVez) {
-      const antes = j.ultimaVez; j.ultimaVez = chave;
-      if (chave !== null && antes !== undefined && humano(chave) && (j.modo === 'local' || antes !== null)) {
-        Som.tocar('vez');
-        const pj = document.getElementById('pj' + chave);
-        if (pj && Fx.cfg.animacoes) pj.animate([{ transform: 'none' }, { transform: 'translateY(-4px) scale(1.012)' }, { transform: 'none' }], { duration: 380, easing: 'cubic-bezier(.3,1.5,.5,1)' });
-      }
+    seloVez(j);
+    // a vez chegou a um humano: sininho e o painel dá um pulinho (no modo 2 jogadores, a cada troca); no online, também
+    // a chamada "Sua vez". A memória da vez fica fora do jogo: no online cada estado do servidor é um objeto novo (com
+    // ela dentro do jogo, o aviso nunca tocava no online). A chave conta as vezes: abrir duas seguidas (quem está atrás
+    // abre a Mesa) também avisa.
+    const idp = online() ? `${j.sala}:${j.partida}` : j;
+    if (idp !== Vez.idp) { Vez.idp = idp; Vez.chave = undefined; }
+    const chave = j.fase === 'fim' || j.intro ? null : `${j.vezes || 0}:${j.vez}`;
+    if (chave !== Vez.chave) {
+      const antes = Vez.chave; Vez.chave = chave;
+      if (chave !== null && humano(j.vez) && (online() || (antes !== undefined && (j.modo === 'local' || antes !== null)))) chegouAVez(j);
     }
     if (j.fx && !j.fx.agendado) {
       const id = j.fx.id; j.fx.agendado = true;
@@ -1203,7 +1265,7 @@
         <tr><td>Dona Coruja (avançado)</td><td>${BASE_MOEDAS.esperto}</td><td>rating abaixo de ${TETO_MOEDAS.esperto}</td></tr>
         <tr><td>Online, com amigos</td><td>${BASE_MOEDAS.online}</td><td>sempre; vale mais vencer quem tem rating maior</td></tr>
         <tr><td>A dois no aparelho</td><td>–</td><td>não paga</td></tr></table>
-        <p class="nota" style="margin-top:10px">Só vitórias dão moedas. A base é multiplicada pela <b>margem</b> (×1 a ×2: vencer por 8 pontos ou mais, na meta 12, dobra) e pela <b>rapidez</b> (×1,5 em até 5 Mesas, ×1,25 em 6). Uma vitória típica rende cerca de 14 contra a Diana e 24 contra a Dona Coruja. Com conta, as vitórias contra os rivais do jogo rendem até 300 moedas por dia.</p>
+        <p class="nota" style="margin-top:10px">Só vitórias dão moedas. A base é multiplicada pela <b>margem</b> (×1 a ×2: vencer por 11 pontos ou mais, na meta 16, dobra), pela <b>rapidez</b> (na meta 16, ×1,5 em até 7 Mesas, ×1,25 em 8) e pela <b>duração</b> (meta 20: ×1,25; meta 24: ×1,5). Uma vitória típica rende cerca de 14 contra a Diana e 24 contra a Dona Coruja. Com conta, as vitórias contra os rivais do jogo rendem até 300 moedas por dia.</p>
         <p class="nota">Experiência sobe em toda partida, ganhando ou perdendo, e os níveis 2, 3 e 5 dão presentes. Cartas nunca serão vendidas por dinheiro: elas ampliam o estilo, não a força (o melhor deck é feito só de cartas grátis).</p>
         <button class="btn btn-papel btn-voltar" data-voltar-loja="1">← Voltar à loja</button>`;
       return;
@@ -1882,7 +1944,7 @@
     if (!ex || !ex.em) return false;
     if (Array.isArray(ex.decks)) st.decks = [0, 1].map(i => (ex.decks[i] || []).filter(c => CARTAS[c]));
     if (ex.rec) Object.assign(st.rec, ex.rec);
-    if (ex.cfg) Object.assign(st.cfg, ex.cfg);
+    if (ex.cfg) { Object.assign(st.cfg, ex.cfg); st.cfg.meta = R.metaValida(st.cfg.meta); }
     if (typeof ex.deckVisto === 'boolean') st.deckVisto = st.deckVisto || ex.deckVisto;
     try { localStorage.setItem('diceduel.v1', JSON.stringify({ cfg: st.cfg, pref: st.pref, rec: st.rec, conta: st.contaConvidado || st.conta, decks: st.decks, deckVisto: st.deckVisto })); } catch (e) {}
     if (!document.getElementById('janelaDeck').hidden) desenharDeck();
@@ -2150,7 +2212,7 @@
     }
     render();
   }
-  // o relógio da vez (o servidor dá 2 minutos; o aviso aparece nos últimos 30 s), a contagem de volta do rival que caiu
+  // o relógio da vez (o tempo do ritmo da sala, no selo de vez), a contagem de volta do rival que caiu
   // e o aviso de quando é a nossa conexão que caiu
   setInterval(() => {
     // jogada enviada e nenhuma resposta em 7 s: pede o estado de novo (o servidor reenvia a partida)
@@ -2167,9 +2229,10 @@
       if (sv !== null) document.querySelectorAll('.volta-rival').forEach(x => { x.textContent = sv; });
       return;
     }
-    if (!jogo.prazoAte) return;
-    const s = Math.max(0, Math.ceil((jogo.prazoAte - Date.now()) / 1000));
-    if (s <= 30) el.innerHTML = `<span class="prazo">${jogo.vez === 0 ? 'sua vez' : 'vez do rival'}: ${s} s</span>`;
+    // o relógio da vez mora no selo de vez, no alto da Mesa (sempre à vista, vermelho nos 10 s finais)
+    if (el.querySelector('.prazo')) el.textContent = `rodada ${jogo.rodada} · ${jogo.mesa.length} ${jogo.mesa.length === 1 ? 'dado' : 'dados'}`;
+    seloVez(jogo);
+    lembrarVez(jogo);
   }, 1000);
 
   // a janela Online

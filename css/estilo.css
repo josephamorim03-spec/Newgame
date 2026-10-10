@@ -1010,3 +1010,35 @@ button.vaga { cursor: pointer; border: 0; background: #fff3dc; color: var(--tint
 .deck-escolha .pontinhos i.cheio { background: var(--mel); }
 .deck-escolha .nota-escolha { flex-basis: 100%; font-weight: 600; font-size: 12px; color: var(--tinta-suave); }
 #btnJogarDeck.pronto-ok { background: var(--papel); color: var(--tinta); box-shadow: 0 4px 0 var(--papel-2), inset 0 0 0 2px var(--feltro); }
+
+/* ==========================================================================
+   De quem é a vez (v0.12): óbvio de longe, mesmo depois de olhar para outro lado
+   ========================================================================== */
+/* o selo no alto da Mesa: "Sua vez" na sua cor, respirando; "Vez de …" apagado, com o contorno do rival.
+   No online ele traz o relógio da vez, que fica vermelho nos 10 s finais */
+/* nome comprido (até 20 letras, sem espaço) quebra em duas linhas em vez de vazar: nunca cortado */
+.selo-vez { display: inline-flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 2px 8px; padding: 4px 14px; border-radius: 999px; font-family: var(--f-titulo); font-size: 19px; line-height: 1.25; text-align: center; max-width: 100%; }
+.selo-vez b { font-weight: 700; overflow-wrap: anywhere; }
+.selo-vez.minha { background: var(--voce); color: #fff; text-shadow: 0 1px 0 rgba(0,0,0,.18); box-shadow: 0 3px 0 var(--voce-tinta), 0 0 0 0 rgba(111,191,211,.65); animation: seloRespira 1.8s ease-in-out infinite; }
+.selo-vez.rival { background: rgba(0,0,0,.2); color: var(--texto-suave); box-shadow: inset 0 0 0 2px var(--rival); font-size: 17px; }
+.selo-tempo { white-space: nowrap; font-family: var(--f-corpo); font-size: 13px; font-weight: 800; font-variant-numeric: tabular-nums; padding: 1px 8px; border-radius: 999px; background: rgba(0,0,0,.16); }
+.selo-vez.minha.urgente { background: var(--perigo); box-shadow: 0 3px 0 #b8584a; animation: seloUrgente .7s ease-in-out infinite; }
+.selo-vez.rival.urgente .selo-tempo { color: #ffd3cb; }
+@keyframes seloRespira { 50% { box-shadow: 0 3px 0 var(--voce-tinta), 0 0 0 8px rgba(111,191,211,0); transform: scale(1.04); } }
+@keyframes seloUrgente { 50% { transform: scale(1.08); } }
+/* com o selo, o título "Mesa" sai (o selo ocupa o lugar dele) */
+.vez-minha .mesa-topo h2, .vez-rival .mesa-topo h2 { display: none; }
+/* na sua vez a Mesa acende: o feltro ganha um aro da sua cor que respira e um brilho sobre a madeira */
+.vez-minha .tabuleiro { animation: mesaAcesa 2.4s ease-in-out infinite; }
+@keyframes mesaAcesa {
+  0%, 100% { box-shadow: inset 0 0 70px rgba(20, 40, 30, .45), inset 0 0 0 2px rgba(0,0,0,.18), 0 0 0 3px var(--voce), 0 0 22px 4px rgba(111,191,211,.35); }
+  50% { box-shadow: inset 0 0 70px rgba(20, 40, 30, .45), inset 0 0 0 2px rgba(0,0,0,.18), 0 0 0 4px var(--voce), 0 0 36px 10px rgba(111,191,211,.55); }
+}
+.sem-animacoes .vez-minha .tabuleiro { animation: none; box-shadow: inset 0 0 70px rgba(20, 40, 30, .45), inset 0 0 0 2px rgba(0,0,0,.18), 0 0 0 4px var(--voce), 0 0 30px 8px rgba(111,191,211,.45); }
+/* na vez do rival a Mesa e a sua ficha esmaecem: o que está aceso é de quem joga */
+.mesa, #pj0 .jogador { transition: filter .35s ease; }
+.vez-rival .mesa { filter: saturate(.55) brightness(.82); }
+.vez-rival #pj0 .jogador { filter: saturate(.7) brightness(.94); }
+/* a chamada "Sua vez" (online): na sua cor */
+.chamada.vez-chamada { box-shadow: 0 8px 0 var(--papel-2), 0 20px 50px rgba(0,0,0,.45), 0 0 0 4px var(--voce); }
+.chamada.vez-chamada b { color: var(--voce-tinta); }

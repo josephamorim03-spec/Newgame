@@ -4,7 +4,7 @@
 #      NOVAS=pausa,furto python3 sim/decks.py   (soma cartas propostas de sim/novas.py)
 #      PROCS=4 limita os processos (a máquina pode ser compartilhada); JSON=arquivo grava os números
 #      CONFIRMA=6000 joga de novo os 8 melhores (CONFIRMA_N=10: os 10) com mais partidas (1.200 têm ruído de ±1,4 ponto)
-#      META=16 joga até 16 pontos (o padrão é 12); a Mesa é sempre de 5 dados
+#      META=20 joga até 20 pontos (o padrão é 16, como no jogo; 24 também; 12 era a de antes da v0.12); a Mesa é sempre de 5 dados
 import random, itertools, statistics, os, json
 from collections import Counter
 from multiprocessing import Pool
@@ -16,7 +16,7 @@ else:
     import deck as D
 MAXP = int(os.environ.get('MAXP', '1'))
 PROCS = int(os.environ.get('PROCS', '4'))
-META = int(os.environ.get('META', '12'))
+META = int(os.environ.get('META', '16'))
 CONFIRMA_N = int(os.environ.get('CONFIRMA_N', '8'))
 DECKS = [list(d) for d in itertools.combinations(D.CARTAS, 3)
          if sum(c in D.ARMADILHAS for c in d) <= 2 and sum(c in D.PONTOS_CARTAS for c in d) <= MAXP]

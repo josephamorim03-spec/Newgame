@@ -4,7 +4,7 @@
 # Deck de até 3 cartas, cada uma 1x por partida. Armadilhas: no máximo 1 armada por vez.
 import random
 from functools import lru_cache
-PONT={3:1,4:2,5:4,6:6,7:8}; LIM=6; META=12
+PONT={3:1,4:2,5:4,6:6,7:8}; LIM=6; META=16
 def pontos(L): return PONT.get(L,0)
 def sinc(a,b): return a==b or abs(a-b)==1 or a+b==7
 def encaixa(cor,v,coringa=False): return (not cor) or coringa or sinc(cor[-1],v)
@@ -17,7 +17,10 @@ ARMADILHAS={'espelho','interferencia','fundo','pedagio','ancora'}
 # interf_modo: 'lider' (hoje: −1 no disparo de 4+ de quem lidera) | 'vale1' (o disparo de 4+ de quem lidera vale como um de 3: 1 ponto)
 #              | 'grande' (−interf_grande no disparo de 5+, de qualquer um; descartada: quem sabe a gasta de graça com um 5)
 # pedagio_modo: 'sempre' (hoje: +2 no próximo disparo do rival) | 'pequeno' (+2 só num disparo de 3 ou 4; o de 5+ não paga)
-BAL=dict(interf_modo='lider', interf_grande=2, pedagio_modo='sempre', interf_menos=1, interf_min=4, interf_max=9, interf_6='normal', interf_lider='espera', pedagio=2, pedagio16=2, fundo_tudo=True, rerrolar_tudo=True, ancora_min=4, rerrolar_cor=2, coringa_cor=2, sobre=2, espelho_sem_bolso=True)
+# coringa_modo: 'frente' (v0.12: o dado que romperia troca a frente) | 'entra' (até a v0.11: entrava como mais um elo)
+# coringa_max: maior corrente em que o Coringa pode ser usado; coringa_seguro: o robô conta com o Coringa na mão como
+#              seguro e segura a corrente de 5, como gente faz (não é regra; docs/balanceamento-cartas.md §14)
+BAL=dict(interf_modo='lider', interf_grande=2, pedagio_modo='sempre', interf_menos=1, interf_min=4, interf_max=9, interf_6='normal', interf_lider='espera', pedagio=2, pedagio16=2, fundo_tudo=True, rerrolar_tudo=True, ancora_min=4, rerrolar_cor=2, coringa_cor=2, coringa_max=5, coringa_seguro=False, coringa_modo='frente', sobre=2, espelho_sem_bolso=True)
 import os, json
 BAL.update(json.loads(os.environ.get('BAL', '{}')))   # ex.: BAL='{"pedagio": 2}' para testar outro número
 EFEITOS={'rerrolar','virar','ajuste','pressa','coringa','sobrecarga'}
@@ -85,8 +88,11 @@ class Partida:
         if entra is None: return
         if encaixa(j.cor,entra,j.coringa):
             # o Coringa só é gasto num dado que entra numa corrente já começada (como no jogo)
+            # coringa_modo 'frente': o dado que não sincronizava troca a frente (a corrente não cresce)
+            troca = BAL['coringa_modo']=='frente' and j.coringa and j.cor and not sinc(j.cor[-1],entra)
             if j.cor: j.coringa=False
-            j.cor.append(entra)
+            if troca: j.cor[-1]=entra
+            else: j.cor.append(entra)
         elif j.armada=='ancora' and len(j.cor)>=BAL['ancora_min']:
             s.disparar_trap(p,'ancora')
         else:
@@ -155,9 +161,14 @@ class Partida:
             for i,X in enumerate(s.mesa):
                 if encaixa(r.cor,X): return (i,'corrente')
         return (random.randrange(len(s.mesa)),'corrente')
+    def coringa_pronto(s,p):
+        """o Coringa ainda na mão e permitido com a corrente de agora (coringa_max: o maior tamanho em que ele pode ser usado)"""
+        j=s.j[p]; return j.pronta('coringa') and BAL['coringa_cor']<=len(j.cor)<=BAL['coringa_max']
     def risco(s,p):
         j=s.j[p]
         if s.garante(p): return .03
+        # coringa_seguro: o robô conta com o Coringa na mão como seguro, como um jogador humano (segura a corrente de 5)
+        if BAL['coringa_seguro'] and s.coringa_pronto(p): return .03
         if len(s.mesa)>=2:
             k=sum(encaixa(j.cor,v) for v in s.mesa); return 1 if k==0 else .6 if k==1 else .1
         pf=opcoes(j.cor)/6
@@ -194,7 +205,7 @@ class Partida:
                         if s.efeito(p,'ajuste'): m[i]=X+d; precisa=False
                         break
                 if not precisa or not j.pronta('ajuste'): break
-        if precisa and j.pronta('coringa') and len(j.cor)>=BAL['coringa_cor']:
+        if precisa and s.coringa_pronto(p):
             if s.efeito(p,'coringa'): j.coringa=True; precisa=False
         if precisa and j.pronta('rerrolar') and len(j.cor)>=BAL['rerrolar_cor'] and s.efeito(p,'rerrolar'):
             if BAL['rerrolar_tudo']: m[:]=[random.randint(1,6) for _ in m]; s.desarma(None)

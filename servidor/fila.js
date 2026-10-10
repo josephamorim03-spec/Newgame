@@ -4,6 +4,8 @@
 // a diferença aceita cresce com a espera, e depois de um tempo vale qualquer rival, para ninguém ficar parado.
 'use strict';
 
+const Regras = require('../shared/regras');
+
 const PADRAO = {
   janelaInicial: 100,      // diferença de rating aceita logo de cara
   crescePorSegundo: 5,     // quanto a janela abre por segundo de espera
@@ -30,9 +32,9 @@ class Fila {
     return Math.min(this.o.janelaMaxima, this.o.janelaInicial + this.o.crescePorSegundo * espera / 1000);
   }
   // entrar de novo (outra aba, outro deck) troca a entrada, mas mantém o tempo de espera
-  entrar({ id, rating, meta = 12, dados = null }) {
+  entrar({ id, rating, meta = Regras.META_PADRAO, dados = null }) {
     const antes = this.entradas.get(id);
-    const e = { id, rating, meta: meta === 16 ? 16 : 12, desde: antes ? antes.desde : this.agora(), dados };
+    const e = { id, rating, meta: Regras.metaValida(meta), desde: antes ? antes.desde : this.agora(), dados };
     this.entradas.set(id, e);
     return e;
   }

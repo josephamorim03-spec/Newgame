@@ -44,11 +44,11 @@ class Salas {
   // o tempo da vez desta sala (o do ritmo dela) e o mínimo de quem volta de uma queda (nunca mais que a vez inteira)
   limiteDe(sala) { return this.t.limiteVez || RITMOS[sala.ritmo] || RITMOS[RITMO_PADRAO]; }
   minimoDe(sala) { return Math.min(this.t.minimoNaVolta, this.limiteDe(sala)); }
-  criar(conta, { meta = 12, ritmo } = {}) {
+  criar(conta, { meta = Regras.META_PADRAO, ritmo } = {}) {
     // uma sala esperando por conta: criar outra fecha a anterior
     for (const s of this.salas.values()) if (s.dono === conta.id && !s.jogo) { s.fechada = true; this.salas.delete(s.codigo); }
     let codigo; do codigo = novoCodigo(); while (this.salas.has(codigo));
-    const sala = { codigo, dono: conta.id, meta: meta === 16 ? 16 : 12, ritmo: ritmoValido(ritmo), criada: this.agora(), mexida: this.agora(), jogadores: [], jogo: null, revanche: new Set(), primeiro: crypto.randomInt(2), fechada: false };
+    const sala = { codigo, dono: conta.id, meta: Regras.metaValida(meta), ritmo: ritmoValido(ritmo), criada: this.agora(), mexida: this.agora(), jogadores: [], jogo: null, revanche: new Set(), primeiro: crypto.randomInt(2), fechada: false };
     this.salas.set(codigo, sala);
     return sala;
   }

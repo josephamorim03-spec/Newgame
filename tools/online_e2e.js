@@ -117,7 +117,7 @@ const espera = ms => new Promise(r => setTimeout(r, ms));
     // Ajustes no meio da partida online: tocar na meta (a marcada e a outra) não é desistência
     await ana.evaluate(() => document.getElementById('btnConfig').click());
     const metaAna = await ana.evaluate(() => DiceDuel.st.cfg.meta);
-    await ana.click(`#janelaConfig [data-cfg="meta"][data-v="${metaAna}"]`); await ana.click(`#janelaConfig [data-cfg="meta"][data-v="${metaAna === 12 ? 16 : 12}"]`);
+    await ana.click(`#janelaConfig [data-cfg="meta"][data-v="${metaAna}"]`); await ana.click(`#janelaConfig [data-cfg="meta"][data-v="${metaAna === 16 ? 20 : 16}"]`);
     await espera(400);
     const depoisCfg = await ana.evaluate(() => ({ modo: DiceDuel.jogo.modo, fase: DiceDuel.jogo.fase, aviso: !document.getElementById('avisoCfg').hidden }));
     if (depoisCfg.modo !== 'online' || depoisCfg.fase === 'fim' || !depoisCfg.aviso) throw new Error('Ajustes no online mexeram na partida: ' + JSON.stringify(depoisCfg));
@@ -147,12 +147,28 @@ const espera = ms => new Promise(r => setTimeout(r, ms));
       return false;
     });
     const acabou = pg => pg.evaluate(() => DiceDuel.jogo.fase === 'fim' && !!DiceDuel.jogo.premio);
+    // de quem é a vez (v0.12): quem tem a vez vê "Sua vez" com o relógio, a Mesa acesa e a aba avisando; o outro, "Vez de …"
+    const selo = pg => pg.evaluate(() => ({ vez: DiceDuel.jogo.vez, fase: DiceDuel.jogo.fase, intro: DiceDuel.jogo.intro, txt: document.getElementById('seloVez').textContent, oculto: document.getElementById('seloVez').hidden,
+      minha: document.body.classList.contains('vez-minha'), rival: document.body.classList.contains('vez-rival'), titulo: document.title }));
+    let selosVistos = 0;
+    const conferirSelo = async () => {
+      const [sa, sb] = [await selo(ana), await selo(bia)];
+      if (sa.fase === 'fim' || sb.fase === 'fim' || sa.intro || sb.intro || sa.vez === sb.vez) return;   // entre um estado e outro
+      for (const [x, nome] of [[sa, ANA], [sb, BIA]]) {
+        const ok = x.vez === 0 ? !x.oculto && /^Sua vez\d+ s$/.test(x.txt) && x.minha && !x.rival && x.titulo.startsWith('● Sua vez')
+          : !x.oculto && x.txt.startsWith('Vez de ') && x.rival && !x.minha && !x.titulo.startsWith('●');
+        if (!ok) throw new Error(`o selo de vez de ${nome} não diz de quem é a vez: ` + JSON.stringify(x));
+      }
+      selosVistos++;
+    };
     while (!((await acabou(ana)) && (await acabou(bia)))) {
+      if (passos % 9 === 4) await conferirSelo();
       if (++passos > 3000) throw new Error('a partida online não terminou');
       const a = await jogada(ana), b = await jogada(bia);
       if (!a && !b) await espera(25);
       if (passos === 12) await bia.screenshot({ path: path.join(FOTOS, 'online-partida-pc.png') });
     }
+    if (selosVistos < 3) throw new Error(`o selo de vez quase não foi conferido (${selosVistos} vezes)`);
     await espera(900);
     for (const pg of [ana, bia]) await pg.waitForSelector('#fim:not([hidden])', { timeout: 5000 });
     await ana.screenshot({ path: path.join(FOTOS, 'online-fim-celular.png') }); await layout(ana, 'fim'); await layout(bia, 'fim');

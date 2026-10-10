@@ -9,7 +9,7 @@ Os dois jogadores disputam a mesma Mesa de 5 dados e montam **correntes** de dad
 
 Cada um guarda um dado no **Bolso**, escolhe a hora de **disparar** a corrente para marcar pontos e leva um
 **deck de até 3 cartas** com efeitos e armadilhas. Um efeito virado para baixo vira **blefe**: para o rival, é um
-"?" igual ao de uma armadilha. A partida dura de 4 a 6 minutos.
+"?" igual ao de uma armadilha. A partida vai a 16, 20 ou 24 pontos; na 16, o padrão, dura de 6 a 8 minutos.
 
 **Progressão sem pagar para vencer:**
 - moedas só vêm de vitórias, e rendem mais com margem maior e menos Mesas;
@@ -79,7 +79,7 @@ e o amigo cai direto na sala. O servidor é a autoridade da partida e roda na Ra
 ```bash
 cd sim && python3 valor_cartas.py      # valor de cada carta sozinha
 cd sim && python3 informacao.py        # armadilhas: oculto × à mostra
-cd sim && NOVAS=pausa,reverso,furto,lacre python3 decks.py   # os 402 decks das 15 cartas: algum domina? (META=16 também)
+cd sim && NOVAS=pausa,reverso,furto,lacre python3 decks.py   # os 402 decks das 15 cartas: algum domina? (meta 16; META=20 e META=24 também)
 cd sim && NOVAS=pausa,reverso,furto,lacre JSON=/tmp/d.json python3 decks.py && JSON=/tmp/d.json NOVAS=pausa,reverso,furto,lacre python3 torneio.py   # os 20 melhores uns contra os outros
 cd sim && python3 economia.py          # cartas compradas não superam as grátis; moedas por vitória
 npm install && npm test                        # motor, API, salas, quedas, limite por par
@@ -93,6 +93,11 @@ node tools/vercel_local.js                     # a página como o Vercel publica
 ```
 
 ## Estado
+
+**v0.12 (nesta branch, ainda não publicada):** metas 16 (padrão), 20 e 24, no lugar de 12 e 16; o Coringa troca a frente
+da corrente em vez de alongá-la; e no online fica óbvio de quem é a vez (selo com relógio no alto da Mesa, a Mesa acesa na
+sua vez, chamada e sininhos quando a vez chega, lembretes, aviso na aba e de novo ao voltar para a tela). Números em
+`docs/balanceamento-cartas.md` §14 e a vez em `docs/design.md` §8.
 
 **v0.11, em produção:** a página no Vercel (`diceduel-game.vercel.app`) e o servidor na Railway, os dois publicados da branch `DiceDuel`. 15 cartas (Pausa, Reverso, Furto e Lacre na v0.11), Pedágio +2 e Interferência só em quem lidera (`docs/balanceamento-cartas.md`). O resumo copiável do fim da partida traz:
 - o deck de cada um;
