@@ -380,24 +380,26 @@ descansam no feltro (o do meio, na pele da rival, dá um pulinho de vez em quand
 formarem uma corrente, a rival repara ("Olha: isso já é uma corrente."). **Tocar na rival**, ela sorri e fala outra
 frase. Em telas baixas (até 680 px) a cena encolhe; com "reduzir movimento", fica parada.
 
-**As patas da Diana** (`js/pata.js`). Gata que é, a Diana não deixa os dados em paz. Ela espia com as duas patas
-apoiadas na borda da mesa, uma de cada lado do queixo; só as patas, sem braço nem corpo. A cada 4 a 8 s uma delas sai da
-borda, desce num dado, dá uma ou duas batidinhas (o dado treme, um toque abafado no feltro e uma vibração leve, só depois
-de a pessoa já ter tocado na tela, porque antes o navegador recusa), arrasta o dado na direção dela com a cabeça
-inclinada, travessa, e solta; o dado volta para o lugar e a pata volta para a borda. **Cada dado é da pata do lado dele:**
-o da esquerda, a pata da esquerda; o da direita, a da direita; o do meio, meio a meio. Às vezes ela comenta ("Esse aqui
-parece meu.", "Só estou olhando.", "Calma. Ainda não peguei."). Tocar num dado ou nela no meio do gesto faz as patas
-voltarem depressa para a borda. A pata não sobe pela tela (passaria pelo rosto): erguer é ela crescer um pouco e a
-sombra no feltro se afastar.
+**As patas da Diana** (`js/pata.js`). Gata que é, a Diana não deixa os dados em paz. As patas dela ficam escondidas
+atrás da mesa; a cada 4 a 8 s uma delas aparece:
+1. **sobe por trás da mesa mostrando a palma** (a almofada maior e os quatro feijõezinhos rosa), coberta pela borda até
+   sair inteira, e fica um instante no alto, de frente: a ameaça;
+2. **vira**: passa a ser vista de cima (o dorso), já fora da mesa;
+3. vai até um dado (no feltro, erguer é a pata crescer um pouco e a sombra se afastar), dá **uma ou duas batidinhas** (o
+   dado treme, a poeirinha sai embaixo da pata, um toque abafado no feltro e uma vibração leve, só depois de a pessoa já
+   ter tocado na tela, porque antes o navegador recusa) e **arrasta o dado** na direção dela, com a cabeça inclinada,
+   travessa; solta, e o dado volta para o lugar;
+4. volta para a beirada, **vira de novo para a palma** e afunda atrás da mesa.
 
-A pata tem **duas poses** (pintadas, no traço de cacau e no branco da Diana; o vetor fica de reserva):
-- **dorso:** vista de cima, apoiada na borda, com os vãos dos dedos; é assim que ela ergue e vai até o dado;
-- **palma:** a parte de baixo, com a almofada maior de três lobos e os quatro feijõezinhos rosa: a pata aberta em cima
-  do dado, apertando e puxando.
+**Cada dado é da pata do lado dele:** o da esquerda, a pata da esquerda; o da direita, a da direita; o do meio, meio a
+meio. Às vezes ela comenta ("Esse aqui parece meu.", "Só estou olhando.", "Calma. Ainda não peguei."). Tocar num dado ou
+nela no meio do gesto faz as patas se esconderem depressa. Com a Dona Coruja escolhida, não há patas; com as animações
+desligadas, elas ficam escondidas.
 
-A troca é direta: chegando no dado, dorso vira palma; soltando, palma vira dorso. Já houve outras poses, todas fora por
-ficarem estranhas: "virando" (o giro entre as duas, de lado e depois de cima para baixo) e "gancho" (os dedos dobrados
-por cima da aresta do dado).
+Duas poses, trocadas direto, sem quadros de giro: **palma** (a que sobe e desce atrás da mesa; o "atrás" é um corte do
+SVG na linha da borda) e **dorso** (a que anda no feltro e mexe no dado). Já houve outras, que ficavam estranhas e
+saíram: "virando" (o giro entre as duas) e "gancho" (os dedos dobrados por cima da aresta do dado). Antes disso, as
+patas ficavam apoiadas na borda, e a palma era a que batia no dado; a ordem certa é a de agora.
 
 **A arte pintada das patas** (`arte/patas.json` → `js/patas_pintadas.js`) vem da API de imagem da OpenAI, pela mesma
 ferramenta dos retratos e das cartas (`tools/arte_icones.py --pedidos arte/patas.json`). Cada pose vai junto do próprio
