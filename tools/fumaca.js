@@ -16,7 +16,6 @@ fs.mkdirSync(FOTOS, { recursive: true });
     { nome: 'celular', vp: { width: 390, height: 844 }, pronto: 0, modo: 'bot', mexeAjustes: true },
     { nome: 'celular-coruja', vp: { width: 390, height: 844 }, pronto: 1, modo: 'bot', coruja: true },
     { nome: 'computador', vp: { width: 1360, height: 900 }, pronto: 2, modo: 'bot', coruja: true },
-    { nome: 'computador-dois', vp: { width: 1360, height: 900 }, pronto: 3, modo: 'local' },
   ];
   for (const r of rodadas) {
     const pg = await navegador.newPage({ viewport: r.vp, hasTouch: r.nome.startsWith('celular') });
@@ -51,12 +50,11 @@ fs.mkdirSync(FOTOS, { recursive: true });
       if (conta.dado !== 'dourado' || !conta.cartas.includes('espelho') || conta.icone !== 'raposa' || conta.moedas !== 1000 - 450 - 100 - 110) erros.push(`${r.nome}: a compra na loja não funcionou ${JSON.stringify(conta)}`);
       await pg.click('#btnFecharLoja');
     }
-    // a sessão se monta no menu principal: o rival na escolha de cima; a dois, o botão abre os decks dos dois jogadores
+    // a sessão se monta no menu principal: o rival na escolha de cima
     if (r.coruja) await pg.click('[data-inicio="rival"][data-v="esperto"]');
-    if (r.modo === 'local') await pg.click('[data-inicio="dois"]');
-    else await pg.evaluate(() => document.getElementById('btnDeck').click());
+    await pg.evaluate(() => document.getElementById('btnDeck').click());
     await pg.click(`[data-pronto="${r.pronto}"]`);
-    if (r.modo === 'local') { await pg.click('[data-aba="1"]'); await pg.click('[data-pronto="1"]'); }
+    if (await pg.$('[data-inicio="dois"]')) erros.push(`${r.nome}: o menu ainda oferece o modo a dois`);
     await pg.click('#btnJogarDeck');
     await pg.waitForTimeout(300);
     if (r.nome === 'celular') await pg.screenshot({ path: path.join(FOTOS, 'versus-celular.png') });

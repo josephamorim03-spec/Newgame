@@ -359,7 +359,7 @@ function criarApp({ banco, segredo, raiz = path.join(__dirname, '..'), tempos = 
     if (b.rec && typeof b.rec === 'object') ex.rec = Object.fromEntries(REC.map(k => [k, inteiro(b.rec[k], 1e6)]));
     if (b.cfg && typeof b.cfg === 'object') {
       const um = (v, ok, padrao) => (ok.includes(v) ? v : padrao);
-      ex.cfg = { modo: um(b.cfg.modo, ['bot', 'local'], 'bot'), nivel: um(b.cfg.nivel, ['aprendiz', 'esperto'], 'aprendiz'),
+      ex.cfg = { modo: 'bot', nivel: um(b.cfg.nivel, ['aprendiz', 'esperto'], 'aprendiz'),
         meta: Regras.metaValida(b.cfg.meta), ritmo: um(b.cfg.ritmo, ['calmo', 'normal', 'rapido'], 'normal') };
     }
     if (typeof b.deckVisto === 'boolean') ex.deckVisto = b.deckVisto;

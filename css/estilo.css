@@ -981,6 +981,7 @@ button.vaga { cursor: pointer; border: 0; background: #fff3dc; color: var(--tint
 .inicio-linha:has(> [hidden]) > .btn:not([hidden]) { grid-column: 1 / -1; }
 .inicio-principal { min-height: 60px; font-size: 20px; }
 .inicio-linha { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.inicio-linha > .btn:only-child { grid-column: 1 / -1; }
 .inicio-linha .btn { position: relative; }
 .inicio-linha .ponto-online { position: absolute; top: 8px; right: 10px; }
 .inicio-partida { padding: 14px; border-radius: var(--raio); background: var(--papel); color: var(--tinta); box-shadow: 0 6px 0 var(--papel-2); }

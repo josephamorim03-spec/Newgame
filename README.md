@@ -36,7 +36,6 @@ e o amigo cai direto na sala. O servidor é a autoridade da partida e roda na Ra
 **Contra quem:**
 - **Diana**, uma gata branca de olhos azuis, a rival fácil;
 - **Dona Coruja**, que lê a Mesa;
-- **duas pessoas** no mesmo aparelho;
 - **um amigo, online**, por link de convite (vale rating e moedas).
 
 **Em Ajustes dá para ligar e desligar:**
@@ -84,7 +83,7 @@ cd sim && NOVAS=pausa,reverso,furto,lacre JSON=/tmp/d.json python3 decks.py && J
 cd sim && python3 economia.py          # cartas compradas não superam as grátis; moedas por vitória
 npm install && npm test                        # motor, API, salas, quedas, limite por par
 export NODE_PATH=$(npm root -g)                # Playwright instalado globalmente (ou: npm i -D playwright)
-node tools/fumaca.js                           # 4 partidas no navegador (celular, computador, Coruja, a dois)
+node tools/fumaca.js                           # 3 partidas no navegador (celular, computador, Coruja)
 node tools/regras.js                           # as cartas fazem o que o texto delas diz
 node tools/layout.js                           # layout em 360, 390, 430, 768 e 1360 px
 node tools/online_e2e.js                       # online de ponta a ponta, com o servidor local
@@ -96,7 +95,8 @@ node tools/vercel_local.js                     # a página como o Vercel publica
 
 **v0.12 (nesta branch, ainda não publicada):** metas 16 (padrão), 20 e 24, no lugar de 12 e 16; o Coringa troca a frente
 da corrente em vez de alongá-la; e no online fica óbvio de quem é a vez (selo com relógio no alto da Mesa, a Mesa acesa na
-sua vez, chamada e sininhos quando a vez chega, lembretes, aviso na aba e de novo ao voltar para a tela). Números em
+sua vez, chamada e sininhos quando a vez chega, lembretes, aviso na aba e de novo ao voltar para a tela). O modo a dois
+no mesmo aparelho saiu do jogo (o motor ainda o usa nos testes de regras, para ninguém jogar sozinho no meio do teste). Números em
 `docs/balanceamento-cartas.md` §14 e a vez em `docs/design.md` §8.
 
 **v0.11, em produção:** a página no Vercel (`diceduel-game.vercel.app`) e o servidor na Railway, os dois publicados da branch `DiceDuel`. 15 cartas (Pausa, Reverso, Furto e Lacre na v0.11), Pedágio +2 e Interferência só em quem lidera (`docs/balanceamento-cartas.md`). O resumo copiável do fim da partida traz:
