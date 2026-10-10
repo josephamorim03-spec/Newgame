@@ -1258,3 +1258,9 @@ button.inicio-perfil:active { transform: translateY(1px); }
 .perfil-loja { margin-top: 12px; }
 .inicio-perfil .perfil-texto { display: grid; gap: 1px; flex: 1; min-width: 0; line-height: 1.2; }
 .perfil-secao { font-size: 18px; text-transform: none; letter-spacing: 0; color: var(--tinta); }
+
+/* Loja: as cartas têm o "i" (e a arte) que abre a carta inteira, com o preço e o Comprar; a janela da carta abre por
+   cima da Loja (as duas são janelas; sem isso, a da carta ficava atrás) */
+.item.item-carta { position: relative; }
+.item.item-carta .previa { cursor: pointer; }
+#janelaCarta { z-index: 61; }

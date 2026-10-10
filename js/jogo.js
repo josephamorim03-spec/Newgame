@@ -1420,7 +1420,9 @@
       else if (info.nivel) botao = `<button class="btn btn-papel" disabled>Nível ${info.nivel}</button>`;
       else if (c.moedas < info.preco) botao = `<button class="btn btn-duplo btn-papel" disabled><span><span class="moeda"></span> ${info.preco}</span><small>faltam ${info.preco - c.moedas}</small></button>`;
       else botao = `<button class="btn btn-mel" data-comprar="${tipo}:${id}"><span class="moeda"></span>${info.preco}</button>`;
-      return `<div class="item${usando ? ' usando' : ''}"><div class="previa">${previa}</div><b>${info.nome}</b><small>${sub}</small>${botao}</div>`;
+      // nas cartas, o "i" (e a própria arte) abre a carta inteira, com o preço e o Comprar
+      const ler = tipo === 'cartas' ? `<button class="op-info" data-info-loja="${id}" aria-label="Ler a carta ${info.nome}">i</button>` : '';
+      return `<div class="item${usando ? ' usando' : ''}${ler ? ' item-carta' : ''}">${ler}<div class="previa"${ler ? ` data-info-loja="${id}"` : ''}>${previa}</div><b>${info.nome}</b><small>${sub}</small>${botao}</div>`;
     };
     let html = '';
     if (aba === 'cartas') html = ORDEM.map(id => item('cartas', id, { nome: CARTAS[id].nome, preco: PRECO_CARTA[id] || 0 }, CARTAS[id].arte, `${CARTAS[id].tipo}${CARTAS[id].pontos ? ` · <span class="raio">${RAIO}</span>` : ''} · ${CARTAS[id].verbo}`)).join('');
@@ -1554,12 +1556,21 @@
     if (t) { t.textContent = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; t.classList.toggle('acabando', s <= 10); }
   }, 1000);
   // a carta inteira, fora da partida (montar o deck)
-  function abrirInfoCarta(c) {
+  function abrirInfoCarta(c, naLoja = false) {
     const k = CARTAS[c];
     document.getElementById('cartaDetalhe').innerHTML = `${k.arte}<div><h2 id="cartaTitulo">${k.nome}</h2>
       <p class="nota">${k.tipo === 'armadilha' ? 'Armadilha' : 'Efeito'}${k.pontos ? ` · carta de pontos <span class="raio">${RAIO}</span>` : ''}</p><p style="margin-top:8px">${k.texto}</p></div>`;
-    document.getElementById('cartaNota').textContent = porQueNao(st.decks[st.abaDeck], c) || '';
-    document.getElementById('cartaBotoes').innerHTML = `<button class="btn btn-papel" data-fechar-carta="1">Fechar</button>`;
+    let nota = porQueNao(st.decks[st.abaDeck], c) || '', btnComprar = '';
+    if (naLoja) {
+      const preco = PRECO_CARTA[c] || 0, conta = st.conta;
+      if (conta.cartas.includes(c)) nota = GRATIS.includes(c) ? 'Grátis: já está na sua coleção.' : 'Já está na sua coleção.';
+      else {
+        nota = conta.moedas >= preco ? `Custa ${preco} moedas.` : `Custa ${preco} moedas: faltam ${preco - conta.moedas}.`;
+        if (conta.moedas >= preco) btnComprar = `<button class="btn btn-mel" data-comprar-carta="${c}"><span class="moeda"></span> Comprar · ${preco}</button>`;
+      }
+    }
+    document.getElementById('cartaNota').textContent = nota;
+    document.getElementById('cartaBotoes').innerHTML = `${btnComprar}<button class="btn btn-papel" data-fechar-carta="1">Fechar</button>`;
     document.getElementById('janelaCarta').hidden = false;
     Som.tocar('carta');
   }
@@ -1842,6 +1853,7 @@
   });
   document.getElementById('lojaConteudo').addEventListener('click', e => {
     if (e.target.closest('[data-voltar-loja]')) { lojaVolta(); return; }
+    const il = e.target.closest('[data-info-loja]'); if (il) { abrirInfoCarta(il.dataset.infoLoja, true); return; }
     const cb = e.target.closest('[data-comprar]'); if (cb) { const [t, id] = cb.dataset.comprar.split(':'); comprar(t, id, cb); return; }
     const ub = e.target.closest('[data-usar-item]');
     if (ub) { const [t, id] = ub.dataset.usarItem.split(':'); usarItem(t, id); }
@@ -2085,7 +2097,18 @@
   addEventListener('pointercancel', e => fimArrastoDado(e, false));
   document.getElementById('cartaBotoes').addEventListener('click', e => {
     if (e.target.closest('[data-fechar-carta]')) { document.getElementById('janelaCarta').hidden = true; return; }
-    const j = jogo, p = j.vez;
+    // comprar pela carta aberta na Loja: o primeiro toque pede confirmação, o segundo compra pelo mesmo caminho da Loja
+    const cc = e.target.closest('[data-comprar-carta]');
+    if (cc) {
+      const id = cc.dataset.comprarCarta, preco = PRECO_CARTA[id] || 0;
+      if (cc.dataset.certeza !== '1') { cc.dataset.certeza = '1'; cc.innerHTML = `Confirmar? <span class="moeda"></span> ${preco}`; return; }
+      document.getElementById('janelaCarta').hidden = true;
+      const bl = document.querySelector(`#lojaConteudo [data-comprar="cartas:${id}"]`);
+      if (bl) { bl.dataset.certeza = '1'; comprar('cartas', id, bl); }
+      return;
+    }
+    const j = jogo; if (!j) return;
+    const p = j.vez;
     if (!humano(p) || j.pensando) return;
     const bv = e.target.closest('[data-virar]');
     if (bv) { if (podeVirar(p, bv.dataset.virar).ok) { document.getElementById('janelaCarta').hidden = true; virarParaBaixo(bv.dataset.virar); } return; }
