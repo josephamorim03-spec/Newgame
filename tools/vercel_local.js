@@ -29,7 +29,9 @@ const servidor = http.createServer((req, res) => {
     pg.on('response', r => { if (r.status() === 404 && r.url().startsWith(base)) faltando.push(r.url().slice(base.length)); });
     await pg.goto(base + '/'); await pg.waitForTimeout(600);
     await pg.evaluate(() => { const st = DiceDuel.st; st.deckVisto = true; st.cfg.modo = 'bot'; DiceDuel.ajustar({ som: false, musica: false }); document.getElementById('janelaDeck').hidden = true; });
-    await pg.evaluate(() => document.getElementById('btnDeck').click()); await pg.click('#btnJogarDeck'); await pg.waitForTimeout(400);
+    // v0.12: o Jogar do menu abre a escolha do rival; o Jogar de lá começa a partida
+    await pg.click('[data-inicio="jogar"]'); await pg.waitForTimeout(150); await pg.click('[data-inicio="comecar"]'); await pg.waitForTimeout(400);
+    if (await pg.$('#janelaDeck:not([hidden])')) { await pg.click('#btnJogarDeck'); await pg.waitForTimeout(400); }
     await pg.evaluate(() => document.querySelectorAll('.versus').forEach(v => v.click()));
     // joga clicando na Mesa até o fim (ou 150 toques)
     for (let k = 0; k < 150; k++) {
@@ -48,10 +50,10 @@ const servidor = http.createServer((req, res) => {
     for (const m of ['loja', 'ajustes', 'regras', 'online', 'deck']) {
       const menuAberto = await pg.$('#inicio:not([hidden])');
       if (!menuAberto && await pg.$('#btnPausa:visible') && (m === 'ajustes' || m === 'regras')) { await pg.click('#btnPausa'); await pg.click(`[data-menu="${m}"]`); }
-      else if (!menuAberto && await pg.$('#btnPausa:visible')) { await pg.click('#btnPausa'); await pg.click('[data-menu="inicio"]'); await pg.click(`[data-inicio="${m}"]`); }
-      else if (menuAberto) await pg.click(`[data-inicio="${m}"]`);
+      else if (!menuAberto && await pg.$('#btnPausa:visible')) { await pg.click('#btnPausa'); await pg.click('[data-menu="inicio"]'); await pg.click(`[data-inicio="${m}"]:visible`); }
+      else if (menuAberto) await pg.click(`[data-inicio="${m}"]:visible`);
       else if (m === 'loja') await pg.click('#btnCarteira');   // fora da partida, o cabeçalho tem moedas (Loja) e Menu
-      else { await pg.click('#btnMenuTopo'); await pg.click(`[data-inicio="${m}"]`); }
+      else { await pg.click('#btnMenuTopo'); await pg.click(`[data-inicio="${m}"]:visible`); }
       await pg.waitForTimeout(250); await pg.keyboard.press('Escape');
     }
     await pg.close();
