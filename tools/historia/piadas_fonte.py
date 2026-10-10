@@ -8,6 +8,7 @@ ajuda a julgar a piada) e de qual gag ela faz parte (§8 do roteiro). O status n
     python3 tools/historia/piadas_fonte.py
 """
 import json
+import sys
 from pathlib import Path
 
 RAIZ = Path(__file__).resolve().parents[2]
@@ -33,7 +34,8 @@ F = [
     # Guia
     ('G-01', 'Diana', 'Primeiro Eco', 'Eco. O mesmo número. Gêmeos idênticos: mesmo código, opiniões diferentes.', '', ''),
     ('G-02', 'Diana', 'Primeiro Passo', 'Passo. Um a mais ou um a menos. Uma mutação pequena. A maioria passa despercebida. (toca no nariz) A minha, não.', '', 'nariz'),
-    ('G-03', 'Diana', 'Primeiro Oposto', 'Oposto. Somam sete. Como A e T, C e G na biologia. O dado sabia disso antes.', '', ''),
+    ('G-03a', 'Diana', 'Primeiro Oposto · opção a', 'Oposto. Somam sete: as faces de lados contrários do dado. Os opostos se completam. Diz o dado.', '', ''),
+    ('G-03b', 'Diana', 'Primeiro Oposto · opção b', 'Oposto. Somam sete: um e seis, dois e cinco, três e quatro. Cada número tem o seu par. Quase romântico.', '', ''),
     ('G-04', 'Diana', 'Primeira corrente de 3', 'Três elos. Um códon: a menor frase que a vida sabe ler. Já dá para disparar.', '', ''),
     ('G-05', 'Diana', 'Primeira ruptura', 'Rompeu. Na natureza chamam isso de mutação. Aqui chamamos de "arrisquei demais".', '', ''),
     ('G-06', 'Diana', 'Primeiro uso do Bolso', 'O Bolso guarda um dado. A vida guarda duas fitas pelo mesmo motivo.', '', ''),
@@ -50,7 +52,8 @@ F = [
     ('C1-10', 'Sapo', 'Partida · ruptura dele', 'Escorreguei na vitória-régia.', '', ''),
     ('C1-11', 'Sapo', 'Partida · ele venceu', 'Chá?', '', 'cha'),
     ('C1-12', 'Sapo', 'Partida · ele perdeu', 'Justo. A página é sua. O chá também, se quiser.', '', 'cha'),
-    ('C1-13', 'Página 1', 'Depois · Q1', 'SOPA DE GIRINO AO CONTRÁRIO: leve a fita de volta pela outra ponta. Não deixe ferver. (margem: "Reverso? Testar.")', 'A página molhada, com o desenho de uma fita voltando.', 'receitas'),
+    ('C1-13a', 'Página 1', 'Depois · Q1 · opção a', 'SOPA DE GIRINO AO CONTRÁRIO · Ingredientes: A, T, C e G. Nessa ordem. Ou na outra.', 'A página molhada.', 'receitas'),
+    ('C1-13b', 'Página 1', 'Depois · Q1 · opção b', '(margem, na letra da Diana) Ler no espelho. Ou com o Reverso.', 'A página molhada, com o título escrito espelhado: SOPA DE GIRINO AO CONTRÁRIO.', 'receitas'),
     ('C1-14', 'Sapo', 'Depois · Q2–Q3', 'Sabe por que ela quer isso? Dizem que a salamandra regenera uma perna inteira. / Eu não. Sou sapo. Todo mundo confunde.', '', ''),
     # Interlúdio 1
     ('I1-01', 'Diana', 'Q1', 'Uma a menos.', 'Ela lê a página um. No fundo, pela primeira vez, um mural de cortiça com uma foto de dado e um barbante vermelho.', 'mural'),
@@ -68,14 +71,17 @@ F = [
     ('C2-09', 'Coelho', 'Partida · ruptura dele', 'Contei errado. De novo. Eram quarenta e quatro.', '', ''),
     ('C2-10', 'Coelho', 'Partida · ele venceu', 'Ganhei! Preciso ir. Atrasado.', '', ''),
     ('C2-11', 'Coelho', 'Partida · ele perdeu', 'Toma a página. Corre que ainda dá tempo de… alguma coisa.', '', ''),
-    ('C2-12', 'Página 2', 'Depois · Q1', 'PÃO QUE CRESCE SOZINHO: fermento no máximo. Deixe dobrar. Dobre de novo. Não deixe o coelho ajudar. (margem: "superexpressão")', 'Um pão saindo da fôrma e do quadro.', 'pao'),
+    ('C2-12a', 'Página 2', 'Depois · Q1 · opção a', 'PÃO QUE CRESCE SOZINHO · Ingredientes: G, G, G e G. Fermento: sim.', 'Um pão saindo da fôrma e do quadro.', 'receitas'),
+    ('C2-12b', 'Página 2', 'Depois · Q1 · opção b', '(margem, na letra da Diana) Não deixar o Coelho ler.', 'A página com o título PÃO QUE CRESCE SOZINHO e uma mancha de farinha em forma de pata de coelho.', 'receitas'),
     ('C2-13', 'Coelho', 'Depois · Q2', 'Ela é sua amiga? Avisa que o curativo está torto.', '', 'nariz'),
-    ('C2-14', 'Coelho', 'Depois · Q3', 'E pergunta se ela tem mais receitas. O pão ficou ótimo. Ainda está crescendo.', '', 'pao'),
+    ('C2-14a', 'Coelho', 'Depois · Q3 · opção a', 'Ela tem outras receitas? Pergunto por um amigo. Quarenta e três amigos.', '', 'pao'),
+    ('C2-14b', 'Coelho', 'Depois · Q3 · opção b', '(sem esta fala: o capítulo termina no Q2)', '', 'pao'),
     # Cap 3 Raposa
     ('C3-01', 'Diana', 'Interlúdio · Q1', 'Inspiração.', 'Um mini cachecol verde enrolado no nariz.', 'nariz'),
     ('C3-02', 'Diana', 'Interlúdio · Q2–Q3', 'A Raposa tem a página três. Ela vai mentir para você. / Não. Pior. Ela vai dizer a verdade de um jeito que parece mentira.', '', ''),
     ('C3-03', 'Diana', 'Interlúdio · Q4', 'E ela usa armadilhas. Eu também. Achei que era hora de contar.', 'A Diana vira uma carta para baixo: o "?".', ''),
-    ('C3-04', 'Raposa', 'Chegada · Q1', 'Ah. A aluna da gata.', 'A Raposa num sofá de toca, olhos semicerrados, satisfeita.', ''),
+    ('C3-04a', 'Raposa', 'Chegada · Q1 · opção a', 'Ah. Você deve ser o projeto da gata.', 'A Raposa num sofá de toca, olhos semicerrados, satisfeita.', 'sabem'),
+    ('C3-04b', 'Raposa', 'Chegada · Q1 · opção b', 'Ah. Quem a gata anda treinando.', 'A Raposa num sofá de toca, olhos semicerrados, satisfeita.', 'sabem'),
     ('C3-05', 'Raposa', 'Chegada · Q2', 'No inverno eu fico branca, sabia? É genética. O cachecol é escolha.', '', ''),
     ('C3-06', 'Raposa', 'Chegada · Q3–Q5', 'A página é "Torta de Fundo Falso". Adorei. Quase não devolvo. / … / Quase.', '', ''),
     ('C3-07', 'Raposa', 'Partida · início', 'Fique à vontade. Nada aqui é o que parece. Inclusive eu.', '', ''),
@@ -85,12 +91,14 @@ F = [
     ('C3-11', 'Raposa', 'Partida · ruptura dela', 'Que deselegante. Para mim.', '', ''),
     ('C3-12', 'Raposa', 'Partida · ela venceu', 'Volte quando quiser perder com estilo.', '', ''),
     ('C3-13', 'Raposa', 'Partida · ela perdeu', 'Leve. E cuidado com a gata: ela é mais raposa do que eu.', '', 'sabem'),
-    ('C3-14', 'Página 3', 'Depois · Q1', 'TORTA DE FUNDO FALSO: a massa esconde o recheio. Ninguém precisa saber o que vai dentro até morder.', 'Uma torta cortada, com o recheio escondido.', 'receitas'),
+    ('C3-14a', 'Página 3', 'Depois · Q1 · opção a', 'TORTA DE FUNDO FALSO · Recheio: segredo. Até para quem come.', 'Uma torta inteira, sem corte.', 'receitas'),
+    ('C3-14b', 'Página 3', 'Depois · Q1 · opção b', '(debaixo de uma aba da página) Achou que ia ter receita aqui?', 'A página TORTA DE FUNDO FALSO tem uma aba de papel colada; levantada, mostra só a frase.', 'receitas'),
     # Cap 4 Urso
     ('C4-01', 'Diana', 'Interlúdio · Q1–Q3', 'É um acessório. / … / Está na moda. Em clínica veterinária.', 'A Diana com um cone de veterinário no pescoço.', 'nariz'),
     ('C4-02', 'Diana', 'Interlúdio · Q4–Q5', 'O Urso tem a página quatro. Está hibernando. Não acorde ele. / Quer dizer: acorde. Com educação.', 'O mural no fundo: três fotos e um bilhete "DISPARO. DUELO. DOBRO. → D".', 'letra-d'),
     ('C4-03', 'Urso', 'Chegada · Q2', '…É primavera?', 'Caverna escura, um volume enorme de gorro vermelho; o ronco desenhado com pips. Um olho abre.', ''),
-    ('C4-04', 'Urso', 'Chegada · Q3', 'Não? Então são cinco minutos. Ou cinco meses. O que vier primeiro.', '', ''),
+    ('C4-04a', 'Urso', 'Chegada · Q3 · opção a', 'Não? Então estou sonhando. Joga rápido, antes que eu acorde.', '', ''),
+    ('C4-04b', 'Urso', 'Chegada · Q3 · opção b', 'Não? Então me acorda em março.', '', ''),
     ('C4-05', 'Caixa + Urso', 'Chegada · Q4', 'CAIXA: Ursos hibernam meses e acordam sem perder músculo. A ciência quer muito esse segredo. / URSO: O segredo é não acordar.', '', ''),
     ('C4-06', 'Urso', 'Partida · início', '(bocejo) Vai você primeiro. Vai você sempre.', '', ''),
     ('C4-07', 'Urso', 'Partida · usa Pausa', 'Pausa. Não é preguiça. É estratégia de inverno.', '', ''),
@@ -98,7 +106,8 @@ F = [
     ('C4-09', 'Urso', 'Partida · ruptura dele', 'Cochilei no meio.', '', ''),
     ('C4-10', 'Urso', 'Partida · ele venceu', 'Pronto. Posso voltar a dormir?', '', ''),
     ('C4-11', 'Urso', 'Partida · ele perdeu', 'Leva a página. Fecha a porta. Apaga a luz.', '', ''),
-    ('C4-12', 'Página 4', 'Depois · Q1', 'MEL EM BANHO-MARIA: deixe dormir. O gene não some, só fica quieto. Acorde com cuidado.', 'Um pote de mel dormindo em banho-maria.', 'receitas'),
+    ('C4-12a', 'Página 4', 'Depois · Q1 · opção a', 'MEL EM BANHO-MARIA · Tempo de preparo: um inverno.', 'Um pote de mel de gorro, dormindo em banho-maria.', 'receitas'),
+    ('C4-12b', 'Página 4', 'Depois · Q1 · opção b', '(margem, na letra da Diana) Não acordar o mel.', 'A página MEL EM BANHO-MARIA, com o pote de mel desenhado de olhos fechados.', 'receitas'),
     ('C4-13', 'Urso', 'Depois · Q3–Q4', '(dormindo) …a gata… o nariz… ela pediu pra não contar… / (ronco)', 'O Urso dormindo de novo; você puxa a página da pata dele.', 'sabem'),
     # Cap 5 Guaxinim
     ('C5-01', 'Diana', 'Interlúdio · Q1–Q2', 'O cone sumiu. / Suspeito de alguém de máscara.', 'Uma meia enrolada no nariz.', 'nariz'),
@@ -114,7 +123,8 @@ F = [
     ('C5-11', 'Guaxinim', 'Partida · ruptura dele', 'Lixo. Literalmente.', '', ''),
     ('C5-12', 'Guaxinim', 'Partida · ele venceu', 'Volte sempre. Traga coisas.', '', ''),
     ('C5-13', 'Guaxinim', 'Partida · ele perdeu', 'Tá. Leva a página. E o cone. / …Fica com o cone? Não? Tá.', '', 'nariz'),
-    ('C5-14', 'Página 5', 'Depois · Q1', 'SALADA DE SOBRAS DOS OUTROS: pegue do vizinho o que ele não está usando. Funciona com bactéria. Com guaxinim também.', 'Uma tigela com folhas de várias hortas.', 'receitas'),
+    ('C5-14a', 'Página 5', 'Depois · Q1 · opção a', 'SALADA DE SOBRAS DOS OUTROS · Ingredientes: os do vizinho.', 'Uma tigela com folhas de várias hortas.', 'receitas'),
+    ('C5-14b', 'Página 5', 'Depois · Q1 · opção b', '(etiqueta de preço colada na página) Página 5 · 4,99 por mês', 'A página SALADA DE SOBRAS DOS OUTROS com uma etiqueta de preço por cima do título.', 'receitas'),
     ('C5-15', 'Guaxinim', 'Depois · Q2', 'Pergunta pra gata quem deixou a janela aberta.', '', 'sabem'),
     # Cap 6 Ovelha
     ('C6-01', 'Diana', 'Interlúdio · Q1–Q3', 'Algodão. / … / É lã. Da Ovelha. Ela ainda não sabe.', 'Um tufo branco e fofo no nariz.', 'nariz'),
@@ -128,7 +138,8 @@ F = [
     ('C6-09', 'Ovelha', 'Partida · ruptura dela', 'Desmanchou. Igual tricô.', '', ''),
     ('C6-10', 'Ovelha', 'Partida · ela venceu', 'Leva um pouco de lã de lembrança. Parece que alguém já levou.', '', 'nariz'),
     ('C6-11', 'Ovelha', 'Partida · ela perdeu', 'Toma a página. E diz pra gata devolver a minha lã.', '', 'nariz'),
-    ('C6-12', 'Página 6', 'Depois · Q1', 'PUDIM GÊMEO: faça dois iguais. Desenforme um ao contrário. Se ficarem idênticos, alguma coisa deu errado.', 'Dois pudins, um de cabeça para baixo.', 'receitas'),
+    ('C6-12a', 'Página 6', 'Depois · Q1 · opção a', 'PUDIM GÊMEO · Rende: duas porções idênticas. A segunda não lembra da primeira.', 'Dois pudins iguais.', 'receitas'),
+    ('C6-12b', 'Página 6', 'Depois · Q1 · opção b', '(margem, na letra da Diana) Uma delas é a cópia. Não pergunte qual.', 'Duas páginas PUDIM GÊMEO idênticas, grampeadas.', 'receitas'),
     # Interlúdio 6
     ('I6-01', 'Diana', 'Q1', 'Cansei de disfarçar.', 'A Diana sem nada no nariz: o ferimento à mostra. Primeiro quadro sério da história.', 'nariz'),
     ('I6-02', 'Diana', 'Q2', 'Não é nada. É um lençol.', 'O mural coberto por um lençol, o barbante vermelho saindo por baixo.', 'mural'),
@@ -142,16 +153,17 @@ F = [
     ('C7-06', 'Coruja', 'Partida · seu disparo grande', 'Jogada precisa. Você leu.', '', ''),
     ('C7-07', 'Coruja', 'Partida · ruptura dela', 'Hum. Escrevi uma letra errada. Acontece com os melhores.', '', ''),
     ('C7-08', 'Coruja', 'Partida · ela venceu', 'Ainda não. Volte quando ler mais rápido.', '', ''),
-    ('C7-09', 'Coruja', 'Partida · ela perdeu', 'Está pronta. Sente-se. Precisamos falar da gata.', '', 'sabem'),
-    ('C7-10', 'Coruja', 'Depois · Q1', 'Esta não é uma receita.', 'Ela entrega a última página: só o desenho de um nariz de gato com um X.', 'receitas'),
+    ('C7-09', 'Coruja', 'Partida · ela perdeu', 'Agora sim. Sente-se. Precisamos falar da gata.', 'Reescrita sem gênero (era "Está pronta").', 'sabem'),
+    ('C7-10a', 'Coruja', 'Depois · Q1 · opção a', 'A última. Não tem ingrediente nenhum.', 'Ela entrega a última página: só o desenho de um nariz de gato com um X.', 'receitas'),
+    ('C7-10b', 'Coruja', 'Depois · Q1 · opção b', '(quadro mudo: ela só entrega a página)', 'Ela entrega a última página: só o desenho de um nariz de gato com um X.', 'receitas'),
     ('C7-11', 'Coruja', 'Depois · Q2', 'Uma letra errada, no meio de quase três bilhões. Um Passo onde devia haver um Eco. Por isso não fecha.', '', ''),
-    ('C7-12', 'Coruja', 'Depois · Q3', 'Ela não te ensinou a jogar por gentileza, querida. Pergunte a ela.', '', 'sabem'),
+    ('C7-12', 'Coruja', 'Depois · Q3', 'Ela não te ensinou a jogar por gentileza. Pergunte a ela.', 'Reescrita sem gênero (tirei o "querida").', 'sabem'),
     # Revelação
     ('R-01', 'Diana', 'Q1', 'Você acha que é coincidência tudo começar com D?', 'Ela puxa o lençol: o mural inteiro, barbante vermelho, a foto de cada bicho carimbada, a sua no meio, uma dupla hélice com dados no lugar dos degraus.', 'letra-d'),
     ('R-02', 'Diana', 'Q2', 'Meu nome. Dados. DNA. Está tudo conectado.', 'Três cartões ligados pelo barbante: DIANA · DADOS · DNA.', 'letra-d'),
     ('R-03', 'Diana', 'Q3–Q5', 'Até a Dona Coruja. / Ela diz que "Dona" é pronome de tratamento. / É o que um D diria.', 'A foto da Coruja com um post-it "D?".', 'letra-d'),
     ('R-04', 'Diana', 'Q6', 'Uma letra. Errada. Desde que eu nasci. O corte foi a quina de um dado. O não fechar é comigo.', 'Ela sentada, séria.', 'nariz'),
-    ('R-05', 'Diana', 'Q7', 'Eu tentei sozinha. Patas não seguram pipeta.', 'A pata dela segurando uma pipeta, torta, pingando.', ''),
+    ('R-05', 'Diana', 'Q7', 'Eu tentei sozinha. Mas com essas patas fica difícil.', 'A pata dela segurando uma pipeta, torta, pingando.', ''),
     ('R-06', 'Diana', 'Q8–Q10', 'Então eu ensinei alguém que monta correntes melhor do que eu. / … / Você.', '', ''),
     ('R-07', 'Diana', 'Q11 · [Você me usou.]', 'Usei. Ensinei. Em gatês é a mesma palavra.', '', ''),
     ('R-08', 'Diana', 'Q11 · [E as páginas?]', 'O Guaxinim levou. Eu deixei a janela aberta. Com um bilhete: "por favor, não leve as páginas". / Guaxinim não lê bilhete. Eu sabia.', '', 'sabem'),
@@ -170,21 +182,31 @@ F = [
     ('F-01', 'Diana', 'Q1–Q2', 'Dois, cinco, dois, cinco. / …Parece senha de wi-fi.', 'A sua corrente vencedora vira uma fita impressa com as letras embaixo: 2 5 2 5 → C G C G.', ''),
     ('F-02', 'Diana', 'Q2 · se a corrente tem 3 ou 4', 'O três e o quatro não dizem nada. São tipo "hmm". Todo texto tem.', '', ''),
     ('F-03', 'Diana', 'Q5–Q6', 'Fechou. / Faz cócegas.', 'O ferimento fechado; ela encosta a pata. Antes, um quadro mudo.', 'nariz'),
-    ('F-A', 'Diana', 'Fecho · opção A, o Eco', 'Fechou. Fechou. / Por que eu estou falando duas vezes? Vezes? / Você pôs um Eco. Eco. / …Passa amanhã. Manhã. / Revanche? Vanche?', '', 'fecho'),
-    ('F-A2', 'Diana', 'Fecho · opção A, quadro da 3.ª estrela', 'Fita complementar perfeita. Eu ensinei bem. Bem.', '', 'fecho'),
-    ('F-B', 'Diana', 'Fecho · opção B, sem preço', 'Fechou. / Eu sabia que ia dar certo. Eu escolhi a pessoa certa. / Eu sou ótima professora. / Revanche?', '', 'fecho'),
-    ('F-C', 'Diana', 'Fecho · opção C, a orelha sempre', '…Você virou o dado errado. Sete menos o valor. / Gostei. Fica. / Revanche?', 'No espelho: a ponta preta da orelha trocou de lado.', 'fecho'),
-    ('F-D', 'Diana', 'Fecho · opção D, como estava', 'Comum: "…Você virou o dado errado. Sete menos o valor. A orelha trocou de lado. Tudo bem. Ninguém olha orelha. Revanche?" · Com a 3.ª estrela: "Nem a orelha mexeu. Fita complementar perfeita. Eu ensinei bem."', '', 'fecho'),
+    ('F-A', 'Diana', 'Fecho · o Eco', 'Fechou. Fechou. / Por que eu estou falando duas vezes? Vezes? / Você pôs um Eco. Eco. / …Passa amanhã. Manhã. / Revanche? Vanche?', '', 'fecho'),
+    ('F-A2', 'Diana', 'Fecho · quadro da 3.ª estrela', 'Fita complementar perfeita. Eu ensinei bem. Bem.', '', 'fecho'),
     # Pós-créditos
     ('X-01', 'Diana', 'Pós-créditos 1', 'DianaDice não seria um nome melhor para esse jogo? / … / Seria.', 'Ela risca "Dice Duel" com um pincel atômico e escreve por cima: "DianaDice".', 'letra-d'),
-    ('X-02', 'Coelho + Diana', 'Pós-créditos 2', 'COELHO (de dentro do pão): Fiz de novo! Com a página dois! / DIANA: Estava escrito: não deixe o coelho ajudar. / COELHO: Eu não ajudei. Eu fiz sozinho.', 'A Diana, curada, abre a porta. Um pão enorme ocupa o quadro inteiro.', 'pao'),
+    ('X-02a', 'Sapo + Diana', 'Pós-créditos 2 · opção a', 'SAPO: Soube da cura. Trouxe chá. / DIANA: É do lago? / SAPO: Orgânico.', 'A Diana, curada, abre a porta. O Sapo de chapéu, com uma xícara turva.', 'cha'),
+    ('X-02b', '—', 'Pós-créditos 2 · opção b', '(sem o segundo pós-créditos: termina no DianaDice)', '', ''),
 ]
 
 GAGS = {
     'nariz': 'O nariz (o enfeite muda a cada capítulo)', 'mural': 'O mural', 'letra-d': 'A teoria do D', 'receitas': 'O caderno de "receitas"',
     'pao': 'O pão do Coelho', 'sabem': 'Quem sabe de alguma coisa', 'pata': 'A pata', 'revanche': '"Revanche?"', 'cha': 'O chá do Sapo',
-    'fecho': 'O fecho da história (escolha uma opção)',
+    'fecho': 'O fecho da história (o Eco)',
 }
+
+
+def importar(pasta):
+    """As decisões da página de revisão (os documentos da coleção "revisao", salvos um por arquivo): cada uma vale
+    para o texto que foi julgado (o campo "texto" do documento)."""
+    dec = {}
+    for f in sorted(Path(pasta).glob('*.json')):
+        d = json.loads(f.read_text(encoding='utf-8'))
+        d = d.get('data', d)
+        if d.get('status') in ('aprovada', 'ajustar', 'recusada'):
+            dec[f.stem] = d
+    return dec
 
 
 def main():
@@ -192,6 +214,12 @@ def main():
     if SAIDA.exists():
         for x in json.loads(SAIDA.read_text(encoding='utf-8'))['falas']:
             antes[x['id']] = x
+    if len(sys.argv) > 1:   # python3 tools/historia/piadas_fonte.py PASTA_DA_REVISAO
+        for cod, d in importar(sys.argv[1]).items():
+            if cod in antes and d.get('texto') == antes[cod]['texto']:
+                antes[cod] = {**antes[cod], 'status': d['status'], 'nota': d.get('nota') or ''}
+    # textos que o próprio dono escreveu numa nota de ajuste já nascem aprovados
+    DO_DONO = {'R-05'}
     ids = [f[0] for f in F]
     assert len(ids) == len(set(ids)), 'código repetido'
     falas = []
@@ -200,11 +228,12 @@ def main():
         velho = antes.get(cod, {})
         # texto mudou: volta a pendente (a aprovação era do texto de antes)
         mudou = velho and velho.get('texto') != texto
+        st = 'aprovada' if cod in DO_DONO else 'pendente' if mudou or not velho else velho.get('status', 'pendente')
         falas.append({'id': cod, 'cap': cap, 'capitulo': CAPS[cap], 'quem': quem, 'onde': onde, 'texto': texto, 'desenho': desenho,
-                      'gag': gag, 'status': 'pendente' if mudou or not velho else velho.get('status', 'pendente'),
-                      'nota': '' if mudou else velho.get('nota', '')})
+                      'gag': gag, 'status': st, 'nota': 'texto do dono' if cod in DO_DONO else '' if mudou else velho.get('nota', '')})
     SAIDA.write_text(json.dumps({'gags': GAGS, 'falas': falas}, ensure_ascii=False, indent=1) + '\n', encoding='utf-8')
-    print(f'{SAIDA.relative_to(RAIZ)}: {len(falas)} falas')
+    from collections import Counter
+    print(f'{SAIDA.relative_to(RAIZ)}: {len(falas)} falas', dict(Counter(x['status'] for x in falas)))
 
 
 if __name__ == '__main__':
