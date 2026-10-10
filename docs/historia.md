@@ -24,7 +24,7 @@ receitas: a receita é ela. E você foi treinado para reescrever uma letra errad
   cada página virou um rival, e cada rival uma lição. A "busca das páginas" foi o treino.
 - **A cura:** a correção tem que ser escrita contra a fita original. A fita original é ela. Por isso o último duelo é
   contra a Diana, na Mesa dela, e ela não pode facilitar ("se eu facilitar, a cura sai com defeito").
-- **O preço:** em aberto (§7, Final): o dono não gostou de um final "melhor" preso a uma estrela. As opções estão lá.
+- **O preço:** nenhum. O fecho é o **Eco** (§7, Final), um final só para todo mundo (decisão do dono).
 
 Tudo isso é plantado desde o começo, para quem jogar de novo achar (§8): o curativo que piora a cada capítulo, o
 mural que cresce no fundo dos quadros dela, as frases soltas sobre DNA e as frases dos rivais que sabem de alguma coisa.
@@ -551,7 +551,7 @@ a cascata, o impacto e as tarefas do dia.
 8. **Publicar:** a `DiceDuel-primeira-partida` volta para a `DiceDuel` como v0.15. A página vai para o Vercel e o
    servidor para a Railway, que precisa da rota `/api/historia`.
 
-**O dado de cada bicho (4.ª rodada de falas, pendente):** o dono pediu que cada rival tenha o dado dele e que as
+**O dado de cada bicho (4.ª rodada de falas, revisada):** o dono pediu que cada rival tenha o dado dele e que as
 falas conversem com isso: Sapo verde, Diana rosa, Coelho branco clássico, Coruja madeira, Ovelha de lã e Raposa verde
 (roubado do Sapo). Os dados (as skins) e os quadros desenhados são da sessão de arte. Aqui ficaram 16 falas novas,
 cada uma com uma sacada científica de verdade:
@@ -566,7 +566,7 @@ cada uma com uma sacada científica de verdade:
   "move o ladrão" quando você soma um Oposto, sem nome de jogo;
 - a idade nos anéis da madeira da Coruja e os olhos fixos dela.
 
-Elas já estão nos lugares delas em `js/historia.js` e aparecem quando forem aprovadas.
+O dono aprovou 8 e recusou 8; as aprovadas estão nos lugares delas em `js/historia.js` e as recusadas saíram.
 
 **Pendente com o dono:**
 - a **F-03b** foi aprovada e substituiu a F-03 (que ficou de reserva);
