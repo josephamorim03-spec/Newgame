@@ -42,7 +42,7 @@
     <div class="inicio-partida" id="inicioPartida" hidden></div>
     <div class="inicio-jogar" id="inicioJogar">
       <button class="btn btn-mel inicio-principal" data-inicio="jogar">Jogar</button>
-      <div class="inicio-linha"><button class="btn btn-papel" data-inicio="online">Online<span class="ponto-online" id="pontoInicio" hidden></span></button></div>
+      <div class="inicio-linha"><button class="btn btn-papel" data-inicio="historia" hidden>História</button><button class="btn btn-papel" data-inicio="online">Online<span class="ponto-online" id="pontoInicio" hidden></span></button></div>
       <button class="inicio-tarefas" id="inicioTarefas" data-inicio="tarefas" hidden></button>
     </div>
     <div class="inicio-rivais" id="inicioRivais" hidden>
@@ -271,6 +271,14 @@
     </div>
   </div>
 
+  <div class="janela" id="janelaHistoria" hidden>
+    <div class="caixa" role="dialog" aria-modal="true" aria-labelledby="historiaTitulo">
+      <div class="deck-topo"><h2 id="historiaTitulo">O Caderno da Diana</h2></div>
+      <div id="historiaConteudo"></div>
+      <button class="btn btn-papel" id="btnFecharHistoria">Fechar</button>
+    </div>
+  </div>
+
   <div class="janela" id="janelaTarefas" hidden>
     <div class="caixa" role="dialog" aria-modal="true" aria-labelledby="tarefasTitulo">
       <div class="deck-topo"><h2 id="tarefasTitulo">Tarefas do dia</h2></div>
@@ -328,8 +336,8 @@
 <script src="shared/rolagem.js"></script>
 <script src="js/rolagem.js"></script>
 <script src="js/cartao.js"></script>
-<script src="js/patas_pintadas.js"></script>
-<script src="js/pata.js"></script>
+<script src="js/historia_falas.js"></script>
+<script src="js/historia.js"></script>
 <script src="js/jogo.js"></script>
 </body>
 </html>

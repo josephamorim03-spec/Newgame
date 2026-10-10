@@ -189,6 +189,36 @@
     return true;
   }
 
+  // ---------- modo história, "O Caderno da Diana" (docs/historia.md) ----------
+  // Os capítulos andam em ordem; vencer um pela primeira vez dá a recompensa dele, uma vez só. A carta da história
+  // continua à venda: quem já a tem recebe o preço dela em moedas (§6.1). Vale igual no aparelho e no servidor.
+  const HISTORIA = {
+    ordem: ['P', 'C1', 'C2'],
+    recompensa: { P: null, C1: { carta: 'reverso' }, C2: { moedas: 40 } },
+  };
+  function estadoHistoria(est) {
+    const feitos = est && Array.isArray(est.feitos) ? est.feitos.filter(c => HISTORIA.ordem.includes(c)) : [];
+    return { feitos: HISTORIA.ordem.filter(c => feitos.includes(c)) };
+  }
+  // o capítulo que dá para jogar agora (o primeiro não feito), ou null com tudo feito
+  const proximoCapitulo = est => HISTORIA.ordem.find(c => !estadoHistoria(est).feitos.includes(c)) || null;
+  // venceu o capítulo: devolve o estado novo e o prêmio ({ carta?, moedas }), ou erro se o capítulo ainda está travado.
+  // conta: { cartas, moedas } (mexe nela)
+  function concluirCapitulo(conta, est, cap) {
+    const e = estadoHistoria(est);
+    if (!HISTORIA.ordem.includes(cap)) return { erro: 'Capítulo desconhecido.' };
+    if (e.feitos.includes(cap)) return { estado: e, premio: null };   // jogar de novo não paga de novo
+    if (proximoCapitulo(e) !== cap) return { erro: 'Este capítulo ainda está fechado.' };
+    const r = HISTORIA.recompensa[cap] || {}, premio = {};
+    if (r.carta) {
+      if (conta.cartas.includes(r.carta)) premio.moedas = PRECO_CARTA[r.carta] || 0;
+      else { conta.cartas.push(r.carta); premio.carta = r.carta; }
+    }
+    if (r.moedas) premio.moedas = (premio.moedas || 0) + r.moedas;
+    if (premio.moedas) conta.moedas += premio.moedas;
+    return { estado: { feitos: e.feitos.concat(cap) }, premio: Object.keys(premio).length ? premio : null };
+  }
+
   // experiência: sobe sempre (vitória ou derrota); os níveis dão presentes cosméticos (conta: {xp, dados, icones, mesas})
   const xpDaPartida = (venceu, nMomentos) => (venceu ? 20 : 10) + Math.min(15, nMomentos * 3);
   function ganharXp(conta, ganho) {
@@ -626,6 +656,7 @@
     PONTOS, LIM, NA_MESA, REL, CARTAS, ORDEM, pedagioDe, deckValido, rels, sinc, frente, encaixa, facesQueEncaixam, opcoes, pontos, harmonica,
     GRATIS, PRECO_CARTA, CATALOGO, NIVEIS, PRESENTES, RATING_RIVAL, TETO_MOEDAS, BASE_MOEDAS, TITULOS, tituloDe, nivelDe,
     METAS, META_PADRAO, metaValida, moedasDaVitoria, ajusteRatingOnline, elo, premioSolo, xpDaPartida, ganharXp, precoDe,
+    HISTORIA, estadoHistoria, proximoCapitulo, concluirCapitulo,
     TAREFAS, MOEDAS_TAREFA, tarefasDoDia, estadoTarefas, resumoTarefas, resumoValido, avancarTarefas, dobrarPrimeiraVitoria,
     criarPartida, usarRng, encaixaP, destinos, destinosValidos, seguro, bolsoGarante, marcadoContra, valorAoPegar, seguroDado,
     usavel, armadilhasOcultas, podeUsar, usarCarta,

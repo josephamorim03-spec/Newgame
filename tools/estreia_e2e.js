@@ -1,8 +1,8 @@
 // A estreia e o guia no navegador (docs/design.md §5): quem nunca jogou toca em Jogar e cai direto numa partida
 // contra a Diana, até 8 pontos, sem cartas; cada explicação do guia aparece uma vez; o fim da derrota abre pelos
 // bons momentos; a partida seguinte volta ao caminho de sempre (escolha do rival, deck "Primeira mesa", sem
-// armadilhas) e só depois dela as armadilhas são liberadas. Quem já jogava não passa pela estreia. E a pata da
-// Diana na tela inicial mexem nos dados e os devolvem.
+// armadilhas) e só depois dela as armadilhas são liberadas. Quem já jogava não passa pela estreia. E os dados da
+// capa: dois brancos e um rosa no meio, que rolam ao toque e não mudam de cor.
 // Uso: NODE_PATH=$(npm root -g) node tools/estreia_e2e.js   (fotos em builds/fotos/)
 const { chromium } = require('playwright');
 const path = require('path');
@@ -164,19 +164,20 @@ async function jogar(pg, { fotoGuia = null, maxPassos = 1500 } = {}) {
   if (r6.estreia || r6.meta !== 16 || !r6.guia.estreia || r6.guia.jogou) falha(`jogar pelo deck pula a estreia, veio ${JSON.stringify(r6)}`);
   await dk.close();
 
-  // 6. as patas da Diana na tela inicial: uma mexe num dado e o devolve ao lugar; tocar no meio as faz recolher e soltar o
-  // dado; com a Dona Coruja escolhida, não há patas
-  const pt = await nova();
-  if (!(await pt.$('#inicioCena .cena-pata .mao0')) || !(await pt.$('#inicioCena .cena-pata .mao1'))) falha('as duas patas da Diana não estão na tela inicial');
-  await pt.waitForSelector('.cena-dado.cutucado', { timeout: 12000 }).catch(() => falha('a pata não mexeu em nenhum dado em 12 s'));
-  await pt.waitForTimeout(2600);
-  if (!(await pt.evaluate(() => [...document.querySelectorAll('.cena-dado')].every(d => !d.style.transform)))) falha('depois da investida, os dados voltam para o lugar');
-  await pt.waitForSelector('.cena-dado.cutucado', { timeout: 12000 }).catch(() => {});
-  await pt.click('.cena-dado >> nth=1'); await pt.waitForTimeout(700);
-  if (!(await pt.evaluate(() => [...document.querySelectorAll('.cena-dado')].every(d => !d.style.transform)))) falha('tocar no meio da investida solta o dado');
-  await pt.evaluate(() => { DiceDuel.st.guia.estreia = true; DiceDuel.st.cfg.nivel = 'esperto'; DiceDuel.abrirInicio(); });
-  if (await pt.$('#inicioCena .cena-pata')) falha('com a Dona Coruja não há pata');
-  await pt.close();
+  // 6. os dados da capa: dois brancos e um rosa no meio, sempre (com outro dado comprado, com a Dona Coruja e depois de
+  // rolar); tocar num dado o rola
+  const capa = await nova();
+  const peles = () => capa.evaluate(() => [...document.querySelectorAll('#inicioCena .cena-dado .dado')].map(d => [...d.classList].find(k => k.startsWith('skin-'))).join(' '));
+  const certo = 'skin-marfim skin-rosa skin-marfim';
+  if ((await peles()) !== certo) falha(`a capa tem dois dados brancos e um rosa no meio, veio ${await peles()}`);
+  const antes = await capa.evaluate(() => document.querySelector('#inicioCena .cena-dado:nth-child(1) .dado').getAttribute('aria-label'));
+  await capa.click('#inicioCena .cena-dado >> nth=0'); await capa.waitForTimeout(200);
+  const depois = await capa.evaluate(() => document.querySelector('#inicioCena .cena-dado:nth-child(1) .dado').getAttribute('aria-label'));
+  if (antes === depois) falha('tocar num dado da capa o rola (o número muda)');
+  await capa.evaluate(() => { const st = DiceDuel.st; st.conta.dados.push('dourado'); st.conta.dado = 'dourado'; st.guia.estreia = true; st.cfg.nivel = 'esperto'; DiceDuel.abrirInicio(); });
+  await capa.click('#inicioCena .cena-dado >> nth=1'); await capa.waitForTimeout(200);
+  if ((await peles()) !== certo) falha(`os dados da capa não mudam de cor (dado dourado, Dona Coruja, depois de rolar): veio ${await peles()}`);
+  await capa.close();
 
   await navegador.close();
   console.log(`Paciência na estreia: ${tevePaciencia ? 'apareceu' : 'não apareceu nesta partida (depende dos dados)'}`);

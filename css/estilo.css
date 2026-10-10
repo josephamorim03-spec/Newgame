@@ -1316,12 +1316,6 @@ button.bolso.alvo-dado { position: relative; border: 0; font: inherit; color: in
 @keyframes cenaEspera { 0%, 86%, 100% { transform: none; } 90% { transform: translateY(-12px) rotate(-12deg); } 94% { transform: translateY(0) rotate(4deg); } 97% { transform: translateY(-3px); } }
 .cena-dado.rola .dado { animation: cenaRola .55s cubic-bezier(.3,.7,.3,1); }
 @keyframes cenaRola { 0% { transform: translateY(0) rotate(0); } 35% { transform: translateY(-26px) rotate(200deg) scale(1.1); } 70% { transform: translateY(0) rotate(350deg) scale(.95, 1.05); } 85% { transform: translateY(-5px) rotate(360deg); } 100% { transform: translateY(0) rotate(360deg); } }
-/* as patas da Diana (js/pata.js): só as patas, num SVG por cima da mesa e do queixo */
-.cena-pata { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
-.cena-dado.cutucado .dado { animation: cenaCutuca .32s ease-out; }
-@keyframes cenaCutuca { 0% { transform: translateY(2px) scale(1.06, .9); } 30% { transform: translate(-1.5px, -1px) rotate(-6deg); } 55% { transform: translate(1.5px, 0) rotate(5deg); } 80% { transform: rotate(-2deg); } 100% { transform: none; } }
-.cena-rival.travessa { animation: cenaTravessa .7s ease-in-out both; }
-@keyframes cenaTravessa { 40%, 70% { transform: rotate(-6deg) translateX(-3px); } }
 @media (max-height: 680px) { .inicio-cena { height: 128px; } .cena-rival { width: 84px; height: 84px; margin-left: -42px; } .cena-mesa { height: 54px; } .cena-dado { width: 32px; height: 32px; } }
 
 /* ==========================================================================
@@ -1392,14 +1386,9 @@ button.inicio-perfil:active { transform: translateY(1px); }
 /* "Disparar e vencer" */
 .btn.vence { box-shadow: 0 3px 0 var(--mel-escuro), 0 0 0 3px rgba(255,236,190,.9), 0 0 22px 4px rgba(255,207,138,.75); }
 .fecha-txt { display: inline-grid; place-items: center; width: 1.25em; height: 1.25em; border-radius: 50%; background: var(--rival); color: #fff; font-size: .85em; vertical-align: .05em; }
-/* a presença do rival: o dado que ele olha acende de leve; com a Diana, a patinha passa por cima e bate no que ela pega */
+/* a presença do rival: o dado que ele olha acende de leve */
 .pega.olhado .face { transform: translateY(-4px); transition: transform .18s ease-out; }
 .pega.olhado .dado { box-shadow: 0 0 0 2px rgba(236,143,168,.7), 0 6px 14px rgba(0,0,0,.35); }
-.patinha { position: absolute; left: 50%; top: -42%; width: 78%; height: 78%; transform: translateX(-50%); pointer-events: none; z-index: 3;
-  filter: drop-shadow(0 4px 3px rgba(0,0,0,.3)); animation: patinhaChega .22s ease-out both; }
-.pega.destaque .patinha { animation: patinhaBate .52s ease-in-out both; }
-@keyframes patinhaChega { from { opacity: 0; transform: translate(-50%, -14px) scale(1.15); } to { opacity: 1; transform: translate(-50%, 0) scale(1); } }
-@keyframes patinhaBate { 0% { transform: translate(-50%, -10px); } 30% { transform: translate(-50%, 6px) scale(.94); } 55% { transform: translate(-50%, -4px); } 75% { transform: translate(-50%, 5px) scale(.95); } 100% { transform: translate(-50%, 0); } }
 /* o aviso da carta do rival, no vão entre o painel dele e a Mesa: mais baixo que as chamadas de festa */
 .chamada.aviso-carta.compacta { transform: translate(-50%, -50%); animation-name: avisoEntra; padding: 6px 18px 7px; border-radius: 18px; max-width: min(340px, calc(100vw - 32px)); min-width: 0; }
 .chamada.aviso-carta.compacta b { font-size: clamp(20px, 5.6vw, 26px); }
@@ -1440,3 +1429,60 @@ button.inicio-perfil:active { transform: translateY(1px); }
 .recompensas .tarefa-feita span:last-child { color: var(--mel-escuro); }
 .recompensas .tarefa-feita { flex-wrap: nowrap; }
 .recompensas .tarefa-feita span:first-child { flex: 1; min-width: 0; }
+
+/* ---------- modo história (v0.15): o leitor de gibi e o caderno ---------- */
+.gibi { position: fixed; inset: 0; z-index: 90; display: grid; grid-template-rows: auto 1fr auto; gap: 8px; cursor: pointer;
+  padding: calc(var(--seg-topo) + 12px) 16px calc(var(--seg-baixo) + 12px);
+  background: radial-gradient(circle at 1px 1px, rgba(255,243,226,.06) 1px, transparent 1.5px) 0 0 / 7px 7px, rgba(20,13,19,.97);
+  animation: gibiEntra .25s ease-out both; }
+@keyframes gibiEntra { from { opacity: 0; } }
+.gibi-topo { display: flex; justify-content: space-between; align-items: center; gap: 12px; max-width: 480px; width: 100%; margin: 0 auto; }
+.gibi-titulo { font-family: var(--f-titulo); font-weight: 700; color: var(--luz); font-size: 15px; letter-spacing: .02em; }
+.gibi-pular { color: var(--texto-suave); font-weight: 800; }
+.gibi-pagina { display: flex; flex-direction: column; justify-content: center; gap: 14px; max-width: 480px; width: 100%; margin: 0 auto; min-height: 0; overflow: hidden; }
+.gibi-dica { margin: 0; text-align: center; font-size: 12px; color: var(--texto-suave); opacity: .7; }
+.gq { background: var(--papel); color: var(--tinta); border: 3px solid var(--tinta); border-radius: 6px; padding: 12px 14px 14px; display: grid; gap: 10px;
+  box-shadow: 5px 5px 0 rgba(0,0,0,.45); transform: rotate(-.6deg); animation: gqEntra .32s cubic-bezier(.2,1.3,.4,1) both; }
+.gq:nth-child(even) { transform: rotate(.7deg); }
+.gq.saindo { opacity: .45; transform: scale(.94) rotate(-.6deg); transition: opacity .25s, transform .25s; max-height: 34vh; overflow: hidden; }
+@keyframes gqEntra { from { opacity: 0; transform: translateY(16px) scale(.96); } }
+.gq-topo { display: flex; align-items: center; gap: 10px; }
+.gq-topo .avatar { width: 52px; height: 52px; flex: none; }
+.gq-topo b { font-family: var(--f-titulo); font-size: 18px; }
+.gq-cena { margin: 0; padding: 6px 9px; background: #f6e3a8; border: 2px solid var(--tinta); font-size: 13px; font-style: italic; line-height: 1.35; color: #4a3a2a; }
+.gq-baloes { display: grid; gap: 8px; }
+.gq-balao { position: relative; margin: 0; padding: 9px 13px; background: #fffaf0; border: 2px solid var(--tinta); border-radius: 18px; font-size: 17px; font-weight: 700; line-height: 1.35;
+  animation: balaoEntra .22s cubic-bezier(.2,1.5,.4,1) both; justify-self: start; max-width: 100%; }
+.gq-balao::before { content: ''; position: absolute; left: 18px; top: -9px; width: 14px; height: 14px; background: #fffaf0; border-left: 2px solid var(--tinta); border-top: 2px solid var(--tinta); transform: rotate(45deg) skew(8deg, 8deg); }
+.gq-balao.pausa { font-size: 20px; color: var(--tinta-suave); padding: 4px 14px; }
+.gq-balao.caixa { border-radius: 2px; background: #f6e3a8; font-style: italic; font-weight: 600; }
+.gq-balao.caixa::before { display: none; }
+.gq-balao i { font-weight: 600; color: var(--tinta-suave); }
+.gq-quem { display: block; font-family: var(--f-titulo); font-size: 13px; color: var(--rival-tinta); }
+@keyframes balaoEntra { from { opacity: 0; transform: scale(.7); } }
+/* a página do caderno: papel pautado, o título em letra de mão e a nota da Diana na margem */
+.gq-pagina { background: transparent; border: 0; box-shadow: none; padding: 0; }
+.gq-folha { position: relative; background: repeating-linear-gradient(#fffaf0 0 27px, #d8e4ef 27px 28px); border: 2px solid var(--tinta); border-radius: 3px;
+  padding: 26px 18px 20px 44px; box-shadow: 5px 5px 0 rgba(0,0,0,.45); min-height: 140px; }
+.gq-folha::before { content: ''; position: absolute; left: 32px; top: 0; bottom: 0; width: 2px; background: rgba(232,128,111,.6); }
+.gq-num { position: absolute; top: 6px; right: 10px; font-size: 11px; font-weight: 800; color: var(--tinta-suave); text-transform: uppercase; letter-spacing: .08em; }
+.gq-linhas { display: grid; gap: 6px; }
+.gq-titulo-pag { margin: 0; font-family: var(--f-titulo); font-weight: 700; font-size: 20px; line-height: 1.2; animation: balaoEntra .22s both; }
+.gq-ingr { margin: 0; font-size: 16px; font-weight: 700; animation: balaoEntra .22s both; }
+.gq-margem { margin: 6px 0 0; font-family: var(--f-titulo); font-size: 17px; color: var(--rival-tinta); transform: rotate(-2deg); animation: balaoEntra .22s both; }
+.gq-margem small { display: block; font-family: var(--f-corpo); font-size: 11px; font-style: italic; color: var(--tinta-suave); transform: none; }
+.sem-animacoes .gq, .sem-animacoes .gq-balao, .sem-animacoes .gibi { animation: none; }
+
+/* o mapa do caderno */
+.historia-caps { list-style: none; margin: 0 0 12px; padding: 0; display: grid; gap: 8px; }
+.hc { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; padding: 10px 12px; border-radius: 14px; background: var(--papel-2); }
+.hc.atual { box-shadow: inset 0 0 0 2px var(--mel); }
+.hc.travado { opacity: .55; }
+.hc.em-breve { grid-template-columns: 1fr; }
+.hc-retrato .avatar { width: 46px; height: 46px; }
+.hc-txt { display: grid; gap: 2px; min-width: 0; }
+.hc-txt small { font-size: 12px; font-weight: 800; color: var(--tinta-suave); text-transform: uppercase; letter-spacing: .05em; }
+.hc-txt b { font-family: var(--f-titulo); font-size: 16px; line-height: 1.2; }
+.hc-txt span { font-size: 13px; color: var(--tinta-suave); }
+.hc.feito .hc-txt span { color: #2f7a52; font-weight: 800; }
+.hc .btn { min-height: 40px; padding: 0 14px; }

@@ -42,7 +42,7 @@
 | Onomatopeia desenhada | o som escrito no quadro | **sim, 4 momentos**: ruptura "plonc" (pequena, caindo), Bolso que salva "fump", disparo de 5+ "fuuu!", armadilha "tchã!" | `case 'ruptura'` (~1197), `'salvo'` (~1206), disparo, `'revelou'` |
 | Quadro congelado | a ação para num painel com moldura | **sim, só Sinfonia e Virada**: 250 ms de pausa visual com borda de tinta e retícula, depois segue | `e.L === 6` (~1170), vitória com `e.virada` (~1243) |
 | Linhas de velocidade / *smear* | rastro desenhado do movimento | **talvez**: no voo dos pontos até o placar e da carta jogada | `Fx.orbes`, `Fx.voar` |
-| Cada personagem com seu estilo | cada aranha anima de um jeito | **depois**: a Diana em dois (ágil, de gato), a Dona Coruja em uns (calma) | `js/pata.js`, falas, avatares |
+| Cada personagem com seu estilo | cada aranha anima de um jeito | **depois**: a Diana em dois (ágil, de gato), a Dona Coruja em uns (calma) | falas, avatares |
 | Tela partida em painéis | dois quadros lado a lado | **depois**: só no versus (Você × rival) | janela do versus |
 | Glitch, *kirby krackle*, tremor contínuo | ruído dimensional | **não** | — |
 
