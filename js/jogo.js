@@ -369,12 +369,12 @@
     }
     let precisa = eu.length >= 2 && !m.some(d => encaixaP(p, d.v));
     if (precisa && pode('virar')) { const i = m.findIndex(d => encaixa(eu, 7 - d.v)); if (i >= 0) { usa.push({ carta: 'virar', idx: i }); precisa = false; } }
-    if (precisa && pode('ajuste')) {
+    if (precisa && pode('ajuste') && m.length >= 3) {
       for (let i = 0; i < m.length && precisa; i++) for (const dl of [1, -1]) {
         const x = m[i].v + dl; if (x >= 1 && x <= 6 && encaixa(eu, x)) { usa.push({ carta: 'ajuste', idx: i, delta: dl }); precisa = false; break; }
       }
     }
-    if (precisa && pode('coringa')) { usa.push({ carta: 'coringa' }); precisa = false; }
+    if (precisa && pode('coringa') && m.length >= 2) { usa.push({ carta: 'coringa' }); precisa = false; }
     // Reverso: nada entra pela frente, mas algo da Mesa (ou o dado do Bolso) entra pela outra ponta
     if (precisa && pode('reverso')) {
       const outra = [eu[0]];
@@ -1278,7 +1278,7 @@
         <tr><td>Diana (iniciante)</td><td>${BASE_MOEDAS.aprendiz}</td><td>rating abaixo de ${TETO_MOEDAS.aprendiz}</td></tr>
         <tr><td>Dona Coruja (avançado)</td><td>${BASE_MOEDAS.esperto}</td><td>rating abaixo de ${TETO_MOEDAS.esperto}</td></tr>
         <tr><td>Online, com amigos</td><td>${BASE_MOEDAS.online}</td><td>sempre; vale mais vencer quem tem rating maior</td></tr></table>
-        <p class="nota" style="margin-top:10px">Só vitórias dão moedas. A base é multiplicada pela <b>margem</b> (×1 a ×2: vencer por 11 pontos ou mais, na meta 16, dobra), pela <b>rapidez</b> (na meta 16, ×1,5 em até 7 Mesas, ×1,25 em 8) e pela <b>duração</b> (meta 20: ×1,25; meta 24: ×1,5). Uma vitória típica rende cerca de 14 contra a Diana e 24 contra a Dona Coruja. Com conta, as vitórias contra os rivais do jogo rendem até 300 moedas por dia.</p>
+        <p class="nota" style="margin-top:10px">Só vitórias dão moedas. A base é multiplicada pela <b>margem</b> (×1 a ×2: vencer por 11 pontos ou mais dobra) e pela <b>rapidez</b> (×1,5 em até 7 Mesas, ×1,25 em 8). Uma vitória típica rende cerca de 12 contra a Diana e 21 contra a Dona Coruja. Com conta, as vitórias contra os rivais do jogo rendem até 300 moedas por dia.</p>
         <p class="nota">Experiência sobe em toda partida, ganhando ou perdendo, e os níveis 2, 3 e 5 dão presentes. Cartas nunca serão vendidas por dinheiro: elas ampliam o estilo, não a força (o melhor deck é feito só de cartas grátis).</p>
         <button class="btn btn-papel btn-voltar" data-voltar-loja="1">← Voltar à loja</button>`;
       return;

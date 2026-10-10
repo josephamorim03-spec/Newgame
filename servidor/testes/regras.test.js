@@ -321,13 +321,20 @@ test('Desafio e blefe podem fechar a partida', () => {
 });
 
 // ---------- v0.12: metas 16, 20 e 24; o Coringa troca a frente ----------
-test('Metas: 16, 20 e 24 (16 é o padrão); 12 e lixo viram 16; partidas longas rendem mais moedas', () => {
-  assert.deepStrictEqual(Regras.METAS, [16, 20, 24]);
+test('Meta: só a 16 por ora (20 e 24 voltam com o próprio ajuste); o resto vira 16; partidas longas rendem mais moedas', () => {
+  assert.deepStrictEqual(Regras.METAS, [16]);
   assert.strictEqual(Regras.criarPartida({ decks: [[], []], rng: rngDe(1) }).meta, 16);
-  for (const [m, v] of [[16, 16], [20, 20], [24, 24], ['24', 24], [12, 16], [undefined, 16], ['muito', 16]]) assert.strictEqual(Regras.metaValida(m), v);
+  for (const [m, v] of [[16, 16], ['16', 16], [20, 16], [24, 16], [12, 16], [undefined, 16], ['muito', 16]]) assert.strictEqual(Regras.metaValida(m), v);
   const a = Regras.moedasDaVitoria(10, 0, 30, 16).total, b = Regras.moedasDaVitoria(10, 0, 30, 20).total, c = Regras.moedasDaVitoria(10, 0, 30, 24).total;
   assert.deepStrictEqual([a, b, c], [10, 13, 15]);
   assert.strictEqual(Regras.moedasDaVitoria(10, 0, 30, 12).total, 10);   // partida guardada de antes da v0.12: sem desconto
+});
+test('Ajuste só com 3+ dados na Mesa; Coringa só com 2+ (v0.12)', () => {
+  for (const [c, n, ok] of [['ajuste', 2, false], ['ajuste', 3, true], ['coringa', 1, false], ['coringa', 2, true]]) {
+    const j = Regras.criarPartida({ decks: [[c], []], vez: 0, rng: rngDe(9) });
+    j.cor[0] = [2, 3]; j.mesa = j.mesa.slice(0, n);
+    assert.strictEqual(Regras.podeUsar(j, 0, c, 0).ok, ok, `${c} com ${n} dados`);
+  }
 });
 test('Coringa: o dado que romperia troca a frente; a corrente não cresce nem completa o 6.º', () => {
   const j = Regras.criarPartida({ decks: [['coringa'], []], vez: 0, rng: rngDe(3) });

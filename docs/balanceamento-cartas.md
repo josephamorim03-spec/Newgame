@@ -826,3 +826,61 @@ Pressa com 4 dados na Mesa (0,1% das partidas). O rival não assistiu por regra:
 carta mais fraca dos 402 decks (média ~47%), então a regra fica. O que mudou foi a tela: o aviso da Pausa do rival diz
 "você joga de novo", e quando a vez volta para você em seguida aparece "Sua vez de novo" com o motivo ("você está
 atrás no placar e abre a Mesa nova" ou "Diana usou a Pausa e passou a vez").
+
+## 17. Nenhum deck acima de 60%, e a meta (v0.12)
+
+**O alvo.** Em jogo de cartas competitivo, um deck que vence 60% contra o campo vira obrigatório. O alvo aqui: o
+melhor deck **confirmado** entre 55% e 58%, as médias das cartas perto de 50%.
+
+**Cuidado com o "melhor".** Com 200 partidas por deck, cada número tem ±7 pontos de ruído, e o maior de 402 números
+ruidosos sai inflado em 8 a 10 pontos. Por isso, a cada rodada, os 12 melhores jogam de novo 3.000 partidas cada
+(`CONFIRMA=3000 python3 sim/humano.py decks`), e só o confirmado conta. (Todos os números: humano × humano, meta 16, as
+15 cartas, a Pressa nova.)
+
+| Mudança testada | Melhor deck confirmado | Dos 12 melhores, acima de 58% | Médias das cartas |
+|---|---|---|---|
+| hoje | 61,6% Ajuste + Coringa + Pressa | 7 | 45,3% (Pedágio) a 53,3% (Lacre) |
+| Âncora em corrente de 3+ | 62,6% | 4 | |
+| Pedágio +3 | 62,1% (o Pedágio vira o problema) | 9 | |
+| Sobrecarga +3 | 62,5% (a Sobrecarga vira o problema) | 7 | |
+| Pausa com disparo | 62,0% | 5 | |
+| Ajuste só +1 | 61,7% | 5 | |
+| no máximo 2 cartas de conserto por deck | 63,5% | 6 | |
+| sem o Coringa | 59,4% | 2 | |
+| sem o Ajuste | 62,2% Coringa + Fundo + Virar | 4 | |
+| sem o Coringa e sem o Ajuste | 56,6% | 0 | |
+| Coringa fecha a corrente (dispara no resgate) | 61,7% (o Ajuste em todos os 6 melhores) | 7 | Coringa cai a 45% |
+| ... e Ajuste não pega o dado que ajustou | 57,3% | 0 | Coringa 45,4%, Ajuste 47,0%: fracas demais |
+| Coringa e Ajuste só com 3+ dados na Mesa | 58,7% | 1 | Coringa 44,4%: fraco demais |
+| Coringa até corrente de 4 + Ajuste com 3+ | 62,3% | 6 | Coringa sobe a 54,4% |
+| **Coringa com 2+ dados na Mesa + Ajuste com 3+ (v0.12)** | **58,2%** Fundo + Reverso + Virar | **1** | **47,4% (Pedágio) a 52,7% (Lacre)** |
+
+**O que se aprendeu:**
+- **Fortalecer as fracas não abaixa o topo.** Puxa a carta fortalecida para o topo e o resto continua.
+- **O problema eram as duas cartas de conserto mais flexíveis, Coringa e Ajuste**, sozinhas ou juntas, e ele aparecia
+  no fim da Mesa: com 1 ou 2 dados sobrando, consertar tirava todo o risco de segurar a corrente.
+- **A regra adotada é da mesma família da Pressa (3 ou 4 dados):** Ajuste só com 3+ dados na Mesa, Coringa só com 2+.
+  As duas continuam úteis (~49%), o melhor deck cai de 61,6% para 58,2%, a faixa das cartas aperta de 8 para 5 pontos
+  e os decks jogáveis (45%+) vão de 81% para 85%.
+
+**A meta.** Com o humano (8.000 partidas por linha) e o equilíbrio dos decks com a regra nova:
+
+| Meta | Mesas | Minutos | Quem começa vence | Virada (3+ atrás no meio) | Cartas que sobram | Melhor deck (confirmado) |
+|---|---|---|---|---|---|---|
+| 12 | 6,6 | 4 a 6 | **56,1%** | 25% | **24%** | 73,7% (antes da regra nova; 47 decks acima de 58%) |
+| **16** | 9,2 | 5 a 8 | 53,7% | 28% | 17% | **58,2%** |
+| 20 | 11,5 | 7 a 10 | 52,4% | 37,5% | 13% | 60,9% (Pedágio e Sobrecarga ~56% de média: 20 = 6+6+6+2) |
+| 24 | 13,6 | 8 a 11 | 51,5% | 35% | 10% | 62,7% (resgates em série: Âncora + Coringa + Reverso) |
+
+- **A 12 é ruim mesmo:** quem começa leva vantagem, um quarto das cartas nem chega a ser usado, e é a mais
+  desequilibrada.
+- **Só a 16 fica equilibrada com as mesmas cartas.** A 20 e a 24 têm virada mais frequente e começo mais justo (bom),
+  mas cada uma deixa um tipo de deck passar de 60%. Por ora, **o jogo tem uma meta só, a 16** (a escolha sumiu da tela
+  e dos Ajustes; meta antiga vira 16). Modos mais longos voltam quando tiverem o próprio ajuste (os números dos ⚡ na
+  20; os resgates na 24).
+- **O pensador não serve para comparar metas.** Com 12 simulações por opção, a partida longa vira ruído para ele: venceu
+  o humano em 69% na 12, 65% na 16, 51% na 20 e **39% na 24**. Quem piora é ele, não o jogo.
+
+Reproduzir: `cd sim && N=8000 python3 humano.py metas` e, para cada linha da primeira tabela,
+`CONFIRMA=3000 ND=200 BAL='{...}' VARIANTES="3 cartas (hoje)" python3 humano.py decks` (variantes em `deck.py`:
+`ajuste_modo`, `coringa_mesa`, `coringa_modo`; `SEM=coringa` tira uma carta; `MAXCONSERTO=2` limita os consertos).

@@ -114,14 +114,14 @@ const espera = ms => new Promise(r => setTimeout(r, ms));
     await espera(300);
     for (const pg of [ana, bia]) { await fechar(pg); await pg.evaluate(() => document.querySelectorAll('.versus').forEach(v => v.click())); }
     await ana.screenshot({ path: path.join(FOTOS, 'online-partida-celular.png') }); await layout(ana, 'partida'); await layout(bia, 'partida');
-    // Ajustes no meio da partida online: tocar na meta (a marcada e a outra) não é desistência
+    // Ajustes no meio da partida online: mexer neles (o ritmo do rival, a marcada e a outra) não é desistência
     await ana.evaluate(() => document.getElementById('btnConfig').click());
-    const metaAna = await ana.evaluate(() => DiceDuel.st.cfg.meta);
-    await ana.click(`#janelaConfig [data-cfg="meta"][data-v="${metaAna}"]`); await ana.click(`#janelaConfig [data-cfg="meta"][data-v="${metaAna === 16 ? 20 : 16}"]`);
+    const ritmoAna = await ana.evaluate(() => DiceDuel.st.cfg.ritmo);
+    await ana.click(`#janelaConfig [data-cfg="ritmo"][data-v="${ritmoAna}"]`); await ana.click(`#janelaConfig [data-cfg="ritmo"][data-v="${ritmoAna === 'calmo' ? 'rapido' : 'calmo'}"]`);
     await espera(400);
-    const depoisCfg = await ana.evaluate(() => ({ modo: DiceDuel.jogo.modo, fase: DiceDuel.jogo.fase, aviso: !document.getElementById('avisoCfg').hidden }));
-    if (depoisCfg.modo !== 'online' || depoisCfg.fase === 'fim' || !depoisCfg.aviso) throw new Error('Ajustes no online mexeram na partida: ' + JSON.stringify(depoisCfg));
-    await ana.click(`#janelaConfig [data-cfg="meta"][data-v="${metaAna}"]`);
+    const depoisCfg = await ana.evaluate(() => ({ modo: DiceDuel.jogo.modo, fase: DiceDuel.jogo.fase }));
+    if (depoisCfg.modo !== 'online' || depoisCfg.fase === 'fim') throw new Error('Ajustes no online mexeram na partida: ' + JSON.stringify(depoisCfg));
+    await ana.click(`#janelaConfig [data-cfg="ritmo"][data-v="${ritmoAna}"]`);
     await fechar(ana);
     const vistaBia = await bia.evaluate(() => ({ nomes: DiceDuel.jogo.nomes, deckRival: DiceDuel.jogo.decks[1], ritmo: DiceDuel.jogo.ritmo, limite: DiceDuel.jogo.limiteVez }));
     if (vistaBia.ritmo !== 'calma' || vistaBia.limite !== 120000) throw new Error('o tempo por vez escolhido não chegou à partida: ' + JSON.stringify(vistaBia));

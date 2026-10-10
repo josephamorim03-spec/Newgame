@@ -15,14 +15,14 @@
   const LIM = 6, NA_MESA = 5;
   const REL = { eco: { nome: 'Eco', simb: '=' }, passo: { nome: 'Passo', simb: '±1' }, oposto: { nome: 'Oposto', simb: '7' } };
   const CARTAS = {
-    ajuste:        { nome: 'Ajuste', tipo: 'efeito', alvo: true, verbo: '±1 num dado', texto: 'Some ou tire 1 de um dado da Mesa (o 6 não passa de 6, o 1 não desce de 1). Não desfaz a marca de um Espelho.' },
+    ajuste:        { nome: 'Ajuste', tipo: 'efeito', alvo: true, verbo: '±1 num dado', texto: 'Some ou tire 1 de um dado da Mesa (o 6 não passa de 6, o 1 não desce de 1). Só com 3 dados ou mais na Mesa. Não desfaz a marca de um Espelho.' },
     virar:         { nome: 'Virar', tipo: 'efeito', alvo: true, verbo: 'vira um dado', texto: 'Vire um dado da Mesa para a face oposta (7 − valor). Se o dado tinha a marca de um Espelho, a marca some.' },
     rerrolar:      { nome: 'Rerrolar', tipo: 'efeito', verbo: 'rola a Mesa', texto: 'Role de novo todos os dados que estão na Mesa. Se havia a marca de um Espelho, ela some.' },
     pressa:        { nome: 'Pressa', tipo: 'efeito', verbo: 'pega 2 dados', texto: 'Nesta vez você pega dois dados, um depois do outro, sem disparar no meio. Só com 3 ou 4 dados na Mesa: ela nunca abre uma Mesa nova nem pega o último dado (esse fica para o rival). O segundo dado é opcional.' },
     // Coringa (v0.12): o dado que não sincronizava TROCA a frente (a corrente não cresce). Entrando como mais um elo, ele
     // garantia o 6.º dado de graça: com uso de gente (segurar a corrente de 5 contando com ele) vencia 64,9% sozinho na
     // meta 12; trocando a frente, 55,0% na meta 16, como Ajuste e Pressa (docs/balanceamento-cartas.md §14)
-    coringa:       { nome: 'Coringa', tipo: 'efeito', verbo: 'troca a frente', texto: 'O próximo dado que não sincronizaria com a sua corrente entra no lugar da frente: a corrente não rompe, mas também não cresce. Fica ativo até um dado entrar numa corrente já começada, e é gasto nele mesmo que ele já sincronizasse (aí ele entra normal, como mais um elo).' },
+    coringa:       { nome: 'Coringa', tipo: 'efeito', verbo: 'troca a frente', texto: 'O próximo dado que não sincronizaria com a sua corrente entra no lugar da frente: a corrente não rompe, mas também não cresce. Só com 2 dados ou mais na Mesa. Fica ativo até um dado entrar numa corrente já começada, e é gasto nele mesmo que ele já sincronizasse (aí ele entra normal, como mais um elo).' },
     sobrecarga:    { nome: 'Sobrecarga', tipo: 'efeito', pontos: true, verbo: '+2 no disparo', texto: 'Seu próximo disparo de 4 dados ou mais vale +2. Disparo de 3 não a gasta. Pode ser usada também na hora de disparar.' },
     // v0.11 (docs/balanceamento-cartas.md): medidas no simulador com meta 12 e 16
     pausa:         { nome: 'Pausa', tipo: 'efeito', verbo: 'passa a vez', texto: 'Nesta vez você não pega dado nem dispara: a vez passa ao rival, e a sua corrente e o seu Bolso ficam como estão. Não vale no segundo dado da Pressa.' },
@@ -105,7 +105,9 @@
   // metas da partida (v0.12): 16, 20 ou 24 pontos. Na meta 12, dois disparos de 6 fechavam a partida em ~7 Mesas e
   // queimar as cartas cedo compensava; a 16 é o padrão (~9,5 Mesas), 20 e 24 são partidas longas (~12 e ~14 Mesas).
   // A 12 só existe para terminar uma partida guardada de antes (docs/balanceamento-cartas.md §14)
-  const METAS = [16, 20, 24], META_PADRAO = 16;
+  // 20 e 24 ficam de fora por ora: com as mesmas cartas, a 20 deixa as cartas ⚡ dominarem e a 24 os resgates em série
+  // (o melhor deck passa de 60% nas duas; balanceamento §17). Voltam quando tiverem o próprio ajuste
+  const METAS = [16], META_PADRAO = 16;
   const metaValida = m => (METAS.includes(+m) ? +m : META_PADRAO);
   // moedas de uma vitória: base × margem (×1 a ×2) × rapidez em Mesas (×1 a ×1,5) × duração (meta/16: a 20 rende ×1,25,
   // a 24, ×1,5) [× rating do rival, no online]
@@ -225,6 +227,10 @@
     if (c === 'pressa' && j.mesa.length < 3) return { ok: false, motivo: 'Precisa de 3 ou 4 dados na Mesa: a Pressa nunca pega o último dado (ele fica para o rival).' };
     if (c === 'pressa' && j.mesa.length > 4) return { ok: false, motivo: 'Com a Mesa cheia, não: a Pressa vale com 3 ou 4 dados (ela nunca abre uma Mesa).' };
     if (c === 'espelho' && j.mesa.length < 2) return { ok: false, motivo: 'Precisa de 2 dados ou mais na Mesa.' };
+    // Ajuste e Coringa (v0.12): no fim da Mesa sobram poucas escolhas, e era ali que o conserto tirava todo o risco. Com
+    // eles livres, o melhor deck (Ajuste + Coringa + Pressa) vencia 61,6%; assim, 58,2% (balanceamento §17)
+    if (c === 'ajuste' && j.mesa.length < 3) return { ok: false, motivo: 'Precisa de 3 dados ou mais na Mesa.' };
+    if (c === 'coringa' && j.mesa.length < 2) return { ok: false, motivo: 'Precisa de 2 dados ou mais na Mesa: no último dado, o Coringa não vale.' };
     if (c === 'pressa' && j.extra[p]) return { ok: false, motivo: 'A Pressa já está valendo nesta vez.' };
     if (c === 'pausa' && j.segundoDado) return { ok: false, motivo: 'No segundo dado da Pressa, use Dispensar.' };
     if (c === 'pausa' && j.extra[p]) return { ok: false, motivo: 'A Pressa já está valendo nesta vez: pegue os dados.' };
