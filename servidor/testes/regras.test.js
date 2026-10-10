@@ -410,3 +410,25 @@ test('o resumo das tarefas sai da partida: pontos, maior corrente, disparos, sal
   assert.deepStrictEqual(Regras.resumoTarefas(j, 0), { venceu: true, pts: 9, maior: 5, disparos: 3, salvos: 1, bloqueios: 1 });
   assert.strictEqual(Regras.resumoTarefas(j, 1).venceu, false);
 });
+
+test('modo história: capítulos em ordem, recompensa uma vez, a carta que já se tem vira moedas', () => {
+  const c = { cartas: ['ajuste'], moedas: 0 };
+  assert.match(Regras.concluirCapitulo(c, null, 'C1').erro, /fechado/, 'o Capítulo 1 só abre depois do Prólogo');
+  assert.ok(Regras.concluirCapitulo(c, null, 'X9').erro);
+  let r = Regras.concluirCapitulo(c, null, 'P');
+  assert.deepStrictEqual([r.estado.feitos, r.premio], [['P'], null]);
+  r = Regras.concluirCapitulo(c, r.estado, 'C1');
+  assert.deepStrictEqual(r.premio, { carta: 'reverso' }); assert.ok(c.cartas.includes('reverso'));
+  const de_novo = Regras.concluirCapitulo(c, r.estado, 'C1');
+  assert.strictEqual(de_novo.premio, null, 'jogar de novo não paga de novo');
+  r = Regras.concluirCapitulo(c, r.estado, 'C2');
+  assert.deepStrictEqual([r.premio, c.moedas], [{ moedas: 40 }, 40]);
+  assert.strictEqual(Regras.proximoCapitulo(r.estado), null);
+  // quem comprou o Reverso antes recebe o preço dele em moedas
+  const comprou = { cartas: ['reverso'], moedas: 0 };
+  const e = Regras.concluirCapitulo(comprou, null, 'P').estado;
+  assert.deepStrictEqual(Regras.concluirCapitulo(comprou, e, 'C1').premio, { moedas: Regras.PRECO_CARTA.reverso });
+  // estado estragado vira começo
+  assert.deepStrictEqual(Regras.estadoHistoria({ feitos: ['C2', 'lixo'] }).feitos, ['C2']);
+  assert.strictEqual(Regras.proximoCapitulo('lixo'), 'P');
+});

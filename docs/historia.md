@@ -427,6 +427,25 @@ Para cada uma valer, ela muda um pouco a cada aparição e paga no fim.
 
 ## 9. Como vira jogo
 
+**Feito (fase 1, v0.15):** o Prólogo e os capítulos 1 (Sapo) e 2 (Coelho) jogáveis.
+- **Onde:** o botão **História** no menu (aparece depois da estreia e some com uma partida guardada) abre o mapa do
+  caderno, com os capítulos em ordem.
+- **O gibi** (`js/historia.js`): quadros de papel com borda de tinta, o retrato e a rubrica do desenho numa caixa
+  amarela (o lugar da arte que ainda vem). Um toque por balão, "Pular" vai direto à Mesa, Esc também.
+- **As partidas:** cada capítulo define o rival, o deck dele, a meta e o ritmo.
+  - O Prólogo é a Diana até 8, sem cartas, com o guia na voz dela (G-01 a G-06, uma vez por partida).
+  - Os bichos falam as falas aprovadas do capítulo, inclusive a da carta deles (o Sapo comenta o Reverso).
+- **O fim:** vencer mostra a cena do depois (a página do caderno em papel pautado, com a nota da margem) e abre o
+  próximo capítulo; perder oferece a revanche direto na Mesa. A história não mexe em rating, moedas de vitória,
+  recordes nem tarefas.
+- **A recompensa** (`R.concluirCapitulo` em `shared/regras.js`): uma vez por capítulo, em ordem; o Cap. 1 dá o
+  Reverso (ou o preço dele, para quem já o tem) e o Cap. 2, 40 moedas. Com conta, quem decide é o servidor
+  (`POST /api/historia`, progresso em `extras.historia`, que o aparelho não consegue escrever).
+- **Só falas aprovadas:** o jogo carrega `js/historia_falas.js`, gerado de `docs/historia_piadas.json` só com as
+  aprovadas e em uso. O `tools/historia_e2e.js` reprova qualquer código usado sem aprovação.
+- **Testes:** `tools/historia_e2e.js` (mapa, gibi, Prólogo, guia, Sapo, derrota e revanche, recompensa, 360 px) e
+  `npm test` (a regra dos capítulos e a rota do servidor).
+
 **O que já existe e serve:** a estreia (o Prólogo), o motor com meta e decks livres (`criarPartida`), os robôs
 (`automatoEscolhe`/`automatoDispara`), as falas por chave (`RIVAIS[].falas`), os retratos pintados de todos os bichos,
 a cascata, o impacto e as tarefas do dia.

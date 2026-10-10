@@ -22,7 +22,8 @@
    "desenho": "A Diana atrás da mesinha de feltro. No nariz, um curativo com estampa de pips de dado.",
    "gag": "nariz",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "P-02",
@@ -34,7 +35,8 @@
    "desenho": "A pata dela empurra um dado devagar até a beirada.",
    "gag": "pata",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "P-03",
@@ -46,7 +48,8 @@
    "desenho": "O dado cai para fora do quadro. Ela não olha.",
    "gag": "nariz",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "P-04",
@@ -58,7 +61,8 @@
    "desenho": "Ela olhando o placar.",
    "gag": "",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "P-05",
@@ -70,7 +74,8 @@
    "desenho": "Um caderno \"RECEITAS DA DIANA\" com tocos de páginas arrancadas.",
    "gag": "receitas",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "P-06",
@@ -82,7 +87,8 @@
    "desenho": "Close no rosto dela.",
    "gag": "letra-d",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "G-01",
@@ -94,7 +100,8 @@
    "desenho": "",
    "gag": "",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "G-02",
@@ -106,7 +113,8 @@
    "desenho": "",
    "gag": "nariz",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "G-03a",
@@ -117,8 +125,9 @@
    "texto": "Oposto. Somam sete: as faces de lados contrários do dado. Os opostos se completam. Diz o dado.",
    "desenho": "",
    "gag": "",
-   "status": "pendente",
-   "nota": ""
+   "status": "aprovada",
+   "nota": "",
+   "usar": false
   },
   {
    "id": "G-03b",
@@ -129,8 +138,9 @@
    "texto": "Oposto. Somam sete: um e seis, dois e cinco, três e quatro. Cada número tem o seu par. Quase romântico.",
    "desenho": "",
    "gag": "",
-   "status": "pendente",
-   "nota": ""
+   "status": "aprovada",
+   "nota": "",
+   "usar": true
   },
   {
    "id": "G-04",
@@ -142,7 +152,8 @@
    "desenho": "",
    "gag": "",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "G-05",
@@ -154,7 +165,8 @@
    "desenho": "",
    "gag": "",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "G-06",
@@ -166,7 +178,8 @@
    "desenho": "",
    "gag": "",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C1-01",
@@ -178,7 +191,8 @@
    "desenho": "Dois curativos cruzados em X no nariz.",
    "gag": "nariz",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C1-02",
@@ -190,7 +204,8 @@
    "desenho": "",
    "gag": "cha",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C1-03",
@@ -202,7 +217,8 @@
    "desenho": "O Sapo numa vitória-régia, tirando o chapéu de palha.",
    "gag": "cha",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C1-04",
@@ -214,7 +230,8 @@
    "desenho": "Uma xícara turva, com um girino dentro.",
    "gag": "cha",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C1-05",
@@ -226,7 +243,8 @@
    "desenho": "",
    "gag": "",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C1-06",
@@ -238,7 +256,8 @@
    "desenho": "",
    "gag": "cha",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C1-07",
@@ -250,7 +269,8 @@
    "desenho": "",
    "gag": "",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C1-08",
@@ -262,7 +282,8 @@
    "desenho": "",
    "gag": "",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C1-09",
@@ -274,7 +295,8 @@
    "desenho": "",
    "gag": "",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C1-10",
@@ -286,7 +308,8 @@
    "desenho": "",
    "gag": "",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C1-11",
@@ -298,7 +321,8 @@
    "desenho": "",
    "gag": "cha",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C1-12",
@@ -310,7 +334,8 @@
    "desenho": "",
    "gag": "cha",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C1-13a",
@@ -321,8 +346,9 @@
    "texto": "SOPA DE GIRINO AO CONTRÁRIO · Ingredientes: A, T, C e G. Nessa ordem. Ou na outra.",
    "desenho": "A página molhada.",
    "gag": "receitas",
-   "status": "pendente",
-   "nota": ""
+   "status": "aprovada",
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C1-13b",
@@ -333,8 +359,9 @@
    "texto": "(margem, na letra da Diana) Ler no espelho. Ou com o Reverso.",
    "desenho": "A página molhada, com o título escrito espelhado: SOPA DE GIRINO AO CONTRÁRIO.",
    "gag": "receitas",
-   "status": "pendente",
-   "nota": ""
+   "status": "aprovada",
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C1-14",
@@ -346,7 +373,8 @@
    "desenho": "",
    "gag": "",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "I1-01",
@@ -358,7 +386,8 @@
    "desenho": "Ela lê a página um. No fundo, pela primeira vez, um mural de cortiça com uma foto de dado e um barbante vermelho.",
    "gag": "mural",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "I1-02",
@@ -370,7 +399,8 @@
    "desenho": "Ela olha para o nada.",
    "gag": "letra-d",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "I1-03",
@@ -382,7 +412,8 @@
    "desenho": "Ela percebe você olhando o mural e cobre a cortiça com a pata.",
    "gag": "mural",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C2-01",
@@ -394,7 +425,8 @@
    "desenho": "Curativo e, por cima, um adesivo: \"NÃO PERGUNTE\".",
    "gag": "nariz",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C2-02",
@@ -406,7 +438,8 @@
    "desenho": "",
    "gag": "",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C2-03",
@@ -418,7 +451,8 @@
    "desenho": "O Coelho com uma planilha, cercado de silhuetas de coelhinhos.",
    "gag": "",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C2-04",
@@ -430,7 +464,8 @@
    "desenho": "",
    "gag": "pao",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C2-05",
@@ -442,7 +477,8 @@
    "desenho": "",
    "gag": "",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C2-06",
@@ -454,7 +490,8 @@
    "desenho": "",
    "gag": "",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C2-07",
@@ -466,7 +503,8 @@
    "desenho": "",
    "gag": "",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C2-08",
@@ -478,7 +516,8 @@
    "desenho": "",
    "gag": "",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C2-09",
@@ -490,7 +529,8 @@
    "desenho": "",
    "gag": "",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C2-10",
@@ -502,7 +542,8 @@
    "desenho": "",
    "gag": "",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C2-11",
@@ -514,7 +555,8 @@
    "desenho": "",
    "gag": "",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C2-12a",
@@ -525,8 +567,9 @@
    "texto": "PÃO QUE CRESCE SOZINHO · Ingredientes: G, G, G e G. Fermento: sim.",
    "desenho": "Um pão saindo da fôrma e do quadro.",
    "gag": "receitas",
-   "status": "pendente",
-   "nota": ""
+   "status": "aprovada",
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C2-12b",
@@ -537,8 +580,9 @@
    "texto": "(margem, na letra da Diana) Não deixar o Coelho ler.",
    "desenho": "A página com o título PÃO QUE CRESCE SOZINHO e uma mancha de farinha em forma de pata de coelho.",
    "gag": "receitas",
-   "status": "pendente",
-   "nota": ""
+   "status": "aprovada",
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C2-13",
@@ -550,7 +594,8 @@
    "desenho": "",
    "gag": "nariz",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C2-14a",
@@ -561,8 +606,9 @@
    "texto": "Ela tem outras receitas? Pergunto por um amigo. Quarenta e três amigos.",
    "desenho": "",
    "gag": "pao",
-   "status": "pendente",
-   "nota": ""
+   "status": "aprovada",
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C2-14b",
@@ -573,8 +619,9 @@
    "texto": "(sem esta fala: o capítulo termina no Q2)",
    "desenho": "",
    "gag": "pao",
-   "status": "pendente",
-   "nota": ""
+   "status": "aprovada",
+   "nota": "",
+   "usar": false
   },
   {
    "id": "C3-01",
@@ -586,7 +633,8 @@
    "desenho": "Um mini cachecol verde enrolado no nariz.",
    "gag": "nariz",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C3-02",
@@ -598,7 +646,8 @@
    "desenho": "",
    "gag": "",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C3-03",
@@ -610,7 +659,8 @@
    "desenho": "A Diana vira uma carta para baixo: o \"?\".",
    "gag": "",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C3-04a",
@@ -621,8 +671,9 @@
    "texto": "Ah. Você deve ser o projeto da gata.",
    "desenho": "A Raposa num sofá de toca, olhos semicerrados, satisfeita.",
    "gag": "sabem",
-   "status": "pendente",
-   "nota": ""
+   "status": "aprovada",
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C3-04b",
@@ -633,8 +684,9 @@
    "texto": "Ah. Quem a gata anda treinando.",
    "desenho": "A Raposa num sofá de toca, olhos semicerrados, satisfeita.",
    "gag": "sabem",
-   "status": "pendente",
-   "nota": ""
+   "status": "aprovada",
+   "nota": "",
+   "usar": false
   },
   {
    "id": "C3-05",
@@ -646,7 +698,8 @@
    "desenho": "",
    "gag": "",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C3-06",
@@ -658,7 +711,8 @@
    "desenho": "",
    "gag": "",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C3-07",
@@ -670,7 +724,8 @@
    "desenho": "",
    "gag": "",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C3-08",
@@ -682,7 +737,8 @@
    "desenho": "",
    "gag": "",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C3-09",
@@ -694,7 +750,8 @@
    "desenho": "",
    "gag": "",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C3-10",
@@ -706,7 +763,8 @@
    "desenho": "",
    "gag": "",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C3-11",
@@ -718,7 +776,8 @@
    "desenho": "",
    "gag": "",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C3-12",
@@ -730,7 +789,8 @@
    "desenho": "",
    "gag": "",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C3-13",
@@ -742,7 +802,8 @@
    "desenho": "",
    "gag": "sabem",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C3-14a",
@@ -753,8 +814,9 @@
    "texto": "TORTA DE FUNDO FALSO · Recheio: segredo. Até para quem come.",
    "desenho": "Uma torta inteira, sem corte.",
    "gag": "receitas",
-   "status": "pendente",
-   "nota": ""
+   "status": "aprovada",
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C3-14b",
@@ -765,8 +827,9 @@
    "texto": "(debaixo de uma aba da página) Achou que ia ter receita aqui?",
    "desenho": "A página TORTA DE FUNDO FALSO tem uma aba de papel colada; levantada, mostra só a frase.",
    "gag": "receitas",
-   "status": "pendente",
-   "nota": ""
+   "status": "aprovada",
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C4-01",
@@ -778,7 +841,8 @@
    "desenho": "A Diana com um cone de veterinário no pescoço.",
    "gag": "nariz",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C4-02",
@@ -790,7 +854,8 @@
    "desenho": "O mural no fundo: três fotos e um bilhete \"DISPARO. DUELO. DOBRO. → D\".",
    "gag": "letra-d",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C4-03",
@@ -802,7 +867,8 @@
    "desenho": "Caverna escura, um volume enorme de gorro vermelho; o ronco desenhado com pips. Um olho abre.",
    "gag": "",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C4-04a",
@@ -813,8 +879,9 @@
    "texto": "Não? Então estou sonhando. Joga rápido, antes que eu acorde.",
    "desenho": "",
    "gag": "",
-   "status": "pendente",
-   "nota": ""
+   "status": "aprovada",
+   "nota": "",
+   "usar": false
   },
   {
    "id": "C4-04b",
@@ -825,8 +892,9 @@
    "texto": "Não? Então me acorda em março.",
    "desenho": "",
    "gag": "",
-   "status": "pendente",
-   "nota": ""
+   "status": "aprovada",
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C4-05",
@@ -838,7 +906,8 @@
    "desenho": "",
    "gag": "",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C4-06",
@@ -850,7 +919,8 @@
    "desenho": "",
    "gag": "",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C4-07",
@@ -862,7 +932,8 @@
    "desenho": "",
    "gag": "",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C4-08",
@@ -874,7 +945,8 @@
    "desenho": "",
    "gag": "",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C4-09",
@@ -886,7 +958,8 @@
    "desenho": "",
    "gag": "",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C4-10",
@@ -898,7 +971,8 @@
    "desenho": "",
    "gag": "",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C4-11",
@@ -910,7 +984,8 @@
    "desenho": "",
    "gag": "",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C4-12a",
@@ -921,8 +996,9 @@
    "texto": "MEL EM BANHO-MARIA · Tempo de preparo: um inverno.",
    "desenho": "Um pote de mel de gorro, dormindo em banho-maria.",
    "gag": "receitas",
-   "status": "pendente",
-   "nota": ""
+   "status": "aprovada",
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C4-12b",
@@ -933,8 +1009,9 @@
    "texto": "(margem, na letra da Diana) Não acordar o mel.",
    "desenho": "A página MEL EM BANHO-MARIA, com o pote de mel desenhado de olhos fechados.",
    "gag": "receitas",
-   "status": "pendente",
-   "nota": ""
+   "status": "aprovada",
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C4-13",
@@ -946,7 +1023,8 @@
    "desenho": "O Urso dormindo de novo; você puxa a página da pata dele.",
    "gag": "sabem",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C5-01",
@@ -958,7 +1036,8 @@
    "desenho": "Uma meia enrolada no nariz.",
    "gag": "nariz",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C5-02",
@@ -970,7 +1049,8 @@
    "desenho": "",
    "gag": "letra-d",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C5-03",
@@ -982,7 +1062,8 @@
    "desenho": "O Guaxinim num monte de tralha, usando o cone da Diana como abajur.",
    "gag": "nariz",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C5-04",
@@ -994,7 +1075,8 @@
    "desenho": "",
    "gag": "",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C5-05",
@@ -1006,7 +1088,8 @@
    "desenho": "",
    "gag": "",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C5-06",
@@ -1018,7 +1101,8 @@
    "desenho": "",
    "gag": "",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C5-07",
@@ -1030,7 +1114,8 @@
    "desenho": "",
    "gag": "",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C5-08",
@@ -1042,7 +1127,8 @@
    "desenho": "",
    "gag": "",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C5-09",
@@ -1054,7 +1140,8 @@
    "desenho": "",
    "gag": "",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C5-10",
@@ -1066,7 +1153,8 @@
    "desenho": "",
    "gag": "",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C5-11",
@@ -1078,7 +1166,8 @@
    "desenho": "",
    "gag": "",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C5-12",
@@ -1090,7 +1179,8 @@
    "desenho": "",
    "gag": "",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C5-13",
@@ -1102,7 +1192,8 @@
    "desenho": "",
    "gag": "nariz",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C5-14a",
@@ -1113,8 +1204,9 @@
    "texto": "SALADA DE SOBRAS DOS OUTROS · Ingredientes: os do vizinho.",
    "desenho": "Uma tigela com folhas de várias hortas.",
    "gag": "receitas",
-   "status": "pendente",
-   "nota": ""
+   "status": "aprovada",
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C5-14b",
@@ -1125,8 +1217,9 @@
    "texto": "(etiqueta de preço colada na página) Página 5 · 4,99 por mês",
    "desenho": "A página SALADA DE SOBRAS DOS OUTROS com uma etiqueta de preço por cima do título.",
    "gag": "receitas",
-   "status": "pendente",
-   "nota": ""
+   "status": "aprovada",
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C5-15",
@@ -1138,7 +1231,8 @@
    "desenho": "",
    "gag": "sabem",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C6-01",
@@ -1150,7 +1244,8 @@
    "desenho": "Um tufo branco e fofo no nariz.",
    "gag": "nariz",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C6-02",
@@ -1162,7 +1257,8 @@
    "desenho": "",
    "gag": "",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C6-03",
@@ -1174,7 +1270,8 @@
    "desenho": "A Ovelha num pasto de hexágonos, com uma falha na lã do ombro.",
    "gag": "",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C6-04",
@@ -1186,7 +1283,8 @@
    "desenho": "",
    "gag": "",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C6-05",
@@ -1198,7 +1296,8 @@
    "desenho": "",
    "gag": "",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C6-06",
@@ -1210,7 +1309,8 @@
    "desenho": "",
    "gag": "",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C6-07",
@@ -1222,7 +1322,8 @@
    "desenho": "",
    "gag": "",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C6-08",
@@ -1234,7 +1335,8 @@
    "desenho": "",
    "gag": "",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C6-09",
@@ -1246,7 +1348,8 @@
    "desenho": "",
    "gag": "",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C6-10",
@@ -1258,7 +1361,8 @@
    "desenho": "",
    "gag": "nariz",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C6-11",
@@ -1270,7 +1374,8 @@
    "desenho": "",
    "gag": "nariz",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C6-12a",
@@ -1281,8 +1386,9 @@
    "texto": "PUDIM GÊMEO · Rende: duas porções idênticas. A segunda não lembra da primeira.",
    "desenho": "Dois pudins iguais.",
    "gag": "receitas",
-   "status": "pendente",
-   "nota": ""
+   "status": "aprovada",
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C6-12b",
@@ -1293,8 +1399,9 @@
    "texto": "(margem, na letra da Diana) Uma delas é a cópia. Não pergunte qual.",
    "desenho": "Duas páginas PUDIM GÊMEO idênticas, grampeadas.",
    "gag": "receitas",
-   "status": "pendente",
-   "nota": ""
+   "status": "aprovada",
+   "nota": "",
+   "usar": true
   },
   {
    "id": "I6-01",
@@ -1306,7 +1413,8 @@
    "desenho": "A Diana sem nada no nariz: o ferimento à mostra. Primeiro quadro sério da história.",
    "gag": "nariz",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "I6-02",
@@ -1318,7 +1426,8 @@
    "desenho": "O mural coberto por um lençol, o barbante vermelho saindo por baixo.",
    "gag": "mural",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "I6-03",
@@ -1330,7 +1439,8 @@
    "desenho": "",
    "gag": "sabem",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C7-01",
@@ -1342,7 +1452,8 @@
    "desenho": "Biblioteca de estantes altas. Lombadas: \"Volume A\", \"Volume T\", \"Volume C\", \"Volume G\".",
    "gag": "",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C7-02",
@@ -1354,7 +1465,8 @@
    "desenho": "",
    "gag": "sabem",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C7-03",
@@ -1366,7 +1478,8 @@
    "desenho": "O Coelho numa mesa de leitura, ofegante, com uma pilha de livros de receitas e um pão que não cabe na mesa.",
    "gag": "letra-d",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C7-04",
@@ -1378,7 +1491,8 @@
    "desenho": "",
    "gag": "",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C7-05",
@@ -1390,7 +1504,8 @@
    "desenho": "",
    "gag": "",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C7-06",
@@ -1402,7 +1517,8 @@
    "desenho": "",
    "gag": "",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C7-07",
@@ -1414,7 +1530,8 @@
    "desenho": "",
    "gag": "",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C7-08",
@@ -1426,7 +1543,8 @@
    "desenho": "",
    "gag": "",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C7-09",
@@ -1437,8 +1555,9 @@
    "texto": "Agora sim. Sente-se. Precisamos falar da gata.",
    "desenho": "Reescrita sem gênero (era \"Está pronta\").",
    "gag": "sabem",
-   "status": "pendente",
-   "nota": ""
+   "status": "aprovada",
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C7-10a",
@@ -1449,8 +1568,9 @@
    "texto": "A última. Não tem ingrediente nenhum.",
    "desenho": "Ela entrega a última página: só o desenho de um nariz de gato com um X.",
    "gag": "receitas",
-   "status": "pendente",
-   "nota": ""
+   "status": "aprovada",
+   "nota": "",
+   "usar": false
   },
   {
    "id": "C7-10b",
@@ -1461,8 +1581,9 @@
    "texto": "(quadro mudo: ela só entrega a página)",
    "desenho": "Ela entrega a última página: só o desenho de um nariz de gato com um X.",
    "gag": "receitas",
-   "status": "pendente",
-   "nota": ""
+   "status": "aprovada",
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C7-11",
@@ -1474,7 +1595,8 @@
    "desenho": "",
    "gag": "",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C7-12",
@@ -1485,8 +1607,9 @@
    "texto": "Ela não te ensinou a jogar por gentileza. Pergunte a ela.",
    "desenho": "Reescrita sem gênero (tirei o \"querida\").",
    "gag": "sabem",
-   "status": "pendente",
-   "nota": ""
+   "status": "aprovada",
+   "nota": "",
+   "usar": true
   },
   {
    "id": "R-01",
@@ -1498,7 +1621,8 @@
    "desenho": "Ela puxa o lençol: o mural inteiro, barbante vermelho, a foto de cada bicho carimbada, a sua no meio, uma dupla hélice com dados no lugar dos degraus.",
    "gag": "letra-d",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "R-02",
@@ -1510,7 +1634,8 @@
    "desenho": "Três cartões ligados pelo barbante: DIANA · DADOS · DNA.",
    "gag": "letra-d",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "R-03",
@@ -1522,7 +1647,8 @@
    "desenho": "A foto da Coruja com um post-it \"D?\".",
    "gag": "letra-d",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "R-04",
@@ -1534,7 +1660,8 @@
    "desenho": "Ela sentada, séria.",
    "gag": "nariz",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "R-05",
@@ -1546,7 +1673,8 @@
    "desenho": "A pata dela segurando uma pipeta, torta, pingando.",
    "gag": "",
    "status": "aprovada",
-   "nota": "texto do dono"
+   "nota": "texto do dono",
+   "usar": true
   },
   {
    "id": "R-06",
@@ -1558,7 +1686,8 @@
    "desenho": "",
    "gag": "",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "R-07",
@@ -1570,7 +1699,8 @@
    "desenho": "",
    "gag": "",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "R-08",
@@ -1582,7 +1712,8 @@
    "desenho": "",
    "gag": "sabem",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "R-09",
@@ -1594,7 +1725,8 @@
    "desenho": "",
    "gag": "pata",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "R-10",
@@ -1606,7 +1738,8 @@
    "desenho": "O Coelho na porta, abraçado a um pão do tamanho dele.",
    "gag": "pao",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "R-11",
@@ -1618,7 +1751,8 @@
    "desenho": "Ela na Mesa dela, os dados prontos.",
    "gag": "",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C8-01",
@@ -1630,7 +1764,8 @@
    "desenho": "A primeira fala do jogo, palavra por palavra.",
    "gag": "revanche",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C8-02",
@@ -1642,7 +1777,8 @@
    "desenho": "",
    "gag": "",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C8-03",
@@ -1654,7 +1790,8 @@
    "desenho": "",
    "gag": "",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C8-04",
@@ -1666,7 +1803,8 @@
    "desenho": "",
    "gag": "",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C8-05",
@@ -1678,7 +1816,8 @@
    "desenho": "",
    "gag": "",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C8-06",
@@ -1690,7 +1829,8 @@
    "desenho": "",
    "gag": "revanche",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "C8-07",
@@ -1702,7 +1842,8 @@
    "desenho": "Sem o \"Revanche?\" de sempre: vem a cena da cura.",
    "gag": "revanche",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "F-01",
@@ -1714,7 +1855,8 @@
    "desenho": "A sua corrente vencedora vira uma fita impressa com as letras embaixo: 2 5 2 5 → C G C G.",
    "gag": "",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "F-02",
@@ -1726,7 +1868,8 @@
    "desenho": "",
    "gag": "",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "F-03",
@@ -1738,7 +1881,8 @@
    "desenho": "O ferimento fechado; ela encosta a pata. Antes, um quadro mudo.",
    "gag": "nariz",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "F-A",
@@ -1750,7 +1894,8 @@
    "desenho": "",
    "gag": "fecho",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "F-A2",
@@ -1762,7 +1907,8 @@
    "desenho": "",
    "gag": "fecho",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "X-01",
@@ -1774,7 +1920,8 @@
    "desenho": "Ela risca \"Dice Duel\" com um pincel atômico e escreve por cima: \"DianaDice\".",
    "gag": "letra-d",
    "status": "aprovada",
-   "nota": ""
+   "nota": "",
+   "usar": true
   },
   {
    "id": "X-02a",
@@ -1785,8 +1932,9 @@
    "texto": "SAPO: Soube da cura. Trouxe chá. / DIANA: É do lago? / SAPO: Orgânico.",
    "desenho": "A Diana, curada, abre a porta. O Sapo de chapéu, com uma xícara turva.",
    "gag": "cha",
-   "status": "pendente",
-   "nota": ""
+   "status": "aprovada",
+   "nota": "",
+   "usar": true
   },
   {
    "id": "X-02b",
@@ -1797,8 +1945,9 @@
    "texto": "(sem o segundo pós-créditos: termina no DianaDice)",
    "desenho": "",
    "gag": "",
-   "status": "pendente",
-   "nota": ""
+   "status": "aprovada",
+   "nota": "",
+   "usar": false
   }
  ]
 }

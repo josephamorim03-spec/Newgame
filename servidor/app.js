@@ -442,6 +442,24 @@ function criarApp({ banco, segredo, raiz = path.join(__dirname, '..'), tempos = 
     res.json({ premio: r.premio, conta: perfil(r.conta) });
   }));
 
+  // ---------- modo história: o capítulo vencido dá a recompensa dele, uma vez, em ordem (docs/historia.md) ----------
+  // Como as partidas contra os rivais do jogo, a partida roda no aparelho; a ordem dos capítulos e o "uma vez só" são
+  // conferidos aqui, e a recompensa é pequena (uma carta que também se compra, ou poucas moedas)
+  app.post('/api/historia', limSolo, exigirConta, assincrono(async (req, res) => {
+    const cap = (req.body || {}).capitulo;
+    if (typeof cap !== 'string') return res.status(400).json({ erro: 'Capítulo inválido.' });
+    const r = await trava(req.conta.id, async () => {
+      const c = await banco.contaPorId(req.conta.id);
+      const conta = { cartas: c.cartas.slice(), moedas: c.moedas };
+      const fim = Regras.concluirCapitulo(conta, c.extras && c.extras.historia, cap);
+      if (fim.erro) return { status: 400, erro: fim.erro };
+      const nova = await banco.atualizarConta(c.id, { cartas: conta.cartas, moedas: conta.moedas, extras: { ...(c.extras || {}), historia: fim.estado } });
+      return { premio: fim.premio, conta: nova };
+    });
+    if (r.erro) return res.status(r.status).json({ erro: r.erro });
+    res.json({ premio: r.premio, conta: perfil(r.conta) });
+  }));
+
   // ---------- salas (convite por link) ----------
   app.post('/api/salas', exigirConta, (req, res) => {
     const b = req.body || {};

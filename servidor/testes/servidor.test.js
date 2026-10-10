@@ -196,6 +196,27 @@ test('tarefas do dia nas partidas solo: pagam na derrota, uma vez só; a primeir
   } finally { await s.fechar(); }
 });
 
+test('modo história: o servidor dá a recompensa do capítulo em ordem e uma vez; o aparelho não escreve o progresso', { timeout: 20000 }, async () => {
+  const s = await subir();
+  try {
+    const { token } = await conta(s, 'Hugo');
+    assert.strictEqual((await s.api('POST', '/api/historia', { capitulo: 'C1' }, token)).status, 400, 'fora de ordem');
+    assert.strictEqual((await s.api('POST', '/api/historia', { capitulo: 42 }, token)).status, 400);
+    assert.strictEqual((await s.api('POST', '/api/historia', { capitulo: 'P' }, null)).status, 401);
+    let r = await s.api('POST', '/api/historia', { capitulo: 'P' }, token);
+    assert.strictEqual(r.premio, null);
+    r = await s.api('POST', '/api/historia', { capitulo: 'C1' }, token);
+    assert.deepStrictEqual(r.premio, { carta: 'reverso' }); assert.ok(r.conta.cartas.includes('reverso'));
+    const moedas = r.conta.moedas;
+    r = await s.api('POST', '/api/historia', { capitulo: 'C1' }, token);
+    assert.strictEqual(r.premio, null); assert.strictEqual(r.conta.moedas, moedas, 'de novo não paga');
+    await s.api('PUT', '/api/eu/dados', { historia: { feitos: ['P', 'C1', 'C2'] } }, token);
+    assert.deepStrictEqual((await s.api('GET', '/api/eu', null, token)).conta.extras.historia.feitos, ['P', 'C1']);
+    r = await s.api('POST', '/api/historia', { capitulo: 'C2' }, token);
+    assert.deepStrictEqual(r.premio, { moedas: 40 });
+  } finally { await s.fechar(); }
+});
+
 test('convidado vira conta: progresso importado com teto', { timeout: 20000 }, async () => {
   const s = await subir();
   try {

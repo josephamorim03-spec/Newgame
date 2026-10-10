@@ -72,7 +72,8 @@ e o amigo cai direto na sala. O servidor é a autoridade da partida e roda na Ra
 | `tools/vercel_local.js` | simula o Vercel (só o que o `.vercelignore` publica, com a CSP do `vercel.json`) e joga uma partida |
 | `docs/design.md` | regras, cartas, números, decisões e por quê |
 | `docs/pesquisa.md` | o que jogos de cartas no celular ensinam (deck pequeno, armadilhas, contra-jogo) |
-| `docs/historia.md` | o modo história "Fita Dupla": roteiro em quadros, a Diana e a cura, os rivais, as gags e como vira jogo |
+| `docs/historia.md` | o modo história "O Caderno da Diana": roteiro em quadros, a Diana e a cura, os rivais, as gags e como vira jogo |
+| `js/historia.js`, `js/historia_falas.js` | o modo história: os capítulos, o leitor de gibi, o mapa; as falas aprovadas (geradas por `tools/historia/piadas_fonte.py`) |
 | `docs/progressao.md` | moedas, rating contra o farm, XP e níveis, loja, cosméticos, regras de monetização |
 | `docs/visual-impresso.md` | técnicas do Aranhaverso no Dice Duel: o que cabe, o que não cabe e o plano |
 | `docs/servidor.md` | o servidor: o que faz, regras contra abuso, como pôr na Railway, API |
@@ -89,6 +90,7 @@ npm install && npm test                        # motor, API, salas, quedas, limi
 export NODE_PATH=$(npm root -g)                # Playwright instalado globalmente (ou: npm i -D playwright)
 node tools/fumaca.js                           # 3 partidas no navegador (celular, computador, Coruja)
 node tools/estreia_e2e.js                      # a primeira partida, o guia e a tela do fim da derrota
+node tools/historia_e2e.js                     # o modo história: mapa, gibi, Prólogo, Sapo, recompensa e só falas aprovadas
 node tools/regras.js                           # as cartas fazem o que o texto delas diz
 node tools/layout.js                           # layout em 360, 390, 430, 768 e 1360 px
 node tools/online_e2e.js                       # online de ponta a ponta, com o servidor local
