@@ -79,14 +79,16 @@ async function jogar(pg, { fotoGuia = null, maxPassos = 1500 } = {}) {
   const vs = await pg.$('.versus'); if (vs) await vs.click();
 
   const passos = await jogar(pg, { fotoGuia: 'estreia-guia.png' });
-  await pg.waitForTimeout(2600);
+  // a tela do fim espera a festa do disparo que fechou a partida (v0.14): espera por ela, não um tempo fixo
+  await pg.waitForFunction(() => !document.getElementById('fim').hidden, null, { timeout: 9000 }).catch(() => {});
+  await pg.waitForTimeout(1200);
   await pg.screenshot({ path: path.join(FOTOS, 'estreia-fim.png') });
   const fim = await pg.evaluate(() => {
     const j = DiceDuel.jogo, st = DiceDuel.st, ordem = el => Array.from(el.parentElement.children).indexOf(el);
     return {
       fase: j.fase, pts: j.pts, vencedor: j.vencedor, disparos: j.stats[0].disp, guia: st.guia, partidas: st.rec.partidas, recordes: j.recordes || [],
       momentos: j.momentos.filter(m => m.p === 0).map(m => m.txt), guiaCh: window.__ch.filter(c => c.classe.includes('guia')).map(c => c.t),
-      grande: !!document.querySelector('#fimRecompensas .grande'), fimAberto: !document.getElementById('fim').hidden,
+      grande: !!document.querySelector('#fimRecompensas .grande'), tarefas: j.premio && j.premio.tarefas ? j.premio.tarefas.moedas : 0, fimAberto: !document.getElementById('fim').hidden,
       momentosAntes: ordem(document.getElementById('fimMomentosTitulo')) < ordem(document.getElementById('fimRecompensas')),
       largura: [document.documentElement.scrollWidth, innerWidth],
     };
@@ -102,7 +104,9 @@ async function jogar(pg, { fotoGuia = null, maxPassos = 1500 } = {}) {
   if (fim.guiaCh.length !== fim.guia.vistos.length) falha(`as explicações mostradas (${fim.guiaCh}) não batem com as vistas (${fim.guia.vistos})`);
   const tevePaciencia = fim.momentos.some(t => t.startsWith('Paciência'));
   if (fim.vencedor === 0 && !fim.grande) falha('vitória: as moedas abrem o prêmio');
-  if (fim.vencedor !== 0 && fim.grande) falha('derrota: sem o "+0" grande');
+  // na derrota, o número grande só aparece se uma tarefa do dia pagou (v0.14); nunca um "+0"
+  if (fim.vencedor !== 0 && fim.grande !== fim.tarefas > 0) falha(`derrota: número grande só com tarefa paga (grande ${fim.grande}, tarefas ${fim.tarefas})`);
+  if (await pg.evaluate(() => /^\+?0$/.test((document.getElementById('contaMoedas') || {}).textContent || ''))) falha('o fim mostra "+0"');
   if (fim.vencedor !== 0 && fim.momentos.length && !fim.momentosAntes) falha('derrota com bons momentos: eles vêm antes do prêmio');
   if (fim.largura[0] > fim.largura[1]) falha('a tela do fim rola para o lado');
 
@@ -118,7 +122,7 @@ async function jogar(pg, { fotoGuia = null, maxPassos = 1500 } = {}) {
   if (seg.tipos.includes('armadilha')) falha(`a Diana ainda não usa armadilhas na segunda partida: ${seg.rival}`);
   const vs2 = await pg.$('.versus'); if (vs2) await vs2.click();
   await jogar(pg);
-  await pg.waitForTimeout(2600);
+  await pg.waitForFunction(() => !document.getElementById('fim').hidden, null, { timeout: 9000 }).catch(() => {});
   const fim2 = await pg.evaluate(() => ({ fase: DiceDuel.jogo.fase, recordes: DiceDuel.jogo.recordes || [], partidas: DiceDuel.st.rec.partidas }));
   console.log('segunda partida', { deck: seg.deck, rival: seg.rival, ...fim2 });
   if (fim2.fase !== 'fim') falha('a segunda partida não terminou');
