@@ -728,11 +728,24 @@ img.avatar { object-fit: contain; }
 @keyframes ferve { 50% { box-shadow: inset 0 3px 8px rgba(0,0,0,.35), 0 0 0 3px rgba(255,207,138,.75), 0 0 28px rgba(255,180,110,.55); } }
 /* clarão de disparo grande */
 .clarao { position: fixed; z-index: 56; pointer-events: none; width: 420px; height: 420px; border-radius: 50%; background: radial-gradient(circle, rgba(255,246,230,.95), rgba(255,207,138,.45) 35%, transparent 70%); transform: translate(-50%, -50%); mix-blend-mode: screen; }
-/* impresso (docs/visual-impresso.md, atrás de ?impresso=1): o anel de retícula do clarão e o quadro congelado da Sinfonia */
+/* impresso (docs/visual-impresso.md): o anel de retícula do clarão, o quadro congelado da Sinfonia e da Virada, as
+   onomatopeias, o selo de 5 e 6 em retícula e a cascata curta "em dois" */
 .clarao.reticula { background: center / 100% 100% no-repeat; mix-blend-mode: normal; border-radius: 0; }
 .quadro-gibi { position: fixed; inset: 0; z-index: 56; pointer-events: none; box-shadow: inset 0 0 0 12px var(--papel), inset 0 0 0 16px var(--tinta); }
 .quadro-gibi::before { content: ''; position: absolute; inset: 0; background: radial-gradient(circle, rgba(251,241,223,.45) 0 1.8px, transparent 2.3px) 0 0 / 9px 9px;
   -webkit-mask-image: radial-gradient(closest-side, transparent 78%, #000 118%); mask-image: radial-gradient(closest-side, transparent 78%, #000 118%); }
+/* a onomatopeia: letras de papel com contorno de tinta e as chapas azul e rosa fora do registro */
+.onomatopeia { position: fixed; z-index: 58; pointer-events: none; font-family: var(--f-titulo); font-weight: 700; font-size: 34px; line-height: 1; letter-spacing: .02em; white-space: nowrap;
+  color: var(--papel); -webkit-text-stroke: 2px var(--tinta); paint-order: stroke fill; text-shadow: -3px -1px 0 var(--voce), 3px 1px 0 var(--rival), 0 4px 0 rgba(58,42,46,.45); }
+.onomatopeia.voce { color: #dff3f8; } .onomatopeia.rival { color: #ffe0e8; }
+.onomatopeia.grande { font-size: 46px; -webkit-text-stroke-width: 2.5px; }
+.onomatopeia.suave { font-size: 26px; color: #e3f5e8; }
+/* a ruptura é gentil: "plonc" pequeno, sem as chapas, caindo devagar */
+.onomatopeia.triste { font-size: 22px; color: #e9d8c8; -webkit-text-stroke-width: 1.5px; text-shadow: 0 3px 0 rgba(58,42,46,.4); }
+/* o selo final do disparo de 5 e 6 ganha retícula clara sobre o mel, como cor impressa */
+.impresso .contagem.final.n5, .impresso .contagem.final.n6 { background-image: radial-gradient(circle, rgba(255,250,240,.5) 0 1.3px, transparent 1.8px); background-size: 6px 6px; }
+/* a cascata da corrente curta anda "em dois" (poses seguradas); a de 5 e 6 continua fluida */
+.impresso .fx-disparo:is(.fx-n2, .fx-n3, .fx-n4) .slot .dado { animation-timing-function: steps(3, end); }
 .sem-animacoes .corrente.quente, .sem-animacoes .corrente.fervendo { box-shadow: inset 0 3px 8px rgba(0,0,0,.35), 0 0 0 2px rgba(255,207,138,.6); }
 @media (prefers-reduced-motion: reduce) { .corrente.quente, .corrente.fervendo { animation: none; box-shadow: inset 0 3px 8px rgba(0,0,0,.35), 0 0 0 2px rgba(255,207,138,.6); } }
 

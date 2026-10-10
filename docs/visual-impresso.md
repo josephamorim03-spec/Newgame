@@ -63,17 +63,31 @@
 - `node tools/impresso_demo.js` grava a mesma sequência sem e com (celular, 390 px) em `builds/impresso/`
   (`sem.webm`, `com.webm` e quadros). **Decidir olhando; se não ficar melhor, para aqui.**
 
-### Fase 1: o sotaque no jogo de sempre (2 a 3 dias)
-Tudo em `js/efeitos.js` e `css/estilo.css`, sem tocar em regras nem no servidor:
-1. **`Fx.onomatopeia(alvo, txt, tipo)`**: Fredoka 700 (a fonte que já carrega; nada novo na CSP), contorno de tinta,
-   sombra desencaixada azul/rosa de 2 px, entra torta e sai. Uma por lance, no máximo.
-2. **`Fx.quadro(forca)`**: o hit-stop. Congela só a camada visual (as partículas param, um véu com retícula e moldura
-   de tinta aparece por 250 ms). **Nunca** pausa o relógio da vez, a rede ou o motor.
-3. **Retícula** como fundo CSS (`radial-gradient` repetido, com máscara) no `.clarao` e no selo final.
-4. **Desencaixe** como `text-shadow` / `box-shadow` animados em azul e rosa, 150 ms, na carta revelada e no "+N".
-5. **Cascata em dois:** os passos da `Fx.contagem` com `steps()`/quadros segurados para corrente de 2 a 4; de 5+, como hoje.
-6. **Ajustes:** tudo isso obedece "Animações" e "Brilhos e confete"; com "reduzir movimento", nada aparece. No máximo
-   um clarão por lance e nunca mais de 3 por segundo.
+### Fase 1: o sotaque no jogo de sempre (feita)
+Ligado por padrão (`?impresso=0` desliga no aparelho, para comparar; `?impresso=1` volta a ligar). Tudo em
+`js/efeitos.js`, `css/estilo.css` e nos eventos de `js/jogo.js`; nada nas regras nem no servidor.
+
+| Momento | O que acontece |
+|---|---|
+| Disparo de 2 a 4 | a cascata dos dados e o selo que conta (+1, +2, +4) andam **em dois**: poses seguradas (`steps`) em vez de deslizar. A corrente curta é "desenho de quem está aprendendo" |
+| Disparo de 4+ | o clarão ganha o **anel de retícula** na cor de quem disparou (fase 0) |
+| Disparo de 5 e 6 | cascata e selo **fluidos**, selo final em mel com retícula clara, e a onomatopeia "FUUU!" (6: "FUUUM!", maior) quando a festa estoura |
+| Sinfonia e Virada | o **quadro congelado** (260 ms, moldura de papel e retícula nas bordas); a chamada vem depois |
+| "+N" de 4 ou mais no placar | chega com as chapas azul e rosa fora do registro e assenta |
+| Armadilha revelada | chamada e painel fora do registro (fase 0) e "TCHÃ!" na cor do dono |
+| Salvo (Bolso ou Âncora) | "ufa!", pequeno e verde-claro |
+| Ruptura de 2+ | "plonc", pequeno, sem as chapas, **caindo** devagar: a ruptura continua gentil |
+
+**Regras do sotaque:**
+- **Uma onomatopeia por lance:** outra que chegue em menos de 700 ms fica de fora.
+- **Só papel, tinta, azul e rosa:** a Fredoka que já carrega (nada novo na CSP); a retícula é desenhada num canvas uma
+  vez por cor (`data:`, já permitido).
+- **Obedece aos Ajustes:** sem "Animações" ou com "reduzir movimento", nada disso aparece; sem "Brilhos e confete",
+  nem retícula, nem quadro, nem onomatopeia.
+- **Sem pisca-pisca:** no máximo um clarão e um quadro congelado por lance.
+
+**A medir no teste com gente:** se o quadro congelado (somado ao impacto de 150 ms) lê como festa ou como travamento;
+se as onomatopeias são lidas ou viram ruído; se a cascata em dois parece "estilo" ou "o celular engasgou".
 
 ### Fase 2: o cosmético Gibi (2 a 3 dias)
 Para quem quiser o estilo inteiro, sem impor a ninguém:
@@ -97,5 +111,5 @@ Só se a Fase 1 passar no teste com gente.
   As onomatopeias são lidas ou viram ruído? Alguém sente que "deixou de ser aconchegante"?
 
 ## 5. Recomendação
-Fazer a **Fase 0** agora, e a **Fase 1** se o protótipo convencer. A Fase 2 vale depois do teste com gente: é o lugar
+Fases 0 e 1 feitas. A Fase 2 vale depois do teste com gente: é o lugar
 certo para o estilo inteiro, porque quem escolhe é o jogador.

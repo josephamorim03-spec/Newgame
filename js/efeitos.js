@@ -8,13 +8,16 @@
   const cfg = { animacoes: true, particulas: true, tremor: true };
   const reduzido = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (reduzido) { cfg.animacoes = false; cfg.tremor = false; }
-  // "impresso" (fase 0 de docs/visual-impresso.md): técnicas de gibi atrás de uma bandeira. ?impresso=1 liga e fica
-  // guardado no aparelho; ?impresso=0 desliga
+  // "impresso" (docs/visual-impresso.md): o sotaque de gibi impresso (retícula, chapas azul e rosa fora do registro,
+  // quadro congelado, onomatopeias). Ligado desde a fase 1; ?impresso=0 desliga e fica guardado no aparelho (para comparar),
+  // ?impresso=1 volta a ligar. Obedece às animações e aos brilhos dos Ajustes
+  cfg.impresso = true;
   try {
     const q = new URLSearchParams(location.search).get('impresso');
-    if (q != null) { if (q === '0') localStorage.removeItem('diceduel.impresso'); else localStorage.setItem('diceduel.impresso', '1'); }
-    cfg.impresso = !!localStorage.getItem('diceduel.impresso');
-  } catch (e) { cfg.impresso = false; }
+    if (q != null) localStorage.setItem('diceduel.impresso', q === '0' ? '0' : '1');
+    cfg.impresso = localStorage.getItem('diceduel.impresso') !== '0';
+  } catch (e) { /* sem armazenamento: fica ligado */ }
+  document.documentElement.classList.toggle('impresso', cfg.impresso);
   const AZUL = '#6fbfd3', ROSA = '#ec8fa8';   // as cores dos dois jogadores são as duas chapas da impressão
 
   // ---------- partículas ----------
@@ -149,24 +152,54 @@
     return (reticulas[cor] = c.toDataURL());
   }
   // as chapas azul e rosa saem do registro e voltam, em 3 poses seguradas
+  // el: a caixa (box-shadow); texto: as letras (text-shadow). Um dos dois pode faltar
   function desencaixe(el, texto = null) {
-    if (!cfg.impresso || !cfg.animacoes || !el) return;
-    const fim = getComputedStyle(el).boxShadow, base = fim === 'none' ? '' : ', ' + fim;
-    el.animate([
+    if (!cfg.impresso || !cfg.animacoes || (!el && !texto)) return;
+    const fim = el && getComputedStyle(el).boxShadow, base = !fim || fim === 'none' ? '' : ', ' + fim;
+    const fimT = texto && getComputedStyle(texto).textShadow, baseT = !fimT || fimT === 'none' ? '' : ', ' + fimT;
+    if (el) el.animate([
       { boxShadow: `-9px -3px 0 ${AZUL}, 9px 3px 0 ${ROSA}${base}` },
       { boxShadow: `5px 2px 0 ${AZUL}, -5px -2px 0 ${ROSA}${base}` },
       { boxShadow: `-2px 0 0 ${AZUL}, 2px 0 0 ${ROSA}${base}` },
       { boxShadow: `0 0 0 transparent, 0 0 0 transparent${base}` },
     ], { duration: 420, easing: 'steps(1, end)' });
     if (texto) texto.animate([
-      { textShadow: `-5px -2px 0 ${AZUL}, 5px 2px 0 ${ROSA}` },
-      { textShadow: `3px 1px 0 ${AZUL}, -3px -1px 0 ${ROSA}` },
-      { textShadow: `-1px 0 0 ${AZUL}, 1px 0 0 ${ROSA}` },
-      { textShadow: '0 0 0 transparent, 0 0 0 transparent' },
+      { textShadow: `-5px -2px 0 ${AZUL}, 5px 2px 0 ${ROSA}${baseT}` },
+      { textShadow: `3px 1px 0 ${AZUL}, -3px -1px 0 ${ROSA}${baseT}` },
+      { textShadow: `-1px 0 0 ${AZUL}, 1px 0 0 ${ROSA}${baseT}` },
+      { textShadow: `0 0 0 transparent, 0 0 0 transparent${baseT}` },
     ], { duration: 420, easing: 'steps(1, end)' });
   }
   // o quadro congelado (hit-stop): tudo o que se mexe na tela para por um instante dentro de uma moldura de gibi.
   // Só a imagem para: o relógio da vez, a rede e o motor seguem. Devolve quanto tempo ficou parado (0 se não parou)
+  // a onomatopeia: o som escrito na tela, como no gibi ("plonc", "fump!", "fuuu!", "tchã!"). Entra torta em poses
+  // seguradas, fica um instante e sai. Uma por lance: outra que chegue logo depois fica de fora
+  let ultimaOno = 0;
+  function onomatopeia(alvo, txt, tipo = '') {
+    if (!cfg.impresso || !cfg.animacoes || !cfg.particulas) return;
+    const agora = performance.now();
+    if (agora - ultimaOno < 700) return;
+    ultimaOno = agora;
+    const r = alvo && alvo.nodeType ? alvo.getBoundingClientRect() : null;
+    const triste = /triste/.test(tipo);
+    const x = r ? r.left + r.width * (0.3 + Math.random() * 0.4) : innerWidth / 2, y = r ? r.top + (triste ? r.height * 0.5 : -6) : innerHeight / 2;
+    const el = document.createElement('div');
+    el.className = 'onomatopeia ' + tipo; el.textContent = txt; el.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(el);
+    // não vaza da tela: o meio fica a meia largura (e mais um respiro) da borda
+    const meia = el.offsetWidth / 2 + 10;
+    el.style.left = Math.max(meia, Math.min(innerWidth - meia, x)) + 'px'; el.style.top = Math.max(70, y) + 'px';
+    const giro = (triste ? 6 : -9) + Math.random() * 6 - 3, t = s => `translate(-50%, -50%) rotate(${giro}deg) ${s}`;
+    const fim = triste ? t('translateY(14px) scale(.9)') : t('translateY(-18px) scale(1.04)');
+    el.animate([
+      { transform: t('scale(.3)'), opacity: 0 },
+      { transform: t('scale(1.25)'), opacity: 1, offset: 0.08 },
+      { transform: t('scale(1)'), opacity: 1, offset: 0.16 },
+      { transform: t('scale(1)'), opacity: 1, offset: 0.7 },
+      { transform: fim, opacity: 0 },
+    ], { duration: triste ? 1000 : 900, easing: 'steps(2, end)' }).onfinish = () => el.remove();
+  }
+
   function quadro(ms = 260) {
     if (!cfg.impresso || !cfg.animacoes || !cfg.particulas) return 0;
     const paradas = document.getAnimations().filter(a => a.playState === 'running');
@@ -227,6 +260,7 @@
     t.style.left = x + 'px'; t.style.top = y + 'px';
     document.body.appendChild(t);
     setTimeout(() => t.remove(), 1300);
+    return t;
   }
 
   // chamada grande de bom momento, uma de cada vez
@@ -311,7 +345,9 @@
         el.textContent = p.txt;
         const ultimo = i === passos.length - 1;
         el.classList.toggle('final', ultimo);
-        el.animate([{ transform: 'translate(-50%, -50%) scale(1.45)' }, { transform: 'translate(-50%, -50%) scale(1)' }], { duration: ultimo ? 320 : 200, easing: 'cubic-bezier(.3,1.6,.5,1)' });
+        // impresso: a corrente curta conta "em dois" (3 poses seguradas); a de 5 e 6, fluida (o lance melhor anda mais liso)
+        const emDois = cfg.impresso && !/\bn[56]\b/.test(classe);
+        el.animate([{ transform: 'translate(-50%, -50%) scale(1.45)' }, { transform: 'translate(-50%, -50%) scale(1)' }], { duration: ultimo ? 320 : 200, easing: emDois ? 'steps(3, jump-none)' : 'cubic-bezier(.3,1.6,.5,1)' });
         if (ultimo) { res(); setTimeout(() => { el.classList.add('saindo'); setTimeout(() => el.remove(), 380); }, 520); }
       }, p.ms));
     });
@@ -333,5 +369,5 @@
     return new Promise(res => setTimeout(res, ms));
   }
 
-  window.Fx = { cfg, faiscas, confete, poeira, voar, texto, chamada, dica, contagem, tremer, pulsar, contar, centro, orbes, clarao, impacto, limparDica, lancarCarta, desencaixe, quadro, AZUL, ROSA };
+  window.Fx = { cfg, faiscas, confete, poeira, voar, texto, chamada, dica, contagem, tremer, pulsar, contar, centro, orbes, clarao, impacto, limparDica, lancarCarta, desencaixe, quadro, onomatopeia, AZUL, ROSA };
 })();
