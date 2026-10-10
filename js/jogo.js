@@ -305,8 +305,11 @@
       const liberouAgora = !liberadasAntes && armadilhasLiberadas();
       if (p === 0) { r.vitorias++; r.seq++; } else r.seq = 0;
       if (r.seq > r.melhorSeq) { r.melhorSeq = r.seq; if (r.seq >= 2) j.recordes.push(`Melhor sequência: ${r.seq} vitórias seguidas`); }
-      if (s.maiorDisp > r.maiorDisparo) { r.maiorDisparo = s.maiorDisp; j.recordes.push(`Maior disparo: +${s.maiorDisp}`); }
-      if (s.maior > r.maiorCorrente) { r.maiorCorrente = s.maior; j.recordes.push(`Maior corrente: ${s.maior}`); }
+      // o recorde sempre é guardado, mas só é festejado quando diz alguma coisa: nas primeiras partidas, qualquer
+      // disparo "batia o recorde" ("Novo: Maior disparo: +1" não é notícia)
+      const notavel = (x, min) => r.partidas > 5 || x >= min;
+      if (s.maiorDisp > r.maiorDisparo) { r.maiorDisparo = s.maiorDisp; if (notavel(s.maiorDisp, 4)) j.recordes.push(`Maior disparo: +${s.maiorDisp}`); }
+      if (s.maior > r.maiorCorrente) { r.maiorCorrente = s.maior; if (notavel(s.maior, 5)) j.recordes.push(`Maior corrente: ${s.maior}`); }
       if (liberouAgora) j.recordes.push('Armadilhas liberadas no deck!');
       // moedas (só vitórias, só abaixo do teto de rating do rival), rating e experiência: regras em shared/regras.js
       const c = st.conta, ps = R.premioSolo({ rating: c.rating, pico: c.pico }, { nivel: j.nivel, venceu: p === 0, margem: j.pts[0] - j.pts[1], rodadas: j.rodada, meta: j.meta });
@@ -1359,7 +1362,10 @@
     // acabou antes da meta: por quê (sem isso, um 0 × 0 parece que a conexão caiu)
     const wo = j.desistencia, quem = wo === 0 && j.modo !== 'local' ? 'Você' : n[wo];
     const motivo = wo === undefined ? '' : { tempo: `${quem} não jogou a tempo.`, inativo: `${quem} não respondeu ao “Você ainda está aí?”.`, queda: `${quem} caiu e não voltou a tempo.`, saiu: `${quem} saiu da partida.` }[j.motivoFim] || `${quem} saiu da partida.`;
-    document.getElementById('fimPlacar').innerHTML = `<span class="cor0">${n[0]} ${j.pts[0]}</span> × <span class="cor1">${j.pts[1]} ${n[1]}</span>${motivo ? `<small class="fim-motivo">${esc(motivo)}</small>` : ''}`;
+    // perdeu por pouco: o fim diz quanto faltou (um "quase" chama a próxima; uma derrota seca, não)
+    const faltou = j.modo !== 'local' && v === 1 && wo === undefined ? j.meta - j.pts[0] : 0;
+    const quase = faltou > 0 && faltou <= 3 ? `<small class="fim-quase">Faltaram ${faltou === 1 ? 'só 1 ponto' : `${faltou} pontos`}</small>` : '';
+    document.getElementById('fimPlacar').innerHTML = `<span class="cor0">${n[0]} ${j.pts[0]}</span> × <span class="cor1">${j.pts[1]} ${n[1]}</span>${motivo ? `<small class="fim-motivo">${esc(motivo)}</small>` : quase}`;
     // repetições viram um item só ("×2"); os mais raros vêm primeiro
     const grupos = new Map();
     j.momentos.filter(m => humano(m.p)).forEach(m => { const k = m.p + m.txt; const g = grupos.get(k) || { ...m, vezes: 0 }; g.vezes++; grupos.set(k, g); });
@@ -1368,7 +1374,7 @@
     const momentos = lances
       .map(m => `<li><span class="em">${simboloMomento(m.simbolo)}</span><span>${j.modo === 'local' ? `<span class="cor${m.p}">${n[m.p]}</span> ` : ''}${m.txt}${m.vezes > 1 ? ` <b>×${m.vezes}</b>` : ''}</span></li>`).join('');
     const recs = (j.recordes || []).map(r => `<li class="recorde"><span class="em">${simboloMomento('✪')}</span>Novo: ${r}</li>`).join('');
-    document.getElementById('fimMomentos').innerHTML = recs + (momentos || `<li><span class="em">${simboloMomento('☕')}</span>Sem lances marcantes desta vez.</li>`);
+    document.getElementById('fimMomentos').innerHTML = recs + (momentos || (recs ? '' : `<li><span class="em">${simboloMomento('☕')}</span>Sem lances marcantes desta vez.</li>`));
     // perdeu e teve bons lances: eles vêm antes do prêmio (o que você fez de bom primeiro, o placar depois)
     const rec = document.getElementById('fimRecompensas'), tit = document.getElementById('fimMomentosTitulo'), lista = document.getElementById('fimMomentos');
     const momentosPrimeiro = j.modo !== 'local' && v !== 0 && !!(recs || momentos);
@@ -1383,7 +1389,10 @@
       linha('Disparos', x => x.disp) + linha('Maior corrente', x => x.maior || '–') + linha('Rupturas', x => x.rupt) +
       linha('Bolso (guardou · trocou)', x => `${x.guardou} · ${x.trocou}`);
     prepararCartao(j, lances);
-    document.getElementById('btnDeNovo').textContent = online() ? 'Revanche' : 'Jogar de novo';
+    // o botão diz o que vem: a revanche contra quem venceu, ou a sequência que está em jogo
+    const seq = j.modo === 'bot' ? st.rec.seq : 0;
+    document.getElementById('btnDeNovo').textContent = online() ? 'Revanche' : j.modo !== 'bot' || j.estreia ? 'Jogar de novo'
+      : v === 1 ? `Revanche contra ${RIVAIS[j.nivel].nome}` : seq >= 2 ? `Mais uma · ${seq} vitórias seguidas` : 'Jogar de novo';
     document.getElementById('fim').hidden = false;
     document.getElementById('btnDeNovo').focus();
   }
@@ -1438,20 +1447,41 @@
     const dr = pr.rating - pr.ratingAntes;
     const prox = NIVEIS[pr.nivelDepois] ?? null, ant = NIVEIS[pr.nivelDepois - 1];
     const pct = prox === null ? 100 : Math.round((c.xp - ant) / (prox - ant) * 100);
+    // a barra começa de onde estava antes da partida e enche (subiu de nível: começa do zero do nível novo)
+    const pct0 = pr.nivelDepois > pr.nivelAntes ? 0 : Math.max(0, Math.min(pct, Math.round((c.xp - pr.xpGanho - ant) / ((prox ?? c.xp) - ant || 1) * 100)));
     const presentes = pr.presentes.map(x => `<div class="linha"><span>Presente do nível: ${nomeItem(x.tipo, x.id)}</span><span class="sobe">novo!</span></div>`).join('');
     const total = m ? m.total : 0;
     const linhaRating = `<div class="linha"><span>${online() ? 'Rating online' : 'Rating'} ${pr.ratingAntes} → <b>${pr.rating}</b> <span class="${dr >= 0 ? 'sobe' : 'desce'}">(${dr >= 0 ? '+' : ''}${dr})</span></span><span>${tituloDe(pr.rating)}</span></div>`;
     const linhaXp = `<div class="linha"><span>Nível ${pr.nivelDepois}${pr.nivelDepois > pr.nivelAntes ? ' <span class="sobe">subiu!</span>' : ''}</span><span>+${pr.xpGanho} XP</span></div>
-      <div class="xp"><i style="width:${pct}%"></i></div>${presentes}`;
+      <div class="xp"><i style="width:${Fx.cfg.animacoes ? pct0 : pct}%"></i></div>${presentes}`;
+    const meta = proximaMeta(c), linhaMeta = meta ? `<div class="linha meta-prox"><span>${meta.txt}</span><span>${meta.falta}</span></div>` : '';
     // sem moedas (derrota, teto do rival): a tela não abre com um "+0" grande. Primeiro o que se ganhou (experiência,
     // que sobe sempre), depois o rating e, miúda, a linha das moedas
-    el.innerHTML = total ? `<div class="grande"><span class="moeda" aria-hidden="true"></span><span id="contaMoedas">+0</span></div>${linhaMoedas}${linhaRating}${linhaXp}`
-      : `${linhaXp}${linhaRating}${linhaMoedas}`;
+    el.innerHTML = total ? `<div class="grande"><span class="moeda" aria-hidden="true"></span><span id="contaMoedas">+0</span></div>${linhaMoedas}${linhaRating}${linhaXp}${linhaMeta}`
+      : `${linhaXp}${linhaRating}${linhaMoedas}${linhaMeta}`;
+    // em sequência (v0.14): cada linha entra uma depois da outra; as moedas contam, depois a barra de experiência enche
+    // com um tique e, se subiu de nível, a chamada e o presente. Antes, tudo aparecia de uma vez e já cheio
+    [...el.children].forEach((x, k) => { x.classList.add('revela'); x.style.setProperty('--k', k); });
     const alvo = document.getElementById('contaMoedas');
+    const tXp = total ? 1150 : 450;
     if (total) {
       setTimeout(() => { Fx.contar(alvo, 0, total); setTimeout(() => { alvo.textContent = '+' + total; }, 600); Som.tocar('moeda', { n: Math.ceil(total / 5) }); Fx.faiscas(alvo, 18, ['#ffe3a3', '#f2c14e', '#fff6e6']); }, 350);
     }
-    if (pr.nivelDepois > pr.nivelAntes) setTimeout(() => { Som.tocar('nivel'); Fx.chamada(`Nível ${pr.nivelDepois}!`, pr.presentes.length ? 'você ganhou um presente na Loja' : 'continue assim', 'suave'); }, 900);
+    const barra = el.querySelector('.xp i');
+    if (barra && Fx.cfg.animacoes) setTimeout(() => { barra.style.width = pct + '%'; Som.tocar('tique', { k: 2 }); }, tXp);
+    if (pr.nivelDepois > pr.nivelAntes) setTimeout(() => { Som.tocar('nivel'); Fx.chamada(`Nível ${pr.nivelDepois}!`, pr.presentes.length ? 'você ganhou um presente na Loja' : 'continue assim', 'suave'); }, tXp + 650);
+  }
+  // a próxima coisa a ganhar, para a pessoa sair do fim sabendo para onde vai: o presente do próximo nível que tiver um,
+  // senão a carta (ou, com todas, o visual) mais barata que ela ainda não tem
+  function proximaMeta(c) {
+    const nv = nivelDe(c.xp), lv = Object.keys(PRESENTES).map(Number).sort((a, b) => a - b).find(x => x > nv);
+    if (lv && NIVEIS[lv - 1] != null) { const [tipo, id] = PRESENTES[lv]; return { txt: `Nível ${lv}: ${nomeItem(tipo, id)} de presente`, falta: `faltam ${NIVEIS[lv - 1] - c.xp} XP` }; }
+    const cartas = Object.keys(PRECO_CARTA).filter(id => !c.cartas.includes(id)).map(id => ({ tipo: 'cartas', id, preco: PRECO_CARTA[id] }));
+    const visuais = ['dados', 'icones', 'mesas'].flatMap(t => Object.entries(R.CATALOGO[t]).filter(([id, it]) => it.preco > 0 && !it.nivel && !(c[t] || []).includes(id)).map(([id, it]) => ({ tipo: t, id, preco: it.preco })));
+    const alvo = (cartas.length ? cartas : visuais).sort((a, b) => a.preco - b.preco)[0];
+    if (!alvo) return null;
+    const falta = alvo.preco - c.moedas;
+    return { txt: `Próximo na Loja: ${alvo.tipo === 'cartas' ? 'a carta ' : ''}${nomeItem(alvo.tipo, alvo.id)}`, falta: falta > 0 ? `faltam ${falta} moedas` : 'já dá para comprar' };
   }
 
   // ---------- loja ----------

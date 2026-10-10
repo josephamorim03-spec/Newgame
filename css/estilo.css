@@ -1382,3 +1382,9 @@ button.inicio-perfil:active { transform: translateY(1px); }
 @keyframes avisoEntra { 0% { transform: translate(-50%, -50%) scale(.6) rotate(-4deg); opacity: 0; } 100% { transform: translate(-50%, -50%) scale(1); opacity: 1; } }
 @keyframes avisoSai { to { transform: translate(-50%, -70%) scale(.94); opacity: 0; } }
 .carta-voando { transform-origin: 50% 50%; box-shadow: 0 14px 30px rgba(0,0,0,.4); }
+/* o fim em sequência (v0.14): as linhas do prêmio entram uma depois da outra */
+.recompensas > .revela { animation: revela .38s cubic-bezier(.2,.9,.3,1.2) both; animation-delay: calc(150ms + var(--k, 0) * 140ms); }
+@keyframes revela { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.fim-quase { display: block; margin-top: 4px; font-family: var(--f-corpo); font-size: 15px; font-weight: 800; color: var(--mel-escuro); }
+.recompensas .meta-prox { font-size: 13px; color: var(--tinta-suave); border-top: 1px dashed rgba(58,42,46,.18); padding-top: 8px; }
+.recompensas .meta-prox span:last-child { color: var(--tinta); }
