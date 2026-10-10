@@ -2187,6 +2187,48 @@
     ]
    },
    "lugar": "sw"
+  },
+  "f-empurra": {
+   "quem": [
+    "diana"
+   ],
+   "nariz": "curada",
+   "lugar": "nw",
+   "texto": "At her felt table, Diana, healed, gently pushes the five pink dice back across the table toward the reader with one white paw, a small sincere half-smile, looking at the reader. Warm lamplight.",
+   "boca": {
+    "diana": [
+     62,
+     50
+    ]
+   }
+  },
+  "c7-lacre": {
+   "quem": [
+    "coruja"
+   ],
+   "lugar": "nw",
+   "texto": "Dona Coruja taps a red wax seal on top of a closed book with the tip of her wing, at her library desk. A few wooden dice on the desk."
+  },
+  "c7-tampa": {
+   "quem": [
+    "coruja"
+   ],
+   "lugar": "nw",
+   "texto": "Dona Coruja sits on top of an open book on her library desk, covering the page with her body, prim and pleased. A few wooden dice on the desk."
+  },
+  "c8-bolso": {
+   "quem": [
+    "diana"
+   ],
+   "nariz": "nada",
+   "lugar": "ne",
+   "texto": "Diana at her table covered in wine-red felt, holding up one front paw to show a single pink die resting in it, deadpan and a little smug. Behind her, the cork board with a double helix drawn with dice.",
+   "boca": {
+    "diana": [
+     45,
+     52
+    ]
+   }
   }
  },
  "paginas": [
@@ -2833,6 +2875,20 @@
      "plano": "perto"
     },
     {
+     "arte": "c7-lacre",
+     "opcoes": [
+      [
+       "c7-lacre",
+       "C7-15a"
+      ],
+      [
+       "c7-tampa",
+       "C7-15b"
+      ]
+     ],
+     "nota": "sorteada no jogo"
+    },
+    {
      "arte": "c7-biblioteca",
      "fala": "C7-12",
      "plano": "detalhe"
@@ -2936,18 +2992,6 @@
      "fala": "R-08",
      "parte": 1,
      "plano": "perto"
-    },
-    {
-     "arte": "r-mural",
-     "fala": "R-09",
-     "parte": 0,
-     "plano": "perto"
-    },
-    {
-     "arte": "r-mural",
-     "fala": "R-09",
-     "parte": 1,
-     "plano": "detalhe"
     }
    ]
   },
@@ -2999,6 +3043,41 @@
    "piloto": true
   },
   {
+   "id": "C8-antes",
+   "titulo": "Cap. 8 · Fita Dupla · Antes",
+   "piloto": true,
+   "quadros": [
+    {
+     "arte": "c8-bolso",
+     "fala": "C8-09b",
+     "parte": 0
+    },
+    {
+     "arte": "c8-bolso",
+     "fala": "C8-09b",
+     "parte": 1,
+     "plano": "perto"
+    },
+    {
+     "arte": "c8-bolso",
+     "fala": "C8-09a",
+     "parte": 0
+    },
+    {
+     "arte": "c8-bolso",
+     "fala": "C8-09a",
+     "parte": 1,
+     "plano": "perto"
+    },
+    {
+     "arte": "c8-bolso",
+     "fala": "C8-09a",
+     "parte": 2,
+     "plano": "detalhe"
+    }
+   ]
+  },
+  {
    "id": "F-1",
    "titulo": "Final · Quase três bilhões e uma",
    "quadros": [
@@ -3021,13 +3100,13 @@
     },
     {
      "arte": "f-close",
-     "fala": "F-03",
+     "fala": "F-03b",
      "parte": 0,
      "plano": "perto"
     },
     {
      "arte": "f-close",
-     "fala": "F-03",
+     "fala": "F-03b",
      "parte": 1,
      "plano": "detalhe"
     }
@@ -3063,6 +3142,30 @@
      "arte": "f-eco",
      "fala": "F-A",
      "parte": 4,
+     "plano": "detalhe"
+    }
+   ]
+  },
+  {
+   "id": "F-3",
+   "titulo": "Final · Agora jogue só porque é bom",
+   "piloto": true,
+   "quadros": [
+    {
+     "arte": "f-empurra",
+     "fala": "F-Zb",
+     "parte": 0
+    },
+    {
+     "arte": "f-empurra",
+     "fala": "F-Zb",
+     "parte": 1,
+     "plano": "perto"
+    },
+    {
+     "arte": "f-empurra",
+     "fala": "F-Zb",
+     "parte": 2,
      "plano": "detalhe"
     }
    ]
@@ -3369,6 +3472,6 @@
    ]
   }
  },
- "_refazer": "Quando houver crédito na API, nesta ordem: (1) python3 tools/historia/quadros.py narizes cachecol; (2) python3 tools/historia/quadros.py --qualidade high p-pata i1-le c3-raposa c1-pag-a c6-ovelha (o c6-ovelha é uma edição da arte atual: só os hexágonos); (3) python3 tools/historia/dados_ia.py rascunhos, o dono escolhe nas pranchas e python3 tools/historia/dados_ia.py aplicar ...; (4) os 6 antigos do piloto e o resto, no pedido novo.",
+ "_refazer": "Quando houver crédito na API, nesta ordem: (1) python3 tools/historia/quadros.py narizes cachecol; (2) python3 tools/historia/quadros.py --qualidade high p-pata i1-le c3-raposa c1-pag-a c6-ovelha (o c6-ovelha é uma edição da arte atual: só os hexágonos); (3) python3 tools/historia/dados_ia.py rascunhos, o dono escolhe nas pranchas e python3 tools/historia/dados_ia.py aplicar ...; (4) as artes novas do roteiro: f-empurra, c7-lacre, c7-tampa, c8-bolso; (5) os 6 antigos do piloto e o resto, no pedido novo.",
  "_dados": "Os dados dos quadros são conferidos depois de pintados: tools/historia/dados_quadros.py troca as bolinhas erradas pelas certas (anotações em 'dados' de cada arte)."
 }
