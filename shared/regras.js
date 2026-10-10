@@ -501,14 +501,16 @@
     return { tipo: 'pegar', idx: melhor.idx, modo: melhor.modo };
   }
   // o tempo da vez de p acabou: joga por ele e conta (j.auto); na AUTO_MAX.ª seguida, W.O. Uma jogada dele zera a conta
-  // (quem zera é quem recebe a ação: o servidor). Devolve 'fim' ou 'proximo'.
-  function jogarNoAutomatico(j, p) {
+  // (quem zera é quem recebe a ação: o servidor). motivo: 'tempo' (estava conectado e não jogou) ou 'queda' (caiu e o
+  // prazo de volta acabou): vai no aviso e, na AUTO_MAX.ª, no porquê do W.O. Devolve 'fim' ou 'proximo'.
+  function jogarNoAutomatico(j, p, motivo = 'tempo') {
     if (j.fase === 'fim' || j.vez !== p) return j.fase === 'fim' ? 'fim' : 'proximo';
+    if (motivo !== 'queda') motivo = 'tempo';
     if (!j.auto) j.auto = [0, 0];
     j.auto[p]++;
-    if (j.auto[p] >= AUTO_MAX) { desistir(j, p, 'tempo'); return 'fim'; }
-    registrar(j, p, `não jogou a tempo: a vez foi no automático (${j.auto[p]} de ${AUTO_MAX})`, 'ruim');
-    emitir(j, 'automatica', { p, n: j.auto[p], max: AUTO_MAX });
+    if (j.auto[p] >= AUTO_MAX) { desistir(j, p, motivo); return 'fim'; }
+    registrar(j, p, `${motivo === 'queda' ? 'está sem conexão' : 'não jogou a tempo'}: a vez foi no automático (${j.auto[p]} de ${AUTO_MAX})`, 'ruim');
+    emitir(j, 'automatica', { p, n: j.auto[p], max: AUTO_MAX, motivo });
     for (let i = 0; i < 20 && j.fase !== 'fim' && j.vez === p; i++) {
       const a = jogadaAutomatica(j, p);
       if (!a || !aplicar(j, p, a).ok) break;

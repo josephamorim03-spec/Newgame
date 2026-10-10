@@ -85,13 +85,13 @@ test('o relógio recomeça na Mesa nova, mesmo quando quem fechou a Mesa abre a 
   p.salas.fechar();
 });
 
-test('ritmo da sala: o tempo da vez vem do ritmo escolhido ao criar (Relâmpago 20 s, Rápida 45 s, Calma 2 min)', async () => {
+test('ritmo da sala: o tempo da vez vem do ritmo escolhido ao criar (Relâmpago 20 s, Rápida 60 s, Calma 2 min)', async () => {
   const { Salas: S, RITMOS } = require('../salas');
   let agora = 5_000_000;
   const banco = await criarBanco({ url: '' });
   const salas = new S({ banco, trava: (id, fn) => fn(), tempos: { esperaReconexao: 90_000, minimoNaVolta: 30_000, escolha: 0 }, agora: () => agora });
   const ws = () => ({ readyState: 1, msgs: [], send(m) { this.msgs.push(JSON.parse(m)); } });
-  for (const [ritmo, ms] of [['relampago', 20_000], ['rapida', 45_000], ['calma', 120_000], ['qualquer', 45_000], [undefined, 45_000]]) {
+  for (const [ritmo, ms] of [['relampago', 20_000], ['rapida', 60_000], ['calma', 120_000], ['qualquer', 60_000], [undefined, 60_000]]) {
     const a = await banco.criarConta('A' + ritmo + ms, 'x'), b = await banco.criarConta('B' + ritmo + ms, 'x'), wa = ws(), wb = ws();
     const sala = salas.criar(a, { ritmo });
     assert.strictEqual(salas.resumo(sala).limiteVez, ms, `${ritmo}`);
@@ -135,5 +135,45 @@ test('tempo esgotado: o jogo joga por você; 3 vezes SEGUIDAS e a partida acaba 
   assert.strictEqual(j.motivoFim, 'tempo');
   await new Promise(r => setTimeout(r, 20));
   assert.ok(p.sockets[eu].msgs.some(m => m.tipo === 'fim'), 'o fim chega');
+  p.salas.fechar();
+});
+
+test('ausente: depois do automático a vez fica curta (15 s) até um sinal de vida; quem cai e não volta vai no automático na hora', async () => {
+  const p = await partida();
+  const j = p.sala.jogo, eu = p.daVez, rival = 1 - eu;
+  const jogarAMao = async i => { for (let k = 0; k < 20 && j.fase !== 'fim' && j.vez === i; k++) await p.salas.acao(p.sockets[i], p.contas[i], Regras.jogadaAutomatica(j, i)); };
+  const ateMinhaVez = async () => { for (let k = 0; k < 5 && j.fase !== 'fim' && j.vez !== eu; k++) await jogarAMao(rival); };
+  const estado = w => [...w.msgs].reverse().find(m => m.tipo === 'estado').jogo;
+  // não jogou: automático e ausente
+  p.passar(120_001); p.salas.verificar();
+  assert.strictEqual(p.sala.jogadores[eu].ausente, true);
+  assert.strictEqual(estado(p.sockets[rival]).perfis[1].ausente, true, 'o rival sabe que ele está ausente');
+  // a próxima vez dele tem só 15 s (o rival não espera os 2 min inteiros)
+  await ateMinhaVez();
+  assert.strictEqual(estado(p.sockets[eu]).limiteVez, 15_000);
+  assert.ok(estado(p.sockets[eu]).prazoVez <= 15_000);
+  p.passar(15_001); p.salas.verificar();
+  assert.strictEqual(j.auto[eu], 2, 'a vez curta também acabou no automático');
+  // sinal de vida (tocou na tela): o tempo inteiro de volta; a conta só zera quando ele joga
+  await ateMinhaVez();
+  p.passar(5_000);
+  p.salas.voltei(p.sockets[eu], p.contas[eu]);
+  assert.strictEqual(p.sala.jogadores[eu].ausente, false);
+  assert.strictEqual(estado(p.sockets[eu]).limiteVez, 120_000);
+  assert.ok(estado(p.sockets[eu]).prazoVez >= 30_000, 'com pelo menos o mínimo da volta');
+  assert.strictEqual(j.auto[eu], 2);
+  p.salas.voltei(p.sockets[eu], p.contas[eu]);   // repetir não dá tempo de novo
+  await jogarAMao(eu);
+  assert.strictEqual(j.auto[eu], 0, 'jogou: a conta zera');
+  // caiu e passou o prazo de volta: na vez dele, automático na hora (sem esperar o relógio), por queda
+  await ateMinhaVez();
+  p.salas.caiu(p.sockets[eu]);
+  p.passar(90_001); p.salas.verificar();
+  assert.strictEqual(j.auto[eu], 1);
+  assert.ok(estado(p.sockets[rival]).eventos.some(e => e.tipo === 'automatica' && e.motivo === 'queda'));
+  for (let n = 0; n < 3 && j.fase !== 'fim'; n++) { await ateMinhaVez(); p.salas.verificar(); }
+  assert.strictEqual(j.fase, 'fim');
+  assert.strictEqual(j.motivoFim, 'queda');
+  assert.strictEqual(j.vencedor, rival);
   p.salas.fechar();
 });

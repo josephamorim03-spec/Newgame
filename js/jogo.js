@@ -150,6 +150,8 @@
   const online = () => jogo && jogo.modo === 'online';
   // o rival online caiu no meio da partida; segundosVolta: quanto ele ainda tem para voltar (null se não se sabe)
   const rivalCaiu = () => online() && jogo.fase !== 'fim' && jogo.perfis[1].conectado === false;
+  // as vezes seguidas no automático (online): a etiqueta no painel de cada um
+  const autoTag = p => { const n = online() && jogo.fase !== 'fim' && jogo.auto ? jogo.auto[p] : 0; return n ? `<span class="auto-tag" title="vezes seguidas no automático (na ${R.AUTO_MAX}ª, a partida acaba)">auto ${n}/${R.AUTO_MAX}</span>` : ''; };
   const segundosVolta = () => { const ate = jogo.perfis[1].voltaAte; return ate ? Math.max(0, Math.ceil((ate - Date.now()) / 1000)) : null; };
 
   function novaPartida() {
@@ -740,12 +742,12 @@
     const seCrescer = L >= 3 && L < LIM ? ` · com ${L + 1}: <b>+${pontos(L + 1)}</b>` : '';
     // os pontinhos de "pensando…" moram no selo de vez, no alto da Mesa (no painel, em 360 px, estouravam com placar de 2 dígitos)
     const caiu = p === 1 && rivalCaiu(), sv = caiu ? segundosVolta() : null;
-    const tag = j.fase === 'fim' ? (j.vencedor === p ? 'venceu' : '') : caiu ? (sv === null ? 'caiu' : `caiu · <span class="volta-rival">${sv}</span> s`)
+    const tag = j.fase === 'fim' ? (j.vencedor === p ? 'venceu' : '') : caiu ? (sv === null ? 'caiu' : sv === 0 ? 'sem conexão' : `caiu · <span class="volta-rival">${sv}</span> s`)
       : daVez ? (humano(p) ? (j.modo !== 'local' ? 'sua vez' : 'vez') : online() ? 'jogando' : 'pensando') + (online() ? '<span class="relogio-vez" data-relogio></span>' : '') : '';
     const avatar = j.modo === 'bot' && p === 1 ? Retratos.retrato(RETRATO_RIVAL[j.nivel], j.humor || '') : p === 0 ? iconeSVG(st.conta.icone) : online() ? iconeSVG(j.perfis[1].icone) : '';
     const fala = j.modo === 'bot' && p === 1 && j.fala ? `<div class="fala" aria-live="polite">${j.fala.txt}</div>` : '';
     return `<div class="jogador p${p}${daVez ? ' da-vez' : ''}">${fala}
-      <div class="cab">${avatar}<span class="quem"><span class="nome">${n[p]}</span>${tag ? `<span class="vez-tag">${tag}</span>` : ''}</span>
+      <div class="cab">${avatar}<span class="quem"><span class="nome">${n[p]}</span>${tag || autoTag(p) ? `<span class="tags-vez">${tag ? `<span class="vez-tag">${tag}</span>` : ''}${autoTag(p)}</span>` : ''}</span>
         ${bolsoHTML(p)}<span class="placar"><b data-placar="${p}">${j.pts[p]}</b><small>/${j.meta}</small></span></div>
       <div class="barra" role="progressbar" aria-valuemin="0" aria-valuemax="${j.meta}" aria-valuenow="${j.pts[p]}" aria-label="Pontos de ${n[p]}"><i style="width:${pct}%"></i>${prev ? `<span class="prev" style="left:${pct}%;width:${prev}%"></span>` : ''}</div>
       ${(() => { const alvo = p === j.vez && !fx && dadoEscolhido(j) >= 0 ? previaAlvos(p, dadoEscolhido(j)).corrente : null;
@@ -993,7 +995,7 @@
     const s = segundosDaVez(j);
     if (s === null || vezDoAparelho(j) !== 'minha' || j.pensando) return;
     const ultimo = Vez.aviso && Vez.aviso.chave === Vez.chave ? Vez.aviso.s : Infinity;
-    const metade = Math.floor(Math.round((j.limiteVez || 45000) / 1000) / 2);
+    const metade = Math.floor(Math.round((j.limiteVez || 60000) / 1000) / 2);
     if (s <= 10 && ultimo > 10) avisarVez(`${s} s: se o tempo acabar, o jogo joga por você`, true);
     else if (s > 10 && s <= metade && ultimo > metade && j.sel == null && j.fase === 'pegar') avisarVez(`${s} s para jogar`);
   }
@@ -1165,10 +1167,12 @@
         case 'virar': setTimeout(() => { if (jogo.virando === e.id) jogo.virando = null; }, 500); Som.tocar('virar'); break;
         case 'automatica': {
           // o tempo da vez acabou e o servidor jogou por alguém (na AUTO_MAX.ª seguida, a partida acaba)
-          const meu = humano(e.p) && j.modo !== 'local';
+          // quem não jogou fica "ausente": a vez dele passa a ter só alguns segundos até ele dar sinal de vida (tocar na tela)
+          const meu = humano(e.p) && j.modo !== 'local', curto = Math.round((j.vezAusente || 15000) / 1000);
           Som.tocar('perigo'); if (meu) vibrar([40, 60, 40]);
-          Fx.chamada('Tempo!', meu ? `O tempo da vez acabou e o jogo jogou por você (${e.n} de ${e.max}). Jogue na próxima: na ${e.max}ª seguida, a partida acaba.`
-            : `${n[e.p]} não jogou a tempo: a vez foi no automático (${e.n} de ${e.max}).`, meu ? '' : 'rival', { classe: 'de-jogo', ms: 5200 });
+          Fx.chamada(e.motivo === 'queda' && !meu ? 'Sem conexão' : 'Tempo!', meu ? `O tempo acabou e o jogo jogou por você (${e.n} de ${e.max}). Toque na tela para voltar a ter o tempo inteiro; na ${e.max}ª seguida, a partida acaba.`
+            : e.motivo === 'queda' ? `${n[e.p]} está sem conexão: a vez foi no automático (${e.n} de ${e.max}).`
+            : `${n[e.p]} não jogou a tempo: a vez foi no automático (${e.n} de ${e.max}). Até voltar, a vez de ${n[e.p]} tem só ${curto} s.`, meu ? '' : 'rival', { classe: 'de-jogo', ms: 5600 });
           break;
         }
         case 'chamada': Som.tocar('momento'); Fx.chamada(e.titulo, e.sub, e.estilo === 'esquiva' ? (e.p === 1 && j.modo !== 'local' ? 'rival' : '') : e.estilo, { classe: 'de-jogo' }); break;
@@ -2496,7 +2500,7 @@
   };
 
   // o tempo de cada vez no online, escolhido ao criar a sala (como o controle de tempo do chess.com; servidor/salas.js)
-  const TEMPOS_ONLINE = { relampago: ['Relâmpago', '20 s'], rapida: ['Rápida', '45 s'], calma: ['Calma', '2 min'] };
+  const TEMPOS_ONLINE = { relampago: ['Relâmpago', '20 s'], rapida: ['Rápida', '60 s'], calma: ['Calma', '2 min'] };
   const tempoTxt = r => { const t = TEMPOS_ONLINE[r] || TEMPOS_ONLINE.rapida; return `${t[0]} · ${t[1]} por vez`; };
   async function criarSala() {
     aviso('Criando a sala…');
@@ -3092,6 +3096,17 @@
     }
   }
   // o roteiro de teste automático (tools/) pode ler o estado
+  // AFK: quem entrou no automático e toca na tela, aperta uma tecla ou volta para o app avisa o servidor ("voltei"):
+  // a vez volta a ter o tempo inteiro (a conta das vezes seguidas no automático só zera quando a pessoa joga)
+  let ultimoVoltei = 0;
+  function talvezVoltei() {
+    const j = jogo;
+    if (!j || !online() || j.fase === 'fim' || !j.perfis || !j.perfis[0].ausente || Date.now() - ultimoVoltei < 3000) return;
+    ultimoVoltei = Date.now(); enviarWs({ tipo: 'voltei' });
+  }
+  addEventListener('pointerdown', talvezVoltei, true);
+  addEventListener('keydown', talvezVoltei, true);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) talvezVoltei(); });
   window.DiceDuel = { get jogo() { return jogo; }, st, salvar, fecharInicio: () => esconderInicio(), abrirInicio: () => mostrarInicio(), ajustar(p) { Object.assign(st.pref, p); aplicarPrefs(); if (jogo) render(); }, automato: () => talvezAutomato() };
   window.claude?.hot?.ready ? window.claude.hot.ready(iniciar) : iniciar(window.claude?.hot?.data ?? {});
 })();

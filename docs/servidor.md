@@ -58,10 +58,11 @@ Banco: Postgres (o plugin da Railway). Sem `DATABASE_URL`, guarda tudo num arqui
 
 | O quê | Quanto |
 |---|---|
-| Tempo por vez (o ritmo da sala, escolhido ao criar, como no chess.com) | **Relâmpago 20 s**, **Rápida 45 s** (padrão; a fila usa este) ou **Calma 2 min**. O rating é um só para os três |
+| Tempo por vez (o ritmo da sala, escolhido ao criar, como no chess.com) | **Relâmpago 20 s**, **Rápida 60 s** (padrão; a fila usa este) ou **Calma 2 min**. O rating é um só para os três |
 | O tempo da vez acabou | o jogo **joga por você** (uma jogada segura: o dado que não rompe, de preferência na corrente; dispensa o 2.º dado da Pressa; com 3+ na corrente, dispara; não usa cartas) e os dois veem o aviso "Tempo!" com a conta (1 de 3). **3 vezes seguidas** no automático = W.O.; qualquer jogada sua zera a conta (`Regras.jogarNoAutomatico`) |
+| Quem entrou no automático (ausente) | as vezes dele têm só **15 s** até ele dar sinal de vida: tocar na tela, apertar uma tecla, voltar para o app (`voltei`), reconectar ou jogar. Aí volta o tempo inteiro, com pelo menos 30 s se a vez for dele. Os dois veem "auto 1/3" no painel de quem está no automático e o aviso diz que a vez do ausente está curta |
 | A partida acabou por W.O. | a tela do fim diz o porquê: saiu da partida, caiu e não voltou a tempo, ou ficou 3 vezes seguidas sem jogar |
-| Quem cai no meio da partida tem para voltar | **90 s** (depois perde por W.O., sem moedas para ninguém) |
+| Quem cai no meio da partida tem para voltar | **90 s** com o relógio parado; depois, as vezes dele vão **no automático na hora** (o rival vê "sem conexão"), e a 3.ª seguida é W.O. por queda (sem moedas para ninguém se for antes da 3.ª Mesa) |
 | Relógio da vez de quem está caído | **para**; na volta, continua de onde estava, com pelo menos **30 s** para jogar (o mínimo vale uma vez por vez; numa mesma vez, o relógio fica parado por no máximo 90 s somados: cair e voltar sem fim não segura a partida) |
 | Relógio da vez (o do ritmo) | recomeça quando a vez passa e a cada Mesa nova, mesmo quando quem fechou a Mesa abre a próxima |
 | O rival de quem caiu vê | "caiu · N s" contando o tempo que falta para a volta |

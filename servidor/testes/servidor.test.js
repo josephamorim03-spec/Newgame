@@ -5,6 +5,7 @@ const WebSocket = require('ws');
 const { criarApp, TETO_SOLO_DIA } = require('../app');
 const { BancoMemoria, criarBanco } = require('../banco');
 const { jogadaAoAcaso } = require('./ajuda');
+const Regras = require('../../shared/regras');
 
 const SEGREDO = 'segredo-de-teste-com-32-caracteres!!';
 
@@ -22,6 +23,13 @@ async function subir({ banco = new BancoMemoria(), tempos = {}, limites = { cont
 }
 
 // um jogador pela rede: guarda as mensagens e espera pelas que interessam
+// o cliente joga as próprias vezes sozinho (a jogada simples do automático, mas mandada por ele: conta como jogada)
+function jogarSozinho(c) {
+  c.ws.on('message', d => {
+    const m = JSON.parse(d);
+    if (m.tipo === 'estado' && m.jogo.fase !== 'fim' && m.jogo.vez === 0) { const a = Regras.jogadaAutomatica(m.jogo, 0); if (a) c.enviar({ tipo: 'acao', acao: a }); }
+  });
+}
 async function cliente(url, token) {
   const ws = new WebSocket(url), msgs = [];
   let acordar = null;
@@ -222,7 +230,7 @@ test('partida online completa: cada um vê só o que deve, e o fim paga rating e
   } finally { await s.fechar(); }
 });
 
-test('quem cai tem um tempo para voltar; depois perde por W.O. (sem moedas para ninguém)', { timeout: 20000 }, async () => {
+test('quem cai tem um tempo para voltar; depois as vezes dele vão no automático e a 3ª seguida é W.O. (sem moedas para ninguém)', { timeout: 20000 }, async () => {
   const s = await subir({ tempos: { esperaReconexao: 400 } });
   try {
     const A = await conta(s, 'Hugo'), B = await conta(s, 'Iris');
@@ -239,9 +247,12 @@ test('quem cai tem um tempo para voltar; depois perde por W.O. (sem moedas para 
     a.enviar({ tipo: 'entrar', sala: sala.codigo, deck: [] });
     const volta = await a.esperar(m => m.tipo === 'estado');
     assert.notStrictEqual(volta.jogo.fase, 'fim');
-    // cai e não volta: W.O.
+    // cai e não volta: passado o prazo, as vezes dele vão no automático na hora (a Iris vê "sem conexão"), e a 3ª é W.O.
+    jogarSozinho(b);
     a.ws.terminate();
-    const fim = await b.esperar(m => m.tipo === 'fim', 3000);
+    const auto = await b.esperar(m => m.tipo === 'estado' && m.jogo.eventos.some(e => e.tipo === 'automatica' && e.p === 1), 4000);
+    assert.strictEqual(auto.jogo.eventos.find(e => e.tipo === 'automatica').motivo, 'queda');
+    const fim = await b.esperar(m => m.tipo === 'fim', 6000);
     assert.strictEqual(fim.premio.porDesistencia, true);
     assert.strictEqual(fim.premio.moedas.total, 0);
     // W.O. logo na 1ª Mesa não mexe no rating (contra contas descartáveis que caem de propósito)
@@ -310,7 +321,7 @@ test('se o banco falhar ao premiar, o fim chega assim mesmo (sem prêmio, com o 
     a.enviar({ tipo: 'entrar', sala: sala.codigo, deck: [] });
     b.enviar({ tipo: 'entrar', sala: sala.codigo, deck: [] });
     await a.esperar(m => m.tipo === 'estado');
-    a.ws.terminate();
+    a.enviar({ tipo: 'desistir' });
     const fim = await b.esperar(m => m.tipo === 'fim', 3000);
     assert.strictEqual(fim.premio, null);
     assert.match(fim.erro, /não conseguiu registrar/);
