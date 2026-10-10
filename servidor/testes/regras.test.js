@@ -119,7 +119,7 @@ test('Pressa: o 6.º dado dispara e o segundo dado continua; dispensar leva à d
   assert.strictEqual(j.pts[0], 6);
   assert.ok(j.vez === 0 && j.segundoDado);
   const k = Regras.criarPartida({ decks: [['pressa'], []], vez: 0, rng: rngDe(4) });
-  k.cor[0] = [3, 3]; k.bolso[0] = 6; k.mesa = [{ id: 911, v: 3 }, { id: 912, v: 1 }];
+  k.cor[0] = [3, 3]; k.bolso[0] = 6; k.mesa = [{ id: 911, v: 3 }, { id: 912, v: 1 }, { id: 913, v: 1 }];
   Regras.aplicar(k, 0, { tipo: 'carta', carta: 'pressa' });
   Regras.aplicar(k, 0, { tipo: 'pegar', idx: 0 });
   if (k.fase === 'destino') Regras.aplicar(k, 0, { tipo: 'destino', modo: 'corrente' });
@@ -343,4 +343,12 @@ test('Coringa: o dado que romperia troca a frente; a corrente não cresce nem co
   Regras.usarCarta(k, 0, 'coringa'); Regras.pegarPara(k, 0, 0, 'corrente');
   assert.deepStrictEqual(k.cor[0], [2, 3, 4]);
   assert.strictEqual(k.coringa[0], false);
+});
+
+test('Pressa (v0.12): só com 3 ou 4 dados na Mesa; nunca abre uma Mesa nem pega o último dado', () => {
+  for (const [n, ok] of [[1, false], [2, false], [3, true], [4, true], [5, false]]) {
+    const j = Regras.criarPartida({ decks: [['pressa'], []], vez: 0, rng: rngDe(6) });
+    j.mesa = j.mesa.slice(0, n);
+    assert.strictEqual(Regras.podeUsar(j, 0, 'pressa').ok, ok, `${n} dados na Mesa`);
+  }
 });

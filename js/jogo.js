@@ -419,7 +419,7 @@
         if (i !== undefined) usa.push({ carta: 'espelho', idx: i });
       }
     }
-    if (pode('pressa') && eu.length >= 2 && m.length >= 2 && !usa.some(u => u.carta === 'rerrolar')) {
+    if (pode('pressa') && eu.length >= 2 && m.length >= 3 && m.length <= 4 && !usa.some(u => u.carta === 'rerrolar')) {
       const ok = m.some((a, i) => encaixaP(p, a.v) && m.some((b, k) => k !== i && encaixa(eu.concat(a.v), b.v)));
       if (ok) usa.push({ carta: 'pressa' });
     }
@@ -463,7 +463,7 @@
       pressa: `${quem} vai pegar dois dados nesta vez`,
       coringa: `o próximo dado de ${quem} que romperia troca a frente da corrente`,
       sobrecarga: `o próximo disparo de 4+ de ${quem} vale +2`,
-      pausa: `${quem} passou a vez sem pegar dado`,
+      pausa: `${quem} passou a vez sem pegar dado: ${nomes()[1 - e.p] === 'Você' ? 'você joga de novo' : `${nomes()[1 - e.p]} joga de novo`}`,
       reverso: `a corrente de ${quem} agora cresce pela outra ponta${e.frente ? ` (frente: ${e.frente})` : ''}`,
       furto: e.meu === undefined ? `${quem} trocou os dados dos Bolsos` : `${quem} trocou ${e.meu === null ? 'o Bolso vazio' : 'o ' + e.meu} pelo ${e.dele === null ? 'Bolso vazio' : e.dele} do rival`,
     }[e.c] || `${quem} usou`;
@@ -999,18 +999,31 @@
   function pulinho(el, forte = false) {
     if (el && Fx.cfg.animacoes) el.animate([{ transform: 'none' }, { transform: forte ? 'translateY(-6px) scale(1.03)' : 'translateY(-4px) scale(1.012)' }, { transform: 'none' }], { duration: forte ? 480 : 380, easing: 'cubic-bezier(.3,1.5,.5,1)' });
   }
-  function avisarVez(sub = '', forte = false) {
+  function avisarVez(sub = '', forte = false, titulo = null) {
     const s = segundosDaVez(jogo);
     Vez.aviso = { chave: Vez.chave, s: s === null ? Infinity : s };
     Som.tocar('suaVez'); vibrar(forte ? [60, 60, 60, 60, 90] : [40, 50, 40]);
     pulinho(document.getElementById('seloVez'), true);
-    if (!document.hidden && !inicioAberto()) Fx.chamada(forte ? 'Ainda é sua vez' : 'Sua vez', sub, 'vez-chamada de-jogo', { ms: forte ? 1800 : 1100 });
+    if (!document.hidden && !inicioAberto()) Fx.chamada(titulo || (forte ? 'Ainda é sua vez' : 'Sua vez'), sub, 'vez-chamada de-jogo', { ms: forte ? 1800 : titulo ? 1600 : 1100 });
   }
-  function chegouAVez(j) {
+  // deNovo: a vez anterior também era sua (você está atrás e abre a Mesa nova, ou o rival usou a Pausa): a chamada diz
+  // por quê, contra o rival e no online; sem isso, jogar duas ou três vezes seguidas parecia erro do jogo
+  function porqueDeNovo(j) {
+    const n = nomes(), recente = j.log.slice(0, 4);
+    if (recente.some(l => l.p === j.vez && l.txt.includes('abre a Mesa'))) return 'você está atrás no placar e abre a Mesa nova';
+    if (recente.some(l => l.p === 1 - j.vez && l.txt.startsWith('usou Pausa'))) return `${n[1 - j.vez]} usou a Pausa e passou a vez`;
+    return '';
+  }
+  function chegouAVez(j, deNovo = false) {
     pulinho(document.getElementById('pj' + (j.modo === 'local' ? j.vez : 0)));
-    if (!online()) { Som.tocar('vez'); return; }
+    const motivo = deNovo && j.modo !== 'local' ? porqueDeNovo(j) : '';
+    if (!online()) {
+      Som.tocar('vez');
+      if (motivo && !inicioAberto()) Fx.chamada('Sua vez de novo', motivo, 'vez-chamada de-jogo', { ms: 1600 });
+      return;
+    }
     const s = segundosDaVez(j);
-    avisarVez(s === null ? '' : `${s} s para jogar`);
+    avisarVez(motivo || (s === null ? '' : `${s} s para jogar`), false, motivo ? 'Sua vez de novo' : null);
   }
   // os lembretes da vez no online: na metade do tempo (se nada foi escolhido) e nos 10 s finais (sempre). Por faixa, não
   // pelo segundo exato: com a aba em segundo plano o relógio pula segundos
@@ -1077,7 +1090,7 @@
     const chave = j.fase === 'fim' || j.intro ? null : `${j.vezes || 0}:${j.vez}`;
     if (chave !== Vez.chave) {
       const antes = Vez.chave; Vez.chave = chave;
-      if (chave !== null && humano(j.vez) && (online() || (antes !== undefined && (j.modo === 'local' || antes !== null)))) chegouAVez(j);
+      if (chave !== null && humano(j.vez) && (online() || (antes !== undefined && (j.modo === 'local' || antes !== null)))) chegouAVez(j, !!antes && antes.endsWith(`:${j.vez}`));
     }
     if (j.fx && !j.fx.agendado) {
       const id = j.fx.id; j.fx.agendado = true;

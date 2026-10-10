@@ -717,3 +717,112 @@ dessa meta.
 
 Reproduzir: `cd sim && BAL='{"coringa_seguro":true}' NOVAS=pausa,reverso,furto,lacre CONFIRMA=6000 python3 decks.py`
 (com `META=20` ou `META=24`; `BAL='{"coringa_modo":"entra","coringa_seguro":true}'` é o Coringa antigo).
+
+## 15. Jogar como gente: o "humano", o "pensador" e as variantes de deck (v0.12)
+
+**O que existe de dado com gente.** Só relatos: o "?" que era certeza (virou o blefe, §13), a meta 12 curta, o Coringa
+roubado (§14), a Pressa que dá 3 dados seguidos (§16) e a vez que passava despercebida. O servidor guarda de cada
+partida online só o placar, as rodadas e as moedas: nada de deck, de cartas usadas ou de quando. Não há como medir
+com gente o que segue abaixo; os números são de robôs, e o próximo passo é registrar isso nas partidas reais.
+
+**Dois jogadores novos** (`sim/humano.py`):
+- **humano** (rápido): usa as cartas pelo que está em jogo. Guarda o conserto (Ajuste, Virar, Coringa, Reverso,
+  Rerrolar) para a corrente que vale a pena salvar, conta com as cartas da mão como seguro na hora de segurar, gasta a
+  Pressa quando ela leva a 5+, a Sobrecarga num disparo de 5+, arma a armadilha que pega agora, despeja o que sobrou na
+  reta final. Cada regra foi medida (ligar e desligar; os números por busca coordenada, `python3 sim/humano.py ajuste`):
+  o seguro na mão vale +3,3 pontos, guardar o conserto +2,2, negar o dado ao rival é essencial (sem isso, 48%).
+- **pensador** (lento): antes de cada carta, cada dado e cada "disparar ou segurar", simula o resto da partida 12 a 24
+  vezes por opção (com as mesmas sortes para todas) e fica com a que mais vence. É o "bom jogador".
+
+| Confronto (decks de 3 sorteados, meta 16) | Vitórias |
+|---|---|
+| humano × robô | 54,0% (±1,5) |
+| pensador (24 simulações) × robô | **87,5%** (±3,2) |
+| pensador (24 simulações) × humano | **85,5%** (±3,5) |
+
+**O jogo tem muita habilidade, e quase toda no jogo de dados.** O planejador antigo, que só pensava no dado e no
+disparo, vencia o robô em 82,6% (§13); planejar também as cartas leva a 87,5%. As cartas usadas "do jeito certo"
+valem ~4 pontos; o dado, o Bolso e a hora de disparar valem o resto. O humano e o robô são jogadores casuais; gente
+experiente fica entre eles e o pensador.
+
+**Variantes de deck** (humano × humano para o jogo; humano × robô para a habilidade com as cartas; 6.000 partidas cada):
+
+| Variante | Mesas | Habilidade (humano × robô) | Virada (3+ atrás no meio) | Cartas sobram | Usadas no 1º quarto da partida |
+|---|---|---|---|---|---|
+| 3 cartas (hoje) | 9,2 | 52,8% | 28% | 17% | **40%** |
+| 2 cartas | 9,4 | 53,3% | 30% | 15% | 41% |
+| 3 no deck, usa só 2 | 9,5 | 53,0% | 30% | 36% | 52% |
+| 3 cartas, 1 por Mesa | 9,2 | 55,4% | 28% | 20% | 34% |
+| 1 carta | 9,5 | 51,3% | 30% | 13% | 40% |
+| 4 cartas | 9,0 | 56,4% | 28% | 20% | 37% |
+| sem cartas | 9,5 | 49,8% | 31% | – | – |
+
+**Com o bom jogador** (pensador com 12 simulações × humano; 240 partidas cada, ±6 pontos; as duas primeiras linhas com
+mais 480 partidas, ±3,4):
+
+| Variante | Pensador × humano | Cartas sobram | Usadas no 1º quarto |
+|---|---|---|---|
+| 3 cartas (hoje) | 69,7% | 12% | 55% |
+| 2 cartas | 65,0% | 10% | 58% |
+| 3 no deck, usa só 2 | 61,3% | 35% | 70% |
+| 3 cartas, 1 por Mesa | 71,5% | 14% | 51% |
+| sem cartas | 64,2% | 0% | – |
+
+**Equilíbrio dos decks** (cada deck contra decks sorteados, humano × humano, 500 partidas por deck):
+
+| Variante | Decks | Desvio | Melhor deck | Acima de 58% | Jogáveis (45%+) |
+|---|---|---|---|---|---|
+| 3 cartas (hoje) | 402 | 0,055 | 64,2% Ajuste + Coringa + Pressa | 22 | 80% |
+| 2 cartas | 102 | 0,041 | 58,6% Ajuste + Lacre | 1 | 89% |
+| 3 no deck, usa só 2 | 402 | 0,040 | 61,6% Ajuste + Coringa + Virar | 6 | 88% |
+| 3 cartas, 1 por Mesa | 402 | 0,051 | 63,8% Ajuste + Pressa + Reverso | 21 | 84% |
+
+**Deck de 2 cartas: pior para o jogo.**
+- **Não resolve a queima:** 41% das cartas ainda saem no primeiro quarto (hoje, 40%); com o bom jogador, 58% (hoje, 56%).
+  Quem queima não queima por ter carta demais: queima porque usar cedo não custa nada.
+- **Não muda a habilidade:** o bom jogador vence o casual igual (65,0% com 2 cartas; 65,4% com 3 nas mesmas 240 partidas).
+- **Fica mais equilibrado, mas por empobrecer:** sem trio, sem combo; e são 102 decks em vez de 402.
+- **Enfraquece o blefe:** ele precisa de um efeito para virar e de uma armadilha escondida; com 2 cartas isso existe
+  em 42% dos decks (hoje, 70%), e o "?" vira cara ou coroa entre duas cartas (hoje, ~2,8 possibilidades). Depois que o
+  efeito sai, todo "?" seguinte é certeza: a regra do blefe nasceu justamente desse problema (§13 e `docs/design.md` §4).
+- **Esvazia a loja:** com menos lugar no deck, uma carta nova vale menos.
+
+**"3 no deck, usa só 2": a pior.** O casual gasta as duas cedo e fica com a terceira na mão (36% das cartas sobram;
+70% dos usos no primeiro quarto com o pensador). O dilema "qual eu queimo?" vira "queimo logo as duas".
+
+**"1 carta por Mesa": a única que mexe na queima** (34% no primeiro quarto com o casual, contra 40%; 51% com o
+pensador, contra 55%), e o casual que pensa nas cartas passa a vencer mais o robô (55,4% × 52,8%). Para o bom jogador o
+peso da habilidade não muda (71,5% × 69,7%, dentro do ruído: com 240 partidas parecia 70,8% × 65,4%, e era sorte).
+Custa uma regra a mais e uma marca na tela ("carta desta Mesa já usada"); o equilíbrio dos decks fica como o de hoje.
+É uma melhora pequena: vale um teste com gente antes de virar regra.
+
+## 16. Pressa: 3 dados seguidos com o rival assistindo (v0.12)
+
+**O relato.** Usei a Pressa no 4.º dado de uma Mesa que o rival abriu: peguei o 4.º e o 5.º (que seria dele). Como eu
+estava atrás no placar, abri a Mesa seguinte, e esse dado fechou a corrente de 6. Reproduzido no motor: rival, eu,
+rival, **eu, eu, eu**. Não é erro de código: são duas regras se somando. A Pressa pega o último dado da Mesa, e quem
+está atrás abre a próxima. Com o deck [Pressa] contra deck vazio, isso acontece em **24%** das partidas.
+
+| Pressa (deck [Pressa] × deck vazio, humano × humano, 24.000 partidas) | Pressa vence | Partidas com 3+ dados seguidos de alguém |
+|---|---|---|
+| até a v0.11: com 2+ dados na Mesa | 54,1% | 24,1% |
+| A: só com 3+ dados na Mesa | 54,5% | 21,8% |
+| B: quem esvaziou a Mesa com ela não abre a seguinte | 53,1% | 21,2% |
+| **v0.12: só com 3 ou 4 dados na Mesa** | 56,2% | **0%** |
+
+A e B não bastam: os 3 seguidos também saem de pegar o último dado normal, estar atrás, abrir a Mesa nova e usar a
+Pressa ali. Com 3 ou 4 dados ela nunca abre uma Mesa nem pega o último dado, e ninguém pega mais de 2 dados seguidos.
+A Pressa fica até um pouco melhor (o robô passa a guardá-la para o meio da Mesa, quando os dois dados rendem mais),
+dentro da faixa do Ajuste (55%).
+
+Reproduzir: `cd sim && N=24000 python3 humano.py pressa`; as variantes ficam em `deck.py` (`pressa_min`, `pressa_max`,
+`pressa_abre`).
+
+**E as 3 vezes seguidas com 4 dados?** Procurado por força bruta (6.000 partidas ao acaso com todas as cartas, nas
+duas regras da Pressa): jogar 3 vezes seguidas **só acontece com a Pausa do rival no meio**. Sem ela, ninguém joga
+mais de 2 vezes seguidas (pegar o último dado e, atrás no placar, abrir a Mesa nova: a regra de virada, §2 de
+`docs/design.md`). O caso relatado: pegar o último dado, abrir a Mesa nova (atrás), o rival usar a Pausa e você usar a
+Pressa com 4 dados na Mesa (0,1% das partidas). O rival não assistiu por regra: ele escolheu passar. A Pausa é a
+carta mais fraca dos 402 decks (média ~47%), então a regra fica. O que mudou foi a tela: o aviso da Pausa do rival diz
+"você joga de novo", e quando a vez volta para você em seguida aparece "Sua vez de novo" com o motivo ("você está
+atrás no placar e abre a Mesa nova" ou "Diana usou a Pausa e passou a vez").

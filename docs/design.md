@@ -49,7 +49,7 @@ Antes da partida, cada um monta um deck de **até 3 cartas**, cada uma valendo *
 | Ajuste | efeito | ±1 num dado da Mesa | 56,6% |
 | Virar | efeito | vira um dado (7 − valor); desfaz uma marca de Espelho | 54,1% |
 | Rerrolar | efeito | rola a Mesa toda; desfaz uma marca de Espelho | 55,1% |
-| Pressa | efeito | pega 2 dados nesta vez (só com 2+ na Mesa; o 2.º é opcional) | 58,1% |
+| Pressa | efeito | pega 2 dados nesta vez (só com 3 ou 4 dados na Mesa, v0.12; o 2.º é opcional) | 58,1% |
 | Coringa | efeito | o próximo dado que romperia a corrente entra **no lugar da frente**: a corrente não rompe nem cresce (v0.12) | 55,0% (meta 16) |
 | Sobrecarga ⚡ | efeito | +2 no próximo disparo de 4+ | — |
 | Pausa (v0.11) | efeito | passa a vez sem pegar dado nem disparar; corrente e Bolso ficam | — |
@@ -90,7 +90,7 @@ Cada regra abaixo aparece também no painel de Regras do jogo e é conferida por
 | Pedágio | Pega qualquer disparo, inclusive o de 3 e o automático de 6. Se os dois passarem da meta no mesmo disparo, vence quem disparou. |
 | Coringa + Âncora | Com o Coringa ativo nenhum dado rompe, então a Âncora não é gasta. |
 | Coringa | Não alonga a corrente (v0.12): o dado que romperia **troca a frente** e a corrente fica do mesmo tamanho (não completa o 6.º dado). É gasto no primeiro dado que entra numa corrente **já começada**, mesmo que esse dado já sincronizasse (aí ele entra normal, como mais um elo). Corrente vazia e Bolso não gastam. Até a v0.11 o dado entrava como mais um elo: jogando como gente (segurar a corrente de 5 contando com ele), o Coringa vencia 64,9% sozinho na meta 12 e estava nos 25 melhores decks da 16 (`docs/balanceamento-cartas.md` §14). |
-| Pressa | Precisa de 2+ dados na Mesa e não passa para a Mesa seguinte. Não se dispara entre os dois dados; o segundo é opcional ("Dispensar"). Se o primeiro completar 6, a corrente dispara sozinha e o segundo começa outra. |
+| Pressa | Só com 3 ou 4 dados na Mesa (v0.12): nunca abre uma Mesa nem pega o último dado. Com 2, ela pegava o último dado (que era do rival) e quem está atrás abria a Mesa seguinte: 3 dados seguidos com o rival só assistindo, em 24% das partidas com ela (`docs/balanceamento-cartas.md` §16). Não passa para a Mesa seguinte. Não se dispara entre os dois dados; o segundo é opcional ("Dispensar"). Se o primeiro completar 6, a corrente dispara sozinha e o segundo começa outra. |
 | Espelho | O dado chega virado (7 − valor) e não pode ir para o Bolso; Coringa e Âncora ainda valem. As etiquetas da Mesa e o aviso de ruptura já usam o valor virado. Virar (no dado marcado) e Rerrolar apagam a marca; Ajuste não. Pegar o próprio dado marcado desperdiça o Espelho. |
 | Fundo Falso | Só pega quando o dado vai para o Bolso. Na troca, os dois caem e a corrente não muda. |
 | Lugar da armadilha | Uma carta armada por vez, contando o blefe. Armadilha que nunca encontra a sua condição fica armada até o fim. |
@@ -407,6 +407,9 @@ de volta à tela, se a vez era sua ou do rival (e no online o tempo da vez acaba
 - **Bug corrigido:** o sininho da vez guardava a memória dentro do objeto do jogo; no online cada estado do servidor é
   um objeto novo, então o aviso **nunca tocava no online**. A memória saiu do jogo, e a chave conta as vezes: abrir a
   Mesa duas vezes seguidas (quem está atrás abre) também avisa.
+- **Sua vez de novo:** quando a vez volta para você em seguida, a chamada diz por quê ("você está atrás no placar e abre
+  a Mesa nova" ou "Diana usou a Pausa e passou a vez"); o aviso da Pausa do rival já diz "você joga de novo". Sem isso,
+  jogar duas ou três vezes seguidas parecia erro do jogo (`docs/balanceamento-cartas.md` §16).
 - No modo a dois no mesmo aparelho o selo não aparece (os dois são da casa); fica o pulinho do painel a cada troca.
 
 **Menu principal (v0.11).** O jogo abre nele: logo, nome, rating, nível e moedas, a escolha do rival (Diana ou
