@@ -299,3 +299,27 @@ test('Pressa (v0.12): só com 3 ou 4 dados na Mesa; nunca abre uma Mesa nem pega
     assert.strictEqual(Regras.podeUsar(j, 0, 'pressa').ok, ok, `${n} dados na Mesa`);
   }
 });
+
+// o tempo da vez acabou (online): o jogo joga por ele, nunca deixa a vez presa e quase nunca rompe a corrente
+test('vez no automático: termina a vez em qualquer situação; 3 seguidas = W.O. por tempo', () => {
+  let vezes = 0;
+  for (let semente = 1; semente <= 120; semente++) {
+    const rng = rngDe(semente), deck = () => { for (;;) { const d = [0, 1, 2].map(() => Regras.ORDEM[Math.floor(rng() * Regras.ORDEM.length)]); if (Regras.deckValido(d)) return d; } };
+    const j = Regras.criarPartida({ decks: [deck(), deck()], vez: 0, meta: 16, rng });
+    for (let k = 0; k < 600 && j.fase !== 'fim'; k++) {
+      const p = j.vez;
+      // às vezes o jogador já fez parte da vez (pegou o dado e ficou na escolha do destino, ou na de disparar)
+      if (rng() < 0.3) { const a = jogadaAoAcaso(j, p, rng); if (a.tipo !== 'carta') Regras.aplicar(j, p, a); if (j.fase === 'fim' || j.vez !== p) continue; }
+      const rodada = j.rodada; Regras.jogarNoAutomatico(j, p); vezes++;
+      assert.ok(j.fase === 'fim' || j.vez !== p || j.rodada !== rodada, `semente ${semente}: a vez ficou presa`);   // (na Mesa nova, quem está atrás abre)
+      if (j.auto) j.auto[p] = 0;   // aqui é sempre a 1ª: o W.O. por tempo tem o próprio caso, embaixo
+    }
+    assert.strictEqual(j.fase, 'fim', `semente ${semente}: a partida no automático termina`);
+  }
+  assert.ok(vezes > 5000);
+  const k = Regras.criarPartida({ decks: [[], []], vez: 0, rng: rngDe(3) });
+  for (let n = 0; n < 5 && k.fase !== 'fim'; n++) Regras.jogarNoAutomatico(k, k.vez);
+  assert.strictEqual(k.fase, 'fim'); assert.strictEqual(k.motivoFim, 'tempo'); assert.strictEqual(k.desistencia, 0);
+  assert.strictEqual(k.log[0].txt, `ficou ${Regras.AUTO_MAX} vezes seguidas sem jogar a tempo`);
+  assert.deepStrictEqual(Regras.visaoDe(k, 1).auto, [2, 3]);   // a conta vai na visão de cada um, na ordem de quem vê
+});

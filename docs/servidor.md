@@ -58,7 +58,9 @@ Banco: Postgres (o plugin da Railway). Sem `DATABASE_URL`, guarda tudo num arqui
 
 | O quê | Quanto |
 |---|---|
-| Tempo por vez (o ritmo da sala, escolhido ao criar, como no chess.com) | **Relâmpago 20 s**, **Rápida 45 s** (padrão; a fila usa este) ou **Calma 2 min**; quem estoura o tempo da própria vez perde por W.O. O rating é um só para os três |
+| Tempo por vez (o ritmo da sala, escolhido ao criar, como no chess.com) | **Relâmpago 20 s**, **Rápida 45 s** (padrão; a fila usa este) ou **Calma 2 min**. O rating é um só para os três |
+| O tempo da vez acabou | o jogo **joga por você** (uma jogada segura: o dado que não rompe, de preferência na corrente; dispensa o 2.º dado da Pressa; com 3+ na corrente, dispara; não usa cartas) e os dois veem o aviso "Tempo!" com a conta (1 de 3). **3 vezes seguidas** no automático = W.O.; qualquer jogada sua zera a conta (`Regras.jogarNoAutomatico`) |
+| A partida acabou por W.O. | a tela do fim diz o porquê: saiu da partida, caiu e não voltou a tempo, ou ficou 3 vezes seguidas sem jogar |
 | Quem cai no meio da partida tem para voltar | **90 s** (depois perde por W.O., sem moedas para ninguém) |
 | Relógio da vez de quem está caído | **para**; na volta, continua de onde estava, com pelo menos **30 s** para jogar (o mínimo vale uma vez por vez; numa mesma vez, o relógio fica parado por no máximo 90 s somados: cair e voltar sem fim não segura a partida) |
 | Relógio da vez (o do ritmo) | recomeça quando a vez passa e a cada Mesa nova, mesmo quando quem fechou a Mesa abre a próxima |

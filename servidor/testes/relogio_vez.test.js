@@ -38,7 +38,10 @@ test('reenviar "entrar" pela mesma conexão não dá tempo nem conta como queda'
   assert.strictEqual(p.sala.jogadores[p.daVez].caiuEm, null);
   assert.strictEqual(prazo(w), 20_000, 'o prazo seguiu correndo');
   p.passar(21_000); p.salas.verificar();
-  assert.strictEqual(p.sala.jogo.fase, 'fim', 'perdeu por tempo');
+  // estourou: o jogo jogou por ele (não perde mais na hora) e a vez passou
+  assert.notStrictEqual(p.sala.jogo.fase, 'fim', 'estourar o tempo uma vez não acaba a partida');
+  assert.strictEqual(p.sala.jogo.auto[p.daVez], 1, 'a vez foi no automático');
+  assert.notStrictEqual(p.sala.jogo.vez, p.daVez, 'e passou para o rival');
   p.salas.fechar();
 });
 
@@ -57,10 +60,11 @@ test('cair e voltar sem fim não segura a partida: a pausa tem teto e o mínimo 
     p.salas.caiu(w); p.passar(80_000); w = p.ws();
     await p.salas.entrar(w, conta, { sala: p.sala.codigo, deck: p.deck });
     p.salas.verificar();
-    if (p.sala.jogo.fase === 'fim') break;
+    if (p.sala.jogo.fase === 'fim' || (p.sala.jogo.auto && p.sala.jogo.auto[i])) break;
   }
-  assert.strictEqual(p.sala.jogo.fase, 'fim', 'acabou perdendo por tempo');
-  assert.notStrictEqual(p.sala.jogo.vencedor, i);
+  // a pausa acabou e o tempo da vez também: a vez foi no automático (não ficou presa nas quedas)
+  assert.ok(p.sala.jogo.fase === 'fim' || p.sala.jogo.auto[i] === 1, 'a vez de quem caiu e voltou sem fim não ficou presa');
+  if (p.sala.jogo.fase === 'fim') assert.notStrictEqual(p.sala.jogo.vencedor, i);
   p.salas.fechar();
 });
 
@@ -95,8 +99,41 @@ test('ritmo da sala: o tempo da vez vem do ritmo escolhido ao criar (Relâmpago 
     const w = [wa, wb][sala.jogo.vez];
     assert.strictEqual(prazo(w), ms);
     assert.strictEqual(RITMOS[sala.ritmo], ms);
-    agora += ms + 1; salas.verificar();
-    assert.strictEqual(sala.jogo.fase, 'fim', `${ritmo}: estourou o tempo da vez e perdeu`);
+    const vez = sala.jogo.vez;
+    agora += ms - 1; salas.verificar();
+    assert.ok(!sala.jogo.auto, `${ritmo}: antes do tempo, nada no automático`);
+    agora += 2; salas.verificar();
+    assert.strictEqual(sala.jogo.auto[vez], 1, `${ritmo}: estourou o tempo da vez e o jogo jogou por ele`);
+    assert.notStrictEqual(sala.jogo.fase, 'fim');
   }
   salas.fechar();
+});
+
+test('tempo esgotado: o jogo joga por você; 3 vezes SEGUIDAS e a partida acaba (W.O. com o motivo); jogar zera a conta', async () => {
+  const p = await partida();
+  const j = p.sala.jogo, eu = p.daVez, rival = 1 - eu;
+  // joga a vez de i à mão (a mesma jogada simples do automático, mas mandada pelo jogador)
+  const jogarAMao = async i => { for (let k = 0; k < 20 && j.fase !== 'fim' && j.vez === i; k++) await p.salas.acao(p.sockets[i], p.contas[i], Regras.jogadaAutomatica(j, i)); };
+  const ateMinhaVez = async () => { for (let k = 0; k < 5 && j.fase !== 'fim' && j.vez !== eu; k++) await jogarAMao(rival); };
+  const estourar = () => { p.passar(120_001); p.salas.verificar(); };
+  estourar();
+  assert.strictEqual(j.auto[eu], 1);
+  // os dois recebem o aviso do automático (cada um na própria visão: para o rival, quem não jogou é o 1)
+  const ultimoEstado = w => [...w.msgs].reverse().find(m => m.tipo === 'estado');
+  assert.ok(ultimoEstado(p.sockets[eu]).jogo.eventos.some(e => e.tipo === 'automatica' && e.p === 0 && e.n === 1 && e.max === 3));
+  assert.ok(ultimoEstado(p.sockets[rival]).jogo.eventos.some(e => e.tipo === 'automatica' && e.p === 1));
+  await ateMinhaVez(); estourar();
+  assert.strictEqual(j.auto[eu], 2);
+  // jogou de novo: a conta zera
+  await ateMinhaVez(); await jogarAMao(eu);
+  assert.strictEqual(j.auto[eu], 0, 'jogar zera a conta');
+  assert.strictEqual(j.auto[rival], 0, 'quem jogou tudo à mão nunca entrou no automático');
+  for (let n = 1; n <= 3 && j.fase !== 'fim'; n++) { await ateMinhaVez(); estourar(); }
+  assert.strictEqual(j.fase, 'fim', 'na 3ª seguida, acabou');
+  assert.strictEqual(j.vencedor, rival);
+  assert.strictEqual(j.desistencia, eu);
+  assert.strictEqual(j.motivoFim, 'tempo');
+  await new Promise(r => setTimeout(r, 20));
+  assert.ok(p.sockets[eu].msgs.some(m => m.tipo === 'fim'), 'o fim chega');
+  p.salas.fechar();
 });

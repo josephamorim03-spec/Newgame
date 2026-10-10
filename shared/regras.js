@@ -467,11 +467,55 @@
     if (virada) momento(j, p, '☾', `Virada: ${j.nomes[p]} esteve ${-j.piorDiferenca[p]} pontos atrás`);
     emitir(j, 'fim', { p, virada });
   }
-  function desistir(j, p) {
+  // W.O. e o porquê (a tela do fim conta): 'saiu' (desistiu ou fechou a partida), 'queda' (caiu e não voltou a tempo),
+  // 'tempo' (AUTO_MAX vezes seguidas no automático)
+  const AUTO_MAX = 3;
+  const TXT_WO = { saiu: 'saiu da partida', queda: 'caiu e não voltou a tempo', tempo: `ficou ${AUTO_MAX} vezes seguidas sem jogar a tempo` };
+  function desistir(j, p, motivo = 'saiu') {
     if (j.fase === 'fim') return;
-    registrar(j, p, 'saiu da partida', 'ruim');
-    j.desistencia = p;
+    if (!tem(TXT_WO, motivo)) motivo = 'saiu';
+    registrar(j, p, TXT_WO[motivo], 'ruim');
+    j.desistencia = p; j.motivoFim = motivo;
     terminar(j, 1 - p);
+  }
+
+  // ---------- a vez no automático (online: o tempo da vez acabou) ----------
+  // Uma jogada simples e segura, até a vez passar: o dado que não rompe (de preferência na corrente), o 2.º dado da
+  // Pressa dispensado, e com 3+ na corrente dispara (o que já foi montado não se perde). Não usa cartas.
+  function jogadaAutomatica(j, p) {
+    if (j.fase === 'fim' || j.vez !== p) return null;
+    if (j.fase === 'destino' && j.mao) {
+      const seg = destinos(j, p, j.mao.v);
+      return { tipo: 'destino', modo: seg.includes('corrente') ? 'corrente' : seg[0] || destinosValidos(j, p, j.mao.v)[0] };
+    }
+    if (j.fase === 'decidir') return j.cor[p].length >= 3 ? { tipo: 'disparar' } : { tipo: 'segurar' };
+    if (j.fase !== 'pegar' || !j.mesa.length) return null;
+    if (j.segundoDado) return { tipo: 'dispensar' };
+    let melhor = null;
+    j.mesa.forEach((d, idx) => {
+      const ds = destinosDoDado(j, p, idx), naCorrente = encaixaP(j, p, valorAoPegar(j, p, d));
+      const nota = !seguroDado(j, p, d) ? 0 : naCorrente ? 2 : 1;
+      const modo = nota === 2 ? 'corrente' : nota === 1 ? ds.find(m => m !== 'corrente') || ds[0] : ds[0];
+      if (!melhor || nota > melhor.nota) melhor = { idx, modo, nota };
+    });
+    return { tipo: 'pegar', idx: melhor.idx, modo: melhor.modo };
+  }
+  // o tempo da vez de p acabou: joga por ele e conta (j.auto); na AUTO_MAX.ª seguida, W.O. Uma jogada dele zera a conta
+  // (quem zera é quem recebe a ação: o servidor). Devolve 'fim' ou 'proximo'.
+  function jogarNoAutomatico(j, p) {
+    if (j.fase === 'fim' || j.vez !== p) return j.fase === 'fim' ? 'fim' : 'proximo';
+    if (!j.auto) j.auto = [0, 0];
+    j.auto[p]++;
+    if (j.auto[p] >= AUTO_MAX) { desistir(j, p, 'tempo'); return 'fim'; }
+    registrar(j, p, `não jogou a tempo: a vez foi no automático (${j.auto[p]} de ${AUTO_MAX})`, 'ruim');
+    emitir(j, 'automatica', { p, n: j.auto[p], max: AUTO_MAX });
+    for (let i = 0; i < 20 && j.fase !== 'fim' && j.vez === p; i++) {
+      const a = jogadaAutomatica(j, p);
+      if (!a || !aplicar(j, p, a).ok) break;
+    }
+    // não deveria sobrar nada, mas a vez nunca fica presa no automático
+    if (j.fase !== 'fim' && j.vez === p) { j.mao = null; j.espelhado = false; proximo(j); }
+    return j.fase === 'fim' ? 'fim' : 'proximo';
   }
 
   // ---------- ação genérica (o servidor recebe isto pela rede) ----------
@@ -525,7 +569,7 @@
     const t = JSON.parse(JSON.stringify(j));
     const troca = a => (eu === 0 ? a : [a[1], a[0]]);
     const ip = p => (p === null || p === undefined ? p : eu === 0 ? p : 1 - p);
-    for (const k of ['decks', 'cartas', 'armada', 'coringa', 'sobre', 'extra', 'cor', 'pts', 'bolso', 'stats', 'piorDiferenca', 'nomes']) if (t[k]) t[k] = troca(t[k]);
+    for (const k of ['decks', 'cartas', 'armada', 'coringa', 'sobre', 'extra', 'cor', 'pts', 'bolso', 'stats', 'piorDiferenca', 'nomes', 'auto']) if (t[k]) t[k] = troca(t[k]);
     t.vez = ip(t.vez); t.vencedor = ip(t.vencedor);
     if (t.desistencia !== undefined) t.desistencia = ip(t.desistencia);
     if (t.marca) t.marca.dono = ip(t.marca.dono);
@@ -553,6 +597,6 @@
     METAS, META_PADRAO, metaValida, moedasDaVitoria, ajusteRatingOnline, elo, premioSolo, xpDaPartida, ganharXp, precoDe,
     criarPartida, usarRng, encaixaP, destinos, destinosValidos, seguro, bolsoGarante, marcadoContra, valorAoPegar, seguroDado,
     usavel, armadilhasOcultas, podeUsar, usarCarta,
-    tirar, pegar, pegarPara, destinosDoDado, colocar, dispensarSegundo, disparar, segurar, proximo, terminar, desistir, aplicar, visaoDe,
+    tirar, pegar, pegarPara, destinosDoDado, colocar, dispensarSegundo, disparar, segurar, proximo, terminar, desistir, aplicar, visaoDe, AUTO_MAX, jogadaAutomatica, jogarNoAutomatico,
   };
 });

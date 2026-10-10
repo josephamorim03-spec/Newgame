@@ -16,7 +16,8 @@ const MESAS_PARA_VALER = 3;
 const PARTIDAS_POR_PAR = 3; // por dia, valendo rating e moedas (contra duas contas combinando resultado)
 
 // ritmo da sala (como o controle de tempo do chess.com, escolhido ao criar a sala): o tempo de cada vez.
-// Quem estoura o tempo da própria vez perde (por W.O.); quem cai tem o prazo de volta, com o relógio da vez parado.
+// Quem estoura o tempo da própria vez joga no automático (uma jogada segura, Regras.jogarNoAutomatico); na 3.ª vez
+// seguida, perde por W.O. Quem cai tem o prazo de volta, com o relógio da vez parado.
 const RITMOS = { relampago: 20_000, rapida: 45_000, calma: 120_000 };
 const RITMO_PADRAO = 'rapida';
 const ritmoValido = r => (typeof r === 'string' && Object.hasOwn(RITMOS, r) ? r : RITMO_PADRAO);
@@ -113,6 +114,7 @@ class Salas {
     if (!sala || !sala.jogo) return this.erro(ws, 'Nenhuma partida em andamento.');
     const r = Regras.aplicar(sala.jogo, assento, acao);
     if (!r.ok) { this.erro(ws, r.erro); this.mandarEstado(sala, assento); return; }
+    if (sala.jogo.auto) sala.jogo.auto[assento] = 0;   // jogou: as vezes no automático deixam de ser seguidas
     sala.mexida = this.agora();
     // o relógio recomeça quando a vez passa e também na Mesa nova (que pode começar com quem fechou a anterior)
     if (sala.jogo.vez !== sala.ultimaVez || sala.jogo.rodada !== sala.ultimaRodada) this.novaVez(sala);
@@ -327,10 +329,16 @@ class Salas {
       const j = sala.jogo, emJogo = j && j.fase !== 'fim';
       if (emJogo) {
         const caido = sala.jogadores.findIndex(x => !x.ws && x.caiuEm && agora - x.caiuEm > this.t.esperaReconexao);
-        if (caido >= 0) { Regras.desistir(j, caido); this.depoisDaAcao(sala).catch(e => console.error('verificar', e)); continue; }
+        if (caido >= 0) { Regras.desistir(j, caido, 'queda'); this.depoisDaAcao(sala).catch(e => console.error('verificar', e)); continue; }
         // a vez não vence enquanto quem joga está caído: aí vale só o prazo de volta
         const daVezCaido = !sala.jogadores[j.vez].ws;
-        if (!daVezCaido && agora - sala.vezDesde > this.limiteDe(sala)) { Regras.desistir(j, j.vez); this.depoisDaAcao(sala).catch(e => console.error('verificar', e)); continue; }
+        if (!daVezCaido && agora - sala.vezDesde > this.limiteDe(sala)) {
+          // o tempo da vez acabou: o jogo joga por ele (e conta); o relógio recomeça para quem joga agora
+          Regras.jogarNoAutomatico(j, j.vez);
+          this.novaVez(sala);
+          this.depoisDaAcao(sala).catch(e => console.error('verificar', e));
+          continue;
+        }
       }
       const alguem = sala.jogadores.some(x => x.ws);
       if ((!alguem && agora - sala.mexida > this.t.salaParada) || (!j && agora - sala.criada > this.t.conviteValido)) {

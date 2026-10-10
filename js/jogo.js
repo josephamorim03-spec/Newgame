@@ -933,7 +933,7 @@
   // ---------- de quem é a vez: óbvio de longe (v0.12) ----------
   // Na sua vez a Mesa acende (a moldura de feltro ganha a sua cor, respirando) e o selo no alto da Mesa diz "Sua vez";
   // na vez do rival a Mesa esmaece e o selo diz de quem é. No online o selo traz o relógio da vez, a aba do navegador
-  // avisa ("● Sua vez"), a vez é lembrada na metade do tempo e nos 10 s finais (o tempo acabar é derrota), e quem
+  // avisa ("● Sua vez"), a vez é lembrada na metade do tempo e nos 10 s finais (o tempo acabar põe a vez no automático), e quem
   // volta para a tela (outra aba, celular bloqueado) na sua vez ouve e vê o aviso de novo.
   const TITULO = document.title;
   // aviso: em quantos segundos da vez foi o último aviso (os lembretes só tocam abaixo dele, uma vez cada)
@@ -994,7 +994,7 @@
     if (s === null || vezDoAparelho(j) !== 'minha' || j.pensando) return;
     const ultimo = Vez.aviso && Vez.aviso.chave === Vez.chave ? Vez.aviso.s : Infinity;
     const metade = Math.floor(Math.round((j.limiteVez || 45000) / 1000) / 2);
-    if (s <= 10 && ultimo > 10) avisarVez(`${s} s: se o tempo acabar, você perde a partida`, true);
+    if (s <= 10 && ultimo > 10) avisarVez(`${s} s: se o tempo acabar, o jogo joga por você`, true);
     else if (s > 10 && s <= metade && ultimo > metade && j.sel == null && j.fase === 'pegar') avisarVez(`${s} s para jogar`);
   }
   document.addEventListener('visibilitychange', () => {
@@ -1163,6 +1163,14 @@
           break;
         }
         case 'virar': setTimeout(() => { if (jogo.virando === e.id) jogo.virando = null; }, 500); Som.tocar('virar'); break;
+        case 'automatica': {
+          // o tempo da vez acabou e o servidor jogou por alguém (na AUTO_MAX.ª seguida, a partida acaba)
+          const meu = humano(e.p) && j.modo !== 'local';
+          Som.tocar('perigo'); if (meu) vibrar([40, 60, 40]);
+          Fx.chamada('Tempo!', meu ? `O tempo da vez acabou e o jogo jogou por você (${e.n} de ${e.max}). Jogue na próxima: na ${e.max}ª seguida, a partida acaba.`
+            : `${n[e.p]} não jogou a tempo: a vez foi no automático (${e.n} de ${e.max}).`, meu ? '' : 'rival', { classe: 'de-jogo', ms: 5200 });
+          break;
+        }
         case 'chamada': Som.tocar('momento'); Fx.chamada(e.titulo, e.sub, e.estilo === 'esquiva' ? (e.p === 1 && j.modo !== 'local' ? 'rival' : '') : e.estilo, { classe: 'de-jogo' }); break;
         case 'falar': if (j.modo === 'bot') falaDoEvento(e); break;
         case 'fim': {
@@ -1205,7 +1213,10 @@
     const j = jogo, n = nomes(), v = j.vencedor;
     if (j.fase !== 'fim' || jogo !== j) return;
     document.getElementById('fimTitulo').textContent = j.modo !== 'local' ? (v === 0 ? 'Você venceu!' : `${n[1]} venceu`) : `${n[v]} venceu!`;
-    document.getElementById('fimPlacar').innerHTML = `<span class="cor0">${n[0]} ${j.pts[0]}</span> × <span class="cor1">${j.pts[1]} ${n[1]}</span>`;
+    // acabou antes da meta: por quê (sem isso, um 0 × 0 parece que a conexão caiu)
+    const wo = j.desistencia, quem = wo === 0 && j.modo !== 'local' ? 'Você' : n[wo];
+    const motivo = wo === undefined ? '' : { tempo: `${quem} ficou ${R.AUTO_MAX} vezes seguidas sem jogar a tempo.`, queda: `${quem} caiu e não voltou a tempo.`, saiu: `${quem} saiu da partida.` }[j.motivoFim] || `${quem} saiu da partida.`;
+    document.getElementById('fimPlacar').innerHTML = `<span class="cor0">${n[0]} ${j.pts[0]}</span> × <span class="cor1">${j.pts[1]} ${n[1]}</span>${motivo ? `<small class="fim-motivo">${esc(motivo)}</small>` : ''}`;
     // repetições viram um item só ("×2"); os mais raros vêm primeiro
     const grupos = new Map();
     j.momentos.filter(m => humano(m.p)).forEach(m => { const k = m.p + m.txt; const g = grupos.get(k) || { ...m, vezes: 0 }; g.vezes++; grupos.set(k, g); });
@@ -1913,11 +1924,12 @@
     if (!toque || e.pointerId !== toque.id) return;
     clearTimeout(toque.timer);
     const t = toque; toque = null;
+    if (t.largar) t.largar();
     if (t.espiou) { esconderEspiar(); engolirClique = true; setTimeout(() => { engolirClique = false; }, 400); return; }
     if (!t.arrasta) return;   // um toque normal: o clique cuida
     engolirClique = true; setTimeout(() => { engolirClique = false; }, 400);
     const a = t.arrasta, j = jogo;
-    a.fant.remove(); tab.classList.remove('soltar-aqui'); document.body.classList.remove('arrastando-carta');
+    a.fant.remove(); camadaArrasto.replaceChildren(); tab.classList.remove('soltar-aqui'); document.body.classList.remove('arrastando-carta');
     document.querySelectorAll('.pega.mira').forEach(el => el.classList.remove('mira'));
     if (!j || j.vez !== t.p) return render();
     if (a.alvo) {
@@ -1941,22 +1953,26 @@
     clearTimeout(passarMouse); esconderEspiar();
     toque = { b, p: +b.dataset.dono, c: b.dataset.carta, x: e.clientX, y: e.clientY, id: e.pointerId, arrasta: null, espiou: false };
     const t = toque;
+    t.largar = ouvirNoElemento(b, moverToque, soltouToque, cancelouToque);   // a carta também sai da tela ao ser arrastada
     t.timer = setTimeout(() => { if (toque === t && !t.arrasta) { t.espiou = true; mostrarEspiar(b); vibrar(8); } }, 380);
   });
-  addEventListener('pointermove', e => {
+  addEventListener('pointermove', e => moverToque(e), { passive: false });
+  function moverToque(e) {
     // a carta espiada pelo mouse some ao sair dela (mesmo que a tela tenha sido redesenhada embaixo do mouse parado)
     if (!toque && e.pointerType === 'mouse' && !espiar.hidden && !(e.target.closest && e.target.closest('.cartas [data-carta]'))) { clearTimeout(passarMouse); esconderEspiar(); }
-    if (!toque || e.pointerId !== toque.id) return;
+    if (!toque || e.pointerId !== toque.id || !umaVez(e)) return;
     if (!toque.arrasta) {
       if (toque.espiou || Math.hypot(e.clientX - toque.x, e.clientY - toque.y) < 10) return;
       clearTimeout(toque.timer);
-      if (!podeArrastar(toque.p, toque.c) || !iniciarArrasto(toque)) { toque = null; return; }
+      if (!podeArrastar(toque.p, toque.c) || !iniciarArrasto(toque)) { if (toque.largar) toque.largar(); toque = null; return; }
     }
     e.preventDefault();
     moverArrasto(e);
-  }, { passive: false });
-  addEventListener('pointerup', e => terminarToque(e, true));
-  addEventListener('pointercancel', e => terminarToque(e, false));
+  }
+  function soltouToque(e) { terminarToque(e, true); }
+  function cancelouToque(e) { terminarToque(e, false); }
+  addEventListener('pointerup', soltouToque);
+  addEventListener('pointercancel', cancelouToque);
   // o clique que vem depois de um arrasto ou de espiar não conta como toque na carta
   document.addEventListener('click', e => { if (engolirClique && e.target.closest && e.target.closest('#tabuleiro')) { engolirClique = false; e.stopPropagation(); e.preventDefault(); } }, true);
   // segurar no celular não abre o menu do sistema
@@ -1979,13 +1995,26 @@
   camadaDado.className = 'camada-arrasto camada-dado';
   document.body.appendChild(camadaDado);
   const alvoDadoSob = (x, y) => { const el = document.elementFromPoint(x, y); return el && el.closest('[data-alvo-dado]'); };
+  // No iPhone, os eventos do dedo continuam indo para o elemento onde o toque começou, mesmo depois de ele sair da tela
+  // (a Mesa é redesenhada quando o arrasto começa); fora do documento, eles não sobem até a janela. Por isso quem
+  // começou o arrasto também ouve o mover e o soltar; sem isso, o dado-fantasma ficava preso na tela para sempre.
+  // Cada evento é tratado uma vez só (no navegador comum, ele chega ao elemento e depois à janela).
+  const umaVez = e => { if (e.__arrasto) return false; try { e.__arrasto = true; } catch (_) {} return true; };
+  function ouvirNoElemento(el, mover, soltar, cancelar) {
+    el.addEventListener('pointermove', mover, { passive: false });
+    el.addEventListener('pointerup', soltar);
+    el.addEventListener('pointercancel', cancelar);
+    return () => { el.removeEventListener('pointermove', mover); el.removeEventListener('pointerup', soltar); el.removeEventListener('pointercancel', cancelar); };
+  }
   document.getElementById('mesa').addEventListener('pointerdown', e => {
     const b = e.target.closest('.pega:not([disabled])'), j = jogo;
     if (!b || !j || e.button > 0 || j.fase !== 'pegar' || !humano(j.vez) || j.pensando || j.intro || toque) return;
     arrastoDado = { b, id: +b.dataset.id, idx: +b.dataset.i, x: e.clientX, y: e.clientY, pid: e.pointerId, fant: null };
+    arrastoDado.largar = ouvirNoElemento(b, moverDado, soltouDado, cancelouDado);
   });
-  addEventListener('pointermove', e => {
-    const a = arrastoDado; if (!a || e.pointerId !== a.pid) return;
+  addEventListener('pointermove', e => moverDado(e), { passive: false });
+  function moverDado(e) {
+    const a = arrastoDado; if (!a || e.pointerId !== a.pid || !umaVez(e)) return;
     if (!a.fant) {
       if (Math.hypot(e.clientX - a.x, e.clientY - a.y) < 10) return;
       const j = jogo, idx = idxDe(a.id);
@@ -2005,20 +2034,34 @@
     document.querySelectorAll('[data-alvo-dado].mira').forEach(el => el.classList.remove('mira'));
     const alvo = alvoDadoSob(e.clientX, e.clientY - 26);
     if (alvo) { alvo.classList.add('mira'); if (a.ultAlvo !== alvo.dataset.alvoDado) { a.ultAlvo = alvo.dataset.alvoDado; vibrar(4); } } else a.ultAlvo = null;
-  }, { passive: false });
+  }
   const fimArrastoDado = (e, valeu) => {
     const a = arrastoDado; if (!a || e.pointerId !== a.pid) return;
     arrastoDado = null;
+    if (a.largar) a.largar();
     if (!a.fant) return;   // um toque normal: o clique cuida
     engolirClique = true; setTimeout(() => { engolirClique = false; }, 400);
-    a.fant.remove(); document.body.classList.remove('arrastando-carta');
+    a.fant.remove(); camadaDado.replaceChildren(); document.body.classList.remove('arrastando-carta');
     document.querySelectorAll('[data-alvo-dado].mira').forEach(el => el.classList.remove('mira'));
     const alvo = valeu && alvoDadoSob(e.clientX, e.clientY - 26);
     if (alvo && jogo && jogo.sel === a.id) return levarDado(alvo.dataset.alvoDado);
     render();
   };
-  addEventListener('pointerup', e => fimArrastoDado(e, true));
-  addEventListener('pointercancel', e => fimArrastoDado(e, false));
+  function soltouDado(e) { fimArrastoDado(e, true); }
+  function cancelouDado(e) { fimArrastoDado(e, false); }
+  addEventListener('pointerup', soltouDado);
+  addEventListener('pointercancel', cancelouDado);
+  // rede de segurança: um toque novo do dedo principal quer dizer que o anterior acabou (mesmo que o "soltar" tenha
+  // se perdido), e sair da tela (outro app, celular bloqueado) encerra qualquer arrasto. Nada de fantasma preso.
+  const desfazerArrastos = () => {
+    if (arrastoDado) fimArrastoDado({ pointerId: arrastoDado.pid, clientX: -1, clientY: -1 }, false);
+    if (toque) terminarToque({ pointerId: toque.id, clientX: -1, clientY: -1 }, false);
+    camadaDado.replaceChildren(); camadaArrasto.replaceChildren(); document.body.classList.remove('arrastando-carta');
+    document.querySelectorAll('.mira').forEach(el => el.classList.remove('mira')); tab.classList.remove('soltar-aqui');
+  };
+  addEventListener('pointerdown', e => { if (e.isPrimary && (arrastoDado || toque || camadaDado.firstChild || camadaArrasto.firstChild)) desfazerArrastos(); }, true);
+  document.addEventListener('visibilitychange', () => { if (document.hidden) desfazerArrastos(); });
+  addEventListener('blur', desfazerArrastos);
   document.getElementById('cartaBotoes').addEventListener('click', e => {
     if (e.target.closest('[data-fechar-carta]')) { document.getElementById('janelaCarta').hidden = true; return; }
     // comprar pela carta aberta na Loja: o primeiro toque pede confirmação, o segundo compra pelo mesmo caminho da Loja
@@ -2835,7 +2878,7 @@
       return;
     }
     el.innerHTML = `${eu}
-      <div class="linha-cfg tempo-online"><span><label>Tempo por vez</label><small>quem estoura o tempo da própria vez perde</small></span>
+      <div class="linha-cfg tempo-online"><span><label>Tempo por vez</label><small>se o tempo acabar, o jogo joga por você; 3 vezes seguidas e a partida acaba</small></span>
         <span class="segmento" role="group" aria-label="Tempo por vez">${Object.entries(TEMPOS_ONLINE).map(([k, t]) => `<button data-on="tempo" data-v="${k}" aria-pressed="${st.cfg.tempoOnline === k}">${t[0]} <small>${t[1]}</small></button>`).join('')}</span></div>
       <div class="linha-botoes"><button class="btn btn-mel" data-on="criar-sala">Chamar um amigo</button></div>
       <form class="linha-botoes" id="formCodigo"><input class="campo codigo" name="codigo" maxlength="6" placeholder="código" aria-label="Código da sala" autocomplete="off" style="flex:1 1 120px"><button class="btn btn-papel" type="submit">Entrar na sala</button></form>

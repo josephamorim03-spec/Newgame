@@ -343,6 +343,8 @@ button.carta:hover { transform: translateY(-2px) rotate(-1deg); }
 .caixa h2 { font-family: var(--f-titulo); font-weight: 700; font-size: 28px; margin: 0; line-height: 1.05; }
 .caixa h3 { margin: 4px 0 0; font-size: 13px; text-transform: uppercase; letter-spacing: .08em; color: var(--tinta-suave); }
 .fim-placar { font-family: var(--f-titulo); font-size: 22px; font-variant-numeric: tabular-nums; }
+/* acabou antes da meta (W.O.): o porquê, logo abaixo do placar */
+.fim-motivo { display: block; margin-top: 4px; font-family: var(--f-corpo); font-size: 14px; font-weight: 700; color: var(--tinta-suave); }
 .caixa textarea { width: 100%; min-height: 90px; resize: vertical; background: var(--papel-2); color: var(--tinta); border: 0; border-radius: 12px; padding: 8px; font-size: 12px; font-family: ui-monospace, Menlo, Consolas, monospace; }
 .momentos { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
 .momentos li { display: flex; gap: 10px; align-items: center; padding: 8px 10px; border-radius: 12px; background: var(--papel-2); font-weight: 700; }

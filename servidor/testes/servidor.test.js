@@ -289,8 +289,11 @@ test('queda na própria vez: o relógio da vez para, o rival vê o prazo de volt
     // o pulso tem resposta (o navegador não vê os pings do servidor)
     volta.enviar({ tipo: 'pulso' });
     await volta.esperar(m => m.tipo === 'pulso');
-    // e o relógio volta a correr: parado de novo, agora perde por tempo
-    const fim = await outro.esperar(m => m.tipo === 'fim', 3000);
+    // e o relógio volta a correr: parado de novo, o jogo joga por ele (o rival vê o aviso)...
+    const auto = await outro.esperar(m => m.tipo === 'estado' && m.jogo.eventos.some(e => e.tipo === 'automatica' && e.p === 1), 3000);
+    assert.strictEqual(auto.jogo.eventos.find(e => e.tipo === 'automatica').n, 1);
+    // ...e, ninguém jogando, a 3ª vez seguida no automático acaba a partida (W.O. por tempo)
+    const fim = await outro.esperar(m => m.tipo === 'fim', 8000);
     assert.strictEqual(fim.premio.porDesistencia, true);
     volta.fechar(); outro.fechar();
   } finally { await s.fechar(); }

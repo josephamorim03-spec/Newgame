@@ -372,6 +372,8 @@ button.carta:hover { transform: translateY(-2px) rotate(-1deg); }
 .caixa h2 { font-family: var(--f-titulo); font-weight: 700; font-size: 28px; margin: 0; line-height: 1.05; }
 .caixa h3 { margin: 4px 0 0; font-size: 13px; text-transform: uppercase; letter-spacing: .08em; color: var(--tinta-suave); }
 .fim-placar { font-family: var(--f-titulo); font-size: 22px; font-variant-numeric: tabular-nums; }
+/* acabou antes da meta (W.O.): o porquê, logo abaixo do placar */
+.fim-motivo { display: block; margin-top: 4px; font-family: var(--f-corpo); font-size: 14px; font-weight: 700; color: var(--tinta-suave); }
 .caixa textarea { width: 100%; min-height: 90px; resize: vertical; background: var(--papel-2); color: var(--tinta); border: 0; border-radius: 12px; padding: 8px; font-size: 12px; font-family: ui-monospace, Menlo, Consolas, monospace; }
 .momentos { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
 .momentos li { display: flex; gap: 10px; align-items: center; padding: 8px 10px; border-radius: 12px; background: var(--papel-2); font-weight: 700; }
@@ -2042,11 +2044,55 @@ button.inicio-perfil:active { transform: translateY(1px); }
     if (virada) momento(j, p, '☾', `Virada: ${j.nomes[p]} esteve ${-j.piorDiferenca[p]} pontos atrás`);
     emitir(j, 'fim', { p, virada });
   }
-  function desistir(j, p) {
+  // W.O. e o porquê (a tela do fim conta): 'saiu' (desistiu ou fechou a partida), 'queda' (caiu e não voltou a tempo),
+  // 'tempo' (AUTO_MAX vezes seguidas no automático)
+  const AUTO_MAX = 3;
+  const TXT_WO = { saiu: 'saiu da partida', queda: 'caiu e não voltou a tempo', tempo: `ficou ${AUTO_MAX} vezes seguidas sem jogar a tempo` };
+  function desistir(j, p, motivo = 'saiu') {
     if (j.fase === 'fim') return;
-    registrar(j, p, 'saiu da partida', 'ruim');
-    j.desistencia = p;
+    if (!tem(TXT_WO, motivo)) motivo = 'saiu';
+    registrar(j, p, TXT_WO[motivo], 'ruim');
+    j.desistencia = p; j.motivoFim = motivo;
     terminar(j, 1 - p);
+  }
+
+  // ---------- a vez no automático (online: o tempo da vez acabou) ----------
+  // Uma jogada simples e segura, até a vez passar: o dado que não rompe (de preferência na corrente), o 2.º dado da
+  // Pressa dispensado, e com 3+ na corrente dispara (o que já foi montado não se perde). Não usa cartas.
+  function jogadaAutomatica(j, p) {
+    if (j.fase === 'fim' || j.vez !== p) return null;
+    if (j.fase === 'destino' && j.mao) {
+      const seg = destinos(j, p, j.mao.v);
+      return { tipo: 'destino', modo: seg.includes('corrente') ? 'corrente' : seg[0] || destinosValidos(j, p, j.mao.v)[0] };
+    }
+    if (j.fase === 'decidir') return j.cor[p].length >= 3 ? { tipo: 'disparar' } : { tipo: 'segurar' };
+    if (j.fase !== 'pegar' || !j.mesa.length) return null;
+    if (j.segundoDado) return { tipo: 'dispensar' };
+    let melhor = null;
+    j.mesa.forEach((d, idx) => {
+      const ds = destinosDoDado(j, p, idx), naCorrente = encaixaP(j, p, valorAoPegar(j, p, d));
+      const nota = !seguroDado(j, p, d) ? 0 : naCorrente ? 2 : 1;
+      const modo = nota === 2 ? 'corrente' : nota === 1 ? ds.find(m => m !== 'corrente') || ds[0] : ds[0];
+      if (!melhor || nota > melhor.nota) melhor = { idx, modo, nota };
+    });
+    return { tipo: 'pegar', idx: melhor.idx, modo: melhor.modo };
+  }
+  // o tempo da vez de p acabou: joga por ele e conta (j.auto); na AUTO_MAX.ª seguida, W.O. Uma jogada dele zera a conta
+  // (quem zera é quem recebe a ação: o servidor). Devolve 'fim' ou 'proximo'.
+  function jogarNoAutomatico(j, p) {
+    if (j.fase === 'fim' || j.vez !== p) return j.fase === 'fim' ? 'fim' : 'proximo';
+    if (!j.auto) j.auto = [0, 0];
+    j.auto[p]++;
+    if (j.auto[p] >= AUTO_MAX) { desistir(j, p, 'tempo'); return 'fim'; }
+    registrar(j, p, `não jogou a tempo: a vez foi no automático (${j.auto[p]} de ${AUTO_MAX})`, 'ruim');
+    emitir(j, 'automatica', { p, n: j.auto[p], max: AUTO_MAX });
+    for (let i = 0; i < 20 && j.fase !== 'fim' && j.vez === p; i++) {
+      const a = jogadaAutomatica(j, p);
+      if (!a || !aplicar(j, p, a).ok) break;
+    }
+    // não deveria sobrar nada, mas a vez nunca fica presa no automático
+    if (j.fase !== 'fim' && j.vez === p) { j.mao = null; j.espelhado = false; proximo(j); }
+    return j.fase === 'fim' ? 'fim' : 'proximo';
   }
 
   // ---------- ação genérica (o servidor recebe isto pela rede) ----------
@@ -2100,7 +2146,7 @@ button.inicio-perfil:active { transform: translateY(1px); }
     const t = JSON.parse(JSON.stringify(j));
     const troca = a => (eu === 0 ? a : [a[1], a[0]]);
     const ip = p => (p === null || p === undefined ? p : eu === 0 ? p : 1 - p);
-    for (const k of ['decks', 'cartas', 'armada', 'coringa', 'sobre', 'extra', 'cor', 'pts', 'bolso', 'stats', 'piorDiferenca', 'nomes']) if (t[k]) t[k] = troca(t[k]);
+    for (const k of ['decks', 'cartas', 'armada', 'coringa', 'sobre', 'extra', 'cor', 'pts', 'bolso', 'stats', 'piorDiferenca', 'nomes', 'auto']) if (t[k]) t[k] = troca(t[k]);
     t.vez = ip(t.vez); t.vencedor = ip(t.vencedor);
     if (t.desistencia !== undefined) t.desistencia = ip(t.desistencia);
     if (t.marca) t.marca.dono = ip(t.marca.dono);
@@ -2128,7 +2174,7 @@ button.inicio-perfil:active { transform: translateY(1px); }
     METAS, META_PADRAO, metaValida, moedasDaVitoria, ajusteRatingOnline, elo, premioSolo, xpDaPartida, ganharXp, precoDe,
     criarPartida, usarRng, encaixaP, destinos, destinosValidos, seguro, bolsoGarante, marcadoContra, valorAoPegar, seguroDado,
     usavel, armadilhasOcultas, podeUsar, usarCarta,
-    tirar, pegar, pegarPara, destinosDoDado, colocar, dispensarSegundo, disparar, segurar, proximo, terminar, desistir, aplicar, visaoDe,
+    tirar, pegar, pegarPara, destinosDoDado, colocar, dispensarSegundo, disparar, segurar, proximo, terminar, desistir, aplicar, visaoDe, AUTO_MAX, jogadaAutomatica, jogarNoAutomatico,
   };
 });
 
@@ -4561,7 +4607,7 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
   // ---------- de quem é a vez: óbvio de longe (v0.12) ----------
   // Na sua vez a Mesa acende (a moldura de feltro ganha a sua cor, respirando) e o selo no alto da Mesa diz "Sua vez";
   // na vez do rival a Mesa esmaece e o selo diz de quem é. No online o selo traz o relógio da vez, a aba do navegador
-  // avisa ("● Sua vez"), a vez é lembrada na metade do tempo e nos 10 s finais (o tempo acabar é derrota), e quem
+  // avisa ("● Sua vez"), a vez é lembrada na metade do tempo e nos 10 s finais (o tempo acabar põe a vez no automático), e quem
   // volta para a tela (outra aba, celular bloqueado) na sua vez ouve e vê o aviso de novo.
   const TITULO = document.title;
   // aviso: em quantos segundos da vez foi o último aviso (os lembretes só tocam abaixo dele, uma vez cada)
@@ -4622,7 +4668,7 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     if (s === null || vezDoAparelho(j) !== 'minha' || j.pensando) return;
     const ultimo = Vez.aviso && Vez.aviso.chave === Vez.chave ? Vez.aviso.s : Infinity;
     const metade = Math.floor(Math.round((j.limiteVez || 45000) / 1000) / 2);
-    if (s <= 10 && ultimo > 10) avisarVez(`${s} s: se o tempo acabar, você perde a partida`, true);
+    if (s <= 10 && ultimo > 10) avisarVez(`${s} s: se o tempo acabar, o jogo joga por você`, true);
     else if (s > 10 && s <= metade && ultimo > metade && j.sel == null && j.fase === 'pegar') avisarVez(`${s} s para jogar`);
   }
   document.addEventListener('visibilitychange', () => {
@@ -4791,6 +4837,14 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
           break;
         }
         case 'virar': setTimeout(() => { if (jogo.virando === e.id) jogo.virando = null; }, 500); Som.tocar('virar'); break;
+        case 'automatica': {
+          // o tempo da vez acabou e o servidor jogou por alguém (na AUTO_MAX.ª seguida, a partida acaba)
+          const meu = humano(e.p) && j.modo !== 'local';
+          Som.tocar('perigo'); if (meu) vibrar([40, 60, 40]);
+          Fx.chamada('Tempo!', meu ? `O tempo da vez acabou e o jogo jogou por você (${e.n} de ${e.max}). Jogue na próxima: na ${e.max}ª seguida, a partida acaba.`
+            : `${n[e.p]} não jogou a tempo: a vez foi no automático (${e.n} de ${e.max}).`, meu ? '' : 'rival', { classe: 'de-jogo', ms: 5200 });
+          break;
+        }
         case 'chamada': Som.tocar('momento'); Fx.chamada(e.titulo, e.sub, e.estilo === 'esquiva' ? (e.p === 1 && j.modo !== 'local' ? 'rival' : '') : e.estilo, { classe: 'de-jogo' }); break;
         case 'falar': if (j.modo === 'bot') falaDoEvento(e); break;
         case 'fim': {
@@ -4833,7 +4887,10 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     const j = jogo, n = nomes(), v = j.vencedor;
     if (j.fase !== 'fim' || jogo !== j) return;
     document.getElementById('fimTitulo').textContent = j.modo !== 'local' ? (v === 0 ? 'Você venceu!' : `${n[1]} venceu`) : `${n[v]} venceu!`;
-    document.getElementById('fimPlacar').innerHTML = `<span class="cor0">${n[0]} ${j.pts[0]}</span> × <span class="cor1">${j.pts[1]} ${n[1]}</span>`;
+    // acabou antes da meta: por quê (sem isso, um 0 × 0 parece que a conexão caiu)
+    const wo = j.desistencia, quem = wo === 0 && j.modo !== 'local' ? 'Você' : n[wo];
+    const motivo = wo === undefined ? '' : { tempo: `${quem} ficou ${R.AUTO_MAX} vezes seguidas sem jogar a tempo.`, queda: `${quem} caiu e não voltou a tempo.`, saiu: `${quem} saiu da partida.` }[j.motivoFim] || `${quem} saiu da partida.`;
+    document.getElementById('fimPlacar').innerHTML = `<span class="cor0">${n[0]} ${j.pts[0]}</span> × <span class="cor1">${j.pts[1]} ${n[1]}</span>${motivo ? `<small class="fim-motivo">${esc(motivo)}</small>` : ''}`;
     // repetições viram um item só ("×2"); os mais raros vêm primeiro
     const grupos = new Map();
     j.momentos.filter(m => humano(m.p)).forEach(m => { const k = m.p + m.txt; const g = grupos.get(k) || { ...m, vezes: 0 }; g.vezes++; grupos.set(k, g); });
@@ -5541,11 +5598,12 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     if (!toque || e.pointerId !== toque.id) return;
     clearTimeout(toque.timer);
     const t = toque; toque = null;
+    if (t.largar) t.largar();
     if (t.espiou) { esconderEspiar(); engolirClique = true; setTimeout(() => { engolirClique = false; }, 400); return; }
     if (!t.arrasta) return;   // um toque normal: o clique cuida
     engolirClique = true; setTimeout(() => { engolirClique = false; }, 400);
     const a = t.arrasta, j = jogo;
-    a.fant.remove(); tab.classList.remove('soltar-aqui'); document.body.classList.remove('arrastando-carta');
+    a.fant.remove(); camadaArrasto.replaceChildren(); tab.classList.remove('soltar-aqui'); document.body.classList.remove('arrastando-carta');
     document.querySelectorAll('.pega.mira').forEach(el => el.classList.remove('mira'));
     if (!j || j.vez !== t.p) return render();
     if (a.alvo) {
@@ -5569,22 +5627,26 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     clearTimeout(passarMouse); esconderEspiar();
     toque = { b, p: +b.dataset.dono, c: b.dataset.carta, x: e.clientX, y: e.clientY, id: e.pointerId, arrasta: null, espiou: false };
     const t = toque;
+    t.largar = ouvirNoElemento(b, moverToque, soltouToque, cancelouToque);   // a carta também sai da tela ao ser arrastada
     t.timer = setTimeout(() => { if (toque === t && !t.arrasta) { t.espiou = true; mostrarEspiar(b); vibrar(8); } }, 380);
   });
-  addEventListener('pointermove', e => {
+  addEventListener('pointermove', e => moverToque(e), { passive: false });
+  function moverToque(e) {
     // a carta espiada pelo mouse some ao sair dela (mesmo que a tela tenha sido redesenhada embaixo do mouse parado)
     if (!toque && e.pointerType === 'mouse' && !espiar.hidden && !(e.target.closest && e.target.closest('.cartas [data-carta]'))) { clearTimeout(passarMouse); esconderEspiar(); }
-    if (!toque || e.pointerId !== toque.id) return;
+    if (!toque || e.pointerId !== toque.id || !umaVez(e)) return;
     if (!toque.arrasta) {
       if (toque.espiou || Math.hypot(e.clientX - toque.x, e.clientY - toque.y) < 10) return;
       clearTimeout(toque.timer);
-      if (!podeArrastar(toque.p, toque.c) || !iniciarArrasto(toque)) { toque = null; return; }
+      if (!podeArrastar(toque.p, toque.c) || !iniciarArrasto(toque)) { if (toque.largar) toque.largar(); toque = null; return; }
     }
     e.preventDefault();
     moverArrasto(e);
-  }, { passive: false });
-  addEventListener('pointerup', e => terminarToque(e, true));
-  addEventListener('pointercancel', e => terminarToque(e, false));
+  }
+  function soltouToque(e) { terminarToque(e, true); }
+  function cancelouToque(e) { terminarToque(e, false); }
+  addEventListener('pointerup', soltouToque);
+  addEventListener('pointercancel', cancelouToque);
   // o clique que vem depois de um arrasto ou de espiar não conta como toque na carta
   document.addEventListener('click', e => { if (engolirClique && e.target.closest && e.target.closest('#tabuleiro')) { engolirClique = false; e.stopPropagation(); e.preventDefault(); } }, true);
   // segurar no celular não abre o menu do sistema
@@ -5607,13 +5669,26 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
   camadaDado.className = 'camada-arrasto camada-dado';
   document.body.appendChild(camadaDado);
   const alvoDadoSob = (x, y) => { const el = document.elementFromPoint(x, y); return el && el.closest('[data-alvo-dado]'); };
+  // No iPhone, os eventos do dedo continuam indo para o elemento onde o toque começou, mesmo depois de ele sair da tela
+  // (a Mesa é redesenhada quando o arrasto começa); fora do documento, eles não sobem até a janela. Por isso quem
+  // começou o arrasto também ouve o mover e o soltar; sem isso, o dado-fantasma ficava preso na tela para sempre.
+  // Cada evento é tratado uma vez só (no navegador comum, ele chega ao elemento e depois à janela).
+  const umaVez = e => { if (e.__arrasto) return false; try { e.__arrasto = true; } catch (_) {} return true; };
+  function ouvirNoElemento(el, mover, soltar, cancelar) {
+    el.addEventListener('pointermove', mover, { passive: false });
+    el.addEventListener('pointerup', soltar);
+    el.addEventListener('pointercancel', cancelar);
+    return () => { el.removeEventListener('pointermove', mover); el.removeEventListener('pointerup', soltar); el.removeEventListener('pointercancel', cancelar); };
+  }
   document.getElementById('mesa').addEventListener('pointerdown', e => {
     const b = e.target.closest('.pega:not([disabled])'), j = jogo;
     if (!b || !j || e.button > 0 || j.fase !== 'pegar' || !humano(j.vez) || j.pensando || j.intro || toque) return;
     arrastoDado = { b, id: +b.dataset.id, idx: +b.dataset.i, x: e.clientX, y: e.clientY, pid: e.pointerId, fant: null };
+    arrastoDado.largar = ouvirNoElemento(b, moverDado, soltouDado, cancelouDado);
   });
-  addEventListener('pointermove', e => {
-    const a = arrastoDado; if (!a || e.pointerId !== a.pid) return;
+  addEventListener('pointermove', e => moverDado(e), { passive: false });
+  function moverDado(e) {
+    const a = arrastoDado; if (!a || e.pointerId !== a.pid || !umaVez(e)) return;
     if (!a.fant) {
       if (Math.hypot(e.clientX - a.x, e.clientY - a.y) < 10) return;
       const j = jogo, idx = idxDe(a.id);
@@ -5633,20 +5708,34 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     document.querySelectorAll('[data-alvo-dado].mira').forEach(el => el.classList.remove('mira'));
     const alvo = alvoDadoSob(e.clientX, e.clientY - 26);
     if (alvo) { alvo.classList.add('mira'); if (a.ultAlvo !== alvo.dataset.alvoDado) { a.ultAlvo = alvo.dataset.alvoDado; vibrar(4); } } else a.ultAlvo = null;
-  }, { passive: false });
+  }
   const fimArrastoDado = (e, valeu) => {
     const a = arrastoDado; if (!a || e.pointerId !== a.pid) return;
     arrastoDado = null;
+    if (a.largar) a.largar();
     if (!a.fant) return;   // um toque normal: o clique cuida
     engolirClique = true; setTimeout(() => { engolirClique = false; }, 400);
-    a.fant.remove(); document.body.classList.remove('arrastando-carta');
+    a.fant.remove(); camadaDado.replaceChildren(); document.body.classList.remove('arrastando-carta');
     document.querySelectorAll('[data-alvo-dado].mira').forEach(el => el.classList.remove('mira'));
     const alvo = valeu && alvoDadoSob(e.clientX, e.clientY - 26);
     if (alvo && jogo && jogo.sel === a.id) return levarDado(alvo.dataset.alvoDado);
     render();
   };
-  addEventListener('pointerup', e => fimArrastoDado(e, true));
-  addEventListener('pointercancel', e => fimArrastoDado(e, false));
+  function soltouDado(e) { fimArrastoDado(e, true); }
+  function cancelouDado(e) { fimArrastoDado(e, false); }
+  addEventListener('pointerup', soltouDado);
+  addEventListener('pointercancel', cancelouDado);
+  // rede de segurança: um toque novo do dedo principal quer dizer que o anterior acabou (mesmo que o "soltar" tenha
+  // se perdido), e sair da tela (outro app, celular bloqueado) encerra qualquer arrasto. Nada de fantasma preso.
+  const desfazerArrastos = () => {
+    if (arrastoDado) fimArrastoDado({ pointerId: arrastoDado.pid, clientX: -1, clientY: -1 }, false);
+    if (toque) terminarToque({ pointerId: toque.id, clientX: -1, clientY: -1 }, false);
+    camadaDado.replaceChildren(); camadaArrasto.replaceChildren(); document.body.classList.remove('arrastando-carta');
+    document.querySelectorAll('.mira').forEach(el => el.classList.remove('mira')); tab.classList.remove('soltar-aqui');
+  };
+  addEventListener('pointerdown', e => { if (e.isPrimary && (arrastoDado || toque || camadaDado.firstChild || camadaArrasto.firstChild)) desfazerArrastos(); }, true);
+  document.addEventListener('visibilitychange', () => { if (document.hidden) desfazerArrastos(); });
+  addEventListener('blur', desfazerArrastos);
   document.getElementById('cartaBotoes').addEventListener('click', e => {
     if (e.target.closest('[data-fechar-carta]')) { document.getElementById('janelaCarta').hidden = true; return; }
     // comprar pela carta aberta na Loja: o primeiro toque pede confirmação, o segundo compra pelo mesmo caminho da Loja
@@ -6463,7 +6552,7 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
       return;
     }
     el.innerHTML = `${eu}
-      <div class="linha-cfg tempo-online"><span><label>Tempo por vez</label><small>quem estoura o tempo da própria vez perde</small></span>
+      <div class="linha-cfg tempo-online"><span><label>Tempo por vez</label><small>se o tempo acabar, o jogo joga por você; 3 vezes seguidas e a partida acaba</small></span>
         <span class="segmento" role="group" aria-label="Tempo por vez">${Object.entries(TEMPOS_ONLINE).map(([k, t]) => `<button data-on="tempo" data-v="${k}" aria-pressed="${st.cfg.tempoOnline === k}">${t[0]} <small>${t[1]}</small></button>`).join('')}</span></div>
       <div class="linha-botoes"><button class="btn btn-mel" data-on="criar-sala">Chamar um amigo</button></div>
       <form class="linha-botoes" id="formCodigo"><input class="campo codigo" name="codigo" maxlength="6" placeholder="código" aria-label="Código da sala" autocomplete="off" style="flex:1 1 120px"><button class="btn btn-papel" type="submit">Entrar na sala</button></form>
