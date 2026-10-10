@@ -108,6 +108,9 @@ node tools/vercel_local.js                     # a página como o Vercel publica
 - **Paciência:** segurar uma corrente que já podia disparar e ela render 2+ pontos a mais vira bom momento
   ("Valeu esperar!" na hora). É o primeiro bom momento que premia uma decisão, não um resultado.
 - **Fim da derrota sem "+0":** os bons momentos vêm primeiro, depois a experiência e o rating.
+- **Sotaque de gibi impresso** (`docs/visual-impresso.md`): retícula no clarão, quadro congelado na Sinfonia e na
+  Virada, as chapas azul e rosa fora do registro na armadilha e no "+N", onomatopeias ("FUUU!", "TCHÃ!", "ufa!",
+  "plonc") e a cascata curta "em dois". `?impresso=0` desliga, para comparar.
 - **Juice:** o disparo em cascata (cada dado acende na nota dele, um selo conta +1, +2, +4... e o "+N" estoura no
   placar do tamanho do lance); a tela inicial com a rival à mesa, a saudação da hora e dados que rolam ao toque, e as patas da Diana (pintadas:
   a palma rosa sobe por trás da mesa, vira e, vista de cima, bate e puxa um dado) ameaçando pegá-los; a mesa

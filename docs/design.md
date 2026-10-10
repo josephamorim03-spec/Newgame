@@ -444,7 +444,8 @@ contexto de empilhamento e a moldura de madeira (o `::before`, z-index −1) pas
 segundo. Agora treme o que envolve a mesa.
 
 **Gamefeel:** o dado afunda quando é tocado; a corrente esquenta com 4 dados e ferve com 5; o disparo de 4+ solta um
-clarão; o celular vibra de leve ao escolher, pegar e disparar (dá para desligar). Com "reduzir movimento" ou as
+clarão; o celular vibra de leve ao escolher, pegar e disparar (dá para desligar). Por cima disso, o sotaque de gibi impresso
+(v0.14, `docs/visual-impresso.md`): retícula, as chapas azul e rosa fora do registro, quadro congelado e onomatopeias. Com "reduzir movimento" ou as
 animações desligadas, tudo isso vira instantâneo.
 
 ## 8. Ajustes

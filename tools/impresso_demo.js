@@ -1,5 +1,5 @@
-// Demonstração do "impresso" (docs/visual-impresso.md, fase 0): grava a mesma sequência sem e com ?impresso=1
-// (disparo de 5, Sinfonia, armadilha revelada) e falha com qualquer erro no console.
+// Demonstração do "impresso" (docs/visual-impresso.md): grava a mesma sequência sem (?impresso=0) e com (?impresso=1):
+// disparo de 4 (cascata "em dois"), disparo de 5, Sinfonia, ruptura e armadilha revelada. Falha com qualquer erro no console.
 // Uso: npm i -D playwright && node tools/impresso_demo.js   (vídeos e quadros em builds/impresso/)
 const { chromium } = require('playwright');
 const path = require('path');
@@ -40,6 +40,12 @@ const VP = { width: 390, height: 844 };
     };
     const quadros = async (nome, ms) => { let t = 0; for (const alvo of ms) { await pg.waitForTimeout(alvo - t); t = alvo; await pg.screenshot({ path: path.join(SAIDA, `${modo}-${nome}-${alvo}.png`) }); } };
 
+    // 0. disparo de 4: a cascata curta anda em poses seguradas
+    await cena(() => { const j = DiceDuel.jogo; j.vez = 0; j.fase = 'decidir'; j.cor[0] = [2, 3, 4, 5]; j.mesa = [{ id: 8001, v: 1 }, { id: 8002, v: 1 }]; });
+    await pg.click('[data-acao="disparar"]');
+    await quadros('disparo4', [200, 350, 700]);
+    await pg.waitForTimeout(1800);
+
     // 1. disparo de 5: o clarão (com o anel de retícula na cor de quem disparou)
     await cena(() => { const j = DiceDuel.jogo; j.vez = 0; j.fase = 'decidir'; j.cor[0] = [1, 2, 3, 4, 5]; j.mesa = [{ id: 9001, v: 2 }, { id: 9002, v: 4 }]; });
     await pg.click('[data-acao="disparar"]');
@@ -52,6 +58,14 @@ const VP = { width: 390, height: 844 };
     if (await pg.$('[data-alvo-dado="corrente"]')) await pg.click('[data-alvo-dado="corrente"]');
     await quadros('sinfonia', [1050, 1200, 1500]);
     await pg.waitForTimeout(2000);
+
+    // 2b. ruptura: a corrente de 3 rompe com um dado que não sincroniza ("plonc", pequeno, caindo)
+    await cena(() => { const j = DiceDuel.jogo; j.vez = 0; j.fase = 'pegar'; j.cor[0] = [1, 2, 3]; j.mesa = [{ id: 9201, v: 6 }, { id: 9202, v: 6 }]; });
+    await pg.click('.pega[data-i="0"]');
+    if (await pg.$('[data-alvo-dado="corrente"]')) await pg.click('[data-alvo-dado="corrente"]');
+    if (await pg.$('[data-confirma="corrente"]')) await pg.click('[data-confirma="corrente"]');
+    await quadros('ruptura', [200, 450]);
+    await pg.waitForTimeout(1500);
 
     // 3. a armadilha do rival revelada: as chapas azul e rosa saem do registro e voltam
     await pg.evaluate(() => { const j = DiceDuel.jogo; j.eventos.push({ tipo: 'revelou', p: 1, c: 'interferencia', txt: 'a sua corrente de 4 vale 2 a menos' }); });

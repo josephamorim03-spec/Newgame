@@ -757,11 +757,24 @@ img.avatar { object-fit: contain; }
 @keyframes ferve { 50% { box-shadow: inset 0 3px 8px rgba(0,0,0,.35), 0 0 0 3px rgba(255,207,138,.75), 0 0 28px rgba(255,180,110,.55); } }
 /* clarão de disparo grande */
 .clarao { position: fixed; z-index: 56; pointer-events: none; width: 420px; height: 420px; border-radius: 50%; background: radial-gradient(circle, rgba(255,246,230,.95), rgba(255,207,138,.45) 35%, transparent 70%); transform: translate(-50%, -50%); mix-blend-mode: screen; }
-/* impresso (docs/visual-impresso.md, atrás de ?impresso=1): o anel de retícula do clarão e o quadro congelado da Sinfonia */
+/* impresso (docs/visual-impresso.md): o anel de retícula do clarão, o quadro congelado da Sinfonia e da Virada, as
+   onomatopeias, o selo de 5 e 6 em retícula e a cascata curta "em dois" */
 .clarao.reticula { background: center / 100% 100% no-repeat; mix-blend-mode: normal; border-radius: 0; }
 .quadro-gibi { position: fixed; inset: 0; z-index: 56; pointer-events: none; box-shadow: inset 0 0 0 12px var(--papel), inset 0 0 0 16px var(--tinta); }
 .quadro-gibi::before { content: ''; position: absolute; inset: 0; background: radial-gradient(circle, rgba(251,241,223,.45) 0 1.8px, transparent 2.3px) 0 0 / 9px 9px;
   -webkit-mask-image: radial-gradient(closest-side, transparent 78%, #000 118%); mask-image: radial-gradient(closest-side, transparent 78%, #000 118%); }
+/* a onomatopeia: letras de papel com contorno de tinta e as chapas azul e rosa fora do registro */
+.onomatopeia { position: fixed; z-index: 58; pointer-events: none; font-family: var(--f-titulo); font-weight: 700; font-size: 34px; line-height: 1; letter-spacing: .02em; white-space: nowrap;
+  color: var(--papel); -webkit-text-stroke: 2px var(--tinta); paint-order: stroke fill; text-shadow: -3px -1px 0 var(--voce), 3px 1px 0 var(--rival), 0 4px 0 rgba(58,42,46,.45); }
+.onomatopeia.voce { color: #dff3f8; } .onomatopeia.rival { color: #ffe0e8; }
+.onomatopeia.grande { font-size: 46px; -webkit-text-stroke-width: 2.5px; }
+.onomatopeia.suave { font-size: 26px; color: #e3f5e8; }
+/* a ruptura é gentil: "plonc" pequeno, sem as chapas, caindo devagar */
+.onomatopeia.triste { font-size: 22px; color: #e9d8c8; -webkit-text-stroke-width: 1.5px; text-shadow: 0 3px 0 rgba(58,42,46,.4); }
+/* o selo final do disparo de 5 e 6 ganha retícula clara sobre o mel, como cor impressa */
+.impresso .contagem.final.n5, .impresso .contagem.final.n6 { background-image: radial-gradient(circle, rgba(255,250,240,.5) 0 1.3px, transparent 1.8px); background-size: 6px 6px; }
+/* a cascata da corrente curta anda "em dois" (poses seguradas); a de 5 e 6 continua fluida */
+.impresso .fx-disparo:is(.fx-n2, .fx-n3, .fx-n4) .slot .dado { animation-timing-function: steps(3, end); }
 .sem-animacoes .corrente.quente, .sem-animacoes .corrente.fervendo { box-shadow: inset 0 3px 8px rgba(0,0,0,.35), 0 0 0 2px rgba(255,207,138,.6); }
 @media (prefers-reduced-motion: reduce) { .corrente.quente, .corrente.fervendo { animation: none; box-shadow: inset 0 3px 8px rgba(0,0,0,.35), 0 0 0 2px rgba(255,207,138,.6); } }
 
@@ -3166,13 +3179,16 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
   const cfg = { animacoes: true, particulas: true, tremor: true };
   const reduzido = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (reduzido) { cfg.animacoes = false; cfg.tremor = false; }
-  // "impresso" (fase 0 de docs/visual-impresso.md): técnicas de gibi atrás de uma bandeira. ?impresso=1 liga e fica
-  // guardado no aparelho; ?impresso=0 desliga
+  // "impresso" (docs/visual-impresso.md): o sotaque de gibi impresso (retícula, chapas azul e rosa fora do registro,
+  // quadro congelado, onomatopeias). Ligado desde a fase 1; ?impresso=0 desliga e fica guardado no aparelho (para comparar),
+  // ?impresso=1 volta a ligar. Obedece às animações e aos brilhos dos Ajustes
+  cfg.impresso = true;
   try {
     const q = new URLSearchParams(location.search).get('impresso');
-    if (q != null) { if (q === '0') localStorage.removeItem('diceduel.impresso'); else localStorage.setItem('diceduel.impresso', '1'); }
-    cfg.impresso = !!localStorage.getItem('diceduel.impresso');
-  } catch (e) { cfg.impresso = false; }
+    if (q != null) localStorage.setItem('diceduel.impresso', q === '0' ? '0' : '1');
+    cfg.impresso = localStorage.getItem('diceduel.impresso') !== '0';
+  } catch (e) { /* sem armazenamento: fica ligado */ }
+  document.documentElement.classList.toggle('impresso', cfg.impresso);
   const AZUL = '#6fbfd3', ROSA = '#ec8fa8';   // as cores dos dois jogadores são as duas chapas da impressão
 
   // ---------- partículas ----------
@@ -3307,24 +3323,54 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     return (reticulas[cor] = c.toDataURL());
   }
   // as chapas azul e rosa saem do registro e voltam, em 3 poses seguradas
+  // el: a caixa (box-shadow); texto: as letras (text-shadow). Um dos dois pode faltar
   function desencaixe(el, texto = null) {
-    if (!cfg.impresso || !cfg.animacoes || !el) return;
-    const fim = getComputedStyle(el).boxShadow, base = fim === 'none' ? '' : ', ' + fim;
-    el.animate([
+    if (!cfg.impresso || !cfg.animacoes || (!el && !texto)) return;
+    const fim = el && getComputedStyle(el).boxShadow, base = !fim || fim === 'none' ? '' : ', ' + fim;
+    const fimT = texto && getComputedStyle(texto).textShadow, baseT = !fimT || fimT === 'none' ? '' : ', ' + fimT;
+    if (el) el.animate([
       { boxShadow: `-9px -3px 0 ${AZUL}, 9px 3px 0 ${ROSA}${base}` },
       { boxShadow: `5px 2px 0 ${AZUL}, -5px -2px 0 ${ROSA}${base}` },
       { boxShadow: `-2px 0 0 ${AZUL}, 2px 0 0 ${ROSA}${base}` },
       { boxShadow: `0 0 0 transparent, 0 0 0 transparent${base}` },
     ], { duration: 420, easing: 'steps(1, end)' });
     if (texto) texto.animate([
-      { textShadow: `-5px -2px 0 ${AZUL}, 5px 2px 0 ${ROSA}` },
-      { textShadow: `3px 1px 0 ${AZUL}, -3px -1px 0 ${ROSA}` },
-      { textShadow: `-1px 0 0 ${AZUL}, 1px 0 0 ${ROSA}` },
-      { textShadow: '0 0 0 transparent, 0 0 0 transparent' },
+      { textShadow: `-5px -2px 0 ${AZUL}, 5px 2px 0 ${ROSA}${baseT}` },
+      { textShadow: `3px 1px 0 ${AZUL}, -3px -1px 0 ${ROSA}${baseT}` },
+      { textShadow: `-1px 0 0 ${AZUL}, 1px 0 0 ${ROSA}${baseT}` },
+      { textShadow: `0 0 0 transparent, 0 0 0 transparent${baseT}` },
     ], { duration: 420, easing: 'steps(1, end)' });
   }
   // o quadro congelado (hit-stop): tudo o que se mexe na tela para por um instante dentro de uma moldura de gibi.
   // Só a imagem para: o relógio da vez, a rede e o motor seguem. Devolve quanto tempo ficou parado (0 se não parou)
+  // a onomatopeia: o som escrito na tela, como no gibi ("plonc", "fump!", "fuuu!", "tchã!"). Entra torta em poses
+  // seguradas, fica um instante e sai. Uma por lance: outra que chegue logo depois fica de fora
+  let ultimaOno = 0;
+  function onomatopeia(alvo, txt, tipo = '') {
+    if (!cfg.impresso || !cfg.animacoes || !cfg.particulas) return;
+    const agora = performance.now();
+    if (agora - ultimaOno < 700) return;
+    ultimaOno = agora;
+    const r = alvo && alvo.nodeType ? alvo.getBoundingClientRect() : null;
+    const triste = /triste/.test(tipo);
+    const x = r ? r.left + r.width * (0.3 + Math.random() * 0.4) : innerWidth / 2, y = r ? r.top + (triste ? r.height * 0.5 : -6) : innerHeight / 2;
+    const el = document.createElement('div');
+    el.className = 'onomatopeia ' + tipo; el.textContent = txt; el.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(el);
+    // não vaza da tela: o meio fica a meia largura (e mais um respiro) da borda
+    const meia = el.offsetWidth / 2 + 10;
+    el.style.left = Math.max(meia, Math.min(innerWidth - meia, x)) + 'px'; el.style.top = Math.max(70, y) + 'px';
+    const giro = (triste ? 6 : -9) + Math.random() * 6 - 3, t = s => `translate(-50%, -50%) rotate(${giro}deg) ${s}`;
+    const fim = triste ? t('translateY(14px) scale(.9)') : t('translateY(-18px) scale(1.04)');
+    el.animate([
+      { transform: t('scale(.3)'), opacity: 0 },
+      { transform: t('scale(1.25)'), opacity: 1, offset: 0.08 },
+      { transform: t('scale(1)'), opacity: 1, offset: 0.16 },
+      { transform: t('scale(1)'), opacity: 1, offset: 0.7 },
+      { transform: fim, opacity: 0 },
+    ], { duration: triste ? 1000 : 900, easing: 'steps(2, end)' }).onfinish = () => el.remove();
+  }
+
   function quadro(ms = 260) {
     if (!cfg.impresso || !cfg.animacoes || !cfg.particulas) return 0;
     const paradas = document.getAnimations().filter(a => a.playState === 'running');
@@ -3385,6 +3431,7 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     t.style.left = x + 'px'; t.style.top = y + 'px';
     document.body.appendChild(t);
     setTimeout(() => t.remove(), 1300);
+    return t;
   }
 
   // chamada grande de bom momento, uma de cada vez
@@ -3469,7 +3516,9 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
         el.textContent = p.txt;
         const ultimo = i === passos.length - 1;
         el.classList.toggle('final', ultimo);
-        el.animate([{ transform: 'translate(-50%, -50%) scale(1.45)' }, { transform: 'translate(-50%, -50%) scale(1)' }], { duration: ultimo ? 320 : 200, easing: 'cubic-bezier(.3,1.6,.5,1)' });
+        // impresso: a corrente curta conta "em dois" (3 poses seguradas); a de 5 e 6, fluida (o lance melhor anda mais liso)
+        const emDois = cfg.impresso && !/\bn[56]\b/.test(classe);
+        el.animate([{ transform: 'translate(-50%, -50%) scale(1.45)' }, { transform: 'translate(-50%, -50%) scale(1)' }], { duration: ultimo ? 320 : 200, easing: emDois ? 'steps(3, jump-none)' : 'cubic-bezier(.3,1.6,.5,1)' });
         if (ultimo) { res(); setTimeout(() => { el.classList.add('saindo'); setTimeout(() => el.remove(), 380); }, 520); }
       }, p.ms));
     });
@@ -3491,7 +3540,7 @@ window.MOMENTOS_PINTADOS = Object.assign(window.MOMENTOS_PINTADOS || {}, {
     return new Promise(res => setTimeout(res, ms));
   }
 
-  window.Fx = { cfg, faiscas, confete, poeira, voar, texto, chamada, dica, contagem, tremer, pulsar, contar, centro, orbes, clarao, impacto, limparDica, lancarCarta, desencaixe, quadro, AZUL, ROSA };
+  window.Fx = { cfg, faiscas, confete, poeira, voar, texto, chamada, dica, contagem, tremer, pulsar, contar, centro, orbes, clarao, impacto, limparDica, lancarCarta, desencaixe, quadro, onomatopeia, AZUL, ROSA };
 })();
 
 </script>
@@ -5122,7 +5171,7 @@ window.PATAS_PINTADAS = Object.assign(window.PATAS_PINTADAS || {}, {
         ${bolsoHTML(p)}<span class="placar"><b data-placar="${p}">${placarSegurado.has(p) ? placarSegurado.get(p) : j.pts[p]}</b><small>/${j.meta}</small></span></div>
       <div class="barra" role="progressbar" aria-valuemin="0" aria-valuemax="${j.meta}" aria-valuenow="${j.pts[p]}" aria-label="Pontos de ${n[p]}"><i style="width:${pct}%"></i>${prev ? `<span class="prev" style="left:${pct}%;width:${prev}%"></span>` : ''}</div>
       ${(() => { const alvo = p === j.vez && !fx && dadoEscolhido(j) >= 0 ? previaAlvos(p, dadoEscolhido(j)).corrente : null;
-        return `<div class="corrente${fx ? ' fx-' + fx.tipo : L >= 5 ? ' fervendo' : L >= 4 ? ' quente' : ''}${!fx && (disparoVence(p) || porUm(p)) ? ' por-um' : ''}${alvo ? ` alvo-dado alvo-${alvo.cls}" data-alvo-dado="corrente" role="button" tabindex="0" aria-label="Corrente: ${alvo.txt}` : ''}" style="--fase:-${Math.round(performance.now() % 1800)}ms;--fx-t:-${fxT}ms;--n:${cor.length}">${slots}${alvo ? `<span class="alvo-chip">${alvo.txt}</span>` : ''}</div>`; })()}
+        return `<div class="corrente${fx ? ' fx-' + fx.tipo + ' fx-n' + Math.min(6, (fx.dados || []).length) : L >= 5 ? ' fervendo' : L >= 4 ? ' quente' : ''}${!fx && (disparoVence(p) || porUm(p)) ? ' por-um' : ''}${alvo ? ` alvo-dado alvo-${alvo.cls}" data-alvo-dado="corrente" role="button" tabindex="0" aria-label="Corrente: ${alvo.txt}` : ''}" style="--fase:-${Math.round(performance.now() % 1800)}ms;--fx-t:-${fxT}ms;--n:${cor.length}">${slots}${alvo ? `<span class="alvo-chip">${alvo.txt}</span>` : ''}</div>`; })()}
       ${st.pref.dicas && !cartaEscolhida(j, p) ? `<div class="info"><span>Corrente <b>${L}</b>/${LIM}</span><span>${valeAgora}${seCrescer}</span></div>` : ''}
       ${comDecisao && !cartaEscolhida(j, p) ? '<div class="decisao-slot"></div>' : cartasHTML(p) + (comDecisao ? '<div class="decisao-slot"></div>' : '')}
     </div>`;
@@ -5542,6 +5591,7 @@ window.PATAS_PINTADAS = Object.assign(window.PATAS_PINTADAS || {}, {
               if (e.L === 6) { Fx.chamada('Sinfonia!', 'corrente completa de 6', quem, { classe: 'de-jogo' }); vibrar([30, 40, 60]); }
               else if (e.L === 5) Fx.chamada('Belo disparo!', `corrente de 5 · +${e.ganho}`, quem, { classe: 'de-jogo' });
               if (e.harm) Fx.chamada('Harmonia!', `todos os elos em ${REL[e.harm].nome}`, 'suave', { classe: 'de-jogo' });
+              if (e.L >= 5) Fx.onomatopeia(qs(`#pj${e.p} .corrente`) || cor, e.L === 6 ? 'FUUUM!' : 'FUUU!', `${quem || 'voce'}${e.L === 6 ? ' grande' : ''}`);
             };
             if (parou) setTimeout(festa, parou); else festa();
             if (e.L >= 4 && humano(e.p)) Som.tocar('momento');
@@ -5561,7 +5611,8 @@ window.PATAS_PINTADAS = Object.assign(window.PATAS_PINTADAS || {}, {
               placarSegurado.delete(e.p);
               const pl = qs(`[data-placar="${e.p}"]`); if (!pl) return;
               pl.textContent = jogo.pts[e.p];
-              Fx.texto(pl, `+${e.ganho}`, `pontos ${quem} v${Math.min(6, e.ganho)}`);
+              const mais = Fx.texto(pl, `+${e.ganho}`, `pontos ${quem} v${Math.min(6, e.ganho)}`);
+              if (e.ganho >= 4) Fx.desencaixe(null, mais);   // impresso: o "+N" grande chega fora do registro e assenta
             });
           });
           break;
@@ -5571,13 +5622,14 @@ window.PATAS_PINTADAS = Object.assign(window.PATAS_PINTADAS || {}, {
           Som.tocar('ruptura', { L: e.L }); Fx.poeira(qs(`#pj${e.p} .corrente`), 8 + e.L * 2); if (humano(e.p)) vibrar(90);
           if (painelEl) Fx.tremer(painelEl, 0.6);
           if (e.L >= 4 && humano(e.p)) Fx.texto(qs(`#pj${e.p} .corrente`), 'Rompeu', 'pequeno ruim');
+          if (e.L >= 2) Fx.onomatopeia(qs(`#pj${e.p} .corrente`), 'plonc', 'triste');
           if (e.L >= 2 && humano(e.p)) ensinar('ruptura');
           break;
         }
         // segurou uma corrente que já podia disparar e ela rendeu mais: a decisão foi boa, e o jogo diz isso na hora
         // (com 6, a Sinfonia já festeja; a Paciência fica nos bons momentos do fim)
         case 'paciencia': if (humano(e.p) && e.L < 6) Fx.chamada('Valeu esperar!', `segurou a de ${e.de} e disparou com ${e.L}: +${e.ganho} em vez de +${e.antes}`, 'suave', { classe: 'de-jogo' }); break;
-        case 'salvo': Som.tocar('salvo'); Fx.chamada('Salvo!', e.txt, 'suave', { classe: 'de-jogo' }); Fx.faiscas(qs(`#pj${e.p} .corrente`), 14, ['#cdeccf', '#fff6e6']); break;
+        case 'salvo': Som.tocar('salvo'); Fx.chamada('Salvo!', e.txt, 'suave', { classe: 'de-jogo' }); Fx.faiscas(qs(`#pj${e.p} .corrente`), 14, ['#cdeccf', '#fff6e6']); Fx.onomatopeia(qs(`#pj${e.p} .corrente`), 'ufa!', 'suave'); break;
         case 'bloqueio': Som.tocar('bloqueio'); Fx.texto(qs(`#pj${e.p} .corrente`) || null, 'Bloqueio!', 'pequeno'); break;
         case 'carta': {
           Som.tocar('carta');
@@ -5600,6 +5652,7 @@ window.PATAS_PINTADAS = Object.assign(window.PATAS_PINTADAS || {}, {
             const painel = qs(`#pj${e.p} .jogador`) || painelEl;
             Som.tocar('revelou'); Fx.chamada(CARTAS[e.c].nome + '!', e.txt, e.p === 1 && j.modo !== 'local' ? 'rival' : '', { classe: 'de-jogo', desencaixe: true });
             Fx.faiscas(painel, 22, ['#e2d6ff', '#fff6e6', '#ffe3a3']); Fx.desencaixe(painel); vibrar([40, 60, 40]);
+            Fx.onomatopeia(painel, 'TCHÃ!', e.p === 1 && j.modo !== 'local' ? 'rival' : 'voce');
           });
           break;
         }
@@ -5612,7 +5665,9 @@ window.PATAS_PINTADAS = Object.assign(window.PATAS_PINTADAS || {}, {
           // o disparo que fecha a partida conta até o fim (a cascata e os pontos no placar) antes de a vitória estourar
           setTimeout(() => {
             Som.musica.cena('fim');
-            if (venceuHumano) { Som.tocar('vitoria'); Fx.confete(120); Fx.chamada(e.virada ? 'Virada!' : j.modo !== 'local' ? 'Vitória!' : `${n[e.p]} venceu!`, e.virada ? 'veio de trás e venceu' : 'partida bem jogada', '', { classe: 'de-jogo', furar: true, ms: 1700 }); }
+            // impresso: a Virada para num quadro de gibi antes de estourar, como a Sinfonia
+            const parou = venceuHumano && e.virada ? Fx.quadro() : 0;
+            if (venceuHumano) setTimeout(() => { Som.tocar('vitoria'); Fx.confete(120); Fx.chamada(e.virada ? 'Virada!' : j.modo !== 'local' ? 'Vitória!' : `${n[e.p]} venceu!`, e.virada ? 'veio de trás e venceu' : 'partida bem jogada', '', { classe: 'de-jogo', furar: true, ms: 1700 }); }, parou);
             else { Som.tocar('derrota'); Fx.chamada('Fim de partida', `${n[e.p]} venceu desta vez`, 'rival', { classe: 'de-jogo', furar: true, ms: 1700 }); }
           }, esperaFesta());
           break;

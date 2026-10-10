@@ -830,7 +830,7 @@
         ${bolsoHTML(p)}<span class="placar"><b data-placar="${p}">${placarSegurado.has(p) ? placarSegurado.get(p) : j.pts[p]}</b><small>/${j.meta}</small></span></div>
       <div class="barra" role="progressbar" aria-valuemin="0" aria-valuemax="${j.meta}" aria-valuenow="${j.pts[p]}" aria-label="Pontos de ${n[p]}"><i style="width:${pct}%"></i>${prev ? `<span class="prev" style="left:${pct}%;width:${prev}%"></span>` : ''}</div>
       ${(() => { const alvo = p === j.vez && !fx && dadoEscolhido(j) >= 0 ? previaAlvos(p, dadoEscolhido(j)).corrente : null;
-        return `<div class="corrente${fx ? ' fx-' + fx.tipo : L >= 5 ? ' fervendo' : L >= 4 ? ' quente' : ''}${!fx && (disparoVence(p) || porUm(p)) ? ' por-um' : ''}${alvo ? ` alvo-dado alvo-${alvo.cls}" data-alvo-dado="corrente" role="button" tabindex="0" aria-label="Corrente: ${alvo.txt}` : ''}" style="--fase:-${Math.round(performance.now() % 1800)}ms;--fx-t:-${fxT}ms;--n:${cor.length}">${slots}${alvo ? `<span class="alvo-chip">${alvo.txt}</span>` : ''}</div>`; })()}
+        return `<div class="corrente${fx ? ' fx-' + fx.tipo + ' fx-n' + Math.min(6, (fx.dados || []).length) : L >= 5 ? ' fervendo' : L >= 4 ? ' quente' : ''}${!fx && (disparoVence(p) || porUm(p)) ? ' por-um' : ''}${alvo ? ` alvo-dado alvo-${alvo.cls}" data-alvo-dado="corrente" role="button" tabindex="0" aria-label="Corrente: ${alvo.txt}` : ''}" style="--fase:-${Math.round(performance.now() % 1800)}ms;--fx-t:-${fxT}ms;--n:${cor.length}">${slots}${alvo ? `<span class="alvo-chip">${alvo.txt}</span>` : ''}</div>`; })()}
       ${st.pref.dicas && !cartaEscolhida(j, p) ? `<div class="info"><span>Corrente <b>${L}</b>/${LIM}</span><span>${valeAgora}${seCrescer}</span></div>` : ''}
       ${comDecisao && !cartaEscolhida(j, p) ? '<div class="decisao-slot"></div>' : cartasHTML(p) + (comDecisao ? '<div class="decisao-slot"></div>' : '')}
     </div>`;
@@ -1250,6 +1250,7 @@
               if (e.L === 6) { Fx.chamada('Sinfonia!', 'corrente completa de 6', quem, { classe: 'de-jogo' }); vibrar([30, 40, 60]); }
               else if (e.L === 5) Fx.chamada('Belo disparo!', `corrente de 5 · +${e.ganho}`, quem, { classe: 'de-jogo' });
               if (e.harm) Fx.chamada('Harmonia!', `todos os elos em ${REL[e.harm].nome}`, 'suave', { classe: 'de-jogo' });
+              if (e.L >= 5) Fx.onomatopeia(qs(`#pj${e.p} .corrente`) || cor, e.L === 6 ? 'FUUUM!' : 'FUUU!', `${quem || 'voce'}${e.L === 6 ? ' grande' : ''}`);
             };
             if (parou) setTimeout(festa, parou); else festa();
             if (e.L >= 4 && humano(e.p)) Som.tocar('momento');
@@ -1269,7 +1270,8 @@
               placarSegurado.delete(e.p);
               const pl = qs(`[data-placar="${e.p}"]`); if (!pl) return;
               pl.textContent = jogo.pts[e.p];
-              Fx.texto(pl, `+${e.ganho}`, `pontos ${quem} v${Math.min(6, e.ganho)}`);
+              const mais = Fx.texto(pl, `+${e.ganho}`, `pontos ${quem} v${Math.min(6, e.ganho)}`);
+              if (e.ganho >= 4) Fx.desencaixe(null, mais);   // impresso: o "+N" grande chega fora do registro e assenta
             });
           });
           break;
@@ -1279,13 +1281,14 @@
           Som.tocar('ruptura', { L: e.L }); Fx.poeira(qs(`#pj${e.p} .corrente`), 8 + e.L * 2); if (humano(e.p)) vibrar(90);
           if (painelEl) Fx.tremer(painelEl, 0.6);
           if (e.L >= 4 && humano(e.p)) Fx.texto(qs(`#pj${e.p} .corrente`), 'Rompeu', 'pequeno ruim');
+          if (e.L >= 2) Fx.onomatopeia(qs(`#pj${e.p} .corrente`), 'plonc', 'triste');
           if (e.L >= 2 && humano(e.p)) ensinar('ruptura');
           break;
         }
         // segurou uma corrente que já podia disparar e ela rendeu mais: a decisão foi boa, e o jogo diz isso na hora
         // (com 6, a Sinfonia já festeja; a Paciência fica nos bons momentos do fim)
         case 'paciencia': if (humano(e.p) && e.L < 6) Fx.chamada('Valeu esperar!', `segurou a de ${e.de} e disparou com ${e.L}: +${e.ganho} em vez de +${e.antes}`, 'suave', { classe: 'de-jogo' }); break;
-        case 'salvo': Som.tocar('salvo'); Fx.chamada('Salvo!', e.txt, 'suave', { classe: 'de-jogo' }); Fx.faiscas(qs(`#pj${e.p} .corrente`), 14, ['#cdeccf', '#fff6e6']); break;
+        case 'salvo': Som.tocar('salvo'); Fx.chamada('Salvo!', e.txt, 'suave', { classe: 'de-jogo' }); Fx.faiscas(qs(`#pj${e.p} .corrente`), 14, ['#cdeccf', '#fff6e6']); Fx.onomatopeia(qs(`#pj${e.p} .corrente`), 'ufa!', 'suave'); break;
         case 'bloqueio': Som.tocar('bloqueio'); Fx.texto(qs(`#pj${e.p} .corrente`) || null, 'Bloqueio!', 'pequeno'); break;
         case 'carta': {
           Som.tocar('carta');
@@ -1308,6 +1311,7 @@
             const painel = qs(`#pj${e.p} .jogador`) || painelEl;
             Som.tocar('revelou'); Fx.chamada(CARTAS[e.c].nome + '!', e.txt, e.p === 1 && j.modo !== 'local' ? 'rival' : '', { classe: 'de-jogo', desencaixe: true });
             Fx.faiscas(painel, 22, ['#e2d6ff', '#fff6e6', '#ffe3a3']); Fx.desencaixe(painel); vibrar([40, 60, 40]);
+            Fx.onomatopeia(painel, 'TCHÃ!', e.p === 1 && j.modo !== 'local' ? 'rival' : 'voce');
           });
           break;
         }
@@ -1320,7 +1324,9 @@
           // o disparo que fecha a partida conta até o fim (a cascata e os pontos no placar) antes de a vitória estourar
           setTimeout(() => {
             Som.musica.cena('fim');
-            if (venceuHumano) { Som.tocar('vitoria'); Fx.confete(120); Fx.chamada(e.virada ? 'Virada!' : j.modo !== 'local' ? 'Vitória!' : `${n[e.p]} venceu!`, e.virada ? 'veio de trás e venceu' : 'partida bem jogada', '', { classe: 'de-jogo', furar: true, ms: 1700 }); }
+            // impresso: a Virada para num quadro de gibi antes de estourar, como a Sinfonia
+            const parou = venceuHumano && e.virada ? Fx.quadro() : 0;
+            if (venceuHumano) setTimeout(() => { Som.tocar('vitoria'); Fx.confete(120); Fx.chamada(e.virada ? 'Virada!' : j.modo !== 'local' ? 'Vitória!' : `${n[e.p]} venceu!`, e.virada ? 'veio de trás e venceu' : 'partida bem jogada', '', { classe: 'de-jogo', furar: true, ms: 1700 }); }, parou);
             else { Som.tocar('derrota'); Fx.chamada('Fim de partida', `${n[e.p]} venceu desta vez`, 'rival', { classe: 'de-jogo', furar: true, ms: 1700 }); }
           }, esperaFesta());
           break;
