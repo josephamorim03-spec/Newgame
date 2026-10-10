@@ -6,8 +6,8 @@
  * Cada dado é da pata do lado dele: o da esquerda, a pata da esquerda; o da direita, a da direita; o do meio, qualquer
  * uma (meio a meio). Erguer a pata é ela crescer um pouco e a sombra no feltro se afastar, como se viesse na direção de
  * quem olha. Com as animações desligadas (Ajustes ou "reduzir movimento"), as patas ficam paradas na borda.
- * A pata é um sprite de quatro poses, trocadas como quadros: "dorso" (vista de cima, apoiada), "virando" (de lado, a
- * beirada rosa das almofadinhas aparecendo), "palma" (a pata erguida, de frente: a almofada maior e os quatro
+ * A pata é um sprite de quatro poses, trocadas como quadros: "dorso" (vista de cima, apoiada), "virando" (no meio do
+ * giro de cima para baixo: larga e achatada, a ponta dos dedos de frente, um feijãozinho rosa em cada), "palma" (a pata erguida, de frente: a almofada maior e os quatro
  * feijõezinhos rosa) e "gancho" (os dedos dobrados por cima da aresta do dado, as pontinhas rosa pegando na face).
  * A investida: dorso → virando → palma ao erguer; palma → virando → gancho ao descer na aresta; puxa; gancho →
  * virando → dorso ao voltar. A pata da direita é o espelho da da esquerda.
@@ -65,14 +65,19 @@
       + almofada(L, 0, L * 0.3, 0.95)
       + feijao(-0.56, -0.2, 0.95) + feijao(-0.2, -0.5, 1) + feijao(0.2, -0.5, 1) + feijao(0.56, -0.2, 0.95);
   }
-  // virando: a pata de lado, no meio do giro: estreita, com a beirada rosa das almofadinhas aparecendo de um lado
-  function virando(L, k) {
-    const rx = L * 0.5, ry = L * 0.84, id = `pata-giro-${k}`;
-    return `<defs><clipPath id="${id}"><ellipse cx="0" cy="0" rx="${rx}" ry="${ry}"/></clipPath></defs>`
-      + el(0, 0, rx, ry, PELO)
-      + `<g clip-path="url(#${id})">${el(rx * 0.75, -ry * 0.45, L * 0.17, L * 0.2, ROSA)}${el(rx * 0.95, -ry * 0.05, L * 0.16, L * 0.2, ROSA)}${el(rx * 0.85, ry * 0.42, L * 0.3, L * 0.3, ROSA)}</g>`
-      + el(0, 0, rx, ry, 'none', 0.2, L)
-      + `<path d="M${-rx * 0.55} ${-ry * 0.5} q ${-rx * 0.35} ${ry * 0.5} 0 ${ry}" fill="none" stroke="${SOMBRA}" stroke-width="${L * 0.14}" stroke-linecap="round"/>`;
+  // virando: o meio do giro entre o dorso (dedos para baixo, palma no feltro) e a palma (dedos para cima, almofadas de
+  // frente). O giro é de cima para baixo, num eixo deitado: no meio dele a pata aparece larga e achatada, com a ponta
+  // dos quatro dedos virada para quem olha e um feijãozinho rosa em cada um (a almofada maior ainda não aparece).
+  // Simétrica: serve às duas patas sem trocar de lado
+  function virando(L) {
+    const borda = L * 0.2;
+    const formas = [[0, -L * 0.14, L * 0.86, L * 0.44], ...[-0.6, -0.2, 0.2, 0.6].map(x => [x * L, L * 0.18, L * 0.29, L * 0.29])];
+    const contorno = formas.map(([x, y, rx, ry]) => el(x, y, rx + borda / 2, ry + borda / 2, CACAU)).join('');
+    const pelo = formas.map(([x, y, rx, ry]) => el(x, y, rx - borda / 2, ry - borda / 2, PELO)).join('');
+    const feijao = formas.slice(1).map(([x, y]) => el(x, y + L * 0.05, L * 0.1, L * 0.11, ROSA, 0, L, ` stroke="${ROSA_SOMBRA}" stroke-width="${L * 0.04}"`)).join('');
+    return contorno + pelo
+      + `<path d="M${-L * 0.6} ${-L * 0.36} q ${L * 0.6} ${-L * 0.22} ${L * 1.2} 0" fill="none" stroke="${SOMBRA}" stroke-width="${L * 0.12}" stroke-linecap="round"/>`
+      + feijao;
   }
   // gancho: os dedos dobrados por cima da aresta do dado. A palma (uma elipse larga) e quatro dedos redondos em arco
   // na ponta, num contorno só (primeiro tudo em cacau, mais grosso; por cima, tudo em branco); entre os dedos, vãos

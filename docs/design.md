@@ -382,7 +382,10 @@ sombra no feltro se afastar.
 
 A pata é um **sprite de quatro poses**, trocadas como quadros (vetor, no traço de cacau e no branco da Diana):
 - **dorso:** vista de cima, apoiada na borda, com os vãos dos dedos;
-- **virando:** de lado, estreita, com a beirada rosa das almofadinhas aparecendo;
+- **virando:** o meio do giro entre o dorso e a palma. O giro é de cima para baixo, num eixo deitado (os dedos vão de
+  apontar para baixo a apontar para cima), então no meio dele a pata aparece larga e achatada, com a ponta dos quatro
+  dedos de frente e um feijãozinho rosa em cada. Até a v0.14 inicial era um giro de lado (estreita, o rosa na
+  lateral), que não casava com a virada de cima para baixo e, na pata direita espelhada, punha o rosa do lado errado;
 - **palma:** erguida, de frente para quem olha: a almofada maior, de três lobos, e os quatro feijõezinhos rosa em arco;
 - **gancho:** os dedos dobrados por cima da aresta do dado, com as quatro pontinhas rosa apertando a face dele.
 
