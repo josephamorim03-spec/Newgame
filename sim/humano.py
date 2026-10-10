@@ -505,7 +505,7 @@ if __name__ == '__main__':
         print("  variante               | pensador x humano | Mesas | cartas usadas (pensador e humano) | sobram | usadas no 1º quarto | mediana do uso")
         for nome in os.environ.get('VARIANTES', '3 cartas (hoje),2 cartas,3 no deck e usa só 2,3 cartas e 1 por Mesa,sem cartas').split(','):
             v = VARIANTES[nome]; pool = decks_de(v['k']) if v['k'] else [[]]
-            r = mede('pensador', 'humano', n=n, pool_a=pool, mec=v['mec'])
+            r = mede('pensador', 'humano', n=n, pool_a=pool, mec=v['mec'], semente=int(os.environ.get('SEMENTE', '1')))
             print(f"  {nome:22s} | {fmt(r):17s} | {r['mesas']:5.1f} | {r['usos']:33.2f} | {r['sobra']:6.0%} | {r['cedo']:19.0%} | {r['quando']:.0%}", flush=True)
     if 'pressa' in quais:
         # a Pressa no fim da Mesa: pegar o último dado (que era do rival) e, atrás no placar, abrir a Mesa seguinte
