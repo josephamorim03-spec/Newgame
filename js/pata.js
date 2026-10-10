@@ -11,6 +11,9 @@
  * feijõezinhos rosa) e "gancho" (os dedos dobrados por cima da aresta do dado, as pontinhas rosa pegando na face).
  * A investida: dorso → virando → palma ao erguer; palma → virando → gancho ao descer na aresta; puxa; gancho →
  * virando → dorso ao voltar. A pata da direita é o espelho da da esquerda.
+ * A arte pintada (js/patas_pintadas.js, gerada pela API de imagem com arte/patas.json e o vetor de cada pose como
+ * referência) entra no lugar do vetor de cada pose que a tem; sem ela, fica o vetor. Dela vêm também os efeitos: a
+ * poeirinha da batida, quando a pata encosta no dado, e o rastro da pata que corre até o dado.
  *   Pata.ligar(cena, { aoBater(i), aoTerminar(i) })   Pata.desligar()   Pata.susto()
  */
 (function () {
@@ -84,6 +87,11 @@
       + ponta(-0.52) + ponta(-0.18) + ponta(0.18) + ponta(0.52);
   }
   const SPRITE = { dorso, virando, palma, gancho };
+  // a arte pintada de cada pose e dos efeitos (o quadrado do webp, em larguras L: o desenho ocupa o lado maior dele)
+  const pintada = id => (window.PATAS_PINTADAS || {})[id];
+  const LADO_PINTADA = { dorso: 2.15, virando: 2.05, palma: 2.25, gancho: 2.15, batida: 2.1, rastro: 2.2 };
+  const imagem = (id, L) => { const t = LADO_PINTADA[id] * L; return `<image href="${pintada(id)}" x="${-t / 2}" y="${-t / 2}" width="${t}" height="${t}"/>`; };
+  const poseSVG = (p, L, k) => (pintada(p) ? imagem(p, L) : SPRITE[p](L, k));
 
   // desenha as duas patas: a erguida (e > 0) cresce, sobe um pouco e a sombra dela se afasta; a inclinação segue o
   // caminho da pata (para o lado de onde ela veio), sem passar de 25°
@@ -104,7 +112,7 @@
     c.m = medir(c); if (!c.m) return false;
     const m = c.m;
     c.svg.setAttribute('viewBox', `0 0 ${m.w} ${m.h}`);
-    c.svg.innerHTML = [0, 1].map(k => `<ellipse class="sombra${k}" fill="#1f2a24"/><g class="mao${k}">${POSES.map(p => `<g data-pose="${p}" display="none">${SPRITE[p](m.larg, k)}</g>`).join('')}</g>`).join('');
+    c.svg.innerHTML = [0, 1].map(k => `<ellipse class="sombra${k}" fill="#1f2a24"/><g class="mao${k}">${POSES.map(p => `<g data-pose="${p}" display="none">${poseSVG(p, m.larg, k)}</g>`).join('')}</g>`).join('');
     if (!c.P) c.P = m.repouso.map(r => ({ ...r }));
     if (!c.pose) c.pose = ['dorso', 'dorso'];
     return desenhar(c);
@@ -126,6 +134,23 @@
       };
       requestAnimationFrame(passo);
     });
+  }
+
+  // um efeito pintado no ponto (x, y) da cena: aparece pequeno, cresce e some em ms (giro em graus); sem a pintura, nada
+  function efeito(c, id, x, y, ms, giro = 0, de = 0.5, ate = 1.15, espelho = false) {
+    if (!pintada(id) || !animando() || !c.svg.isConnected) return;
+    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    g.innerHTML = imagem(id, c.m.larg);
+    c.svg.insertBefore(g, c.svg.firstChild);   // atrás das patas
+    const t0 = performance.now();
+    const passo = agora => {
+      const t = Math.min(1, (agora - t0) / ms), e = 1 - Math.pow(1 - t, 2);
+      const s = de + (ate - de) * e;
+      g.setAttribute('transform', `translate(${x} ${y}) rotate(${giro}) scale(${espelho ? -s : s} ${s})`);
+      g.setAttribute('opacity', (t < 0.35 ? 1 : 1 - (t - 0.35) / 0.65).toFixed(2));
+      if (t < 1 && g.isConnected) requestAnimationFrame(passo); else g.remove();
+    };
+    requestAnimationFrame(passo);
   }
 
   // troca a pose da pata k quadro a quadro (cada quadro fica ms na tela); devolve false se a investida foi cancelada
@@ -173,6 +198,10 @@
     if (!(await quadros(c, k, ['virando'], 60))) return;
     if (!(await mover(c, k, ergue, 200, suave))) return;
     if (!(await quadros(c, k, ['palma'], 0))) return;
+    // o rastro da corrida até o dado, no meio do caminho e na direção dele
+    // (o desenho aponta para a direita, a ponta fina atrás: indo para a esquerda, ele é espelhado em vez de virado)
+    const rumo = Math.atan2(acima.y - ergue.y, acima.x - ergue.x) * 180 / Math.PI, praEsquerda = Math.abs(rumo) > 90;
+    efeito(c, 'rastro', (ergue.x + acima.x) / 2, (ergue.y + acima.y) / 2, 360, praEsquerda ? rumo - 180 : rumo, 0.7, 1, praEsquerda);
     if (!(await mover(c, k, acima, 300, suave))) return;
     await esperar(220 + Math.random() * 220);   // a ameaça: a palma no ar, em cima do dado
     // desce virando até enganchar na aresta
@@ -182,6 +211,8 @@
     for (let b = 0; b < batidas; b++) {
       if (!(await mover(c, k, aresta, 110, t => t * t))) return;
       d.el.classList.remove('cutucado'); void d.el.offsetWidth; d.el.classList.add('cutucado');
+      // a poeirinha sai embaixo das pontinhas, na face do dado (atrás da pata, que fica por cima)
+      efeito(c, 'batida', aresta.x, aresta.y + m.larg * 1.05, 320, Math.random() * 40 - 20, 0.55, 1.25);
       if (c.cb.aoBater) c.cb.aoBater(i, b);
       if (b < batidas - 1 && !(await mover(c, k, { x: aresta.x, y: Math.max(m.chao, aresta.y - d.t * 0.2), e: 0.5 }, 130, salto))) return;
     }
@@ -220,6 +251,8 @@
     svg.setAttribute('class', 'cena-pata'); svg.setAttribute('aria-hidden', 'true');
     cena.appendChild(svg);   // por cima da mesa e do queixo: as patas ficam na frente
     atual = { cena, svg, cb, token: 0, timer: null, P: null, pose: null };
+    // os efeitos pintados já decodificados: sem isso, a primeira poeirinha chegava atrasada
+    ['batida', 'rastro'].forEach(id => { if (!pintada(id)) return; const im = new Image(); im.src = pintada(id); if (im.decode) im.decode().catch(() => {}); });
     requestAnimationFrame(() => { if (atual && atual.svg === svg) montar(atual); });
     agendar(atual, 1800 + Math.random() * 1200);
   }
@@ -242,5 +275,6 @@
   }
   addEventListener('resize', () => { if (atual) { atual.token++; atual.P = null; atual.pose = null; if (atual.alvo) { soltar(atual.alvo); atual.alvo = null; } montar(atual); } });
 
-  window.Pata = { ligar, desligar, susto };
+  // SPRITE e POSES saem para tools/referencias_patas.js desenhar as referências da arte pintada
+  window.Pata = { ligar, desligar, susto, SPRITE, POSES };
 })();

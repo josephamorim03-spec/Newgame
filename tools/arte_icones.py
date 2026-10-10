@@ -19,6 +19,8 @@ de js/retratos.js. Para tirar um retrato pintado, apague arte/fonte/<id>.png e r
 Personagens claros (os de "fundo_opaco" em arte/retratos.json) somem no fundo transparente da API, que
 toma o pelo branco por fundo: esses vêm num verde-croma liso, que é recortado aqui (o pedido cru
 fica em builds/crus/ para conferir o recorte).
+Um "pelo" no arquivo de pedidos ({"alvo": [r, g, b], "itens": [...]}) alinha o branco do pelo desses itens ao tom do
+retrato (as patas da Diana, arte/patas.json, usam o branco da cabeça dela).
 Outro arquivo de pedidos (--pedidos) pode trocar a pasta das fontes ("fonte"), o arquivo de saída ("saida"),
 a variável global ("variavel"), o prefixo da referência ("prefixo_referencia") e o lado do WebP ("lado"), e lista
 os pedidos em "itens": é assim que os ícones das cartas usam esta mesma ferramenta (arte/cartas.json).
@@ -182,13 +184,42 @@ def webp(png_bytes, lado_final):
     return buf.getvalue()
 
 
+def tom_do_pelo(png_bytes, alvo):
+    """alinha o branco do pelo a um tom (o do retrato do personagem): o branco mais comum da pintura vira o alvo, e os
+    tons claros e neutros (pelo e a sombra dele) andam junto; o rosa, o contorno e o resto não mudam"""
+    im = Image.open(io.BytesIO(png_bytes)).convert("RGBA")
+    px = im.load()
+    w, h = im.size
+    contagem = {}
+    for y in range(0, h, 2):
+        for x in range(0, w, 2):
+            r, g, b, a = px[x, y]
+            if a == 255 and min(r, g, b) > 220:
+                contagem[(r, g, b)] = contagem.get((r, g, b), 0) + 1
+    if not contagem:
+        return png_bytes
+    base = max(contagem, key=contagem.get)
+    fator = [alvo[i] / max(1, base[i]) for i in range(3)]
+    for y in range(h):
+        for x in range(w):
+            r, g, b, a = px[x, y]
+            if a and min(r, g, b) > 150 and max(r, g, b) - min(r, g, b) < 40:
+                px[x, y] = (min(255, round(r * fator[0])), min(255, round(g * fator[1])), min(255, round(b * fator[2])), a)
+    buf = io.BytesIO()
+    im.save(buf, "PNG")
+    return buf.getvalue()
+
+
 def embutir(cfg):
     fonte, saida, variavel, _, lado = opcoes(cfg)
     prontos = {}
+    pelo = cfg.get("pelo") or {}
     for png in sorted(fonte.glob("*.png")):
         dados = png.read_bytes()
         if png.stem in cfg.get("furos", []):      # objetos vazados: o miolo sai transparente (ver furar)
             dados = furar(dados)
+        if png.stem in pelo.get("itens", []):     # o pelo no tom do retrato (ver tom_do_pelo)
+            dados = tom_do_pelo(dados, pelo["alvo"])
         prontos[png.stem] = "data:image/webp;base64," + base64.b64encode(webp(dados, lado)).decode()
     linhas = [f"/* gerado por tools/arte_icones.py a partir de {PEDIDOS.relative_to(RAIZ)}: as versões pintadas (webp em data URI). Vazio = só vetor. */",
               f"window.{variavel} = Object.assign(window.{variavel} || {{}}, {{"]

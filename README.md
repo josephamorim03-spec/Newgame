@@ -58,6 +58,7 @@ e o amigo cai direto na sala. O servidor é a autoridade da partida e roda na Ra
 | `js/audio.js` | efeitos e trilha lo-fi sintetizados na hora (Web Audio, sem arquivos de áudio) |
 | `js/efeitos.js` | partículas, dados voando, chamadas de "bom momento", contagem do placar |
 | `js/pata.js` | as patas da Diana na tela inicial, mexendo nos dados da mesinha |
+| `js/patas_pintadas.js` | a arte pintada das patas e dos efeitos delas (gerada de `arte/patas.json`; `tools/referencias_patas.js` desenha as referências) |
 | `sim/` | regras de referência em Python e os experimentos de balanceamento |
 | `tools/empacotar.py` | gera o HTML único |
 | `tools/lancamentos/` | exporta os lançamentos gravados do Godot e monta `js/lancamentos.js` |

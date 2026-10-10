@@ -388,7 +388,16 @@ A pata é um **sprite de quatro poses**, trocadas como quadros (vetor, no traço
 
 A investida: dorso → virando → palma ao erguer (a palma fica no ar em cima do dado, a ameaça); palma → virando → gancho
 ao descer na aresta de cima do dado; uma ou duas apertadas; puxa o dado pela aresta (ele inclina, arrastado pela
-beirada); gancho → virando → dorso ao soltar, e a pata volta para a borda. A pata da direita é o espelho da da esquerda. Com a Dona Coruja escolhida, não há patas; com as animações desligadas, elas ficam paradas
+beirada); gancho → virando → dorso ao soltar, e a pata volta para a borda. A pata da direita é o espelho da da esquerda.
+
+**A arte pintada das patas** (`arte/patas.json` → `js/patas_pintadas.js`) vem da API de imagem da OpenAI, pela mesma
+ferramenta dos retratos e das cartas (`tools/arte_icones.py --pedidos arte/patas.json`). Cada pose vai junto do próprio
+sprite vetorial como referência (`arte/referencia/pata-<pose>.png`, desenhado por `tools/referencias_patas.js`), para a
+pintura manter o ângulo, as proporções e os dedos; o pelo branco é alinhado ao tom da cabeça pintada da Diana (o
+"pelo" de `arte/patas.json`), para pata e rosto serem do mesmo bicho. Pose sem pintura usa o vetor. Da mesma leva vêm
+dois efeitos: a **poeirinha da batida**, que sai embaixo das pontinhas rosa quando a pata aperta o dado, e o **rastro**
+da pata correndo até o dado. Os pedidos dos efeitos dizem "só isto, nada de dados": com "jogo de dados" no estilo, o
+gerador punha dados (e até um punho) no desenho. Com a Dona Coruja escolhida, não há patas; com as animações desligadas, elas ficam paradas
 na borda.
 
 **A mesa não pisca mais marrom.** O tremor dos disparos de 5 e 6 movia a própria mesa; o transform a fazia virar um
