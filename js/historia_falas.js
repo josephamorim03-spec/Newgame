@@ -138,7 +138,7 @@ window.HISTORIA_FALAS = {
 "C8-07": "Mereceu.",
 "F-01": "Dois, cinco, dois, cinco. / …Parece senha de wi-fi.",
 "F-02": "O três e o quatro não dizem nada. São tipo \"hmm\". Todo texto tem.",
-"F-03": "Fechou. / Faz cócegas.",
+"F-03b": "Faz cócegas. / Cócegas.",
 "F-A": "Fechou. Fechou. / Por que eu estou falando duas vezes? Vezes? / Você pôs um Eco. Eco. / …Passa amanhã. Manhã. / Revanche? Vanche?",
 "F-A2": "Fita complementar perfeita. Eu ensinei bem. Bem.",
 "X-01": "DianaDice não seria um nome melhor para esse jogo? / … / Seria.",
@@ -199,7 +199,7 @@ window.HISTORIA_CENAS = {
 "C8-01": "A primeira fala do jogo, palavra por palavra.",
 "C8-07": "Sem o \"Revanche?\" de sempre: vem a cena da cura.",
 "F-01": "A sua corrente vencedora vira uma fita impressa com as letras embaixo: 2 5 2 5 → C G C G.",
-"F-03": "O ferimento fechado; ela encosta a pata. Antes, um quadro mudo.",
+"F-03b": "O ferimento fechado; ela encosta a pata. Antes, um quadro mudo. (Com esta, o \"Fechou.\" sai daqui e fica só no \"Fechou. Fechou.\" do fecho, e o eco começa já no \"Cócegas.\")",
 "X-01": "Ela risca \"Dice Duel\" com um pincel atômico e escreve por cima: \"DianaDice\".",
 "X-02a": "A Diana, curada, abre a porta. O Sapo de chapéu, com uma xícara turva."
 };

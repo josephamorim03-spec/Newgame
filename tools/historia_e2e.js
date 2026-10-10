@@ -56,9 +56,12 @@ async function vencer(pg, cor, pts) {
     ids.push(...Object.values(Historia.GUIA));
     return { ids, carregadas: Object.keys(window.HISTORIA_FALAS) };
   });
+  // um código usado pela história existe no roteiro e não foi recusado nem posto de reserva; se ainda está pendente,
+  // ele só não aparece (historia_falas.js não o carrega)
   for (const id of usados.ids) {
     const f = aprovadas.find(x => x.id === id);
-    if (!f || f.status !== 'aprovada' || !f.usar) falha(`a história usa ${id}, que não está aprovada para uso`);
+    if (!f || f.status === 'recusada' || f.usar === false) falha(`a história usa ${id}, que não está no roteiro para uso`);
+    else if (f.status !== 'aprovada' && usados.carregadas.includes(id)) falha(`${id} está pendente e foi carregado`);
   }
   for (const id of usados.carregadas) { const f = aprovadas.find(x => x.id === id); if (!f || f.status !== 'aprovada') falha(`historia_falas.js carrega ${id} sem aprovação`); }
   await pg0.close();

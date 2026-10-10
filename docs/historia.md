@@ -538,8 +538,25 @@ a cascata, o impacto e as tarefas do dia.
 8. **Publicar:** a `DiceDuel-primeira-partida` volta para a `DiceDuel` como v0.15. A página vai para o Vercel e o
    servidor para a Railway, que precisa da rota `/api/historia`.
 
+**O dado de cada bicho (4.ª rodada de falas, pendente):** o dono pediu que cada rival tenha o dado dele e que as
+falas conversem com isso: Sapo verde, Diana rosa, Coelho branco clássico, Coruja madeira, Ovelha de lã e Raposa verde
+(roubado do Sapo). Os dados (as skins) e os quadros desenhados são da sessão de arte. Aqui ficaram 16 falas novas,
+cada uma com uma sacada científica de verdade:
+- a Diana não enxerga rosa direito (gatos são dicromatas: veem azul e amarelo);
+- o verde do Sapo é azul com amarelo por cima (sapo não tem pigmento verde) e a cobrança do dado roubado;
+- a Raposa chama o roubo de mimetismo;
+- o Coelho e a sequência de Fibonacci, que nasceu de um problema sobre coelhos;
+- o mel que não estraga, do Urso;
+- a pata molhada do Guaxinim, que sente melhor;
+- a lã da Ovelha, que é queratina, como o chifre;
+- a Ovelha negociando "duas lãs por qualquer coisa, tenho porto", com a cavalaria e o maior exército, e o sete que
+  "move o ladrão" quando você soma um Oposto, sem nome de jogo;
+- a idade nos anéis da madeira da Coruja e os olhos fixos dela.
+
+Elas já estão nos lugares delas em `js/historia.js` e aparecem quando forem aprovadas.
+
 **Pendente com o dono:**
-- a **F-03b** está na página de revisão: tira o "Fechou." repetido antes do "Fechou. Fechou.";
+- a **F-03b** foi aprovada e substituiu a F-03 (que ficou de reserva);
 - a **R-09** ("eu não estava brincando com os seus dados na tela inicial… estava sequenciando") lembrava a pata da
   Diana mexendo nos dados da capa, que saiu do jogo. Os dados ainda estão na capa, mas ela não mexe mais neles, e a
   piada perde o apoio. Fica, sai ou ganha outra versão?

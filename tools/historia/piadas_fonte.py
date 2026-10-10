@@ -185,6 +185,24 @@ F = [
     ('F-03b', 'Diana', 'Q5–Q6 · proposta para não repetir o "Fechou"', 'Faz cócegas. / Cócegas.', 'O ferimento fechado; ela encosta a pata. Antes, um quadro mudo. (Com esta, o "Fechou." sai daqui e fica só no "Fechou. Fechou." do fecho, e o eco começa já no "Cócegas.")', 'fecho'),
     ('F-A', 'Diana', 'Fecho · o Eco', 'Fechou. Fechou. / Por que eu estou falando duas vezes? Vezes? / Você pôs um Eco. Eco. / …Passa amanhã. Manhã. / Revanche? Vanche?', '', 'fecho'),
     ('F-A2', 'Diana', 'Fecho · quadro da 3.ª estrela', 'Fita complementar perfeita. Eu ensinei bem. Bem.', '', 'fecho'),
+
+    # ---- 4.ª rodada: o dado de cada bicho (pedido do dono), com sacada científica; Ovelha com troca e cavalaria ----
+    ('P-07', 'Diana', 'Antes · Q4 (depois do "Não pergunte do nariz")', 'Eu jogo com o dado rosa. / Gato não enxerga rosa direito: a gente vê azul e amarelo. / Escolhi pelo que me disseram.', 'A Diana segurando o dado rosa contra a luz, apertando os olhos. Ciência: gatos são dicromatas (veem azul e amarelo; vermelho e rosa ficam apagados).', 'dados'),
+    ('C1-15', 'Sapo', 'Chegada · Q5 (depois do "você toma o chá")', 'Jogo com dado verde, como eu. / Meu verde, aliás, é azul com amarelo por cima: sapo não tem tinta verde. / O dado tem.', 'O Sapo erguendo o dado verde ao lado do próprio rosto, para comparar. Ciência: o verde dos sapos é luz azul refletida pela pele passando por um pigmento amarelo.', 'dados'),
+    ('C1-16', 'Sapo', 'Depois · Q4 (o último quadro)', 'Ah: se vir uma raposa de cachecol com um dado verde, / o dado é meu.', 'O Sapo apontando para fora do quadro, sério.', 'dados'),
+    ('C2-15', 'Coelho', 'Chegada · Q4 (depois do "reunião grande")', 'Dado branco, clássico. Eu não escolhi: / com quarenta e três filhos, o dado é o que sobra.', 'O Coelho com um dado branco gasto na pata, cercado de coelhinhos com dados coloridos.', 'dados'),
+    ('C2-16', 'Coelho', 'Partida · quando ele dispara 4 ou mais', 'Um, um, dois, três, cinco… / Isso não é corrente. É a minha família.', 'Ciência: a sequência de Fibonacci nasceu de um problema sobre quantos coelhos nascem a cada mês (Liber Abaci, 1202).', 'dados'),
+    ('C3-17', 'Diana', 'Interlúdio · Q3b (depois do "parece mentira")', 'A Raposa está com um dado verde novo. O Sapo está procurando o dele. / Não é coincidência. Quase nada é.', 'O mural no fundo: a foto do Sapo e a da Raposa ligadas por um barbante, com um dado verde desenhado no meio.', 'dados'),
+    ('C3-15', 'Raposa', 'Chegada · Q6 (depois do "Quase.")', 'O dado verde? Combina com o cachecol. / O Sapo chama isso de roubo. Eu chamo de mimetismo.', 'A Raposa encostando o dado verde no cachecol verde: mesma cor. Ciência: mimetismo é quando um bicho imita a aparência de outro (ou do ambiente) para levar vantagem.', 'dados'),
+    ('C4-14', 'Urso', 'Chegada · Q5 (depois do "não acordar")', 'Mel não estraga, sabia? Acharam mel de três mil anos ainda bom. / Eu pretendo durar igual. Dormindo.', 'O Urso abraçado a um pote de mel, já fechando os olhos. Ciência: mel tem pouca água e é ácido; potes de milhares de anos foram achados comestíveis.', 'dados'),
+    ('C5-16', 'Guaxinim', 'Partida · início (sorteada com a C5-07)', 'Eu lavo o dado antes de jogar. / Não é mania: pata molhada sente melhor. Ciência.', 'Ciência: o guaxinim molha as patas porque a água deixa os receptores de tato delas mais sensíveis.', 'dados'),
+    ('C6-13', 'Ovelha', 'Chegada · Q6 (depois do "Ninguém nunca quer a ovelha")', 'Meu dado é de lã. / Lã é queratina, a mesma coisa de chifre e unha. É um chifre que decidiu ser fofo.', 'A Ovelha apertando o dado de lã, que afunda como pelúcia. Ciência: lã, cabelo, unha e chifre são feitos da mesma proteína, a queratina.', 'dados'),
+    ('C6-14', 'Ovelha', 'Partida · início (sorteada com a C6-06)', 'Troco duas lãs por qualquer coisa. Tenho porto.', 'Homenagem aos jogos de tabuleiro de hexágonos (troca 2 por 1 no porto da lã), sem nome de jogo.', 'dados'),
+    ('C6-15', 'Ovelha', 'Partida · quando ela dispara 4 ou mais', 'Cuidado comigo. Tenho cavalaria: três cavaleiros e o maior exército do pasto.', 'Homenagem aos jogos de tabuleiro de hexágonos (os cavaleiros e o maior exército), sem nome de jogo.', 'dados'),
+    ('C6-16', 'Ovelha', 'Partida · o seu primeiro Oposto (somou sete)', 'Somou sete: hora de mexer no ladrão. / …O Guaxinim acabou de passar.', 'Homenagem: num jogo de hexágonos, o 7 move o ladrão; no Dice Duel, o 7 é o Oposto. Ciência: com dois dados, o sete é a soma mais provável (6 em 36).', 'dados'),
+    ('C7-13', 'Coruja', 'Chegada · Q4 (depois do "pronome de tratamento")', 'Jogo com dado de madeira. A madeira guarda a idade nos anéis. / Não conte os meus.', 'A Dona Coruja girando o dado de madeira; os veios aparecem nas faces. Ciência: dendrocronologia, a idade de uma árvore lida nos anéis.', 'dados'),
+    ('C7-14', 'Coruja', 'Partida · início (sorteada com a C7-04)', 'Coruja não mexe os olhos: vira a cabeça. Por isso vejo a Mesa inteira.', 'Ciência: os olhos da coruja são fixos no crânio; ela gira a cabeça até uns 270 graus.', 'dados'),
+    ('C8-08', 'Diana', 'Partida · ruptura dela (sorteada com a C8-05)', 'Arrisquei demais. Em minha defesa, gato não enxerga o vermelho do perigo.', 'Retorno da P-07 (gato não enxerga rosa nem vermelho direito).', 'dados'),
     # Pós-créditos
     ('X-01', 'Diana', 'Pós-créditos 1', 'DianaDice não seria um nome melhor para esse jogo? / … / Seria.', 'Ela risca "Dice Duel" com um pincel atômico e escreve por cima: "DianaDice".', 'letra-d'),
     ('X-02a', 'Sapo + Diana', 'Pós-créditos 2 · opção a', 'SAPO: Soube da cura. Trouxe chá. / DIANA: É do lago? / SAPO: Orgânico.', 'A Diana, curada, abre a porta. O Sapo de chapéu, com uma xícara turva.', 'cha'),
@@ -194,7 +212,7 @@ F = [
 GAGS = {
     'nariz': 'O nariz (o enfeite muda a cada capítulo)', 'mural': 'O mural', 'letra-d': 'A teoria do D', 'receitas': 'O caderno de "receitas"',
     'pao': 'O pão do Coelho', 'sabem': 'Quem sabe de alguma coisa', 'pata': 'A pata', 'revanche': '"Revanche?"', 'cha': 'O chá do Sapo',
-    'fecho': 'O fecho da história (o Eco)',
+    'fecho': 'O fecho da história (o Eco)', 'dados': 'O dado de cada bicho (e a ciência por trás)',
 }
 
 
@@ -223,7 +241,7 @@ def main():
     DO_DONO = {'R-05'}
     # o dono aprovou as duas opções de cada par (2.ª rodada). As das páginas se completam e entram juntas (o título com
     # os ingredientes e a nota da margem); nos pares que se excluem, a escolhida entra e a outra fica de reserva
-    RESERVA = {'G-03a', 'C3-04b', 'C4-04a', 'C2-14b', 'C7-10a', 'X-02b'}
+    RESERVA = {'G-03a', 'C3-04b', 'C4-04a', 'C2-14b', 'C7-10a', 'X-02b', 'F-03'}   # a F-03 deu lugar à F-03b (aprovada)
     ids = [f[0] for f in F]
     assert len(ids) == len(set(ids)), 'código repetido'
     falas = []
