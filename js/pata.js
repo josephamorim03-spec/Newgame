@@ -6,9 +6,10 @@
  * Cada dado é da pata do lado dele: o da esquerda, a pata da esquerda; o da direita, a da direita; o do meio, qualquer
  * uma (meio a meio). Erguer a pata é ela crescer um pouco e a sombra no feltro se afastar, como se viesse na direção de
  * quem olha. Com as animações desligadas (Ajustes ou "reduzir movimento"), as patas ficam paradas na borda.
- * A pata tem duas poses: "dorso" (vista de cima, apoiada, e assim ela vai até o dado) e "gancho" (os dedos dobrados por
- * cima da aresta do dado, as pontinhas rosa pegando na face). A troca é direta, sem quadros de giro no meio: as poses
- * intermediárias (virando, palma) saíram porque a virada ficava estranha. A pata da direita é o espelho da da esquerda.
+ * A pata tem duas poses: "dorso" (vista de cima, apoiada, e assim ela vai até o dado) e "palma" (a parte de baixo, com
+ * a almofada maior e os quatro feijõezinhos rosa: a pata aberta apertando o dado). A troca é direta, sem quadros de
+ * giro no meio. Já houve outras ("virando", "gancho"), que ficavam estranhas e saíram. A pata da direita é o espelho
+ * da da esquerda.
  * A arte pintada (js/patas_pintadas.js, gerada pela API de imagem com arte/patas.json e o vetor de cada pose como
  * referência) entra no lugar do vetor de cada pose que a tem; sem ela, fica o vetor. Dela vêm também os efeitos: a
  * poeirinha da batida, quando a pata encosta no dado, e o rastro da pata que corre até o dado.
@@ -16,8 +17,8 @@
  */
 (function () {
   'use strict';
-  const PELO = '#f8f6f2', SOMBRA = '#e4e1dc', CACAU = '#3a2a2e', ROSA = '#f19bb3';
-  const POSES = ['dorso', 'gancho'];
+  const PELO = '#f8f6f2', SOMBRA = '#e4e1dc', CACAU = '#3a2a2e', ROSA = '#f19bb3', ROSA_SOMBRA = '#d97894';
+  const POSES = ['dorso', 'palma'];
   let atual = null;   // { cena, svg, cb, token, timer, P: [esquerda, direita], m, alvo }
 
   const esperar = ms => new Promise(r => setTimeout(r, ms));
@@ -49,24 +50,24 @@
       + `<path d="M${-rx * 0.82} ${ry * 0.35} q ${rx * 0.82} ${ry * 0.9} ${rx * 1.64} 0" fill="none" stroke="${SOMBRA}" stroke-width="${L * 0.16}" stroke-linecap="round"/>`
       + dedo(-rx * 0.34, -L * 0.05) + dedo(rx * 0.34, L * 0.05);
   }
-  // gancho: os dedos dobrados por cima da aresta do dado. A palma (uma elipse larga) e quatro dedos redondos em arco
-  // na ponta, num contorno só (primeiro tudo em cacau, mais grosso; por cima, tudo em branco); entre os dedos, vãos
-  // curtos; embaixo de cada dedo, só uma lasquinha rosa da almofada, a parte que aperta a face do dado
-  function gancho(L) {
-    const borda = L * 0.2;
-    const formas = [[0, -L * 0.08, L * 0.88, L * 0.56], ...[[-0.62, 0.36], [-0.21, 0.47], [0.21, 0.47], [0.62, 0.36]].map(([x, y]) => [x * L, y * L, L * 0.27, L * 0.25])];
-    const contorno = formas.map(([x, y, rx, ry]) => el(x, y, rx + borda / 2, ry + borda / 2, CACAU)).join('');
-    const pelo = formas.map(([x, y, rx, ry]) => el(x, y, rx - borda / 2, ry - borda / 2, PELO)).join('');
-    const lasca = formas.slice(1).map(([x, y]) => el(x, y + L * 0.27, L * 0.15, L * 0.075, ROSA, 0.07, L)).join('');
-    const vao = (x, y) => `<path d="M${x * L} ${y * L} l 0 ${-L * 0.16}" stroke="${CACAU}" stroke-width="${L * 0.1}" stroke-linecap="round"/>`;
-    return contorno + lasca + pelo
-      + `<path d="M${-L * 0.62} ${-L * 0.32} q ${L * 0.62} ${-L * 0.3} ${L * 1.24} 0" fill="none" stroke="${SOMBRA}" stroke-width="${L * 0.13}" stroke-linecap="round"/>`
-      + vao(-0.42, 0.36) + vao(0, 0.4) + vao(0.42, 0.36);
+  // a almofada maior (a "palma"): três lobos embaixo, como a de verdade
+  function almofada(L, cx, cy, s) {
+    const u = L * s, p = (x, y) => `${cx + x * u} ${cy + y * u}`;
+    return `<path d="M${p(-0.46, -0.02)} C${p(-0.44, -0.3)} ${p(0.44, -0.3)} ${p(0.46, -0.02)} C${p(0.5, 0.26)} ${p(0.34, 0.4)} ${p(0.17, 0.33)} C${p(0.08, 0.43)} ${p(-0.08, 0.43)} ${p(-0.17, 0.33)} C${p(-0.34, 0.4)} ${p(-0.5, 0.26)} ${p(-0.46, -0.02)}Z" fill="${ROSA}" stroke="${ROSA_SOMBRA}" stroke-width="${L * 0.06}"/>`;
   }
-  const SPRITE = { dorso, gancho };
+  // palma: a pata erguida, de frente para quem olha, com os dedos para cima: a almofada maior embaixo e os quatro
+  // feijõezinhos em arco por cima dela; pelo branco em volta
+  function palma(L) {
+    const rx = L * 0.92, ry = L * 0.86;
+    const feijao = (x, y, r) => el(x * L, y * L, L * 0.19 * r, L * 0.22 * r, ROSA, 0, L, ` stroke="${ROSA_SOMBRA}" stroke-width="${L * 0.05}"`);
+    return el(0, 0, rx, ry, PELO, 0.2, L)
+      + almofada(L, 0, L * 0.3, 0.95)
+      + feijao(-0.56, -0.2, 0.95) + feijao(-0.2, -0.5, 1) + feijao(0.2, -0.5, 1) + feijao(0.56, -0.2, 0.95);
+  }
+  const SPRITE = { dorso, palma };
   // a arte pintada de cada pose e dos efeitos (o quadrado do webp, em larguras L: o desenho ocupa o lado maior dele)
   const pintada = id => (window.PATAS_PINTADAS || {})[id];
-  const LADO_PINTADA = { dorso: 2.15, gancho: 2.15, batida: 2.1, rastro: 2.2 };
+  const LADO_PINTADA = { dorso: 2.15, palma: 2.25, batida: 2.1, rastro: 2.2 };
   const imagem = (id, L) => { const t = LADO_PINTADA[id] * L; return `<image href="${pintada(id)}" x="${-t / 2}" y="${-t / 2}" width="${t}" height="${t}"/>`; };
   const poseSVG = (p, L, k) => (pintada(p) ? imagem(p, L) : SPRITE[p](L, k));
 
@@ -157,8 +158,8 @@
     return i < meio ? 0 : 1;
   }
 
-  // uma investida: a pata ergue da borda (dorso), vai até o dado, desce na aresta de cima dele já com os dedos dobrados
-  // (gancho), aperta uma ou duas vezes, puxa o dado pela aresta na direção dela, solta (dorso) e volta para a borda
+  // uma investida: a pata ergue da borda (dorso), vai até o dado, desce nele aberta (palma, as almofadinhas no dado),
+  // aperta uma ou duas vezes, puxa o dado na direção dela, solta (dorso) e volta para a borda
   async function investida(c) {
     if (!montar(c)) return;
     const m = c.m, i = Math.floor(Math.random() * m.dados.length), d = m.dados[i], k = pataDoDado(i, m.dados.length);
@@ -168,8 +169,8 @@
     // a pata não passa pelo rosto: erguer é o "e" (ela cresce e a sombra se afasta), não subir na tela
     const ergue = { x: casa.x + (d.x - casa.x) * 0.25, y: Math.max(m.chao, casa.y + m.larg * 0.4), e: 1 };
     const acima = { x: d.x + (casa.x - d.x) * 0.12, y: Math.max(m.chao, d.y - d.t * 0.45), e: 1 };
-    // na aresta: a ponta dos dedos (os feijões) cobre um pouco da face de cima do dado
-    const aresta = { x: d.x, y: Math.max(m.chao, d.y - d.t * 0.5 - m.larg * 0.25), e: 0 };
+    // no dado: a palma aberta em cima da metade de cima da face (os feijõezinhos passam da aresta)
+    const noDado = { x: d.x, y: Math.max(m.chao, d.y - d.t * 0.28), e: 0 };
     // ergue
     if (!(await mover(c, k, ergue, 200, suave))) return;
     // o rastro da corrida até o dado, no meio do caminho e na direção dele
@@ -178,22 +179,22 @@
     efeito(c, 'rastro', (ergue.x + acima.x) / 2, (ergue.y + acima.y) / 2, 360, praEsquerda ? rumo - 180 : rumo, 0.7, 1, praEsquerda);
     if (!(await mover(c, k, acima, 300, suave))) return;
     await esperar(220 + Math.random() * 220);   // a ameaça: a pata no ar, em cima do dado
-    // desce e engancha na aresta
-    if (!(await quadros(c, k, ['gancho'], 0))) return;
+    // desce com a pata aberta
+    if (!(await quadros(c, k, ['palma'], 0))) return;
     const batidas = Math.random() < 0.5 ? 2 : 1;
     for (let b = 0; b < batidas; b++) {
-      if (!(await mover(c, k, aresta, 110, t => t * t))) return;
+      if (!(await mover(c, k, noDado, 110, t => t * t))) return;
       d.el.classList.remove('cutucado'); void d.el.offsetWidth; d.el.classList.add('cutucado');
-      // a poeirinha sai embaixo das pontinhas, na face do dado (atrás da pata, que fica por cima)
-      efeito(c, 'batida', aresta.x, aresta.y + m.larg * 1.05, 320, Math.random() * 40 - 20, 0.55, 1.25);
+      // a poeirinha sai embaixo da palma, na face do dado (atrás da pata, que fica por cima)
+      efeito(c, 'batida', noDado.x, noDado.y + m.larg * 1.15, 320, Math.random() * 40 - 20, 0.55, 1.25);
       if (c.cb.aoBater) c.cb.aoBater(i, b);
-      if (b < batidas - 1 && !(await mover(c, k, { x: aresta.x, y: Math.max(m.chao, aresta.y - d.t * 0.2), e: 0.5 }, 130, salto))) return;
+      if (b < batidas - 1 && !(await mover(c, k, { x: noDado.x, y: Math.max(m.chao, noDado.y - d.t * 0.2), e: 0.5 }, 130, salto))) return;
     }
-    // puxa o dado pela aresta, na direção da borda do lado dela; o dado inclina como quem é arrastado pela beirada; a
+    // puxa o dado pela noDado, na direção da borda do lado dela; o dado inclina como quem é arrastado pela beirada; a
     // cabeça acompanha, travessa
     if (cab) cab.classList.add('travessa');
-    const puxa = { x: aresta.x + (casa.x - aresta.x) * 0.25, y: Math.max(m.chao, aresta.y - d.t * 0.3), e: 0.1 };
-    const ok = await mover(c, k, puxa, 420, suave, P => puxar(d, P.x - aresta.x, P.y - aresta.y, (P.x - aresta.x) * 0.5 + (P.y - aresta.y) * (k ? 0.6 : -0.6)));
+    const puxa = { x: noDado.x + (casa.x - noDado.x) * 0.25, y: Math.max(m.chao, noDado.y - d.t * 0.3), e: 0.1 };
+    const ok = await mover(c, k, puxa, 420, suave, P => puxar(d, P.x - noDado.x, P.y - noDado.y, (P.x - noDado.x) * 0.5 + (P.y - noDado.y) * (k ? 0.6 : -0.6)));
     await esperar(ok ? 260 : 0);
     soltar(d); c.alvo = null;
     if (cab) cab.classList.remove('travessa');

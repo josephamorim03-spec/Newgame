@@ -390,14 +390,14 @@ parece meu.", "Só estou olhando.", "Calma. Ainda não peguei."). Tocar num dado
 voltarem depressa para a borda. A pata não sobe pela tela (passaria pelo rosto): erguer é ela crescer um pouco e a
 sombra no feltro se afastar.
 
-A pata tem **duas poses** (vetor e pintura, no traço de cacau e no branco da Diana):
+A pata tem **duas poses** (pintadas, no traço de cacau e no branco da Diana; o vetor fica de reserva):
 - **dorso:** vista de cima, apoiada na borda, com os vãos dos dedos; é assim que ela ergue e vai até o dado;
-- **gancho:** os dedos dobrados por cima da aresta do dado, num contorno só, com uma lasquinha rosa embaixo de cada
-  ponta apertando a face dele.
+- **palma:** a parte de baixo, com a almofada maior de três lobos e os quatro feijõezinhos rosa: a pata aberta em cima
+  do dado, apertando e puxando.
 
-A troca é direta: chegando no dado, dorso vira gancho; soltando, gancho vira dorso. Houve uma versão com quadros de
-giro no meio ("virando" e "palma", a pata mostrando as almofadinhas rosa ao erguer), mas a virada ficava estranha em
-qualquer eixo e saiu.
+A troca é direta: chegando no dado, dorso vira palma; soltando, palma vira dorso. Já houve outras poses, todas fora por
+ficarem estranhas: "virando" (o giro entre as duas, de lado e depois de cima para baixo) e "gancho" (os dedos dobrados
+por cima da aresta do dado).
 
 **A arte pintada das patas** (`arte/patas.json` → `js/patas_pintadas.js`) vem da API de imagem da OpenAI, pela mesma
 ferramenta dos retratos e das cartas (`tools/arte_icones.py --pedidos arte/patas.json`). Cada pose vai junto do próprio
