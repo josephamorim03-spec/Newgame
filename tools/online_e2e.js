@@ -217,6 +217,7 @@ const espera = ms => new Promise(r => setTimeout(r, ms));
     // (não pode virar um pedido de revanche)
     await ana.waitForFunction(() => DiceDuel.jogo.fase === 'fim', null, { timeout: 5000 });
     await ana.evaluate(() => { document.getElementById('janelaOnline').hidden = true; DiceDuel.abrirInicio(); });
+    await ana.evaluate(() => { DiceDuel.st.guia.estreia = true; });   // a estreia tem o próprio teste
     await ana.click('[data-inicio="jogar"]'); await ana.click('[data-inicio="comecar"]');
     await ana.waitForFunction(() => DiceDuel.jogo && DiceDuel.jogo.modo === 'bot', null, { timeout: 5000 });
     const anaDepois = await ana.evaluate(() => ({ menu: !document.getElementById('inicio').hidden, sala: localStorage.getItem('diceduel.sala') }));

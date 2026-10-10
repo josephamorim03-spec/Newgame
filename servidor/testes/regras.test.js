@@ -323,3 +323,53 @@ test('vez no automático: termina a vez em qualquer situação; 3 seguidas = W.O
   assert.strictEqual(k.log[0].txt, `ficou ${Regras.AUTO_MAX} vezes seguidas sem jogar a tempo`);
   assert.deepStrictEqual(Regras.visaoDe(k, 1).auto, [2, 3]);   // a conta vai na visão de cada um, na ordem de quem vê
 });
+
+// os bons momentos de decisão (docs/design.md §6): a Paciência premia segurar uma corrente que já podia disparar
+test('Paciência: segurar e disparar maior vira momento; romper, ou disparar do mesmo tamanho, não', () => {
+  const novo = () => { const j = Regras.criarPartida({ decks: [[], []], vez: 0, meta: 16, rng: rngDe(11) }); j.bolso = [null, null]; return j; };
+  const segurarCom = (j, cor) => { j.vez = 0; j.fase = 'decidir'; j.cor[0] = cor; assert.ok(Regras.aplicar(j, 0, { tipo: 'segurar' }).ok); };
+  const dispararCom = (j, cor) => { j.vez = 0; j.fase = 'decidir'; j.cor[0] = cor; j.eventos.length = 0; assert.ok(Regras.aplicar(j, 0, { tipo: 'disparar' }).ok); };
+  const paciencia = j => j.momentos.filter(m => m.p === 0 && m.txt.startsWith('Paciência'));
+
+  const rendeu = novo();
+  segurarCom(rendeu, [1, 2, 3]);
+  assert.strictEqual(rendeu.stats[0].segurou, 3);
+  segurarCom(rendeu, [1, 2, 3, 4]);
+  assert.strictEqual(rendeu.stats[0].segurou, 3, 'vale a primeira vez que a corrente foi segurada');
+  dispararCom(rendeu, [1, 2, 3, 4, 5]);
+  assert.strictEqual(paciencia(rendeu).length, 1);
+  assert.match(paciencia(rendeu)[0].txt, /corrente de 3 e disparou com 5 \(\+4 em vez de \+1\)/);
+  assert.deepStrictEqual(rendeu.eventos.filter(e => e.tipo === 'paciencia').map(e => [e.de, e.L, e.ganho, e.antes]), [[3, 5, 4, 1]]);
+  assert.strictEqual(rendeu.stats[0].segurou, 0, 'o disparo zera');
+
+  const mesmo = novo();
+  segurarCom(mesmo, [1, 2, 3, 4]); dispararCom(mesmo, [1, 2, 3, 4]);
+  assert.strictEqual(paciencia(mesmo).length, 0, 'do mesmo tamanho não rendeu nada a mais');
+
+  const pouco = novo();
+  segurarCom(pouco, [1, 2, 3]); dispararCom(pouco, [1, 2, 3, 4]);
+  assert.strictEqual(paciencia(pouco).length, 0, 'de 3 para 4 (+2 em vez de +1) é o lance comum: não vira momento');
+
+  const quatro = novo();
+  segurarCom(quatro, [1, 2, 3, 4]); dispararCom(quatro, [1, 2, 3, 4, 5]);
+  assert.strictEqual(paciencia(quatro).length, 1, 'de 4 para 5 (+4 em vez de +2) vira');
+
+  const rompeu = novo();
+  segurarCom(rompeu, [1, 2, 3]);
+  rompeu.vez = 0; rompeu.fase = 'pegar'; rompeu.mesa[0].v = 6; rompeu.bolso[0] = 6;   // o 6 não sincroniza com o 3
+  assert.ok(Regras.aplicar(rompeu, 0, { tipo: 'pegar', idx: 0, modo: 'corrente' }).ok);
+  assert.strictEqual(rompeu.cor[0].length, 0); assert.strictEqual(rompeu.stats[0].segurou, 0, 'a ruptura zera');
+  dispararCom(rompeu, [2, 3, 4, 5, 6]);
+  assert.strictEqual(paciencia(rompeu).length, 0, 'a corrente nova não foi segurada');
+
+  // o rival não vê o contador (as estatísticas dele vão por lista)
+  assert.strictEqual('segurou' in Regras.visaoDe(rendeu, 1).stats[1], false);
+});
+
+test('o elo diz quais sincronias o dado fez e entre quais números (o guia da estreia nomeia cada uma)', () => {
+  const j = Regras.criarPartida({ decks: [[], []], vez: 0, meta: 8, rng: rngDe(12) });
+  j.bolso = [null, null]; j.cor[0] = [3]; j.mesa[0].v = 4; j.eventos.length = 0;
+  assert.ok(Regras.aplicar(j, 0, { tipo: 'pegar', idx: 0, modo: 'corrente' }).ok);
+  const elo = j.eventos.find(e => e.tipo === 'elo');
+  assert.deepStrictEqual([elo.rels, elo.de, elo.v], [['passo', 'oposto'], 3, 4]);
+});

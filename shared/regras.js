@@ -153,7 +153,8 @@
   // rng não vai no estado (não é serializável): fica numa propriedade não enumerável
   const sorte = j => (j.__rng || Math.random)();
   const rolar = j => 1 + Math.floor(sorte(j) * 6);
-  const novoStats = () => ({ disp: 0, rupt: 0, maior: 0, maiorDisp: 0, compras: 0, guardou: 0, trocou: 0, cartas: [] });
+  // segurou: o tamanho da corrente na primeira vez que ela foi segurada (0: não foi); vira o momento "Paciência"
+  const novoStats = () => ({ disp: 0, rupt: 0, maior: 0, maiorDisp: 0, compras: 0, guardou: 0, trocou: 0, cartas: [], segurou: 0 });
   const novoId = j => (j.proxId = (j.proxId || 1) + 1);
 
   function criarPartida({ decks, vez = 0, meta = META_PADRAO, nomes = ['Jogador 1', 'Jogador 2'], modo = 'bot', nivel = 'aprendiz', rng = null, idInicial = 1 }) {
@@ -383,14 +384,14 @@
         if (viaCoringa) eu[eu.length - 1] = entra; else eu.push(entra);
         registrar(j, p, viaCoringa ? `pôs ${entra}${deOnde} · Remendo: entrou no lugar do ${trocada} · corrente de ${eu.length}`
           : `pôs ${entra}${deOnde} · ${r.length ? r.map(k => REL[k].nome).join(' + ') : 'começa a corrente'} · corrente de ${eu.length}`);
-        emitir(j, 'elo', { p, n: eu.length, coringa: !!viaCoringa });
+        emitir(j, 'elo', { p, n: eu.length, coringa: !!viaCoringa, rels: viaCoringa ? [] : r, de: viaCoringa ? trocada : frente(eu.slice(0, -1)), v: entra });
         if (salvouPeloBolso) { emitir(j, 'salvo', { p, txt: 'O Bolso salvou a corrente' }); momento(j, p, '❀', `O Bolso salvou uma corrente de ${eu.length - 1}`); }
       } else if (j.armada[p] === 'ancora' && eu.length >= 4) {
         revelar(j, p, 'ancora', `o ${entra} não sincronizava com ${frente(eu)}: foi descartado e a corrente de ${eu.length} ficou.`);
         emitir(j, 'salvo', { p, txt: 'A Âncora segurou a corrente' }); momento(j, p, '❀', `A Âncora salvou uma corrente de ${eu.length}`);
       } else {
         const perdida = eu.slice();
-        j.stats[p].rupt++;
+        j.stats[p].rupt++; j.stats[p].segurou = 0;
         j.cor[p] = [];
         j.fx = { id: novoId(j), p, tipo: 'ruptura', dados: perdida.concat(entra) };
         registrar(j, p, `pôs ${entra}${deOnde}, que não sincroniza com ${frente(perdida)}: a corrente de ${perdida.length} rompeu`, 'ruim');
@@ -437,6 +438,15 @@
     j.cor[p] = [];
     registrar(j, p, `${auto ? 'completou 6 e disparou' : 'disparou'} uma corrente de ${L}${extra}: +${ganho} (total ${j.pts[p]})`, 'bom');
     emitir(j, 'disparo', { p, L, ganho, harm, de: antes[p] });
+    // Paciência: a corrente que já podia disparar foi segurada e rendeu mais. É o momento de uma decisão, não de um
+    // resultado: quem segurou correu o risco de romper e acertou. Compara o ganho de verdade (com Sobrecarga e
+    // Interferência) com o que a corrente valia quando foi segurada, e pede 2 pontos a mais: segurar a de 3 e disparar
+    // a de 4 (+2 em vez de +1) é o lance comum e, festejado toda vez, perderia o valor (saiu 3 vezes numa partida só)
+    const esperou = j.stats[p].segurou || 0; j.stats[p].segurou = 0;
+    if (esperou && ganho - pontos(esperou) >= 2) {
+      momento(j, p, '⧗', `Paciência: segurou a corrente de ${esperou} e disparou com ${L} (+${ganho} em vez de +${pontos(esperou)})`);
+      emitir(j, 'paciencia', { p, de: esperou, L, ganho, antes: pontos(esperou) });
+    }
     if (L === 6) momento(j, p, '★', 'Sinfonia: corrente completa de 6');
     else if (L === 5) momento(j, p, '♪', 'Disparou uma corrente de 5');
     if (harm) momento(j, p, '✿', `Harmonia: todos os elos em ${REL[harm].nome}`);
@@ -449,7 +459,10 @@
     proximo(j);
     return 'proximo';
   }
-  function segurar(j, p) { registrar(j, p, `segurou a corrente de ${j.cor[p].length}`); proximo(j); return 'proximo'; }
+  function segurar(j, p) {
+    if (!j.stats[p].segurou) j.stats[p].segurou = j.cor[p].length;
+    registrar(j, p, `segurou a corrente de ${j.cor[p].length}`); proximo(j); return 'proximo';
+  }
 
   function proximo(j) {
     j.fase = 'pegar'; j.segundoDado = false; j.extra = [0, 0]; j.vezes = (j.vezes || 0) + 1;

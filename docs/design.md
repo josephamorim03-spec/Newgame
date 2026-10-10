@@ -194,10 +194,33 @@ evitar o Bolso sem saber) perdeu mais do que as armadilhas tiram. O jogo diz iss
 
 ## 5. Primeiras partidas (onboarding)
 
-- **Primeira visita:** o menu principal; o Jogar abre o deck "Primeira mesa" (só efeitos) por cima dele, e a rival
-  é a Diana (a mais fácil).
-- **Armadilhas:** chegam depois da primeira partida (ou em Ajustes → "Todas as cartas liberadas").
-  A Diana também só usa efeitos até lá.
+**A estreia (v0.14).** Até a v0.13, quem tocava em Jogar pela primeira vez escolhia o rival e caía na tela de montar
+o deck, com 15 cartas (várias com preço da Loja), antes de rolar um dado; depois vinha uma partida inteira até 16 com
+Eco, Passo, Oposto, Bolso, disparo e três cartas ao mesmo tempo. Os jogos que ensinam bem fazem o contrário: a primeira
+batalha do Clash Royale tem deck fixo e sem relógio, o Marvel Snap libera os tipos de carta em ordem, o Balatro ensina
+pela própria partida. Agora:
+- **Primeira partida:** o Jogar começa direto uma partida contra a Diana, **até 8 pontos e sem cartas** dos dois lados
+  (sem escolha de rival, sem deck). Você começa; a Diana, que joga em segundo, ganha o dado no Bolso de sempre das
+  partidas sem cartas. O versus diz o que fazer em uma frase. Ela vale como uma partida contra a Diana (rating,
+  moedas na vitória, experiência, recordes).
+- **Segunda partida:** o caminho de antes: a escolha do rival e o deck "Primeira mesa" (só efeitos) por cima dela.
+- **Armadilhas:** chegam depois da primeira partida **com cartas** (a estreia não conta), ou em Ajustes → "Todas as
+  cartas liberadas". A Diana também só usa efeitos até lá.
+- **Quem já jogava** (recordes ou deck no aparelho, ou uma conta que já jogou, ao entrar nela) não passa pela estreia
+  nem pelas explicações.
+
+**O guia: nomear depois de fazer.** Cada explicação aparece **uma vez**, logo depois de a pessoa fazer a coisa, e não
+antes: a descoberta é dela, o jogo só dá o nome (o prazer de "entender sozinho" é o mesmo da piada que se resolve na
+cabeça de quem ouve). São cinco:
+
+| Quando | Chamada |
+|---|---|
+| o primeiro Eco, Passo e Oposto da pessoa | "Passo!" · "4 e 3: um a mais ou um a menos sincroniza." (com os números do lance) |
+| a primeira corrente de 3, na hora de decidir | "Já dá para disparar" · disparar marca agora; segurar arrisca, mas vale mais (3 +1, 4 +2, 5 +4, 6 +6) |
+| a primeira ruptura de 2 dados ou mais | "A corrente rompeu" · um dado guardado no Bolso pode salvar a corrente numa hora dessas |
+
+Valem em qualquer partida (também online), até aparecerem. Com as ajudas desligadas não aparecem e não ficam marcadas.
+O que já apareceu fica no aparelho (`guia` no `diceduel.v1`), não na conta.
 - **Prévia antes de confirmar:** ao escolher o alvo de Virar ou Ajuste, cada dado mostra como ficaria.
   Cancelar devolve a carta.
 
@@ -214,6 +237,7 @@ evitar o Bolso sem saber) perdeu mais do que as armadilhas tiram. O jogo diz iss
 | Esquiva (o dono do Espelho teve de pegar o próprio dado) | "Esquiva!" para quem desviou |
 | Armadilha que pega | revelação com brilho e o nome da carta |
 | Virada (vencer depois de estar 4+ pontos atrás) | "Virada!" no fim |
+| Paciência (v0.14): segurou uma corrente que já podia disparar e ela rendeu **2 pontos ou mais** a mais | "Valeu esperar!" na hora (com 6, a Sinfonia já festeja) e, no fim, "Paciência: segurou a corrente de 3 e disparou com 5 (+4 em vez de +1)" com uma ampulheta |
 | Fim de partida | lista de **bons momentos** (repetições viram "×2"), **recordes** (maior disparo, maior corrente, melhor sequência) e confete na vitória |
 
 **Tocar escolhe, não pega (v0.9.2).** Um toque sem querer não pode custar a partida:
@@ -235,6 +259,11 @@ nunca perder rating.
 
 **Perder também é aconchegante.** A ruptura é um "plonc" descendente com poeirinha caindo devagar, nunca um
 estrondo. A derrota diz "Fim de partida" e mostra os bons momentos da partida.
+
+**A tela do fim sem "+0" (v0.14).** Na derrota, a tela abria com uma moeda grande e "+0", e logo abaixo o rating
+caindo: a primeira coisa lida era o que não se ganhou (o risco que `docs/progressao.md` §7 já apontava). Agora, sem
+moedas (derrota, ou teto do rival), não há número grande: os **bons momentos vêm primeiro**, depois a experiência
+(que sobe sempre), o rating e, miúda, a linha das moedas. Na vitória com moedas, nada muda.
 
 **O tom (v0.9):** aconchegante, mas adulto e bonito. Nada de falas infantis ("que vitória gostosa", "doce como
 algodão-doce"). Os textos são curtos e sóbrios, como um bom adversário de mesa falaria: "Boa leitura da Mesa",
@@ -490,4 +519,7 @@ para 977"). Online o relógio é o da sala (tempo por vez escolhido ao criá-la,
   as rupturas e o uso do Bolso.
 - **Medir no teste** se a Interferência ainda pesa demais com gente e se Espelho, Rerrolar e Virar são fracos
   de verdade ou só no robô.
+- **Medir a estreia com gente (v0.14):** quantos terminam a primeira partida e quantos começam a segunda; se as
+  chamadas do guia (4,2 s, no alto da Mesa) são lidas ou atrapalham a vez da Diana; e se a Paciência aparece de vez em
+  quando (rara demais, ninguém a vê; comum demais, perde o valor).
 - **Medir o "?" com gente:** se o rival passa a disparar de 3 para fugir da Interferência quando ela pode estar armada.

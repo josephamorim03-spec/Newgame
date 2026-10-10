@@ -83,7 +83,8 @@ function tocar([semente, modo]) {
       DiceDuel.ajustar({ animacoes: c.anim, liberar: true, som: false, musica: false });
     }, r);
     // começa pelo menu principal, como quem abre o jogo (depois o menu volta pela Pausa e pelo fim)
-    await pg.click('[data-inicio="jogar"]'); await pg.click('[data-inicio="comecar"]');
+    // na primeira visita o Jogar começa direto a estreia (sem a escolha do rival): o macaco passa por ela também
+    await pg.click('[data-inicio="jogar"]'); if (await pg.$('#inicioRivais:not([hidden])')) await pg.click('[data-inicio="comecar"]');
     let ultimaSig = '', desde = Date.now(), partidas = 0, ultimo = '';
     const rastro = [];
     for (let i = 0; i < PASSOS; i++) {

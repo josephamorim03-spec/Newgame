@@ -23,6 +23,7 @@ fs.mkdirSync(FOTOS, { recursive: true });
     pg.on('console', m => { if (m.type() === 'error' && !/fonts\.g/.test(m.text())) erros.push(`${r.nome} console: ${m.text()}`); });
     await pg.goto('file://' + path.join(RAIZ, 'index.html'));
     await pg.waitForTimeout(500);
+    await pg.evaluate(() => { DiceDuel.st.guia.estreia = true; });   // a estreia tem o próprio teste (tools/estreia_e2e.js)
     // o jogo abre no menu principal; na primeira visita o Jogar leva à tela de montar o deck, com as armadilhas travadas
     if (r.nome === 'celular') await pg.screenshot({ path: path.join(FOTOS, 'inicio-celular.png') });
     await pg.click('[data-inicio="jogar"]'); await pg.waitForTimeout(150);   // Jogar abre a escolha do rival

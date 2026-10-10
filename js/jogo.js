@@ -41,7 +41,9 @@
   if (pintada('moeda')) { document.documentElement.style.setProperty('--moeda-img', `url("${pintada('moeda')}")`); document.documentElement.classList.add('moeda-pintada'); }
   // os símbolos dos "Bons momentos" do fim da partida, pintados (js/momentos_pintados.js) quando existem
   const MOMENTO_ID = { '☾': 'virada', '★': 'sinfonia', '✿': 'harmonia', '✧': 'truque', '❀': 'salvou', '↺': 'esquiva', '✦': 'bloqueio', '♪': 'nota', '✪': 'recorde' };
-  const srcMomento = c => (c === '☕' ? (window.RETRATOS_PINTADOS || {}).xicara : (window.MOMENTOS_PINTADOS || {})[MOMENTO_ID[c]]);
+  // a Paciência (segurou e rendeu) ainda não tem pintura: uma ampulheta em vetor, no contorno e nas cores dos adesivos
+  const AMPULHETA = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><g stroke="#3a2a2e" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"><path d="M19 14h26c0 10-9 14-9 18s9 8 9 18H19c0-10 9-14 9-18s-9-8-9-18z" fill="#fffaf0"/><rect x="13" y="6" width="38" height="8" rx="3" fill="#a86c45"/><rect x="13" y="50" width="38" height="8" rx="3" fill="#a86c45"/></g><path d="M25 21h14c-1.5 4-5 6-7 8-2-2-5.5-4-7-8z" fill="#f2b15e"/><path d="M22.5 47c2-5 6-7.5 9.5-8.5 3.5 1 7.5 3.5 9.5 8.5z" fill="#f2b15e"/></svg>');
+  const srcMomento = c => (c === '☕' ? (window.RETRATOS_PINTADOS || {}).xicara : c === '⧗' ? AMPULHETA : (window.MOMENTOS_PINTADOS || {})[MOMENTO_ID[c]]);
   const simboloMomento = c => (srcMomento(c) ? `<img src="${srcMomento(c)}" alt="${c}" draggable="false">` : c);
   const CARTAS = Object.fromEntries(Object.entries(R.CARTAS).map(([k, v]) => [k, { ...v, ico: ICO_CARTA[k], arte: pintada(k) ? imgPintada(k, 'ico pintado') : ICO_CARTA[k] }]));
   const PRONTOS = [
@@ -109,7 +111,13 @@
     conta: { moedas: 0, rating: 1000, xp: 0, cartas: GRATIS.slice(), dados: ['marfim'], icones: ['bolinha'], mesas: ['salvia'], dado: 'marfim', icone: 'bolinha', mesa: 'salvia' },
     abaLoja: 'cartas',
     primeiro: 0, abaDeck: 0, deckVisto: false,
+    // a primeira partida e as explicações que aparecem uma vez, na hora em que a coisa acontece (docs/design.md §5).
+    // estreia: a primeira partida (meta 8, sem cartas) já passou; jogou: ela foi jogada de verdade (quem já jogava
+    // antes dela existir não a joga); vistos: as explicações que já apareceram
+    guia: { estreia: false, jogou: false, vistos: [] },
   };
+  const GUIA_TODOS = ['eco', 'passo', 'oposto', 'disparo', 'ruptura'];
+  const guiaVeterano = () => ({ estreia: true, jogou: false, vistos: GUIA_TODOS.slice() });
   if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) st.pref.animacoes = false;
   let jogo = null;
   try {
@@ -124,12 +132,18 @@
     if (s.conta) { Object.assign(st.conta, s.conta); GRATIS.forEach(c => { if (!st.conta.cartas.includes(c)) st.conta.cartas.push(c); }); }
     if (Array.isArray(s.decks)) st.decks = s.decks.map(d => (d || []).filter(c => CARTAS[c])).map(d => deckValido(d) ? d : []);
     st.deckVisto = !!s.deckVisto;
+    // quem já jogava antes do guia existir não passa pela estreia nem pelas explicações
+    if (s.guia) st.guia = { ...st.guia, ...s.guia, vistos: Array.isArray(s.guia.vistos) ? s.guia.vistos : [] };
+    else if (st.rec.partidas > 0 || st.deckVisto) st.guia = guiaVeterano();
   } catch (e) {}
+  const gravarLocal = () => {
+    try { localStorage.setItem('diceduel.v1', JSON.stringify({ cfg: st.cfg, pref: st.pref, rec: st.rec, conta: st.contaConvidado || st.conta, decks: st.decks, deckVisto: st.deckVisto, guia: st.guia })); } catch (e) {}
+  };
   const salvar = () => {
-    try { localStorage.setItem('diceduel.v1', JSON.stringify({ cfg: st.cfg, pref: st.pref, rec: st.rec, conta: st.contaConvidado || st.conta, decks: st.decks, deckVisto: st.deckVisto })); } catch (e) {}
+    gravarLocal();
     if (st.sessao && Conta.sincronizar) Conta.sincronizar();   // com conta, decks e recordes vão para o servidor
   };
-  const armadilhasLiberadas = () => st.pref.liberar || st.rec.partidas >= 1;
+  const armadilhasLiberadas = () => st.pref.liberar || st.rec.partidas - (st.guia.jogou ? 1 : 0) >= 1;
   const travada = c => CARTAS[c].tipo === 'armadilha' && !armadilhasLiberadas();
   const possui = c => st.conta.cartas.includes(c);
   const disponivel = c => possui(c) && !travada(c);
@@ -154,7 +168,12 @@
   const autoTag = p => { const n = online() && jogo.fase !== 'fim' && jogo.auto ? jogo.auto[p] : 0; return n ? `<span class="auto-tag" title="vezes seguidas no automático (na ${R.AUTO_MAX}ª, a partida acaba)">auto ${n}/${R.AUTO_MAX}</span>` : ''; };
   const segundosVolta = () => { const ate = jogo.perfis[1].voltaAte; return ate ? Math.max(0, Math.ceil((ate - Date.now()) / 1000)) : null; };
 
-  function novaPartida() {
+  // a estreia (docs/design.md §5): a primeira partida de quem nunca jogou é contra a Diana, até 8 pontos e sem cartas
+  // dos dois lados. Ensina só a corrente, o Bolso e o disparo; as cartas chegam na partida seguinte. Enquanto ela não
+  // acontece, toda partida nova contra o rival é ela (Jogar, Recomeçar, a volta de uma sala online); só montar um deck e
+  // tocar em Jogar no deck a pula (aí a pessoa escolheu com o que jogar)
+  const META_ESTREIA = 8;
+  function novaPartida(op = {}) {
     esconderInicio();   // começar uma partida sai do menu principal
     if (window.Rolagem) Rolagem.parar();
     // numa sala online: "jogar de novo" é pedir revanche; no meio da partida, só volta à mesa
@@ -163,15 +182,17 @@
       ['fim', 'janelaCarta', 'janelaDeck'].forEach(id => { document.getElementById(id).hidden = true; });
       return;
     }
-    const modo = st.cfg.modo, nivel = st.cfg.nivel;
-    const deckRival = modo === 'local' ? st.decks[1].slice()
+    const estreia = op.estreia ?? !st.guia.estreia;
+    const modo = estreia ? 'bot' : st.cfg.modo, nivel = estreia ? 'aprendiz' : st.cfg.nivel;
+    const deckRival = estreia ? [] : modo === 'local' ? st.decks[1].slice()
       : nivel === 'esperto' ? sorteia(DECKS_CORUJA).slice() : sorteiaDeck(!armadilhasLiberadas());
-    const decks = [st.decks[0].filter(disponivel), modo === 'local' ? deckRival.filter(disponivel) : deckRival];
+    const decks = estreia ? [[], []] : [st.decks[0].filter(disponivel), modo === 'local' ? deckRival.filter(disponivel) : deckRival];
     const nomesP = modo === 'bot' ? ['Você', RIVAIS[nivel].nome] : ['Jogador 1', 'Jogador 2'];
     // ids dos dados nunca se repetem entre partidas: um temporizador da partida anterior não marca dado da nova
     const idInicial = Math.max(uid, jogo && jogo.proxId ? jogo.proxId + 1 : 1);
     uid = idInicial + 1;
-    jogo = R.criarPartida({ decks, vez: st.primeiro, meta: +st.cfg.meta, nomes: nomesP, modo, nivel, idInicial });
+    jogo = R.criarPartida({ decks, vez: estreia ? 0 : st.primeiro, meta: estreia ? META_ESTREIA : +st.cfg.meta, nomes: nomesP, modo, nivel, idInicial });
+    if (estreia) jogo.estreia = true;
     Object.assign(jogo, { alvo: null, ajusteIdx: null, sel: null, destaque: null, pensando: false, token: Math.random(), fala: null, humor: null, intro: false });
     st.primeiro = 1 - st.primeiro;
     ['avisoCfg', 'fim', 'janelaCarta', 'janelaDeck'].forEach(id => { document.getElementById(id).hidden = true; });
@@ -275,8 +296,10 @@
     const j = jogo, p = j.vencedor;
     j.recordes = j.recordes || [];
     if (j.modo === 'bot') {
-      const r = st.rec, s = j.stats[0], liberouAgora = !armadilhasLiberadas();
+      const r = st.rec, s = j.stats[0], liberadasAntes = armadilhasLiberadas();
+      if (j.estreia) { st.guia.estreia = true; st.guia.jogou = true; }
       r.partidas++;
+      const liberouAgora = !liberadasAntes && armadilhasLiberadas();
       if (p === 0) { r.vitorias++; r.seq++; } else r.seq = 0;
       if (r.seq > r.melhorSeq) { r.melhorSeq = r.seq; if (r.seq >= 2) j.recordes.push(`Melhor sequência: ${r.seq} vitórias seguidas`); }
       if (s.maiorDisp > r.maiorDisparo) { r.maiorDisparo = s.maiorDisp; j.recordes.push(`Maior disparo: +${s.maiorDisp}`); }
@@ -1039,6 +1062,7 @@
     ticker.innerHTML = instrucao || (j.log[0] ? linha(j.log[0]) : '');
     ticker.classList.toggle('instrucao', !!instrucao);
     mostrarCorrenteNaDecisao(j);
+    if (j.fase === 'decidir' && humano(j.vez) && !j.intro) ensinar('disparo');   // a primeira corrente de 3: disparar ou segurar
     guardarPartida();
     if (j.modo === 'online' && j.fase !== 'fim' && inicioAberto()) esconderInicio();
     if (j.fase !== 'fim' && Som.musica.cenaAtual === 'fim') Som.musica.cena('jogo');
@@ -1108,6 +1132,8 @@
             if (alvo) Fx.faiscas(alvo, 5 + e.n * 2, undefined, 1.6 + e.n * 0.3);
             if (e.n === 4) Fx.texto(alvo, 'Corrente de 4', 'pequeno');
             if (e.n === 5) Fx.texto(alvo, 'Corrente de 5', 'pequeno');
+            const nova = humano(e.p) && (e.rels || []).find(k => !st.guia.vistos.includes(k));
+            if (nova) ensinar(nova, e.de, e.v);
           }, 300);
           break;
         }
@@ -1141,8 +1167,12 @@
           Som.tocar('ruptura', { L: e.L }); Fx.poeira(qs(`#pj${e.p} .corrente`), 8 + e.L * 2); if (humano(e.p)) vibrar(90);
           if (painelEl) Fx.tremer(painelEl, 0.6);
           if (e.L >= 4 && humano(e.p)) Fx.texto(qs(`#pj${e.p} .corrente`), 'Rompeu', 'pequeno ruim');
+          if (e.L >= 2 && humano(e.p)) ensinar('ruptura');
           break;
         }
+        // segurou uma corrente que já podia disparar e ela rendeu mais: a decisão foi boa, e o jogo diz isso na hora
+        // (com 6, a Sinfonia já festeja; a Paciência fica nos bons momentos do fim)
+        case 'paciencia': if (humano(e.p) && e.L < 6) Fx.chamada('Valeu esperar!', `segurou a de ${e.de} e disparou com ${e.L}: +${e.ganho} em vez de +${e.antes}`, 'suave', { classe: 'de-jogo' }); break;
         case 'salvo': Som.tocar('salvo'); Fx.chamada('Salvo!', e.txt, 'suave', { classe: 'de-jogo' }); Fx.faiscas(qs(`#pj${e.p} .corrente`), 14, ['#cdeccf', '#fff6e6']); break;
         case 'bloqueio': Som.tocar('bloqueio'); Fx.texto(qs(`#pj${e.p} .corrente`) || null, 'Bloqueio!', 'pequeno'); break;
         case 'carta': {
@@ -1188,6 +1218,24 @@
     }
   }
 
+  // ---------- o guia (docs/design.md §5): cada explicação aparece uma vez, logo depois de a pessoa fazer a coisa ----------
+  // Nomear o que ela acabou de descobrir ("Oposto!") em vez de explicar antes: a descoberta é dela. Com as ajudas
+  // desligadas, nada aparece (e nada é marcado como visto)
+  const GUIA_TXT = {
+    eco: (a, b) => ['Eco!', `${a} e ${b}: o mesmo número sincroniza.`],
+    passo: (a, b) => ['Passo!', `${a} e ${b}: um a mais ou um a menos sincroniza.`],
+    oposto: (a, b) => ['Oposto!', `${a} e ${b} somam 7, como as faces opostas do dado.`],
+    disparo: () => ['Já dá para disparar', 'Disparar marca os pontos agora. Segurar arrisca a corrente, mas ela vale mais: 3 dados +1, 4 +2, 5 +4, 6 +6.'],
+    ruptura: () => ['A corrente rompeu', 'O dado não sincronizava com a frente. Um dado guardado no Bolso pode salvar a corrente numa hora dessas.'],
+  };
+  function ensinar(chave, ...args) {
+    if (!st.pref.dicas || st.guia.vistos.includes(chave)) return false;
+    st.guia.vistos.push(chave); gravarLocal();
+    const [titulo, sub] = GUIA_TXT[chave](...args);
+    Fx.chamada(titulo, sub, 'suave', { classe: 'de-jogo guia', ms: 4200 });
+    return true;
+  }
+
   // ---------- tela de "versus" ----------
   function mostrarVersus() {
     const j = jogo, n = nomes();
@@ -1200,7 +1248,7 @@
     const el = document.createElement('div');
     el.className = 'versus'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Começo da partida');
     el.innerHTML = `<div class="caixa"><h2>Dice Duel</h2><div class="vs-linha">${lado(0)}<span class="vs-x">×</span>${lado(1)}</div>
-      <p class="nota">${j.modo === 'bot' ? RIVAIS[j.nivel].desc + '. ' : online() ? `Rating ${j.perfis[1].rating}. ${tempoTxt(j.ritmo)}. ` : ''}Meta: ${j.meta} pontos. ${n[j.vez]} começa.</p><button class="btn btn-mel">Vamos lá</button></div>`;
+      <p class="nota">${j.estreia ? 'Primeira partida, sem cartas: ligue dados que sincronizam e dispare a corrente. As cartas chegam na próxima. ' : j.modo === 'bot' ? RIVAIS[j.nivel].desc + '. ' : online() ? `Rating ${j.perfis[1].rating}. ${tempoTxt(j.ritmo)}. ` : ''}Meta: ${j.meta} pontos. ${n[j.vez]} começa.</p><button class="btn btn-mel">Vamos lá</button></div>`;
     document.body.appendChild(el);
     Som.tocar('carta');
     let fechou = false;
@@ -1210,7 +1258,7 @@
       render(); talvezAutomato();
     };
     el.addEventListener('click', () => { Som.desbloquear(); fechar(); });
-    setTimeout(fechar, 3200);
+    setTimeout(fechar, j.estreia ? 6500 : 3200);   // a estreia tem uma frase a mais para ler
   }
 
   function mostrarFim() {
@@ -1224,12 +1272,16 @@
     // repetições viram um item só ("×2"); os mais raros vêm primeiro
     const grupos = new Map();
     j.momentos.filter(m => humano(m.p)).forEach(m => { const k = m.p + m.txt; const g = grupos.get(k) || { ...m, vezes: 0 }; g.vezes++; grupos.set(k, g); });
-    const ordemSimb = ['☾', '★', '✿', '✧', '❀', '↺', '✦', '♪'];
+    const ordemSimb = ['☾', '★', '⧗', '✿', '✧', '❀', '↺', '✦', '♪'];
     const lances = [...grupos.values()].sort((a, b) => ordemSimb.indexOf(a.simbolo) - ordemSimb.indexOf(b.simbolo)).slice(0, 6);
     const momentos = lances
       .map(m => `<li><span class="em">${simboloMomento(m.simbolo)}</span><span>${j.modo === 'local' ? `<span class="cor${m.p}">${n[m.p]}</span> ` : ''}${m.txt}${m.vezes > 1 ? ` <b>×${m.vezes}</b>` : ''}</span></li>`).join('');
     const recs = (j.recordes || []).map(r => `<li class="recorde"><span class="em">${simboloMomento('✪')}</span>Novo: ${r}</li>`).join('');
     document.getElementById('fimMomentos').innerHTML = recs + (momentos || `<li><span class="em">${simboloMomento('☕')}</span>Sem lances marcantes desta vez.</li>`);
+    // perdeu e teve bons lances: eles vêm antes do prêmio (o que você fez de bom primeiro, o placar depois)
+    const rec = document.getElementById('fimRecompensas'), tit = document.getElementById('fimMomentosTitulo'), lista = document.getElementById('fimMomentos');
+    const momentosPrimeiro = j.modo !== 'local' && v !== 0 && !!(recs || momentos);
+    if (momentosPrimeiro) { rec.before(tit, lista); } else { rec.after(tit, lista); }
     desenharRecompensas(j);
     const s = j.stats, linha = (rot, f) => `<tr><th>${rot}</th><td>${f(s[0], 0)}</td><td>${f(s[1], 1)}</td></tr>`;
     document.getElementById('fimTabela').innerHTML =
@@ -1296,11 +1348,15 @@
     const prox = NIVEIS[pr.nivelDepois] ?? null, ant = NIVEIS[pr.nivelDepois - 1];
     const pct = prox === null ? 100 : Math.round((c.xp - ant) / (prox - ant) * 100);
     const presentes = pr.presentes.map(x => `<div class="linha"><span>Presente do nível: ${nomeItem(x.tipo, x.id)}</span><span class="sobe">novo!</span></div>`).join('');
-    el.innerHTML = `<div class="grande"><span class="moeda" aria-hidden="true"></span><span id="contaMoedas">+0</span></div>${linhaMoedas}
-      <div class="linha"><span>${online() ? 'Rating online' : 'Rating'} ${pr.ratingAntes} → <b>${pr.rating}</b> <span class="${dr >= 0 ? 'sobe' : 'desce'}">(${dr >= 0 ? '+' : ''}${dr})</span></span><span>${tituloDe(pr.rating)}</span></div>
-      <div class="linha"><span>Nível ${pr.nivelDepois}${pr.nivelDepois > pr.nivelAntes ? ' <span class="sobe">subiu!</span>' : ''}</span><span>+${pr.xpGanho} XP</span></div>
+    const total = m ? m.total : 0;
+    const linhaRating = `<div class="linha"><span>${online() ? 'Rating online' : 'Rating'} ${pr.ratingAntes} → <b>${pr.rating}</b> <span class="${dr >= 0 ? 'sobe' : 'desce'}">(${dr >= 0 ? '+' : ''}${dr})</span></span><span>${tituloDe(pr.rating)}</span></div>`;
+    const linhaXp = `<div class="linha"><span>Nível ${pr.nivelDepois}${pr.nivelDepois > pr.nivelAntes ? ' <span class="sobe">subiu!</span>' : ''}</span><span>+${pr.xpGanho} XP</span></div>
       <div class="xp"><i style="width:${pct}%"></i></div>${presentes}`;
-    const total = m ? m.total : 0, alvo = document.getElementById('contaMoedas');
+    // sem moedas (derrota, teto do rival): a tela não abre com um "+0" grande. Primeiro o que se ganhou (experiência,
+    // que sobe sempre), depois o rating e, miúda, a linha das moedas
+    el.innerHTML = total ? `<div class="grande"><span class="moeda" aria-hidden="true"></span><span id="contaMoedas">+0</span></div>${linhaMoedas}${linhaRating}${linhaXp}`
+      : `${linhaXp}${linhaRating}${linhaMoedas}`;
+    const alvo = document.getElementById('contaMoedas');
     if (total) {
       setTimeout(() => { Fx.contar(alvo, 0, total); setTimeout(() => { alvo.textContent = '+' + total; }, 600); Som.tocar('moeda', { n: Math.ceil(total / 5) }); Fx.faiscas(alvo, 18, ['#ffe3a3', '#f2c14e', '#fff6e6']); }, 350);
     }
@@ -1693,6 +1749,7 @@
     const a = b.dataset.inicio;
     if (a === 'rival') { st.cfg.nivel = b.dataset.v; salvar(); Som.tocar('toque'); desenharInicio(); return; }
     if (a === 'meta') { st.cfg.meta = R.metaValida(b.dataset.v); salvar(); desenharInicio(); return; }
+    if (a === 'jogar' && !st.guia.estreia) { Online.sair(); st.cfg.modo = 'bot'; salvar(); escolhendoRival = false; novaPartida(); return; }
     if (a === 'jogar') { escolhendoRival = true; desenharInicio(); const f = inicio.querySelector('.rival-carta.marcado'); if (f) f.focus({ preventScroll: true }); return; }
     if (a === 'voltar') { escolhendoRival = false; desenharInicio(); return; }
     if (a === 'comecar') {
@@ -2165,7 +2222,9 @@
       desenharEscolha();
       return;
     }
-    st.deckVisto = true; salvar();
+    st.deckVisto = true;
+    if (!st.guia.estreia) st.guia.estreia = true;   // montou o deck e foi jogar com ele: a estreia fica para trás
+    salvar();
     Online.deckMudou();
     if ((partidaEmAndamento() || (!online() && lerPartidaGuardada())) && !online()) { document.getElementById('janelaDeck').hidden = true; Fx.chamada('Deck salvo', 'vale a partir da próxima partida', 'suave'); return; }
     novaPartida();
@@ -2339,7 +2398,9 @@
     if (ex.rec) Object.assign(st.rec, ex.rec);
     if (ex.cfg) { Object.assign(st.cfg, ex.cfg); st.cfg.meta = R.metaValida(st.cfg.meta); st.cfg.modo = 'bot'; }
     if (typeof ex.deckVisto === 'boolean') st.deckVisto = st.deckVisto || ex.deckVisto;
-    try { localStorage.setItem('diceduel.v1', JSON.stringify({ cfg: st.cfg, pref: st.pref, rec: st.rec, conta: st.contaConvidado || st.conta, decks: st.decks, deckVisto: st.deckVisto })); } catch (e) {}
+    // entrar numa conta que já jogou, num aparelho novo: nada de estreia nem de explicações
+    if (st.rec.partidas > 0 && !st.guia.estreia) st.guia = guiaVeterano();
+    gravarLocal();
     if (!document.getElementById('janelaDeck').hidden) desenharDeck();
     return true;
   }

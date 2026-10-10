@@ -63,6 +63,7 @@ e o amigo cai direto na sala. O servidor é a autoridade da partida e roda na Ra
 | `tools/arte_icones.py` | pinta os retratos com a API de imagem da OpenAI, no estilo do jogo (pedidos em `arte/retratos.json`, com o vetor de cada personagem como referência), e os embute no jogo |
 | `tools/referencias.js` | desenha os vetores de `js/retratos.js` em `arte/referencia/` (rode de novo quando mudar um vetor) |
 | `tools/fumaca.js` | teste de fumaça: joga partidas inteiras no navegador e falha com qualquer erro |
+| `tools/estreia_e2e.js` | a estreia e o guia: primeira partida sem cartas, explicações uma vez só, fim da derrota, a partida seguinte e quem já jogava |
 | `tools/regras.js` | testes dirigidos das cartas (Pressa, Remendo, Espelho, armadilha virada, Âncora × Interferência) |
 | `tools/layout.js` | verificador de layout em 5 larguras: texto vazando, fora da caixa, quebrado, descentralizado |
 | `tools/macaco.js` | o macaco: toques ao acaso em tudo, com vigia de travamento e de estado impossível |
@@ -84,6 +85,7 @@ cd sim && python3 economia.py          # cartas compradas não superam as gráti
 npm install && npm test                        # motor, API, salas, quedas, limite por par
 export NODE_PATH=$(npm root -g)                # Playwright instalado globalmente (ou: npm i -D playwright)
 node tools/fumaca.js                           # 3 partidas no navegador (celular, computador, Coruja)
+node tools/estreia_e2e.js                      # a primeira partida, o guia e a tela do fim da derrota
 node tools/regras.js                           # as cartas fazem o que o texto delas diz
 node tools/layout.js                           # layout em 360, 390, 430, 768 e 1360 px
 node tools/online_e2e.js                       # online de ponta a ponta, com o servidor local
@@ -92,6 +94,17 @@ node tools/vercel_local.js                     # a página como o Vercel publica
 ```
 
 ## Estado
+
+**v0.14, na branch `DiceDuel-primeira-partida` (ainda não publicada):** a primeira partida e a sensação de jogar bem.
+- **A estreia:** na primeira visita, Jogar começa direto uma partida contra a Diana até 8 pontos, sem cartas (sem
+  escolher rival nem montar deck). As cartas chegam na segunda; as armadilhas, depois dela.
+- **O guia:** o primeiro Eco, Passo e Oposto, a primeira corrente de 3 e a primeira ruptura ganham, uma vez só, uma
+  chamada que dá nome ao que a pessoa acabou de fazer ("Oposto! 2 e 5 somam 7").
+- **Paciência:** segurar uma corrente que já podia disparar e ela render 2+ pontos a mais vira bom momento
+  ("Valeu esperar!" na hora). É o primeiro bom momento que premia uma decisão, não um resultado.
+- **Fim da derrota sem "+0":** os bons momentos vêm primeiro, depois a experiência e o rating.
+
+Detalhes em `docs/design.md` §5 e §6; teste em `tools/estreia_e2e.js`.
 
 **v0.13, em produção** (a página no Vercel e o servidor na Railway, publicados da branch `DiceDuel`): **o blefe e o
 desafio saíram.** O "?" do rival é sempre uma armadilha de verdade; tocar nele mostra quais armadilhas do deck dele ele

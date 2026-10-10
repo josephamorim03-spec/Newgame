@@ -143,7 +143,7 @@ if (require.main === module) (async () => {
     if (seg) await pg.addInitScript(([t, b]) => addEventListener('DOMContentLoaded', () => { document.documentElement.style.setProperty('--seg-topo', t + 'px'); document.documentElement.style.setProperty('--seg-baixo', b + 'px'); }), [seg.topo, seg.baixo]);
     const erros = []; pg.on('pageerror', e => erros.push(e.message));
     await pg.goto('file://' + path.join(RAIZ, 'index.html'));
-    await pg.evaluate(() => { DiceDuel.ajustar({ animacoes: false, liberar: true }); DiceDuel.st.conta.moedas = 400; DiceDuel.st.conta.cartas = Regras.ORDEM.slice(); });
+    await pg.evaluate(() => { DiceDuel.st.guia.estreia = true; DiceDuel.ajustar({ animacoes: false, liberar: true }); DiceDuel.st.conta.moedas = 400; DiceDuel.st.conta.cartas = Regras.ORDEM.slice(); });
     await pg.waitForTimeout(300);
     // o mouse sai de cima antes de medir: o dado inclinado pelo :hover passa da borda de propósito e não é defeito
     const olha = async (tela, foto) => { await pg.mouse.move(0, 0); await pg.waitForTimeout(220); anota(tela, w, await pg.evaluate(verificar)); if (foto) await pg.screenshot({ path: path.join(FOTOS, `${tela}-${w}.png`), fullPage: false }); };

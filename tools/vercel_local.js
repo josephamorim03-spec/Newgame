@@ -28,7 +28,7 @@ const servidor = http.createServer((req, res) => {
     pg.on('console', m => { const t = m.text(); if (m.type() === 'error' && !/fonts\.g|ERR_NAME|net::ERR|railway\.app/.test(t)) erros.push('console: ' + t); if (/Content Security Policy/i.test(t)) erros.push('CSP: ' + t); });
     pg.on('response', r => { if (r.status() === 404 && r.url().startsWith(base)) faltando.push(r.url().slice(base.length)); });
     await pg.goto(base + '/'); await pg.waitForTimeout(600);
-    await pg.evaluate(() => { const st = DiceDuel.st; st.deckVisto = true; st.cfg.modo = 'bot'; DiceDuel.ajustar({ som: false, musica: false }); document.getElementById('janelaDeck').hidden = true; });
+    await pg.evaluate(() => { const st = DiceDuel.st; st.deckVisto = true; st.guia.estreia = true; st.cfg.modo = 'bot'; DiceDuel.ajustar({ som: false, musica: false }); document.getElementById('janelaDeck').hidden = true; });
     // v0.12: o Jogar do menu abre a escolha do rival; o Jogar de lá começa a partida
     await pg.click('[data-inicio="jogar"]'); await pg.waitForTimeout(150); await pg.click('[data-inicio="comecar"]'); await pg.waitForTimeout(400);
     if (await pg.$('#janelaDeck:not([hidden])')) { await pg.click('#btnJogarDeck'); await pg.waitForTimeout(400); }
