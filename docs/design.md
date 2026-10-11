@@ -488,6 +488,11 @@ o dedo e o dado: a pessoa escolhia o dado na Mesa e lia três botões lá embaix
   pergunta tem só "Romper" (e o ✕): trocar com o Bolso também romperia, e as duas opções eram uma escolha que não muda
   nada que importe. O dado do Bolso fica onde está; o Bolso, apontado, também diz "rompe".
 - A regra não muda: com uma jogada segura disponível, não dá para romper de propósito; a pergunta oferece a segura.
+- **O Bolso responde ao toque (v0.17).** Sem um dado escolhido, tocar no seu Bolso não fazia nada, e o aro verde do
+  dado do Bolso que serve na corrente convidava justamente a tocar (queixa de um jogador). O dado guardado não sai
+  sozinho, só por troca, e o toque agora diz isso na linha da Mesa ("O 4 do Bolso entra na corrente trocando: leve um
+  dado da Mesa até o Bolso"; vazio, como guardar; o que não serve, que a troca romperia), com um tremidinho no Bolso.
+  A frase fica até a vez mudar, um dado ser escolhido ou uma carta ser tocada.
 - A vez não aparece mais num selo no meio da Mesa: a etiqueta "sua vez" do painel basta. No online, o relógio da vez
   mora nela ("SUA VEZ · 23 s", vermelha nos 10 s finais).
 

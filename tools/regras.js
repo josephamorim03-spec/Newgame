@@ -232,6 +232,19 @@ const RAIZ = path.join(__dirname, '..');
   await dado(0);
   const chips = await pg.evaluate(() => [...document.querySelectorAll('.alvo-chip')].map(c => c.getBoundingClientRect()).map(r => ({ l: r.left, r: r.right, t: r.top, b: r.bottom })));
   confere(chips.length === 2 && !(chips[0].l < chips[1].r && chips[1].l < chips[0].r && chips[0].t < chips[1].b && chips[1].t < chips[0].b), 'As etiquetas do Bolso e da corrente não se cruzam');
+
+  // 10d. Tocar no dado do Bolso sem um dado escolhido: antes não acontecia nada (queixa de um jogador). Agora a linha da
+  //      Mesa explica que ele só sai por troca, e com um dado escolhido o toque no Bolso continua levando o dado até ele
+  await cena([[], []], () => { const j = DiceDuel.jogo; j.vez = 0; j.fase = 'pegar'; j.sel = null; j.cor[0] = [2, 3]; j.bolso[0] = 4; j.mesa = [{ id: 9921, v: 1 }, { id: 9922, v: 6 }]; });
+  await pg.click('#pj0 [data-bolso]');
+  confere(/do Bolso entra na corrente trocando/.test(await pg.textContent('#ticker')), 'Bolso tocado sem dado escolhido: a linha da Mesa explica a troca');
+  await pg.click('.pega[data-id="9921"]');
+  confere(!/entra na corrente trocando/.test(await pg.textContent('#ticker')), 'Bolso tocado: escolher um dado devolve a linha da Mesa ao dado');
+  await pg.click('#pj0 [data-alvo-dado="bolso"]'); j = await J();
+  confere(j.cor[0].join() === '2,3,4' && j.bolso[0] === 1, 'Bolso tocado com o dado escolhido: troca (o 4 entra, o 1 fica guardado)');
+  await cena([[], []], () => { const j = DiceDuel.jogo; j.vez = 0; j.fase = 'pegar'; j.sel = null; j.cor[0] = [2, 3]; j.bolso[0] = 6; j.mesa = [{ id: 9931, v: 4 }]; });
+  await pg.click('#pj0 [data-bolso]');
+  confere(/não sincroniza com o seu 3/.test(await pg.textContent('#ticker')), 'Bolso que não serve, tocado: a linha diz que a troca romperia');
   await pg.keyboard.press('Escape');
 
   // 11. Ajudas: a chave do menu de pausa liga e desliga etiquetas, dicas e explicações (e lembra a escolha);
