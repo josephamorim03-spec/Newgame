@@ -194,8 +194,10 @@ crédito na API; a fila está em `arte/historia.json` (`_refazer`).
 
 ## Plano de uso do crédito (econômico e direcionado)
 
-Estado: 61 desenhos nas páginas. **17 já estão no estilo novo** (o Prólogo, as receitas do Sapo e da Raposa, os quadros
-corrigidos e as 4 cenas novas). **44 ainda são da 1.ª versão.** O cachecol foi aprovado como está.
+Estado: as fases 1 e 2 estão feitas. Os quadros da 1.ª versão que sobraram foram escolhidos pelo dono e estão marcados
+`"travada": true` em `arte/historia.json` (não se repintam sem perguntar). Da fase 3, 5 dados foram redesenhados e
+encaixados (`arte/historia/dados_ia/`); o resto dos dados está em pausa, à espera da escolha do dono. O cachecol foi
+aprovado como está.
 
 ### O que aprendemos (vale para todo pedido)
 - **gpt-image-2**, com o retrato aprovado de cada bicho como referência: segura as marcas da Diana (a ponta preta na
