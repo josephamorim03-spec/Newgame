@@ -2708,10 +2708,10 @@
    "dados": [
     {
      "caixa": [
-      56.5,
+      45.5,
       52.5,
-      61.3,
-      59.5
+      50.8,
+      58.8
      ],
      "vista": "obliquo",
      "conferido": false,
@@ -2729,12 +2729,19 @@
       91.5
      ],
      "vista": "obliquo",
-     "conferido": true,
+     "conferido": false,
      "faces": {
       "t": 6,
       "e": 4,
       "d": 5
-     }
+     },
+     "ia": "a",
+     "recorte": [
+      988,
+      786,
+      1192,
+      990
+     ]
     },
     {
      "caixa": [
@@ -2744,23 +2751,29 @@
       93
      ],
      "vista": "obliquo",
-     "conferido": true,
+     "conferido": false,
      "faces": {
       "t": 1,
       "e": 5,
       "d": 4
-     }
+     },
+     "ia": "a",
+     "recorte": [
+      1119,
+      799,
+      1323,
+      1003
+     ]
     }
    ],
-   "cena_de": "r-mesa",
-   "edicao": "Make it the SAME night as the second panel: the window now shows a dark-blue night sky with a few stars, and the room is lit by warm lamplight. Keep the wine-red felt table, the cork board with the double helix of dice, the pink die in her raised paw and the two pink dice on the felt exactly. Keep EVERYTHING else exactly as in the first panel: the same Diana (white cat, black-tipped ear on the viewer's left, grey brow marks, the same nose accessory), the same pose, expression, framing and position, the same thick cocoa outline, flat sticker style and colors. No new text or letters anywhere.",
+   "edicao": "Fix ONLY Diana's raised front leg, which is drawn too long, too thin and coming out of the wrong place. Redraw it with real cat anatomy: she sits upright and lifts her RIGHT front leg (on the viewer's right) from the shoulder, a SHORT, thick, soft white foreleg the same width as her other front leg, bent at the elbow and held close in front of her chest, at about the height of her chin's lower edge; the paw is turned palm up, showing small pink toe beans, and a single small pink die rests on the paw pad. The leg must clearly start at her shoulder, under the cheek, not from the middle of her body. Keep EVERYTHING else exactly as in the attached panel: her head, face, expression, the small red scratch on her nose, the night window with the green curtain, the green lamp, the cork board with the double helix of dice, the wine-red felt table and the two pink dice on it, the framing, the thick cocoa outline, flat sticker style and colors. No text.",
    "continuidade": "A noite da partida final, na mesa de feltro vinho de r-mesa.",
    "evitar": [
     [
+     40,
      50,
-     48,
-     66,
-     64
+     55,
+     80
     ],
     [
      65,
