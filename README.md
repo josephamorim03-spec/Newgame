@@ -107,14 +107,14 @@ node tools/vercel_local.js                     # a página como o Vercel publica
 
 ## Estado
 
-**v0.16, na branch `DiceDuel-primeira-partida` (ainda não publicada):** o menu e o mistério da história.
+**v0.16, em produção** (a página no Vercel e o servidor na Railway, publicados da branch `DiceDuel`): o menu e o mistério da história.
 - **O menu só tem o Jogar,** que abre os modos História e Online (nesta ordem). **A partida avulsa contra a Diana ou a
   Dona Coruja saiu** (os rivais estão na história; moedas de vitória, rating e Tarefas do dia agora vêm do online).
 - **No mapa da história, como no Pokémon:** os rivais que a pessoa ainda não tentou são silhuetas com "?" e o nome do
-  lugar fica fechado; tocar em Jogar revela (e perder não esconde de novo).
+  lugar fica fechado; tocar em Jogar revela (e perder não esconde de novo). O "?" fica no meio da cabeça de cada bicho.
 - Detalhes em `docs/design.md` §8 e `docs/historia.md`.
 
-**v0.15, em produção** (a página no Vercel e o servidor na Railway, publicados da branch `DiceDuel`): o modo história
+**v0.15:** o modo história
 em quadros pintados e a interface de gibi.
 - **O gibi da história com arte:** onde a fala tem quadro, o gibi mostra o quadro pintado (64 artes, 768 px) com os
   balões no lugar que o dono ajustou, um por toque; perto e detalhe pela câmera, quadros mudos, as receitas em letra
