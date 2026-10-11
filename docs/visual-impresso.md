@@ -117,7 +117,7 @@ o impresso. Tudo no fim de `css/estilo.css`, sob `.impresso` (`?impresso=0` volt
 | **Fichas dos jogadores** | quadros de gibi: contorno e sombra dura cacau; a cor da vez segue por fora |
 | **Chamadas** | caixa de gibi: contorno cacau e a chapa da cor do momento deslocada (mel, rosa ou lilás), no lugar do aro |
 | **Janelas** | contorno e sombra dura cacau |
-| **Começo da partida** | o letreiro no alto e os dois lados como quadros frente a frente, cada um com a retícula da sua cor (azul você, rosa o rival), tortos para lados opostos; o × vira um selo de mel |
+| **Começo da partida** | o letreiro no alto e os dois lados como quadros frente a frente, cada um com a retícula da sua cor (azul você, rosa o rival), tortos para lados opostos (empilhados no celular, lado a lado a partir de 600 px); entre eles, um "VS" numa explosão de mel com contorno cacau e as chapas azul e rosa, que estoura em poses seguradas (o selo redondo com × da 1.ª versão o dono não aprovou) |
 | **Fundo** | retícula clara nas bordas da noite, limpa no meio |
 
 **O que ficou de fora, de propósito:** os dados (as skins e a rolagem 3D seguem como estão: contorno neles mexeria em toda
