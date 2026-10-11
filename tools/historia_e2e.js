@@ -24,11 +24,14 @@ async function nova(navegador, guardado = VETERANO, vp = { width: 390, height: 8
   await pg.goto(PAGINA); await pg.waitForTimeout(600);
   return pg;
 }
+// o que o gibi mostra: os balões do cartão, os da página do caderno e, nos quadros pintados, os balões que já chegaram e a
+// letra de mão das receitas (js/historia_quadros.js)
+const LIDOS = '.gibi .gq-balao, .gibi .gq-titulo-pag, .gibi .gq-ingr, .gibi .gq-margem, .gibi .balao:not(.oculto), .gibi .mao';
 // toca no gibi até ele fechar; devolve os balões que apareceram
 async function lerGibi(pg, max = 80) {
   const vistos = [];
   for (let i = 0; i < max && await pg.$('.gibi'); i++) {
-    vistos.push(...await pg.$$eval('.gibi .gq-balao, .gibi .gq-titulo-pag, .gibi .gq-ingr, .gibi .gq-margem', l => l.map(x => x.textContent)));
+    vistos.push(...await pg.$$eval(LIDOS, l => l.map(x => x.textContent)));
     await pg.click('.gibi'); await pg.waitForTimeout(60);
   }
   if (await pg.$('.gibi')) falha('o gibi não fechou');
@@ -80,6 +83,9 @@ async function vencer(pg, cor, pts) {
   await pg.screenshot({ path: path.join(FOTOS, 'historia-mapa.png') });
   await pg.click('[data-cap="P"]'); await pg.waitForTimeout(300);
   await pg.screenshot({ path: path.join(FOTOS, 'historia-gibi.png') });
+  // o Prólogo tem quadro pintado: a arte aparece com o balão em cima, e o retrato de sempre não
+  const pintado = await pg.evaluate(() => { const i = document.querySelector('.gibi .gq-arte img.base'); return { img: !!(i && i.complete && i.naturalWidth), balao: !!document.querySelector('.gibi .gq-arte .balao:not(.oculto)'), retrato: !!document.querySelector('.gibi .gq-topo') }; });
+  if (!pintado.img || !pintado.balao || pintado.retrato) falha(`o gibi do Prólogo não mostrou o quadro pintado: ${JSON.stringify(pintado)}`);
   const antes = await lerGibi(pg);
   if (!antes.some(t => /Você joga dados\?/.test(t))) falha(`o Prólogo não abriu com a Diana: ${antes}`);
   await passarVersus(pg);
@@ -161,7 +167,7 @@ async function vencer(pg, cor, pts) {
   for (let i = 0; i < 60 && await pf.$('.gibi'); i++) {
     const bt = await pf.$('.gibi [data-escolha="1"]');
     if (bt) { viuEscolha = true; await bt.click(); await pf.waitForTimeout(80); continue; }
-    revelacao.push(...await pf.$$eval('.gibi .gq-balao', l => l.map(x => x.textContent)));
+    revelacao.push(...await pf.$$eval(LIDOS, l => l.map(x => x.textContent)));
     await pf.click('.gibi'); await pf.waitForTimeout(50);
   }
   if (!viuEscolha) falha('a revelação não ofereceu a escolha');
@@ -175,7 +181,7 @@ async function vencer(pg, cor, pts) {
   await pf.waitForSelector('.gibi', { timeout: 9000 }).catch(() => falha('vencer o Capítulo 8 não mostrou o final'));
   const final = []; let fita = '';
   for (let i = 0; i < 80 && await pf.$('.gibi'); i++) {
-    final.push(...await pf.$$eval('.gibi .gq-balao, .gibi .gq-cred-titulo, .gibi .gq-marcador', l => l.map(x => x.textContent)));
+    final.push(...await pf.$$eval(LIDOS + ', .gibi .gq-cred-titulo, .gibi .gq-marcador', l => l.map(x => x.textContent)));
     if (!fita) fita = await pf.$eval('.gibi .gq-fita', x => x.textContent).catch(() => '');
     await pf.click('.gibi'); await pf.waitForTimeout(50);
   }
@@ -195,7 +201,7 @@ async function vencer(pg, cor, pts) {
   const pq = await nova(navegador, VETERANO, { width: 360, height: 640 });
   await pq.evaluate(() => { Historia.gibi(Historia.cap('C2').antes); });
   for (let i = 0; i < 6 && await pq.$('.gibi'); i++) { await pq.click('.gibi'); await pq.waitForTimeout(60); }
-  const fora = await pq.evaluate(() => [...document.querySelectorAll('.gibi .gq:not(.saindo) .gq-balao')].some(b => { const r = b.getBoundingClientRect(); return r.right > innerWidth + 1 || r.left < -1; }) || document.documentElement.scrollWidth > innerWidth);
+  const fora = await pq.evaluate(() => [...document.querySelectorAll('.gibi .gq:not(.saindo) .gq-balao, .gibi .gq:not(.saindo) .arte')].some(b => { const r = b.getBoundingClientRect(); return r.right > innerWidth + 1 || r.left < -1; }) || document.documentElement.scrollWidth > innerWidth);
   if (fora) falha('em 360 px, um balão do gibi sai da tela');
   await pq.screenshot({ path: path.join(FOTOS, 'historia-360.png') });
   await pq.close();

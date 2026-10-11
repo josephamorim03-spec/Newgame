@@ -65,7 +65,7 @@ e o amigo cai direto na sala. O servidor é a autoridade da partida e roda na Ra
 | `tools/historia/baloes.py` | grava em `arte/historia.json` os ajustes do editor de balões (posição, largura, letra e ponta do rabinho de cada balão, feitos à mão na página `quadros.py paginas --editor`) |
 | `tools/historia/dados_quadros.py` | conserta os dados dos quadros da história trocando só as bolinhas: acha as faces de cada dado pelas arestas de tinta da arte e desenha as bolinhas certas nelas; só mexe quando a face achada é confiável, e recusa um dado impossível (faces vizinhas somando 7, canto espelhado) |
 | `tools/historia/dados_ia.py` | os dados que a troca de bolinhas não conserta: recorta cada um, pede ao gerador variações dele com as bolinhas certas, o dono escolhe e a escolhida volta exatamente ao lugar (precisa de crédito na API) |
-| `tools/historia/quadros.py` | os quadros do modo história: pinta as artes de `arte/historia.json` (gpt-image-2, com os retratos de referência) em `arte/historia/quadros/` e monta as páginas com as falas por cima, para revisar |
+| `tools/historia/quadros.py` | os quadros do modo história: pinta as artes de `arte/historia.json` (gpt-image-2, com os retratos de referência) em `arte/historia/quadros/`, monta as páginas com as falas por cima, para revisar, e gera os quadros do gibi do jogo (`quadros.py jogo` → `js/historia_quadros_dados.js`, 768 px) |
 | `tools/referencias.js` | desenha os vetores de `js/retratos.js` em `arte/referencia/` (rode de novo quando mudar um vetor) |
 | `tools/fumaca.js` | teste de fumaça: joga partidas inteiras no navegador e falha com qualquer erro |
 | `tools/estreia_e2e.js` | a estreia e o guia: primeira partida sem cartas, explicações uma vez só, fim da derrota, a partida seguinte e quem já jogava |
@@ -80,6 +80,7 @@ e o amigo cai direto na sala. O servidor é a autoridade da partida e roda na Ra
 | `docs/historia.md` | o modo história "O Caderno da Diana": roteiro em quadros, a Diana e a cura, os rivais, as gags e como vira jogo |
 | `docs/arte-historia.md` | a arte do modo história: a API desenha as peças (fundo, pose, objeto), o código monta o gibi; o teste de modelos e o plano |
 | `js/historia.js`, `js/historia_falas.js` | o modo história: os capítulos, o leitor de gibi, o mapa; as falas aprovadas (geradas por `tools/historia/piadas_fonte.py`) |
+| `js/historia_quadros.js`, `css/quadros.css` | o desenho dos quadros pintados da história (a arte, a câmera, os balões com o rabinho até quem fala, a receita, o mural), o mesmo no gibi do jogo e nas páginas de conferência |
 | `docs/progressao.md` | moedas, rating contra o farm, XP e níveis, loja, cosméticos, regras de monetização |
 | `docs/visual-impresso.md` | técnicas do Aranhaverso no Dice Duel: o que cabe, o que não cabe e o plano |
 | `docs/servidor.md` | o servidor: o que faz, regras contra abuso, como pôr na Railway, API |

@@ -2610,6 +2610,145 @@
      "conferido": true
     }
    ]
+  },
+  "c1-aviso": {
+   "quem": [
+    "sapo"
+   ],
+   "nariz": "",
+   "lugar": "nw",
+   "dados_skin": "lagoa",
+   "texto": "Sapo the frog stands on his lily pad in the pond at night, serious for once, frowning, pointing firmly out of the frame to the right with one webbed hand, his straw boater hat tilted. Beside him on the lily pad, a small empty velvet dice tray with one empty slot. No dice in the picture. Water lilies, a big moon. Keep the upper-left area (a third of the width, top 40%) as empty plain wall or sky for a speech balloon; the characters stay in the right 60% of the frame.",
+   "boca": {
+    "sapo": [
+     67,
+     42
+    ]
+   },
+   "cabeca": {
+    "sapo": [
+     53,
+     22,
+     77,
+     52
+    ]
+   }
+  },
+  "c2-dado": {
+   "quem": [
+    "coelho"
+   ],
+   "nariz": "",
+   "lugar": "nw",
+   "dados_skin": "marfim",
+   "texto": "Coelho the rabbit, tired and in a hurry, holds up in one paw a single classic white ivory die at face height, showing it to the reader with a resigned look, a pocket watch hanging from his other paw. Behind him, a long row of tiny coat hooks with dozens of very small rabbit coats and scarves, a huge family's entrance hall. The die is drawn big and seen straight from the front, so only ONE face shows, as a plain square with exactly one round pips in the standard arrangement; no other dice in the picture. Keep the upper-left area (a third of the width, top 40%) as empty plain wall or sky for a speech balloon; the characters stay in the right 60% of the frame.",
+   "boca": {
+    "coelho": [
+     71.6,
+     46
+    ]
+   },
+   "cabeca": {
+    "coelho": [
+     62,
+     8,
+     86,
+     56
+    ]
+   },
+   "evitar": [
+    [
+     47,
+     27,
+     60,
+     46
+    ]
+   ]
+  },
+  "c3-verde": {
+   "quem": [
+    "diana"
+   ],
+   "nariz": "cachecol",
+   "lugar": "nw",
+   "dados_skin": "lagoa",
+   "texto": "Diana sits at the green felt game table and inspects a single frog-green die through a big magnifying glass, one eyebrow raised, suspicious, like a detective. Warm lamp light, simple background. The die is drawn big and seen straight from the front, so only ONE face shows, as a plain square with exactly five round pips in the standard arrangement; no other dice in the picture. Keep the upper-left area (a third of the width, top 40%) as empty plain wall or sky for a speech balloon; the characters stay in the right 60% of the frame.",
+   "boca": {
+    "diana": [
+     60,
+     48
+    ]
+   },
+   "cabeca": {
+    "diana": [
+     49,
+     6,
+     79,
+     56
+    ]
+   },
+   "evitar": [
+    [
+     41,
+     70,
+     53,
+     88
+    ]
+   ]
+  },
+  "c3-mimetismo": {
+   "quem": [
+    "raposa"
+   ],
+   "nariz": "",
+   "lugar": "ne",
+   "dados_skin": "lagoa",
+   "texto": "Raposa the fox, smug and elegant, holds a single frog-green die right next to her green knitted scarf, comparing the two colors with a satisfied half-smile, eyes half closed. Warm winter den, plush old sofa behind her. Her single bushy tail with a white tip curls once behind her, clearly attached at her lower back. The die is drawn big and seen straight from the front, so only ONE face shows, as a plain square with exactly three round pips in the standard arrangement; no other dice in the picture. Keep the upper-right area (a third of the width, top 40%) as empty plain wall for a speech balloon; the fox stays in the left 60% of the frame.",
+   "boca": {
+    "raposa": [
+     41,
+     46
+    ]
+   },
+   "cabeca": {
+    "raposa": [
+     17,
+     6,
+     53,
+     56
+    ]
+   },
+   "evitar": [
+    [
+     49,
+     49,
+     60,
+     64
+    ]
+   ]
+  },
+  "c4-mel": {
+   "quem": [
+    "urso"
+   ],
+   "nariz": "",
+   "lugar": "nw",
+   "dados_skin": "mel",
+   "texto": "Inside the dark cave, the big brown bear half asleep, eyes barely open, wearing his red knitted beanie with a cream pompom, hugs a big round glass jar of golden honey against his belly like a pillow, a wooden honey dipper in it. Cozy and drowsy. No dice in the picture. Keep the upper-left area (a third of the width, top 40%) as empty plain wall or sky for a speech balloon; the characters stay in the right 60% of the frame.",
+   "boca": {
+    "urso": [
+     64,
+     46
+    ]
+   },
+   "cabeca": {
+    "urso": [
+     53,
+     13,
+     81,
+     48
+    ]
+   }
   }
  },
  "paginas": [
@@ -2738,6 +2877,17 @@
      "fala": "C1-14",
      "parte": 1,
      "plano": "detalhe"
+    },
+    {
+     "arte": "c1-aviso",
+     "fala": "C1-16",
+     "parte": 0
+    },
+    {
+     "arte": "c1-aviso",
+     "fala": "C1-16",
+     "parte": 1,
+     "plano": "perto"
     }
    ],
    "piloto": true
@@ -2792,6 +2942,17 @@
      "arte": "c2-coelho",
      "fala": "C2-05",
      "plano": "detalhe"
+    },
+    {
+     "arte": "c2-dado",
+     "fala": "C2-15",
+     "parte": 0
+    },
+    {
+     "arte": "c2-dado",
+     "fala": "C2-15",
+     "parte": 1,
+     "plano": "perto"
     }
    ]
   },
@@ -2854,6 +3015,17 @@
      "plano": "detalhe"
     },
     {
+     "arte": "c3-verde",
+     "fala": "C3-17",
+     "parte": 0
+    },
+    {
+     "arte": "c3-verde",
+     "fala": "C3-17",
+     "parte": 1,
+     "plano": "perto"
+    },
+    {
      "arte": "c3-carta",
      "fala": "C3-03"
     }
@@ -2897,6 +3069,16 @@
      "fala": "C3-06",
      "parte": 2,
      "plano": "detalhe"
+    },
+    {
+     "arte": "c3-mimetismo",
+     "fala": "C3-15",
+     "parte": 0
+    },
+    {
+     "arte": "c3-mimetismo",
+     "fala": "C3-15",
+     "parte": 1
     }
    ]
   },
@@ -2985,6 +3167,17 @@
     {
      "arte": "c4-caverna",
      "fala": "C4-05",
+     "plano": "perto"
+    },
+    {
+     "arte": "c4-mel",
+     "fala": "C4-14",
+     "parte": 0
+    },
+    {
+     "arte": "c4-mel",
+     "fala": "C4-14",
+     "parte": 1,
      "plano": "perto"
     }
    ]
@@ -3469,6 +3662,11 @@
      "plano": "perto"
     },
     {
+     "arte": "f-fita",
+     "fala": "F-02",
+     "plano": "perto"
+    },
+    {
      "arte": "f-nariz"
     },
     {
@@ -3519,6 +3717,11 @@
      "fala": "F-A",
      "parte": 4,
      "plano": "detalhe"
+    },
+    {
+     "arte": "f-eco",
+     "fala": "F-A2",
+     "plano": "perto"
     }
    ]
   },
@@ -3879,9 +4082,21 @@
    "y": 3,
    "w": 52.9,
    "fs": 0.9,
-   "semRabo": true,
    "tx": 71.6,
-   "ty": 40.8
+   "ty": 40.8,
+   "semRabo": true
+  },
+  "C1-depois_3_0": {
+   "x": 2,
+   "y": 3,
+   "w": 48,
+   "fs": 0.85
+  },
+  "C1-depois_4_0": {
+   "x": 3,
+   "y": 4,
+   "w": 30,
+   "fs": 1
   },
   "C1-interludio_0_0": {
    "x": 60.1,
@@ -3896,9 +4111,9 @@
    "y": 3.2,
    "w": 55.7,
    "fs": 0.8,
-   "semRabo": true,
    "tx": 49.7,
-   "ty": 26.7
+   "ty": 26.7,
+   "semRabo": true
   },
   "C1-interludio_2_0": {
    "x": 31.1,
@@ -3926,6 +4141,18 @@
    "y": 2.4,
    "w": 71,
    "fs": 0.8
+  },
+  "C2-chegada_3_0": {
+   "x": 3,
+   "y": 4,
+   "w": 40,
+   "fs": 0.9
+  },
+  "C2-chegada_4_0": {
+   "x": 2,
+   "y": 2,
+   "w": 36,
+   "fs": 0.85
   },
   "C2-depois_1_0": {
    "x": 2.5,
@@ -3976,6 +4203,18 @@
    "w": 69.4,
    "fs": 0.8
   },
+  "C3-chegada_5_0": {
+   "x": 56,
+   "y": 4,
+   "w": 40,
+   "fs": 0.9
+  },
+  "C3-chegada_6_0": {
+   "x": 56,
+   "y": 4,
+   "w": 40,
+   "fs": 0.85
+  },
   "C3-interludio_2_0": {
    "x": 31.4,
    "y": 81.8,
@@ -3983,6 +4222,18 @@
    "fs": 0.9
   },
   "C3-interludio_3_0": {
+   "x": 2,
+   "y": 4,
+   "w": 44,
+   "fs": 0.85
+  },
+  "C3-interludio_4_0": {
+   "x": 2,
+   "y": 4,
+   "w": 34,
+   "fs": 0.95
+  },
+  "C3-interludio_5_0": {
    "x": 44.5,
    "y": 0,
    "w": 59.7,
@@ -3999,6 +4250,18 @@
    "y": 86.5,
    "w": 57.2,
    "fs": 1
+  },
+  "C4-chegada_4_0": {
+   "x": 2,
+   "y": 4,
+   "w": 44,
+   "fs": 0.85
+  },
+  "C4-chegada_5_0": {
+   "x": 2,
+   "y": 4,
+   "w": 34,
+   "fs": 0.95
   },
   "C5-chegada_1_0": {
    "x": 48.4,
@@ -4048,11 +4311,23 @@
    "w": 59.7,
    "fs": 1
   },
-  "F-1_4_0": {
+  "F-1_2_0": {
+   "x": 2,
+   "y": 3,
+   "w": 36,
+   "fs": 0.85
+  },
+  "F-1_5_0": {
    "x": 3.1,
    "y": 5.3,
    "w": 37.7,
    "fs": 1
+  },
+  "F-2_5_0": {
+   "x": 2,
+   "y": 4,
+   "w": 32,
+   "fs": 0.9
   },
   "I1_1_0": {
    "x": 39.2,

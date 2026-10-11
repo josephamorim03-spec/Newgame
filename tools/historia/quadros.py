@@ -10,6 +10,7 @@
                                                           # --editor: o editor de balões (arrastar, largura, rabinho, letra)
     python3 tools/historia/quadros.py narizes [ids...]        # a folha de modelo do nariz (arte/historia/narizes/)
     python3 tools/historia/quadros.py pagina-base            # o papel do caderno de receitas (arte/historia/pagina-base.png)
+    python3 tools/historia/quadros.py jogo                   # os quadros para o gibi do jogo (js/historia_quadros_dados.js)
 
 Cada arte é um desenho descrito no roteiro (docs/historia.md §7), sem texto: o pedido junta o estilo, o retrato pintado de
 cada bicho do quadro (arte/fonte/<id>.png) como referência, o enfeite do nariz da Diana naquele capítulo e a cena.
@@ -39,6 +40,8 @@ FALAS = RAIZ / "docs" / "historia_piadas.json"
 MODELO_PAGINA = RAIZ / "tools" / "historia" / "paginas_modelo.html"
 PARALELO = 4
 LADO_PAGINA = 960      # a largura de cada quadro nas páginas de revisão
+LADO_JOGO, QUALIDADE_JOGO = 768, 70   # no jogo (arquivo único): o lado maior de cada quadro (decisão do dono: 768 px)
+DADOS_JOGO = RAIZ / "js" / "historia_quadros_dados.js"
 
 
 PAGINA_BASE = NARIZES.parent / "pagina-base.png"   # o papel do caderno de receitas: toda receita é desenhada em cima dele
@@ -161,10 +164,90 @@ def paginas(cfg, saida, piloto=False, editor=False):
              "baloes": cfg.get("baloes", {}), "editor": editor}
     js = json.dumps(dados, ensure_ascii=False).replace("</", "<\\/")
     saida.parent.mkdir(parents=True, exist_ok=True)
-    saida.write_text(MODELO_PAGINA.read_text(encoding="utf-8").replace("/*DADOS*/null", js), encoding="utf-8")
+    # o desenho do quadro é o mesmo do gibi do jogo: css/quadros.css e js/historia_quadros.js entram embutidos
+    modelo = (MODELO_PAGINA.read_text(encoding="utf-8")
+              .replace("/*QUADROS_CSS*/", (RAIZ / "css" / "quadros.css").read_text(encoding="utf-8"))
+              .replace("/*QUADROS_JS*/", (RAIZ / "js" / "historia_quadros.js").read_text(encoding="utf-8")))
+    saida.write_text(modelo.replace("/*DADOS*/null", js), encoding="utf-8")
     faltando = sorted(i for i in usadas - {""} - set(imagens) if not cfg["artes"].get(i, {}).get("mural"))
     print(f"{saida}: {len(pags)} páginas, {len(imagens)} artes, {saida.stat().st_size // 1024} KB"
           + (f"; ainda sem arte: {', '.join(faltando)}" if faltando else ""))
+
+
+def jogo(cfg):
+    """Os quadros que o gibi do jogo mostra (js/historia.js com js/historia_quadros.js): por fala, os quadros dela na ordem
+    das páginas (a parte é o balão da fala que o quadro mostra), os quadros mudos que vêm antes ou depois dela, as artes
+    (só o que o desenho usa) e os balões ajustados pelo dono. As falas em si vêm do js/historia_falas.js (só as aprovadas)."""
+    falas_src = {f["id"]: f for f in json.loads(FALAS.read_text(encoding="utf-8"))["falas"]}
+    campos_q = ("plano", "foco", "impacto", "som", "linhas")
+    porfala, mudos = {}, {}
+    for p in cfg["paginas"]:
+        qs = p["quadros"]
+        meio = set()
+        eh_meio = lambda q: bool(q and q.get("plano") and q["plano"] != "inteiro" and not q.get("opcoes"))
+        i = 0
+        while i < len(qs):                       # como a grade das páginas: dois quadros de meio seguidos ficam lado a lado
+            if eh_meio(qs[i]) and i + 1 < len(qs) and eh_meio(qs[i + 1]):
+                meio |= {i, i + 1}; i += 2
+            else:
+                i += 1
+        entradas = []                            # (índice, fala, entrada)
+        for i, q in enumerate(qs):
+            base = {k: q[k] for k in campos_q if k in q}
+            if q.get("opcoes"):
+                for k, (arte, fala) in enumerate(q["opcoes"]):
+                    if arte:
+                        entradas.append((i, fala, {"arte": arte, "chave": f'{p["id"]}_{i}_o{k}', **base}))
+                continue
+            if not q.get("arte"):
+                continue
+            e = {"arte": q["arte"], "chave": f'{p["id"]}_{i}', **base}
+            if q.get("parte") is not None:
+                e["parte"] = q["parte"]
+            if i in meio:
+                e["meio"] = True
+            entradas.append((i, q.get("fala"), e))
+        for n, (i, fala, e) in enumerate(entradas):
+            if fala:
+                porfala.setdefault(fala, []).append(e)
+                continue
+            # um quadro mudo vai antes da próxima fala da página; sem próxima, depois da anterior
+            depois = next((f for _, f, _ in entradas[n + 1:] if f), None)
+            antes = next((f for _, f, _ in reversed(entradas[:n]) if f), None)
+            if depois:
+                mudos.setdefault(depois, {}).setdefault("antes", []).append(e)
+            elif antes:
+                mudos.setdefault(antes, {}).setdefault("depois", []).append(e)
+    usadas = {e["arte"] for l in porfala.values() for e in l} | {e["arte"] for m in mudos.values() for l in m.values() for e in l}
+    campos = ("boca", "cabeca", "evitar", "lugar", "titulo", "espelho", "aba", "pagina", "mural")
+    artes, imagens = {}, {}
+    for id_ in sorted(usadas):
+        a = cfg["artes"].get(id_)
+        if not a:
+            continue
+        artes[id_] = {c: a[c] for c in campos if c in a}
+        artes[id_]["texto"] = ""                   # o pedido em inglês não serve de descrição: no jogo, o texto é o balão
+        arq = QUADROS / f"{id_}.webp"
+        if a.get("mural") or not arq.exists():
+            continue
+        im = Image.open(arq).convert("RGB")
+        k = LADO_JOGO / max(im.size)
+        im = im.resize((round(im.width * k), round(im.height * k)), Image.LANCZOS)
+        buf = io.BytesIO()
+        im.save(buf, "WEBP", quality=QUALIDADE_JOGO, method=6)
+        imagens[id_] = "data:image/webp;base64," + base64.b64encode(buf.getvalue()).decode()
+    # quem fala em cada fala (o resto, o texto, vem do js/historia_falas.js); um quadro sem arte não entra
+    porfala = {f: [e for e in l if e["arte"] in artes] for f, l in porfala.items()}
+    porfala = {f: l for f, l in porfala.items() if l}
+    quem = {f: falas_src[f]["quem"] for f in porfala if f in falas_src}
+    usados_baloes = {e["chave"] for l in porfala.values() for e in l} | {e["chave"] for m in mudos.values() for l in m.values() for e in l}
+    baloes = {k: v for k, v in cfg.get("baloes", {}).items() if k.rsplit("_", 1)[0] in usados_baloes}
+    dados = {"falas": porfala, "mudos": mudos, "quem": quem, "artes": artes, "murais": cfg.get("murais", {}), "baloes": baloes, "imagens": imagens}
+    js = json.dumps(dados, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
+    DADOS_JOGO.write_text("/* gerado por tools/historia/quadros.py jogo a partir de arte/historia.json e arte/historia/quadros/: os quadros pintados\n"
+                          " * do gibi (js/historia.js os desenha com js/historia_quadros.js). Não editar. */\n"
+                          "window.HISTORIA_QUADROS = " + js + ";\n", encoding="utf-8")
+    print(f"{DADOS_JOGO.relative_to(RAIZ)}: {len(porfala)} falas com quadro, {len(imagens)} imagens, {DADOS_JOGO.stat().st_size // 1024} KB")
 
 
 def narizes(cfg, ids):
@@ -191,6 +274,8 @@ def main():
     argv = sys.argv[1:]
     if argv[:1] == ["pagina-base"]:
         return pagina_base(cfg)
+    if argv[:1] == ["jogo"]:
+        return jogo(cfg)
     if argv[:1] == ["narizes"]:
         return narizes(cfg, argv[1:])
     if argv[:1] == ["paginas"]:

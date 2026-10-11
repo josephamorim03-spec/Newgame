@@ -129,6 +129,59 @@
     for (const id of qd.ids) { const f = fala(id); if (!f) continue; f.split(' / ').forEach(b => out.push({ id, ...balao(b, qd.quem) })); }
     return out;
   }
+  // ---------- os quadros pintados (js/historia_quadros.js, com os dados de js/historia_quadros_dados.js) ----------
+  // onde a fala tem quadro, o gibi mostra o quadro com os balões no lugar que o dono ajustou, um balão por toque; onde não
+  // tem, o retrato de sempre. A fala continua vindo daqui (só as aprovadas); do quadro vêm a arte, a câmera e o lugar.
+  let QH;
+  function pintados() {
+    if (QH !== undefined) return QH;
+    const H = window.HISTORIA_QUADROS;
+    if (!H || !window.QuadrosHistoria) return (QH = null);
+    const falas = {};
+    for (const [id, quem] of Object.entries(H.quem)) if (fala(id)) falas[id] = { quem, texto: fala(id), status: 'aprovada' };
+    QH = { H, Q: QuadrosHistoria.criar({ ...H, falas, retratos: window.RETRATOS_PINTADOS || {} }) };
+    return QH;
+  }
+  // o quadro do n-ésimo balão de uma fala: o da parte n, ou o quadro com todos os balões dela
+  function entradaDe(id, n) {
+    const l = pintados() && QH.H.falas[id];
+    return l ? l.find(e => e.parte === n) || l.find(e => e.parte == null) || null : null;
+  }
+  // cada balão sabe o seu número na fala e o seu quadro; os quadros mudos entram antes (ou depois) da fala deles
+  function comQuadros(bs) {
+    if (!pintados()) return bs;
+    const out = [], cont = {};
+    bs.forEach((b, k) => {
+      if (!b.id) { out.push(b); return; }
+      const n = cont[b.id] = b.id in cont ? cont[b.id] + 1 : 0, m = QH.H.mudos[b.id] || {};
+      if (n === 0) (m.antes || []).forEach(e => out.push({ mudo: e }));
+      out.push({ ...b, n, quadro: entradaDe(b.id, n) });
+      if (!bs.slice(k + 1).some(x => x.id === b.id)) (m.depois || []).forEach(e => out.push({ mudo: e }));
+    });
+    return out;
+  }
+  // o quadro pintado: os balões dele todos já no lugar (escondidos), para nenhum pular quando o próximo aparecer
+  function quadroPintadoHTML(e, bs) {
+    const { Q } = QH;
+    let t = null;
+    if (bs.length) {
+      const id = bs[0].id, base = Q.batidas(id), texto = {};
+      bs.forEach(b => { texto[b.n] = b.t; });
+      const comTexto = (x, k) => ({ ...x, txt: texto[k] != null ? texto[k] : x.txt });   // o texto do jogo (a cura muda a 1.ª frase)
+      if (e.parte != null) t = base[e.parte] ? comTexto(base[e.parte], e.parte) : null;
+      else { const l = base.map(comTexto); t = l.length === 1 ? l[0] : { ...l[0], multi: l }; }
+    }
+    const cls = `q${e.meio ? ' q-meio' : ''}${e.impacto ? ' q-impacto' : ''}`;
+    return `<div class="gq gq-arte qh"><div class="${cls}" data-linhas='${e.linhas ? JSON.stringify(e.linhas) : ''}'>${Q.painel(e.arte, e, t, e.chave)}</div><div class="gq-baloes"></div></div>`;
+  }
+  function desenharQuadro(gq) {
+    const el = gq && gq.querySelector('.arte[data-arte]');
+    if (!el || !QH) return;
+    const img = el.querySelector('img.base');
+    if (img && !img.complete) { img.addEventListener('load', () => QH.Q.desenhar(el), { once: true }); return; }
+    QH.Q.desenhar(el);
+  }
+
   function quadroHTML(qd) {
     const cena = qd.ids.map(id => CENAS()[id]).find(Boolean) || '';
     if (qd.quem === 'creditos') return `<div class="gq gq-creditos"><p class="gq-cred-titulo">Dice Duel</p><p class="gq-cred-sub">O Caderno da Diana</p><p class="gq-cred-fim">fim</p></div>`;
@@ -141,7 +194,7 @@
   }
   // mostra os quadros um a um; cada toque mostra o próximo balão. "Pular" termina na hora. Devolve quando acaba
   function gibi(quadros, { titulo = '', ctx = {} } = {}) {
-    const fila = quadros.map(qd => ({ qd, bs: batidas(qd, ctx) })).filter(x => x.bs.length);
+    const fila = quadros.map(qd => ({ qd, bs: comQuadros(batidas(qd, ctx)) })).filter(x => x.bs.length);
     if (!fila.length) return Promise.resolve();
     return new Promise(res => {
       const el = document.createElement('div');
@@ -152,21 +205,58 @@
       if (window.Som) Som.tocar('abrir');
       const pag = el.querySelector('.gibi-pagina');
       let iq = -1, ib = 0, atual = null, acabou = false, esperando = false;
-      const fim = () => { if (acabou) return; acabou = true; document.removeEventListener('keydown', tecla, true); el.remove(); if (window.Som) Som.tocar('fechar'); res(); };
+      // a vista da vez: o cartão de sempre (vista.e null) ou um quadro pintado (vista.e: a entrada dele)
+      let vista = null;
+      const redesenhar = () => { if (vista && vista.e) desenharQuadro(atual); };
+      const fim = () => { if (acabou) return; acabou = true; document.removeEventListener('keydown', tecla, true); removeEventListener('resize', redesenhar); el.remove(); if (window.Som) Som.tocar('fechar'); res(); };
+      addEventListener('resize', redesenhar);
+      if (document.fonts) document.fonts.ready.then(redesenhar);
+      // o quadro pintado de um balão (null: o cartão). Sem fala (a fita da cura, o rótulo da escolha), vai para a vista do
+      // próximo balão com fala, que é a quem ele acompanha; sem próximo (os botões da escolha), fica na vista da vez
+      function alvo(b) {
+        if (b.mudo) return b.mudo;
+        if (b.id) return b.quadro || null;
+        const prox = fila[iq].bs.slice(ib).find(x => x.id || x.mudo);
+        return prox ? prox.mudo || prox.quadro || null : vista ? vista.e : null;
+      }
+      function garantirVista(b, qd) {
+        const e = alvo(b);
+        if (vista && vista.e === e) return;
+        if (e) {
+          // o quadro pintado ocupa a página sozinho, com todos os balões dele já no lugar (escondidos)
+          pag.querySelectorAll('.gq').forEach(x => x.remove());
+          pag.insertAdjacentHTML('beforeend', quadroPintadoHTML(e, b.mudo ? [] : fila[iq].bs.filter(x => x.quadro === e)));
+          atual = pag.lastElementChild;
+          atual.querySelectorAll('.balao').forEach(x => x.classList.add('oculto'));
+        } else {
+          // um cartão novo: no máximo dois na tela (o anterior fica, apagado, acima)
+          pag.querySelectorAll('.gq.saindo').forEach(x => x.remove());
+          pag.querySelectorAll('.gq').forEach(x => x.classList.add('saindo'));
+          pag.insertAdjacentHTML('beforeend', quadroHTML(qd));
+          atual = pag.lastElementChild;
+        }
+        vista = { e };
+        if (e) desenharQuadro(atual);
+      }
       function proximo() {
         if (iq >= 0 && ib < fila[iq].bs.length) return mostrarBatida();
-        iq++; ib = 0;
+        iq++; ib = 0; vista = null;
         if (iq >= fila.length) return fim();
-        // um quadro novo: no máximo dois na tela (o anterior fica, apagado, acima)
-        pag.querySelectorAll('.gq.saindo').forEach(x => x.remove());
-        pag.querySelectorAll('.gq').forEach(x => x.classList.add('saindo'));
-        pag.insertAdjacentHTML('beforeend', quadroHTML(fila[iq].qd));
-        atual = pag.lastElementChild;
         mostrarBatida();
       }
       function mostrarBatida() {
         const b = fila[iq].bs[ib++], qd = fila[iq].qd;
-        if (b.creditos) return;
+        garantirVista(b, qd);
+        if (b.creditos || b.mudo) return;
+        if (vista.e && b.id) {
+          // no quadro pintado: aparece o balão desta batida (o da parte, ou o n-ésimo do quadro com todos)
+          const bal = atual.querySelector(`.balao[data-chave="${vista.e.chave}_${vista.e.parte != null ? 0 : b.n}"]`);
+          if (!bal) return;
+          bal.classList.remove('oculto');
+          desenharQuadro(atual);
+          if (window.Som) Som.tocar(b.pausa ? 'toque' : 'falaRival', { voz: b.quem === 'diana' ? 'diana' : 'coruja' });
+          return;
+        }
         if (b.escolha) {
           // dois botões: o escolhido fala primeiro e o outro em seguida (os dois são do roteiro)
           esperando = true;
@@ -177,7 +267,7 @@
             atual.querySelector('.gq-escolha').remove();
             const novas = [];
             ordem.forEach(o => { novas.push({ rotulo: o.rotulo }); const f = fala(o.id); if (f) f.split(' / ').forEach(x => novas.push({ id: o.id, ...balao(x, qd.quem) })); });
-            fila[iq].bs.splice(ib, 0, ...novas);
+            fila[iq].bs.splice(ib, 0, ...comQuadros(novas));
             esperando = false; proximo();
           }));
           return;
