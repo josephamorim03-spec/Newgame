@@ -79,6 +79,15 @@
       const m = [[t[0], b[0], n[0]], [t[1], b[1], n[1]], [t[2], b[2], n[2]]];
       html += `<div class="face-rolagem" style="transform:${matriz(m, n.map(x => x * L / 2))}">${montarCubo.faceHTML(i + 1)}</div>`;
     }
+    // as quinas: cada vértice de um dado de cantos redondos é uma esfera do mesmo raio do canto da face, encostada nas
+    // três faces. Sem ela, onde três cantos redondos se encontram ficava um buraco (o vértice "vazado"). A esfera é
+    // um disco sempre de frente para a tela (o quadro desfaz o giro do cubo nele), com a luz de uma bola. Pousado e
+    // visto de cima, cada disco fica inteiro sob o canto redondo da face de cima: o pouso não muda
+    const raio = (skin === 'pelucia' || skin === 'la' ? 0.34 : 0.24) * L, cq = L / 2 - raio, quinas = [];
+    for (const sx of [-1, 1]) for (const sy of [-1, 1]) for (const sz of [-1, 1]) {
+      html += `<div class="quina-rolagem" style="left:${L / 2 - raio}px;top:${L / 2 - raio}px;width:${2 * raio}px;height:${2 * raio}px"></div>`;
+      quinas.push([sx * cq, sy * cq, sz * cq]);
+    }
     cubo.innerHTML = html;
     // cada face guarda as próprias peças: a sombra da luz (um elemento só, por cima das bolinhas) e as bolinhas acesas.
     // A luz muda a cada quadro; escrevê-la como variável CSS herdada na face fazia o navegador recalcular a face e as
@@ -89,7 +98,8 @@
       sombra.className = 'sombra-face'; dado.appendChild(sombra);
       return { el, sombra, pips: [...el.querySelectorAll('.pip.on')], op: -1, esc: -1, pip: -1 };
     });
-    return { cubo, faces, miolos: [...cubo.querySelectorAll('.miolo-rolagem')].map(el => ({ el, esc: -1, op: -1 })) };
+    return { cubo, faces, miolos: [...cubo.querySelectorAll('.miolo-rolagem')].map(el => ({ el, esc: -1, op: -1 })),
+      quinas: [...cubo.querySelectorAll('.quina-rolagem')].map((el, k) => ({ el, c: quinas[k], op: -1 })) };
   }
 
   // cada dado tem o seu palco: a perspectiva olha para a casa dele (de frente, um pouco de baixo), e não para o
@@ -101,10 +111,10 @@
     const sombra = document.createElement('div');
     sombra.className = 'sombra-rolagem';
     sombra.style.width = sombra.style.height = L + 'px';
-    const { cubo, faces, miolos } = montarCubo(L, skin);
+    const { cubo, faces, miolos, quinas } = montarCubo(L, skin);
     if (skin) cubo.dataset.skin = sombra.dataset.skin = skin;
     palco.append(sombra, cubo);
-    return { palco, sombra, cubo, faces, miolos };
+    return { palco, sombra, cubo, faces, miolos, quinas };
   }
 
   // itens: [{ id, v }] na ordem da Mesa (é a ordem das casas). op: { faceHTML(v), som(nome, dados), velocidade }
@@ -122,10 +132,10 @@
       if (el) el.closest('.pega').classList.add('rolando');   // antes de medir: desliga a animação antiga da casa
       const L = el ? onde(el).L : 60;
       montarCubo.faceHTML = op.faceHTML;
-      const { palco, cubo, sombra, faces, miolos } = montarPalco(L, op.skin);
+      const { palco, cubo, sombra, faces, miolos, quinas } = montarPalco(L, op.skin);
       camada.append(palco);
       const d = M.preparar(sorteio.l, i, it.v - 1, 0, sorteio.espelhado);
-      ativos.set(it.id, { d, palco, cubo, sombra, faces, miolos, grupo, L, opacidade: -1 });
+      ativos.set(it.id, { d, palco, cubo, sombra, faces, miolos, quinas, grupo, L, opacidade: -1 });
     });
     if (!raf) raf = requestAnimationFrame(quadro);
     return true;
@@ -160,7 +170,7 @@
       // na pose final: o dado parado aparece por baixo e o cubo se funde nele (sem trocar num quadro só,
       // o cubo 3D é desenhado mais macio que o dado nítido e a troca dava um estalo)
       if (t >= a.d.assenta && !a.pousando) { a.pousando = true; el.closest('.pega').classList.add('pousando'); }
-      // no ar, o cubo é sólido (cantos pouco redondos); perto de assentar, os cantos voltam aos do dado parado (css)
+      // no ar, as faces têm a beirada toda sombreada (aresta redonda); perto de assentar, a do dado parado (css)
       if (!a.chegando && t >= a.d.assenta - 0.22) { a.chegando = true; a.cubo.classList.remove('voando'); }
       lote.push({ a, t, c: t < a.d.inicio ? null : onde(el) });
     }
@@ -188,7 +198,16 @@
       if (z !== a.z) { a.z = z; a.palco.style.zIndex = String(z); }
       // o centro fica meio lado abaixo da face de cima: parado, a face de cima cai no plano da tela (escala 1)
       const Lm = L * NITIDEZ;   // o cubo montado (o centro dele é o centro do dado; a escala volta ao tamanho da tela)
-      a.cubo.style.transform = `translate3d(${cx - Lm / 2}px, ${cy - Lm / 2}px, ${p.pos[1] * L - L / 2}px) ${matriz(baseCss(p.base))} scale3d(${1 / NITIDEZ}, ${1 / NITIDEZ}, ${1 / NITIDEZ})`;
+      const R = baseCss(p.base);
+      a.cubo.style.transform = `translate3d(${cx - Lm / 2}px, ${cy - Lm / 2}px, ${p.pos[1] * L - L / 2}px) ${matriz(R)} scale3d(${1 / NITIDEZ}, ${1 / NITIDEZ}, ${1 / NITIDEZ})`;
+      // as quinas: no lugar do vértice, com o giro do cubo desfeito (a transposta), de frente para a tela.
+      // Na fusão elas somem (a face de cima, sumindo, as deixaria aparecer por baixo)
+      const Rt = [[R[0][0], R[1][0], R[2][0]], [R[0][1], R[1][1], R[2][1]], [R[0][2], R[1][2], R[2][2]]];
+      const oq = a.pousando ? 0 : Math.round(entra * 100) / 100;
+      for (const q of a.quinas) {
+        q.el.style.transform = matriz(Rt, q.c);
+        if (oq !== q.op) { q.op = oq; q.el.style.opacity = oq; }
+      }
       // a sombra é a do dado parado (6 px abaixo, desfocada): no chão ela fica onde a dele fica;
       // no ar ela se afasta para baixo e à direita, encolhe e clareia
       a.sombra.style.transform = `translate(${cx - L / 2 + h * L * 0.28}px, ${cy - L / 2 + 6 + h * L * 0.42}px) scale(${1 - Math.min(0.45, h * 0.16)})`;
