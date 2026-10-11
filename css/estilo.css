@@ -1449,6 +1449,14 @@ button.inicio-perfil:active { transform: translateY(1px); }
 .gq:nth-child(even) { transform: rotate(.7deg); }
 .gq.saindo { opacity: .45; transform: scale(.94) rotate(-.6deg); transition: opacity .25s, transform .25s; max-height: 34vh; overflow: hidden; }
 @keyframes gqEntra { from { opacity: 0; transform: translateY(16px) scale(.96); } }
+/* o quadro pintado (css/quadros.css desenha o quadro): sem o cartão de papel, do tamanho que cabe na altura da tela */
+.gq.gq-arte { background: transparent; border: 0; border-radius: 0; padding: 0; box-shadow: none; gap: 8px; }
+.gq-arte .arte { --alto: calc(100dvh - var(--seg-topo) - var(--seg-baixo) - 150px); width: min(100%, calc(var(--alto) * 1.5)); margin: 0 auto; box-shadow: 5px 5px 0 rgba(0,0,0,.45); }
+.gq-arte .arte.pagina { width: min(100%, calc(var(--alto) * 2 / 3)); }
+.gq-arte .q-meio .arte { aspect-ratio: 1 / 1; width: min(100%, var(--alto)); }
+@media (max-width: 560px) { .gq-arte .q-meio .arte { aspect-ratio: 4 / 3; width: min(100%, calc(var(--alto) * 4 / 3)); } }
+.gq-arte .gq-baloes:empty { display: none; }
+.gq.gq-arte.saindo { max-height: 30vh; }
 .gq-topo { display: flex; align-items: center; gap: 10px; }
 .gq-topo .avatar { width: 52px; height: 52px; flex: none; }
 .gq-topo b { font-family: var(--f-titulo); font-size: 18px; }

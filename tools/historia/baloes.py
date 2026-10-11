@@ -6,7 +6,8 @@ tools/historia/quadros.py paginas --editor, coleção "baloes" do banco dela).
 
 Cada chave é página_quadro[_oOpção]_balão; cada ajuste tem x, y (canto de cima à esquerda) e w (largura) em % do quadro,
 fs (a escala da letra), tx, ty (a ponta do rabinho, em % do quadro; sem eles, o rabinho é o automático) e semRabo.
-Um balão que voltou ao automático no editor some do banco e, aqui, do arquivo.
+Um balão que voltou ao automático no editor some do banco e, aqui, do arquivo. Depois de gravar, refaz os quadros do gibi do
+jogo (tools/historia/quadros.py jogo), para o jogo mostrar os balões no lugar novo.
 """
 import json
 import sys
@@ -31,6 +32,9 @@ def main():
     cfg["baloes"] = novos
     PEDIDOS.write_text(json.dumps(cfg, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     print(f"{len(novos)} balões ajustados ({len(set(novos) - set(antes))} novos, {len(set(antes) - set(novos))} voltaram ao automático)")
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    import quadros                                     # o gibi do jogo leva os balões ajustados
+    quadros.jogo(cfg)
 
 
 if __name__ == "__main__":

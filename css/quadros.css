@@ -1,0 +1,76 @@
+/* Dice Duel · os quadros pintados da história (js/historia_quadros.js): a arte e a camada de tinta por cima (balão, rabinho,
+ * onomatopeia, retícula, letra de mão das receitas, o mural). Usado pelo gibi do jogo e pelas páginas de conferência
+ * (tools/historia/quadros.py paginas). Tudo mora dentro de .qh: o jogo já tem .caixa, .nota e .impacto com outro sentido.
+ * As cores são da arte, as mesmas no tema claro e no escuro. */
+.qh {
+  --qh-tinta: #3a2a2e; --qh-tinta-suave: #7a6468; --qh-papel: #fbf1df; --qh-papel-2: #f1dfc2; --qh-folha: #fffaf0;
+  --qh-mel: #f2b15e; --qh-rosa: #ec8fa8; --qh-azul: #6fbfd3; --qh-pendente: #b8761c; --qh-recusada: #b2483a; --qh-caneta: #8a2f3a;
+  --qh-titulo: "Fredoka", "Nunito", system-ui, sans-serif;
+  --qh-texto: "Nunito", system-ui, sans-serif;
+  --qh-mao: "Caveat", "Comic Sans MS", cursive;
+}
+
+/* o quadro: borda de nanquim; a arte e a camada de tinta por cima */
+.qh .arte { position: relative; overflow: hidden; aspect-ratio: 3 / 2; border: 3px solid var(--qh-tinta); border-radius: 2px; background: var(--qh-papel-2); container-type: inline-size; max-width: 100%; }
+.qh .arte.pagina { aspect-ratio: 2 / 3; }
+.qh .arte img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: var(--op, 50% 50%); transform-origin: 0 0; transform: var(--cam, none); }
+.qh .arte.vazio { display: grid; place-items: center; text-align: center; padding: 16px; color: var(--qh-tinta-suave); border-style: dashed; font-size: 13px; background: transparent; }
+/* retícula: pontinhos de impressão, mais densos num canto (a sombra do gibi barato) */
+.qh .reticula { position: absolute; inset: 0; pointer-events: none; mix-blend-mode: multiply;
+  background: radial-gradient(circle, rgba(58,42,46,.55) 0 28%, transparent 34%) 0 0 / 1.6cqw 1.6cqw;
+  -webkit-mask-image: linear-gradient(to top right, #000, transparent 42%); mask-image: linear-gradient(to top right, #000, transparent 42%); opacity: .45; }
+.qh .arte.pagina .reticula { display: none; }
+/* quadro de impacto: congelado, retícula forte em volta de quem fala, e as chapas azul e rosa fora do registro */
+.qh .q-impacto .arte { transform: rotate(-1.2deg); border-width: 4px; box-shadow: -5px 4px 0 var(--qh-azul), 5px -4px 0 var(--qh-rosa); }
+.qh .q-impacto .reticula { -webkit-mask-image: radial-gradient(circle at var(--bx, 50%) var(--by, 60%), transparent 22%, #000 80%); mask-image: radial-gradient(circle at var(--bx, 50%) var(--by, 60%), transparent 22%, #000 80%); opacity: .6; }
+.qh .q-impacto img.chapa { mix-blend-mode: multiply; opacity: .28; }
+.qh .q-impacto img.chapa.azul { transform: translate(-0.9cqw, 0.5cqw) var(--cam, none); filter: sepia(1) saturate(5) hue-rotate(150deg); }
+.qh .q-impacto img.chapa.rosa { transform: translate(0.9cqw, -0.5cqw) var(--cam, none); filter: sepia(1) saturate(5) hue-rotate(290deg); }
+.qh .tinta { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; z-index: 2; }
+
+/* o balão: só o texto mora no HTML; o contorno e o rabinho são desenhados juntos no SVG (sem emenda) */
+.qh .balao { position: absolute; z-index: 3; box-sizing: border-box; width: max-content; max-width: max(44%, 190px); padding: .8em 1.35em; color: #3a2a2e;
+  font: 800 calc(clamp(12.5px, 3.1cqw, 17px) * var(--fs, 1))/1.25 var(--qh-texto); text-align: center; text-wrap: balance; }
+.qh .balao.ajustado { max-width: none; }
+.qh .balao.nw { left: 4%; top: 5%; } .qh .balao.ne { right: 4%; top: 5%; } .qh .balao.sw { left: 4%; bottom: 6%; } .qh .balao.se { right: 4%; bottom: 6%; }
+.qh .balao.t-pausa { padding: .55em 1.1em; font-size: clamp(13px, 4cqw, 20px); letter-spacing: .1em; }
+.qh .balao.t-caixa { left: 0; top: 0; max-width: 72%; padding: .6em .9em; text-align: left; font-weight: 700; font-style: italic; }
+.qh .q-meio .balao { max-width: 74%; font-size: calc(clamp(12.5px, 4.4cqw, 16px) * var(--fs, 1)); }   /* depois dos tipos: vale também no ajustado, na pausa e na narração */
+.qh .balao.oculto { visibility: hidden; }
+.qh .balao .rub { display: block; font: italic 700 .78em var(--qh-texto); color: #7a6468; }
+.qh .balao .estado { display: block; margin: .35em auto 0; width: max-content; }
+.qh .estado { font: 800 9px var(--qh-texto); letter-spacing: .06em; text-transform: uppercase; color: #fff; background: var(--qh-pendente); border-radius: 4px; padding: 1px 5px; }
+.qh .estado.recusada { background: var(--qh-recusada); }
+/* onomatopeia: letreiro de gibi, com as chapas fora do registro */
+.qh .som { position: absolute; z-index: 3; font: 700 clamp(22px, 9cqw, 64px)/1 var(--qh-titulo); color: var(--qh-mel); -webkit-text-stroke: .12em #3a2a2e; paint-order: stroke fill;
+  text-shadow: -.06em .05em 0 var(--qh-azul), .06em -.05em 0 var(--qh-rosa); transform: translate(-50%, -50%) rotate(var(--rot, -10deg)); letter-spacing: .02em; }
+
+/* as páginas do caderno: o desenho é da arte; o título e as notas são letra de mão */
+.qh .mao { position: absolute; z-index: 3; left: 14%; right: 6%; text-align: center; font: 700 clamp(14px, 7.4cqw, 34px)/1.05 var(--qh-mao); color: #3a2a2e; }
+.qh .mao.titulo { top: 7%; }
+.qh .mao.titulo.espelho { transform: scaleX(-1); }
+.qh .mao.corpo { bottom: 9%; font-weight: 600; font-size: clamp(13px, 6.4cqw, 28px); }
+.qh .mao.margem { bottom: 6%; left: auto; right: 5%; width: 62%; color: var(--qh-caneta); transform: rotate(-4deg); font-size: clamp(13px, 6.6cqw, 30px); text-align: right; }
+.qh .mao .estado { font-family: var(--qh-texto); vertical-align: middle; }
+.qh .mao.oculto, .qh .debaixo.oculto { visibility: hidden; }
+.qh .aba { position: absolute; z-index: 4; left: 20%; right: 10%; top: 30%; height: 30%; background: #fbf1df; border: 2px solid #3a2a2e; border-radius: 2px;
+  transform-origin: 50% 0; transform: perspective(500px) rotateX(64deg) rotate(-2deg); box-shadow: 0 6px 0 rgba(58,42,46,.12);
+  background-image: repeating-linear-gradient(transparent 0 calc(7.2cqw - 1px), rgba(111,191,211,.45) calc(7.2cqw - 1px) 7.2cqw); }
+.qh .debaixo { position: absolute; z-index: 3; left: 18%; right: 8%; top: 50%; text-align: center; font: 700 clamp(13px, 6.6cqw, 30px)/1.1 var(--qh-mao); color: var(--qh-caneta); }
+
+/* o mural (montado aqui, não pintado): cortiça, moldura de madeira, polaroides com os retratos do jogo, barbante, post-its */
+.qh .mural { position: absolute; inset: 0; transform-origin: 0 0; transform: var(--cam, none);
+  background: radial-gradient(circle, rgba(92,56,30,.35) 0 .25cqw, transparent .4cqw) 0 0 / 1.3cqw 1.3cqw,
+    radial-gradient(circle, rgba(255,226,180,.3) 0 .2cqw, transparent .35cqw) .6cqw .7cqw / 1.7cqw 1.7cqw, #c48f5c;
+  box-shadow: inset 0 0 0 2.4cqw #8a5634, inset 0 0 0 2.8cqw #3a2a2e; }
+.qh .mural svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.qh .foto { position: absolute; width: 12cqw; padding: .7cqw .7cqw 2.4cqw; background: #fffaf0; border: .3cqw solid #3a2a2e; transform: translate(-50%, -50%) rotate(var(--r, 0deg)); }
+.qh .foto img { position: static; display: block; width: 100%; height: auto; aspect-ratio: 1; object-fit: cover; transform: none; background: #f1dfc2; }
+.qh .foto .leg { position: absolute; left: 0; right: 0; bottom: .1cqw; text-align: center; font: 700 2.2cqw/1 var(--qh-mao); color: #3a2a2e; }
+.qh .carimbo { position: absolute; left: 50%; top: 58%; transform: translate(-50%, -50%) rotate(-14deg); font: 700 2.1cqw/1 var(--qh-titulo); color: #b2483a; border: .35cqw solid #b2483a; border-radius: .6cqw; padding: .3cqw .7cqw; letter-spacing: .06em; background: rgba(255,250,240,.55); white-space: nowrap; }
+.qh .recado { position: absolute; transform: translate(-50%, -50%) rotate(var(--r, 0deg)); font: 700 2.6cqw/1.05 var(--qh-mao); color: #3a2a2e; text-align: center; }
+.qh .recado.postit { width: 13cqw; min-height: 11cqw; padding: 1cqw; background: #f8dc9a; border: .25cqw solid #3a2a2e; display: grid; place-items: center; }
+.qh .recado.postit.pequeno { width: 7cqw; min-height: 6cqw; font-size: 3.4cqw; }
+.qh .recado.cartao { padding: .6cqw 1.4cqw; background: #fffaf0 repeating-linear-gradient(transparent 0 1.5cqw, rgba(111,191,211,.5) 1.5cqw 1.65cqw); border: .25cqw solid #3a2a2e; font-family: var(--qh-titulo); font-size: 2.6cqw; letter-spacing: .08em; }
+.qh .alfinete { fill: #e8806f; stroke: #3a2a2e; stroke-width: .35; }
+@media (prefers-reduced-motion: reduce) { .qh .q-impacto .arte { transform: none; } }

@@ -235,3 +235,22 @@ aprovado como está.
 A coruja de dois óculos no c7-lacre entra na fase 2, como edição (só os óculos). O valor de cada imagem aparece no
 painel da OpenAI (platform.openai.com → Usage); o plano conta imagens porque o preço por imagem muda com o modelo e a
 qualidade.
+
+## Os quadros no jogo (decisão do dono: 768 px; a integração é da sessão da arte)
+
+O gibi do jogo (`js/historia.js`) mostra o quadro pintado onde a fala tem quadro, com os balões no lugar que o dono
+ajustou no editor; onde não tem, o cartão de sempre (o retrato e os balões de papel).
+- **Um desenho só:** `js/historia_quadros.js` e `css/quadros.css` desenham o quadro (a câmera, os balões com o rabinho, a
+  onomatopeia, a receita em letra de mão, o mural) no jogo e nas páginas de conferência; o que se ajusta numa vale na outra.
+  Tudo do quadro mora dentro de `.qh` (o jogo já usa `.caixa`, `.nota` e `.impacto` com outro sentido).
+- **Os dados:** `python3 tools/historia/quadros.py jogo` gera `js/historia_quadros_dados.js` (as artes em 768 px, WebP 70,
+  cerca de 1,6 MB; por fala, os quadros dela; os quadros mudos; os balões ajustados). O `baloes.py` já roda isso depois de
+  gravar os ajustes. Arte nova ou refeita: rodar de novo e empacotar.
+- **As falas continuam vindo do `js/historia_falas.js`** (só as aprovadas): o quadro dá a arte, a câmera e o lugar; o texto
+  é o do jogo (a cura lê a corrente de quem jogou na 1.ª frase da F-01).
+- **No leitor:** cada toque mostra o próximo balão do quadro (todos já têm lugar, escondidos, para nenhum pular); a parte
+  seguinte de uma fala troca de quadro (perto, detalhe); um quadro mudo (a caverna antes do Urso, o Coelho depois da
+  Coruja, o nariz antes do close) é um toque só dele. A fita da cura, os botões da revelação e as falas sem quadro ficam
+  abaixo do quadro ou no cartão.
+- O quadro cabe na altura da tela (3:2; a receita em pé; dois quadros de meio viram 1:1, ou 4:3 no celular, como nas
+  páginas, para os balões ajustados ficarem no mesmo lugar).
