@@ -124,6 +124,49 @@ o impresso. Tudo no fim de `css/estilo.css`, sob `.impresso` (`?impresso=0` volt
 skin); o ícone do app e a prévia de compartilhamento (`img/`), que pedem arte nova; e trocar o nome do jogo, que o dono não
 pediu (o pedido foi a forma do nome).
 
+### Legibilidade (v0.16, pedido do dono)
+A retícula atrás do texto atrapalhava a leitura no perfil, nas Tarefas, nos ícones de baixo (Deck, Loja, Regras,
+Ajustes) e nos botões do topo. Eles ficaram lisos, com um contorno de papel mais firme e uma sombra dura; no Jogar, a
+retícula ficou só na faixa de baixo, abaixo da palavra. **Regra daqui em diante: textura nunca atrás de letra.** Os
+pontinhos ficam no fundo da página, onde não há texto.
+
+### Proposta: o caderno e o nanquim (reflexão, ainda não feita)
+O dono pediu para pensar em mais gibi: páginas e modais com textura e cor de nanquim, rabiscos, traços de tinta, papel
+rasgado, tudo ligado ao enredo. **Vale fazer, com uma condição: cada textura conta um pedaço da história, e fica só onde a
+história está.** Cada material tem um sentido:
+
+| Material | O que é na história | Onde entra | Onde não entra |
+|---|---|---|---|
+| **Papel de caderno** (pautado, margem vermelha) | o Caderno da Diana, que é o caderno de pesquisa disfarçado | o mapa da história, a página conquistada no fim do capítulo, as recompensas | Loja, Ajustes, Online, deck: são telas de uso, e precisam ser lidas depressa |
+| **Borda rasgada** | as páginas que o Guaxinim arrancou e vendeu, uma para cada bicho | o topo da página do caderno e cada página recuperada | qualquer coisa que não seja página do caderno |
+| **Fita adesiva** | a "Fita Dupla", a fita de DNA da cura | segurando a página no mapa e as páginas recuperadas | botões e partida |
+| **Traço de nanquim** (sublinhado de pincel, carimbo, círculo à mão, seta) | a mão da Diana anotando | acentos pequenos: título sublinhado, carimbo "Feito", o capítulo da vez circulado, a seta do guia no Prólogo | atrás de texto, e na partida |
+| **Aguada de nanquim** (manchas escuras) | as cenas pesadas da história | os quadros dramáticos do gibi (a revelação, o Cap. 8, a cura), com o colega da arte | o menu e as janelas: no celular, a janela cobre a tela e a aguada nem aparece |
+| **Retícula e as chapas azul e rosa** | o jogo impresso | a partida e o letreiro, como hoje | atrás de letra |
+
+**Por que não pôr em tudo:** a partida pede leitura rápida (painéis, Mesa, cartas), e a Loja e os Ajustes são
+formulários. Textura demais ali repete o problema da retícula atrás do texto. O jogo continua aconchegante: o nanquim é
+cacau e chapado, como a arte dos retratos (contorno cacau, uma sombra por forma), e não mancha fotográfica.
+
+**Cuidados:**
+- **Desempenho:** o rasgado é uma máscara com um SVG pequeno e fixo, e a sombra vira `drop-shadow` (a máscara corta o
+  `box-shadow`). Nada de `feTurbulence` vivo.
+- **Texto:** nota "da Diana" na margem só com fala aprovada (a regra da história, `docs/historia.md` §11). O protótipo
+  usou o contador de estrelas no lugar dela.
+- **Arte da história:** o colega faz os quadros. Os traços de nanquim são código, por cima de tudo, como o balão e a
+  retícula (`docs/arte-historia.md`).
+
+**O protótipo** (no `builds/`, fora do jogo): o mapa como página do caderno, com o topo rasgado, a fita mel com pontinhos
+de dado, o título "O Caderno da Diana" em Caveat (a letra das receitas), as pautas azuis, a margem vermelha e o carimbo
+"FEITO" torto nos capítulos vencidos.
+
+**Fases, se o dono aprovar:**
+1. **O mapa como página do caderno** e a **página conquistada** no fim de cada capítulo (a página rasgada que volta,
+   presa com a fita). Cerca de 1 dia.
+2. **Os acentos de nanquim:** carimbo, sublinhado de pincel nos títulos da história, o capítulo da vez circulado à mão,
+   a seta do guia no Prólogo. Meio dia.
+3. **A aguada de nanquim nos quadros dramáticos do gibi,** junto com o colega da arte.
+
 ## 4. Como verificar
 - `node tools/fumaca.js`, `node tools/estreia_e2e.js` (as chamadas do guia não podem atrasar), `node tools/layout.js`
   (onomatopeia e quadro não vazam em 360 px), `node tools/vercel_local.js` (CSP), `python3 tools/empacotar.py`.

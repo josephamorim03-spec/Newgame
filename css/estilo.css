@@ -1562,15 +1562,16 @@ button.inicio-perfil:active { transform: translateY(1px); }
 .impresso .btn-mel { background: radial-gradient(circle, rgba(196,132,58,.55) 0 1.4px, transparent 1.9px) 0 0 / 7px 7px, linear-gradient(180deg, #f8c47a, var(--mel));
   background-size: 7px 7px, auto; background-position: 0 100%, 0 0; background-repeat: repeat-x, no-repeat;
   box-shadow: 0 4px 0 var(--tinta), 0 10px 18px rgba(0,0,0,.25); }
-.impresso .btn-mel { background: linear-gradient(180deg, #f8c47a 0 40%, rgba(242,177,94,0) 85%), radial-gradient(circle, rgba(196,132,58,.6) 0 1.4px, transparent 1.9px) 0 0 / 7px 7px, var(--mel); }
+/* a retícula fica na faixa de baixo, abaixo da palavra (atrás da letra ela atrapalhava a leitura) */
+.impresso .btn-mel { background: linear-gradient(180deg, #f8c47a 0 62%, rgba(242,177,94,0) 96%), radial-gradient(circle, rgba(196,132,58,.6) 0 1.4px, transparent 1.9px) 0 0 / 7px 7px, var(--mel); }
 .impresso .btn-papel { box-shadow: 0 4px 0 var(--tinta), 0 8px 14px rgba(0,0,0,.18); }
 .impresso .btn-mel:active, .impresso .btn-papel:active { box-shadow: 0 1px 0 var(--tinta); }
 .impresso .inicio-principal { font-family: var(--f-titulo); font-size: clamp(18px, 5.4vw, 24px); letter-spacing: .02em; }
 
-/* os painéis escuros do menu ganham retícula no canto, como uma caixa de legenda impressa */
+/* os painéis escuros do menu: lisos, com um contorno de papel mais firme. A retícula atrás do texto atrapalhava a
+   leitura (o dono, v0.16); os pontinhos ficam só no fundo da página, onde não há letra */
 .impresso .inicio-perfil, .impresso .inicio-tarefas, .impresso .inicio-ico, .impresso .btn-topo {
-  background: radial-gradient(circle, rgba(255,243,226,.12) 0 1.2px, transparent 1.7px) 0 0 / 7px 7px, rgba(255,243,226,.06);
-  -webkit-mask-image: none; }
+  background: rgba(255,243,226,.07); box-shadow: inset 0 0 0 1.5px rgba(255,243,226,.24), 0 3px 0 rgba(18,12,18,.55); }
 .impresso .inicio-ico .ico { stroke-width: 2.2; }
 
 /* balões de fala de gibi: papel, contorno cacau e o rabinho apontando para quem fala */
