@@ -3473,5 +3473,304 @@
   }
  },
  "_refazer": "Quando houver crédito na API, nesta ordem: (1) python3 tools/historia/quadros.py narizes cachecol; (2) python3 tools/historia/quadros.py --qualidade high p-pata i1-le c3-raposa c1-pag-a c6-ovelha (o c6-ovelha é uma edição da arte atual: só os hexágonos); (3) python3 tools/historia/dados_ia.py rascunhos, o dono escolhe nas pranchas e python3 tools/historia/dados_ia.py aplicar ...; (4) as artes novas do roteiro: f-empurra, c7-lacre, c7-tampa, c8-bolso; (5) os 6 antigos do piloto e o resto, no pedido novo.",
- "_dados": "Os dados dos quadros são conferidos depois de pintados: tools/historia/dados_quadros.py troca as bolinhas erradas pelas certas (anotações em 'dados' de cada arte)."
+ "_dados": "Os dados dos quadros são conferidos depois de pintados: tools/historia/dados_quadros.py troca as bolinhas erradas pelas certas (anotações em 'dados' de cada arte).",
+ "baloes": {
+  "C1-chegada_2_0": {
+   "x": 0,
+   "y": 1.1,
+   "w": 73.9,
+   "fs": 0.7,
+   "tx": 43.2,
+   "ty": 22.6
+  },
+  "C1-chegada_3_0": {
+   "x": 2.2,
+   "y": 2.4,
+   "w": 59.4,
+   "fs": 0.9,
+   "semRabo": true
+  },
+  "C1-depois_1_0": {
+   "x": 2.2,
+   "y": 3.3,
+   "w": 73.9,
+   "fs": 0.7,
+   "tx": 41,
+   "ty": 28
+  },
+  "C1-depois_2_0": {
+   "x": 45.4,
+   "y": 3,
+   "w": 52.9,
+   "fs": 0.9,
+   "tx": 71.6,
+   "ty": 40.8,
+   "semRabo": true
+  },
+  "C1-interludio_0_0": {
+   "x": 60.1,
+   "y": 3.8,
+   "w": 37.4,
+   "fs": 1,
+   "tx": 59,
+   "ty": 31.8
+  },
+  "C1-interludio_1_0": {
+   "x": 41.5,
+   "y": 3.2,
+   "w": 55.7,
+   "fs": 0.8,
+   "tx": 49.7,
+   "ty": 26.7,
+   "semRabo": true
+  },
+  "C1-interludio_2_0": {
+   "x": 31.1,
+   "y": 83.2,
+   "w": 68.2,
+   "fs": 1,
+   "tx": 60.2,
+   "ty": 72.7
+  },
+  "C2-chegada_0_0": {
+   "x": 4.1,
+   "y": 77.7,
+   "w": 53.3,
+   "fs": 0.8,
+   "semRabo": true
+  },
+  "C2-chegada_1_0": {
+   "x": 23.5,
+   "y": 2.5,
+   "w": 93.5,
+   "fs": 0.7
+  },
+  "C2-chegada_2_0": {
+   "x": 27.9,
+   "y": 2.4,
+   "w": 71,
+   "fs": 0.8
+  },
+  "C2-depois_1_0": {
+   "x": 2.5,
+   "y": 3.8,
+   "w": 59.7,
+   "fs": 1
+  },
+  "C2-depois_2_o0_0": {
+   "x": 47,
+   "y": 2.8,
+   "w": 50.8,
+   "fs": 0.8
+  },
+  "C2-interludio_0_0": {
+   "x": 2.8,
+   "y": 78.2,
+   "w": 42.8,
+   "fs": 0.8,
+   "semRabo": true
+  },
+  "C2-interludio_1_0": {
+   "x": 3.4,
+   "y": 4.3,
+   "w": 82.3,
+   "fs": 1
+  },
+  "C3-chegada_0_o0_0": {
+   "x": 45.7,
+   "y": 3.8,
+   "w": 50.8,
+   "fs": 1
+  },
+  "C3-chegada_0_o1_0": {
+   "x": 6.5,
+   "y": 69.4,
+   "w": 48,
+   "fs": 1
+  },
+  "C3-chegada_1_0": {
+   "x": 42.7,
+   "y": 68.1,
+   "w": 45.5,
+   "fs": 0.9
+  },
+  "C3-chegada_2_0": {
+   "x": 4.7,
+   "y": 68.1,
+   "w": 69.4,
+   "fs": 0.8
+  },
+  "C3-interludio_2_0": {
+   "x": 31.4,
+   "y": 81.8,
+   "w": 92.4,
+   "fs": 0.9
+  },
+  "C3-interludio_3_0": {
+   "x": 44.5,
+   "y": 0,
+   "w": 59.7,
+   "fs": 0.8
+  },
+  "C4-chegada_3_0": {
+   "x": 1.2,
+   "y": 0,
+   "w": 92.9,
+   "fs": 0.8
+  },
+  "C4-chegada_3_1": {
+   "x": 43.2,
+   "y": 86.5,
+   "w": 57.2,
+   "fs": 1
+  },
+  "C5-chegada_1_0": {
+   "x": 48.4,
+   "y": 73.6,
+   "w": 57.5,
+   "fs": 1
+  },
+  "C5-chegada_2_0": {
+   "x": 29.6,
+   "y": 0,
+   "w": 73.9,
+   "fs": 0.8
+  },
+  "C5-chegada_3_0": {
+   "x": 38,
+   "y": 69.4,
+   "w": 59.7,
+   "fs": 0.8
+  },
+  "C5-chegada_4_0": {
+   "x": 20.7,
+   "y": 4.1,
+   "w": 54.9,
+   "fs": 1
+  },
+  "C5-depois_1_0": {
+   "x": 46.1,
+   "y": 78.1,
+   "w": 59.7,
+   "fs": 1
+  },
+  "C5-interludio_2_0": {
+   "x": 45.7,
+   "y": 0,
+   "w": 56.3,
+   "fs": 0.8
+  },
+  "C6-chegada_1_0": {
+   "x": 36.8,
+   "y": 3.8,
+   "w": 59.7,
+   "fs": 0.9
+  },
+  "C6-interludio_3_0": {
+   "x": 0,
+   "y": 71.6,
+   "w": 59.7,
+   "fs": 1
+  },
+  "F-1_4_0": {
+   "x": 3.1,
+   "y": 5.3,
+   "w": 37.7,
+   "fs": 1
+  },
+  "I1_1_0": {
+   "x": 39.2,
+   "y": 2.9,
+   "w": 59.7,
+   "fs": 1
+  },
+  "I1_2_0": {
+   "x": 2.5,
+   "y": 3.8,
+   "w": 59.7,
+   "fs": 1
+  },
+  "P-antes_0_0": {
+   "x": 4.6,
+   "y": 10.1,
+   "w": 42.1,
+   "fs": 0.9,
+   "tx": 40.4,
+   "ty": 40.4
+  },
+  "P-antes_1_0": {
+   "x": 1.5,
+   "y": 2.3,
+   "w": 35.1,
+   "fs": 1,
+   "tx": 49.1,
+   "ty": 55.5
+  },
+  "P-antes_2_0": {
+   "x": 1.9,
+   "y": 19.2,
+   "w": 36.7,
+   "fs": 0.9,
+   "tx": 45.7,
+   "ty": 46.8
+  },
+  "P-depois_0_0": {
+   "x": 51,
+   "y": 5.8,
+   "w": 45,
+   "fs": 0.9,
+   "tx": 51.2,
+   "ty": 31.2
+  },
+  "P-depois_1_0": {
+   "x": 0.3,
+   "y": 0,
+   "w": 50.4,
+   "fs": 0.8,
+   "tx": 32.7,
+   "ty": 35.8
+  },
+  "P-depois_2_0": {
+   "x": 4.3,
+   "y": 8.6,
+   "w": 56.7,
+   "fs": 0.8,
+   "tx": 67.7,
+   "ty": 49.4,
+   "semRabo": true
+  },
+  "R-3_1_0": {
+   "x": 37.7,
+   "y": 2,
+   "w": 59.7,
+   "fs": 0.8
+  },
+  "X_1_0": {
+   "x": 46.4,
+   "y": 71.5,
+   "w": 52.6,
+   "fs": 0.9
+  },
+  "X_4_o0_0": {
+   "x": 40,
+   "y": 3.6,
+   "w": 59.7,
+   "fs": 1
+  },
+  "X_4_o0_1": {
+   "x": 0,
+   "y": 54.2,
+   "w": 29.9,
+   "fs": 1,
+   "semRabo": true
+  },
+  "X_4_o0_2": {
+   "x": 65.3,
+   "y": 80.1,
+   "w": 28.3,
+   "fs": 1.1,
+   "tx": 70.7,
+   "ty": 66.6
+  }
+ }
 }
