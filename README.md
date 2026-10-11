@@ -109,7 +109,7 @@ node tools/vercel_local.js                     # a página como o Vercel publica
 
 ## Estado
 
-**v0.17, na branch `DiceDuel-primeira-partida` (ainda não publicada):** o Caderno da Diana e a legibilidade.
+**v0.17, em produção** (a página no Vercel e o servidor na Railway, publicados da branch `DiceDuel`): o Caderno da Diana e a legibilidade.
 - **Consolidação (o rumo, `docs/visual-impresso.md`):** um só cartão pequeno na Loja, no deck e no Perfil; o letreiro de
   uma linha no cabeçalho; a cena da Diana de volta na tela dos modos.
 - **A partida:** as cartas do rival em fichas baixas e os dados da Mesa maiores; a etiqueta da jogada ("Passo",
@@ -127,7 +127,7 @@ node tools/vercel_local.js                     # a página como o Vercel publica
 - **Legibilidade:** sem pontinhos atrás do texto nos painéis do menu; no Jogar, só na faixa de baixo.
 - A identidade visual em regras (materiais, letras, cores) está em `docs/visual-impresso.md`.
 
-**v0.16, em produção** (a página no Vercel e o servidor na Railway, publicados da branch `DiceDuel`): o menu e o mistério da história.
+**v0.16:** o menu e o mistério da história.
 - **O menu só tem o Jogar,** que abre os modos História e Online (nesta ordem). **A partida avulsa contra a Diana ou a
   Dona Coruja saiu** (os rivais estão na história; moedas de vitória, rating e Tarefas do dia agora vêm do online).
 - **No mapa da história, como no Pokémon:** os rivais que a pessoa ainda não tentou são silhuetas com "?" e o nome do
