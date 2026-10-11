@@ -364,68 +364,52 @@
      92
     ]
    ],
-   "edicao": "Keep the SAME room and the SAME night as the attached panel: the plain warm cream wall, the window with the crescent moon and the dark-blue night sky, the teal curtain, the warm table lamp glowing on the little wooden cabinet, the same SMALL ROUND side table covered in sage-green felt with its wooden rim, the same pink dice, and the same Diana (white cat, black-tipped ear, grey brow marks, the little bandage with dice pips on the bridge of her nose). Same thick cocoa outline, same flat sticker style, same colors and lighting. No text or letters anywhere. Change only the moment: Diana sits behind the same round table and holds open, with both front paws, an old notebook with a worn green cloth cover; the cover reads 'RECEITAS DA DIANA' in neat hand lettering (these are the only words allowed). Between the pages, ragged stubs where several pages were torn out. Her face peeks over the notebook, looking at the reader. The three pink dice rest on the felt in front of the notebook. The upper-left third of the frame (top 40%) stays empty plain wall, free for a speech balloon.",
-   "base_de": "p-mesa",
-   "continuidade": "v0.18: refeito a partir de p-mesa (o mesmo cômodo e a mesma hora da cena; pedido do dono)",
+   "edicao": "Change ONLY the dice on the felt: there must be exactly TWO pink dice on the table (one fell off earlier), not three; remove the third die and fill its place with plain sage felt. Keep EVERYTHING else exactly as in the first panel: the same Diana (white cat, black-tipped ear on the viewer's left, grey brow marks, the same nose accessory), the same pose, expression, framing and position, the same thick cocoa outline, flat sticker style and colors. No new text or letters anywhere.",
+   "continuidade": "Depois da queda (p-cai) ficam dois dados na mesa.",
    "dados": [
     {
      "caixa": [
-      47.7,
-      83.5,
-      53.5,
-      92.8
+      49.5,
+      85.5,
+      55,
+      94.5
      ],
      "vista": "obliquo",
+     "conferido": false,
      "faces": {
       "t": 2,
       "e": 6,
       "d": 3
      },
-     "conferido": false,
-     "ia": "a",
+     "ia": "c",
      "recorte": [
-      687,
-      812,
-      867,
-      992
+      715,
+      834,
+      890,
+      1009
      ]
     },
     {
      "caixa": [
-      56.3,
+      62,
       87.5,
-      61.8,
-      96.5
+      67.8,
+      97
      ],
      "vista": "obliquo",
+     "conferido": false,
      "faces": {
       "t": 4,
       "e": 1,
       "d": 5
      },
-     "conferido": false,
-     "ia": "a",
+     "ia": "d",
      "recorte": [
-      819,
-      854,
-      994,
-      1029
+      904,
+      852,
+      1088,
+      1036
      ]
-    },
-    {
-     "caixa": [
-      65.8,
-      86.3,
-      71.5,
-      95.6
-     ],
-     "vista": "obliquo",
-     "faces": {
-      "t": 5,
-      "e": 3,
-      "d": 6
-     },
-     "conferido": true
     }
    ],
    "dados_skin": "rosa"
@@ -439,109 +423,95 @@
    "texto": "Close-up of Diana's face, eyes half lidded, dead serious and conspiratorial, looking straight at the reader. Plain dark wall behind her. Composition: the characters stay in the right 60% of the frame; the upper-left area (a third of the width, top 40%) is empty plain wall or sky, kept free for a speech balloon.",
    "boca": {
     "diana": [
-     54,
-     82
+     58,
+     80
     ]
    },
    "cabeca": {
     "diana": [
-     26,
+     29,
      5,
-     90,
-     96
+     82,
+     100
     ]
    },
    "dados_skin": "rosa",
    "dados": [
     {
      "caixa": [
-      84.4,
-      75.8,
-      89.4,
-      83.3
+      82.5,
+      74.5,
+      87.5,
+      82.5
      ],
      "vista": "obliquo",
-     "desfoque": 2,
+     "conferido": false,
      "faces": {
       "t": 4,
       "e": 2,
       "d": 1
      },
-     "conferido": false
+     "ia": "a",
+     "recorte": [
+      1228,
+      726,
+      1383,
+      881
+     ]
     },
     {
      "caixa": [
-      89.4,
-      76.7,
-      95.3,
-      83.8
+      88.5,
+      77.5,
+      93.5,
+      85.5
      ],
      "vista": "obliquo",
-     "desfoque": 2,
+     "conferido": false,
      "faces": {
       "t": 5,
       "e": 4,
       "d": 1
      },
-     "conferido": false
-    },
-    {
-     "caixa": [
-      87.2,
-      69.2,
-      91.1,
-      74.5
-     ],
-     "vista": "obliquo",
-     "desfoque": 3,
-     "faces": {
-      "t": 6,
-      "e": 5,
-      "d": 3
-     },
-     "conferido": false
-    },
-    {
-     "caixa": [
-      95.6,
-      69.7,
-      99.8,
-      75.0
-     ],
-     "vista": "obliquo",
-     "desfoque": 3,
-     "faces": {
-      "t": 2,
-      "e": 1,
-      "d": 4
-     },
-     "conferido": false
+     "ia": "a",
+     "recorte": [
+      1320,
+      757,
+      1475,
+      912
+     ]
     }
    ],
-   "travada": "o dono escolheu manter esta arte (não repintar sem perguntar)"
+   "travada": "o dono escolheu manter esta arte (não repintar sem perguntar)",
+   "cena_de": "p-mesa",
+   "edicao": "Change ONLY the background behind Diana so it is the SAME room and the SAME night as the second panel: the plain warm cream wall lit by a warm lamp, the window with the dark-blue night sky and crescent moon, the teal curtain, the warm table lamp glowing on the little wooden cabinet, and the SMALL ROUND side table covered in sage-green felt with its wooden rim, now slightly dimmer and moodier for a dramatic close-up, with exactly TWO pink dice on the round felt table behind her. No armchair, no bookshelf, no picture frames. The upper-left third (top 40%) stays plain wall, free for a speech balloon. Keep EVERYTHING else exactly as in the first panel: the same Diana (white cat, black-tipped ear on the viewer's left, grey brow marks, the same nose accessory), the same pose, expression, framing and position, the same thick cocoa outline, flat sticker style and colors. No new text or letters anywhere.",
+   "continuidade": "O mesmo quarto e a mesma noite do Prólogo, com os dois dados que sobraram."
   },
   "c1-x": {
    "quem": [
     "diana"
    ],
    "nariz": "x",
-   "lugar": "ne",
+   "lugar": "nw",
    "texto": "Medium close-up of Diana at her felt table, looking at the reader with flat deadpan eyes. An open little tin of adhesive bandages beside her. Composition: the characters stay in the right 60% of the frame; the upper-left area (a third of the width, top 40%) is empty plain wall or sky, kept free for a speech balloon.",
    "boca": {
     "diana": [
-     39,
-     60
+     46,
+     63
     ]
    },
    "cabeca": {
     "diana": [
-     17,
-     18,
-     57,
-     70
+     29,
+     15,
+     63,
+     72
     ]
    },
-   "travada": "o dono escolheu manter esta arte (não repintar sem perguntar)"
+   "travada": "o dono escolheu manter esta arte (não repintar sem perguntar)",
+   "cena_de": "p-mesa",
+   "edicao": "Change ONLY the table and the background so it is the SAME room and the SAME night as the second panel: the plain warm cream wall lit by a warm lamp, the window with the dark-blue night sky and crescent moon, the teal curtain, the warm table lamp glowing on the little wooden cabinet, and the SMALL ROUND side table covered in sage-green felt with its wooden rim. Diana lies across that same ROUND felt table (its curved wooden rim visible), the little open tin of adhesive bandages beside her on the felt. The upper-left third (top 40%) stays plain wall, free for a speech balloon. Keep EVERYTHING else exactly as in the first panel: the same Diana (white cat, black-tipped ear on the viewer's left, grey brow marks, the same nose accessory), the same pose, expression, framing and position, the same thick cocoa outline, flat sticker style and colors. No new text or letters anywhere.",
+   "continuidade": "O quarto da Diana, à noite, na mesma mesa redonda do Prólogo (o Sapo também é de noite)."
   },
   "c1-sapo": {
    "quem": [
@@ -1422,7 +1392,10 @@
      89,
      85
     ]
-   }
+   },
+   "cena_de": "c4-caverna",
+   "edicao": "Change ONLY the light and the background so it is the SAME dark cave at night as the second panel: deep navy and near-black cave shadows, the same dark rock walls, the bear lit softly from the cave opening. Keep the bear's face, his red beanie with cream pompom, the one sleepy half-open eye, the pose and the framing exactly. The upper-left third (top 40%) stays an empty dark area for a speech balloon. Same thick cocoa outline and flat sticker style. No text.",
+   "continuidade": "A mesma caverna escura de c4-caverna e c4-mel."
   },
   "c4-pag-a": {
    "quem": [],
@@ -2113,7 +2086,10 @@
      80,
      68
     ]
-   }
+   },
+   "cena_de": "r-mesa",
+   "edicao": "Make it the SAME night as the second panel: what is seen through the open doorway is now a dark-blue night outside, and the room is lit by warm lamplight, like the second panel. Keep the Coelho in the doorway hugging the huge loaf, Diana in the right foreground, the door, the floor and the rug exactly. The upper-right third (top 40%) stays plain wall, free for a speech balloon. Same thick cocoa outline and flat sticker style. No text.",
+   "continuidade": "A mesma noite de r-mesa (a partida final começa com \"Boa noite\")."
   },
   "r-mesa": {
    "quem": [
@@ -2215,7 +2191,10 @@
      70,
      98
     ]
-   ]
+   ],
+   "cena_de": "f-empurra",
+   "edicao": "Make it the SAME night as the second panel: the window now shows a dark-blue night sky, and the room is lit by warm lamplight. Keep the printed tape in her paws exactly. Keep EVERYTHING else exactly as in the first panel: the same Diana (white cat, black-tipped ear on the viewer's left, grey brow marks, the same nose accessory), the same pose, expression, framing and position, the same thick cocoa outline, flat sticker style and colors. No new text or letters anywhere.",
+   "continuidade": "A mesma noite da partida final e de f-empurra."
   },
   "f-nariz": {
    "quem": [
@@ -2237,7 +2216,9 @@
      82,
      58
     ]
-   }
+   },
+   "edicao": "Change ONLY what is seen through the window and the light: the window on the right now shows a dark-blue night sky, and the room is lit by a soft warm evening light. Do NOT add any furniture, lamp, picture or object: the rest of the wall stays plain and empty exactly as in the first panel. Keep EVERYTHING else exactly as in the first panel: the same Diana, pose, paw on her nose, expression, framing and position, the same thick cocoa outline, flat sticker style and colors. No text.",
+   "continuidade": "A mesma noite da partida final e de f-empurra."
   },
   "f-close": {
    "quem": [
@@ -2281,7 +2262,10 @@
      75,
      56
     ]
-   }
+   },
+   "cena_de": "f-empurra",
+   "edicao": "Make it the SAME night as the second panel: the window now shows a dark-blue night sky, and the room is lit by warm lamplight. Keep EVERYTHING else exactly as in the first panel: the same Diana (white cat, black-tipped ear on the viewer's left, grey brow marks, the same nose accessory), the same pose, expression, framing and position, the same thick cocoa outline, flat sticker style and colors. No new text or letters anywhere.",
+   "continuidade": "A mesma noite da partida final e de f-empurra."
   },
   "x-titulo": {
    "quem": [],
@@ -2482,69 +2466,82 @@
    "dados": [
     {
      "caixa": [
-      23.3,
-      82,
-      31.1,
-      94.5
+      23.5,
+      82.5,
+      31,
+      93.5
      ],
      "vista": "obliquo",
+     "conferido": true,
      "faces": {
       "t": 5,
       "e": 3,
       "d": 6
-     },
-     "conferido": false,
-     "ia": "b"
+     }
     },
     {
      "caixa": [
-      31.9,
-      81.3,
+      32,
+      81.5,
       39.5,
-      95
+      94
      ],
      "vista": "obliquo",
+     "conferido": false,
      "faces": {
       "t": 6,
       "e": 4,
       "d": 5
-     },
-     "conferido": false,
-     "ia": "b"
+     }
     },
     {
      "caixa": [
-      54.3,
+      54.5,
       83.5,
-      61.1,
-      95.5
+      61,
+      96
      ],
      "vista": "obliquo",
+     "conferido": false,
      "faces": {
       "t": 1,
       "e": 5,
       "d": 4
      },
-     "conferido": false,
-     "ia": "b"
+     "ia": "b",
+     "recorte": [
+      765,
+      797,
+      1008,
+      1040
+     ]
     },
     {
      "caixa": [
-      62.2,
+      62,
       82.5,
-      70.2,
-      94.9
+      70,
+      94
      ],
      "vista": "obliquo",
+     "conferido": false,
      "faces": {
       "t": 3,
       "e": 1,
       "d": 2
      },
-     "conferido": false,
-     "ia": "b"
+     "ia": "b",
+     "recorte": [
+      897,
+      787,
+      1130,
+      1020
+     ]
     }
-   ]
+   ],
+   "cena_de": "r-mesa",
+   "edicao": "Change ONLY the color of the table felt: it is the SAME wine-red felt table as in the second panel (the table of the final match), instead of green. Keep the five pink dice exactly where they are, her paw pushing them, the lamp, the window and the night. Her nose is healed: NO bandage. Keep EVERYTHING else exactly as in the first panel: the same Diana (white cat, black-tipped ear on the viewer's left, grey brow marks), the same pose, expression, framing and position, the same thick cocoa outline, flat sticker style and colors. No new text or letters anywhere.",
+   "continuidade": "A mesa de feltro vinho da partida final (r-mesa, c8-bolso)."
   },
   "c7-lacre": {
    "quem": [
@@ -2695,66 +2692,82 @@
    "texto": "Diana at her table covered in wine-red felt, holding up one front paw to show a single pink die resting in it, deadpan and a little smug. Behind her, the cork board with a double helix drawn with dice.",
    "boca": {
     "diana": [
-     39,
-     45
+     41,
+     47
     ]
    },
    "cabeca": {
     "diana": [
-     24,
-     7,
-     54,
-     60
+     26,
+     8,
+     55,
+     52
     ]
    },
    "dados_skin": "rosa",
    "dados": [
     {
      "caixa": [
-      54.1,
-      52.3,
-      58.7,
-      59
+      56.5,
+      52.5,
+      61.3,
+      59.5
      ],
      "vista": "obliquo",
+     "conferido": false,
      "faces": {
       "t": 5,
       "e": 3,
       "d": 6
-     },
-     "conferido": false
+     }
     },
     {
      "caixa": [
-      67,
+      67.5,
       82,
-      73.3,
-      90.8
+      74.5,
+      91.5
      ],
      "vista": "obliquo",
+     "conferido": true,
      "faces": {
       "t": 6,
       "e": 4,
       "d": 5
-     },
-     "conferido": false,
-     "ia": "a"
+     }
     },
     {
      "caixa": [
-      75.6,
-      82.8,
-      82,
-      92.3
+      76,
+      83,
+      83,
+      93
      ],
      "vista": "obliquo",
+     "conferido": true,
      "faces": {
       "t": 1,
       "e": 5,
       "d": 4
-     },
-     "conferido": true
+     }
     }
+   ],
+   "cena_de": "r-mesa",
+   "edicao": "Make it the SAME night as the second panel: the window now shows a dark-blue night sky with a few stars, and the room is lit by warm lamplight. Keep the wine-red felt table, the cork board with the double helix of dice, the pink die in her raised paw and the two pink dice on the felt exactly. Keep EVERYTHING else exactly as in the first panel: the same Diana (white cat, black-tipped ear on the viewer's left, grey brow marks, the same nose accessory), the same pose, expression, framing and position, the same thick cocoa outline, flat sticker style and colors. No new text or letters anywhere.",
+   "continuidade": "A noite da partida final, na mesa de feltro vinho de r-mesa.",
+   "evitar": [
+    [
+     50,
+     48,
+     66,
+     64
+    ],
+    [
+     65,
+     80,
+     85,
+     95
+    ]
    ]
   },
   "c1-aviso": {
@@ -4328,14 +4341,6 @@
    "y": 3,
    "w": 30,
    "fs": 1
-  },
-  "C1-interludio_0_0": {
-   "x": 60.1,
-   "y": 3.8,
-   "w": 37.4,
-   "fs": 1,
-   "tx": 59,
-   "ty": 31.8
   },
   "C1-interludio_1_0": {
    "x": 41.5,

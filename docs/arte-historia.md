@@ -270,5 +270,17 @@ continuavam três na mesa. A regra agora:
 - Depois de repintar: `dados_quadros.py <ids>` (bolinhas), `dados_ia.py rascunhos/aplicar` para os dados que a correção não
   confia, e anotar de novo `boca`, `cabeca`, `dados` e a ponta dos balões (`tx`, `ty`).
 
-Aplicado em: Prólogo (p-pata, p-cai, p-placar, p-caderno, todos da âncora p-mesa: noite, mesa redonda, abajur, lua; depois da
-queda ficam dois dados; o placar mostra 8 e 6) e Capítulo 1 (i1-le, da âncora i1-nada: o mesmo quarto de i1-nada e i1-cobre).
+Aplicado em (v0.18):
+
+| Onde | O que estava quebrado | Como ficou |
+|---|---|---|
+| Prólogo | começava à noite na mesa redonda, virava dia numa mesa quadrada, sem abajur; 3 dados + 1 caindo | a cena toda na noite de p-mesa; depois da queda ficam **2** dados até o close (p-caderno, p-close); o placar mostra 8 e 6 |
+| Cap. 1 · Interlúdio | c1-x de dia, mesa retangular | a mesma noite e a mesma mesa redonda do Prólogo (o Sapo também é de noite) |
+| I1 | i1-le em outro cômodo | o quarto de i1-nada e i1-cobre |
+| Cap. 4 · Chegada | c4-olho numa caverna cinza e clara entre duas escuras | a caverna escura de c4-caverna |
+| Revelação 4 → Cap. 8 → Final | porta de dia e mesa à noite na mesma página; o Bolso e o fim de dia; o fim numa mesa verde | uma noite só, da porta do Coelho ao fim (a partida final começa com "Boa noite"), na mesa de feltro vinho da Diana (docs/historia.md: a Mesa dela) |
+
+`"cena_de": "<quadro>"` manda o cômodo de outro quadro da cena junto, como segunda imagem, quando o quadro editado é ele mesmo
+(o rosto e a pose dele ficam, o cômodo vem do outro). Os originais de antes estão em builds/continuidade/ (fora do git).
+Ficou como estava: o quarto muda de canto entre capítulos (o mural, a janela, a estante), que é o mesmo quarto visto de outro lado;
+no Interlúdio 3, a Diana sai do chão (c3-cachecol) para a mesa (c3-carta).

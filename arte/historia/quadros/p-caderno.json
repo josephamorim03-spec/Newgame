@@ -1,6 +1,7 @@
 {
- "edicao": "Keep the SAME room and the SAME night as the attached panel: the plain warm cream wall, the window with the crescent moon and the dark-blue night sky, the teal curtain, the warm table lamp glowing on the little wooden cabinet, the same SMALL ROUND side table covered in sage-green felt with its wooden rim, the same pink dice, and the same Diana (white cat, black-tipped ear, grey brow marks, the little bandage with dice pips on the bridge of her nose). Same thick cocoa outline, same flat sticker style, same colors and lighting. No text or letters anywhere. Change only the moment: Diana sits behind the same round table and holds open, with both front paws, an old notebook with a worn green cloth cover; the cover reads 'RECEITAS DA DIANA' in neat hand lettering (these are the only words allowed). Between the pages, ragged stubs where several pages were torn out. Her face peeks over the notebook, looking at the reader. The three pink dice rest on the felt in front of the notebook. The upper-left third of the frame (top 40%) stays empty plain wall, free for a speech balloon.",
- "base_de": "p-mesa",
+ "edicao": "Change ONLY the dice on the felt: there must be exactly TWO pink dice on the table (one fell off earlier), not three; remove the third die and fill its place with plain sage felt. Keep EVERYTHING else exactly as in the first panel: the same Diana (white cat, black-tipped ear on the viewer's left, grey brow marks, the same nose accessory), the same pose, expression, framing and position, the same thick cocoa outline, flat sticker style and colors. No new text or letters anywhere.",
+ "base_de": "p-caderno",
+ "cena_de": null,
  "qualidade": "high",
  "modelo": "gpt-image-2"
 }
