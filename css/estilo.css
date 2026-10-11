@@ -1696,3 +1696,13 @@ button.inicio-perfil:active { transform: translateY(1px); }
 .p1 .cartas .carta .cverbo { display: none; }
 /* em tela estreita, a ficha do rival fica só com o nome (com o ícone, "Fundo Falso" encostava na borda) */
 @media (max-width: 360px) { .p1 .cartas .carta .c-arte { display: none; } .p1 .cartas .carta { justify-content: center; padding: 3px 4px; } .p1 .cartas .carta .c-txt { text-align: center; } .p1 .cartas .carta .cnome { font-size: 11.5px; } }
+
+/* ==========================================================================
+   Ajustes finos da identidade (v0.17)
+   ========================================================================== */
+/* liga e desliga em mel, a cor da ação (o verde é das relações dos dados e do "feito"), com o contorno do adesivo */
+.impresso .chave-liga { box-shadow: inset 0 0 0 1.5px rgba(58,42,46,.22); }
+.impresso .chave-liga:checked { background: var(--mel); box-shadow: inset 0 0 0 1.5px var(--mel-escuro); }
+.impresso .chave-liga::after { box-shadow: 0 2px 0 rgba(58,42,46,.3), inset 0 0 0 1.5px rgba(58,42,46,.15); }
+/* no computador, a tela inicial cresce junto (era uma coluna estreita perdida no meio da tela) */
+@media (min-width: 1000px) and (min-height: 820px) { .inicio-caixa { zoom: 1.22; } }

@@ -1,6 +1,6 @@
 // As telas do jogo, todas de uma vez, no tamanho de celular (390×844): o menu, os modos, o caderno, a Loja, o deck, os
 // Ajustes, o Perfil, o Online, as Regras, o começo da partida, a partida, a pausa e o fim. Para revisar a identidade
-// visual a cada versão, lado a lado (docs/visual-impresso.md, "O rumo"). Uso: NODE_PATH=$(npm root -g) node tools/telas.js
+// visual a cada versão, lado a lado (docs/visual-impresso.md, "O rumo"). Uso: NODE_PATH=$(npm root -g) node tools/telas.js [pasta] [1360x900]
 const { chromium } = require('playwright');
 const path = require('path'); const fs = require('fs');
 const OUT = process.argv[2] || path.join(__dirname, '..', 'builds', 'telas'); fs.mkdirSync(OUT, { recursive: true });
@@ -9,7 +9,9 @@ const VET = { guia: { estreia: true, jogou: true, vistos: ['eco', 'passo', 'opos
   conta: { moedas: 340, rating: 1027, xp: 180, cartas: ['ajuste', 'coringa', 'pressa', 'rerrolar', 'virar', 'ancora', 'interferencia', 'sobrecarga', 'reverso'], dados: ['marfim', 'menta'], icones: ['bolinha', 'xicara'], mesas: ['salvia'], dado: 'marfim', icone: 'xicara', mesa: 'salvia', historia: { feitos: ['P', 'C1'], estrelas: { C1: 2 } } } };
 (async () => {
   const b = await chromium.launch();
-  const pg = await b.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, hasTouch: true });
+  // a largura vem do 2.º argumento (ex.: 1360x900); o padrão é o celular
+  const [lg, al] = (process.argv[3] || '390x844').split('x').map(Number);
+  const pg = await b.newPage({ viewport: { width: lg, height: al }, deviceScaleFactor: lg > 600 ? 1 : 2, hasTouch: lg <= 600 });
   const foto = async n => { await pg.waitForTimeout(450); await pg.screenshot({ path: `${OUT}/${n}.png` }); };
   const fecharTudo = () => pg.evaluate(() => document.querySelectorAll('.janela').forEach(j => j.hidden = true));
   await pg.goto('file://' + path.join(__dirname, '..', 'index.html')); await pg.evaluate(v => localStorage.setItem('diceduel.v1', JSON.stringify(v)), VET);

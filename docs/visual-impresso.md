@@ -277,6 +277,10 @@ onde importa, não em mais efeito.
   próprio jogo (o letreiro, a cena da Diana à mesa, a noite pontilhada), então ela acompanha o visual. A descrição e o
   texto alternativo do link também foram atualizados. A API de imagem não foi necessária nesta rodada.
 
+- **Ajustes finos (v0.17):** os botões liga/desliga dos Ajustes passaram de verde para mel (verde é das relações dos dados
+  e do "feito"; mel é a ação); no computador a tela inicial cresce junto (era uma coluna estreita no meio da tela);
+  `tools/telas.js` aceita a largura (`node tools/telas.js builds/telas-pc 1360x900`).
+
 **O que não fazer:** textura nas telas de uso (Loja, Ajustes, deck, Online); textura animada; estilo próprio por tela; a
 API de imagem para peça de interface (pauta, fita, carimbo, traço, retícula: em código saem com a cor exata, nítidos e
 leves); qualquer mudança visual sem a foto de antes e depois nas telas reais.
