@@ -6626,28 +6626,13 @@ window.HISTORIA_QUADROS = {"falas":{"P-01":[{"arte":"p-mesa","chave":"P-antes_0"
     }
     const sobreBtn = j.decks[p].includes('sobrecarga') && usavel(p, 'sobrecarga') && !j.sobre[p] && eu.length >= 4 ? `<button class="btn btn-duplo btn-papel" data-acao="sobrecarga"><span>Sobrecarga</span><small>+2 neste disparo</small></button>` : '';
     if (j.fase === 'decidir') {
-      const L = eu.length, rk = risco(p), vale = pontos(L) + (j.sobre[p] && L >= 4 ? 2 : 0);
-      let nivel, txt;
+      const L = eu.length, vale = pontos(L) + (j.sobre[p] && L >= 4 ? 2 : 0);
       const ocultas = j.armada[1 - p] && j.armada[1 - p] !== 'espelho' ? armadilhasOcultas(1 - p) : [];
       // o botão diz "Disparar e vencer" só quando é certo; se a carta virada pode ser a Interferência, "pode fechar"
       const talvez = j.pts[p] + vale >= j.meta, venceJa = talvez && !(ocultas.includes('interferencia') && L >= 4 && j.pts[p] >= j.pts[1 - p] && j.pts[p] + vale - 1 < j.meta);
-      if (j.pts[p] + vale >= j.meta) { nivel = 'vence'; txt = `Disparar agora vence a partida${ocultas.includes('interferencia') && L >= 4 && j.pts[p] >= j.pts[1 - p] && j.pts[p] + vale - 1 < j.meta ? ', se a carta virada do rival não for a Interferência' : ''}.`; }
-      else if (rk.bolso) { nivel = 'baixo'; txt = j.bolso[p] === null ? 'Seu Bolso está vazio: na próxima vez você sempre pode guardar o dado. Segurar não rompe.' : `O ${j.bolso[p]} do seu Bolso sincroniza com o seu ${frente(eu)}: segurar não rompe.`; }
-      else if (rk.n >= 2) {
-        if (rk.k === 0) { nivel = 'alto'; txt = `Nenhum dos ${rk.n} dados que ficam na Mesa sincroniza com o seu ${frente(eu)}. Se segurar, rompe na próxima vez.`; }
-        else if (rk.k === 1) { nivel = 'medio'; txt = `Só 1 dado da Mesa sincroniza com o seu ${frente(eu)}, e o rival escolhe antes.`; }
-        else { nivel = 'baixo'; txt = `${rk.k} dados da Mesa sincronizam com o seu ${frente(eu)}. O rival só pode tirar um.`; }
-      } else {
-        const chance = Math.round((1 - rk.r) * 100);
-        nivel = chance >= 85 ? 'baixo' : chance >= 60 ? 'medio' : 'alto';
-        txt = rk.n === 1 ? `A Mesa vai ser rolada de novo e você escolhe primeiro: ~${chance}% de ter um dado que sincroniza.`
-                         : `A Mesa vai ser rolada de novo e o rival escolhe primeiro: ~${chance}% de sobrar um dado que sincroniza.`;
-      }
-      let extra = '';
-      if (j.armada[p] === 'ancora' && L >= 4) extra += `<div class="risco baixo"><span>Sua Âncora está armada: uma ruptura seria evitada.</span></div>`;
-      if (j.armada[1 - p] && j.armada[1 - p] !== 'espelho') extra += `<div class="risco aviso"><span>${cartaViradaTxt(1 - p, L)}</span></div>`;
+      // sem conselho embaixo (v0.17, pedido do dono): a chance da Mesa nova, quantos dados servem, o Bolso que garante e
+      // o que a carta virada faria decidiam pela pessoa. A decisão é dela; o "?" do rival ainda mostra as armadilhas ao toque
       return `<div class="status">${quem}: corrente de <b>${L}</b>. Disparar ou segurar?</div>
-        ${ajudas ? `<div class="risco ${nivel}"><span>${txt}</span></div>${extra}` : ''}
         <div class="botoes">
           <button class="btn btn-duplo btn-mel${venceJa ? ' vence' : ''}" data-acao="disparar"><span>${venceJa ? 'Disparar e vencer' : 'Disparar'}</span><small>+${vale} agora${venceJa ? '' : talvez ? ' · pode fechar' : ''}</small></button>
           <button class="btn btn-duplo btn-papel" data-acao="segurar"><span>Segurar</span><small>${L + 1 <= LIM ? `com ${L + 1} vale +${pontos(L + 1)}` : 'continuar'}</small></button>

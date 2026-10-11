@@ -437,8 +437,10 @@ animações desligadas, tudo isso vira instantâneo.
 - tremor leve da mesa;
 - vibração;
 - falas do rival;
-- **ajudas na partida** (v0.11): etiquetas nos dados, faces da próxima casa, a linha "disparar vale…", o risco de
-  segurar, a explicação da carta virada e os "toque em…". Desligadas, a barra de jogada fica com uma frase curta e os
+- **ajudas na partida** (v0.11): etiquetas nos dados, faces da próxima casa, a linha "disparar vale…" e os "toque
+  em…". **O conselho na hora de disparar saiu (v0.17, pedido do dono):** a barra trazia a chance da Mesa nova ("~97% de
+  ter um dado que sincroniza"), quantos dados serviam, o Bolso que garantia e o que a carta virada faria, e isso decidia
+  pela pessoa; agora ela tem só a pergunta e os botões (o "?" do rival ainda mostra as armadilhas ao toque). Desligadas, a barra de jogada fica com uma frase curta e os
   botões; os avisos de que a corrente vai romper continuam (evitam toque errado). Também liga e desliga pelo botão
   menu de pausa (o botão no alto da tela).
 

@@ -123,6 +123,8 @@ node tools/vercel_local.js                     # a página como o Vercel publica
   encostam na beira da tela. As chamadas de festa ("Passo!") ficam com a mesma margem dos dois lados.
 - **A fala da Diana na tela inicial** fica em cima dela, centrada e em 1 ou 2 linhas equilibradas (ao lado da cabeça
   ela ficava espremida em 4 ou 5 linhas).
+- **Sem conselho na hora de disparar:** a barra não diz mais a chance da Mesa nova, quantos dados servem nem se o
+  Bolso garante; fica a pergunta e os botões ("Disparar e vencer" continua quando é certo).
 - **A partida:** as cartas do rival em fichas baixas e os dados da Mesa maiores; a etiqueta da jogada ("Passo",
   "Oposto") passou para a direita da corrente, onde não cobre mais as etiquetas dos elos.
 - **Ajustes finos:** os botões liga/desliga em mel (a cor da ação), e a tela inicial maior no computador.
