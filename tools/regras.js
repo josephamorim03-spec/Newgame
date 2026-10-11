@@ -268,6 +268,15 @@ const RAIZ = path.join(__dirname, '..');
   await cena([[], []], () => { const j = DiceDuel.jogo; j.vez = 0; j.fase = 'pegar'; j.sel = null; j.cor[0] = [2, 3]; j.bolso[0] = 4; j.mesa = [{ id: 9945, v: 4 }]; });
   await pg.click('#pj0 [data-bolso]'); await pg.click('.pega[data-id="9945"]'); j = await J();
   confere(j.cor[0].join() === '2,3,4' && j.bolso[0] === 4 && !j.stats[0].trocou, 'Bolso levantado e o mesmo número na Mesa: vai à corrente, sem troca');
+
+  // 10f. Só a troca salva (o 4 não serve no 1, o 1 do Bolso serve): cada alvo diz o que acontece nele, em vez de
+  //      "troca: entra o 1" nos dois; tocar na corrente faz a troca, sem perguntar (romper de propósito não vale)
+  await cena([[], []], () => { const j = DiceDuel.jogo; j.vez = 0; j.fase = 'pegar'; j.sel = null; j.cor[0] = [1]; j.bolso[0] = 1; j.mesa = [{ id: 9951, v: 4 }, { id: 9952, v: 5 }]; });
+  await pg.click('.pega[data-id="9951"]');
+  confere(/guarda o 4/.test(await pg.textContent('#pj0 .bolso')) && /entra o 1 · Eco/.test(await pg.textContent('#pj0 .corrente')) && /vai para o Bolso e o 1 de lá entra/.test(await tx()),
+    'Só a troca salva: o Bolso diz "guarda o 4", a corrente "entra o 1 · Eco" e a linha explica a jogada');
+  await pg.click('#pj0 [data-alvo-dado="corrente"]'); j = await J();
+  confere(j.cor[0].join() === '1,1' && j.bolso[0] === 4, 'Só a troca salva, corrente tocada: troca sem perguntar');
   await pg.keyboard.press('Escape');
 
   // 11. Ajudas: a chave do menu de pausa liga e desliga etiquetas, dicas e explicações (e lembra a escolha);

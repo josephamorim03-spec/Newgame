@@ -6194,14 +6194,15 @@ window.HISTORIA_QUADROS = {"falas":{"P-01":[{"arte":"p-mesa","chave":"P-antes_0"
   // o que acontece em cada alvo com o dado escolhido: { corrente: {cls, txt}, bolso: {cls, txt} }
   function previaAlvos(p, idx) {
     const j = jogo, op = opcoesDoDado(p, idx), b = j.bolso[p], L = j.cor[p].length, ancora = j.armada[p] === 'ancora' && L >= 4;
+    // só a troca salva: a corrente recebe o do Bolso e o Bolso guarda o escolhido (antes os dois diziam "troca: entra o 1")
     const corrente = op.seguros.includes('corrente') ? { cls: 'ok', txt: relDe(p, op.v) }
-      : op.seguros.includes('trocar') ? { cls: 'aviso', txt: `troca: entra o ${b}` }
+      : op.seguros.includes('trocar') ? { cls: 'ok', txt: `entra o ${b} · ${relDe(p, b)}` }
       : op.seguros.includes('guardar') ? { cls: 'aviso', txt: 'não sincroniza' }
       : { cls: 'perigo', txt: ancora ? 'a Âncora segura' : 'rompe' };
     const bolso = op.contra ? { cls: 'nao', txt: 'não pode' }
       : op.igual ? (op.rompe ? { cls: 'perigo', txt: 'rompe' } : { cls: 'nao', txt: `já tem um ${b}` })
       : op.seguros.includes('guardar') ? { cls: 'ok', txt: 'guardar' }
-      : op.seguros.includes('trocar') ? { cls: 'ok', txt: `troca: entra o ${b}` }
+      : op.seguros.includes('trocar') ? { cls: 'ok', txt: op.seguros.includes('corrente') ? `troca: entra o ${b}` : `guarda o ${op.v}` }
       : op.rompe && op.ds.includes('trocar') ? { cls: 'perigo', txt: 'rompe' }
       : { cls: 'nao', txt: b !== null ? `o ${b} não serve` : 'não pode' };
     return { corrente, bolso, op };
@@ -6219,7 +6220,7 @@ window.HISTORIA_QUADROS = {"falas":{"P-01":[{"arte":"p-mesa","chave":"P-antes_0"
       : `O ${v} não sincroniza${b !== null && !op.contra ? ', nem o do Bolso' : ''}: a sua corrente de <b>${L}</b> vai romper.`, [['corrente', ancora ? 'Pegar' : 'Romper']]);
     if (alvo === 'corrente') {
       if (op.seguros.includes('corrente')) return pegarDado('corrente');
-      if (op.seguros.includes('trocar')) return perguntar(`O ${v} não sincroniza com o seu ${fr}. Trocar: o <b>${b}</b> do Bolso entra na corrente e o ${v} fica guardado?`, [['trocar', 'Trocar']]);
+      if (op.seguros.includes('trocar')) return pegarDado('trocar');   // a única jogada segura: o do Bolso entra, o escolhido fica guardado
       if (op.seguros.includes('guardar')) return perguntar(`O ${v} não sincroniza com o seu ${fr}. Guardar no Bolso?`, [['guardar', 'Guardar']]);
       return romper();
     }
@@ -6271,6 +6272,9 @@ window.HISTORIA_QUADROS = {"falas":{"P-01":[{"arte":"p-mesa","chave":"P-antes_0"
     if (op.proprio) return `Esse é o dado do seu <b>Espelho</b>: pegá-lo desperdiça a armadilha.`;
     const virado = op.contra ? `Virado pelo Espelho, o ${d.v} chega como <b>${op.v}</b> e não pode ir para o Bolso. ` : '';
     const de = { corrente: 'põe na corrente', guardar: 'guarda no Bolso', trocar: 'troca com o Bolso' }[op.principal];
+    const eu = j.cor[j.vez], b = j.bolso[j.vez];
+    if (!op.contra && !op.seguros.includes('corrente') && op.seguros.includes('trocar'))
+      return `O <b>${op.v}</b> não sincroniza com o seu ${frente(eu)}: ele vai para o Bolso e o <b>${b}</b> de lá entra na corrente (${relDe(j.vez, b)}).`;
     if (op.igual) return op.rompe ? `O <b>${op.v}</b> não sincroniza, e o do Bolso também é um ${op.v}: a corrente rompe.`
       : `Leve o <b>${op.v}</b> à corrente${st.pref.dicas ? ' (toque ou arraste)' : ''}: o Bolso já tem um ${op.v}, trocar daria no mesmo.`;
     return `${virado}Leve o <b>${op.v}</b> à corrente ou ao Bolso${st.pref.dicas ? ' (toque ou arraste)' : ''}${de ? `; tocar de novo nele ${de}` : ''}.`;

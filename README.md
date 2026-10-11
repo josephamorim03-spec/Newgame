@@ -117,7 +117,8 @@ node tools/vercel_local.js                     # a página como o Vercel publica
 - **Duas queixas de jogador na partida:** sem saída (nada sincroniza, nem o do Bolso), a barra avisa na hora e traz o
   "Romper"; e tocar no dado do Bolso, que antes não fazia nada, agora o levanta: o dado tocado depois na Mesa fica
   guardado no lugar dele (a mesma troca, na outra ordem; o balanceamento não muda). Pegar o mesmo número que está no Bolso não
-  oferece mais a troca (daria no mesmo): o dado vai à corrente.
+  oferece mais a troca (daria no mesmo): o dado vai à corrente. Quando só a troca salva, o Bolso diz "guarda o 4" e a
+  corrente "entra o 1 · Eco" (antes os dois diziam "troca: entra o 1"), e tocar em qualquer um troca sem perguntar.
 - **As dicas do guia viram um balão da Diana** no painel dela, com o rabinho até o retrato: não cobrem mais a Mesa nem
   encostam na beira da tela. As chamadas de festa ("Passo!") ficam com a mesma margem dos dois lados.
 - **A fala da Diana na tela inicial** fica em cima dela, centrada e em 1 ou 2 linhas equilibradas (ao lado da cabeça

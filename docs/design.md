@@ -486,7 +486,10 @@ o dedo e o dado: a pessoa escolhia o dado na Mesa e lia três botões lá embaix
 - **tocar na corrente ou no Bolso**, ou **arrastar o dado** até eles, leva o dado; **tocar de novo no dado** faz a
   melhor jogada segura (como antes); tocar num espaço vazio da Mesa (ou Esc) desfaz a escolha;
 - **pergunta só quando há risco** ou quando o lugar apontado não é o que a regra deixa: o dado que não serve solto na
-  corrente pergunta se troca com o do Bolso, se guarda, ou (sem nenhuma jogada segura) se rompe. O dado novo solto no
+  corrente pergunta se guarda, ou (sem nenhuma jogada segura) se rompe. **Quando só a troca salva (v0.17)**, cada alvo
+  diz o que acontece nele (o Bolso "guarda o 4", a corrente "entra o 1 · Eco"; antes os dois diziam "troca: entra o 1"),
+  a linha da Mesa conta a jogada numa frase e tocar em qualquer um dos dois troca, sem perguntar: romper de propósito
+  não é permitido, então a pergunta só tinha um sim. O dado novo solto no
   Bolso cheio, com o do Bolso servindo na corrente, troca **sem perguntar**: o gesto já diz o que a pessoa quer.
 - **Romper é um botão só (v0.14).** Quando nenhuma jogada salva a corrente (o dado não sincroniza, nem o do Bolso), a
   pergunta tem só "Romper" (e o ✕): trocar com o Bolso também romperia, e as duas opções eram uma escolha que não muda
