@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="pt-BR">
+<html lang="pt-BR" class="impresso">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
@@ -37,7 +37,8 @@
   <div class="inicio-caixa">
     <!-- a rival da vez à mesa, com a saudação e três dados para cutucar (desenhada por desenharCena, em js/jogo.js) -->
     <div class="inicio-cena" id="inicioCena" aria-hidden="true"></div>
-    <h1 id="inicioTitulo">Dice <span>Duel</span></h1>
+    <!-- o letreiro: adesivo de gibi (contorno cacau, borda de papel, as chapas azul e rosa fora do registro; docs/visual-impresso.md) -->
+    <h1 id="inicioTitulo" class="titulo-letreiro"><svg class="letreiro" viewBox="0 0 320 170" aria-hidden="true"><g transform="rotate(-5 160 85)"><text x="138" y="85" class="lt-sombra">DICE</text><text x="138" y="78" class="lt-borda">DICE</text><text x="133" y="77" class="lt-chapa lt-azul">DICE</text><text x="138" y="78" class="lt-tinta lt-papel">DICE</text><text x="182" y="155" class="lt-sombra">DUEL</text><text x="182" y="148" class="lt-borda">DUEL</text><text x="187" y="147" class="lt-chapa lt-rosa">DUEL</text><text x="182" y="148" class="lt-tinta lt-mel">DUEL</text></g></svg><span class="so-leitor">Dice Duel</span></h1>
     <button class="inicio-perfil" id="inicioPerfil" data-inicio="perfil" aria-label="Seu perfil: visual, nível e recordes"></button>
     <div class="inicio-partida" id="inicioPartida" hidden></div>
     <div class="inicio-jogar" id="inicioJogar">
@@ -72,8 +73,8 @@
         <circle cx="40" cy="34" r="3" fill="#3a2a2e"/><circle cx="48" cy="42" r="3" fill="#3a2a2e"/>
       </svg>
       <div>
-        <h1>Dice <span>Duel</span></h1>
-        <p>duelo de dados aconchegante · v0.13</p>
+        <h1 class="titulo-letreiro"><svg class="letreiro" viewBox="0 0 320 170" aria-hidden="true"><g transform="rotate(-5 160 85)"><text x="138" y="85" class="lt-sombra">DICE</text><text x="138" y="78" class="lt-borda">DICE</text><text x="133" y="77" class="lt-chapa lt-azul">DICE</text><text x="138" y="78" class="lt-tinta lt-papel">DICE</text><text x="182" y="155" class="lt-sombra">DUEL</text><text x="182" y="148" class="lt-borda">DUEL</text><text x="187" y="147" class="lt-chapa lt-rosa">DUEL</text><text x="182" y="148" class="lt-tinta lt-mel">DUEL</text></g></svg><span class="so-leitor">Dice Duel</span></h1>
+        <p>duelo de dados aconchegante · v0.14</p>
       </div>
     </div>
     <div class="topo-botoes">
