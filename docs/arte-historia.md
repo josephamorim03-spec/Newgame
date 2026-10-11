@@ -191,3 +191,45 @@ O pedido de arte agora pede o estilo do jogo sem desvio (fundo chapado, no máxi
 retícula pintada) e um canto livre para o balão. O piloto (Prólogo, Cap. 1, receitas, mural, a revelação e o fim) está em
 **Quadros do Caderno da Diana** (https://claude.ai/artifact/4LfMUuqa94bKGNzQKBH1u5). Os quadros marcados "arte antiga" esperam
 crédito na API; a fila está em `arte/historia.json` (`_refazer`).
+
+## Plano de uso do crédito (econômico e direcionado)
+
+Estado: 61 desenhos nas páginas. **17 já estão no estilo novo** (o Prólogo, as receitas do Sapo e da Raposa, os quadros
+corrigidos e as 4 cenas novas). **44 ainda são da 1.ª versão.** O cachecol foi aprovado como está.
+
+### O que aprendemos (vale para todo pedido)
+- **gpt-image-2**, com o retrato aprovado de cada bicho como referência: segura as marcas da Diana (a ponta preta na
+  orelha certa, os dois riscos, os olhos azuis).
+- **O nariz vem da folha de modelo** (`arte/historia/narizes/`), nunca do texto: o texto sozinho errou o enfeite (o
+  curativo apareceu na Diana curada).
+- **Estilo do jogo sem desvio:** contorno cacau, chapado com uma sombra e um brilho, só a paleta do jogo, fundo com
+  poucas formas e no máximo três objetos, sem retícula pintada (o código põe), sem texto além do letreiro pedido.
+- **Um canto livre para o balão**, e a boca e a cabeça marcadas depois (de graça, no `arte/historia.json`).
+- **Dados: poucos, grandes e da cor do dono.** O gerador erra o arranjo das bolinhas; a troca de bolinhas conserta de
+  graça cerca de 1 em 3, e o resto custa redesenho. Dado que não é da piada não entra no pedido.
+- **Correção pequena é edição da arte atual**, não pintura nova (a Ovelha só com os hexágonos): sai certa de primeira
+  e não muda o resto do quadro.
+- **Pedido de gesto ou direção precisa dizer o lado** (o girino precisou de 3 tentativas até o pedido dizer onde ficam
+  as linhas de movimento).
+- Taxa de refazer observada: **cerca de 1 em 4** quadros novos.
+
+### As regras de gasto
+1. **Uma imagem por quadro, em qualidade média**; a alta só nos quadros de impacto (os closes, a revelação e a cura).
+   Variações só quando a primeira falha.
+2. **Não consertar dados de quadro que vai ser repintado**: o redesenho já traz dados novos, e só os que a troca de
+   bolinhas não consertar vão para o `dados_ia.py`, com **uma** variação primeiro.
+3. **Dado miúdo de fundo não se conserta**: no pedido novo ele simplesmente não existe.
+4. **Conferir cada lote antes do próximo** (marcar boca, cabeça e dados, trocar as bolinhas, olhar o resultado), e o
+   dono vê o lote na página antes de seguir.
+
+### As fases
+| Fase | O quê | Imagens (estimativa) |
+|---|---|---|
+| 1 | Os 19 quadros mais vistos da 1.ª versão (3 ou mais aparições nas páginas: a revelação, o Coelho, o Sapo, a Diana de cada capítulo, o fim), na ordem da história | 19 + ~5 refeitas |
+| 2 | Os outros 17 quadros de personagem e as 8 receitas no papel do caderno (edição do papel-base) | 25 + ~6 refeitas |
+| 3 | Os dados que sobrarem errados nos quadros novos e grandes (≥ 6% da largura), uma variação cada | ~15 + ~5 |
+| **Total** | | **~75 imagens**, contra ~250 de repintar tudo e pedir 3 variações por dado |
+
+A coruja de dois óculos no c7-lacre entra na fase 2, como edição (só os óculos). O valor de cada imagem aparece no
+painel da OpenAI (platform.openai.com → Usage); o plano conta imagens porque o preço por imagem muda com o modelo e a
+qualidade.

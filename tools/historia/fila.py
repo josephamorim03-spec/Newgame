@@ -4,10 +4,10 @@
     python3 tools/historia/fila.py          # confere o crédito e roda os passos 1 a 3
     python3 tools/historia/fila.py --seco   # só mostra o que roda
 
-1. o cachecol maior (a folha de modelo do nariz, partindo da v1);
-2. os quadros que o dono pediu para corrigir: p-pata, i1-le, c3-raposa, c1-pag-a e c6-ovelha (o da Ovelha é uma edição
+(o cachecol maior já saiu e foi aprovado)
+1. os quadros que o dono pediu para corrigir: p-pata, i1-le, c3-raposa, c1-pag-a e c6-ovelha (o da Ovelha é uma edição
    da arte atual, só os hexágonos), e as quatro artes novas do roteiro (c7-lacre, c7-tampa, c8-bolso, f-empurra);
-3. os rascunhos dos dados que a troca de bolinhas não consertou (tools/historia/dados_ia.py), com as pranchas para o dono.
+2. os rascunhos dos dados que a troca de bolinhas não consertou (tools/historia/dados_ia.py), com as pranchas para o dono.
 Depois: marcar de novo os dados, a boca e a cabeça dos quadros repintados (arte/historia.json), e o dono escolhe as
 variações dos dados (dados_ia.py aplicar ...).
 """
@@ -21,7 +21,6 @@ from pathlib import Path
 
 RAIZ = Path(__file__).resolve().parents[2]
 PASSOS = [
-    ["tools/historia/quadros.py", "narizes", "cachecol"],
     ["tools/historia/quadros.py", "--qualidade", "high", "p-pata", "i1-le", "c3-raposa", "c1-pag-a", "c6-ovelha",
      "c7-lacre", "c7-tampa", "c8-bolso", "f-empurra"],
     ["tools/historia/dados_ia.py", "rascunhos"],
