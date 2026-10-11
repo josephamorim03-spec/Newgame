@@ -108,7 +108,7 @@ async function vencer(pg, cor, pts) {
   // o guia na voz da Diana: um Eco forçado
   const dicas = [];
   await pg.exposeFunction('__dica', t => dicas.push(t));
-  await pg.evaluate(() => { const o = Fx.dica; Fx.dica = (t, s, ...r) => { window.__dica(t + ' ' + s); return o(t, s, ...r); }; });
+  await pg.evaluate(() => document.addEventListener('dica-guia', e => window.__dica(e.detail.titulo + ' ' + e.detail.sub)));
   await pg.evaluate(() => { const j = DiceDuel.jogo; j.pensando = false; j.vez = 0; j.fase = 'pegar'; j.cor[0] = [3]; j.mesa[0].v = 3; DiceDuel.ajustar({}); });
   await pg.click('.pega >> nth=0'); await pg.waitForTimeout(80); await pg.click('.pega >> nth=0'); await pg.waitForTimeout(800);
   if (!dicas.some(t => /Gêmeos idênticos/.test(t))) falha(`o guia do Prólogo não falou o Eco na voz da Diana: ${dicas}`);

@@ -709,7 +709,7 @@
   // e o próximo dado tocado na Mesa fica guardado no lugar dele. É a mesma troca de sempre, na ordem que a pessoa tentou;
   // o motor só recebe a troca quando o dado da Mesa é escolhido (nada fica pela metade, e o disparo vem depois, como antes)
   let bolsoEscolhido = null;   // a chave da vez em que o dado do Bolso foi levantado
-  const podeLevantarBolso = (j, p) => j.vez === p && j.fase === 'pegar' && humano(p) && !j.pensando && !j.intro && !j.segundoDado
+  const podeLevantarBolso = (j, p) => j.vez === p && j.fase === 'pegar' && humano(p) && !j.pensando && !j.intro
     && j.bolso[p] !== null && encaixaP(p, j.bolso[p]) && j.mesa.some(d => !marcadoContra(p, d));
   const bolsoArmado = j => bolsoEscolhido !== null && bolsoEscolhido === chaveVez(j) && j.sel == null && podeLevantarBolso(j, j.vez);
   function tocarBolso(p) {
@@ -952,9 +952,11 @@
       : p === 1 && rivalInativo() ? `ausente · <span data-afk>${segundosAfk()}</span> s`
       : daVez ? (humano(p) ? (j.modo !== 'local' ? 'sua vez' : 'vez') : online() ? 'jogando' : 'pensando') + (online() ? '<span class="relogio-vez" data-relogio></span>' : '') : '';
     const avatar = j.modo === 'bot' && p === 1 ? Retratos.retrato(RETRATO_RIVAL[j.nivel], j.humor || '') : p === 0 ? iconeSVG(st.conta.icone) : online() ? iconeSVG(j.perfis[1].icone) : '';
-    const fala = j.modo === 'bot' && p === 1 && j.fala ? `<div class="fala" aria-live="polite">${j.fala.txt}</div>` : '';
+    const guia = j.modo === 'bot' && p === 1 && dicaRival && j.fase !== 'fim' ? dicaRival : null;
+    const fala = guia ? '' : j.modo === 'bot' && p === 1 && j.fala ? `<div class="fala" aria-live="polite">${j.fala.txt}</div>` : '';
+    const falaGuia = guia ? `<div class="fala-guia${performance.now() - guia.t < 300 ? ' entra' : ''}" data-fechar-dica role="status"><b>${guia.titulo}</b>${guia.sub ? `<span>${guia.sub}</span>` : ''}</div>` : '';
     return `<div class="jogador p${p}${daVez ? ' da-vez' : ''}">${fala}
-      <div class="cab">${avatar}<span class="quem"><span class="nome">${n[p]}</span>${tag ? `<span class="tags-vez"><span class="vez-tag">${tag}</span></span>` : ''}</span>
+      <div class="cab">${falaGuia}${avatar}<span class="quem"><span class="nome">${n[p]}</span>${tag ? `<span class="tags-vez"><span class="vez-tag">${tag}</span></span>` : ''}</span>
         ${bolsoHTML(p)}<span class="placar"><b data-placar="${p}">${placarSegurado.has(p) ? placarSegurado.get(p) : j.pts[p]}</b><small>/${j.meta}</small></span></div>
       <div class="barra" role="progressbar" aria-valuemin="0" aria-valuemax="${j.meta}" aria-valuenow="${j.pts[p]}" aria-label="Pontos de ${n[p]}"><i style="width:${pct}%"></i>${prev ? `<span class="prev" style="left:${pct}%;width:${prev}%"></span>` : ''}</div>
       ${(() => { const alvo = p === j.vez && !fx && dadoEscolhido(j) >= 0 ? previaAlvos(p, dadoEscolhido(j)).corrente : null;
@@ -1479,7 +1481,7 @@
         case 'falar': if (j.modo === 'bot') falaDoEvento(e); break;
         case 'fim': {
           const venceuHumano = humano(e.p);
-          Fx.limparDica();
+          Fx.limparDica(); dicaRival = null;
           // o disparo que fecha a partida conta até o fim (a cascata e os pontos no placar) antes de a vitória estourar
           setTimeout(() => {
             Som.musica.cena('fim');
@@ -1511,16 +1513,29 @@
       if (!txt || jogo.historiaGuia.includes(chave)) return false;
       jogo.historiaGuia.push(chave);
       const limpo = txt.replace(/\(([^)]*)\)/g, '<i>($1)</i>'), corte = limpo.indexOf('. ');
-      Fx.dica(corte > 0 ? limpo.slice(0, corte + 1) : limpo, corte > 0 ? limpo.slice(corte + 2) : '', document.getElementById('pj0'), 5200);
+      mostrarDica(corte > 0 ? limpo.slice(0, corte + 1) : limpo, corte > 0 ? limpo.slice(corte + 2) : '', 5200);
       jogo.humor = 'feliz'; setTimeout(() => { if (jogo && jogo.humor === 'feliz') { jogo.humor = null; render(); } }, 2400);
       return true;
     }
     if (!st.pref.dicas || st.guia.vistos.includes(chave)) return false;
     st.guia.vistos.push(chave); gravarLocal();
     const [titulo, sub] = GUIA_TXT[chave](...args);
-    Fx.dica(titulo, sub, document.getElementById('pj0'));
+    mostrarDica(titulo, sub);
     return true;
   }
+  // A dica do guia contra um bicho (a Diana ensina): um balão dela, saindo do retrato e assentado no painel dela. Antes era
+  // uma caixa solta acima do seu painel: cobria os dados da Mesa e, larga e com a sombra dura, encostava na beira da tela.
+  // No painel do rival ela não tapa nem a Mesa nem o seu painel, onde se joga; um toque fecha. No online, a caixa de antes.
+  let dicaRival = null, dicaN = 0;   // { n, titulo, sub, t }
+  function mostrarDica(titulo, sub, ms = 4200) {
+    document.dispatchEvent(new CustomEvent('dica-guia', { detail: { titulo, sub } }));   // para os testes (estreia, história)
+    if (!jogo || jogo.modo !== 'bot') return Fx.dica(titulo, sub, document.getElementById('pj0'), ms);
+    Fx.limparDica();
+    const d = { n: ++dicaN, titulo, sub, t: performance.now() };
+    dicaRival = d; render();
+    setTimeout(() => { if (dicaRival === d) { dicaRival = null; if (jogo) render(); } }, ms);
+  }
+  function fecharDica() { if (!dicaRival) return; dicaRival = null; render(); }
 
   // ---------- tela de "versus" ----------
   function mostrarVersus() {
@@ -2369,6 +2384,7 @@
     const v = e.target.closest('[data-virada]'); if (v && jogo) { abrirVirada(+v.dataset.virada); return; }
     const al = e.target.closest('[data-alvo-dado]'); if (al && jogo) { levarDado(al.dataset.alvoDado); return; }
     const bo = e.target.closest('[data-bolso]'); if (bo && jogo) { tocarBolso(+bo.dataset.bolso); return; }
+    if (e.target.closest('[data-fechar-dica]')) { fecharDica(); return; }
     const b = e.target.closest('[data-carta]'); if (!b || !jogo) return;
     tocarCarta(+b.dataset.dono, b.dataset.carta);
   });
@@ -3664,7 +3680,7 @@
     }
     document.title = `● Você ainda está aí? · ${TITULO}`;
   }
-  window.DiceDuel = { get jogo() { return jogo; }, st, salvar,
+  window.DiceDuel = { get jogo() { return jogo; }, st, salvar, mostrarDica,
     // só para os testes (tools/): a partida avulsa contra um rival saiu do menu na v0.15, mas o robô e o motor continuam
     avulsa(nivel) { Online.sair(); if (st.cfg.modo !== 'local') st.cfg.modo = 'bot'; if (nivel) st.cfg.nivel = nivel; novaPartida({ avulsa: true, estreia: false }); }, fecharInicio: () => esconderInicio(), abrirInicio: () => mostrarInicio(), ajustar(p) { Object.assign(st.pref, p); aplicarPrefs(); if (jogo) render(); }, automato: () => talvezAutomato() };
   window.claude?.hot?.ready ? window.claude.hot.ready(iniciar) : iniciar(window.claude?.hot?.data ?? {});

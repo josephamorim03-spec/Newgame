@@ -224,8 +224,12 @@ cabeça de quem ouve). São cinco:
 | a primeira ruptura de 2 dados ou mais | "A corrente rompeu" · um dado guardado no Bolso pode salvar a corrente numa hora dessas |
 
 Valem em qualquer partida (também online), até aparecerem. Com as ajudas desligadas não aparecem e não ficam marcadas.
-Ficam numa faixa própria, logo acima do seu painel, e fora da fila das chamadas de festa: na fila, uma explicação de
-4 s atrasava o "Belo disparo!" do lance seguinte.
+Ficam fora da fila das chamadas de festa (na fila, uma explicação de 4 s atrasava o "Belo disparo!" do lance seguinte).
+**Contra um bicho, a dica é um balão da rival (v0.17):** sai do retrato dela, com o rabinho, e fica assentada no painel
+dela, dentro da largura do painel; um toque fecha. Antes era uma caixa solta logo acima do seu painel: cobria os dados
+da Mesa e, larga e com a sombra dura de gibi, encostava na beira da tela (queixa do dono, num iPhone). No online, sem
+quem fale, ela continua sendo a caixa acima do seu painel. As chamadas de gibi descontam a sombra na largura e andam
+metade dela para a esquerda: as margens ficam iguais dos dois lados.
 O que já apareceu fica no aparelho (`guia` no `diceduel.v1`), não na conta.
 - **Prévia antes de confirmar:** ao escolher o alvo de Virar ou Ajuste, cada dado mostra como ficaria.
   Cancelar devolve a carta.

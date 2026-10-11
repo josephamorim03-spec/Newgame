@@ -14,13 +14,13 @@ fs.mkdirSync(FOTOS, { recursive: true });
 const PAGINA = 'file://' + path.join(RAIZ, 'index.html');
 const GUIA_TODOS = ['eco', 'passo', 'oposto', 'disparo', 'ruptura'];
 
-// guarda as chamadas (Fx.chamada) e as dicas do guia (Fx.dica) para conferir
+// guarda as chamadas (Fx.chamada) e as dicas do guia (o evento dica-guia) para conferir
 const espiarChamadas = pg => pg.evaluate(() => {
   window.__ch = [];
-  const orig = Fx.chamada, origDica = Fx.dica;
+  const orig = Fx.chamada;
   Fx.chamada = (t, s, tipo, op = {}) => { window.__ch.push({ t, s, classe: op.classe || '' }); return orig(t, s, tipo, op); };
-  // as explicações do guia têm faixa própria (Fx.dica), fora da fila das chamadas
-  Fx.dica = (t, s, ...resto) => { window.__ch.push({ t, s, classe: 'guia' }); return origDica(t, s, ...resto); };
+  // as explicações do guia têm lugar próprio (o balão da Diana no painel dela), fora da fila das chamadas
+  document.addEventListener('dica-guia', e => window.__ch.push({ t: e.detail.titulo, s: e.detail.sub, classe: 'guia' }));
 });
 
 // joga a partida até o fim pela tela: segura a corrente de 3 (para a Paciência poder aparecer) e dispara de 4 em diante

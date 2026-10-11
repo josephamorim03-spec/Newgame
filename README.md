@@ -117,6 +117,8 @@ node tools/vercel_local.js                     # a página como o Vercel publica
 - **Duas queixas de jogador na partida:** sem saída (nada sincroniza, nem o do Bolso), a barra avisa na hora e traz o
   "Romper"; e tocar no dado do Bolso, que antes não fazia nada, agora o levanta: o dado tocado depois na Mesa fica
   guardado no lugar dele (a mesma troca, na outra ordem; o balanceamento não muda).
+- **As dicas do guia viram um balão da Diana** no painel dela, com o rabinho até o retrato: não cobrem mais a Mesa nem
+  encostam na beira da tela. As chamadas de festa ("Passo!") ficam com a mesma margem dos dois lados.
 - **A partida:** as cartas do rival em fichas baixas e os dados da Mesa maiores; a etiqueta da jogada ("Passo",
   "Oposto") passou para a direita da corrente, onde não cobre mais as etiquetas dos elos.
 - **Ajustes finos:** os botões liga/desliga em mel (a cor da ação), e a tela inicial maior no computador.
