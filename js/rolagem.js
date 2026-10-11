@@ -58,7 +58,7 @@
   function montarCubo(Lt, skin) {
     const L = Lt * NITIDEZ;                 // o tamanho montado; na tela, Lt
     const cubo = document.createElement('div');
-    cubo.className = 'cubo-rolagem';
+    cubo.className = 'cubo-rolagem voando';
     cubo.style.width = cubo.style.height = L + 'px';
     cubo.style.setProperty('--lado', Lt + 'px');
     cubo.style.setProperty('--nitidez', NITIDEZ);
@@ -160,6 +160,8 @@
       // na pose final: o dado parado aparece por baixo e o cubo se funde nele (sem trocar num quadro só,
       // o cubo 3D é desenhado mais macio que o dado nítido e a troca dava um estalo)
       if (t >= a.d.assenta && !a.pousando) { a.pousando = true; el.closest('.pega').classList.add('pousando'); }
+      // no ar, o cubo é sólido (cantos pouco redondos); perto de assentar, os cantos voltam aos do dado parado (css)
+      if (!a.chegando && t >= a.d.assenta - 0.22) { a.chegando = true; a.cubo.classList.remove('voando'); }
       lote.push({ a, t, c: t < a.d.inicio ? null : onde(el) });
     }
     acabaram.forEach(([id]) => encerrar(id));

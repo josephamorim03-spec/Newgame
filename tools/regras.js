@@ -263,12 +263,15 @@ const RAIZ = path.join(__dirname, '..');
       Rolagem.parar(); j.mesa.forEach(d => { d.novo = true; }); j.eventos.push({ tipo: 'rolar' }); DiceDuel.ajustar({});
       const cubo = document.querySelector('.cubo-rolagem'), face = cubo && cubo.querySelector('.face-rolagem .dado');
       const parado = document.querySelector('.pega .face > .dado');
+      // no ar o cubo é sólido (cantos pouco redondos, "voando"); ao assentar, os cantos são os do dado parado (sem salto)
+      const voando = cubo && cubo.classList.contains('voando');
+      if (cubo) { cubo.classList.remove('voando'); face.style.transition = 'none'; }
       return { cubos: document.querySelectorAll('.cubo-rolagem').length, faces: document.querySelectorAll(`.cubo-rolagem .dado.skin-${skin}`).length,
         miolo: cubo && getComputedStyle(cubo.querySelector('.miolo-rolagem')).backgroundColor, canto: face && getComputedStyle(face).borderTopLeftRadius,
-        cantoParado: parado && getComputedStyle(parado).borderTopLeftRadius, mesa: j.mesa.length };
+        cantoParado: parado && getComputedStyle(parado).borderTopLeftRadius, mesa: j.mesa.length, voando };
     }, skin);
     confere(r.cubos === r.mesa && r.faces === r.mesa * 6, `Skin ${skin}: ${r.cubos} cubos com as 6 faces na skin (${r.faces})`);
-    confere(r.canto === r.cantoParado, `Skin ${skin}: o cubo tem o mesmo canto do dado parado (${r.canto} × ${r.cantoParado})`);
+    confere(r.voando && r.canto === r.cantoParado, `Skin ${skin}: o cubo sai sólido e assenta com o mesmo canto do dado parado (${r.canto} × ${r.cantoParado})`);
     if (skin !== 'marfim') confere(r.miolo !== 'rgb(236, 223, 200)', `Skin ${skin}: miolo na cor da skin (${r.miolo})`);
   }
   await pg.waitForTimeout(2600);
