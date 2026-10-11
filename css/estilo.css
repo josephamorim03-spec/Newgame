@@ -1257,7 +1257,8 @@ button.bolso.alvo-dado { position: relative; border: 0; font: inherit; color: in
 .alvo-chip { position: absolute; z-index: 3; pointer-events: none; white-space: nowrap; font-size: 11.5px; font-weight: 800; line-height: 1; padding: 4px 8px; border-radius: 999px; background: var(--marfim); color: var(--tinta); box-shadow: 0 2px 6px rgba(0,0,0,.25); }
 /* à direita, nas casas vazias: à esquerda ela cobria as etiquetas dos elos (±1, 7, =) */
 .corrente .alvo-chip { top: -10px; right: 12px; }
-.bolso .alvo-chip { top: calc(100% + 4px); right: 0; font-size: 11px; }
+/* a do Bolso fica na beirada de CIMA dele, no meio: embaixo, ela caía em cima da etiqueta da corrente ("rompe" sobre "rompe") */
+.bolso .alvo-chip { top: -9px; left: 50%; transform: translateX(-50%); font-size: 11px; }
 .alvo-ok > .alvo-chip { background: var(--passo); }
 .alvo-aviso > .alvo-chip { background: var(--mel); }
 .alvo-perigo > .alvo-chip { background: var(--perigo); color: #fff; }
