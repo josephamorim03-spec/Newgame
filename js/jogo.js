@@ -705,18 +705,35 @@
   // Tocar no seu Bolso sem um dado escolhido: antes não acontecia nada (e o aro verde do dado útil convidava ao toque).
   // O dado guardado só sai por troca, então o toque diz isso na linha da Mesa, até a vez mudar ou outro toque mandar.
   let toqueBolso = null;   // { chave, t }: a vez e a hora do toque
+  // O Bolso escolhido primeiro: na sua vez, tocar no dado do Bolso que serve o levanta (a corrente mostra ele entrando)
+  // e o próximo dado tocado na Mesa fica guardado no lugar dele. É a mesma troca de sempre, na ordem que a pessoa tentou;
+  // o motor só recebe a troca quando o dado da Mesa é escolhido (nada fica pela metade, e o disparo vem depois, como antes)
+  let bolsoEscolhido = null;   // a chave da vez em que o dado do Bolso foi levantado
+  const podeLevantarBolso = (j, p) => j.vez === p && j.fase === 'pegar' && humano(p) && !j.pensando && !j.intro && !j.segundoDado
+    && j.bolso[p] !== null && encaixaP(p, j.bolso[p]) && j.mesa.some(d => !marcadoContra(p, d));
+  const bolsoArmado = j => bolsoEscolhido !== null && bolsoEscolhido === chaveVez(j) && j.sel == null && podeLevantarBolso(j, j.vez);
   function tocarBolso(p) {
     const j = jogo; if (!j || j.fase === 'fim' || !humano(p) || j.intro) return;
     if (dadoEscolhido(j) >= 0) return levarDado('bolso');
-    toqueBolso = { chave: chaveVez(j), t: performance.now() };
-    foco = null; Som.tocar('toque'); vibrar(6); render();
+    toqueBolso = { chave: chaveVez(j), t: performance.now() }; foco = null; pergunta = null;
+    if (bolsoArmado(j)) { bolsoEscolhido = null; Som.tocar('toque'); vibrar(6); return render(); }   // tocar de novo solta
+    if (podeLevantarBolso(j, p)) {
+      bolsoEscolhido = chaveVez(j);
+      Som.tocar('escolher', { n: j.cor[p].length + 1, x: 0 }); vibrar(6); return render();
+    }
+    Som.tocar('toque'); vibrar(6); render();
   }
   function instrucaoBolso(j) {
+    if (bolsoArmado(j)) {
+      const p = j.vez, b = j.bolso[p];
+      return `O <b>${b}</b> vai para a corrente. Toque no dado da Mesa que fica guardado no lugar dele.`;
+    }
     if (!toqueBolso || toqueBolso.chave !== chaveVez(j) || dadoEscolhido(j) >= 0 || j.fase === 'fim') return '';
     const p = j.modo !== 'local' ? 0 : j.vez, b = j.bolso[p], eu = j.cor[p];
     const minha = j.vez === p && j.fase === 'pegar' && !j.pensando, leve = minha ? 'leve' : 'na sua vez, leve';
     if (b === null) return `O <b>Bolso</b> está vazio: ${leve} um dado da Mesa até ele para guardar.`;
-    if (!eu.length || encaixaP(p, b)) return `O <b>${b}</b> do Bolso entra ${minha ? 'na corrente ' : ''}trocando: ${leve} um dado da Mesa até o Bolso.`;
+    if (!eu.length || encaixaP(p, b)) return minha ? `O <b>${b}</b> do Bolso só entra trocando com um dado da Mesa, e nenhum deles pode ir para o Bolso agora.`
+      : `O <b>${b}</b> do Bolso entra trocando: na sua vez, toque nele e depois no dado da Mesa que fica guardado.`;
     return `O <b>${b}</b> do Bolso não sincroniza com o seu ${frente(eu)}: trocar agora romperia a corrente.`;
   }
   // a frase do dado escolhido, na linha da Mesa
@@ -740,6 +757,10 @@
     }
     if (j.fase !== 'pegar') return;
     foco = null;
+    if (bolsoArmado(j)) {
+      if (marcadoContra(j.vez, d)) { Som.tocar('perigo', { x: (idx - 2) * 0.3 }); vibrar([6, 40, 6]); return; }   // virado pelo Espelho: não vai para o Bolso
+      bolsoEscolhido = null; j.sel = d.id; return pegarDado('trocar');
+    }
     if (j.sel === d.id) {
       const op = opcoesDoDado(j.vez, idx);
       if (op.principal) pegarDado(op.principal); else if (!op.proprio) levarDado('corrente');
@@ -769,7 +790,7 @@
   }
   function soltarEscolha() {
     const j = jogo;
-    foco = null; pergunta = null;
+    foco = null; pergunta = null; bolsoEscolhido = null;
     j.sel = null;
     if (j.fase === 'alvo' || j.fase === 'ajuste') { j.fase = 'pegar'; j.alvo = null; j.ajusteIdx = null; }
   }
@@ -780,7 +801,7 @@
   // tocar numa carta sua, na sua vez: a que pede um dado já espera o dado (toque nele ou arraste a carta até ele);
   // as outras sobem e mostram Usar ou Armar. Tocar de novo devolve. Fora da vez, e as do rival: a janela de leitura
   function tocarCarta(p, c) {
-    const j = jogo; toqueBolso = null;
+    const j = jogo; toqueBolso = null; bolsoEscolhido = null;
     if (escolhendoDado(j, p)) { const mesma = j.alvo === c; soltarEscolha(); if (mesma) return render(); }
     if (!podeAbrir(j, p)) return abrirCarta(p, c);
     if (cartaEmFoco(j) === c) { foco = null; return render(); }
@@ -851,7 +872,7 @@
 
   function bolsoHTML(p) {
     const j = jogo, b = j.bolso[p], util = b !== null && j.cor[p].length && encaixaP(p, b);
-    const destaque = j.fase === 'destino' && j.vez === p ? ' ativo' : '';
+    const destaque = j.fase === 'destino' && j.vez === p ? ' ativo' : p === j.vez && bolsoArmado(j) ? ' levantado' : '';
     const alvo = p === j.vez && dadoEscolhido(j) >= 0 ? previaAlvos(p, dadoEscolhido(j)).bolso : null;
     if (alvo) return `<button class="bolso alvo-dado alvo-${alvo.cls}" data-alvo-dado="bolso" aria-label="Bolso: ${alvo.txt}"><span class="rot">Bolso</span>${b === null ? '<span class="bolso-vazio"></span>' : `<span class="mini${util ? ' util' : ''}">${dadoHTML(b, skinDe(p))}</span>`}<span class="alvo-chip">${alvo.txt}</span></button>`;
     // o seu Bolso responde ao toque (tocarBolso): o dado guardado não sai sozinho, e o toque explica como ele sai
@@ -937,6 +958,8 @@
         ${bolsoHTML(p)}<span class="placar"><b data-placar="${p}">${placarSegurado.has(p) ? placarSegurado.get(p) : j.pts[p]}</b><small>/${j.meta}</small></span></div>
       <div class="barra" role="progressbar" aria-valuemin="0" aria-valuemax="${j.meta}" aria-valuenow="${j.pts[p]}" aria-label="Pontos de ${n[p]}"><i style="width:${pct}%"></i>${prev ? `<span class="prev" style="left:${pct}%;width:${prev}%"></span>` : ''}</div>
       ${(() => { const alvo = p === j.vez && !fx && dadoEscolhido(j) >= 0 ? previaAlvos(p, dadoEscolhido(j)).corrente : null;
+        const doBolso = !alvo && p === j.vez && !fx && bolsoArmado(j) ? { cls: 'ok', txt: `entra o ${j.bolso[p]}: ${relDe(p, j.bolso[p])}` } : null;
+        if (doBolso) return `<div class="corrente alvo-dado alvo-ok${L >= 5 ? ' fervendo' : L >= 4 ? ' quente' : ''}" style="--fase:-${Math.round(performance.now() % 1800)}ms;--fx-t:-${fxT}ms;--n:${cor.length}">${slots}<span class="alvo-chip">${doBolso.txt}</span></div>`;
         return `<div class="corrente${fx ? ' fx-' + fx.tipo + ' fx-n' + Math.min(6, (fx.dados || []).length) : L >= 5 ? ' fervendo' : L >= 4 ? ' quente' : ''}${!fx && (disparoVence(p) || porUm(p)) ? ' por-um' : ''}${alvo ? ` alvo-dado alvo-${alvo.cls}" data-alvo-dado="corrente" role="button" tabindex="0" aria-label="Corrente: ${alvo.txt}` : ''}" style="--fase:-${Math.round(performance.now() % 1800)}ms;--fx-t:-${fxT}ms;--n:${cor.length}">${slots}${alvo ? `<span class="alvo-chip">${alvo.txt}</span>` : ''}</div>`; })()}
       ${st.pref.dicas && !cartaEscolhida(j, p) ? `<div class="info"><span>Corrente <b>${L}</b>/${LIM}</span><span>${valeAgora}${seCrescer}</span></div>` : ''}
       ${comDecisao && !cartaEscolhida(j, p) && !barraComCartas ? '<div class="decisao-slot"></div>' : cartasHTML(p) + (comDecisao ? '<div class="decisao-slot"></div>' : '')}
@@ -967,9 +990,11 @@
         if (contra && dicas) tags = `<span class="tag previa">vira ${vv}</span>` + tags;
       }
       if (j.fase === 'ajuste' && j.ajusteIdx === i) tags = `<span class="tag previa">ajustar</span>`;
+      const pelaTroca = bolsoArmado(j);
+      if (pelaTroca) tags = contra ? `<span class="tag rompe">não pode</span>` : `<span class="tag inicio">guardar</span>`;
       const serveRival = dicas && ele.length && encaixa(ele, valorAoPegar(1 - p, d)) && j.fase !== 'fim';
       const fechaRival = serveRival && porUm(1 - p);
-      const cls = ['pega', d.novo ? 'novo' : '', window.Rolagem && Rolagem.ativo(d.id) ? 'rolando' : '', window.Rolagem && Rolagem.pousando(d.id) ? 'pousando' : '', !salvo && j.fase === 'pegar' && dicas ? 'nao-cabe' : '', j.sel === d.id || (j.fase === 'ajuste' && j.ajusteIdx === i) ? 'escolhido' : '', j.destaque === d.id ? 'destaque' : '', j.olhando === d.id ? 'olhado' : '', j.virando === d.id ? 'virando' : '', mudou(d.id) ? 'mudou' : ''].join(' ');
+      const cls = ['pega', d.novo ? 'novo' : '', window.Rolagem && Rolagem.ativo(d.id) ? 'rolando' : '', window.Rolagem && Rolagem.pousando(d.id) ? 'pousando' : '', (pelaTroca ? contra : !salvo && j.fase === 'pegar' && dicas) ? 'nao-cabe' : '', pelaTroca && !contra ? 'pela-troca' : '', j.sel === d.id || (j.fase === 'ajuste' && j.ajusteIdx === i) ? 'escolhido' : '', j.destaque === d.id ? 'destaque' : '', j.olhando === d.id ? 'olhado' : '', j.virando === d.id ? 'virando' : '', mudou(d.id) ? 'mudou' : ''].join(' ');
       const rotulo = `${j.fase === 'alvo' ? 'Escolher' : 'Pegar'} ${d.v}${contra ? `, chega virado como ${vv}` : ''}${cabe ? (r.length ? ', ' + r.map(k => REL[k].nome).join(' e ') : '') : salvo ? ', só pelo Bolso' : ', rompe a corrente'}${fechaRival ? ', dá a vitória ao rival' : serveRival ? ', serve ao rival' : ''}${marcado !== null ? ', marcado com Espelho' : ''}`;
       return `<button class="${cls}" style="--i:${i}" data-i="${i}" data-id="${d.id}" ${ativo ? '' : 'disabled'} aria-label="${rotulo}" aria-pressed="${j.sel === d.id || (j.fase === 'ajuste' && j.ajusteIdx === i)}">
         <span class="kbd">${i + 1}</span><span class="face">${dadoHTML(d.v, skinMesa())}${mudou(d.id) && marcaMudanca.antes != null ? `<span class="era">era ${marcaMudanca.antes}</span>` : ''}${serveRival ? `<span class="alvo-rival${fechaRival ? ' fecha' : ''}"></span>` : ''}${marcado !== null ? `<span class="marca-esp dono${marcado}" title="Marcado com Espelho">${CARTAS.espelho.ico}</span>` : ''}</span><span class="tags">${tags}</span></button>`;
@@ -2338,7 +2363,7 @@
   // tocar num espaço vazio da Mesa desfaz a escolha do dado (não há mais barra com Cancelar)
   document.getElementById('mesa').addEventListener('click', e => { const b = e.target.closest('.pega'); if (b && !b.disabled) clicarDado(+b.dataset.i); });
   document.querySelector('.mesa-area').addEventListener('click', e => {
-    if (!e.target.closest('.pega') && jogo && jogo.fase === 'pegar' && jogo.sel != null && humano(jogo.vez)) cancelarEscolha();
+    if (!e.target.closest('.pega') && jogo && jogo.fase === 'pegar' && (jogo.sel != null || bolsoArmado(jogo)) && humano(jogo.vez)) cancelarEscolha();
   });
   document.getElementById('tabuleiro').addEventListener('click', e => {
     const v = e.target.closest('[data-virada]'); if (v && jogo) { abrirVirada(+v.dataset.virada); return; }

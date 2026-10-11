@@ -233,18 +233,30 @@ const RAIZ = path.join(__dirname, '..');
   const chips = await pg.evaluate(() => [...document.querySelectorAll('.alvo-chip')].map(c => c.getBoundingClientRect()).map(r => ({ l: r.left, r: r.right, t: r.top, b: r.bottom })));
   confere(chips.length === 2 && !(chips[0].l < chips[1].r && chips[1].l < chips[0].r && chips[0].t < chips[1].b && chips[1].t < chips[0].b), 'As etiquetas do Bolso e da corrente não se cruzam');
 
-  // 10d. Tocar no dado do Bolso sem um dado escolhido: antes não acontecia nada (queixa de um jogador). Agora a linha da
-  //      Mesa explica que ele só sai por troca, e com um dado escolhido o toque no Bolso continua levando o dado até ele
+  // 10d. Tocar no dado do Bolso sem um dado escolhido: antes não acontecia nada (queixa de um jogador). Agora o Bolso que
+  //      serve se levanta, a corrente mostra ele entrando, e o dado tocado na Mesa fica guardado no lugar dele (a troca de
+  //      sempre, na outra ordem). Tocar de novo, ou num vazio da Mesa, solta; o que não serve só explica
+  const tx = () => pg.textContent('#ticker');
   await cena([[], []], () => { const j = DiceDuel.jogo; j.vez = 0; j.fase = 'pegar'; j.sel = null; j.cor[0] = [2, 3]; j.bolso[0] = 4; j.mesa = [{ id: 9921, v: 1 }, { id: 9922, v: 6 }]; });
   await pg.click('#pj0 [data-bolso]');
-  confere(/do Bolso entra na corrente trocando/.test(await pg.textContent('#ticker')), 'Bolso tocado sem dado escolhido: a linha da Mesa explica a troca');
-  await pg.click('.pega[data-id="9921"]');
-  confere(!/entra na corrente trocando/.test(await pg.textContent('#ticker')), 'Bolso tocado: escolher um dado devolve a linha da Mesa ao dado');
-  await pg.click('#pj0 [data-alvo-dado="bolso"]'); j = await J();
-  confere(j.cor[0].join() === '2,3,4' && j.bolso[0] === 1, 'Bolso tocado com o dado escolhido: troca (o 4 entra, o 1 fica guardado)');
+  confere(/O 4 vai para a corrente/.test(await tx()) && !!(await pg.$('#pj0 .bolso.levantado')) && /entra o 4/.test(await pg.textContent('#pj0 .corrente')) && (await pg.$$('.pega.pela-troca')).length === 2,
+    'Bolso tocado: ele se levanta, a corrente mostra o 4 entrando e os dados da Mesa dizem "guardar"');
+  j = await J(); confere(j.cor[0].join() === '2,3' && j.bolso[0] === 4, 'Bolso levantado: nada muda no jogo até escolher o dado da Mesa');
+  await pg.click('#pj0 [data-bolso]');
+  confere(!(await pg.$('#pj0 .bolso.levantado')) && !(await pg.$$('.pega.pela-troca')).length, 'Bolso tocado de novo: solta');
+  await pg.click('#pj0 [data-bolso]'); await pg.keyboard.press('Escape');
+  confere(!(await pg.$('#pj0 .bolso.levantado')), 'Bolso levantado: Esc solta');
+  await pg.click('#pj0 [data-bolso]'); await pg.click('.pega[data-id="9921"]'); j = await J();
+  confere(j.cor[0].join() === '2,3,4' && j.bolso[0] === 1 && j.fase === 'decidir', 'Bolso levantado e o 1 da Mesa: troca (o 4 entra, o 1 fica guardado) e, com 3, vem a decisão');
+  await cena([[], []], () => { const j = DiceDuel.jogo; j.vez = 0; j.fase = 'pegar'; j.sel = null; j.cor[0] = [2, 3]; j.bolso[0] = 4; j.mesa = [{ id: 9925, v: 1 }]; });
+  await pg.click('.pega[data-id="9925"]'); await pg.click('#pj0 [data-alvo-dado="bolso"]'); j = await J();
+  confere(j.cor[0].join() === '2,3,4' && j.bolso[0] === 1, 'A ordem de sempre continua: o dado da Mesa e depois o Bolso troca');
+  await cena([[], []], () => { const j = DiceDuel.jogo; j.vez = 0; j.fase = 'pegar'; j.sel = null; j.cor[0] = [3, 4, 5]; j.bolso[0] = 6; j.mesa = [{ id: 9927, v: 2 }]; });
+  await pg.click('#pj0 [data-bolso]'); await pg.click('.pega[data-id="9927"]'); j = await J();
+  confere(j.cor[0].join() === '3,4,5,6' && j.bolso[0] === 2 && j.fase === 'decidir' && j.vez === 0, 'Pelo Bolso levantado, a corrente de 4 decide disparar só depois da troca inteira');
   await cena([[], []], () => { const j = DiceDuel.jogo; j.vez = 0; j.fase = 'pegar'; j.sel = null; j.cor[0] = [2, 3]; j.bolso[0] = 6; j.mesa = [{ id: 9931, v: 4 }]; });
   await pg.click('#pj0 [data-bolso]');
-  confere(/não sincroniza com o seu 3/.test(await pg.textContent('#ticker')), 'Bolso que não serve, tocado: a linha diz que a troca romperia');
+  confere(/não sincroniza com o seu 3/.test(await tx()) && !(await pg.$('#pj0 .bolso.levantado')), 'Bolso que não serve, tocado: não se levanta e a linha diz que a troca romperia');
   await pg.keyboard.press('Escape');
 
   // 11. Ajudas: a chave do menu de pausa liga e desliga etiquetas, dicas e explicações (e lembra a escolha);
