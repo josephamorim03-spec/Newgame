@@ -219,6 +219,8 @@ svg.ico.mini-ico { width: 1.25em; height: 1.25em; vertical-align: -0.25em; strok
 .bolso .mini { width: 28px; height: 28px; }
 .bolso .mini.util .dado { box-shadow: 0 0 0 2px var(--passo); }
 .bolso-vazio { width: 28px; height: 28px; border-radius: 24%; box-shadow: inset 0 0 0 2px rgba(58,42,46,.18); display: inline-block; }
+[data-bolso] { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.bolso.cutucado { animation: cartaTreme .4s ease-out; }
 .bolso.ativo { box-shadow: 0 0 0 2px var(--mel), 0 0 14px rgba(242,177,94,.5); }
 .bolso .chegando .dado { opacity: 0; }
 
@@ -749,11 +751,13 @@ img.avatar { object-fit: contain; }
    (a sombra no chão) mora na .sombra-rolagem */
 /* a face montada maior (js/rolagem.js, NITIDEZ): o desenho tem o tamanho do dado da Mesa e o zoom amplia tudo junto */
 .face-rolagem .dado { width: var(--lado, 100%); height: var(--lado, 100%); zoom: var(--nitidez, 1); position: relative; box-shadow: inset 0 -3px 0 rgba(120, 90, 60, .18); transition: border-radius .2s ease-out; }
-/* no ar, as faces fecham o cubo: com os cantos do dado parado (24%), cada quina virava um buraco onde três cantos
-   redondos se encontram, e a beirada de baixo de cada face (a sombra de dentro) desenhava a face como um ladrilho solto.
-   Perto de assentar ("voando" sai, js/rolagem.js), os cantos voltam aos do dado parado e o pouso não tem salto */
-.cubo-rolagem.voando .face-rolagem .dado { border-radius: 10%; box-shadow: none; }
-.cubo-rolagem.voando .miolo-rolagem { border-radius: 6%; }
+/* no ar, a beirada de baixo de cada face (a sombra de dentro do dado parado) desenhava a face como um ladrilho solto:
+   no lugar dela, a beirada toda levemente sombreada, como a aresta redonda de um dado de verdade. Perto de assentar
+   ("voando" sai, js/rolagem.js), volta a do dado parado */
+.cubo-rolagem.voando .face-rolagem .dado { box-shadow: inset 0 0 0 1px rgba(255,255,255,.3), inset 0 0 6px 1px rgba(90,60,30,.16); }
+/* as quinas (js/rolagem.js): a esfera de cada vértice, na cor da skin, com a luz de cima à esquerda */
+.quina-rolagem { position: absolute; border-radius: 50%; pointer-events: none;
+  background: radial-gradient(circle at 38% 32%, color-mix(in srgb, var(--miolo, #ecdfc8) 45%, #fff) 0%, var(--miolo, #ecdfc8) 50%, color-mix(in srgb, var(--miolo, #ecdfc8) 84%, #2a1a12) 100%); }
 .face-rolagem .dado.skin-madeira { box-shadow: inset 0 -3px 0 rgba(70,40,20,.3); }
 .face-rolagem .dado.skin-pelucia { box-shadow: inset 0 0 0 2px rgba(255,255,255,.55), inset 0 -5px 7px rgba(120,80,40,.25); }
 .face-rolagem .dado.skin-la { box-shadow: inset 0 0 0 2px rgba(255,255,255,.6), inset 0 -5px 7px rgba(120,95,60,.22); }
@@ -4242,6 +4246,15 @@ window.DADOS_PINTADOS = Object.assign(window.DADOS_PINTADOS || {}, {
       const m = [[t[0], b[0], n[0]], [t[1], b[1], n[1]], [t[2], b[2], n[2]]];
       html += `<div class="face-rolagem" style="transform:${matriz(m, n.map(x => x * L / 2))}">${montarCubo.faceHTML(i + 1)}</div>`;
     }
+    // as quinas: cada vértice de um dado de cantos redondos é uma esfera do mesmo raio do canto da face, encostada nas
+    // três faces. Sem ela, onde três cantos redondos se encontram ficava um buraco (o vértice "vazado"). A esfera é
+    // um disco sempre de frente para a tela (o quadro desfaz o giro do cubo nele), com a luz de uma bola. Pousado e
+    // visto de cima, cada disco fica inteiro sob o canto redondo da face de cima: o pouso não muda
+    const raio = (skin === 'pelucia' || skin === 'la' ? 0.34 : 0.24) * L, cq = L / 2 - raio, quinas = [];
+    for (const sx of [-1, 1]) for (const sy of [-1, 1]) for (const sz of [-1, 1]) {
+      html += `<div class="quina-rolagem" style="left:${L / 2 - raio}px;top:${L / 2 - raio}px;width:${2 * raio}px;height:${2 * raio}px"></div>`;
+      quinas.push([sx * cq, sy * cq, sz * cq]);
+    }
     cubo.innerHTML = html;
     // cada face guarda as próprias peças: a sombra da luz (um elemento só, por cima das bolinhas) e as bolinhas acesas.
     // A luz muda a cada quadro; escrevê-la como variável CSS herdada na face fazia o navegador recalcular a face e as
@@ -4252,7 +4265,8 @@ window.DADOS_PINTADOS = Object.assign(window.DADOS_PINTADOS || {}, {
       sombra.className = 'sombra-face'; dado.appendChild(sombra);
       return { el, sombra, pips: [...el.querySelectorAll('.pip.on')], op: -1, esc: -1, pip: -1 };
     });
-    return { cubo, faces, miolos: [...cubo.querySelectorAll('.miolo-rolagem')].map(el => ({ el, esc: -1, op: -1 })) };
+    return { cubo, faces, miolos: [...cubo.querySelectorAll('.miolo-rolagem')].map(el => ({ el, esc: -1, op: -1 })),
+      quinas: [...cubo.querySelectorAll('.quina-rolagem')].map((el, k) => ({ el, c: quinas[k], op: -1 })) };
   }
 
   // cada dado tem o seu palco: a perspectiva olha para a casa dele (de frente, um pouco de baixo), e não para o
@@ -4264,10 +4278,10 @@ window.DADOS_PINTADOS = Object.assign(window.DADOS_PINTADOS || {}, {
     const sombra = document.createElement('div');
     sombra.className = 'sombra-rolagem';
     sombra.style.width = sombra.style.height = L + 'px';
-    const { cubo, faces, miolos } = montarCubo(L, skin);
+    const { cubo, faces, miolos, quinas } = montarCubo(L, skin);
     if (skin) cubo.dataset.skin = sombra.dataset.skin = skin;
     palco.append(sombra, cubo);
-    return { palco, sombra, cubo, faces, miolos };
+    return { palco, sombra, cubo, faces, miolos, quinas };
   }
 
   // itens: [{ id, v }] na ordem da Mesa (é a ordem das casas). op: { faceHTML(v), som(nome, dados), velocidade }
@@ -4285,10 +4299,10 @@ window.DADOS_PINTADOS = Object.assign(window.DADOS_PINTADOS || {}, {
       if (el) el.closest('.pega').classList.add('rolando');   // antes de medir: desliga a animação antiga da casa
       const L = el ? onde(el).L : 60;
       montarCubo.faceHTML = op.faceHTML;
-      const { palco, cubo, sombra, faces, miolos } = montarPalco(L, op.skin);
+      const { palco, cubo, sombra, faces, miolos, quinas } = montarPalco(L, op.skin);
       camada.append(palco);
       const d = M.preparar(sorteio.l, i, it.v - 1, 0, sorteio.espelhado);
-      ativos.set(it.id, { d, palco, cubo, sombra, faces, miolos, grupo, L, opacidade: -1 });
+      ativos.set(it.id, { d, palco, cubo, sombra, faces, miolos, quinas, grupo, L, opacidade: -1 });
     });
     if (!raf) raf = requestAnimationFrame(quadro);
     return true;
@@ -4323,7 +4337,7 @@ window.DADOS_PINTADOS = Object.assign(window.DADOS_PINTADOS || {}, {
       // na pose final: o dado parado aparece por baixo e o cubo se funde nele (sem trocar num quadro só,
       // o cubo 3D é desenhado mais macio que o dado nítido e a troca dava um estalo)
       if (t >= a.d.assenta && !a.pousando) { a.pousando = true; el.closest('.pega').classList.add('pousando'); }
-      // no ar, o cubo é sólido (cantos pouco redondos); perto de assentar, os cantos voltam aos do dado parado (css)
+      // no ar, as faces têm a beirada toda sombreada (aresta redonda); perto de assentar, a do dado parado (css)
       if (!a.chegando && t >= a.d.assenta - 0.22) { a.chegando = true; a.cubo.classList.remove('voando'); }
       lote.push({ a, t, c: t < a.d.inicio ? null : onde(el) });
     }
@@ -4351,7 +4365,16 @@ window.DADOS_PINTADOS = Object.assign(window.DADOS_PINTADOS || {}, {
       if (z !== a.z) { a.z = z; a.palco.style.zIndex = String(z); }
       // o centro fica meio lado abaixo da face de cima: parado, a face de cima cai no plano da tela (escala 1)
       const Lm = L * NITIDEZ;   // o cubo montado (o centro dele é o centro do dado; a escala volta ao tamanho da tela)
-      a.cubo.style.transform = `translate3d(${cx - Lm / 2}px, ${cy - Lm / 2}px, ${p.pos[1] * L - L / 2}px) ${matriz(baseCss(p.base))} scale3d(${1 / NITIDEZ}, ${1 / NITIDEZ}, ${1 / NITIDEZ})`;
+      const R = baseCss(p.base);
+      a.cubo.style.transform = `translate3d(${cx - Lm / 2}px, ${cy - Lm / 2}px, ${p.pos[1] * L - L / 2}px) ${matriz(R)} scale3d(${1 / NITIDEZ}, ${1 / NITIDEZ}, ${1 / NITIDEZ})`;
+      // as quinas: no lugar do vértice, com o giro do cubo desfeito (a transposta), de frente para a tela.
+      // Na fusão elas somem (a face de cima, sumindo, as deixaria aparecer por baixo)
+      const Rt = [[R[0][0], R[1][0], R[2][0]], [R[0][1], R[1][1], R[2][1]], [R[0][2], R[1][2], R[2][2]]];
+      const oq = a.pousando ? 0 : Math.round(entra * 100) / 100;
+      for (const q of a.quinas) {
+        q.el.style.transform = matriz(Rt, q.c);
+        if (oq !== q.op) { q.op = oq; q.el.style.opacity = oq; }
+      }
       // a sombra é a do dado parado (6 px abaixo, desfocada): no chão ela fica onde a dele fica;
       // no ar ela se afasta para baixo e à direita, encolhe e clareia
       a.sombra.style.transform = `translate(${cx - L / 2 + h * L * 0.28}px, ${cy - L / 2 + 6 + h * L * 0.42}px) scale(${1 - Math.min(0.45, h * 0.16)})`;
@@ -6175,6 +6198,23 @@ window.HISTORIA_QUADROS = {"falas":{"P-01":[{"arte":"p-mesa","chave":"P-antes_0"
     if (op.rompe && op.ds.includes('trocar')) return romper();
     return perguntar(`O ${b} do Bolso não sincroniza com o seu ${fr}: trocar romperia a corrente.`, op.seguros.includes('corrente') ? [['corrente', `Pôr na corrente (${relDe(p, v)})`]] : []);
   }
+  // Tocar no seu Bolso sem um dado escolhido: antes não acontecia nada (e o aro verde do dado útil convidava ao toque).
+  // O dado guardado só sai por troca, então o toque diz isso na linha da Mesa, até a vez mudar ou outro toque mandar.
+  let toqueBolso = null;   // { chave, t }: a vez e a hora do toque
+  function tocarBolso(p) {
+    const j = jogo; if (!j || j.fase === 'fim' || !humano(p) || j.intro) return;
+    if (dadoEscolhido(j) >= 0) return levarDado('bolso');
+    toqueBolso = { chave: chaveVez(j), t: performance.now() };
+    foco = null; Som.tocar('toque'); vibrar(6); render();
+  }
+  function instrucaoBolso(j) {
+    if (!toqueBolso || toqueBolso.chave !== chaveVez(j) || dadoEscolhido(j) >= 0 || j.fase === 'fim') return '';
+    const p = j.modo !== 'local' ? 0 : j.vez, b = j.bolso[p], eu = j.cor[p];
+    const minha = j.vez === p && j.fase === 'pegar' && !j.pensando, leve = minha ? 'leve' : 'na sua vez, leve';
+    if (b === null) return `O <b>Bolso</b> está vazio: ${leve} um dado da Mesa até ele para guardar.`;
+    if (!eu.length || encaixaP(p, b)) return `O <b>${b}</b> do Bolso entra ${minha ? 'na corrente ' : ''}trocando: ${leve} um dado da Mesa até o Bolso.`;
+    return `O <b>${b}</b> do Bolso não sincroniza com o seu ${frente(eu)}: trocar agora romperia a corrente.`;
+  }
   // a frase do dado escolhido, na linha da Mesa
   function instrucaoDado(j) {
     const idx = dadoEscolhido(j); if (idx < 0 || perguntaValida(j)) return '';
@@ -6236,7 +6276,7 @@ window.HISTORIA_QUADROS = {"falas":{"P-01":[{"arte":"p-mesa","chave":"P-antes_0"
   // tocar numa carta sua, na sua vez: a que pede um dado já espera o dado (toque nele ou arraste a carta até ele);
   // as outras sobem e mostram Usar ou Armar. Tocar de novo devolve. Fora da vez, e as do rival: a janela de leitura
   function tocarCarta(p, c) {
-    const j = jogo;
+    const j = jogo; toqueBolso = null;
     if (escolhendoDado(j, p)) { const mesma = j.alvo === c; soltarEscolha(); if (mesma) return render(); }
     if (!podeAbrir(j, p)) return abrirCarta(p, c);
     if (cartaEmFoco(j) === c) { foco = null; return render(); }
@@ -6310,7 +6350,9 @@ window.HISTORIA_QUADROS = {"falas":{"P-01":[{"arte":"p-mesa","chave":"P-antes_0"
     const destaque = j.fase === 'destino' && j.vez === p ? ' ativo' : '';
     const alvo = p === j.vez && dadoEscolhido(j) >= 0 ? previaAlvos(p, dadoEscolhido(j)).bolso : null;
     if (alvo) return `<button class="bolso alvo-dado alvo-${alvo.cls}" data-alvo-dado="bolso" aria-label="Bolso: ${alvo.txt}"><span class="rot">Bolso</span>${b === null ? '<span class="bolso-vazio"></span>' : `<span class="mini${util ? ' util' : ''}">${dadoHTML(b, skinDe(p))}</span>`}<span class="alvo-chip">${alvo.txt}</span></button>`;
-    return `<span class="bolso${destaque}" title="Bolso: guarda um dado"><span class="rot">Bolso</span>${b === null ? '<span class="bolso-vazio"></span>' : `<span class="mini${util ? ' util' : ''}">${dadoHTML(b, skinDe(p))}</span>`}</span>`;
+    // o seu Bolso responde ao toque (tocarBolso): o dado guardado não sai sozinho, e o toque explica como ele sai
+    const meu = humano(p) && j.fase !== 'fim', cutucado = meu && toqueBolso && toqueBolso.chave === chaveVez(j) && performance.now() - toqueBolso.t < 450 ? ' cutucado' : '';
+    return `<span class="bolso${destaque}${cutucado}"${meu ? ` data-bolso="${p}" role="button" tabindex="0" aria-label="Bolso${b === null ? ', vazio' : `: ${b}`}"` : ''} title="Bolso: guarda um dado"><span class="rot">Bolso</span>${b === null ? '<span class="bolso-vazio"></span>' : `<span class="mini${util ? ' util' : ''}">${dadoHTML(b, skinDe(p))}</span>`}</span>`;
   }
   function cartasHTML(p) {
     const j = jogo, deck = j.decks[p];
@@ -6702,7 +6744,7 @@ window.HISTORIA_QUADROS = {"falas":{"P-01":[{"arte":"p-mesa","chave":"P-antes_0"
     // o rival a um dado de fechar a partida: a linha da Mesa diz quais dados dão isso a ele (os do "!"), no lugar do último lance
     const fecha = st.pref.dicas && j.modo !== 'local' && humano(j.vez) && j.fase === 'pegar' && mesa.querySelector('.alvo-rival.fecha')
       ? `<span class="cor1">${n[1]}</span> fecha a partida com um dado marcado com <b class="fecha-txt">!</b>` : '';
-    const instrucao = humano(j.vez) ? instrucaoCarta(j) || instrucaoDado(j) || fecha : '', ticker = document.getElementById('ticker');
+    const instrucao = instrucaoBolso(j) || (humano(j.vez) ? instrucaoCarta(j) || instrucaoDado(j) || fecha : ''), ticker = document.getElementById('ticker');
     ticker.innerHTML = instrucao || (j.log[0] ? linha(j.log[0]) : '');
     ticker.classList.toggle('instrucao', !!instrucao);
     mostrarCorrenteNaDecisao(j);
@@ -7797,6 +7839,7 @@ window.HISTORIA_QUADROS = {"falas":{"P-01":[{"arte":"p-mesa","chave":"P-antes_0"
   document.getElementById('tabuleiro').addEventListener('click', e => {
     const v = e.target.closest('[data-virada]'); if (v && jogo) { abrirVirada(+v.dataset.virada); return; }
     const al = e.target.closest('[data-alvo-dado]'); if (al && jogo) { levarDado(al.dataset.alvoDado); return; }
+    const bo = e.target.closest('[data-bolso]'); if (bo && jogo) { tocarBolso(+bo.dataset.bolso); return; }
     const b = e.target.closest('[data-carta]'); if (!b || !jogo) return;
     tocarCarta(+b.dataset.dono, b.dataset.carta);
   });
@@ -8198,6 +8241,7 @@ window.HISTORIA_QUADROS = {"falas":{"P-01":[{"arte":"p-mesa","chave":"P-antes_0"
     const k = e.key.toLowerCase();
     // com um dado escolhido: Enter (ou C) põe na corrente/destino principal, B guarda ou troca
     if (k === 'enter' && alvo.closest('button')) return;   // Enter num botão focado já é o clique dele
+    if ((k === 'enter' || k === ' ') && alvo.closest('[data-bolso]')) { e.preventDefault(); return tocarBolso(+alvo.closest('[data-bolso]').dataset.bolso); }
     if (jogo.sel != null && humano(jogo.vez) && !jogo.pensando) {
       if (jogo.fase === 'alvo' && k === 'enter') return confirmarAlvo();
       if (jogo.fase === 'pegar') {

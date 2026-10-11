@@ -110,8 +110,13 @@ node tools/vercel_local.js                     # a página como o Vercel publica
 ## Estado
 
 **v0.17, em produção** (a página no Vercel e o servidor na Railway, publicados da branch `DiceDuel`): o Caderno da Diana e a legibilidade.
+- **A rolagem dos dados** (queixa de um jogador): nítida no celular (cada face montada em 2x), sem beira serrilhada
+  nem risco solto ao lado do dado, e no ar com os cantos e as quinas redondos do dado parado (uma esfera em cada vértice).
 - **Consolidação (o rumo, `docs/visual-impresso.md`):** um só cartão pequeno na Loja, no deck e no Perfil; o letreiro de
   uma linha no cabeçalho; a cena da Diana de volta na tela dos modos.
+- **Duas queixas de jogador na partida:** sem saída (nada sincroniza, nem o do Bolso), a barra avisa na hora e traz o
+  "Romper"; e tocar no dado do Bolso, que antes não fazia nada, explica na linha da Mesa que ele só sai trocando com
+  um dado da Mesa.
 - **A partida:** as cartas do rival em fichas baixas e os dados da Mesa maiores; a etiqueta da jogada ("Passo",
   "Oposto") passou para a direita da corrente, onde não cobre mais as etiquetas dos elos.
 - **Ajustes finos:** os botões liga/desliga em mel (a cor da ação), e a tela inicial maior no computador.

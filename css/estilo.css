@@ -190,6 +190,8 @@ svg.ico.mini-ico { width: 1.25em; height: 1.25em; vertical-align: -0.25em; strok
 .bolso .mini { width: 28px; height: 28px; }
 .bolso .mini.util .dado { box-shadow: 0 0 0 2px var(--passo); }
 .bolso-vazio { width: 28px; height: 28px; border-radius: 24%; box-shadow: inset 0 0 0 2px rgba(58,42,46,.18); display: inline-block; }
+[data-bolso] { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.bolso.cutucado { animation: cartaTreme .4s ease-out; }
 .bolso.ativo { box-shadow: 0 0 0 2px var(--mel), 0 0 14px rgba(242,177,94,.5); }
 .bolso .chegando .dado { opacity: 0; }
 
@@ -720,11 +722,13 @@ img.avatar { object-fit: contain; }
    (a sombra no chão) mora na .sombra-rolagem */
 /* a face montada maior (js/rolagem.js, NITIDEZ): o desenho tem o tamanho do dado da Mesa e o zoom amplia tudo junto */
 .face-rolagem .dado { width: var(--lado, 100%); height: var(--lado, 100%); zoom: var(--nitidez, 1); position: relative; box-shadow: inset 0 -3px 0 rgba(120, 90, 60, .18); transition: border-radius .2s ease-out; }
-/* no ar, as faces fecham o cubo: com os cantos do dado parado (24%), cada quina virava um buraco onde três cantos
-   redondos se encontram, e a beirada de baixo de cada face (a sombra de dentro) desenhava a face como um ladrilho solto.
-   Perto de assentar ("voando" sai, js/rolagem.js), os cantos voltam aos do dado parado e o pouso não tem salto */
-.cubo-rolagem.voando .face-rolagem .dado { border-radius: 10%; box-shadow: none; }
-.cubo-rolagem.voando .miolo-rolagem { border-radius: 6%; }
+/* no ar, a beirada de baixo de cada face (a sombra de dentro do dado parado) desenhava a face como um ladrilho solto:
+   no lugar dela, a beirada toda levemente sombreada, como a aresta redonda de um dado de verdade. Perto de assentar
+   ("voando" sai, js/rolagem.js), volta a do dado parado */
+.cubo-rolagem.voando .face-rolagem .dado { box-shadow: inset 0 0 0 1px rgba(255,255,255,.3), inset 0 0 6px 1px rgba(90,60,30,.16); }
+/* as quinas (js/rolagem.js): a esfera de cada vértice, na cor da skin, com a luz de cima à esquerda */
+.quina-rolagem { position: absolute; border-radius: 50%; pointer-events: none;
+  background: radial-gradient(circle at 38% 32%, color-mix(in srgb, var(--miolo, #ecdfc8) 45%, #fff) 0%, var(--miolo, #ecdfc8) 50%, color-mix(in srgb, var(--miolo, #ecdfc8) 84%, #2a1a12) 100%); }
 .face-rolagem .dado.skin-madeira { box-shadow: inset 0 -3px 0 rgba(70,40,20,.3); }
 .face-rolagem .dado.skin-pelucia { box-shadow: inset 0 0 0 2px rgba(255,255,255,.55), inset 0 -5px 7px rgba(120,80,40,.25); }
 .face-rolagem .dado.skin-la { box-shadow: inset 0 0 0 2px rgba(255,255,255,.6), inset 0 -5px 7px rgba(120,95,60,.22); }
