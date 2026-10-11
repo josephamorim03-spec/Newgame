@@ -24,14 +24,21 @@ fs.mkdirSync(FOTOS, { recursive: true });
     await pg.goto('file://' + path.join(RAIZ, 'index.html'));
     await pg.waitForTimeout(500);
     await pg.evaluate(() => { DiceDuel.st.guia.estreia = true; });   // a estreia tem o próprio teste (tools/estreia_e2e.js)
-    // o jogo abre no menu principal; na primeira visita o Jogar leva à tela de montar o deck, com as armadilhas travadas
+    // o jogo abre no menu principal, só com o Jogar; depois da estreia, o Jogar abre os modos: História e Online, nesta
+    // ordem (v0.15: a partida avulsa contra a Diana ou a Coruja saiu do menu)
     if (r.nome === 'celular') await pg.screenshot({ path: path.join(FOTOS, 'inicio-celular.png') });
-    await pg.click('[data-inicio="jogar"]'); await pg.waitForTimeout(150);   // Jogar abre a escolha do rival
-    if (await pg.$('#inicioRivais[hidden]')) erros.push(`${r.nome}: o Jogar não abriu a escolha do rival`);
-    if (r.nome === 'celular') await pg.screenshot({ path: path.join(FOTOS, 'rivais-celular.png') });
-    await pg.click('[data-inicio="comecar"]'); await pg.waitForTimeout(150);
+    if (await pg.$('#inicioJogar [data-inicio="online"], #inicioJogar [data-inicio="historia"]')) erros.push(`${r.nome}: o menu tem outro botão além do Jogar`);
+    await pg.click('[data-inicio="jogar"]'); await pg.waitForTimeout(150);
+    const modos = await pg.$$eval('#inicioModos:not([hidden]) .btn', l => l.map(b => b.dataset.inicio));
+    if (modos.join() !== 'historia,online,voltar') erros.push(`${r.nome}: o Jogar deveria abrir História e Online, nesta ordem (veio ${modos})`);
+    if (await pg.$('#inicioRivais, [data-inicio="comecar"]')) erros.push(`${r.nome}: a escolha do rival ainda está no menu`);
+    if (r.nome === 'celular') await pg.screenshot({ path: path.join(FOTOS, 'modos-celular.png') });
+    await pg.click('[data-inicio="voltar"]'); await pg.waitForTimeout(100);
+    // o deck: na primeira visita, as armadilhas travadas; o botão só salva (não começa partida avulsa)
+    await pg.evaluate(() => document.getElementById('btnDeck').click()); await pg.waitForTimeout(150);
     const deckAberto = await pg.evaluate(() => !document.getElementById('janelaDeck').hidden);
     const travadas = await pg.$$eval('.op .preco', l => l.length);
+    if ((await pg.textContent('#btnJogarDeck')).trim() !== 'Salvar deck') erros.push(`${r.nome}: o botão do deck deveria só salvar`);
     if (r.nome === 'celular') await pg.screenshot({ path: path.join(FOTOS, 'deck-celular.png') });
     await pg.evaluate(() => { DiceDuel.st.pref.liberar = true; });       // libera tudo para testar as armadilhas
     await pg.click('#btnFecharDeck');
@@ -54,13 +61,14 @@ fs.mkdirSync(FOTOS, { recursive: true });
       if (conta.dado !== 'dourado' || !conta.cartas.includes('espelho') || conta.icone !== 'raposa' || conta.moedas !== 1000 - 450 - 100 - 110) erros.push(`${r.nome}: a compra na loja não funcionou ${JSON.stringify(conta)}`);
       await pg.click('#btnFecharLoja');
     }
-    // a sessão se monta no menu principal: o rival na escolha de cima
-    // (fechar o deck da primeira visita deixa a escolha do rival aberta: é dali que se joga)
-    if (r.coruja) { if (!(await pg.$('#inicioRivais:not([hidden])'))) await pg.click('[data-inicio="jogar"]'); await pg.click('[data-inicio="rival"][data-v="esperto"]'); await pg.click('[data-inicio="voltar"]'); }
+    // o deck pronto e, sem a partida avulsa no menu, a partida contra o robô pelo atalho de teste (o motor e o robô são
+    // os mesmos da história)
     await pg.evaluate(() => document.getElementById('btnDeck').click());
     await pg.click(`[data-pronto="${r.pronto}"]`);
     if (await pg.$('[data-inicio="dois"]')) erros.push(`${r.nome}: o menu ainda oferece o modo a dois`);
     await pg.click('#btnJogarDeck');
+    if (await pg.evaluate(() => document.getElementById('inicio').hidden)) erros.push(`${r.nome}: salvar o deck saiu do menu (começou uma partida?)`);
+    await pg.evaluate(nivel => DiceDuel.avulsa(nivel), r.coruja ? 'esperto' : 'aprendiz');
     await pg.waitForTimeout(300);
     if (r.nome === 'celular') await pg.screenshot({ path: path.join(FOTOS, 'versus-celular.png') });
     const versus = await pg.$('.versus'); if (versus) await versus.click();

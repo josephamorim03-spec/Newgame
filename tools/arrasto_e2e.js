@@ -18,12 +18,12 @@ const RAIZ = path.join(__dirname, '..');
   // uma partida a dois (ninguém joga sozinho), na vez do jogador 0, escolhendo dado
   const montar = async (decks = [[], []]) => {
     await pg.evaluate(d => {
-      const st = DiceDuel.st; st.pref.liberar = true; st.pref.animacoes = false; st.deckVisto = true; st.cfg.modo = 'local';
+      const st = DiceDuel.st; st.pref.liberar = true; st.pref.animacoes = false; st.deckVisto = true; st.cfg.modo = 'local'; st.guia.estreia = true;   // a estreia tem o próprio teste (e salvar o deck não a pula mais)
       st.conta.cartas = Regras.ORDEM.slice(); st.decks = d;
       document.getElementById('janelaDeck').hidden = true;
     }, decks);
     await pg.evaluate(() => document.getElementById('btnDeck').click());
-    if (await pg.$('#deckEmAndamento:not([hidden]) #btnRecomecar:not([hidden])')) await pg.click('#btnRecomecar'); else await pg.click('#btnJogarDeck');
+    if (await pg.$('#deckEmAndamento:not([hidden]) #btnRecomecar:not([hidden])')) await pg.click('#btnRecomecar'); else await pg.evaluate(() => { document.getElementById('janelaDeck').hidden = true; DiceDuel.avulsa(); });   // v0.15: o botão do deck só salva
     await pg.waitForTimeout(80);
     await pg.evaluate(() => { const j = DiceDuel.jogo; j.vez = 0; j.fase = 'pegar'; j.intro = false; j.pensando = false; DiceDuel.ajustar({}); });
     await pg.keyboard.press('Escape'); await pg.waitForTimeout(50);

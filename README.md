@@ -33,10 +33,10 @@ e o amigo cai direto na sala. O servidor é a autoridade da partida e roda na Ra
 - **Gerar o arquivo único de novo depois de mexer no código:** `python3 tools/empacotar.py`.
 - **Com o online:** `npm install && npm start` e abra `http://localhost:8080`. Na Railway, siga `docs/servidor.md`.
 
-**Contra quem:**
-- **Diana**, uma gata branca de olhos azuis, a rival fácil;
-- **Dona Coruja**, que lê a Mesa;
-- **um amigo, online**, por link de convite (vale rating e moedas).
+**Contra quem (v0.15: o Jogar abre os dois modos, nesta ordem):**
+- **História**, "O Caderno da Diana": a Diana, uma gata branca de olhos azuis, ensina a jogar e manda você atrás de sete
+  bichos, um por capítulo (até a Dona Coruja, que lê a Mesa). Quem vem fica em silhueta até você tentar;
+- **Online**: um amigo por link de convite, ou a fila (vale rating e moedas).
 
 **Em Ajustes dá para ligar e desligar:**
 - som e música, com volume;
@@ -111,6 +111,10 @@ node tools/vercel_local.js                     # a página como o Vercel publica
 adesivo (contorno cacau, borda de papel, DICE com a chapa azul e DUEL com a rosa); botões, balões, fichas, chamadas e
 janelas ganharam contorno e sombra dura cacau; o começo da partida mostra os dois lados como quadros frente a frente.
 `?impresso=0` volta ao visual anterior (menos o letreiro). Detalhes em `docs/visual-impresso.md` §3.
+**O menu só tem o Jogar,** que abre os modos História e Online (nesta ordem); **a partida avulsa contra a Diana ou a
+Dona Coruja saiu** (os rivais estão na história; moedas de vitória, rating e Tarefas do dia agora vêm do online). No
+mapa da história, os rivais que a pessoa ainda não tentou são **silhuetas com "?"** e o nome fica fechado, como no
+Pokémon; tocar em Jogar revela. Detalhes em `docs/design.md` §8 e `docs/historia.md`.
 
 **v0.14, em produção** (a página no Vercel e o servidor na Railway, publicados da branch `DiceDuel`): a primeira partida e a sensação de jogar bem.
 - **A estreia:** na primeira visita, Jogar começa direto uma partida contra a Diana até 8 pontos, sem cartas (sem

@@ -1296,36 +1296,17 @@ button.bolso.alvo-dado { position: relative; border: 0; font: inherit; color: in
   .cartas .carta.grande:nth-of-type(1) { rotate: -1deg; translate: 0 2px; }
   .cartas .carta.grande:nth-of-type(3) { rotate: 1deg; translate: 0 2px; }
 }
-=======
-   Escolha do rival (v0.12): Jogar → os retratos, o jeito de cada uma e o que a vitória rende → Jogar contra ...
+
+/* ==========================================================================
+   Os modos (v0.15): depois da estreia, Jogar abre a História e o Online, nesta ordem. A partida avulsa contra a Diana
+   ou a Dona Coruja saiu: os rivais agora estão na história
    ========================================================================== */
-.inicio-rivais { width: 100%; display: grid; gap: 12px; justify-items: stretch; text-align: left; }
-.inicio-rivais h2 { margin: 0; text-align: center; font-family: var(--f-titulo); font-weight: 700; font-size: 24px; color: var(--texto); }
-.rival-cartas { display: grid; gap: 10px; }
-.rival-carta { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px; align-items: center; padding: 12px; border: 0; border-radius: var(--raio); text-align: left; cursor: pointer;
-  background: var(--papel); color: var(--tinta); font: inherit; box-shadow: 0 5px 0 var(--papel-2), 0 10px 20px rgba(0,0,0,.25); transition: transform .18s, box-shadow .18s; }
-.rival-carta:active { transform: translateY(3px); }
-.rival-carta:not(.marcado) .rival-retrato { filter: saturate(.75); }
-.rival-carta.marcado { box-shadow: 0 5px 0 var(--papel-2), 0 0 0 3px var(--mel), 0 14px 26px rgba(0,0,0,.32); transform: translateY(-2px); }
-.rival-retrato { width: clamp(72px, 22vw, 96px); height: clamp(72px, 22vw, 96px); border-radius: 50%; overflow: hidden; display: block; background: var(--papel-2); box-shadow: inset 0 0 0 3px rgba(58,42,46,.08); }
-.rival-retrato .avatar { width: 100%; height: 100%; display: block; }
-.rival-texto { display: grid; gap: 4px; min-width: 0; }
-.rival-topo { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.rival-topo b { font-family: var(--f-titulo); font-size: 21px; line-height: 1.1; }
-.rival-nivel { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
-.rival-nivel.n-aprendiz { background: var(--passo); color: #24533a; }
-.rival-nivel.n-esperto { background: var(--eco); color: #3d2e73; }
-.rival-jeito { font-size: 14px; line-height: 1.35; }
-.rival-rende { font-size: 12px; font-weight: 700; color: var(--tinta-suave); }
-.rival-ajustes { display: grid; gap: 8px; padding: 10px 12px; border-radius: 14px; background: rgba(255,243,226,.06); color: var(--texto-suave); font-size: 14px; }
-.rival-linha { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
-.rival-deck b { color: var(--texto); font-weight: 800; }
-.inicio-rivais .btn-link { color: var(--texto); justify-self: center; }
-.rival-ajustes .btn-link { justify-self: auto; }
-.inicio-rivais .inicio-principal { margin-top: 2px; }
-/* o Jogar e o Voltar da escolha do rival: um em cima do outro, da mesma largura, como o Jogar e o Online da tela
-   inicial; o Voltar é o botão de papel */
-.inicio-rivais .inicio-principal, .inicio-rivais [data-inicio="voltar"] { justify-self: stretch; width: 100%; }
+.inicio-modos { width: 100%; display: grid; gap: 12px; justify-items: stretch; }
+.inicio-modos[hidden] { display: none; }
+.inicio-modos h2 { margin: 0 0 2px; text-align: center; font-family: var(--f-titulo); font-weight: 700; font-size: 24px; color: var(--texto); }
+.inicio-modos .btn-duplo { min-height: 64px; position: relative; }
+.inicio-modos .btn-duplo small { font-family: var(--f-corpo); font-size: 13px; letter-spacing: 0; }
+.inicio-modos .ponto-online { position: absolute; top: 8px; right: 10px; }
 .tela-inicio.escolhendo .inicio-cena, .tela-inicio.escolhendo #inicioTitulo { display: none; }
 /* a cena da tela inicial (v0.14): a rival da vez atrás de uma mesinha de feltro e madeira, com a saudação e três dados.
    Tocar num dado o rola; tocar na rival, ela fala. A arte pintada aparece antes de qualquer toque */
@@ -1520,6 +1501,18 @@ button.inicio-perfil:active { transform: translateY(1px); }
 .hc.travado { opacity: .55; }
 .hc.em-breve { grid-template-columns: 1fr; }
 .hc-retrato .avatar { width: 46px; height: 46px; }
+/* o rival ainda não visto (v0.15): só a silhueta, com um "?" de gibi por cima; o nome do lugar fica "? ? ?" */
+.hc-retrato { position: relative; display: block; width: 46px; height: 46px; }
+.hc.oculto .hc-retrato .avatar { filter: brightness(0); opacity: .82; }
+.hc-interroga { position: absolute; inset: 0; display: grid; place-items: center; font-style: normal; font-family: var(--f-titulo); font-weight: 700; font-size: 24px; line-height: 1;
+  color: var(--mel); -webkit-text-stroke: 2.5px var(--tinta); paint-order: stroke fill; text-shadow: -2px 0 0 var(--voce), 2px 1px 0 var(--rival); }
+.hc.oculto .hc-nome { letter-spacing: .12em; color: var(--tinta-suave); }
+/* a revelação: a silhueta pisca branca e sai em cores, em poses seguradas; o "?" estoura e some */
+.hc.revelando .hc-retrato .avatar { animation: hcRevela .9s steps(6, end) both; }
+.hc.revelando .hc-interroga { animation: hcInterroga .45s steps(3, end) forwards; }
+.hc.revelando { box-shadow: inset 0 0 0 2px var(--mel), 0 0 0 4px rgba(255,207,138,.35); }
+@keyframes hcRevela { 0% { filter: brightness(0); opacity: .82; transform: scale(1); } 35% { filter: brightness(0) invert(1); opacity: 1; transform: scale(1.18); } 55% { filter: brightness(2.2); transform: scale(1.1); } 100% { filter: none; opacity: 1; transform: scale(1); } }
+@keyframes hcInterroga { 0% { transform: none; opacity: 1; } 60% { transform: rotate(10deg) scale(1.6); opacity: 1; } 100% { transform: rotate(14deg) scale(2); opacity: 0; } }
 .hc-txt { display: grid; gap: 2px; min-width: 0; }
 .hc-txt small { font-size: 12px; font-weight: 800; color: var(--tinta-suave); text-transform: uppercase; letter-spacing: .05em; }
 .hc-txt b { font-family: var(--f-titulo); font-size: 16px; line-height: 1.2; }
@@ -1740,16 +1733,13 @@ button.inicio-perfil:active { transform: translateY(1px); }
     <div class="inicio-partida" id="inicioPartida" hidden></div>
     <div class="inicio-jogar" id="inicioJogar">
       <button class="btn btn-mel inicio-principal" data-inicio="jogar">Jogar</button>
-      <div class="inicio-linha"><button class="btn btn-papel" data-inicio="historia" hidden>História</button><button class="btn btn-papel" data-inicio="online">Online<span class="ponto-online" id="pontoInicio" hidden></span></button></div>
       <button class="inicio-tarefas" id="inicioTarefas" data-inicio="tarefas" hidden></button>
     </div>
-    <div class="inicio-rivais" id="inicioRivais" hidden>
-      <h2>Escolha o rival</h2>
-      <div class="rival-cartas" id="rivalCartas" role="radiogroup" aria-label="Rival"></div>
-      <div class="rival-ajustes">
-        <span class="rival-linha"><span class="rival-deck" id="rivalDeck"></span><button class="btn-link" data-inicio="trocar-deck">Trocar</button></span>
-      </div>
-      <button class="btn btn-mel inicio-principal" data-inicio="comecar" id="rivalComecar">Jogar</button>
+    <!-- Jogar (depois da estreia) abre os dois modos, nesta ordem: a História e o Online -->
+    <div class="inicio-modos" id="inicioModos" hidden>
+      <h2>Como quer jogar?</h2>
+      <button class="btn btn-mel btn-duplo inicio-principal" data-inicio="historia"><span>História</span><small id="modoHistoriaSub"></small></button>
+      <button class="btn btn-papel btn-duplo inicio-principal" data-inicio="online"><span>Online</span><small>contra gente, com rating e moedas</small><span class="ponto-online" id="pontoInicio" hidden></span></button>
       <button class="btn btn-papel" data-inicio="voltar">Voltar</button>
     </div>
     <div class="inicio-mais">
@@ -5231,24 +5221,39 @@ window.HISTORIA_QUADROS = {"falas":{"P-01":[{"arte":"p-mesa","chave":"P-antes_0"
   }
 
   // ---------- o mapa ----------
-  let ligacao = null;   // { estado(): {feitos}, jogar(capId), retrato(id) }
+  let ligacao = null;   // { estado(): {feitos}, jogar(capId), nomeCarta(c), visto(capId) }
+  // como no Pokémon: até a pessoa tentar o capítulo, o rival é só uma silhueta com "?" e o nome do lugar fica fechado.
+  // Tocar em Jogar revela (e a revelação fica: perder não esconde de novo)
   function abrirMapa() {
     const j = document.getElementById('janelaHistoria'); if (!j || !ligacao) return;
     const est = ligacao.estado(), prox = R().proximoCapitulo(est);
     const linhas = CAPS.map(c => {
       const feito = est.feitos.includes(c.id), aberto = feito || c.id === prox;
+      const oculto = !(ligacao.visto ? ligacao.visto(c.id) : true);
       const rec = R().HISTORIA.recompensa[c.id];
       const dado = rec && rec.dado ? `dado ${R().CATALOGO.dados[rec.dado].nome}` : '';
       const premio = !rec ? '' : [rec.carta ? `carta ${ligacao.nomeCarta(rec.carta)}` : rec.icone ? 'o ícone da Diana' : `${rec.moedas} moedas`, dado].filter(Boolean).join(' e ');
-      return `<li class="hc${feito ? ' feito' : ''}${aberto ? '' : ' travado'}${c.id === prox ? ' atual' : ''}">
-        <span class="hc-retrato">${Retratos.retrato(c.retrato)}</span>
-        <span class="hc-txt"><small>${esc(c.titulo)}${feito && c.estrelas ? ` <span class="hc-estrelas" aria-label="${est.estrelas[c.id] || 0} de 3 estrelas">${'★'.repeat(est.estrelas[c.id] || 0)}${'☆'.repeat(3 - (est.estrelas[c.id] || 0))}</span>` : ''}</small><b>${esc(c.nome)}</b><span>${feito ? 'Feito' : aberto ? (premio ? `Vale: ${premio}` : 'Comece por aqui') : 'Fechado'}</span></span>
-        ${aberto ? `<button class="btn ${c.id === prox ? 'btn-mel' : 'btn-papel'}" data-cap="${c.id}">${feito ? 'Jogar de novo' : 'Jogar'}</button>` : ''}</li>`;
+      return `<li class="hc${feito ? ' feito' : ''}${aberto ? '' : ' travado'}${c.id === prox ? ' atual' : ''}${oculto ? ' oculto' : ''}">
+        <span class="hc-retrato"${oculto ? ' aria-label="rival ainda desconhecido"' : ''}>${Retratos.retrato(c.retrato)}${oculto ? '<i class="hc-interroga" aria-hidden="true">?</i>' : ''}</span>
+        <span class="hc-txt"><small>${esc(c.titulo)}${feito && c.estrelas ? ` <span class="hc-estrelas" aria-label="${est.estrelas[c.id] || 0} de 3 estrelas">${'★'.repeat(est.estrelas[c.id] || 0)}${'☆'.repeat(3 - (est.estrelas[c.id] || 0))}</span>` : ''}</small><b class="hc-nome">${oculto ? '? ? ?' : esc(c.nome)}</b><span>${feito ? 'Feito' : aberto ? (premio ? `Vale: ${premio}` : 'Comece por aqui') : 'Fechado'}</span></span>
+        ${aberto ? `<button class="btn ${c.id === prox ? 'btn-mel' : 'btn-papel'}" data-cap="${c.id}"${oculto ? ' data-revelar="1"' : ''}>${feito ? 'Jogar de novo' : 'Jogar'}</button>` : ''}</li>`;
     }).join('');
     const total = R().totalEstrelas(est);
     j.querySelector('#historiaConteudo').innerHTML = `<p class="nota historia-total">${est.feitos.length > 1 ? `${total} de ${3 * (CAPS.length - 1)} estrelas` : 'Sete páginas, sete bichos.'}</p><ol class="historia-caps">${linhas}</ol>`;
     j.hidden = false;
     if (window.Som) Som.tocar('abrir');
+  }
+  // a revelação: a silhueta pisca branca, o "?" estoura, o retrato aparece em cores e o nome do lugar se escreve; só
+  // então a janela fecha e o capítulo começa (sem animações, direto)
+  function revelar(b) {
+    const j = document.getElementById('janelaHistoria'), li = b.closest('.hc'), c = cap(b.dataset.cap);
+    if (!li || !c || li.classList.contains('revelando')) return;
+    const comecar = () => { j.hidden = true; ligacao.jogar(c.id); };
+    if (document.documentElement.classList.contains('sem-animacoes')) return comecar();
+    b.disabled = true; li.classList.add('revelando');
+    if (window.Som) Som.tocar('revelou');
+    setTimeout(() => { li.classList.remove('oculto'); const nome = li.querySelector('.hc-nome'); if (nome) nome.textContent = c.nome; }, 420);
+    setTimeout(comecar, 1300);
   }
   const R = () => window.Regras;
   function ligar(l) {
@@ -5256,6 +5261,7 @@ window.HISTORIA_QUADROS = {"falas":{"P-01":[{"arte":"p-mesa","chave":"P-antes_0"
     const j = document.getElementById('janelaHistoria'); if (!j) return;
     j.addEventListener('click', e => {
       const b = e.target.closest('[data-cap]');
+      if (b && b.dataset.revelar) { revelar(b); return; }
       if (b) { j.hidden = true; ligacao.jogar(b.dataset.cap); return; }
       if (e.target.closest('#btnFecharHistoria')) { j.hidden = true; if (window.Som) Som.tocar('fechar'); }
     });
@@ -5479,6 +5485,13 @@ window.HISTORIA_QUADROS = {"falas":{"P-01":[{"arte":"p-mesa","chave":"P-antes_0"
     // um capítulo do modo história: o rival, o deck dele e a meta vêm do capítulo (js/historia.js)
     const hc = op.historia && window.Historia ? Historia.cap(op.historia) : null;
     const estreia = hc ? false : (op.estreia ?? !st.guia.estreia);
+    // sem partida avulsa contra os rivais (v0.15): fora da estreia e da história, "jogar de novo" (o fim, a pausa, o deck,
+    // a meta, a volta de uma sala) repete o capítulo que estava na Mesa ou volta ao menu. op.avulsa fica para os testes
+    if (!hc && !estreia && st.cfg.modo === 'bot' && !op.avulsa) {
+      if (jogo && jogo.historia && Historia.cap(jogo.historia)) return jogarCapitulo(jogo.historia, { semAntes: true });
+      ['fim', 'janelaCarta', 'janelaDeck'].forEach(id => { document.getElementById(id).hidden = true; });
+      return mostrarInicio();
+    }
     const semCartas = estreia || (hc && hc.semCartas);
     const modo = estreia || hc ? 'bot' : st.cfg.modo, nivel = hc ? hc.rival : estreia ? 'aprendiz' : st.cfg.nivel;
     const deckRival = semCartas ? [] : hc ? hc.deckRival.slice() : modo === 'local' ? st.decks[1].slice()
@@ -6801,12 +6814,11 @@ window.HISTORIA_QUADROS = {"falas":{"P-01":[{"arte":"p-mesa","chave":"P-antes_0"
       linha('Bolso (guardou · trocou)', x => `${x.guardou} · ${x.trocou}`);
     prepararCartao(j, lances);
     // o botão diz o que vem: a revanche contra quem venceu, ou a sequência que está em jogo
-    const seq = j.modo === 'bot' ? st.rec.seq : 0;
     const prox = j.historia && R.proximoCapitulo(st.conta.historia), proxCap = prox && Historia.cap(prox);
     if (j.historia) document.getElementById('btnDeNovo').textContent = !(j.premio && j.premio.historia && j.premio.historia.venceu)
       ? `Revanche contra ${RIVAIS[j.nivel].nome}` : proxCap ? `Próximo: ${proxCap.titulo}` : 'O caderno';
-    else document.getElementById('btnDeNovo').textContent = online() ? 'Revanche' : j.modo !== 'bot' || j.estreia ? 'Jogar de novo'
-      : v === 1 ? `Revanche contra ${RIVAIS[j.nivel].nome}` : seq >= 2 ? `Mais uma · ${seq} vitórias seguidas` : 'Jogar de novo';
+    // sem partida avulsa: depois da estreia (ou de uma partida avulsa guardada de antes), o caminho é a história
+    else document.getElementById('btnDeNovo').textContent = online() ? 'Revanche' : j.modo !== 'bot' ? 'Jogar de novo' : 'Abrir a História';
     document.getElementById('fim').hidden = false;
     document.getElementById('btnDeNovo').focus();
   }
@@ -6866,7 +6878,7 @@ window.HISTORIA_QUADROS = {"falas":{"P-01":[{"arte":"p-mesa","chave":"P-antes_0"
         }
         if (pr && pr.moedas) html += `<div class="grande"><span class="moeda" aria-hidden="true"></span><span>+${pr.moedas}</span></div>`;
         if (!pr && h.ja) html += `<span class="conta">Capítulo já feito: jogar de novo não paga de novo.</span>`;
-        else if (!pr && !pag) { const prox = Historia.cap(R.proximoCapitulo(st.conta.historia)); html += `<span class="conta">${c.titulo} feito.${prox ? ` ${prox.titulo} aberto: ${prox.nome}.` : ''}</span>`; }
+        else if (!pr && !pag) { const prox = Historia.cap(R.proximoCapitulo(st.conta.historia)); html += `<span class="conta">${c.titulo} feito.${prox ? ` ${prox.titulo} aberto${capituloVisto(prox.id) ? `: ${prox.nome}` : ''}.` : ''}</span>`; }
       }
       el.innerHTML = html;
       [...el.children].forEach((x, k) => { x.classList.add('revela'); x.style.setProperty('--k', k); });
@@ -7022,7 +7034,8 @@ window.HISTORIA_QUADROS = {"falas":{"P-01":[{"arte":"p-mesa","chave":"P-antes_0"
   const partidaEmAndamento = () => !!(jogo && jogo.fase !== 'fim' && (jogo.compras > 0 || online()));
   function abrirDeck() {
     const andando = partidaEmAndamento();
-    document.getElementById('btnJogarDeck').textContent = andando ? 'Salvar deck' : 'Jogar';
+    // sem partida avulsa, o deck só se salva: vale no próximo capítulo e na próxima sala online
+    document.getElementById('btnJogarDeck').textContent = 'Salvar deck';
     document.getElementById('deckEmAndamento').hidden = !andando;
     document.getElementById('btnRecomecar').hidden = online();
     document.getElementById('btnRecomecar').textContent = jogo && jogo.modo === 'bot' ? 'Recomeçar agora (conta como derrota)' : 'Recomeçar agora';
@@ -7258,7 +7271,8 @@ window.HISTORIA_QUADROS = {"falas":{"P-01":[{"arte":"p-mesa","chave":"P-antes_0"
   // os três dados da mesinha: dois brancos e um rosa no meio, sempre (não seguem o dado do jogador nem o da rival)
   const PELE_CENA = ['marfim', 'rosa', 'marfim'];
   // na estreia a rival é sempre a Diana; depois, a escolhida
-  const rivalDaCena = () => (!st.guia.estreia ? 'aprendiz' : RIVAIS[st.cfg.nivel] ? st.cfg.nivel : 'aprendiz');
+  // a rival da cena é sempre a Diana (sem a escolha do rival, e a história não entrega quem vem)
+  const rivalDaCena = () => 'aprendiz';
   function desenharCena() {
     const el = document.getElementById('inicioCena'); if (!el) return;
     const k = rivalDaCena(), falas = RIVAIS[k].falas.inicio;
@@ -7286,19 +7300,19 @@ window.HISTORIA_QUADROS = {"falas":{"P-01":[{"arte":"p-mesa","chave":"P-antes_0"
     document.getElementById('pontoInicio').hidden = document.getElementById('pontoOnline').hidden;
     desenharTarefasInicio();
     const g = partidaParaContinuar(), box = document.getElementById('inicioPartida');
-    // a escolha do rival ocupa o lugar dos botões do menu (Jogar → Escolha o rival → Jogar contra ...)
-    const rivais = escolhendoRival && !g;
-    document.getElementById('inicioRivais').hidden = !rivais;
-    document.getElementById('inicioJogar').hidden = rivais;
-    inicio.querySelector('.inicio-mais').hidden = rivais;
-    document.getElementById('inicioPerfil').hidden = rivais;
-    inicio.classList.toggle('escolhendo', rivais);   // na escolha do rival, o logo e o título saem (cabe sem rolar em 360×640)
-    if (rivais) desenharRivais();
-    // com uma partida offline em andamento, o caminho é continuar ou abandonar (começar outra é abandonar)
-    inicio.querySelector('[data-inicio="jogar"]').hidden = !!g;
-    // a história aparece depois da estreia, e não com uma partida guardada (começar outra seria abandoná-la)
-    inicio.querySelector('[data-inicio="historia"]').hidden = !st.guia.estreia || !!g || !window.Historia;
-    box.hidden = !g;
+    // os modos (v0.15) ocupam o lugar dos botões do menu: Jogar → História, Online (nesta ordem). A partida avulsa
+    // contra a Diana ou a Dona Coruja saiu; os rivais estão na história
+    const modos = escolhendoModo;
+    document.getElementById('inicioModos').hidden = !modos;
+    document.getElementById('inicioJogar').hidden = modos;
+    inicio.querySelector('.inicio-mais').hidden = modos;
+    inicio.classList.toggle('escolhendo', modos);
+    if (modos) desenharModos();
+    // com uma partida offline em andamento, o caminho é continuar ou abandonar (começar outra é abandonar): o Jogar fica,
+    // de papel, embaixo do Continuar, e abre só o Online (a História some, como antes)
+    const jogar = inicio.querySelector('[data-inicio="jogar"]');
+    jogar.classList.toggle('btn-mel', !g); jogar.classList.toggle('btn-papel', !!g);
+    box.hidden = !g || modos;
     if (!g) { box.innerHTML = ''; return; }   // sem partida guardada, nada de botões velhos escondidos
     const quem = g.modo === 'bot' ? ['Você', RIVAIS[g.nivel].nome] : ['Jogador 1', 'Jogador 2'];
     const custo = custoAbandono(g);
@@ -7316,7 +7330,8 @@ window.HISTORIA_QUADROS = {"falas":{"P-01":[{"arte":"p-mesa","chave":"P-antes_0"
   // primeira visita (a estreia vem antes de tudo)
   function desenharTarefasInicio() {
     const el = document.getElementById('inicioTarefas'), t = tarefasHoje();
-    el.hidden = !st.guia.estreia;
+    // sem a partida avulsa, só o online avança as tarefas: sem conta, a linha some
+    el.hidden = !st.guia.estreia || !st.sessao;
     if (el.hidden) return;
     const feitas = t.feitas.length, resta = (t.ids.length - feitas) * R.MOEDAS_TAREFA;
     el.innerHTML = `<span class="tf-titulo">Tarefas do dia</span><span class="tf-pontos" aria-hidden="true">${t.ids.map(id => `<i class="${t.feitas.includes(id) ? 'feita' : ''}"></i>`).join('')}</span>
@@ -7333,47 +7348,40 @@ window.HISTORIA_QUADROS = {"falas":{"P-01":[{"arte":"p-mesa","chave":"P-antes_0"
         <span class="tf-premio">${feita ? 'feita' : `<span class="moeda" aria-hidden="true"></span>+${R.MOEDAS_TAREFA}`}</span></li>`;
     };
     document.getElementById('tarefasConteudo').innerHTML = `<ul class="lista-tarefas">${t.ids.map(item).join('')}</ul>
-      <p class="nota">As tarefas pagam também na derrota, contra os rivais e no online. ${t.vitoria ? 'A primeira vitória de hoje já rendeu em dobro.' : 'A primeira vitória do dia que render moedas rende <b>em dobro</b>.'} Amanhã tem tarefas novas.</p>`;
+      <p class="nota">As tarefas avançam nas partidas online e pagam também na derrota. ${t.vitoria ? 'A primeira vitória de hoje já rendeu em dobro.' : 'A primeira vitória do dia que render moedas rende <b>em dobro</b>.'} Amanhã tem tarefas novas.</p>`;
     document.getElementById('janelaTarefas').hidden = false; Som.tocar('abrir');
   }
 
   // ---------- modo história (js/historia.js) ----------
+  // os capítulos que a pessoa já tentou: até tentar, o mapa mostra só a silhueta do rival e "?" no nome (como no
+  // Pokémon). Tentar uma vez já revela, vença ou não. O Prólogo é a Diana, que ela já conhece
+  const capituloVisto = id => id === 'P' || (st.guia.caps || []).includes(id) || R.estadoHistoria(st.conta.historia).feitos.includes(id);
+  function verCapitulo(id) {
+    if (capituloVisto(id)) return;
+    st.guia.caps = (st.guia.caps || []).concat(id); salvar();
+  }
   function jogarCapitulo(id, { semAntes = false } = {}) {
     const c = Historia.cap(id); if (!c) return;
+    verCapitulo(id);
     Online.sair();
     ['fim', 'janelaHistoria'].forEach(k => { document.getElementById(k).hidden = true; });
     esconderInicio();
     (semAntes ? Promise.resolve() : Historia.gibi(c.antes, { titulo: `${c.titulo} · ${c.nome}` })).then(() => novaPartida({ historia: id }));
   }
-  if (window.Historia) Historia.ligar({ estado: () => R.estadoHistoria(st.conta.historia), jogar: jogarCapitulo, nomeCarta: c => CARTAS[c].nome });
+  if (window.Historia) Historia.ligar({ estado: () => R.estadoHistoria(st.conta.historia), jogar: jogarCapitulo, nomeCarta: c => CARTAS[c].nome, visto: capituloVisto });
 
-  // ---------- a escolha do rival: o retrato, o jeito de jogar, a dificuldade e o que a vitória rende ----------
-  let escolhendoRival = false;
-  const NIVEL_RIVAL = { aprendiz: 'Para começar', esperto: 'Desafiadora' };
-  const JEITO_RIVAL = { aprendiz: 'Gata branca de olhos azuis. Joga solto e arrisca: boa para aprender as correntes e as cartas.',
-    esperto: 'Joga com paciência, lê a Mesa e leva um dos melhores decks. Arma as armadilhas na hora certa.' };
-  function rendeRival(nivel) {
-    const c = st.conta, pico = Math.max(c.rating, c.pico || 0);
-    if (pico >= TETO_MOEDAS[nivel]) return `vitórias não rendem mais moedas (seu rating já passou de ${TETO_MOEDAS[nivel] - 1})`;
-    // uma vitória típica: margem de 5 pontos, no ritmo normal de Mesas da meta
-    const t = moedasDaVitoria(BASE_MOEDAS[nivel], 5, Math.round(+st.cfg.meta * 9.5 / 16), +st.cfg.meta).total;
-    return `vitória rende cerca de ${t} moedas · rating ${RATING_RIVAL[nivel]}`;
-  }
-  function desenharRivais() {
-    document.getElementById('rivalCartas').innerHTML = ['aprendiz', 'esperto'].map(k => {
-      const marcado = st.cfg.nivel === k;
-      return `<button class="rival-carta${marcado ? ' marcado' : ''}" data-inicio="rival" data-v="${k}" role="radio" aria-checked="${marcado}">
-        <span class="rival-retrato">${Retratos.retrato(RETRATO_RIVAL[k], marcado ? 'feliz' : '')}</span>
-        <span class="rival-texto"><span class="rival-topo"><b>${RIVAIS[k].nome}</b><span class="rival-nivel n-${k}">${NIVEL_RIVAL[k]}</span></span>
-          <span class="rival-jeito">${JEITO_RIVAL[k]}</span><small class="rival-rende">${rendeRival(k)}</small></span></button>`;
-    }).join('');
-    inicio.querySelectorAll('[data-inicio="meta"]').forEach(b => b.setAttribute('aria-pressed', String(+st.cfg.meta === +b.dataset.v)));
-    const deck = (st.deckVisto ? st.decks[0] : PRONTOS[0].cartas).filter(c => CARTAS[c]);
-    document.getElementById('rivalDeck').innerHTML = `Seu deck: <b>${deck.length ? deck.map(c => CARTAS[c].nome).join(', ') : 'sem cartas'}</b>`;
-    document.getElementById('rivalComecar').textContent = `Jogar contra ${RIVAIS[st.cfg.nivel].nome}`;
+  // ---------- os modos: a História (com o capítulo da vez) e o Online ----------
+  let escolhendoModo = false;
+  function desenharModos() {
+    const h = inicio.querySelector('[data-inicio="historia"]');
+    h.hidden = !window.Historia || !!partidaParaContinuar();
+    if (window.Historia) {
+      const prox = R.proximoCapitulo(st.conta.historia), c = prox && Historia.cap(prox);
+      document.getElementById('modoHistoriaSub').textContent = c ? `${c.titulo}${c.id === 'P' || capituloVisto(c.id) ? ` · ${c.nome}` : ''}` : 'o caderno completo';
+    }
   }
   function mostrarInicio() {
-    confirmarAbandono = false; escolhendoRival = false;
+    confirmarAbandono = false; escolhendoModo = false;
     // a partida para atrás do menu: a jogada do rival que estava no meio recomeça do zero no Continuar
     if (jogo && jogo.modo === 'bot' && jogo.pensando) { jogo.token = Math.random(); jogo.pensando = false; jogo.destaque = null; jogo.olhando = null; }
     ['fim', 'janelaMenu', 'janelaCarta'].forEach(id => { document.getElementById(id).hidden = true; });
@@ -7405,18 +7413,10 @@ window.HISTORIA_QUADROS = {"falas":{"P-01":[{"arte":"p-mesa","chave":"P-antes_0"
   inicio.addEventListener('click', e => {
     const b = e.target.closest('[data-inicio]'); if (!b) return;
     const a = b.dataset.inicio;
-    if (a === 'rival') { st.cfg.nivel = b.dataset.v; salvar(); Som.tocar('toque'); desenharInicio(); return; }
-    if (a === 'meta') { st.cfg.meta = R.metaValida(b.dataset.v); salvar(); desenharInicio(); return; }
-    if (a === 'jogar' && !st.guia.estreia) { Online.sair(); st.cfg.modo = 'bot'; salvar(); escolhendoRival = false; novaPartida(); return; }
-    if (a === 'jogar') { escolhendoRival = true; desenharInicio(); const f = inicio.querySelector('.rival-carta.marcado'); if (f) f.focus({ preventScroll: true }); return; }
-    if (a === 'voltar') { escolhendoRival = false; desenharInicio(); return; }
-    if (a === 'comecar') {
-      Online.sair();
-      st.cfg.modo = 'bot'; salvar();
-      // primeira vez: o deck "Primeira mesa" abre por cima da escolha do rival (fechar sem jogar volta para ela)
-      if (!st.deckVisto) { st.decks[0] = PRONTOS[0].cartas.slice(); abrirDeck(); return; }
-      escolhendoRival = false; novaPartida(); return;
-    }
+    // a primeira visita: Jogar começa a estreia direto; depois, abre os modos
+    if (a === 'jogar' && !st.guia.estreia) { Online.sair(); st.cfg.modo = 'bot'; salvar(); escolhendoModo = false; novaPartida(); return; }
+    if (a === 'jogar') { escolhendoModo = true; desenharInicio(); const f = inicio.querySelector('#inicioModos .btn:not([hidden])'); if (f) f.focus({ preventScroll: true }); return; }
+    if (a === 'voltar') { escolhendoModo = false; desenharInicio(); return; }
     if (a === 'continuar') {
       const g = partidaParaContinuar(); if (!g) return desenharInicio();
       if (jogo !== g) jogo = restaurarPartida(g);
@@ -7437,7 +7437,9 @@ window.HISTORIA_QUADROS = {"falas":{"P-01":[{"arte":"p-mesa","chave":"P-antes_0"
     }
     if (a === 'perfil') { abrirPerfil(); return; }
     if (a === 'tarefas') { abrirTarefas(); return; }
-    if (a === 'historia') { Historia.abrirMapa(); return; }
+    // a História e o Online abrem por cima; ao fechar, o menu volta ao principal (com os ícones de baixo)
+    if (a === 'historia' || a === 'online') escolhendoModo = false;
+    if (a === 'historia') { if (!st.deckVisto) { st.decks[0] = PRONTOS[0].cartas.slice(); st.deckVisto = true; salvar(); } Historia.abrirMapa(); return; }
     if (a === 'online') { document.getElementById('btnOnline').click(); return; }
     if (a === 'regras') { abrirLado(true); return; }
     const botao = { deck: 'btnDeck', 'trocar-deck': 'btnDeck', loja: 'btnCarteira', ajustes: 'btnConfig' }[a];
@@ -7447,7 +7449,7 @@ window.HISTORIA_QUADROS = {"falas":{"P-01":[{"arte":"p-mesa","chave":"P-antes_0"
   // ---------- menu de pausa (durante a partida, o cabeçalho some e tudo o que não é jogada fica aqui) ----------
   const janelaMenu = document.getElementById('janelaMenu');
   function textoSair() {
-    if (!jogo || jogo.fase === 'fim') return ['Nova partida', ''];
+    if (!jogo || jogo.fase === 'fim') return [jogo && jogo.historia ? 'Jogar de novo' : 'Menu principal', ''];
     if (online()) return ['Desistir', 'Desistir conta como derrota no ranking.'];
     if (jogo.modo === 'bot' && jogo.compras > 0) return ['Desistir', 'Desistir conta como derrota (rating e sequência).'];
     return ['Recomeçar', ''];
@@ -7872,6 +7874,7 @@ window.HISTORIA_QUADROS = {"falas":{"P-01":[{"arte":"p-mesa","chave":"P-antes_0"
       if (!h || !h.venceu) return jogarCapitulo(j.historia, { semAntes: true });   // a revanche vai direto à Mesa
       return prox ? jogarCapitulo(prox) : (document.getElementById('fim').hidden = true, mostrarInicio(), Historia.abrirMapa());
     }
+    if (j && j.modo === 'bot' && window.Historia) { document.getElementById('fim').hidden = true; mostrarInicio(); Historia.abrirMapa(); return; }
     novaPartida();
   });
   document.getElementById('btnFechar').addEventListener('click', () => { document.getElementById('fim').hidden = true; });
@@ -7892,11 +7895,10 @@ window.HISTORIA_QUADROS = {"falas":{"P-01":[{"arte":"p-mesa","chave":"P-antes_0"
       return;
     }
     st.deckVisto = true;
-    if (!st.guia.estreia) st.guia.estreia = true;   // montou o deck e foi jogar com ele: a estreia fica para trás
     salvar();
     Online.deckMudou();
-    if ((partidaEmAndamento() || (!online() && lerPartidaGuardada())) && !online()) { document.getElementById('janelaDeck').hidden = true; Fx.chamada('Deck salvo', 'vale a partir da próxima partida', 'suave'); return; }
-    novaPartida();
+    document.getElementById('janelaDeck').hidden = true;
+    if (!online()) Fx.chamada('Deck salvo', 'vale a partir da próxima partida', 'suave');
   });
   // recomeçar no meio: contra o rival do jogo conta como derrota (senão abandonar seria um jeito de nunca perder rating)
   document.getElementById('btnRecomecar').addEventListener('click', () => {
@@ -7956,7 +7958,7 @@ window.HISTORIA_QUADROS = {"falas":{"P-01":[{"arte":"p-mesa","chave":"P-antes_0"
     // Esc fecha a janela aberta mesmo com o foco num campo (o login do Online abre com o foco no nome),
     // e também no menu principal, quando ainda não há partida
     if (alvo.closest('textarea, input') && e.key !== 'Escape') return;
-    if (e.key === 'Escape' && escolhendoRival && inicioAberto() && document.querySelectorAll('.janela:not([hidden])').length === 0) { escolhendoRival = false; desenharInicio(); return; }
+    if (e.key === 'Escape' && escolhendoModo && inicioAberto() && document.querySelectorAll('.janela:not([hidden])').length === 0) { escolhendoModo = false; desenharInicio(); return; }
     if (e.key === 'Escape') {
       ['fim', 'janelaCarta', 'janelaDeck', 'janelaConfig', 'janelaLoja', 'janelaPerfil', 'janelaTarefas', 'janelaHistoria', 'janelaOnline', 'janelaMenu'].forEach(id => { const el = document.getElementById(id); if (el) el.hidden = true; }); abrirLado(false);
       return jogo ? cancelarEscolha() : undefined;
@@ -8261,7 +8263,8 @@ window.HISTORIA_QUADROS = {"falas":{"P-01":[{"arte":"p-mesa","chave":"P-antes_0"
     enviarWs({ tipo: 'sair' });
     Rede.sala = null; Rede.infoSala = null; Rede.pediuRevanche = false; Rede.voltando = false;
     lembrarSala();
-    if (online()) { jogo = null; novaPartida(); }
+    // sair da sala volta ao menu (v0.15: sem a partida avulsa contra o rival; antes da estreia, ela ficava aqui)
+    if (online()) { jogo = null; mostrarInicio(); }
     desenharOnline(); carregarRanking();
   }
 
@@ -8315,7 +8318,7 @@ window.HISTORIA_QUADROS = {"falas":{"P-01":[{"arte":"p-mesa","chave":"P-antes_0"
       // "entrou por outra janela": a sala guardada é da janela nova (a memória do aparelho é a mesma), fica onde está
       if (m.semSala || m.codigo !== 'sala') lembrarSala();
       if (estavaJogando) {
-        jogo = null; novaPartida();
+        jogo = null; mostrarInicio();
         if (m.semSala) { Fx.chamada('A sala fechou', 'O servidor reiniciou e esta partida se perdeu. Crie outra sala para jogar de novo.', 'suave'); aviso(m.erro, true); return; }
       }
       aviso(m.erro, true); abrirOnline();
@@ -8860,7 +8863,9 @@ window.HISTORIA_QUADROS = {"falas":{"P-01":[{"arte":"p-mesa","chave":"P-antes_0"
     }
     document.title = `● Você ainda está aí? · ${TITULO}`;
   }
-  window.DiceDuel = { get jogo() { return jogo; }, st, salvar, fecharInicio: () => esconderInicio(), abrirInicio: () => mostrarInicio(), ajustar(p) { Object.assign(st.pref, p); aplicarPrefs(); if (jogo) render(); }, automato: () => talvezAutomato() };
+  window.DiceDuel = { get jogo() { return jogo; }, st, salvar,
+    // só para os testes (tools/): a partida avulsa contra um rival saiu do menu na v0.15, mas o robô e o motor continuam
+    avulsa(nivel) { Online.sair(); if (st.cfg.modo !== 'local') st.cfg.modo = 'bot'; if (nivel) st.cfg.nivel = nivel; novaPartida({ avulsa: true, estreia: false }); }, fecharInicio: () => esconderInicio(), abrirInicio: () => mostrarInicio(), ajustar(p) { Object.assign(st.pref, p); aplicarPrefs(); if (jogo) render(); }, automato: () => talvezAutomato() };
   window.claude?.hot?.ready ? window.claude.hot.ready(iniciar) : iniciar(window.claude?.hot?.data ?? {});
 })();
 

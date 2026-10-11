@@ -44,16 +44,13 @@
     <div class="inicio-partida" id="inicioPartida" hidden></div>
     <div class="inicio-jogar" id="inicioJogar">
       <button class="btn btn-mel inicio-principal" data-inicio="jogar">Jogar</button>
-      <div class="inicio-linha"><button class="btn btn-papel" data-inicio="historia" hidden>História</button><button class="btn btn-papel" data-inicio="online">Online<span class="ponto-online" id="pontoInicio" hidden></span></button></div>
       <button class="inicio-tarefas" id="inicioTarefas" data-inicio="tarefas" hidden></button>
     </div>
-    <div class="inicio-rivais" id="inicioRivais" hidden>
-      <h2>Escolha o rival</h2>
-      <div class="rival-cartas" id="rivalCartas" role="radiogroup" aria-label="Rival"></div>
-      <div class="rival-ajustes">
-        <span class="rival-linha"><span class="rival-deck" id="rivalDeck"></span><button class="btn-link" data-inicio="trocar-deck">Trocar</button></span>
-      </div>
-      <button class="btn btn-mel inicio-principal" data-inicio="comecar" id="rivalComecar">Jogar</button>
+    <!-- Jogar (depois da estreia) abre os dois modos, nesta ordem: a História e o Online -->
+    <div class="inicio-modos" id="inicioModos" hidden>
+      <h2>Como quer jogar?</h2>
+      <button class="btn btn-mel btn-duplo inicio-principal" data-inicio="historia"><span>História</span><small id="modoHistoriaSub"></small></button>
+      <button class="btn btn-papel btn-duplo inicio-principal" data-inicio="online"><span>Online</span><small>contra gente, com rating e moedas</small><span class="ponto-online" id="pontoInicio" hidden></span></button>
       <button class="btn btn-papel" data-inicio="voltar">Voltar</button>
     </div>
     <div class="inicio-mais">

@@ -467,7 +467,12 @@ Para cada uma valer, ela muda um pouco a cada aparição e paga no fim.
 
 **Fase 1 (v0.15):** o Prólogo e os capítulos 1 (Sapo) e 2 (Coelho) jogáveis.
 - **Onde:** o botão **História** no menu (aparece depois da estreia e some com uma partida guardada) abre o mapa do
-  caderno, com os capítulos em ordem.
+  caderno, com os capítulos em ordem. *(v0.15: o menu tem só o Jogar; ele abre os modos, História e Online, nesta ordem.)*
+- **O mapa como no Pokémon (v0.15, pedido do dono):** até a pessoa tentar um capítulo, o rival dele é **só a silhueta,
+  com um "?"**, e o nome do lugar fica "? ? ?" (também no fim do capítulo anterior, "Capítulo 3 aberto."). Tocar em Jogar
+  **revela**: a silhueta pisca branca, o "?" estoura, o retrato sai em cores e o nome se escreve; só então o capítulo
+  começa. Tentar uma vez basta: perder não esconde de novo. O Prólogo é a Diana, já conhecida. O que já foi visto fica
+  no aparelho (`guia.caps` no `diceduel.v1`); os capítulos feitos da conta também contam.
 - **O gibi** (`js/historia.js`): quadros de papel com borda de tinta, o retrato e a rubrica do desenho numa caixa
   amarela (o lugar da arte que ainda vem). Um toque por balão, "Pular" vai direto à Mesa, Esc também.
 - **As partidas:** cada capítulo define o rival, o deck dele, a meta e o ritmo.
