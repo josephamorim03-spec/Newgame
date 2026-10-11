@@ -2654,21 +2654,23 @@
     "sapo"
    ],
    "nariz": "",
-   "lugar": "nw",
+   "lugar": "ne",
    "dados_skin": "lagoa",
    "texto": "Sapo the frog stands on his lily pad in the pond at night, serious for once, frowning, pointing firmly out of the frame to the right with one webbed hand, his straw boater hat tilted. Beside him on the lily pad, a small empty velvet dice tray with one empty slot. No dice in the picture. Water lilies, a big moon. Keep the upper-left area (a third of the width, top 40%) as empty plain wall or sky for a speech balloon; the characters stay in the right 60% of the frame.",
+   "base_de": "c1-sapo",
+   "edicao": "Change only Sapo's pose and expression: he has put his straw boater back on his head, frowns seriously and points firmly out of the frame to the right with one webbed hand, the other hand on his hip. The three green dice are gone from the lily pad; where they were there is only a small empty wooden dice tray. Keep the pond, the moon, the fireflies, the water lilies, the teapot, the lily pad, the colors, the line work and the drawing style identical. No text.",
    "boca": {
     "sapo": [
-     67,
+     45,
      42
     ]
    },
    "cabeca": {
     "sapo": [
-     53,
-     22,
-     77,
-     52
+     30,
+     16,
+     57,
+     51
     ]
    }
   },
@@ -2680,26 +2682,53 @@
    "lugar": "nw",
    "dados_skin": "marfim",
    "texto": "Coelho the rabbit, tired and in a hurry, holds up in one paw a single classic white ivory die at face height, showing it to the reader with a resigned look, a pocket watch hanging from his other paw. Behind him, a long row of tiny coat hooks with dozens of very small rabbit coats and scarves, a huge family's entrance hall. The die is drawn big and seen straight from the front, so only ONE face shows, as a plain square with exactly one round pips in the standard arrangement; no other dice in the picture. Keep the upper-left area (a third of the width, top 40%) as empty plain wall or sky for a speech balloon; the characters stay in the right 60% of the frame.",
+   "base_de": "c2-coelho",
+   "edicao": "Change only what the rabbit holds: no spreadsheet and no pocket watch now; he holds up in one paw, at face height, a single classic white ivory die, drawn as a solid 3D cube in three-quarter view exactly like the other dice in this panel (the top face and two side faces visible, rounded edges, thick outline, round pips), never a flat square, with black pips (one pip on the top face), and shows it to the reader with a tired, resigned look. Keep the crowded burrow full of small rabbit silhouettes, the desk with its dice, the lamp, the clock, the calendar, the colors and the drawing style identical. No text.",
+   "dados": [
+    {
+     "caixa": [
+      57.0,
+      39.3,
+      64.6,
+      50.0
+     ],
+     "vista": "obliquo",
+     "faces": {
+      "t": 1,
+      "e": 5,
+      "d": 4
+     },
+     "conferido": false,
+     "pular": true,
+     "ia": "a",
+     "recorte": [
+      823,
+      346,
+      1044,
+      567
+     ]
+    }
+   ],
    "boca": {
     "coelho": [
-     71.6,
-     46
+     47,
+     49
     ]
    },
    "cabeca": {
     "coelho": [
-     62,
-     8,
-     86,
-     56
+     35,
+     16,
+     53,
+     51
     ]
    },
    "evitar": [
     [
-     47,
-     27,
-     60,
-     46
+     57.0,
+     39.3,
+     64.6,
+     50.0
     ]
    ]
   },
@@ -2708,29 +2737,56 @@
     "diana"
    ],
    "nariz": "cachecol",
-   "lugar": "nw",
+   "lugar": "ne",
    "dados_skin": "lagoa",
    "texto": "Diana sits at the green felt game table and inspects a single frog-green die through a big magnifying glass, one eyebrow raised, suspicious, like a detective. Warm lamp light, simple background. The die is drawn big and seen straight from the front, so only ONE face shows, as a plain square with exactly five round pips in the standard arrangement; no other dice in the picture. Keep the upper-left area (a third of the width, top 40%) as empty plain wall or sky for a speech balloon; the characters stay in the right 60% of the frame.",
+   "base_de": "c3-cachecol",
+   "edicao": "Diana now holds a big round magnifying glass in one paw and looks through it, one eyebrow raised, suspicious like a detective, at a single frog-green die standing on the table in front of her, drawn as a solid 3D cube in three-quarter view exactly like the other dice in this panel (the top face and two side faces visible, rounded edges, thick outline, round pips), never a flat square, with cream pips (five pips on the top face). Keep her face, her ear tip and forehead marks, the green knitted scarf lying on her nose exactly as it is, the room, the books, the plant, the board game and the other dice identical. No text.",
+   "dados": [
+    {
+     "caixa": [
+      32.2,
+      86.4,
+      40.7,
+      99.3
+     ],
+     "vista": "obliquo",
+     "faces": {
+      "t": 5,
+      "e": 3,
+      "d": 6
+     },
+     "conferido": false,
+     "pular": true,
+     "ia": "c",
+     "recorte": [
+      434,
+      825,
+      684,
+      1075
+     ]
+    }
+   ],
    "boca": {
     "diana": [
-     60,
-     48
+     44,
+     57
     ]
    },
    "cabeca": {
     "diana": [
-     49,
-     6,
-     79,
-     56
+     31,
+     10,
+     65,
+     60
     ]
    },
    "evitar": [
     [
-     41,
-     70,
-     53,
-     88
+     32.2,
+     86.4,
+     40.7,
+     99.3
     ]
    ]
   },
@@ -2739,29 +2795,56 @@
     "raposa"
    ],
    "nariz": "",
-   "lugar": "ne",
+   "lugar": "nw",
    "dados_skin": "lagoa",
    "texto": "Raposa the fox, smug and elegant, holds a single frog-green die right next to her green knitted scarf, comparing the two colors with a satisfied half-smile, eyes half closed. Warm winter den, plush old sofa behind her. Her single bushy tail with a white tip curls once behind her, clearly attached at her lower back. The die is drawn big and seen straight from the front, so only ONE face shows, as a plain square with exactly three round pips in the standard arrangement; no other dice in the picture. Keep the upper-right area (a third of the width, top 40%) as empty plain wall for a speech balloon; the fox stays in the left 60% of the frame.",
+   "base_de": "c3-raposa",
+   "edicao": "Raposa now sits up on the same sofa and holds up in one paw a single frog-green die, drawn as a solid 3D cube in three-quarter view exactly like the other dice in this panel (the top face and two side faces visible, rounded edges, thick outline, round pips), never a flat square, with cream pips (three pips on the top face), right next to her green plaid scarf, comparing the two greens with a satisfied half-smile, eyes half closed. Keep the sofa, her single bushy tail with the white tip, the snowy window, the little side table with its green dice, the rug, the colors and the drawing style identical. No text.",
+   "dados": [
+    {
+     "caixa": [
+      46.6,
+      24.5,
+      52.6,
+      32.7
+     ],
+     "vista": "obliquo",
+     "faces": {
+      "t": 3,
+      "e": 1,
+      "d": 2
+     },
+     "conferido": false,
+     "pular": true,
+     "ia": "a",
+     "recorte": [
+      674,
+      205,
+      849,
+      380
+     ]
+    }
+   ],
    "boca": {
     "raposa": [
-     41,
-     46
+     62,
+     29
     ]
    },
    "cabeca": {
     "raposa": [
-     17,
-     6,
-     53,
-     56
+     56,
+     4,
+     75,
+     32
     ]
    },
    "evitar": [
     [
-     49,
-     49,
-     60,
-     64
+     46.6,
+     24.5,
+     52.6,
+     32.7
     ]
    ]
   },
@@ -2773,18 +2856,20 @@
    "lugar": "nw",
    "dados_skin": "mel",
    "texto": "Inside the dark cave, the big brown bear half asleep, eyes barely open, wearing his red knitted beanie with a cream pompom, hugs a big round glass jar of golden honey against his belly like a pillow, a wooden honey dipper in it. Cozy and drowsy. No dice in the picture. Keep the upper-left area (a third of the width, top 40%) as empty plain wall or sky for a speech balloon; the characters stay in the right 60% of the frame.",
+   "base_de": "c4-caverna",
+   "edicao": "The bear stays lying in the same spot, but now he is half awake: one eye barely open, drowsy, and he hugs a big round glass jar of golden honey against his chest like a pillow, a wooden honey dipper in it. Keep the dark cave, the red knitted beanie with the cream pompom, the 'zZz' letters, the honey-colored dice on the floor, the colors and the drawing style identical. No other text.",
    "boca": {
     "urso": [
-     64,
-     46
+     28,
+     65
     ]
    },
    "cabeca": {
     "urso": [
-     53,
      13,
-     81,
-     48
+     37,
+     40,
+     80
     ]
    }
   }
@@ -4125,14 +4210,14 @@
    "semRabo": true
   },
   "C1-depois_3_0": {
-   "x": 2,
-   "y": 3,
-   "w": 48,
+   "x": 58,
+   "y": 2,
+   "w": 40,
    "fs": 0.85
   },
   "C1-depois_4_0": {
-   "x": 3,
-   "y": 4,
+   "x": 62,
+   "y": 3,
    "w": 30,
    "fs": 1
   },
@@ -4181,15 +4266,15 @@
    "fs": 0.8
   },
   "C2-chegada_3_0": {
-   "x": 3,
-   "y": 4,
-   "w": 40,
-   "fs": 0.9
+   "x": 2,
+   "y": 3,
+   "w": 30,
+   "fs": 0.85
   },
   "C2-chegada_4_0": {
    "x": 2,
-   "y": 2,
-   "w": 36,
+   "y": 3,
+   "w": 30,
    "fs": 0.85
   },
   "C2-depois_1_0": {
@@ -4242,15 +4327,15 @@
    "fs": 0.8
   },
   "C3-chegada_5_0": {
-   "x": 56,
-   "y": 4,
-   "w": 40,
-   "fs": 0.9
+   "x": 23,
+   "y": 2,
+   "w": 32,
+   "fs": 0.85
   },
   "C3-chegada_6_0": {
-   "x": 56,
-   "y": 4,
-   "w": 40,
+   "x": 23,
+   "y": 2,
+   "w": 32,
    "fs": 0.85
   },
   "C3-interludio_2_0": {
@@ -4260,15 +4345,15 @@
    "fs": 0.9
   },
   "C3-interludio_3_0": {
-   "x": 2,
+   "x": 66,
    "y": 4,
-   "w": 44,
+   "w": 32,
    "fs": 0.85
   },
   "C3-interludio_4_0": {
    "x": 2,
-   "y": 4,
-   "w": 34,
+   "y": 3,
+   "w": 28,
    "fs": 0.95
   },
   "C3-interludio_5_0": {
@@ -4292,7 +4377,7 @@
   "C4-chegada_4_0": {
    "x": 2,
    "y": 4,
-   "w": 44,
+   "w": 36,
    "fs": 0.85
   },
   "C4-chegada_5_0": {
