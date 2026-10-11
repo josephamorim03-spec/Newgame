@@ -82,14 +82,17 @@ def tamanho_de(cfg, id_):
 def pintar(cfg, id_, qualidade):
     a = cfg["artes"][id_]
     if a.get("edicao"):                                # só corrige o que o dono apontou: a edição parte da arte atual (a original, sem a troca de bolinhas)
-        atual = QUADROS / "originais" / f"{id_}.webp"
-        atual = atual if atual.exists() else QUADROS / f"{id_}.webp"
+        origem = a.get("base_de", id_)                 # ou de um quadro já aprovado do mesmo capítulo: o mesmo cenário, só o gesto novo
+        atual = QUADROS / "originais" / f"{origem}.webp"
+        atual = atual if atual.exists() else QUADROS / f"{origem}.webp"
         base = RAIZ / "builds" / "edicao" / f"{id_}.png"
         base.parent.mkdir(parents=True, exist_ok=True)
         Image.open(atual).convert("RGB").save(base)
         png = A.gerar("Edit the attached comic panel. " + a["edicao"], qualidade, base, fundo="opaque", tamanho=tamanho_de(cfg, id_), modelo=cfg["modelo"])
         Image.open(io.BytesIO(png)).convert("RGB").save(QUADROS / f"{id_}.webp", "WEBP", quality=88, method=6)
         (QUADROS / "originais" / f"{id_}.webp").unlink(missing_ok=True)   # a nova arte é a nova original (os dados são refeitos depois)
+        (QUADROS / f"{id_}.json").write_text(json.dumps({"edicao": a["edicao"], "base_de": origem, "qualidade": qualidade, "modelo": cfg["modelo"]},
+                                                          ensure_ascii=False, indent=1), encoding="utf-8")
         return id_
     png = A.gerar(prompt_de(cfg, id_), qualidade, refs_de(cfg, id_), fundo="opaque", tamanho=tamanho_de(cfg, id_), modelo=cfg["modelo"])
     if (QUADROS / "originais" / f"{id_}.webp").exists():   # arte nova: os dados mudaram de lugar
@@ -148,7 +151,7 @@ def paginas(cfg, saida, piloto=False, editor=False):
         imagens[id_] = "data:image/webp;base64," + base64.b64encode(buf.getvalue()).decode()
     def nova(id_):   # a arte já saiu no pedido novo (estilo chapado, folha do nariz, espaço do balão, receita no papel)?
         meta = QUADROS / f"{id_}.json"
-        return meta.exists() and ("SIMPLE: a few big flat" in meta.read_text(encoding="utf-8") or "DRAWN ON THE PAPER" in meta.read_text(encoding="utf-8"))
+        return meta.exists() and any(t in meta.read_text(encoding="utf-8") for t in ("SIMPLE: a few big flat", "DRAWN ON THE PAPER", '"edicao"'))
     campos = ("texto", "quem", "nariz", "boca", "cabeca", "dados", "dados_skin", "evitar", "lugar", "titulo", "espelho", "aba", "pagina", "mural")
     # o mural é montado na página com os retratos que o jogo já tem (a versão pintada, em data URI)
     retratos = {}
