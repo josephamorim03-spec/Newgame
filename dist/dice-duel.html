@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="pt-BR">
+<html lang="pt-BR" class="impresso">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
@@ -1551,6 +1551,88 @@ button.inicio-perfil:active { transform: translateY(1px); }
 .historia-metas li.ok { color: var(--tinta); font-weight: 700; }
 .historia-metas li.ok::before { content: '★ '; }
 
+/* ==========================================================================
+   Gibi aconchegante (v0.15, docs/visual-impresso.md §6): a interface no estilo da arte do jogo, adesivo chapado com
+   contorno cacau, mais o impresso (retícula, as chapas azul e rosa). Tudo sob .impresso: ?impresso=0 volta ao visual
+   anterior, para comparar
+   ========================================================================== */
+/* o letreiro: um adesivo recortado. Por baixo, a sombra; a borda de papel larga junta as letras num recorte só; a chapa
+   (azul em DICE, rosa em DUEL) sai um pouco do registro; por cima, a letra com contorno cacau */
+.titulo-letreiro { margin: 0; line-height: 0; font-size: 0; }
+.letreiro { display: block; height: auto; overflow: visible; }
+.letreiro text { font-family: var(--f-titulo); font-weight: 700; font-size: 84px; letter-spacing: 2px; text-anchor: middle; stroke-linejoin: round; paint-order: stroke fill; }
+.letreiro .lt-sombra { fill: #120c12; stroke: #120c12; stroke-width: 22px; opacity: .55; }
+.letreiro .lt-borda { fill: var(--papel); stroke: var(--papel); stroke-width: 22px; }
+.letreiro .lt-chapa { stroke-width: 9px; }
+.letreiro .lt-tinta { stroke: var(--tinta); stroke-width: 8px; }
+.letreiro .lt-azul { fill: var(--voce); stroke: var(--voce); } .letreiro .lt-rosa { fill: var(--rival); stroke: var(--rival); }
+.letreiro .lt-papel { fill: var(--papel); } .letreiro .lt-mel { fill: var(--mel); }
+.tela-inicio #inicioTitulo { margin: -10px 0 -8px; }
+.tela-inicio #inicioTitulo .letreiro { width: min(250px, 66vw); }
+@media (max-height: 700px) { .tela-inicio #inicioTitulo .letreiro { width: 190px; } }
+.marca .titulo-letreiro .letreiro { width: 92px; }
+.marca .logo { display: none; }
+/* o letreiro entra como um adesivo colado: cresce torto e assenta, em poses seguradas */
+.tela-inicio:not([hidden]) #inicioTitulo .letreiro { animation: letreiroEntra .5s steps(4, end) both .1s; transform-origin: 50% 60%; }
+@keyframes letreiroEntra { 0% { transform: scale(.4) rotate(-14deg); opacity: 0; } 50% { transform: scale(1.12) rotate(4deg); opacity: 1; } 100% { transform: none; } }
+.sem-animacoes #inicioTitulo .letreiro { animation: none; }
+
+/* a página impressa: uma retícula leve nas bordas da noite (no meio, limpa), como papel de gibi */
+.impresso body::before, .impresso .tela-inicio::before { content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background: radial-gradient(circle, rgba(255,243,226,.09) 0 1.5px, transparent 2px) 0 0 / 10px 10px;
+  -webkit-mask-image: radial-gradient(ellipse 75% 65% at 50% 40%, transparent 55%, #000 100%); mask-image: radial-gradient(ellipse 75% 65% at 50% 40%, transparent 55%, #000 100%); }
+.impresso .tela-inicio { isolation: isolate; }
+
+/* os botões viram adesivos: cor chapada, contorno cacau e a sombra dura logo abaixo; o Jogar ganha retícula na metade
+   de baixo, a "sombra impressa" */
+.impresso .btn-mel, .impresso .btn-papel { border: 2.5px solid var(--tinta); }
+.impresso .btn-mel { background: radial-gradient(circle, rgba(196,132,58,.55) 0 1.4px, transparent 1.9px) 0 0 / 7px 7px, linear-gradient(180deg, #f8c47a, var(--mel));
+  background-size: 7px 7px, auto; background-position: 0 100%, 0 0; background-repeat: repeat-x, no-repeat;
+  box-shadow: 0 4px 0 var(--tinta), 0 10px 18px rgba(0,0,0,.25); }
+.impresso .btn-mel { background: linear-gradient(180deg, #f8c47a 0 40%, rgba(242,177,94,0) 85%), radial-gradient(circle, rgba(196,132,58,.6) 0 1.4px, transparent 1.9px) 0 0 / 7px 7px, var(--mel); }
+.impresso .btn-papel { box-shadow: 0 4px 0 var(--tinta), 0 8px 14px rgba(0,0,0,.18); }
+.impresso .btn-mel:active, .impresso .btn-papel:active { box-shadow: 0 1px 0 var(--tinta); }
+.impresso .inicio-principal { font-family: var(--f-titulo); font-size: clamp(18px, 5.4vw, 24px); letter-spacing: .02em; }
+
+/* os painéis escuros do menu ganham retícula no canto, como uma caixa de legenda impressa */
+.impresso .inicio-perfil, .impresso .inicio-tarefas, .impresso .inicio-ico, .impresso .btn-topo {
+  background: radial-gradient(circle, rgba(255,243,226,.12) 0 1.2px, transparent 1.7px) 0 0 / 7px 7px, rgba(255,243,226,.06);
+  -webkit-mask-image: none; }
+.impresso .inicio-ico .ico { stroke-width: 2.2; }
+
+/* balões de fala de gibi: papel, contorno cacau e o rabinho apontando para quem fala */
+.impresso .cena-fala, .impresso .fala { border: 2.5px solid var(--tinta); border-radius: 18px; box-shadow: 3px 4px 0 rgba(18,12,18,.55); overflow: visible; }
+.impresso .cena-fala::before, .impresso .fala::before { content: ''; position: absolute; left: 10px; bottom: -11px; width: 14px; height: 12px; background: var(--tinta); clip-path: polygon(0 0, 100% 0, 0 100%); }
+.impresso .cena-fala::after, .impresso .fala::after { content: ''; position: absolute; left: 12.5px; bottom: -6.5px; width: 9px; height: 8px; background: inherit; clip-path: polygon(0 0, 100% 0, 0 100%); }
+.impresso .fala { background: var(--papel); }
+
+/* as fichas dos jogadores viram quadros de gibi: contorno cacau e a sombra dura (a cor da vez continua por fora) */
+.impresso .jogador { box-shadow: 0 0 0 2.5px var(--tinta), 0 6px 0 2.5px var(--tinta), 0 12px 24px rgba(0,0,0,.22); }
+.impresso .jogador.da-vez.p0 { box-shadow: 0 0 0 2.5px var(--tinta), 0 6px 0 2.5px var(--tinta), 0 0 0 5.5px var(--voce), 0 6px 0 5.5px var(--voce), 0 14px 28px rgba(0,0,0,.25); }
+.impresso .jogador.da-vez.p1 { box-shadow: 0 0 0 2.5px var(--tinta), 0 6px 0 2.5px var(--tinta), 0 0 0 5.5px var(--rival), 0 6px 0 5.5px var(--rival), 0 14px 28px rgba(0,0,0,.25); }
+
+/* as chamadas viram caixas de gibi: contorno cacau e a chapa da cor do momento deslocada, em vez do aro */
+.impresso .chamada { width: max-content; border: 3px solid var(--tinta); border-radius: 16px; box-shadow: 7px 7px 0 var(--mel), 7px 7px 0 3px var(--tinta), 0 20px 50px rgba(0,0,0,.45); }
+.impresso .chamada.rival { box-shadow: 7px 7px 0 var(--rival), 7px 7px 0 3px var(--tinta), 0 20px 50px rgba(0,0,0,.45); }
+.impresso .chamada.suave { box-shadow: 7px 7px 0 var(--eco), 7px 7px 0 3px var(--tinta), 0 20px 50px rgba(0,0,0,.45); }
+.impresso .chamada b { letter-spacing: .01em; }
+
+/* o selo da contagem e as etiquetas da vez: contorno cacau, como adesivo */
+.impresso .contagem { border: 2.5px solid var(--tinta); box-shadow: 0 4px 0 var(--tinta), 0 10px 24px rgba(0,0,0,.35); }
+.impresso .vez-tag { box-shadow: inset 0 0 0 1.5px rgba(58,42,46,.35); }
+.impresso .da-vez .vez-tag { box-shadow: inset 0 0 0 2px var(--tinta); }
+
+/* as janelas viram páginas de gibi: contorno cacau e a sombra dura */
+.impresso .caixa { border: 3px solid var(--tinta); box-shadow: 0 7px 0 var(--tinta), 0 30px 60px rgba(0,0,0,.5); }
+/* o começo da partida: o letreiro no alto e os dois lados como quadros frente a frente, cada um com a retícula da sua
+   cor (azul você, rosa o rival), tortos para lados opostos; o × vira um selo de mel no meio */
+.vs-titulo .letreiro { width: 150px; margin: -4px auto -2px; }
+.impresso .vs-linha > .vs-lado { padding: 10px 12px 12px; border: 2.5px solid var(--tinta); border-radius: 14px; box-shadow: 0 4px 0 var(--tinta); }
+.impresso .vs-linha > .vs-lado:first-child { transform: rotate(-2deg); background: radial-gradient(circle, rgba(111,191,211,.45) 0 1.6px, transparent 2.1px) 0 0 / 8px 8px, #eaf6f9; }
+.impresso .vs-linha > .vs-lado:last-child { transform: rotate(2deg); background: radial-gradient(circle, rgba(236,143,168,.45) 0 1.6px, transparent 2.1px) 0 0 / 8px 8px, #fcedf1; }
+.impresso .vs-x { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 50%; background: var(--mel); color: var(--tinta); border: 3px solid var(--tinta);
+  box-shadow: -4px 0 0 var(--voce), 4px 3px 0 var(--rival); font-size: 30px; line-height: 1; z-index: 1; margin: -6px 0; }
+
 </style>
 <style>
 /* Dice Duel · os quadros pintados da história (js/historia_quadros.js): a arte e a camada de tinta por cima (balão, rabinho,
@@ -1638,7 +1720,8 @@ button.inicio-perfil:active { transform: translateY(1px); }
   <div class="inicio-caixa">
     <!-- a rival da vez à mesa, com a saudação e três dados para cutucar (desenhada por desenharCena, em js/jogo.js) -->
     <div class="inicio-cena" id="inicioCena" aria-hidden="true"></div>
-    <h1 id="inicioTitulo">Dice <span>Duel</span></h1>
+    <!-- o letreiro: adesivo de gibi (contorno cacau, borda de papel, as chapas azul e rosa fora do registro; docs/visual-impresso.md) -->
+    <h1 id="inicioTitulo" class="titulo-letreiro"><svg class="letreiro" viewBox="0 0 320 170" aria-hidden="true"><g transform="rotate(-5 160 85)"><text x="138" y="85" class="lt-sombra">DICE</text><text x="138" y="78" class="lt-borda">DICE</text><text x="133" y="77" class="lt-chapa lt-azul">DICE</text><text x="138" y="78" class="lt-tinta lt-papel">DICE</text><text x="182" y="155" class="lt-sombra">DUEL</text><text x="182" y="148" class="lt-borda">DUEL</text><text x="187" y="147" class="lt-chapa lt-rosa">DUEL</text><text x="182" y="148" class="lt-tinta lt-mel">DUEL</text></g></svg><span class="so-leitor">Dice Duel</span></h1>
     <button class="inicio-perfil" id="inicioPerfil" data-inicio="perfil" aria-label="Seu perfil: visual, nível e recordes"></button>
     <div class="inicio-partida" id="inicioPartida" hidden></div>
     <div class="inicio-jogar" id="inicioJogar">
@@ -1673,8 +1756,8 @@ button.inicio-perfil:active { transform: translateY(1px); }
         <circle cx="40" cy="34" r="3" fill="#3a2a2e"/><circle cx="48" cy="42" r="3" fill="#3a2a2e"/>
       </svg>
       <div>
-        <h1>Dice <span>Duel</span></h1>
-        <p>duelo de dados aconchegante · v0.13</p>
+        <h1 class="titulo-letreiro"><svg class="letreiro" viewBox="0 0 320 170" aria-hidden="true"><g transform="rotate(-5 160 85)"><text x="138" y="85" class="lt-sombra">DICE</text><text x="138" y="78" class="lt-borda">DICE</text><text x="133" y="77" class="lt-chapa lt-azul">DICE</text><text x="138" y="78" class="lt-tinta lt-papel">DICE</text><text x="182" y="155" class="lt-sombra">DUEL</text><text x="182" y="148" class="lt-borda">DUEL</text><text x="187" y="147" class="lt-chapa lt-rosa">DUEL</text><text x="182" y="148" class="lt-tinta lt-mel">DUEL</text></g></svg><span class="so-leitor">Dice Duel</span></h1>
+        <p>duelo de dados aconchegante · v0.14</p>
       </div>
     </div>
     <div class="topo-botoes">
@@ -6632,7 +6715,9 @@ window.HISTORIA_QUADROS = {"falas":{"P-01":[{"arte":"p-mesa","chave":"P-antes_0"
     };
     const el = document.createElement('div');
     el.className = 'versus'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Começo da partida');
-    el.innerHTML = `<div class="caixa"><h2>Dice Duel</h2><div class="vs-linha">${lado(0)}<span class="vs-x">×</span>${lado(1)}</div>
+    // o título é o letreiro da tela inicial (o adesivo de gibi); sem ele, o nome em texto
+    const letreiro = (document.getElementById('inicioTitulo') || {}).innerHTML || 'Dice Duel';
+    el.innerHTML = `<div class="caixa"><h2 class="titulo-letreiro vs-titulo">${letreiro}</h2><div class="vs-linha">${lado(0)}<span class="vs-x">×</span>${lado(1)}</div>
       <p class="nota">${j.estreia ? 'Primeira partida, sem cartas: ligue dados que sincronizam e dispare a corrente. As cartas chegam na próxima. ' : j.historia ? `${RIVAIS[j.nivel].desc}. ${(Historia.cap(j.historia) || {}).regra || ''} ` : j.modo === 'bot' ? RIVAIS[j.nivel].desc + '. ' : online() ? `Rating ${j.perfis[1].rating}. ${tempoTxt(j.ritmo)}. ` : ''}Meta: ${j.meta} pontos. ${n[j.vez]} começa.</p><button class="btn btn-mel">Vamos lá</button></div>`;
     document.body.appendChild(el);
     Som.tocar('carta');

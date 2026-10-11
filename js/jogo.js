@@ -1461,7 +1461,9 @@
     };
     const el = document.createElement('div');
     el.className = 'versus'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Começo da partida');
-    el.innerHTML = `<div class="caixa"><h2>Dice Duel</h2><div class="vs-linha">${lado(0)}<span class="vs-x">×</span>${lado(1)}</div>
+    // o título é o letreiro da tela inicial (o adesivo de gibi); sem ele, o nome em texto
+    const letreiro = (document.getElementById('inicioTitulo') || {}).innerHTML || 'Dice Duel';
+    el.innerHTML = `<div class="caixa"><h2 class="titulo-letreiro vs-titulo">${letreiro}</h2><div class="vs-linha">${lado(0)}<span class="vs-x">×</span>${lado(1)}</div>
       <p class="nota">${j.estreia ? 'Primeira partida, sem cartas: ligue dados que sincronizam e dispare a corrente. As cartas chegam na próxima. ' : j.historia ? `${RIVAIS[j.nivel].desc}. ${(Historia.cap(j.historia) || {}).regra || ''} ` : j.modo === 'bot' ? RIVAIS[j.nivel].desc + '. ' : online() ? `Rating ${j.perfis[1].rating}. ${tempoTxt(j.ritmo)}. ` : ''}Meta: ${j.meta} pontos. ${n[j.vez]} começa.</p><button class="btn btn-mel">Vamos lá</button></div>`;
     document.body.appendChild(el);
     Som.tocar('carta');

@@ -107,6 +107,11 @@ node tools/vercel_local.js                     # a página como o Vercel publica
 
 ## Estado
 
+**v0.15, na branch `DiceDuel-primeira-partida` (ainda não publicada):** a interface de gibi. O letreiro virou um
+adesivo (contorno cacau, borda de papel, DICE com a chapa azul e DUEL com a rosa); botões, balões, fichas, chamadas e
+janelas ganharam contorno e sombra dura cacau; o começo da partida mostra os dois lados como quadros frente a frente.
+`?impresso=0` volta ao visual anterior (menos o letreiro). Detalhes em `docs/visual-impresso.md` §3.
+
 **v0.14, em produção** (a página no Vercel e o servidor na Railway, publicados da branch `DiceDuel`): a primeira partida e a sensação de jogar bem.
 - **A estreia:** na primeira visita, Jogar começa direto uma partida contra a Diana até 8 pontos, sem cartas (sem
   escolher rival nem montar deck). As cartas chegam na segunda; as armadilhas, depois dela.

@@ -23,7 +23,7 @@
 - **A Loja vende estilo.** Uma mesa e uma skin de dado "de gibi" encaixam na progressão sem mexer em força
   (`docs/progressao.md`: só cosméticos, todo cosmético pago com um equivalente ganho jogando).
 
-**Contra (e por isso só sotaque):**
+**Contra (e por isso, até a v0.14, só sotaque; na v0.15 o dono pediu a interface toda, ver §3):**
 - **Glitch, aberração cromática forte e ruído** brigam com o tom. O filme teve aviso de fotossensibilidade.
 - **Tela partida, caixas de legenda e tipografia de gibi em tudo** trocariam a cara do jogo e do onboarding que a
   v0.14 acabou de acertar.
@@ -102,6 +102,27 @@ Para quem quiser o estilo inteiro, sem impor a ninguém:
 
 ### Fase 3 (talvez): o estilo por personagem e o versus em painéis
 Só se a Fase 1 passar no teste com gente.
+
+### Interface de gibi (v0.15, pedido do dono)
+Depois da Fase 1 em produção, o dono pediu mais: o nome "Dice Duel" estava fraco (texto liso, em Fredoka, creme e mel) e o
+gibi podia ir para a interface toda. Isso muda a decisão do §1 ("só um toque"): **a interface passa a ser de gibi
+aconchegante**, no mesmo estilo dos retratos e da arte da história (adesivo chapado, contorno cacau, uma sombra dura) mais
+o impresso. Tudo no fim de `css/estilo.css`, sob `.impresso` (`?impresso=0` volta ao visual anterior, menos o letreiro, que vale sempre):
+
+| Peça | Como ficou |
+|---|---|
+| **O letreiro** (tela inicial, cabeçalho, começo da partida) | SVG em 4 camadas: sombra, uma borda de papel larga que junta as letras num recorte só (o adesivo), a chapa fora do registro (**azul em DICE, rosa em DUEL**: você e o rival) e a letra com contorno cacau. Empilhado, em caixa alta, torto (−5°). Entra como adesivo colado, em 4 poses. Contorno cacau sozinho some na noite; a borda de papel é o que o faz ler |
+| **Botões** (Jogar, Online, Vamos lá...) | cor chapada, contorno cacau e sombra dura cacau; o Jogar tem retícula na metade de baixo, a "sombra impressa" |
+| **Balões** (a saudação da tela inicial e as falas do rival) | contorno cacau, cantos redondos e o rabinho apontando para quem fala |
+| **Fichas dos jogadores** | quadros de gibi: contorno e sombra dura cacau; a cor da vez segue por fora |
+| **Chamadas** | caixa de gibi: contorno cacau e a chapa da cor do momento deslocada (mel, rosa ou lilás), no lugar do aro |
+| **Janelas** | contorno e sombra dura cacau |
+| **Começo da partida** | o letreiro no alto e os dois lados como quadros frente a frente, cada um com a retícula da sua cor (azul você, rosa o rival), tortos para lados opostos; o × vira um selo de mel |
+| **Fundo** | retícula clara nas bordas da noite, limpa no meio |
+
+**O que ficou de fora, de propósito:** os dados (as skins e a rolagem 3D seguem como estão: contorno neles mexeria em toda
+skin); o ícone do app e a prévia de compartilhamento (`img/`), que pedem arte nova; e trocar o nome do jogo, que o dono não
+pediu (o pedido foi a forma do nome).
 
 ## 4. Como verificar
 - `node tools/fumaca.js`, `node tools/estreia_e2e.js` (as chamadas do guia não podem atrasar), `node tools/layout.js`
