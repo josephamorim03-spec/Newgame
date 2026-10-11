@@ -112,17 +112,17 @@
    "texto": "Closer shot of the felt table: Diana, crouched low behind the table, stretches ONE front paw forward and gently pushes one pink die toward the table's left edge. Natural cat anatomy: a soft round shoulder, the foreleg curving smoothly out from the body (no straight tube, no stiff joint), every outline smooth and clean. Her face behind it, eyes half closed, unbothered, looking at the reader, not at the die.",
    "boca": {
     "diana": [
-     52,
-     58
+     63,
+     68.5
     ]
    },
    "dados": [
     {
      "caixa": [
-      15.2,
-      79.5,
-      25.1,
-      93.2
+      36.3,
+      88,
+      42.5,
+      97.5
      ],
      "vista": "obliquo",
      "faces": {
@@ -134,10 +134,10 @@
     },
     {
      "caixa": [
-      73.8,
-      79.5,
-      83.6,
-      92.5
+      56,
+      87,
+      61.8,
+      96.3
      ],
      "vista": "obliquo",
      "faces": {
@@ -145,14 +145,21 @@
       "e": 4,
       "d": 2
      },
-     "conferido": true
+     "conferido": false,
+     "ia": "a",
+     "recorte": [
+      814,
+      848,
+      994,
+      1028
+     ]
     },
     {
      "caixa": [
-      84.5,
-      79.2,
-      95.3,
-      93.0
+      65.6,
+      86.9,
+      71.3,
+      95.6
      ],
      "vista": "obliquo",
      "faces": {
@@ -160,18 +167,28 @@
       "e": 6,
       "d": 3
      },
-     "conferido": true
+     "conferido": false,
+     "ia": "a",
+     "recorte": [
+      966,
+      849,
+      1135,
+      1018
+     ]
     }
    ],
    "cabeca": {
     "diana": [
-     37,
-     8,
-     78,
-     68
+     50,
+     22,
+     82,
+     74
     ]
    },
-   "dados_skin": "rosa"
+   "dados_skin": "rosa",
+   "edicao": "Keep the SAME room and the SAME night as the attached panel: the plain warm cream wall, the window with the crescent moon and the dark-blue night sky, the teal curtain, the warm table lamp glowing on the little wooden cabinet, the same SMALL ROUND side table covered in sage-green felt with its wooden rim, the same pink dice, and the same Diana (white cat, black-tipped ear, grey brow marks, the little bandage with dice pips on the bridge of her nose). Same thick cocoa outline, same flat sticker style, same colors and lighting. No text or letters anywhere. Change only the moment and the framing: a slightly closer shot of the round table. Diana crouches low behind the table and stretches ONE front paw forward over the felt, gently pushing ONE pink die toward the table's LEFT edge; the other two pink dice stay still on the felt to the right. Natural cat anatomy: a soft round shoulder, the foreleg curving smoothly out from the body. Her face behind it, eyes half closed, unbothered, looking at the reader, not at the die. The upper-left third of the frame (top 40%) stays empty plain wall, free for a speech balloon.",
+   "base_de": "p-mesa",
+   "continuidade": "v0.18: refeito a partir de p-mesa (o mesmo cômodo e a mesma hora da cena; pedido do dono)"
   },
   "p-cai": {
    "quem": [
@@ -182,75 +199,69 @@
    "texto": "Medium shot: Diana sits behind the felt table, gazing calmly at the reader, chin slightly raised. At the lower left, a pink die is falling off the table's edge, mid-air, about to leave the frame. She does not look at it. Composition: the characters stay in the right 60% of the frame; the upper-left area (a third of the width, top 40%) is empty plain wall or sky, kept free for a speech balloon.",
    "boca": {
     "diana": [
-     59,
-     45
+     63.5,
+     57
     ]
    },
    "dados": [
     {
-     "x": 44.1,
-     "y": 94.5,
-     "vista": "obliquo",
-     "faces": {
-      "t": 2,
-      "e": 1,
-      "d": 4
-     },
      "caixa": [
-      40.89,
-      89.55,
-      47.07,
-      99.9
+      15.7,
+      90.3,
+      21,
+      99
      ],
-     "conferido": false,
-     "ia": "a"
-    },
-    {
-     "x": 54.0,
-     "y": 92.3,
      "vista": "obliquo",
      "faces": {
-      "t": 6,
+      "t": 4,
       "e": 5,
-      "d": 3
+      "d": 6
      },
-     "caixa": [
-      50.78,
-      87.11,
-      57.03,
-      97.56
-     ],
-     "conferido": false,
-     "ia": "a"
+     "conferido": true
     },
     {
-     "x": 63.6,
-     "y": 94.4,
+     "caixa": [
+      57.5,
+      88,
+      63,
+      96.5
+     ],
      "vista": "obliquo",
      "faces": {
       "t": 5,
-      "e": 4,
-      "d": 1
+      "e": 6,
+      "d": 4
      },
+     "conferido": true
+    },
+    {
      "caixa": [
-      60.35,
-      89.16,
-      66.41,
-      99.9
+      67.3,
+      87,
+      73,
+      96.3
      ],
-     "conferido": false,
-     "ia": "a"
+     "vista": "obliquo",
+     "faces": {
+      "t": 1,
+      "e": 2,
+      "d": 3
+     },
+     "conferido": true
     }
    ],
    "cabeca": {
     "diana": [
-     46,
-     8,
-     75,
-     52
+     47,
+     10,
+     80,
+     66
     ]
    },
-   "dados_skin": "rosa"
+   "dados_skin": "rosa",
+   "edicao": "Keep the SAME room and the SAME night as the attached panel: the plain warm cream wall, the window with the crescent moon and the dark-blue night sky, the teal curtain, the warm table lamp glowing on the little wooden cabinet, the same SMALL ROUND side table covered in sage-green felt with its wooden rim, the same pink dice, and the same Diana (white cat, black-tipped ear, grey brow marks, the little bandage with dice pips on the bridge of her nose). Same thick cocoa outline, same flat sticker style, same colors and lighting. No text or letters anywhere. Change only the moment: Diana sits behind the round table, gazing calmly at the reader, chin slightly raised. Now ONLY TWO pink dice remain on the felt. The third pink die is at the lower left, in mid-air, falling off the table's edge with two small motion lines, about to leave the frame; she does not look at it. The upper-left third of the frame (top 40%) stays empty plain wall, free for a speech balloon.",
+   "base_de": "p-mesa",
+   "continuidade": "v0.18: refeito a partir de p-mesa (o mesmo cômodo e a mesma hora da cena; pedido do dono)"
   },
   "p-placar": {
    "quem": [
@@ -261,58 +272,68 @@
    "texto": "Diana sits beside the felt table looking sideways at a small wooden flip scoreboard, her black-tipped ear drooping a little: mildly impressed, despite herself. Two pink dice on the felt. Composition: the characters stay in the left 60% of the frame; the upper-right area (a third of the width, top 40%) is empty plain wall or sky, kept free for a speech balloon.",
    "boca": {
     "diana": [
-     35,
-     48
+     33,
+     57.5
     ]
    },
    "dados": [
     {
-     "x": 36.9,
-     "y": 90.7,
-     "vista": "canto",
+     "caixa": [
+      26.8,
+      80.6,
+      32.3,
+      89.8
+     ],
+     "vista": "obliquo",
      "faces": {
       "t": 5,
-      "e": 6,
-      "d": 4
+      "e": 1,
+      "d": 3
      },
-     "corte": 0.57,
-     "caixa": [
-      33.4,
-      84.77,
-      40.36,
-      96.48
-     ],
-     "conferido": true
+     "conferido": false,
+     "ia": "a",
+     "recorte": [
+      364,
+      783,
+      542,
+      961
+     ]
     },
     {
-     "x": 44.3,
-     "y": 86.2,
-     "vista": "canto",
+     "caixa": [
+      35.7,
+      82.5,
+      41.2,
+      91.5
+     ],
+     "vista": "obliquo",
      "faces": {
-      "t": 1,
-      "e": 4,
+      "t": 6,
+      "e": 3,
       "d": 2
      },
-     "corte": 0.54,
-     "caixa": [
-      40.69,
-      80.27,
-      47.79,
-      91.89
-     ],
-     "conferido": true,
-     "ia": "a"
+     "conferido": false,
+     "ia": "a",
+     "recorte": [
+      503,
+      803,
+      678,
+      978
+     ]
     }
    ],
    "cabeca": {
     "diana": [
+     14,
      16,
-     8,
-     50,
-     56
+     45,
+     65
     ]
    },
-   "dados_skin": "rosa"
+   "dados_skin": "rosa",
+   "edicao": "Keep the SAME room and the SAME night as the attached panel: the plain warm cream wall, the window with the crescent moon and the dark-blue night sky, the teal curtain, the warm table lamp glowing on the little wooden cabinet, the same SMALL ROUND side table covered in sage-green felt with its wooden rim, the same pink dice, and the same Diana (white cat, black-tipped ear, grey brow marks, the little bandage with dice pips on the bridge of her nose). Same thick cocoa outline, same flat sticker style, same colors and lighting. No text or letters anywhere. Change only the moment and turn the view a little: now the window with the moon and the lamp are on the LEFT side of the frame, behind her. Diana sits on the left half, beside the same round felt table, looking sideways at a small wooden flip scoreboard standing on the felt (two flip cards, no readable numbers needed), her black-tipped ear drooping a little: mildly impressed, despite herself. Two pink dice on the felt. The upper-right third of the frame (top 40%) is empty plain wall, free for a speech balloon. The flip scoreboard shows '8' and '6' in big dark numerals (the only text).",
+   "base_de": "p-mesa",
+   "continuidade": "v0.18: refeito a partir de p-mesa (o mesmo cômodo e a mesma hora da cena; pedido do dono)"
   },
   "p-caderno": {
    "quem": [
@@ -323,16 +344,16 @@
    "texto": "Diana holds open an old notebook with a worn cloth cover; the cover reads 'RECEITAS DA DIANA' in neat hand lettering. Between the pages, ragged stubs where several pages were torn out. Her face peeks over the notebook, looking at the reader. Composition: the characters stay in the right 60% of the frame; the upper-left area (a third of the width, top 40%) is empty plain wall or sky, kept free for a speech balloon.",
    "boca": {
     "diana": [
-     49,
-     55
+     63,
+     50.5
     ]
    },
    "cabeca": {
     "diana": [
-     33,
-     22,
-     67,
-     60
+     45,
+     9,
+     81,
+     58
     ]
    },
    "evitar": [
@@ -342,7 +363,72 @@
      72,
      92
     ]
-   ]
+   ],
+   "edicao": "Keep the SAME room and the SAME night as the attached panel: the plain warm cream wall, the window with the crescent moon and the dark-blue night sky, the teal curtain, the warm table lamp glowing on the little wooden cabinet, the same SMALL ROUND side table covered in sage-green felt with its wooden rim, the same pink dice, and the same Diana (white cat, black-tipped ear, grey brow marks, the little bandage with dice pips on the bridge of her nose). Same thick cocoa outline, same flat sticker style, same colors and lighting. No text or letters anywhere. Change only the moment: Diana sits behind the same round table and holds open, with both front paws, an old notebook with a worn green cloth cover; the cover reads 'RECEITAS DA DIANA' in neat hand lettering (these are the only words allowed). Between the pages, ragged stubs where several pages were torn out. Her face peeks over the notebook, looking at the reader. The three pink dice rest on the felt in front of the notebook. The upper-left third of the frame (top 40%) stays empty plain wall, free for a speech balloon.",
+   "base_de": "p-mesa",
+   "continuidade": "v0.18: refeito a partir de p-mesa (o mesmo cômodo e a mesma hora da cena; pedido do dono)",
+   "dados": [
+    {
+     "caixa": [
+      47.7,
+      83.5,
+      53.5,
+      92.8
+     ],
+     "vista": "obliquo",
+     "faces": {
+      "t": 2,
+      "e": 6,
+      "d": 3
+     },
+     "conferido": false,
+     "ia": "a",
+     "recorte": [
+      687,
+      812,
+      867,
+      992
+     ]
+    },
+    {
+     "caixa": [
+      56.3,
+      87.5,
+      61.8,
+      96.5
+     ],
+     "vista": "obliquo",
+     "faces": {
+      "t": 4,
+      "e": 1,
+      "d": 5
+     },
+     "conferido": false,
+     "ia": "a",
+     "recorte": [
+      819,
+      854,
+      994,
+      1029
+     ]
+    },
+    {
+     "caixa": [
+      65.8,
+      86.3,
+      71.5,
+      95.6
+     ],
+     "vista": "obliquo",
+     "faces": {
+      "t": 5,
+      "e": 3,
+      "d": 6
+     },
+     "conferido": true
+    }
+   ],
+   "dados_skin": "rosa"
   },
   "p-close": {
    "quem": [
@@ -584,10 +670,10 @@
    "dados": [
     {
      "caixa": [
-      10.2,
-      82.5,
-      16.7,
-      91.7
+      27.7,
+      89.7,
+      35,
+      99.6
      ],
      "vista": "obliquo",
      "faces": {
@@ -595,15 +681,21 @@
       "e": 2,
       "d": 3
      },
-     "conferido": true,
-     "ia": "a"
+     "conferido": false,
+     "ia": "a",
+     "recorte": [
+      375,
+      862,
+      588,
+      1075
+     ]
     },
     {
      "caixa": [
-      18.3,
-      88.3,
-      24.7,
-      97.8
+      56.3,
+      88.7,
+      63,
+      98.7
      ],
      "vista": "obliquo",
      "faces": {
@@ -611,15 +703,21 @@
       "e": 3,
       "d": 1
      },
-     "conferido": true,
-     "ia": "a"
+     "conferido": false,
+     "ia": "a",
+     "recorte": [
+      818,
+      861,
+      1013,
+      1056
+     ]
     },
     {
      "caixa": [
-      26.7,
-      87.8,
-      32.4,
-      97.0
+      72.8,
+      92.3,
+      79.8,
+      99.6
      ],
      "vista": "obliquo",
      "faces": {
@@ -627,23 +725,33 @@
       "e": 5,
       "d": 1
      },
-     "conferido": false
+     "conferido": false,
+     "ia": "a",
+     "recorte": [
+      1069,
+      880,
+      1273,
+      1084
+     ]
     }
    ],
    "boca": {
     "diana": [
-     48,
-     40
+     51,
+     59
     ]
    },
    "cabeca": {
     "diana": [
-     35,
-     8,
-     64,
-     42
+     31,
+     22,
+     66,
+     70
     ]
-   }
+   },
+   "edicao": "Keep the SAME room as the attached panel: the same wall and floor colors, the same light, the cork board with ONLY ONE photo (a single die) and one red string, the same potted plant, and the same Diana (white cat, black-tipped ear, grey brow marks, the same little bandage on the bridge of her nose). Same thick cocoa outline, same flat sticker style. No text or letters anywhere. Change only the moment: Diana sits at a small table with sage-green felt and a few pink dice in the foreground and holds a damp notebook page up in front of her face with both front paws, reading it with narrowed eyes. The page faces HER: we see only the plain cream BACK of the page, blank, with a faint wet stain showing through, and nothing drawn on our side. Her eyes peek over the top edge of the page. The cork board stays visible behind her at the right. The upper-left third of the frame (top 40%) stays empty plain wall, free for a speech balloon.",
+   "base_de": "i1-nada",
+   "continuidade": "v0.18: refeito a partir de i1-nada (o mesmo cômodo e a mesma hora da cena; pedido do dono)"
   },
   "i1-nada": {
    "quem": [
@@ -4483,24 +4591,24 @@
    "y": 19.2,
    "w": 36.7,
    "fs": 0.9,
-   "tx": 45.7,
-   "ty": 46.8
+   "tx": 63.5,
+   "ty": 57
   },
   "P-depois_0_0": {
    "x": 51,
    "y": 5.8,
    "w": 45,
    "fs": 0.9,
-   "tx": 51.2,
-   "ty": 31.2
+   "tx": 33,
+   "ty": 57.5
   },
   "P-depois_1_0": {
    "x": 0.3,
    "y": 0,
    "w": 50.4,
    "fs": 0.8,
-   "tx": 32.7,
-   "ty": 35.8
+   "tx": 63,
+   "ty": 50.5
   },
   "P-depois_2_0": {
    "x": 4.3,
