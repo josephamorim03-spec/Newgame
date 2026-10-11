@@ -270,11 +270,15 @@
     </div>
   </div>
 
-  <div class="janela" id="janelaHistoria" hidden>
-    <div class="caixa" role="dialog" aria-modal="true" aria-labelledby="historiaTitulo">
-      <div class="deck-topo"><h2 id="historiaTitulo">O Caderno da Diana</h2></div>
-      <div id="historiaConteudo"></div>
-      <button class="btn btn-papel" id="btnFecharHistoria">Fechar</button>
+  <!-- o mapa da história é uma página do caderno (docs/visual-impresso.md): a folha leva a sombra e a fita; a caixa, o
+       papel com o topo rasgado (a máscara cortaria a sombra) -->
+  <div class="janela janela-caderno" id="janelaHistoria" hidden>
+    <div class="folha-caderno">
+      <div class="caixa" role="dialog" aria-modal="true" aria-labelledby="historiaTitulo">
+        <div class="deck-topo"><h2 id="historiaTitulo">O Caderno da Diana</h2></div>
+        <div id="historiaConteudo"></div>
+        <button class="btn btn-papel" id="btnFecharHistoria">Fechar</button>
+      </div>
     </div>
   </div>
 

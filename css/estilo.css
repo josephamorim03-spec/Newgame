@@ -1620,3 +1620,52 @@ button.inicio-perfil:active { transform: translateY(1px); }
 /* a explosão estoura em poses seguradas: pequena, grande demais, assenta */
 @keyframes vsEntra { 0% { transform: scale(.2) rotate(-30deg); opacity: 0; } 40% { transform: scale(1.3) rotate(8deg); opacity: 1; } 70% { transform: scale(.92) rotate(-3deg); } 100% { transform: none; } }
 .sem-animacoes .vs-x { animation: none; }
+
+/* ==========================================================================
+   O Caderno da Diana (v0.17): o mapa da história é uma página do caderno dela. Cada material conta um pedaço do enredo
+   (docs/visual-impresso.md): o papel pautado é o caderno de pesquisa disfarçado de receitas; o topo rasgado, as páginas que
+   o Guaxinim arrancou; a fita, a Fita Dupla; a letra de mão (Caveat, a letra das receitas) e o nanquim, a mão da Diana.
+   A margem vermelha corre no recuo, fora dos cartões (atrás dos retratos ela atrapalhava a leitura)
+   ========================================================================== */
+.folha-caderno { width: min(480px, 100%); max-height: 100%; display: grid; position: relative; }
+.folha-caderno > .caixa { width: 100%; }
+/* a altura da página vem da tela (o envoltório tem altura do conteúdo, então o 100% da caixa não a limitaria): sem
+   isso, a lista não rola e o Fechar fica fora da tela no celular */
+.folha-caderno > .caixa { max-height: calc(100vh - max(16px, calc(var(--seg-topo) + 8px)) - max(16px, calc(var(--seg-baixo) + 4px)));
+  max-height: calc(100dvh - max(16px, calc(var(--seg-topo) + 8px)) - max(16px, calc(var(--seg-baixo) + 4px))); }
+.impresso .folha-caderno { filter: drop-shadow(0 6px 0 var(--tinta)) drop-shadow(0 22px 30px rgba(0,0,0,.45)); }
+.impresso .janela-caderno .caixa { border: 0; border-radius: 0 0 16px 16px; box-shadow: none; padding: 36px 16px 18px 32px;
+  background: linear-gradient(90deg, transparent 17px, rgba(232,128,111,.65) 17px 19px, transparent 19px) local,
+    repeating-linear-gradient(180deg, transparent 0 27px, rgba(111,191,211,.32) 27px 28px) local, var(--papel);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 16' preserveAspectRatio='none'%3E%3Cpath d='M0 16 L0 2.5 L7 8.8 L14 5.2 L21 9.9 L28 3.7 L35 6.8 L42 2.9 L49 9.4 L56 5.7 L63 10.5 L70 2.5 L77 7.2 L84 3.4 L91 8.2 L98 4.5 L105 9.3 L112 4.6 L119 7.7 L126 2.3 L133 8.8 L140 5.1 L147 11.4 L154 3.4 L161 6.5 L168 2.8 L175 7.6 L182 5.5 L189 10.2 L196 4.0 L203 7.1 L210 1.7 L217 9.7 L224 6.0 L231 10.8 L238 2.8 L245 6.0 L252 3.8 L259 8.5 L266 4.8 L273 9.7 L280 3.4 L287 8.0 L294 2.6 L301 9.1 L308 5.4 L315 10.2 L322 3.8 L329 6.8 L336 3.1 L343 7.9 L350 4.2 L357 10.5 L364 4.3 L371 7.4 L378 2.0 L385 8.5 L392 6.3 L399 11.1 L400 16 Z' fill='black'/%3E%3C/svg%3E") top / 100% 16px no-repeat, linear-gradient(#000, #000) 0 15px / 100% calc(100% - 15px) no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 16' preserveAspectRatio='none'%3E%3Cpath d='M0 16 L0 2.5 L7 8.8 L14 5.2 L21 9.9 L28 3.7 L35 6.8 L42 2.9 L49 9.4 L56 5.7 L63 10.5 L70 2.5 L77 7.2 L84 3.4 L91 8.2 L98 4.5 L105 9.3 L112 4.6 L119 7.7 L126 2.3 L133 8.8 L140 5.1 L147 11.4 L154 3.4 L161 6.5 L168 2.8 L175 7.6 L182 5.5 L189 10.2 L196 4.0 L203 7.1 L210 1.7 L217 9.7 L224 6.0 L231 10.8 L238 2.8 L245 6.0 L252 3.8 L259 8.5 L266 4.8 L273 9.7 L280 3.4 L287 8.0 L294 2.6 L301 9.1 L308 5.4 L315 10.2 L322 3.8 L329 6.8 L336 3.1 L343 7.9 L350 4.2 L357 10.5 L364 4.3 L371 7.4 L378 2.0 L385 8.5 L392 6.3 L399 11.1 L400 16 Z' fill='black'/%3E%3C/svg%3E") top / 100% 16px no-repeat, linear-gradient(#000, #000) 0 15px / 100% calc(100% - 15px) no-repeat; }
+/* a fita que segura a página: mel meio transparente, com pontinhos de dado e as pontas cortadas à mão */
+.impresso .folha-caderno::before { content: ''; position: absolute; top: -2px; left: 50%; width: 118px; height: 26px; transform: translateX(-50%) rotate(-3deg); z-index: 2; pointer-events: none;
+  background: radial-gradient(circle, rgba(58,42,46,.22) 0 1.4px, transparent 1.9px) 0 0 / 9px 9px, rgba(242,177,94,.62);
+  clip-path: polygon(3% 0, 97% 5%, 100% 30%, 96% 55%, 99% 100%, 2% 95%, 0 60%, 4% 35%); }
+/* o título na letra da Diana, com um traço de pincel embaixo */
+.impresso .janela-caderno h2 { font-family: 'Caveat', var(--f-titulo); font-weight: 700; font-size: 40px; line-height: 1; padding-bottom: 12px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 14' preserveAspectRatio='none'%3E%3Cpath d='M3 9 C40 3 80 12 120 6 S180 4 197 8' stroke='%233a2a2e' stroke-width='3.4' fill='none' stroke-linecap='round'/%3E%3Cpath d='M22 11.5 C70 8.5 110 12.5 168 9.5' stroke='%233a2a2e' stroke-width='1.5' fill='none' stroke-linecap='round' opacity='.55'/%3E%3C/svg%3E") left bottom / min(250px, 82%) 12px no-repeat; }
+.impresso .janela-caderno .historia-total { font-family: 'Caveat', var(--f-corpo); font-size: 21px; line-height: 1.1; color: var(--rival-tinta); transform: rotate(-1.5deg); transform-origin: left; margin: 2px 0 6px; }
+/* os capítulos: cartões opacos colados na página (a pauta e a margem não passam por trás deles) */
+.impresso .janela-caderno .hc { background: #f6e7cc; box-shadow: inset 0 0 0 1.5px rgba(58,42,46,.16), 0 2px 0 rgba(58,42,46,.12); }
+/* o capítulo da vez: uma seta à mão na margem, apontando para ele (um círculo em volta cortava o retrato e o botão) */
+.impresso .janela-caderno .hc.atual { box-shadow: inset 0 0 0 2px var(--mel), 0 2px 0 rgba(58,42,46,.12); }
+.impresso .janela-caderno .hc.atual::before { content: ''; position: absolute; left: -29px; top: 22px; width: 24px; height: 20px; pointer-events: none; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 26 22'%3E%3Cpath d='M2 13 C8 10 14 11 21 11' stroke='%23c4843a' stroke-width='2.8' fill='none' stroke-linecap='round'/%3E%3Cpath d='M15 5 C18 8 20 10 22.5 11 C20 13 18 15 15.5 18' stroke='%23c4843a' stroke-width='2.8' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat; transform: rotate(-6deg); }
+/* o carimbo de feito: tinta verde, torto, como quem carimba a página */
+.hc-carimbo { justify-self: start; }
+.impresso .hc-carimbo { display: inline-block; font-family: var(--f-titulo); font-weight: 700; font-size: 11px !important; letter-spacing: .14em; text-transform: uppercase; line-height: 1;
+  color: #2f7a52 !important; padding: 3px 6px 2px; border: 2px solid currentColor; border-radius: 4px; transform: rotate(-6deg); margin-top: 3px; opacity: .9; }
+/* tocar no capítulo abre as metas das estrelas (um aberto por vez) */
+.hc { position: relative; }
+.hc-txt { display: grid; gap: 2px; min-width: 0; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.hc-det { grid-column: 1 / -1; display: grid; grid-template-rows: 0fr; transition: grid-template-rows .22s ease; }
+.hc-det > div { overflow: hidden; min-height: 0; visibility: hidden; transition: visibility .22s; }
+.hc.aberto .hc-det { grid-template-rows: 1fr; }
+.hc.aberto .hc-det > div { visibility: visible; }
+.hc-metas { list-style: none; margin: 4px 0 6px; padding: 8px 0 0; border-top: 1.5px dashed rgba(58,42,46,.22); display: grid; gap: 4px; }
+.hc-metas li { display: grid; grid-template-columns: 3.4em 1fr; align-items: baseline; gap: 6px; font-size: 14px; color: var(--tinta); }
+.hc-m-n { color: var(--mel-escuro); letter-spacing: .04em; font-size: 13px; }
+.hc-metas-nota { margin: 0 0 4px; font-size: 13px; color: var(--tinta-suave); }
+.hc-metas-nota:first-child { padding-top: 8px; border-top: 1.5px dashed rgba(58,42,46,.22); }
+.sem-animacoes .hc-det, .sem-animacoes .hc-det > div { transition: none; }

@@ -83,6 +83,15 @@ async function vencer(pg, cor, pts) {
   // como no Pokémon: o Prólogo é a Diana (já conhecida); os outros rivais são silhuetas com "?" e o nome fechado
   const ocultos = await pg.$$eval('.hc', l => l.map(x => x.classList.contains('oculto') && x.querySelector('.hc-nome').textContent.includes('?')));
   if (ocultos[0] || ocultos.slice(1).some(o => !o)) falha(`o mapa: só o Prólogo revelado, o resto em silhueta (${ocultos})`);
+  // tocar num capítulo abre as metas das estrelas; com o rival em silhueta, elas ficam fechadas (contariam quem vem)
+  await pg.click('[data-abre="P"]'); await pg.waitForTimeout(250);
+  const metasP = await pg.$eval('.hc.aberto', x => x.textContent);
+  if (!/não tem estrelas/.test(metasP)) falha('o Prólogo aberto deveria dizer que não tem estrelas');
+  await pg.click('[data-abre="C1"]'); await pg.waitForTimeout(250);
+  const metasC1 = await pg.$$eval('.hc.aberto', l => l.map(x => x.textContent));
+  if (metasC1.length !== 1 || !/metas aparecem quando você conhecer/.test(metasC1[0])) falha(`o capítulo em silhueta abre sem mostrar as metas, e só um fica aberto: ${metasC1}`);
+  await pg.click('[data-abre="C1"]'); await pg.waitForTimeout(150);
+  if (await pg.$('.hc.aberto')) falha('tocar de novo fecha as metas');
   const mapa = await pg.$$eval('.hc', l => l.map(x => ({ c: x.className, botao: !!x.querySelector('[data-cap]') })));
   if (!mapa[0].botao || mapa[1].botao || mapa[2].botao) falha(`o mapa abre só o Prólogo: ${JSON.stringify(mapa)}`);
   await pg.screenshot({ path: path.join(FOTOS, 'historia-mapa.png') });

@@ -130,7 +130,7 @@ Ajustes) e nos botões do topo. Eles ficaram lisos, com um contorno de papel mai
 retícula ficou só na faixa de baixo, abaixo da palavra. **Regra daqui em diante: textura nunca atrás de letra.** Os
 pontinhos ficam no fundo da página, onde não há texto.
 
-### Proposta: o caderno e o nanquim (reflexão, ainda não feita)
+### Proposta: o caderno e o nanquim (reflexão; a 1.ª parte foi feita na v0.17, abaixo)
 O dono pediu para pensar em mais gibi: páginas e modais com textura e cor de nanquim, rabiscos, traços de tinta, papel
 rasgado, tudo ligado ao enredo. **Vale fazer, com uma condição: cada textura conta um pedaço da história, e fica só onde a
 história está.** Cada material tem um sentido:
@@ -166,6 +166,59 @@ de dado, o título "O Caderno da Diana" em Caveat (a letra das receitas), as pau
 2. **Os acentos de nanquim:** carimbo, sublinhado de pincel nos títulos da história, o capítulo da vez circulado à mão,
    a seta do guia no Prólogo. Meio dia.
 3. **A aguada de nanquim nos quadros dramáticos do gibi,** junto com o colega da arte.
+
+### O caderno no jogo (v0.17, pedido do dono)
+O dono gostou do protótipo e pediu dois ajustes: a margem vermelha não pode passar pelos retratos, e tocar num capítulo
+deve mostrar as metas das estrelas. Ficou assim (`#janelaHistoria`, `js/historia.js`, fim de `css/estilo.css`):
+- **A página:** papel pautado com a margem vermelha **no recuo**, fora dos cartões; os cartões são opacos (nem pauta nem
+  margem passam por trás de retrato ou texto). Topo rasgado (máscara fixa, sem sorteio) e a fita mel com pontinhos de
+  dado segurando a página. A sombra e a fita ficam num envoltório (`.folha-caderno`), porque a máscara cortaria as duas.
+- **A mão da Diana:** o título "O Caderno da Diana" e o contador de estrelas em Caveat, com um traço de pincel embaixo do
+  título; o capítulo feito ganha o carimbo verde "FEITO", torto; o capítulo da vez, uma **seta à mão na margem** (um
+  círculo em volta cortava o retrato e o botão).
+- **As metas:** tocar no capítulo (no texto, não no Jogar) abre, de leve, a lista: ★ vencer, ★★ e ★★★ as metas do
+  capítulo, a regra da casa e a melhor vez. Um aberto por vez; tocar de novo fecha. **Com o rival em silhueta, as metas
+  ficam fechadas** ("As metas aparecem quando você conhecer o rival"): elas contariam quem vem ("Não perca dado para o
+  Fundo Falso"). O Prólogo diz que não tem estrelas.
+
+## A identidade visual: o jogo de mesa da Diana
+Depois de quatro rodadas (o impresso, a interface de gibi, a legibilidade e o caderno), a identidade cabe em poucas
+regras. Elas servem para decidir as próximas telas sem inventar estilo novo a cada uma.
+
+**A ideia:** um jogo de dados de mesa, à noite, com uma gata que anota tudo num caderno. **Aconchego de objeto de
+verdade** (feltro, madeira, papel, fita, carimbo) **impresso como gibi** (contorno cacau, retícula, as chapas azul e rosa).
+
+**Os materiais, um por superfície, cada um com um sentido:**
+
+| Material | Sentido | Onde |
+|---|---|---|
+| **Noite** com pontinhos nas bordas | a sala escura em volta da mesa | o fundo de tudo |
+| **Feltro e madeira** | a mesa: aqui se joga | a Mesa, a cena da tela inicial, as correntes |
+| **Papel liso com contorno cacau** (adesivo) | as peças do jogo | fichas, cartas, botões, janelas de uso (Loja, Ajustes, deck, Online) |
+| **Papel de caderno** (pauta, margem, rasgado, fita, carimbo) | o Caderno da Diana | só a história |
+| **Nanquim** (traço de pincel, seta, carimbo) | a mão da Diana anotando | acentos pequenos, na história |
+| **Retícula e chapas azul/rosa** | a festa impressa | os momentos da partida e o letreiro |
+
+**As letras, cada uma com uma voz:** Fredoka é o jogo (títulos, números, botões); Nunito é a explicação (texto corrido);
+**Caveat é a Diana escrevendo**, e só ela (o caderno, as receitas, as notas). Nada de quarta fonte.
+
+**As cores, cada uma com um papel:** cacau é a tinta (contorno, texto); papel e mel são a base e a ação (o Jogar, o que
+é seu de fazer agora); **azul é você e rosa é o rival**, sempre (as chapas, as fichas, o VS); eco, passo e oposto
+(lilás, verde, laranja) são só as relações dos dados; o verde de carimbo é só "feito".
+
+**As regras (cada uma veio de um ajuste do dono):**
+- **Textura nunca atrás de letra.** Pontinho, pauta e margem ficam onde não há texto.
+- **Nenhum traço por cima de rosto ou botão.** A margem corre no recuo; a seta fica na margem; o "?" vai ao meio da
+  cabeça, mas dentro da caixa do retrato.
+- **O material diz onde você está.** Feltro é jogar, papel liso é ajustar, caderno é a história. Se uma tela mistura
+  dois, ela está errada.
+- **Movimento de gibi só no que é festa ou revelação:** poses seguradas, quadro congelado, estouro. O resto se move
+  macio.
+- **Uma onomatopeia, um clarão, um quadro por lance.**
+
+**Próximos passos possíveis, nessa linha:** a página conquistada no fim do capítulo, presa com a mesma fita; a aguada
+de nanquim só nos quadros dramáticos do gibi (com o colega da arte); o ícone do app e a prévia de compartilhamento
+a partir do letreiro.
 
 ## 4. Como verificar
 - `node tools/fumaca.js`, `node tools/estreia_e2e.js` (as chamadas do guia não podem atrasar), `node tools/layout.js`

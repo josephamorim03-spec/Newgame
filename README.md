@@ -107,6 +107,15 @@ node tools/vercel_local.js                     # a página como o Vercel publica
 
 ## Estado
 
+**v0.17, na branch `DiceDuel-primeira-partida` (ainda não publicada):** o Caderno da Diana e a legibilidade.
+- **O mapa da história é uma página do caderno:** pauta, margem vermelha no recuo (fora dos retratos), topo rasgado, a
+  fita segurando a página, o título na letra da Diana com um traço de pincel, o carimbo "FEITO" e uma seta à mão no
+  capítulo da vez.
+- **Tocar num capítulo abre as metas das estrelas** (vencer e as duas do capítulo), a regra da casa e a melhor vez; com o
+  rival em silhueta, as metas ficam fechadas.
+- **Legibilidade:** sem pontinhos atrás do texto nos painéis do menu; no Jogar, só na faixa de baixo.
+- A identidade visual em regras (materiais, letras, cores) está em `docs/visual-impresso.md`.
+
 **v0.16, em produção** (a página no Vercel e o servidor na Railway, publicados da branch `DiceDuel`): o menu e o mistério da história.
 - **O menu só tem o Jogar,** que abre os modos História e Online (nesta ordem). **A partida avulsa contra a Diana ou a
   Dona Coruja saiu** (os rivais estão na história; moedas de vitória, rating e Tarefas do dia agora vêm do online).
