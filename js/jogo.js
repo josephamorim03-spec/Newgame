@@ -920,7 +920,7 @@
       ${(() => { const alvo = p === j.vez && !fx && dadoEscolhido(j) >= 0 ? previaAlvos(p, dadoEscolhido(j)).corrente : null;
         return `<div class="corrente${fx ? ' fx-' + fx.tipo + ' fx-n' + Math.min(6, (fx.dados || []).length) : L >= 5 ? ' fervendo' : L >= 4 ? ' quente' : ''}${!fx && (disparoVence(p) || porUm(p)) ? ' por-um' : ''}${alvo ? ` alvo-dado alvo-${alvo.cls}" data-alvo-dado="corrente" role="button" tabindex="0" aria-label="Corrente: ${alvo.txt}` : ''}" style="--fase:-${Math.round(performance.now() % 1800)}ms;--fx-t:-${fxT}ms;--n:${cor.length}">${slots}${alvo ? `<span class="alvo-chip">${alvo.txt}</span>` : ''}</div>`; })()}
       ${st.pref.dicas && !cartaEscolhida(j, p) ? `<div class="info"><span>Corrente <b>${L}</b>/${LIM}</span><span>${valeAgora}${seCrescer}</span></div>` : ''}
-      ${comDecisao && !cartaEscolhida(j, p) ? '<div class="decisao-slot"></div>' : cartasHTML(p) + (comDecisao ? '<div class="decisao-slot"></div>' : '')}
+      ${comDecisao && !cartaEscolhida(j, p) && !barraComCartas ? '<div class="decisao-slot"></div>' : cartasHTML(p) + (comDecisao ? '<div class="decisao-slot"></div>' : '')}
     </div>`;
   }
 
@@ -1004,7 +1004,10 @@
   // carta com alvo, fim); escolher um dado não precisa de texto: o "sua vez" do painel e as etiquetas dos dados bastam.
   // O que não é jogada (ajudas, regras, ajustes, deck, loja, online, desistir) mora no menu de pausa, na linha da Mesa
   const acoesHTML = () => acoesConteudo();
+  // a barra de "nenhum dado serve" deixa as cartas à vista: uma delas pode ser a saída (as outras decisões ficam no lugar delas)
+  let barraComCartas = false;
   function acoesConteudo() {
+    barraComCartas = false;
     const j = jogo, p = j.vez, n = nomes(), quem = `<b class="cor${p}">${n[p]}</b>`, ajudas = st.pref.dicas;
     if (j.fase === 'fim') {
       return `<div class="status"><b class="cor${j.vencedor}">${n[j.vencedor]}</b> venceu por ${j.pts[j.vencedor]} × ${j.pts[1 - j.vencedor]}.</div>
@@ -1076,6 +1079,24 @@
     // o que rompe a corrente nunca é o botão de destaque
     if (pg) return `<div class="status pergunta-dado">${pg.txt}</div><div class="botoes">${pg.botoes.map(([m, r], i) => `<button class="btn ${/romp/i.test(r) ? 'btn-papel perigo' : i ? 'btn-papel' : 'btn-mel'}" data-confirma="${m}">${r}</button>`).join('')}${btnVoltar('cancelar')}</div>`;
     if (dadoEscolhido(j) >= 0) return '';
+    // nenhum dado da Mesa serve (nem o do Bolso): a corrente rompe de qualquer jeito. A barra diz isso na hora e já traz o
+    // "Romper"; antes ela ficava vazia, e o "Romper" só aparecia depois de tocar num dado (um jogador ficou sem saber o
+    // que fazer com três 6 na Mesa e uma corrente de 5). Na ruptura o dado que entra se perde junto: a escolha que
+    // importa é qual dado tirar da Mesa (o que sobra fica para o rival)
+    if (!algumSeguro && !j.segundoDado && eu.length && j.mesa.length) {
+      const ancora = j.armada[p] === 'ancora' && eu.length >= 4, rival = n[1 - p];
+      const porValor = new Map(); j.mesa.forEach(d => { const v = valorAoPegar(p, d); if (!porValor.has(v)) porValor.set(v, d.id); });
+      const cartas = j.decks[p].some(c => podeUsar(p, c).ok), nem = j.bolso[p] !== null ? ', nem o do Bolso' : '';
+      const txt = ancora ? `<b>Nenhum dado sincroniza</b> com o seu ${frente(eu)}${nem}, mas a sua <b>Âncora</b> segura a corrente.`
+        : `<b>Nenhum dado sincroniza</b> com o seu ${frente(eu)}${nem}: a sua corrente de <b>${eu.length}</b> vai romper${cartas ? ', a não ser que uma carta sua ajude' : ''}.`;
+      const escolha = porValor.size > 1 ? ` Escolha qual dado tirar da Mesa: o que sobrar fica para ${rival}.` : '';
+      const rot = ancora ? 'Pegar' : 'Romper';
+      const botoes = porValor.size === 1 ? `<button class="btn btn-duplo btn-papel perigo" data-romper="${j.mesa[0].id}"><span>${rot}</span><small>pega um ${[...porValor.keys()][0]}</small></button>`
+        : porValor.size <= 3 ? [...porValor].map(([v, id]) => `<button class="btn btn-duplo btn-papel perigo" data-romper="${id}"><span>${rot}</span><small>tira o ${v}</small></button>`).join('') : '';
+      const outro = porValor.size > 3 ? ' Toque no dado que vai tirar.' : '';
+      barraComCartas = cartas;
+      return `<div class="status pergunta-dado">${txt}${escolha}${outro}</div>${botoes ? `<div class="botoes">${botoes}</div>` : ''}${cartas && ajudas ? `<p class="nota" style="margin:0">Ou toque numa carta sua para usar.</p>` : ''}`;
+    }
     // sem dado escolhido não há decisão: nada de barra (a não ser o segundo dado da Pressa, que pode ser dispensado)
     if (!j.segundoDado) return '';
     let msg;
@@ -2540,6 +2561,9 @@
   document.getElementById('acoes').addEventListener('click', e => {
     const j = jogo;
     const cf = e.target.closest('[data-confirma]'); if (cf && j.fase === 'pegar' && dadoEscolhido(j) >= 0) { pegarDado(cf.dataset.confirma); return; }
+    // nenhum dado serve: o "Romper" da barra pega o dado dele (ele vai para a corrente, que rompe)
+    const rp = e.target.closest('[data-romper]');
+    if (rp && j.fase === 'pegar' && humano(j.vez) && !j.pensando && idxDe(+rp.dataset.romper) >= 0) { j.sel = +rp.dataset.romper; pegarDado('corrente'); return; }
     const dst = e.target.closest('[data-destino]');
     if (dst && j.fase === 'pegar' && j.sel && humano(j.vez) && !j.pensando) { pegarDado(dst.dataset.destino); return; }
     if (dst && j.fase === 'destino' && j.mao && humano(j.vez)) { colocar(j.vez, j.mao.v, dst.dataset.destino); return; }

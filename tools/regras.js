@@ -219,6 +219,21 @@ const RAIZ = path.join(__dirname, '..');
   // e a ação velha "desafiar" (de uma tela antiga) é recusada pelo motor
   confere(await pg.evaluate(() => Regras.aplicar(DiceDuel.jogo, 0, { tipo: 'desafiar' }).ok) === false, 'Desafiar não existe mais no motor');
 
+  // 10c. Nenhum dado serve (nem o do Bolso): a barra já diz que a corrente vai romper e traz o "Romper", sem precisar
+  //      tocar num dado antes (um jogador ficou sem saber o que fazer com três 6 na Mesa e uma corrente de 5)
+  await cena([[], []], () => { const j = DiceDuel.jogo; j.vez = 0; j.fase = 'pegar'; j.cor[0] = [2, 3, 4, 3, 2]; j.bolso[0] = 6; j.mesa = [{ id: 9901, v: 6 }, { id: 9902, v: 6 }, { id: 9903, v: 6 }]; });
+  confere(/Nenhum dado sincroniza/.test(await pg.textContent('#acoes')) && (await pg.$$('#acoes [data-romper]')).length === 1, 'Sem saída: a barra avisa e mostra o Romper, sem tocar num dado');
+  await pg.click('#acoes [data-romper]'); j = await J();
+  confere(j.cor[0].length === 0 && j.stats[0].rupt === 1 && j.mesa.length === 2 && j.bolso[0] === 6, 'Sem saída: o Romper pega um dado e a corrente rompe (o Bolso fica)');
+  await cena([[], []], () => { const j = DiceDuel.jogo; j.vez = 0; j.fase = 'pegar'; j.cor[0] = [2, 3, 4, 3, 2]; j.bolso[0] = 6; j.mesa = [{ id: 9911, v: 6 }, { id: 9912, v: 4 }, { id: 9913, v: 6 }]; });
+  confere((await pg.$$('#acoes [data-romper]')).length === 2 && /o que sobrar fica para/.test(await pg.textContent('#acoes')), 'Sem saída, valores diferentes: um Romper por valor e o aviso de que o resto fica para o rival');
+  // o "rompe" do Bolso e o da corrente não se cruzam (antes, um ficava em cima do outro)
+  await cena([[], []], () => { const j = DiceDuel.jogo; j.vez = 0; j.fase = 'pegar'; j.cor[0] = [6, 6]; j.bolso[0] = 4; j.mesa = [{ id: 9921, v: 3 }, { id: 9922, v: 3 }]; });
+  await dado(0);
+  const chips = await pg.evaluate(() => [...document.querySelectorAll('.alvo-chip')].map(c => c.getBoundingClientRect()).map(r => ({ l: r.left, r: r.right, t: r.top, b: r.bottom })));
+  confere(chips.length === 2 && !(chips[0].l < chips[1].r && chips[1].l < chips[0].r && chips[0].t < chips[1].b && chips[1].t < chips[0].b), 'As etiquetas do Bolso e da corrente não se cruzam');
+  await pg.keyboard.press('Escape');
+
   // 11. Ajudas: a chave do menu de pausa liga e desliga etiquetas, dicas e explicações (e lembra a escolha);
   //     durante a partida o cabeçalho some e o menu é o único caminho para fora da jogada
   await cena([['ajuste'], []], () => {
