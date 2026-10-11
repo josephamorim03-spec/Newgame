@@ -501,6 +501,10 @@ o dedo e o dado: a pessoa escolhia o dado na Mesa e lia três botões lá embaix
   vez) e o disparar/segurar vem depois da troca inteira; o balanceamento não muda, o online também não. O Bolso que não
   serve, ou fora da vez, não se levanta: o toque diz na linha da Mesa por quê (a troca romperia; ou, na sua vez, toque
   nele e depois no dado). O dado virado pelo Espelho continua sem poder ir para o Bolso ("não pode").
+- **O mesmo número do Bolso não oferece troca (v0.17).** Trocar um 4 da Mesa pelo 4 do Bolso dá o mesmo que pôr o 4 na
+  corrente (e, com o Fundo Falso do rival armado, perderia os dois), mas a tela oferecia a troca como escolha. Agora a
+  linha diz "Leve o 4 à corrente: o Bolso já tem um 4", o Bolso apagado diz "já tem um 4" e, tocado, leva o dado à
+  corrente; com o Bolso levantado, o mesmo número também vai à corrente. Só na tela: o motor segue aceitando a troca.
 - A vez não aparece mais num selo no meio da Mesa: a etiqueta "sua vez" do painel basta. No online, o relógio da vez
   mora nela ("SUA VEZ · 23 s", vermelha nos 10 s finais).
 

@@ -257,6 +257,17 @@ const RAIZ = path.join(__dirname, '..');
   await cena([[], []], () => { const j = DiceDuel.jogo; j.vez = 0; j.fase = 'pegar'; j.sel = null; j.cor[0] = [2, 3]; j.bolso[0] = 6; j.mesa = [{ id: 9931, v: 4 }]; });
   await pg.click('#pj0 [data-bolso]');
   confere(/não sincroniza com o seu 3/.test(await tx()) && !(await pg.$('#pj0 .bolso.levantado')), 'Bolso que não serve, tocado: não se levanta e a linha diz que a troca romperia');
+
+  // 10e. O dado da Mesa com o mesmo número do Bolso: trocar daria no mesmo (e com o Fundo Falso do rival perderia os
+  //      dois), então a troca não é oferecida; o Bolso diz "já tem um 4" e, tocado, leva o dado à corrente
+  await cena([[], []], () => { const j = DiceDuel.jogo; j.vez = 0; j.fase = 'pegar'; j.sel = null; j.cor[0] = [2, 3]; j.bolso[0] = 4; j.mesa = [{ id: 9941, v: 4 }, { id: 9942, v: 1 }]; });
+  await pg.click('.pega[data-id="9941"]');
+  confere(!/ou ao Bolso/.test(await tx()) && /já tem um 4/.test(await pg.textContent('#pj0 .bolso')), 'Mesmo número do Bolso: a linha não oferece a troca e o Bolso diz "já tem um 4"');
+  await pg.click('#pj0 [data-alvo-dado="bolso"]'); j = await J();
+  confere(j.cor[0].join() === '2,3,4' && j.bolso[0] === 4 && !j.stats[0].trocou, 'Mesmo número, Bolso tocado: o 4 vai à corrente, sem troca e sem pergunta');
+  await cena([[], []], () => { const j = DiceDuel.jogo; j.vez = 0; j.fase = 'pegar'; j.sel = null; j.cor[0] = [2, 3]; j.bolso[0] = 4; j.mesa = [{ id: 9945, v: 4 }]; });
+  await pg.click('#pj0 [data-bolso]'); await pg.click('.pega[data-id="9945"]'); j = await J();
+  confere(j.cor[0].join() === '2,3,4' && j.bolso[0] === 4 && !j.stats[0].trocou, 'Bolso levantado e o mesmo número na Mesa: vai à corrente, sem troca');
   await pg.keyboard.press('Escape');
 
   // 11. Ajudas: a chave do menu de pausa liga e desliga etiquetas, dicas e explicações (e lembra a escolha);

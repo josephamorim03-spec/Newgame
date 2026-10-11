@@ -654,9 +654,12 @@
     const j = jogo, d = j.mesa[idx], v = valorAoPegar(p, d);
     const contra = marcadoContra(p, d), proprio = !!(j.marca && j.marca.id === d.id && j.marca.dono === p);
     const ds = R.destinosDoDado(j, p, idx);
-    const seguros = contra ? (encaixaP(p, v) ? ['corrente'] : []) : destinos(p, v);
+    // o mesmo número do Bolso: trocar dá o mesmo que pôr na corrente (e com o Fundo Falso do rival, perde os dois),
+    // então a troca não é oferecida como escolha; o Bolso apontado leva o dado à corrente
+    const igual = !contra && j.bolso[p] !== null && j.bolso[p] === v;
+    const seguros = contra ? (encaixaP(p, v) ? ['corrente'] : []) : destinos(p, v).filter(m => !(igual && m === 'trocar'));
     const principal = proprio ? null : seguros.includes('corrente') ? 'corrente' : (seguros[0] || null);
-    return { d, v, ds, seguros, rompe: !seguros.length, contra, proprio, principal };
+    return { d, v, ds, seguros, rompe: !seguros.length, contra, proprio, principal, igual };
   }
   // ---------- o dado escolhido: corrente ou Bolso, tocando, arrastando ou tocando de novo no dado ----------
   // Sem botões de destino: a corrente e o Bolso acendem com o que vai acontecer em cada um. Só pergunta quando a jogada
@@ -673,6 +676,7 @@
       : op.seguros.includes('guardar') ? { cls: 'aviso', txt: 'não sincroniza' }
       : { cls: 'perigo', txt: ancora ? 'a Âncora segura' : 'rompe' };
     const bolso = op.contra ? { cls: 'nao', txt: 'não pode' }
+      : op.igual ? (op.rompe ? { cls: 'perigo', txt: 'rompe' } : { cls: 'nao', txt: `já tem um ${b}` })
       : op.seguros.includes('guardar') ? { cls: 'ok', txt: 'guardar' }
       : op.seguros.includes('trocar') ? { cls: 'ok', txt: `troca: entra o ${b}` }
       : op.rompe && op.ds.includes('trocar') ? { cls: 'perigo', txt: 'rompe' }
@@ -696,6 +700,7 @@
       if (op.seguros.includes('guardar')) return perguntar(`O ${v} não sincroniza com o seu ${fr}. Guardar no Bolso?`, [['guardar', 'Guardar']]);
       return romper();
     }
+    if (op.igual) return op.seguros.includes('corrente') ? pegarDado('corrente') : romper();   // o mesmo número: trocar seria igual
     if (op.contra) return perguntar(`Virado pelo Espelho, o ${v} não pode ir para o Bolso.`, op.ds.includes('corrente') && op.seguros.includes('corrente') ? [['corrente', 'Pôr na corrente']] : []);
     if (op.seguros.includes('guardar')) return pegarDado('guardar');
     if (op.seguros.includes('trocar')) return pegarDado('trocar');   // o do Bolso serve na corrente: troca sem perguntar
@@ -743,6 +748,8 @@
     if (op.proprio) return `Esse é o dado do seu <b>Espelho</b>: pegá-lo desperdiça a armadilha.`;
     const virado = op.contra ? `Virado pelo Espelho, o ${d.v} chega como <b>${op.v}</b> e não pode ir para o Bolso. ` : '';
     const de = { corrente: 'põe na corrente', guardar: 'guarda no Bolso', trocar: 'troca com o Bolso' }[op.principal];
+    if (op.igual) return op.rompe ? `O <b>${op.v}</b> não sincroniza, e o do Bolso também é um ${op.v}: a corrente rompe.`
+      : `Leve o <b>${op.v}</b> à corrente${st.pref.dicas ? ' (toque ou arraste)' : ''}: o Bolso já tem um ${op.v}, trocar daria no mesmo.`;
     return `${virado}Leve o <b>${op.v}</b> à corrente ou ao Bolso${st.pref.dicas ? ' (toque ou arraste)' : ''}${de ? `; tocar de novo nele ${de}` : ''}.`;
   }
 
@@ -759,7 +766,8 @@
     foco = null;
     if (bolsoArmado(j)) {
       if (marcadoContra(j.vez, d)) { Som.tocar('perigo', { x: (idx - 2) * 0.3 }); vibrar([6, 40, 6]); return; }   // virado pelo Espelho: não vai para o Bolso
-      bolsoEscolhido = null; j.sel = d.id; return pegarDado('trocar');
+      bolsoEscolhido = null; j.sel = d.id;
+      return pegarDado(opcoesDoDado(j.vez, idx).igual ? 'corrente' : 'trocar');   // o mesmo número: dá o mesmo, sem trocar
     }
     if (j.sel === d.id) {
       const op = opcoesDoDado(j.vez, idx);
@@ -1081,7 +1089,7 @@
       if (ds.length) {
         if (ds.includes('corrente')) botoes += bt('corrente', 'Na corrente', relTxt(v), 'btn-mel');
         if (ds.includes('guardar')) botoes += bt('guardar', 'Guardar', 'no Bolso', ds.includes('corrente') ? 'btn-papel' : 'btn-mel');
-        if (ds.includes('trocar')) botoes += bt('trocar', 'Trocar', `entra o ${b} · ${relTxt(b)}`, ds.includes('corrente') ? 'btn-papel' : 'btn-mel');
+        if (ds.includes('trocar') && b !== v) botoes += bt('trocar', 'Trocar', `entra o ${b} · ${relTxt(b)}`, ds.includes('corrente') ? 'btn-papel' : 'btn-mel');
       } else {
         // nenhuma opção salva a corrente: um botão só (o dado do Bolso fica onde está)
         botoes += bt('corrente', 'Romper', b !== null ? `o ${b} fica no Bolso` : 'a corrente se perde', 'btn-papel');
