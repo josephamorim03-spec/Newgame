@@ -315,7 +315,7 @@
       const dado = rec && rec.dado ? `dado ${R().CATALOGO.dados[rec.dado].nome}` : '';
       const premio = !rec ? '' : [rec.carta ? `carta ${ligacao.nomeCarta(rec.carta)}` : rec.icone ? 'o ícone da Diana' : `${rec.moedas} moedas`, dado].filter(Boolean).join(' e ');
       return `<li class="hc${feito ? ' feito' : ''}${aberto ? '' : ' travado'}${c.id === prox ? ' atual' : ''}${oculto ? ' oculto' : ''}">
-        <span class="hc-retrato"${oculto ? ' aria-label="rival ainda desconhecido"' : ''}>${Retratos.retrato(c.retrato)}${oculto ? '<i class="hc-interroga" aria-hidden="true">?</i>' : ''}</span>
+        <span class="hc-retrato" data-r="${c.retrato}"${oculto ? ' aria-label="rival ainda desconhecido"' : ''}>${Retratos.retrato(c.retrato)}${oculto ? '<i class="hc-interroga" aria-hidden="true">?</i>' : ''}</span>
         <span class="hc-txt"><small>${esc(c.titulo)}${feito && c.estrelas ? ` <span class="hc-estrelas" aria-label="${est.estrelas[c.id] || 0} de 3 estrelas">${'★'.repeat(est.estrelas[c.id] || 0)}${'☆'.repeat(3 - (est.estrelas[c.id] || 0))}</span>` : ''}</small><b class="hc-nome">${oculto ? '? ? ?' : esc(c.nome)}</b><span>${feito ? 'Feito' : aberto ? (premio ? `Vale: ${premio}` : 'Comece por aqui') : 'Fechado'}</span></span>
         ${aberto ? `<button class="btn ${c.id === prox ? 'btn-mel' : 'btn-papel'}" data-cap="${c.id}"${oculto ? ' data-revelar="1"' : ''}>${feito ? 'Jogar de novo' : 'Jogar'}</button>` : ''}</li>`;
     }).join('');

@@ -1475,6 +1475,15 @@ button.inicio-perfil:active { transform: translateY(1px); }
 /* o rival ainda não visto (v0.15): só a silhueta, com um "?" de gibi por cima; o nome do lugar fica "? ? ?" */
 .hc-retrato { position: relative; display: block; width: 46px; height: 46px; }
 .hc.oculto .hc-retrato .avatar { filter: brightness(0); opacity: .82; }
+/* o "?" vai ao meio da cabeça de cada silhueta, não ao meio da caixa (o coelho tem a cabeça mais baixa por causa das
+   orelhas; o guaxinim, mais alta). --qx/--qy deslocam o "?" em px; o deslocamento é feito com padding, para o "?" não
+   sair da caixa do retrato */
+.hc-retrato { --qx: -1.5px; --qy: -3px; }
+.hc-retrato[data-r="sapo"] { --qx: 0px; --qy: -4px; } .hc-retrato[data-r="coelho"] { --qx: -2px; --qy: 0.5px; }
+.hc-retrato[data-r="raposa"] { --qx: -1px; --qy: -3px; } .hc-retrato[data-r="urso"] { --qx: -2px; --qy: 0px; }
+.hc-retrato[data-r="guaxinim"] { --qx: 0px; --qy: -4.5px; } .hc-retrato[data-r="ovelha"] { --qx: -2.5px; --qy: -3px; }
+.hc-retrato[data-r="coruja"] { --qx: -1px; --qy: -2px; } .hc-retrato[data-r="diana"] { --qx: -1px; --qy: -3px; }
+.hc-interroga { box-sizing: border-box; padding: max(0px, calc(var(--qy) * 2)) max(0px, calc(var(--qx) * -2)) max(0px, calc(var(--qy) * -2)) max(0px, calc(var(--qx) * 2)); }
 .hc-interroga { position: absolute; inset: 0; display: grid; place-items: center; font-style: normal; font-family: var(--f-titulo); font-weight: 700; font-size: 24px; line-height: 1;
   color: var(--mel); -webkit-text-stroke: 2.5px var(--tinta); paint-order: stroke fill; text-shadow: -2px 0 0 var(--voce), 2px 1px 0 var(--rival); }
 .hc.oculto .hc-nome { letter-spacing: .12em; color: var(--tinta-suave); }
