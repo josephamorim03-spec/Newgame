@@ -202,7 +202,8 @@
       47.07,
       99.9
      ],
-     "conferido": false
+     "conferido": false,
+     "ia": "a"
     },
     {
      "x": 54.0,
@@ -219,7 +220,8 @@
       57.03,
       97.56
      ],
-     "conferido": false
+     "conferido": false,
+     "ia": "a"
     },
     {
      "x": 63.6,
@@ -236,7 +238,8 @@
       66.41,
       99.9
      ],
-     "conferido": false
+     "conferido": false,
+     "ia": "a"
     }
    ],
    "cabeca": {
@@ -297,7 +300,8 @@
       47.79,
       91.89
      ],
-     "conferido": true
+     "conferido": true,
+     "ia": "a"
     }
    ],
    "cabeca": {
@@ -591,7 +595,8 @@
       "e": 2,
       "d": 3
      },
-     "conferido": true
+     "conferido": true,
+     "ia": "a"
     },
     {
      "caixa": [
@@ -606,7 +611,8 @@
       "e": 3,
       "d": 1
      },
-     "conferido": true
+     "conferido": true,
+     "ia": "a"
     },
     {
      "caixa": [
@@ -661,7 +667,8 @@
       "e": 3,
       "d": 2
      },
-     "conferido": false
+     "conferido": false,
+     "ia": "a"
     },
     {
      "caixa": [
@@ -676,7 +683,8 @@
       "e": 4,
       "d": 2
      },
-     "conferido": false
+     "conferido": false,
+     "ia": "a"
     },
     {
      "caixa": [
@@ -706,7 +714,8 @@
       "e": 1,
       "d": 5
      },
-     "conferido": false
+     "conferido": false,
+     "ia": "a"
     }
    ],
    "boca": {
@@ -792,7 +801,8 @@
       "e": 1,
       "d": 3
      },
-     "conferido": false
+     "conferido": false,
+     "ia": "a"
     }
    ],
    "boca": {
@@ -932,7 +942,8 @@
       "e": 6,
       "d": 5
      },
-     "conferido": false
+     "conferido": false,
+     "ia": "b"
     },
     {
      "caixa": [
@@ -963,7 +974,14 @@
       "e": 3,
       "d": 2
      },
-     "conferido": false
+     "conferido": false,
+     "ia": "c",
+     "recorte": [
+      253,
+      873,
+      486,
+      1106
+     ]
     },
     {
      "caixa": [
@@ -1226,7 +1244,8 @@
       "e": 2,
       "d": 4
      },
-     "conferido": false
+     "conferido": false,
+     "ia": "a"
     },
     {
      "caixa": [
@@ -1450,7 +1469,8 @@
       "e": 1,
       "d": 4
      },
-     "conferido": false
+     "conferido": false,
+     "ia": "b"
     },
     {
      "caixa": [
@@ -1515,7 +1535,8 @@
       10.2,
       92.0
      ],
-     "conferido": false
+     "conferido": false,
+     "ia": "b"
     },
     {
      "x": 13.8,
@@ -1549,7 +1570,14 @@
       10.7,
       100
      ],
-     "conferido": false
+     "conferido": false,
+     "ia": "c",
+     "recorte": [
+      -6,
+      860,
+      218,
+      1084
+     ]
     },
     {
      "x": 29.8,
@@ -1566,7 +1594,8 @@
       33.2,
       99.4
      ],
-     "conferido": false
+     "conferido": false,
+     "ia": "b"
     },
     {
      "x": 38.0,
@@ -1747,7 +1776,8 @@
       "e": 6,
       "d": 4
      },
-     "conferido": true
+     "conferido": true,
+     "ia": "a"
     },
     {
      "caixa": [
@@ -1923,7 +1953,8 @@
       "e": 4,
       "d": 5
      },
-     "conferido": false
+     "conferido": false,
+     "ia": "a"
     },
     {
      "caixa": [
@@ -2011,7 +2042,8 @@
       "e": 6,
       "d": 5
      },
-     "conferido": false
+     "conferido": false,
+     "ia": "a"
     },
     {
      "caixa": [
@@ -2026,7 +2058,8 @@
       "e": 1,
       "d": 3
      },
-     "conferido": false
+     "conferido": false,
+     "ia": "a"
     },
     {
      "caixa": [
@@ -2341,10 +2374,10 @@
    "dados": [
     {
      "caixa": [
-      23.7,
-      66.5,
+      23.3,
+      82,
       31.1,
-      79
+      94.5
      ],
      "vista": "obliquo",
      "faces": {
@@ -2352,14 +2385,15 @@
       "e": 3,
       "d": 6
      },
-     "conferido": false
+     "conferido": false,
+     "ia": "b"
     },
     {
      "caixa": [
-      32.2,
-      64.8,
-      39.4,
-      79
+      31.9,
+      81.3,
+      39.5,
+      95
      ],
      "vista": "obliquo",
      "faces": {
@@ -2367,14 +2401,15 @@
       "e": 4,
       "d": 5
      },
-     "conferido": false
+     "conferido": false,
+     "ia": "b"
     },
     {
      "caixa": [
-      54.4,
-      66.8,
-      61.3,
-      79.8
+      54.3,
+      83.5,
+      61.1,
+      95.5
      ],
      "vista": "obliquo",
      "faces": {
@@ -2382,14 +2417,15 @@
       "e": 5,
       "d": 4
      },
-     "conferido": false
+     "conferido": false,
+     "ia": "b"
     },
     {
      "caixa": [
       62.2,
-      64.8,
-      70,
-      79
+      82.5,
+      70.2,
+      94.9
      ],
      "vista": "obliquo",
      "faces": {
@@ -2397,7 +2433,8 @@
       "e": 1,
       "d": 2
      },
-     "conferido": false
+     "conferido": false,
+     "ia": "b"
     }
    ]
   },
@@ -2437,7 +2474,8 @@
       "d": 1
      },
      "conferido": false,
-     "pular": true
+     "pular": true,
+     "ia": "a"
     },
     {
      "caixa": [

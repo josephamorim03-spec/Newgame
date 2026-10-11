@@ -239,21 +239,43 @@ def bolinhas(q, v):
     return [[mapa(u + r * math.cos(k * math.pi / 16), w + r * math.sin(k * math.pi / 16)) for k in range(32)] for (u, w) in PIPS[v]]
 
 
-def encaixar(im, dado, aceito):
-    """o recorte aceito volta ao lugar dele (o mesmo quadrado do tools/historia/dados_ia.py), mas só a área do dado, com a
-    borda esfumada: o resto do recorte não substitui a arte"""
-    from dados_ia import recorte
-    W, H = im.size
-    r = recorte(W, H, dado["caixa"])
-    patch = Image.open(aceito).convert("RGB").resize((r[2] - r[0], r[3] - r[1]), Image.LANCZOS)
-    x0, y0, x1, y1 = (dado["caixa"][i] / 100 * (W if i % 2 == 0 else H) for i in range(4))
-    folga = (x1 - x0) * .12
-    mascara = Image.new("L", im.size, 0)
-    ImageDraw.Draw(mascara).rounded_rectangle((x0 - folga, y0 - folga, x1 + folga, y1 + folga), radius=folga * 2, fill=255)
-    mascara = mascara.filter(ImageFilter.GaussianBlur(folga * .6))
-    camada = im.copy()
-    camada.paste(patch, r[:2])
-    im.paste(camada, (0, 0), mascara)
+def encaixar_todos(base, dados, ia):
+    """os recortes aceitos de um quadro, juntos e na ordem de profundidade (do fundo para a frente: quem está mais embaixo
+    no quadro está na frente). Cada dado é colado só dentro da silhueta dele (a caixa com os cantos arredondados, como o
+    cubo visto de lado), e a borda esfumada de um recorte nunca entra em outro dado: o gerador às vezes redesenha também o
+    vizinho que aparece no canto do recorte, e esse vizinho não pode voltar por cima. Um dado sem recorte (a troca de
+    bolinhas ou a arte) que fica na frente de um recortado é refeito da base, por cima."""
+    import numpy as np
+    from dados_ia import retangulo
+    W, H = base.size
+    aceitos = {id(d): a for d, a in ia}
+    caixas = [tuple(d["caixa"][i] / 100 * (W if i % 2 == 0 else H) for i in range(4)) for d in dados]
+    def silhueta(c, folga=0.0, borrao=1.5):
+        x0, y0, x1, y1 = c
+        m = Image.new("L", base.size, 0)
+        ImageDraw.Draw(m).rounded_rectangle((x0 - folga, y0 - folga, x1 + folga, y1 + folga), radius=max(folga * 2, (x1 - x0) * .3), fill=255)
+        return np.asarray(m.filter(ImageFilter.GaussianBlur(borrao)), dtype=np.float32) / 255
+    nucleos = [silhueta(c) for c in caixas]
+    def sobrepoe(a, b):
+        return min(a[2], b[2]) > max(a[0], b[0]) and min(a[3], b[3]) > max(a[1], b[1])
+    camada_base = np.asarray(base, dtype=np.float32)
+    out = camada_base.copy()
+    for k in sorted(range(len(dados)), key=lambda k: caixas[k][3]):
+        c, aceito = caixas[k], aceitos.get(id(dados[k]))
+        if aceito:
+            r = retangulo(dados[k], W, H)
+            cam = base.copy()
+            cam.paste(Image.open(aceito).convert("RGB").resize((r[2] - r[0], r[3] - r[1]), Image.LANCZOS), r[:2])
+            camada = np.asarray(cam, dtype=np.float32)
+            folga = (c[2] - c[0]) * .12
+            outros = np.clip(sum((n for j, n in enumerate(nucleos) if j != k), np.zeros_like(nucleos[k])), 0, 1)
+            m = np.maximum(nucleos[k], silhueta(c, folga, folga * .6) * (1 - outros))
+        elif any(sobrepoe(c, caixas[j]) for j in range(len(dados)) if aceitos.get(id(dados[j]))):
+            camada, m = camada_base, nucleos[k]
+        else:
+            continue
+        out = out * (1 - m[..., None]) + camada * m[..., None]
+    return Image.fromarray(out.clip(0, 255).astype(np.uint8))
 
 
 def consertar(id_, arte):
@@ -330,8 +352,8 @@ def consertar(id_, arte):
             achadas.append(q)
     camada = camada.resize((W, H), Image.LANCZOS)
     saida = Image.alpha_composite(im.convert("RGBA"), camada).convert("RGB")
-    for dado, aceito in ia:
-        encaixar(saida, dado, aceito)
+    if ia:
+        saida = encaixar_todos(saida, arte["dados"], ia)
     saida.save(QUADROS / f"{id_}.webp", "WEBP", quality=88, method=6)
     CONFERIR.mkdir(parents=True, exist_ok=True)
     conf = saida.copy()

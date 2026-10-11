@@ -4,16 +4,19 @@ bolinhas certas (variações), o dono escolhe uma e ela é encaixada de volta, s
 
     python3 tools/historia/dados_ia.py rascunhos                 # os dados que a troca de bolinhas não consertou ("conferido": false)
     python3 tools/historia/dados_ia.py rascunhos p-cai c4-caverna  # só os destes quadros
+    python3 tools/historia/dados_ia.py rascunhos p-cai:2 c6-la:3   # só estes dados (mesmo os já consertados)
     python3 tools/historia/dados_ia.py rascunhos --todos         # todos os dados, também os já consertados
     python3 tools/historia/dados_ia.py rascunhos --n 3 --qualidade medium
     python3 tools/historia/dados_ia.py aplicar p-cai:1=b c4-caverna:2=a   # escolhe a variação de cada dado (o número é o do dado)
 
-1. rascunhos: para cada dado, o recorte quadrado em volta dele (a caixa e uma margem) vai ampliado para 1024 px ao
+1. rascunhos: para cada dado, o recorte quadrado em volta dele (a caixa e uma margem, com o dado sempre no meio: perto da
+   borda do quadro o que falta vem espelhado; senão o gerador redesenha o vizinho) vai ampliado para 1024 px ao
    gerador, com o pedido de redesenhar só o dado do meio, no mesmo lugar, tamanho, ângulo, cor e contorno, mostrando os
    números da anotação ("faces" em arte/historia.json) no arranjo certo. Saem N variações em
    builds/dados_ia/<id>/<dado>/<letra>.png e a prancha builds/dados_ia/<id>/prancha.jpg: o recorte da arte e as variações,
    lado a lado, com as letras.
-2. aplicar: a variação escolhida vai para arte/historia/dados_ia/<id>-<dado>.png e o dado ganha "ia" na anotação. O
+2. aplicar: a variação escolhida vai para arte/historia/dados_ia/<id>-<dado>.png e o dado ganha "ia" (e "recorte", o lugar
+   exato) na anotação; uma variação que mudou mais de 20% fora da caixa do dado é recusada (redesenhou outra coisa). O
    tools/historia/dados_quadros.py encaixa esses recortes por cima da arte (só a área do dado, com a borda esfumada),
    no lugar da troca de bolinhas, toda vez que roda.
 Precisa de OPENAI_API_KEY (como o tools/arte_icones.py).
@@ -45,7 +48,8 @@ NOMES = {"t": "the top face", "e": "the front-left face", "d": "the right face"}
 
 
 def recorte(W, H, caixa):
-    """o quadrado em volta do dado (em pixels da imagem inteira), dentro da imagem"""
+    """o quadrado em volta do dado (em pixels da imagem inteira), dentro da imagem. Perto da borda o quadrado desliza e o
+    dado sai do meio: só vale para os recortes antigos (os que já têm "recorte" gravado usam o deles)"""
     x0, y0, x1, y1 = caixa[0] / 100 * W, caixa[1] / 100 * H, caixa[2] / 100 * W, caixa[3] / 100 * H
     lado = max(x1 - x0, y1 - y0) * (1 + 2 * MARGEM)
     lado = min(lado, W, H)
@@ -53,6 +57,30 @@ def recorte(W, H, caixa):
     rx0 = int(min(max(0, cx - lado / 2), W - lado))
     ry0 = int(min(max(0, cy - lado / 2), H - lado))
     return rx0, ry0, rx0 + int(lado), ry0 + int(lado)
+
+
+def recorte_centrado(W, H, caixa):
+    """o quadrado com o dado bem no meio; perto da borda ele passa da imagem e a parte de fora é completada (espelho)"""
+    x0, y0, x1, y1 = caixa[0] / 100 * W, caixa[1] / 100 * H, caixa[2] / 100 * W, caixa[3] / 100 * H
+    lado = int(max(x1 - x0, y1 - y0) * (1 + 2 * MARGEM))
+    rx0, ry0 = int((x0 + x1) / 2 - lado / 2), int((y0 + y1) / 2 - lado / 2)
+    return rx0, ry0, rx0 + lado, ry0 + lado
+
+
+def recortar(im, r):
+    """o pedaço r da imagem; o que passa da borda vem espelhado (o gerador vê um entorno contínuo, sem faixa preta)"""
+    import numpy as np
+    a = np.asarray(im)
+    W, H = im.size
+    pad = max(0, -r[0], -r[1], r[2] - W, r[3] - H)
+    if pad:
+        a = np.pad(a, ((pad, pad), (pad, pad), (0, 0)), mode="symmetric")
+    return Image.fromarray(a[r[1] + pad:r[3] + pad, r[0] + pad:r[2] + pad])
+
+
+def retangulo(dado, W, H):
+    """onde o recorte aceito de um dado volta: o gravado na aplicação, ou o de antes (deslizante) nos aceitos antigos"""
+    return tuple(dado["recorte"]) if dado.get("recorte") else recorte(W, H, dado["caixa"])
 
 
 def prompt(dado):
@@ -67,19 +95,29 @@ def prompt(dado):
 
 def rascunhos(cfg, ids, todos, n, qualidade):
     trabalhos = []
-    for id_ in ids:
+    so = {}                                                    # "id:k": só aquele dado, o que o dono pediu para refazer
+    for a in ids:
+        id_, _, k = a.partition(":")
+        so.setdefault(id_, set())
+        if k:
+            so[id_].add(int(k))
+    for id_, quais in so.items():
         im = Image.open(ORIGINAIS / f"{id_}.webp" if (ORIGINAIS / f"{id_}.webp").exists() else QUADROS / f"{id_}.webp").convert("RGB")
         for k, dado in enumerate(cfg["artes"][id_].get("dados", []), 1):
-            if dado.get("conferido") and not todos:
+            if quais and k not in quais:
+                continue
+            if dado.get("conferido") and not todos and not quais:
                 continue
             if dado["caixa"][2] - dado["caixa"][0] < MIN_LARGURA:   # miúdo de fundo: não vale uma imagem
                 continue
-            r = recorte(*im.size, dado["caixa"])
+            r = recorte_centrado(*im.size, dado["caixa"])
             pasta = RASCUNHOS / id_ / str(k)
             pasta.mkdir(parents=True, exist_ok=True)
-            cr = im.crop(r).resize((1024, 1024), Image.LANCZOS)
+            cr = recortar(im, r).resize((1024, 1024), Image.LANCZOS)
             cr.save(pasta / "recorte.png")
-            trabalhos += [(id_, k, dado, pasta, letra) for letra in LETRAS[:n]]
+            (pasta / "recorte.json").write_text(json.dumps(list(r)), encoding="utf-8")
+            livres = [l for l in LETRAS if not (pasta / f"{l}.png").exists()]   # as versões de antes ficam
+            trabalhos += [(id_, k, dado, pasta, letra) for letra in livres[:n]]
     print(f"{len(trabalhos)} pedidos ({cfg['modelo']}, {qualidade})", flush=True)
 
     def um(t):
@@ -117,6 +155,27 @@ def prancha(id_):
         print(f"  {RASCUNHOS / id_ / 'prancha.jpg'}")
 
 
+def mudou_fora(arq, dado):
+    """a fração do que a variação mudou (em relação ao recorte) que fica fora da caixa do dado"""
+    import numpy as np
+    from PIL import ImageFilter
+    pasta = arq.parent
+    id_ = pasta.parent.name
+    W, H = Image.open(QUADROS / f"{id_}.webp").size
+    rj = pasta / "recorte.json"
+    r = tuple(json.loads(rj.read_text(encoding="utf-8"))) if rj.exists() else recorte(W, H, dado["caixa"])
+    L = r[2] - r[0]
+    base = np.asarray(Image.open(pasta / "recorte.png").convert("L").resize((L, L)), dtype=float)
+    nova = np.asarray(Image.open(arq).convert("L").resize((L, L)), dtype=float)
+    dif = np.asarray(Image.fromarray(np.abs(nova - base).astype(np.uint8)).filter(ImageFilter.GaussianBlur(3)), dtype=float) > 40
+    # o que passa da borda do quadro (o espelho) não volta para a arte: não conta
+    dif[:, :max(0, -r[0])] = False; dif[:max(0, -r[1]), :] = False
+    dif[:, max(0, W - r[0]):] = False; dif[max(0, H - r[1]):, :] = False
+    x0, y0, x1, y1 = (int(dado["caixa"][i] / 100 * (W if i % 2 == 0 else H)) - r[i % 2] for i in range(4))
+    dentro = dif[max(0, y0):max(0, y1), max(0, x0):max(0, x1)].sum()
+    return 1 - dentro / max(1, dif.sum())
+
+
 def aplicar(cfg, escolhas):
     ACEITOS.mkdir(parents=True, exist_ok=True)
     for e in escolhas:
@@ -125,8 +184,18 @@ def aplicar(cfg, escolhas):
         arq = RASCUNHOS / id_ / k / f"{letra}.png"
         if not arq.exists():
             sys.exit(f"Não existe: {arq}")
+        dado = cfg["artes"][id_]["dados"][int(k) - 1]
+        fora = mudou_fora(arq, dado)
+        if fora > .2:                                         # o gerador redesenhou outra coisa (o vizinho): não entra
+            print(f"  {id_}, dado {k}: variação {letra} RECUSADA ({fora:.0%} da mudança fora do dado)")
+            continue
         (ACEITOS / f"{id_}-{k}.png").write_bytes(arq.read_bytes())
-        cfg["artes"][id_]["dados"][int(k) - 1]["ia"] = letra
+        dado["ia"] = letra
+        rj = arq.parent / "recorte.json"
+        if rj.exists():
+            dado["recorte"] = json.loads(rj.read_text(encoding="utf-8"))
+        else:
+            dado.pop("recorte", None)
         print(f"  {id_}, dado {k}: variação {letra}")
     PEDIDOS.write_text(json.dumps(cfg, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     import dados_quadros                                      # refaz os quadros com os recortes aceitos
