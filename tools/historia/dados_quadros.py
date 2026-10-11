@@ -270,6 +270,9 @@ def consertar(id_, arte):
     ia = []
     for n, dado in enumerate(arte["dados"]):
         dado.setdefault("faces", escolher_faces(id_, n))
+        if dado.get("pular"):                           # conferido à mão e recusado: fica como a arte, à espera do dados_ia.py
+            dado["conferido"] = False
+            continue
         aceito = ACEITOS / f"{id_}-{n + 1}.png"
         if dado.get("ia") and aceito.exists():          # o dado redesenhado pelo gerador (tools/historia/dados_ia.py) entra no lugar
             ia.append((dado, aceito))

@@ -112,69 +112,63 @@
    "texto": "Closer shot of the felt table: Diana, crouched low behind the table, stretches ONE front paw forward and gently pushes one pink die toward the table's left edge. Natural cat anatomy: a soft round shoulder, the foreleg curving smoothly out from the body (no straight tube, no stiff joint), every outline smooth and clean. Her face behind it, eyes half closed, unbothered, looking at the reader, not at the die.",
    "boca": {
     "diana": [
-     64,
-     57
+     52,
+     59
     ]
    },
    "dados": [
     {
-     "x": 21.5,
-     "y": 85.5,
+     "caixa": [
+      11.7,
+      81.7,
+      20.9,
+      95.8
+     ],
      "vista": "obliquo",
      "faces": {
-      "t": 4,
-      "e": 1,
-      "d": 5
+      "t": 6,
+      "e": 3,
+      "d": 2
      },
-     "caixa": [
-      17.9,
-      81.1,
-      24.6,
-      91.5
-     ],
-     "conferido": false
+     "conferido": true
     },
     {
-     "x": 71.8,
-     "y": 84.0,
-     "vista": "obliquo",
-     "faces": {
-      "t": 3,
-      "e": 2,
-      "d": 6
-     },
      "caixa": [
-      67.77,
-      79.79,
-      75.26,
-      90.82
+      73.6,
+      79.2,
+      82.4,
+      92.5
      ],
-     "conferido": false
-    },
-    {
-     "x": 79.8,
-     "y": 89.4,
      "vista": "obliquo",
      "faces": {
       "t": 1,
-      "e": 3,
-      "d": 5
+      "e": 4,
+      "d": 2
      },
+     "conferido": true
+    },
+    {
      "caixa": [
-      76.11,
-      83.89,
-      83.4,
-      95.31
+      83.9,
+      78.7,
+      92.8,
+      92.8
      ],
+     "vista": "obliquo",
+     "faces": {
+      "t": 2,
+      "e": 6,
+      "d": 3
+     },
      "conferido": true
     }
    ],
    "cabeca": {
     "diana": [
-     50,
+     37,
      10,
-     92,
-     62
+     77,
+     66
     ]
    },
    "dados_skin": "rosa"
@@ -559,7 +553,7 @@
    "quem": [],
    "nariz": "",
    "pagina": true,
-   "texto": "a soup bowl seen from the side with a little tadpole swimming in it BACKWARDS: its tail leads the way and its head trails behind, small motion lines behind the head, so it clearly moves tail-first, like reversing.",
+   "texto": "a soup bowl seen from the side with one little tadpole in the soup. The tadpole looks to the RIGHT (head on the right, tail on the left) but it is swimming BACKWARDS, toward the left, tail first. To show that, three short speed lines are drawn on the RIGHT, just in front of its face (trailing behind it as it backs away), and its tail is bent forward a little. There are NO speed lines and no bubbles near the tail. Its expression is calm and a little embarrassed. Nothing else in the soup.",
    "titulo": "SOPA DE GIRINO AO CONTRÁRIO"
   },
   "c1-pag-b": {
@@ -577,24 +571,68 @@
    "nariz": "x",
    "texto": "Diana sits at her felt table and holds a damp notebook page up in front of her face with both front paws, reading it with narrowed eyes. The page faces HER: we see only the plain cream BACK of the page, blank, with a faint wet stain showing through, and NOTHING drawn on the side we see (no tadpole, no writing). Her eyes peek over the top edge of the page. Behind her, only the edge of a cork board shows at the side of the frame.",
    "lugar": "nw",
-   "dados_skin": "marfim",
+   "dados_skin": "rosa",
    "dados": [
     {
      "caixa": [
-      9.4,
-      21.2,
-      20.0,
-      37.0
+      10.2,
+      82.5,
+      16.7,
+      91.7
      ],
-     "vista": "canto",
+     "vista": "obliquo",
      "faces": {
       "t": 1,
       "e": 2,
       "d": 3
      },
+     "conferido": true
+    },
+    {
+     "caixa": [
+      18.3,
+      88.3,
+      24.7,
+      97.8
+     ],
+     "vista": "obliquo",
+     "faces": {
+      "t": 2,
+      "e": 3,
+      "d": 1
+     },
+     "conferido": true
+    },
+    {
+     "caixa": [
+      26.7,
+      87.8,
+      32.4,
+      97.0
+     ],
+     "vista": "obliquo",
+     "faces": {
+      "t": 3,
+      "e": 5,
+      "d": 1
+     },
      "conferido": false
     }
-   ]
+   ],
+   "boca": {
+    "diana": [
+     48,
+     40
+    ]
+   },
+   "cabeca": {
+    "diana": [
+     35,
+     8,
+     64,
+     42
+    ]
+   }
   },
   "i1-nada": {
    "quem": [
@@ -665,7 +703,21 @@
      },
      "conferido": false
     }
-   ]
+   ],
+   "boca": {
+    "diana": [
+     41,
+     48
+    ]
+   },
+   "cabeca": {
+    "diana": [
+     22,
+     6,
+     56,
+     55
+    ]
+   }
   },
   "i1-cobre": {
    "quem": [
@@ -673,7 +725,29 @@
    ],
    "nariz": "x",
    "texto": "Diana, caught: she has stretched one front paw flat over the cork board behind her, covering the die photo, and looks back at the reader with an innocent, far too calm face. The cork board holds ONLY ONE photo (a single die) and one red string: it is just beginning, nothing else is pinned on it.",
-   "refazer": "o mural sai do quadro pintado e vai para os quadros montados pelo código (murais em arte/historia.json)"
+   "refazer": "o mural sai do quadro pintado e vai para os quadros montados pelo código (murais em arte/historia.json)",
+   "boca": {
+    "diana": [
+     56,
+     52
+    ]
+   },
+   "cabeca": {
+    "diana": [
+     48,
+     22,
+     70,
+     60
+    ]
+   },
+   "evitar": [
+    [
+     7,
+     12,
+     55,
+     80
+    ]
+   ]
   },
   "c2-adesivo": {
    "quem": [
@@ -713,7 +787,21 @@
      },
      "conferido": false
     }
-   ]
+   ],
+   "boca": {
+    "diana": [
+     50,
+     58
+    ]
+   },
+   "cabeca": {
+    "diana": [
+     28,
+     10,
+     68,
+     65
+    ]
+   }
   },
   "c2-coelho": {
    "quem": [
@@ -783,7 +871,21 @@
      },
      "conferido": true
     }
-   ]
+   ],
+   "boca": {
+    "coelho": [
+     47,
+     47
+    ]
+   },
+   "cabeca": {
+    "coelho": [
+     35,
+     13,
+     56,
+     53
+    ]
+   }
   },
   "c2-pag-a": {
    "quem": [],
@@ -879,7 +981,21 @@
      },
      "conferido": true
     }
-   ]
+   ],
+   "boca": {
+    "diana": [
+     46,
+     48
+    ]
+   },
+   "cabeca": {
+    "diana": [
+     30,
+     6,
+     66,
+     60
+    ]
+   }
   },
   "c3-carta": {
    "quem": [
@@ -919,7 +1035,21 @@
      },
      "conferido": false
     }
-   ]
+   ],
+   "boca": {
+    "diana": [
+     49,
+     53
+    ]
+   },
+   "cabeca": {
+    "diana": [
+     33,
+     10,
+     67,
+     60
+    ]
+   }
   },
   "c3-raposa": {
    "quem": [
@@ -932,10 +1062,10 @@
    "dados": [
     {
      "caixa": [
-      79.4,
-      63.2,
-      84.2,
-      69.8
+      77.2,
+      65.7,
+      83.3,
+      74
      ],
      "vista": "obliquo",
      "faces": {
@@ -947,10 +1077,10 @@
     },
     {
      "caixa": [
-      76.7,
-      69.0,
-      81.7,
-      76.5
+      83.1,
+      61.5,
+      88.9,
+      69.8
      ],
      "vista": "obliquo",
      "faces": {
@@ -962,10 +1092,10 @@
     },
     {
      "caixa": [
-      83.3,
-      66.8,
-      88.3,
-      74.3
+      86.9,
+      65.3,
+      92.8,
+      74
      ],
      "vista": "obliquo",
      "faces": {
@@ -975,7 +1105,21 @@
      },
      "conferido": false
     }
-   ]
+   ],
+   "boca": {
+    "raposa": [
+     64,
+     18
+    ]
+   },
+   "cabeca": {
+    "raposa": [
+     55,
+     6,
+     77,
+     28
+    ]
+   }
   },
   "c3-pag-a": {
    "quem": [],
@@ -998,7 +1142,21 @@
    ],
    "nariz": "cone",
    "texto": "Diana sits upright with great dignity in a large translucent plastic veterinary cone, looking at the reader as if it were high fashion. Through the window behind her, the loaf of bread outside is bigger now, pressing against the glass.",
-   "lugar": "nw"
+   "lugar": "nw",
+   "boca": {
+    "diana": [
+     50,
+     51
+    ]
+   },
+   "cabeca": {
+    "diana": [
+     30,
+     12,
+     68,
+     62
+    ]
+   }
   },
   "c4-mural": {
    "quem": [
@@ -1009,12 +1167,26 @@
    "refazer": "o mural sai do quadro pintado e vai para os quadros montados pelo código (murais em arte/historia.json)",
    "evitar": [
     [
-     50,
-     10,
-     98,
-     75
+     46,
+     5,
+     96,
+     70
     ]
-   ]
+   ],
+   "boca": {
+    "diana": [
+     33,
+     59
+    ]
+   },
+   "cabeca": {
+    "diana": [
+     16,
+     40,
+     46,
+     72
+    ]
+   }
   },
   "c4-caverna": {
    "quem": [
@@ -1069,14 +1241,42 @@
      },
      "conferido": false
     }
-   ]
+   ],
+   "boca": {
+    "urso": [
+     34,
+     78
+    ]
+   },
+   "cabeca": {
+    "urso": [
+     15,
+     42,
+     50,
+     92
+    ]
+   }
   },
   "c4-olho": {
    "quem": [
     "urso"
    ],
    "nariz": "",
-   "texto": "Close-up in the dark cave: one sleepy eye of the brown bear cracks open under the rim of his red beanie, groggy and confused."
+   "texto": "Close-up in the dark cave: one sleepy eye of the brown bear cracks open under the rim of his red beanie, groggy and confused.",
+   "boca": {
+    "urso": [
+     46,
+     80
+    ]
+   },
+   "cabeca": {
+    "urso": [
+     10,
+     20,
+     90,
+     95
+    ]
+   }
   },
   "c4-pag-a": {
    "quem": [],
@@ -1093,7 +1293,21 @@
     "urso"
    ],
    "nariz": "",
-   "texto": "The brown bear in the red beanie is asleep again on his back in the cave, snoring, a notebook page loosely held in his big paw; the page is sliding out of his paw, being pulled gently from outside the bottom edge of the frame."
+   "texto": "The brown bear in the red beanie is asleep again on his back in the cave, snoring, a notebook page loosely held in his big paw; the page is sliding out of his paw, being pulled gently from outside the bottom edge of the frame.",
+   "boca": {
+    "urso": [
+     34,
+     57
+    ]
+   },
+   "cabeca": {
+    "urso": [
+     20,
+     36,
+     50,
+     72
+    ]
+   }
   },
   "c5-meia": {
    "quem": [
@@ -1134,7 +1348,21 @@
      },
      "conferido": true
     }
-   ]
+   ],
+   "boca": {
+    "diana": [
+     56,
+     53
+    ]
+   },
+   "cabeca": {
+    "diana": [
+     36,
+     8,
+     72,
+     60
+    ]
+   }
   },
   "c5-tralha": {
    "quem": [
@@ -1224,7 +1452,21 @@
      },
      "conferido": false
     }
-   ]
+   ],
+   "boca": {
+    "guaxinim": [
+     35,
+     36
+    ]
+   },
+   "cabeca": {
+    "guaxinim": [
+     25,
+     17,
+     42,
+     44
+    ]
+   }
   },
   "c5-pag-a": {
    "quem": [],
@@ -1424,9 +1666,9 @@
     {
      "caixa": [
       19.4,
-      76.7,
-      31.1,
-      95.3
+      77,
+      31.4,
+      95.8
      ],
      "vista": "canto",
      "faces": {
@@ -1438,9 +1680,9 @@
     },
     {
      "caixa": [
-      64.7,
-      79.5,
-      77.8,
+      64.8,
+      80,
+      76.9,
       98.3
      ],
      "vista": "canto",
@@ -1452,7 +1694,21 @@
      "conferido": true
     }
    ],
-   "edicao": "Keep everything identical (the sheep, her pose, the missing wool patch, the sky, the hills, the dice, the colors, the outline and the framing). Fix only the pasture: the grass is divided into a REGULAR honeycomb of identical flat hexagon tiles lying on the ground in perspective, with straight edges of equal length and evenly spaced lines, including the tiles under and around the sheep's feet; no warped, bent or irregular hexagons."
+   "edicao": "Keep everything identical (the sheep, her pose, the missing wool patch, the sky, the hills, the dice, the colors, the outline and the framing). Fix only the pasture: the grass is divided into a REGULAR honeycomb of identical flat hexagon tiles lying on the ground in perspective, with straight edges of equal length and evenly spaced lines, including the tiles under and around the sheep's feet; no warped, bent or irregular hexagons.",
+   "boca": {
+    "ovelha": [
+     44,
+     45
+    ]
+   },
+   "cabeca": {
+    "ovelha": [
+     31,
+     20,
+     53,
+     50
+    ]
+   }
   },
   "c6-pag-a": {
    "quem": [],
@@ -1554,7 +1810,21 @@
     "diana"
    ],
    "nariz": "nada",
-   "texto": "Close-up of Diana, serious for the first time, with no accessory on her nose, looking at the reader. Muted colors, softer light, the first quiet panel of the story."
+   "texto": "Close-up of Diana, serious for the first time, with no accessory on her nose, looking at the reader. Muted colors, softer light, the first quiet panel of the story.",
+   "boca": {
+    "diana": [
+     50,
+     59
+    ]
+   },
+   "cabeca": {
+    "diana": [
+     32,
+     12,
+     66,
+     63
+    ]
+   }
   },
   "i6-lencol": {
    "quem": [
@@ -1562,7 +1832,29 @@
    ],
    "nariz": "nada",
    "texto": "The cork board on the wall is now entirely covered by a white bedsheet, with many red strings poking out from under its edges. Diana sits in front of it as if nothing were there.",
-   "refazer": "o mural sai do quadro pintado e vai para os quadros montados pelo código (murais em arte/historia.json)"
+   "refazer": "o mural sai do quadro pintado e vai para os quadros montados pelo código (murais em arte/historia.json)",
+   "boca": {
+    "diana": [
+     46,
+     64
+    ]
+   },
+   "cabeca": {
+    "diana": [
+     37,
+     42,
+     56,
+     70
+    ]
+   },
+   "evitar": [
+    [
+     12,
+     18,
+     80,
+     40
+    ]
+   ]
   },
   "c7-biblioteca": {
    "quem": [
@@ -1617,7 +1909,21 @@
      },
      "conferido": true
     }
-   ]
+   ],
+   "boca": {
+    "coruja": [
+     45,
+     50
+    ]
+   },
+   "cabeca": {
+    "coruja": [
+     32,
+     26,
+     58,
+     62
+    ]
+   }
   },
   "c7-coelho": {
    "quem": [
@@ -1672,14 +1978,50 @@
      },
      "conferido": true
     }
-   ]
+   ],
+   "boca": {
+    "coelho": [
+     59,
+     59
+    ]
+   },
+   "cabeca": {
+    "coelho": [
+     52,
+     28,
+     70,
+     65
+    ]
+   }
   },
   "c7-pagina": {
    "quem": [
     "coruja"
    ],
    "nariz": "",
-   "texto": "Dona Coruja hands a single notebook page across the library desk toward the reader. The page has no recipe at all: only a simple drawing of a cat's nose with an X drawn over it."
+   "texto": "Dona Coruja hands a single notebook page across the library desk toward the reader. The page has no recipe at all: only a simple drawing of a cat's nose with an X drawn over it.",
+   "boca": {
+    "coruja": [
+     52,
+     41
+    ]
+   },
+   "cabeca": {
+    "coruja": [
+     38,
+     12,
+     64,
+     55
+    ]
+   },
+   "evitar": [
+    [
+     28,
+     66,
+     53,
+     98
+    ]
+   ]
   },
   "r-mural": {
    "quem": [
@@ -1723,7 +2065,21 @@
    ],
    "nariz": "nada",
    "texto": "Diana sits alone on the floor in front of the conspiracy wall, serious, ears slightly lowered, looking at the reader. Quiet, muted palette.",
-   "refazer": "o mural sai do quadro pintado e vai para os quadros montados pelo código (murais em arte/historia.json)"
+   "refazer": "o mural sai do quadro pintado e vai para os quadros montados pelo código (murais em arte/historia.json)",
+   "boca": {
+    "diana": [
+     49,
+     61
+    ]
+   },
+   "cabeca": {
+    "diana": [
+     32,
+     25,
+     66,
+     67
+    ]
+   }
   },
   "r-pipeta": {
    "quem": [
@@ -1778,7 +2134,21 @@
      },
      "conferido": false
     }
-   ]
+   ],
+   "boca": {
+    "diana": [
+     61,
+     58
+    ]
+   },
+   "cabeca": {
+    "diana": [
+     45,
+     5,
+     90,
+     68
+    ]
+   }
   },
   "r-coelho-porta": {
    "quem": [
@@ -1961,21 +2331,63 @@
      },
      "conferido": false
     }
-   ]
+   ],
+   "boca": {
+    "diana": [
+     47,
+     43
+    ]
+   },
+   "cabeca": {
+    "diana": [
+     33,
+     10,
+     65,
+     48
+    ]
+   }
   },
   "f-nariz": {
    "quem": [
     "diana"
    ],
    "nariz": "nada",
-   "texto": "Close-up: Diana holds a strip of printed paper tape (like a receipt from an old printer) so that its end touches the bridge of her nose. Comic-print effect: strong halftone dots radiating from the point of contact, the blue and pink color plates slightly out of register around her, a frozen moment. No cards, no other objects in the foreground."
+   "texto": "Close-up: Diana holds a strip of printed paper tape (like a receipt from an old printer) so that its end touches the bridge of her nose. Comic-print effect: strong halftone dots radiating from the point of contact, the blue and pink color plates slightly out of register around her, a frozen moment. No cards, no other objects in the foreground.",
+   "boca": {
+    "diana": [
+     55,
+     65
+    ]
+   },
+   "cabeca": {
+    "diana": [
+     30,
+     10,
+     78,
+     75
+    ]
+   }
   },
   "f-close": {
    "quem": [
     "diana"
    ],
    "nariz": "curada",
-   "texto": "Extreme close-up of the bridge of Diana's nose and her eyes: the wound has closed. Her own white paw touches the spot gently, in wonder. A silent panel."
+   "texto": "Extreme close-up of the bridge of Diana's nose and her eyes: the wound has closed. Her own white paw touches the spot gently, in wonder. A silent panel.",
+   "boca": {
+    "diana": [
+     50,
+     92
+    ]
+   },
+   "cabeca": {
+    "diana": [
+     0,
+     0,
+     100,
+     100
+    ]
+   }
   },
   "f-eco": {
    "quem": [
@@ -2015,7 +2427,21 @@
      },
      "conferido": false
     }
-   ]
+   ],
+   "boca": {
+    "diana": [
+     50,
+     46
+    ]
+   },
+   "cabeca": {
+    "diana": [
+     35,
+     12,
+     64,
+     50
+    ]
+   }
   },
   "x-titulo": {
    "quem": [],
@@ -2194,27 +2620,223 @@
    ],
    "nariz": "curada",
    "lugar": "nw",
-   "texto": "At her felt table, Diana, healed, gently pushes the five pink dice back across the table toward the reader with one white paw, a small sincere half-smile, looking at the reader. Warm lamplight.",
+   "texto": "At her felt table, Diana, healed, gently pushes the five pink dice back across the table toward the reader with one white paw, a small sincere half-smile, looking at the reader. Warm lamplight. IMPORTANT: her nose is healed, with NO bandage, NO plaster, NO sticker and nothing at all on it: clean white fur on the bridge of the nose, exactly like the attached model sheet.",
    "boca": {
     "diana": [
-     62,
-     50
+     51,
+     52
     ]
-   }
+   },
+   "cabeca": {
+    "diana": [
+     33,
+     5,
+     66,
+     62
+    ]
+   },
+   "dados_skin": "rosa",
+   "dados": [
+    {
+     "caixa": [
+      23.7,
+      66.5,
+      31.1,
+      79
+     ],
+     "vista": "obliquo",
+     "faces": {
+      "t": 5,
+      "e": 3,
+      "d": 6
+     },
+     "conferido": false
+    },
+    {
+     "caixa": [
+      32.2,
+      64.8,
+      39.4,
+      79
+     ],
+     "vista": "obliquo",
+     "faces": {
+      "t": 6,
+      "e": 4,
+      "d": 5
+     },
+     "conferido": false
+    },
+    {
+     "caixa": [
+      54.4,
+      66.8,
+      61.3,
+      79.8
+     ],
+     "vista": "obliquo",
+     "faces": {
+      "t": 1,
+      "e": 5,
+      "d": 4
+     },
+     "conferido": false
+    },
+    {
+     "caixa": [
+      62.2,
+      64.8,
+      70,
+      79
+     ],
+     "vista": "obliquo",
+     "faces": {
+      "t": 3,
+      "e": 1,
+      "d": 2
+     },
+     "conferido": false
+    }
+   ]
   },
   "c7-lacre": {
    "quem": [
     "coruja"
    ],
    "lugar": "nw",
-   "texto": "Dona Coruja taps a red wax seal on top of a closed book with the tip of her wing, at her library desk. A few wooden dice on the desk."
+   "texto": "Dona Coruja taps a red wax seal on top of a closed book with the tip of her wing, at her library desk. A few wooden dice on the desk.",
+   "boca": {
+    "coruja": [
+     46,
+     44
+    ]
+   },
+   "cabeca": {
+    "coruja": [
+     32,
+     8,
+     61,
+     58
+    ]
+   },
+   "dados_skin": "madeira",
+   "dados": [
+    {
+     "caixa": [
+      72.2,
+      66.2,
+      80.9,
+      78.3
+     ],
+     "vista": "obliquo",
+     "faces": {
+      "t": 3,
+      "e": 5,
+      "d": 1
+     },
+     "conferido": false,
+     "pular": true
+    },
+    {
+     "caixa": [
+      82.6,
+      72.5,
+      91.3,
+      85.8
+     ],
+     "vista": "obliquo",
+     "faces": {
+      "t": 4,
+      "e": 6,
+      "d": 2
+     },
+     "conferido": true
+    },
+    {
+     "caixa": [
+      71.1,
+      80,
+      80,
+      94.2
+     ],
+     "vista": "obliquo",
+     "faces": {
+      "t": 6,
+      "e": 2,
+      "d": 4
+     },
+     "conferido": true
+    }
+   ]
   },
   "c7-tampa": {
    "quem": [
     "coruja"
    ],
    "lugar": "nw",
-   "texto": "Dona Coruja sits on top of an open book on her library desk, covering the page with her body, prim and pleased. A few wooden dice on the desk."
+   "texto": "Dona Coruja sits on top of an open book on her library desk, covering the page with her body, prim and pleased. A few wooden dice on the desk.",
+   "boca": {
+    "coruja": [
+     50,
+     39
+    ]
+   },
+   "cabeca": {
+    "coruja": [
+     33,
+     4,
+     64,
+     45
+    ]
+   },
+   "dados_skin": "madeira",
+   "dados": [
+    {
+     "caixa": [
+      6.7,
+      72.5,
+      14.2,
+      83.7
+     ],
+     "vista": "obliquo",
+     "faces": {
+      "t": 6,
+      "e": 4,
+      "d": 5
+     },
+     "conferido": true
+    },
+    {
+     "caixa": [
+      15.9,
+      67.5,
+      23.1,
+      78.7
+     ],
+     "vista": "obliquo",
+     "faces": {
+      "t": 1,
+      "e": 5,
+      "d": 4
+     },
+     "conferido": true
+    },
+    {
+     "caixa": [
+      13.9,
+      79.2,
+      21.7,
+      91.2
+     ],
+     "vista": "obliquo",
+     "faces": {
+      "t": 3,
+      "e": 1,
+      "d": 2
+     },
+     "conferido": true
+    }
+   ]
   },
   "c8-bolso": {
    "quem": [
@@ -2225,10 +2847,66 @@
    "texto": "Diana at her table covered in wine-red felt, holding up one front paw to show a single pink die resting in it, deadpan and a little smug. Behind her, the cork board with a double helix drawn with dice.",
    "boca": {
     "diana": [
-     45,
-     52
+     39,
+     45
     ]
-   }
+   },
+   "cabeca": {
+    "diana": [
+     24,
+     7,
+     54,
+     60
+    ]
+   },
+   "dados_skin": "rosa",
+   "dados": [
+    {
+     "caixa": [
+      54.1,
+      52.3,
+      58.7,
+      59
+     ],
+     "vista": "obliquo",
+     "faces": {
+      "t": 5,
+      "e": 3,
+      "d": 6
+     },
+     "conferido": false
+    },
+    {
+     "caixa": [
+      67,
+      82,
+      73.3,
+      90.8
+     ],
+     "vista": "obliquo",
+     "faces": {
+      "t": 6,
+      "e": 4,
+      "d": 5
+     },
+     "conferido": false
+    },
+    {
+     "caixa": [
+      75.6,
+      82.8,
+      82,
+      92.3
+     ],
+     "vista": "obliquo",
+     "faces": {
+      "t": 1,
+      "e": 5,
+      "d": 4
+     },
+     "conferido": true
+    }
+   ]
   }
  },
  "paginas": [
@@ -3702,9 +4380,7 @@
    "x": 1.5,
    "y": 2.3,
    "w": 35.1,
-   "fs": 1,
-   "tx": 49.1,
-   "ty": 55.5
+   "fs": 1
   },
   "P-antes_2_0": {
    "x": 1.9,

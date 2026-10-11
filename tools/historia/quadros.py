@@ -67,7 +67,7 @@ def refs_de(cfg, id_):
         return [PAGINA_BASE]
     refs = []
     for p in a["quem"]:
-        modelo = NARIZES / f"{a['nariz']}.png"
+        modelo = NARIZES / f"{a.get('nariz', '')}.png"
         refs.append(modelo if p == "diana" and a.get("nariz") and modelo.exists() else RAIZ / "arte" / "fonte" / f"{p}.png")
     return refs or None
 
