@@ -3301,7 +3301,7 @@
     const el = document.getElementById('onlineConteudo');
     document.getElementById('onlineServidor').textContent = st.sessao ? (Rede.ola ? 'conectado' : '') : '';
     if (!API) {
-      el.innerHTML = `<p>O online precisa do servidor do Dice Duel. Abra o jogo pelo endereço do servidor (por exemplo, o da Railway) para criar conta, chamar amigos e entrar no ranking.</p><p class="nota">Aqui, neste arquivo, dá para jogar contra a Diana, a Dona Coruja ou a dois no mesmo aparelho.</p>`;
+      el.innerHTML = `<p>O online precisa do servidor do Dice Duel. Abra o jogo pelo endereço do servidor (por exemplo, o da Railway) para criar conta, chamar amigos e entrar no ranking.</p><p class="nota">Aqui, neste arquivo, dá para jogar a História (o progresso fica neste aparelho).</p>`;
       return;
     }
     if (!st.sessao) {

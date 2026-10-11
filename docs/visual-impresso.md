@@ -220,6 +220,56 @@ verdade** (feltro, madeira, papel, fita, carimbo) **impresso como gibi** (contor
 de nanquim só nos quadros dramáticos do gibi (com o colega da arte); o ícone do app e a prévia de compartilhamento
 a partir do letreiro.
 
+## O rumo (análise crítica, v0.17)
+Antes de mais estilo, as 14 telas foram fotografadas lado a lado no celular (`tools/telas.js`) e lidas contra as regras
+acima.
+
+**O que já funciona e não se mexe:** a paleta (cacau, papel, mel, azul você, rosa rival); os retratos pintados; o
+letreiro adesivo; o começo da partida com o VS; o Caderno da Diana; os momentos de festa da partida. Juntos, eles já
+fazem uma identidade própria: um jogo de mesa à noite, com uma gata que anota tudo, impresso como gibi.
+
+**Os problemas, em ordem de peso:**
+1. **A partida é a tela menos desenhada, e é onde a pessoa passa quase todo o tempo.** Os dois painéis têm o mesmo peso
+   (o seu não se destaca do da Diana), há muitas etiquetas pequenas ao mesmo tempo ("Começa" embaixo de cada dado,
+   chips de carta, "Corrente 0/6", "qualquer dado começa"), e a Mesa, que é o coração, é um retângulo verde com dados
+   pequenos. A identidade está nas bordas e quase não está no centro.
+2. **O estilo está se acumulando por camadas.** Impresso, interface de gibi e caderno vieram um por vez, em resposta a
+   pedidos. Já há três tipos de cartão (os da Loja e do deck com aro mel, as fichas com contorno cacau, os capítulos do
+   caderno), contornos que existem numas telas e não noutras, e cada ajuste mexe direto no CSS. Mais textura agora
+   aumentaria esse ruído.
+3. **Nada foi visto num celular de verdade nem por jogadores.** Desempenho (máscaras, sombras, o quadro congelado),
+   legibilidade ao sol e o "isso parece travamento?" só se medem assim. Os dois pedidos de ajuste do dono (pontinhos atrás
+   do texto, margem cruzando os retratos) mostram que a tela real pega o que a foto no computador não pega.
+4. **A primeira impressão de fora ainda é a antiga:** o ícone do app e a prévia do link compartilhado.
+5. **Arestas menores:** o letreiro empilhado fica apertado no cabeçalho pequeno (pede uma versão de uma linha); a tela
+   "Como quer jogar?" ficou vazia sem a cena (pede a cena ou o letreiro, menores); havia texto desatualizado (o Online sem
+   servidor ainda oferecia Diana e Coruja; corrigido).
+
+**Vale a pena continuar? Sim, mas mudando o modo de trabalhar:** parar de acrescentar material novo e passar a
+**consolidar, desenhar o centro e validar**. O ganho estético agora está em fazer o que já existe ficar coerente e bonito
+onde importa, não em mais efeito.
+
+**A sequência recomendada:**
+1. **Consolidar (1 dia):** um só "adesivo" (contorno, sombra, raio e estados) para todo cartão e botão, em variáveis
+   CSS, aplicado na Loja, no deck, no Perfil e na partida; o letreiro de uma linha para tamanhos pequenos; a cena (menor)
+   de volta na tela dos modos. Sem mudar o jeito do jogo.
+2. **Desenhar a partida (2 a 3 dias, em protótipos lado a lado antes de mexer no jogo):** o seu painel com mais peso que o
+   do rival; a Mesa como protagonista (dados maiores, feltro e madeira mais ricos); menos etiquetas ao mesmo tempo (as
+   ajudas aparecem quando servem); o retrato do rival maior e mais expressivo, porque a arte pintada já existe.
+3. **Validar (meio dia + o teste com 5 a 8 pessoas de `design.md` §9):** um iPhone e um Android de entrada; medir
+   legibilidade, 60 qps na cascata de 6 e o quadro congelado.
+4. **O ícone e a prévia (meio dia), com a API de imagem:** a única peça desta lista em que a pintura ajuda mais que o
+   código. Opções pelo `tools/arte_icones.py`, filtradas pelo crítico de ícones, e o dono escolhe.
+5. **Só depois, a história:** a página conquistada presa com a fita; a aguada de nanquim nos quadros dramáticos, com o
+   colega da arte.
+
+**O que não fazer:** textura nas telas de uso (Loja, Ajustes, deck, Online); textura animada; estilo próprio por tela; a
+API de imagem para peça de interface (pauta, fita, carimbo, traço, retícula: em código saem com a cor exata, nítidos e
+leves); qualquer mudança visual sem a foto de antes e depois nas telas reais.
+
+**Como trabalhar daqui em diante:** a cada versão, `node tools/telas.js` fotografa todas as telas para olhar lado a lado;
+toda proposta nova vem primeiro como protótipo sobre a tela real, com antes e depois, e passa pelas regras desta página.
+
 ## 4. Como verificar
 - `node tools/fumaca.js`, `node tools/estreia_e2e.js` (as chamadas do guia não podem atrasar), `node tools/layout.js`
   (onomatopeia e quadro não vazam em 360 px), `node tools/vercel_local.js` (CSP), `python3 tools/empacotar.py`.
