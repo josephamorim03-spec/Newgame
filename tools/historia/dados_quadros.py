@@ -270,12 +270,12 @@ def consertar(id_, arte):
     ia = []
     for n, dado in enumerate(arte["dados"]):
         dado.setdefault("faces", escolher_faces(id_, n))
-        if dado.get("pular"):                           # conferido à mão e recusado: fica como a arte, à espera do dados_ia.py
-            dado["conferido"] = False
-            continue
         aceito = ACEITOS / f"{id_}-{n + 1}.png"
         if dado.get("ia") and aceito.exists():          # o dado redesenhado pelo gerador (tools/historia/dados_ia.py) entra no lugar
             ia.append((dado, aceito))
+            continue
+        if dado.get("pular"):                           # conferido à mão e recusado: fica como a arte, à espera do dados_ia.py
+            dado["conferido"] = False
             continue
         x0, y0, x1, y1 = (round(v / 100 * (W if i % 2 == 0 else H)) for i, v in enumerate(dado["caixa"]))
         x0, y0, x1, y1 = max(0, x0), max(0, y0), min(W, x1), min(H, y1)

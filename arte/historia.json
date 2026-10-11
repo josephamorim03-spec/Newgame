@@ -427,7 +427,8 @@
      },
      "conferido": false
     }
-   ]
+   ],
+   "travada": "o dono escolheu manter esta arte (não repintar sem perguntar)"
   },
   "c1-x": {
    "quem": [
@@ -489,7 +490,8 @@
       "e": 1,
       "d": 4
      },
-     "conferido": false
+     "conferido": false,
+     "ia": "a"
     },
     {
      "x": 67.8,
@@ -549,7 +551,8 @@
      100,
      60
     ]
-   }
+   },
+   "travada": "o dono escolheu manter esta arte (não repintar sem perguntar)"
   },
   "c1-pag-a": {
    "quem": [],
@@ -719,7 +722,8 @@
      56,
      55
     ]
-   }
+   },
+   "travada": "o dono escolheu manter esta arte (não repintar sem perguntar)"
   },
   "i1-cobre": {
    "quem": [
@@ -749,7 +753,8 @@
      55,
      80
     ]
-   ]
+   ],
+   "travada": "o dono escolheu manter esta arte (não repintar sem perguntar)"
   },
   "c2-adesivo": {
    "quem": [
@@ -803,7 +808,8 @@
      68,
      65
     ]
-   }
+   },
+   "travada": "o dono escolheu manter esta arte (não repintar sem perguntar)"
   },
   "c2-coelho": {
    "quem": [
@@ -941,7 +947,8 @@
       "e": 1,
       "d": 3
      },
-     "conferido": false
+     "conferido": false,
+     "ia": "a"
     },
     {
      "caixa": [
@@ -1057,7 +1064,8 @@
      67,
      60
     ]
-   }
+   },
+   "travada": "o dono escolheu manter esta arte (não repintar sem perguntar)"
   },
   "c3-raposa": {
    "quem": [
@@ -1264,7 +1272,8 @@
      50,
      92
     ]
-   }
+   },
+   "travada": "o dono escolheu manter esta arte (não repintar sem perguntar)"
   },
   "c4-olho": {
    "quem": [
@@ -1367,7 +1376,8 @@
       "e": 6,
       "d": 2
      },
-     "conferido": false
+     "conferido": false,
+     "ia": "a"
     },
     {
      "caixa": [
@@ -1640,7 +1650,8 @@
      53,
      50
     ]
-   }
+   },
+   "travada": "o dono escolheu manter esta arte (não repintar sem perguntar)"
   },
   "c6-pag-a": {
    "quem": [],
@@ -1752,7 +1763,8 @@
       "d": 3
      },
      "conferido": false,
-     "pular": true
+     "pular": true,
+     "ia": "a"
     }
    ],
    "dados_skin": "madeira"
@@ -2579,7 +2591,8 @@
       "e": 4,
       "d": 5
      },
-     "conferido": false
+     "conferido": false,
+     "ia": "a"
     },
     {
      "caixa": [

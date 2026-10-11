@@ -36,6 +36,7 @@ ORIGINAIS = QUADROS / "originais"
 ACEITOS = RAIZ / "arte" / "historia" / "dados_ia"
 RASCUNHOS = RAIZ / "builds" / "dados_ia"
 LETRAS = "abcdefgh"
+MIN_LARGURA = 6               # % da largura do quadro: só os dados que aparecem grandes (decisão do dono)
 MARGEM = .45                  # o recorte vai além da caixa do dado: o gerador precisa ver o entorno para casar o traço
 FONTE_LETRA = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
 ARRANJO = {1: "one pip in the center", 2: "two pips on a diagonal", 3: "three pips on a diagonal", 4: "four pips, one in each corner",
@@ -70,6 +71,8 @@ def rascunhos(cfg, ids, todos, n, qualidade):
         im = Image.open(ORIGINAIS / f"{id_}.webp" if (ORIGINAIS / f"{id_}.webp").exists() else QUADROS / f"{id_}.webp").convert("RGB")
         for k, dado in enumerate(cfg["artes"][id_].get("dados", []), 1):
             if dado.get("conferido") and not todos:
+                continue
+            if dado["caixa"][2] - dado["caixa"][0] < MIN_LARGURA:   # miúdo de fundo: não vale uma imagem
                 continue
             r = recorte(*im.size, dado["caixa"])
             pasta = RASCUNHOS / id_ / str(k)
