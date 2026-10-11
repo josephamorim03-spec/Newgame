@@ -281,6 +281,16 @@ onde importa, não em mais efeito.
   e do "feito"; mel é a ação); no computador a tela inicial cresce junto (era uma coluna estreita no meio da tela);
   `tools/telas.js` aceita a largura (`node tools/telas.js builds/telas-pc 1360x900`).
 
+- **O fim da partida (v0.17):** era a única tela sem a identidade ("Você venceu!" em texto e o placar numa linha). Agora o
+  placar repete o começo da partida: os dois lados em quadros tortos com a retícula da cor de cada um, o retrato e os
+  pontos; quem venceu pula e leva o carimbo "VENCEU", quem perdeu murcha e fica um pouco apagado; o título ganha as
+  chapas azul e rosa fora do registro. As caixinhas de números do Perfil também passaram para o cartão único.
+
+**O que falta (e por quê):**
+- **A partida, 2.ª passada** (o seu painel com mais peso, o retrato do rival maior): espera o teste num celular de verdade.
+- **A história** (a página conquistada presa com a fita, a aguada de nanquim nos quadros dramáticos): com o colega da arte.
+- **Validar** (etapa 3): um iPhone e um Android simples, e 5 a 8 pessoas jogando.
+
 **O que não fazer:** textura nas telas de uso (Loja, Ajustes, deck, Online); textura animada; estilo próprio por tela; a
 API de imagem para peça de interface (pauta, fita, carimbo, traço, retícula: em código saem com a cor exata, nítidos e
 leves); qualquer mudança visual sem a foto de antes e depois nas telas reais.

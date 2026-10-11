@@ -1515,7 +1515,12 @@
     // perdeu por pouco: o fim diz quanto faltou (um "quase" chama a próxima; uma derrota seca, não)
     const faltou = j.modo !== 'local' && v === 1 && wo === undefined ? j.meta - j.pts[0] : 0;
     const quase = faltou > 0 && faltou <= 3 ? `<small class="fim-quase">Faltaram ${faltou === 1 ? 'só 1 ponto' : `${faltou} pontos`}</small>` : '';
-    document.getElementById('fimPlacar').innerHTML = `<span class="cor0">${n[0]} ${j.pts[0]}</span> × <span class="cor1">${j.pts[1]} ${n[1]}</span>${motivo ? `<small class="fim-motivo">${esc(motivo)}</small>` : quase}`;
+    // o placar como no começo da partida (v0.17): os dois lados em quadros, com o retrato e os pontos; quem venceu pula e
+    // ganha o carimbo, quem perdeu murcha e fica um pouco apagado
+    const avFim = p => j.modo === 'bot' && p === 1 ? Retratos.retrato(RETRATO_RIVAL[j.nivel], p === v ? 'feliz' : 'triste')
+      : p === 0 ? iconeSVG(st.conta.icone) : online() ? iconeSVG(j.perfis[1].icone) : '';
+    const ladoFim = p => `<div class="fd-lado fd-p${p}${p === v ? ' venceu' : ''}">${avFim(p)}<b>${esc(n[p])}</b><span class="fd-pts">${j.pts[p]}</span>${p === v ? '<i class="fd-carimbo">venceu</i>' : ''}</div>`;
+    document.getElementById('fimPlacar').innerHTML = `<div class="fim-duelo" aria-label="${esc(n[0])} ${j.pts[0]} × ${j.pts[1]} ${esc(n[1])}">${ladoFim(0)}<span class="fd-x" aria-hidden="true">×</span>${ladoFim(1)}</div>${motivo ? `<small class="fim-motivo">${esc(motivo)}</small>` : quase}`;
     // repetições viram um item só ("×2"); os mais raros vêm primeiro
     const grupos = new Map();
     j.momentos.filter(m => humano(m.p)).forEach(m => { const k = m.p + m.txt; const g = grupos.get(k) || { ...m, vezes: 0 }; g.vezes++; grupos.set(k, g); });

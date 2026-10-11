@@ -1681,7 +1681,7 @@ button.inicio-perfil:active { transform: translateY(1px); }
    desenho da partida
    ========================================================================== */
 :root { --adesivo-pequeno: 0 3px 0 rgba(58,42,46,.24), inset 0 0 0 1.5px rgba(58,42,46,.2); }
-.impresso .item:not(.usando):not(:has(.avatar.especial)), .impresso .op:not([aria-pressed="true"]), .impresso .perfil-op:not(.usando) { box-shadow: var(--adesivo-pequeno); }
+.impresso .item:not(.usando):not(:has(.avatar.especial)), .impresso .op:not([aria-pressed="true"]), .impresso .perfil-op:not(.usando), .impresso .perfil-num { box-shadow: var(--adesivo-pequeno); }
 .impresso .item:has(.avatar.especial):not(.usando) { box-shadow: inset 0 0 0 2px #e2b04a, 0 3px 0 rgba(58,42,46,.24); }
 
 /* ==========================================================================
@@ -1706,3 +1706,20 @@ button.inicio-perfil:active { transform: translateY(1px); }
 .impresso .chave-liga::after { box-shadow: 0 2px 0 rgba(58,42,46,.3), inset 0 0 0 1.5px rgba(58,42,46,.15); }
 /* no computador, a tela inicial cresce junto (era uma coluna estreita perdida no meio da tela) */
 @media (min-width: 1000px) and (min-height: 820px) { .inicio-caixa { zoom: 1.22; } }
+
+/* o fim da partida (v0.17): o placar como o começo da partida, dois quadros frente a frente. Quem venceu pula e leva o
+   carimbo; quem perdeu murcha e fica um pouco apagado. O título com as chapas azul e rosa fora do registro */
+.fim-duelo { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 6px; margin-top: 4px; padding: 5px 5px 7px; }   /* o respiro: os quadros tortos não passam da caixa */
+.fd-lado { position: relative; display: grid; justify-items: center; gap: 2px; padding: 10px 6px 8px; border-radius: 14px; min-width: 0; }
+.fd-lado .avatar { width: 64px; height: 64px; margin: 0; }
+.fd-lado b { font-family: var(--f-titulo); font-size: 16px; line-height: 1.1; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fd-p0 b { color: var(--voce-tinta); } .fd-p1 b { color: var(--rival-tinta); }
+.fd-pts { font-family: var(--f-titulo); font-weight: 700; font-size: 34px; line-height: 1; color: var(--tinta); font-variant-numeric: tabular-nums; }
+.fd-lado:not(.venceu) { opacity: .78; } .fd-lado:not(.venceu) .avatar { filter: saturate(.55); }
+.fd-x { font-family: var(--f-titulo); font-size: 22px; color: var(--tinta-suave); }
+.fd-carimbo { position: absolute; top: 8px; right: 2px; transform: rotate(12deg); font-style: normal; font-family: var(--f-titulo); font-weight: 700; font-size: 11px; letter-spacing: .14em;
+  text-transform: uppercase; line-height: 1; color: #2f7a52; border: 2px solid currentColor; border-radius: 4px; padding: 3px 5px 2px; background: rgba(255,250,240,.88); }
+.impresso .fd-lado { border: 2px solid var(--tinta); box-shadow: 0 3px 0 var(--tinta); }
+.impresso .fd-p0 { transform: rotate(-1.5deg); background: radial-gradient(circle, rgba(111,191,211,.4) 0 1.5px, transparent 2px) 0 0 / 8px 8px, #eaf6f9; }
+.impresso .fd-p1 { transform: rotate(1.5deg); background: radial-gradient(circle, rgba(236,143,168,.4) 0 1.5px, transparent 2px) 0 0 / 8px 8px, #fcedf1; }
+.impresso #fimTitulo { text-shadow: -2px 0 0 var(--voce), 2px 1px 0 var(--rival); }

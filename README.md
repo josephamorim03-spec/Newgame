@@ -115,6 +115,8 @@ node tools/vercel_local.js                     # a página como o Vercel publica
 - **A partida:** as cartas do rival em fichas baixas e os dados da Mesa maiores; a etiqueta da jogada ("Passo",
   "Oposto") passou para a direita da corrente, onde não cobre mais as etiquetas dos elos.
 - **Ajustes finos:** os botões liga/desliga em mel (a cor da ação), e a tela inicial maior no computador.
+- **O fim da partida** com o placar em quadros, como o começo: retratos, pontos, o carimbo "VENCEU" e o título com as
+  chapas azul e rosa.
 - **A prévia do link** refeita a partir do jogo (`tools/previa.js`): a antiga ainda anunciava o blefe e a Coruja como
   rival direta.
 - **O mapa da história é uma página do caderno:** pauta, margem vermelha no recuo (fora dos retratos), topo rasgado, a
