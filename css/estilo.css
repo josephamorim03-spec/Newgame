@@ -40,7 +40,7 @@
   --erro-fundo: #f6d2cf;
   --f-titulo: "Fredoka", "Baloo 2", "Trebuchet MS", sans-serif;
   --f-corpo: "Nunito", "Segoe UI", Roboto, Arial, sans-serif;
-  --d-mesa: clamp(44px, 13vw, 76px);
+  --d-mesa: clamp(44px, 14.5vw, 76px);   /* v0.17: um pouco maiores (a altura veio do painel do rival, mais enxuto) */
   --d-cor: clamp(34px, 8.6vw, 50px);
   --d-riv: clamp(28px, 7vw, 42px);
   --raio: 18px;
@@ -1252,7 +1252,8 @@ button.bolso.alvo-dado { position: relative; border: 0; font: inherit; color: in
 .bolso.alvo-dado.alvo-perigo.mira, .bolso.alvo-dado.alvo-nao.mira { box-shadow: 0 0 0 4px var(--perigo); }
 /* a etiqueta do alvo: o que acontece se o dado for para lá */
 .alvo-chip { position: absolute; z-index: 3; pointer-events: none; white-space: nowrap; font-size: 11.5px; font-weight: 800; line-height: 1; padding: 4px 8px; border-radius: 999px; background: var(--marfim); color: var(--tinta); box-shadow: 0 2px 6px rgba(0,0,0,.25); }
-.corrente .alvo-chip { top: -10px; left: 12px; }
+/* à direita, nas casas vazias: à esquerda ela cobria as etiquetas dos elos (±1, 7, =) */
+.corrente .alvo-chip { top: -10px; right: 12px; }
 .bolso .alvo-chip { top: calc(100% + 4px); right: 0; font-size: 11px; }
 .alvo-ok > .alvo-chip { background: var(--passo); }
 .alvo-aviso > .alvo-chip { background: var(--mel); }
@@ -1682,3 +1683,16 @@ button.inicio-perfil:active { transform: translateY(1px); }
 :root { --adesivo-pequeno: 0 3px 0 rgba(58,42,46,.24), inset 0 0 0 1.5px rgba(58,42,46,.2); }
 .impresso .item:not(.usando):not(:has(.avatar.especial)), .impresso .op:not([aria-pressed="true"]), .impresso .perfil-op:not(.usando) { box-shadow: var(--adesivo-pequeno); }
 .impresso .item:has(.avatar.especial):not(.usando) { box-shadow: inset 0 0 0 2px #e2b04a, 0 3px 0 rgba(58,42,46,.24); }
+
+/* ==========================================================================
+   A partida (v0.17): o seu painel pesa mais que o do rival. As cartas do rival viram fichas baixas, com o ícone e o
+   nome (tocar continua mostrando a carta inteira): saber quais são basta; o que cada uma faz está a um toque. A altura
+   que sobra vai para os dados da Mesa, o centro do jogo
+   ========================================================================== */
+.p1 .cartas { gap: 6px; }
+.p1 .cartas .carta { min-height: 32px; padding: 3px 8px 3px 6px; gap: 5px; border-radius: 10px; }
+.p1 .cartas .carta .c-arte { width: 22px; height: 22px; }
+.p1 .cartas .carta .cnome { font-size: 13px; }
+.p1 .cartas .carta .cverbo { display: none; }
+/* em tela estreita, a ficha do rival fica só com o nome (com o ícone, "Fundo Falso" encostava na borda) */
+@media (max-width: 360px) { .p1 .cartas .carta .c-arte { display: none; } .p1 .cartas .carta { justify-content: center; padding: 3px 4px; } .p1 .cartas .carta .c-txt { text-align: center; } .p1 .cartas .carta .cnome { font-size: 11.5px; } }

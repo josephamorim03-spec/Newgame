@@ -69,6 +69,7 @@ e o amigo cai direto na sala. O servidor é a autoridade da partida e roda na Ra
 | `tools/referencias.js` | desenha os vetores de `js/retratos.js` em `arte/referencia/` (rode de novo quando mudar um vetor) |
 | `tools/fumaca.js` | teste de fumaça: joga partidas inteiras no navegador e falha com qualquer erro |
 | `tools/estreia_e2e.js` | a estreia e o guia: primeira partida sem cartas, explicações uma vez só, fim da derrota, a partida seguinte e quem já jogava |
+| `tools/previa.js` | monta a imagem de compartilhamento (`img/previa.png`) a partir do próprio jogo: o letreiro e a cena da Diana |
 | `tools/telas.js` | fotografa as 14 telas do jogo no tamanho de celular, para revisar a identidade visual lado a lado |
 | `tools/impresso_demo.js` | grava o protótipo das técnicas de gibi (`?impresso=1`, `docs/visual-impresso.md`) sem e com, para comparar |
 | `tools/regras.js` | testes dirigidos das cartas (Pressa, Remendo, Espelho, armadilha virada, Âncora × Interferência) |
@@ -109,6 +110,12 @@ node tools/vercel_local.js                     # a página como o Vercel publica
 ## Estado
 
 **v0.17, na branch `DiceDuel-primeira-partida` (ainda não publicada):** o Caderno da Diana e a legibilidade.
+- **Consolidação (o rumo, `docs/visual-impresso.md`):** um só cartão pequeno na Loja, no deck e no Perfil; o letreiro de
+  uma linha no cabeçalho; a cena da Diana de volta na tela dos modos.
+- **A partida:** as cartas do rival em fichas baixas e os dados da Mesa maiores; a etiqueta da jogada ("Passo",
+  "Oposto") passou para a direita da corrente, onde não cobre mais as etiquetas dos elos.
+- **A prévia do link** refeita a partir do jogo (`tools/previa.js`): a antiga ainda anunciava o blefe e a Coruja como
+  rival direta.
 - **O mapa da história é uma página do caderno:** pauta, margem vermelha no recuo (fora dos retratos), topo rasgado, a
   fita segurando a página, o título na letra da Diana com um traço de pincel, o carimbo "FEITO" e uma seta à mão no
   capítulo da vez.

@@ -263,6 +263,20 @@ onde importa, não em mais efeito.
 5. **Só depois, a história:** a página conquistada presa com a fita; a aguada de nanquim nos quadros dramáticos, com o
    colega da arte.
 
+**Andamento (v0.17):**
+- **1. Consolidar: feito.** `--adesivo-pequeno` é o cartão em repouso da Loja, do deck e do Perfil (o selecionado já era
+  igual em todos); o letreiro de uma linha no cabeçalho; a cena da Diana, menor, na tela dos modos.
+- **2. A partida: a primeira passada, de baixo custo.** As cartas do rival viraram fichas baixas (ícone e nome; tocar
+  mostra a carta) e os dados da Mesa cresceram de 13% para 14,5% da largura no celular. A etiqueta da jogada na corrente
+  ("Passo", "Oposto") foi para a direita: à esquerda cobria as etiquetas dos elos. As etiquetas embaixo dos dados da Mesa
+  ficaram: com um dado escolhido, elas dizem o que acontece (±1, Bolso, 7, =), e isso é informação, não ruído. O
+  redesenho maior da partida (o seu painel, o retrato do rival) espera o teste num celular de verdade.
+- **4. O ícone e a prévia: o ícone fica** (vetor: um dado com contorno cacau no feltro, emoldurado de madeira, já é a
+  identidade e lê bem a 32 px; pintado, perderia nitidez pequeno). **A prévia foi refeita em código**, sem a API: a
+  antiga anunciava o blefe (que saiu na v0.13) e a Coruja como rival direta. `tools/previa.js` a monta a partir do
+  próprio jogo (o letreiro, a cena da Diana à mesa, a noite pontilhada), então ela acompanha o visual. A descrição e o
+  texto alternativo do link também foram atualizados. A API de imagem não foi necessária nesta rodada.
+
 **O que não fazer:** textura nas telas de uso (Loja, Ajustes, deck, Online); textura animada; estilo próprio por tela; a
 API de imagem para peça de interface (pauta, fita, carimbo, traço, retícula: em código saem com a cor exata, nítidos e
 leves); qualquer mudança visual sem a foto de antes e depois nas telas reais.
