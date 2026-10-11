@@ -18,6 +18,12 @@
   // a face de cima, parada, recebe a luz que o dado parado recebe: escurecer zero (senão a troca pisca)
   const LUZ_TOPO = LUZ[1];
   const PERSPECTIVA = 1400;
+  // o cubo é montado NITIDEZ vezes maior e reduzido no fim da transformação: o navegador desenha cada face girada
+  // em 3D na resolução do tamanho montado (no celular, o dado de 60 px saía em 60 px esticados três vezes, com a
+  // beira e as bolinhas em degraus). O desenho da face é ampliado por zoom, então as texturas em px das skins
+  // continuam iguais; a geometria na tela é a mesma
+  // (2 basta: 3 dava ~66 MB de textura para cinco dados num iPhone). O miolo, só cor, fica no tamanho da tela
+  const NITIDEZ = 2;
   // Godot (x, y altura, z para quem joga) -> CSS (x, y para baixo, z para quem olha): troca y e z
   const paraCss = v => [v[0], v[2], v[1]];
   const baseCss = m => [[m[0][0], m[0][2], m[0][1]], [m[2][0], m[2][2], m[2][1]], [m[1][0], m[1][2], m[1][1]]];
@@ -44,10 +50,13 @@
   // as faces pareciam abas de papel soltas. O miolo enche as quinas como um dado de canto gasto, e é pequeno o
   // bastante para não aparecer pelos cantos da face de cima quando o dado está pousado (visto de cima):
   // lado/2 − 0,293 × raio do canto (24% do lado; a pelúcia, 34%), com folga.
-  function montarCubo(L, skin) {
+  function montarCubo(Lt, skin) {
+    const L = Lt * NITIDEZ;                 // o tamanho montado; na tela, Lt
     const cubo = document.createElement('div');
     cubo.className = 'cubo-rolagem';
     cubo.style.width = cubo.style.height = L + 'px';
+    cubo.style.setProperty('--lado', Lt + 'px');
+    cubo.style.setProperty('--nitidez', NITIDEZ);
     // o miolo quase do tamanho do dado, com cantos arredondados: enche quinas e arestas sem deixá-las quadradas (com 0,41 sobrava um entalhe escuro em cada vértice);
     // perto do pouso, de pé, ele se apaga (quadro): visto de cima, os cantos dele apareceriam pelos cantos redondos
     const s = 0.47 * L;
@@ -56,7 +65,9 @@
       const t = paraCss(M.tangente(i)), b = paraCss(M.bitangente(i)), n = paraCss(M.NORMAIS[i]);
       const m = [[t[0], b[0], n[0]], [t[1], b[1], n[1]], [t[2], b[2], n[2]]];
       // o lado do miolo é 2s, centrado na caixa do cubo (a caixa tem o lado L)
-      html += `<div class="miolo-rolagem" style="left:${L / 2 - s}px;top:${L / 2 - s}px;width:${2 * s}px;height:${2 * s}px;transform:${matriz(m, n.map(x => x * s))}"></div>`;
+      // montado no tamanho da tela (2s / NITIDEZ) e ampliado na própria transformação: só cor, não precisa de resolução
+      const sm = s / NITIDEZ;
+      html += `<div class="miolo-rolagem" style="left:${L / 2 - sm}px;top:${L / 2 - sm}px;width:${2 * sm}px;height:${2 * sm}px;transform:${matriz(m, n.map(x => x * s))} scale3d(${NITIDEZ}, ${NITIDEZ}, 1)"></div>`;
     }
     for (let i = 0; i < 6; i++) {
       const t = paraCss(M.tangente(i)), b = paraCss(M.bitangente(i)), n = paraCss(M.NORMAIS[i]);
@@ -154,7 +165,8 @@
       // quem está mais alto passa por cima (cada palco é plano para os outros)
       a.palco.style.zIndex = String(Math.round(h * 100));
       // o centro fica meio lado abaixo da face de cima: parado, a face de cima cai no plano da tela (escala 1)
-      a.cubo.style.transform = `translate3d(${cx - L / 2}px, ${cy - L / 2}px, ${p.pos[1] * L - L / 2}px) ${matriz(baseCss(p.base))}`;
+      const Lm = L * NITIDEZ;   // o cubo montado (o centro dele é o centro do dado; a escala volta ao tamanho da tela)
+      a.cubo.style.transform = `translate3d(${cx - Lm / 2}px, ${cy - Lm / 2}px, ${p.pos[1] * L - L / 2}px) ${matriz(baseCss(p.base))} scale3d(${1 / NITIDEZ}, ${1 / NITIDEZ}, ${1 / NITIDEZ})`;
       // a sombra é a do dado parado (6 px abaixo, desfocada): no chão ela fica onde a dele fica;
       // no ar ela se afasta para baixo e à direita, encolhe e clareia
       a.sombra.style.transform = `translate(${cx - L / 2 + h * L * 0.28}px, ${cy - L / 2 + 6 + h * L * 0.42}px) scale(${1 - Math.min(0.45, h * 0.16)})`;
@@ -166,13 +178,20 @@
       // inclinação da face de cima (0 = de pé): o miolo some nos últimos graus, e de vez na fusão
       const deCima = Math.max(...M.NORMAIS.map(nn => M.mulMV(p.base, nn)[1]));
       const miolo = a.pousando ? 0 : entra * Math.max(0, Math.min(1, ((1 - deCima) - 0.0015) / 0.008));
-      if (miolo !== a.miolo) { a.miolo = miolo; a.miolos.forEach(m => { m.style.opacity = miolo.toFixed(3); }); }
+      // quase deitado (a menos de ~11°), as laterais viram tiras de um ou dois pixels soltas ao lado do dado: elas somem
+      // junto com a inclinação (visto de cima, o dado deitado não mostra os lados); a face de cima fica
+      const deitado = Math.max(0, Math.min(1, (1 - deCima) / 0.02));
       a.faces.forEach((f, i) => {
         const n = M.mulMV(p.base, M.NORMAIS[i]), luz = n[0] * LUZ[0] + n[1] * LUZ[1] + n[2] * LUZ[2];
         // a face fica sempre opaca (translúcida, o dado parecia oco, com a face de cima flutuando); quase de perfil,
         // só as bolinhas somem: espremidas na lasca, elas pareceriam sair do contorno
         const perfil = Math.max(0, Math.min(1, (n[1] - 0.06) / 0.22));
-        f.style.opacity = entra.toFixed(3);
+        // de perfil exato (o olho fica em cima), a face vira um risco solto ao lado do dado, serrilhado no celular:
+        // nos últimos graus ela some, e o lado do miolo do mesmo lado some junto
+        const risco = Math.max(0, Math.min(1, (n[1] - 0.012) / 0.05)) * (n[1] >= deCima - 1e-6 ? 1 : deitado);
+        f.style.opacity = (entra * risco).toFixed(3);
+        const m = (miolo * risco).toFixed(3);
+        if (a.miolos[i]._op !== m) { a.miolos[i]._op = m; a.miolos[i].style.opacity = m; }
         f.style.setProperty('--pips', perfil.toFixed(3));
         const escuro = Math.max(0, Math.min(0.42, 0.42 * (LUZ_TOPO - luz) / (1 + LUZ_TOPO))).toFixed(3);
         f.style.setProperty('--escuro', escuro);
