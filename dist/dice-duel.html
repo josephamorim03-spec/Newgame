@@ -1630,8 +1630,22 @@ button.inicio-perfil:active { transform: translateY(1px); }
 .impresso .vs-linha > .vs-lado { padding: 10px 12px 12px; border: 2.5px solid var(--tinta); border-radius: 14px; box-shadow: 0 4px 0 var(--tinta); }
 .impresso .vs-linha > .vs-lado:first-child { transform: rotate(-2deg); background: radial-gradient(circle, rgba(111,191,211,.45) 0 1.6px, transparent 2.1px) 0 0 / 8px 8px, #eaf6f9; }
 .impresso .vs-linha > .vs-lado:last-child { transform: rotate(2deg); background: radial-gradient(circle, rgba(236,143,168,.45) 0 1.6px, transparent 2.1px) 0 0 / 8px 8px, #fcedf1; }
-.impresso .vs-x { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 50%; background: var(--mel); color: var(--tinta); border: 3px solid var(--tinta);
-  box-shadow: -4px 0 0 var(--voce), 4px 3px 0 var(--rival); font-size: 30px; line-height: 1; z-index: 1; margin: -6px 0; }
+.impresso .vs-x { display: block; z-index: 1; margin: -20px 0; line-height: 0; animation: vsEntra .45s steps(4, end) both .15s; }
+.impresso .vs-linha { flex-direction: column; flex-wrap: nowrap; gap: 0; }
+/* com espaço, os dois quadros ficam lado a lado e o VS estoura entre eles, por cima das bordas */
+@media (min-width: 600px) {
+  .impresso .vs-linha { flex-direction: row; align-items: center; }
+  .impresso .vs-linha > .vs-lado { flex: 1 1 0; min-width: 0; align-self: stretch; }
+  .impresso .vs-x { margin: 0 -26px; }
+}
+.vs-explosao { width: 104px; height: auto; overflow: visible; }
+.vs-explosao polygon { stroke-linejoin: round; }
+.vs-explosao .vs-sombra { fill: #120c12; opacity: .45; } .vs-explosao .vs-azul { fill: var(--voce); } .vs-explosao .vs-rosa { fill: var(--rival); }
+.vs-explosao .vs-mel { fill: var(--mel); stroke: var(--tinta); stroke-width: 3.5px; }
+.vs-explosao .vs-letras { font-family: var(--f-titulo); font-weight: 700; font-size: 36px; text-anchor: middle; letter-spacing: 1px; fill: var(--papel); stroke: var(--tinta); stroke-width: 6px; paint-order: stroke fill; stroke-linejoin: round; }
+/* a explosão estoura em poses seguradas: pequena, grande demais, assenta */
+@keyframes vsEntra { 0% { transform: scale(.2) rotate(-30deg); opacity: 0; } 40% { transform: scale(1.3) rotate(8deg); opacity: 1; } 70% { transform: scale(.92) rotate(-3deg); } 100% { transform: none; } }
+.sem-animacoes .vs-x { animation: none; }
 
 </style>
 <style>
@@ -6715,9 +6729,11 @@ window.HISTORIA_QUADROS = {"falas":{"P-01":[{"arte":"p-mesa","chave":"P-antes_0"
     };
     const el = document.createElement('div');
     el.className = 'versus'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Começo da partida');
+    // o "VS" numa explosão de gibi entre os dois quadros (com o impresso desligado, o × de antes)
+    const VS_EXPLOSAO = '<svg class="vs-explosao" viewBox="0 0 120 92" aria-hidden="true"><g transform="rotate(-8 60 46)"><polygon points="109.1,60.1 90.5,65.0 93.0,79.2 78.7,77.1 74.4,95.8 62.3,81.0 50.4,89.1 46.4,75.3 27.6,79.1 36.0,61.9 23.7,54.5 34.6,45.0 23.3,29.5 42.5,30.1 44.1,15.8 57.2,21.8 66.6,5.1 74.1,22.7 87.8,18.3 87.8,32.7 106.9,34.3 93.9,48.4" class="vs-sombra"/><polygon points="101.1,52.1 82.5,57.0 85.0,71.2 70.7,69.1 66.4,87.8 54.3,73.0 42.4,81.1 38.4,67.3 19.6,71.1 28.0,53.9 15.7,46.5 26.6,37.0 15.3,21.5 34.5,22.1 36.1,7.8 49.2,13.8 58.6,-2.9 66.1,14.7 79.8,10.3 79.8,24.7 98.9,26.3 85.9,40.4" class="vs-azul"/><polygon points="109.1,58.1 90.5,63.0 93.0,77.2 78.7,75.1 74.4,93.8 62.3,79.0 50.4,87.1 46.4,73.3 27.6,77.1 36.0,59.9 23.7,52.5 34.6,43.0 23.3,27.5 42.5,28.1 44.1,13.8 57.2,19.8 66.6,3.1 74.1,20.7 87.8,16.3 87.8,30.7 106.9,32.3 93.9,46.4" class="vs-rosa"/><polygon points="105.1,55.1 86.5,60.0 89.0,74.2 74.7,72.1 70.4,90.8 58.3,76.0 46.4,84.1 42.4,70.3 23.6,74.1 32.0,56.9 19.7,49.5 30.6,40.0 19.3,24.5 38.5,25.1 40.1,10.8 53.2,16.8 62.6,0.1 70.1,17.7 83.8,13.3 83.8,27.7 102.9,29.3 89.9,43.4" class="vs-mel"/><text x="60" y="58" class="vs-letras">VS</text></g></svg>';
     // o título é o letreiro da tela inicial (o adesivo de gibi); sem ele, o nome em texto
     const letreiro = (document.getElementById('inicioTitulo') || {}).innerHTML || 'Dice Duel';
-    el.innerHTML = `<div class="caixa"><h2 class="titulo-letreiro vs-titulo">${letreiro}</h2><div class="vs-linha">${lado(0)}<span class="vs-x">×</span>${lado(1)}</div>
+    el.innerHTML = `<div class="caixa"><h2 class="titulo-letreiro vs-titulo">${letreiro}</h2><div class="vs-linha">${lado(0)}<span class="vs-x" role="img" aria-label="contra">${Fx.cfg.impresso ? VS_EXPLOSAO : '×'}</span>${lado(1)}</div>
       <p class="nota">${j.estreia ? 'Primeira partida, sem cartas: ligue dados que sincronizam e dispare a corrente. As cartas chegam na próxima. ' : j.historia ? `${RIVAIS[j.nivel].desc}. ${(Historia.cap(j.historia) || {}).regra || ''} ` : j.modo === 'bot' ? RIVAIS[j.nivel].desc + '. ' : online() ? `Rating ${j.perfis[1].rating}. ${tempoTxt(j.ritmo)}. ` : ''}Meta: ${j.meta} pontos. ${n[j.vez]} começa.</p><button class="btn btn-mel">Vamos lá</button></div>`;
     document.body.appendChild(el);
     Som.tocar('carta');
