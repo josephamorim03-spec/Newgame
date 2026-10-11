@@ -2091,13 +2091,26 @@
     el.innerHTML = `<button class="cena-rival${cena.feliz ? ' feliz' : ''}" data-cena="rival" tabindex="-1">${Retratos.retrato(RETRATO_RIVAL[k], cena.feliz ? 'feliz' : '')}</button>
       <p class="cena-fala">${esc(fala)}</p>
       <div class="cena-mesa">${cena.dados.map((v, i) => `<button class="cena-dado" data-cena="dado" data-i="${i}" tabindex="-1">${dadoHTML(v, PELE_CENA[i])}</button>`).join('')}</div>`;
+    encaixarBalao(el.querySelector('.cena-fala'));
   }
+  // o balão da cena com as linhas equilibradas (text-wrap: balance) não encolhe sozinho: fica na largura máxima e sobra
+  // papel dos lados. Mede a linha mais larga e ajusta a caixa a ela (desfazendo a escala da animação de entrada)
+  function encaixarBalao(b) {
+    if (!b) return;
+    b.style.width = '';
+    const r = document.createRange(); r.selectNodeContents(b);
+    const linhas = [...r.getClientRects()], escala = b.offsetWidth ? b.getBoundingClientRect().width / b.offsetWidth : 1;
+    if (!linhas.length || !escala) return;
+    const cs = getComputedStyle(b), w = Math.max(...linhas.map(x => x.width)) / escala;
+    b.style.width = Math.ceil(w + parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight) + parseFloat(cs.borderLeftWidth) + parseFloat(cs.borderRightWidth)) + 1 + 'px';
+  }
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => encaixarBalao(document.querySelector('#inicioCena .cena-fala')));   // a letra do jogo chega depois e é mais larga
   function falaDaCena(txt) {
     cena.fala = txt; cena.feliz = true;
     // muda só o balão e o sorriso (redesenhar a cena inteira interromperia o dado que está rolando)
     const balao = document.querySelector('#inicioCena .cena-fala'), cab = document.querySelector('#inicioCena .cena-rival');
     if (balao && cab) {
-      balao.textContent = txt.replace('Boa noite', saudacao());
+      balao.textContent = txt.replace('Boa noite', saudacao()); encaixarBalao(balao);
       balao.style.animation = 'none'; void balao.offsetWidth; balao.style.animation = '';
       cab.classList.remove('feliz'); void cab.offsetWidth; cab.classList.add('feliz');
     } else desenharCena();

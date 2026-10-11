@@ -119,6 +119,8 @@ node tools/vercel_local.js                     # a página como o Vercel publica
   guardado no lugar dele (a mesma troca, na outra ordem; o balanceamento não muda).
 - **As dicas do guia viram um balão da Diana** no painel dela, com o rabinho até o retrato: não cobrem mais a Mesa nem
   encostam na beira da tela. As chamadas de festa ("Passo!") ficam com a mesma margem dos dois lados.
+- **A fala da Diana na tela inicial** fica em cima dela, centrada e em 1 ou 2 linhas equilibradas (ao lado da cabeça
+  ela ficava espremida em 4 ou 5 linhas).
 - **A partida:** as cartas do rival em fichas baixas e os dados da Mesa maiores; a etiqueta da jogada ("Passo",
   "Oposto") passou para a direita da corrente, onde não cobre mais as etiquetas dos elos.
 - **Ajustes finos:** os botões liga/desliga em mel (a cor da ação), e a tela inicial maior no computador.

@@ -286,6 +286,11 @@ onde importa, não em mais efeito.
   pontos; quem venceu pula e leva o carimbo "VENCEU", quem perdeu murcha e fica um pouco apagado; o título ganha as
   chapas azul e rosa fora do registro. As caixinhas de números do Perfil também passaram para o cartão único.
 
+- **Os balões (v0.17, pedido do dono, num iPhone):** a fala da Diana na tela inicial saiu do lado da cabeça (espremida
+  em ~120 px, 4 ou 5 linhas tortas alinhadas à esquerda) para cima dela, centrada, com as linhas equilibradas e a caixa
+  do tamanho do texto, e o rabinho descendo até ela. Na partida, a dica do guia virou um balão da Diana no painel dela
+  (não cobre mais a Mesa); as chamadas de gibi descontam a sombra dura na largura, com margens iguais dos dois lados.
+
 **O que falta (e por quê):**
 - **A partida, 2.ª passada** (o seu painel com mais peso, o retrato do rival maior): espera o teste num celular de verdade.
 - **A história** (a página conquistada presa com a fita, a aguada de nanquim nos quadros dramáticos): com o colega da arte.

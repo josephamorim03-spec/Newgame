@@ -1350,6 +1350,12 @@ button.bolso.alvo-dado { position: relative; border: 0; font: inherit; color: in
 @keyframes cenaPulo { 40% { transform: translateY(-10px) scale(1.06); } }
 .cena-fala { position: absolute; top: 2px; left: calc(50% + clamp(40px, 6vh, 56px)); right: 0; margin: 0; width: fit-content; max-width: calc(50% - 30px); padding: 7px 11px; border-radius: 14px 14px 14px 4px; background: var(--papel); color: var(--tinta); font-size: 13px; font-weight: 700; line-height: 1.25; text-align: left; box-shadow: 0 3px 0 var(--papel-2), 0 8px 18px rgba(0,0,0,.3); animation: cenaFala .4s cubic-bezier(.3,1.5,.5,1) both; }
 @keyframes cenaFala { from { transform: translateY(6px) scale(.85); opacity: 0; } }
+/* o balão da Diana (v0.17): em cima da cabeça dela, centrado e largo o bastante para a fala caber em 1 ou 2 linhas
+   equilibradas, com o rabinho descendo até ela. Ao lado da cabeça ele ficava espremido em ~120 px: a mesma frase em
+   4 ou 5 linhas tortas, alinhadas à esquerda, e o espaço livre acima da cena sem uso */
+.inicio-cena { --gato: clamp(92px, 15vh, 128px); }
+.cena-fala { top: auto; bottom: calc(40px + var(--gato) + 12px); left: 0; right: 0; margin: 0 auto; max-width: min(300px, 100%); padding: 8px 16px 9px; border-radius: 16px; font-size: 14px; line-height: 1.3; text-align: center; text-wrap: balance; transform-origin: 50% 100%; }
+.cena-fala::after { content: ''; position: absolute; left: calc(50% - 7px); bottom: -9px; width: 14px; height: 10px; background: var(--papel); clip-path: polygon(0 0, 100% 0, 50% 100%); }
 .cena-mesa { position: absolute; left: 0; right: 0; bottom: 0; height: 62px; display: flex; justify-content: center; align-items: center; gap: 16px; border-radius: 20px;
   background: radial-gradient(ellipse 80% 70% at 50% 35%, var(--feltro-2), var(--feltro) 60%, var(--feltro-escuro));
   box-shadow: inset 0 0 0 5px var(--madeira-claro), inset 0 0 0 7px var(--madeira), inset 0 6px 14px rgba(0,0,0,.35), 0 9px 0 var(--madeira-escuro), 0 18px 30px rgba(0,0,0,.45); }
@@ -1360,7 +1366,7 @@ button.bolso.alvo-dado { position: relative; border: 0; font: inherit; color: in
 @keyframes cenaEspera { 0%, 86%, 100% { transform: none; } 90% { transform: translateY(-12px) rotate(-12deg); } 94% { transform: translateY(0) rotate(4deg); } 97% { transform: translateY(-3px); } }
 .cena-dado.rola .dado { animation: cenaRola .55s cubic-bezier(.3,.7,.3,1); }
 @keyframes cenaRola { 0% { transform: translateY(0) rotate(0); } 35% { transform: translateY(-26px) rotate(200deg) scale(1.1); } 70% { transform: translateY(0) rotate(350deg) scale(.95, 1.05); } 85% { transform: translateY(-5px) rotate(360deg); } 100% { transform: translateY(0) rotate(360deg); } }
-@media (max-height: 680px) { .inicio-cena { height: 128px; } .cena-rival { width: 84px; height: 84px; margin-left: -42px; } .cena-mesa { height: 54px; } .cena-dado { width: 32px; height: 32px; } }
+@media (max-height: 680px) { .inicio-cena { height: 128px; --gato: 84px; } .cena-rival { width: 84px; height: 84px; margin-left: -42px; } .cena-mesa { height: 54px; } .cena-dado { width: 32px; height: 32px; } }
 
 /* ==========================================================================
    Perfil (v0.12): tocar no seu nome na tela inicial. Nível, ratings, recordes e o seu visual (só o que você já tem)
@@ -1640,6 +1646,8 @@ button.inicio-perfil:active { transform: translateY(1px); }
 .impresso .cena-fala, .impresso .fala { border: 2.5px solid var(--tinta); border-radius: 18px; box-shadow: 3px 4px 0 rgba(18,12,18,.55); overflow: visible; }
 .impresso .cena-fala::before, .impresso .fala::before { content: ''; position: absolute; left: 10px; bottom: -11px; width: 14px; height: 12px; background: var(--tinta); clip-path: polygon(0 0, 100% 0, 0 100%); }
 .impresso .cena-fala::after, .impresso .fala::after { content: ''; position: absolute; left: 12.5px; bottom: -6.5px; width: 9px; height: 8px; background: inherit; clip-path: polygon(0 0, 100% 0, 0 100%); }
+.impresso .cena-fala::before { left: calc(50% - 8px); bottom: -12px; width: 16px; height: 12px; clip-path: polygon(0 0, 100% 0, 50% 100%); }
+.impresso .cena-fala::after { left: calc(50% - 5px); bottom: -6px; width: 10px; height: 7px; clip-path: polygon(0 0, 100% 0, 50% 100%); }
 .impresso .fala { background: var(--papel); }
 .impresso .fala-guia { border: 2.5px solid var(--tinta); box-shadow: 4px 5px 0 var(--mel), 4px 5px 0 2.5px var(--tinta), 0 12px 24px rgba(0,0,0,.3); }
 .impresso .fala-guia::before { background: var(--tinta); top: -14px; }
@@ -7606,13 +7614,26 @@ window.HISTORIA_QUADROS = {"falas":{"P-01":[{"arte":"p-mesa","chave":"P-antes_0"
     el.innerHTML = `<button class="cena-rival${cena.feliz ? ' feliz' : ''}" data-cena="rival" tabindex="-1">${Retratos.retrato(RETRATO_RIVAL[k], cena.feliz ? 'feliz' : '')}</button>
       <p class="cena-fala">${esc(fala)}</p>
       <div class="cena-mesa">${cena.dados.map((v, i) => `<button class="cena-dado" data-cena="dado" data-i="${i}" tabindex="-1">${dadoHTML(v, PELE_CENA[i])}</button>`).join('')}</div>`;
+    encaixarBalao(el.querySelector('.cena-fala'));
   }
+  // o balão da cena com as linhas equilibradas (text-wrap: balance) não encolhe sozinho: fica na largura máxima e sobra
+  // papel dos lados. Mede a linha mais larga e ajusta a caixa a ela (desfazendo a escala da animação de entrada)
+  function encaixarBalao(b) {
+    if (!b) return;
+    b.style.width = '';
+    const r = document.createRange(); r.selectNodeContents(b);
+    const linhas = [...r.getClientRects()], escala = b.offsetWidth ? b.getBoundingClientRect().width / b.offsetWidth : 1;
+    if (!linhas.length || !escala) return;
+    const cs = getComputedStyle(b), w = Math.max(...linhas.map(x => x.width)) / escala;
+    b.style.width = Math.ceil(w + parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight) + parseFloat(cs.borderLeftWidth) + parseFloat(cs.borderRightWidth)) + 1 + 'px';
+  }
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => encaixarBalao(document.querySelector('#inicioCena .cena-fala')));   // a letra do jogo chega depois e é mais larga
   function falaDaCena(txt) {
     cena.fala = txt; cena.feliz = true;
     // muda só o balão e o sorriso (redesenhar a cena inteira interromperia o dado que está rolando)
     const balao = document.querySelector('#inicioCena .cena-fala'), cab = document.querySelector('#inicioCena .cena-rival');
     if (balao && cab) {
-      balao.textContent = txt.replace('Boa noite', saudacao());
+      balao.textContent = txt.replace('Boa noite', saudacao()); encaixarBalao(balao);
       balao.style.animation = 'none'; void balao.offsetWidth; balao.style.animation = '';
       cab.classList.remove('feliz'); void cab.offsetWidth; cab.classList.add('feliz');
     } else desenharCena();
