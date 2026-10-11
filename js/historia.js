@@ -302,31 +302,68 @@
   }
 
   // ---------- o mapa ----------
-  let ligacao = null;   // { estado(): {feitos}, jogar(capId), retrato(id) }
+  let ligacao = null;   // { estado(): {feitos}, jogar(capId), nomeCarta(c), visto(capId) }
+  // como no Pokémon: até a pessoa tentar o capítulo, o rival é só uma silhueta com "?" e o nome do lugar fica fechado.
+  // Tocar em Jogar revela (e a revelação fica: perder não esconde de novo)
+  // as metas do capítulo (tocar no capítulo abre): a 1.ª estrela é vencer, as outras duas são do capítulo. Com o rival ainda
+  // em silhueta, as metas ficam fechadas também (elas contam quem vem: "Não perca dado para o Fundo Falso")
+  function metas(c, oculto, feito, n) {
+    if (!c.estrelas) return '<p class="hc-metas-nota">O Prólogo não tem estrelas: é a aula da Diana.</p>';
+    if (oculto) return '<p class="hc-metas-nota">As metas aparecem quando você conhecer o rival.</p>';
+    const lista = [['Vença o capítulo'], ...c.estrelas].map(([t], i) => `<li><span class="hc-m-n" aria-hidden="true">${'★'.repeat(i + 1)}</span><span>${esc(t)}</span></li>`).join('');
+    return `<ol class="hc-metas" aria-label="Metas das estrelas">${lista}</ol>${c.regra ? `<p class="hc-metas-nota"><b>Regra da casa:</b> ${esc(c.regra)}</p>` : ''}
+      <p class="hc-metas-nota">${feito ? `Sua melhor vez: <span class="hc-estrelas">${'★'.repeat(n)}${'☆'.repeat(3 - n)}</span>. ` : ''}As estrelas guardam a melhor vez, também nas revanches.</p>`;
+  }
   function abrirMapa() {
     const j = document.getElementById('janelaHistoria'); if (!j || !ligacao) return;
     const est = ligacao.estado(), prox = R().proximoCapitulo(est);
     const linhas = CAPS.map(c => {
       const feito = est.feitos.includes(c.id), aberto = feito || c.id === prox;
+      const oculto = !(ligacao.visto ? ligacao.visto(c.id) : true);
       const rec = R().HISTORIA.recompensa[c.id];
       const dado = rec && rec.dado ? `dado ${R().CATALOGO.dados[rec.dado].nome}` : '';
       const premio = !rec ? '' : [rec.carta ? `carta ${ligacao.nomeCarta(rec.carta)}` : rec.icone ? 'o ícone da Diana' : `${rec.moedas} moedas`, dado].filter(Boolean).join(' e ');
-      return `<li class="hc${feito ? ' feito' : ''}${aberto ? '' : ' travado'}${c.id === prox ? ' atual' : ''}">
-        <span class="hc-retrato">${Retratos.retrato(c.retrato)}</span>
-        <span class="hc-txt"><small>${esc(c.titulo)}${feito && c.estrelas ? ` <span class="hc-estrelas" aria-label="${est.estrelas[c.id] || 0} de 3 estrelas">${'★'.repeat(est.estrelas[c.id] || 0)}${'☆'.repeat(3 - (est.estrelas[c.id] || 0))}</span>` : ''}</small><b>${esc(c.nome)}</b><span>${feito ? 'Feito' : aberto ? (premio ? `Vale: ${premio}` : 'Comece por aqui') : 'Fechado'}</span></span>
-        ${aberto ? `<button class="btn ${c.id === prox ? 'btn-mel' : 'btn-papel'}" data-cap="${c.id}">${feito ? 'Jogar de novo' : 'Jogar'}</button>` : ''}</li>`;
+      const n = est.estrelas[c.id] || 0;
+      const estrelas = feito && c.estrelas ? ` <span class="hc-estrelas" aria-label="${n} de 3 estrelas">${'★'.repeat(n)}${'☆'.repeat(3 - n)}</span>` : '';
+      const status = feito ? '<span class="hc-carimbo">Feito</span>' : `<span>${aberto ? (premio ? `Vale: ${esc(premio)}` : 'Comece por aqui') : 'Fechado'}</span>`;
+      return `<li class="hc${feito ? ' feito' : ''}${aberto ? '' : ' travado'}${c.id === prox ? ' atual' : ''}${oculto ? ' oculto' : ''}">
+        <span class="hc-retrato" data-r="${c.retrato}"${oculto ? ' aria-label="rival ainda desconhecido"' : ''}>${Retratos.retrato(c.retrato)}${oculto ? '<i class="hc-interroga" aria-hidden="true">?</i>' : ''}</span>
+        <button class="hc-txt" data-abre="${c.id}" aria-expanded="false" aria-controls="hc-metas-${c.id}"><small>${esc(c.titulo)}${estrelas}</small><b class="hc-nome">${oculto ? '? ? ?' : esc(c.nome)}</b>${status}</button>
+        ${aberto ? `<button class="btn ${c.id === prox ? 'btn-mel' : 'btn-papel'}" data-cap="${c.id}"${oculto ? ' data-revelar="1"' : ''}>${feito ? 'Jogar de novo' : 'Jogar'}</button>` : ''}
+        <div class="hc-det" id="hc-metas-${c.id}"><div>${metas(c, oculto, feito, n)}</div></div></li>`;
     }).join('');
     const total = R().totalEstrelas(est);
     j.querySelector('#historiaConteudo').innerHTML = `<p class="nota historia-total">${est.feitos.length > 1 ? `${total} de ${3 * (CAPS.length - 1)} estrelas` : 'Sete páginas, sete bichos.'}</p><ol class="historia-caps">${linhas}</ol>`;
     j.hidden = false;
     if (window.Som) Som.tocar('abrir');
   }
+  // a revelação: a silhueta pisca branca, o "?" estoura, o retrato aparece em cores e o nome do lugar se escreve; só
+  // então a janela fecha e o capítulo começa (sem animações, direto)
+  function revelar(b) {
+    const j = document.getElementById('janelaHistoria'), li = b.closest('.hc'), c = cap(b.dataset.cap);
+    if (!li || !c || li.classList.contains('revelando')) return;
+    const comecar = () => { j.hidden = true; ligacao.jogar(c.id); };
+    if (document.documentElement.classList.contains('sem-animacoes')) return comecar();
+    b.disabled = true; li.classList.add('revelando');
+    if (window.Som) Som.tocar('revelou');
+    setTimeout(() => { li.classList.remove('oculto'); const nome = li.querySelector('.hc-nome'); if (nome) nome.textContent = c.nome; }, 420);
+    setTimeout(comecar, 1300);
+  }
   const R = () => window.Regras;
   function ligar(l) {
     ligacao = l;
     const j = document.getElementById('janelaHistoria'); if (!j) return;
     j.addEventListener('click', e => {
+      const ab = e.target.closest('[data-abre]');
+      if (ab) {
+        const li = ab.closest('.hc'), abrir = !li.classList.contains('aberto');
+        j.querySelectorAll('.hc.aberto').forEach(x => { x.classList.remove('aberto'); x.querySelector('[data-abre]').setAttribute('aria-expanded', 'false'); });
+        li.classList.toggle('aberto', abrir); ab.setAttribute('aria-expanded', String(abrir));
+        if (window.Som) Som.tocar(abrir ? 'abrir' : 'fechar');
+        return;
+      }
       const b = e.target.closest('[data-cap]');
+      if (b && b.dataset.revelar) { revelar(b); return; }
       if (b) { j.hidden = true; ligacao.jogar(b.dataset.cap); return; }
       if (e.target.closest('#btnFecharHistoria')) { j.hidden = true; if (window.Som) Som.tocar('fechar'); }
     });

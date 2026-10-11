@@ -254,3 +254,33 @@ ajustou no editor; onde não tem, o cartão de sempre (o retrato e os balões de
   abaixo do quadro ou no cartão.
 - O quadro cabe na altura da tela (3:2; a receita em pé; dois quadros de meio viram 1:1, ou 4:3 no celular, como nas
   páginas, para os balões ajustados ficarem no mesmo lugar).
+
+## Continuidade entre os quadros (v0.17)
+
+Cada quadro era pedido sozinho, então a mesma cena mudava de um quadro para o outro: no Prólogo, a Diana começava à noite numa
+mesa redonda com abajur e, no quadro seguinte, já era dia, a mesa era quadrada, o abajur sumia e, depois de um dado cair,
+continuavam três na mesa. A regra agora:
+
+- **Uma cena, uma âncora.** O primeiro quadro aprovado de cada cena é a âncora; os outros quadros da cena são **edições** dela
+  (`"base_de": "<âncora>"` + `"edicao"` em arte/historia.json): o mesmo cômodo, a mesma luz, a mesma mesa, só o gesto muda.
+- **O que a história mudou fica mudado.** Se um dado caiu, o próximo quadro tem um a menos; se o placar disse 8 a 6, o
+  quadro mostra 8 e 6. A frase de `"continuidade"` em cada quadro diz o que precisa bater com o anterior (é o que se confere na revisão).
+- **Quadro travado não se repinta.** Os quadros com `"travada"` são escolha do dono; uma cena nova se ancora neles, mas eles
+  não mudam para acompanhar outra cena sem perguntar.
+- Depois de repintar: `dados_quadros.py <ids>` (bolinhas), `dados_ia.py rascunhos/aplicar` para os dados que a correção não
+  confia, e anotar de novo `boca`, `cabeca`, `dados` e a ponta dos balões (`tx`, `ty`).
+
+Aplicado em (v0.18):
+
+| Onde | O que estava quebrado | Como ficou |
+|---|---|---|
+| Prólogo | começava à noite na mesa redonda, virava dia numa mesa quadrada, sem abajur; 3 dados + 1 caindo | a cena toda na noite de p-mesa; depois da queda ficam **2** dados até o close (p-caderno, p-close); o placar mostra 8 e 6 |
+| Cap. 1 · Interlúdio | c1-x de dia, mesa retangular | a mesma noite e a mesma mesa redonda do Prólogo (o Sapo também é de noite) |
+| I1 | i1-le em outro cômodo | o quarto de i1-nada e i1-cobre |
+| Cap. 4 · Chegada | c4-olho numa caverna cinza e clara entre duas escuras | a caverna escura de c4-caverna |
+| Revelação 4 → Cap. 8 → Final | porta de dia e mesa à noite na mesma página; o Bolso e o fim de dia; o fim numa mesa verde | uma noite só, da porta do Coelho ao fim (a partida final começa com "Boa noite"), na mesa de feltro vinho da Diana (docs/historia.md: a Mesa dela) |
+
+`"cena_de": "<quadro>"` manda o cômodo de outro quadro da cena junto, como segunda imagem, quando o quadro editado é ele mesmo
+(o rosto e a pose dele ficam, o cômodo vem do outro). Os originais de antes estão em builds/continuidade/ (fora do git).
+Ficou como estava: o quarto muda de canto entre capítulos (o mural, a janela, a estante), que é o mesmo quarto visto de outro lado;
+no Interlúdio 3, a Diana sai do chão (c3-cachecol) para a mesa (c3-carta).

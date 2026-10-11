@@ -13,7 +13,7 @@ const RAIZ = path.join(__dirname, '..');
   await pg.waitForTimeout(300);
   // partida a dois (ninguém joga sozinho no meio do teste), sem animação
   await pg.evaluate(() => {
-    const st = DiceDuel.st; st.pref.liberar = true; st.pref.animacoes = false; st.deckVisto = true; st.cfg.modo = 'local';
+    const st = DiceDuel.st; st.pref.liberar = true; st.pref.animacoes = false; st.deckVisto = true; st.cfg.modo = 'local'; st.guia.estreia = true;   // a estreia tem o próprio teste (e salvar o deck não a pula mais)
     st.conta.cartas = Regras.ORDEM.slice();
     document.getElementById('janelaDeck').hidden = true;
   });
@@ -21,7 +21,7 @@ const RAIZ = path.join(__dirname, '..');
     await pg.evaluate(d => { DiceDuel.st.decks = d; }, decks);
     await pg.evaluate(() => document.getElementById('btnDeck').click());
     // com uma partida em andamento, o botão só salva o deck; recomeçar é o link de baixo
-    if (await pg.$('#deckEmAndamento:not([hidden]) #btnRecomecar:not([hidden])')) await pg.click('#btnRecomecar'); else await pg.click('#btnJogarDeck');
+    await pg.evaluate(() => { document.getElementById('janelaDeck').hidden = true; DiceDuel.avulsa(); });   // v0.15: o deck só salva; a partida da cena vem pelo atalho de teste
     await pg.waitForTimeout(80);
     await pg.evaluate(montar);
     await pg.keyboard.press('Escape');   // Esc redesenha a tela

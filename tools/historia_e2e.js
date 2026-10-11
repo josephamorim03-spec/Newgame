@@ -71,13 +71,27 @@ async function vencer(pg, cor, pts) {
 
   // 1. primeira visita: sem "História" no menu (a estreia vem antes de tudo)
   const novato = await nova(navegador, null);
-  if (await novato.$('[data-inicio="historia"]:not([hidden])')) falha('a História aparece antes da estreia');
+  // (v0.15: a História mora nos modos, que o Jogar só abre depois da estreia; antes dela o Jogar começa a estreia)
+  if (await novato.$('#inicioModos:not([hidden]) [data-inicio="historia"]')) falha('a História aparece antes da estreia');
   await novato.close();
 
   // 2. o mapa e o Prólogo
   const pg = await nova(navegador);
-  if (!(await pg.$('[data-inicio="historia"]:not([hidden])'))) falha('o menu não mostra a História depois da estreia');
+  await pg.click('[data-inicio="jogar"]'); await pg.waitForTimeout(150);
+  if (!(await pg.$('#inicioModos:not([hidden]) [data-inicio="historia"]:not([hidden])'))) falha('o Jogar não mostra a História depois da estreia');
   await pg.click('[data-inicio="historia"]'); await pg.waitForTimeout(250);
+  // como no Pokémon: o Prólogo é a Diana (já conhecida); os outros rivais são silhuetas com "?" e o nome fechado
+  const ocultos = await pg.$$eval('.hc', l => l.map(x => x.classList.contains('oculto') && x.querySelector('.hc-nome').textContent.includes('?')));
+  if (ocultos[0] || ocultos.slice(1).some(o => !o)) falha(`o mapa: só o Prólogo revelado, o resto em silhueta (${ocultos})`);
+  // tocar num capítulo abre as metas das estrelas; com o rival em silhueta, elas ficam fechadas (contariam quem vem)
+  await pg.click('[data-abre="P"]'); await pg.waitForTimeout(250);
+  const metasP = await pg.$eval('.hc.aberto', x => x.textContent);
+  if (!/não tem estrelas/.test(metasP)) falha('o Prólogo aberto deveria dizer que não tem estrelas');
+  await pg.click('[data-abre="C1"]'); await pg.waitForTimeout(250);
+  const metasC1 = await pg.$$eval('.hc.aberto', l => l.map(x => x.textContent));
+  if (metasC1.length !== 1 || !/metas aparecem quando você conhecer/.test(metasC1[0])) falha(`o capítulo em silhueta abre sem mostrar as metas, e só um fica aberto: ${metasC1}`);
+  await pg.click('[data-abre="C1"]'); await pg.waitForTimeout(150);
+  if (await pg.$('.hc.aberto')) falha('tocar de novo fecha as metas');
   const mapa = await pg.$$eval('.hc', l => l.map(x => ({ c: x.className, botao: !!x.querySelector('[data-cap]') })));
   if (!mapa[0].botao || mapa[1].botao || mapa[2].botao) falha(`o mapa abre só o Prólogo: ${JSON.stringify(mapa)}`);
   await pg.screenshot({ path: path.join(FOTOS, 'historia-mapa.png') });
@@ -147,6 +161,7 @@ async function vencer(pg, cor, pts) {
   const quase = { ...VETERANO, conta: { moedas: 0, rating: 1000, xp: 0, cartas: ['ajuste', 'virar', 'pressa', 'coringa', 'ancora', 'interferencia'], dados: ['marfim'], icones: ['bolinha'], mesas: ['salvia'], dado: 'marfim', icone: 'bolinha', mesa: 'salvia',
     historia: { feitos: ['P', 'C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7'], estrelas: { C1: 3, C2: 1 } } } };
   const pf = await nova(navegador, quase);
+  await pf.click('[data-inicio="jogar"]'); await pf.waitForTimeout(150);
   await pf.click('[data-inicio="historia"]'); await pf.waitForTimeout(250);
   const mapa2 = await pf.$$eval('.hc', l => l.length);
   if (mapa2 !== 9) falha(`o mapa mostra os 9 capítulos, mostrou ${mapa2}`);

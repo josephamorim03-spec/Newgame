@@ -205,6 +205,7 @@
     const paradas = document.getAnimations().filter(a => a.playState === 'running');
     paradas.forEach(a => a.pause());
     congeladoAte = performance.now() + ms;
+    if (window.Rolagem && Rolagem.congelar) Rolagem.congelar(ms);   // os dados no ar também param (js/rolagem.js)
     const el = document.createElement('div');
     el.className = 'quadro-gibi'; el.setAttribute('aria-hidden', 'true');
     document.body.appendChild(el);

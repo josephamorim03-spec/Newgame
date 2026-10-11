@@ -30,7 +30,7 @@ const VP = { width: 390, height: 844 };
     });
     const cena = async montar => {
       await pg.evaluate(() => { DiceDuel.st.decks = [[], []]; document.getElementById('btnDeck').click(); });
-      if (await pg.$('#deckEmAndamento:not([hidden]) #btnRecomecar:not([hidden])')) await pg.click('#btnRecomecar'); else await pg.click('#btnJogarDeck');
+      if (await pg.$('#deckEmAndamento:not([hidden]) #btnRecomecar:not([hidden])')) await pg.click('#btnRecomecar'); else await pg.evaluate(() => { document.getElementById('janelaDeck').hidden = true; DiceDuel.avulsa(); });   // v0.15: o botão do deck só salva
       await pg.waitForTimeout(80);
       await pg.evaluate(montar);
       await pg.keyboard.press('Escape');

@@ -205,7 +205,9 @@ pela própria partida. Agora:
   nas outras partidas, e ignora o primeiro meio segundo; vale também para os capítulos da história, que têm a regra do
   capítulo para ler). Ela vale como uma partida contra a Diana (rating,
   moedas na vitória, experiência, recordes).
-- **Segunda partida:** o caminho de antes: a escolha do rival e o deck "Primeira mesa" (só efeitos) por cima dela.
+- **Segunda partida:** até a v0.14, a escolha do rival e o deck "Primeira mesa" por cima dela. **Na v0.15 a partida
+  avulsa saiu:** o fim da estreia diz **Abrir a História** e leva ao caderno, e o Jogar do menu abre os modos (História,
+  Online). O deck "Primeira mesa" (só efeitos) entra na primeira vez que a pessoa abre a História.
 - **Armadilhas:** chegam depois da primeira partida **com cartas** (a estreia não conta), ou em Ajustes → "Todas as
   cartas liberadas". A Diana também só usa efeitos até lá.
 - **Quem já jogava** (recordes ou deck no aparelho, ou uma conta que já jogou, ao entrar nela) não passa pela estreia
@@ -511,8 +513,23 @@ de volta à tela, se a vez era sua ou do rival (e no online o tempo da vez acaba
 bom). Quem tinha o modo marcado volta para o rival; uma partida a dois guardada não volta. O motor ainda sabe jogar a
 dois: é assim que `tools/regras.js` joga as duas mãos pela tela.
 
-**Menu principal (v0.11).** O jogo abre nele: logo, nome, rating, nível e moedas, **Jogar** grande, Online, e uma
-fileira de ícones (Deck, Loja, Regras, Ajustes).
+**Menu principal (v0.11; v0.15).** O jogo abre nele: logo, nome, rating, nível e moedas, **só o Jogar** grande, as
+Tarefas do dia (com conta) e uma fileira de ícones (Deck, Loja, Regras, Ajustes).
+
+**Os modos (v0.15, pedido do dono).** Na primeira visita, o Jogar começa a estreia direto. Depois dela, abre "Como quer
+jogar?" no lugar dos botões, com dois modos **nesta ordem: História** (com o capítulo da vez embaixo) **e Online**
+(contra gente, com rating e moedas), e Voltar (ou Esc). **A partida avulsa contra a Diana ou a Dona Coruja saiu do
+jogo**: os rivais estão na história. O que isso mudou:
+- todo "jogar de novo" fora da estreia e da história (o fim, a Pausa, o deck, a meta nos Ajustes, sair de uma sala)
+  repete o capítulo que estava na Mesa ou volta ao menu (`novaPartida`, em `js/jogo.js`);
+- o botão do deck só salva ("Salvar deck"): vale no próximo capítulo e na próxima sala;
+- a cena da tela inicial é sempre a Diana (a história não entrega quem vem);
+- **moedas de vitória, rating contra os rivais e Tarefas do dia** vinham da partida avulsa. A história não mexe neles
+  (`docs/historia.md`): agora só o online os faz andar, e a linha das Tarefas só aparece com conta;
+- o motor e o robô da partida avulsa continuam (a história e os testes usam: `DiceDuel.avulsa()`, só para os testes).
+- com uma partida guardada (um capítulo, ou uma avulsa de antes), o menu mostra Continuar e Abandonar, e o Jogar fica
+  embaixo, de papel: abre só o Online (a História some, porque começar outra seria abandonar a guardada);
+- sair de uma sala online volta ao menu (antes começava uma partida contra o rival, ou a estreia).
 
 **Perfil e Loja (v0.12).** A Loja fazia dois papéis: vender e ser o lugar do perfil (título, rating, nível, XP) e do
 visual. Ficou assim:
@@ -526,7 +543,7 @@ visual. Ficou assim:
   do menu, voltava a ver "Convidado" (e as moedas de antes da compra). Agora tudo o que mostra a conta se redesenha
   quando ela muda, e o menu também sempre que uma janela por cima dele fecha. O `tools/online_e2e.js` confere.
 
-**Escolha do rival (v0.12).** A escolha Diana/Dona Coruja era um seletor pequeno no menu, com uma linha de texto: não
+**Escolha do rival (v0.12; saiu na v0.15).** A escolha Diana/Dona Coruja era um seletor pequeno no menu, com uma linha de texto: não
 dava para ver quem era cada uma nem o que mudava. Agora **Jogar** abre "Escolha o rival", no lugar dos botões do menu
 (o logo e o título saem, para caber sem rolar em 360×640):
 - um cartão por rival, com o **retrato pintado**, o nome, a dificuldade ("Para começar", "Desafiadora"), o jeito de

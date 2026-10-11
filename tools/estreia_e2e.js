@@ -66,7 +66,7 @@ async function jogar(pg, { fotoGuia = null, maxPassos = 1500 } = {}) {
   await pg.click('[data-inicio="jogar"]'); await pg.waitForTimeout(400);
   const ini = await pg.evaluate(() => ({
     estreia: DiceDuel.jogo && DiceDuel.jogo.estreia, meta: DiceDuel.jogo.meta, decks: DiceDuel.jogo.decks, nivel: DiceDuel.jogo.nivel, vez: DiceDuel.jogo.vez,
-    rivais: !!document.querySelector('#inicioRivais:not([hidden])'), deck: !document.getElementById('janelaDeck').hidden,
+    rivais: !!document.querySelector('#inicioModos:not([hidden])'), deck: !document.getElementById('janelaDeck').hidden,
     versus: (document.querySelector('.versus') || {}).textContent || '',
   }));
   if (!ini.estreia) falha('o primeiro Jogar não começou a estreia');
@@ -115,13 +115,18 @@ async function jogar(pg, { fotoGuia = null, maxPassos = 1500 } = {}) {
   if (fim.vencedor !== 0 && fim.momentos.length && !fim.momentosAntes) falha('derrota com bons momentos: eles vêm antes do prêmio');
   if (fim.largura[0] > fim.largura[1]) falha('a tela do fim rola para o lado');
 
-  // 2. a partida seguinte: escolha do rival, deck "Primeira mesa" e a Diana ainda sem armadilhas
-  await pg.click('#btnMenuFim'); await pg.waitForTimeout(300);
+  // 2. depois da estreia (v0.15): o botão do fim leva à História, e o Jogar do menu abre os modos (História, Online).
+  // A partida seguinte contra o robô (pelo atalho de teste: a avulsa saiu do menu) ainda sem armadilhas da Diana
+  const botaoFim = (await pg.textContent('#btnDeNovo')).trim();
+  if (botaoFim !== 'Abrir a História') falha(`o fim da estreia leva à História, o botão diz "${botaoFim}"`);
+  await pg.click('#btnDeNovo'); await pg.waitForTimeout(300);
+  if (await pg.evaluate(() => document.getElementById('janelaHistoria').hidden)) falha('o botão do fim da estreia não abriu o caderno');
+  await pg.click('#btnFecharHistoria'); await pg.waitForTimeout(150);
   await pg.click('[data-inicio="jogar"]'); await pg.waitForTimeout(200);
-  if (!(await pg.$('#inicioRivais:not([hidden])'))) falha('depois da estreia, o Jogar volta a abrir a escolha do rival');
-  await pg.click('[data-inicio="comecar"]'); await pg.waitForTimeout(200);
-  if (await pg.evaluate(() => document.getElementById('janelaDeck').hidden)) falha('a segunda partida abre o deck "Primeira mesa"');
-  await pg.click('#btnJogarDeck'); await pg.waitForTimeout(300);
+  const modos = await pg.$$eval('#inicioModos:not([hidden]) .btn', l => l.map(b => b.dataset.inicio));
+  if (modos.join() !== 'historia,online,voltar') falha(`depois da estreia, o Jogar abre História e Online, nesta ordem (veio ${modos})`);
+  await pg.click('[data-inicio="voltar"]');
+  await pg.evaluate(() => { DiceDuel.st.decks[0] = ['ajuste', 'coringa', 'pressa']; DiceDuel.avulsa('aprendiz'); }); await pg.waitForTimeout(300);
   const seg = await pg.evaluate(() => ({ estreia: !!DiceDuel.jogo.estreia, meta: DiceDuel.jogo.meta, deck: DiceDuel.jogo.decks[0], rival: DiceDuel.jogo.decks[1], tipos: DiceDuel.jogo.decks[1].map(c => Regras.CARTAS[c].tipo) }));
   if (seg.estreia || seg.meta !== 16) falha(`a segunda partida é normal (meta 16), veio ${JSON.stringify(seg)}`);
   if (seg.tipos.includes('armadilha')) falha(`a Diana ainda não usa armadilhas na segunda partida: ${seg.rival}`);
@@ -139,7 +144,7 @@ async function jogar(pg, { fotoGuia = null, maxPassos = 1500 } = {}) {
   const v = await vet.evaluate(() => DiceDuel.st.guia);
   if (!v.estreia || v.jogou || v.vistos.length !== GUIA_TODOS.length) falha(`veterano: o guia deveria vir completo, veio ${JSON.stringify(v)}`);
   await vet.click('[data-inicio="jogar"]'); await vet.waitForTimeout(200);
-  if (!(await vet.$('#inicioRivais:not([hidden])'))) falha('veterano: o Jogar abre a escolha do rival');
+  if (!(await vet.$('#inicioModos:not([hidden])'))) falha('veterano: o Jogar abre os modos');
   await vet.close();
 
   // 4. ajudas desligadas: a estreia acontece, mas nenhuma explicação aparece (nem fica marcada como vista)
@@ -153,7 +158,7 @@ async function jogar(pg, { fotoGuia = null, maxPassos = 1500 } = {}) {
   if (s.vistos.length || s.guiaCh) falha(`ajudas desligadas: o guia não aparece, veio ${JSON.stringify(s)}`);
   await sem.close();
 
-  // 5. Recomeçar antes do primeiro dado continua na estreia; montar o deck e jogar com ele a pula
+  // 5. Recomeçar antes do primeiro dado continua na estreia; salvar o deck não começa partida nem pula a estreia
   const rec = await nova();
   await rec.evaluate(() => DiceDuel.ajustar({ animacoes: false }));
   await rec.click('[data-inicio="jogar"]'); await rec.waitForTimeout(200);
@@ -165,8 +170,8 @@ async function jogar(pg, { fotoGuia = null, maxPassos = 1500 } = {}) {
   await dk.evaluate(() => DiceDuel.ajustar({ animacoes: false }));
   await dk.click('[data-inicio="deck"]'); await dk.waitForTimeout(200);
   await dk.click('#btnJogarDeck'); await dk.waitForTimeout(200);
-  const r6 = await dk.evaluate(() => ({ estreia: !!DiceDuel.jogo.estreia, meta: DiceDuel.jogo.meta, guia: DiceDuel.st.guia }));
-  if (r6.estreia || r6.meta !== 16 || !r6.guia.estreia || r6.guia.jogou) falha(`jogar pelo deck pula a estreia, veio ${JSON.stringify(r6)}`);
+  const r6 = await dk.evaluate(() => ({ jogo: !!DiceDuel.jogo, menu: !document.getElementById('inicio').hidden, guia: DiceDuel.st.guia }));
+  if (r6.jogo || !r6.menu || r6.guia.estreia) falha(`salvar o deck não começa partida nem pula a estreia, veio ${JSON.stringify(r6)}`);
   await dk.close();
 
   // 6. os dados da capa: dois brancos e um rosa no meio, sempre (com outro dado comprado, com a Dona Coruja e depois de

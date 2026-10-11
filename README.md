@@ -33,10 +33,10 @@ e o amigo cai direto na sala. O servidor é a autoridade da partida e roda na Ra
 - **Gerar o arquivo único de novo depois de mexer no código:** `python3 tools/empacotar.py`.
 - **Com o online:** `npm install && npm start` e abra `http://localhost:8080`. Na Railway, siga `docs/servidor.md`.
 
-**Contra quem:**
-- **Diana**, uma gata branca de olhos azuis, a rival fácil;
-- **Dona Coruja**, que lê a Mesa;
-- **um amigo, online**, por link de convite (vale rating e moedas).
+**Contra quem (v0.15: o Jogar abre os dois modos, nesta ordem):**
+- **História**, "O Caderno da Diana": a Diana, uma gata branca de olhos azuis, ensina a jogar e manda você atrás de sete
+  bichos, um por capítulo (até a Dona Coruja, que lê a Mesa). Quem vem fica em silhueta até você tentar;
+- **Online**: um amigo por link de convite, ou a fila (vale rating e moedas).
 
 **Em Ajustes dá para ligar e desligar:**
 - som e música, com volume;
@@ -69,6 +69,8 @@ e o amigo cai direto na sala. O servidor é a autoridade da partida e roda na Ra
 | `tools/referencias.js` | desenha os vetores de `js/retratos.js` em `arte/referencia/` (rode de novo quando mudar um vetor) |
 | `tools/fumaca.js` | teste de fumaça: joga partidas inteiras no navegador e falha com qualquer erro |
 | `tools/estreia_e2e.js` | a estreia e o guia: primeira partida sem cartas, explicações uma vez só, fim da derrota, a partida seguinte e quem já jogava |
+| `tools/previa.js` | monta a imagem de compartilhamento (`img/previa.png`) a partir do próprio jogo: o letreiro e a cena da Diana |
+| `tools/telas.js` | fotografa as 14 telas do jogo no tamanho de celular, para revisar a identidade visual lado a lado |
 | `tools/impresso_demo.js` | grava o protótipo das técnicas de gibi (`?impresso=1`, `docs/visual-impresso.md`) sem e com, para comparar |
 | `tools/regras.js` | testes dirigidos das cartas (Pressa, Remendo, Espelho, armadilha virada, Âncora × Interferência) |
 | `tools/layout.js` | verificador de layout em 5 larguras: texto vazando, fora da caixa, quebrado, descentralizado |
@@ -107,7 +109,32 @@ node tools/vercel_local.js                     # a página como o Vercel publica
 
 ## Estado
 
-**v0.15, em produção** (a página no Vercel e o servidor na Railway, publicados da branch `DiceDuel`): o modo história
+**v0.17, em produção** (a página no Vercel e o servidor na Railway, publicados da branch `DiceDuel`): o Caderno da Diana e a legibilidade.
+- **Consolidação (o rumo, `docs/visual-impresso.md`):** um só cartão pequeno na Loja, no deck e no Perfil; o letreiro de
+  uma linha no cabeçalho; a cena da Diana de volta na tela dos modos.
+- **A partida:** as cartas do rival em fichas baixas e os dados da Mesa maiores; a etiqueta da jogada ("Passo",
+  "Oposto") passou para a direita da corrente, onde não cobre mais as etiquetas dos elos.
+- **Ajustes finos:** os botões liga/desliga em mel (a cor da ação), e a tela inicial maior no computador.
+- **O fim da partida** com o placar em quadros, como o começo: retratos, pontos, o carimbo "VENCEU" e o título com as
+  chapas azul e rosa.
+- **A prévia do link** refeita a partir do jogo (`tools/previa.js`): a antiga ainda anunciava o blefe e a Coruja como
+  rival direta.
+- **O mapa da história é uma página do caderno:** pauta, margem vermelha no recuo (fora dos retratos), topo rasgado, a
+  fita segurando a página, o título na letra da Diana com um traço de pincel, o carimbo "FEITO" e uma seta à mão no
+  capítulo da vez.
+- **Tocar num capítulo abre as metas das estrelas** (vencer e as duas do capítulo), a regra da casa e a melhor vez; com o
+  rival em silhueta, as metas ficam fechadas.
+- **Legibilidade:** sem pontinhos atrás do texto nos painéis do menu; no Jogar, só na faixa de baixo.
+- A identidade visual em regras (materiais, letras, cores) está em `docs/visual-impresso.md`.
+
+**v0.16:** o menu e o mistério da história.
+- **O menu só tem o Jogar,** que abre os modos História e Online (nesta ordem). **A partida avulsa contra a Diana ou a
+  Dona Coruja saiu** (os rivais estão na história; moedas de vitória, rating e Tarefas do dia agora vêm do online).
+- **No mapa da história, como no Pokémon:** os rivais que a pessoa ainda não tentou são silhuetas com "?" e o nome do
+  lugar fica fechado; tocar em Jogar revela (e perder não esconde de novo). O "?" fica no meio da cabeça de cada bicho.
+- Detalhes em `docs/design.md` §8 e `docs/historia.md`.
+
+**v0.15:** o modo história
 em quadros pintados e a interface de gibi.
 - **O gibi da história com arte:** onde a fala tem quadro, o gibi mostra o quadro pintado (64 artes, 768 px) com os
   balões no lugar que o dono ajustou, um por toque; perto e detalhe pela câmera, quadros mudos, as receitas em letra

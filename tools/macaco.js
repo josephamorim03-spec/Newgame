@@ -84,7 +84,9 @@ function tocar([semente, modo]) {
     }, r);
     // começa pelo menu principal, como quem abre o jogo (depois o menu volta pela Pausa e pelo fim)
     // na primeira visita o Jogar começa direto a estreia (sem a escolha do rival): o macaco passa por ela também
-    await pg.click('[data-inicio="jogar"]'); if (await pg.$('#inicioRivais:not([hidden])')) await pg.click('[data-inicio="comecar"]');
+    // depois dela, o Jogar abre os modos (História, Online): sem a partida avulsa no menu, o macaco joga contra o robô
+    // pelo atalho de teste
+    await pg.click('[data-inicio="jogar"]'); if (await pg.$('#inicioModos:not([hidden])')) await pg.evaluate(() => DiceDuel.avulsa());
     let ultimaSig = '', desde = Date.now(), partidas = 0, ultimo = '';
     const rastro = [];
     for (let i = 0; i < PASSOS; i++) {
@@ -105,9 +107,9 @@ function tocar([semente, modo]) {
           if (voltar) { await voltar.click(T); rastro.push('menu voltar'); }
           else if (cont) { await cont.click(T); rastro.push('menu continuar'); }
           else {
-            // enquanto a estreia não acontece, o Jogar começa direto (sem a escolha do rival)
-            if (!(await pg.$('#inicioRivais:not([hidden])'))) await pg.click('[data-inicio="jogar"]', T);
-            if (await pg.$('#inicioRivais:not([hidden])')) await pg.click('[data-inicio="comecar"]', T);
+            // enquanto a estreia não acontece, o Jogar começa direto; depois, abre os modos (e o macaco usa o atalho)
+            if (!(await pg.$('#inicioModos:not([hidden])'))) await pg.click('[data-inicio="jogar"]', T);
+            if (await pg.$('#inicioModos:not([hidden])')) await pg.evaluate(() => DiceDuel.avulsa());
             rastro.push('menu jogar');
           }
         } catch (e) {

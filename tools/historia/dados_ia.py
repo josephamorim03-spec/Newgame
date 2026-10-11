@@ -108,7 +108,7 @@ def rascunhos(cfg, ids, todos, n, qualidade):
                 continue
             if dado.get("conferido") and not todos and not quais:
                 continue
-            if dado["caixa"][2] - dado["caixa"][0] < MIN_LARGURA:   # miúdo de fundo: não vale uma imagem
+            if dado["caixa"][2] - dado["caixa"][0] < MIN_LARGURA and not quais:   # miúdo de fundo: não vale uma imagem (pedido pelo número, vale)
                 continue
             r = recorte_centrado(*im.size, dado["caixa"])
             pasta = RASCUNHOS / id_ / str(k)

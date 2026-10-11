@@ -124,6 +124,180 @@ o impresso. Tudo no fim de `css/estilo.css`, sob `.impresso` (`?impresso=0` volt
 skin); o ícone do app e a prévia de compartilhamento (`img/`), que pedem arte nova; e trocar o nome do jogo, que o dono não
 pediu (o pedido foi a forma do nome).
 
+### Legibilidade (v0.16, pedido do dono)
+A retícula atrás do texto atrapalhava a leitura no perfil, nas Tarefas, nos ícones de baixo (Deck, Loja, Regras,
+Ajustes) e nos botões do topo. Eles ficaram lisos, com um contorno de papel mais firme e uma sombra dura; no Jogar, a
+retícula ficou só na faixa de baixo, abaixo da palavra. **Regra daqui em diante: textura nunca atrás de letra.** Os
+pontinhos ficam no fundo da página, onde não há texto.
+
+### Proposta: o caderno e o nanquim (reflexão; a 1.ª parte foi feita na v0.17, abaixo)
+O dono pediu para pensar em mais gibi: páginas e modais com textura e cor de nanquim, rabiscos, traços de tinta, papel
+rasgado, tudo ligado ao enredo. **Vale fazer, com uma condição: cada textura conta um pedaço da história, e fica só onde a
+história está.** Cada material tem um sentido:
+
+| Material | O que é na história | Onde entra | Onde não entra |
+|---|---|---|---|
+| **Papel de caderno** (pautado, margem vermelha) | o Caderno da Diana, que é o caderno de pesquisa disfarçado | o mapa da história, a página conquistada no fim do capítulo, as recompensas | Loja, Ajustes, Online, deck: são telas de uso, e precisam ser lidas depressa |
+| **Borda rasgada** | as páginas que o Guaxinim arrancou e vendeu, uma para cada bicho | o topo da página do caderno e cada página recuperada | qualquer coisa que não seja página do caderno |
+| **Fita adesiva** | a "Fita Dupla", a fita de DNA da cura | segurando a página no mapa e as páginas recuperadas | botões e partida |
+| **Traço de nanquim** (sublinhado de pincel, carimbo, círculo à mão, seta) | a mão da Diana anotando | acentos pequenos: título sublinhado, carimbo "Feito", o capítulo da vez circulado, a seta do guia no Prólogo | atrás de texto, e na partida |
+| **Aguada de nanquim** (manchas escuras) | as cenas pesadas da história | os quadros dramáticos do gibi (a revelação, o Cap. 8, a cura), com o colega da arte | o menu e as janelas: no celular, a janela cobre a tela e a aguada nem aparece |
+| **Retícula e as chapas azul e rosa** | o jogo impresso | a partida e o letreiro, como hoje | atrás de letra |
+
+**Por que não pôr em tudo:** a partida pede leitura rápida (painéis, Mesa, cartas), e a Loja e os Ajustes são
+formulários. Textura demais ali repete o problema da retícula atrás do texto. O jogo continua aconchegante: o nanquim é
+cacau e chapado, como a arte dos retratos (contorno cacau, uma sombra por forma), e não mancha fotográfica.
+
+**Cuidados:**
+- **Desempenho:** o rasgado é uma máscara com um SVG pequeno e fixo, e a sombra vira `drop-shadow` (a máscara corta o
+  `box-shadow`). Nada de `feTurbulence` vivo.
+- **Texto:** nota "da Diana" na margem só com fala aprovada (a regra da história, `docs/historia.md` §11). O protótipo
+  usou o contador de estrelas no lugar dela.
+- **Arte da história:** o colega faz os quadros. Os traços de nanquim são código, por cima de tudo, como o balão e a
+  retícula (`docs/arte-historia.md`).
+
+**O protótipo** (no `builds/`, fora do jogo): o mapa como página do caderno, com o topo rasgado, a fita mel com pontinhos
+de dado, o título "O Caderno da Diana" em Caveat (a letra das receitas), as pautas azuis, a margem vermelha e o carimbo
+"FEITO" torto nos capítulos vencidos.
+
+**Fases, se o dono aprovar:**
+1. **O mapa como página do caderno** e a **página conquistada** no fim de cada capítulo (a página rasgada que volta,
+   presa com a fita). Cerca de 1 dia.
+2. **Os acentos de nanquim:** carimbo, sublinhado de pincel nos títulos da história, o capítulo da vez circulado à mão,
+   a seta do guia no Prólogo. Meio dia.
+3. **A aguada de nanquim nos quadros dramáticos do gibi,** junto com o colega da arte.
+
+### O caderno no jogo (v0.17, pedido do dono)
+O dono gostou do protótipo e pediu dois ajustes: a margem vermelha não pode passar pelos retratos, e tocar num capítulo
+deve mostrar as metas das estrelas. Ficou assim (`#janelaHistoria`, `js/historia.js`, fim de `css/estilo.css`):
+- **A página:** papel pautado com a margem vermelha **no recuo**, fora dos cartões; os cartões são opacos (nem pauta nem
+  margem passam por trás de retrato ou texto). Topo rasgado (máscara fixa, sem sorteio) e a fita mel com pontinhos de
+  dado segurando a página. A sombra e a fita ficam num envoltório (`.folha-caderno`), porque a máscara cortaria as duas.
+- **A mão da Diana:** o título "O Caderno da Diana" e o contador de estrelas em Caveat, com um traço de pincel embaixo do
+  título; o capítulo feito ganha o carimbo verde "FEITO", torto; o capítulo da vez, uma **seta à mão na margem** (um
+  círculo em volta cortava o retrato e o botão).
+- **As metas:** tocar no capítulo (no texto, não no Jogar) abre, de leve, a lista: ★ vencer, ★★ e ★★★ as metas do
+  capítulo, a regra da casa e a melhor vez. Um aberto por vez; tocar de novo fecha. **Com o rival em silhueta, as metas
+  ficam fechadas** ("As metas aparecem quando você conhecer o rival"): elas contariam quem vem ("Não perca dado para o
+  Fundo Falso"). O Prólogo diz que não tem estrelas.
+
+## A identidade visual: o jogo de mesa da Diana
+Depois de quatro rodadas (o impresso, a interface de gibi, a legibilidade e o caderno), a identidade cabe em poucas
+regras. Elas servem para decidir as próximas telas sem inventar estilo novo a cada uma.
+
+**A ideia:** um jogo de dados de mesa, à noite, com uma gata que anota tudo num caderno. **Aconchego de objeto de
+verdade** (feltro, madeira, papel, fita, carimbo) **impresso como gibi** (contorno cacau, retícula, as chapas azul e rosa).
+
+**Os materiais, um por superfície, cada um com um sentido:**
+
+| Material | Sentido | Onde |
+|---|---|---|
+| **Noite** com pontinhos nas bordas | a sala escura em volta da mesa | o fundo de tudo |
+| **Feltro e madeira** | a mesa: aqui se joga | a Mesa, a cena da tela inicial, as correntes |
+| **Papel liso com contorno cacau** (adesivo) | as peças do jogo | fichas, cartas, botões, janelas de uso (Loja, Ajustes, deck, Online) |
+| **Papel de caderno** (pauta, margem, rasgado, fita, carimbo) | o Caderno da Diana | só a história |
+| **Nanquim** (traço de pincel, seta, carimbo) | a mão da Diana anotando | acentos pequenos, na história |
+| **Retícula e chapas azul/rosa** | a festa impressa | os momentos da partida e o letreiro |
+
+**As letras, cada uma com uma voz:** Fredoka é o jogo (títulos, números, botões); Nunito é a explicação (texto corrido);
+**Caveat é a Diana escrevendo**, e só ela (o caderno, as receitas, as notas). Nada de quarta fonte.
+
+**As cores, cada uma com um papel:** cacau é a tinta (contorno, texto); papel e mel são a base e a ação (o Jogar, o que
+é seu de fazer agora); **azul é você e rosa é o rival**, sempre (as chapas, as fichas, o VS); eco, passo e oposto
+(lilás, verde, laranja) são só as relações dos dados; o verde de carimbo é só "feito".
+
+**As regras (cada uma veio de um ajuste do dono):**
+- **Textura nunca atrás de letra.** Pontinho, pauta e margem ficam onde não há texto.
+- **Nenhum traço por cima de rosto ou botão.** A margem corre no recuo; a seta fica na margem; o "?" vai ao meio da
+  cabeça, mas dentro da caixa do retrato.
+- **O material diz onde você está.** Feltro é jogar, papel liso é ajustar, caderno é a história. Se uma tela mistura
+  dois, ela está errada.
+- **Movimento de gibi só no que é festa ou revelação:** poses seguradas, quadro congelado, estouro. O resto se move
+  macio.
+- **Uma onomatopeia, um clarão, um quadro por lance.**
+
+**Próximos passos possíveis, nessa linha:** a página conquistada no fim do capítulo, presa com a mesma fita; a aguada
+de nanquim só nos quadros dramáticos do gibi (com o colega da arte); o ícone do app e a prévia de compartilhamento
+a partir do letreiro.
+
+## O rumo (análise crítica, v0.17)
+Antes de mais estilo, as 14 telas foram fotografadas lado a lado no celular (`tools/telas.js`) e lidas contra as regras
+acima.
+
+**O que já funciona e não se mexe:** a paleta (cacau, papel, mel, azul você, rosa rival); os retratos pintados; o
+letreiro adesivo; o começo da partida com o VS; o Caderno da Diana; os momentos de festa da partida. Juntos, eles já
+fazem uma identidade própria: um jogo de mesa à noite, com uma gata que anota tudo, impresso como gibi.
+
+**Os problemas, em ordem de peso:**
+1. **A partida é a tela menos desenhada, e é onde a pessoa passa quase todo o tempo.** Os dois painéis têm o mesmo peso
+   (o seu não se destaca do da Diana), há muitas etiquetas pequenas ao mesmo tempo ("Começa" embaixo de cada dado,
+   chips de carta, "Corrente 0/6", "qualquer dado começa"), e a Mesa, que é o coração, é um retângulo verde com dados
+   pequenos. A identidade está nas bordas e quase não está no centro.
+2. **O estilo está se acumulando por camadas.** Impresso, interface de gibi e caderno vieram um por vez, em resposta a
+   pedidos. Já há três tipos de cartão (os da Loja e do deck com aro mel, as fichas com contorno cacau, os capítulos do
+   caderno), contornos que existem numas telas e não noutras, e cada ajuste mexe direto no CSS. Mais textura agora
+   aumentaria esse ruído.
+3. **Nada foi visto num celular de verdade nem por jogadores.** Desempenho (máscaras, sombras, o quadro congelado),
+   legibilidade ao sol e o "isso parece travamento?" só se medem assim. Os dois pedidos de ajuste do dono (pontinhos atrás
+   do texto, margem cruzando os retratos) mostram que a tela real pega o que a foto no computador não pega.
+4. **A primeira impressão de fora ainda é a antiga:** o ícone do app e a prévia do link compartilhado.
+5. **Arestas menores:** o letreiro empilhado fica apertado no cabeçalho pequeno (pede uma versão de uma linha); a tela
+   "Como quer jogar?" ficou vazia sem a cena (pede a cena ou o letreiro, menores); havia texto desatualizado (o Online sem
+   servidor ainda oferecia Diana e Coruja; corrigido).
+
+**Vale a pena continuar? Sim, mas mudando o modo de trabalhar:** parar de acrescentar material novo e passar a
+**consolidar, desenhar o centro e validar**. O ganho estético agora está em fazer o que já existe ficar coerente e bonito
+onde importa, não em mais efeito.
+
+**A sequência recomendada:**
+1. **Consolidar (1 dia):** um só "adesivo" (contorno, sombra, raio e estados) para todo cartão e botão, em variáveis
+   CSS, aplicado na Loja, no deck, no Perfil e na partida; o letreiro de uma linha para tamanhos pequenos; a cena (menor)
+   de volta na tela dos modos. Sem mudar o jeito do jogo.
+2. **Desenhar a partida (2 a 3 dias, em protótipos lado a lado antes de mexer no jogo):** o seu painel com mais peso que o
+   do rival; a Mesa como protagonista (dados maiores, feltro e madeira mais ricos); menos etiquetas ao mesmo tempo (as
+   ajudas aparecem quando servem); o retrato do rival maior e mais expressivo, porque a arte pintada já existe.
+3. **Validar (meio dia + o teste com 5 a 8 pessoas de `design.md` §9):** um iPhone e um Android de entrada; medir
+   legibilidade, 60 qps na cascata de 6 e o quadro congelado.
+4. **O ícone e a prévia (meio dia), com a API de imagem:** a única peça desta lista em que a pintura ajuda mais que o
+   código. Opções pelo `tools/arte_icones.py`, filtradas pelo crítico de ícones, e o dono escolhe.
+5. **Só depois, a história:** a página conquistada presa com a fita; a aguada de nanquim nos quadros dramáticos, com o
+   colega da arte.
+
+**Andamento (v0.17):**
+- **1. Consolidar: feito.** `--adesivo-pequeno` é o cartão em repouso da Loja, do deck e do Perfil (o selecionado já era
+  igual em todos); o letreiro de uma linha no cabeçalho; a cena da Diana, menor, na tela dos modos.
+- **2. A partida: a primeira passada, de baixo custo.** As cartas do rival viraram fichas baixas (ícone e nome; tocar
+  mostra a carta) e os dados da Mesa cresceram de 13% para 14,5% da largura no celular. A etiqueta da jogada na corrente
+  ("Passo", "Oposto") foi para a direita: à esquerda cobria as etiquetas dos elos. As etiquetas embaixo dos dados da Mesa
+  ficaram: com um dado escolhido, elas dizem o que acontece (±1, Bolso, 7, =), e isso é informação, não ruído. O
+  redesenho maior da partida (o seu painel, o retrato do rival) espera o teste num celular de verdade.
+- **4. O ícone e a prévia: o ícone fica** (vetor: um dado com contorno cacau no feltro, emoldurado de madeira, já é a
+  identidade e lê bem a 32 px; pintado, perderia nitidez pequeno). **A prévia foi refeita em código**, sem a API: a
+  antiga anunciava o blefe (que saiu na v0.13) e a Coruja como rival direta. `tools/previa.js` a monta a partir do
+  próprio jogo (o letreiro, a cena da Diana à mesa, a noite pontilhada), então ela acompanha o visual. A descrição e o
+  texto alternativo do link também foram atualizados. A API de imagem não foi necessária nesta rodada.
+
+- **Ajustes finos (v0.17):** os botões liga/desliga dos Ajustes passaram de verde para mel (verde é das relações dos dados
+  e do "feito"; mel é a ação); no computador a tela inicial cresce junto (era uma coluna estreita no meio da tela);
+  `tools/telas.js` aceita a largura (`node tools/telas.js builds/telas-pc 1360x900`).
+
+- **O fim da partida (v0.17):** era a única tela sem a identidade ("Você venceu!" em texto e o placar numa linha). Agora o
+  placar repete o começo da partida: os dois lados em quadros tortos com a retícula da cor de cada um, o retrato e os
+  pontos; quem venceu pula e leva o carimbo "VENCEU", quem perdeu murcha e fica um pouco apagado; o título ganha as
+  chapas azul e rosa fora do registro. As caixinhas de números do Perfil também passaram para o cartão único.
+
+**O que falta (e por quê):**
+- **A partida, 2.ª passada** (o seu painel com mais peso, o retrato do rival maior): espera o teste num celular de verdade.
+- **A história** (a página conquistada presa com a fita, a aguada de nanquim nos quadros dramáticos): com o colega da arte.
+- **Validar** (etapa 3): um iPhone e um Android simples, e 5 a 8 pessoas jogando.
+
+**O que não fazer:** textura nas telas de uso (Loja, Ajustes, deck, Online); textura animada; estilo próprio por tela; a
+API de imagem para peça de interface (pauta, fita, carimbo, traço, retícula: em código saem com a cor exata, nítidos e
+leves); qualquer mudança visual sem a foto de antes e depois nas telas reais.
+
+**Como trabalhar daqui em diante:** a cada versão, `node tools/telas.js` fotografa todas as telas para olhar lado a lado;
+toda proposta nova vem primeiro como protótipo sobre a tela real, com antes e depois, e passa pelas regras desta página.
+
 ## 4. Como verificar
 - `node tools/fumaca.js`, `node tools/estreia_e2e.js` (as chamadas do guia não podem atrasar), `node tools/layout.js`
   (onomatopeia e quadro não vazam em 360 px), `node tools/vercel_local.js` (CSP), `python3 tools/empacotar.py`.

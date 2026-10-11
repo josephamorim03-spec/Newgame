@@ -40,7 +40,7 @@
   --erro-fundo: #f6d2cf;
   --f-titulo: "Fredoka", "Baloo 2", "Trebuchet MS", sans-serif;
   --f-corpo: "Nunito", "Segoe UI", Roboto, Arial, sans-serif;
-  --d-mesa: clamp(44px, 13vw, 76px);
+  --d-mesa: clamp(44px, 14.5vw, 76px);   /* v0.17: um pouco maiores (a altura veio do painel do rival, mais enxuto) */
   --d-cor: clamp(34px, 8.6vw, 50px);
   --d-riv: clamp(28px, 7vw, 42px);
   --raio: 18px;
@@ -729,8 +729,7 @@ img.avatar { object-fit: contain; }
 .face-rolagem .dado.skin-diamante { box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.9), inset 0 -3px 0 rgba(60,90,140,.25); }
 /* sombra por face (a luz vem de cima, à esquerda): por cima das bolinhas, com o canto da skin; o ::after é do brilho do dourado */
 /* quase de perfil, a face continua opaca e só as bolinhas somem (js/rolagem.js) */
-.face-rolagem .pip { opacity: var(--pips, 1); }
-.face-rolagem .dado::before { content: ''; position: absolute; inset: 0; border-radius: inherit; background: #2a1a12; opacity: var(--escuro, 0); z-index: 2; pointer-events: none; }
+.face-rolagem .sombra-face { position: absolute; inset: 0; border-radius: inherit; background: #2a1a12; opacity: 0; z-index: 2; pointer-events: none; }
 .pega.rolando .face > .dado, .pega.rolando .face > .marca-esp, .pega.rolando .face > .alvo-rival { opacity: 0; }   /* opacity: as bolinhas têm visibility própria */
 .pega.rolando.novo .face { animation: none; }
 /* na pose final o dado parado já aparece por baixo e o cubo se funde nele (js/rolagem.js, "pousando") */
@@ -1077,12 +1076,16 @@ button.vaga { cursor: pointer; border: 0; background: #fff3dc; color: var(--tint
 /* com o selo, o título "Mesa" sai (o selo ocupa o lugar dele) */
 /* (o selo saiu do meio da Mesa: o título "Mesa" volta; ver "Corrente e Bolso como alvos" no fim) */
 /* na sua vez a Mesa acende: o feltro ganha um aro da sua cor que respira e um brilho sobre a madeira */
-.vez-minha .tabuleiro { animation: mesaAcesa 2.4s ease-in-out infinite; }
-@keyframes mesaAcesa {
-  0%, 100% { box-shadow: inset 0 0 70px rgba(20, 40, 30, .45), inset 0 0 0 2px rgba(0,0,0,.18), 0 0 0 3px var(--voce), 0 0 22px 4px rgba(111,191,211,.35); }
-  50% { box-shadow: inset 0 0 70px rgba(20, 40, 30, .45), inset 0 0 0 2px rgba(0,0,0,.18), 0 0 0 4px var(--voce), 0 0 36px 10px rgba(111,191,211,.55); }
-}
-.sem-animacoes .vez-minha .tabuleiro { animation: none; box-shadow: inset 0 0 70px rgba(20, 40, 30, .45), inset 0 0 0 2px rgba(0,0,0,.18), 0 0 0 4px var(--voce), 0 0 30px 8px rgba(111,191,211,.45); }
+/* a Mesa acesa na sua vez: o aro na cor de quem joga e o brilho que respira. Antes a respiração animava o box-shadow da
+   própria Mesa (com o desfoque de 70 px por dentro), e o navegador repintava a Mesa inteira a cada quadro, bem na hora
+   em que os seus dados rolam: a rolagem perdia quadros no celular. Agora o brilho é uma camada parada e só a opacidade
+   dela anima (fica na placa de vídeo, sem repintar nada) */
+.vez-minha .tabuleiro { box-shadow: inset 0 0 70px rgba(20, 40, 30, .45), inset 0 0 0 2px rgba(0,0,0,.18), 0 0 0 3px var(--voce), 0 0 22px 4px rgba(111,191,211,.35); }
+.vez-minha .tabuleiro::after { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: -1;
+  box-shadow: 0 0 0 4px var(--voce), 0 0 36px 10px rgba(111,191,211,.55); opacity: 0; will-change: opacity; animation: mesaAcesa 2.4s ease-in-out infinite; }
+@keyframes mesaAcesa { 50% { opacity: 1; } }
+.sem-animacoes .vez-minha .tabuleiro { box-shadow: inset 0 0 70px rgba(20, 40, 30, .45), inset 0 0 0 2px rgba(0,0,0,.18), 0 0 0 4px var(--voce), 0 0 30px 8px rgba(111,191,211,.45); }
+.sem-animacoes .vez-minha .tabuleiro::after { display: none; }
 /* na vez do rival a Mesa e a sua ficha esmaecem: o que está aceso é de quem joga */
 .mesa, #pj0 .jogador { transition: filter .35s ease; }
 .vez-rival .mesa { filter: saturate(.55) brightness(.82); }
@@ -1256,7 +1259,8 @@ button.bolso.alvo-dado { position: relative; border: 0; font: inherit; color: in
 .bolso.alvo-dado.alvo-perigo.mira, .bolso.alvo-dado.alvo-nao.mira { box-shadow: 0 0 0 4px var(--perigo); }
 /* a etiqueta do alvo: o que acontece se o dado for para lá */
 .alvo-chip { position: absolute; z-index: 3; pointer-events: none; white-space: nowrap; font-size: 11.5px; font-weight: 800; line-height: 1; padding: 4px 8px; border-radius: 999px; background: var(--marfim); color: var(--tinta); box-shadow: 0 2px 6px rgba(0,0,0,.25); }
-.corrente .alvo-chip { top: -10px; left: 12px; }
+/* à direita, nas casas vazias: à esquerda ela cobria as etiquetas dos elos (±1, 7, =) */
+.corrente .alvo-chip { top: -10px; right: 12px; }
 .bolso .alvo-chip { top: calc(100% + 4px); right: 0; font-size: 11px; }
 .alvo-ok > .alvo-chip { background: var(--passo); }
 .alvo-aviso > .alvo-chip { background: var(--mel); }
@@ -1271,37 +1275,20 @@ button.bolso.alvo-dado { position: relative; border: 0; font: inherit; color: in
   .cartas .carta.grande:nth-of-type(1) { rotate: -1deg; translate: 0 2px; }
   .cartas .carta.grande:nth-of-type(3) { rotate: 1deg; translate: 0 2px; }
 }
-=======
-   Escolha do rival (v0.12): Jogar → os retratos, o jeito de cada uma e o que a vitória rende → Jogar contra ...
+
+/* ==========================================================================
+   Os modos (v0.15): depois da estreia, Jogar abre a História e o Online, nesta ordem. A partida avulsa contra a Diana
+   ou a Dona Coruja saiu: os rivais agora estão na história
    ========================================================================== */
-.inicio-rivais { width: 100%; display: grid; gap: 12px; justify-items: stretch; text-align: left; }
-.inicio-rivais h2 { margin: 0; text-align: center; font-family: var(--f-titulo); font-weight: 700; font-size: 24px; color: var(--texto); }
-.rival-cartas { display: grid; gap: 10px; }
-.rival-carta { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px; align-items: center; padding: 12px; border: 0; border-radius: var(--raio); text-align: left; cursor: pointer;
-  background: var(--papel); color: var(--tinta); font: inherit; box-shadow: 0 5px 0 var(--papel-2), 0 10px 20px rgba(0,0,0,.25); transition: transform .18s, box-shadow .18s; }
-.rival-carta:active { transform: translateY(3px); }
-.rival-carta:not(.marcado) .rival-retrato { filter: saturate(.75); }
-.rival-carta.marcado { box-shadow: 0 5px 0 var(--papel-2), 0 0 0 3px var(--mel), 0 14px 26px rgba(0,0,0,.32); transform: translateY(-2px); }
-.rival-retrato { width: clamp(72px, 22vw, 96px); height: clamp(72px, 22vw, 96px); border-radius: 50%; overflow: hidden; display: block; background: var(--papel-2); box-shadow: inset 0 0 0 3px rgba(58,42,46,.08); }
-.rival-retrato .avatar { width: 100%; height: 100%; display: block; }
-.rival-texto { display: grid; gap: 4px; min-width: 0; }
-.rival-topo { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.rival-topo b { font-family: var(--f-titulo); font-size: 21px; line-height: 1.1; }
-.rival-nivel { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
-.rival-nivel.n-aprendiz { background: var(--passo); color: #24533a; }
-.rival-nivel.n-esperto { background: var(--eco); color: #3d2e73; }
-.rival-jeito { font-size: 14px; line-height: 1.35; }
-.rival-rende { font-size: 12px; font-weight: 700; color: var(--tinta-suave); }
-.rival-ajustes { display: grid; gap: 8px; padding: 10px 12px; border-radius: 14px; background: rgba(255,243,226,.06); color: var(--texto-suave); font-size: 14px; }
-.rival-linha { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
-.rival-deck b { color: var(--texto); font-weight: 800; }
-.inicio-rivais .btn-link { color: var(--texto); justify-self: center; }
-.rival-ajustes .btn-link { justify-self: auto; }
-.inicio-rivais .inicio-principal { margin-top: 2px; }
-/* o Jogar e o Voltar da escolha do rival: um em cima do outro, da mesma largura, como o Jogar e o Online da tela
-   inicial; o Voltar é o botão de papel */
-.inicio-rivais .inicio-principal, .inicio-rivais [data-inicio="voltar"] { justify-self: stretch; width: 100%; }
-.tela-inicio.escolhendo .inicio-cena, .tela-inicio.escolhendo #inicioTitulo { display: none; }
+.inicio-modos { width: 100%; display: grid; gap: 12px; justify-items: stretch; }
+.inicio-modos[hidden] { display: none; }
+.inicio-modos h2 { margin: 0 0 2px; text-align: center; font-family: var(--f-titulo); font-weight: 700; font-size: 24px; color: var(--texto); }
+.inicio-modos .btn-duplo { min-height: 64px; position: relative; }
+.inicio-modos .btn-duplo small { font-family: var(--f-corpo); font-size: 13px; letter-spacing: 0; }
+.inicio-modos .ponto-online { position: absolute; top: 8px; right: 10px; }
+/* nos modos, sai o letreiro e fica a cena, menor (sem ela a tela ficava vazia) */
+.tela-inicio.escolhendo #inicioTitulo { display: none; }
+.tela-inicio.escolhendo .inicio-cena { height: clamp(112px, 17vh, 150px); }
 /* a cena da tela inicial (v0.14): a rival da vez atrás de uma mesinha de feltro e madeira, com a saudação e três dados.
    Tocar num dado o rola; tocar na rival, ela fala. A arte pintada aparece antes de qualquer toque */
 .inicio-cena { position: relative; width: min(330px, 100%); height: clamp(136px, 23vh, 196px); margin-bottom: -4px; }
@@ -1495,6 +1482,27 @@ button.inicio-perfil:active { transform: translateY(1px); }
 .hc.travado { opacity: .55; }
 .hc.em-breve { grid-template-columns: 1fr; }
 .hc-retrato .avatar { width: 46px; height: 46px; }
+/* o rival ainda não visto (v0.15): só a silhueta, com um "?" de gibi por cima; o nome do lugar fica "? ? ?" */
+.hc-retrato { position: relative; display: block; width: 46px; height: 46px; }
+.hc.oculto .hc-retrato .avatar { filter: brightness(0); opacity: .82; }
+/* o "?" vai ao meio da cabeça de cada silhueta, não ao meio da caixa (o coelho tem a cabeça mais baixa por causa das
+   orelhas; o guaxinim, mais alta). --qx/--qy deslocam o "?" em px; o deslocamento é feito com padding, para o "?" não
+   sair da caixa do retrato */
+.hc-retrato { --qx: -1.5px; --qy: -3px; }
+.hc-retrato[data-r="sapo"] { --qx: 0px; --qy: -4px; } .hc-retrato[data-r="coelho"] { --qx: -2px; --qy: 0.5px; }
+.hc-retrato[data-r="raposa"] { --qx: -1px; --qy: -3px; } .hc-retrato[data-r="urso"] { --qx: -2px; --qy: 0px; }
+.hc-retrato[data-r="guaxinim"] { --qx: 0px; --qy: -4.5px; } .hc-retrato[data-r="ovelha"] { --qx: -2.5px; --qy: -3px; }
+.hc-retrato[data-r="coruja"] { --qx: -1px; --qy: -2px; } .hc-retrato[data-r="diana"] { --qx: -1px; --qy: -3px; }
+.hc-interroga { box-sizing: border-box; padding: max(0px, calc(var(--qy) * 2)) max(0px, calc(var(--qx) * -2)) max(0px, calc(var(--qy) * -2)) max(0px, calc(var(--qx) * 2)); }
+.hc-interroga { position: absolute; inset: 0; display: grid; place-items: center; font-style: normal; font-family: var(--f-titulo); font-weight: 700; font-size: 24px; line-height: 1;
+  color: var(--mel); -webkit-text-stroke: 2.5px var(--tinta); paint-order: stroke fill; text-shadow: -2px 0 0 var(--voce), 2px 1px 0 var(--rival); }
+.hc.oculto .hc-nome { letter-spacing: .12em; color: var(--tinta-suave); }
+/* a revelação: a silhueta pisca branca e sai em cores, em poses seguradas; o "?" estoura e some */
+.hc.revelando .hc-retrato .avatar { animation: hcRevela .9s steps(6, end) both; }
+.hc.revelando .hc-interroga { animation: hcInterroga .45s steps(3, end) forwards; }
+.hc.revelando { box-shadow: inset 0 0 0 2px var(--mel), 0 0 0 4px rgba(255,207,138,.35); }
+@keyframes hcRevela { 0% { filter: brightness(0); opacity: .82; transform: scale(1); } 35% { filter: brightness(0) invert(1); opacity: 1; transform: scale(1.18); } 55% { filter: brightness(2.2); transform: scale(1.1); } 100% { filter: none; opacity: 1; transform: scale(1); } }
+@keyframes hcInterroga { 0% { transform: none; opacity: 1; } 60% { transform: rotate(10deg) scale(1.6); opacity: 1; } 100% { transform: rotate(14deg) scale(2); opacity: 0; } }
 .hc-txt { display: grid; gap: 2px; min-width: 0; }
 .hc-txt small { font-size: 12px; font-weight: 800; color: var(--tinta-suave); text-transform: uppercase; letter-spacing: .05em; }
 .hc-txt b { font-family: var(--f-titulo); font-size: 16px; line-height: 1.2; }
@@ -1545,7 +1553,9 @@ button.inicio-perfil:active { transform: translateY(1px); }
 .tela-inicio #inicioTitulo { margin: -10px 0 -8px; }
 .tela-inicio #inicioTitulo .letreiro { width: min(250px, 66vw); }
 @media (max-height: 700px) { .tela-inicio #inicioTitulo .letreiro { width: 190px; } }
-.marca .titulo-letreiro .letreiro { width: 92px; }
+/* no cabeçalho, o letreiro de uma linha (empilhado, ficava apertado em tamanho pequeno) */
+.marca .titulo-letreiro .letreiro { width: 150px; }
+@media (max-width: 520px) { .marca .titulo-letreiro .letreiro { width: 118px; } }
 .marca .logo { display: none; }
 /* o letreiro entra como um adesivo colado: cresce torto e assenta, em poses seguradas */
 .tela-inicio:not([hidden]) #inicioTitulo .letreiro { animation: letreiroEntra .5s steps(4, end) both .1s; transform-origin: 50% 60%; }
@@ -1564,15 +1574,16 @@ button.inicio-perfil:active { transform: translateY(1px); }
 .impresso .btn-mel { background: radial-gradient(circle, rgba(196,132,58,.55) 0 1.4px, transparent 1.9px) 0 0 / 7px 7px, linear-gradient(180deg, #f8c47a, var(--mel));
   background-size: 7px 7px, auto; background-position: 0 100%, 0 0; background-repeat: repeat-x, no-repeat;
   box-shadow: 0 4px 0 var(--tinta), 0 10px 18px rgba(0,0,0,.25); }
-.impresso .btn-mel { background: linear-gradient(180deg, #f8c47a 0 40%, rgba(242,177,94,0) 85%), radial-gradient(circle, rgba(196,132,58,.6) 0 1.4px, transparent 1.9px) 0 0 / 7px 7px, var(--mel); }
+/* a retícula fica na faixa de baixo, abaixo da palavra (atrás da letra ela atrapalhava a leitura) */
+.impresso .btn-mel { background: linear-gradient(180deg, #f8c47a 0 62%, rgba(242,177,94,0) 96%), radial-gradient(circle, rgba(196,132,58,.6) 0 1.4px, transparent 1.9px) 0 0 / 7px 7px, var(--mel); }
 .impresso .btn-papel { box-shadow: 0 4px 0 var(--tinta), 0 8px 14px rgba(0,0,0,.18); }
 .impresso .btn-mel:active, .impresso .btn-papel:active { box-shadow: 0 1px 0 var(--tinta); }
 .impresso .inicio-principal { font-family: var(--f-titulo); font-size: clamp(18px, 5.4vw, 24px); letter-spacing: .02em; }
 
-/* os painéis escuros do menu ganham retícula no canto, como uma caixa de legenda impressa */
+/* os painéis escuros do menu: lisos, com um contorno de papel mais firme. A retícula atrás do texto atrapalhava a
+   leitura (o dono, v0.16); os pontinhos ficam só no fundo da página, onde não há letra */
 .impresso .inicio-perfil, .impresso .inicio-tarefas, .impresso .inicio-ico, .impresso .btn-topo {
-  background: radial-gradient(circle, rgba(255,243,226,.12) 0 1.2px, transparent 1.7px) 0 0 / 7px 7px, rgba(255,243,226,.06);
-  -webkit-mask-image: none; }
+  background: rgba(255,243,226,.07); box-shadow: inset 0 0 0 1.5px rgba(255,243,226,.24), 0 3px 0 rgba(18,12,18,.55); }
 .impresso .inicio-ico .ico { stroke-width: 2.2; }
 
 /* balões de fala de gibi: papel, contorno cacau e o rabinho apontando para quem fala */
@@ -1621,3 +1632,101 @@ button.inicio-perfil:active { transform: translateY(1px); }
 /* a explosão estoura em poses seguradas: pequena, grande demais, assenta */
 @keyframes vsEntra { 0% { transform: scale(.2) rotate(-30deg); opacity: 0; } 40% { transform: scale(1.3) rotate(8deg); opacity: 1; } 70% { transform: scale(.92) rotate(-3deg); } 100% { transform: none; } }
 .sem-animacoes .vs-x { animation: none; }
+
+/* ==========================================================================
+   O Caderno da Diana (v0.17): o mapa da história é uma página do caderno dela. Cada material conta um pedaço do enredo
+   (docs/visual-impresso.md): o papel pautado é o caderno de pesquisa disfarçado de receitas; o topo rasgado, as páginas que
+   o Guaxinim arrancou; a fita, a Fita Dupla; a letra de mão (Caveat, a letra das receitas) e o nanquim, a mão da Diana.
+   A margem vermelha corre no recuo, fora dos cartões (atrás dos retratos ela atrapalhava a leitura)
+   ========================================================================== */
+.folha-caderno { width: min(480px, 100%); max-height: 100%; display: grid; position: relative; }
+.folha-caderno > .caixa { width: 100%; }
+/* a altura da página vem da tela (o envoltório tem altura do conteúdo, então o 100% da caixa não a limitaria): sem
+   isso, a lista não rola e o Fechar fica fora da tela no celular */
+.folha-caderno > .caixa { max-height: calc(100vh - max(16px, calc(var(--seg-topo) + 8px)) - max(16px, calc(var(--seg-baixo) + 4px)));
+  max-height: calc(100dvh - max(16px, calc(var(--seg-topo) + 8px)) - max(16px, calc(var(--seg-baixo) + 4px))); }
+.impresso .folha-caderno { filter: drop-shadow(0 6px 0 var(--tinta)) drop-shadow(0 22px 30px rgba(0,0,0,.45)); }
+.impresso .janela-caderno .caixa { border: 0; border-radius: 0 0 16px 16px; box-shadow: none; padding: 36px 16px 18px 32px;
+  background: linear-gradient(90deg, transparent 17px, rgba(232,128,111,.65) 17px 19px, transparent 19px) local,
+    repeating-linear-gradient(180deg, transparent 0 27px, rgba(111,191,211,.32) 27px 28px) local, var(--papel);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 16' preserveAspectRatio='none'%3E%3Cpath d='M0 16 L0 2.5 L7 8.8 L14 5.2 L21 9.9 L28 3.7 L35 6.8 L42 2.9 L49 9.4 L56 5.7 L63 10.5 L70 2.5 L77 7.2 L84 3.4 L91 8.2 L98 4.5 L105 9.3 L112 4.6 L119 7.7 L126 2.3 L133 8.8 L140 5.1 L147 11.4 L154 3.4 L161 6.5 L168 2.8 L175 7.6 L182 5.5 L189 10.2 L196 4.0 L203 7.1 L210 1.7 L217 9.7 L224 6.0 L231 10.8 L238 2.8 L245 6.0 L252 3.8 L259 8.5 L266 4.8 L273 9.7 L280 3.4 L287 8.0 L294 2.6 L301 9.1 L308 5.4 L315 10.2 L322 3.8 L329 6.8 L336 3.1 L343 7.9 L350 4.2 L357 10.5 L364 4.3 L371 7.4 L378 2.0 L385 8.5 L392 6.3 L399 11.1 L400 16 Z' fill='black'/%3E%3C/svg%3E") top / 100% 16px no-repeat, linear-gradient(#000, #000) 0 15px / 100% calc(100% - 15px) no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 16' preserveAspectRatio='none'%3E%3Cpath d='M0 16 L0 2.5 L7 8.8 L14 5.2 L21 9.9 L28 3.7 L35 6.8 L42 2.9 L49 9.4 L56 5.7 L63 10.5 L70 2.5 L77 7.2 L84 3.4 L91 8.2 L98 4.5 L105 9.3 L112 4.6 L119 7.7 L126 2.3 L133 8.8 L140 5.1 L147 11.4 L154 3.4 L161 6.5 L168 2.8 L175 7.6 L182 5.5 L189 10.2 L196 4.0 L203 7.1 L210 1.7 L217 9.7 L224 6.0 L231 10.8 L238 2.8 L245 6.0 L252 3.8 L259 8.5 L266 4.8 L273 9.7 L280 3.4 L287 8.0 L294 2.6 L301 9.1 L308 5.4 L315 10.2 L322 3.8 L329 6.8 L336 3.1 L343 7.9 L350 4.2 L357 10.5 L364 4.3 L371 7.4 L378 2.0 L385 8.5 L392 6.3 L399 11.1 L400 16 Z' fill='black'/%3E%3C/svg%3E") top / 100% 16px no-repeat, linear-gradient(#000, #000) 0 15px / 100% calc(100% - 15px) no-repeat; }
+/* a fita que segura a página: mel meio transparente, com pontinhos de dado e as pontas cortadas à mão */
+.impresso .folha-caderno::before { content: ''; position: absolute; top: -2px; left: 50%; width: 118px; height: 26px; transform: translateX(-50%) rotate(-3deg); z-index: 2; pointer-events: none;
+  background: radial-gradient(circle, rgba(58,42,46,.22) 0 1.4px, transparent 1.9px) 0 0 / 9px 9px, rgba(242,177,94,.62);
+  clip-path: polygon(3% 0, 97% 5%, 100% 30%, 96% 55%, 99% 100%, 2% 95%, 0 60%, 4% 35%); }
+/* o título na letra da Diana, com um traço de pincel embaixo */
+.impresso .janela-caderno h2 { font-family: 'Caveat', var(--f-titulo); font-weight: 700; font-size: 40px; line-height: 1; padding-bottom: 12px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 14' preserveAspectRatio='none'%3E%3Cpath d='M3 9 C40 3 80 12 120 6 S180 4 197 8' stroke='%233a2a2e' stroke-width='3.4' fill='none' stroke-linecap='round'/%3E%3Cpath d='M22 11.5 C70 8.5 110 12.5 168 9.5' stroke='%233a2a2e' stroke-width='1.5' fill='none' stroke-linecap='round' opacity='.55'/%3E%3C/svg%3E") left bottom / min(250px, 82%) 12px no-repeat; }
+.impresso .janela-caderno .historia-total { font-family: 'Caveat', var(--f-corpo); font-size: 21px; line-height: 1.1; color: var(--rival-tinta); transform: rotate(-1.5deg); transform-origin: left; margin: 2px 0 6px; }
+/* os capítulos: cartões opacos colados na página (a pauta e a margem não passam por trás deles) */
+.impresso .janela-caderno .hc { background: #f6e7cc; box-shadow: inset 0 0 0 1.5px rgba(58,42,46,.16), 0 2px 0 rgba(58,42,46,.12); }
+/* o capítulo da vez: uma seta à mão na margem, apontando para ele (um círculo em volta cortava o retrato e o botão) */
+.impresso .janela-caderno .hc.atual { box-shadow: inset 0 0 0 2px var(--mel), 0 2px 0 rgba(58,42,46,.12); }
+.impresso .janela-caderno .hc.atual::before { content: ''; position: absolute; left: -29px; top: 22px; width: 24px; height: 20px; pointer-events: none; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 26 22'%3E%3Cpath d='M2 13 C8 10 14 11 21 11' stroke='%23c4843a' stroke-width='2.8' fill='none' stroke-linecap='round'/%3E%3Cpath d='M15 5 C18 8 20 10 22.5 11 C20 13 18 15 15.5 18' stroke='%23c4843a' stroke-width='2.8' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat; transform: rotate(-6deg); }
+/* o carimbo de feito: tinta verde, torto, como quem carimba a página */
+.hc-carimbo { justify-self: start; }
+.impresso .hc-carimbo { display: inline-block; font-family: var(--f-titulo); font-weight: 700; font-size: 11px !important; letter-spacing: .14em; text-transform: uppercase; line-height: 1;
+  color: #2f7a52 !important; padding: 3px 6px 2px; border: 2px solid currentColor; border-radius: 4px; transform: rotate(-6deg); margin-top: 3px; opacity: .9; }
+/* tocar no capítulo abre as metas das estrelas (um aberto por vez) */
+.hc { position: relative; }
+.hc-txt { display: grid; gap: 2px; min-width: 0; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.hc-det { grid-column: 1 / -1; display: grid; grid-template-rows: 0fr; transition: grid-template-rows .22s ease; }
+.hc-det > div { overflow: hidden; min-height: 0; visibility: hidden; transition: visibility .22s; }
+.hc.aberto .hc-det { grid-template-rows: 1fr; }
+.hc.aberto .hc-det > div { visibility: visible; }
+.hc-metas { list-style: none; margin: 4px 0 6px; padding: 8px 0 0; border-top: 1.5px dashed rgba(58,42,46,.22); display: grid; gap: 4px; }
+.hc-metas li { display: grid; grid-template-columns: 3.4em 1fr; align-items: baseline; gap: 6px; font-size: 14px; color: var(--tinta); }
+.hc-m-n { color: var(--mel-escuro); letter-spacing: .04em; font-size: 13px; }
+.hc-metas-nota { margin: 0 0 4px; font-size: 13px; color: var(--tinta-suave); }
+.hc-metas-nota:first-child { padding-top: 8px; border-top: 1.5px dashed rgba(58,42,46,.22); }
+.sem-animacoes .hc-det, .sem-animacoes .hc-det > div { transition: none; }
+
+/* ==========================================================================
+   O adesivo (v0.17): um só cartão pequeno em repouso para a Loja, o deck e o Perfil (antes, cada tela tinha o seu
+   contorno e a sua sombra). Selecionado continua igual em todos: aro mel e sombra mel. As cartas da mão ficam para o
+   desenho da partida
+   ========================================================================== */
+:root { --adesivo-pequeno: 0 3px 0 rgba(58,42,46,.24), inset 0 0 0 1.5px rgba(58,42,46,.2); }
+.impresso .item:not(.usando):not(:has(.avatar.especial)), .impresso .op:not([aria-pressed="true"]), .impresso .perfil-op:not(.usando), .impresso .perfil-num { box-shadow: var(--adesivo-pequeno); }
+.impresso .item:has(.avatar.especial):not(.usando) { box-shadow: inset 0 0 0 2px #e2b04a, 0 3px 0 rgba(58,42,46,.24); }
+
+/* ==========================================================================
+   A partida (v0.17): o seu painel pesa mais que o do rival. As cartas do rival viram fichas baixas, com o ícone e o
+   nome (tocar continua mostrando a carta inteira): saber quais são basta; o que cada uma faz está a um toque. A altura
+   que sobra vai para os dados da Mesa, o centro do jogo
+   ========================================================================== */
+.p1 .cartas { gap: 6px; }
+.p1 .cartas .carta { min-height: 32px; padding: 3px 8px 3px 6px; gap: 5px; border-radius: 10px; }
+.p1 .cartas .carta .c-arte { width: 22px; height: 22px; }
+.p1 .cartas .carta .cnome { font-size: 13px; }
+.p1 .cartas .carta .cverbo { display: none; }
+/* em tela estreita, a ficha do rival fica só com o nome (com o ícone, "Fundo Falso" encostava na borda) */
+@media (max-width: 360px) { .p1 .cartas .carta .c-arte { display: none; } .p1 .cartas .carta { justify-content: center; padding: 3px 4px; } .p1 .cartas .carta .c-txt { text-align: center; } .p1 .cartas .carta .cnome { font-size: 11.5px; } }
+
+/* ==========================================================================
+   Ajustes finos da identidade (v0.17)
+   ========================================================================== */
+/* liga e desliga em mel, a cor da ação (o verde é das relações dos dados e do "feito"), com o contorno do adesivo */
+.impresso .chave-liga { box-shadow: inset 0 0 0 1.5px rgba(58,42,46,.22); }
+.impresso .chave-liga:checked { background: var(--mel); box-shadow: inset 0 0 0 1.5px var(--mel-escuro); }
+.impresso .chave-liga::after { box-shadow: 0 2px 0 rgba(58,42,46,.3), inset 0 0 0 1.5px rgba(58,42,46,.15); }
+/* no computador, a tela inicial cresce junto (era uma coluna estreita perdida no meio da tela) */
+@media (min-width: 1000px) and (min-height: 820px) { .inicio-caixa { zoom: 1.22; } }
+
+/* o fim da partida (v0.17): o placar como o começo da partida, dois quadros frente a frente. Quem venceu pula e leva o
+   carimbo; quem perdeu murcha e fica um pouco apagado. O título com as chapas azul e rosa fora do registro */
+.fim-duelo { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 6px; margin-top: 4px; padding: 5px 5px 7px; }   /* o respiro: os quadros tortos não passam da caixa */
+.fd-lado { position: relative; display: grid; justify-items: center; gap: 2px; padding: 10px 6px 8px; border-radius: 14px; min-width: 0; }
+.fd-lado .avatar { width: 64px; height: 64px; margin: 0; }
+.fd-lado b { font-family: var(--f-titulo); font-size: 16px; line-height: 1.1; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fd-p0 b { color: var(--voce-tinta); } .fd-p1 b { color: var(--rival-tinta); }
+.fd-pts { font-family: var(--f-titulo); font-weight: 700; font-size: 34px; line-height: 1; color: var(--tinta); font-variant-numeric: tabular-nums; }
+.fd-lado:not(.venceu) { opacity: .78; } .fd-lado:not(.venceu) .avatar { filter: saturate(.55); }
+.fd-x { font-family: var(--f-titulo); font-size: 22px; color: var(--tinta-suave); }
+.fd-carimbo { position: absolute; top: 8px; right: 2px; transform: rotate(12deg); font-style: normal; font-family: var(--f-titulo); font-weight: 700; font-size: 11px; letter-spacing: .14em;
+  text-transform: uppercase; line-height: 1; color: #2f7a52; border: 2px solid currentColor; border-radius: 4px; padding: 3px 5px 2px; background: rgba(255,250,240,.88); }
+.impresso .fd-lado { border: 2px solid var(--tinta); box-shadow: 0 3px 0 var(--tinta); }
+.impresso .fd-p0 { transform: rotate(-1.5deg); background: radial-gradient(circle, rgba(111,191,211,.4) 0 1.5px, transparent 2px) 0 0 / 8px 8px, #eaf6f9; }
+.impresso .fd-p1 { transform: rotate(1.5deg); background: radial-gradient(circle, rgba(236,143,168,.4) 0 1.5px, transparent 2px) 0 0 / 8px 8px, #fcedf1; }
+.impresso #fimTitulo { text-shadow: -2px 0 0 var(--voce), 2px 1px 0 var(--rival); }

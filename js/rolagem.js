@@ -12,6 +12,11 @@
   let camada = null, raf = 0;
   let esperas = [];
   let relogio = null;   // testes e fotos: um relógio fixo no lugar do tempo real
+  // o quadro congelado da Sinfonia (js/efeitos.js, Fx.quadro): tudo para, inclusive os dados no ar. Sem isso, a Mesa nova
+  // que a Sinfonia abre seguia rolando enquanto o resto da tela parava, e o lance parecia travado pela metade
+  let congelado = null;   // { desde, ate }
+  // o instante que vale para um lançamento: no quadro congelado, o tempo dele para em "desde"
+  const instante = (g, agora) => (congelado && g.t0 <= congelado.desde && agora < congelado.ate ? congelado.desde : agora);
 
   // a luz vem de cima, à esquerda e um pouco de trás (a mesma do resto da mesa)
   const LUZ = (() => { const v = [-0.42, 0.82, -0.39], n = Math.hypot(...v); return v.map(x => x / n); })();
@@ -21,8 +26,8 @@
   // o cubo é montado NITIDEZ vezes maior e reduzido no fim da transformação: o navegador desenha cada face girada
   // em 3D na resolução do tamanho montado (no celular, o dado de 60 px saía em 60 px esticados três vezes, com a
   // beira e as bolinhas em degraus). O desenho da face é ampliado por zoom, então as texturas em px das skins
-  // continuam iguais; a geometria na tela é a mesma
-  // (2 basta: 3 dava ~66 MB de textura para cinco dados num iPhone). O miolo, só cor, fica no tamanho da tela
+  // continuam iguais; a geometria na tela é a mesma (2 basta: 3 dava ~66 MB de textura para cinco dados num iPhone).
+  // O miolo, só cor, fica no tamanho da tela
   const NITIDEZ = 2;
   // Godot (x, y altura, z para quem joga) -> CSS (x, y para baixo, z para quem olha): troca y e z
   const paraCss = v => [v[0], v[2], v[1]];
@@ -75,7 +80,16 @@
       html += `<div class="face-rolagem" style="transform:${matriz(m, n.map(x => x * L / 2))}">${montarCubo.faceHTML(i + 1)}</div>`;
     }
     cubo.innerHTML = html;
-    return { cubo, faces: [...cubo.querySelectorAll('.face-rolagem')], miolos: [...cubo.querySelectorAll('.miolo-rolagem')] };
+    // cada face guarda as próprias peças: a sombra da luz (um elemento só, por cima das bolinhas) e as bolinhas acesas.
+    // A luz muda a cada quadro; escrevê-la como variável CSS herdada na face fazia o navegador recalcular a face e as
+    // 9 bolinhas a cada escrita (5 dados × 6 faces × 3 variáveis por quadro: metade do tempo do celular ia nisso, e a
+    // rolagem perdia quadros, "truncada"). Agora cada valor vai direto no elemento que o usa, e só quando muda
+    const faces = [...cubo.querySelectorAll('.face-rolagem')].map(el => {
+      const dado = el.querySelector('.dado') || el, sombra = document.createElement('span');
+      sombra.className = 'sombra-face'; dado.appendChild(sombra);
+      return { el, sombra, pips: [...el.querySelectorAll('.pip.on')], op: -1, esc: -1, pip: -1 };
+    });
+    return { cubo, faces, miolos: [...cubo.querySelectorAll('.miolo-rolagem')].map(el => ({ el, esc: -1, op: -1 })) };
   }
 
   // cada dado tem o seu palco: a perspectiva olha para a casa dele (de frente, um pouco de baixo), e não para o
@@ -99,7 +113,8 @@
     const sorteio = M.sortear(BIB, itens.length);
     if (!sorteio) return false;
     garantirCamada();
-    const grupo = { t0: performance.now(), vel: op.velocidade || 1, batidas: M.batidas(sorteio.l, sorteio.espelhado), proxima: 0, ids: itens.map(x => x.id), som: op.som || (() => {}), primeiros: new Set() };
+    // lançado no meio do quadro congelado: começa quando ele acaba
+    const grupo = { t0: congelado && performance.now() < congelado.ate ? congelado.ate : performance.now(), vel: op.velocidade || 1, batidas: M.batidas(sorteio.l, sorteio.espelhado), proxima: 0, ids: itens.map(x => x.id), som: op.som || (() => {}), primeiros: new Set() };
     grupos.add(grupo);
     itens.forEach((it, i) => {
       encerrar(it.id);   // Rerrolar com o dado ainda girando: o novo lançamento toma o lugar
@@ -119,8 +134,10 @@
   function quadro(agora) {
     raf = 0;
     if (relogio) agora = relogio();
+    // acabou o quadro congelado: quem estava no ar retoma de onde parou
+    if (congelado && agora >= congelado.ate) { for (const g of grupos) if (g.t0 <= congelado.desde) g.t0 += congelado.ate - congelado.desde; congelado = null; }
     for (const g of grupos) {
-      const t = (agora - g.t0) / 1000 * g.vel;
+      const t = (instante(g, agora) - g.t0) / 1000 * g.vel;
       // as batidas gravadas, cada uma no seu quadro (só as dos dados que ainda estão na Mesa)
       while (g.proxima < g.batidas.length && g.batidas[g.proxima].t <= t) {
         const b = g.batidas[g.proxima++], id = g.ids[b.casa];
@@ -136,7 +153,7 @@
     // entre uma escrita e outra faria o navegador recalcular tudo a cada dado
     const lote = [], acabaram = [];
     for (const [id, a] of ativos) {
-      const t = (agora - a.grupo.t0) / 1000 * a.grupo.vel;
+      const t = (instante(a.grupo, agora) - a.grupo.t0) / 1000 * a.grupo.vel;
       const el = casaDe(id);
       if (!el) { acabaram.push([id, false]); continue; }      // o dado saiu da Mesa no meio da rolagem
       if (t >= a.d.fim) { acabaram.push([id, true]); continue; }   // pousou: o dado da Mesa (nítido) toma o lugar já
@@ -161,9 +178,12 @@
       const L = a.L, p = M.pose(a.d, t);
       const cx = c.cx + p.pos[0] * L, cy = c.cy + p.pos[2] * L, h = Math.max(0, p.pos[1]);
       // o olho do palco: em cima da casa, na beira de baixo dela (sem lateral à mostra quando o dado pousa)
-      a.palco.style.perspectiveOrigin = `${c.cx}px ${c.cy + L / 2}px`;
+      // (só quando muda: cada escrita, mesmo igual, pede ao navegador para recalcular o estilo do palco)
+      const olho = `${c.cx}px ${c.cy + L / 2}px`;
+      if (olho !== a.olho) { a.olho = olho; a.palco.style.perspectiveOrigin = olho; }
       // quem está mais alto passa por cima (cada palco é plano para os outros)
-      a.palco.style.zIndex = String(Math.round(h * 100));
+      const z = Math.round(h * 100);
+      if (z !== a.z) { a.z = z; a.palco.style.zIndex = String(z); }
       // o centro fica meio lado abaixo da face de cima: parado, a face de cima cai no plano da tela (escala 1)
       const Lm = L * NITIDEZ;   // o cubo montado (o centro dele é o centro do dado; a escala volta ao tamanho da tela)
       a.cubo.style.transform = `translate3d(${cx - Lm / 2}px, ${cy - Lm / 2}px, ${p.pos[1] * L - L / 2}px) ${matriz(baseCss(p.base))} scale3d(${1 / NITIDEZ}, ${1 / NITIDEZ}, ${1 / NITIDEZ})`;
@@ -172,9 +192,9 @@
       a.sombra.style.transform = `translate(${cx - L / 2 + h * L * 0.28}px, ${cy - L / 2 + 6 + h * L * 0.42}px) scale(${1 - Math.min(0.45, h * 0.16)})`;
       // na fusão, a sombra do cubo (desenhada por cima do dado parado) escureceria o dado através das faces que
       // somem: o dado parado já tem a dele, igual, e assume na hora
-      a.sombra.style.opacity = a.pousando ? '0' : String(entra * (1 - Math.min(0.75, h * 0.3)));
+      const so = a.pousando ? 0 : Math.round(entra * (1 - Math.min(0.75, h * 0.3)) * 50) / 50;
+      if (so !== a.so) { a.so = so; a.sombra.style.opacity = String(so); }
       // luz por face: a que olha para longe da luz escurece; a de cima, parada, fica igual ao dado parado.
-      // --topo (quanto a face olha para cima) acende o brilho das skins que brilham
       // inclinação da face de cima (0 = de pé): o miolo some nos últimos graus, e de vez na fusão
       const deCima = Math.max(...M.NORMAIS.map(nn => M.mulMV(p.base, nn)[1]));
       const miolo = a.pousando ? 0 : entra * Math.max(0, Math.min(1, ((1 - deCima) - 0.0015) / 0.008));
@@ -182,22 +202,26 @@
       // junto com a inclinação (visto de cima, o dado deitado não mostra os lados); a face de cima fica
       const deitado = Math.max(0, Math.min(1, (1 - deCima) / 0.02));
       a.faces.forEach((f, i) => {
-        const n = M.mulMV(p.base, M.NORMAIS[i]), luz = n[0] * LUZ[0] + n[1] * LUZ[1] + n[2] * LUZ[2];
-        // a face fica sempre opaca (translúcida, o dado parecia oco, com a face de cima flutuando); quase de perfil,
-        // só as bolinhas somem: espremidas na lasca, elas pareceriam sair do contorno
-        const perfil = Math.max(0, Math.min(1, (n[1] - 0.06) / 0.22));
-        // de perfil exato (o olho fica em cima), a face vira um risco solto ao lado do dado, serrilhado no celular:
-        // nos últimos graus ela some, e o lado do miolo do mesmo lado some junto
+        const n = M.mulMV(p.base, M.NORMAIS[i]);
+        // a face fica sempre opaca (translúcida, o dado parecia oco, com a face de cima flutuando); de perfil exato (o
+        // olho fica em cima), ela vira um risco solto ao lado do dado, serrilhado no celular: nos últimos graus ela some,
+        // e o lado do miolo do mesmo lado some junto
         const risco = Math.max(0, Math.min(1, (n[1] - 0.012) / 0.05)) * (n[1] >= deCima - 1e-6 ? 1 : deitado);
-        f.style.opacity = (entra * risco).toFixed(3);
-        const m = (miolo * risco).toFixed(3);
-        if (a.miolos[i]._op !== m) { a.miolos[i]._op = m; a.miolos[i].style.opacity = m; }
-        f.style.setProperty('--pips', perfil.toFixed(3));
-        const escuro = Math.max(0, Math.min(0.42, 0.42 * (LUZ_TOPO - luz) / (1 + LUZ_TOPO))).toFixed(3);
-        f.style.setProperty('--escuro', escuro);
-        f.style.setProperty('--topo', Math.max(0, n[1]).toFixed(3));
+        const op = Math.round(entra * risco * 100) / 100;
+        if (op !== f.op) { f.op = op; f.el.style.opacity = op; }
+        const mo = Math.round(miolo * risco * 100) / 100, mm = a.miolos[i];
+        if (mo !== mm.op) { mm.op = mo; mm.el.style.opacity = mo; }
+        // virada para baixo, a face está de costas (backface-visibility: hidden) e o miolo dela, atrás: nada a pintar
+        if (n[1] < -0.25) return;
+        const luz = n[0] * LUZ[0] + n[1] * LUZ[1] + n[2] * LUZ[2];
+        // quase de perfil, só as bolinhas somem: espremidas na lasca, elas pareceriam sair do contorno
+        const perfil = Math.round(Math.max(0, Math.min(1, (n[1] - 0.06) / 0.22)) * 20) / 20;
+        if (perfil !== f.pip) { f.pip = perfil; f.pips.forEach(pp => { pp.style.opacity = perfil; }); }
+        const escuro = Math.round(Math.max(0, Math.min(0.42, 0.42 * (LUZ_TOPO - luz) / (1 + LUZ_TOPO))) * 100) / 100;
+        if (escuro !== f.esc) { f.esc = escuro; f.sombra.style.opacity = escuro; }
         // o miolo leva a mesma luz da face do mesmo lado (quase no mesmo plano, ele é a quina dela)
-        a.miolos[i].style.setProperty('--escuro', (Math.min(0.5, +escuro + 0.03)).toFixed(3));
+        const m = a.miolos[i], em = Math.round(Math.min(0.5, escuro + 0.03) * 50) / 50;
+        if (em !== m.esc) { m.esc = em; m.el.style.setProperty('--escuro', em); }
       });
     }
     if (ativos.size && !relogio) raf = requestAnimationFrame(quadro);
@@ -227,6 +251,8 @@
     // quem joga pelo rival espera os dados assentarem (no máximo 2,5 s: nada trava o turno)
     esperar: () => (ativos.size ? new Promise(r => { esperas.push(r); setTimeout(r, 2500); }) : Promise.resolve()),
     parar: () => { for (const id of [...ativos.keys()]) encerrar(id); grupos.clear(); },
+    // o quadro congelado (Fx.quadro): os dados no ar param por ms e depois retomam de onde estavam
+    congelar: ms => { const agora = performance.now(); congelado = { desde: agora, ate: agora + ms }; },
     // só para testes e fotos: desenha o quadro do instante `ms` depois do lançamento
     _quadroEm: ms => { const g = [...grupos][0]; if (!g) return; relogio = () => g.t0 + ms / g.vel; quadro(0); },
     _soltar: () => { relogio = null; cancelAnimationFrame(raf); raf = ativos.size ? requestAnimationFrame(quadro) : 0; },

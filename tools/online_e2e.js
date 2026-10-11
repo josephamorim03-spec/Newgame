@@ -210,18 +210,19 @@ const espera = ms => new Promise(r => setTimeout(r, ms));
     const ranking = await bia.$$eval('.ranking .quem-rk', l => l.map(x => x.childNodes[0].textContent));
     await bia.screenshot({ path: path.join(FOTOS, 'online-ranking.png') }); await layout(bia, 'ranking');
     if (!ranking.includes(BIA) || (!externo && ranking.length !== 2)) throw new Error('ranking: ' + ranking.join(', '));
-    // depois de sair da sala, volta a jogar contra o rival do jogo
-    const modo = await bia.evaluate(() => DiceDuel.jogo.modo);
-    if (modo !== 'bot') throw new Error('depois de sair da sala esperava o modo contra o rival, veio ' + modo);
-    // a Ana (que desistiu, ainda na sala) vai ao menu principal e toca em Jogar: larga a sala e joga contra o rival
-    // (não pode virar um pedido de revanche)
+    // depois de sair da sala, volta ao menu (v0.15: sem a partida avulsa contra o rival)
+    const depoisSala = await bia.evaluate(() => ({ menu: !document.getElementById('inicio').hidden, modo: DiceDuel.jogo && DiceDuel.jogo.modo }));
+    if (!depoisSala.menu || depoisSala.modo === 'online') throw new Error('depois de sair da sala esperava o menu, veio ' + JSON.stringify(depoisSala));
+    // a Ana (que desistiu, ainda na sala) vai ao menu principal, toca em Jogar e escolhe a História: larga a sala e
+    // começa o capítulo (não pode virar um pedido de revanche)
     await ana.waitForFunction(() => DiceDuel.jogo.fase === 'fim', null, { timeout: 5000 });
     await ana.evaluate(() => { document.getElementById('janelaOnline').hidden = true; DiceDuel.abrirInicio(); });
     await ana.evaluate(() => { DiceDuel.st.guia.estreia = true; });   // a estreia tem o próprio teste
-    await ana.click('[data-inicio="jogar"]'); await ana.click('[data-inicio="comecar"]');
-    await ana.waitForFunction(() => DiceDuel.jogo && DiceDuel.jogo.modo === 'bot', null, { timeout: 5000 });
+    await ana.click('[data-inicio="jogar"]'); await ana.click('[data-inicio="historia"]'); await ana.click('[data-cap]');
+    await ana.waitForSelector('.gibi-pular', { timeout: 5000 }).then(b => b.click()).catch(() => {});
+    await ana.waitForFunction(() => DiceDuel.jogo && DiceDuel.jogo.historia, null, { timeout: 5000 });
     const anaDepois = await ana.evaluate(() => ({ menu: !document.getElementById('inicio').hidden, sala: localStorage.getItem('diceduel.sala') }));
-    if (anaDepois.menu || anaDepois.sala) throw new Error('o Jogar do menu depois do online não começou a partida: ' + JSON.stringify(anaDepois));
+    if (anaDepois.menu || anaDepois.sala) throw new Error('a História depois do online não começou o capítulo: ' + JSON.stringify(anaDepois));
     // recarregar mantém a conta
     await ana.reload(); await ana.waitForTimeout(500);
     const nome = await ana.evaluate(() => DiceDuel.st.conta.online && DiceDuel.st.conta.online.nome);
@@ -238,7 +239,7 @@ const espera = ms => new Promise(r => setTimeout(r, ms));
     const noCel = await ana.evaluate(() => ({ moedas: DiceDuel.st.conta.moedas }));
     if (noPc.deck !== 'espelho,ajuste,pressa' || noPc.dado !== 'madeira' || noPc.seq !== 3 || noPc.moedas !== noCel.moedas) throw new Error('a conta não seguiu para o outro aparelho: ' + JSON.stringify({ noPc, noCel }));
     await layout(anaPc, 'outro-aparelho');
-    // a sala some no meio da partida (servidor reiniciou): os dois voltam ao jogo contra o rival, com aviso
+    // a sala some no meio da partida (servidor reiniciou): os dois voltam ao menu, com aviso
     if (!externo) {
       await bia.click('[data-on="criar-sala"]');
       await bia.waitForSelector('.codigo-grande', { timeout: 5000 });
@@ -251,7 +252,8 @@ const espera = ms => new Promise(r => setTimeout(r, ms));
       for (const pg of [ana, bia]) await pg.waitForFunction(() => DiceDuel.jogo && DiceDuel.jogo.modo === 'online' && DiceDuel.jogo.fase !== 'fim', null, { timeout: 6000 })
         .catch(async e => { throw new Error('a partida nova não começou: ' + JSON.stringify(await pg.evaluate(() => ({ modo: DiceDuel.jogo && DiceDuel.jogo.modo, aviso: document.getElementById('onlineAviso').textContent, online: document.getElementById('onlineConteudo').innerText.slice(0, 200) })))); });
       salas.salas.clear(); servidor.wss.clients.forEach(c => c.terminate());
-      for (const pg of [ana, bia]) await pg.waitForFunction(() => DiceDuel.jogo && DiceDuel.jogo.modo === 'bot', null, { timeout: 10000 });
+      // v0.15: sem a partida avulsa, os dois voltam ao menu (com o aviso)
+      for (const pg of [ana, bia]) await pg.waitForFunction(() => !DiceDuel.jogo && !document.getElementById('inicio').hidden, null, { timeout: 10000 });
       const aviso = await ana.textContent('#onlineAviso');
       if (!/não encontrada/.test(aviso)) throw new Error('sem aviso de sala perdida: ' + aviso);
       await layout(ana, 'sala-perdida');

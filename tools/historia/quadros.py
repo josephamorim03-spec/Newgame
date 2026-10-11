@@ -88,10 +88,15 @@ def pintar(cfg, id_, qualidade):
         base = RAIZ / "builds" / "edicao" / f"{id_}.png"
         base.parent.mkdir(parents=True, exist_ok=True)
         Image.open(atual).convert("RGB").save(base)
-        png = A.gerar("Edit the attached comic panel. " + a["edicao"], qualidade, base, fundo="opaque", tamanho=tamanho_de(cfg, id_), modelo=cfg["modelo"])
+        refs, pedido = base, "Edit the attached comic panel. "
+        if a.get("cena_de"):                           # o cômodo de outro quadro da mesma cena vai junto, como a segunda imagem
+            cena = RAIZ / "builds" / "edicao" / f"{id_}.cena.png"
+            Image.open(QUADROS / f"{a['cena_de']}.webp").convert("RGB").save(cena)
+            refs, pedido = [base, cena], "Edit the FIRST attached comic panel; the SECOND attached panel is the same scene, use it only as the reference for the room, light and furniture. "
+        png = A.gerar(pedido + a["edicao"], qualidade, refs, fundo="opaque", tamanho=tamanho_de(cfg, id_), modelo=cfg["modelo"])
         Image.open(io.BytesIO(png)).convert("RGB").save(QUADROS / f"{id_}.webp", "WEBP", quality=88, method=6)
         (QUADROS / "originais" / f"{id_}.webp").unlink(missing_ok=True)   # a nova arte é a nova original (os dados são refeitos depois)
-        (QUADROS / f"{id_}.json").write_text(json.dumps({"edicao": a["edicao"], "base_de": origem, "qualidade": qualidade, "modelo": cfg["modelo"]},
+        (QUADROS / f"{id_}.json").write_text(json.dumps({"edicao": a["edicao"], "base_de": origem, "cena_de": a.get("cena_de"), "qualidade": qualidade, "modelo": cfg["modelo"]},
                                                           ensure_ascii=False, indent=1), encoding="utf-8")
         return id_
     png = A.gerar(prompt_de(cfg, id_), qualidade, refs_de(cfg, id_), fundo="opaque", tamanho=tamanho_de(cfg, id_), modelo=cfg["modelo"])
