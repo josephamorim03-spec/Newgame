@@ -192,6 +192,8 @@ svg.ico.mini-ico { width: 1.25em; height: 1.25em; vertical-align: -0.25em; strok
 .bolso-vazio { width: 28px; height: 28px; border-radius: 24%; box-shadow: inset 0 0 0 2px rgba(58,42,46,.18); display: inline-block; }
 [data-bolso] { cursor: pointer; -webkit-tap-highlight-color: transparent; }
 .bolso.cutucado { animation: cartaTreme .4s ease-out; }
+.bolso.levantado { box-shadow: 0 0 0 3px var(--mel), 0 0 14px rgba(242,177,94,.5); }
+.bolso.levantado .mini { transform: translateY(-3px); transition: transform .12s; }
 .bolso.ativo { box-shadow: 0 0 0 2px var(--mel), 0 0 14px rgba(242,177,94,.5); }
 .bolso .chegando .dado { opacity: 0; }
 
