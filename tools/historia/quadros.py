@@ -8,6 +8,7 @@
     python3 tools/historia/quadros.py --qualidade high    # low | medium (padrão) | high
     python3 tools/historia/quadros.py paginas [SAIDA.html] [--piloto] [--editor]   # monta as páginas (padrão: builds/historia-paginas.html)
                                                           # --editor: o editor de balões (arrastar, largura, rabinho, letra)
+                                                          # --so P-antes,C8-antes: só essas páginas
     python3 tools/historia/quadros.py narizes [ids...]        # a folha de modelo do nariz (arte/historia/narizes/)
     python3 tools/historia/quadros.py pagina-base            # o papel do caderno de receitas (arte/historia/pagina-base.png)
     python3 tools/historia/quadros.py jogo                   # os quadros para o gibi do jogo (js/historia_quadros_dados.js)
@@ -137,9 +138,9 @@ def gerar(cfg, argv):
             print(f"  {feito}", flush=True)
 
 
-def paginas(cfg, saida, piloto=False, editor=False):
+def paginas(cfg, saida, piloto=False, editor=False, so=None):
     falas = {f["id"]: f for f in json.loads(FALAS.read_text(encoding="utf-8"))["falas"]}
-    pags = [p for p in cfg["paginas"] if p.get("piloto") or not piloto]
+    pags = [p for p in cfg["paginas"] if (p.get("piloto") or not piloto) and (not so or p["id"] in so)]
     usadas = {q.get("arte") for p in pags for q in p["quadros"]} | {o[0] for p in pags for q in p["quadros"] for o in q.get("opcoes", [])}
     imagens = {}
     for id_ in sorted(usadas - {""}):
@@ -165,7 +166,7 @@ def paginas(cfg, saida, piloto=False, editor=False):
             m = re.match(r'\s+([a-z]+): "(data:[^"]+)",', linha)
             if m:
                 retratos[m.group(1)] = m.group(2)
-    dados = {"paginas": [p for p in cfg["paginas"] if p.get("piloto") or not piloto],
+    dados = {"paginas": pags,
              "artes": {k: {**{c: v[c] for c in campos if c in v}, "nova": nova(k)} for k, v in cfg["artes"].items()},
              "falas": {k: {"quem": f["quem"], "texto": f["texto"], "status": f["status"], "onde": f["onde"]} for k, f in falas.items()},
              "imagens": imagens, "murais": cfg.get("murais", {}), "retratos": retratos,
@@ -287,8 +288,9 @@ def main():
     if argv[:1] == ["narizes"]:
         return narizes(cfg, argv[1:])
     if argv[:1] == ["paginas"]:
-        resto = [a for a in argv[1:] if a not in ("--piloto", "--editor")]
-        return paginas(cfg, Path(resto[0]) if resto else RAIZ / "builds" / "historia-paginas.html", "--piloto" in argv, "--editor" in argv)
+        so = argv[argv.index("--so") + 1].split(",") if "--so" in argv else None   # --so P-antes,C8-antes: só essas páginas
+        resto = [a for a in argv[1:] if a not in ("--piloto", "--editor", "--so") and (not so or a != ",".join(so))]
+        return paginas(cfg, Path(resto[0]) if resto else RAIZ / "builds" / "historia-paginas.html", "--piloto" in argv, "--editor" in argv, so)
     gerar(cfg, argv)
 
 
