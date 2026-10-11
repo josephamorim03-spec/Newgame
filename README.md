@@ -107,12 +107,19 @@ node tools/vercel_local.js                     # a página como o Vercel publica
 
 ## Estado
 
-**v0.15, na branch `DiceDuel-primeira-partida` (ainda não publicada):** a interface de gibi. O letreiro virou um
-adesivo (contorno cacau, borda de papel, DICE com a chapa azul e DUEL com a rosa); botões, balões, fichas, chamadas e
-janelas ganharam contorno e sombra dura cacau; o começo da partida mostra os dois lados como quadros frente a frente.
-`?impresso=0` volta ao visual anterior (menos o letreiro). Detalhes em `docs/visual-impresso.md` §3.
+**v0.15, em produção** (a página no Vercel e o servidor na Railway, publicados da branch `DiceDuel`): o modo história
+em quadros pintados e a interface de gibi.
+- **O gibi da história com arte:** onde a fala tem quadro, o gibi mostra o quadro pintado (64 artes, 768 px) com os
+  balões no lugar que o dono ajustou, um por toque; perto e detalhe pela câmera, quadros mudos, as receitas em letra
+  de mão no papel do caderno e o mural montado com os retratos (`docs/arte-historia.md`, "Os quadros no jogo").
+- **O dado de cada bicho:** Sapo verde, Diana rosa, Coelho branco clássico, Coruja madeira, Ovelha de lã, Urso mel e a
+  Raposa com o verde do Sapo; os dados dos quadros com as bolinhas de um dado de verdade.
+- **A interface de gibi:** o letreiro virou um adesivo (contorno cacau, borda de papel, DICE com a chapa azul e DUEL
+  com a rosa); botões, balões, fichas, chamadas e janelas ganharam contorno e sombra dura cacau; o começo da partida
+  mostra os dois lados como quadros frente a frente. `?impresso=0` volta ao visual anterior (menos o letreiro).
+  Detalhes em `docs/visual-impresso.md` §3.
 
-**v0.14, em produção** (a página no Vercel e o servidor na Railway, publicados da branch `DiceDuel`): a primeira partida e a sensação de jogar bem.
+**v0.14:** a primeira partida e a sensação de jogar bem.
 - **A estreia:** na primeira visita, Jogar começa direto uma partida contra a Diana até 8 pontos, sem cartas (sem
   escolher rival nem montar deck). As cartas chegam na segunda; as armadilhas, depois dela.
 - **O guia:** o primeiro Eco, Passo e Oposto, a primeira corrente de 3 e a primeira ruptura ganham, uma vez só, uma
