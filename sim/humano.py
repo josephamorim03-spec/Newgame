@@ -73,6 +73,7 @@ class Partida(N.Partida):
         super().fire(p)
         if getattr(s, 'meio', None) is None and max(x.pts for x in s.j) >= s.meta / 2: s.meio = (s.j[0].pts, s.j[1].pts)
     def armar(s, p, c, alvo=None):
+        if c == 'espelho' and s.marca: return   # recusado (deck.py): não conta como uso
         s._conta(p, c); super().armar(p, c, alvo)
 
     # ---------- o que está em jogo ----------

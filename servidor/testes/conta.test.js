@@ -223,6 +223,28 @@ test('senha errada 5 vezes tranca o login daquela conta (mesmo trocando de IP); 
   } finally { await s.fechar(); }
 });
 
+test('a trava provocada por um estranho não barra o dono no aparelho em que ele já entrou', async () => {
+  const s = await subir();
+  try {
+    const davi = await conta(s, 'Davi'), eva = await conta(s, 'Eva');
+    assert.ok(typeof davi.aparelho === 'string' && davi.aparelho !== davi.token);
+    // o token de aparelho não abre sessão
+    assert.strictEqual((await s.api('GET', '/api/eu', null, davi.aparelho)).status, 401);
+    // um estranho (o nome está no ranking) trava o login do Davi
+    for (let i = 0; i < 5; i++) await s.api('POST', '/api/entrar', { nome: 'Davi', senha: 'errada' + i });
+    assert.strictEqual((await s.api('POST', '/api/entrar', { nome: 'Davi', senha: 'dado-forte-7' })).status, 429, 'de um aparelho novo, segue travado');
+    // o token de aparelho de outra conta, ou um inventado, não destrava
+    assert.strictEqual((await s.api('POST', '/api/entrar', { nome: 'Davi', senha: 'dado-forte-7', aparelhos: [eva.aparelho, 'x.y'] })).status, 429);
+    // no aparelho dele, o Davi entra
+    const r = await s.api('POST', '/api/entrar', { nome: 'Davi', senha: 'dado-forte-7', aparelhos: [eva.aparelho, davi.aparelho] });
+    assert.strictEqual(r.status, 200, r.erro);
+    // e o aparelho conhecido tem a trava dele: quem roubar o token de aparelho também para no 5º erro
+    for (let i = 0; i < 4; i++) await s.api('POST', '/api/entrar', { nome: 'Davi', senha: 'errada' + i, aparelhos: [davi.aparelho] });
+    const quinto = await s.api('POST', '/api/entrar', { nome: 'Davi', senha: 'errada', aparelhos: [davi.aparelho] });
+    assert.strictEqual(quinto.status, 429); assert.strictEqual(quinto.codigo, 'trancada');
+  } finally { await s.fechar(); }
+});
+
 test('trocar a senha e apagar a conta: senha atual errada conta para a trava, com aviso', async () => {
   const s = await subir();
   try {
@@ -235,7 +257,9 @@ test('trocar a senha e apagar a conta: senha atual errada conta para a trava, co
     r = await s.api('POST', '/api/eu/apagar', { senha: 'errada' }, L.token);
     assert.strictEqual(r.status, 429); assert.strictEqual(r.codigo, 'trancada');
     assert.strictEqual((await s.api('POST', '/api/eu/apagar', { senha: 'dado-forte-7' }, L.token)).status, 429, 'travada, nem a certa apaga');
-    assert.strictEqual((await s.api('POST', '/api/entrar', { nome: 'Lara', senha: 'dado-forte-7' })).status, 429, 'o login também fica travado');
+    assert.strictEqual((await s.api('POST', '/api/eu/senha', { atual: 'dado-forte-7', nova: 'nova-senha' }, L.token)).status, 429, 'nem troca a senha');
+    // é outra trava: quem só tem a sessão (o dono, ou quem pegou o aparelho) não tranca o login, e vice-versa
+    assert.strictEqual((await s.api('POST', '/api/entrar', { nome: 'Lara', senha: 'dado-forte-7' })).status, 200, 'o login segue livre');
   } finally { await s.fechar(); }
 });
 

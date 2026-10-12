@@ -349,6 +349,22 @@ const RAIZ = path.join(__dirname, '..');
   const ficou = await pa.evaluate(() => DiceDuel.st.pref.dicas);
   confere(padrao && migrou && !ficou, 'Ajudas: ligadas por padrão, religadas uma vez na v0.11, e a escolha de desligar fica');
   await pa.close();
+  // 13. Abandonar a partida da história com o rival pensando: a jogada dele no meio para sem erro (jogo = null)
+  const pb = await navegador.newPage();
+  const errosPb = []; pb.on('pageerror', e => errosPb.push(e.message));
+  await pb.goto('file://' + path.join(RAIZ, 'index.html')); await pb.waitForTimeout(250);
+  await pb.evaluate(() => { DiceDuel.st.guia.estreia = true; DiceDuel.ajustar({ animacoes: false }); DiceDuel.avulsa('aprendiz'); });
+  await pb.waitForTimeout(150);
+  await pb.evaluate(() => { const j = DiceDuel.jogo; Object.assign(j, { intro: false, vez: 1, compras: 1, historia: 'P', pensando: false, fase: 'pegar' }); DiceDuel.automato(); });
+  await pb.waitForTimeout(150);
+  const ab = await pb.evaluate(() => {
+    const pensava = DiceDuel.jogo.pensando; DiceDuel.abrirInicio();
+    document.querySelector('[data-inicio="abandonar"]').click(); document.querySelector('[data-inicio="abandonar-sim"]').click();
+    return { pensava, saiu: DiceDuel.jogo === null };
+  });
+  await pb.waitForTimeout(2500);
+  confere(ab.pensava && ab.saiu && !errosPb.length, `Abandonar com o rival pensando: a jogada dele para sem erro (${JSON.stringify({ ...ab, erros: errosPb })})`);
+  await pb.close();
   await navegador.close();
   console.log(erros.length ? 'ERROS:\n' + erros.join('\n') : 'Tudo certo: as regras das cartas se comportam como o texto diz.');
   process.exit(erros.length ? 1 : 0);

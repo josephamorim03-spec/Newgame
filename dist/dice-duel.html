@@ -2204,7 +2204,7 @@ button.inicio-perfil:active { transform: translateY(1px); }
     pausa:         { nome: 'Pausa', tipo: 'efeito', verbo: 'passa a vez', texto: 'Passe a vez sem pegar dado e sem disparar: a sua corrente e o seu Bolso ficam como estão. Serve quando todo dado da Mesa romperia a sua corrente. Não vale no segundo dado da Pressa.' },
     reverso:       { nome: 'Reverso', tipo: 'efeito', verbo: 'inverte a corrente', texto: 'Inverta a sua corrente: o primeiro dado vira a frente (2-3-4 vira 4-3-2, e o próximo dado precisa sincronizar com o 2). Os pontos não mudam. Precisa de 2 dados ou mais na corrente.' },
     furto:         { nome: 'Furto', tipo: 'efeito', verbo: 'troca os Bolsos', texto: 'Troque o dado do seu Bolso pelo do Bolso do rival (se um deles estiver vazio, o dado só muda de lado). Não conta como guardar: o Fundo Falso não pega.' },
-    espelho:       { nome: 'Espelho', tipo: 'armadilha', alvo: true, verbo: 'marca um dado', texto: 'Marque um dado da Mesa (o rival vê a marca). Se ele pegar esse dado, recebe a face de baixo (7 menos o valor: o 2 vira 5) e não pode guardá-lo no Bolso. Se você mesmo pegá-lo, a armadilha se perde.' },
+    espelho:       { nome: 'Espelho', tipo: 'armadilha', alvo: true, verbo: 'marca um dado', texto: 'Marque um dado da Mesa (o rival vê a marca). Se ele pegar esse dado, recebe a face de baixo (7 menos o valor: o 2 vira 5) e não pode guardá-lo no Bolso. Se você mesmo pegá-lo, a armadilha se perde. Com outro dado já marcado na Mesa, espere a próxima.' },
     fundo:         { nome: 'Fundo Falso', tipo: 'armadilha', verbo: 'o Bolso dele cai', texto: 'Da próxima vez que o rival puser um dado no Bolso (guardar ou trocar), o dado cai e some. Na troca, caem os dois e nada entra na corrente dele.' },
     lacre:         { nome: 'Lacre', tipo: 'armadilha', verbo: 'anula o próximo efeito', texto: 'O próximo efeito que o rival usar é gasto sem agir, qualquer um (até a Sobrecarga). Não pega armadilhas.' },
     ancora:        { nome: 'Âncora', tipo: 'armadilha', verbo: 'segura corrente de 4+', texto: 'Protege a sua corrente de 4 dados ou mais: se entrar nela um dado que não sincroniza, esse dado é jogado fora e a corrente fica inteira. Com 3 ou menos ela não age (a corrente rompe) e continua armada.' },
@@ -2508,6 +2508,9 @@ button.inicio-perfil:active { transform: translateY(1px); }
     if (c === 'pressa' && j.mesa.length < 3) return { ok: false, motivo: 'Precisa de 3 ou 4 dados na Mesa: a Pressa nunca pega o último dado (ele fica para o rival).' };
     if (c === 'pressa' && j.mesa.length > 4) return { ok: false, motivo: 'Com a Mesa cheia, não: a Pressa vale com 3 ou 4 dados (ela nunca abre uma Mesa).' };
     if (c === 'espelho' && j.mesa.length < 2) return { ok: false, motivo: 'Precisa de 2 dados ou mais na Mesa.' };
+    // um dado marcado por vez: com a marca do rival na Mesa, o segundo Espelho apagava a dela e deixava a armadilha
+    // dele armada para sempre, sem marca (ele nunca mais armava outra)
+    if (c === 'espelho' && j.marca) return { ok: false, motivo: 'Já há um dado marcado por um Espelho nesta Mesa: espere a próxima.' };
     // Ajuste e Coringa (v0.12): no fim da Mesa sobram poucas escolhas, e era ali que o conserto tirava todo o risco. Com
     // eles livres, o melhor deck (Ajuste + Coringa + Pressa) vencia 61,6%; assim, 58,2% (balanceamento §17)
     if (c === 'ajuste' && j.mesa.length < 3) return { ok: false, motivo: 'Precisa de 3 dados ou mais na Mesa.' };
@@ -6079,6 +6082,9 @@ window.HISTORIA_QUADROS = {"falas":{"P-01":[{"arte":"p-mesa","chave":"P-antes_0"
     if (jogo) render();
   }
   const mudou = id => !!(marcaMudanca && marcaMudanca.ids.includes(id) && Date.now() < marcaMudanca.ate);
+  // o rival pensa com esperas no meio: depois de cada uma, para se a vez mudou (token novo) ou se a partida saiu da mesa
+  // (jogo = null ao abandonar, ou outra partida no lugar); antes, `jogo.token` com jogo = null lançava TypeError
+  const outraVez = (j, tok) => jogo !== j || tok !== j.token;
   // a presença do rival: antes de pegar, ele olha a Mesa. Cada olhada acende um dado de leve; a Diana, impulsiva, olha um dado no máximo, e às vezes nenhum; a Dona Coruja olha dois, e
   // de preferência os que servem à sua corrente: ela lê a Mesa. As olhadas tomam o lugar de parte da espera de antes,
   // então a vez do rival não fica mais longa. Devolve false se a partida mudou no meio
@@ -6094,7 +6100,7 @@ window.HISTORIA_QUADROS = {"falas":{"P-01":[{"arte":"p-mesa","chave":"P-antes_0"
       if (!j.mesa[i]) continue;
       j.olhando = j.mesa[i].id; render();
       Som.tocar('passar', { i });
-      await espera(coruja ? 380 : 260); if (tok !== jogo.token) return false;
+      await espera(coruja ? 380 : 260); if (outraVez(j, tok)) return false;
     }
     j.olhando = null;
     return true;
@@ -6105,43 +6111,43 @@ window.HISTORIA_QUADROS = {"falas":{"P-01":[{"arte":"p-mesa","chave":"P-antes_0"
     const tok = j.token, p = j.vez;
     j.pensando = true; render();
     if (j.fase === 'pegar') {
-      await espera(st.pref.animacoes ? 450 : 800); if (tok !== jogo.token) return;
-      if (window.Rolagem) { await Rolagem.esperar(); if (tok !== jogo.token) return; }   // escolhe com os dados já assentados
+      await espera(st.pref.animacoes ? 450 : 800); if (outraVez(j, tok)) return;
+      if (window.Rolagem) { await Rolagem.esperar(); if (outraVez(j, tok)) return; }   // escolhe com os dados já assentados
       for (const u of automatoCartas(p)) {
         if (!podeUsar(p, u.carta).ok || (CARTAS[u.carta].alvo && !j.mesa[u.idx])) continue;
         const rc = usarCarta(p, u.carta, u.idx, u.delta || 1);
-        if (rc === 'fim' || jogo.fase === 'fim') { j.pensando = false; return; }
+        if (rc === 'fim' || j.fase === 'fim') { j.pensando = false; return; }
         if (rc === 'proximo') {
           // a Pausa passou a vez: o aviso fica um tempo e a vez segue para o outro lado
           j.pensando = false; depois('proximo'); return;
         }
         render();
         // dá tempo de ler o aviso e ver o dado que mudou antes da próxima ação (não acelera no ritmo rápido)
-        await new Promise(r => setTimeout(r, Math.max(AVISO_CARTA + 300, (AVISO_CARTA + 300) * ritmo()))); if (tok !== jogo.token) return;
+        await new Promise(r => setTimeout(r, Math.max(AVISO_CARTA + 300, (AVISO_CARTA + 300) * ritmo()))); if (outraVez(j, tok)) return;
       }
       for (;;) {
         const plano = automatoEscolhe(p);
         if (!(await olharMesa(p, plano.idx, tok))) return;
         j.destaque = j.mesa[plano.idx].id; render();
         if (!esperto(j) && st.pref.animacoes) Som.tocar('quique', { forca: 3, x: (plano.idx - 2) * 0.3 });   // o toque no dado que ela vai pegar
-        await espera(520); if (tok !== jogo.token) return;
+        await espera(520); if (outraVez(j, tok)) return;
         j.destaque = null; j.pensando = false;
         const v = tirar(p, plano.idx);
         const res = colocar(p, v, automatoDestino(p, v, plano.modo));
         if (res === 'extra') {
           // o segundo dado da Pressa é opcional: sem nenhum dado seguro, o rival dispensa
           if (!j.mesa.some(d => seguroDado(p, d))) { if (dispensarSegundo(p) !== 'decidir') return; break; }
-          j.pensando = true; render(); await espera(520); if (tok !== jogo.token) return; continue;
+          j.pensando = true; render(); await espera(520); if (outraVez(j, tok)) return; continue;
         }
         if (res !== 'decidir') return;
         break;
       }
       j.pensando = true; render();
     }
-    await espera(650); if (tok !== jogo.token) return;
+    await espera(650); if (outraVez(j, tok)) return;
     j.pensando = false;
     if (automatoDispara(p)) {
-      if (j.decks[p].includes('sobrecarga') && podeUsar(p, 'sobrecarga').ok && j.cor[p].length >= 4 && esperto(j)) { usarCarta(p, 'sobrecarga'); render(); await espera(700); if (tok !== jogo.token) return; }
+      if (j.decks[p].includes('sobrecarga') && podeUsar(p, 'sobrecarga').ok && j.cor[p].length >= 4 && esperto(j)) { usarCarta(p, 'sobrecarga'); render(); await espera(700); if (outraVez(j, tok)) return; }
       disparar(p);
     } else segurar(p);
   }
@@ -6820,7 +6826,7 @@ window.HISTORIA_QUADROS = {"falas":{"P-01":[{"arte":"p-mesa","chave":"P-antes_0"
       const id = j.fx.id; j.fx.agendado = true;
       // o disparo fica na tela até o último dado da cascata subir (80 ms + um passo do arpejo por dado + 800 ms da animação)
       const dura = j.fx.tipo === 'disparo' ? 80 + j.fx.dados.length * Som.PASSO_DISPARO * 1000 + 820 : 900;
-      setTimeout(() => { inicioFx.delete(id); if (jogo.fx && jogo.fx.id === id) { jogo.fx = null; render(); } }, st.pref.animacoes ? dura : 10);
+      setTimeout(() => { inicioFx.delete(id); if (jogo && jogo.fx && jogo.fx.id === id) { jogo.fx = null; render(); } }, st.pref.animacoes ? dura : 10);
     }
     consumirEventos();
   }
@@ -6996,7 +7002,7 @@ window.HISTORIA_QUADROS = {"falas":{"P-01":[{"arte":"p-mesa","chave":"P-antes_0"
           });
           break;
         }
-        case 'virar': setTimeout(() => { if (jogo.virando === e.id) jogo.virando = null; }, 500); Som.tocar('virar'); break;
+        case 'virar': setTimeout(() => { if (jogo && jogo.virando === e.id) jogo.virando = null; }, 500); Som.tocar('virar'); break;
         case 'chamada': Som.tocar('momento'); Fx.chamada(e.titulo, e.sub, e.estilo === 'esquiva' ? (e.p === 1 && j.modo !== 'local' ? 'rival' : '') : e.estilo, { classe: 'de-jogo' }); break;
         case 'falar': if (j.modo === 'bot') falaDoEvento(e); break;
         case 'fim': {
@@ -7004,6 +7010,7 @@ window.HISTORIA_QUADROS = {"falas":{"P-01":[{"arte":"p-mesa","chave":"P-antes_0"
           Fx.limparDica(); dicaRival = null;
           // o disparo que fecha a partida conta até o fim (a cascata e os pontos no placar) antes de a vitória estourar
           setTimeout(() => {
+            if (!jogo) return;   // saiu da mesa antes da festa: nada de confete e fanfarra no menu
             Som.musica.cena('fim');
             // impresso: a Virada para num quadro de gibi antes de estourar, como a Sinfonia
             const parou = venceuHumano && e.virada ? Fx.quadro() : 0;
@@ -8378,7 +8385,19 @@ window.HISTORIA_QUADROS = {"falas":{"P-01":[{"arte":"p-mesa","chave":"P-antes_0"
     const d = await r.json().catch(() => ({}));
     if (r.status === 401 && st.sessao && rota !== '/api/entrar') { sairDaConta(); aviso(SESSAO_ACABOU, true); }
     if (!r.ok) throw Object.assign(new Error(d.erro || `O servidor respondeu ${r.status}.`), { status: r.status, espera: d.espera, trancadaAte: d.trancadaAte, restam: d.restam, codigo: d.codigo });
+    if (typeof d.aparelho === 'string') guardarAparelho(d.aparelho);
     return d;
+  }
+  // "esta conta já entrou neste aparelho" (um por conta, até 5): fica mesmo depois de sair da conta, para a trava de
+  // senhas erradas, que alguém pode provocar de longe, não barrar o dono no aparelho dele (servidor/app.js, aparelhoConhecido)
+  const APARELHOS = 'diceduel.aparelhos';
+  function aparelhos() {
+    try { const l = JSON.parse(localStorage.getItem(APARELHOS)); return Array.isArray(l) ? l.filter(t => typeof t === 'string').slice(0, 5) : []; } catch (e) { return []; }
+  }
+  function guardarAparelho(t) {
+    const conta = c => { try { return JSON.parse(atob(c.split('.')[0].replace(/-/g, '+').replace(/_/g, '/'))).id; } catch (e) { return null; } };
+    const id = conta(t);
+    try { localStorage.setItem(APARELHOS, JSON.stringify([t, ...aparelhos().filter(x => conta(x) !== id)].slice(0, 5))); } catch (e) {}
   }
   function aviso(txt, erro = false) {
     Rede.aviso = txt ? { txt, erro } : null;
@@ -8390,6 +8409,7 @@ window.HISTORIA_QUADROS = {"falas":{"P-01":[{"arte":"p-mesa","chave":"P-antes_0"
   // a conta: entrar, criar (o progresso do aparelho vai junto, com teto) e sair
   async function entrarNaConta(criar, nome, senha) {
     const corpo = { nome, senha };
+    if (!criar) corpo.aparelhos = aparelhos();
     if (criar) {
       const c = st.conta;
       corpo.importar = { moedas: c.moedas, xp: c.xp, cartas: c.cartas, dados: c.dados, icones: c.icones, mesas: c.mesas, ativo: { dado: c.dado, icone: c.icone, mesa: c.mesa }, rating: c.rating, pico: c.pico };

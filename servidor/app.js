@@ -135,7 +135,12 @@ function criarApp({ banco, segredo, raiz = path.join(__dirname, '..'), tempos = 
   });
   // como exigirConta, mas sem conta também passa (req.conta fica null)
   const contaSeHouver = assincrono(async (req, res, next) => { req.conta = await contaDoToken(tokenDe(req)); next(); });
-  const responderConta = (res, conta, extra = {}) => res.json({ token: Auth.criarToken(conta.id, segredo, 30, conta.versao_token || 0), conta: perfil(conta), ...extra });
+  // o "aparelho conhecido": junto com o token da sessão vai um segundo token, de 1 ano, que só diz "esta conta já entrou
+  // neste aparelho". Ele não abre sessão nenhuma (é assinado com outra chave); serve para a trava de senha não barrar o dono
+  const segredoAparelho = segredo + '|aparelho';
+  const responderConta = (res, conta, extra = {}) => res.json({ token: Auth.criarToken(conta.id, segredo, 30, conta.versao_token || 0), aparelho: Auth.criarToken(conta.id, segredoAparelho, 365), conta: perfil(conta), ...extra });
+  // algum dos tokens de aparelho que o pedido trouxe é desta conta?
+  const aparelhoConhecido = (lista, conta) => !!conta && Array.isArray(lista) && lista.slice(0, 5).some(t => Auth.lerToken(t, segredoAparelho) === conta.id);
 
   // ---------- saúde (healthcheck da Railway) ----------
   // olha o banco de verdade: com o Postgres fora do ar, responde 503 (a Railway não troca um deploy bom por um quebrado)
@@ -157,7 +162,11 @@ function criarApp({ banco, segredo, raiz = path.join(__dirname, '..'), tempos = 
     responderConta(res, final);
   }));
   // erros de senha por conta (além do limite por IP): quem troca de IP para adivinhar a senha de alguém esbarra aqui.
-  // Vale no login, em trocar a senha e em apagar a conta. A partir do 5º erro seguido, o login da conta trava por 15 min.
+  // A partir do 5º erro seguido, trava por 15 min. São três travas separadas, para quem adivinha não trancar o dono do
+  // lado de fora (os nomes estão no ranking: bastavam 5 senhas erradas a cada 15 min):
+  // - a do login de um aparelho qualquer (a chave do nome);
+  // - a do login de um aparelho em que a conta já entrou (chave + '|aparelho', ver aparelhoConhecido);
+  // - a de trocar a senha e apagar a conta, que já pedem a sessão aberta (chave + '|sessao').
   const errosDeSenha = new Map();   // chave do nome -> { n, primeiro, trancadaAte }
   const vivo = (e, agora = Date.now()) => e && (e.trancadaAte ? agora < e.trancadaAte : agora - e.primeiro < TRANCA_SENHA.janela);
   setInterval(() => { for (const [k, v] of errosDeSenha) if (!vivo(v)) errosDeSenha.delete(k); }, 60_000).unref();
@@ -185,9 +194,9 @@ function criarApp({ banco, segredo, raiz = path.join(__dirname, '..'), tempos = 
   app.post('/api/entrar', limEntrar, assincrono(async (req, res) => {
     const { nome, senha } = req.body || {};
     if (typeof nome !== 'string' || typeof senha !== 'string' || nome.length > 40 || senha.length > 200) return res.status(401).json({ erro: 'Nome ou senha não conferem.' });
-    const chave = Auth.chaveDoNome(nome), tr = trancada(chave);
-    if (tr) return respostaTrancada(res, tr);
     const conta = await banco.contaPorNome(nome.trim());
+    const chave = Auth.chaveDoNome(nome) + (aparelhoConhecido(req.body.aparelhos, conta) ? '|aparelho' : ''), tr = trancada(chave);
+    if (tr) return respostaTrancada(res, tr);
     const certa = await Auth.conferirSenha(senha, conta || CONTA_FALSA);
     if (!conta) return res.status(401).json({ erro: 'Nome ou senha não conferem.' });
     if (!certa) return respostaSenhaErrada(res, 401, 'Nome ou senha não conferem.', errouSenha(chave));
@@ -200,7 +209,7 @@ function criarApp({ banco, segredo, raiz = path.join(__dirname, '..'), tempos = 
     const { atual, nova } = req.body || {};
     const fraca = Auth.problemaSenhaNova(nova, req.conta.nome);
     if (fraca) return res.status(400).json({ erro: fraca.replace(/^Senha:/, 'Senha nova:'), codigo: 'senha' });
-    const chave = Auth.chaveDoNome(req.conta.nome), tr = trancada(chave);
+    const chave = Auth.chaveDoNome(req.conta.nome) + '|sessao', tr = trancada(chave);
     if (tr) return respostaTrancada(res, tr);
     if (typeof atual !== 'string' || !(await Auth.conferirSenha(atual, req.conta))) return respostaSenhaErrada(res, 403, 'A senha atual não confere.', errouSenha(chave));
     errosDeSenha.delete(chave);
@@ -224,7 +233,7 @@ function criarApp({ banco, segredo, raiz = path.join(__dirname, '..'), tempos = 
   // apagar a conta (LGPD): pede a senha; sai das salas (uma partida em andamento conta como desistência) e da fila
   app.post('/api/eu/apagar', limConta, exigirConta, assincrono(async (req, res) => {
     const { senha } = req.body || {};
-    const chave = Auth.chaveDoNome(req.conta.nome), tr = trancada(chave);
+    const chave = Auth.chaveDoNome(req.conta.nome) + '|sessao', tr = trancada(chave);
     if (tr) return respostaTrancada(res, tr);
     if (typeof senha !== 'string' || !(await Auth.conferirSenha(senha, req.conta))) return respostaSenhaErrada(res, 403, 'A senha não confere.', errouSenha(chave));
     const id = req.conta.id;

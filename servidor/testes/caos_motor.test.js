@@ -35,6 +35,7 @@ function invariantes(j, passo) {
   else assert.strictEqual(j.mao, null, `${onde}: dado esquecido na mão`);
   if (j.fase === 'decidir') assert.ok(j.cor[j.vez].length >= 3, `${onde}: decidir com corrente curta`);
   if (j.marca) assert.ok(j.mesa.some(d => d.id === j.marca.id) && j.armada[j.marca.dono] === 'espelho', `${onde}: marca de Espelho órfã`);
+  for (const p of [0, 1]) if (j.armada[p] === 'espelho') assert.ok(j.marca && j.marca.dono === p, `${onde}: Espelho armado sem a marca dele`);
   if (j.fase === 'fim') assert.ok(j.pts[j.vencedor] >= j.meta || j.desistencia !== undefined, `${onde}: fim sem meta`);
   // a visão de cada um: serializável e sem a carta virada do rival
   for (const eu of [0, 1]) {
@@ -50,10 +51,25 @@ function invariantes(j, passo) {
 test('caos no motor: 400 partidas com ações válidas e inválidas, invariantes a cada passo', () => {
   const decks = [['ajuste', 'virar', 'pressa'], ['espelho', 'fundo', 'coringa'], ['rerrolar', 'ancora', 'sobrecarga'], ['interferencia', 'pedagio'],
     ['pressa', 'coringa', 'interferencia'], ['espelho', 'ancora', 'virar'], ['fundo', 'pedagio', 'ajuste'], []];
+  caos(400, 7919, s => [decks[s % 8], decks[(s * 3 + 1) % 8]], 1000, 20000);
+});
+
+// os decks fixos acima nunca põem Espelho contra Espelho nem usam as cartas da v0.11 (Pausa, Reverso, Furto, Lacre):
+// aqui, cada lado leva até 3 das 15 cartas sorteadas, e metade das partidas tem Espelho nos dois decks
+test('caos no motor: 300 partidas com decks sorteados entre as 15 cartas', () => {
+  const sortear = (rng, base = []) => {
+    const d = base.slice(), n = 1 + Math.floor(rng() * 3);
+    while (d.length < n) { const c = Regras.ORDEM[Math.floor(rng() * Regras.ORDEM.length)]; if (!d.includes(c)) d.push(c); }
+    return d;
+  };
+  caos(300, 104729, (s, rng) => (s % 2 ? [sortear(rng, ['espelho']), sortear(rng, ['espelho'])] : [sortear(rng), sortear(rng)]), 500, 10000);
+});
+
+function caos(partidas, sal, decksDe, minRecusadas, minAcoes) {
   let acoes = 0, recusadas = 0;
-  for (let s = 1; s <= 400; s++) {
-    const rng = rngDe(s * 7919);
-    const j = Regras.criarPartida({ decks: [decks[s % 8], decks[(s * 3 + 1) % 8]], vez: s % 2, meta: s % 2 ? 12 : 16, rng });
+  for (let s = 1; s <= partidas; s++) {
+    const rng = rngDe(s * sal);
+    const j = Regras.criarPartida({ decks: decksDe(s, rng), vez: s % 2, meta: s % 2 ? 12 : 16, rng });
     let passo = 0;
     while (j.fase !== 'fim') {
       if (++passo > 4000) assert.fail(`semente ${s}: a partida não terminou`);
@@ -61,7 +77,7 @@ test('caos no motor: 400 partidas com ações válidas e inválidas, invariantes
       let acao, p = j.vez;
       if (x < 0.12) acao = LIXO[Math.floor(rng() * LIXO.length)];
       else if (x < 0.18) { p = 1 - j.vez; acao = jogadaAoAcaso(j, j.vez, rng); }        // fora da vez
-      else if (x < 0.24) acao = { tipo: 'carta', carta: Regras.ORDEM[Math.floor(rng() * 11)], idx: Math.floor(rng() * 6) - 1, delta: rng() < .5 ? -1 : 1 };
+      else if (x < 0.24) acao = { tipo: 'carta', carta: Regras.ORDEM[Math.floor(rng() * Regras.ORDEM.length)], idx: Math.floor(rng() * 6) - 1, delta: rng() < .5 ? -1 : 1 };
       else if (x < 0.30) acao = { tipo: 'pegar', idx: Math.floor(rng() * 6), modo: ['corrente', 'guardar', 'trocar', 'x'][Math.floor(rng() * 4)] };
       else acao = jogadaAoAcaso(j, p, rng);
       const antes = JSON.stringify(j);
@@ -74,5 +90,5 @@ test('caos no motor: 400 partidas com ações válidas e inválidas, invariantes
       if (rng() < 0.0015) { Regras.desistir(j, Math.floor(rng() * 2)); invariantes(j, `${s}/${passo} desistência`); }
     }
   }
-  assert.ok(recusadas > 1000 && acoes > 20000, `poucas ações (${acoes}, ${recusadas} recusadas)`);
-});
+  assert.ok(recusadas > minRecusadas && acoes > minAcoes, `poucas ações (${acoes}, ${recusadas} recusadas)`);
+}

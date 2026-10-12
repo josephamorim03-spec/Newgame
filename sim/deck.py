@@ -68,6 +68,7 @@ class Partida:
         """a corrente de p rompe (gancho para cartas que olham a ruptura, em sim/novas.py)"""
         s.j[p].cor=[]; s.ev.append((p,'ruptura'))
     def armar(s,p,c,alvo=None):
+        if c=='espelho' and s.marca: return  # um dado marcado por vez (shared/regras.js, podeUsar): a carta fica para depois
         j=s.j[p]; j.est[c]='armado'; j.armada=c
         if c=='espelho': s.marca=(p,alvo)
     def disparar_trap(s,p,c):
