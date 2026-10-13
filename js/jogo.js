@@ -122,7 +122,7 @@
 
   // ---------- estado e preferências ----------
   let uid = 1;
-  const PREF_PADRAO = { som: true, musica: true, volSom: 0.8, volMusica: 0.45, animacoes: true, particulas: true, tremor: true, vibrar: true, falas: true, dicas: true, liberar: false, ajudasV11: true };
+  const PREF_PADRAO = { som: true, musica: true, volSom: 0.8, volMusica: 0.45, animacoes: true, particulas: true, tremor: true, vibrar: true, falas: true, dicas: true, liberar: false, ajudasV11: true, animacoesEscolhida: false };
   const st = {
     cfg: { modo: 'bot', nivel: 'aprendiz', meta: R.META_PADRAO, ritmo: 'normal', tempoOnline: 'rapida' },
     pref: { ...PREF_PADRAO },
@@ -138,7 +138,6 @@
   };
   const GUIA_TODOS = ['eco', 'passo', 'oposto', 'disparo', 'ruptura'];
   const guiaVeterano = () => ({ estreia: true, jogou: false, vistos: GUIA_TODOS.slice() });
-  if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) st.pref.animacoes = false;
   let jogo = null;
   try {
     const s = JSON.parse(localStorage.getItem('diceduel.v1') || '{}');
@@ -146,16 +145,30 @@
     st.cfg.meta = R.metaValida(st.cfg.meta);   // v0.12: a meta 12 saiu (quem a tinha marcada passa para a 16)
     if (st.cfg.modo !== 'bot') st.cfg.modo = 'bot';   // v0.12: o modo a dois no mesmo aparelho saiu do jogo
     if (s.pref) Object.assign(st.pref, s.pref);
+    // antes da animacoesEscolhida existir, animações desligadas salvas eram escolha da pessoa (ou o "reduzir movimento"
+    // da primeira visita): continuam desligadas
+    if (s.pref && 'animacoes' in s.pref && !('animacoesEscolhida' in s.pref)) st.pref.animacoesEscolhida = s.pref.animacoes === false;
     // v0.11: as ajudas voltam ligadas uma vez para todo mundo (são o padrão); quem desligar de novo, fica desligado
     if (s.pref && !s.pref.ajudasV11) { st.pref.dicas = true; st.pref.ajudasV11 = true; }
     if (s.rec) Object.assign(st.rec, s.rec);
-    if (s.conta) { Object.assign(st.conta, s.conta); GRATIS.forEach(c => { if (!st.conta.cartas.includes(c)) st.conta.cartas.push(c); }); }
+    if (s.conta && typeof s.conta === 'object') {
+      // listas que não são listas e números que não são números (dado corrompido) ficam com o padrão: antes entravam e o
+      // jogo quebrava mais adiante, fora deste try (no primeiro .includes)
+      const padrao = { ...st.conta };
+      Object.assign(st.conta, s.conta);
+      for (const k of ['cartas', 'dados', 'icones', 'mesas']) if (!Array.isArray(st.conta[k])) st.conta[k] = padrao[k];
+      for (const k of ['moedas', 'rating', 'xp']) if (!Number.isFinite(st.conta[k])) st.conta[k] = padrao[k];
+      GRATIS.forEach(c => { if (!st.conta.cartas.includes(c)) st.conta.cartas.push(c); });
+    }
     if (Array.isArray(s.decks)) st.decks = s.decks.map(d => (d || []).filter(c => CARTAS[c])).map(d => deckValido(d) ? d : []);
     st.deckVisto = !!s.deckVisto;
     // quem já jogava antes do guia existir não passa pela estreia nem pelas explicações
     if (s.guia) st.guia = { ...st.guia, ...s.guia, vistos: Array.isArray(s.guia.vistos) ? s.guia.vistos : [] };
     else if (st.rec.partidas > 0 || st.deckVisto) st.guia = guiaVeterano();
   } catch (e) {}
+  // sem escolha em Ajustes, as animações seguem o "reduzir movimento" do sistema a cada visita (o valor salvo não conta:
+  // senão o "desligado" de uma visita com a opção ligada ficava para sempre). Antes valia só na primeira visita
+  if (!st.pref.animacoesEscolhida) st.pref.animacoes = !(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
   const gravarLocal = () => {
     try { localStorage.setItem('diceduel.v1', JSON.stringify({ cfg: st.cfg, pref: st.pref, rec: st.rec, conta: st.contaConvidado || st.conta, decks: st.decks, deckVisto: st.deckVisto, guia: st.guia })); } catch (e) {}
   };
@@ -242,10 +255,15 @@
     // com uma janela aberta (Ajustes), sem o "versus" por cima dela: a Mesa rola quando a janela fechar
     if (st.pref.animacoes && !document.querySelector('.janela:not([hidden])')) mostrarVersus(); else { jogo.rolouAVista = !document.querySelector('.janela:not([hidden])'); render(); talvezAutomato(); }
   }
+  // Fisher-Yates: o sort com Math.random() - .5 não dá a mesma chance a todas as ordens (umas cartas saíam mais que outras)
+  function embaralhar(l) {
+    for (let i = l.length - 1; i > 0; i--) { const k = Math.floor(Math.random() * (i + 1)); [l[i], l[k]] = [l[k], l[i]]; }
+    return l;
+  }
   function sorteiaDeck(semArmadilha) {
     const pool = ORDEM.filter(c => !semArmadilha || CARTAS[c].tipo !== 'armadilha');
     for (;;) {
-      const d = pool.slice().sort(() => Math.random() - .5).slice(0, 3);
+      const d = embaralhar(pool.slice()).slice(0, 3);
       if (deckValido(d)) return d;
     }
   }
@@ -1243,8 +1261,24 @@
     }
   });
 
+  // os painéis, a Mesa e a barra são redesenhados inteiros a cada render: quem joga pelo teclado perdia o lugar a cada
+  // lance. O foco volta ao "mesmo" botão (a mesma tag com os mesmos data-*), se ele ainda existe
+  function chaveDoFoco() {
+    const a = document.activeElement, tab = document.getElementById('tabuleiro');
+    if (!a || a === document.body || !tab.contains(a) || !window.CSS || !CSS.escape) return null;
+    const dados = [...a.attributes].filter(x => x.name.startsWith('data-'));
+    return dados.length ? a.tagName.toLowerCase() + dados.map(x => `[${x.name}="${CSS.escape(x.value)}"]`).join('') : null;
+  }
   function render() {
     if (!jogo) return;
+    const focado = chaveDoFoco();
+    renderTudo();
+    if (focado && document.activeElement === document.body) {
+      const el = document.getElementById('tabuleiro').querySelector(focado);
+      if (el) el.focus({ preventScroll: true });
+    }
+  }
+  function renderTudo() {
     const j = jogo;
     if (j.voo && !j.voo.de) { const el = document.querySelector(`.pega[data-id="${j.voo.id}"] .face`); if (el) j.voo.de = el.getBoundingClientRect(); }
     document.getElementById('tabuleiro').classList.toggle('modo-local', j.modo === 'local');
@@ -2004,11 +2038,35 @@
     if (h) { h.tabIndex = -1; h.focus({ preventScroll: true }); }
   };
   const vigiaJanelas = new MutationObserver(ms => ms.forEach(m => {
-    if (!m.target.hidden) { rolarAoTopo(m.target); setTimeout(() => { if (!m.target.hidden) focarJanela(m.target); }, 0); }
+    const janela = m.target;
+    if (!janela.hidden) {
+      // quem abriu a janela (o botão tocado): o foco volta para ele quando ela fechar
+      if (!janela.contains(document.activeElement)) janela.voltaFoco = document.activeElement;
+      rolarAoTopo(janela); setTimeout(() => { if (!janela.hidden) focarJanela(janela); }, 0);
+      return;
+    }
+    // fechou: o foco, que ficou num elemento escondido (ou no body), volta para quem abriu, se ele ainda está à vista
+    const volta = janela.voltaFoco; janela.voltaFoco = null;
+    const perdido = !document.activeElement || document.activeElement === document.body || janela.contains(document.activeElement);
+    if (perdido && volta && volta.isConnected && volta.offsetParent !== null) volta.focus({ preventScroll: true });
     // fechou uma janela por cima do menu (Online, Loja, Perfil...): o menu mostra a conta de agora (antes ficava "Convidado")
-    else if (inicioAberto()) desenharInicio();
+    if (inicioAberto()) desenharInicio();
   }));
   document.querySelectorAll('.janela').forEach(el => vigiaJanelas.observe(el, { attributes: true, attributeFilter: ['hidden'] }));
+  // com uma janela aberta, o Tab dá a volta dentro dela (antes saía para a Mesa por trás, invisível sob o fundo da janela)
+  const FOCAVEIS = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Tab') return;
+    const abertas = [...document.querySelectorAll('.janela:not([hidden])')];
+    const janela = abertas.find(x => x.contains(document.activeElement)) || abertas.pop();
+    if (!janela) return;
+    const f = [...janela.querySelectorAll(FOCAVEIS)].filter(x => !x.disabled && x.offsetParent !== null);
+    if (!f.length) return;
+    const primeiro = f[0], ultimo = f[f.length - 1], aqui = document.activeElement;
+    if (!janela.contains(aqui)) { e.preventDefault(); primeiro.focus(); }
+    else if (e.shiftKey && (aqui === primeiro || !f.includes(aqui))) { e.preventDefault(); ultimo.focus(); }
+    else if (!e.shiftKey && aqui === ultimo) { e.preventDefault(); primeiro.focus(); }
+  });
 
   // ---------- sem zoom de pinça (o Safari do iPhone ignora user-scalable=no) ----------
   ['gesturestart', 'gesturechange', 'gestureend'].forEach(t => document.addEventListener(t, e => e.preventDefault(), { passive: false }));
@@ -2675,7 +2733,9 @@
     else aviso.hidden = false;
   }));
   const liga = (id, chave) => document.getElementById(id).addEventListener('change', e => {
-    st.pref[chave] = e.target.checked; salvar(); aplicarPrefs();
+    st.pref[chave] = e.target.checked;
+    if (chave === 'animacoes') st.pref.animacoesEscolhida = true;   // escolha da pessoa: vale mais que o "reduzir movimento"
+    salvar(); aplicarPrefs();
     if (chave === 'som' && e.target.checked) { Som.desbloquear(); Som.tocar('momento'); }
     if (chave === 'liberar') desenharDeck();
     if (jogo) render();

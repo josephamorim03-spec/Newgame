@@ -74,6 +74,7 @@ e o amigo cai direto na sala. O servidor é a autoridade da partida e roda na Ra
 | `tools/impresso_demo.js` | grava o protótipo das técnicas de gibi (`?impresso=1`, `docs/visual-impresso.md`) sem e com, para comparar |
 | `tools/regras.js` | testes dirigidos das cartas (Pressa, Remendo, Espelho, armadilha virada, Âncora × Interferência) |
 | `tools/layout.js` | verificador de layout em 5 larguras: texto vazando, fora da caixa, quebrado, descentralizado |
+| `tools/acessibilidade_e2e.js` | teclado e janelas: o foco sobrevive ao redesenho da Mesa, o Tab dá a volta dentro da janela, o foco volta a quem a abriu; "reduzir movimento" do sistema |
 | `tools/macaco.js` | o macaco: toques ao acaso em tudo, com vigia de travamento e de estado impossível |
 | `tools/online_e2e.js` | ponta a ponta do online: dois navegadores, conta, convite, partida, revanche, ranking |
 | `tools/vercel_local.js` | simula o Vercel (só o que o `.vercelignore` publica, com a CSP do `vercel.json`) e joga uma partida |
@@ -102,6 +103,7 @@ node tools/estreia_e2e.js                      # a primeira partida, o guia e a 
 node tools/historia_e2e.js                     # o modo história: mapa, gibi, Prólogo, Sapo, recompensa e só falas aprovadas
 node tools/regras.js                           # as cartas fazem o que o texto delas diz
 node tools/layout.js                           # layout em 360, 390, 430, 768 e 1360 px
+node tools/acessibilidade_e2e.js               # teclado, foco das janelas e "reduzir movimento"
 node tools/online_e2e.js                       # online de ponta a ponta, com o servidor local
 node tools/macaco.js                           # toca em tudo ao acaso e vigia travamentos e estados impossíveis
 node tools/vercel_local.js                     # a página como o Vercel publica, com a CSP
