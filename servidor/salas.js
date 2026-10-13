@@ -317,7 +317,9 @@ class Salas {
       const p = { amistosa, porDesistencia, ratingAntes: c.rating, rating: c.rating, moedas: null, motivo: null };
       const dia = new Date(this.agora()).toISOString().slice(0, 10);
       // vitória sobre conta nova além do teto do dia: não soma rating, vitória nem moedas (a derrota de quem perdeu vale)
-      const rivalNovo = !!contas[1 - i] && contas[1 - i].partidas < PARTIDAS_CONTA_NOVA;
+      // as partidas que acabaram em desistência antes da 3ª Mesa (extras.cedo) não contam: senão 5 W.O. na hora
+      // "amadureciam" uma conta descartável, e as vitórias sobre ela saíam do teto
+      const rivalNovo = !!contas[1 - i] && contas[1 - i].partidas - ((contas[1 - i].extras && contas[1 - i].extras.cedo) || 0) < PARTIDAS_CONTA_NOVA;
       const novas = c.extras && c.extras.vitoriasNovas && c.extras.vitoriasNovas.dia === dia ? c.extras.vitoriasNovas : { dia, n: 0 };
       const tetoNovas = venceu && !amistosa && !cedo && rivalNovo && novas.n >= VITORIAS_NOVAS_DIA;
       if (venceu && !amistosa && !cedo && rivalNovo && !tetoNovas) novas.n++;
@@ -344,6 +346,7 @@ class Salas {
       }
       campos.moedas = c.moedas + (p.moedas ? p.moedas.total : 0) + tarefas.moedas;
       campos.extras = { ...(c.extras || {}), tarefas: tarefas.estado, vitoriasNovas: novas };
+      if (cedo) campos.extras.cedo = ((c.extras && c.extras.cedo) || 0) + 1;   // para os dois: a partida não valeu para ninguém
       p.tarefas = { concluidas: tarefas.concluidas, moedas: tarefas.moedas };
       const conta = { xp: c.xp, dados: c.dados.slice(), icones: c.icones.slice(), mesas: c.mesas.slice() };
       const xp = Regras.ganharXp(conta, (porDesistencia && !venceu) || amistosa || cedo || tetoNovas ? 0 : Regras.xpDaPartida(venceu, j.momentos.filter(m => m.p === i).length));

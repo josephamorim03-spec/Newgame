@@ -58,3 +58,16 @@ test('vencer contas novas rende rating e moedas só 2 vezes por dia; contra cont
   assert.ok(pf.rating > ratings[1], 'contra conta com partidas, o rating sobe');
   salas.fechar();
 });
+
+test('W.O. na hora não amadurece a conta nova: 5 desistências antes da 3ª Mesa e ela segue nova', async () => {
+  const { banco, salas, partida } = await montar();
+  const f = await banco.criarConta('Flora', 'x'), d = await banco.criarConta('Descartavel', 'x'), ajuda = await banco.criarConta('Ajuda', 'x');
+  for (let k = 0; k < 5; k++) await partida(await banco.contaPorId(ajuda.id), await banco.contaPorId(d.id), 1, 1);   // a descartável sai na hora
+  assert.strictEqual((await banco.contaPorId(d.id)).partidas, 5);
+  // a Flora já venceu 2 contas novas hoje: a descartável, com 5 partidas que não valeram, ainda é nova (fica no teto)
+  await banco.atualizarConta(f.id, { extras: { vitoriasNovas: { dia: new Date().toISOString().slice(0, 10), n: 2 } } });
+  const [pf] = await partida(await banco.contaPorId(f.id), await banco.contaPorId(d.id), 1, 3);
+  assert.strictEqual(pf.rating, 1000, 'sem rating');
+  assert.match(pf.motivo, /2 contas novas/);
+  salas.fechar();
+});
