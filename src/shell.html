@@ -1,0 +1,193 @@
+<title>Peleja</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@600;800;900&display=swap" rel="stylesheet">
+<style>
+/* Layout: oponente em cima, tabuleiro 5x7 no meio, sua barra e sua mão embaixo. Visual claro de jogo de tabuleiro: azul = você, vermelho = inimigo. */
+:root{
+  --paper:#F6EEDC; --paper2:#FFFFFF; --ink:#2A1E16; --soft:#6B5D4F; --line:#2A1E16;
+  --you:#2F7FD8; --foe:#E0473A; --mana:#5B6CF0; --gold:#F2B632; --hurt:#E0473A; --heal:#2E9E4F;
+  --slab:"Lilita One","Alfa Slab One",Georgia,sans-serif; --body:"Nunito",system-ui,sans-serif;
+  color-scheme:light;
+}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--body);font-weight:600;font-size:16px;line-height:1.3;overscroll-behavior:none;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;touch-action:manipulation;overflow:hidden}
+#app{height:100%;min-height:540px;max-width:520px;margin:0 auto;display:flex;flex-direction:column;position:relative}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;touch-action:manipulation;padding:0}
+button:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.bar{display:flex;align-items:center;gap:8px;padding:6px 10px}
+#topBar{background:#FCE3DF;border-bottom:3px solid var(--foe)}
+#myBar{margin:6px 8px 0;padding:6px 8px;border-radius:14px;border:2px solid transparent;transition:background .2s}
+#myBar.turn{background:#DCE8FA;border-color:var(--you)}
+#topBar{transition:background .2s}
+#topBar:not(.turn){background:#F7EBE6;border-bottom-color:#E9B3AB}
+#topBar.turn{background:#F9C9C2}
+#oName[data-turn]:not([data-turn=""])::after{content:attr(data-turn);margin-left:6px;padding:1px 7px;border-radius:9px;background:var(--foe);color:#fff;font-family:var(--body);font-weight:900;font-size:11px;vertical-align:3px}
+.who{display:flex;align-items:center;gap:8px;min-width:0;flex:1}
+.who canvas{width:38px;height:38px;border-radius:50%;border:3px solid var(--foe);background:#fff}
+.who b{font-family:var(--slab);font-weight:400;font-size:18px;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.who small{display:block;font-size:12px;color:var(--soft)}
+.hp{font-family:var(--slab);font-size:24px;line-height:1;display:flex;align-items:center;gap:3px;color:var(--hurt)}
+.hp svg{width:20px;height:20px}
+.mana{display:flex;gap:2px;align-items:center}
+.mana i{width:16px;height:20px;background:var(--mana);clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
+.mana span{font-family:var(--slab);font-size:20px;margin-left:3px;color:var(--mana)}
+.cnt{font-size:13px;color:var(--soft);white-space:nowrap}
+.btn{min-height:42px;padding:0 14px;border:2px solid var(--ink);border-radius:12px;background:var(--paper2);font-family:var(--slab);font-size:16px;box-shadow:0 3px 0 var(--ink)}
+.btn:active{transform:translateY(2px);box-shadow:0 1px 0 var(--ink)}
+.btn[aria-disabled="true"]{opacity:.45;box-shadow:none}
+.btn.hot{background:var(--gold)}
+#bEnd{min-width:96px;position:relative;overflow:hidden}
+#bEnd i{position:absolute;left:0;bottom:0;height:4px;background:var(--foe)}
+#bPow{display:flex;align-items:center;gap:6px;white-space:nowrap}
+#bPow canvas{width:26px;height:26px;border-radius:50%;border:2px solid var(--you)}
+#stage{flex:1;position:relative;min-height:0}
+#gl,#cv{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+#info{margin:4px 8px 0;min-height:62px;display:grid;grid-template-columns:52px 1fr auto;gap:10px;align-items:center;border:2px solid var(--ink);border-radius:14px;background:var(--paper2);padding:5px 10px 5px 5px;box-shadow:0 3px 0 var(--ink)}
+#info canvas{width:52px;height:52px;display:block;border-radius:10px}
+#info .tx{min-width:0;display:grid;gap:1px}
+#info b{font-family:var(--slab);font-weight:400;font-size:16px;line-height:1.05}
+#info b em{font-style:normal;color:var(--soft);font-family:var(--body);font-weight:800;font-size:13px}
+#info span{font-size:13.5px;line-height:1.25}
+#info.say{background:#2F3A57;color:#fff;border-color:#2F3A57} #info.say b em{color:#C9D3F0}
+#info .use{min-height:40px}
+#hand{display:flex;justify-content:center;padding:10px 6px calc(10px + env(safe-area-inset-bottom,0px));gap:var(--gap,5px)}
+.card{position:relative;flex:none;width:var(--cw,64px);height:var(--ch,90px);border:2px solid var(--ink);border-radius:10px;background:var(--paper2);box-shadow:0 3px 0 var(--ink);padding:0;transition:transform .12s}
+.card canvas{position:absolute;left:3px;top:3px;width:calc(100% - 6px);aspect-ratio:1;display:block;border-radius:7px}
+.card .nm{position:absolute;left:1px;right:1px;bottom:3px;font-size:min(10.5px,calc(var(--cw,64px) * .19));letter-spacing:-.2px;font-weight:900;line-height:1.05;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card .co{position:absolute;top:-8px;left:-8px;width:25px;height:25px;border-radius:50%;background:var(--mana);color:#fff;border:2px solid var(--ink);font-family:var(--slab);font-size:14px;display:grid;place-items:center;z-index:1}
+.card .a,.card .h{position:absolute;top:calc(var(--cw,64px) - 14px);width:22px;height:22px;border:2px solid var(--ink);border-radius:50%;font-family:var(--slab);font-size:13px;display:grid;place-items:center}
+.card .a{left:-6px;background:var(--gold)} .card .h{right:-6px;background:var(--foe);color:#fff}
+.card.spell{background:#EFE7FF} .card.spell .nm{color:#4A2A8E}
+.card.sel{transform:translateY(-12px);box-shadow:0 0 0 3px var(--gold),0 3px 0 var(--ink)}
+.card.poor canvas{filter:grayscale(.85) opacity(.55)}
+.card.back{background:repeating-linear-gradient(45deg,#C9D6F2 0 6px,#E3EAFA 6px 12px)}
+.ov{position:absolute;inset:0;z-index:5;overflow:auto;display:flex;justify-content:center;padding:calc(env(safe-area-inset-top,0px) + 16px) 14px calc(env(safe-area-inset-bottom,0px) + 16px);background:var(--paper)}
+.pn{width:100%;max-width:440px;margin:auto 0;display:grid;gap:12px}
+.logo{margin:0;text-align:center;font-family:var(--slab);font-weight:400;font-size:clamp(60px,19vw,94px);line-height:.9;color:var(--foe);text-shadow:0 4px 0 var(--ink);-webkit-text-stroke:2px var(--ink)}
+.logo small{display:block;font-family:var(--body);font-weight:900;font-size:16px;letter-spacing:.18em;text-transform:uppercase;margin-top:10px;color:var(--ink);text-shadow:none;-webkit-text-stroke:0}
+.frame{border:2px solid var(--ink);border-radius:16px;background:var(--paper2);box-shadow:0 4px 0 var(--ink);padding:14px;display:grid;gap:10px}
+.frame h3{margin:0;font-family:var(--slab);font-weight:400;font-size:19px}
+.seg{display:grid;grid-template-columns:repeat(var(--n,2),1fr);gap:6px}
+.seg label{position:relative}
+.seg input{position:absolute;opacity:0;inset:0}
+.seg span{display:grid;place-items:center;text-align:center;min-height:48px;border:2px solid var(--ink);border-radius:12px;background:var(--paper);font-weight:900;line-height:1.05;padding:4px}
+.seg span small{font-weight:600;color:var(--soft);font-size:12px}
+.seg input:checked+span{background:var(--you);color:#fff} .seg input:checked+span small{color:#DCE8FA}
+.seg input:focus-visible+span{outline:3px solid var(--gold);outline-offset:2px}
+.facs{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.fac{position:relative}
+.fac input{position:absolute;opacity:0;inset:0}
+.fac span{display:grid;justify-items:center;gap:2px;border:2px solid var(--ink);border-radius:14px;background:var(--paper);padding:8px 6px;text-align:center}
+.fac canvas{width:72px;height:72px;border-radius:50%;border:3px solid var(--ink)}
+.fac b{font-family:var(--slab);font-weight:400;font-size:18px}
+.fac small{color:var(--soft);font-size:12.5px;line-height:1.2}
+.fac input:checked+span{box-shadow:inset 0 0 0 4px var(--you);background:#E3EEFB}
+.fac input:focus-visible+span{outline:3px solid var(--gold);outline-offset:2px}
+.go{min-height:60px;border:2px solid var(--ink);border-radius:16px;background:var(--foe);color:#fff;font-family:var(--slab);font-size:28px;box-shadow:0 5px 0 var(--ink)}
+.go:active{transform:translateY(3px);box-shadow:0 2px 0 var(--ink)}
+.plain{min-height:46px;border:2px solid var(--ink);border-radius:12px;background:var(--paper2);font-weight:900}
+.rules{margin:0;padding-left:18px;display:grid;gap:6px;font-size:15px}
+.res{margin:0;text-align:center;font-family:var(--slab);font-weight:400;font-size:clamp(54px,17vw,80px);line-height:.9}
+table{width:100%;border-collapse:collapse}
+td,th{padding:6px 0;border-top:1.5px solid #E2D4B4;text-align:right}
+td:first-child,th:first-child{text-align:left;font-weight:600}
+thead th{border-top:0;font-family:var(--slab);font-weight:400}
+.row{display:flex;gap:8px}.row>*{flex:1}
+.tog{display:flex;align-items:center;gap:10px}
+.tog input{width:20px;height:20px;accent-color:var(--you)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div id="app">
+  <div class="bar" id="topBar">
+    <div class="who"><canvas id="oPor" width="68" height="68"></canvas><div><b id="oName"></b><small id="oInfo"></small></div></div>
+    <div class="mana" id="oMana"></div>
+    <div class="hp" id="oHp"></div>
+    <button class="btn" id="bMenu" aria-label="Menu" style="min-width:40px;padding:0">≡</button>
+  </div>
+  <div id="stage">
+    <canvas id="gl" aria-hidden="true"></canvas>
+    <canvas id="cv" aria-label="Tabuleiro"></canvas>
+  </div>
+  <div id="info" aria-live="polite"></div>
+  <div class="bar" id="myBar">
+    <div class="hp" id="mHp"></div>
+    <div class="mana" id="mMana"></div>
+    <div style="flex:1"></div>
+    <button class="btn" id="bPow"></button>
+    <button class="btn" id="bEnd">Passar<i id="bEndT"></i></button>
+  </div>
+  <div id="hand"></div>
+
+  <div class="ov" id="ovHome">
+    <div class="pn">
+      <h1 class="logo">Peleja<small>duelo do folclore</small></h1>
+      <div class="frame">
+        <h3>Sua facção</h3>
+        <div class="facs" id="facs"></div>
+        <h3>Contra quem</h3>
+        <div class="seg" style="--n:2">
+          <label><input type="radio" name="mode" value="bot" checked><span>Bot</span></label>
+          <label><input type="radio" name="mode" value="hot"><span>2 no celular<small>passa o aparelho</small></span></label>
+        </div>
+        <div class="seg" style="--n:3" id="lvSeg">
+          <label><input type="radio" name="lv" value="facil"><span>Fácil</span></label>
+          <label><input type="radio" name="lv" value="normal" checked><span>Normal</span></label>
+          <label><input type="radio" name="lv" value="dificil"><span>Difícil<small>planeja o turno</small></span></label>
+        </div>
+        <button class="go" id="bGo">Pelejar!</button>
+      </div>
+      <div class="frame">
+        <h3>Como se joga</h3>
+        <ol class="rules">
+          <li>Suas peças têm aro <b style="color:#2F7FD8">azul</b>; as do inimigo, <b style="color:#E0473A">vermelho</b>. Derrube o general inimigo (o da coroa, 20 de vida).</li>
+          <li>Mana começa em 2 e sobe 1 por turno. Toque numa carta e depois numa casa iluminada para jogá-la.</li>
+          <li>Unidades entram ao lado do seu general ou de outra unidade sua, e só agem no turno seguinte.</li>
+          <li>No seu turno, cada peça anda até 2 casas e depois ataca uma vizinha. Quem apanha revida. Antes de atacar, a etiqueta no alvo mostra o resultado.</li>
+          <li>O chão muda a cada partida: <b>mata fechada</b> protege (−1 de dano), <b>rio</b> não deixa passar a pé e a <b>encruzilhada</b> dá +1 de mana a quem ficar nela.</li>
+          <li>O general tem um poder com recarga. Passe o turno quando acabar.</li>
+        </ol>
+        <label class="tog"><input type="checkbox" id="optSound" checked> Som</label>
+      </div>
+    </div>
+  </div>
+
+  <div class="ov" id="ovPass" hidden>
+    <div class="pn" style="text-align:center">
+      <p class="res" id="passWho" style="font-size:44px"></p>
+      <p>Passe o celular. A mão do outro jogador fica escondida até ele tocar abaixo.</p>
+      <button class="go" id="bPass">Estou pronto</button>
+    </div>
+  </div>
+
+  <div class="ov" id="ovMenu" hidden>
+    <div class="pn">
+      <p class="res" style="font-size:52px">Pausa</p>
+      <button class="go" id="bResume">Continuar</button>
+      <div class="row"><button class="plain" id="bGiveUp">Desistir</button><button class="plain" id="bHome">Menu inicial</button></div>
+    </div>
+  </div>
+
+  <div class="ov" id="ovEnd" hidden>
+    <div class="pn">
+      <p class="res" id="eTitle"></p>
+      <p id="eWhy" style="margin:0;text-align:center"></p>
+      <div class="frame"><table id="eStats"></table></div>
+      <button class="go" id="bAgain">Outra peleja</button>
+      <button class="plain" id="bHome2">Menu inicial</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/*CORE*/
+</script>
+<script>
+/*ART*/
+</script>
+<script>
+/*UI*/
+</script>

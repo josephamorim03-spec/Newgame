@@ -1,0 +1,3 @@
+const { chromium } = (() => { try { return require('playwright'); } catch (e) { return require('/opt/node22/lib/node_modules/playwright'); } })();
+(async () => { const b = await chromium.launch({ args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] }); const p = await b.newPage({ viewport: { width: 900, height: 700 }, deviceScaleFactor: 2 });
+  p.on('pageerror', e => console.log('ERR', e.message)); await p.goto('file://' + require('path').join(__dirname, 'figsheet.html') + '#' + (process.argv[2] || '')); await p.waitForTimeout(2500); await p.screenshot({ path: process.argv[3] || 'shots/figsheet.png', fullPage: true }); await b.close(); })();

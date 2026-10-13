@@ -1,0 +1,5 @@
+<!doctype html><meta charset="utf-8"><body style="margin:0;background:#F6EEDC;font:12px sans-serif"><div id="g" style="display:grid;grid-template-columns:repeat(9,96px);gap:4px;padding:6px"></div>
+<script src="../vendor/three.min.js"></script><script src="../src/figs.js"></script><script>
+const ids=(location.hash.slice(1)||'curupira,saci,coral,uira,onca,caipora,anhanga,mapin,cuca,corpo,bicho,lobis,pisa,mula,capelobo').split(','), g=document.getElementById('g');
+for(const id of ids) for(const d of [0,2,4]){ const c=FIGS.sprite(id,256,320,d); c.style.cssText='width:96px;height:120px;background:#E9DFC6;border-radius:8px'; g.appendChild(c); }
+</script>
