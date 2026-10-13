@@ -1267,7 +1267,7 @@ const ART = (() => {
     app.style.setProperty("--cw", cw + "px"); app.style.setProperty("--ch", ch + "px");
     const n = $("hand").children.length, room = W - 16, need = n * cw + (n - 1) * 5; app.style.setProperty("--gap", (need > room && n > 1 ? Math.floor((room - n * cw) / (n - 1)) : 5) + "px"); }
   function resize() { layout(); FX.clear(); const r = cv.getBoundingClientRect(); view.w = Math.max(1, r.width); view.h = Math.max(1, r.height); view.dpr = Math.min(2, devicePixelRatio || 1);
-    cv.width = Math.round(view.w * view.dpr); cv.height = Math.round(view.h * view.dpr); const head = figOK() ? 0.3 : 0; view.t = Math.floor(Math.min((view.w - 12) / BW, (view.h - 10) / (BH + head))); view.ox = Math.round((view.w - view.t * BW) / 2); view.oy = Math.round((view.h - view.t * (BH + head)) / 2 + view.t * head);
+    cv.width = Math.round(view.w * view.dpr); cv.height = Math.round(view.h * view.dpr); const head = 0; view.t = Math.floor(Math.min((view.w - 12) / BW, (view.h - 10) / (BH + head))); view.ox = Math.round((view.w - view.t * BW) / 2); view.oy = Math.round((view.h - view.t * (BH + head)) / 2 + view.t * head);
     if (is3D) { ISO.resize(view.w, view.h, view.dpr); view.t = ISO.tilePx(); } }
   new ResizeObserver(resize).observe($("stage"));
   // o tabuleiro gira para quem está jogando ficar sempre embaixo
@@ -1356,6 +1356,12 @@ const ART = (() => {
       list.push({ x: t.x, y: t.y, dealt: t.hp - Math.max(0, ta ? ta.hp : 0), kills: !ta || ta.hp <= 0, taken: Math.max(0, u.hp - Math.max(0, ua ? ua.hp : 0)), dies: !ua || ua.hp <= 0 }); }
     pv.key = key; pv.list = list; return list; }
   function faceDir(u) { const f = face.get(u.id) || (u.o === 0 ? [0, -1] : [0, 1]); return FIGS.dirOf(viewer === 0 ? f[0] : -f[0], viewer === 0 ? f[1] : -f[1]); }
+  // caixa dos pixels visíveis de cada imagem de boneco (para caber inteiro na própria casa)
+  const boxes = new WeakMap(), refH = new Map();
+  function figBox(sp) { let b = boxes.get(sp); if (b) return b; const d = sp.getContext("2d").getImageData(0, 0, sp.width, sp.height).data; let x0 = sp.width, y0 = sp.height, x1 = 0, y1 = 0;
+    for (let y = 0; y < sp.height; y++) for (let x = 0; x < sp.width; x++) if (d[(y * sp.width + x) * 4 + 3] > 24) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+    b = x1 >= x0 ? { x0, y0, x1: x1 + 1, y1: y1 + 1 } : { x0: 0, y0: 0, x1: sp.width, y1: sp.height }; boxes.set(sp, b); return b; }
+  function figRef(art) { if (!refH.has(art)) { const b = figBox(FIGS.sprite(art, 256, 320, 0)); refH.set(art, b.y1 - b.y0); } return refH.get(art); }
   function drawFig(k, u, alpha, labels = false) {
     const t = view.t, p = dpos.get(u.id) || u, x = SX(p.x, p.y), y0 = SY(p.x, p.y), sc = dscale.has(u.id) ? dscale.get(u.id) : 1; if (sc <= 0) return;
     const col = teamCol(u.o), dark = u.o === viewer ? "#245FA6" : "#B8352B", hp = dhp.has(u.id) ? dhp.get(u.id) : u.hp, isSel = sel && sel.k === "unit" && sel.id === u.id;
@@ -1366,22 +1372,25 @@ const ART = (() => {
       // dono da peça à primeira vista: a casa inteira ganha a cor do time
       const sz = (t - 6) * Math.max(0.6, sc); k.fillStyle = u.o === viewer ? "rgba(47,127,216,0.22)" : "rgba(224,71,58,0.22)"; rrect(k, x - sz / 2, y0 - sz / 2, sz, sz, 9); k.fill();
       k.lineWidth = 2.5; k.strokeStyle = u.o === viewer ? "rgba(47,127,216,0.85)" : "rgba(224,71,58,0.85)"; k.stroke();
+      if (u.gen) { k.lineWidth = 2; k.strokeStyle = GOLD; rrect(k, x - sz / 2 + 3, y0 - sz / 2 + 3, sz - 6, sz - 6, 7); k.stroke(); }
       const ready = u.o === g.cur && human(u.o) && !g.over && !busy() && !(sel && sel.k !== "unit") && (g.moves(u).length || g.attacks(u).length), tired = u.o === g.cur && human(u.o) && !g.over && !busy() && !ready && alpha === 1;
       k.fillStyle = "rgba(42,30,22,0.25)"; k.beginPath(); k.ellipse(x + 2, by + th + 3, rw * 1.02, rh * 1.05, 0, 0, 7); k.fill();
       if (ready || isSel) { const pulse = isSel ? 1 : 0.55 + 0.45 * Math.sin(clock * 5); k.globalAlpha = alpha * pulse; k.strokeStyle = GOLD; k.lineWidth = isSel ? 6 : 4; k.beginPath(); k.ellipse(x, by + th / 2, rw + 5, rh + 4, 0, 0, 7); k.stroke(); k.globalAlpha = alpha; }
       k.fillStyle = dark; k.beginPath(); k.ellipse(x, by + th, rw, rh, 0, 0, Math.PI); k.lineTo(x - rw, by); k.ellipse(x, by, rw, rh, 0, Math.PI, 0, true); k.closePath(); k.fill(); k.lineWidth = 2; k.strokeStyle = INK; k.stroke();
       k.fillStyle = col; k.beginPath(); k.ellipse(x, by, rw, rh, 0, 0, 7); k.fill(); k.stroke();
       if (u.gen) { k.strokeStyle = GOLD; k.lineWidth = 3; k.beginPath(); k.ellipse(x, by, rw - 4, rh - 3, 0, 0, 7); k.stroke(); }
-      const art = u.gen ? GEN_ART[u.card] : u.card, dir = faceDir(u), sp = FIGS.sprite(art, 256, 320, dir);
-      if (tired) k.globalAlpha = alpha * 0.62; k.drawImage(sp, x - w / 2, by - lift - h * 0.885, w, h); k.globalAlpha = alpha;
-      FX.paint(k, u.id, FIGS.anchors(art, dir), x - w / 2, by - lift - h * 0.885, w, h, alpha * (tired ? 0.62 : 1), by - lift);
+      // o boneco inteiro cabe na própria casa: altura pela vista de frente (não muda ao virar), largura limitada à casa
+      const art = u.gen ? GEN_ART[u.card] : u.card, dir = faceDir(u), sp = FIGS.sprite(art, 256, 320, dir), bb = figBox(sp);
+      const fs = Math.min(t * 0.8 / figRef(art), t * 0.92 / (bb.x1 - bb.x0)) * sc, dw = sp.width * fs, dh = sp.height * fs, dx = x - (bb.x0 + bb.x1) / 2 * fs, dy = by - lift - bb.y1 * fs;
+      if (tired) k.globalAlpha = alpha * 0.62; k.drawImage(sp, dx, dy, dw, dh); k.globalAlpha = alpha;
+      FX.paint(k, u.id, FIGS.anchors(art, dir), dx, dy, dw, dh, alpha * (tired ? 0.62 : 1), by - lift);
       k.restore(); return;
     }
     const b = Math.max(7.5, t * 0.15), fs = Math.max(10, Math.round(b * 1.25)); k.font = `${fs}px ${FONT}`; k.textAlign = "center"; k.textBaseline = "middle";
     const ax = x - t * 0.5 + b + 2, ay = y0 + t * 0.5 - b - 2; k.fillStyle = GOLD; k.beginPath(); k.arc(ax, ay, b, 0, 7); k.fill(); k.lineWidth = 2; k.strokeStyle = INK; k.stroke(); k.fillStyle = INK; k.fillText(g.atkOf(u), ax, ay + 1);
     const hx = x + t * 0.5 - b - 2, hy = y0 + t * 0.5 - b - 2, hurt = hp < u.max; heart(k, hx, hy + 1, b * 1.08); k.fillStyle = hurt ? "#C81E2C" : "#E0473A"; k.fill(); k.stroke();
     k.lineWidth = 3; k.strokeStyle = INK; k.strokeText(Math.max(0, hp), hx, hy + 1); k.fillStyle = "#FFFFFF"; k.fillText(Math.max(0, hp), hx, hy + 1);
-    if (u.gen) { const cw = t * 0.12, cy = y0 + t * 0.5 - cw * 0.7; k.fillStyle = GOLD; k.beginPath(); k.moveTo(x - cw, cy + cw * 0.5); k.lineTo(x - cw, cy - cw * 0.45); k.lineTo(x - cw * 0.5, cy); k.lineTo(x, cy - cw * 0.65); k.lineTo(x + cw * 0.5, cy); k.lineTo(x + cw, cy - cw * 0.45); k.lineTo(x + cw, cy + cw * 0.5); k.closePath(); k.fill(); k.lineWidth = 1.8; k.strokeStyle = INK; k.stroke(); }
+    if (u.gen) { const cw = Math.max(5, t * 0.1), cx = x - t * 0.5 + cw + 5, cy = y0 - t * 0.5 + cw + 4; k.fillStyle = GOLD; k.beginPath(); k.moveTo(cx - cw, cy + cw * 0.5); k.lineTo(cx - cw, cy - cw * 0.45); k.lineTo(cx - cw * 0.5, cy); k.lineTo(cx, cy - cw * 0.65); k.lineTo(cx + cw * 0.5, cy); k.lineTo(cx + cw, cy - cw * 0.45); k.lineTo(cx + cw, cy + cw * 0.5); k.closePath(); k.fill(); k.lineWidth = 1.6; k.strokeStyle = INK; k.stroke(); }
     if (u.rooted || u.stunned || (u.sick && u.o === g.cur && human(u.o))) { const lab = u.stunned ? "TONTO" : u.rooted ? "PRESO" : "zzz", ww = lab === "zzz" ? t * 0.36 : t * 0.56, hh = Math.max(14, t * 0.2), ly = Math.max(y0 - t * 0.5 + 2, by - h * 0.9);
       k.fillStyle = lab === "zzz" ? "#FFFFFF" : FOE; rrect(k, x - ww / 2, ly, ww, hh, hh / 2); k.fill(); k.lineWidth = 1.6; k.strokeStyle = INK; k.stroke(); k.fillStyle = lab === "zzz" ? "#5A4D40" : "#FFFFFF"; k.font = `800 ${Math.round(hh * 0.62)}px Nunito, sans-serif`; k.fillText(lab, x, ly + hh / 2 + 0.5); }
     k.restore();
