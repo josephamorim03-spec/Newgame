@@ -314,7 +314,7 @@ test('quem cai tem um tempo para voltar, contado na vez dele; depois perde por q
     const fim = await b.esperar(m => m.tipo === 'fim', 6000);
     assert.strictEqual(fim.premio.porDesistencia, true);
     assert.strictEqual(fim.premio.moedas.total, 0);
-    // W.O. logo na 1ª Mesa não mexe no rating (contra contas descartáveis que caem de propósito)
+    // W.O. logo na 1ª Mesa não dá rating a quem fica (contra contas descartáveis que caem de propósito)
     assert.strictEqual(fim.premio.rating, 1000);
     assert.match(fim.premio.motivo, /não mexe no rating/);
     // quem perdeu por W.O. volta à sala e ainda recebe o fim (o estado final e o próprio resultado)
@@ -324,7 +324,9 @@ test('quem cai tem um tempo para voltar, contado na vez dele; depois perde por q
     assert.strictEqual(final.jogo.fase, 'fim');
     const meuFim = await a.esperar(m => m.tipo === 'fim');
     assert.strictEqual(meuFim.premio.porDesistencia, true);
-    assert.strictEqual(meuFim.premio.rating, 1000);
+    // mas quem sai perde, como numa derrota: fechar a aba na Mesa 1 não é um jeito de nunca perder rating
+    assert.ok(meuFim.premio.rating < 1000, `quem saiu ficou com ${meuFim.premio.rating}`);
+    assert.match(meuFim.premio.motivo, /conta como derrota/);
     a.fechar(); b.fechar();
   } finally { await s.fechar(); }
 });
@@ -446,6 +448,39 @@ test('sala cheia e sala que não existe', { timeout: 20000 }, async () => {
     await c.esperar(m => m.tipo === 'erro' && /não encontrada/.test(m.erro));
     assert.strictEqual((await s.api('GET', '/api/salas/ZZZZZZ')).status, 404);
     [a, b, c].forEach(x => x.fechar());
+  } finally { await s.fechar(); }
+});
+
+test('revanche com o rival já em outra partida: a sala volta a esperar, sem "Algo deu errado" a cada volta', { timeout: 20000 }, async () => {
+  const s = await subir();
+  try {
+    const [A, B, C] = await Promise.all(['Olga', 'Pedro', 'Quim'].map(n => conta(s, n)));
+    const s1 = (await s.api('POST', '/api/salas', {}, A.token)).sala.codigo;
+    const [a, b] = await Promise.all([A, B].map(x => cliente(s.ws, x.token)));
+    a.enviar({ tipo: 'entrar', sala: s1, deck: [] }); b.enviar({ tipo: 'entrar', sala: s1, deck: [] });
+    await a.esperar(m => m.tipo === 'estado');
+    a.enviar({ tipo: 'desistir' });
+    await a.esperar(m => m.tipo === 'fim');
+    // o Pedro, em outra aba, começa outra partida com o Quim
+    const s2 = (await s.api('POST', '/api/salas', {}, C.token)).sala.codigo;
+    const [b2, c] = await Promise.all([B, C].map(x => cliente(s.ws, x.token)));
+    b2.enviar({ tipo: 'entrar', sala: s2, deck: [] }); c.enviar({ tipo: 'entrar', sala: s2, deck: [] });
+    await c.esperar(m => m.tipo === 'estado' && m.jogo.fase !== 'fim');
+    // na primeira sala, os dois pedem revanche: o Pedro está ocupado e sai dela
+    a.enviar({ tipo: 'revanche' }); b.enviar({ tipo: 'revanche' });
+    await b.esperar(m => m.tipo === 'erro' && /outra sala/.test(m.erro));
+    const sala = await a.esperar(m => m.tipo === 'sala' && m.sala.jogadores.length === 1);
+    assert.ok(sala);
+    // a Olga volta à sala (reconexão, outra aba): recebe a sala esperando, não um erro do servidor
+    a.msgs.length = 0;
+    a.enviar({ tipo: 'entrar', sala: s1, deck: [] });
+    await a.esperar(m => m.tipo === 'sala');
+    await new Promise(r => setTimeout(r, 150));
+    assert.ok(!a.msgs.some(m => m.tipo === 'erro'), 'veio erro: ' + JSON.stringify(a.msgs.filter(m => m.tipo === 'erro')));
+    // e pedir revanche de novo diz por que não dá
+    a.enviar({ tipo: 'revanche' });
+    await a.esperar(m => m.tipo === 'erro' && /outra partida/.test(m.erro));
+    [a, b, b2, c].forEach(x => x.fechar());
   } finally { await s.fechar(); }
 });
 

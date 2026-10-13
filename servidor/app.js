@@ -577,6 +577,9 @@ function criarApp({ banco, segredo, raiz = path.join(__dirname, '..'), tempos = 
         try {
           if (m.tipo === 'ola') {
             const conta = await contaDoToken(m.token);
+            // a conexão caiu enquanto o banco respondia: o 'close' já rodou, e pôr o socket morto na presença deixava a
+            // conta "online" para sempre (e, depois de 5, "já está aberto em 5 abas" até o servidor reiniciar)
+            if (ws.readyState !== 1) return;
             if (!conta) return salas.enviar(ws, { tipo: 'erro', erro: 'Entre na sua conta de novo.', sair: true });
             if (ws.contaId && ws.contaId !== conta.id) sairDaPresenca(ws);
             const abas = presenca.get(conta.id);
@@ -591,6 +594,7 @@ function criarApp({ banco, segredo, raiz = path.join(__dirname, '..'), tempos = 
           // (entrar, procurar e revanche conferem as cartas: esses sempre buscam a conta fresca, uma compra de agora já vale)
           const fresca = m.tipo === 'entrar' || m.tipo === 'procurar' || m.tipo === 'revanche' || m.tipo === 'deck';
           if (fresca || !ws.conta || Date.now() - ws.contaEm > 5000) { ws.conta = await banco.contaPorId(ws.contaId); ws.contaEm = Date.now(); }
+          if (ws.readyState !== 1) return;   // caiu durante a busca: entrar numa sala com o socket morto prendia a vaga
           const conta = ws.conta;
           if (!conta) { salas.enviar(ws, { tipo: 'erro', erro: 'Esta conta não existe mais.', sair: true }); return ws.close(4001, 'sessao'); }   // apagada
           if (m.tipo === 'chamar') await chamarAmigo(ws, conta, m.nome);

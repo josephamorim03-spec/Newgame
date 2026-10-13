@@ -43,6 +43,7 @@ Uma vitória excelente rende mais de 2× uma apertada: quem joga bem é recompen
 | Jogador forte farmando o modo fácil | cada rival só paga moedas enquanto o **maior rating já alcançado** estiver abaixo de um teto: Diana até 1.050, Dona Coruja até 1.400. Acima disso, as moedas vêm do online |
 | Perder de propósito para baixar o rating | não adianta: o teto olha o pico, não o rating atual |
 | Duas pessoas no mesmo aparelho | não dá moedas nem rating |
+| Online: subir o rating com contas descartáveis | vencer conta nova (menos de 5 partidas) rende rating, moedas e vitória só 2 vezes por dia; desistência antes da 3ª Mesa não dá nada a quem fica, e quem sai perde rating (`docs/servidor.md`) |
 | Online: atropelar iniciantes (smurf) | proposta: multiplicar por `1 + clamp((rating do rival − seu rating) / 400, −0,5, +0,5)`. Vencer quem é melhor vale até ×1,5; vencer quem é bem pior, ×0,5 |
 
 O **rating** do protótipo é provisório: um Elo (K = 32) contra o rating fixo de cada rival (Diana 850,

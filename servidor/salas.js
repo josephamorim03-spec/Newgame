@@ -11,8 +11,13 @@ const LETRAS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // sem 0/O e 1/I, para ditar 
 const novoCodigo = () => Array.from(crypto.randomBytes(6), b => LETRAS[b % LETRAS.length]).join('');
 // dados do servidor com sorteio criptográfico (o Math.random do V8 é previsível com rolagens suficientes)
 const aleatorio = () => crypto.randomInt(0, 2 ** 32) / 2 ** 32;
-// desistir antes desta mesa não mexe no rating (contra contas descartáveis que desistem no primeiro lance)
+// desistir antes desta mesa não dá rating a quem fica (contra contas descartáveis que desistem no primeiro lance);
+// quem sai perde rating como numa derrota (senão fechar a aba na Mesa 1 ou 2 seria um jeito de nunca perder)
 const MESAS_PARA_VALER = 3;
+// conta nova: menos partidas que isto. Vencer contas novas rende rating e moedas só VITORIAS_NOVAS_DIA vezes por dia
+// (cada IP cria 5 contas a cada 10 min: sem o teto, uma conta subia o rating batendo em contas descartáveis)
+const PARTIDAS_CONTA_NOVA = 5;
+const VITORIAS_NOVAS_DIA = 2;
 const PARTIDAS_POR_PAR = 3; // por dia, valendo rating e moedas (contra duas contas combinando resultado)
 
 // ritmo da sala (escolhido ao criar): o tempo de cada vez. Rápida, o padrão: 2 min. Política de AFK, só na vez de cada um:
@@ -143,6 +148,7 @@ class Salas {
   }
   revanche(ws, conta, { deck } = {}) {
     const { sala, assento } = this.onde(ws, conta);
+    if (sala && !sala.jogo && sala.jogadores.length < 2) return this.erro(ws, 'O rival foi para outra partida. Mande o convite de novo quando ele voltar.');
     if (!sala || !sala.jogo || sala.jogo.fase !== 'fim' || sala.jogadores.length < 2) return;
     if (!sala.jogadores[1 - assento].ws) return this.erro(ws, `${sala.jogadores[1 - assento].nome} saiu da sala.`);
     if (Array.isArray(deck) && Regras.deckValido(deck) && deck.every(c => conta.cartas.includes(c))) sala.jogadores[assento].deck = deck.slice();
@@ -235,6 +241,9 @@ class Salas {
       this.erro(ocupado.ws, 'Você já está numa partida em outra sala.', 'sala');
       if (ocupado.ws) ocupado.ws.sala = null;
       sala.jogadores = sala.jogadores.filter(p => p !== ocupado);
+      // na revanche, a partida que acabou ficava na sala com um jogador só: o estado dela pedia o rival que saiu
+      // (TypeError a cada volta à sala). A sala volta a esperar alguém, como uma sala nova
+      sala.jogo = null; sala.resultado = null; sala.revanche.clear();
       return this.avisarSala(sala);
     }
     sala.revanche.clear();
@@ -306,30 +315,41 @@ class Salas {
       if (!c) return;
       const venceu = i === w;
       const p = { amistosa, porDesistencia, ratingAntes: c.rating, rating: c.rating, moedas: null, motivo: null };
+      const dia = new Date(this.agora()).toISOString().slice(0, 10);
+      // vitória sobre conta nova além do teto do dia: não soma rating, vitória nem moedas (a derrota de quem perdeu vale)
+      // as partidas que acabaram em desistência antes da 3ª Mesa (extras.cedo) não contam: senão 5 W.O. na hora
+      // "amadureciam" uma conta descartável, e as vitórias sobre ela saíam do teto
+      const rivalNovo = !!contas[1 - i] && contas[1 - i].partidas - ((contas[1 - i].extras && contas[1 - i].extras.cedo) || 0) < PARTIDAS_CONTA_NOVA;
+      const novas = c.extras && c.extras.vitoriasNovas && c.extras.vitoriasNovas.dia === dia ? c.extras.vitoriasNovas : { dia, n: 0 };
+      const tetoNovas = venceu && !amistosa && !cedo && rivalNovo && novas.n >= VITORIAS_NOVAS_DIA;
+      if (venceu && !amistosa && !cedo && rivalNovo && !tetoNovas) novas.n++;
       // amistosa não soma vitória (o desempate do ranking) nem XP: revanche e desistência em loop não sobem ninguém
-      const campos = { partidas: c.partidas + 1, vitorias: c.vitorias + (venceu && !amistosa && !cedo ? 1 : 0) };
-      if (cedo && !amistosa) p.motivo = `Desistência antes da ${MESAS_PARA_VALER}ª Mesa não mexe no rating.`;
-      else if (!amistosa) {
+      const campos = { partidas: c.partidas + 1, vitorias: c.vitorias + (venceu && !amistosa && !cedo && !tetoNovas ? 1 : 0) };
+      if (amistosa) p.motivo = `Vocês já jogaram ${PARTIDAS_POR_PAR} partidas valendo hoje: esta foi amistosa.`;
+      else if (cedo && venceu) p.motivo = `Desistência antes da ${MESAS_PARA_VALER}ª Mesa não mexe no rating de quem fica.`;
+      else if (tetoNovas) p.motivo = `Hoje você já venceu ${VITORIAS_NOVAS_DIA} contas novas valendo: esta não mexe no rating nem rende moedas.`;
+      else {
         campos.rating = Regras.elo(c.rating, ratings[1 - i], venceu ? 1 : 0);
         campos.pico = Math.max(c.pico, campos.rating);
         p.rating = campos.rating;
-      } else p.motivo = `Vocês já jogaram ${PARTIDAS_POR_PAR} partidas valendo hoje: esta foi amistosa.`;
+        if (cedo) p.motivo = `Sair antes da ${MESAS_PARA_VALER}ª Mesa conta como derrota no rating.`;
+      }
       // tarefas do dia (v0.14): amistosa, desistência cedo e quem perdeu por desistência não avançam
-      const dia = new Date(this.agora()).toISOString().slice(0, 10);
-      const valeTarefa = !amistosa && !cedo && !(porDesistencia && !venceu);
+      const valeTarefa = !amistosa && !cedo && !tetoNovas && !(porDesistencia && !venceu);
       const tarefas = Regras.avancarTarefas(c.extras && c.extras.tarefas, dia, valeTarefa ? Regras.resumoTarefas(j, i) : null);
       if (venceu) {
         const m = Regras.moedasDaVitoria(Regras.BASE_MOEDAS.online, j.pts[i] - j.pts[1 - i], j.rodada, j.meta, Regras.ajusteRatingOnline(ratings[i], ratings[1 - i]));
-        if (porDesistencia) { m.total = 0; p.motivo = cedo ? `Desistência antes da ${MESAS_PARA_VALER}ª Mesa: não mexe no rating nem rende moedas.` : 'Vitória por desistência não rende moedas.'; }
-        if (amistosa) m.total = 0;
+        if (porDesistencia) { m.total = 0; if (!tetoNovas) p.motivo = cedo ? `Desistência antes da ${MESAS_PARA_VALER}ª Mesa: não mexe no rating nem rende moedas.` : 'Vitória por desistência não rende moedas.'; }
+        if (amistosa || tetoNovas) m.total = 0;
         Regras.dobrarPrimeiraVitoria(tarefas.estado, m);
         p.moedas = m; moedasDadas = m.total;
       }
       campos.moedas = c.moedas + (p.moedas ? p.moedas.total : 0) + tarefas.moedas;
-      campos.extras = { ...(c.extras || {}), tarefas: tarefas.estado };
+      campos.extras = { ...(c.extras || {}), tarefas: tarefas.estado, vitoriasNovas: novas };
+      if (cedo) campos.extras.cedo = ((c.extras && c.extras.cedo) || 0) + 1;   // para os dois: a partida não valeu para ninguém
       p.tarefas = { concluidas: tarefas.concluidas, moedas: tarefas.moedas };
       const conta = { xp: c.xp, dados: c.dados.slice(), icones: c.icones.slice(), mesas: c.mesas.slice() };
-      const xp = Regras.ganharXp(conta, (porDesistencia && !venceu) || amistosa || cedo ? 0 : Regras.xpDaPartida(venceu, j.momentos.filter(m => m.p === i).length));
+      const xp = Regras.ganharXp(conta, (porDesistencia && !venceu) || amistosa || cedo || tetoNovas ? 0 : Regras.xpDaPartida(venceu, j.momentos.filter(m => m.p === i).length));
       Object.assign(campos, { xp: conta.xp, dados: conta.dados, icones: conta.icones, mesas: conta.mesas });
       Object.assign(p, xp);
       const nova = await this.banco.atualizarConta(c.id, campos);
