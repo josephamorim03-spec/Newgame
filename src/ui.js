@@ -125,7 +125,7 @@
       if (u.gen) { k.strokeStyle = GOLD; k.lineWidth = 3; k.beginPath(); k.ellipse(x, by, rw - 4, rh - 3, 0, 0, 7); k.stroke(); }
       const art = u.gen ? GEN_ART[u.card] : u.card, dir = faceDir(u), sp = FIGS.sprite(art, 256, 320, dir);
       if (tired) k.globalAlpha = alpha * 0.62; k.drawImage(sp, x - w / 2, by - lift - h * 0.885, w, h); k.globalAlpha = alpha;
-      if (art === "mula") FX.paint(k, u.id, FIGS.anchors(art, dir), x - w / 2, by - lift - h * 0.885, w, h, alpha * (tired ? 0.62 : 1), by - lift);
+      FX.paint(k, u.id, FIGS.anchors(art, dir), x - w / 2, by - lift - h * 0.885, w, h, alpha * (tired ? 0.62 : 1), by - lift);
       k.restore(); return;
     }
     const b = Math.max(10, t * 0.16), fs = Math.max(13, Math.round(b * 1.2)); k.font = `${fs}px ${FONT}`; k.textAlign = "center"; k.textBaseline = "middle";
@@ -175,7 +175,7 @@
       if (e.k === "play") { const C = CARDS[e.c]; stats[e.o].played++; const [mx, my] = mid(); float(mx, my, C.name, INK, 24, step(0.15), 1.1); sfx(C.type === "spell" ? "spell" : "card"); if (!human(e.o) || mode === "hot") tell(`${FAC[g.p[e.o].fac].gen} jogou ${C.name}`, C.text, e.c); }
       else if (e.k === "summon") { const t0 = step(0.25); dscale.set(e.id, 0); anims.push({ t0, d: 0.25, f: a => { dscale.set(e.id, a >= 1 ? 1 : 0.4 + 0.6 * ease(a)); if (a >= 1) dscale.delete(e.id); } }); burstAt(e.x, e.y, 10, t0); }
       else if (e.k === "move") { face.set(e.id, [Math.sign(e.x - e.fx), Math.sign(e.y - e.fy)]); const t0 = step(0.26); dpos.set(e.id, { x: e.fx, y: e.fy }); anims.push({ t0, d: 0.26, f: a => { const q = ease(a); dpos.set(e.id, { x: e.fx + (e.x - e.fx) * q, y: e.fy + (e.y - e.fy) * q }); if (a >= 1) dpos.delete(e.id); } });
-        if (snap.get(e.id)?.card === "mula") anims.push({ t0, d: 0.01, f: () => FX.dust(e.id) }); sfx("move", t0); }
+        anims.push({ t0, d: 0.01, f: () => FX.dust(e.id) }); sfx("move", t0); }
       else if (e.k === "swap") { const a = snap.get(e.a), b = snap.get(e.b), t0 = step(0.3); for (const [id, f, to] of [[e.a, a, b], [e.b, b, a]]) { dpos.set(id, { x: f.x, y: f.y }); anims.push({ t0, d: 0.3, f: q => { const z = ease(q); dpos.set(id, { x: f.x + (to.x - f.x) * z, y: f.y + (to.y - f.y) * z - Math.sin(z * Math.PI) * 0.4 }); if (q >= 1) dpos.delete(id); } }); } }
       else if (e.k === "attack" || e.k === "counter") { const a = g.units.find(z => z.id === e.id) || snap.get(e.id), b = g.units.find(z => z.id === e.t) || snap.get(e.t); if (!a || !b) continue;
         face.set(e.id, [Math.sign(b.x - a.x), Math.sign(b.y - a.y)]);

@@ -1,6 +1,6 @@
 # Briefing: melhorar as miniaturas 3D do Peleja
 
-Situação atual: veja `docs/figsheet-antes.png` (15 personagens de frente, lado e costas) e `docs/jogo-antes.png` (no tabuleiro).
+Situação atual: veja `docs/figsheet-depois.png` (15 personagens de frente, lado e costas) e `docs/efeitos-no-tabuleiro.png`. O que já foi feito a partir da Mula está em [`docs/RELATORIO_ASTRA.md`](RELATORIO_ASTRA.md); a seção 3 de lá lista os próximos pedidos.
 
 ## Objetivo
 1. **Formas melhores** nos 15 personagens de `src/figs.js`, mantendo a identidade de cada um.
@@ -20,7 +20,7 @@ Situação atual: veja `docs/figsheet-antes.png` (15 personagens de frente, lado
 
 ## Partículas: arquitetura pedida
 Como os bonecos são imagens fixas, as partículas **não podem** ficar dentro do render 3D:
-1. Em `figs.js`, exporte `FIGS.anchors(id, dir)`. Ela devolve pontos de emissão em pixels da imagem 256×320, para cada direção, por exemplo `{ smoke: [[x, y]], fire: [[x, y], ...], glow: [[x, y]] }`. Calcule-os projetando pontos 3D do modelo com a mesma câmera do `sprite`.
+1. **Já existe.** Em `figs.js`, `FIGS.anchors(id, dir)`. Ela devolve pontos de emissão em pixels da imagem 256×320, para cada direção, por exemplo `{ smoke: [[x, y]], fire: [[x, y], ...], glow: [[x, y]] }`. Calcule-os projetando pontos 3D do modelo com a mesma câmera do `sprite`.
 2. Crie um módulo `FX` em canvas 2D, chamado de `ui.js` dentro de `drawFig`, depois da imagem do boneco:
    - um pool fixo de no máximo **120 partículas** na tela, sem alocar memória por quadro;
    - **fumaça:** sobe, cresce, fica transparente e balança com o vento;
