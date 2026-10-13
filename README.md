@@ -80,3 +80,25 @@ Mudanças feitas a partir da simulação:
 - Testados e **descartados**:
   - Mapinguari com 4 de ataque derrubou a Mata para 32%;
   - Alma penada com 3 de dano desequilibrou para a Mata.
+
+## Regras novas: costas e lado, dia e noite (outubro/2026)
+- **Costas e lado.** Cada peça olha para onde andou ou atacou.
+  - Golpe pelas costas: +1 de dano e sem revide.
+  - De lado: sem revide.
+  - Quem apanha se vira para o agressor.
+  - **A Mata anda em bando:** uma peça da Mata com aliado colado não é pega de lado nem pelas costas.
+- **Dia e noite** trocam a cada 3 rodadas.
+  - De dia, a Mata anda +1.
+  - De noite, as Assombrações têm +1 de ataque (generais não) e o Lobisomem fica em fúria.
+- **Alma penada** causa 3 de dano (antes 4).
+
+Simulação (`REGRAS='{...}' node tools/balanco.js`):
+
+| regras | Mata | Assombrações | turnos por jogador |
+|---|---|---|---|
+| sem as regras novas | 52% | 46% | 11,4 |
+| costas + céu, sem bando | 35% | 65% | 8,3 |
+| **costas + céu + bando + Alma 3 (atual)** | **51%** | **48%** | **8,8** |
+| atual, bot difícil (150 partidas) | 44% | 56% | 9,8 |
+
+As regras novas encurtam a partida em cerca de 23%. Sem o "bando", a facção agressiva dominava.

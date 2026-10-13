@@ -29,7 +29,7 @@ g = mk(); g.cur = 1; b = put(g, 1, 'capelobo', 2, 2, { hp: 2 }); a = put(g, 0, '
 g = mk(); b = put(g, 1, 'corpo', 2, 2); a = put(g, 0, 'onca', 2, 3); const c2 = put(g, 0, 'saci', 1, 3); g.apply({ c: 'attack', id: a.id, x: 2, y: 2 }); T('corpo-seco: último suspiro', c2.hp === 1);
 // feitiços
 g = mk(); g.cur = 1; g.p[1].hand = ['pacto']; g.p[1].deck = ['a', 'b', 'c']; g.apply({ c: 'play', i: 0, x: -1, y: -1 }); T('pacto -2 e +2 cartas', g.gen(1).hp === 18 && g.p[1].hand.length === 2);
-g = mk(); g.cur = 1; b = put(g, 1, 'bicho', 2, 3); a = put(g, 0, 'mapin', 2, 4); g.p[1].hand = ['alma']; g.apply({ c: 'play', i: 0, x: 2, y: 3 }); T('alma: 4 nos vizinhos', a.hp === 3 && !g.units.includes(b));
+g = mk(); g.cur = 1; b = put(g, 1, 'bicho', 2, 3); a = put(g, 0, 'mapin', 2, 4); g.p[1].hand = ['alma']; g.apply({ c: 'play', i: 0, x: 2, y: 3 }); T('alma: 3 nos vizinhos', a.hp === 4 && !g.units.includes(b));
 g = mk(); a = put(g, 0, 'mapin', 2, 4); g.p[0].hand = ['cha']; a.hp = 2; g.apply({ c: 'play', i: 0, x: 2, y: 4 }); T('chá cura 4', a.hp === 6);
 g = mk(); g.p[0].hand = ['arapuca']; g.apply({ c: 'play', i: 0, x: 2, y: 3 }); g.cur = 1; b = put(g, 1, 'lobis', 2, 1); g.apply({ c: 'move', id: b.id, x: 2, y: 3 }); T('arapuca: 3 de dano', b.hp === 0 || !g.units.includes(b));
 g = mk(); g.cur = 1; g.p[1].grave = ['lobis']; g.p[1].hand = ['assomb']; g.apply({ c: 'play', i: 0, x: -1, y: -1 }); T('assombração traz de volta', g.units.some(u => u.card === 'lobis' && u.o === 1));
@@ -46,4 +46,15 @@ g = mk(); g.cur = 1; g.gen(1).hp = 15; a = put(g, 0, 'saci', 0, 3); g.apply({ c:
 g = mk(); a = put(g, 0, 'onca', 2, 3); b = put(g, 1, 'mapin', 2, 2); g.apply({ c: 'attack', id: a.id, x: 2, y: 2 }); T('revide: quem apanha devolve', !g.units.includes(a));
 g = mk(); a = put(g, 0, 'onca', 2, 3); b = put(g, 1, 'mapin', 2, 2, { stunned: 1 }); g.apply({ c: 'attack', id: a.id, x: 2, y: 2 }); T('atordoado não revida', g.units.includes(a));
 g = mk(); b = put(g, 1, 'lobis', 2, 2); g.p[0].hand = ['enraizar']; g.apply({ c: 'play', i: 0, x: 2, y: 2 }); T('enraizar: 1 de dano e preso', b.hp === 2 && b.rooted === 1);
+// costas e lado
+g = mk(); a = put(g, 0, 'onca', 2, 3); b = put(g, 1, 'mapin', 2, 2, { f: [0, -1] }); g.apply({ c: 'attack', id: a.id, x: 2, y: 2 }); T('costas: +1 de dano e sem revide', b.hp === 3 && g.units.includes(a));
+g = mk(); a = put(g, 0, 'onca', 2, 3); b = put(g, 1, 'mapin', 3, 3, { f: [0, 1] }); g.apply({ c: 'attack', id: a.id, x: 3, y: 3 }); T('lado: sem revide, dano normal', b.hp === 4 && g.units.includes(a) && a.hp === 2);
+g = mk(); a = put(g, 0, 'onca', 2, 3); b = put(g, 1, 'mapin', 2, 2, { f: [0, 1] }); g.apply({ c: 'attack', id: a.id, x: 2, y: 2 }); T('frente: revida como antes', !g.units.includes(a));
+g = mk(); a = put(g, 0, 'onca', 2, 3); b = put(g, 1, 'mapin', 3, 3, { f: [0, 1] }); g.apply({ c: 'attack', id: a.id, x: 3, y: 3 }); T('quem apanha se vira', b.f[0] === -1 && b.f[1] === 0);
+g = mk(); a = put(g, 0, 'onca', 2, 4); g.apply({ c: 'move', id: a.id, x: 3, y: 4 }); T('andar vira a peça', a.f[0] === 1 && a.f[1] === 0);
+// céu
+g = mk(); T('rodada 1 é dia', g.sky() === 'dia'); a = put(g, 0, 'onca', 2, 4); T('dia: Mata anda +1', g.moves(a).some(([x, y]) => Math.abs(x - 2) + Math.abs(y - 4) === 3));
+g = mk(); g.turn = 7; T('rodada 4 é noite', g.sky() === 'noite'); b = put(g, 1, 'corpo', 2, 2); T('noite: Assombrações +1 de ataque', g.atkOf(b) === 3);
+b = put(g, 1, 'lobis', 3, 2); T('lua: Lobisomem em fúria sem ferida', g.atkOf(b) === 3 + 2 + 1); T('noite: general não ganha ataque', g.atkOf(g.gen(1)) === 2);
+g = mk(); a = put(g, 1, 'lobis', 2, 3); b = put(g, 0, 'mapin', 2, 2, { f: [0, -1] }); put(g, 0, 'saci', 1, 2); g.cur = 1; g.apply({ c: 'attack', id: a.id, x: 2, y: 2 }); T('bando: Mata com aliado colado não é pega pelas costas', b.hp === 4 && !g.units.includes(a));
 console.log(`${ok} ok, ${fail} falhas`);

@@ -19,6 +19,8 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;touch-
 button:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
 .bar{display:flex;align-items:center;gap:8px;padding:6px 10px}
 #topBar{background:#FCE3DF;border-bottom:3px solid var(--foe)}
+#sky{font-family:var(--body);font-weight:900;font-size:13px;padding:3px 8px;border-radius:12px;border:2px solid var(--ink);white-space:nowrap}
+#sky.dia{background:#FFE9A8}#sky.noite{background:#2F3A57;color:#fff}
 #myBar{margin:6px 8px 0;padding:6px 8px;border-radius:14px;border:2px solid transparent;transition:background .2s}
 #myBar.turn{background:#DCE8FA;border-color:var(--you)}
 #topBar{transition:background .2s}
@@ -104,6 +106,7 @@ thead th{border-top:0;font-family:var(--slab);font-weight:400}
 <div id="app">
   <div class="bar" id="topBar">
     <div class="who"><canvas id="oPor" width="68" height="68"></canvas><div><b id="oName"></b><small id="oInfo"></small></div></div>
+    <span id="sky" aria-live="polite"></span>
     <div class="mana" id="oMana"></div>
     <div class="hp" id="oHp"></div>
     <button class="btn" id="bMenu" aria-label="Menu" style="min-width:40px;padding:0">≡</button>
@@ -148,6 +151,8 @@ thead th{border-top:0;font-family:var(--slab);font-weight:400}
           <li>Unidades entram ao lado do seu general ou de outra unidade sua, e só agem no turno seguinte.</li>
           <li>No seu turno, cada peça anda até 2 casas e depois ataca uma vizinha. Quem apanha revida. Antes de atacar, a etiqueta no alvo mostra o resultado.</li>
           <li>O chão muda a cada partida: <b>mata fechada</b> protege (−1 de dano), <b>rio</b> não deixa passar a pé e a <b>encruzilhada</b> dá +1 de mana a quem ficar nela.</li>
+          <li><b>Costas e lado:</b> cada peça olha para onde andou ou atacou. Golpe <b>pelas costas</b> causa +1 de dano e não leva revide; <b>de lado</b>, não leva revide. Quem apanha se vira para o agressor. A Mata anda em bando: peça da Mata com aliado colado não é pega de lado nem pelas costas.</li>
+          <li><b>Dia e noite</b> (☀️/🌙 no topo) trocam a cada 3 rodadas. De dia a Mata anda 1 casa a mais; de noite as Assombrações têm +1 de ataque e o Lobisomem fica em fúria.</li>
           <li>O general tem um poder com recarga. Passe o turno quando acabar.</li>
         </ol>
         <label class="tog"><input type="checkbox" id="optSound" checked> Som</label>
@@ -202,12 +207,12 @@ const CD = (() => {
     // Assombrações
     corpo: { name: "Corpo-seco", fac: "assom", type: "unit", cost: 1, atk: 2, hp: 1, text: "Último suspiro: 1 de dano em todos os inimigos vizinhos.", lastBreath: 1 },
     bicho: { name: "Bicho-papão", fac: "assom", type: "unit", cost: 2, atk: 2, hp: 3, text: "Guardião: inimigos vizinhos não podem andar e só podem atacá-lo.", guard: true },
-    lobis: { name: "Lobisomem", fac: "assom", type: "unit", cost: 3, atk: 3, hp: 3, text: "Fúria: +2 de ataque enquanto estiver ferido.", fury: 2 },
+    lobis: { name: "Lobisomem", fac: "assom", type: "unit", cost: 3, atk: 3, hp: 3, text: "Fúria: +2 de ataque enquanto estiver ferido — e a noite toda, sob a lua.", fury: 2, moon: true },
     pisa: { name: "Pisadeira", fac: "assom", type: "unit", cost: 3, atk: 2, hp: 2, text: "Ao entrar: atordoa o inimigo vizinho mais forte (não anda nem ataca no próximo turno).", onEnter: "stunOne" },
     mula: { name: "Mula-sem-cabeça", fac: "assom", type: "unit", cost: 4, atk: 4, hp: 3, text: "Rápida. Galope: anda até 3 casas.", rush: true, move: 3 },
     capelobo: { name: "Capelobo", fac: "assom", type: "unit", cost: 5, atk: 5, hp: 5, text: "Ao destruir uma unidade atacando, recupera toda a vida.", feast: true },
     pacto: { name: "Pacto", fac: "assom", type: "spell", cost: 0, target: "none", text: "Seu general perde 2 de vida. Compre 2 cartas." },
-    alma: { name: "Alma penada", fac: "assom", type: "spell", cost: 1, target: "allyUnit", text: "Destrói uma unidade sua: causa 4 de dano em cada inimigo vizinho a ela." },
+    alma: { name: "Alma penada", fac: "assom", type: "spell", cost: 1, target: "allyUnit", text: "Destrói uma unidade sua: causa 3 de dano em cada inimigo vizinho a ela." },
     grito: { name: "Grito da noite", fac: "assom", type: "spell", cost: 2, target: "enemy", text: "Causa 2 de dano a uma unidade ou general inimigo." },
     assomb: { name: "Assombração", fac: "assom", type: "spell", cost: 3, target: "none", text: "Traz de volta a última unidade sua que morreu, ao lado do seu general." },
   };
@@ -230,7 +235,7 @@ const CD = (() => {
 
   class Game {
     constructor(opt = {}) {
-      const R = rng(opt.seed ?? 1); this.uid = 1; this.units = []; this.traps = []; this.ev = []; this.over = false; this.winner = null; this.turn = 1; this.cur = 0;
+      const R = rng(opt.seed ?? 1); this.rules = { costas: opt.costas ?? true, ceu: opt.ceu ?? true, lado: opt.lado ?? "livre", fase: opt.fase ?? 3, diaAtk: opt.diaAtk ?? false, bando: opt.bando ?? true }; this.uid = 1; this.units = []; this.traps = []; this.ev = []; this.over = false; this.winner = null; this.turn = 1; this.cur = 0;
       this.p = [0, 1].map(o => { const fac = (opt.fac || ["mata", "assom"])[o], F = FACTIONS[fac], deck = [];
         for (const c of F.deck) deck.push(c, c); for (let i = deck.length - 1; i > 0; i--) { const j = Math.floor(R() * (i + 1)); [deck[i], deck[j]] = [deck[j], deck[i]]; }
         return { fac, deck, hand: [], mana: 0, max: 0, cd: 0, grave: [], fatigue: 0 }; });
@@ -239,7 +244,7 @@ const CD = (() => {
       const cand = []; for (let y = 1; y <= 2; y++) for (let x = 0; x < BW; x++) if (Math.max(Math.abs(x - 2), y) > 1) cand.push([x, y]);
       for (let i = cand.length - 1; i > 0; i--) { const j = Math.floor(R() * (i + 1)); [cand[i], cand[j]] = [cand[j], cand[i]]; }
       put(...cand[0], "rio"); put(...cand[1], "mata"); put(...cand[2], "mata");
-      for (const o of [0, 1]) { this.units.push({ id: this.uid++, o, gen: true, card: FACTIONS[this.p[o].fac].gen, atk: 2, hp: GEN_HP, max: GEN_HP, x: 2, y: o === 0 ? BH - 1 : 0, moved: false, acted: false, sick: false, rooted: 0, stunned: 0 });
+      for (const o of [0, 1]) { this.units.push({ id: this.uid++, o, gen: true, card: FACTIONS[this.p[o].fac].gen, atk: 2, hp: GEN_HP, max: GEN_HP, x: 2, y: o === 0 ? BH - 1 : 0, f: [0, o === 0 ? -1 : 1], moved: false, acted: false, sick: false, rooted: 0, stunned: 0 });
         for (let i = 0; i < (o === 0 ? 3 : 4); i++) this.draw(o); }
       this.startTurn(0);
     }
@@ -250,13 +255,21 @@ const CD = (() => {
     at(x, y) { return this.units.find(u => u.x === x && u.y === y && u.hp > 0); }
     gen(o) { return this.units.find(u => u.gen && u.o === o); }
     U(u) { return u.gen ? null : CARDS[u.card]; }
-    atkOf(u) { const C = this.U(u); return u.atk + (C && C.fury && u.hp < u.max ? C.fury : 0); }
+    // céu: dia nas rodadas 1–3, noite nas 4–6, e assim por diante (rodada = um turno de cada jogador)
+    round() { return Math.ceil(this.turn / 2); }
+    sky() { return this.rules.ceu && Math.floor((this.round() - 1) / this.rules.fase) % 2 ? "noite" : "dia"; }
+    skyLeft() { return this.rules.fase - (this.round() - 1) % this.rules.fase; }
+    night(u) { return this.rules.ceu && this.sky() === "noite" && !u.gen && this.p[u.o].fac === "assom"; }
+    day(u) { return this.rules.ceu && this.sky() === "dia" && this.p[u.o].fac === "mata"; }
+    atkOf(u) { const C = this.U(u), dayAtk = this.rules.diaAtk && this.day(u) && !u.gen ? 1 : 0, fury = C && C.fury && (u.hp < u.max || (C.moon && this.rules.ceu && this.sky() === "noite")); return u.atk + (fury ? C.fury : 0) + (this.night(u) ? 1 : 0) + dayAtk; }
+    // de onde vem o golpe, pelo lado para onde o defensor olha: frente, lado ou costas
+    flank(a, t) { if (!this.rules.costas || !t.f) return "frente"; if (this.rules.bando && this.p[t.o].fac === "mata" && this.units.some(v => v !== t && v.hp > 0 && v.o === t.o && cheb(v, t) === 1)) return "frente"; const d = t.f[0] * Math.sign(a.x - t.x) + t.f[1] * Math.sign(a.y - t.y); return d > 0 || (d === 0 && this.rules.lado === "revida") ? (d > 0 ? "frente" : "lado") : d === 0 ? "lado" : "costas"; }
     mine(o) { return this.units.filter(u => u.o === o && u.hp > 0); }
     guardedBy(u) { return this.units.filter(g => g.o !== u.o && g.hp > 0 && !g.gen && CARDS[g.card].guard && cheb(g, u) === 1); }
     canMove(u) { return u.o === this.cur && !u.moved && !u.acted && !u.sick && !u.rooted && !u.stunned && !this.guardedBy(u).length; }
     canAttack(u) { return u.o === this.cur && !u.acted && !u.sick && !u.stunned && this.atkOf(u) > 0; }
-    moves(u) { if (!this.canMove(u)) return []; const C = this.U(u), range = (C && C.move) || 2, out = [];
-      if (C && C.fly) { for (let y = 0; y < BH; y++) for (let x = 0; x < BW; x++) if (!this.at(x, y) && this.ter(x, y) !== "rio" && Math.abs(x - u.x) + Math.abs(y - u.y) <= 3 && (x !== u.x || y !== u.y)) out.push([x, y]); return out; }
+    moves(u) { if (!this.canMove(u)) return []; const C = this.U(u), bonus = this.day(u) && !this.rules.diaAtk ? 1 : 0, range = ((C && C.move) || 2) + bonus, out = [];
+      if (C && C.fly) { for (let y = 0; y < BH; y++) for (let x = 0; x < BW; x++) if (!this.at(x, y) && this.ter(x, y) !== "rio" && Math.abs(x - u.x) + Math.abs(y - u.y) <= 3 + bonus && (x !== u.x || y !== u.y)) out.push([x, y]); return out; }
       const seen = new Set([u.x + "," + u.y]); let fr = [[u.x, u.y]];
       for (let s = 0; s < range; s++) { const nf = []; for (const [x, y] of fr) for (const [dx, dy] of D4) { const nx = x + dx, ny = y + dy, k = nx + "," + ny; if (!inb(nx, ny) || seen.has(k) || this.ter(nx, ny) === "rio") continue; seen.add(k); const o = this.at(nx, ny);
           if (o && o.o !== u.o) continue; nf.push([nx, ny]); if (!o) out.push([nx, ny]); } fr = nf; }
@@ -277,7 +290,8 @@ const CD = (() => {
     startTurn(o) { this.cur = o; const P = this.p[o]; P.max = Math.min(MAX_MANA, P.max + (P.max === 0 ? 2 : 1)); P.mana = P.max; if (P.cd > 0) P.cd--;
       for (const u of this.mine(o)) { u.moved = false; u.acted = false; u.sick = false; }
       for (const u of this.mine(o)) if (this.ter(u.x, u.y) === "encru") { P.mana++; this.e({ k: "cross", o, x: u.x, y: u.y }); }
-      if (this.turn > 1) this.draw(o); this.e({ k: "turn", o, turn: this.turn }); }
+      if (this.turn > 1) this.draw(o); this.e({ k: "turn", o, turn: this.turn });
+      if (this.rules.ceu && o === 0 && this.turn > 1 && (this.round() - 1) % this.rules.fase === 0) this.e({ k: "sky", sky: this.sky() }); }
     endTurn() { if (this.over) return; const o = this.cur;
       for (const u of this.mine(o)) { const C = this.U(u); if (C && C.endHeal) for (const a of this.mine(o)) if (cheb(a, u) === 1 && a.hp < a.max) { a.hp = Math.min(a.max, a.hp + C.endHeal); this.e({ k: "heal", id: a.id, n: C.endHeal }); } }
       for (const u of this.mine(o)) { if (u.rooted) u.rooted--; if (u.stunned) u.stunned--; }
@@ -303,17 +317,18 @@ const CD = (() => {
         else { this.hurt(t, 1, G); if (G.hp < G.max) { G.hp = Math.min(G.max, G.hp + 1); this.e({ k: "heal", id: G.id, n: 1 }); } }
         this.reap(); return true; }
       const u = this.units.find(z => z.id === c.id && z.hp > 0); if (!u || u.o !== o) return false;
-      if (c.c === "move") { if (!this.moves(u).some(([x, y]) => x === c.x && y === c.y)) return false; const fx = u.x, fy = u.y; u.x = c.x; u.y = c.y; u.moved = true; this.e({ k: "move", id: u.id, fx, fy, x: c.x, y: c.y }); this.trap(u); this.reap(); return true; }
+      if (c.c === "move") { if (!this.moves(u).some(([x, y]) => x === c.x && y === c.y)) return false; const fx = u.x, fy = u.y; u.f = [Math.sign(c.x - fx), Math.sign(c.y - fy)]; u.x = c.x; u.y = c.y; u.moved = true; this.e({ k: "move", id: u.id, fx, fy, x: c.x, y: c.y }); this.trap(u); this.reap(); return true; }
       if (c.c === "attack") { const t = this.attacks(u).find(z => z.x === c.x && z.y === c.y); if (!t) return false; u.acted = true; u.moved = true; this.fight(u, t); this.reap(); return true; }
       return false;
     }
     blow(v, n) { if (n > 1 && this.ter(v.x, v.y) === "mata") { this.e({ k: "cover", id: v.id, x: v.x, y: v.y }); return n - 1; } return n; }
-    fight(a, t) { const A = this.U(a), T = this.U(t); this.e({ k: "attack", id: a.id, t: t.id });
-      this.hurt(t, this.blow(t, this.atkOf(a)), a); if (A && A.venom && !t.gen && t.hp > 0) { t.hp = 0; this.e({ k: "venom", id: t.id }); }
-      if (t.hp > 0 && !t.stunned) { this.e({ k: "counter", id: t.id, t: a.id }); this.hurt(a, this.blow(a, this.atkOf(t)), t); if (T && T.venom && !a.gen && a.hp > 0) { a.hp = 0; this.e({ k: "venom", id: a.id }); } }
+    fight(a, t) { const A = this.U(a), T = this.U(t), fl = this.flank(a, t); a.f = [Math.sign(t.x - a.x), Math.sign(t.y - a.y)]; this.e({ k: "attack", id: a.id, t: t.id, flank: fl });
+      this.hurt(t, this.blow(t, this.atkOf(a) + (fl === "costas" ? 1 : 0)), a); if (A && A.venom && !t.gen && t.hp > 0) { t.hp = 0; this.e({ k: "venom", id: t.id }); }
+      if (t.hp > 0) t.f = [Math.sign(a.x - t.x), Math.sign(a.y - t.y)]; // quem apanha se vira para o agressor
+      if (t.hp > 0 && !t.stunned && (fl === "frente" || (fl === "lado" && this.rules.lado === "revida"))) { this.e({ k: "counter", id: t.id, t: a.id }); this.hurt(a, this.blow(a, this.atkOf(t)), t); if (T && T.venom && !a.gen && a.hp > 0) { a.hp = 0; this.e({ k: "venom", id: a.id }); } }
       if (A && A.feast && t.hp <= 0 && !t.gen && a.hp > 0) { a.hp = a.max; this.e({ k: "heal", id: a.id, n: a.max }); } }
     trap(u) { const i = this.traps.findIndex(t => t.x === u.x && t.y === u.y && t.o !== u.o); if (i < 0) return; this.traps.splice(i, 1); this.e({ k: "trap", x: u.x, y: u.y }); this.hurt(u, 3, null); }
-    summon(o, id, x, y) { const C = CARDS[id], u = { id: this.uid++, o, card: id, atk: C.atk, hp: C.hp, max: C.hp, x, y, moved: false, acted: false, sick: !C.rush, rooted: 0, stunned: 0 }; this.units.push(u); this.e({ k: "summon", id: u.id, x, y });
+    summon(o, id, x, y) { const C = CARDS[id], u = { id: this.uid++, o, card: id, atk: C.atk, hp: C.hp, max: C.hp, x, y, f: [0, o === 0 ? -1 : 1], moved: false, acted: false, sick: !C.rush, rooted: 0, stunned: 0 }; this.units.push(u); this.e({ k: "summon", id: u.id, x, y });
       this.trap(u);
       if (C.onEnter === "draw") this.draw(o);
       if (C.onEnter === "rootAround") for (const v of this.units) if (v.hp > 0 && v.o !== o && cheb(v, u) === 1) { v.rooted = 1; this.e({ k: "root", id: v.id }); }
@@ -323,7 +338,7 @@ const CD = (() => {
       else if (id === "cha") { const n = Math.min(4, t.max - t.hp); t.hp += n; this.e({ k: "heal", id: t.id, n: 4 }); }
       else if (id === "arapuca") this.traps.push({ o, x, y });
       else if (id === "pacto") { this.hurt(this.gen(o), 2, null); this.draw(o, 2); }
-      else if (id === "alma") { const vs = this.units.filter(v => v.hp > 0 && v.o !== o && cheb(v, t) === 1); t.hp = 0; this.e({ k: "sacrifice", id: t.id }); for (const v of vs) this.hurt(v, 4, t); }
+      else if (id === "alma") { const vs = this.units.filter(v => v.hp > 0 && v.o !== o && cheb(v, t) === 1); t.hp = 0; this.e({ k: "sacrifice", id: t.id }); for (const v of vs) this.hurt(v, 3, t); }
       else if (id === "grito") this.hurt(t, 2, null);
       else if (id === "assomb") { const cid = P.grave.pop(), G = this.gen(o); const spots = D8.map(([dx, dy]) => [G.x + dx, G.y + dy]).filter(([a, b]) => inb(a, b) && !this.at(a, b) && this.ter(a, b) !== "rio").sort((a, b) => (o === 0 ? a[1] - b[1] : b[1] - a[1]) || a[0] - b[0]);
         if (spots.length) this.summon(o, cid, spots[0][0], spots[0][1]); else P.grave.push(cid); }
@@ -344,6 +359,7 @@ const CD = (() => {
     for (const u of g.units) { if (u.gen || u.hp <= 0) continue; const v = g.atkOf(u) * 1.5 + u.hp + (CARDS[u.card].guard ? 2 : 0) + (CARDS[u.card].venom ? 2 : 0) + 1.5; const enemyG = g.gen(1 - u.o);
       s += (u.o === o ? 1 : -1) * (v + Math.max(0, 4 - cheb(u, enemyG)) * 0.6); }
     for (const u of g.units) if (u.o !== o && u.hp > 0 && cheb(u, me) <= 3 && !u.gen) s -= g.atkOf(u) * 0.8 * P.threat;
+    if (g.rules.costas) for (const m of g.units) { if (m.hp <= 0) continue; for (const e of g.units) if (e.o !== m.o && e.hp > 0 && cheb(e, m) === 1) { const fl = g.flank(e, m); if (fl !== "frente") s += (m.o === o ? -1 : 1) * (fl === "costas" ? 1.6 : 0.8); } }
     for (const u of g.units) { if (u.hp <= 0) continue; const tt = g.ter(u.x, u.y); if (tt === "encru") s += (u.o === o ? 1 : -1) * 2.2; else if (tt === "mata" && !u.gen) s += (u.o === o ? 1 : -1) * 0.6; }
     s += (g.p[o].hand.length - g.p[1 - o].hand.length) * 0.8 + (g.traps.filter(t => t.o === o).length) * 1.2;
     return s;
@@ -1316,6 +1332,7 @@ const ART = (() => {
       k.fillStyle = (x + y) % 2 ? "#F1E6CC" : "#FAF3E3"; k.fillRect(px, py, t, t);
       if (tr) k.drawImage(ART.img("ter_" + tr, 128), px, py, t, t);
       k.strokeStyle = "rgba(42,30,22,0.13)"; k.lineWidth = 1; k.strokeRect(px + 0.5, py + 0.5, t - 1, t - 1); }
+    if (g.sky() === "noite") { k.fillStyle = "rgba(40,52,130,0.16)"; k.fillRect(view.ox, view.oy, t * BW, t * BH); }
     // meio do campo
     k.strokeStyle = "rgba(42,30,22,0.25)"; k.lineWidth = 2; k.setLineDash([6, 6]); k.beginPath(); k.moveTo(view.ox, view.oy + 3.5 * t); k.lineTo(view.ox + BW * t, view.oy + 3.5 * t); k.stroke(); k.setLineDash([]);
     k.restore();
@@ -1350,12 +1367,12 @@ const ART = (() => {
     k.fillStyle = "rgba(42,30,22,0.3)"; rrect(k, x - w / 2 + 1, y - h / 2 + 3, w, h, 9); k.fill(); k.fillStyle = "#FFFFFF"; rrect(k, x - w / 2, y - h / 2, w, h, 9); k.fill(); k.strokeStyle = INK; k.lineWidth = 2; k.stroke();
     k.textAlign = "center"; k.textBaseline = "middle"; const big = Math.max(14, Math.round(t * 0.21)), small = Math.max(10, Math.round(t * 0.135));
     k.font = `${big}px ${FONT}`; k.fillStyle = FOE; k.fillText(pr.kills ? "☠ derruba" : "−" + pr.dealt, x, y - h * 0.17);
-    k.font = `800 ${small}px Nunito, sans-serif`; k.fillStyle = pr.dies ? FOE : "#5A4D40"; k.fillText(pr.dies ? "e você cai ☠" : pr.taken ? `revida −${pr.taken}` : "sem revide", x, y + h * 0.26); k.restore(); }
+    k.font = `800 ${small}px Nunito, sans-serif`; k.fillStyle = pr.dies ? FOE : "#5A4D40"; k.fillText(pr.dies ? "e você cai ☠" : pr.fl === "costas" ? "pelas costas · +1" : pr.fl === "lado" ? "de lado · sem revide" : pr.taken ? `revida −${pr.taken}` : "sem revide", x, y + h * 0.26); k.restore(); }
   function predict(u) { const key = u.id + ":" + ver; if (pv.key === key) return pv.list; const list = [];
     for (const t of g.attacks(u)) { const h = g.clone(); h.apply({ c: "attack", id: u.id, x: t.x, y: t.y }); const ta = h.units.find(z => z.id === t.id), ua = h.units.find(z => z.id === u.id);
-      list.push({ x: t.x, y: t.y, dealt: t.hp - Math.max(0, ta ? ta.hp : 0), kills: !ta || ta.hp <= 0, taken: Math.max(0, u.hp - Math.max(0, ua ? ua.hp : 0)), dies: !ua || ua.hp <= 0 }); }
+      list.push({ x: t.x, y: t.y, fl: g.flank(u, t), dealt: t.hp - Math.max(0, ta ? ta.hp : 0), kills: !ta || ta.hp <= 0, taken: Math.max(0, u.hp - Math.max(0, ua ? ua.hp : 0)), dies: !ua || ua.hp <= 0 }); }
     pv.key = key; pv.list = list; return list; }
-  function faceDir(u) { const f = face.get(u.id) || (u.o === 0 ? [0, -1] : [0, 1]); return FIGS.dirOf(viewer === 0 ? f[0] : -f[0], viewer === 0 ? f[1] : -f[1]); }
+  function faceDir(u) { const f = u.f || face.get(u.id) || (u.o === 0 ? [0, -1] : [0, 1]); return FIGS.dirOf(viewer === 0 ? f[0] : -f[0], viewer === 0 ? f[1] : -f[1]); }
   // caixa dos pixels visíveis de cada imagem de boneco (para caber inteiro na própria casa)
   const boxes = new WeakMap(), refH = new Map();
   function figBox(sp) { let b = boxes.get(sp); if (b) return b; const d = sp.getContext("2d").getImageData(0, 0, sp.width, sp.height).data; let x0 = sp.width, y0 = sp.height, x1 = 0, y1 = 0;
@@ -1436,7 +1453,7 @@ const ART = (() => {
         anims.push({ t0, d: 0.01, f: () => FX.dust(e.id) }); sfx("move", t0); }
       else if (e.k === "swap") { const a = snap.get(e.a), b = snap.get(e.b), t0 = step(0.3); for (const [id, f, to] of [[e.a, a, b], [e.b, b, a]]) { dpos.set(id, { x: f.x, y: f.y }); anims.push({ t0, d: 0.3, f: q => { const z = ease(q); dpos.set(id, { x: f.x + (to.x - f.x) * z, y: f.y + (to.y - f.y) * z - Math.sin(z * Math.PI) * 0.4 }); if (q >= 1) dpos.delete(id); } }); } }
       else if (e.k === "attack" || e.k === "counter") { const a = g.units.find(z => z.id === e.id) || snap.get(e.id), b = g.units.find(z => z.id === e.t) || snap.get(e.t); if (!a || !b) continue;
-        face.set(e.id, [Math.sign(b.x - a.x), Math.sign(b.y - a.y)]);
+        if (e.k === "attack" && e.flank && e.flank !== "frente") float(SX(b.x, b.y), SY(b.x, b.y) - view.t * 0.42, e.flank === "costas" ? "PELAS COSTAS!" : "DE LADO!", "#7A3FB0", 17, tc, 1.1);
         const big = e.k === "attack", D = big ? 0.46 : 0.36, hit = D * 0.5, t0 = step(hit), dx = b.x - a.x, dy = b.y - a.y, reach = big ? 0.55 : 0.42;
         anims.push({ t0, d: D, f: q => { const z = q < 0.3 ? -0.14 * ease(q / 0.3) : q < 0.5 ? -0.14 + (reach + 0.14) * ((q - 0.3) / 0.2) ** 2 : reach * (1 - ease((q - 0.5) / 0.5)); dpos.set(e.id, { x: a.x + dx * z, y: a.y + dy * z }); if (q >= 1) dpos.delete(e.id); } });
         anims.push({ t0: t0 + hit, d: 0.22, f: q => { const z = Math.sin(Math.min(1, q) * Math.PI) * 0.12 * (1 - q); if (g.units.some(u => u.id === e.t)) dpos.set(e.t, { x: b.x + dx * z, y: b.y + dy * z }); if (q >= 1) dpos.delete(e.t); } });
@@ -1457,6 +1474,7 @@ const ART = (() => {
       else if (e.k === "fatigue") { const [mx, my] = mid(); float(mx, my, "Baralho vazio: −" + e.n, "#B3301E", 20, step(0.2), 1.2); }
       else if (e.k === "burn") { if (human(e.o)) tell("Mão cheia", `${CARDS[e.c].name} foi descartada.`, e.c); }
       else if (e.k === "turn") step(0.1);
+      else if (e.k === "sky") { const n = e.sky === "noite"; tell(n ? "🌙 Anoiteceu" : "☀️ Amanheceu", n ? "Assombrações +1 de ataque. Lobisomem em fúria sob a lua." : "A Mata anda 1 casa a mais.", null, 3200); sfx(n ? "lose" : "win", tc); }
     }
     ver++; busyUntil = Math.max(busyUntil, tc + 0.05); anims.push({ t0: tc, d: 0.01, f: () => { dhp.clear(); refresh(); } });
     if (g.cur !== turnBefore) onTurnChange();
@@ -1531,6 +1549,7 @@ const ART = (() => {
     $("oName").dataset.turn = foeTurn ? (mode === "bot" ? "jogando…" : "vez dele") : ""; const me = viewer, op = 1 - me, PM = g.p[me], PO = g.p[op];
     const gm = g.gen(me), go = g.gen(op); $("mHp").innerHTML = HEART + (gm ? Math.max(0, gm.hp) : 0); $("oHp").innerHTML = HEART + (go ? Math.max(0, go.hp) : 0);
     manaEl($("mMana"), PM, true); manaEl($("oMana"), PO, false);
+    if (g.rules.ceu) { const n = g.sky() === "noite", left = g.skyLeft(); $("sky").textContent = (n ? "🌙 " : "☀️ ") + left; $("sky").className = n ? "noite" : "dia"; $("sky").title = `${n ? "Noite" : "Dia"}: muda em ${left} rodada(s)`; }
     $("oName").textContent = FAC[PO.fac].gen; $("oInfo").textContent = `${PO.hand.length} na mão · ${PO.deck.length} no baralho`;
     const oc = $("oPor").getContext("2d"); oc.clearRect(0, 0, 68, 68); oc.drawImage(ART.token(GEN_ART[FAC[PO.fac].gen], 68), 0, 0);
     const pw = FAC[PM.fac].power, myTurn = g.cur === me && human(me) && !g.over; $("bPow").innerHTML = ""; const pc = document.createElement("canvas"); pc.width = pc.height = 44; pc.getContext("2d").drawImage(ART.token(GEN_ART[FAC[PM.fac].gen], 44), 0, 0); $("bPow").appendChild(pc);

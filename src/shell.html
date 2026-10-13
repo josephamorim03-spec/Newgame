@@ -19,6 +19,8 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;touch-
 button:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
 .bar{display:flex;align-items:center;gap:8px;padding:6px 10px}
 #topBar{background:#FCE3DF;border-bottom:3px solid var(--foe)}
+#sky{font-family:var(--body);font-weight:900;font-size:13px;padding:3px 8px;border-radius:12px;border:2px solid var(--ink);white-space:nowrap}
+#sky.dia{background:#FFE9A8}#sky.noite{background:#2F3A57;color:#fff}
 #myBar{margin:6px 8px 0;padding:6px 8px;border-radius:14px;border:2px solid transparent;transition:background .2s}
 #myBar.turn{background:#DCE8FA;border-color:var(--you)}
 #topBar{transition:background .2s}
@@ -104,6 +106,7 @@ thead th{border-top:0;font-family:var(--slab);font-weight:400}
 <div id="app">
   <div class="bar" id="topBar">
     <div class="who"><canvas id="oPor" width="68" height="68"></canvas><div><b id="oName"></b><small id="oInfo"></small></div></div>
+    <span id="sky" aria-live="polite"></span>
     <div class="mana" id="oMana"></div>
     <div class="hp" id="oHp"></div>
     <button class="btn" id="bMenu" aria-label="Menu" style="min-width:40px;padding:0">≡</button>
@@ -148,6 +151,8 @@ thead th{border-top:0;font-family:var(--slab);font-weight:400}
           <li>Unidades entram ao lado do seu general ou de outra unidade sua, e só agem no turno seguinte.</li>
           <li>No seu turno, cada peça anda até 2 casas e depois ataca uma vizinha. Quem apanha revida. Antes de atacar, a etiqueta no alvo mostra o resultado.</li>
           <li>O chão muda a cada partida: <b>mata fechada</b> protege (−1 de dano), <b>rio</b> não deixa passar a pé e a <b>encruzilhada</b> dá +1 de mana a quem ficar nela.</li>
+          <li><b>Costas e lado:</b> cada peça olha para onde andou ou atacou. Golpe <b>pelas costas</b> causa +1 de dano e não leva revide; <b>de lado</b>, não leva revide. Quem apanha se vira para o agressor. A Mata anda em bando: peça da Mata com aliado colado não é pega de lado nem pelas costas.</li>
+          <li><b>Dia e noite</b> (☀️/🌙 no topo) trocam a cada 3 rodadas. De dia a Mata anda 1 casa a mais; de noite as Assombrações têm +1 de ataque e o Lobisomem fica em fúria.</li>
           <li>O general tem um poder com recarga. Passe o turno quando acabar.</li>
         </ol>
         <label class="tog"><input type="checkbox" id="optSound" checked> Som</label>

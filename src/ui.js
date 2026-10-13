@@ -70,6 +70,7 @@
       k.fillStyle = (x + y) % 2 ? "#F1E6CC" : "#FAF3E3"; k.fillRect(px, py, t, t);
       if (tr) k.drawImage(ART.img("ter_" + tr, 128), px, py, t, t);
       k.strokeStyle = "rgba(42,30,22,0.13)"; k.lineWidth = 1; k.strokeRect(px + 0.5, py + 0.5, t - 1, t - 1); }
+    if (g.sky() === "noite") { k.fillStyle = "rgba(40,52,130,0.16)"; k.fillRect(view.ox, view.oy, t * BW, t * BH); }
     // meio do campo
     k.strokeStyle = "rgba(42,30,22,0.25)"; k.lineWidth = 2; k.setLineDash([6, 6]); k.beginPath(); k.moveTo(view.ox, view.oy + 3.5 * t); k.lineTo(view.ox + BW * t, view.oy + 3.5 * t); k.stroke(); k.setLineDash([]);
     k.restore();
@@ -104,12 +105,12 @@
     k.fillStyle = "rgba(42,30,22,0.3)"; rrect(k, x - w / 2 + 1, y - h / 2 + 3, w, h, 9); k.fill(); k.fillStyle = "#FFFFFF"; rrect(k, x - w / 2, y - h / 2, w, h, 9); k.fill(); k.strokeStyle = INK; k.lineWidth = 2; k.stroke();
     k.textAlign = "center"; k.textBaseline = "middle"; const big = Math.max(14, Math.round(t * 0.21)), small = Math.max(10, Math.round(t * 0.135));
     k.font = `${big}px ${FONT}`; k.fillStyle = FOE; k.fillText(pr.kills ? "☠ derruba" : "−" + pr.dealt, x, y - h * 0.17);
-    k.font = `800 ${small}px Nunito, sans-serif`; k.fillStyle = pr.dies ? FOE : "#5A4D40"; k.fillText(pr.dies ? "e você cai ☠" : pr.taken ? `revida −${pr.taken}` : "sem revide", x, y + h * 0.26); k.restore(); }
+    k.font = `800 ${small}px Nunito, sans-serif`; k.fillStyle = pr.dies ? FOE : "#5A4D40"; k.fillText(pr.dies ? "e você cai ☠" : pr.fl === "costas" ? "pelas costas · +1" : pr.fl === "lado" ? "de lado · sem revide" : pr.taken ? `revida −${pr.taken}` : "sem revide", x, y + h * 0.26); k.restore(); }
   function predict(u) { const key = u.id + ":" + ver; if (pv.key === key) return pv.list; const list = [];
     for (const t of g.attacks(u)) { const h = g.clone(); h.apply({ c: "attack", id: u.id, x: t.x, y: t.y }); const ta = h.units.find(z => z.id === t.id), ua = h.units.find(z => z.id === u.id);
-      list.push({ x: t.x, y: t.y, dealt: t.hp - Math.max(0, ta ? ta.hp : 0), kills: !ta || ta.hp <= 0, taken: Math.max(0, u.hp - Math.max(0, ua ? ua.hp : 0)), dies: !ua || ua.hp <= 0 }); }
+      list.push({ x: t.x, y: t.y, fl: g.flank(u, t), dealt: t.hp - Math.max(0, ta ? ta.hp : 0), kills: !ta || ta.hp <= 0, taken: Math.max(0, u.hp - Math.max(0, ua ? ua.hp : 0)), dies: !ua || ua.hp <= 0 }); }
     pv.key = key; pv.list = list; return list; }
-  function faceDir(u) { const f = face.get(u.id) || (u.o === 0 ? [0, -1] : [0, 1]); return FIGS.dirOf(viewer === 0 ? f[0] : -f[0], viewer === 0 ? f[1] : -f[1]); }
+  function faceDir(u) { const f = u.f || face.get(u.id) || (u.o === 0 ? [0, -1] : [0, 1]); return FIGS.dirOf(viewer === 0 ? f[0] : -f[0], viewer === 0 ? f[1] : -f[1]); }
   // caixa dos pixels visíveis de cada imagem de boneco (para caber inteiro na própria casa)
   const boxes = new WeakMap(), refH = new Map();
   function figBox(sp) { let b = boxes.get(sp); if (b) return b; const d = sp.getContext("2d").getImageData(0, 0, sp.width, sp.height).data; let x0 = sp.width, y0 = sp.height, x1 = 0, y1 = 0;
@@ -190,7 +191,7 @@
         anims.push({ t0, d: 0.01, f: () => FX.dust(e.id) }); sfx("move", t0); }
       else if (e.k === "swap") { const a = snap.get(e.a), b = snap.get(e.b), t0 = step(0.3); for (const [id, f, to] of [[e.a, a, b], [e.b, b, a]]) { dpos.set(id, { x: f.x, y: f.y }); anims.push({ t0, d: 0.3, f: q => { const z = ease(q); dpos.set(id, { x: f.x + (to.x - f.x) * z, y: f.y + (to.y - f.y) * z - Math.sin(z * Math.PI) * 0.4 }); if (q >= 1) dpos.delete(id); } }); } }
       else if (e.k === "attack" || e.k === "counter") { const a = g.units.find(z => z.id === e.id) || snap.get(e.id), b = g.units.find(z => z.id === e.t) || snap.get(e.t); if (!a || !b) continue;
-        face.set(e.id, [Math.sign(b.x - a.x), Math.sign(b.y - a.y)]);
+        if (e.k === "attack" && e.flank && e.flank !== "frente") float(SX(b.x, b.y), SY(b.x, b.y) - view.t * 0.42, e.flank === "costas" ? "PELAS COSTAS!" : "DE LADO!", "#7A3FB0", 17, tc, 1.1);
         const big = e.k === "attack", D = big ? 0.46 : 0.36, hit = D * 0.5, t0 = step(hit), dx = b.x - a.x, dy = b.y - a.y, reach = big ? 0.55 : 0.42;
         anims.push({ t0, d: D, f: q => { const z = q < 0.3 ? -0.14 * ease(q / 0.3) : q < 0.5 ? -0.14 + (reach + 0.14) * ((q - 0.3) / 0.2) ** 2 : reach * (1 - ease((q - 0.5) / 0.5)); dpos.set(e.id, { x: a.x + dx * z, y: a.y + dy * z }); if (q >= 1) dpos.delete(e.id); } });
         anims.push({ t0: t0 + hit, d: 0.22, f: q => { const z = Math.sin(Math.min(1, q) * Math.PI) * 0.12 * (1 - q); if (g.units.some(u => u.id === e.t)) dpos.set(e.t, { x: b.x + dx * z, y: b.y + dy * z }); if (q >= 1) dpos.delete(e.t); } });
@@ -211,6 +212,7 @@
       else if (e.k === "fatigue") { const [mx, my] = mid(); float(mx, my, "Baralho vazio: −" + e.n, "#B3301E", 20, step(0.2), 1.2); }
       else if (e.k === "burn") { if (human(e.o)) tell("Mão cheia", `${CARDS[e.c].name} foi descartada.`, e.c); }
       else if (e.k === "turn") step(0.1);
+      else if (e.k === "sky") { const n = e.sky === "noite"; tell(n ? "🌙 Anoiteceu" : "☀️ Amanheceu", n ? "Assombrações +1 de ataque. Lobisomem em fúria sob a lua." : "A Mata anda 1 casa a mais.", null, 3200); sfx(n ? "lose" : "win", tc); }
     }
     ver++; busyUntil = Math.max(busyUntil, tc + 0.05); anims.push({ t0: tc, d: 0.01, f: () => { dhp.clear(); refresh(); } });
     if (g.cur !== turnBefore) onTurnChange();
@@ -285,6 +287,7 @@
     $("oName").dataset.turn = foeTurn ? (mode === "bot" ? "jogando…" : "vez dele") : ""; const me = viewer, op = 1 - me, PM = g.p[me], PO = g.p[op];
     const gm = g.gen(me), go = g.gen(op); $("mHp").innerHTML = HEART + (gm ? Math.max(0, gm.hp) : 0); $("oHp").innerHTML = HEART + (go ? Math.max(0, go.hp) : 0);
     manaEl($("mMana"), PM, true); manaEl($("oMana"), PO, false);
+    if (g.rules.ceu) { const n = g.sky() === "noite", left = g.skyLeft(); $("sky").textContent = (n ? "🌙 " : "☀️ ") + left; $("sky").className = n ? "noite" : "dia"; $("sky").title = `${n ? "Noite" : "Dia"}: muda em ${left} rodada(s)`; }
     $("oName").textContent = FAC[PO.fac].gen; $("oInfo").textContent = `${PO.hand.length} na mão · ${PO.deck.length} no baralho`;
     const oc = $("oPor").getContext("2d"); oc.clearRect(0, 0, 68, 68); oc.drawImage(ART.token(GEN_ART[FAC[PO.fac].gen], 68), 0, 0);
     const pw = FAC[PM.fac].power, myTurn = g.cur === me && human(me) && !g.over; $("bPow").innerHTML = ""; const pc = document.createElement("canvas"); pc.width = pc.height = 44; pc.getContext("2d").drawImage(ART.token(GEN_ART[FAC[PM.fac].gen], 44), 0, 0); $("bPow").appendChild(pc);
