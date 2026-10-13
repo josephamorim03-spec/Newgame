@@ -58,7 +58,22 @@ const PAGINA = 'file://' + path.join(__dirname, '..', 'index.html');
   await rm.evaluate(() => { localStorage.setItem('diceduel.v1', JSON.stringify({ pref: { animacoes: true, animacoesEscolhida: true, ajudasV11: true } })); });
   await rm.reload(); await rm.waitForTimeout(300);
   confere(await rm.evaluate(() => DiceDuel.st.pref.animacoes === true), 'quem ligou as animações em Ajustes fica com elas');
+  // o que a visita com "reduzir movimento" salvou (desligado, sem escolha) vai para o disco
+  await rm.evaluate(() => { localStorage.removeItem('diceduel.v1'); });
+  await rm.reload(); await rm.waitForTimeout(300);
+  await rm.evaluate(() => DiceDuel.salvar());
+  const salvo = await rm.evaluate(() => localStorage.getItem('diceduel.v1'));
   await rm.close();
+  // ...e não prende as animações quando a opção do sistema sai
+  const sem = await nova({ reducedMotion: 'no-preference' });
+  await sem.evaluate(s => localStorage.setItem('diceduel.v1', s), salvo);
+  await sem.reload(); await sem.waitForTimeout(300);
+  confere(await sem.evaluate(() => DiceDuel.st.pref.animacoes === true), 'sem escolha, o desligado de uma visita com "reduzir movimento" não fica quando a opção sai');
+  // quem desligou antes desta versão (salvo sem a animacoesEscolhida) continua desligado
+  await sem.evaluate(() => localStorage.setItem('diceduel.v1', JSON.stringify({ pref: { animacoes: false, ajudasV11: true } })));
+  await sem.reload(); await sem.waitForTimeout(300);
+  confere(await sem.evaluate(() => DiceDuel.st.pref.animacoes === false), 'quem já tinha desligado as animações antes continua com elas desligadas');
+  await sem.close();
 
   await navegador.close();
   console.log(erros.length ? 'ERROS:\n' + erros.join('\n') : 'Tudo certo: teclado, janelas e movimento reduzido.');

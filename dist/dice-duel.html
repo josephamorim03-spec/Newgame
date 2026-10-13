@@ -5645,7 +5645,7 @@ window.HISTORIA_QUADROS = {"falas":{"P-01":[{"arte":"p-mesa","chave":"P-antes_0"
 
   // ---------- estado e preferências ----------
   let uid = 1;
-  const PREF_PADRAO = { som: true, musica: true, volSom: 0.8, volMusica: 0.45, animacoes: true, particulas: true, tremor: true, vibrar: true, falas: true, dicas: true, liberar: false, ajudasV11: true };
+  const PREF_PADRAO = { som: true, musica: true, volSom: 0.8, volMusica: 0.45, animacoes: true, particulas: true, tremor: true, vibrar: true, falas: true, dicas: true, liberar: false, ajudasV11: true, animacoesEscolhida: false };
   const st = {
     cfg: { modo: 'bot', nivel: 'aprendiz', meta: R.META_PADRAO, ritmo: 'normal', tempoOnline: 'rapida' },
     pref: { ...PREF_PADRAO },
@@ -5668,6 +5668,9 @@ window.HISTORIA_QUADROS = {"falas":{"P-01":[{"arte":"p-mesa","chave":"P-antes_0"
     st.cfg.meta = R.metaValida(st.cfg.meta);   // v0.12: a meta 12 saiu (quem a tinha marcada passa para a 16)
     if (st.cfg.modo !== 'bot') st.cfg.modo = 'bot';   // v0.12: o modo a dois no mesmo aparelho saiu do jogo
     if (s.pref) Object.assign(st.pref, s.pref);
+    // antes da animacoesEscolhida existir, animações desligadas salvas eram escolha da pessoa (ou o "reduzir movimento"
+    // da primeira visita): continuam desligadas
+    if (s.pref && 'animacoes' in s.pref && !('animacoesEscolhida' in s.pref)) st.pref.animacoesEscolhida = s.pref.animacoes === false;
     // v0.11: as ajudas voltam ligadas uma vez para todo mundo (são o padrão); quem desligar de novo, fica desligado
     if (s.pref && !s.pref.ajudasV11) { st.pref.dicas = true; st.pref.ajudasV11 = true; }
     if (s.rec) Object.assign(st.rec, s.rec);
@@ -5686,9 +5689,9 @@ window.HISTORIA_QUADROS = {"falas":{"P-01":[{"arte":"p-mesa","chave":"P-antes_0"
     if (s.guia) st.guia = { ...st.guia, ...s.guia, vistos: Array.isArray(s.guia.vistos) ? s.guia.vistos : [] };
     else if (st.rec.partidas > 0 || st.deckVisto) st.guia = guiaVeterano();
   } catch (e) {}
-  // "reduzir movimento" no sistema desliga as animações, a menos que a pessoa as tenha escolhido em Ajustes. Antes valia
-  // só na primeira visita: depois, o valor salvo (o padrão, ligado) passava por cima de quem ligou a opção no sistema
-  if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches && !st.pref.animacoesEscolhida) st.pref.animacoes = false;
+  // sem escolha em Ajustes, as animações seguem o "reduzir movimento" do sistema a cada visita (o valor salvo não conta:
+  // senão o "desligado" de uma visita com a opção ligada ficava para sempre). Antes valia só na primeira visita
+  if (!st.pref.animacoesEscolhida) st.pref.animacoes = !(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
   const gravarLocal = () => {
     try { localStorage.setItem('diceduel.v1', JSON.stringify({ cfg: st.cfg, pref: st.pref, rec: st.rec, conta: st.contaConvidado || st.conta, decks: st.decks, deckVisto: st.deckVisto, guia: st.guia })); } catch (e) {}
   };
