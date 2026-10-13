@@ -5,6 +5,7 @@ Jogo de cartas e tabuleiro **1x1, por turnos, feito para celular em retrato**. D
 - **Jogo publicado (último build):** `dist/peleja.html`, um arquivo único que funciona offline.
 - **Briefing para melhorar as miniaturas 3D com outro modelo:** [`docs/ASTRA.md`](docs/ASTRA.md)
 - **ASTRA — Mula (primeiro personagem):** [antes/depois, limites e verificação](docs/ASTRA-MULA.md)
+- **ASTRA — Saci:** [oito direções, fumaça e verificação](docs/ASTRA-SACI.md)
 
 ## Regras em uma tela
 - Cada general tem 20 de vida e também luta.
@@ -35,6 +36,7 @@ Não há dependências em tempo de execução: o Three.js r128 vai embutido (`ve
 | `node tools/layout.js` | larguras de 320, 360, 390 e 430 px: nada saindo da tela, nomes de carta sem corte |
 | `node tools/telas.js` | fotografa 14 telas em `shots/` para revisão lado a lado |
 | `node tools/figsheet.js` | folha das miniaturas 3D (frente, lado e costas) em `shots/figsheet.png` |
+| `node tools/personagem.js saci 4b80fe7` | antes/depois nas oito direções, fumaça, orçamento e comparação dos outros personagens |
 | `node tools/mula.js` | antes/depois da Mula, oito direções, triângulos/contornos, âncoras, FX e sprites dos demais personagens |
 
 Para WebGL em Chromium sem GPU, os scripts usam `--use-gl=swiftshader --enable-unsafe-swiftshader`.
@@ -44,7 +46,7 @@ Para WebGL em Chromium sem GPU, os scripts usam `--use-gl=swiftshader --enable-u
 src/core.js    regras puras e determinísticas (comandos play/power/move/attack/end, eventos, bot) — sem DOM, pronto para online
 src/ui.js      tabuleiro em canvas 2D, toques, animações (golpe, tremida, estrela, números), prévia de combate, HUD, telas
 src/figs.js    MINIATURAS 3D: personagens modelados por código em Three.js e renderizados em 8 direções como imagens
-src/fx.js      partículas 2D ancoradas no personagem; primeira etapa: fogo, brilho e poeira da Mula
+src/fx.js      partículas 2D ancoradas no personagem; fogo, fumaça, brilho e poeira; pool compartilhado de 120 partículas
 src/flat.js    ilustrações 2D (feitiços e casas de terreno) + fallback das peças sem WebGL
 src/arte.js    ART.img / ART.token: escolhe miniatura 3D (personagens) ou ilustração 2D (feitiços)
 src/shell.html página, CSS e marcadores /*CORE*/ /*ART*/ /*UI*/ preenchidos pelo build

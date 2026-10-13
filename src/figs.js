@@ -28,11 +28,22 @@ const FIGS = (() => {
       cone(r, h, col, p, rot = [0, 0, 0], o = {}) { return K.at(K.mesh(new T.ConeGeometry(r, h, o.seg || 16), col, o), p, rot, o.s || [1, 1, 1]); },
       cyl(r1, r2, h, col, p, rot = [0, 0, 0], o = {}) { return K.at(K.mesh(new T.CylinderGeometry(r1, r2, h, o.seg || 20), col, o), p, rot, o.s || [1, 1, 1]); },
       box(w, h, d, col, p, rot = [0, 0, 0], o = {}) { return K.at(K.mesh(new T.BoxGeometry(w, h, d), col, o), p, rot); },
-      torus(r, t, col, p, rot = [0, 0, 0], o = {}) { return K.at(K.mesh(new T.TorusGeometry(r, t, 10, 28, o.arc || Math.PI * 2), col, o), p, rot, o.s || [1, 1, 1]); },
+      torus(r, t, col, p, rot = [0, 0, 0], o = {}) { return K.at(K.mesh(new T.TorusGeometry(r, t, o.rings || 10, o.seg || 28, o.arc || Math.PI * 2), col, o), p, rot, o.s || [1, 1, 1]); },
       limb(a, b, r, col, o = {}) { const A = new T.Vector3(...a), B = new T.Vector3(...b), d = B.clone().sub(A), len = d.length();
-        const m = K.mesh(new T.CylinderGeometry(o.r2 ?? r, r, len, 14), col, o); m.position.copy(A.clone().add(B).multiplyScalar(0.5)); m.quaternion.setFromUnitVectors(new T.Vector3(0, 1, 0), d.normalize());
+        const m = K.mesh(new T.CylinderGeometry(o.r2 ?? r, r, len, o.seg || 14), col, o); m.position.copy(A.clone().add(B).multiplyScalar(0.5)); m.quaternion.setFromUnitVectors(new T.Vector3(0, 1, 0), d.normalize());
         if (o.joint !== false) { K.ball(r, col, a, [1, 1, 1], o); K.ball(o.r2 ?? r, col, b, [1, 1, 1], o); } return m; },
-      lathe(pts, col, p = [0, 0, 0], o = {}) { return K.at(K.mesh(new T.LatheGeometry(pts.map(([x, y]) => new T.Vector2(x, y)), 32), col, o), p, o.rot || [0, 0, 0], o.s || [1, 1, 1]); },
+      lathe(pts, col, p = [0, 0, 0], o = {}) { return K.at(K.mesh(new T.LatheGeometry(pts.map(([x, y]) => new T.Vector2(x, y)), o.seg || 32), col, o), p, o.rot || [0, 0, 0], o.s || [1, 1, 1]); },
+      tube(pts, radius, col, o = {}) { const curve = new T.CatmullRomCurve3(pts.map(p => new T.Vector3(...p))); return K.mesh(new T.TubeGeometry(curve, o.steps || 16, radius, o.seg || 6, false), col, o); },
+      // Anéis locais contínuos para tecido dobrado e mechas curvas, só no build.
+      sweep(rings, col, o = {}) { const v = [], ix = [], n = o.seg || 12;
+        for (let i = 0; i < rings.length; i++) { const [x, y, z, rx, rz] = rings[i], q = new T.Quaternion();
+          if (o.follow) { const a = rings[Math.max(0, i - 1)], b = rings[Math.min(rings.length - 1, i + 1)]; q.setFromUnitVectors(new T.Vector3(0, 1, 0), new T.Vector3(b[0] - a[0], b[1] - a[1], b[2] - a[2]).normalize()); }
+          for (let j = 0; j < n; j++) { const a = j / n * Math.PI * 2, p = new T.Vector3(Math.cos(a) * rx, 0, Math.sin(a) * rz).applyQuaternion(q); v.push(x + p.x, y + p.y, z + p.z); }
+        }
+        for (let i = 0; i < rings.length - 1; i++) for (let j = 0; j < n; j++) { const a = i * n + j, b = i * n + (j + 1) % n; ix.push(a, a + n, b, b, a + n, b + n); }
+        for (let j = 1; j < n - 1; j++) { ix.push(0, j, j + 1); const e = (rings.length - 1) * n; ix.push(e, e + j + 1, e + j); }
+        const geo = new T.BufferGeometry(); geo.setAttribute("position", new T.Float32BufferAttribute(v, 3)); geo.setIndex(ix); geo.computeVertexNormals(); geo.computeBoundingBox();
+        const center = geo.boundingBox.getCenter(new T.Vector3()); geo.translate(-center.x, -center.y, -center.z); const mesh = K.mesh(geo, col, o); mesh.position.copy(center); return mesh; },
       eye(p, r, look = [0, 0], o = {}) { K.ball(r, o.white || "#FFFFFF", p, [1, o.h || 1.12, 0.7], { ow: 0.1, rough: 0.3 }); K.ball(r * 0.56, o.iris || "#1E1612", [p[0] + look[0] * r * 0.35, p[1] + look[1] * r * 0.3, p[2] + r * 0.5], [1, 1, 0.6], { out: false, rough: 0.2 });
         K.ball(r * 0.18, "#FFFFFF", [p[0] + look[0] * r * 0.35 - r * 0.2, p[1] + r * 0.28, p[2] + r * 0.8], [1, 1, 1], { out: false, em: "#FFFFFF" }); },
       brow(p, w, rz, col = "#2A1E16") { K.box(w, w * 0.22, w * 0.25, col, p, [0, 0, rz], { out: false }); },
@@ -74,22 +85,56 @@ const FIGS = (() => {
       K.torus(0.075, 0.022, "#7A2230", [0, 1.09, 0.27], [0, 0, Math.PI], { arc: Math.PI, ow: 0.12 });
       for (const s of [-1, 1]) for (const y of [1.14, 1.11]) K.box(0.06, 0.014, 0.01, "#E8452C", [s * 0.19, y, 0.245], [0, s * 0.5, 0.12 * s], { out: false });
     } },
-    // SACI: uma perna só sobre um redemoinho, carapuça vermelha com aba, short vermelho, cachimbo fumegando
+    // SACI: uma única perna flexionada, carapuça caída, cachimbo de barro e espiral de vento.
     saci: { build(K) {
-      for (let i = 0; i < 3; i++) K.torus(0.16 - i * 0.04, 0.012, "#D9CFC0", [0, 0.03 + i * 0.05, 0], [Math.PI / 2, 0, i], { out: false });
-      K.limb([0, 0.48, 0], [0.02, 0.12, 0.02], 0.072, DARK, { r2: 0.062 }); K.ball(0.088, DARK, [0.02, 0.07, 0.07], [0.95, 0.62, 1.55]);
-      K.lathe([[0.001, 0.38], [0.2, 0.4], [0.215, 0.52], [0.19, 0.6], [0.001, 0.6]], "#E23B2E"); K.torus(0.19, 0.022, "#3E2A1E", [0, 0.58, 0], [Math.PI / 2, 0, 0], { ow: 0.06 }); K.box(0.05, 0.04, 0.02, "#F2C94C", [0, 0.58, 0.2], [0, 0, 0], { ow: 0.1 });
-      K.ball(0.19, DARK, [0, 0.76, 0], [1, 1.1, 0.8]);
-      K.limb([-0.18, 0.88, 0], [-0.3, 0.7, 0.04], 0.054, DARK); K.limb([-0.3, 0.7, 0.04], [-0.17, 0.6, 0.1], 0.05, DARK);
-      K.limb([0.18, 0.88, 0], [0.31, 1.04, 0.08], 0.054, DARK); K.ball(0.066, DARK, [0.33, 1.1, 0.09]);
-      K.ball(0.3, DARK, [0, 1.22, 0]); for (const s of [-1, 1]) K.ball(0.07, DARK, [s * 0.29, 1.22, 0], [0.55, 1, 1]);
-      K.torus(0.29, 0.05, "#B52A22", [0, 1.36, 0], [Math.PI / 2 + 0.08, 0, 0]);
-      K.cyl(0.18, 0.29, 0.34, "#E23B2E", [0, 1.55, -0.02], [-0.1, 0, 0]); K.cone(0.18, 0.44, "#E23B2E", [0.19, 1.76, 0.02], [0, 0, -1.05]); K.ball(0.08, "#FFFFFF", [0.4, 1.66, 0.05], [1, 1, 1], { rough: 0.95 });
-      K.eye([-0.1, 1.24, 0.25], 0.078, [-0.6, 0.1]); K.eye([0.1, 1.24, 0.25], 0.078, [-0.6, 0.1]); K.brow([-0.1, 1.335, 0.26], 0.09, -0.2); K.brow([0.1, 1.335, 0.26], 0.09, 0.2);
-      K.ball(0.03, "#5A3220", [0, 1.17, 0.29], [1, 0.8, 1], { out: false });
-      K.torus(0.09, 0.022, "#5A1A1A", [0, 1.11, 0.27], [0, 0, Math.PI], { arc: Math.PI, ow: 0.12 }); K.box(0.035, 0.042, 0.02, "#FFFFFF", [-0.025, 1.085, 0.29], [0, 0, 0], { ow: 0.15 });
-      K.limb([0.09, 1.08, 0.27], [0.26, 1.05, 0.3], 0.016, "#8B5A2B", { joint: false }); K.cyl(0.042, 0.036, 0.1, "#8B5A2B", [0.27, 1.09, 0.3]);
-      for (const [x, y, r] of [[0.3, 1.21, 0.035], [0.26, 1.31, 0.045], [0.32, 1.42, 0.04], [0.28, 1.52, 0.03]]) K.ball(r, "#EDE7E0", [x, y, 0.3], [1, 1, 1], { ow: 0.08, rough: 1 });
+      const S = DARK, RED = "#E23B2E", DR = "#B52A22", INK = "#2A1E16";
+      const ball = (r, c, p, scale = [1, 1, 1], o = {}) => K.ball(r, c, p, scale, { seg: 12, rings: 7, ow: 0.035, ...o });
+      const limb = (a, b, r, c = S, o = {}) => K.limb(a, b, r, c, { seg: 10, joint: false, ow: 0.035, ...o });
+      // A perna é visível entre o calção e o pé, sem nenhum segundo membro.
+      limb([0, 0.54, 0], [-0.075, 0.32, 0.025], 0.078, S, { r2: 0.058 });
+      ball(0.061, S, [-0.075, 0.32, 0.025]);
+      limb([-0.075, 0.32, 0.025], [0.015, 0.13, 0.035], 0.052, S, { r2: 0.044 });
+      ball(0.083, S, [0.02, 0.083, 0.085], [0.85, 0.63, 1.6]);
+      for (let i = 0; i < 3; i++) ball(0.025, S, [-0.025 + i * 0.028, 0.065, 0.19], [0.8, 0.7, 1], { seg: 8, rings: 5, out: false });
+      K.lathe([[0.01, 0.43], [0.17, 0.44], [0.195, 0.52], [0.155, 0.63], [0.01, 0.63]], RED, [0, 0, 0], { seg: 14, ow: 0.03 });
+      K.torus(0.152, 0.022, INK, [0, 0.615, 0], [Math.PI / 2, 0, 0], { seg: 16, rings: 4, s: [1, 0.87, 1] });
+      K.box(0.045, 0.042, 0.025, "#F2C94C", [0.015, 0.61, 0.148], [0, 0, 0], { out: false });
+      ball(0.19, S, [-0.025, 0.82, 0], [0.88, 1.18, 0.8], { rot: [0, 0, -0.10] });
+      // Mão na cintura e outra segurando o cachimbo, deixando espaço entre braço e corpo.
+      limb([-0.16, 0.94, 0], [-0.31, 0.79, 0.04], 0.055);
+      limb([-0.31, 0.79, 0.04], [-0.20, 0.66, 0.12], 0.047);
+      ball(0.06, S, [-0.18, 0.665, 0.13], [0.85, 1, 0.75]);
+      limb([0.13, 0.94, 0], [0.30, 0.85, 0.11], 0.055);
+      limb([0.30, 0.85, 0.11], [0.40, 1.045, 0.23], 0.047);
+      ball(0.055, S, [0.405, 1.045, 0.235], [0.85, 1, 0.85]);
+      ball(0.29, S, [-0.025, 1.245, 0.015], [1, 1.03, 0.9], { seg: 16, rings: 10 });
+      for (const side of [-1, 1]) ball(0.063, S, [-0.025 + side * 0.285, 1.24, 0.015], [0.5, 1, 0.7]);
+      // Expressão travessa com sorriso de canto; olhos e nariz sem excesso de malhas.
+      for (const side of [-1, 1]) {
+        const x = -0.025 + side * 0.10;
+        ball(0.072, "#FFFFFF", [x, 1.26, 0.252], [1, 1.07, 0.5], { out: false });
+        ball(0.037, INK, [x + 0.014, 1.255, 0.284], [1, 1.1, 0.35], { seg: 10, rings: 6, out: false });
+        ball(0.012, "#FFFFFF", [x + 0.006, 1.272, 0.299], [1, 1, 0.5], { seg: 6, rings: 4, out: false, em: "#FFFFFF" });
+        K.brow([x, 1.35 + side * 0.01, 0.262], 0.095, side * 0.20);
+      }
+      ball(0.04, "#7D4A2B", [-0.02, 1.18, 0.29], [1.05, 0.7, 0.9], { out: false });
+      K.tube([[-0.13, 1.135, 0.257], [-0.075, 1.095, 0.27], [0, 1.09, 0.275], [0.09, 1.13, 0.257]], 0.017, "#3E201A", { seg: 4, steps: 10, out: false });
+      K.box(0.036, 0.03, 0.014, "#FFFDF5", [-0.07, 1.107, 0.283], [0, 0, 0.14], { out: false });
+      // Gorro de tecido: dobra lateral que desce; ponta vermelha, sem pompom de Papai Noel.
+      K.sweep([[0, 1.40, -0.01, 0.286, 0.248], [-0.02, 1.55, -0.025, 0.24, 0.205], [-0.065, 1.71, -0.045, 0.15, 0.14], [-0.16, 1.80, -0.045, 0.09, 0.085], [-0.28, 1.70, -0.035, 0.055, 0.055], [-0.31, 1.60, -0.015, 0.006, 0.006]], RED, { seg: 16, ow: 0.025, follow: true });
+      K.torus(0.276, 0.032, DR, [-0.015, 1.418, 0.005], [Math.PI / 2, 0, 0.04], { seg: 20, rings: 5, s: [1, 0.87, 1], ow: 0.025 });
+      K.tube([[-0.065, 1.72, 0.098], [-0.135, 1.70, 0.095], [-0.235, 1.69, 0.035]], 0.01, DR, { steps: 8, seg: 4, out: false });
+      // Cachimbo afastado da bochecha: haste curva, bojo oco e borda nítida em 3D.
+      K.tube([[0.085, 1.125, 0.26], [0.22, 1.09, 0.31], [0.36, 1.075, 0.285], [0.44, 1.09, 0.265]], 0.021, "#8B5A2B", { steps: 12, seg: 6, ow: 0.04 });
+      K.lathe([[0.01, 0], [0.048, 0.01], [0.068, 0.09], [0.067, 0.14], [0.045, 0.14], [0.043, 0.095]], "#8B5A2B", [0.44, 1.04, 0.265], { seg: 12, ow: 0.03 });
+      K.torus(0.056, 0.013, "#5A3520", [0.44, 1.18, 0.265], [Math.PI / 2, 0, 0], { seg: 12, rings: 4, out: false });
+      ball(0.038, "#E8662E", [0.44, 1.158, 0.265], [1, 0.15, 1], { seg: 10, rings: 5, out: false, em: "#7A1008" });
+      // Dois fios de vento desenham uma espiral, com a perna sempre livre no centro.
+      for (let strand = 0; strand < 2; strand++) { const pts = [];
+        for (let i = 0; i <= 32; i++) { const u = i / 32, a = u * Math.PI * 3.2 + strand * 2.5, r = 0.29 - u * 0.18; pts.push([Math.cos(a) * r, 0.035 + u * 0.21, Math.sin(a) * r]); }
+        K.tube(pts, strand ? 0.010 : 0.015, strand ? "#B9A384" : "#D9CFC0", { steps: 40, seg: 4, out: false });
+      }
+      K.anchor("smoke", [0.44, 1.188, 0.265]); K.anchor("glow", [0.44, 1.165, 0.265]); K.anchor("dust", [0.02, 0.05, 0.08]);
     } },
     // MAPINGUARI: bloco peludo com tufos, olho único com sobrancelha, bocarra na barriga com língua, braços compridos e garras
     mapin: { build(K) {

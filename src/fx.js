@@ -1,5 +1,5 @@
 // FX — efeitos do personagem sobre o canvas 2D. O sprite 3D continua estático.
-// Esta etapa habilita só a Mula: fogo, brilho e poeira. Pool único de 120 partículas.
+// Fogo, fumaça, brilho e poeira compartilham um pool único de 120 partículas.
 const FX = (() => {
   const CAP = 120, OWNERS = 40;
   const pool = Array.from({ length: CAP }, () => ({ live: false, owner: null, kind: 0, point: 0, x: 0, y: 0, vx: 0, vy: 0, age: 0, life: 1, size: 1, phase: 0 }));
@@ -31,6 +31,9 @@ const FX = (() => {
         const a = e.anchors.dust[0]; p.x = e.x + a[0] * e.w / 256; p.y = e.y + a[1] * e.h / 320;
         p.vx = (Math.random() - 0.5) * e.h * 0.30; p.vy = -e.h * (0.025 + Math.random() * 0.035);
         p.life = 0.35 + Math.random() * 0.20; p.size = e.h * (0.009 + Math.random() * 0.006);
+      } else if (kind === 4) {
+        p.x = 0; p.y = 0; p.vx = (Math.random() - 0.5) * 3; p.vy = -22 - Math.random() * 8;
+        p.life = 1.1 + Math.random() * 0.5; p.size = 2.5 + Math.random() * 1.2;
       } else {
         p.x = (Math.random() - 0.5) * 7; p.y = 0; p.vx = (Math.random() - 0.5) * 10; p.vy = kind === 2 ? -48 : -32;
         p.life = kind === 2 ? 0.45 + Math.random() * 0.22 : 0.20 + Math.random() * 0.18;
@@ -45,26 +48,36 @@ const FX = (() => {
     }
   }
   function paint(k, key, anchors, x, y, w, h, alpha, baseY) {
-    if (!anchors.fire) return; const e = owner(key); if (!e) return;
+    if (!anchors.fire && !anchors.smoke && !anchors.glow) return; const e = owner(key); if (!e) return;
     e.anchors = anchors; e.x = x; e.y = y; e.w = w; e.h = h; e.alpha = alpha; e.stamp = stamp;
     if (!reduced && step) {
       e.carry += step; let count = 0;
       for (let i = 0; i < CAP; i++) if (pool[i].live && pool[i].owner === e && pool[i].kind !== 3) count++;
-      // Máximo 12 chamas/brasas por boneco: várias Mulas compartilham o pool.
-      while (e.carry >= 0.045) { e.carry -= 0.045; if (count >= 12) continue;
-        particle(e, Math.random() < 0.22 ? 2 : 1, Math.floor(Math.random() * anchors.fire.length)); count++;
+      // Máximo 12 partículas suspensas por boneco, dentro do limite global.
+      const interval = anchors.smoke ? 0.14 : 0.045;
+      while (e.carry >= interval) { e.carry -= interval; if (count >= 12) continue;
+        if (anchors.smoke) particle(e, 4, Math.floor(Math.random() * anchors.smoke.length));
+        else if (anchors.fire) particle(e, Math.random() < 0.22 ? 2 : 1, Math.floor(Math.random() * anchors.fire.length));
+        count++;
       }
     }
     k.save();
     // Números são desenhados DEPOIS. Fogo/brilho também ficam acima da base.
     k.beginPath(); k.rect(x - w * 0.25, y - h * 0.12, w * 1.5, Math.max(0, baseY - y - h * 0.10)); k.clip();
     const scale = h / 320, pulse = reduced ? 1 : 0.85 + Math.sin(time * 5 + key) * 0.15;
-    for (let i = 0; i < anchors.glow.length; i++) { const a = anchors.glow[i];
+    for (let i = 0; i < (anchors.glow ? anchors.glow.length : 0); i++) { const a = anchors.glow[i];
       k.globalAlpha = alpha * 0.19 * pulse; k.fillStyle = "#F59A23"; k.beginPath(); k.arc(x + a[0] * scale, y + a[1] * scale, 13 * scale, 0, Math.PI * 2); k.fill();
       k.globalAlpha = alpha * 0.26 * pulse; k.fillStyle = "#FFE45C"; k.beginPath(); k.arc(x + a[0] * scale, y + a[1] * scale, 7 * scale, 0, Math.PI * 2); k.fill();
     }
     if (!reduced) for (let i = 0; i < CAP; i++) { const p = pool[i]; if (!p.live || p.owner !== e || p.kind === 3) continue;
-      const q = p.age / p.life, a = anchors.fire[p.point], px = x + (a[0] + p.x + Math.sin(p.phase + q * 5) * 2) * scale, py = y + (a[1] + p.y) * scale, r = p.size * scale * (1 - q * 0.75);
+      const q = p.age / p.life;
+      if (p.kind === 4) {
+        const a = anchors.smoke[p.point], wind = Math.sin(p.phase + q * 5) * q * 7, r = p.size * scale * (1 + q * 2.5);
+        k.globalAlpha = alpha * Math.min(1, q * 8) * (1 - q) * 0.5; k.fillStyle = "#A99F8D";
+        k.beginPath(); k.ellipse(x + (a[0] + p.x + wind) * scale, y + (a[1] + p.y) * scale, r, r * 0.8, 0, 0, Math.PI * 2); k.fill();
+        continue;
+      }
+      const a = anchors.fire[p.point], px = x + (a[0] + p.x + Math.sin(p.phase + q * 5) * 2) * scale, py = y + (a[1] + p.y) * scale, r = p.size * scale * (1 - q * 0.75);
       k.globalAlpha = alpha * (1 - q) * (p.kind === 2 ? 0.85 : 0.72);
       k.fillStyle = p.kind === 2 || q < 0.3 ? "#FFE45C" : q < 0.7 ? "#F59A23" : "#E23B2E";
       k.beginPath();

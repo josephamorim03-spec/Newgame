@@ -1,3 +1,4 @@
+// Regressão da Mula; Saci tem comparação sequencial em tools/personagem.js.
 // QA da primeira etapa ASTRA: comparação real, direções, orçamento e FX.
 // node tools/mula.js [ref-anterior] (padrão: commit original peleja/prototype)
 const fs = require('fs'), path = require('path'), assert = require('assert/strict'), { execFileSync } = require('child_process');
@@ -47,7 +48,7 @@ let b;
       }
     }
     const changed = [];
-    for (const id of Object.keys(FIGS.DEF)) if (id !== 'mula') for (let dir = 0; dir < 8; dir++) {
+    for (const id of Object.keys(FIGS.DEF)) if (!['mula', 'saci'].includes(id)) for (let dir = 0; dir < 8; dir++) {
       if (FIGS.sprite(id, 256, 320, dir).toDataURL() !== BEFORE.sprite(id, 256, 320, dir).toDataURL()) changed.push(id + ':' + dir);
     }
     return { triangles, anchors, boxes, changed, revision: THREE.REVISION };
@@ -105,5 +106,5 @@ let b;
   assert.deepEqual(errors, []);
   const report = { baseline, ...result, fx, reduced, browserErrors: errors };
   fs.writeFileSync(path.join(root, 'shots/mula-qa.json'), JSON.stringify(report, null, 2) + '\n');
-  console.log('Mula: ' + result.triangles + ' triângulos incluindo contornos; 8 direções/âncoras; 112 sprites dos outros personagens idênticos; pool/pausa/aba oculta/reduced-motion/movimento OK.');
+  console.log('Mula: ' + result.triangles + ' triângulos incluindo contornos; 8 direções/âncoras; 104 sprites dos personagens ainda não refinados idênticos; pool/pausa/aba oculta/reduced-motion/movimento OK.');
 })().catch(e => { console.error(e); process.exitCode = 1; }).finally(async () => { if (b) await b.close(); });
