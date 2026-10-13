@@ -17,7 +17,10 @@ def embutir(html: str) -> str:
         return "<style>\n" + (RAIZ / m.group(1)).read_text(encoding="utf-8") + "\n</style>"
 
     def js(m):
-        return "<script>\n" + (RAIZ / m.group(1)).read_text(encoding="utf-8") + "\n</script>"
+        txt = (RAIZ / m.group(1)).read_text(encoding="utf-8")
+        # as artes da história moram em img/historia/ (só baixam quando a história abre); aqui voltam embutidas
+        txt = re.sub(r'"(img/historia/[^"/]+\.webp)"', lambda k: '"data:image/webp;base64,' + base64.b64encode((RAIZ / k.group(1)).read_bytes()).decode() + '"', txt)
+        return "<script>\n" + txt + "\n</script>"
 
     html = re.sub(r'<link rel="stylesheet" href="(css/[^"]+)">', css, html)
     html = re.sub(r'<script src="((?:js|shared)/[^"]+)"></script>', js, html)

@@ -478,6 +478,8 @@ function criarApp({ banco, segredo, raiz = path.join(__dirname, '..'), tempos = 
   // css e js sem hash no nome: o navegador revalida pelo ETag (304 barato) para nunca juntar HTML novo com JS velho
   // depois de um deploy; as imagens podem ficar 1 h
   for (const pasta of ['css', 'js', 'shared']) app.use('/' + pasta, express.static(path.join(raiz, pasta), { maxAge: 0, index: false }));
+  // as artes da história levam o hash no nome (tools/historia/quadros.py): o navegador pode guardá-las de vez
+  app.use('/img/historia', express.static(path.join(raiz, 'img', 'historia'), { maxAge: '365d', immutable: true, index: false }));
   app.use('/img', express.static(path.join(raiz, 'img'), { maxAge: '1h', index: false }));
   app.get('/manifest.webmanifest', (req, res) => res.type('application/manifest+json').sendFile(path.join(raiz, 'manifest.webmanifest')));
   // servida daqui, a página fala com este mesmo endereço: a <meta name="dice-servidor"> (para o Vercel) sai vazia

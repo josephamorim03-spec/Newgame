@@ -21,6 +21,7 @@ balões, com o estado de cada uma: as falas continuam passando pela aprovação 
 Precisa de OPENAI_API_KEY (como o tools/arte_icones.py).
 """
 import base64
+import hashlib
 import io
 import json
 import re
@@ -43,6 +44,16 @@ PARALELO = 4
 LADO_PAGINA = 960      # a largura de cada quadro nas páginas de revisão
 LADO_JOGO, QUALIDADE_JOGO = 768, 70   # no jogo (arquivo único): o lado maior de cada quadro (decisão do dono: 768 px)
 DADOS_JOGO = RAIZ / "js" / "historia_quadros_dados.js"
+# as imagens do gibi do jogo: arquivos à parte (só baixam quando a história abre), com o hash no nome para o navegador
+# guardá-las de vez (vercel.json); o tools/empacotar.py as embute de volta no arquivo único
+IMG_JOGO = RAIZ / "img" / "historia"
+
+
+def gravar_imagem_jogo(id_, dados):
+    """grava a imagem de uma arte em img/historia/<arte>.<hash>.webp e devolve o caminho que a página usa"""
+    nome = f"{id_}.{hashlib.sha256(dados).hexdigest()[:10]}.webp"
+    (IMG_JOGO / nome).write_bytes(dados)
+    return f"img/historia/{nome}"
 
 
 PAGINA_BASE = NARIZES.parent / "pagina-base.png"   # o papel do caderno de receitas: toda receita é desenhada em cima dele
@@ -230,6 +241,10 @@ def jogo(cfg):
     usadas = {e["arte"] for l in porfala.values() for e in l} | {e["arte"] for m in mudos.values() for l in m.values() for e in l}
     campos = ("boca", "cabeca", "evitar", "lugar", "titulo", "espelho", "aba", "pagina", "mural")
     artes, imagens = {}, {}
+    # as de antes ficam: uma página aberta antes do deploy ainda tem os nomes velhos e só pede a imagem quando a história
+    # abre. Cada arte nova ganha outro nome (outro hash), então nada é sobrescrito; dá para limpar as velhas de vez em
+    # quando, bem depois de um deploy
+    IMG_JOGO.mkdir(parents=True, exist_ok=True)
     for id_ in sorted(usadas):
         a = cfg["artes"].get(id_)
         if not a:
@@ -244,7 +259,7 @@ def jogo(cfg):
         im = im.resize((round(im.width * k), round(im.height * k)), Image.LANCZOS)
         buf = io.BytesIO()
         im.save(buf, "WEBP", quality=QUALIDADE_JOGO, method=6)
-        imagens[id_] = "data:image/webp;base64," + base64.b64encode(buf.getvalue()).decode()
+        imagens[id_] = gravar_imagem_jogo(id_, buf.getvalue())
     # quem fala em cada fala (o resto, o texto, vem do js/historia_falas.js); um quadro sem arte não entra
     porfala = {f: [e for e in l if e["arte"] in artes] for f, l in porfala.items()}
     porfala = {f: l for f, l in porfala.items() if l}
@@ -254,7 +269,7 @@ def jogo(cfg):
     dados = {"falas": porfala, "mudos": mudos, "quem": quem, "artes": artes, "murais": cfg.get("murais", {}), "baloes": baloes, "imagens": imagens}
     js = json.dumps(dados, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
     DADOS_JOGO.write_text("/* gerado por tools/historia/quadros.py jogo a partir de arte/historia.json e arte/historia/quadros/: os quadros pintados\n"
-                          " * do gibi (js/historia.js os desenha com js/historia_quadros.js). Não editar. */\n"
+                          " * do gibi (js/historia.js os desenha com js/historia_quadros.js); as imagens ficam em img/historia/. Não editar. */\n"
                           "window.HISTORIA_QUADROS = " + js + ";\n", encoding="utf-8")
     print(f"{DADOS_JOGO.relative_to(RAIZ)}: {len(porfala)} falas com quadro, {len(imagens)} imagens, {DADOS_JOGO.stat().st_size // 1024} KB")
 

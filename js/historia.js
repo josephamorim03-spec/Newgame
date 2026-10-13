@@ -196,6 +196,10 @@
   function gibi(quadros, { titulo = '', ctx = {} } = {}) {
     const fila = quadros.map(qd => ({ qd, bs: comQuadros(batidas(qd, ctx)) })).filter(x => x.bs.length);
     if (!fila.length) return Promise.resolve();
+    // as artes moram em img/historia/ e só baixam quando a história abre: as deste gibi começam a baixar já, para o
+    // quadro seguinte não esperar a rede (no arquivo único elas vêm embutidas)
+    const H = window.HISTORIA_QUADROS;
+    if (H) new Set(fila.flatMap(x => x.bs.map(b => (b.mudo || b.quadro || {}).arte)).filter(Boolean)).forEach(a => { if (H.imagens[a]) new Image().src = H.imagens[a]; });
     return new Promise(res => {
       const el = document.createElement('div');
       el.className = 'gibi'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', titulo || 'História');
