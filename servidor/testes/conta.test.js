@@ -292,6 +292,29 @@ test('conexões: no máximo 5 abas por conta, prazo para se identificar, só a p
   } finally { await s.fechar(); }
 });
 
+test('conexão que cai enquanto o banco responde ao "ola" não fica na presença (nem conta como aba)', async () => {
+  const banco = new BancoMemoria();
+  const s = await subir({ banco });
+  try {
+    const H = await conta(s, 'Hana');
+    // banco lento: cada "ola" demora, e a aba fecha antes da resposta
+    const contaPorId = banco.contaPorId.bind(banco);
+    banco.contaPorId = async id => { await espera(150); return contaPorId(id); };
+    for (let i = 0; i < 6; i++) {
+      const ws = new WebSocket(s.ws);
+      await new Promise(ok => ws.once('open', ok));
+      ws.send(JSON.stringify({ tipo: 'ola', token: H.token }));
+      ws.close();
+    }
+    await espera(400);
+    assert.strictEqual((await s.api('GET', '/api/saude')).online, 0, 'ninguém online: as 6 abas fecharam');
+    // e a conta continua entrando (antes: "já está aberto em 5 abas" até o servidor reiniciar)
+    const a = await aparelho(s.ws, H.token);
+    assert.strictEqual(a.resposta.tipo, 'ola');
+    a.fechar();
+  } finally { await s.fechar(); }
+});
+
 // o mesmo com Postgres de verdade (TESTE_DATABASE_URL): versão da sessão, apagar conta, quem fica fora do Online agora, ping
 test('Postgres: senha nova derruba os tokens antigos, apagar some com a conta, oculto e ping', { skip: !process.env.TESTE_DATABASE_URL && 'defina TESTE_DATABASE_URL' }, async () => {
   const banco = await criarBanco({ url: process.env.TESTE_DATABASE_URL });

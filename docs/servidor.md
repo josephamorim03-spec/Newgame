@@ -27,7 +27,11 @@ Banco: Postgres (o plugin da Railway). Sem `DATABASE_URL`, guarda tudo num arqui
 - O mesmo par de contas vale rating e moedas 3 vezes por dia. Depois disso as partidas viram amistosas (sem rating, moedas, vitória no ranking nem XP).
 - Uma conta joga uma partida por vez: outra aba não entra em outra sala enquanto houver partida em andamento (sem isso, várias partidas
   simultâneas da mesma dupla passavam todas pelo limite de 3).
-- Desistência (ou W.O.) antes da 3ª Mesa não mexe no rating nem rende moedas: contas descartáveis que desistem no primeiro lance não sobem ninguém.
+- Desistência (ou W.O.) antes da 3ª Mesa não dá rating nem moedas a quem fica: contas descartáveis que desistem no primeiro lance não
+  sobem ninguém. Quem sai perde rating como numa derrota (antes não perdia nada, e fechar a aba na Mesa 1 ou 2 era um jeito de nunca perder).
+- Conta nova (menos de 5 partidas): vencê-la rende rating, moedas e vitória no ranking só 2 vezes por dia para cada conta. Cada IP cria
+  5 contas a cada 10 min, e o limite por par não segurava quem subia o rating batendo em contas descartáveis. A derrota de quem perdeu vale
+  normalmente. Os números ficam em `PARTIDAS_CONTA_NOVA` e `VITORIAS_NOVAS_DIA` (`servidor/salas.js`).
 - Contra os rivais do jogo, o resultado vem do aparelho: além das 300 moedas por dia, no máximo 80 partidas e 800 de XP por conta por dia.
 - Contra os rivais do jogo (que rodam no aparelho), a conta recebe até 300 moedas por dia. O teto pelo maior rating de cada rival continua valendo.
 - Quem já jogava sem conta leva o progresso uma vez, ao criar a conta: até 600 moedas, e itens até um valor total de 900.
