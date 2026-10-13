@@ -35,6 +35,7 @@ Não há dependências em tempo de execução: o Three.js r128 vai embutido (`ve
 | `node tools/fuzz.js` | partidas inteiras pela interface, com ações aleatórias (bot e 2 no celular); procura erros e estados impossíveis |
 | `node tools/layout.js` | larguras de 320, 360, 390 e 430 px: nada saindo da tela, nomes de carta sem corte |
 | `node tools/telas.js` | fotografa 14 telas em `shots/` para revisão lado a lado |
+| `node tools/balanco.js 600 normal` | bot x bot alternando lados: vitória por facção e por quem começa, duração e taxa de vitória de quem jogou cada carta |
 | `node tools/figsheet.js` | folha das miniaturas 3D (frente, lado e costas) em `shots/figsheet.png` |
 | `node tools/personagem.js saci 4b80fe7` | antes/depois nas oito direções, fumaça, orçamento e comparação dos outros personagens |
 | `node tools/mula.js` | antes/depois da Mula, oito direções, triângulos/contornos, âncoras, FX e sprites dos demais personagens |
@@ -69,3 +70,13 @@ legacy/        motores de arte anteriores (xilogravura e tabuleiro 3D), só para
   - mostrar o resultado sem decidir pelo jogador;
   - receita de áudio do iOS;
   - testes automáticos de regras e layout.
+
+## Balanço atual (outubro/2026)
+Medido com `tools/balanco.js`, 1000 partidas no bot normal: **Mata 52% · Assombrações 45%**, quem começa vence 47%, ~11 turnos por jogador. No bot difícil fica perto disso.
+Mudanças feitas a partir da simulação:
+- **Enraizar** (1 mana) agora também causa 1 de dano. Antes o bot nunca jogava a carta, porque só prender era fraco demais.
+- **Pacto:** o general perde 2 de vida (antes 3) e compra 2 cartas. O bot passou a usá-lo quando tem a mão curta e o general está com vida sobrando.
+- **Cobra-coral:** 1/3 por 3 de mana (antes 1/2 por 2), para sobreviver a um golpe antes de envenenar.
+- Testados e **descartados**:
+  - Mapinguari com 4 de ataque derrubou a Mata para 32%;
+  - Alma penada com 3 de dano desequilibrou para a Mata.

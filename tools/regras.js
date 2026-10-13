@@ -28,7 +28,7 @@ g = mk(); g.cur = 1; a = put(g, 0, 'mapin', 2, 3); put(g, 0, 'saci', 1, 3); g.p[
 g = mk(); g.cur = 1; b = put(g, 1, 'capelobo', 2, 2, { hp: 2 }); a = put(g, 0, 'saci', 2, 3); g.apply({ c: 'attack', id: b.id, x: 2, y: 3 }); T('capelobo recupera tudo ao destruir', b.hp === 5);
 g = mk(); b = put(g, 1, 'corpo', 2, 2); a = put(g, 0, 'onca', 2, 3); const c2 = put(g, 0, 'saci', 1, 3); g.apply({ c: 'attack', id: a.id, x: 2, y: 2 }); T('corpo-seco: último suspiro', c2.hp === 1);
 // feitiços
-g = mk(); g.cur = 1; g.p[1].hand = ['pacto']; g.p[1].deck = ['a', 'b', 'c']; g.apply({ c: 'play', i: 0, x: -1, y: -1 }); T('pacto -3 e +2 cartas', g.gen(1).hp === 17 && g.p[1].hand.length === 2);
+g = mk(); g.cur = 1; g.p[1].hand = ['pacto']; g.p[1].deck = ['a', 'b', 'c']; g.apply({ c: 'play', i: 0, x: -1, y: -1 }); T('pacto -2 e +2 cartas', g.gen(1).hp === 18 && g.p[1].hand.length === 2);
 g = mk(); g.cur = 1; b = put(g, 1, 'bicho', 2, 3); a = put(g, 0, 'mapin', 2, 4); g.p[1].hand = ['alma']; g.apply({ c: 'play', i: 0, x: 2, y: 3 }); T('alma: 4 nos vizinhos', a.hp === 3 && !g.units.includes(b));
 g = mk(); a = put(g, 0, 'mapin', 2, 4); g.p[0].hand = ['cha']; a.hp = 2; g.apply({ c: 'play', i: 0, x: 2, y: 4 }); T('chá cura 4', a.hp === 6);
 g = mk(); g.p[0].hand = ['arapuca']; g.apply({ c: 'play', i: 0, x: 2, y: 3 }); g.cur = 1; b = put(g, 1, 'lobis', 2, 1); g.apply({ c: 'move', id: b.id, x: 2, y: 3 }); T('arapuca: 3 de dano', b.hp === 0 || !g.units.includes(b));
@@ -45,4 +45,5 @@ g = mk(); g.cur = 1; g.gen(1).hp = 15; a = put(g, 0, 'saci', 0, 3); g.apply({ c:
 // revide
 g = mk(); a = put(g, 0, 'onca', 2, 3); b = put(g, 1, 'mapin', 2, 2); g.apply({ c: 'attack', id: a.id, x: 2, y: 2 }); T('revide: quem apanha devolve', !g.units.includes(a));
 g = mk(); a = put(g, 0, 'onca', 2, 3); b = put(g, 1, 'mapin', 2, 2, { stunned: 1 }); g.apply({ c: 'attack', id: a.id, x: 2, y: 2 }); T('atordoado não revida', g.units.includes(a));
+g = mk(); b = put(g, 1, 'lobis', 2, 2); g.p[0].hand = ['enraizar']; g.apply({ c: 'play', i: 0, x: 2, y: 2 }); T('enraizar: 1 de dano e preso', b.hp === 2 && b.rooted === 1);
 console.log(`${ok} ok, ${fail} falhas`);

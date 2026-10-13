@@ -45,20 +45,20 @@ button:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
 #bPow canvas{width:26px;height:26px;border-radius:50%;border:2px solid var(--you)}
 #stage{flex:1;position:relative;min-height:0}
 #gl,#cv{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
-#info{margin:4px 8px 0;min-height:62px;display:grid;grid-template-columns:52px 1fr auto;gap:10px;align-items:center;border:2px solid var(--ink);border-radius:14px;background:var(--paper2);padding:5px 10px 5px 5px;box-shadow:0 3px 0 var(--ink)}
-#info canvas{width:52px;height:52px;display:block;border-radius:10px}
+#info{margin:4px 8px 0;min-height:50px;display:grid;grid-template-columns:40px 1fr auto;gap:8px;align-items:center;border:2px solid var(--ink);border-radius:14px;background:var(--paper2);padding:5px 10px 5px 5px;box-shadow:0 3px 0 var(--ink)}
+#info canvas{width:40px;height:40px;display:block;border-radius:10px}
 #info .tx{min-width:0;display:grid;gap:1px}
 #info b{font-family:var(--slab);font-weight:400;font-size:16px;line-height:1.05}
 #info b em{font-style:normal;color:var(--soft);font-family:var(--body);font-weight:800;font-size:13px}
-#info span{font-size:13.5px;line-height:1.25}
+#info span{font-size:13px;line-height:1.2;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 #info.say{background:#2F3A57;color:#fff;border-color:#2F3A57} #info.say b em{color:#C9D3F0}
 #info .use{min-height:40px}
-#hand{display:flex;justify-content:center;padding:10px 6px calc(10px + env(safe-area-inset-bottom,0px));gap:var(--gap,5px)}
+#hand{display:flex;justify-content:center;padding:8px 6px calc(8px + env(safe-area-inset-bottom,0px));gap:var(--gap,5px)}
 .card{position:relative;flex:none;width:var(--cw,64px);height:var(--ch,90px);border:2px solid var(--ink);border-radius:10px;background:var(--paper2);box-shadow:0 3px 0 var(--ink);padding:0;transition:transform .12s}
 .card canvas{position:absolute;left:3px;top:3px;width:calc(100% - 6px);aspect-ratio:1;display:block;border-radius:7px}
 .card .nm{position:absolute;left:1px;right:1px;bottom:3px;font-size:min(10.5px,calc(var(--cw,64px) * .19));letter-spacing:-.2px;font-weight:900;line-height:1.05;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .card .co{position:absolute;top:-8px;left:-8px;width:25px;height:25px;border-radius:50%;background:var(--mana);color:#fff;border:2px solid var(--ink);font-family:var(--slab);font-size:14px;display:grid;place-items:center;z-index:1}
-.card .a,.card .h{position:absolute;top:calc(var(--cw,64px) - 14px);width:22px;height:22px;border:2px solid var(--ink);border-radius:50%;font-family:var(--slab);font-size:13px;display:grid;place-items:center}
+.card .a,.card .h{position:absolute;top:calc(var(--cw,64px) * 0.7 - 11px);width:min(22px,calc(var(--cw,64px) * 0.36));height:min(22px,calc(var(--cw,64px) * 0.36));border:2px solid var(--ink);border-radius:50%;font-family:var(--slab);font-size:min(13px,calc(var(--cw,64px) * 0.22));display:grid;place-items:center}
 .card .a{left:-6px;background:var(--gold)} .card .h{right:-6px;background:var(--foe);color:#fff}
 .card.spell{background:#EFE7FF} .card.spell .nm{color:#4A2A8E}
 .card.sel{transform:translateY(-12px);box-shadow:0 0 0 3px var(--gold),0 3px 0 var(--ink)}

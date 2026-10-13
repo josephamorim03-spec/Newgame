@@ -17,11 +17,11 @@
   const save = () => { try { localStorage.setItem("pj-save", JSON.stringify({ fac: myFac, level, mode, sound })); } catch (e) {} };
 
   // ---------- medidas: tabuleiro e cartas se ajustam à tela ----------
-  function layout() { const W = $("app").clientWidth, nc = Math.max(5, $("hand").children.length), cw = Math.floor(Math.min(78, (W - 16 - (nc - 1) * 5) / nc)), ch = Math.round(cw * 1.32), app = $("app");
+  function layout() { const W = $("app").clientWidth, nc = Math.max(5, $("hand").children.length), cw = Math.floor(Math.min(64, innerHeight * 0.085, (W - 16 - (nc - 1) * 5) / nc)), ch = Math.round(cw * 1.32), app = $("app");
     app.style.setProperty("--cw", cw + "px"); app.style.setProperty("--ch", ch + "px");
     const n = $("hand").children.length, room = W - 16, need = n * cw + (n - 1) * 5; app.style.setProperty("--gap", (need > room && n > 1 ? Math.floor((room - n * cw) / (n - 1)) : 5) + "px"); }
   function resize() { layout(); FX.clear(); const r = cv.getBoundingClientRect(); view.w = Math.max(1, r.width); view.h = Math.max(1, r.height); view.dpr = Math.min(2, devicePixelRatio || 1);
-    cv.width = Math.round(view.w * view.dpr); cv.height = Math.round(view.h * view.dpr); const head = figOK() ? 0.6 : 0; view.t = Math.floor(Math.min((view.w - 12) / BW, (view.h - 10) / (BH + head))); view.ox = Math.round((view.w - view.t * BW) / 2); view.oy = Math.round((view.h - view.t * (BH + head)) / 2 + view.t * head);
+    cv.width = Math.round(view.w * view.dpr); cv.height = Math.round(view.h * view.dpr); const head = figOK() ? 0.3 : 0; view.t = Math.floor(Math.min((view.w - 12) / BW, (view.h - 10) / (BH + head))); view.ox = Math.round((view.w - view.t * BW) / 2); view.oy = Math.round((view.h - view.t * (BH + head)) / 2 + view.t * head);
     if (is3D) { ISO.resize(view.w, view.h, view.dpr); view.t = ISO.tilePx(); } }
   new ResizeObserver(resize).observe($("stage"));
   // o tabuleiro gira para quem está jogando ficar sempre embaixo
@@ -113,10 +113,13 @@
   function drawFig(k, u, alpha, labels = false) {
     const t = view.t, p = dpos.get(u.id) || u, x = SX(p.x, p.y), y0 = SY(p.x, p.y), sc = dscale.has(u.id) ? dscale.get(u.id) : 1; if (sc <= 0) return;
     const col = teamCol(u.o), dark = u.o === viewer ? "#245FA6" : "#B8352B", hp = dhp.has(u.id) ? dhp.get(u.id) : u.hp, isSel = sel && sel.k === "unit" && sel.id === u.id;
-    const by = y0 + t * 0.26, rw = t * 0.4 * sc, rh = t * 0.15 * sc, th = t * 0.07 * sc, lift = isSel ? t * 0.07 : 0;
+    const by = y0 + t * 0.3, rw = t * 0.36 * sc, rh = t * 0.13 * sc, th = t * 0.06 * sc, lift = isSel ? t * 0.07 : 0;
     k.save(); k.globalAlpha = alpha;
-    const h = t * 1.78 * sc, w = h * 0.8;
+    const h = t * 1.4 * sc, w = h * 0.8;
     if (!labels) {
+      // dono da peça à primeira vista: a casa inteira ganha a cor do time
+      const sz = (t - 6) * Math.max(0.6, sc); k.fillStyle = u.o === viewer ? "rgba(47,127,216,0.22)" : "rgba(224,71,58,0.22)"; rrect(k, x - sz / 2, y0 - sz / 2, sz, sz, 9); k.fill();
+      k.lineWidth = 2.5; k.strokeStyle = u.o === viewer ? "rgba(47,127,216,0.85)" : "rgba(224,71,58,0.85)"; k.stroke();
       const ready = u.o === g.cur && human(u.o) && !g.over && !busy() && !(sel && sel.k !== "unit") && (g.moves(u).length || g.attacks(u).length), tired = u.o === g.cur && human(u.o) && !g.over && !busy() && !ready && alpha === 1;
       k.fillStyle = "rgba(42,30,22,0.25)"; k.beginPath(); k.ellipse(x + 2, by + th + 3, rw * 1.02, rh * 1.05, 0, 0, 7); k.fill();
       if (ready || isSel) { const pulse = isSel ? 1 : 0.55 + 0.45 * Math.sin(clock * 5); k.globalAlpha = alpha * pulse; k.strokeStyle = GOLD; k.lineWidth = isSel ? 6 : 4; k.beginPath(); k.ellipse(x, by + th / 2, rw + 5, rh + 4, 0, 0, 7); k.stroke(); k.globalAlpha = alpha; }
@@ -128,12 +131,12 @@
       FX.paint(k, u.id, FIGS.anchors(art, dir), x - w / 2, by - lift - h * 0.885, w, h, alpha * (tired ? 0.62 : 1), by - lift);
       k.restore(); return;
     }
-    const b = Math.max(10, t * 0.16), fs = Math.max(13, Math.round(b * 1.2)); k.font = `${fs}px ${FONT}`; k.textAlign = "center"; k.textBaseline = "middle";
-    const ax = x - rw * 0.98, ay = by + rh * 0.55; k.fillStyle = GOLD; k.beginPath(); k.arc(ax, ay, b, 0, 7); k.fill(); k.lineWidth = 2; k.strokeStyle = INK; k.stroke(); k.fillStyle = INK; k.fillText(g.atkOf(u), ax, ay + 1);
-    const hx = x + rw * 0.98, hy = by + rh * 0.55, hurt = hp < u.max; heart(k, hx, hy + 1, b * 1.08); k.fillStyle = hurt ? "#C81E2C" : "#E0473A"; k.fill(); k.stroke();
+    const b = Math.max(7.5, t * 0.15), fs = Math.max(10, Math.round(b * 1.25)); k.font = `${fs}px ${FONT}`; k.textAlign = "center"; k.textBaseline = "middle";
+    const ax = x - t * 0.5 + b + 2, ay = y0 + t * 0.5 - b - 2; k.fillStyle = GOLD; k.beginPath(); k.arc(ax, ay, b, 0, 7); k.fill(); k.lineWidth = 2; k.strokeStyle = INK; k.stroke(); k.fillStyle = INK; k.fillText(g.atkOf(u), ax, ay + 1);
+    const hx = x + t * 0.5 - b - 2, hy = y0 + t * 0.5 - b - 2, hurt = hp < u.max; heart(k, hx, hy + 1, b * 1.08); k.fillStyle = hurt ? "#C81E2C" : "#E0473A"; k.fill(); k.stroke();
     k.lineWidth = 3; k.strokeStyle = INK; k.strokeText(Math.max(0, hp), hx, hy + 1); k.fillStyle = "#FFFFFF"; k.fillText(Math.max(0, hp), hx, hy + 1);
-    if (u.gen) { const cw = t * 0.13, cy = by + rh * 0.9; k.fillStyle = GOLD; k.beginPath(); k.moveTo(x - cw, cy + cw * 0.5); k.lineTo(x - cw, cy - cw * 0.45); k.lineTo(x - cw * 0.5, cy); k.lineTo(x, cy - cw * 0.65); k.lineTo(x + cw * 0.5, cy); k.lineTo(x + cw, cy - cw * 0.45); k.lineTo(x + cw, cy + cw * 0.5); k.closePath(); k.fill(); k.lineWidth = 1.8; k.strokeStyle = INK; k.stroke(); }
-    if (u.rooted || u.stunned || (u.sick && u.o === g.cur && human(u.o))) { const lab = u.stunned ? "TONTO" : u.rooted ? "PRESO" : "zzz", ww = lab === "zzz" ? t * 0.36 : t * 0.56, hh = Math.max(14, t * 0.2), ly = by - h * 0.86;
+    if (u.gen) { const cw = t * 0.12, cy = y0 + t * 0.5 - cw * 0.7; k.fillStyle = GOLD; k.beginPath(); k.moveTo(x - cw, cy + cw * 0.5); k.lineTo(x - cw, cy - cw * 0.45); k.lineTo(x - cw * 0.5, cy); k.lineTo(x, cy - cw * 0.65); k.lineTo(x + cw * 0.5, cy); k.lineTo(x + cw, cy - cw * 0.45); k.lineTo(x + cw, cy + cw * 0.5); k.closePath(); k.fill(); k.lineWidth = 1.8; k.strokeStyle = INK; k.stroke(); }
+    if (u.rooted || u.stunned || (u.sick && u.o === g.cur && human(u.o))) { const lab = u.stunned ? "TONTO" : u.rooted ? "PRESO" : "zzz", ww = lab === "zzz" ? t * 0.36 : t * 0.56, hh = Math.max(14, t * 0.2), ly = Math.max(y0 - t * 0.5 + 2, by - h * 0.9);
       k.fillStyle = lab === "zzz" ? "#FFFFFF" : FOE; rrect(k, x - ww / 2, ly, ww, hh, hh / 2); k.fill(); k.lineWidth = 1.6; k.strokeStyle = INK; k.stroke(); k.fillStyle = lab === "zzz" ? "#5A4D40" : "#FFFFFF"; k.font = `800 ${Math.round(hh * 0.62)}px Nunito, sans-serif`; k.fillText(lab, x, ly + hh / 2 + 0.5); }
     k.restore();
   }
@@ -251,7 +254,7 @@
     else if (g.over) { title = "Fim da peleja"; }
     else if (!human(o)) { art = GEN_ART[FAC[g.p[o].fac].gen]; title = `${FAC[g.p[o].fac].gen} está jogando…`; text = "Toque nas peças inimigas para ver o que fazem."; }
     else { art = GEN_ART[FAC[g.p[o].fac].gen]; title = mode === "hot" ? `Vez de ${FAC[g.p[o].fac].gen}` : "Sua vez"; sub = `turno ${Math.ceil(g.turn / 2)}`;
-      text = g.actions().length ? "Toque numa carta, ou numa peça com contorno dourado. Toque nas inimigas para ver o que fazem." : "Nada mais a fazer: toque em Passar."; }
+      text = g.actions().length ? "Toque numa peça com brilho dourado ou numa carta." : "Nada mais a fazer: toque em Passar."; }
     el.appendChild(thumb(art)); const tx = document.createElement("div"); tx.className = "tx"; const b = document.createElement("b"); b.textContent = title; if (sub) { const em = document.createElement("em"); em.textContent = " · " + sub; b.appendChild(em); }
     const sp = document.createElement("span"); sp.textContent = text; tx.append(b, sp); el.appendChild(tx); if (btn) el.appendChild(btn);
   }
@@ -266,7 +269,7 @@
       if (busy() || !human(g.cur)) { inspect = null; tell(C.name, C.text, id, 3000); return; }
       sel = sel && sel.k === "card" && sel.i === i ? null : { k: "card", i }; inspect = null; say = null; refresh(); });
     return b; }
-  function manaEl(el, P, mine) { el.innerHTML = '<i class="on"></i>'; const s = document.createElement("span"); s.textContent = mine ? `${P.mana}/${P.max}` : `${P.max}`; el.appendChild(s); el.setAttribute("aria-label", `Mana ${s.textContent}`); }
+  function manaEl(el, P, mine) { el.innerHTML = '<i class="on"></i>'; const s = document.createElement("span"); s.textContent = mine ? (P.mana > P.max ? `${P.max}+${P.mana - P.max}` : `${P.mana}/${P.max}`) : `${P.max}`; el.appendChild(s); el.setAttribute("aria-label", `Mana ${s.textContent}`); }
   function refresh() { renderHud(); renderInfo(); }
   function renderHud() {
     if (!g) return; const foeTurn = !g.over && g.cur !== viewer; $("topBar").classList.toggle("turn", foeTurn); $("myBar").classList.toggle("turn", !g.over && g.cur === viewer);

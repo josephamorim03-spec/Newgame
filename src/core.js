@@ -5,13 +5,13 @@ const CD = (() => {
   const CARDS = {
     // Mata
     saci: { name: "Saci-Pererê", fac: "mata", type: "unit", cost: 2, atk: 2, hp: 2, text: "Entra em qualquer casa vazia a até 3 do seu general.", farSummon: 3 },
-    coral: { name: "Cobra-coral", fac: "mata", type: "unit", cost: 2, atk: 1, hp: 2, text: "Veneno: destrói qualquer unidade que ferir (não afeta generais).", venom: true },
+    coral: { name: "Cobra-coral", fac: "mata", type: "unit", cost: 3, atk: 1, hp: 3, text: "Veneno: destrói qualquer unidade que ferir (não afeta generais).", venom: true },
     uira: { name: "Uirapuru", fac: "mata", type: "unit", cost: 2, atk: 1, hp: 3, text: "Voa: anda até 3 casas por cima de peças e do rio. Ao entrar: compre 1 carta.", fly: true, onEnter: "draw" },
     onca: { name: "Onça-pintada", fac: "mata", type: "unit", cost: 3, atk: 3, hp: 2, text: "Rápida: age no turno em que entra.", rush: true },
     caipora: { name: "Caipora", fac: "mata", type: "unit", cost: 3, atk: 2, hp: 4, text: "No fim do seu turno, cura 1 nas suas unidades vizinhas (e no general).", endHeal: 1 },
     anhanga: { name: "Anhangá", fac: "mata", type: "unit", cost: 5, atk: 4, hp: 5, text: "Ao entrar: enraíza os inimigos vizinhos (não andam no próximo turno).", onEnter: "rootAround" },
     mapin: { name: "Mapinguari", fac: "mata", type: "unit", cost: 6, atk: 5, hp: 7, text: "Guardião: inimigos vizinhos não podem andar e só podem atacá-lo.", guard: true },
-    enraizar: { name: "Enraizar", fac: "mata", type: "spell", cost: 1, target: "enemy", text: "Uma unidade ou general inimigo não anda no próximo turno." },
+    enraizar: { name: "Enraizar", fac: "mata", type: "spell", cost: 1, target: "enemy", text: "Causa 1 de dano a uma unidade ou general inimigo, que também não anda no próximo turno." },
     cha: { name: "Chá de ervas", fac: "mata", type: "spell", cost: 1, target: "ally", text: "Cura 4 de uma unidade sua ou do seu general." },
     arapuca: { name: "Arapuca", fac: "mata", type: "spell", cost: 2, target: "empty", text: "Armadilha escondida numa casa vazia: o primeiro inimigo que parar nela leva 3." },
     // Assombrações
@@ -21,7 +21,7 @@ const CD = (() => {
     pisa: { name: "Pisadeira", fac: "assom", type: "unit", cost: 3, atk: 2, hp: 2, text: "Ao entrar: atordoa o inimigo vizinho mais forte (não anda nem ataca no próximo turno).", onEnter: "stunOne" },
     mula: { name: "Mula-sem-cabeça", fac: "assom", type: "unit", cost: 4, atk: 4, hp: 3, text: "Rápida. Galope: anda até 3 casas.", rush: true, move: 3 },
     capelobo: { name: "Capelobo", fac: "assom", type: "unit", cost: 5, atk: 5, hp: 5, text: "Ao destruir uma unidade atacando, recupera toda a vida.", feast: true },
-    pacto: { name: "Pacto", fac: "assom", type: "spell", cost: 0, target: "none", text: "Seu general perde 3 de vida. Compre 2 cartas." },
+    pacto: { name: "Pacto", fac: "assom", type: "spell", cost: 0, target: "none", text: "Seu general perde 2 de vida. Compre 2 cartas." },
     alma: { name: "Alma penada", fac: "assom", type: "spell", cost: 1, target: "allyUnit", text: "Destrói uma unidade sua: causa 4 de dano em cada inimigo vizinho a ela." },
     grito: { name: "Grito da noite", fac: "assom", type: "spell", cost: 2, target: "enemy", text: "Causa 2 de dano a uma unidade ou general inimigo." },
     assomb: { name: "Assombração", fac: "assom", type: "spell", cost: 3, target: "none", text: "Traz de volta a última unidade sua que morreu, ao lado do seu general." },
@@ -134,10 +134,10 @@ const CD = (() => {
       if (C.onEnter === "rootAround") for (const v of this.units) if (v.hp > 0 && v.o !== o && cheb(v, u) === 1) { v.rooted = 1; this.e({ k: "root", id: v.id }); }
       if (C.onEnter === "stunOne") { const vs = this.units.filter(v => v.hp > 0 && v.o !== o && cheb(v, u) === 1).sort((a, b) => this.atkOf(b) - this.atkOf(a) || a.id - b.id); if (vs[0]) { vs[0].stunned = 1; this.e({ k: "stun", id: vs[0].id }); } } }
     cast(o, id, x, y) { const t = this.at(x, y), P = this.p[o];
-      if (id === "enraizar") { t.rooted = 1; this.e({ k: "root", id: t.id }); }
+      if (id === "enraizar") { t.rooted = 1; this.e({ k: "root", id: t.id }); this.hurt(t, 1, null); }
       else if (id === "cha") { const n = Math.min(4, t.max - t.hp); t.hp += n; this.e({ k: "heal", id: t.id, n: 4 }); }
       else if (id === "arapuca") this.traps.push({ o, x, y });
-      else if (id === "pacto") { this.hurt(this.gen(o), 3, null); this.draw(o, 2); }
+      else if (id === "pacto") { this.hurt(this.gen(o), 2, null); this.draw(o, 2); }
       else if (id === "alma") { const vs = this.units.filter(v => v.hp > 0 && v.o !== o && cheb(v, t) === 1); t.hp = 0; this.e({ k: "sacrifice", id: t.id }); for (const v of vs) this.hurt(v, 4, t); }
       else if (id === "grito") this.hurt(t, 2, null);
       else if (id === "assomb") { const cid = P.grave.pop(), G = this.gen(o); const spots = D8.map(([dx, dy]) => [G.x + dx, G.y + dy]).filter(([a, b]) => inb(a, b) && !this.at(a, b) && this.ter(a, b) !== "rio").sort((a, b) => (o === 0 ? a[1] - b[1] : b[1] - a[1]) || a[0] - b[0]);
@@ -168,6 +168,7 @@ const CD = (() => {
     const base = evaluate(g, o, P); let best = null, bv = base + 0.3;
     for (const a of g.actions()) { const h = g.clone(); if (!h.apply(a)) continue; let v = evaluate(h, o, P);
       if (P.combo && a.c === "move") { const u = h.units.find(z => z.id === a.id); if (u) for (const t of h.attacks(u)) { const h2 = h.clone(); h2.apply({ c: "attack", id: u.id, x: t.x, y: t.y }); v = Math.max(v, evaluate(h2, o, P) - 0.2); } }
+      if (a.c === "play" && g.p[o].hand[a.i] === "pacto") { const G = g.gen(o); if (g.p[o].hand.length <= 3 && G.hp >= 12 && g.p[o].deck.length >= 2) v += 7; }
       v += (R() - 0.5) * noise; if (v > bv) { bv = v; best = a; } }
     return best;
   }
