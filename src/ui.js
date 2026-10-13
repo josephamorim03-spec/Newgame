@@ -20,7 +20,7 @@
   function layout() { const W = $("app").clientWidth, nc = Math.max(5, $("hand").children.length), cw = Math.floor(Math.min(78, (W - 16 - (nc - 1) * 5) / nc)), ch = Math.round(cw * 1.32), app = $("app");
     app.style.setProperty("--cw", cw + "px"); app.style.setProperty("--ch", ch + "px");
     const n = $("hand").children.length, room = W - 16, need = n * cw + (n - 1) * 5; app.style.setProperty("--gap", (need > room && n > 1 ? Math.floor((room - n * cw) / (n - 1)) : 5) + "px"); }
-  function resize() { layout(); const r = cv.getBoundingClientRect(); view.w = Math.max(1, r.width); view.h = Math.max(1, r.height); view.dpr = Math.min(2, devicePixelRatio || 1);
+  function resize() { layout(); FX.clear(); const r = cv.getBoundingClientRect(); view.w = Math.max(1, r.width); view.h = Math.max(1, r.height); view.dpr = Math.min(2, devicePixelRatio || 1);
     cv.width = Math.round(view.w * view.dpr); cv.height = Math.round(view.h * view.dpr); const head = figOK() ? 0.6 : 0; view.t = Math.floor(Math.min((view.w - 12) / BW, (view.h - 10) / (BH + head))); view.ox = Math.round((view.w - view.t * BW) / 2); view.oy = Math.round((view.h - view.t * (BH + head)) / 2 + view.t * head);
     if (is3D) { ISO.resize(view.w, view.h, view.dpr); view.t = ISO.tilePx(); } }
   new ResizeObserver(resize).observe($("stage"));
@@ -82,6 +82,8 @@
     const order = g.units.slice().sort((a, b) => SY(a.x, a.y) - SY(b.x, b.y));
     const all = order.map(u => [u, 1]).concat(ghosts.map(gh => [gh.u, gh.alpha])).sort((a, b) => SY(a[0].x, a[0].y) - SY(b[0].x, b[0].y));
     for (const [u, a] of all) drawUnit(k, u, a);
+    // Todos os números/selos por cima de TODOS os bonecos e partículas.
+    if (figOK()) for (const [u, a] of all) drawFig(k, u, a, true);
     for (const [x, y] of placeUnits) { k.strokeStyle = "#2E9E4F"; k.lineWidth = 5; k.setLineDash([8, 5]); k.lineDashOffset = -clock * 30; k.beginPath(); k.arc(SX(x, y), SY(x, y), t * 0.47, 0, 7); k.stroke(); k.setLineDash([]); }
     drawEffects(k, hl);
   }
@@ -108,19 +110,24 @@
       list.push({ x: t.x, y: t.y, dealt: t.hp - Math.max(0, ta ? ta.hp : 0), kills: !ta || ta.hp <= 0, taken: Math.max(0, u.hp - Math.max(0, ua ? ua.hp : 0)), dies: !ua || ua.hp <= 0 }); }
     pv.key = key; pv.list = list; return list; }
   function faceDir(u) { const f = face.get(u.id) || (u.o === 0 ? [0, -1] : [0, 1]); return FIGS.dirOf(viewer === 0 ? f[0] : -f[0], viewer === 0 ? f[1] : -f[1]); }
-  function drawFig(k, u, alpha) {
+  function drawFig(k, u, alpha, labels = false) {
     const t = view.t, p = dpos.get(u.id) || u, x = SX(p.x, p.y), y0 = SY(p.x, p.y), sc = dscale.has(u.id) ? dscale.get(u.id) : 1; if (sc <= 0) return;
     const col = teamCol(u.o), dark = u.o === viewer ? "#245FA6" : "#B8352B", hp = dhp.has(u.id) ? dhp.get(u.id) : u.hp, isSel = sel && sel.k === "unit" && sel.id === u.id;
-    const ready = u.o === g.cur && human(u.o) && !g.over && !busy() && !(sel && sel.k !== "unit") && (g.moves(u).length || g.attacks(u).length), tired = u.o === g.cur && human(u.o) && !g.over && !busy() && !ready && alpha === 1;
     const by = y0 + t * 0.26, rw = t * 0.4 * sc, rh = t * 0.15 * sc, th = t * 0.07 * sc, lift = isSel ? t * 0.07 : 0;
     k.save(); k.globalAlpha = alpha;
-    k.fillStyle = "rgba(42,30,22,0.25)"; k.beginPath(); k.ellipse(x + 2, by + th + 3, rw * 1.02, rh * 1.05, 0, 0, 7); k.fill();
-    if (ready || isSel) { const pulse = isSel ? 1 : 0.55 + 0.45 * Math.sin(clock * 5); k.globalAlpha = alpha * pulse; k.strokeStyle = GOLD; k.lineWidth = isSel ? 6 : 4; k.beginPath(); k.ellipse(x, by + th / 2, rw + 5, rh + 4, 0, 0, 7); k.stroke(); k.globalAlpha = alpha; }
-    k.fillStyle = dark; k.beginPath(); k.ellipse(x, by + th, rw, rh, 0, 0, Math.PI); k.lineTo(x - rw, by); k.ellipse(x, by, rw, rh, 0, Math.PI, 0, true); k.closePath(); k.fill(); k.lineWidth = 2; k.strokeStyle = INK; k.stroke();
-    k.fillStyle = col; k.beginPath(); k.ellipse(x, by, rw, rh, 0, 0, 7); k.fill(); k.stroke();
-    if (u.gen) { k.strokeStyle = GOLD; k.lineWidth = 3; k.beginPath(); k.ellipse(x, by, rw - 4, rh - 3, 0, 0, 7); k.stroke(); }
-    const sp = FIGS.sprite(u.gen ? GEN_ART[u.card] : u.card, 256, 320, faceDir(u)), h = t * 1.78 * sc, w = h * 0.8;
-    if (tired) k.globalAlpha = alpha * 0.62; k.drawImage(sp, x - w / 2, by - lift - h * 0.885, w, h); k.globalAlpha = alpha;
+    const h = t * 1.78 * sc, w = h * 0.8;
+    if (!labels) {
+      const ready = u.o === g.cur && human(u.o) && !g.over && !busy() && !(sel && sel.k !== "unit") && (g.moves(u).length || g.attacks(u).length), tired = u.o === g.cur && human(u.o) && !g.over && !busy() && !ready && alpha === 1;
+      k.fillStyle = "rgba(42,30,22,0.25)"; k.beginPath(); k.ellipse(x + 2, by + th + 3, rw * 1.02, rh * 1.05, 0, 0, 7); k.fill();
+      if (ready || isSel) { const pulse = isSel ? 1 : 0.55 + 0.45 * Math.sin(clock * 5); k.globalAlpha = alpha * pulse; k.strokeStyle = GOLD; k.lineWidth = isSel ? 6 : 4; k.beginPath(); k.ellipse(x, by + th / 2, rw + 5, rh + 4, 0, 0, 7); k.stroke(); k.globalAlpha = alpha; }
+      k.fillStyle = dark; k.beginPath(); k.ellipse(x, by + th, rw, rh, 0, 0, Math.PI); k.lineTo(x - rw, by); k.ellipse(x, by, rw, rh, 0, Math.PI, 0, true); k.closePath(); k.fill(); k.lineWidth = 2; k.strokeStyle = INK; k.stroke();
+      k.fillStyle = col; k.beginPath(); k.ellipse(x, by, rw, rh, 0, 0, 7); k.fill(); k.stroke();
+      if (u.gen) { k.strokeStyle = GOLD; k.lineWidth = 3; k.beginPath(); k.ellipse(x, by, rw - 4, rh - 3, 0, 0, 7); k.stroke(); }
+      const art = u.gen ? GEN_ART[u.card] : u.card, dir = faceDir(u), sp = FIGS.sprite(art, 256, 320, dir);
+      if (tired) k.globalAlpha = alpha * 0.62; k.drawImage(sp, x - w / 2, by - lift - h * 0.885, w, h); k.globalAlpha = alpha;
+      if (art === "mula") FX.paint(k, u.id, FIGS.anchors(art, dir), x - w / 2, by - lift - h * 0.885, w, h, alpha * (tired ? 0.62 : 1), by - lift);
+      k.restore(); return;
+    }
     const b = Math.max(10, t * 0.16), fs = Math.max(13, Math.round(b * 1.2)); k.font = `${fs}px ${FONT}`; k.textAlign = "center"; k.textBaseline = "middle";
     const ax = x - rw * 0.98, ay = by + rh * 0.55; k.fillStyle = GOLD; k.beginPath(); k.arc(ax, ay, b, 0, 7); k.fill(); k.lineWidth = 2; k.strokeStyle = INK; k.stroke(); k.fillStyle = INK; k.fillText(g.atkOf(u), ax, ay + 1);
     const hx = x + rw * 0.98, hy = by + rh * 0.55, hurt = hp < u.max; heart(k, hx, hy + 1, b * 1.08); k.fillStyle = hurt ? "#C81E2C" : "#E0473A"; k.fill(); k.stroke();
@@ -167,7 +174,8 @@
     for (const e of evs) {
       if (e.k === "play") { const C = CARDS[e.c]; stats[e.o].played++; const [mx, my] = mid(); float(mx, my, C.name, INK, 24, step(0.15), 1.1); sfx(C.type === "spell" ? "spell" : "card"); if (!human(e.o) || mode === "hot") tell(`${FAC[g.p[e.o].fac].gen} jogou ${C.name}`, C.text, e.c); }
       else if (e.k === "summon") { const t0 = step(0.25); dscale.set(e.id, 0); anims.push({ t0, d: 0.25, f: a => { dscale.set(e.id, a >= 1 ? 1 : 0.4 + 0.6 * ease(a)); if (a >= 1) dscale.delete(e.id); } }); burstAt(e.x, e.y, 10, t0); }
-      else if (e.k === "move") { face.set(e.id, [Math.sign(e.x - e.fx), Math.sign(e.y - e.fy)]); const t0 = step(0.26); dpos.set(e.id, { x: e.fx, y: e.fy }); anims.push({ t0, d: 0.26, f: a => { const q = ease(a); dpos.set(e.id, { x: e.fx + (e.x - e.fx) * q, y: e.fy + (e.y - e.fy) * q }); if (a >= 1) dpos.delete(e.id); } }); sfx("move", t0); }
+      else if (e.k === "move") { face.set(e.id, [Math.sign(e.x - e.fx), Math.sign(e.y - e.fy)]); const t0 = step(0.26); dpos.set(e.id, { x: e.fx, y: e.fy }); anims.push({ t0, d: 0.26, f: a => { const q = ease(a); dpos.set(e.id, { x: e.fx + (e.x - e.fx) * q, y: e.fy + (e.y - e.fy) * q }); if (a >= 1) dpos.delete(e.id); } });
+        if (snap.get(e.id)?.card === "mula") anims.push({ t0, d: 0.01, f: () => FX.dust(e.id) }); sfx("move", t0); }
       else if (e.k === "swap") { const a = snap.get(e.a), b = snap.get(e.b), t0 = step(0.3); for (const [id, f, to] of [[e.a, a, b], [e.b, b, a]]) { dpos.set(id, { x: f.x, y: f.y }); anims.push({ t0, d: 0.3, f: q => { const z = ease(q); dpos.set(id, { x: f.x + (to.x - f.x) * z, y: f.y + (to.y - f.y) * z - Math.sin(z * Math.PI) * 0.4 }); if (q >= 1) dpos.delete(id); } }); } }
       else if (e.k === "attack" || e.k === "counter") { const a = g.units.find(z => z.id === e.id) || snap.get(e.id), b = g.units.find(z => z.id === e.t) || snap.get(e.t); if (!a || !b) continue;
         face.set(e.id, [Math.sign(b.x - a.x), Math.sign(b.y - a.y)]);
@@ -300,7 +308,7 @@
   function start() {
     ensureAudio(); const other = myFac === "mata" ? "assom" : "mata", seed = 1 + Math.floor(Math.random() * 1e6);
     g = new K.Game({ seed, fac: [myFac, other] }); g.ev = []; bot = mode === "bot" ? K.makeBot(level, 1, seed) : null; viewer = 0;
-    for (const s of stats) Object.assign(s, { dmg: 0, kills: 0, played: 0 }); fx = []; ver++; face.clear(); anims = []; floats = []; ghosts = []; parts = []; dpos.clear(); dhp.clear(); dscale.clear(); sel = null; inspect = null; say = null; busyUntil = clock; paused = false; ended = false;
+    for (const s of stats) Object.assign(s, { dmg: 0, kills: 0, played: 0 }); fx = []; FX.clear(); ver++; face.clear(); anims = []; floats = []; ghosts = []; parts = []; dpos.clear(); dhp.clear(); dscale.clear(); sel = null; inspect = null; say = null; busyUntil = clock; paused = false; ended = false;
     for (const id of ["ovHome", "ovEnd", "ovMenu", "ovPass"]) $(id).hidden = true; $("hand").dataset.sig = ""; resize(); turnStart = performance.now();
     if (mode === "hot") { $("passWho").textContent = `Vez de ${FAC[g.p[0].fac].gen}`; $("ovPass").hidden = false; } else tell("Sua vez", "Toque numa carta e depois numa casa iluminada perto do seu general.", null, 3500);
     refresh();
@@ -311,8 +319,8 @@
     $("eStats").innerHTML = `<thead><tr><th></th><th>${name(0)}</th><th>${name(1)}</th></tr></thead><tbody><tr><td>Dano causado</td><td>${stats[0].dmg}</td><td>${stats[1].dmg}</td></tr><tr><td>Unidades derrubadas</td><td>${stats[0].kills}</td><td>${stats[1].kills}</td></tr><tr><td>Cartas jogadas</td><td>${stats[0].played}</td><td>${stats[1].played}</td></tr><tr><td>Vida do general</td><td>${Math.max(0, g.gen(0)?.hp ?? 0)}</td><td>${Math.max(0, g.gen(1)?.hp ?? 0)}</td></tr></tbody>`;
     sfx(mode === "bot" ? (w === 0 ? "win" : "lose") : "win"); $("ovEnd").hidden = false; }
   $("bGo").addEventListener("click", start); $("bAgain").addEventListener("click", start);
-  $("bPass").addEventListener("click", () => { viewer = g.cur; $("ovPass").hidden = true; turnStart = performance.now(); $("hand").dataset.sig = ""; refresh(); sfx("turn"); });
-  const home = () => { for (const id of ["ovEnd", "ovMenu", "ovPass"]) $(id).hidden = true; $("ovHome").hidden = false; g = null; paused = false; };
+  $("bPass").addEventListener("click", () => { viewer = g.cur; FX.clear(); $("ovPass").hidden = true; turnStart = performance.now(); $("hand").dataset.sig = ""; refresh(); sfx("turn"); });
+  const home = () => { for (const id of ["ovEnd", "ovMenu", "ovPass"]) $(id).hidden = true; $("ovHome").hidden = false; g = null; FX.clear(); paused = false; };
   $("bHome").addEventListener("click", home); $("bHome2").addEventListener("click", home);
   $("bMenu").addEventListener("click", () => { if (!g) return; paused = true; pauseAt = performance.now(); $("ovMenu").hidden = false; });
   $("bResume").addEventListener("click", () => { ensureAudio(); paused = false; turnStart += performance.now() - pauseAt; $("ovMenu").hidden = true; });
@@ -327,7 +335,8 @@
 
   let lastT = 0, hudT = 0, wasBusy = false;
   function frame(ts) { requestAnimationFrame(frame); const dt = Math.min(0.05, (ts - lastT) / 1000 || 0); lastT = ts;
-    if (g && !paused) { stepAnims(dt);
+    FX.frame(dt, !!g && !paused && !g.over && $("ovPass").hidden);
+    if (g && !paused && !document.hidden) { stepAnims(dt);
       if (g.over && !busy() && !ended) finish();
       else if (!g.over && bot && g.cur === 1 && !busy() && clock >= botWait) { const a = bot(g); if (a) act(a); botWait = clock + 0.4; }
       else if (!g.over && human(g.cur) && $("ovPass").hidden && !busy()) { const left = TURN_S - (performance.now() - turnStart) / 1000; $("bEndT").style.width = Math.max(0, left / TURN_S * 100) + "%"; if (left <= 0) { tell("Tempo esgotado", "O turno passou sozinho."); act({ c: "end" }); } } }

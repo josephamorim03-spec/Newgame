@@ -666,7 +666,8 @@ const FLAT = (() => {
 const FIGS = (() => {
   const T = THREE, C = c => new T.Color(c).convertSRGBToLinear();
   let R = null, scene, cam, outline;
-  const cache = new Map(), models = new Map();
+  const cache = new Map(), models = new Map(), anchorCache = new Map();
+  const EMPTY_ANCHORS = Object.freeze({});
   function setup() { if (R) return; R = new T.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true }); R.outputEncoding = T.sRGBEncoding; R.setClearColor(0x000000, 0);
     R.toneMapping = T.NoToneMapping; scene = new T.Scene();
     scene.add(new T.HemisphereLight(C("#FFF6E8"), C("#7A6A58"), 0.75));
@@ -679,11 +680,13 @@ const FIGS = (() => {
   function kit(root) {
     const K = {
       root,
+      // Pontos locais, projetados uma única vez por direção (fora do render 3D).
+      anchor(type, p) { const a = root.userData.anchors || (root.userData.anchors = {}); (a[type] || (a[type] = [])).push(new T.Vector3(...p)); },
       mat: (c, o = {}) => new T.MeshStandardMaterial({ color: C(c), roughness: o.rough ?? 0.72, metalness: o.metal ?? 0, emissive: C(o.em || "#000000") }),
       // malha com contorno fino (casco invertido)
       mesh(geo, col, o = {}) { const m = new T.Mesh(geo, typeof col === "string" ? K.mat(col, o) : col); if (o.out !== false) { const h = new T.Mesh(geo, outline); h.scale.setScalar(1 + (o.ow ?? 0.045)); m.add(h); } (o.parent || root).add(m); return m; },
       at(m, p = [0, 0, 0], r = [0, 0, 0], s = [1, 1, 1]) { m.position.set(...p); m.rotation.set(...r); m.scale.set(...s); return m; },
-      ball(r, col, p, s = [1, 1, 1], o = {}) { return K.at(K.mesh(new T.SphereGeometry(r, 28, 18), col, o), p, o.rot || [0, 0, 0], s); },
+      ball(r, col, p, s = [1, 1, 1], o = {}) { return K.at(K.mesh(new T.SphereGeometry(r, o.seg || 28, o.rings || 18), col, o), p, o.rot || [0, 0, 0], s); },
       cone(r, h, col, p, rot = [0, 0, 0], o = {}) { return K.at(K.mesh(new T.ConeGeometry(r, h, o.seg || 16), col, o), p, rot, o.s || [1, 1, 1]); },
       cyl(r1, r2, h, col, p, rot = [0, 0, 0], o = {}) { return K.at(K.mesh(new T.CylinderGeometry(r1, r2, h, o.seg || 20), col, o), p, rot, o.s || [1, 1, 1]); },
       box(w, h, d, col, p, rot = [0, 0, 0], o = {}) { return K.at(K.mesh(new T.BoxGeometry(w, h, d), col, o), p, rot); },
@@ -916,18 +919,83 @@ const FIGS = (() => {
       for (let i = 0; i < 13; i++) { const a = (i / 12 - 0.5) * 3.4; K.ball(0.06, "#EDEBE4", [Math.sin(a) * 0.17, 1.22 - Math.abs(a) * 0.06, -0.03 - Math.cos(a) * 0.08], [0.6, 3.2 - Math.abs(a) * 0.4, 0.6], { rot: [0.15, 0, a * 0.15] }); }
       for (let i = 0; i < 6; i++) K.cone(0.05, 0.16, "#EDEBE4", [-0.15 + i * 0.06, 1.5, -0.02], [-0.5, 0, (i - 2.5) * -0.4], { seg: 7 });
     } },
-    // MULA-SEM-CABEÇA: mula galopando com manta vermelha, pescoço terminando em fogo, ferraduras
+    // MULA-SEM-CABEÇA: silhueta equina, manta caída, ferraduras abertas e fogo curvo.
+    // Só esta miniatura usa malhas leves; os outros DEF permanecem iguais.
     mula: { build(K) {
-      const B = "#5B3A29", DB = "#3E2A1E";
-      for (const [x, z, k] of [[-0.14, 0.3, 1], [0.14, 0.32, -1], [-0.14, -0.3, -1], [0.14, -0.28, 1]]) { K.limb([x, 0.52, z], [x, 0.28, z + k * 0.06], 0.065, B, { r2: 0.05 }); K.limb([x, 0.28, z + k * 0.06], [x, 0.07, z + k * 0.02], 0.045, B, { r2: 0.04 }); K.cyl(0.05, 0.055, 0.06, "#9AA0A6", [x, 0.04, z + k * 0.02], [0, 0, 0], { metal: 0.5, rough: 0.35 }); }
-      K.ball(0.3, B, [0, 0.6, 0], [0.8, 0.72, 1.4]);
-      K.box(0.5, 0.05, 0.42, "#B5223A", [0, 0.78, 0], [0, 0, 0], { ow: 0.04 }); K.box(0.52, 0.025, 0.44, "#F2C94C", [0, 0.755, 0], [0, 0, 0], { out: false });
-      K.limb([0, 0.65, -0.4], [0, 0.5, -0.62], 0.04, DB); for (let i = 0; i < 4; i++) K.cone(0.04, 0.2, DB, [(i - 1.5) * 0.03, 0.42, -0.66], [-2.4, 0, (i - 1.5) * 0.3], { seg: 6 });
-      K.limb([0, 0.72, 0.32], [0, 1.0, 0.5], 0.13, B, { r2: 0.11 }); K.ball(0.11, "#E23B2E", [0, 1.05, 0.52], [1, 0.4, 1], { out: false, em: "#A01C10" });
-      for (let i = 0; i < 9; i++) { const a = (i / 8 - 0.5) * 2.4; K.cone(0.07, 0.4 - Math.abs(a) * 0.08, "#E23B2E", [Math.sin(a) * 0.1, 1.24, 0.5 + Math.cos(a) * 0.02], [-0.3, 0, -a * 0.4], { seg: 8, em: "#7A1008" }); }
-      for (let i = 0; i < 6; i++) { const a = (i / 5 - 0.5) * 2; K.cone(0.05, 0.3, "#F59A23", [Math.sin(a) * 0.07, 1.22, 0.52], [-0.25, 0, -a * 0.35], { seg: 8, out: false, em: "#8A4A08" }); }
-      for (let i = 0; i < 3; i++) K.cone(0.03, 0.2, "#FFE45C", [(i - 1) * 0.04, 1.2, 0.53], [-0.2, 0, (i - 1) * -0.3], { seg: 8, out: false, em: "#A08010" });
-      for (const [x, y, z] of [[0.2, 1.5, 0.4], [-0.18, 1.45, 0.6], [0.05, 1.62, 0.5]]) K.ball(0.025, "#FFB03A", [x, y, z], [1, 1, 1], { out: false, em: "#FF8A00" });
+      const B = "#5B3A29", DB = "#3E2A1E", LIGHT = "#79513A", RED = "#B5223A", GOLD = "#F2C94C";
+      const ball = (r, col, p, scale = [1, 1, 1], o = {}) => K.ball(r, col, p, scale, { seg: 12, rings: 6, ow: 0.025, ...o });
+      // Anéis elípticos conectados: volumes contínuos em vez de pilhas de cones.
+      const sweep = (rings, col, o = {}) => {
+        const vertices = [], indices = [], n = 10;
+        for (const [x, y, z, rx, rz] of rings) for (let j = 0; j < n; j++) {
+          const a = j / n * Math.PI * 2; vertices.push(x + Math.cos(a) * rx, y, z + Math.sin(a) * rz);
+        }
+        for (let i = 0; i < rings.length - 1; i++) for (let j = 0; j < n; j++) {
+          const a = i * n + j, b = i * n + (j + 1) % n, c = a + n, d = b + n; indices.push(a, c, b, b, c, d);
+        }
+        for (let j = 1; j < n - 1; j++) { indices.push(0, j, j + 1); const e = (rings.length - 1) * n; indices.push(e, e + j + 1, e + j); }
+        const geo = new T.BufferGeometry(); geo.setAttribute("position", new T.Float32BufferAttribute(vertices, 3)); geo.setIndex(indices); geo.computeVertexNormals();
+        return K.mesh(geo, col, { ow: 0.025, ...o });
+      };
+      // Barril alongado, peito e anca separados; espaço negativo entre as quatro patas.
+      ball(0.31, B, [0, 0.68, -0.02], [0.86, 0.88, 1.75], { rings: 8 });
+      ball(0.23, LIGHT, [0, 0.69, 0.30], [1.04, 1.22, 0.93], { rings: 8 });
+      ball(0.24, B, [0, 0.70, -0.36], [1.04, 1.05, 0.95], { rings: 8 });
+      const legs = [
+        [-0.18, 0.32, 0.40, 0.27, 0.58, 0.10], [0.18, 0.32, 0.25, 0.32, 0.20, 0.075],
+        [-0.18, -0.36, -0.49, 0.31, -0.61, 0.075], [0.18, -0.36, -0.25, 0.28, -0.32, 0.10]
+      ];
+      for (const [x, z, kneeZ, kneeY, hoofZ, hoofY] of legs) {
+        ball(0.11, B, [x, 0.54, z], [0.9, 1.5, 1.05]);
+        K.limb([x, 0.56, z], [x, kneeY, kneeZ], 0.06, B, { r2: 0.043, joint: false, ow: 0.025 });
+        ball(0.05, LIGHT, [x, kneeY, kneeZ], [1, 1.12, 1]);
+        K.limb([x, kneeY, kneeZ], [x, hoofY + 0.035, hoofZ], 0.037, B, { r2: 0.03, joint: false, ow: 0.025 });
+        ball(0.068, DB, [x, hoofY, hoofZ + 0.02], [0.90, 0.72, 1.20]);
+        // U aberto atrás do casco: ferradura, não uma bota de metal.
+        const shoe = K.mesh(new T.TorusGeometry(0.048, 0.012, 4, 12, Math.PI * 1.65), "#9AA0A6", { metal: 0.5, rough: 0.35, ow: 0.02 });
+        K.at(shoe, [x, hoofY - 0.031, hoofZ + 0.02], [Math.PI / 2, 0, Math.PI * 0.175], [1, 1.28, 1]);
+      }
+      // Manta curva: acompanha o dorso e cai dos dois lados, com barra dourada.
+      const blanket = (z0, z1, col, outset = 0) => {
+        const v = [], idx = [], sections = 8;
+        for (const z of [z0, z1]) for (let i = 0; i <= sections; i++) {
+          const a = -1.68 + i / sections * 3.36;
+          v.push(Math.sin(a) * (0.277 + outset), 0.68 + Math.cos(a) * (0.295 + outset), z);
+        }
+        for (let i = 0; i < sections; i++) { const j = i + sections + 1; idx.push(i, j, i + 1, i + 1, j, j + 1); }
+        const geo = new T.BufferGeometry(); geo.setAttribute("position", new T.Float32BufferAttribute(v, 3)); geo.setIndex(idx); geo.computeVertexNormals();
+        const mat = K.mat(col); mat.side = T.DoubleSide; return K.mesh(geo, mat, { out: false });
+      };
+      blanket(-0.30, 0.22, RED); blanket(-0.315, -0.275, GOLD, 0.003); blanket(0.195, 0.235, GOLD, 0.003);
+      for (const side of [-1, 1]) {
+        K.box(0.025, 0.022, 0.54, GOLD, [side * 0.275, 0.65, -0.04], [0, 0, 0], { out: false });
+        K.box(0.028, 0.16, 0.025, GOLD, [side * 0.278, 0.76, -0.04], [0, 0, 0], { out: false });
+      }
+      // Cauda em arco, afinada e com tufo, separada da anca.
+      const tailCurve = new T.CatmullRomCurve3([[0, 0.78, -0.53], [0.05, 0.77, -0.67], [0.11, 0.58, -0.79], [0.15, 0.43, -0.84]].map(p => new T.Vector3(...p)));
+      K.mesh(new T.TubeGeometry(tailCurve, 8, 0.035, 6, false), DB, { ow: 0.03 });
+      ball(0.08, DB, [0.15, 0.42, -0.84], [0.6, 1.6, 0.7], { rot: [0.45, 0, -0.25] });
+      // Pescoço inclinado e contínuo, terminando em abertura incandescente; sem cabeça.
+      sweep([[0, 0.72, 0.31, 0.16, 0.18], [0, 0.92, 0.40, 0.14, 0.16], [0, 1.13, 0.52, 0.105, 0.12], [0, 1.25, 0.57, 0.10, 0.10]], B);
+      K.cyl(0.104, 0.104, 0.04, DB, [0, 1.235, 0.57], [0, 0, 0], { seg: 12, ow: 0.02 });
+      ball(0.10, "#F59A23", [0, 1.26, 0.57], [1, 0.32, 1], { out: false, em: "#F57C2A" });
+      // Chamas esculpidas curvas, assimétricas e cheias; brasas só no FX animado.
+      const flame = (x, z, height, bendX, bendZ, radius, col, em) => sweep([
+        [x, 1.255, z, radius * 0.72, radius * 0.65],
+        [x + bendX * 0.10, 1.255 + height * 0.18, z + bendZ * 0.10, radius * 0.92, radius * 0.70],
+        [x + bendX * 0.25, 1.255 + height * 0.38, z + bendZ * 0.25, radius, radius * 0.72],
+        [x + bendX * 0.65, 1.255 + height * 0.64, z + bendZ * 0.55, radius * 0.62, radius * 0.44],
+        [x + bendX * 1.18, 1.255 + height * 0.83, z + bendZ * 0.87, radius * 0.28, radius * 0.20],
+        [x + bendX, 1.255 + height, z + bendZ, 0.002, 0.002]
+      ], col, { out: false, em });
+      flame(-0.06, 0.56, 0.33, -0.10, -0.05, 0.08, "#E23B2E", "#7A1008");
+      flame(0.05, 0.56, 0.43, 0.10, -0.11, 0.085, "#E23B2E", "#7A1008");
+      flame(0, 0.57, 0.51, -0.035, -0.16, 0.08, "#F59A23", "#8A4A08");
+      flame(-0.045, 0.61, 0.28, -0.07, 0.01, 0.06, "#F59A23", "#8A4A08");
+      flame(0.025, 0.64, 0.36, 0.05, -0.025, 0.055, "#FFE45C", "#A08010");
+      flame(-0.015, 0.64, 0.23, -0.015, 0, 0.038, "#FFF0C8", "#A08010");
+      K.anchor("fire", [-0.055, 1.34, 0.57]); K.anchor("fire", [0.055, 1.39, 0.56]); K.anchor("fire", [0, 1.48, 0.53]);
+      K.anchor("glow", [0, 1.27, 0.57]); K.anchor("dust", [0, 0.055, 0]);
     } },
     // CAPELOBO: fera peluda de pé, focinho comprido de tamanduá, garras em foice, umbigo vermelho (o ponto fraco)
     capelobo: { build(K) {
@@ -946,17 +1014,113 @@ const FIGS = (() => {
   const OUTLINE_INK = "#2A1E16";
   function model(id) { if (models.has(id)) return models.get(id); const D = DEF[id]; if (!D) return null; setup(); const inner = new T.Group(); D.build(kit(inner)); inner.scale.setScalar(D.scale || 1); const root = new T.Group(); root.add(inner); models.set(id, root); return root; }
   // dir: 0 = de frente para quem olha a tela, 2 = virado para a direita, 4 = de costas, 6 = para a esquerda (8 direções)
-  function sprite(id, w = 256, h = 320, dir = 0) { const key = id + "@" + w + "x" + h + ":" + dir; if (cache.has(key)) return cache.get(key); const root = model(id); if (!root) return null;
-    root.rotation.y = dir * Math.PI / 4; scene.add(root);
+  function frameModel(root, w, h, dir) {
+    root.rotation.y = dir * Math.PI / 4;
     const yaw = 0, pitch = 0.36, dist = 9, aim = new T.Vector3(0, 0.95, 0);
     cam.aspect = w / h; cam.position.set(Math.sin(yaw) * Math.cos(pitch) * dist, aim.y + Math.sin(pitch) * dist, Math.cos(yaw) * Math.cos(pitch) * dist); cam.lookAt(aim);
     const H = 2.45; cam.fov = 2 * Math.atan(H / 2 / dist) * 180 / Math.PI; cam.updateProjectionMatrix();
+    cam.updateMatrixWorld(true); root.updateMatrixWorld(true);
+  }
+  function sprite(id, w = 256, h = 320, dir = 0) { const key = id + "@" + w + "x" + h + ":" + dir; if (cache.has(key)) return cache.get(key); const root = model(id); if (!root) return null;
+    frameModel(root, w, h, dir); scene.add(root);
     R.setSize(w, h, false); R.render(scene, cam); scene.remove(root);
     const c = document.createElement("canvas"); c.width = w; c.height = h; c.getContext("2d").drawImage(R.domElement, 0, 0); cache.set(key, c); return c; }
+  // Coordenadas na imagem canônica 256×320, com a mesma câmera do sprite.
+  function anchors(id, dir = 0) { const key = id + ":" + dir; if (anchorCache.has(key)) return anchorCache.get(key);
+    if (!DEF[id]) return EMPTY_ANCHORS; const root = model(id), inner = root.children[0], local = inner.userData.anchors;
+    if (!local) return EMPTY_ANCHORS; frameModel(root, 256, 320, dir); const out = {};
+    for (const type of Object.keys(local)) out[type] = local[type].map(p => { const v = p.clone().applyMatrix4(inner.matrixWorld).project(cam); return [(v.x + 1) * 128, (1 - v.y) * 160]; });
+    anchorCache.set(key, out); return out; }
   // direção (dx, dy) na tela -> índice 0..7 (dy > 0 = para baixo = de frente)
   function dirOf(dx, dy) { const a = Math.atan2(dx, dy); return ((Math.round(a / (Math.PI / 4)) % 8) + 8) % 8; }
   let okFlag = null; function ok() { if (okFlag === null) { try { setup(); okFlag = !!R; } catch (e) { okFlag = false; } } return okFlag; }
-  return { DEF, sprite, dirOf, ok, has: id => !!DEF[id] };
+  return { DEF, sprite, anchors, dirOf, ok, has: id => !!DEF[id] };
+})();
+
+// FX — efeitos do personagem sobre o canvas 2D. O sprite 3D continua estático.
+// Esta etapa habilita só a Mula: fogo, brilho e poeira. Pool único de 120 partículas.
+const FX = (() => {
+  const CAP = 120, OWNERS = 40;
+  const pool = Array.from({ length: CAP }, () => ({ live: false, owner: null, kind: 0, point: 0, x: 0, y: 0, vx: 0, vy: 0, age: 0, life: 1, size: 1, phase: 0 }));
+  const emitters = Array.from({ length: OWNERS }, () => ({ key: null, anchors: null, x: 0, y: 0, w: 0, h: 0, alpha: 1, stamp: 0, carry: 0 }));
+  const motion = matchMedia("(prefers-reduced-motion: reduce)");
+  let reduced = motion.matches, time = 0, step = 0, stamp = 0, cursor = 0;
+  function clear() { for (let i = 0; i < CAP; i++) pool[i].live = false; for (let i = 0; i < OWNERS; i++) { emitters[i].key = null; emitters[i].carry = 0; } }
+  motion.addEventListener("change", e => { reduced = e.matches; clear(); });
+  function drop(e) { for (let i = 0; i < CAP; i++) if (pool[i].owner === e) pool[i].live = false; e.key = null; e.carry = 0; }
+  function frame(dt, active) {
+    stamp++; step = active && !document.hidden ? Math.min(0.05, Math.max(0, dt)) : 0; time += step;
+    for (let i = 0; i < OWNERS; i++) if (emitters[i].key !== null && emitters[i].stamp < stamp - 1) drop(emitters[i]);
+    if (reduced || !step) return;
+    for (let i = 0; i < CAP; i++) { const p = pool[i]; if (!p.live) continue;
+      p.age += step; if (p.age >= p.life) { p.live = false; continue; }
+      p.x += p.vx * step; p.y += p.vy * step;
+      if (p.kind === 3) p.vx *= 1 - step * 3;
+    }
+  }
+  function owner(key) { let free = null;
+    for (let i = 0; i < OWNERS; i++) { const e = emitters[i]; if (e.key === key) return e; if (e.key === null && !free) free = e; }
+    if (free) { free.key = key; free.carry = 0; } return free;
+  }
+  function particle(e, kind, point) {
+    // Não sobrescreve partículas vivas e não cria objetos durante os quadros.
+    for (let i = 0; i < CAP; i++) { const p = pool[cursor]; cursor = (cursor + 1) % CAP; if (p.live) continue;
+      p.live = true; p.owner = e; p.kind = kind; p.point = point; p.age = 0; p.phase = Math.random() * Math.PI * 2;
+      if (kind === 3) {
+        const a = e.anchors.dust[0]; p.x = e.x + a[0] * e.w / 256; p.y = e.y + a[1] * e.h / 320;
+        p.vx = (Math.random() - 0.5) * e.h * 0.30; p.vy = -e.h * (0.025 + Math.random() * 0.035);
+        p.life = 0.35 + Math.random() * 0.20; p.size = e.h * (0.009 + Math.random() * 0.006);
+      } else {
+        p.x = (Math.random() - 0.5) * 7; p.y = 0; p.vx = (Math.random() - 0.5) * 10; p.vy = kind === 2 ? -48 : -32;
+        p.life = kind === 2 ? 0.45 + Math.random() * 0.22 : 0.20 + Math.random() * 0.18;
+        p.size = kind === 2 ? 1.6 : 4 + Math.random() * 3;
+      }
+      return;
+    }
+  }
+  function dust(key) { if (reduced || document.hidden) return;
+    for (let i = 0; i < OWNERS; i++) { const e = emitters[i]; if (e.key !== key || !e.anchors.dust) continue;
+      for (let j = 0; j < 5; j++) particle(e, 3, 0); return;
+    }
+  }
+  function paint(k, key, anchors, x, y, w, h, alpha, baseY) {
+    if (!anchors.fire) return; const e = owner(key); if (!e) return;
+    e.anchors = anchors; e.x = x; e.y = y; e.w = w; e.h = h; e.alpha = alpha; e.stamp = stamp;
+    if (!reduced && step) {
+      e.carry += step; let count = 0;
+      for (let i = 0; i < CAP; i++) if (pool[i].live && pool[i].owner === e && pool[i].kind !== 3) count++;
+      // Máximo 12 chamas/brasas por boneco: várias Mulas compartilham o pool.
+      while (e.carry >= 0.045) { e.carry -= 0.045; if (count >= 12) continue;
+        particle(e, Math.random() < 0.22 ? 2 : 1, Math.floor(Math.random() * anchors.fire.length)); count++;
+      }
+    }
+    k.save();
+    // Números são desenhados DEPOIS. Fogo/brilho também ficam acima da base.
+    k.beginPath(); k.rect(x - w * 0.25, y - h * 0.12, w * 1.5, Math.max(0, baseY - y - h * 0.10)); k.clip();
+    const scale = h / 320, pulse = reduced ? 1 : 0.85 + Math.sin(time * 5 + key) * 0.15;
+    for (let i = 0; i < anchors.glow.length; i++) { const a = anchors.glow[i];
+      k.globalAlpha = alpha * 0.19 * pulse; k.fillStyle = "#F59A23"; k.beginPath(); k.arc(x + a[0] * scale, y + a[1] * scale, 13 * scale, 0, Math.PI * 2); k.fill();
+      k.globalAlpha = alpha * 0.26 * pulse; k.fillStyle = "#FFE45C"; k.beginPath(); k.arc(x + a[0] * scale, y + a[1] * scale, 7 * scale, 0, Math.PI * 2); k.fill();
+    }
+    if (!reduced) for (let i = 0; i < CAP; i++) { const p = pool[i]; if (!p.live || p.owner !== e || p.kind === 3) continue;
+      const q = p.age / p.life, a = anchors.fire[p.point], px = x + (a[0] + p.x + Math.sin(p.phase + q * 5) * 2) * scale, py = y + (a[1] + p.y) * scale, r = p.size * scale * (1 - q * 0.75);
+      k.globalAlpha = alpha * (1 - q) * (p.kind === 2 ? 0.85 : 0.72);
+      k.fillStyle = p.kind === 2 || q < 0.3 ? "#FFE45C" : q < 0.7 ? "#F59A23" : "#E23B2E";
+      k.beginPath();
+      if (p.kind === 2) k.arc(px, py, r, 0, Math.PI * 2);
+      else { k.moveTo(px, py + r); k.bezierCurveTo(px - r * 1.2, py, px - r * 0.5, py - r, px + Math.sin(p.phase) * r * 0.7, py - r * 2.3); k.bezierCurveTo(px + r, py - r, px + r, py, px, py + r); }
+      k.fill();
+    }
+    k.restore();
+    // Poeira permanece no ponto da passada; não acompanha o pescoço nem cobre texto.
+    if (!reduced) { k.save(); for (let i = 0; i < CAP; i++) { const p = pool[i]; if (!p.live || p.owner !== e || p.kind !== 3) continue;
+        const q = p.age / p.life; k.globalAlpha = alpha * (1 - q) * 0.32; k.fillStyle = "#9F8965"; k.beginPath(); k.ellipse(p.x, p.y, p.size * (1 + q), p.size * (0.5 + q * 0.5), 0, 0, Math.PI * 2); k.fill(); }
+      k.restore(); }
+  }
+  // Diagnóstico sob demanda, nunca chamado pelo loop de desenho.
+  function stats() { let alive = 0, owners = 0; for (let i = 0; i < CAP; i++) if (pool[i].live) alive++; for (let i = 0; i < OWNERS; i++) if (emitters[i].key !== null) owners++;
+    return { capacity: CAP, alive, owners, reduced, time }; }
+  return { frame, paint, dust, clear, stats };
 })();
 
 // Arte do jogo. Personagens: miniaturas 3D (FIGS) em cima de fundo da facção; feitiços: ilustrações chapadas (FLAT).
@@ -1003,7 +1167,7 @@ const ART = (() => {
   function layout() { const W = $("app").clientWidth, nc = Math.max(5, $("hand").children.length), cw = Math.floor(Math.min(78, (W - 16 - (nc - 1) * 5) / nc)), ch = Math.round(cw * 1.32), app = $("app");
     app.style.setProperty("--cw", cw + "px"); app.style.setProperty("--ch", ch + "px");
     const n = $("hand").children.length, room = W - 16, need = n * cw + (n - 1) * 5; app.style.setProperty("--gap", (need > room && n > 1 ? Math.floor((room - n * cw) / (n - 1)) : 5) + "px"); }
-  function resize() { layout(); const r = cv.getBoundingClientRect(); view.w = Math.max(1, r.width); view.h = Math.max(1, r.height); view.dpr = Math.min(2, devicePixelRatio || 1);
+  function resize() { layout(); FX.clear(); const r = cv.getBoundingClientRect(); view.w = Math.max(1, r.width); view.h = Math.max(1, r.height); view.dpr = Math.min(2, devicePixelRatio || 1);
     cv.width = Math.round(view.w * view.dpr); cv.height = Math.round(view.h * view.dpr); const head = figOK() ? 0.6 : 0; view.t = Math.floor(Math.min((view.w - 12) / BW, (view.h - 10) / (BH + head))); view.ox = Math.round((view.w - view.t * BW) / 2); view.oy = Math.round((view.h - view.t * (BH + head)) / 2 + view.t * head);
     if (is3D) { ISO.resize(view.w, view.h, view.dpr); view.t = ISO.tilePx(); } }
   new ResizeObserver(resize).observe($("stage"));
@@ -1065,6 +1229,8 @@ const ART = (() => {
     const order = g.units.slice().sort((a, b) => SY(a.x, a.y) - SY(b.x, b.y));
     const all = order.map(u => [u, 1]).concat(ghosts.map(gh => [gh.u, gh.alpha])).sort((a, b) => SY(a[0].x, a[0].y) - SY(b[0].x, b[0].y));
     for (const [u, a] of all) drawUnit(k, u, a);
+    // Todos os números/selos por cima de TODOS os bonecos e partículas.
+    if (figOK()) for (const [u, a] of all) drawFig(k, u, a, true);
     for (const [x, y] of placeUnits) { k.strokeStyle = "#2E9E4F"; k.lineWidth = 5; k.setLineDash([8, 5]); k.lineDashOffset = -clock * 30; k.beginPath(); k.arc(SX(x, y), SY(x, y), t * 0.47, 0, 7); k.stroke(); k.setLineDash([]); }
     drawEffects(k, hl);
   }
@@ -1091,19 +1257,24 @@ const ART = (() => {
       list.push({ x: t.x, y: t.y, dealt: t.hp - Math.max(0, ta ? ta.hp : 0), kills: !ta || ta.hp <= 0, taken: Math.max(0, u.hp - Math.max(0, ua ? ua.hp : 0)), dies: !ua || ua.hp <= 0 }); }
     pv.key = key; pv.list = list; return list; }
   function faceDir(u) { const f = face.get(u.id) || (u.o === 0 ? [0, -1] : [0, 1]); return FIGS.dirOf(viewer === 0 ? f[0] : -f[0], viewer === 0 ? f[1] : -f[1]); }
-  function drawFig(k, u, alpha) {
+  function drawFig(k, u, alpha, labels = false) {
     const t = view.t, p = dpos.get(u.id) || u, x = SX(p.x, p.y), y0 = SY(p.x, p.y), sc = dscale.has(u.id) ? dscale.get(u.id) : 1; if (sc <= 0) return;
     const col = teamCol(u.o), dark = u.o === viewer ? "#245FA6" : "#B8352B", hp = dhp.has(u.id) ? dhp.get(u.id) : u.hp, isSel = sel && sel.k === "unit" && sel.id === u.id;
-    const ready = u.o === g.cur && human(u.o) && !g.over && !busy() && !(sel && sel.k !== "unit") && (g.moves(u).length || g.attacks(u).length), tired = u.o === g.cur && human(u.o) && !g.over && !busy() && !ready && alpha === 1;
     const by = y0 + t * 0.26, rw = t * 0.4 * sc, rh = t * 0.15 * sc, th = t * 0.07 * sc, lift = isSel ? t * 0.07 : 0;
     k.save(); k.globalAlpha = alpha;
-    k.fillStyle = "rgba(42,30,22,0.25)"; k.beginPath(); k.ellipse(x + 2, by + th + 3, rw * 1.02, rh * 1.05, 0, 0, 7); k.fill();
-    if (ready || isSel) { const pulse = isSel ? 1 : 0.55 + 0.45 * Math.sin(clock * 5); k.globalAlpha = alpha * pulse; k.strokeStyle = GOLD; k.lineWidth = isSel ? 6 : 4; k.beginPath(); k.ellipse(x, by + th / 2, rw + 5, rh + 4, 0, 0, 7); k.stroke(); k.globalAlpha = alpha; }
-    k.fillStyle = dark; k.beginPath(); k.ellipse(x, by + th, rw, rh, 0, 0, Math.PI); k.lineTo(x - rw, by); k.ellipse(x, by, rw, rh, 0, Math.PI, 0, true); k.closePath(); k.fill(); k.lineWidth = 2; k.strokeStyle = INK; k.stroke();
-    k.fillStyle = col; k.beginPath(); k.ellipse(x, by, rw, rh, 0, 0, 7); k.fill(); k.stroke();
-    if (u.gen) { k.strokeStyle = GOLD; k.lineWidth = 3; k.beginPath(); k.ellipse(x, by, rw - 4, rh - 3, 0, 0, 7); k.stroke(); }
-    const sp = FIGS.sprite(u.gen ? GEN_ART[u.card] : u.card, 256, 320, faceDir(u)), h = t * 1.78 * sc, w = h * 0.8;
-    if (tired) k.globalAlpha = alpha * 0.62; k.drawImage(sp, x - w / 2, by - lift - h * 0.885, w, h); k.globalAlpha = alpha;
+    const h = t * 1.78 * sc, w = h * 0.8;
+    if (!labels) {
+      const ready = u.o === g.cur && human(u.o) && !g.over && !busy() && !(sel && sel.k !== "unit") && (g.moves(u).length || g.attacks(u).length), tired = u.o === g.cur && human(u.o) && !g.over && !busy() && !ready && alpha === 1;
+      k.fillStyle = "rgba(42,30,22,0.25)"; k.beginPath(); k.ellipse(x + 2, by + th + 3, rw * 1.02, rh * 1.05, 0, 0, 7); k.fill();
+      if (ready || isSel) { const pulse = isSel ? 1 : 0.55 + 0.45 * Math.sin(clock * 5); k.globalAlpha = alpha * pulse; k.strokeStyle = GOLD; k.lineWidth = isSel ? 6 : 4; k.beginPath(); k.ellipse(x, by + th / 2, rw + 5, rh + 4, 0, 0, 7); k.stroke(); k.globalAlpha = alpha; }
+      k.fillStyle = dark; k.beginPath(); k.ellipse(x, by + th, rw, rh, 0, 0, Math.PI); k.lineTo(x - rw, by); k.ellipse(x, by, rw, rh, 0, Math.PI, 0, true); k.closePath(); k.fill(); k.lineWidth = 2; k.strokeStyle = INK; k.stroke();
+      k.fillStyle = col; k.beginPath(); k.ellipse(x, by, rw, rh, 0, 0, 7); k.fill(); k.stroke();
+      if (u.gen) { k.strokeStyle = GOLD; k.lineWidth = 3; k.beginPath(); k.ellipse(x, by, rw - 4, rh - 3, 0, 0, 7); k.stroke(); }
+      const art = u.gen ? GEN_ART[u.card] : u.card, dir = faceDir(u), sp = FIGS.sprite(art, 256, 320, dir);
+      if (tired) k.globalAlpha = alpha * 0.62; k.drawImage(sp, x - w / 2, by - lift - h * 0.885, w, h); k.globalAlpha = alpha;
+      if (art === "mula") FX.paint(k, u.id, FIGS.anchors(art, dir), x - w / 2, by - lift - h * 0.885, w, h, alpha * (tired ? 0.62 : 1), by - lift);
+      k.restore(); return;
+    }
     const b = Math.max(10, t * 0.16), fs = Math.max(13, Math.round(b * 1.2)); k.font = `${fs}px ${FONT}`; k.textAlign = "center"; k.textBaseline = "middle";
     const ax = x - rw * 0.98, ay = by + rh * 0.55; k.fillStyle = GOLD; k.beginPath(); k.arc(ax, ay, b, 0, 7); k.fill(); k.lineWidth = 2; k.strokeStyle = INK; k.stroke(); k.fillStyle = INK; k.fillText(g.atkOf(u), ax, ay + 1);
     const hx = x + rw * 0.98, hy = by + rh * 0.55, hurt = hp < u.max; heart(k, hx, hy + 1, b * 1.08); k.fillStyle = hurt ? "#C81E2C" : "#E0473A"; k.fill(); k.stroke();
@@ -1150,7 +1321,8 @@ const ART = (() => {
     for (const e of evs) {
       if (e.k === "play") { const C = CARDS[e.c]; stats[e.o].played++; const [mx, my] = mid(); float(mx, my, C.name, INK, 24, step(0.15), 1.1); sfx(C.type === "spell" ? "spell" : "card"); if (!human(e.o) || mode === "hot") tell(`${FAC[g.p[e.o].fac].gen} jogou ${C.name}`, C.text, e.c); }
       else if (e.k === "summon") { const t0 = step(0.25); dscale.set(e.id, 0); anims.push({ t0, d: 0.25, f: a => { dscale.set(e.id, a >= 1 ? 1 : 0.4 + 0.6 * ease(a)); if (a >= 1) dscale.delete(e.id); } }); burstAt(e.x, e.y, 10, t0); }
-      else if (e.k === "move") { face.set(e.id, [Math.sign(e.x - e.fx), Math.sign(e.y - e.fy)]); const t0 = step(0.26); dpos.set(e.id, { x: e.fx, y: e.fy }); anims.push({ t0, d: 0.26, f: a => { const q = ease(a); dpos.set(e.id, { x: e.fx + (e.x - e.fx) * q, y: e.fy + (e.y - e.fy) * q }); if (a >= 1) dpos.delete(e.id); } }); sfx("move", t0); }
+      else if (e.k === "move") { face.set(e.id, [Math.sign(e.x - e.fx), Math.sign(e.y - e.fy)]); const t0 = step(0.26); dpos.set(e.id, { x: e.fx, y: e.fy }); anims.push({ t0, d: 0.26, f: a => { const q = ease(a); dpos.set(e.id, { x: e.fx + (e.x - e.fx) * q, y: e.fy + (e.y - e.fy) * q }); if (a >= 1) dpos.delete(e.id); } });
+        if (snap.get(e.id)?.card === "mula") anims.push({ t0, d: 0.01, f: () => FX.dust(e.id) }); sfx("move", t0); }
       else if (e.k === "swap") { const a = snap.get(e.a), b = snap.get(e.b), t0 = step(0.3); for (const [id, f, to] of [[e.a, a, b], [e.b, b, a]]) { dpos.set(id, { x: f.x, y: f.y }); anims.push({ t0, d: 0.3, f: q => { const z = ease(q); dpos.set(id, { x: f.x + (to.x - f.x) * z, y: f.y + (to.y - f.y) * z - Math.sin(z * Math.PI) * 0.4 }); if (q >= 1) dpos.delete(id); } }); } }
       else if (e.k === "attack" || e.k === "counter") { const a = g.units.find(z => z.id === e.id) || snap.get(e.id), b = g.units.find(z => z.id === e.t) || snap.get(e.t); if (!a || !b) continue;
         face.set(e.id, [Math.sign(b.x - a.x), Math.sign(b.y - a.y)]);
@@ -1283,7 +1455,7 @@ const ART = (() => {
   function start() {
     ensureAudio(); const other = myFac === "mata" ? "assom" : "mata", seed = 1 + Math.floor(Math.random() * 1e6);
     g = new K.Game({ seed, fac: [myFac, other] }); g.ev = []; bot = mode === "bot" ? K.makeBot(level, 1, seed) : null; viewer = 0;
-    for (const s of stats) Object.assign(s, { dmg: 0, kills: 0, played: 0 }); fx = []; ver++; face.clear(); anims = []; floats = []; ghosts = []; parts = []; dpos.clear(); dhp.clear(); dscale.clear(); sel = null; inspect = null; say = null; busyUntil = clock; paused = false; ended = false;
+    for (const s of stats) Object.assign(s, { dmg: 0, kills: 0, played: 0 }); fx = []; FX.clear(); ver++; face.clear(); anims = []; floats = []; ghosts = []; parts = []; dpos.clear(); dhp.clear(); dscale.clear(); sel = null; inspect = null; say = null; busyUntil = clock; paused = false; ended = false;
     for (const id of ["ovHome", "ovEnd", "ovMenu", "ovPass"]) $(id).hidden = true; $("hand").dataset.sig = ""; resize(); turnStart = performance.now();
     if (mode === "hot") { $("passWho").textContent = `Vez de ${FAC[g.p[0].fac].gen}`; $("ovPass").hidden = false; } else tell("Sua vez", "Toque numa carta e depois numa casa iluminada perto do seu general.", null, 3500);
     refresh();
@@ -1294,8 +1466,8 @@ const ART = (() => {
     $("eStats").innerHTML = `<thead><tr><th></th><th>${name(0)}</th><th>${name(1)}</th></tr></thead><tbody><tr><td>Dano causado</td><td>${stats[0].dmg}</td><td>${stats[1].dmg}</td></tr><tr><td>Unidades derrubadas</td><td>${stats[0].kills}</td><td>${stats[1].kills}</td></tr><tr><td>Cartas jogadas</td><td>${stats[0].played}</td><td>${stats[1].played}</td></tr><tr><td>Vida do general</td><td>${Math.max(0, g.gen(0)?.hp ?? 0)}</td><td>${Math.max(0, g.gen(1)?.hp ?? 0)}</td></tr></tbody>`;
     sfx(mode === "bot" ? (w === 0 ? "win" : "lose") : "win"); $("ovEnd").hidden = false; }
   $("bGo").addEventListener("click", start); $("bAgain").addEventListener("click", start);
-  $("bPass").addEventListener("click", () => { viewer = g.cur; $("ovPass").hidden = true; turnStart = performance.now(); $("hand").dataset.sig = ""; refresh(); sfx("turn"); });
-  const home = () => { for (const id of ["ovEnd", "ovMenu", "ovPass"]) $(id).hidden = true; $("ovHome").hidden = false; g = null; paused = false; };
+  $("bPass").addEventListener("click", () => { viewer = g.cur; FX.clear(); $("ovPass").hidden = true; turnStart = performance.now(); $("hand").dataset.sig = ""; refresh(); sfx("turn"); });
+  const home = () => { for (const id of ["ovEnd", "ovMenu", "ovPass"]) $(id).hidden = true; $("ovHome").hidden = false; g = null; FX.clear(); paused = false; };
   $("bHome").addEventListener("click", home); $("bHome2").addEventListener("click", home);
   $("bMenu").addEventListener("click", () => { if (!g) return; paused = true; pauseAt = performance.now(); $("ovMenu").hidden = false; });
   $("bResume").addEventListener("click", () => { ensureAudio(); paused = false; turnStart += performance.now() - pauseAt; $("ovMenu").hidden = true; });
@@ -1310,7 +1482,8 @@ const ART = (() => {
 
   let lastT = 0, hudT = 0, wasBusy = false;
   function frame(ts) { requestAnimationFrame(frame); const dt = Math.min(0.05, (ts - lastT) / 1000 || 0); lastT = ts;
-    if (g && !paused) { stepAnims(dt);
+    FX.frame(dt, !!g && !paused && !g.over && $("ovPass").hidden);
+    if (g && !paused && !document.hidden) { stepAnims(dt);
       if (g.over && !busy() && !ended) finish();
       else if (!g.over && bot && g.cur === 1 && !busy() && clock >= botWait) { const a = bot(g); if (a) act(a); botWait = clock + 0.4; }
       else if (!g.over && human(g.cur) && $("ovPass").hidden && !busy()) { const left = TURN_S - (performance.now() - turnStart) / 1000; $("bEndT").style.width = Math.max(0, left / TURN_S * 100) + "%"; if (left <= 0) { tell("Tempo esgotado", "O turno passou sozinho."); act({ c: "end" }); } } }
