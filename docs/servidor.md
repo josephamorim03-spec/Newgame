@@ -32,7 +32,10 @@ Banco: Postgres (o plugin da Railway). Sem `DATABASE_URL`, guarda tudo num arqui
 - Contra os rivais do jogo (que rodam no aparelho), a conta recebe até 300 moedas por dia. O teto pelo maior rating de cada rival continua valendo.
 - Quem já jogava sem conta leva o progresso uma vez, ao criar a conta: até 600 moedas, e itens até um valor total de 900.
 - Login: 10 tentativas por minuto por IP, e 5 senhas erradas seguidas trancam o login daquela conta por 15 minutos (mesmo trocando de IP).
-  Vale também para a senha atual em trocar a senha e apagar a conta. A tela avisa nas 3 últimas tentativas ("Mais 2 tentativas antes de
+  Como os nomes estão no ranking, qualquer um provocava essa trava de longe e deixava o dono do lado de fora. Por isso, cada login bom
+  devolve também um token de **aparelho conhecido** (1 ano, assinado com outra chave, não abre sessão), que o cliente guarda mesmo
+  depois de sair da conta e manda no login: quem o traz tem uma trava só dele, que os erros de fora não tocam. A senha atual em trocar
+  a senha e apagar a conta tem a sua própria trava (5 erros, 15 min), separada do login. A tela avisa nas 3 últimas tentativas ("Mais 2 tentativas antes de
   travar"), e na trava o botão mostra a contagem ("Tente de novo em 14:32") e volta sozinho. Os limites por IP também dizem quanto
   esperar (e mandam Retry-After). Conta que não existe responde no mesmo tempo. Criação de contas: 5 a cada 10 minutos.
 - A API inteira: 1200 pedidos por minuto por IP (as rotas sensíveis têm limites próprios, mais apertados).

@@ -73,6 +73,7 @@ class Partida(N.Partida):
         super().fire(p)
         if getattr(s, 'meio', None) is None and max(x.pts for x in s.j) >= s.meta / 2: s.meio = (s.j[0].pts, s.j[1].pts)
     def armar(s, p, c, alvo=None):
+        if c == 'espelho' and s.marca: return   # recusado (deck.py): não conta como uso
         s._conta(p, c); super().armar(p, c, alvo)
 
     # ---------- o que está em jogo ----------
@@ -269,7 +270,9 @@ class Partida(N.Partida):
             if not j.pronta(c): continue
             if c in ARM:
                 if j.armada is not None: continue
-                if c == 'espelho': ops += [('espelho', i) for i, X in enumerate(m) if serve(R.cor, X) and len(m) >= 2]
+                if c == 'espelho':
+                    if s.marca: continue   # um dado marcado por vez: o armar recusaria, e a escolha "vazia" voltava a ser pensada
+                    ops += [('espelho', i) for i, X in enumerate(m) if serve(R.cor, X) and len(m) >= 2]
                 else: ops.append((c,))
             elif c == 'ajuste':
                 for i, X in enumerate(m):

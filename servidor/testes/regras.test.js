@@ -145,6 +145,23 @@ test('pegar com destino: escolher e confirmar numa ação só, com o Espelho já
   assert.strictEqual(j.mesa.length, 2);
 });
 
+test('dois Espelhos: com a marca do rival na Mesa, o segundo espera (antes apagava a marca e a armadilha dele travava)', () => {
+  const j = Regras.criarPartida({ decks: [['espelho'], ['espelho']], vez: 0, rng: rngDe(13) });
+  j.mesa = [{ id: 1, v: 2 }, { id: 2, v: 3 }, { id: 3, v: 6 }, { id: 4, v: 4 }];
+  assert.ok(Regras.aplicar(j, 0, { tipo: 'carta', carta: 'espelho', idx: 0 }).ok);
+  j.vez = 1; j.fase = 'pegar';
+  const r = Regras.aplicar(j, 1, { tipo: 'carta', carta: 'espelho', idx: 1 });
+  assert.strictEqual(r.ok, false);
+  assert.deepStrictEqual(j.marca, { dono: 0, id: 1 }, 'a marca da Ana continua');
+  assert.strictEqual(j.cartas[1].espelho, 'pronta', 'o Espelho da Bia fica na mão');
+  // a Bia pega o dado marcado: o Espelho da Ana dispara, e aí a Bia já pode marcar
+  assert.ok(Regras.aplicar(j, 1, { tipo: 'pegar', idx: 0, modo: 'corrente' }).ok);
+  assert.strictEqual(j.marca, null); assert.strictEqual(j.armada[0], null);
+  j.vez = 1; j.fase = 'pegar';
+  assert.ok(Regras.aplicar(j, 1, { tipo: 'carta', carta: 'espelho', idx: 0 }).ok);
+  assert.strictEqual(j.marca.dono, 1);
+});
+
 // ---------- cartas da v0.11: Pausa, Reverso, Furto e Lacre (docs/balanceamento-cartas.md) ----------
 const montar = (decks, f) => { const j = Regras.criarPartida({ decks, vez: 0, meta: 16, rng: rngDe(11) }); f(j); return j; };
 

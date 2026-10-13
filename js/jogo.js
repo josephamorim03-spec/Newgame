@@ -556,6 +556,9 @@
     if (jogo) render();
   }
   const mudou = id => !!(marcaMudanca && marcaMudanca.ids.includes(id) && Date.now() < marcaMudanca.ate);
+  // o rival pensa com esperas no meio: depois de cada uma, para se a vez mudou (token novo) ou se a partida saiu da mesa
+  // (jogo = null ao abandonar, ou outra partida no lugar); antes, `jogo.token` com jogo = null lançava TypeError
+  const outraVez = (j, tok) => jogo !== j || tok !== j.token;
   // a presença do rival: antes de pegar, ele olha a Mesa. Cada olhada acende um dado de leve; a Diana, impulsiva, olha um dado no máximo, e às vezes nenhum; a Dona Coruja olha dois, e
   // de preferência os que servem à sua corrente: ela lê a Mesa. As olhadas tomam o lugar de parte da espera de antes,
   // então a vez do rival não fica mais longa. Devolve false se a partida mudou no meio
@@ -571,7 +574,7 @@
       if (!j.mesa[i]) continue;
       j.olhando = j.mesa[i].id; render();
       Som.tocar('passar', { i });
-      await espera(coruja ? 380 : 260); if (tok !== jogo.token) return false;
+      await espera(coruja ? 380 : 260); if (outraVez(j, tok)) return false;
     }
     j.olhando = null;
     return true;
@@ -582,43 +585,43 @@
     const tok = j.token, p = j.vez;
     j.pensando = true; render();
     if (j.fase === 'pegar') {
-      await espera(st.pref.animacoes ? 450 : 800); if (tok !== jogo.token) return;
-      if (window.Rolagem) { await Rolagem.esperar(); if (tok !== jogo.token) return; }   // escolhe com os dados já assentados
+      await espera(st.pref.animacoes ? 450 : 800); if (outraVez(j, tok)) return;
+      if (window.Rolagem) { await Rolagem.esperar(); if (outraVez(j, tok)) return; }   // escolhe com os dados já assentados
       for (const u of automatoCartas(p)) {
         if (!podeUsar(p, u.carta).ok || (CARTAS[u.carta].alvo && !j.mesa[u.idx])) continue;
         const rc = usarCarta(p, u.carta, u.idx, u.delta || 1);
-        if (rc === 'fim' || jogo.fase === 'fim') { j.pensando = false; return; }
+        if (rc === 'fim' || j.fase === 'fim') { j.pensando = false; return; }
         if (rc === 'proximo') {
           // a Pausa passou a vez: o aviso fica um tempo e a vez segue para o outro lado
           j.pensando = false; depois('proximo'); return;
         }
         render();
         // dá tempo de ler o aviso e ver o dado que mudou antes da próxima ação (não acelera no ritmo rápido)
-        await new Promise(r => setTimeout(r, Math.max(AVISO_CARTA + 300, (AVISO_CARTA + 300) * ritmo()))); if (tok !== jogo.token) return;
+        await new Promise(r => setTimeout(r, Math.max(AVISO_CARTA + 300, (AVISO_CARTA + 300) * ritmo()))); if (outraVez(j, tok)) return;
       }
       for (;;) {
         const plano = automatoEscolhe(p);
         if (!(await olharMesa(p, plano.idx, tok))) return;
         j.destaque = j.mesa[plano.idx].id; render();
         if (!esperto(j) && st.pref.animacoes) Som.tocar('quique', { forca: 3, x: (plano.idx - 2) * 0.3 });   // o toque no dado que ela vai pegar
-        await espera(520); if (tok !== jogo.token) return;
+        await espera(520); if (outraVez(j, tok)) return;
         j.destaque = null; j.pensando = false;
         const v = tirar(p, plano.idx);
         const res = colocar(p, v, automatoDestino(p, v, plano.modo));
         if (res === 'extra') {
           // o segundo dado da Pressa é opcional: sem nenhum dado seguro, o rival dispensa
           if (!j.mesa.some(d => seguroDado(p, d))) { if (dispensarSegundo(p) !== 'decidir') return; break; }
-          j.pensando = true; render(); await espera(520); if (tok !== jogo.token) return; continue;
+          j.pensando = true; render(); await espera(520); if (outraVez(j, tok)) return; continue;
         }
         if (res !== 'decidir') return;
         break;
       }
       j.pensando = true; render();
     }
-    await espera(650); if (tok !== jogo.token) return;
+    await espera(650); if (outraVez(j, tok)) return;
     j.pensando = false;
     if (automatoDispara(p)) {
-      if (j.decks[p].includes('sobrecarga') && podeUsar(p, 'sobrecarga').ok && j.cor[p].length >= 4 && esperto(j)) { usarCarta(p, 'sobrecarga'); render(); await espera(700); if (tok !== jogo.token) return; }
+      if (j.decks[p].includes('sobrecarga') && podeUsar(p, 'sobrecarga').ok && j.cor[p].length >= 4 && esperto(j)) { usarCarta(p, 'sobrecarga'); render(); await espera(700); if (outraVez(j, tok)) return; }
       disparar(p);
     } else segurar(p);
   }
@@ -1297,7 +1300,7 @@
       const id = j.fx.id; j.fx.agendado = true;
       // o disparo fica na tela até o último dado da cascata subir (80 ms + um passo do arpejo por dado + 800 ms da animação)
       const dura = j.fx.tipo === 'disparo' ? 80 + j.fx.dados.length * Som.PASSO_DISPARO * 1000 + 820 : 900;
-      setTimeout(() => { inicioFx.delete(id); if (jogo.fx && jogo.fx.id === id) { jogo.fx = null; render(); } }, st.pref.animacoes ? dura : 10);
+      setTimeout(() => { inicioFx.delete(id); if (jogo && jogo.fx && jogo.fx.id === id) { jogo.fx = null; render(); } }, st.pref.animacoes ? dura : 10);
     }
     consumirEventos();
   }
@@ -1473,7 +1476,7 @@
           });
           break;
         }
-        case 'virar': setTimeout(() => { if (jogo.virando === e.id) jogo.virando = null; }, 500); Som.tocar('virar'); break;
+        case 'virar': setTimeout(() => { if (jogo && jogo.virando === e.id) jogo.virando = null; }, 500); Som.tocar('virar'); break;
         case 'chamada': Som.tocar('momento'); Fx.chamada(e.titulo, e.sub, e.estilo === 'esquiva' ? (e.p === 1 && j.modo !== 'local' ? 'rival' : '') : e.estilo, { classe: 'de-jogo' }); break;
         case 'falar': if (j.modo === 'bot') falaDoEvento(e); break;
         case 'fim': {
@@ -1481,6 +1484,7 @@
           Fx.limparDica(); dicaRival = null;
           // o disparo que fecha a partida conta até o fim (a cascata e os pontos no placar) antes de a vitória estourar
           setTimeout(() => {
+            if (!jogo) return;   // saiu da mesa antes da festa: nada de confete e fanfarra no menu
             Som.musica.cena('fim');
             // impresso: a Virada para num quadro de gibi antes de estourar, como a Sinfonia
             const parou = venceuHumano && e.virada ? Fx.quadro() : 0;
@@ -2855,7 +2859,19 @@
     const d = await r.json().catch(() => ({}));
     if (r.status === 401 && st.sessao && rota !== '/api/entrar') { sairDaConta(); aviso(SESSAO_ACABOU, true); }
     if (!r.ok) throw Object.assign(new Error(d.erro || `O servidor respondeu ${r.status}.`), { status: r.status, espera: d.espera, trancadaAte: d.trancadaAte, restam: d.restam, codigo: d.codigo });
+    if (typeof d.aparelho === 'string') guardarAparelho(d.aparelho);
     return d;
+  }
+  // "esta conta já entrou neste aparelho" (um por conta, até 5): fica mesmo depois de sair da conta, para a trava de
+  // senhas erradas, que alguém pode provocar de longe, não barrar o dono no aparelho dele (servidor/app.js, aparelhoConhecido)
+  const APARELHOS = 'diceduel.aparelhos';
+  function aparelhos() {
+    try { const l = JSON.parse(localStorage.getItem(APARELHOS)); return Array.isArray(l) ? l.filter(t => typeof t === 'string').slice(0, 5) : []; } catch (e) { return []; }
+  }
+  function guardarAparelho(t) {
+    const conta = c => { try { return JSON.parse(atob(c.split('.')[0].replace(/-/g, '+').replace(/_/g, '/'))).id; } catch (e) { return null; } };
+    const id = conta(t);
+    try { localStorage.setItem(APARELHOS, JSON.stringify([t, ...aparelhos().filter(x => conta(x) !== id)].slice(0, 5))); } catch (e) {}
   }
   function aviso(txt, erro = false) {
     Rede.aviso = txt ? { txt, erro } : null;
@@ -2867,6 +2883,7 @@
   // a conta: entrar, criar (o progresso do aparelho vai junto, com teto) e sair
   async function entrarNaConta(criar, nome, senha) {
     const corpo = { nome, senha };
+    if (!criar) corpo.aparelhos = aparelhos();
     if (criar) {
       const c = st.conta;
       corpo.importar = { moedas: c.moedas, xp: c.xp, cartas: c.cartas, dados: c.dados, icones: c.icones, mesas: c.mesas, ativo: { dado: c.dado, icone: c.icone, mesa: c.mesa }, rating: c.rating, pico: c.pico };

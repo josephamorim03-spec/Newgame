@@ -28,7 +28,7 @@
     pausa:         { nome: 'Pausa', tipo: 'efeito', verbo: 'passa a vez', texto: 'Passe a vez sem pegar dado e sem disparar: a sua corrente e o seu Bolso ficam como estão. Serve quando todo dado da Mesa romperia a sua corrente. Não vale no segundo dado da Pressa.' },
     reverso:       { nome: 'Reverso', tipo: 'efeito', verbo: 'inverte a corrente', texto: 'Inverta a sua corrente: o primeiro dado vira a frente (2-3-4 vira 4-3-2, e o próximo dado precisa sincronizar com o 2). Os pontos não mudam. Precisa de 2 dados ou mais na corrente.' },
     furto:         { nome: 'Furto', tipo: 'efeito', verbo: 'troca os Bolsos', texto: 'Troque o dado do seu Bolso pelo do Bolso do rival (se um deles estiver vazio, o dado só muda de lado). Não conta como guardar: o Fundo Falso não pega.' },
-    espelho:       { nome: 'Espelho', tipo: 'armadilha', alvo: true, verbo: 'marca um dado', texto: 'Marque um dado da Mesa (o rival vê a marca). Se ele pegar esse dado, recebe a face de baixo (7 menos o valor: o 2 vira 5) e não pode guardá-lo no Bolso. Se você mesmo pegá-lo, a armadilha se perde.' },
+    espelho:       { nome: 'Espelho', tipo: 'armadilha', alvo: true, verbo: 'marca um dado', texto: 'Marque um dado da Mesa (o rival vê a marca). Se ele pegar esse dado, recebe a face de baixo (7 menos o valor: o 2 vira 5) e não pode guardá-lo no Bolso. Se você mesmo pegá-lo, a armadilha se perde. Com outro dado já marcado na Mesa, espere a próxima.' },
     fundo:         { nome: 'Fundo Falso', tipo: 'armadilha', verbo: 'o Bolso dele cai', texto: 'Da próxima vez que o rival puser um dado no Bolso (guardar ou trocar), o dado cai e some. Na troca, caem os dois e nada entra na corrente dele.' },
     lacre:         { nome: 'Lacre', tipo: 'armadilha', verbo: 'anula o próximo efeito', texto: 'O próximo efeito que o rival usar é gasto sem agir, qualquer um (até a Sobrecarga). Não pega armadilhas.' },
     ancora:        { nome: 'Âncora', tipo: 'armadilha', verbo: 'segura corrente de 4+', texto: 'Protege a sua corrente de 4 dados ou mais: se entrar nela um dado que não sincroniza, esse dado é jogado fora e a corrente fica inteira. Com 3 ou menos ela não age (a corrente rompe) e continua armada.' },
@@ -332,6 +332,9 @@
     if (c === 'pressa' && j.mesa.length < 3) return { ok: false, motivo: 'Precisa de 3 ou 4 dados na Mesa: a Pressa nunca pega o último dado (ele fica para o rival).' };
     if (c === 'pressa' && j.mesa.length > 4) return { ok: false, motivo: 'Com a Mesa cheia, não: a Pressa vale com 3 ou 4 dados (ela nunca abre uma Mesa).' };
     if (c === 'espelho' && j.mesa.length < 2) return { ok: false, motivo: 'Precisa de 2 dados ou mais na Mesa.' };
+    // um dado marcado por vez: com a marca do rival na Mesa, o segundo Espelho apagava a dela e deixava a armadilha
+    // dele armada para sempre, sem marca (ele nunca mais armava outra)
+    if (c === 'espelho' && j.marca) return { ok: false, motivo: 'Já há um dado marcado por um Espelho nesta Mesa: espere a próxima.' };
     // Ajuste e Coringa (v0.12): no fim da Mesa sobram poucas escolhas, e era ali que o conserto tirava todo o risco. Com
     // eles livres, o melhor deck (Ajuste + Coringa + Pressa) vencia 61,6%; assim, 58,2% (balanceamento §17)
     if (c === 'ajuste' && j.mesa.length < 3) return { ok: false, motivo: 'Precisa de 3 dados ou mais na Mesa.' };
