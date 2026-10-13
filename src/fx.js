@@ -52,26 +52,26 @@ const FX = (() => {
     }
   }
   // emite enquanto o acumulador permitir, respeitando o teto por boneco (vários bonecos dividem o pool)
-  function emit(e, field, every, cap, kind, list) { if (!list) return; e[field] += step; let n = -1;
+  function emit(e, field, every, cap, kind, list) { if (!list || !list.length) return; e[field] += step; let n = -1;
     while (e[field] >= every) { e[field] -= every; if (n < 0) n = count(e, kind === EMBER ? FLAME : kind); if (n >= cap) continue;
       particle(e, kind === FLAME && Math.random() < 0.22 ? EMBER : kind, Math.floor(Math.random() * list.length)); n++; } }
   function paint(k, key, anchors, x, y, w, h, alpha, baseY) {
     const e = owner(key); if (!e) return;
     e.anchors = anchors; e.x = x; e.y = y; e.w = w; e.h = h; e.alpha = alpha; e.stamp = stamp;
     if (!reduced && step) { emit(e, "fire", 0.045, 12, FLAME, anchors.fire); emit(e, "smoke", 0.16, 7, SMOKE, anchors.smoke); emit(e, "note", 0.85, 2, NOTE, anchors.notes); }
-    const scale = h / 320, A = (list, i) => [x + list[i][0] * scale, y + list[i][1] * scale];
+    const scale = h / 320;
     k.save();
     // Números são desenhados DEPOIS. Os efeitos ficam acima da base do boneco.
     k.beginPath(); k.rect(x - w * 0.4, y - h * 0.4, w * 1.8, Math.max(0, baseY - y + h * 0.3 - h * 0.10)); k.clip();
     const pulse = reduced ? 1 : 0.85 + Math.sin(time * 5 + key) * 0.15;
-    if (anchors.glow) for (let i = 0; i < anchors.glow.length; i++) { const [gx, gy] = A(anchors.glow, i);
+    if (anchors.glow) for (let i = 0; i < anchors.glow.length; i++) { const a = anchors.glow[i], gx = x + a[0] * scale, gy = y + a[1] * scale;
       k.globalAlpha = alpha * 0.19 * pulse; k.fillStyle = "#F59A23"; k.beginPath(); k.arc(gx, gy, 13 * scale, 0, Math.PI * 2); k.fill();
       k.globalAlpha = alpha * 0.26 * pulse; k.fillStyle = "#FFE45C"; k.beginPath(); k.arc(gx, gy, 7 * scale, 0, Math.PI * 2); k.fill(); }
     if (anchors.eyes) { const ep = reduced ? 1 : 0.6 + 0.4 * Math.sin(time * 3.2 + key * 1.7);
-      for (let i = 0; i < anchors.eyes.length; i++) { const [gx, gy] = A(anchors.eyes, i);
+      for (let i = 0; i < anchors.eyes.length; i++) { const a = anchors.eyes[i], gx = x + a[0] * scale, gy = y + a[1] * scale;
         k.globalAlpha = alpha * 0.22 * ep; k.fillStyle = "#FF3B2A"; k.beginPath(); k.arc(gx, gy, 11 * scale, 0, Math.PI * 2); k.fill();
         k.globalAlpha = alpha * 0.5 * ep; k.fillStyle = "#FF8A5C"; k.beginPath(); k.arc(gx, gy, 4.5 * scale, 0, Math.PI * 2); k.fill(); } }
-    if (anchors.spirit) for (let i = 0; i < anchors.spirit.length; i++) { const [gx, gy] = A(anchors.spirit, i), tw = reduced ? 0.7 : Math.max(0, Math.sin(time * 2.6 + i * 1.9 + key)), r = (3 + tw * 5) * scale;
+    if (anchors.spirit) for (let i = 0; i < anchors.spirit.length; i++) { const a = anchors.spirit[i], gx = x + a[0] * scale, gy = y + a[1] * scale, tw = reduced ? 0.7 : Math.max(0, Math.sin(time * 2.6 + i * 1.9 + key)), r = (3 + tw * 5) * scale;
       k.globalAlpha = alpha * (0.25 + tw * 0.65); k.fillStyle = "#FFF3B0"; k.beginPath(); k.moveTo(gx, gy - r * 1.6); k.lineTo(gx + r * 0.35, gy - r * 0.35); k.lineTo(gx + r * 1.6, gy); k.lineTo(gx + r * 0.35, gy + r * 0.35);
       k.lineTo(gx, gy + r * 1.6); k.lineTo(gx - r * 0.35, gy + r * 0.35); k.lineTo(gx - r * 1.6, gy); k.lineTo(gx - r * 0.35, gy - r * 0.35); k.closePath(); k.fill(); }
     if (!reduced) for (let i = 0; i < CAP; i++) { const p = pool[i]; if (!p.live || p.owner !== e || p.kind === DUST) continue;
