@@ -10,6 +10,7 @@ const { chromium } = (() => { try { return require('playwright'); } catch (e) { 
     const r = await p.evaluate(() => document.getElementById('cv').getBoundingClientRect()); await p.touchscreen.tap(r.left + 5, r.top + 5); await p.waitForTimeout(300);
     const res = await p.evaluate(() => { const out = []; const W = innerWidth, H = innerHeight;
       for (const el of document.querySelectorAll('#hand .card, #myBar .btn, #info, #topBar')) { const q = el.getBoundingClientRect(); if (q.left < -1 || q.right > W + 1 || q.bottom > H + 1) out.push((el.id || el.className) + ' fora ' + [q.left, q.right, q.bottom].map(Math.round)); }
+      const mb = document.getElementById('myBar').getBoundingClientRect(); for (const el of document.querySelectorAll('#myBar > *')) { const q = el.getBoundingClientRect(); if (q.right > mb.right + 1) out.push((el.id || el.className) + ' estoura a barra'); }
       for (const el of document.querySelectorAll('#hand .nm')) if (el.scrollWidth > el.clientWidth + 1) out.push('nome cortado: ' + el.textContent);
       const st = document.getElementById('stage').getBoundingClientRect(); out.push('palco ' + Math.round(st.height) + 'px');
       return out; });

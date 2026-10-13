@@ -138,3 +138,12 @@ Medição traço a traço (400 partidas cada, só aquele traço ligado, base 59%
 | + totens + troca | 49% | 51% | 7,3 | 25% |
 
 Na primeira versão do bot, a troca jogava fora as cartas caras e o Mapinguari ia embora (Mata 45%). Agora o bot só troca carta cara se a mão não tiver jogadas baratas, e troca feitiço repetido.
+
+## Personagens refinados pelo Astra
+Fluxo: o Astra trabalha em `peleja/astra-figs`, um personagem por commit, com QA em `docs/ASTRA-*.md` e `node tools/personagem.js <id> <commit-base>`. Depois, cada um entra na `peleja/prototype` por merge.
+
+| personagem | triângulos | integrado em |
+|---|---|---|
+| Mula-sem-cabeça | 7.144 | `e39492d` |
+| Saci-Pererê | — | `edbf40e` |
+| Curupira | 7.904 (antes 13.064) | merge de `ed0dff8` |

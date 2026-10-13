@@ -45,6 +45,7 @@ button:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
 #bEnd{min-width:96px;position:relative;overflow:hidden}
 #bEnd i{position:absolute;left:0;bottom:0;height:4px;background:var(--foe)}
 #bPow{display:flex;align-items:center;gap:6px;white-space:nowrap}
+#bPow{position:relative}#bPow .ic{display:none}@media (max-width:380px){.bar{gap:6px}#myBar .btn{padding:0 10px}#bPow .lb{display:none}#bPow .ic{display:inline}#bEnd{min-width:84px}}#bPow.lit::after{content:attr(data-sky);position:absolute;top:-9px;right:-9px;width:22px;height:22px;border-radius:50%;border:2px solid var(--ink);background:#FFE45C;font-size:12px;line-height:1;display:grid;place-items:center}
 #bPow canvas{width:26px;height:26px;border-radius:50%;border:2px solid var(--you)}
 #stage{flex:1;position:relative;min-height:0}
 #gl,#cv{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
@@ -1635,7 +1636,7 @@ const ART = (() => {
     $("mCau").hidden = !g.rules.totem; $("mCau").textContent = `🗿 ${PM.causos}/${g.rules.totem}`; $("mCau").title = "Causos: fique nos totens para juntar";
     const oc = $("oPor").getContext("2d"); oc.clearRect(0, 0, 68, 68); oc.drawImage(ART.token(GEN_ART[FAC[PO.fac].gen], 68), 0, 0);
     const pw = FAC[PM.fac].power, myTurn = g.cur === me && human(me) && !g.over; $("bPow").innerHTML = ""; const pc = document.createElement("canvas"); pc.width = pc.height = 44; pc.getContext("2d").drawImage(ART.token(GEN_ART[FAC[PM.fac].gen], 44), 0, 0); $("bPow").appendChild(pc);
-    $("bPow").appendChild(document.createTextNode(PM.cd > 0 ? `Poder em ${PM.cd}` : `Poder · ${pw.cost}`)); $("bPow").setAttribute("aria-label", `${pw.name}: ${pw.text}${skyLine(pw)}`); if (g.lit(pw)) $("bPow").appendChild(document.createTextNode(" " + SKY[g.sky()]));
+    const lb = document.createElement("span"); lb.className = "lb"; lb.textContent = PM.cd > 0 ? "Poder em " : "Poder · "; const ic = document.createElement("span"); ic.className = "ic"; ic.textContent = PM.cd > 0 ? "⏳" : ""; $("bPow").append(lb, ic, `${PM.cd > 0 ? PM.cd : pw.cost}`); $("bPow").setAttribute("aria-label", `${pw.name}: ${pw.text}${skyLine(pw)}`); $("bPow").classList.toggle("lit", g.lit(pw)); $("bPow").dataset.sky = g.lit(pw) ? SKY[g.sky()] : "";
     $("bPow").setAttribute("aria-disabled", myTurn && g.powerTargets(me).length ? "false" : "true"); $("bPow").classList.toggle("hot", !!(sel && sel.k === "power"));
     $("bEnd").setAttribute("aria-disabled", myTurn ? "false" : "true"); $("bEnd").classList.toggle("hot", myTurn && !busy() && !g.actions().length);
     const hand = $("hand"), showHand = mode === "bot" ? 0 : (g.cur === me && $("ovPass").hidden ? me : -1), hsig = [showHand, g.cur, g.p[me].hand.join(","), g.p[me].mana, sel ? sel.k + sel.i : "", busy(), g.sky(), mullSel ? mullSel.join(".") + "m" : ""].join("|");
