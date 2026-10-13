@@ -2,7 +2,8 @@
 const fs = require('fs'), path = require('path'), assert = require('assert/strict'), { execFileSync } = require('child_process');
 const { chromium } = (() => { try { return require('playwright'); } catch (_) { return require('/opt/node22/lib/node_modules/playwright'); } })();
 const root = path.join(__dirname, '..'), id = process.argv[2], baseline = process.argv[3];
-assert.ok(['saci', 'curupira'].includes(id) && baseline, 'Informe saci/curupira e o commit anterior');
+const names = {saci:'Saci-Pererê',curupira:'Curupira',coral:'Cobra-coral',uira:'Uirapuru',onca:'Onça-pintada',caipora:'Caipora',anhanga:'Anhangá',mapin:'Mapinguari',cuca:'Cuca',corpo:'Corpo-seco',bicho:'Bicho-papão',lobis:'Lobisomem',pisa:'Pisadeira',capelobo:'Capelobo',mula:'Mula-sem-cabeça'};
+assert.ok(names[id] && baseline, 'Informe o personagem e o commit anterior');
 const previous = execFileSync('git', ['show', baseline + ':src/figs.js'], { cwd: root, encoding: 'utf8' }).replace('const FIGS =', 'const BEFORE =');
 const options = { args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] };
 fs.mkdirSync(path.join(root, 'shots'), { recursive: true });
@@ -11,7 +12,7 @@ let browser;
   browser = await chromium.launch(options);
   let p = await browser.newPage({ viewport: { width: 1040, height: 760 }, deviceScaleFactor: 1 });
   const errors = []; p.on('pageerror', e => errors.push(e.message));
-  await p.setContent(`<html lang="pt-BR"><meta charset="utf-8"><style>*{box-sizing:border-box}body{margin:0;background:#F6EEDC;color:#2A1E16;font:13px system-ui}main{width:1040px;padding:20px}h1{margin:0;font-size:28px}p{margin:5px 0 16px;color:#6B5949}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}section{padding:10px;background:#E9DFC6;border-radius:12px}h2{margin:0 0 8px;font-size:14px}.pair{display:flex;justify-content:space-between;text-align:center}.small{border-top:1px solid #D2C3A8;margin-top:6px;padding-top:6px;justify-content:space-evenly}canvas{display:block}</style><main><h1>${id === 'saci' ? 'Saci-Pererê' : 'Curupira'} · oito direções</h1><p>Antes / depois + FX · mesma câmera e escala · abaixo, imagem com 60 px de altura</p><div class="grid"></div></main></html>`);
+  await p.setContent(`<html lang="pt-BR"><meta charset="utf-8"><style>*{box-sizing:border-box}body{margin:0;background:#F6EEDC;color:#2A1E16;font:13px system-ui}main{width:1040px;padding:20px}h1{margin:0;font-size:28px}p{margin:5px 0 16px;color:#6B5949}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}section{padding:10px;background:#E9DFC6;border-radius:12px}h2{margin:0 0 8px;font-size:14px}.pair{display:flex;justify-content:space-between;text-align:center}.small{border-top:1px solid #D2C3A8;margin-top:6px;padding-top:6px;justify-content:space-evenly}canvas{display:block}</style><main><h1>${names[id]} · oito direções</h1><p>Antes / depois + FX · mesma câmera e escala · abaixo, imagem com 60 px de altura</p><div class="grid"></div></main></html>`);
   for (const content of [fs.readFileSync(path.join(root, 'vendor/three.min.js'), 'utf8'), previous, fs.readFileSync(path.join(root, 'src/figs.js'), 'utf8'), fs.readFileSync(path.join(root, 'src/fx.js'), 'utf8')]) await p.addScriptTag({ content });
   const result = await p.evaluate(id => {
     const build = FIGS.DEF[id].build; let model;
@@ -64,8 +65,8 @@ let browser;
     const smoke = [];
     if (id === 'saci') {
       FX.clear(); const random = Math.random; Math.random = () => 0.5;
-      const ellipse = k.ellipse.bind(k); let sample = null;
-      k.ellipse = (...v) => { if (k.fillStyle === '#a99f8d' && (!sample || v[2] > sample.radius)) sample = { x: v[0], y: v[1], radius: v[2], alpha: k.globalAlpha }; ellipse(...v); };
+      const arc = k.arc.bind(k); let sample = null;
+      k.arc = (...v) => { if (['#e9e3da','#b9b1a6'].includes(k.fillStyle) && (!sample || v[2] > sample.radius)) sample = { x: v[0], y: v[1], radius: v[2], alpha: k.globalAlpha }; arc(...v); };
       for (let f = 0; f < 75; f++) { sample = null; FX.frame(1 / 60, true); FX.paint(k, 99, a, 0, 0, 256, 320, 1, 283); if ([12, 24, 45, 70].includes(f)) smoke.push(sample); }
       Math.random = random;
     }
@@ -73,21 +74,22 @@ let browser;
   }, id);
   assert.ok(fx.loaded.alive > 0 && fx.loaded.alive <= 120); assert.equal(fx.loaded.owners, 35);
   assert.equal(fx.paused.time, fx.beforePause.time); assert.equal(fx.paused.alive, fx.beforePause.alive); assert.equal(fx.dust.alive, 5); assert.equal(fx.removed.alive, 0); assert.equal(fx.removed.owners, 0); assert.equal(fx.hiddenStart.time, fx.hiddenEnd.time);
-  if (id === 'saci') { const [a, b, c, d] = fx.smoke; assert.ok(a && b && c && d); assert.ok(a.y > b.y && b.y > c.y && c.y > d.y, 'Fumaça não sobe'); assert.ok(a.radius < b.radius && b.radius < c.radius && c.radius < d.radius, 'Fumaça não cresce'); assert.ok(d.alpha < b.alpha, 'Fumaça não some'); assert.ok(b.x < a.x && d.x > c.x, 'Fumaça não balança'); }
+  if (id === 'saci') { const [a, b, c, d] = fx.smoke; assert.ok(a && b && c && d); assert.ok(a.y > b.y && b.y > c.y && c.y > d.y, 'Fumaça não sobe'); assert.ok(a.radius < b.radius && b.radius < c.radius && c.radius < d.radius, 'Fumaça não cresce'); assert.ok(d.alpha < b.alpha, 'Fumaça não some'); assert.ok(Math.abs((b.x-a.x)/(b.y-a.y) - (d.x-c.x)/(d.y-c.y)) > 0.02, 'Fumaça sem variação de vento'); }
   await p.emulateMedia({ reducedMotion: 'reduce' }); await p.waitForTimeout(30);
   const reduced = await p.evaluate(id => { const k = document.createElement('canvas').getContext('2d'); for (let f = 0; f < 60; f++) { FX.frame(1 / 60, true); FX.paint(k, 1, FIGS.anchors(id, 0), 0, 0, 256, 320, 1, 283); FX.dust(1); } return FX.stats(); }, id);
   assert.equal(reduced.reduced, true); assert.equal(reduced.alive, 0);
   await browser.close(); browser = await chromium.launch(options);
   p = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1, isMobile: true, hasTouch: true }); p.on('pageerror', e => errors.push(e.message)); await p.route(/^https?:/, route => route.abort());
   await p.goto('file://' + path.join(root, 'dist/test.html'));
-  await p.evaluate(id => { document.querySelector('input[name=mode][value=hot]').click(); document.querySelector('input[name=fac][value=mata]').click(); document.getElementById('bGo').click(); document.getElementById('bPass').click(); const g = __pj.g;
+  await p.evaluate(id => { document.querySelector('input[name=mode][value=hot]').click(); document.querySelector('input[name=fac][value=' + (id === 'cuca' ? 'assom' : 'mata') + ']').click(); document.getElementById('bGo').click(); document.getElementById('bPass').click(); const g = __pj.g;
     g.terr = { '0,2': 'mata', '4,2': 'mata', '0,4': 'mata', '4,4': 'mata', '2,3': 'encru' }; g.p[0].hand = ['saci', 'coral', 'uira', 'onca']; g.p[0].mana = g.p[0].max = 9;
-    for (const [card, x, y, o] of [['saci', 1, 4, 0], ['mula', 3, 2, 1]]) { const d = CD.CARDS[card]; g.units.push({ id: g.uid++, card, o, x, y, atk: d.atk, hp: d.hp, max: d.hp, sick: false, moved: false, acted: false, rooted: 0, stunned: 0 }); }
+    if (id === 'curupira' || id === 'cuca') { const u = g.units.find(u => u.gen && u.o === 0); u.x = 1; u.y = 4; }
+    for (const [card, x, y, o] of [...(id === 'curupira' || id === 'cuca' ? [] : [[id, 1, 4, 0]]), ['mula', 3, 2, 1]]) { const d = CD.CARDS[card]; g.units.push({ id: g.uid++, card, o, x, y, atk: d.atk, hp: d.hp, max: d.hp, sick: false, moved: false, acted: false, rooted: 0, stunned: 0 }); }
   }, id);
   const tile = await p.evaluate(() => { const r = document.getElementById('cv').getBoundingClientRect(); return [r.x + __pj.SX(1, 4), r.y + __pj.SY(1, 4)]; }); await p.touchscreen.tap(...tile); await p.waitForTimeout(1500);
   await p.screenshot({ path: path.join(root, `shots/jogo-${id}.png`) });
   assert.ok((await p.evaluate(() => FX.stats().alive)) > 0);
-  const move = await p.evaluate(() => { const u = __pj.g.at(1, 4); return __pj.act({ c: 'move', id: u.id, x: 2, y: 4 }); }); assert.equal(move, true); await p.waitForTimeout(400); assert.equal(await p.evaluate(() => __pj.g.at(2, 4).card), 'saci');
+  const move = await p.evaluate(() => { const u = __pj.g.at(1, 4); return __pj.act({ c: 'move', id: u.id, x: 2, y: 4 }); }); assert.equal(move, true); await p.waitForTimeout(400); assert.equal(await p.evaluate(() => __pj.g.at(2, 4).card.toLowerCase()), id);
   assert.deepEqual(errors, []);
   fs.writeFileSync(path.join(root, `shots/${id}-qa.json`), JSON.stringify({ baseline, ...result, fx, reduced, browserErrors: errors }, null, 2) + '\n');
   console.log(`${id}: 8 direções; 112 sprites dos demais idênticos; pool, pausa, redução de movimento, toque e jogo offline OK.`);
