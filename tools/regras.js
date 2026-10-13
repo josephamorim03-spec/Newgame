@@ -349,6 +349,16 @@ const RAIZ = path.join(__dirname, '..');
   const ficou = await pa.evaluate(() => DiceDuel.st.pref.dicas);
   confere(padrao && migrou && !ficou, 'Ajudas: ligadas por padrão, religadas uma vez na v0.11, e a escolha de desligar fica');
   await pa.close();
+  // 13. Progresso salvo corrompido (cartas que não é lista, moedas que não é número): o jogo abre com o padrão nesses campos
+  const pc = await navegador.newPage();
+  const errosPc = []; pc.on('pageerror', e => errosPc.push(e.message));
+  await pc.goto('file://' + path.join(RAIZ, 'index.html')); await pc.waitForTimeout(200);
+  await pc.evaluate(() => localStorage.setItem('diceduel.v1', JSON.stringify({ conta: { cartas: 5, icones: 'x', moedas: 'muitas', xp: 40 } })));
+  await pc.reload(); await pc.waitForTimeout(300);
+  const cc = await pc.evaluate(() => { document.querySelector('[data-inicio="loja"]').click(); const c = DiceDuel.st.conta; return { cartas: Array.isArray(c.cartas) && c.cartas.length > 0, icones: Array.isArray(c.icones), moedas: c.moedas, xp: c.xp }; });
+  await pc.waitForTimeout(200);
+  confere(cc.cartas && cc.icones && cc.moedas === 0 && cc.xp === 40 && !errosPc.length, `Progresso corrompido: abre com o padrão nos campos ruins e mantém os bons (${JSON.stringify({ ...cc, erros: errosPc })})`);
+  await pc.close();
   await navegador.close();
   console.log(erros.length ? 'ERROS:\n' + erros.join('\n') : 'Tudo certo: as regras das cartas se comportam como o texto diz.');
   process.exit(erros.length ? 1 : 0);
