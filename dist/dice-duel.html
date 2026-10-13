@@ -8633,6 +8633,13 @@ window.HISTORIA_QUADROS = {"falas":{"P-01":[{"arte":"p-mesa","chave":"P-antes_0"
     if (m.tipo === 'achou') { Rede.busca = null; Rede.sala = m.sala; Rede.infoSala = null; lembrarSala(); aviso(`Rival encontrado: ${m.rival} (rating ${m.rating}).`); return; }
     if (m.tipo === 'sala') {
       Rede.infoSala = m.sala; Rede.voltando = false;
+      // a revanche não saiu porque o rival já estava em outra partida: o servidor tirou a partida que acabou e a sala
+      // voltou a esperar. Aqui também: sai do fim e mostra a sala com o convite (antes ficava "Esperando o rival…")
+      if (online() && jogo.sala === m.sala.codigo && jogo.fase === 'fim' && m.sala.estado === 'esperando') {
+        jogo = null; Rede.pediuRevanche = false;
+        mostrarInicio(); abrirOnline(); aviso('O rival foi para outra partida. A sala voltou a esperar: mande o convite de novo.');
+        return;
+      }
       const euId = st.sessao && st.sessao.perfil.id, outro = m.sala.jogadores.find(x => x.id !== euId);
       if (online() && jogo.sala === m.sala.codigo && outro) {
         // o rival caiu: o relógio dele para e aparece quanto tempo ele ainda tem para voltar
