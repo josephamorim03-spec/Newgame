@@ -266,6 +266,11 @@ const FLAT = (() => {
     ter_rio: { bg: "#A8D5EE", draw(t) { for (const [y, c, w] of [[22, "#8CC2E2", 5], [50, "#8CC2E2", 5], [78, "#8CC2E2", 5], [34, "#FFFFFF", 4], [64, "#FFFFFF", 4]]) { const pts = []; for (let x = -4; x <= 104; x += 6) pts.push([x, y + Math.sin(x / 7) * 4]); t.line(pts, c, w); } } },
     ter_encru: { bg: "#F1DDA8", draw(t) { t.line([[-5, -5], [105, 105]], "#FBEFD0", 26); t.line([[105, -5], [-5, 105]], "#FBEFD0", 26);
         for (const [x, y] of [[40, 46], [60, 46], [50, 60]]) { t.shape([[x - 3.6, y - 4, 1], [x + 3.6, y - 4, 1], [x + 3.6, y + 10, 1], [x - 3.6, y + 10, 1]], "#FFFFFF", { lw: 1.8 }); t.shape([[x, y - 5], [x - 3, y - 10], [x, y - 17, 1], [x + 3, y - 10]], "#F57C2A", { lw: 1.6 }); } } },
+    // totem: roda de pedras e um poste entalhado (as peças ficam no meio, as pedras aparecem em volta)
+    ter_totem: { bg: "#EAD9F4", draw(t) { t.ell(50, 50, 40, 40, "#DCC6EC", { lw: 0 });
+        for (let i = 0; i < 10; i++) { const a = i / 10 * Math.PI * 2, x = 50 + Math.cos(a) * 41, y = 50 + Math.sin(a) * 41; t.ell(x, y, 5.5, 4.4, i % 2 ? "#B9A6C9" : "#CDBBD9", { lw: 1.6, rot: a }); }
+        t.shape([[42, 14, 1], [58, 14, 1], [58, 44, 1], [42, 44, 1]], "#B5683F", { lw: 1.8, shade: [2, 0] }); t.shape([[37, 14, 1], [50, 6, 1], [63, 14, 1]], "#E8452C", { lw: 1.8 });
+        t.dot(46.5, 23, 2.2); t.dot(53.5, 23, 2.2); t.line([[45, 31], [50, 34], [55, 31]], OUT, 2); t.line([[42, 38], [58, 38]], "#8A4A28", 2.4); } },
   };
   function k_glow(t, x, y) { const k = t.k, g = k.createRadialGradient(x, y, 0, x, y, 10); g.addColorStop(0, "rgba(255,90,60,0.55)"); g.addColorStop(1, "rgba(255,90,60,0)"); k.fillStyle = g; k.fillRect(x - 10, y - 10, 20, 20); }
   function render(id, size) { const D = DEF[id]; if (!D) return null; const c = document.createElement("canvas"); c.width = c.height = size; const k = c.getContext("2d");

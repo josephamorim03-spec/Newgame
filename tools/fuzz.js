@@ -5,15 +5,15 @@ const { chromium } = (() => { try { return require('playwright'); } catch (e) { 
   const errs = []; p.on('pageerror', e => errs.push(e.message)); p.on('console', m => { if (m.type() === 'error') errs.push('console: ' + m.text()); });
   await p.goto('file://' + require('path').join(__dirname, '../dist/test.html')); await p.waitForTimeout(600);
   const probs = new Set();
-  for (const [mode, fac, games] of [['bot', 'mata', 3], ['bot', 'assom', 3], ['hot', 'mata', 2], ['hot', 'assom', 2]]) {
+  for (const [mode, fac, games, extra] of [['bot', 'mata', 3, false], ['bot', 'assom', 3, true], ['hot', 'mata', 2, true], ['hot', 'assom', 2, false]]) {
     for (let gi = 0; gi < games; gi++) {
-      await p.evaluate(([m, f]) => { document.querySelector(`input[name=mode][value=${m}]`).click(); document.querySelector(`input[name=fac][value=${f}]`).click(); }, [mode, fac]);
+      await p.evaluate(([m, f, x]) => { document.querySelector(`input[name=mode][value=${m}]`).click(); document.querySelector(`input[name=fac][value=${f}]`).click(); for (const id of ['opt_totem', 'opt_troca']) { const el = document.getElementById(id); if (el.checked !== x) el.click(); } }, [mode, fac, extra]);
       await p.evaluate(() => document.getElementById('bGo').click()); await p.waitForTimeout(300);
       for (let step = 0; step < 900; step++) {
         const st = await p.evaluate(() => { const g = __pj.g; if (!g || g.over) return 'over';
           if (!document.getElementById('ovPass').hidden) { document.getElementById('bPass').click(); return 'pass'; }
           if (__pj.busy) return 'wait'; const human = document.querySelector('input[name=mode]:checked').value === 'hot' || g.cur === 0; if (!human) return 'wait';
-          const acts = g.actions(); const r = Math.random(); let a = null;
+          const acts = g.actions(); if (g.p[g.cur].mull && Math.random() < 0.7) acts.push({ c: 'mull', idx: g.p[g.cur].hand.length > 1 && Math.random() < 0.5 ? [0, 1] : [] }); const r = Math.random(); let a = null;
           if (acts.length && r < 0.85) a = acts[Math.floor(Math.random() * acts.length)];
           __pj.act(a || { c: 'end' });
           // invariantes
@@ -26,7 +26,7 @@ const { chromium } = (() => { try { return require('playwright'); } catch (e) { 
       }
       await p.waitForTimeout(1200);
       const end = await p.evaluate(() => [!!__pj.g && __pj.g.over, !document.getElementById('ovEnd').hidden, document.getElementById('eTitle').textContent]);
-      console.log(mode, fac, gi, JSON.stringify(end));
+      console.log(mode, fac, extra ? 'extras' : '', gi, JSON.stringify(end), await p.evaluate(() => document.getElementById('eWhy').textContent));
       await p.evaluate(() => document.getElementById('bHome2').click()); await p.waitForTimeout(200);
     }
   }

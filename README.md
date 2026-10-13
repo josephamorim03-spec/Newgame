@@ -31,8 +31,9 @@ Não há dependências em tempo de execução: o Three.js r128 vai embutido (`ve
 ## Testes (Node + Playwright/Chromium)
 | comando | o que verifica |
 |---|---|
-| `node tools/regras.js` | 33 cenários: cada carta, poder e terreno faz exatamente o que o texto diz |
+| `node tools/regras.js` | 77 cenários: cada carta, poder e terreno faz exatamente o que o texto diz |
 | `node tools/fuzz.js` | partidas inteiras pela interface, com ações aleatórias (bot e 2 no celular); procura erros e estados impossíveis |
+| `node tools/ceu.js` | fotos da troca inicial, do anoitecer com traços 🌙 acesos e dos totens |
 | `node tools/layout.js` | larguras de 320, 360, 390 e 430 px: nada saindo da tela, nomes de carta sem corte |
 | `node tools/telas.js` | fotografa 14 telas em `shots/` para revisão lado a lado |
 | `node tools/balanco.js 600 normal` | bot x bot alternando lados: vitória por facção e por quem começa, duração e taxa de vitória de quem jogou cada carta |
@@ -89,7 +90,7 @@ Mudanças feitas a partir da simulação:
   - **A Mata anda em bando:** uma peça da Mata com aliado colado não é pega de lado nem pelas costas.
 - **Dia e noite** trocam a cada 3 rodadas.
   - De dia, a Mata anda +1.
-  - De noite, as Assombrações têm +1 de ataque (generais não) e o Lobisomem fica em fúria.
+  - De noite, o Lobisomem fica em fúria. (O +1 de ataque geral das Assombrações foi trocado pelos traços das cartas; ver abaixo.)
 - **Alma penada** causa 3 de dano (antes 4).
 
 Simulação (`REGRAS='{...}' node tools/balanco.js`):
@@ -102,3 +103,38 @@ Simulação (`REGRAS='{...}' node tools/balanco.js`):
 | atual, bot difícil (150 partidas) | 44% | 56% | 9,8 |
 
 As regras novas encurtam a partida em cerca de 23%. Sem o "bando", a facção agressiva dominava.
+
+## Céu nas cartas, totens e troca (outubro/2026)
+### Traços ☀️/🌙 (sempre ligados)
+Quase toda carta e os dois poderes têm um traço que só vale numa hora do dia. Na mão, o selo acende; no tabuleiro, a peça ganha o selo no canto e o ataque fica laranja quando sobe (cinza quando cai).
+
+| Mata ☀️ | Mata 🌙 | Assombrações 🌙 |
+|---|---|---|
+| Saci entra em qualquer casa vazia | Onça +1 de ataque | Corpo-seco: suspiro de 2 |
+| Cobra-coral ataca sem revide | Caipora cura 2 | Bicho-papão: vizinhos −1 de ataque |
+| Uirapuru compra 2 ao entrar | Anhangá também fere 1 ao entrar | Lobisomem em fúria |
+| Mapinguari recupera 3 no fim do turno | Arapuca causa 4 | Pisadeira atordoa todos os vizinhos |
+| Enraizar causa 2 | | Mula galopa 4 |
+| Chá cura 6 | | Capelobo +1 de ataque |
+| Rastro falso recarrega em 1 | | Grito causa 3 · Assombração volta pronta · Feitiço da Cuca causa 2 |
+
+A Mata continua andando +1 de dia. O +1 de ataque geral das Assombrações à noite saiu: agora a noite delas vem das cartas.
+
+Medição traço a traço (400 partidas cada, só aquele traço ligado, base 59%×40%): Capelobo sem revide valia +9 pontos para as Assombrações e foi trocado por +1 de ataque; Bicho-papão +6; Cuca, Grito e Assombração +4 cada; Mapinguari +4 para a Mata; Uirapuru e Anhangá +3.
+
+### Regras extras (menu inicial, desligadas por padrão)
+- **🗿 Totens e causos.** Duas casas sagradas no meio (1,3) e (3,3). No começo do seu turno, cada peça sua num totem conta 1 causo. 6 causos também vence.
+- **↺ Troca e mana guardada.** No seu primeiro turno, antes de agir, troque até 2 cartas. Até 1 mana que sobrar passa para o turno seguinte.
+
+| regras (bot normal, `REGRAS=...`) | Mata | Assombrações | turnos | por causos |
+|---|---|---|---|---|
+| sem traços nas cartas (versão anterior) | 51% | 48% | 8,8 | — |
+| traços, 1ª versão (com +1 geral à noite) | 39% | 61% | 8,0 | — |
+| **traços, versão atual (1000 partidas)** | **49%** | **50%** | **8,4** | — |
+| atual, bot difícil (150) | 53% | 47% | 9,1 | — |
+| + totens (meta 8) | 49% | 51% | 7,8 | 14% |
+| + totens (meta 6) | 51% | 50% | 7,4 | 24% |
+| + troca e mana guardada | 50% | 50% | 8,5 | — |
+| + totens + troca | 49% | 51% | 7,3 | 25% |
+
+Na primeira versão do bot, a troca jogava fora as cartas caras e o Mapinguari ia embora (Mata 45%). Agora o bot só troca carta cara se a mão não tiver jogadas baratas, e troca feitiço repetido.

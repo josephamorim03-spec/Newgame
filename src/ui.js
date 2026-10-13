@@ -9,12 +9,13 @@
   const GEN_ART = { Curupira: "curupira", Cuca: "cuca" };
   const SHORT = { saci: "Saci", coral: "Cobra-coral", uira: "Uirapuru", onca: "Onça", caipora: "Caipora", anhanga: "Anhangá", mapin: "Mapinguari", enraizar: "Enraizar", cha: "Chá", arapuca: "Arapuca",
     corpo: "Corpo-seco", bicho: "Bicho-papão", lobis: "Lobisomem", pisa: "Pisadeira", mula: "Mula", capelobo: "Capelobo", pacto: "Pacto", alma: "Alma penada", grito: "Grito", assomb: "Assombração" };
-  let g = null, mode = "bot", myFac = "mata", level = "normal", sound = true, bot = null, viewer = 0;
+  let g = null, mode = "bot", myFac = "mata", level = "normal", sound = true, bot = null, viewer = 0, extras = { totem: false, troca: false }, mullSel = null, skyNote = "";
+  const META = 6, SKY = { dia: "☀️", noite: "🌙" };
   let sel = null, inspect = null, say = null, anims = [], floats = [], ghosts = [], parts = [], dpos = new Map(), dhp = new Map(), dscale = new Map(), clock = 0, fx = [], shake = { amp: 0, t0: 0, d: 0.3 }, ver = 0, pv = { key: "", list: [] }, busyUntil = 0, botWait = 0, turnStart = 0, paused = false, pauseAt = 0, ended = false;
   const stats = [{ dmg: 0, kills: 0, played: 0 }, { dmg: 0, kills: 0, played: 0 }];
   const view = { w: 1, h: 1, dpr: 1, t: 60, ox: 0, oy: 0 };
-  try { const o = JSON.parse(localStorage.getItem("pj-save") || "{}"); myFac = o.fac || myFac; level = o.level || level; mode = o.mode || mode; sound = o.sound ?? true; } catch (e) {}
-  const save = () => { try { localStorage.setItem("pj-save", JSON.stringify({ fac: myFac, level, mode, sound })); } catch (e) {} };
+  try { const o = JSON.parse(localStorage.getItem("pj-save") || "{}"); myFac = o.fac || myFac; level = o.level || level; mode = o.mode || mode; sound = o.sound ?? true; extras = { ...extras, ...(o.extras || {}) }; } catch (e) {}
+  const save = () => { try { localStorage.setItem("pj-save", JSON.stringify({ fac: myFac, level, mode, sound, extras })); } catch (e) {} };
 
   // ---------- medidas: tabuleiro e cartas se ajustam à tela ----------
   function layout() { const W = $("app").clientWidth, nc = Math.max(5, $("hand").children.length), cw = Math.floor(Math.min(64, innerHeight * 0.085, (W - 16 - (nc - 1) * 5) / nc)), ch = Math.round(cw * 1.32), app = $("app");
@@ -70,7 +71,7 @@
       k.fillStyle = (x + y) % 2 ? "#F1E6CC" : "#FAF3E3"; k.fillRect(px, py, t, t);
       if (tr) k.drawImage(ART.img("ter_" + tr, 128), px, py, t, t);
       k.strokeStyle = "rgba(42,30,22,0.13)"; k.lineWidth = 1; k.strokeRect(px + 0.5, py + 0.5, t - 1, t - 1); }
-    if (g.sky() === "noite") { k.fillStyle = "rgba(40,52,130,0.16)"; k.fillRect(view.ox, view.oy, t * BW, t * BH); }
+    if (g.rules.ceu) { k.fillStyle = g.sky() === "noite" ? "rgba(40,52,130,0.16)" : "rgba(255,214,90,0.07)"; k.fillRect(view.ox, view.oy, t * BW, t * BH); }
     // meio do campo
     k.strokeStyle = "rgba(42,30,22,0.25)"; k.lineWidth = 2; k.setLineDash([6, 6]); k.beginPath(); k.moveTo(view.ox, view.oy + 3.5 * t); k.lineTo(view.ox + BW * t, view.oy + 3.5 * t); k.stroke(); k.setLineDash([]);
     k.restore();
@@ -142,7 +143,9 @@
       k.restore(); return;
     }
     const b = Math.max(7.5, t * 0.15), fs = Math.max(10, Math.round(b * 1.25)); k.font = `${fs}px ${FONT}`; k.textAlign = "center"; k.textBaseline = "middle";
-    const ax = x - t * 0.5 + b + 2, ay = y0 + t * 0.5 - b - 2; k.fillStyle = GOLD; k.beginPath(); k.arc(ax, ay, b, 0, 7); k.fill(); k.lineWidth = 2; k.strokeStyle = INK; k.stroke(); k.fillStyle = INK; k.fillText(g.atkOf(u), ax, ay + 1);
+    const ax = x - t * 0.5 + b + 2, ay = y0 + t * 0.5 - b - 2, atk = g.atkOf(u), up = atk > u.atk, down = atk < u.atk; k.fillStyle = up ? "#F57C2A" : down ? "#9AA3B5" : GOLD; k.beginPath(); k.arc(ax, ay, b, 0, 7); k.fill(); k.lineWidth = up ? 2.6 : 2; k.strokeStyle = INK; k.stroke(); k.fillStyle = up ? "#FFFFFF" : INK; if (up) { k.lineWidth = 2.6; k.strokeText(atk, ax, ay + 1); } k.fillText(atk, ax, ay + 1);
+    if (g.litU(u)) { const r = Math.max(6.5, t * 0.115), sx = x + t * 0.5 - r - 3, sy = y0 - t * 0.5 + r + 3, night = g.sky() === "noite", pz = reduce ? 1 : 1 + 0.08 * Math.sin(clock * 4 + u.id);
+      k.fillStyle = night ? "#2F3A57" : "#FFE9A8"; k.beginPath(); k.arc(sx, sy, r * pz, 0, 7); k.fill(); k.lineWidth = 1.8; k.strokeStyle = night ? "#C9D3F0" : "#D99A1E"; k.stroke(); k.font = `${Math.round(r * 1.25)}px sans-serif`; k.fillText(SKY[g.sky()], sx, sy + 1); k.font = `${fs}px ${FONT}`; }
     const hx = x + t * 0.5 - b - 2, hy = y0 + t * 0.5 - b - 2, hurt = hp < u.max; heart(k, hx, hy + 1, b * 1.08); k.fillStyle = hurt ? "#C81E2C" : "#E0473A"; k.fill(); k.stroke();
     k.lineWidth = 3; k.strokeStyle = INK; k.strokeText(Math.max(0, hp), hx, hy + 1); k.fillStyle = "#FFFFFF"; k.fillText(Math.max(0, hp), hx, hy + 1);
     if (u.gen) { const cw = Math.max(5, t * 0.1), cx = x - t * 0.5 + cw + 5, cy = y0 - t * 0.5 + cw + 4; k.fillStyle = GOLD; k.beginPath(); k.moveTo(cx - cw, cy + cw * 0.5); k.lineTo(cx - cw, cy - cw * 0.45); k.lineTo(cx - cw * 0.5, cy); k.lineTo(cx, cy - cw * 0.65); k.lineTo(cx + cw * 0.5, cy); k.lineTo(cx + cw, cy - cw * 0.45); k.lineTo(cx + cw, cy + cw * 0.5); k.closePath(); k.fill(); k.lineWidth = 1.6; k.strokeStyle = INK; k.stroke(); }
@@ -212,7 +215,13 @@
       else if (e.k === "fatigue") { const [mx, my] = mid(); float(mx, my, "Baralho vazio: −" + e.n, "#B3301E", 20, step(0.2), 1.2); }
       else if (e.k === "burn") { if (human(e.o)) tell("Mão cheia", `${CARDS[e.c].name} foi descartada.`, e.c); }
       else if (e.k === "turn") step(0.1);
-      else if (e.k === "sky") { const n = e.sky === "noite"; tell(n ? "🌙 Anoiteceu" : "☀️ Amanheceu", n ? "Assombrações +1 de ataque. Lobisomem em fúria sob a lua." : "A Mata anda 1 casa a mais.", null, 3200); sfx(n ? "lose" : "win", tc); }
+      else if (e.k === "sky") { const n = e.sky === "noite", woke = g.units.filter(u => g.litU(u)), names = [...new Set(woke.map(u => u.gen ? u.card : SHORT[u.card]))];
+        const [mx, my] = mid(), t0 = step(0.2); float(mx, my, n ? "🌙 NOITE" : "☀️ DIA", n ? "#2F3A57" : "#C9741E", 38, t0, 1.6, true);
+        for (const u of woke) float(SX(u.x, u.y), SY(u.x, u.y) - view.t * 0.2, SKY[e.sky], INK, 26, t0 + 0.25, 1.3);
+        tell(n ? "🌙 Anoiteceu" : "☀️ Amanheceu", (n ? "As cartas com 🌙 despertam." : "A Mata anda 1 casa a mais; as cartas com ☀️ despertam.") + (names.length ? ` Em campo: ${names.join(", ")}.` : ""), null, 4200); say.keep = true; skyNote = say.title + " — " + say.text; sfx(n ? "lose" : "win", t0); }
+      else if (e.k === "causo") { const t0 = step(0.18); float(SX(e.x, e.y), SY(e.x, e.y) - 16, `+1 causo (${e.n}/${g.rules.totem})`, "#7A3FB0", 19, t0, 1.2); burstAt(e.x, e.y, 10, t0, ["#B9A6C9", GOLD]); sfx("heal", t0); }
+      else if (e.k === "mull") { if (e.n && (!human(e.o) || mode === "hot")) tell(`${FAC[g.p[e.o].fac].gen} trocou ${e.n} carta(s)`, "Troca inicial: as cartas voltaram ao baralho.", null, 2200); }
+      else if (e.k === "saved") { if (human(e.o)) { const [mx, my] = mid(); float(mx, my + view.t * 0.6, "+1 mana guardada", "#5B6CF0", 20, step(0.1), 1.2); } }
     }
     ver++; busyUntil = Math.max(busyUntil, tc + 0.05); anims.push({ t0: tc, d: 0.01, f: () => { dhp.clear(); refresh(); } });
     if (g.cur !== turnBefore) onTurnChange();
@@ -227,8 +236,8 @@
   function stepAnims(dt) { clock += dt; for (const a of anims) { if (clock < a.t0) continue; const q = Math.min(1, (clock - a.t0) / a.d); a.f(q); if (q >= 1) a.done = true; } anims = anims.filter(a => !a.done);
     for (const p of parts) { p.life += dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 300 * dt; } parts = parts.filter(p => p.life < p.max); floats = floats.filter(f => clock < f.t0 + f.d); fx = fx.filter(f => clock < f.t0 + f.d); }
   function onTurnChange() { sel = null; inspect = null; turnStart = performance.now(); if (g.over) return;
-    if (mode === "hot") { $("passWho").textContent = `Vez de ${FAC[g.p[g.cur].fac].gen}`; setTimeout(() => { if (!g.over) { $("ovPass").hidden = false; refresh(); } }, 700); }
-    else if (g.cur === 0) { tell("Sua vez", "Toque numa carta e depois numa casa iluminada, ou numa peça com contorno dourado.", null, 2500); sfx("turn"); } else botWait = clock + 0.6; }
+    if (mode === "hot") { $("passWho").textContent = `Vez de ${FAC[g.p[g.cur].fac].gen}`; $("passSky").textContent = skyNote || ""; skyNote = ""; setTimeout(() => { if (!g.over) { $("ovPass").hidden = false; refresh(); } }, 700); }
+    else if (g.cur === 0) { if (!(say && say.keep && performance.now() < say.until)) tell("Sua vez", "Toque numa carta e depois numa casa iluminada, ou numa peça com contorno dourado.", null, 2500); sfx("turn"); } else botWait = clock + 0.6; }
 
   // ---------- toques no tabuleiro ----------
   function tileAt(px, py) { if (is3D) return ISO.pick(px, py, viewer); const vx = Math.floor((px - view.ox) / view.t), vy = Math.floor((py - view.oy) / view.t); if (vx < 0 || vy < 0 || vx >= BW || vy >= BH) return null; return viewer === 0 ? [vx, vy] : [BW - 1 - vx, BH - 1 - vy]; }
@@ -246,26 +255,30 @@
   });
 
   // ---------- faixa de informação ----------
+  const skyLine = C => C && C.sky ? ` ${SKY[C.sky]} ${C.skyText}${g && g.lit(C) ? " (agora!)" : ""}` : "";
   function tell(title, text, art, ms = 2600) { say = { title, text, art, until: performance.now() + ms }; renderInfo(); }
   function thumb(id) { const c = document.createElement("canvas"); c.width = c.height = 104; if (id) c.getContext("2d").drawImage(ART.img(id, 104), 0, 0); return c; }
   function renderInfo() {
     const el = $("info"); el.innerHTML = ""; el.className = ""; if (!g) return; const o = g.cur;
     let art = null, title = "", sub = "", text = "", btn = null;
-    if (say && performance.now() < say.until) { el.className = "say"; art = say.art || GEN_ART[FAC[g.p[viewer].fac].gen]; title = say.title; text = say.text; }
-    else if (sel && sel.k === "card") { const id = g.p[o].hand[sel.i], C = CARDS[id]; art = id; title = C.name; sub = C.type === "unit" ? `${C.cost} mana · ${C.atk}/${C.hp}` : `${C.cost} mana · feitiço`; text = C.text;
-      const ok = g.playTargets(o, sel.i).length > 0; if (!ok) text = (g.p[o].mana < C.cost ? "Mana insuficiente. " : "Sem alvo agora. ") + C.text;
+    if (mullSel && human(o) && g.p[o].mull) { art = GEN_ART[FAC[g.p[o].fac].gen]; title = "Troca inicial"; sub = `${mullSel.length}/2`; text = "Toque em até 2 cartas para devolver ao baralho. Você compra outras no lugar.";
+      btn = document.createElement("button"); btn.className = "btn use hot"; btn.textContent = mullSel.length ? `Trocar ${mullSel.length}` : "Manter"; btn.addEventListener("click", () => { const idx = mullSel; mullSel = null; act({ c: "mull", idx }); }); }
+    else if (say && performance.now() < say.until) { el.className = "say"; art = say.art || GEN_ART[FAC[g.p[viewer].fac].gen]; title = say.title; text = say.text; }
+    else if (sel && sel.k === "card") { const id = g.p[o].hand[sel.i], C = CARDS[id]; art = id; title = C.name; sub = C.type === "unit" ? `${C.cost} mana · ${C.atk}/${C.hp}` : `${C.cost} mana · feitiço`; text = C.text + skyLine(C);
+      const ok = g.playTargets(o, sel.i).length > 0; if (!ok) text = (g.p[o].mana < C.cost ? "Mana insuficiente. " : "Sem alvo agora. ") + C.text + skyLine(C);
       else if (C.type === "spell" && C.target === "none") { btn = document.createElement("button"); btn.className = "btn use hot"; btn.textContent = "Usar"; btn.addEventListener("click", () => { act({ c: "play", i: sel.i, x: -1, y: -1 }); }); }
-      else text = (C.type === "unit" ? "Toque numa casa dourada. " : C.target === "empty" ? "Toque numa casa dourada vazia. " : C.target === "enemy" ? "Toque num inimigo (aro vermelho). " : "Toque numa peça sua (aro verde). ") + C.text; }
-    else if (sel && sel.k === "power") { const F = FAC[g.p[o].fac]; art = GEN_ART[F.gen]; title = F.power.name; sub = `${F.power.cost} mana · recarga ${F.power.cd}`; text = (F.power.target === "any" ? "Toque em qualquer peça (aro vermelho). " : "Toque numa peça sua (aro verde). ") + F.power.text; }
+      else text = (C.type === "unit" ? "Toque numa casa dourada. " : C.target === "empty" ? "Toque numa casa dourada vazia. " : C.target === "enemy" ? "Toque num inimigo (aro vermelho). " : "Toque numa peça sua (aro verde). ") + C.text + skyLine(C); }
+    else if (sel && sel.k === "power") { const F = FAC[g.p[o].fac]; art = GEN_ART[F.gen]; title = F.power.name; sub = `${F.power.cost} mana · recarga ${F.power.cd}`; text = (F.power.target === "any" ? "Toque em qualquer peça (aro vermelho). " : "Toque numa peça sua (aro verde). ") + F.power.text + skyLine(F.power); }
     else if (inspect && inspect.unit) { const u = g.units.find(q => q.id === inspect.unit); if (u) { const F = FAC[g.p[u.o].fac]; art = u.gen ? GEN_ART[u.card] : u.card; title = u.gen ? `${u.card}` : CARDS[u.card].name;
         sub = `${u.o === viewer || mode === "bot" && u.o === 0 ? "sua" : "inimiga"} · ${g.atkOf(u)}/${u.hp}`; const st = [u.rooted && "enraizada", u.stunned && "atordoada", u.sick && "chegou agora"].filter(Boolean).join(", ");
-        const tr = g.ter(u.x, u.y); text = (u.gen ? `General. Poder: ${F.power.text}` : CARDS[u.card].text) + (st ? ` (${st})` : "") + (tr ? ` Em ${TERR[tr].name}: ${TERR[tr].text}` : "");
+        const tr = g.ter(u.x, u.y); text = (u.gen ? `General. Poder: ${F.power.text}${skyLine(F.power)}` : CARDS[u.card].text + skyLine(CARDS[u.card])) + (st ? ` (${st})` : "") + (tr ? ` Em ${TERR[tr].name}: ${TERR[tr].text}` : "");
         if (sel && sel.k === "unit" && sel.id === u.id) { const m = g.moves(u).length, a = g.attacks(u).length; text = (m || a ? `${m ? "Pontos: andar. " : ""}${a ? "Vermelho: atacar — a etiqueta mostra o dano e a revida. " : ""}` : "Já agiu neste turno. ") + text; } } }
     else if (inspect && inspect.ter) { const T = TERR[inspect.ter]; art = "ter_" + inspect.ter; title = T.name; sub = "terreno"; text = T.text; }
     else if (g.over) { title = "Fim da peleja"; }
     else if (!human(o)) { art = GEN_ART[FAC[g.p[o].fac].gen]; title = `${FAC[g.p[o].fac].gen} está jogando…`; text = "Toque nas peças inimigas para ver o que fazem."; }
     else { art = GEN_ART[FAC[g.p[o].fac].gen]; title = mode === "hot" ? `Vez de ${FAC[g.p[o].fac].gen}` : "Sua vez"; sub = `turno ${Math.ceil(g.turn / 2)}`;
-      text = g.actions().length ? "Toque numa peça com brilho dourado ou numa carta." : "Nada mais a fazer: toque em Passar."; }
+      text = g.actions().length ? "Toque numa peça com brilho dourado ou numa carta." : "Nada mais a fazer: toque em Passar.";
+      if (g.p[o].mull && !busy()) { text = "Antes de jogar, você pode trocar até 2 cartas da mão."; btn = document.createElement("button"); btn.className = "btn use hot"; btn.textContent = "Trocar"; btn.addEventListener("click", () => { mullSel = []; sel = null; refresh(); }); } }
     el.appendChild(thumb(art)); const tx = document.createElement("div"); tx.className = "tx"; const b = document.createElement("b"); b.textContent = title; if (sub) { const em = document.createElement("em"); em.textContent = " · " + sub; b.appendChild(em); }
     const sp = document.createElement("span"); sp.textContent = text; tx.append(b, sp); el.appendChild(tx); if (btn) el.appendChild(btn);
   }
@@ -276,32 +289,36 @@
     const co = document.createElement("span"); co.className = "co"; co.textContent = C.cost; b.appendChild(co);
     if (C.type === "unit") { const a = document.createElement("span"); a.className = "a"; a.textContent = C.atk; const h = document.createElement("span"); h.className = "h"; h.textContent = C.hp; b.append(a, h); }
     const nm = document.createElement("span"); nm.className = "nm"; nm.textContent = SHORT[id] || C.name; b.appendChild(nm);
+    if (C.sky) { const sk = document.createElement("span"); sk.className = "sk" + (g.lit(C) ? " on" : "") + (C.sky === "noite" ? " lua" : ""); sk.textContent = SKY[C.sky]; b.appendChild(sk); }
+    if (mullSel && mullSel.includes(i)) b.classList.add("out");
     b.addEventListener("click", () => { if (!g || g.over || paused) return; ensureAudio(); sfx("tap");
+      if (mullSel) { const j = mullSel.indexOf(i); if (j >= 0) mullSel.splice(j, 1); else if (mullSel.length < 2) mullSel.push(i); refresh(); return; }
       if (busy() || !human(g.cur)) { inspect = null; tell(C.name, C.text, id, 3000); return; }
       sel = sel && sel.k === "card" && sel.i === i ? null : { k: "card", i }; inspect = null; say = null; refresh(); });
     return b; }
   function manaEl(el, P, mine) { el.innerHTML = '<i class="on"></i>'; const s = document.createElement("span"); s.textContent = mine ? (P.mana > P.max ? `${P.max}+${P.mana - P.max}` : `${P.mana}/${P.max}`) : `${P.max}`; el.appendChild(s); el.setAttribute("aria-label", `Mana ${s.textContent}`); }
-  function refresh() { renderHud(); renderInfo(); }
+  function refresh() { if (mullSel && (!g || g.over || !g.p[g.cur].mull)) mullSel = null; renderHud(); renderInfo(); }
   function renderHud() {
     if (!g) return; const foeTurn = !g.over && g.cur !== viewer; $("topBar").classList.toggle("turn", foeTurn); $("myBar").classList.toggle("turn", !g.over && g.cur === viewer);
     $("oName").dataset.turn = foeTurn ? (mode === "bot" ? "jogando…" : "vez dele") : ""; const me = viewer, op = 1 - me, PM = g.p[me], PO = g.p[op];
     const gm = g.gen(me), go = g.gen(op); $("mHp").innerHTML = HEART + (gm ? Math.max(0, gm.hp) : 0); $("oHp").innerHTML = HEART + (go ? Math.max(0, go.hp) : 0);
     manaEl($("mMana"), PM, true); manaEl($("oMana"), PO, false);
     if (g.rules.ceu) { const n = g.sky() === "noite", left = g.skyLeft(); $("sky").textContent = (n ? "🌙 " : "☀️ ") + left; $("sky").className = n ? "noite" : "dia"; $("sky").title = `${n ? "Noite" : "Dia"}: muda em ${left} rodada(s)`; }
-    $("oName").textContent = FAC[PO.fac].gen; $("oInfo").textContent = `${PO.hand.length} na mão · ${PO.deck.length} no baralho`;
+    $("oName").textContent = FAC[PO.fac].gen; $("oInfo").textContent = `${PO.hand.length} na mão · ${PO.deck.length} no baralho` + (g.rules.totem ? ` · 🗿 ${PO.causos}/${g.rules.totem}` : "");
+    $("mCau").hidden = !g.rules.totem; $("mCau").textContent = `🗿 ${PM.causos}/${g.rules.totem}`; $("mCau").title = "Causos: fique nos totens para juntar";
     const oc = $("oPor").getContext("2d"); oc.clearRect(0, 0, 68, 68); oc.drawImage(ART.token(GEN_ART[FAC[PO.fac].gen], 68), 0, 0);
     const pw = FAC[PM.fac].power, myTurn = g.cur === me && human(me) && !g.over; $("bPow").innerHTML = ""; const pc = document.createElement("canvas"); pc.width = pc.height = 44; pc.getContext("2d").drawImage(ART.token(GEN_ART[FAC[PM.fac].gen], 44), 0, 0); $("bPow").appendChild(pc);
-    $("bPow").appendChild(document.createTextNode(PM.cd > 0 ? `Poder em ${PM.cd}` : `Poder · ${pw.cost}`)); $("bPow").setAttribute("aria-label", `${pw.name}: ${pw.text}`);
+    $("bPow").appendChild(document.createTextNode(PM.cd > 0 ? `Poder em ${PM.cd}` : `Poder · ${pw.cost}`)); $("bPow").setAttribute("aria-label", `${pw.name}: ${pw.text}${skyLine(pw)}`); if (g.lit(pw)) $("bPow").appendChild(document.createTextNode(" " + SKY[g.sky()]));
     $("bPow").setAttribute("aria-disabled", myTurn && g.powerTargets(me).length ? "false" : "true"); $("bPow").classList.toggle("hot", !!(sel && sel.k === "power"));
     $("bEnd").setAttribute("aria-disabled", myTurn ? "false" : "true"); $("bEnd").classList.toggle("hot", myTurn && !busy() && !g.actions().length);
-    const hand = $("hand"), showHand = mode === "bot" ? 0 : (g.cur === me && $("ovPass").hidden ? me : -1), hsig = [showHand, g.cur, g.p[me].hand.join(","), g.p[me].mana, sel ? sel.k + sel.i : "", busy()].join("|");
+    const hand = $("hand"), showHand = mode === "bot" ? 0 : (g.cur === me && $("ovPass").hidden ? me : -1), hsig = [showHand, g.cur, g.p[me].hand.join(","), g.p[me].mana, sel ? sel.k + sel.i : "", busy(), g.sky(), mullSel ? mullSel.join(".") + "m" : ""].join("|");
     if (hand.dataset.sig === hsig) return; hand.dataset.sig = hsig; hand.innerHTML = "";
     if (showHand < 0) for (let i = 0; i < g.p[me].hand.length; i++) { const b = document.createElement("div"); b.className = "card back"; hand.appendChild(b); }
-    else g.p[showHand].hand.forEach((id, i) => hand.appendChild(cardEl(id, i, g.cur === showHand && !busy() && g.playTargets(showHand, i).length > 0, sel && sel.k === "card" && sel.i === i)));
+    else g.p[showHand].hand.forEach((id, i) => hand.appendChild(cardEl(id, i, !!mullSel || (g.cur === showHand && !busy() && g.playTargets(showHand, i).length > 0), sel && sel.k === "card" && sel.i === i)));
     layout();
   }
   $("bPow").addEventListener("click", () => { if (!g || g.over || paused) return; const P = g.p[viewer], F = FAC[P.fac].power;
-    if (busy() || !human(g.cur) || g.cur !== viewer) { tell(F.name, `${F.text} Custa ${F.cost} mana, recarga de ${F.cd} turnos.`, GEN_ART[FAC[P.fac].gen], 3500); return; }
+    if (busy() || !human(g.cur) || g.cur !== viewer) { tell(F.name, `${F.text} Custa ${F.cost} mana, recarga de ${F.cd} turnos.${skyLine(F)}`, GEN_ART[FAC[P.fac].gen], 3500); return; }
     if (P.cd > 0) { tell(F.name, `Recarregando: volta em ${P.cd} turno(s). ${F.text}`, GEN_ART[FAC[P.fac].gen]); return; } if (P.mana < F.cost) { tell(F.name, `Precisa de ${F.cost} mana. ${F.text}`, GEN_ART[FAC[P.fac].gen]); return; }
     if (!g.powerTargets(g.cur).length) { tell(F.name, "Sem alvo para o poder agora. " + F.text, GEN_ART[FAC[P.fac].gen]); return; }
     sel = sel && sel.k === "power" ? null : { k: "power" }; inspect = null; say = null; sfx("tap"); refresh(); });
@@ -322,15 +339,15 @@
   // ---------- telas ----------
   function start() {
     ensureAudio(); const other = myFac === "mata" ? "assom" : "mata", seed = 1 + Math.floor(Math.random() * 1e6);
-    g = new K.Game({ seed, fac: [myFac, other] }); g.ev = []; bot = mode === "bot" ? K.makeBot(level, 1, seed) : null; viewer = 0;
+    g = new K.Game({ seed, fac: [myFac, other], totem: extras.totem ? META : 0, troca: extras.troca }); mullSel = null; g.ev = []; bot = mode === "bot" ? K.makeBot(level, 1, seed) : null; viewer = 0; skyNote = "";
     for (const s of stats) Object.assign(s, { dmg: 0, kills: 0, played: 0 }); fx = []; FX.clear(); ver++; face.clear(); anims = []; floats = []; ghosts = []; parts = []; dpos.clear(); dhp.clear(); dscale.clear(); sel = null; inspect = null; say = null; busyUntil = clock; paused = false; ended = false;
     for (const id of ["ovHome", "ovEnd", "ovMenu", "ovPass"]) $(id).hidden = true; $("hand").dataset.sig = ""; resize(); turnStart = performance.now();
-    if (mode === "hot") { $("passWho").textContent = `Vez de ${FAC[g.p[0].fac].gen}`; $("ovPass").hidden = false; } else tell("Sua vez", "Toque numa carta e depois numa casa iluminada perto do seu general.", null, 3500);
+    if (mode === "hot") { $("passWho").textContent = `Vez de ${FAC[g.p[0].fac].gen}`; $("ovPass").hidden = false; } else if (!g.p[0].mull) tell("Sua vez", "Toque numa carta e depois numa casa iluminada perto do seu general.", null, 3500);
     refresh();
   }
   function finish() { ended = true; const w = g.winner, name = o => mode === "bot" ? (o === 0 ? "Você" : "Bot") : FAC[g.p[o].fac].gen;
     $("eTitle").textContent = w === null ? "Empate" : mode === "bot" ? (w === 0 ? "Vitória!" : "Derrota") : `${FAC[g.p[w].fac].gen} vence!`;
-    $("eWhy").textContent = w === null ? "Os dois generais caíram juntos." : g.gaveUp !== undefined ? `${mode === "bot" && g.gaveUp === 0 ? "Você desistiu" : FAC[g.p[g.gaveUp].fac].gen + " desistiu"} no turno ${Math.ceil(g.turn / 2)}.` : `${FAC[g.p[1 - w].fac].gen} caiu no turno ${Math.ceil(g.turn / 2)}.`;
+    $("eWhy").textContent = w === null ? "Os dois generais caíram juntos." : g.gaveUp !== undefined ? `${mode === "bot" && g.gaveUp === 0 ? "Você desistiu" : FAC[g.p[g.gaveUp].fac].gen + " desistiu"} no turno ${Math.ceil(g.turn / 2)}.` : g.why === "causos" ? `${FAC[g.p[w].fac].gen} juntou ${g.p[w].causos} causos nos totens no turno ${Math.ceil(g.turn / 2)}.` : `${FAC[g.p[1 - w].fac].gen} caiu no turno ${Math.ceil(g.turn / 2)}.`;
     $("eStats").innerHTML = `<thead><tr><th></th><th>${name(0)}</th><th>${name(1)}</th></tr></thead><tbody><tr><td>Dano causado</td><td>${stats[0].dmg}</td><td>${stats[1].dmg}</td></tr><tr><td>Unidades derrubadas</td><td>${stats[0].kills}</td><td>${stats[1].kills}</td></tr><tr><td>Cartas jogadas</td><td>${stats[0].played}</td><td>${stats[1].played}</td></tr><tr><td>Vida do general</td><td>${Math.max(0, g.gen(0)?.hp ?? 0)}</td><td>${Math.max(0, g.gen(1)?.hp ?? 0)}</td></tr></tbody>`;
     sfx(mode === "bot" ? (w === 0 ? "win" : "lose") : "win"); $("ovEnd").hidden = false; }
   $("bGo").addEventListener("click", start); $("bAgain").addEventListener("click", start);
@@ -345,6 +362,7 @@
       sm.textContent = id === "mata" ? "Mata: armadilhas, veneno e mobilidade" : "Assombrações: força bruta e sacrifício"; s.append(c, b, sm); l.className = "fac"; l.append(i, s); box.appendChild(l); } })();
   for (const r of document.querySelectorAll('input[name="mode"]')) { r.checked = r.value === mode; r.addEventListener("change", () => { mode = r.value; $("lvSeg").hidden = mode !== "bot"; save(); }); } $("lvSeg").hidden = mode !== "bot";
   for (const r of document.querySelectorAll('input[name="lv"]')) { r.checked = r.value === level; r.addEventListener("change", () => { level = r.value; save(); }); }
+  for (const k of ["totem", "troca"]) { const el = $("opt_" + k); el.checked = !!extras[k]; el.addEventListener("change", () => { extras[k] = el.checked; save(); }); }
   $("optSound").checked = sound; $("optSound").addEventListener("change", e => { sound = e.target.checked; save(); if (sound) ensureAudio(); });
   document.addEventListener("visibilitychange", () => { if (document.hidden && g && !g.over && !paused) { paused = true; pauseAt = performance.now(); $("ovMenu").hidden = false; } });
 

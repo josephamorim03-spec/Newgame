@@ -37,6 +37,7 @@ button:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
 .mana i{width:16px;height:20px;background:var(--mana);clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
 .mana span{font-family:var(--slab);font-size:20px;margin-left:3px;color:var(--mana)}
 .cnt{font-size:13px;color:var(--soft);white-space:nowrap}
+.stack{display:grid;gap:0;justify-items:start}.stack .cnt{font-size:12px;line-height:1;font-weight:900;color:#7A3FB0}
 .btn{min-height:42px;padding:0 14px;border:2px solid var(--ink);border-radius:12px;background:var(--paper2);font-family:var(--slab);font-size:16px;box-shadow:0 3px 0 var(--ink)}
 .btn:active{transform:translateY(2px);box-shadow:0 1px 0 var(--ink)}
 .btn[aria-disabled="true"]{opacity:.45;box-shadow:none}
@@ -52,7 +53,7 @@ button:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
 #info .tx{min-width:0;display:grid;gap:1px}
 #info b{font-family:var(--slab);font-weight:400;font-size:16px;line-height:1.05}
 #info b em{font-style:normal;color:var(--soft);font-family:var(--body);font-weight:800;font-size:13px}
-#info span{font-size:13px;line-height:1.2;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+#info span{font-size:13px;line-height:1.2;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 #info.say{background:#2F3A57;color:#fff;border-color:#2F3A57} #info.say b em{color:#C9D3F0}
 #info .use{min-height:40px}
 #hand{display:flex;justify-content:center;padding:8px 6px calc(8px + env(safe-area-inset-bottom,0px));gap:var(--gap,5px)}
@@ -65,6 +66,9 @@ button:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
 .card.spell{background:#EFE7FF} .card.spell .nm{color:#4A2A8E}
 .card.sel{transform:translateY(-12px);box-shadow:0 0 0 3px var(--gold),0 3px 0 var(--ink)}
 .card.poor canvas{filter:grayscale(.85) opacity(.55)}
+.card .sk{position:absolute;top:2px;right:2px;width:19px;height:19px;border-radius:50%;border:2px solid var(--ink);background:#FFF3CF;font-size:11px;line-height:1;display:grid;place-items:center;opacity:.7;z-index:1}
+.card .sk.lua{background:#C9D3F0}.card .sk.on{opacity:1;background:#FFE45C;box-shadow:0 0 0 3px rgba(242,182,50,.55)}.card .sk.lua.on{background:#2F3A57;box-shadow:0 0 0 3px rgba(91,108,240,.55)}
+.card.out{transform:translateY(6px);opacity:.55}.card.out::after{content:"↺";position:absolute;inset:0;display:grid;place-items:center;font-size:32px;font-weight:900;color:var(--foe);text-shadow:0 0 4px #fff}
 .card.back{background:repeating-linear-gradient(45deg,#C9D6F2 0 6px,#E3EAFA 6px 12px)}
 .ov{position:absolute;inset:0;z-index:5;overflow:auto;display:flex;justify-content:center;padding:calc(env(safe-area-inset-top,0px) + 16px) 14px calc(env(safe-area-inset-bottom,0px) + 16px);background:var(--paper)}
 .pn{width:100%;max-width:440px;margin:auto 0;display:grid;gap:12px}
@@ -98,7 +102,7 @@ td,th{padding:6px 0;border-top:1.5px solid #E2D4B4;text-align:right}
 td:first-child,th:first-child{text-align:left;font-weight:600}
 thead th{border-top:0;font-family:var(--slab);font-weight:400}
 .row{display:flex;gap:8px}.row>*{flex:1}
-.tog{display:flex;align-items:center;gap:10px}
+.tog{display:flex;align-items:center;gap:10px}.tog span{line-height:1.2}.tog small{display:block;color:var(--soft);font-size:12.5px;font-weight:600}
 .tog input{width:20px;height:20px;accent-color:var(--you)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
@@ -118,7 +122,7 @@ thead th{border-top:0;font-family:var(--slab);font-weight:400}
   <div id="info" aria-live="polite"></div>
   <div class="bar" id="myBar">
     <div class="hp" id="mHp"></div>
-    <div class="mana" id="mMana"></div>
+    <div class="stack"><div class="mana" id="mMana"></div><span class="cnt" id="mCau" hidden></span></div>
     <div style="flex:1"></div>
     <button class="btn" id="bPow"></button>
     <button class="btn" id="bEnd">Passar<i id="bEndT"></i></button>
@@ -141,6 +145,9 @@ thead th{border-top:0;font-family:var(--slab);font-weight:400}
           <label><input type="radio" name="lv" value="normal" checked><span>Normal</span></label>
           <label><input type="radio" name="lv" value="dificil"><span>Difícil<small>planeja o turno</small></span></label>
         </div>
+        <h3>Regras extras <small style="font-family:var(--body);font-weight:800;font-size:12px;color:var(--soft)">para testar</small></h3>
+        <label class="tog"><input type="checkbox" id="opt_totem"> <span><b>🗿 Totens e causos</b><small>Peça sua num totem conta 1 causo por turno; 6 causos também vence.</small></span></label>
+        <label class="tog"><input type="checkbox" id="opt_troca"> <span><b>↺ Troca e mana guardada</b><small>Troque até 2 cartas no 1º turno; 1 mana que sobrar fica para o próximo.</small></span></label>
         <button class="go" id="bGo">Pelejar!</button>
       </div>
       <div class="frame">
@@ -152,7 +159,7 @@ thead th{border-top:0;font-family:var(--slab);font-weight:400}
           <li>No seu turno, cada peça anda até 2 casas e depois ataca uma vizinha. Quem apanha revida. Antes de atacar, a etiqueta no alvo mostra o resultado.</li>
           <li>O chão muda a cada partida: <b>mata fechada</b> protege (−1 de dano), <b>rio</b> não deixa passar a pé e a <b>encruzilhada</b> dá +1 de mana a quem ficar nela.</li>
           <li><b>Costas e lado:</b> cada peça olha para onde andou ou atacou. Golpe <b>pelas costas</b> causa +1 de dano e não leva revide; <b>de lado</b>, não leva revide. Quem apanha se vira para o agressor. A Mata anda em bando: peça da Mata com aliado colado não é pega de lado nem pelas costas.</li>
-          <li><b>Dia e noite</b> (☀️/🌙 no topo) trocam a cada 3 rodadas. De dia a Mata anda 1 casa a mais; de noite as Assombrações têm +1 de ataque e o Lobisomem fica em fúria.</li>
+          <li><b>Dia e noite</b> (☀️/🌙 no topo) trocam a cada 3 rodadas. Quase toda carta (e o poder de cada general) tem um lado ☀️ ou 🌙 que só vale nessa hora: o selo acende na carta e na peça. A Mata é mais forte de dia (e anda 1 casa a mais); as Assombrações, de noite.</li>
           <li>O general tem um poder com recarga. Passe o turno quando acabar.</li>
         </ol>
         <label class="tog"><input type="checkbox" id="optSound" checked> Som</label>
@@ -163,6 +170,7 @@ thead th{border-top:0;font-family:var(--slab);font-weight:400}
   <div class="ov" id="ovPass" hidden>
     <div class="pn" style="text-align:center">
       <p class="res" id="passWho" style="font-size:44px"></p>
+      <p id="passSky" style="margin:0;font-weight:900"></p>
       <p>Passe o celular. A mão do outro jogador fica escondida até ele tocar abaixo.</p>
       <button class="go" id="bPass">Estou pronto</button>
     </div>

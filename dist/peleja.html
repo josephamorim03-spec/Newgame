@@ -37,6 +37,7 @@ button:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
 .mana i{width:16px;height:20px;background:var(--mana);clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
 .mana span{font-family:var(--slab);font-size:20px;margin-left:3px;color:var(--mana)}
 .cnt{font-size:13px;color:var(--soft);white-space:nowrap}
+.stack{display:grid;gap:0;justify-items:start}.stack .cnt{font-size:12px;line-height:1;font-weight:900;color:#7A3FB0}
 .btn{min-height:42px;padding:0 14px;border:2px solid var(--ink);border-radius:12px;background:var(--paper2);font-family:var(--slab);font-size:16px;box-shadow:0 3px 0 var(--ink)}
 .btn:active{transform:translateY(2px);box-shadow:0 1px 0 var(--ink)}
 .btn[aria-disabled="true"]{opacity:.45;box-shadow:none}
@@ -52,7 +53,7 @@ button:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
 #info .tx{min-width:0;display:grid;gap:1px}
 #info b{font-family:var(--slab);font-weight:400;font-size:16px;line-height:1.05}
 #info b em{font-style:normal;color:var(--soft);font-family:var(--body);font-weight:800;font-size:13px}
-#info span{font-size:13px;line-height:1.2;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+#info span{font-size:13px;line-height:1.2;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 #info.say{background:#2F3A57;color:#fff;border-color:#2F3A57} #info.say b em{color:#C9D3F0}
 #info .use{min-height:40px}
 #hand{display:flex;justify-content:center;padding:8px 6px calc(8px + env(safe-area-inset-bottom,0px));gap:var(--gap,5px)}
@@ -65,6 +66,9 @@ button:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
 .card.spell{background:#EFE7FF} .card.spell .nm{color:#4A2A8E}
 .card.sel{transform:translateY(-12px);box-shadow:0 0 0 3px var(--gold),0 3px 0 var(--ink)}
 .card.poor canvas{filter:grayscale(.85) opacity(.55)}
+.card .sk{position:absolute;top:2px;right:2px;width:19px;height:19px;border-radius:50%;border:2px solid var(--ink);background:#FFF3CF;font-size:11px;line-height:1;display:grid;place-items:center;opacity:.7;z-index:1}
+.card .sk.lua{background:#C9D3F0}.card .sk.on{opacity:1;background:#FFE45C;box-shadow:0 0 0 3px rgba(242,182,50,.55)}.card .sk.lua.on{background:#2F3A57;box-shadow:0 0 0 3px rgba(91,108,240,.55)}
+.card.out{transform:translateY(6px);opacity:.55}.card.out::after{content:"↺";position:absolute;inset:0;display:grid;place-items:center;font-size:32px;font-weight:900;color:var(--foe);text-shadow:0 0 4px #fff}
 .card.back{background:repeating-linear-gradient(45deg,#C9D6F2 0 6px,#E3EAFA 6px 12px)}
 .ov{position:absolute;inset:0;z-index:5;overflow:auto;display:flex;justify-content:center;padding:calc(env(safe-area-inset-top,0px) + 16px) 14px calc(env(safe-area-inset-bottom,0px) + 16px);background:var(--paper)}
 .pn{width:100%;max-width:440px;margin:auto 0;display:grid;gap:12px}
@@ -98,7 +102,7 @@ td,th{padding:6px 0;border-top:1.5px solid #E2D4B4;text-align:right}
 td:first-child,th:first-child{text-align:left;font-weight:600}
 thead th{border-top:0;font-family:var(--slab);font-weight:400}
 .row{display:flex;gap:8px}.row>*{flex:1}
-.tog{display:flex;align-items:center;gap:10px}
+.tog{display:flex;align-items:center;gap:10px}.tog span{line-height:1.2}.tog small{display:block;color:var(--soft);font-size:12.5px;font-weight:600}
 .tog input{width:20px;height:20px;accent-color:var(--you)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
@@ -118,7 +122,7 @@ thead th{border-top:0;font-family:var(--slab);font-weight:400}
   <div id="info" aria-live="polite"></div>
   <div class="bar" id="myBar">
     <div class="hp" id="mHp"></div>
-    <div class="mana" id="mMana"></div>
+    <div class="stack"><div class="mana" id="mMana"></div><span class="cnt" id="mCau" hidden></span></div>
     <div style="flex:1"></div>
     <button class="btn" id="bPow"></button>
     <button class="btn" id="bEnd">Passar<i id="bEndT"></i></button>
@@ -141,6 +145,9 @@ thead th{border-top:0;font-family:var(--slab);font-weight:400}
           <label><input type="radio" name="lv" value="normal" checked><span>Normal</span></label>
           <label><input type="radio" name="lv" value="dificil"><span>Difícil<small>planeja o turno</small></span></label>
         </div>
+        <h3>Regras extras <small style="font-family:var(--body);font-weight:800;font-size:12px;color:var(--soft)">para testar</small></h3>
+        <label class="tog"><input type="checkbox" id="opt_totem"> <span><b>🗿 Totens e causos</b><small>Peça sua num totem conta 1 causo por turno; 6 causos também vence.</small></span></label>
+        <label class="tog"><input type="checkbox" id="opt_troca"> <span><b>↺ Troca e mana guardada</b><small>Troque até 2 cartas no 1º turno; 1 mana que sobrar fica para o próximo.</small></span></label>
         <button class="go" id="bGo">Pelejar!</button>
       </div>
       <div class="frame">
@@ -152,7 +159,7 @@ thead th{border-top:0;font-family:var(--slab);font-weight:400}
           <li>No seu turno, cada peça anda até 2 casas e depois ataca uma vizinha. Quem apanha revida. Antes de atacar, a etiqueta no alvo mostra o resultado.</li>
           <li>O chão muda a cada partida: <b>mata fechada</b> protege (−1 de dano), <b>rio</b> não deixa passar a pé e a <b>encruzilhada</b> dá +1 de mana a quem ficar nela.</li>
           <li><b>Costas e lado:</b> cada peça olha para onde andou ou atacou. Golpe <b>pelas costas</b> causa +1 de dano e não leva revide; <b>de lado</b>, não leva revide. Quem apanha se vira para o agressor. A Mata anda em bando: peça da Mata com aliado colado não é pega de lado nem pelas costas.</li>
-          <li><b>Dia e noite</b> (☀️/🌙 no topo) trocam a cada 3 rodadas. De dia a Mata anda 1 casa a mais; de noite as Assombrações têm +1 de ataque e o Lobisomem fica em fúria.</li>
+          <li><b>Dia e noite</b> (☀️/🌙 no topo) trocam a cada 3 rodadas. Quase toda carta (e o poder de cada general) tem um lado ☀️ ou 🌙 que só vale nessa hora: o selo acende na carta e na peça. A Mata é mais forte de dia (e anda 1 casa a mais); as Assombrações, de noite.</li>
           <li>O general tem um poder com recarga. Passe o turno quando acabar.</li>
         </ol>
         <label class="tog"><input type="checkbox" id="optSound" checked> Som</label>
@@ -163,6 +170,7 @@ thead th{border-top:0;font-family:var(--slab);font-weight:400}
   <div class="ov" id="ovPass" hidden>
     <div class="pn" style="text-align:center">
       <p class="res" id="passWho" style="font-size:44px"></p>
+      <p id="passSky" style="margin:0;font-weight:900"></p>
       <p>Passe o celular. A mão do outro jogador fica escondida até ele tocar abaixo.</p>
       <button class="go" id="bPass">Estou pronto</button>
     </div>
@@ -194,39 +202,41 @@ const CD = (() => {
   // ---------- cartas ----------
   const CARDS = {
     // Mata
-    saci: { name: "Saci-Pererê", fac: "mata", type: "unit", cost: 2, atk: 2, hp: 2, text: "Entra em qualquer casa vazia a até 3 do seu general.", farSummon: 3 },
-    coral: { name: "Cobra-coral", fac: "mata", type: "unit", cost: 3, atk: 1, hp: 3, text: "Veneno: destrói qualquer unidade que ferir (não afeta generais).", venom: true },
-    uira: { name: "Uirapuru", fac: "mata", type: "unit", cost: 2, atk: 1, hp: 3, text: "Voa: anda até 3 casas por cima de peças e do rio. Ao entrar: compre 1 carta.", fly: true, onEnter: "draw" },
-    onca: { name: "Onça-pintada", fac: "mata", type: "unit", cost: 3, atk: 3, hp: 2, text: "Rápida: age no turno em que entra.", rush: true },
-    caipora: { name: "Caipora", fac: "mata", type: "unit", cost: 3, atk: 2, hp: 4, text: "No fim do seu turno, cura 1 nas suas unidades vizinhas (e no general).", endHeal: 1 },
-    anhanga: { name: "Anhangá", fac: "mata", type: "unit", cost: 5, atk: 4, hp: 5, text: "Ao entrar: enraíza os inimigos vizinhos (não andam no próximo turno).", onEnter: "rootAround" },
-    mapin: { name: "Mapinguari", fac: "mata", type: "unit", cost: 6, atk: 5, hp: 7, text: "Guardião: inimigos vizinhos não podem andar e só podem atacá-lo.", guard: true },
-    enraizar: { name: "Enraizar", fac: "mata", type: "spell", cost: 1, target: "enemy", text: "Causa 1 de dano a uma unidade ou general inimigo, que também não anda no próximo turno." },
-    cha: { name: "Chá de ervas", fac: "mata", type: "spell", cost: 1, target: "ally", text: "Cura 4 de uma unidade sua ou do seu general." },
-    arapuca: { name: "Arapuca", fac: "mata", type: "spell", cost: 2, target: "empty", text: "Armadilha escondida numa casa vazia: o primeiro inimigo que parar nela leva 3." },
+    saci: { name: "Saci-Pererê", fac: "mata", type: "unit", cost: 2, atk: 2, hp: 2, text: "Entra em qualquer casa vazia a até 3 do seu general.", farSummon: 3, sky: "dia", skyText: "De dia: entra em qualquer casa vazia." },
+    coral: { name: "Cobra-coral", fac: "mata", type: "unit", cost: 3, atk: 1, hp: 3, text: "Veneno: destrói qualquer unidade que ferir (não afeta generais).", venom: true, sky: "dia", skyText: "Ao sol: ataca sem levar revide.", skyFree: true },
+    uira: { name: "Uirapuru", fac: "mata", type: "unit", cost: 2, atk: 1, hp: 3, text: "Voa: anda até 3 casas por cima de peças e do rio. Ao entrar: compre 1 carta.", fly: true, onEnter: "draw", sky: "dia", skyText: "Canto da manhã: de dia, compra 2 ao entrar." },
+    onca: { name: "Onça-pintada", fac: "mata", type: "unit", cost: 3, atk: 3, hp: 2, text: "Rápida: age no turno em que entra.", rush: true, sky: "noite", skyText: "Caçadora: de noite, +1 de ataque." },
+    caipora: { name: "Caipora", fac: "mata", type: "unit", cost: 3, atk: 2, hp: 4, text: "No fim do seu turno, cura 1 nas suas unidades vizinhas (e no general).", endHeal: 1, sky: "noite", skyText: "De noite, cura 2 em vez de 1." },
+    anhanga: { name: "Anhangá", fac: "mata", type: "unit", cost: 5, atk: 4, hp: 5, text: "Ao entrar: enraíza os inimigos vizinhos (não andam no próximo turno).", onEnter: "rootAround", sky: "noite", skyText: "De noite, também causa 1 de dano nos inimigos vizinhos ao entrar." },
+    mapin: { name: "Mapinguari", fac: "mata", type: "unit", cost: 6, atk: 5, hp: 7, text: "Guardião: inimigos vizinhos não podem andar e só podem atacá-lo.", guard: true, sky: "dia", skyText: "De dia, recupera 3 de vida no fim do seu turno." },
+    enraizar: { name: "Enraizar", fac: "mata", type: "spell", cost: 1, target: "enemy", text: "Causa 1 de dano a uma unidade ou general inimigo, que também não anda no próximo turno.", sky: "dia", skyText: "De dia: 2 de dano." },
+    cha: { name: "Chá de ervas", fac: "mata", type: "spell", cost: 1, target: "ally", text: "Cura 4 de uma unidade sua ou do seu general.", sky: "dia", skyText: "De dia: cura 6." },
+    arapuca: { name: "Arapuca", fac: "mata", type: "spell", cost: 2, target: "empty", text: "Armadilha escondida numa casa vazia: o primeiro inimigo que parar nela leva 3.", sky: "noite", skyText: "De noite a armadilha causa 4." },
     // Assombrações
-    corpo: { name: "Corpo-seco", fac: "assom", type: "unit", cost: 1, atk: 2, hp: 1, text: "Último suspiro: 1 de dano em todos os inimigos vizinhos.", lastBreath: 1 },
-    bicho: { name: "Bicho-papão", fac: "assom", type: "unit", cost: 2, atk: 2, hp: 3, text: "Guardião: inimigos vizinhos não podem andar e só podem atacá-lo.", guard: true },
-    lobis: { name: "Lobisomem", fac: "assom", type: "unit", cost: 3, atk: 3, hp: 3, text: "Fúria: +2 de ataque enquanto estiver ferido — e a noite toda, sob a lua.", fury: 2, moon: true },
-    pisa: { name: "Pisadeira", fac: "assom", type: "unit", cost: 3, atk: 2, hp: 2, text: "Ao entrar: atordoa o inimigo vizinho mais forte (não anda nem ataca no próximo turno).", onEnter: "stunOne" },
-    mula: { name: "Mula-sem-cabeça", fac: "assom", type: "unit", cost: 4, atk: 4, hp: 3, text: "Rápida. Galope: anda até 3 casas.", rush: true, move: 3 },
-    capelobo: { name: "Capelobo", fac: "assom", type: "unit", cost: 5, atk: 5, hp: 5, text: "Ao destruir uma unidade atacando, recupera toda a vida.", feast: true },
+    corpo: { name: "Corpo-seco", fac: "assom", type: "unit", cost: 1, atk: 2, hp: 1, text: "Último suspiro: 1 de dano em todos os inimigos vizinhos.", lastBreath: 1, sky: "noite", skyText: "De noite, o último suspiro causa 2." },
+    bicho: { name: "Bicho-papão", fac: "assom", type: "unit", cost: 2, atk: 2, hp: 3, text: "Guardião: inimigos vizinhos não podem andar e só podem atacá-lo.", guard: true, sky: "noite", skyText: "De noite, inimigos vizinhos têm −1 de ataque." },
+    lobis: { name: "Lobisomem", fac: "assom", type: "unit", cost: 3, atk: 3, hp: 3, text: "Fúria: +2 de ataque enquanto estiver ferido.", fury: 2, moon: true, sky: "noite", skyText: "Lua: em fúria a noite toda." },
+    pisa: { name: "Pisadeira", fac: "assom", type: "unit", cost: 3, atk: 2, hp: 2, text: "Ao entrar: atordoa o inimigo vizinho mais forte (não anda nem ataca no próximo turno).", onEnter: "stunOne", sky: "noite", skyText: "De noite, atordoa todos os inimigos vizinhos ao entrar." },
+    mula: { name: "Mula-sem-cabeça", fac: "assom", type: "unit", cost: 4, atk: 4, hp: 3, text: "Rápida. Galope: anda até 3 casas.", rush: true, move: 3, sky: "noite", skyText: "De noite, galopa até 4 casas." },
+    capelobo: { name: "Capelobo", fac: "assom", type: "unit", cost: 5, atk: 5, hp: 5, text: "Ao destruir uma unidade atacando, recupera toda a vida.", feast: true, sky: "noite", skyText: "De noite: +1 de ataque." },
     pacto: { name: "Pacto", fac: "assom", type: "spell", cost: 0, target: "none", text: "Seu general perde 2 de vida. Compre 2 cartas." },
     alma: { name: "Alma penada", fac: "assom", type: "spell", cost: 1, target: "allyUnit", text: "Destrói uma unidade sua: causa 3 de dano em cada inimigo vizinho a ela." },
-    grito: { name: "Grito da noite", fac: "assom", type: "spell", cost: 2, target: "enemy", text: "Causa 2 de dano a uma unidade ou general inimigo." },
-    assomb: { name: "Assombração", fac: "assom", type: "spell", cost: 3, target: "none", text: "Traz de volta a última unidade sua que morreu, ao lado do seu general." },
+    grito: { name: "Grito da noite", fac: "assom", type: "spell", cost: 2, target: "enemy", text: "Causa 2 de dano a uma unidade ou general inimigo.", sky: "noite", skyText: "De noite: 3 de dano." },
+    assomb: { name: "Assombração", fac: "assom", type: "spell", cost: 3, target: "none", text: "Traz de volta a última unidade sua que morreu, ao lado do seu general.", sky: "noite", skyText: "De noite, a unidade volta pronta para agir." },
   };
   const FACTIONS = {
-    mata: { name: "Mata", gen: "Curupira", color: "#2F6B3A", power: { name: "Rastro falso", cost: 1, cd: 2, target: "allyUnit", text: "Troca o Curupira de lugar com uma unidade sua." },
+    mata: { name: "Mata", gen: "Curupira", color: "#2F6B3A", power: { name: "Rastro falso", cost: 1, cd: 2, target: "allyUnit", text: "Troca o Curupira de lugar com uma unidade sua.", sky: "dia", skyText: "De dia, recarrega em 1 turno." },
       deck: ["saci", "coral", "uira", "onca", "caipora", "anhanga", "mapin", "enraizar", "cha", "arapuca"] },
-    assom: { name: "Assombrações", gen: "Cuca", color: "#7A2340", power: { name: "Feitiço da Cuca", cost: 1, cd: 2, target: "any", text: "1 de dano em qualquer unidade ou general; a Cuca recupera 1." },
+    assom: { name: "Assombrações", gen: "Cuca", color: "#7A2340", power: { name: "Feitiço da Cuca", cost: 1, cd: 2, target: "any", text: "1 de dano em qualquer unidade ou general; a Cuca recupera 1.", sky: "noite", skyText: "De noite: 2 de dano." },
       deck: ["corpo", "bicho", "lobis", "pisa", "mula", "capelobo", "pacto", "alma", "grito", "assomb"] },
   };
+  for (const [k, C] of Object.entries(CARDS)) C.id = k;
   // terreno: sorteado com a semente e espelhado (justo para os dois lados)
   const TERR = {
     mata: { name: "Mata fechada", text: "Quem está aqui leva 1 de dano a menos em ataques e revides (mínimo 1)." },
     rio: { name: "Rio", text: "Ninguém para nem passa a pé. Quem voa pula por cima. Dá para atacar por cima do rio." },
     encru: { name: "Encruzilhada", text: "No começo do seu turno, cada peça sua aqui dá +1 de mana." },
+    totem: { name: "Totem", text: "Casa sagrada: no começo do seu turno, cada peça sua aqui conta 1 causo. Quem juntar os causos da meta vence." },
   };
   const D8 = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]], D4 = D8.slice(0, 4);
   const inb = (x, y) => x >= 0 && y >= 0 && x < BW && y < BH;
@@ -235,15 +245,15 @@ const CD = (() => {
 
   class Game {
     constructor(opt = {}) {
-      const R = rng(opt.seed ?? 1); this.rules = { costas: opt.costas ?? true, ceu: opt.ceu ?? true, lado: opt.lado ?? "livre", fase: opt.fase ?? 3, diaAtk: opt.diaAtk ?? false, bando: opt.bando ?? true }; this.uid = 1; this.units = []; this.traps = []; this.ev = []; this.over = false; this.winner = null; this.turn = 1; this.cur = 0;
+      const R = rng(opt.seed ?? 1); this.rules = { costas: opt.costas ?? true, ceu: opt.ceu ?? true, lado: opt.lado ?? "livre", fase: opt.fase ?? 3, diaAtk: opt.diaAtk ?? false, bando: opt.bando ?? true, ceuFac: opt.ceuFac ?? true, ceuCartas: opt.ceuCartas ?? true, totem: opt.totem ?? 0, troca: opt.troca ?? false, guarda: opt.guarda ?? opt.troca ?? false, noiteAtk: opt.noiteAtk ?? false, off: opt.off || [], only: opt.only || null }; this.seed = opt.seed ?? 1; this.uid = 1; this.units = []; this.traps = []; this.ev = []; this.over = false; this.winner = null; this.turn = 1; this.cur = 0;
       this.p = [0, 1].map(o => { const fac = (opt.fac || ["mata", "assom"])[o], F = FACTIONS[fac], deck = [];
         for (const c of F.deck) deck.push(c, c); for (let i = deck.length - 1; i > 0; i--) { const j = Math.floor(R() * (i + 1)); [deck[i], deck[j]] = [deck[j], deck[i]]; }
-        return { fac, deck, hand: [], mana: 0, max: 0, cd: 0, grave: [], fatigue: 0 }; });
+        return { fac, deck, hand: [], mana: 0, max: 0, cd: 0, grave: [], fatigue: 0, causos: 0, saved: 0, mull: !!this.rules.troca }; });
       this.terr = {}; const put = (x, y, k) => { this.terr[x + "," + y] = k; this.terr[(BW - 1 - x) + "," + (BH - 1 - y)] = k; };
       if (R() < 0.5) put(2, 3, "encru"); else put(0, 3, "encru");
       const cand = []; for (let y = 1; y <= 2; y++) for (let x = 0; x < BW; x++) if (Math.max(Math.abs(x - 2), y) > 1) cand.push([x, y]);
       for (let i = cand.length - 1; i > 0; i--) { const j = Math.floor(R() * (i + 1)); [cand[i], cand[j]] = [cand[j], cand[i]]; }
-      put(...cand[0], "rio"); put(...cand[1], "mata"); put(...cand[2], "mata");
+      put(...cand[0], "rio"); put(...cand[1], "mata"); put(...cand[2], "mata"); if (this.rules.totem) put(1, 3, "totem");
       for (const o of [0, 1]) { this.units.push({ id: this.uid++, o, gen: true, card: FACTIONS[this.p[o].fac].gen, atk: 2, hp: GEN_HP, max: GEN_HP, x: 2, y: o === 0 ? BH - 1 : 0, f: [0, o === 0 ? -1 : 1], moved: false, acted: false, sick: false, rooted: 0, stunned: 0 });
         for (let i = 0; i < (o === 0 ? 3 : 4); i++) this.draw(o); }
       this.startTurn(0);
@@ -259,16 +269,21 @@ const CD = (() => {
     round() { return Math.ceil(this.turn / 2); }
     sky() { return this.rules.ceu && Math.floor((this.round() - 1) / this.rules.fase) % 2 ? "noite" : "dia"; }
     skyLeft() { return this.rules.fase - (this.round() - 1) % this.rules.fase; }
-    night(u) { return this.rules.ceu && this.sky() === "noite" && !u.gen && this.p[u.o].fac === "assom"; }
-    day(u) { return this.rules.ceu && this.sky() === "dia" && this.p[u.o].fac === "mata"; }
-    atkOf(u) { const C = this.U(u), dayAtk = this.rules.diaAtk && this.day(u) && !u.gen ? 1 : 0, fury = C && C.fury && (u.hp < u.max || (C.moon && this.rules.ceu && this.sky() === "noite")); return u.atk + (fury ? C.fury : 0) + (this.night(u) ? 1 : 0) + dayAtk; }
+    night(u) { return this.rules.ceu && this.rules.ceuFac && this.rules.noiteAtk && this.sky() === "noite" && !u.gen && this.p[u.o].fac === "assom"; }
+    day(u) { return this.rules.ceu && this.rules.ceuFac && this.sky() === "dia" && this.p[u.o].fac === "mata"; }
+    // traço de céu da carta (☀️/🌙) ativo agora?
+    lit(C) { return !!(C && C.sky && this.rules.ceu && this.rules.ceuCartas && this.sky() === C.sky && !this.rules.off.includes(C.id || C.name) && (!this.rules.only || this.rules.only.includes(C.id || C.name))); }
+    litU(u) { return this.lit(u.gen ? FACTIONS[this.p[u.o].fac].power : this.U(u)); }
+    atkOf(u) { const C = this.U(u), dayAtk = this.rules.diaAtk && this.day(u) && !u.gen ? 1 : 0, fury = C && C.fury && (u.hp < u.max || (C.moon && this.rules.ceu && this.sky() === "noite"));
+      const lit = this.lit(C) && (u.card === "onca" || u.card === "capelobo") ? 1 : 0, fear = this.lit(CARDS.bicho) && this.units.some(b => b.card === "bicho" && b.hp > 0 && b.o !== u.o && cheb(b, u) === 1) ? 1 : 0;
+      return Math.max(0, u.atk + (fury ? C.fury : 0) + (this.night(u) ? 1 : 0) + dayAtk + lit - fear); }
     // de onde vem o golpe, pelo lado para onde o defensor olha: frente, lado ou costas
     flank(a, t) { if (!this.rules.costas || !t.f) return "frente"; if (this.rules.bando && this.p[t.o].fac === "mata" && this.units.some(v => v !== t && v.hp > 0 && v.o === t.o && cheb(v, t) === 1)) return "frente"; const d = t.f[0] * Math.sign(a.x - t.x) + t.f[1] * Math.sign(a.y - t.y); return d > 0 || (d === 0 && this.rules.lado === "revida") ? (d > 0 ? "frente" : "lado") : d === 0 ? "lado" : "costas"; }
     mine(o) { return this.units.filter(u => u.o === o && u.hp > 0); }
     guardedBy(u) { return this.units.filter(g => g.o !== u.o && g.hp > 0 && !g.gen && CARDS[g.card].guard && cheb(g, u) === 1); }
     canMove(u) { return u.o === this.cur && !u.moved && !u.acted && !u.sick && !u.rooted && !u.stunned && !this.guardedBy(u).length; }
     canAttack(u) { return u.o === this.cur && !u.acted && !u.sick && !u.stunned && this.atkOf(u) > 0; }
-    moves(u) { if (!this.canMove(u)) return []; const C = this.U(u), bonus = this.day(u) && !this.rules.diaAtk ? 1 : 0, range = ((C && C.move) || 2) + bonus, out = [];
+    moves(u) { if (!this.canMove(u)) return []; const C = this.U(u), bonus = this.day(u) && !this.rules.diaAtk ? 1 : 0, range = ((C && C.move) || 2) + (C && C.move && this.lit(C) ? 1 : 0) + bonus, out = [];
       if (C && C.fly) { for (let y = 0; y < BH; y++) for (let x = 0; x < BW; x++) if (!this.at(x, y) && this.ter(x, y) !== "rio" && Math.abs(x - u.x) + Math.abs(y - u.y) <= 3 + bonus && (x !== u.x || y !== u.y)) out.push([x, y]); return out; }
       const seen = new Set([u.x + "," + u.y]); let fr = [[u.x, u.y]];
       for (let s = 0; s < range; s++) { const nf = []; for (const [x, y] of fr) for (const [dx, dy] of D4) { const nx = x + dx, ny = y + dy, k = nx + "," + ny; if (!inb(nx, ny) || seen.has(k) || this.ter(nx, ny) === "rio") continue; seen.add(k); const o = this.at(nx, ny);
@@ -278,7 +293,7 @@ const CD = (() => {
       for (const [dx, dy] of D8) { const t = this.at(u.x + dx, u.y + dy); if (t && t.o !== u.o && (!g.length || g.includes(t))) out.push(t); } return out; }
     summonTiles(o, cardId) { const C = CARDS[cardId], out = [], G = this.gen(o);
       for (let y = 0; y < BH; y++) for (let x = 0; x < BW; x++) { if (this.at(x, y) || this.ter(x, y) === "rio") continue;
-        if (C.farSummon ? cheb(G, { x, y }) <= C.farSummon : this.mine(o).some(u => cheb(u, { x, y }) === 1)) out.push([x, y]); } return out; }
+        if (C.farSummon ? this.lit(C) || cheb(G, { x, y }) <= C.farSummon : this.mine(o).some(u => cheb(u, { x, y }) === 1)) out.push([x, y]); } return out; }
     spellTargets(o, t) { if (t === "enemy") return this.units.filter(u => u.hp > 0 && u.o !== o).map(u => [u.x, u.y]); if (t === "ally") return this.mine(o).map(u => [u.x, u.y]);
       if (t === "allyUnit") return this.mine(o).filter(u => !u.gen).map(u => [u.x, u.y]); if (t === "any") return this.units.filter(u => u.hp > 0).map(u => [u.x, u.y]);
       if (t === "empty") { const out = []; for (let y = 0; y < BH; y++) for (let x = 0; x < BW; x++) if (!this.at(x, y) && this.ter(x, y) !== "rio" && !this.traps.some(tr => tr.x === x && tr.y === y)) out.push([x, y]); return out; } return []; }
@@ -287,13 +302,17 @@ const CD = (() => {
     powerTargets(o) { const P = this.p[o], F = FACTIONS[P.fac].power; if (P.cd > 0 || P.mana < F.cost) return []; return this.spellTargets(o, F.target); }
     // ----- turno -----
     draw(o, n = 1) { const P = this.p[o]; for (let i = 0; i < n; i++) { if (!P.deck.length) { P.fatigue++; this.hurt(this.gen(o), P.fatigue, null); this.e({ k: "fatigue", o, n: P.fatigue }); continue; } const c = P.deck.pop(); if (P.hand.length < HAND_MAX) { P.hand.push(c); this.e({ k: "draw", o, c }); } else this.e({ k: "burn", o, c }); } }
-    startTurn(o) { this.cur = o; const P = this.p[o]; P.max = Math.min(MAX_MANA, P.max + (P.max === 0 ? 2 : 1)); P.mana = P.max; if (P.cd > 0) P.cd--;
+    startTurn(o) { this.cur = o; const P = this.p[o]; P.max = Math.min(MAX_MANA, P.max + (P.max === 0 ? 2 : 1)); P.mana = P.max + P.saved; if (P.saved) this.e({ k: "saved", o, n: P.saved }); P.saved = 0; if (P.cd > 0) P.cd--;
       for (const u of this.mine(o)) { u.moved = false; u.acted = false; u.sick = false; }
       for (const u of this.mine(o)) if (this.ter(u.x, u.y) === "encru") { P.mana++; this.e({ k: "cross", o, x: u.x, y: u.y }); }
+      for (const u of this.mine(o)) if (this.ter(u.x, u.y) === "totem") { P.causos++; this.e({ k: "causo", o, x: u.x, y: u.y, n: P.causos }); }
+      if (this.rules.totem && P.causos >= this.rules.totem && !this.over) { this.over = true; this.winner = o; this.why = "causos"; this.e({ k: "causos", o }); return; }
       if (this.turn > 1) this.draw(o); this.e({ k: "turn", o, turn: this.turn });
       if (this.rules.ceu && o === 0 && this.turn > 1 && (this.round() - 1) % this.rules.fase === 0) this.e({ k: "sky", sky: this.sky() }); }
     endTurn() { if (this.over) return; const o = this.cur;
-      for (const u of this.mine(o)) { const C = this.U(u); if (C && C.endHeal) for (const a of this.mine(o)) if (cheb(a, u) === 1 && a.hp < a.max) { a.hp = Math.min(a.max, a.hp + C.endHeal); this.e({ k: "heal", id: a.id, n: C.endHeal }); } }
+      for (const u of this.mine(o)) { const C = this.U(u); if (C && C.endHeal) { const n = C.endHeal + (this.lit(C) ? 1 : 0); for (const a of this.mine(o)) if (cheb(a, u) === 1 && a.hp < a.max) { const h = Math.min(n, a.max - a.hp); a.hp += h; this.e({ k: "heal", id: a.id, n: h }); } }
+        if (u.card === "mapin" && this.lit(C) && u.hp < u.max) { const h = Math.min(3, u.max - u.hp); u.hp += h; this.e({ k: "heal", id: u.id, n: h }); } }
+      this.p[o].saved = this.rules.guarda ? Math.min(1, this.p[o].mana) : 0; this.p[o].mull = false;
       for (const u of this.mine(o)) { if (u.rooted) u.rooted--; if (u.stunned) u.stunned--; }
       this.turn++; this.startTurn(1 - o); }
     // ----- dano e morte -----
@@ -301,20 +320,22 @@ const CD = (() => {
     reap() { for (let guard = 0; guard < 10; guard++) { const dead = this.units.filter(u => u.hp <= 0 && !u.gone); if (!dead.length) break;
         for (const u of dead) { u.gone = true; this.e({ k: "die", id: u.id, x: u.x, y: u.y });
           if (u.gen) { if (!this.over) { this.over = true; this.winner = 1 - u.o; } continue; } this.p[u.o].grave.push(u.card); const C = CARDS[u.card];
-          if (C.lastBreath) for (const v of this.units) if (v.hp > 0 && v.o !== u.o && cheb(v, u) === 1) this.hurt(v, C.lastBreath, u); } }
+          if (C.lastBreath) for (const v of this.units) if (v.hp > 0 && v.o !== u.o && cheb(v, u) === 1) this.hurt(v, C.lastBreath + (this.lit(C) ? 1 : 0), u); } }
       this.units = this.units.filter(u => !u.gone);
       const g0 = this.gen(0), g1 = this.gen(1); if (!g0 || !g1) { this.over = true; this.winner = !g0 && !g1 ? null : g0 ? 0 : 1; } }
     // ----- comandos -----
-    apply(c) {
+    apply(c) { const P = this.p[this.cur], ok = this.run(c); if (ok && c.c !== "mull" && c.c !== "end") P.mull = false; return ok; }
+    run(c) {
       if (this.over) return false; const o = this.cur, P = this.p[o];
+      if (c.c === "mull") { if (!P.mull || !Array.isArray(c.idx) || c.idx.length > 2 || new Set(c.idx).size !== c.idx.length || c.idx.some(i => !(i >= 0 && i < P.hand.length))) return false; this.mulligan(o, c.idx); return true; }
       if (c.c === "end") { this.endTurn(); return true; }
       if (c.c === "play") { const ok = this.playTargets(o, c.i).some(([x, y]) => x === c.x && y === c.y); if (!ok) return false; const id = P.hand[c.i], C = CARDS[id];
         P.mana -= C.cost; P.hand.splice(c.i, 1); this.e({ k: "play", o, c: id, x: c.x, y: c.y });
         if (C.type === "unit") this.summon(o, id, c.x, c.y); else this.cast(o, id, c.x, c.y); this.reap(); return true; }
-      if (c.c === "power") { if (!this.powerTargets(o).some(([x, y]) => x === c.x && y === c.y)) return false; const F = FACTIONS[P.fac].power; P.mana -= F.cost; P.cd = F.cd; const t = this.at(c.x, c.y), G = this.gen(o);
+      if (c.c === "power") { if (!this.powerTargets(o).some(([x, y]) => x === c.x && y === c.y)) return false; const F = FACTIONS[P.fac].power; P.mana -= F.cost; P.cd = this.lit(F) && P.fac === "mata" ? 1 : F.cd; const t = this.at(c.x, c.y), G = this.gen(o);
         this.e({ k: "power", o, x: c.x, y: c.y });
         if (P.fac === "mata") { const gx = G.x, gy = G.y; G.x = t.x; G.y = t.y; t.x = gx; t.y = gy; this.e({ k: "swap", a: G.id, b: t.id }); this.trap(G); this.trap(t); }
-        else { this.hurt(t, 1, G); if (G.hp < G.max) { G.hp = Math.min(G.max, G.hp + 1); this.e({ k: "heal", id: G.id, n: 1 }); } }
+        else { this.hurt(t, this.lit(F) ? 2 : 1, G); if (G.hp < G.max) { G.hp = Math.min(G.max, G.hp + 1); this.e({ k: "heal", id: G.id, n: 1 }); } }
         this.reap(); return true; }
       const u = this.units.find(z => z.id === c.id && z.hp > 0); if (!u || u.o !== o) return false;
       if (c.c === "move") { if (!this.moves(u).some(([x, y]) => x === c.x && y === c.y)) return false; const fx = u.x, fy = u.y; u.f = [Math.sign(c.x - fx), Math.sign(c.y - fy)]; u.x = c.x; u.y = c.y; u.moved = true; this.e({ k: "move", id: u.id, fx, fy, x: c.x, y: c.y }); this.trap(u); this.reap(); return true; }
@@ -325,24 +346,28 @@ const CD = (() => {
     fight(a, t) { const A = this.U(a), T = this.U(t), fl = this.flank(a, t); a.f = [Math.sign(t.x - a.x), Math.sign(t.y - a.y)]; this.e({ k: "attack", id: a.id, t: t.id, flank: fl });
       this.hurt(t, this.blow(t, this.atkOf(a) + (fl === "costas" ? 1 : 0)), a); if (A && A.venom && !t.gen && t.hp > 0) { t.hp = 0; this.e({ k: "venom", id: t.id }); }
       if (t.hp > 0) t.f = [Math.sign(a.x - t.x), Math.sign(a.y - t.y)]; // quem apanha se vira para o agressor
-      if (t.hp > 0 && !t.stunned && (fl === "frente" || (fl === "lado" && this.rules.lado === "revida"))) { this.e({ k: "counter", id: t.id, t: a.id }); this.hurt(a, this.blow(a, this.atkOf(t)), t); if (T && T.venom && !a.gen && a.hp > 0) { a.hp = 0; this.e({ k: "venom", id: a.id }); } }
+      if (t.hp > 0 && !t.stunned && !(A && A.skyFree && this.lit(A)) && (fl === "frente" || (fl === "lado" && this.rules.lado === "revida"))) { this.e({ k: "counter", id: t.id, t: a.id }); this.hurt(a, this.blow(a, this.atkOf(t)), t); if (T && T.venom && !a.gen && a.hp > 0) { a.hp = 0; this.e({ k: "venom", id: a.id }); } }
       if (A && A.feast && t.hp <= 0 && !t.gen && a.hp > 0) { a.hp = a.max; this.e({ k: "heal", id: a.id, n: a.max }); } }
-    trap(u) { const i = this.traps.findIndex(t => t.x === u.x && t.y === u.y && t.o !== u.o); if (i < 0) return; this.traps.splice(i, 1); this.e({ k: "trap", x: u.x, y: u.y }); this.hurt(u, 3, null); }
+    trap(u) { const i = this.traps.findIndex(t => t.x === u.x && t.y === u.y && t.o !== u.o); if (i < 0) return; this.traps.splice(i, 1); this.e({ k: "trap", x: u.x, y: u.y }); this.hurt(u, this.lit(CARDS.arapuca) ? 4 : 3, null); }
     summon(o, id, x, y) { const C = CARDS[id], u = { id: this.uid++, o, card: id, atk: C.atk, hp: C.hp, max: C.hp, x, y, f: [0, o === 0 ? -1 : 1], moved: false, acted: false, sick: !C.rush, rooted: 0, stunned: 0 }; this.units.push(u); this.e({ k: "summon", id: u.id, x, y });
       this.trap(u);
-      if (C.onEnter === "draw") this.draw(o);
-      if (C.onEnter === "rootAround") for (const v of this.units) if (v.hp > 0 && v.o !== o && cheb(v, u) === 1) { v.rooted = 1; this.e({ k: "root", id: v.id }); }
-      if (C.onEnter === "stunOne") { const vs = this.units.filter(v => v.hp > 0 && v.o !== o && cheb(v, u) === 1).sort((a, b) => this.atkOf(b) - this.atkOf(a) || a.id - b.id); if (vs[0]) { vs[0].stunned = 1; this.e({ k: "stun", id: vs[0].id }); } } }
+      if (C.onEnter === "draw") this.draw(o, this.lit(C) ? 2 : 1);
+      if (C.onEnter === "rootAround") for (const v of this.units) if (v.hp > 0 && v.o !== o && cheb(v, u) === 1) { v.rooted = 1; this.e({ k: "root", id: v.id }); if (this.lit(C)) this.hurt(v, 1, u); }
+      if (C.onEnter === "stunOne") { const vs = this.units.filter(v => v.hp > 0 && v.o !== o && cheb(v, u) === 1).sort((a, b) => this.atkOf(b) - this.atkOf(a) || a.id - b.id); for (const v of this.lit(C) ? vs : vs.slice(0, 1)) { v.stunned = 1; this.e({ k: "stun", id: v.id }); } }
+      if (this.lit(CARDS.assomb) && this.reviving) u.sick = false; }
     cast(o, id, x, y) { const t = this.at(x, y), P = this.p[o];
-      if (id === "enraizar") { t.rooted = 1; this.e({ k: "root", id: t.id }); this.hurt(t, 1, null); }
-      else if (id === "cha") { const n = Math.min(4, t.max - t.hp); t.hp += n; this.e({ k: "heal", id: t.id, n: 4 }); }
+      if (id === "enraizar") { t.rooted = 1; this.e({ k: "root", id: t.id }); this.hurt(t, this.lit(CARDS.enraizar) ? 2 : 1, null); }
+      else if (id === "cha") { const n = Math.min(this.lit(CARDS.cha) ? 6 : 4, t.max - t.hp); t.hp += n; this.e({ k: "heal", id: t.id, n }); }
       else if (id === "arapuca") this.traps.push({ o, x, y });
       else if (id === "pacto") { this.hurt(this.gen(o), 2, null); this.draw(o, 2); }
       else if (id === "alma") { const vs = this.units.filter(v => v.hp > 0 && v.o !== o && cheb(v, t) === 1); t.hp = 0; this.e({ k: "sacrifice", id: t.id }); for (const v of vs) this.hurt(v, 3, t); }
-      else if (id === "grito") this.hurt(t, 2, null);
+      else if (id === "grito") this.hurt(t, this.lit(CARDS.grito) ? 3 : 2, null);
       else if (id === "assomb") { const cid = P.grave.pop(), G = this.gen(o); const spots = D8.map(([dx, dy]) => [G.x + dx, G.y + dy]).filter(([a, b]) => inb(a, b) && !this.at(a, b) && this.ter(a, b) !== "rio").sort((a, b) => (o === 0 ? a[1] - b[1] : b[1] - a[1]) || a[0] - b[0]);
-        if (spots.length) this.summon(o, cid, spots[0][0], spots[0][1]); else P.grave.push(cid); }
+        if (spots.length) { this.reviving = true; this.summon(o, cid, spots[0][0], spots[0][1]); this.reviving = false; } else P.grave.push(cid); }
     }
+    // troca inicial: devolve até 2 cartas ao baralho (posição sorteada com a semente) e compra o mesmo tanto
+    mulligan(o, idx) { const P = this.p[o], R = rng(this.seed * 31 + o + 7), back = idx.slice().sort((a, b) => b - a).map(i => P.hand.splice(i, 1)[0]);
+      for (const c of back) P.deck.splice(Math.floor(R() * (P.deck.length + 1)), 0, c); P.mull = false; this.e({ k: "mull", o, n: back.length }); this.draw(o, back.length); }
     // todas as ações possíveis do jogador da vez (para o bot)
     actions() { const o = this.cur, out = [];
       this.p[o].hand.forEach((c, i) => { for (const [x, y] of this.playTargets(o, i)) out.push({ c: "play", i, x, y }); });
@@ -361,6 +386,8 @@ const CD = (() => {
     for (const u of g.units) if (u.o !== o && u.hp > 0 && cheb(u, me) <= 3 && !u.gen) s -= g.atkOf(u) * 0.8 * P.threat;
     if (g.rules.costas) for (const m of g.units) { if (m.hp <= 0) continue; for (const e of g.units) if (e.o !== m.o && e.hp > 0 && cheb(e, m) === 1) { const fl = g.flank(e, m); if (fl !== "frente") s += (m.o === o ? -1 : 1) * (fl === "costas" ? 1.6 : 0.8); } }
     for (const u of g.units) { if (u.hp <= 0) continue; const tt = g.ter(u.x, u.y); if (tt === "encru") s += (u.o === o ? 1 : -1) * 2.2; else if (tt === "mata" && !u.gen) s += (u.o === o ? 1 : -1) * 0.6; }
+    if (g.rules.totem) { const T = g.rules.totem, mine = g.p[o].causos, his = g.p[1 - o].causos; s += (mine - his) * 4 + (mine >= T - 2 ? (mine - T + 3) * 6 : 0) - (his >= T - 2 ? (his - T + 3) * 6 * P.threat : 0);
+      for (const u of g.units) if (u.hp > 0 && g.ter(u.x, u.y) === "totem") s += (u.o === o ? 1 : -1) * 3.5; }
     s += (g.p[o].hand.length - g.p[1 - o].hand.length) * 0.8 + (g.traps.filter(t => t.o === o).length) * 1.2;
     return s;
   }
@@ -378,6 +405,8 @@ const CD = (() => {
     const P = LV[level] || LV.normal, R = rng(seed + o); let queue = [], qTurn = -1;
     return function next(g) {
       if (g.over || g.cur !== o) return null;
+      if (g.p[o].mull) { const H = g.p[o].hand, cheap = H.filter(c => CARDS[c].cost <= 3).length, idx = H.map((c, i) => [CARDS[c].cost, i]).filter(([c]) => c >= 5).sort((a, b) => b[0] - a[0]).slice(0, Math.max(0, 2 - Math.max(0, cheap - 1))).map(([, i]) => i);
+        const dup = H.findIndex((c, i) => CARDS[c].type === "spell" && H.indexOf(c) !== i); if (dup >= 0 && idx.length < 2 && !idx.includes(dup)) idx.push(dup); return { c: "mull", idx }; }
       if (P.plans) { // difícil: testa vários planos de turno inteiro e a melhor resposta do oponente a cada um
         if (qTurn !== g.turn || !queue.length) { let best = null, bv = -Infinity; const opp = LV.normal;
           for (let k = 0; k < P.plans; k++) { const h = g.clone(); const plan = playTurn(h, o, P, R, k === 0 ? 0 : 1.5); if (!h.over) { h.endTurn(); playTurn(h, 1 - o, opp, R, 0); }
@@ -670,6 +699,11 @@ const FLAT = (() => {
     ter_rio: { bg: "#A8D5EE", draw(t) { for (const [y, c, w] of [[22, "#8CC2E2", 5], [50, "#8CC2E2", 5], [78, "#8CC2E2", 5], [34, "#FFFFFF", 4], [64, "#FFFFFF", 4]]) { const pts = []; for (let x = -4; x <= 104; x += 6) pts.push([x, y + Math.sin(x / 7) * 4]); t.line(pts, c, w); } } },
     ter_encru: { bg: "#F1DDA8", draw(t) { t.line([[-5, -5], [105, 105]], "#FBEFD0", 26); t.line([[105, -5], [-5, 105]], "#FBEFD0", 26);
         for (const [x, y] of [[40, 46], [60, 46], [50, 60]]) { t.shape([[x - 3.6, y - 4, 1], [x + 3.6, y - 4, 1], [x + 3.6, y + 10, 1], [x - 3.6, y + 10, 1]], "#FFFFFF", { lw: 1.8 }); t.shape([[x, y - 5], [x - 3, y - 10], [x, y - 17, 1], [x + 3, y - 10]], "#F57C2A", { lw: 1.6 }); } } },
+    // totem: roda de pedras e um poste entalhado (as peças ficam no meio, as pedras aparecem em volta)
+    ter_totem: { bg: "#EAD9F4", draw(t) { t.ell(50, 50, 40, 40, "#DCC6EC", { lw: 0 });
+        for (let i = 0; i < 10; i++) { const a = i / 10 * Math.PI * 2, x = 50 + Math.cos(a) * 41, y = 50 + Math.sin(a) * 41; t.ell(x, y, 5.5, 4.4, i % 2 ? "#B9A6C9" : "#CDBBD9", { lw: 1.6, rot: a }); }
+        t.shape([[42, 14, 1], [58, 14, 1], [58, 44, 1], [42, 44, 1]], "#B5683F", { lw: 1.8, shade: [2, 0] }); t.shape([[37, 14, 1], [50, 6, 1], [63, 14, 1]], "#E8452C", { lw: 1.8 });
+        t.dot(46.5, 23, 2.2); t.dot(53.5, 23, 2.2); t.line([[45, 31], [50, 34], [55, 31]], OUT, 2); t.line([[42, 38], [58, 38]], "#8A4A28", 2.4); } },
   };
   function k_glow(t, x, y) { const k = t.k, g = k.createRadialGradient(x, y, 0, x, y, 10); g.addColorStop(0, "rgba(255,90,60,0.55)"); g.addColorStop(1, "rgba(255,90,60,0)"); k.fillStyle = g; k.fillRect(x - 10, y - 10, 20, 20); }
   function render(id, size) { const D = DEF[id]; if (!D) return null; const c = document.createElement("canvas"); c.width = c.height = size; const k = c.getContext("2d");
@@ -1271,12 +1305,13 @@ const ART = (() => {
   const GEN_ART = { Curupira: "curupira", Cuca: "cuca" };
   const SHORT = { saci: "Saci", coral: "Cobra-coral", uira: "Uirapuru", onca: "Onça", caipora: "Caipora", anhanga: "Anhangá", mapin: "Mapinguari", enraizar: "Enraizar", cha: "Chá", arapuca: "Arapuca",
     corpo: "Corpo-seco", bicho: "Bicho-papão", lobis: "Lobisomem", pisa: "Pisadeira", mula: "Mula", capelobo: "Capelobo", pacto: "Pacto", alma: "Alma penada", grito: "Grito", assomb: "Assombração" };
-  let g = null, mode = "bot", myFac = "mata", level = "normal", sound = true, bot = null, viewer = 0;
+  let g = null, mode = "bot", myFac = "mata", level = "normal", sound = true, bot = null, viewer = 0, extras = { totem: false, troca: false }, mullSel = null, skyNote = "";
+  const META = 6, SKY = { dia: "☀️", noite: "🌙" };
   let sel = null, inspect = null, say = null, anims = [], floats = [], ghosts = [], parts = [], dpos = new Map(), dhp = new Map(), dscale = new Map(), clock = 0, fx = [], shake = { amp: 0, t0: 0, d: 0.3 }, ver = 0, pv = { key: "", list: [] }, busyUntil = 0, botWait = 0, turnStart = 0, paused = false, pauseAt = 0, ended = false;
   const stats = [{ dmg: 0, kills: 0, played: 0 }, { dmg: 0, kills: 0, played: 0 }];
   const view = { w: 1, h: 1, dpr: 1, t: 60, ox: 0, oy: 0 };
-  try { const o = JSON.parse(localStorage.getItem("pj-save") || "{}"); myFac = o.fac || myFac; level = o.level || level; mode = o.mode || mode; sound = o.sound ?? true; } catch (e) {}
-  const save = () => { try { localStorage.setItem("pj-save", JSON.stringify({ fac: myFac, level, mode, sound })); } catch (e) {} };
+  try { const o = JSON.parse(localStorage.getItem("pj-save") || "{}"); myFac = o.fac || myFac; level = o.level || level; mode = o.mode || mode; sound = o.sound ?? true; extras = { ...extras, ...(o.extras || {}) }; } catch (e) {}
+  const save = () => { try { localStorage.setItem("pj-save", JSON.stringify({ fac: myFac, level, mode, sound, extras })); } catch (e) {} };
 
   // ---------- medidas: tabuleiro e cartas se ajustam à tela ----------
   function layout() { const W = $("app").clientWidth, nc = Math.max(5, $("hand").children.length), cw = Math.floor(Math.min(64, innerHeight * 0.085, (W - 16 - (nc - 1) * 5) / nc)), ch = Math.round(cw * 1.32), app = $("app");
@@ -1332,7 +1367,7 @@ const ART = (() => {
       k.fillStyle = (x + y) % 2 ? "#F1E6CC" : "#FAF3E3"; k.fillRect(px, py, t, t);
       if (tr) k.drawImage(ART.img("ter_" + tr, 128), px, py, t, t);
       k.strokeStyle = "rgba(42,30,22,0.13)"; k.lineWidth = 1; k.strokeRect(px + 0.5, py + 0.5, t - 1, t - 1); }
-    if (g.sky() === "noite") { k.fillStyle = "rgba(40,52,130,0.16)"; k.fillRect(view.ox, view.oy, t * BW, t * BH); }
+    if (g.rules.ceu) { k.fillStyle = g.sky() === "noite" ? "rgba(40,52,130,0.16)" : "rgba(255,214,90,0.07)"; k.fillRect(view.ox, view.oy, t * BW, t * BH); }
     // meio do campo
     k.strokeStyle = "rgba(42,30,22,0.25)"; k.lineWidth = 2; k.setLineDash([6, 6]); k.beginPath(); k.moveTo(view.ox, view.oy + 3.5 * t); k.lineTo(view.ox + BW * t, view.oy + 3.5 * t); k.stroke(); k.setLineDash([]);
     k.restore();
@@ -1404,7 +1439,9 @@ const ART = (() => {
       k.restore(); return;
     }
     const b = Math.max(7.5, t * 0.15), fs = Math.max(10, Math.round(b * 1.25)); k.font = `${fs}px ${FONT}`; k.textAlign = "center"; k.textBaseline = "middle";
-    const ax = x - t * 0.5 + b + 2, ay = y0 + t * 0.5 - b - 2; k.fillStyle = GOLD; k.beginPath(); k.arc(ax, ay, b, 0, 7); k.fill(); k.lineWidth = 2; k.strokeStyle = INK; k.stroke(); k.fillStyle = INK; k.fillText(g.atkOf(u), ax, ay + 1);
+    const ax = x - t * 0.5 + b + 2, ay = y0 + t * 0.5 - b - 2, atk = g.atkOf(u), up = atk > u.atk, down = atk < u.atk; k.fillStyle = up ? "#F57C2A" : down ? "#9AA3B5" : GOLD; k.beginPath(); k.arc(ax, ay, b, 0, 7); k.fill(); k.lineWidth = up ? 2.6 : 2; k.strokeStyle = INK; k.stroke(); k.fillStyle = up ? "#FFFFFF" : INK; if (up) { k.lineWidth = 2.6; k.strokeText(atk, ax, ay + 1); } k.fillText(atk, ax, ay + 1);
+    if (g.litU(u)) { const r = Math.max(6.5, t * 0.115), sx = x + t * 0.5 - r - 3, sy = y0 - t * 0.5 + r + 3, night = g.sky() === "noite", pz = reduce ? 1 : 1 + 0.08 * Math.sin(clock * 4 + u.id);
+      k.fillStyle = night ? "#2F3A57" : "#FFE9A8"; k.beginPath(); k.arc(sx, sy, r * pz, 0, 7); k.fill(); k.lineWidth = 1.8; k.strokeStyle = night ? "#C9D3F0" : "#D99A1E"; k.stroke(); k.font = `${Math.round(r * 1.25)}px sans-serif`; k.fillText(SKY[g.sky()], sx, sy + 1); k.font = `${fs}px ${FONT}`; }
     const hx = x + t * 0.5 - b - 2, hy = y0 + t * 0.5 - b - 2, hurt = hp < u.max; heart(k, hx, hy + 1, b * 1.08); k.fillStyle = hurt ? "#C81E2C" : "#E0473A"; k.fill(); k.stroke();
     k.lineWidth = 3; k.strokeStyle = INK; k.strokeText(Math.max(0, hp), hx, hy + 1); k.fillStyle = "#FFFFFF"; k.fillText(Math.max(0, hp), hx, hy + 1);
     if (u.gen) { const cw = Math.max(5, t * 0.1), cx = x - t * 0.5 + cw + 5, cy = y0 - t * 0.5 + cw + 4; k.fillStyle = GOLD; k.beginPath(); k.moveTo(cx - cw, cy + cw * 0.5); k.lineTo(cx - cw, cy - cw * 0.45); k.lineTo(cx - cw * 0.5, cy); k.lineTo(cx, cy - cw * 0.65); k.lineTo(cx + cw * 0.5, cy); k.lineTo(cx + cw, cy - cw * 0.45); k.lineTo(cx + cw, cy + cw * 0.5); k.closePath(); k.fill(); k.lineWidth = 1.6; k.strokeStyle = INK; k.stroke(); }
@@ -1474,7 +1511,13 @@ const ART = (() => {
       else if (e.k === "fatigue") { const [mx, my] = mid(); float(mx, my, "Baralho vazio: −" + e.n, "#B3301E", 20, step(0.2), 1.2); }
       else if (e.k === "burn") { if (human(e.o)) tell("Mão cheia", `${CARDS[e.c].name} foi descartada.`, e.c); }
       else if (e.k === "turn") step(0.1);
-      else if (e.k === "sky") { const n = e.sky === "noite"; tell(n ? "🌙 Anoiteceu" : "☀️ Amanheceu", n ? "Assombrações +1 de ataque. Lobisomem em fúria sob a lua." : "A Mata anda 1 casa a mais.", null, 3200); sfx(n ? "lose" : "win", tc); }
+      else if (e.k === "sky") { const n = e.sky === "noite", woke = g.units.filter(u => g.litU(u)), names = [...new Set(woke.map(u => u.gen ? u.card : SHORT[u.card]))];
+        const [mx, my] = mid(), t0 = step(0.2); float(mx, my, n ? "🌙 NOITE" : "☀️ DIA", n ? "#2F3A57" : "#C9741E", 38, t0, 1.6, true);
+        for (const u of woke) float(SX(u.x, u.y), SY(u.x, u.y) - view.t * 0.2, SKY[e.sky], INK, 26, t0 + 0.25, 1.3);
+        tell(n ? "🌙 Anoiteceu" : "☀️ Amanheceu", (n ? "As cartas com 🌙 despertam." : "A Mata anda 1 casa a mais; as cartas com ☀️ despertam.") + (names.length ? ` Em campo: ${names.join(", ")}.` : ""), null, 4200); say.keep = true; skyNote = say.title + " — " + say.text; sfx(n ? "lose" : "win", t0); }
+      else if (e.k === "causo") { const t0 = step(0.18); float(SX(e.x, e.y), SY(e.x, e.y) - 16, `+1 causo (${e.n}/${g.rules.totem})`, "#7A3FB0", 19, t0, 1.2); burstAt(e.x, e.y, 10, t0, ["#B9A6C9", GOLD]); sfx("heal", t0); }
+      else if (e.k === "mull") { if (e.n && (!human(e.o) || mode === "hot")) tell(`${FAC[g.p[e.o].fac].gen} trocou ${e.n} carta(s)`, "Troca inicial: as cartas voltaram ao baralho.", null, 2200); }
+      else if (e.k === "saved") { if (human(e.o)) { const [mx, my] = mid(); float(mx, my + view.t * 0.6, "+1 mana guardada", "#5B6CF0", 20, step(0.1), 1.2); } }
     }
     ver++; busyUntil = Math.max(busyUntil, tc + 0.05); anims.push({ t0: tc, d: 0.01, f: () => { dhp.clear(); refresh(); } });
     if (g.cur !== turnBefore) onTurnChange();
@@ -1489,8 +1532,8 @@ const ART = (() => {
   function stepAnims(dt) { clock += dt; for (const a of anims) { if (clock < a.t0) continue; const q = Math.min(1, (clock - a.t0) / a.d); a.f(q); if (q >= 1) a.done = true; } anims = anims.filter(a => !a.done);
     for (const p of parts) { p.life += dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 300 * dt; } parts = parts.filter(p => p.life < p.max); floats = floats.filter(f => clock < f.t0 + f.d); fx = fx.filter(f => clock < f.t0 + f.d); }
   function onTurnChange() { sel = null; inspect = null; turnStart = performance.now(); if (g.over) return;
-    if (mode === "hot") { $("passWho").textContent = `Vez de ${FAC[g.p[g.cur].fac].gen}`; setTimeout(() => { if (!g.over) { $("ovPass").hidden = false; refresh(); } }, 700); }
-    else if (g.cur === 0) { tell("Sua vez", "Toque numa carta e depois numa casa iluminada, ou numa peça com contorno dourado.", null, 2500); sfx("turn"); } else botWait = clock + 0.6; }
+    if (mode === "hot") { $("passWho").textContent = `Vez de ${FAC[g.p[g.cur].fac].gen}`; $("passSky").textContent = skyNote || ""; skyNote = ""; setTimeout(() => { if (!g.over) { $("ovPass").hidden = false; refresh(); } }, 700); }
+    else if (g.cur === 0) { if (!(say && say.keep && performance.now() < say.until)) tell("Sua vez", "Toque numa carta e depois numa casa iluminada, ou numa peça com contorno dourado.", null, 2500); sfx("turn"); } else botWait = clock + 0.6; }
 
   // ---------- toques no tabuleiro ----------
   function tileAt(px, py) { if (is3D) return ISO.pick(px, py, viewer); const vx = Math.floor((px - view.ox) / view.t), vy = Math.floor((py - view.oy) / view.t); if (vx < 0 || vy < 0 || vx >= BW || vy >= BH) return null; return viewer === 0 ? [vx, vy] : [BW - 1 - vx, BH - 1 - vy]; }
@@ -1508,26 +1551,30 @@ const ART = (() => {
   });
 
   // ---------- faixa de informação ----------
+  const skyLine = C => C && C.sky ? ` ${SKY[C.sky]} ${C.skyText}${g && g.lit(C) ? " (agora!)" : ""}` : "";
   function tell(title, text, art, ms = 2600) { say = { title, text, art, until: performance.now() + ms }; renderInfo(); }
   function thumb(id) { const c = document.createElement("canvas"); c.width = c.height = 104; if (id) c.getContext("2d").drawImage(ART.img(id, 104), 0, 0); return c; }
   function renderInfo() {
     const el = $("info"); el.innerHTML = ""; el.className = ""; if (!g) return; const o = g.cur;
     let art = null, title = "", sub = "", text = "", btn = null;
-    if (say && performance.now() < say.until) { el.className = "say"; art = say.art || GEN_ART[FAC[g.p[viewer].fac].gen]; title = say.title; text = say.text; }
-    else if (sel && sel.k === "card") { const id = g.p[o].hand[sel.i], C = CARDS[id]; art = id; title = C.name; sub = C.type === "unit" ? `${C.cost} mana · ${C.atk}/${C.hp}` : `${C.cost} mana · feitiço`; text = C.text;
-      const ok = g.playTargets(o, sel.i).length > 0; if (!ok) text = (g.p[o].mana < C.cost ? "Mana insuficiente. " : "Sem alvo agora. ") + C.text;
+    if (mullSel && human(o) && g.p[o].mull) { art = GEN_ART[FAC[g.p[o].fac].gen]; title = "Troca inicial"; sub = `${mullSel.length}/2`; text = "Toque em até 2 cartas para devolver ao baralho. Você compra outras no lugar.";
+      btn = document.createElement("button"); btn.className = "btn use hot"; btn.textContent = mullSel.length ? `Trocar ${mullSel.length}` : "Manter"; btn.addEventListener("click", () => { const idx = mullSel; mullSel = null; act({ c: "mull", idx }); }); }
+    else if (say && performance.now() < say.until) { el.className = "say"; art = say.art || GEN_ART[FAC[g.p[viewer].fac].gen]; title = say.title; text = say.text; }
+    else if (sel && sel.k === "card") { const id = g.p[o].hand[sel.i], C = CARDS[id]; art = id; title = C.name; sub = C.type === "unit" ? `${C.cost} mana · ${C.atk}/${C.hp}` : `${C.cost} mana · feitiço`; text = C.text + skyLine(C);
+      const ok = g.playTargets(o, sel.i).length > 0; if (!ok) text = (g.p[o].mana < C.cost ? "Mana insuficiente. " : "Sem alvo agora. ") + C.text + skyLine(C);
       else if (C.type === "spell" && C.target === "none") { btn = document.createElement("button"); btn.className = "btn use hot"; btn.textContent = "Usar"; btn.addEventListener("click", () => { act({ c: "play", i: sel.i, x: -1, y: -1 }); }); }
-      else text = (C.type === "unit" ? "Toque numa casa dourada. " : C.target === "empty" ? "Toque numa casa dourada vazia. " : C.target === "enemy" ? "Toque num inimigo (aro vermelho). " : "Toque numa peça sua (aro verde). ") + C.text; }
-    else if (sel && sel.k === "power") { const F = FAC[g.p[o].fac]; art = GEN_ART[F.gen]; title = F.power.name; sub = `${F.power.cost} mana · recarga ${F.power.cd}`; text = (F.power.target === "any" ? "Toque em qualquer peça (aro vermelho). " : "Toque numa peça sua (aro verde). ") + F.power.text; }
+      else text = (C.type === "unit" ? "Toque numa casa dourada. " : C.target === "empty" ? "Toque numa casa dourada vazia. " : C.target === "enemy" ? "Toque num inimigo (aro vermelho). " : "Toque numa peça sua (aro verde). ") + C.text + skyLine(C); }
+    else if (sel && sel.k === "power") { const F = FAC[g.p[o].fac]; art = GEN_ART[F.gen]; title = F.power.name; sub = `${F.power.cost} mana · recarga ${F.power.cd}`; text = (F.power.target === "any" ? "Toque em qualquer peça (aro vermelho). " : "Toque numa peça sua (aro verde). ") + F.power.text + skyLine(F.power); }
     else if (inspect && inspect.unit) { const u = g.units.find(q => q.id === inspect.unit); if (u) { const F = FAC[g.p[u.o].fac]; art = u.gen ? GEN_ART[u.card] : u.card; title = u.gen ? `${u.card}` : CARDS[u.card].name;
         sub = `${u.o === viewer || mode === "bot" && u.o === 0 ? "sua" : "inimiga"} · ${g.atkOf(u)}/${u.hp}`; const st = [u.rooted && "enraizada", u.stunned && "atordoada", u.sick && "chegou agora"].filter(Boolean).join(", ");
-        const tr = g.ter(u.x, u.y); text = (u.gen ? `General. Poder: ${F.power.text}` : CARDS[u.card].text) + (st ? ` (${st})` : "") + (tr ? ` Em ${TERR[tr].name}: ${TERR[tr].text}` : "");
+        const tr = g.ter(u.x, u.y); text = (u.gen ? `General. Poder: ${F.power.text}${skyLine(F.power)}` : CARDS[u.card].text + skyLine(CARDS[u.card])) + (st ? ` (${st})` : "") + (tr ? ` Em ${TERR[tr].name}: ${TERR[tr].text}` : "");
         if (sel && sel.k === "unit" && sel.id === u.id) { const m = g.moves(u).length, a = g.attacks(u).length; text = (m || a ? `${m ? "Pontos: andar. " : ""}${a ? "Vermelho: atacar — a etiqueta mostra o dano e a revida. " : ""}` : "Já agiu neste turno. ") + text; } } }
     else if (inspect && inspect.ter) { const T = TERR[inspect.ter]; art = "ter_" + inspect.ter; title = T.name; sub = "terreno"; text = T.text; }
     else if (g.over) { title = "Fim da peleja"; }
     else if (!human(o)) { art = GEN_ART[FAC[g.p[o].fac].gen]; title = `${FAC[g.p[o].fac].gen} está jogando…`; text = "Toque nas peças inimigas para ver o que fazem."; }
     else { art = GEN_ART[FAC[g.p[o].fac].gen]; title = mode === "hot" ? `Vez de ${FAC[g.p[o].fac].gen}` : "Sua vez"; sub = `turno ${Math.ceil(g.turn / 2)}`;
-      text = g.actions().length ? "Toque numa peça com brilho dourado ou numa carta." : "Nada mais a fazer: toque em Passar."; }
+      text = g.actions().length ? "Toque numa peça com brilho dourado ou numa carta." : "Nada mais a fazer: toque em Passar.";
+      if (g.p[o].mull && !busy()) { text = "Antes de jogar, você pode trocar até 2 cartas da mão."; btn = document.createElement("button"); btn.className = "btn use hot"; btn.textContent = "Trocar"; btn.addEventListener("click", () => { mullSel = []; sel = null; refresh(); }); } }
     el.appendChild(thumb(art)); const tx = document.createElement("div"); tx.className = "tx"; const b = document.createElement("b"); b.textContent = title; if (sub) { const em = document.createElement("em"); em.textContent = " · " + sub; b.appendChild(em); }
     const sp = document.createElement("span"); sp.textContent = text; tx.append(b, sp); el.appendChild(tx); if (btn) el.appendChild(btn);
   }
@@ -1538,32 +1585,36 @@ const ART = (() => {
     const co = document.createElement("span"); co.className = "co"; co.textContent = C.cost; b.appendChild(co);
     if (C.type === "unit") { const a = document.createElement("span"); a.className = "a"; a.textContent = C.atk; const h = document.createElement("span"); h.className = "h"; h.textContent = C.hp; b.append(a, h); }
     const nm = document.createElement("span"); nm.className = "nm"; nm.textContent = SHORT[id] || C.name; b.appendChild(nm);
+    if (C.sky) { const sk = document.createElement("span"); sk.className = "sk" + (g.lit(C) ? " on" : "") + (C.sky === "noite" ? " lua" : ""); sk.textContent = SKY[C.sky]; b.appendChild(sk); }
+    if (mullSel && mullSel.includes(i)) b.classList.add("out");
     b.addEventListener("click", () => { if (!g || g.over || paused) return; ensureAudio(); sfx("tap");
+      if (mullSel) { const j = mullSel.indexOf(i); if (j >= 0) mullSel.splice(j, 1); else if (mullSel.length < 2) mullSel.push(i); refresh(); return; }
       if (busy() || !human(g.cur)) { inspect = null; tell(C.name, C.text, id, 3000); return; }
       sel = sel && sel.k === "card" && sel.i === i ? null : { k: "card", i }; inspect = null; say = null; refresh(); });
     return b; }
   function manaEl(el, P, mine) { el.innerHTML = '<i class="on"></i>'; const s = document.createElement("span"); s.textContent = mine ? (P.mana > P.max ? `${P.max}+${P.mana - P.max}` : `${P.mana}/${P.max}`) : `${P.max}`; el.appendChild(s); el.setAttribute("aria-label", `Mana ${s.textContent}`); }
-  function refresh() { renderHud(); renderInfo(); }
+  function refresh() { if (mullSel && (!g || g.over || !g.p[g.cur].mull)) mullSel = null; renderHud(); renderInfo(); }
   function renderHud() {
     if (!g) return; const foeTurn = !g.over && g.cur !== viewer; $("topBar").classList.toggle("turn", foeTurn); $("myBar").classList.toggle("turn", !g.over && g.cur === viewer);
     $("oName").dataset.turn = foeTurn ? (mode === "bot" ? "jogando…" : "vez dele") : ""; const me = viewer, op = 1 - me, PM = g.p[me], PO = g.p[op];
     const gm = g.gen(me), go = g.gen(op); $("mHp").innerHTML = HEART + (gm ? Math.max(0, gm.hp) : 0); $("oHp").innerHTML = HEART + (go ? Math.max(0, go.hp) : 0);
     manaEl($("mMana"), PM, true); manaEl($("oMana"), PO, false);
     if (g.rules.ceu) { const n = g.sky() === "noite", left = g.skyLeft(); $("sky").textContent = (n ? "🌙 " : "☀️ ") + left; $("sky").className = n ? "noite" : "dia"; $("sky").title = `${n ? "Noite" : "Dia"}: muda em ${left} rodada(s)`; }
-    $("oName").textContent = FAC[PO.fac].gen; $("oInfo").textContent = `${PO.hand.length} na mão · ${PO.deck.length} no baralho`;
+    $("oName").textContent = FAC[PO.fac].gen; $("oInfo").textContent = `${PO.hand.length} na mão · ${PO.deck.length} no baralho` + (g.rules.totem ? ` · 🗿 ${PO.causos}/${g.rules.totem}` : "");
+    $("mCau").hidden = !g.rules.totem; $("mCau").textContent = `🗿 ${PM.causos}/${g.rules.totem}`; $("mCau").title = "Causos: fique nos totens para juntar";
     const oc = $("oPor").getContext("2d"); oc.clearRect(0, 0, 68, 68); oc.drawImage(ART.token(GEN_ART[FAC[PO.fac].gen], 68), 0, 0);
     const pw = FAC[PM.fac].power, myTurn = g.cur === me && human(me) && !g.over; $("bPow").innerHTML = ""; const pc = document.createElement("canvas"); pc.width = pc.height = 44; pc.getContext("2d").drawImage(ART.token(GEN_ART[FAC[PM.fac].gen], 44), 0, 0); $("bPow").appendChild(pc);
-    $("bPow").appendChild(document.createTextNode(PM.cd > 0 ? `Poder em ${PM.cd}` : `Poder · ${pw.cost}`)); $("bPow").setAttribute("aria-label", `${pw.name}: ${pw.text}`);
+    $("bPow").appendChild(document.createTextNode(PM.cd > 0 ? `Poder em ${PM.cd}` : `Poder · ${pw.cost}`)); $("bPow").setAttribute("aria-label", `${pw.name}: ${pw.text}${skyLine(pw)}`); if (g.lit(pw)) $("bPow").appendChild(document.createTextNode(" " + SKY[g.sky()]));
     $("bPow").setAttribute("aria-disabled", myTurn && g.powerTargets(me).length ? "false" : "true"); $("bPow").classList.toggle("hot", !!(sel && sel.k === "power"));
     $("bEnd").setAttribute("aria-disabled", myTurn ? "false" : "true"); $("bEnd").classList.toggle("hot", myTurn && !busy() && !g.actions().length);
-    const hand = $("hand"), showHand = mode === "bot" ? 0 : (g.cur === me && $("ovPass").hidden ? me : -1), hsig = [showHand, g.cur, g.p[me].hand.join(","), g.p[me].mana, sel ? sel.k + sel.i : "", busy()].join("|");
+    const hand = $("hand"), showHand = mode === "bot" ? 0 : (g.cur === me && $("ovPass").hidden ? me : -1), hsig = [showHand, g.cur, g.p[me].hand.join(","), g.p[me].mana, sel ? sel.k + sel.i : "", busy(), g.sky(), mullSel ? mullSel.join(".") + "m" : ""].join("|");
     if (hand.dataset.sig === hsig) return; hand.dataset.sig = hsig; hand.innerHTML = "";
     if (showHand < 0) for (let i = 0; i < g.p[me].hand.length; i++) { const b = document.createElement("div"); b.className = "card back"; hand.appendChild(b); }
-    else g.p[showHand].hand.forEach((id, i) => hand.appendChild(cardEl(id, i, g.cur === showHand && !busy() && g.playTargets(showHand, i).length > 0, sel && sel.k === "card" && sel.i === i)));
+    else g.p[showHand].hand.forEach((id, i) => hand.appendChild(cardEl(id, i, !!mullSel || (g.cur === showHand && !busy() && g.playTargets(showHand, i).length > 0), sel && sel.k === "card" && sel.i === i)));
     layout();
   }
   $("bPow").addEventListener("click", () => { if (!g || g.over || paused) return; const P = g.p[viewer], F = FAC[P.fac].power;
-    if (busy() || !human(g.cur) || g.cur !== viewer) { tell(F.name, `${F.text} Custa ${F.cost} mana, recarga de ${F.cd} turnos.`, GEN_ART[FAC[P.fac].gen], 3500); return; }
+    if (busy() || !human(g.cur) || g.cur !== viewer) { tell(F.name, `${F.text} Custa ${F.cost} mana, recarga de ${F.cd} turnos.${skyLine(F)}`, GEN_ART[FAC[P.fac].gen], 3500); return; }
     if (P.cd > 0) { tell(F.name, `Recarregando: volta em ${P.cd} turno(s). ${F.text}`, GEN_ART[FAC[P.fac].gen]); return; } if (P.mana < F.cost) { tell(F.name, `Precisa de ${F.cost} mana. ${F.text}`, GEN_ART[FAC[P.fac].gen]); return; }
     if (!g.powerTargets(g.cur).length) { tell(F.name, "Sem alvo para o poder agora. " + F.text, GEN_ART[FAC[P.fac].gen]); return; }
     sel = sel && sel.k === "power" ? null : { k: "power" }; inspect = null; say = null; sfx("tap"); refresh(); });
@@ -1584,15 +1635,15 @@ const ART = (() => {
   // ---------- telas ----------
   function start() {
     ensureAudio(); const other = myFac === "mata" ? "assom" : "mata", seed = 1 + Math.floor(Math.random() * 1e6);
-    g = new K.Game({ seed, fac: [myFac, other] }); g.ev = []; bot = mode === "bot" ? K.makeBot(level, 1, seed) : null; viewer = 0;
+    g = new K.Game({ seed, fac: [myFac, other], totem: extras.totem ? META : 0, troca: extras.troca }); mullSel = null; g.ev = []; bot = mode === "bot" ? K.makeBot(level, 1, seed) : null; viewer = 0; skyNote = "";
     for (const s of stats) Object.assign(s, { dmg: 0, kills: 0, played: 0 }); fx = []; FX.clear(); ver++; face.clear(); anims = []; floats = []; ghosts = []; parts = []; dpos.clear(); dhp.clear(); dscale.clear(); sel = null; inspect = null; say = null; busyUntil = clock; paused = false; ended = false;
     for (const id of ["ovHome", "ovEnd", "ovMenu", "ovPass"]) $(id).hidden = true; $("hand").dataset.sig = ""; resize(); turnStart = performance.now();
-    if (mode === "hot") { $("passWho").textContent = `Vez de ${FAC[g.p[0].fac].gen}`; $("ovPass").hidden = false; } else tell("Sua vez", "Toque numa carta e depois numa casa iluminada perto do seu general.", null, 3500);
+    if (mode === "hot") { $("passWho").textContent = `Vez de ${FAC[g.p[0].fac].gen}`; $("ovPass").hidden = false; } else if (!g.p[0].mull) tell("Sua vez", "Toque numa carta e depois numa casa iluminada perto do seu general.", null, 3500);
     refresh();
   }
   function finish() { ended = true; const w = g.winner, name = o => mode === "bot" ? (o === 0 ? "Você" : "Bot") : FAC[g.p[o].fac].gen;
     $("eTitle").textContent = w === null ? "Empate" : mode === "bot" ? (w === 0 ? "Vitória!" : "Derrota") : `${FAC[g.p[w].fac].gen} vence!`;
-    $("eWhy").textContent = w === null ? "Os dois generais caíram juntos." : g.gaveUp !== undefined ? `${mode === "bot" && g.gaveUp === 0 ? "Você desistiu" : FAC[g.p[g.gaveUp].fac].gen + " desistiu"} no turno ${Math.ceil(g.turn / 2)}.` : `${FAC[g.p[1 - w].fac].gen} caiu no turno ${Math.ceil(g.turn / 2)}.`;
+    $("eWhy").textContent = w === null ? "Os dois generais caíram juntos." : g.gaveUp !== undefined ? `${mode === "bot" && g.gaveUp === 0 ? "Você desistiu" : FAC[g.p[g.gaveUp].fac].gen + " desistiu"} no turno ${Math.ceil(g.turn / 2)}.` : g.why === "causos" ? `${FAC[g.p[w].fac].gen} juntou ${g.p[w].causos} causos nos totens no turno ${Math.ceil(g.turn / 2)}.` : `${FAC[g.p[1 - w].fac].gen} caiu no turno ${Math.ceil(g.turn / 2)}.`;
     $("eStats").innerHTML = `<thead><tr><th></th><th>${name(0)}</th><th>${name(1)}</th></tr></thead><tbody><tr><td>Dano causado</td><td>${stats[0].dmg}</td><td>${stats[1].dmg}</td></tr><tr><td>Unidades derrubadas</td><td>${stats[0].kills}</td><td>${stats[1].kills}</td></tr><tr><td>Cartas jogadas</td><td>${stats[0].played}</td><td>${stats[1].played}</td></tr><tr><td>Vida do general</td><td>${Math.max(0, g.gen(0)?.hp ?? 0)}</td><td>${Math.max(0, g.gen(1)?.hp ?? 0)}</td></tr></tbody>`;
     sfx(mode === "bot" ? (w === 0 ? "win" : "lose") : "win"); $("ovEnd").hidden = false; }
   $("bGo").addEventListener("click", start); $("bAgain").addEventListener("click", start);
@@ -1607,6 +1658,7 @@ const ART = (() => {
       sm.textContent = id === "mata" ? "Mata: armadilhas, veneno e mobilidade" : "Assombrações: força bruta e sacrifício"; s.append(c, b, sm); l.className = "fac"; l.append(i, s); box.appendChild(l); } })();
   for (const r of document.querySelectorAll('input[name="mode"]')) { r.checked = r.value === mode; r.addEventListener("change", () => { mode = r.value; $("lvSeg").hidden = mode !== "bot"; save(); }); } $("lvSeg").hidden = mode !== "bot";
   for (const r of document.querySelectorAll('input[name="lv"]')) { r.checked = r.value === level; r.addEventListener("change", () => { level = r.value; save(); }); }
+  for (const k of ["totem", "troca"]) { const el = $("opt_" + k); el.checked = !!extras[k]; el.addEventListener("change", () => { extras[k] = el.checked; save(); }); }
   $("optSound").checked = sound; $("optSound").addEventListener("change", e => { sound = e.target.checked; save(); if (sound) ensureAudio(); });
   document.addEventListener("visibilitychange", () => { if (document.hidden && g && !g.over && !paused) { paused = true; pauseAt = performance.now(); $("ovMenu").hidden = false; } });
 
