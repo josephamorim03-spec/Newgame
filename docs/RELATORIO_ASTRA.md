@@ -86,3 +86,8 @@ No total, de ~860 mil para ~118 mil triângulos (−86%). Isso deixa a primeira 
 - **Fumaça do Saci e notas do Uirapuru** ficam discretas no tamanho do tabuleiro, de propósito, para não poluir. Podem ganhar mais presença só no instante em que a peça age.
 - **Rostos:** olhos e bocas ainda são esferas e toros simples. Uma passada dedicada a expressões, por exemplo pálpebras e sobrancelhas em `sweep`, daria mais personalidade.
 - **Animais de frente** (Onça, Mula, Anhangá) continuam estreitos nas direções 0 e 4. Isso é inevitável com a câmera atual, e pode ser compensado com um leve giro de 3/4 nessas direções.
+
+## 4. Nota sobre `tools/mula.js` (QA do Astra)
+- Este script foi feito para a etapa 1 e verifica que os **outros** personagens ficaram idênticos ao commit original `3f1c896`. Agora que os 14 foram remodelados, essa parte vai acusar diferença, e isso é esperado.
+- O restante do script continua valendo: orçamento da Mula, âncoras, pool de FX, pausa, movimento reduzido, offline e fallback 2D.
+- Para a próxima etapa, passe a nova referência: `node tools/mula.js 570e5fa`.
