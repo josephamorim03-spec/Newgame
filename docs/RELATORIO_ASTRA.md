@@ -91,3 +91,21 @@ No total, de ~860 mil para ~118 mil triângulos (−86%). Isso deixa a primeira 
 - Este script foi feito para a etapa 1 e verifica que os **outros** personagens ficaram idênticos ao commit original `3f1c896`. Agora que os 14 foram remodelados, essa parte vai acusar diferença, e isso é esperado.
 - O restante do script continua valendo: orçamento da Mula, âncoras, pool de FX, pausa, movimento reduzido, offline e fallback 2D.
 - Para a próxima etapa, passe a nova referência: `node tools/mula.js 570e5fa`.
+
+## 5. Etapa 2 do Astra: Saci (commit `7342a4f`)
+O Saci do Astra **substituiu** o meu. Ele está melhor e tem a mesma contagem de triângulos que ele relatou (6.760).
+
+**O que aprendi dele:**
+- **Recentrar a malha antes do contorno.** O contorno é uma cópia escalada da peça. Se a geometria está longe da origem, o traço "escorrega" para um lado. Agora `sweep`, `loft` e `tube` recentram a malha, e isso corrigiu um defeito discreto nos meus tubos.
+- **`sweep` com `follow`:** cada anel acompanha a direção do caminho. Foi assim que ele fez a carapuça que dobra e desce.
+- **Pose conta história:** perna única flexionada, uma mão na cintura e a outra segurando o cachimbo, com espaço vazio entre braço e corpo.
+- **O objeto certo, de novo:** haste curva, fornilho oco com borda e brasa dentro. A fumaça sai da abertura.
+- **Evitar o clichê:** a carapuça sem pompom não lembra Papai Noel.
+- **Vento legível:** dois fios em espiral, deixando a perna livre no centro.
+
+**Como juntei:** o Astra partiu da versão anterior à minha remodelagem.
+- Mantive meu `fx.js` e meu `ui.js`, que já tratam fumaça, notas, olhos e poeira para todos.
+- Trouxe o modelo do Saci dele e as ferramentas do kit que ele usa: `tube`, `sweep` com `follow`, e as opções `seg` e `rings` em `torus`, `limb` e `lathe`.
+- A fumaça dele passa a usar a âncora `smoke` com o emissor geral.
+
+**Próxima referência para `tools/personagem.js`:** o commit desta junção.
