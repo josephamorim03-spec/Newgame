@@ -241,9 +241,10 @@ def jogo(cfg):
     usadas = {e["arte"] for l in porfala.values() for e in l} | {e["arte"] for m in mudos.values() for l in m.values() for e in l}
     campos = ("boca", "cabeca", "evitar", "lugar", "titulo", "espelho", "aba", "pagina", "mural")
     artes, imagens = {}, {}
+    # as de antes ficam: uma página aberta antes do deploy ainda tem os nomes velhos e só pede a imagem quando a história
+    # abre. Cada arte nova ganha outro nome (outro hash), então nada é sobrescrito; dá para limpar as velhas de vez em
+    # quando, bem depois de um deploy
     IMG_JOGO.mkdir(parents=True, exist_ok=True)
-    for velha in IMG_JOGO.glob("*.webp"):          # as de antes saem: cada arte nova ganha outro nome (outro hash)
-        velha.unlink()
     for id_ in sorted(usadas):
         a = cfg["artes"].get(id_)
         if not a:
