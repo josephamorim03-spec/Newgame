@@ -527,3 +527,63 @@ Retorno: mesmo com as divisas onduladas (v1.5 e v1.6), ainda apareciam retas ent
 - montar o cache de 26 peças leva 150 ms (antes, 100 ms);
 - um quadro normal continua em cerca de 2,5 ms;
 - a peça fantasma guarda a sua máscara, porque ela só depende da forma da peça.
+
+## Enfeites sem sobreposição e feno de verdade (v1.8)
+
+Aplicado por cima do chão em manchas da v1.7.
+
+- **Feno do carro de boi** refeito no Blender. Era uma bolha lisa com anéis e parecia pão. Agora é:
+  - um monte irregular com textura de fios cruzados;
+  - 420 fios soltos por cima, alguns caindo pelas bordas;
+  - um carro com guardas de ripa.
+- **Construções não se empilham**:
+  - a folga vertical entre elas segue a altura real do sprite;
+  - o telhado não pode passar da borda de trás da própria peça (antes, a casa da frente encostava na de trás e parecia uma torre).
+- **Cercas soltas** no meio do pasto, nas divisas e nas ruas: removidas. Cerca só no sítio e no cercado.
+- **Cercado**: só em pasto grande ou em cerca de 40% dos outros. No resto, as ovelhas pastam soltas.
+- **Ipês só florescem na seca**. Nas águas, a mesma árvore aparece verde; o contexto da peça ganhou a estação.
+- **Rio seco**: a margem ficou estreita e suave, e saiu a faixa interna que parecia trilha de roda.
+- **Lagoa seca**: menor, com barro no meio e capim e taboas em volta, em vez de um disco de areia do tamanho da peça.
+- **Chão da mata** mais perto do capim: a mata é dada pelas árvores, não por um hexágono escuro.
+- **Fauna 3D** menor (de 2,1 para 1,55 vezes a escala da maquete), para não cobrir casas e árvores.
+- v1.8b:
+  - o gado pasta mais perto do seu ponto e mais longe do cercado, então não anda mais por cima da cerca;
+  - saiu a cerca solta das lavouras;
+  - borboletas com metade do tamanho (0,1 da peça).
+
+## Mundo com regras: tabela métrica e mapa de colisão (v1.9)
+
+Os bugs de sobreposição vinham de um mesmo problema: cada elemento era posto e desenhado sem saber dos outros. O boi só não podia nascer no rio, mas podia andar até ele. O cercado só olhava o próprio centro. Cada bicho tinha um tamanho escolhido "no olho". A v1.9 cria uma camada de lógica entre o tabuleiro e o desenho.
+
+1. **Layout único por peça, em unidades do mundo.**
+   - A composição dos enfeites roda uma vez por peça, com raio 1, e o resultado é guardado em cache.
+   - O desenho só escala esse layout. O que se vê de perto, de longe e no mapa de colisão é o mesmo arranjo. Antes, o sorteio dependia da posição em pixels e mudava com o zoom.
+2. **Tabela métrica.** Referência: 1 unidade (o raio da peça) equivale a uns 20 m, e a casa de telha mede uns 7,5 m.
+   - Bichos e objetos pequenos são exagerados de forma uniforme para serem lidos, mas mantêm a ordem: galinha < ovelha < capivara < boi < casa < cercado.
+   - `MSCALE` corrige os sprites do atlas que fugiam da tabela. O cercado ficou 24% menor e não engole mais a vila. O carro de boi, as galinhas, a capivara e a garça de enfeite também foram corrigidos.
+   - `FLEN` dá o comprimento de cada bicho da fauna. A escala de desenho é medida no próprio sprite, pela largura do corpo sem sombra, ao carregar. Assim a onça e o tamanduá saem do mesmo tamanho, a seriema fica menor que a ema, e a arara voando segue a mesma tabela.
+3. **Pegada inteira.** Construções grandes e o cercado testam oito pontos do contorno da pegada, não só o centro:
+   - nenhum desses pontos pode cair no canal do rio;
+   - nenhum pode sair da área do próprio terreno, porque um cercado no pasto não invade a vila ao lado.
+4. **Mapa de colisão do vale** (`G.world`): uma grade de 0,04 u (cerca de 80 cm), refeita quando o tabuleiro muda. Cada célula guarda bits:
+
+   | Bit | Significado |
+   |---|---|
+   | `TERRA` | dentro de uma peça |
+   | `AGUA` | canal, nascente ou lagoa |
+   | `MARGEM` | até 0,14 u da água |
+   | `BLOQ` | pegada de casa, cercado, cerca, tronco, pedra |
+   | `OCLU` | a área "atrás" de um objeto alto, onde o bicho seria desenhado por cima dele |
+   | `CERC` | dentro do cercado |
+   | `ROCA` | lavoura |
+
+5. **Regras por espécie** (`WRULE`): `terra`, `gado`, `cercado`, `margem` e `vau`.
+   - O gado não entra na água, na lavoura, no cercado nem atrás de casas.
+   - A ovelha do cercado não sai dele.
+   - A capivara e o martim ficam na beira, e a garça anda no raso.
+   - Destinos e caminhos são testados (`wok`, `wseg`), e só se anda em linha reta por caminho livre.
+   - A casa de cada bicho da fauna é procurada (`wnear`) até cair num lugar válido. Se não há lugar, o bicho não é desenhado, em vez de aparecer onde não faz sentido.
+6. **Gado e ovelhas viraram agentes**, com posição no mundo. Andam até pontos válidos perto de casa, pastam parados e evitam esbarrar uns nos outros.
+7. **Aves**: a arara voando e os passarinhos usam a mesma tabela e ficam presos ao mundo, não à tela. Ficam numa camada acima de tudo e com um leve exagero de tamanho, por estarem mais perto da câmera.
+
+**Teste de invariantes**: num navegador sem tela, seis vales são jogados por um bot, e 1.600 quadros de cada um são conferidos célula a célula. O resultado foi zero bicho na água, em casa ou cerca, atrás de objeto alto, fora do tabuleiro ou fora do cercado, e zero violação da regra da fauna.

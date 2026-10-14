@@ -862,16 +862,115 @@ def scarecrow():
     cyl(0.022, 0.03, (0, 0, 0.255), hat, 12)
 
 
+def hay_fiber_mat():
+    """feno solto: fios em todas as direções (faixas tortas cruzadas), sem os anéis do fardo"""
+    m = bpy.data.materials.get('feno_solto')
+    if m:
+        return m
+    m = bpy.data.materials.new('feno_solto')
+    m.use_nodes = True
+    nt = m.node_tree
+    pb = nt.nodes['Principled BSDF']
+    pb.inputs['Base Color'].default_value = hexcol('#c9a24e')
+    pb.inputs['Roughness'].default_value = 0.95
+    tc = nt.nodes.new('ShaderNodeTexCoord')
+    facs = []
+    for sc, rot in ((90.0, 0.0), (110.0, 1.1), (75.0, 2.2)):
+        mp = nt.nodes.new('ShaderNodeMapping')
+        mp.inputs['Rotation'].default_value = (0.3 * rot, 0.5 * rot, rot)
+        nt.links.new(tc.outputs['Object'], mp.inputs['Vector'])
+        wv = nt.nodes.new('ShaderNodeTexWave')
+        wv.wave_type = 'BANDS'
+        wv.inputs['Scale'].default_value = sc
+        wv.inputs['Distortion'].default_value = 14.0
+        wv.inputs['Detail'].default_value = 3.0
+        nt.links.new(mp.outputs['Vector'], wv.inputs['Vector'])
+        facs.append(wv.outputs['Fac'])
+    m1 = nt.nodes.new('ShaderNodeMath')
+    m1.operation = 'MAXIMUM'
+    nt.links.new(facs[0], m1.inputs[0])
+    nt.links.new(facs[1], m1.inputs[1])
+    m2 = nt.nodes.new('ShaderNodeMath')
+    m2.operation = 'MAXIMUM'
+    nt.links.new(m1.outputs[0], m2.inputs[0])
+    nt.links.new(facs[2], m2.inputs[1])
+    mix, fac, a, b, out = _mix_rgba(nt)
+    a.default_value = hexcol('#86601f')
+    b.default_value = hexcol('#e6c46a')
+    nt.links.new(m2.outputs[0], fac)
+    nt.links.new(out, pb.inputs['Base Color'])
+    bump = nt.nodes.new('ShaderNodeBump')
+    bump.inputs['Strength'].default_value = 0.8
+    bump.inputs['Distance'].default_value = 0.003
+    nt.links.new(m2.outputs[0], bump.inputs['Height'])
+    nt.links.new(bump.outputs['Normal'], pb.inputs['Normal'])
+    return m
+
+
+def hay_strands(n, rx, ry, z0, hz, seed, spill=0.25):
+    """fios de feno soltos sobre o monte, seguindo a superfície, alguns caindo pelas bordas"""
+    rnd = random.Random(seed)
+    D, L = hexcol('#94692a'), hexcol('#ebcb72')
+    verts, faces, cols = [], [], []
+    def zon(x, y):
+        q = 1 - (x / rx) ** 2 - (y / ry) ** 2
+        return z0 + hz * math.sqrt(max(0.0, q))
+    for i in range(n):
+        a = rnd.random() * math.tau
+        rr = math.sqrt(rnd.random()) * (1 + spill * (rnd.random() < 0.3))
+        x0, y0 = math.cos(a) * rx * rr * 0.95, math.sin(a) * ry * rr * 0.95
+        d = rnd.random() * math.tau
+        ln = rnd.uniform(0.03, 0.07)
+        w = rnd.uniform(0.0022, 0.0038)
+        px, py = -math.sin(d), math.cos(d)
+        c0 = _lerp(D, L, rnd.uniform(0.35, 1.0))
+        b0 = len(verts)
+        segs = 4
+        for j in range(segs + 1):
+            t = j / segs - 0.5
+            cx, cy = x0 + math.cos(d) * ln * t, y0 + math.sin(d) * ln * t
+            cz = zon(cx, cy) + 0.003 + 0.004 * math.sin((t + 0.5) * math.pi) * rnd.random()
+            if zon(cx, cy) <= z0 + 1e-4:
+                cz = z0 - 0.012 * (abs(t) + 0.2)      # fio caindo pela borda
+            verts += [(cx - px * w, cy - py * w, cz), (cx + px * w, cy + py * w, cz)]
+            if j < segs:
+                faces.append((b0 + 2 * j, b0 + 2 * j + 1, b0 + 2 * j + 3, b0 + 2 * j + 2))
+                cols.append(_lerp(c0, L, 0.15 * j))
+    me = bpy.data.meshes.new('feno_fios')
+    me.from_pydata(verts, [], faces)
+    me.update()
+    attr = me.color_attributes.new('Col', 'FLOAT_COLOR', 'CORNER')
+    for fi, c in enumerate(cols):
+        for li in range(4):
+            attr.data[fi * 4 + li].color = c
+    o = link(bpy.data.objects.new('feno_fios', me))
+    o.data.materials.append(leaf_mat())
+    return o
+
+
 def cart():
-    """carro de boi: caixa de madeira com duas rodas maciças e cabeçalho"""
+    """carro de boi: caixa de madeira com guardas de ripa, duas rodas maciças e cabeçalho, carregado de feno solto
+    (v1.7: o feno era uma bolha lisa com anéis e parecia pão; agora é um monte de fios em todas as direções)"""
     wood = mat('carro', '#9a6a40', 0.85)
     dark = mat('carro_escuro', '#5d3f26', 0.9)
-    cube((0.2, 0.12, 0.05), (0, 0, 0.09), wood, bevel=0.004)
+    cube((0.2, 0.12, 0.03), (0, 0, 0.08), wood, bevel=0.003)
+    for y in (-0.062, 0.062):                       # guardas laterais de ripas
+        cube((0.2, 0.008, 0.008), (0, y, 0.115), dark)
+        for x in (-0.09, -0.03, 0.03, 0.09):
+            cube((0.008, 0.008, 0.04), (x, y, 0.1), dark)
     for y in (-0.07, 0.07):
         cyl(0.055, 0.016, (0, y, 0.055), dark, 16, rot=(math.pi / 2, 0, 0))
+        cyl(0.014, 0.02, (0, y * 1.08, 0.055), wood, 10, rot=(math.pi / 2, 0, 0))
     cube((0.2, 0.012, 0.012), (0.18, 0, 0.07), dark, (0, 0.15, 0))
-    hay = straw_mat('feno_fibra', '#b98a32', '#f0cf78')
-    blob(0.06, (0, 0, 0.13), hay, (1.4, 0.9, 0.5), seed=131, amount=0.3)
+    # monte de feno: elipsoide achatado e irregular, com textura de fios, e fios soltos por cima e pelas bordas
+    o = ico(0.1, (0, 0, 0.1), hay_fiber_mat(), 3, (1.05, 0.68, 0.55), smooth=True)
+    tex = bpy.data.textures.new('feno_monte', 'CLOUDS')
+    tex.noise_scale = 0.05
+    md = o.modifiers.new('irregular', 'DISPLACE')
+    md.texture = tex
+    md.strength = 0.018
+    md.texture_coords = 'GLOBAL'
+    hay_strands(420, 0.105, 0.068, 0.1, 0.055, 7)
 
 
 def chickens():
