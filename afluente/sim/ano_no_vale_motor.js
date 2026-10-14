@@ -154,15 +154,15 @@ function Engine(){
   function rotations(e){const seen=new Set(),out=[];for(let r=0;r<6;r++){const x=rot(e,r),key=x.join('');if(!seen.has(key)){seen.add(key);out.push({r,e:x});}}return out;}
 
   // grupos: triângulos (peça, lado) de mesmo bioma conectados; tamanho = nº de peças distintas
-  function groups(board){
+  function groups(board,withG){
     const par=new Map();
     const f=x=>{let r=x;while(par.get(r)!==r)r=par.get(r);while(par.get(x)!==r){const n=par.get(x);par.set(x,r);x=n;}return r;};
     const u=(a,b)=>{const ra=f(a),rb=f(b);if(ra!==rb)par.set(ra,rb);};
-    for(const[k,t]of board)for(let i=0;i<6;i++)if(t.e[i]!=='G')par.set(k*6+i,k*6+i);
+    for(const[k,t]of board)for(let i=0;i<6;i++)if(withG||t.e[i]!=='G')par.set(k*6+i,k*6+i);
     for(const[k,t]of board){
       const w=[];
       for(let i=0;i<6;i++){
-        const b=t.e[i];if(b==='G')continue;
+        const b=t.e[i];if(b==='G'&&!withG)continue;
         if(b==='A')w.push(i);
         else if(t.e[(i+1)%6]===b)u(k*6+i,k*6+(i+1)%6);
         const n=board.get(nb(k,i));if(n&&n.e[opp(i)]===b)u(k*6+i,nb(k,i)*6+opp(i));
@@ -255,23 +255,74 @@ function Engine(){
       .sort((a,b)=>(b.rep.pts+4*b.rep.tiles)-(a.rep.pts+4*a.rep.tiles));
   }
   const over=s=>s.left<=0;
-  function replay(seedKey,actions){let s=newGame(seedKey);for(const a of actions||[]){if(over(s))break;s=place(s,a.k,a.r).state;}return s;}
 
-  // bot guloso (define o par): maior ganho imediato contando peças ganhas como 4 pontos
-  function parScore(seedKey){
+  // ---------- fauna do Cerrado (v1.3): bichos que voltam quando o vale tem o lugar certo para eles.
+  // Não dá pontos nem peças: é coleção (o Caderno) e vida no vale. Cada condição cabe numa frase e se vê no tabuleiro.
+  const FAUNA=[
+    {id:'seriema',name:'Seriema',rar:1,cond:'Um pasto com 6 peças.',hint:'Canta alto no capim aberto.'},
+    {id:'tucano',name:'Tucano',rar:1,cond:'Um bosque com 6 peças.',hint:'Precisa de mata para comer frutos.'},
+    {id:'joao',name:'João-de-barro',rar:1,cond:'Uma vila com 4 peças.',hint:'Faz casa de barro perto das casas da gente.'},
+    {id:'garca',name:'Garça',rar:1,cond:'2 brejos com água viva (rio vivo que termina em terra).',hint:'Pesca na água parada.'},
+    {id:'capivara',name:'Capivara',rar:2,cond:'6 peças com água viva ao mesmo tempo.',hint:'Não vive longe da água.'},
+    {id:'ema',name:'Ema',rar:2,cond:'Um campo com 8 peças.',hint:'Corre pelas lavouras grandes.'},
+    {id:'martim',name:'Martim-pescador',rar:2,cond:'Uma cachoeira com água viva.',hint:'Mergulha onde a água cai.'},
+    {id:'anta',name:'Anta',rar:2,cond:'Um bosque com 6 peças e rio vivo passando por dentro.',hint:'Mora na mata de galeria, à beira do rio.'},
+    {id:'lobo',name:'Lobo-guará',rar:3,cond:'Um pasto com 8 peças encostado num bosque com 8 peças.',hint:'Anda na beira entre o campo aberto e a mata.'},
+    {id:'tamandua',name:'Tamanduá-bandeira',rar:3,cond:'Um pasto com 12 peças.',hint:'Come cupim nos pastos sem fim.'},
+    {id:'onca',name:'Onça-pintada',rar:4,cond:'Na seca, 10 trechos de rio continuam correndo.',hint:'Só volta a um vale que cuida do rio na seca.'},
+  ];
+  // o que o vale oferece agora: maior região de cada bioma, água viva, brejos, cachoeira viva, mata com rio, pasto encostado em mata
+  function habitat(s){
+    const board=s.board,G=groups(board,true),big={G:0,C:0,B:0,V:0},bio=x=>board.get(Math.floor(x/6)).e[x%6];
+    const sizeOf=new Map();
+    for(const[r,set]of G.members){const b=bio(r);sizeOf.set(r,set.size);if(b in big&&set.size>big[b])big[b]=set.size;}
+    let gallery=0;for(const[r,set]of G.members){if(bio(r)!=='B'||set.size<6)continue;for(const k of set)if(s.alive.has(k)){gallery=Math.max(gallery,set.size);break;}}
+    let brejos=0,falls=false;
+    for(const k of s.alive){const t=board.get(k);if(t.sp==='falls')falls=true;
+      for(let d=0;d<6;d++){if(t.e[d]!=='A')continue;const n=board.get(nb(k,d));if(n&&n.e[opp(d)]!=='A'){brejos++;break;}}}
+    let edge=0;const pair=(a,b)=>{const ra=G.find(a),rb=G.find(b);edge=Math.max(edge,Math.min(sizeOf.get(ra)||0,sizeOf.get(rb)||0));};
+    for(const[k,t]of board)for(let i=0;i<6;i++){if(t.e[i]!=='G')continue;
+      const j=(i+1)%6,h=(i+5)%6;if(t.e[j]==='B')pair(k*6+i,k*6+j);if(t.e[h]==='B')pair(k*6+i,k*6+h);
+      const n=board.get(nb(k,i));if(n&&n.e[opp(i)]==='B')pair(k*6+i,nb(k,i)*6+opp(i));}
+    return{big,alive:s.alive.size-1,gallery,brejos,falls,edge,secaRun:s.seca?s.alive.size-1:0};
+  }
+  const FAUNA_TEST={seriema:h=>[h.big.G,6],tucano:h=>[h.big.B,6],joao:h=>[h.big.V,4],garca:h=>[h.brejos,2],
+    capivara:h=>[h.alive,6],ema:h=>[h.big.C,8],martim:h=>[h.falls?1:0,1],anta:h=>[h.gallery?6:0,6],
+    lobo:h=>[h.edge,8],tamandua:h=>[h.big.G,12],onca:h=>[h.secaRun,10]};
+  // progresso de cada bicho: [quanto o vale tem, quanto precisa]
+  function faunaProgress(s){const h=habitat(s),out={};for(const f of FAUNA)out[f.id]=FAUNA_TEST[f.id](h);return out;}
+  // registra os bichos que apareceram nesta partida (e em que jogada)
+  function faunaStep(s){if(s.lesson)return s;const pr=faunaProgress(s),fauna={...(s.fauna||{})};let add=false;
+    for(const f of FAUNA){const[a,b]=pr[f.id];if(a>=b&&fauna[f.id]==null){fauna[f.id]=s.turn;add=true;}}
+    return add?{...s,fauna}:s;}
+  function replay(seedKey,actions){let s=newGame(seedKey);for(const a of actions||[]){if(over(s))break;s=faunaStep(place(s,a.k,a.r).state);}return s;}
+
+  // ---------- bots de referência (v1.3): definem os marcos de cada vale.
+  // guloso: maior ganho imediato (peça ganha = 4 pontos). cuidadoso: + protege o rio para a seca.
+  // mestre: + persegue as missões. Os três jogam a mesma pilha que a pessoa, sem ver o futuro.
+  const questBefore=s=>new Map(questProgress(s).map(q=>[q.key+':'+q.edge,q.cur]));
+  function botValue(s,ns,rep,pol,before){
+    let v=rep.pts+4*rep.tiles;if(pol==='guloso')return v;
+    const b=balance(ns);v+=(b.phase===0&&b.turnsLeft<=5?2.5:1.2)*b.riverSafe;if(pol==='cuidadoso')return v;
+    before=before||questBefore(s);
+    if(before.size)for(const q of questProgress(ns)){if(q.flow)continue;const b0=before.get(q.key+':'+q.edge);if(b0!=null&&q.cur>b0)v+=2.5*Math.min(q.cur-b0,Math.max(0,q.n-b0));}
+    return v;
+  }
+  function botPlay(seedKey,pol){
     let s=newGame(seedKey);
     while(!over(s)&&s.turn<300){
-      let best=null,bv=-1e9;
+      let best=null,bv=-1e9;const before=pol==='mestre'?questBefore(s):null;
       for(const k of slots(s))for(const o of rotations(cur(s).e)){
-        if(!legal(s.board,k,o.e))continue;
-        const{rep}=place(s,k,o.r),v=rep.pts+4*rep.tiles;
+        const{state:ns,rep}=place(s,k,o.r),v=botValue(s,ns,rep,pol,before);
         if(v>bv){bv=v;best={k,r:o.r};}
       }
       if(!best)break;
       s=place(s,best.k,best.r).state;
     }
-    return{score:s.score,placed:s.placed,season:s.season};
+    const x=s.stats;
+    return{score:s.score,placed:s.placed,season:s.season,quests:s.questsDone,perfects:s.perfects,
+      src:{match:x.match,flow:x.flow,quest:x.quest,perfect:x.perfect,special:x.special,seca:x.kept},tiles:{quest:x.tQuest,perfect:x.tPerfect,season:x.tSeason},act:s.actions};
   }
-  return{DIRS,K,KQ,KR,nb,opp,SRC,START,SPECIALS,seasonAt,seasonName,phase,yearOf,balance,CYCLE,CFG,LESSONS,computeAlive,shielded,cur,peek,newGame,place,options,slots,legal,rotations,questProgress,over,replay,parScore,hashStr,rot,groups};
+  const parScore=seedKey=>botPlay(seedKey,'guloso');
+  return{DIRS,K,KQ,KR,nb,opp,SRC,START,SPECIALS,FAUNA,habitat,faunaProgress,faunaStep,botPlay,botValue,seasonAt,seasonName,phase,yearOf,balance,CYCLE,CFG,LESSONS,computeAlive,shielded,cur,peek,newGame,place,options,slots,legal,rotations,questProgress,over,replay,parScore,hashStr,rot,groups};
 }
-

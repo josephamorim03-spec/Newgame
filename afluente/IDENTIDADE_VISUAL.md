@@ -1,4 +1,4 @@
-# Identidade visual do Afluente (v1.3, "Vale vivo")
+# Identidade visual do Afluente (v1.4, "Vale vivo")
 
 > **Uma maquete de madeira pintada, vista sob a luz do Cerrado.**
 > A água é o que dá cor ao vale. Longe dela, o capim vira palha.
@@ -115,7 +115,7 @@ Assim, duas peças iguais nunca ficam iguais, mas a mesma peça é sempre desenh
 
 **Rio que acaba**: estreita até sumir num brejo de terra escura, poças e taboas. É como nascem as veredas.
 
-## 9. Ambiente vivo e mundo que responde (v1.3)
+## 9. Ambiente vivo e mundo que responde (v1.4)
 
 O vale tem **tempo próprio**. O jogador não controla nada disso, mas sente:
 

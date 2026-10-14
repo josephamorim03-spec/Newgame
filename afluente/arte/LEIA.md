@@ -36,7 +36,7 @@ Uso: `python leito_seco.py <pasta>` (com o `bpy` instalado no ambiente, como em 
 - **Renderizar só alguns**: `SOMENTE=pequi,lobeira venv/bin/python afluente_sprites.py saida/` acrescenta ao `meta.json` que já existe.
 - **Atlas**: `montar_atlas.py` não gera mais as versões secas (`~d`). No jogo, a secura é um campo contínuo desenhado por cima do vale. `SECOS=1` volta a gerá-las. Atlas de 1024 px de largura, com 56 sprites, em 385 KB.
 
-## v1.3: folhas, palha, capim, bichos e vila
+## v1.4: folhas, palha, capim, bichos e vila
 
 - **Copas de folhas** (`canopy()`): cartões em losango sobre uma casca elipsoide em volta de um miolo escuro, com cor por vértice e material translúcido (`leaf_mat`). O `blob()` usa isso automaticamente nas folhagens de árvore.
 - **Versões secas**: `SECAS=1 venv/bin/python afluente_sprites.py saida/` renderiza `<nome>_seco` (copa ocre e ferrugem, metade das folhas) para as árvores, o pequizeiro, a lobeira e o arbusto.

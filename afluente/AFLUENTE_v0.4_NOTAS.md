@@ -301,8 +301,38 @@ Pedido: trabalhar mais o 3D, criar variações dentro da própria variação (co
   - A resolução vai até 2×.
   - Qualidade adaptativa: se o aparelho passar de cerca de 26 ms por quadro, cai para 1,5× e tira vento e raios; depois cai para 1,25× e tira as manchas e o segundo passe da umidade.
   - No zoom, no máximo 3 peças são redesenhadas por quadro.
+## O fim da partida: marcos, a última cheia e a fauna (v1.3)
 
-## v1.3: "Vale vivo" (ambiente que se move sozinho e mundo que responde ao mapa)
+Pedido: fazer a pessoa querer jogar de novo quando a partida termina. Estudar outros jogos, de gêneros parecidos e diferentes, e passar as ideias por um pipeline crítico, mudando mecânicas se valer a pena. O estudo completo, com fontes e simulações, está em `FATOR_REPLAY_2.md`.
+
+- **Marcos do vale**: três gotas por vale, Riacho, Ribeirão e Rio cheio.
+  - Três bots jogam a mesma pilha num Web Worker: guloso, cuidadoso e mestre.
+  - Riacho = 70% do guloso; Ribeirão = o guloso (o antigo par); Rio cheio = o melhor bot, e pelo menos 30% acima do guloso.
+  - Durante a partida, as gotas e o próximo número aparecem no placar, e uma faixa avisa quando um marco é alcançado.
+  - Motivo: na simulação, o mesmo bot faz de 46 a 512 pontos dependendo do vale. O recorde de pontos media a sorte da pilha.
+- **A última cheia**: no fim, a câmera mostra o vale inteiro e um brilho percorre o rio vivo. Na folha, os pontos contam até o total e as gotas acendem uma a uma, cada uma com uma nota.
+- **Folha do fim refeita**:
+  - título com o marco alcançado e o quanto faltou para o próximo;
+  - "onde o bot foi melhor", com uma frase sobre a maior diferença;
+  - "ver o vale do bot";
+  - botão principal "Tentar o (próximo marco) neste vale";
+  - bichos e uma pista;
+  - detalhes recolhidos.
+- **Fauna do Cerrado**: 11 bichos que aparecem quando o vale tem o hábitat deles.
+  - Exemplos: pasto com 6 peças traz a seriema; brejos com água trazem a garça; na seca, 10 trechos de rio correndo trazem a onça.
+  - Não dão pontos. Ficam no vale, no retrato do fim e no modo Contemplar.
+  - Desenhados em vetor com a paleta do jogo. Garça, capivara e lobo-guará usam os modelos do Blender da v1.2.
+  - Os enfeites desses três bichos só aparecem depois que o bicho voltou ao vale na partida.
+- **Caderno do Cerrado**: álbum com barra de progresso, três pistas com "seu melhor" e a grade de bichos (os que faltam aparecem em silhueta). Fica na tela inicial, no menu e no fim.
+- **Estatísticas**: rios cheios, bichos e as gotas da semana. O vale do dia mostra o marco na tela inicial. O texto para compartilhar ganhou as gotas e os bichos.
+- **Simulação** (40 vales, `sim/replay_teste.js`):
+  - jogador casual: 0–3 gotas = 19/12/5/4;
+  - cuidadoso: 3/9/25/3;
+  - mestre: 0/10/15/15.
+  - Raridade dos bichos: comuns aparecem em 52–98% das partidas, raros em 18–50% e a onça em 2% (casual) a 22% (mestre).
+- **O que não mudou**: as regras de pontuação. Lições e números anteriores continuam válidos.
+
+## Vale vivo: ambiente que se move sozinho e mundo que responde ao mapa (v1.4)
 
 **Cada elemento pensado em separado (Blender)**
 - **Copas de folhas**: as árvores deixaram de ser bolas 3D. Agora são centenas de folhas (cartões em losango) em volta de um miolo escuro, com cor variando folha a folha e um pouco de luz atravessando.

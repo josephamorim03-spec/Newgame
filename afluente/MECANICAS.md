@@ -134,3 +134,12 @@ O resultado mais importante é a diferença entre os bots:
 - Com número exato, a diferença era pequena (4,7 contra 3,8), porque as missões se cumpriam quase por acaso.
 
 Ou seja, a missão agora recompensa a **intenção**. O tamanho da partida continua o mesmo.
+
+## 7. Marcos e fauna (v1.3) pelos mesmos três critérios
+
+| Mecânica | Cria uma decisão? | Cabe numa frase e se vê? | Consequência perto? | Veredito |
+|---|---|---|---|---|
+| **Marcos do vale** (3 gotas medidas por bots) | Sim: "proteger o rio agora ou pontuar já?" ganha um alvo | Sim: gotas e número no placar | Sim: a faixa aparece na jogada em que o marco é alcançado | **Manter**. Substitui o par e o recorde como medida principal |
+| **Fauna** (11 bichos por hábitat) | Sim, e por gosto: crescer o pasto para o lobo-guará custa pontos | Sim: "Um pasto com 8 peças encostado num bosque com 8" | Sim: o bicho aparece na hora, no lugar do hábitat | **Manter**, sem pontos, para não virar mais uma conta |
+
+Detalhes, números e o que foi descartado estão em `FATOR_REPLAY_2.md`.
