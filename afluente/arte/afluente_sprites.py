@@ -461,6 +461,7 @@ def straw_mat(name, base, light):
     m.use_nodes = True
     nt = m.node_tree
     pb = nt.nodes['Principled BSDF']
+    pb.inputs['Base Color'].default_value = hexcol(base)  # a cumeeira (gable_house) deriva a cor escura daqui
     pb.inputs['Roughness'].default_value = 0.95
     tc = nt.nodes.new('ShaderNodeTexCoord')
     wv = nt.nodes.new('ShaderNodeTexWave')
@@ -903,17 +904,22 @@ def log():
 
 
 def house_rustic():
-    """casinha de taipa: parede ocre, telhado de palha, varanda com esteios"""
-    wall = mat('taipa', '#f3eadb', 0.9)
-    straw = straw_mat('palha_fibra', '#9a7434', '#d9b468')
-    wood = mat('madeira', '#8a5a36', 0.8)
-    gable_house(0.22, 0.16, 0.12, 0.085, wall, straw, over=0.03, tiles=True)
-    cube((0.23, 0.17, 0.03), (0, 0, 0.015), mat('barrado', '#c47a45', 0.9))
-    cube((0.05, 0.006, 0.08), (-0.05, -0.088, 0.04), mat('porta', '#7a4a2a', 0.8))
-    cube((0.04, 0.006, 0.035), (0.05, -0.083, 0.065), mat('janela_escura', '#3a2a20', 0.9))
-    for x in (-0.13, 0.13):
-        cube((0.012, 0.012, 0.07), (x, -0.1, 0.035), wood)
-    cube((0.27, 0.012, 0.01), (0, -0.1, 0.07), wood)
+    """casinha de taipa: parede caiada alta, barrado de terra, porta e janela com batente azul,
+    telhado de palha de duas águas, íngreme e com beiral curto (v1.5: antes o telhado cobria a casa e ela parecia um caixote)"""
+    wall = mat('taipa', '#f4ead6', 0.9)
+    straw = straw_mat('palha_fibra', '#8a6428', '#c9a253')
+    blue = mat('batente_azul', '#3f78a8', 0.7)
+    w, d, h = 0.2, 0.14, 0.15
+    gable_house(w, d, h, 0.11, wall, straw, over=0.016, tiles=False)
+    cube((w + 0.008, d + 0.008, 0.035), (0, 0, 0.0175), mat('barrado', '#b8693f', 0.9))
+    fy = -d / 2 - 0.004
+    cube((0.045, 0.006, 0.09), (-0.045, fy, 0.045), mat('porta', '#6e4428', 0.8))
+    cube((0.055, 0.004, 0.098), (-0.045, fy + 0.001, 0.049), blue)
+    cube((0.04, 0.006, 0.04), (0.05, fy, 0.095), mat('janela_escura', '#3a2a20', 0.9))
+    for sx in (-1, 1):
+        cube((0.018, 0.007, 0.044), (0.05 + sx * 0.03, fy, 0.095), blue)
+    # banquinho de madeira encostado na parede
+    cube((0.05, 0.016, 0.012), (0.03, fy - 0.012, 0.025), mat('madeira', '#8a5a36', 0.8))
 
 
 def capybara():

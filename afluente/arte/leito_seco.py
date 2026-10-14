@@ -1,5 +1,5 @@
 """Leito do rio seco no Blender: o MESMO leito de areia e seixos da água (agua.py), sem a água,
-com uma crosta de barro rachado em relevo (bump de verdade, iluminado pelo mesmo sol).
+com marcas de correnteza na areia e algumas manchas de barro rachado (bump de verdade, iluminado pelo mesmo sol).
 Assim o rio seco e o rio com água são o mesmo material visto em duas estações.
 
 Uso:  python leito_seco.py <pasta_saida>      (gera leito_seco.png, 400×316 = 1×1 unidade do chão)
@@ -20,30 +20,35 @@ exec(compile(src, 'agua.py', 'exec'))  # cena, câmera, sol, areia e seixos idê
 sc.render.resolution_x, sc.render.resolution_y = 400, 316
 sc.cycles.samples = 96
 
-# ---------- crosta de barro rachado (Worley periódico: placas separadas por rachaduras)
+# ---------- leito de riacho seco: areia com marcas da correnteza, seixos e só algumas manchas de barro rachado
+# (v1.5: o mosaico de placas cobrindo tudo parecia calçada; riacho seco do Cerrado é areia e cascalho)
+TAU = 2 * math.pi
 cr = np.random.default_rng(21)
-# grade 7×7 com sorteio dentro de cada célula: placas de tamanho parecido, sem pontos colados
-# (pontos muito próximos criavam faixas escuras largas no meio das placas)
-g7 = (np.stack(np.meshgrid(np.arange(7), np.arange(7)), -1).reshape(-1, 2) + 0.5 + cr.uniform(-0.34, 0.34, (49, 2))) / 7
-pts = g7 % 1.0
+# marcas de correnteza: ondas finas e tortas, periódicas (números de onda inteiros)
+rip = np.sin(TAU * (9 * xx + 2 * yy) + 1.4 * np.sin(TAU * (2 * yy - xx)) + 0.8 * np.sin(TAU * (3 * xx + 4 * yy)))
+rip = (rip * 0.5 + 0.5) ** 2
+# manchas de barro: ruído de baixa frequência (soma de senos periódicos), só os picos viram barro
+low = sum(np.sin(TAU * (kx * xx + ky * yy) + ph) for kx, ky, ph in [(1, 2, 0.3), (2, -1, 1.7), (3, 1, 4.1), (-1, 3, 2.6)]) / 4
+clay = np.clip((low - 0.18) / 0.22, 0, 1)
+# rachaduras finas e irregulares só dentro do barro (Worley numa grade 11×11 com sorteio)
+g = (np.stack(np.meshgrid(np.arange(11), np.arange(11)), -1).reshape(-1, 2) + 0.5 + cr.uniform(-0.4, 0.4, (121, 2))) / 11
 f1 = np.full((S, S), 9.0)
 f2 = np.full((S, S), 9.0)
-for px, py in pts:
+for px, py in g % 1.0:
     for ox in (-1, 0, 1):
         for oy in (-1, 0, 1):
             d = np.hypot(xx - px - ox, yy - py - oy)
             f2 = np.where(d < f1, f1, np.minimum(f2, d))
             f1 = np.minimum(f1, d)
-edge = f2 - f1
-crack = np.clip(1 - edge / 0.0075, 0, 1) ** 1.2          # 1 na rachadura, 0 no meio da placa
-plate = np.clip(1 - (f1 / 0.11) ** 2, 0, 1)                 # placas abauladas (domo liso a partir do centro)
-height = 0.3 * plate - 0.9 * crack
+crack = np.clip(1 - (f2 - f1) / 0.0035, 0, 1) * clay
+height = 0.25 * rip * (1 - clay) + 0.2 * clay - 0.8 * crack
 
-# areia mais clara e seca, barro um pouco mais escuro nas bordas das placas
-d1, d2, dk = np.array(lin('#c8ad80')[:3]), np.array(lin('#e8d6b0')[:3]), np.array(lin('#86684a')[:3])
+d1, d2 = np.array(lin('#cdb184')[:3]), np.array(lin('#e9d8b2')[:3])
+dc, dk = np.array(lin('#a98a64')[:3]), np.array(lin('#7a5f44')[:3])
 dry = d1[None, None, :] * (1 - sand[..., None]) + d2[None, None, :] * sand[..., None]
-dry *= (0.93 + grain[..., None] * 0.6)
-dry = dry * (1 - 0.10 * (1 - plate[..., None])) * (1 - crack[..., None]) + dk[None, None, :] * crack[..., None]
+dry *= (0.93 + grain[..., None] * 0.6) * (0.96 + 0.06 * rip[..., None])
+dry = dry * (1 - clay[..., None] * 0.55) + dc[None, None, :] * clay[..., None] * 0.55
+dry = dry * (1 - crack[..., None] * 0.8) + dk[None, None, :] * crack[..., None] * 0.8
 img.pixels = np.concatenate([dry, np.ones((S, S, 1))], axis=2)[::-1].reshape(-1).tolist()
 
 hi = bpy.data.images.new('crosta', S, S)

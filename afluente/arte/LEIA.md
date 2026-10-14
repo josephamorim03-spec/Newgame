@@ -49,3 +49,13 @@ Uso: `python leito_seco.py <pasta>` (com o `bpy` instalado no ambiente, como em 
   - `sobrado` e `sobrado_b`, `venda`, `coreto`;
   - `cow`, refeito como gado curraleiro caramelo.
 - **WebP**: depois de montar o atlas, `python3 -c "from PIL import Image;Image.open('atlas.png').save('atlas.webp','WEBP',quality=90,method=6)"`. O jogo embute o `atlas.webp`.
+
+## v1.5: leito de riacho e casinha de taipa
+
+- `leito_seco.py` não cobre mais tudo com placas rachadas:
+  - areia com marcas de correnteza (ondas periódicas);
+  - manchas de barro (picos de um ruído de baixa frequência) com rachaduras finas só dentro delas;
+  - os mesmos seixos da água.
+- `house_rustic` (`house_d`): paredes mais altas, barrado, batentes azuis, telhado de palha íngreme sem fiadas.
+- `straw_mat` passou a guardar a cor base, para que a cumeeira saia marrom-palha e não cinza.
+- `cow`: gado curraleiro caramelo (v1.4).

@@ -388,3 +388,46 @@ Pedido: fazer a pessoa querer jogar de novo quando a partida termina. Estudar ou
 **Desempenho**
 - Fora do Contemplar, o quadro leva 2 a 4 ms no teste (o capim fio a fio custa cerca de 1,6 ms no zoom).
 - No Contemplar, o custo é dos recortes do rio, que já existia na v1.2. A qualidade adaptativa reduz a resolução quando passa de 26 ms.
+
+## Terrenos coerentes de perto (v1.5)
+
+Reação a capturas do iPhone em que o vale, visto de perto, "não fazia sentido".
+
+**O rio seco parecia calçada quebrada.** Rio que não está ligado à nascente fica seco, e a textura dele era um mosaico regular de placas rachadas.
+- `leito_seco.py` refeito: areia com marcas de correnteza e seixos, e só algumas manchas de barro com rachaduras finas.
+- O leito fica afundado: barranca em sombra e o meio mais claro e úmido.
+- Seixos no fundo e capim nas barrancas.
+- Resultado: lê como um riacho seco do Cerrado.
+
+**Objetos não respeitavam o espaço.**
+- Cada objeto agora tem uma pegada calculada pela largura real do sprite:
+  - casas e construções não se sobrepõem entre si nem às árvores;
+  - casas e construções ficam dentro da peça.
+- Nada entra no canal do rio, exceto buritis, taboas, garça e capivara. Isso vale para os bichos também.
+- A igreja e o moinho se afastam do rio ao longo do próprio triângulo.
+- O cercado só entra se couber; se não couber, as ovelhas ficam soltas.
+
+**Emendas retas entre terrenos.**
+- Dentro da peça, triângulos de terrenos diferentes se encontram numa linha ondulada (a mesma dos dois lados), em vez de um corte reto do centro ao canto.
+- A borda da mata ganha uma sombra suave.
+- A linha das bordas que não combinam ficou mais discreta.
+
+**A vila virava um hexágono de terra com bolinhas.**
+- O chão da vila agora é capim com terreiros de terra batida em manchas irregulares, então a peça se emenda com as vizinhas.
+- A vila é marcada pelas casas, hortas e cercas.
+
+**Casinha de taipa parecia caixote.** Refeita no Blender:
+- paredes caiadas mais altas e barrado de terra;
+- porta e janela com batente azul;
+- telhado de palha íngreme com beiral curto.
+
+**Zoom nítido.**
+- O zoom máximo do jogo foi de 80 para 120.
+- As peças na tela são guardadas com até 160 px por unidade (eram 100). Fora da tela, voltam à resolução baixa para poupar memória.
+- As texturas do chão têm o dobro de resolução.
+- A pinça do iOS não amplia mais a página, que era o que deixava tudo borrado: quem dá zoom é o jogo.
+- As bandeiras de missão mantêm o tamanho na tela em vez de crescer com o zoom.
+
+**Desempenho no zoom máximo**: cerca de 2 ms por quadro no teste.
+- Preencher o leito seco duas vezes com textura custava cerca de 60 ms; virou cor lisa.
+- Com 220 px por unidade, o navegador do teste perdia a aceleração das telas grandes. Por isso o limite ficou em 160.
