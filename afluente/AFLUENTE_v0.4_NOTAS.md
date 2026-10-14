@@ -1,0 +1,39 @@
+# Afluente v0.4 — o laço do Dorfromantik com água viva
+
+**Status:** protótipo jogável (`prototipo/afluente.html`). Substitui o núcleo da v0.3 após o teste: "não achei divertido".
+
+## Por que a v0.3 não divertia
+
+- Decisões óbvias: plantar encostado na água e cavar rumo à foz quase sempre era o certo.
+- Nada surpreendia: a água ia exatamente aonde se pintava; não havia risco nem reação em cadeia.
+- Recompensa pequena e atrasada: pontos só a cada 5 jogadas.
+- O simulador mediu "regras que não quebram" e diferença entre bots, não diversão.
+
+## O que torna o Dorfromantik divertido (e o que trouxemos)
+
+| Ingrediente | No Afluente v0.4 |
+|---|---|
+| Cada jogada é um mini-quebra-cabeça graduado: girar e achar o melhor encaixe, com retorno imediato | +1 por lado que combina; prévia com lados verdes/vermelhos e `+N` antes de colocar; a melhor rotação já vem sugerida |
+| As peças são a vida; pontos são consequência | Pilha começa com 22; o jogo acaba quando ela acaba |
+| Jogar bem devolve peças | Peça perfeita (cercada, 6 lados combinando): +5 e +1 peça. Missão cumprida: +3 peças |
+| Missões com número exato criam planos e risco | "Bosque com 7": o grupo precisa ter exatamente 7 peças; passou, perdeu |
+| Peças ruins viram problema a contornar | Restrição única: água só encosta em água |
+| Mundo aberto e bonito que cresce | Tabuleiro sem limite, câmera que acompanha, arrastar e pinçar |
+
+**Identidade própria:** a água só corre no rio ligado à nascente. Rios desconectados ficam como leito seco; ligar um deles faz a água descer por tudo de uma vez (+2 por peça que recebe água viva), e o terreno em volta fica verde. Há missões de "ligar à água".
+
+## Números do simulador (40 vales, `parScore` = bot guloso)
+
+| Bot | Pontos | Peças colocadas | Missões cumpridas | Perfeitas |
+|---|---:|---:|---:|---:|
+| Aleatório | 11 | 22 | 0,1 | 0 |
+| Guloso | 157 (49–313) | 39 (23–59) | 4,1 | 4,5 |
+
+Nenhuma partida travou (a água só encosta em água, mas o tabuleiro aberto sempre tem lugar).
+
+## A verificar com pessoas
+
+1. A primeira partida é entendida sem ler a ajuda?
+2. A pilha acabando gera vontade de "só mais uma"?
+3. As missões exatas são lidas no mapa (marcadores `3/9`)?
+4. Ligar um rio seco à nascente é um momento memorável?
