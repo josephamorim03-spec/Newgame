@@ -97,7 +97,25 @@ Princípio: **cada ação tem peso, som e resposta no vale, sem pressa**. É a s
 
 O tempo é o mesmo para tudo: a peça leva cerca de 190 ms para cair, e som, vibração e números saem no impacto.
 
-## 8. Próximos passos possíveis
+## 8. Composição: variações dentro da variação (v1.2)
+
+Cada terreno de cada peça é **composto**, e não sorteado objeto por objeto:
+
+1. Os triângulos vizinhos do mesmo terreno viram uma área.
+2. Um **arranjo** é escolhido conforme o contexto: bosque à beira d'água vira mata ciliar com buritis; área grande pode virar clareira ou praça.
+3. Os objetos são espalhados com **distância mínima** (Poisson), com uma densidade que desenha o arranjo: anel na clareira, fileiras na lavoura, casas dos dois lados do caminho na rua.
+4. Cada objeto varia em **espécie, tamanho, espelhamento e tom**.
+
+Assim, duas peças iguais nunca ficam iguais, mas a mesma peça é sempre desenhada do mesmo jeito: o sorteio é estável.
+
+**Bichos raros**, para quem contempla:
+- capivara na beira d'água;
+- garça no brejo;
+- lobo-guará no cerrado (cerca de 6% das áreas de cerrado).
+
+**Rio que acaba**: estreita até sumir num brejo de terra escura, poças e taboas. É como nascem as veredas.
+
+## 9. Próximos passos possíveis
 
 - Floração **por espécie** nos bosques durante a seca: as copas de ipê trocam de folha para flor, com sprite novo no Blender.
 - **Hora do dia** dentro de uma partida longa (alvorada → meio-dia → entardecer).

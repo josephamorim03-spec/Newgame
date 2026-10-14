@@ -523,6 +523,247 @@ def termite_mound():
     blob(0.045, (0.045, 0.02, 0.05), clay, seed=61)
 
 
+# ---------------------------------------------------------------- v1.2: mais Cerrado, mais vida no campo e na vila
+
+def tree_round_more(var):
+    """mais duas formas de árvore de copa redonda (variações da mesma espécie)"""
+    greens = {3: ('#2c6431', '#8cc65a'), 4: ('#336d2c', '#a2c95a')}
+    m = foliage(f'folha{var}', *greens[var])
+    if var == 3:   # copa larga e baixa, tronco que se divide
+        trunk(0.12, 0.03, lean=-0.03)
+        for i, (x, y, z, r, sc) in enumerate([(-0.1, 0.0, 0.2, 0.12, (1.2, 1, 0.8)), (0.1, 0.02, 0.21, 0.12, (1.2, 1, 0.8)),
+                                              (0.0, -0.04, 0.27, 0.12, (1.3, 1.1, 0.75)), (0.02, 0.07, 0.25, 0.1, (1, 1, 0.8))]):
+            blob(r, (x, y, z), m, sc, seed=i + 71)
+    else:          # árvore alta e estreita com copa em camadas
+        trunk(0.22, 0.024)
+        for i, (z, r) in enumerate([(0.24, 0.1), (0.34, 0.085), (0.43, 0.065)]):
+            blob(r, (0.01 * i, -0.01 * i, z), m, (1.15, 1.1, 0.8), seed=i + 81, amount=0.22)
+
+
+def pequi():
+    """pequizeiro: copa larga em guarda-chuva, tronco grosso e torto, frutos verdes"""
+    m = foliage('pequi', '#3b6a26', '#9fc860')
+    t = mat('tronco_pequi', '#5b3f28', 0.9)
+    cyl(0.04, 0.16, (0, 0, 0.08), t, 8, 0.03, smooth=True)
+    cyl(0.026, 0.13, (0.05, 0, 0.19), t, 7, 0.018, rot=(0, math.radians(30), 0), smooth=True)
+    cyl(0.024, 0.12, (-0.05, 0.01, 0.18), t, 7, 0.016, rot=(0.2, math.radians(-32), 0), smooth=True)
+    for i, (x, y, z, r) in enumerate([(-0.11, 0, 0.27, 0.12), (0.11, 0.01, 0.28, 0.12), (0, -0.05, 0.3, 0.13), (0.0, 0.07, 0.29, 0.1)]):
+        blob(r, (x, y, z), m, (1.55, 1.3, 0.48), seed=i + 91)
+    fr = mat('pequi_fruto', '#7c9a2c', 0.6)
+    for x, y in [(-0.12, -0.08), (0.06, -0.1), (0.16, -0.04)]:
+        ico(0.016, (x, y, 0.235), fr, 2, smooth=True)
+
+
+def lobeira():
+    """lobeira: arbusto de folhas grandes cinza-esverdeadas e frutos redondos (fruta-do-lobo)"""
+    m = foliage('lobeira', '#4f6b3e', '#a9c08a')
+    cyl(0.018, 0.1, (0, 0, 0.05), mat('tronco', '#6b4a2e', 0.9), 6, 0.014)
+    for i, (x, y, z, r) in enumerate([(0, 0, 0.13, 0.085), (-0.07, 0.01, 0.1, 0.065), (0.07, -0.01, 0.11, 0.07)]):
+        blob(r, (x, y, z), m, (1.25, 1.1, 0.8), seed=i + 101, amount=0.4)
+    fr = mat('lobeira_fruto', '#9db84a', 0.5)
+    for x, y, z in [(-0.05, -0.07, 0.07), (0.04, -0.07, 0.09)]:
+        ico(0.022, (x, y, z), fr, 2, smooth=True)
+
+
+def canela():
+    """canela-de-ema: caules escuros com tufo no alto e flor lilás"""
+    st = mat('canela_caule', '#4a3a2c', 0.9)
+    lf = foliage('canela_folha', '#4f7a34', '#a6c86a')
+    fl = mat('canela_flor', '#b98ee6', 0.5)
+    for x, y, h in [(-0.03, 0.0, 0.12), (0.03, 0.02, 0.15), (0.0, -0.03, 0.1)]:
+        cyl(0.012, h, (x, y, h / 2), st, 6, 0.009)
+        blob(0.035, (x, y, h + 0.01), lf, (1, 1, 0.8), seed=int(h * 1000), amount=0.5)
+        ico(0.014, (x, y - 0.012, h + 0.04), fl, 2, (1, 1, 0.8), smooth=True)
+
+
+def tuft_gold():
+    """capim-dourado: hastes finas com cabecinhas douradas"""
+    st = mat('dourado_haste', '#b8913a', 0.7)
+    hd = mat('dourado', '#f2c14a', 0.4, emit='#c89020', strength=0.15)
+    rnd = random.Random(13)
+    for i in range(16):
+        a, r, h = rnd.random() * math.tau, rnd.random() * 0.06, 0.08 + rnd.random() * 0.08
+        x, y = math.cos(a) * r, math.sin(a) * r
+        cyl(0.003, h, (x, y, h / 2), st, 3, rot=(rnd.uniform(-.25, .25), rnd.uniform(-.25, .25), 0))
+        ico(0.011, (x, y, h), hd, 1, smooth=True)
+
+
+def sunflower():
+    st = mat('girassol_caule', '#5f8f34')
+    pet = mat('girassol_petala', '#f6c21c', 0.6)
+    mid = mat('girassol_miolo', '#5a3518', 0.8)
+    lf = foliage('girassol_folha', '#3f7a2c', '#86bd4e')
+    for i, (x, y, h) in enumerate([(-0.05, 0.02, 0.2), (0.05, 0.0, 0.23), (0.0, -0.04, 0.18)]):
+        cyl(0.007, h, (x, y, h / 2), st, 5)
+        blob(0.03, (x + 0.02, y, h * 0.5), lf, (1.3, 0.6, 0.4), seed=111 + i, amount=0.2)
+        cyl(0.036, 0.012, (x, y - 0.012, h), pet, 14, rot=(math.radians(70), 0, 0))
+        cyl(0.019, 0.016, (x, y - 0.016, h), mid, 12, rot=(math.radians(70), 0, 0))
+
+
+def corn():
+    st = foliage('milho', '#4f8a2c', '#a8d05e')
+    cob = mat('espiga_milho', '#e8c34a', 0.6)
+    rnd = random.Random(17)
+    for i in range(5):
+        x, y = rnd.uniform(-0.07, 0.07), rnd.uniform(-0.05, 0.05)
+        h = 0.2 + rnd.random() * 0.05
+        cyl(0.007, h, (x, y, h / 2), st, 5)
+        for k in range(3):
+            a = rnd.random() * math.tau
+            mesh(f'folha_milho{i}{k}', [(x, y, h * (0.35 + 0.2 * k)), (x + math.cos(a) * 0.06, y + math.sin(a) * 0.06, h * (0.3 + 0.2 * k)),
+                                        (x + math.cos(a) * 0.09, y + math.sin(a) * 0.09, h * (0.15 + 0.2 * k)),
+                                        (x + math.cos(a + 0.3) * 0.05, y + math.sin(a + 0.3) * 0.05, h * (0.32 + 0.2 * k))], [(0, 1, 2, 3)], st)
+        ico(0.014, (x + 0.012, y - 0.01, h * 0.55), cob, 2, (0.8, 0.8, 1.8), smooth=True)
+
+
+def fence():
+    wood = mat('cerca', '#8a6040', 0.85)
+    for x in (-0.13, 0.0, 0.13):
+        cube((0.016, 0.016, 0.1), (x, 0, 0.05), wood, bevel=0.003)
+    for z in (0.04, 0.08):
+        cube((0.28, 0.01, 0.014), (0, -0.006, z), wood, bevel=0.002)
+
+
+def well():
+    """poço: boca de pedra, dois esteios, sarilho e um telhadinho de duas águas"""
+    stone = foliage('poco_pedra', '#8e877c', '#d6cfc2')
+    wood = mat('madeira', '#8a5a36', 0.8)
+    rf = mat('telhado_poco', '#b8693f', 0.75)
+    cyl(0.06, 0.07, (0, 0, 0.035), stone, 16)
+    cyl(0.045, 0.072, (0, 0, 0.037), mat('agua_poco', '#2b5a6a', 0.2), 16)
+    for x in (-0.055, 0.055):
+        cube((0.012, 0.012, 0.15), (x, 0, 0.11), wood)
+    cyl(0.009, 0.12, (0, 0, 0.15), wood, 8, rot=(0, math.pi / 2, 0))
+    for side in (-1, 1):
+        cube((0.15, 0.075, 0.008), (0, side * 0.03, 0.2), rf, (side * -0.62, 0, 0), bevel=0.002)
+    cube((0.155, 0.012, 0.012), (0, 0, 0.222), mat('telhado_poco_escuro', '#7a4028', 0.8))
+
+
+def garden():
+    """horta: canteiros com fileiras de verduras"""
+    soil = mat('terra_horta', '#7a4f30', 0.95)
+    wood = mat('cerca', '#8a6040', 0.85)
+    greens = [foliage('alface', '#4f9a3a', '#b4e07a'), foliage('couve', '#2f6f3a', '#79b25a')]
+    for row, y in enumerate((-0.06, 0.06)):
+        cube((0.26, 0.08, 0.02), (0, y, 0.01), soil, bevel=0.004)
+        cube((0.27, 0.088, 0.008), (0, y, 0.004), wood)
+        for k in range(5):
+            blob(0.022, (-0.1 + k * 0.05, y, 0.03), greens[(row + k) % 2], (1, 1, 0.7), seed=120 + row * 5 + k, amount=0.35)
+
+
+def scarecrow():
+    wood = mat('madeira', '#8a5a36', 0.8)
+    shirt = mat('espantalho_camisa', '#c0563a', 0.8)
+    hat = mat('chapeu', '#d8b25a', 0.8)
+    cube((0.012, 0.012, 0.22), (0, 0, 0.11), wood)
+    cube((0.16, 0.012, 0.012), (0, 0, 0.17), wood)
+    cube((0.07, 0.03, 0.08), (0, 0, 0.15), shirt, bevel=0.008)
+    ico(0.026, (0, 0, 0.215), mat('saco', '#e3d1a6', 0.9), 2, smooth=True)
+    cyl(0.05, 0.008, (0, 0, 0.237), hat, 16)
+    cyl(0.022, 0.03, (0, 0, 0.255), hat, 12)
+
+
+def cart():
+    """carro de boi: caixa de madeira com duas rodas maciças e cabeçalho"""
+    wood = mat('carro', '#9a6a40', 0.85)
+    dark = mat('carro_escuro', '#5d3f26', 0.9)
+    cube((0.2, 0.12, 0.05), (0, 0, 0.09), wood, bevel=0.004)
+    for y in (-0.07, 0.07):
+        cyl(0.055, 0.016, (0, y, 0.055), dark, 16, rot=(math.pi / 2, 0, 0))
+    cube((0.2, 0.012, 0.012), (0.18, 0, 0.07), dark, (0, 0.15, 0))
+    hay = foliage('feno', '#c79a3a', '#f1d07a')
+    blob(0.06, (0, 0, 0.13), hay, (1.4, 0.9, 0.5), seed=131, amount=0.3)
+
+
+def chickens():
+    body = [mat('galinha_branca', '#f4efe6', 0.8), mat('galinha_ruiva', '#c4733a', 0.8)]
+    comb = mat('crista', '#d63a2a', 0.6)
+    beak = mat('bico', '#e8a83a', 0.6)
+    for i, (x, y, rz) in enumerate([(-0.05, 0.0, 0.4), (0.05, 0.03, -0.6), (0.0, -0.05, 2.2)]):
+        b = body[i % 2]
+        o = ico(0.03, (x, y, 0.035), b, 2, (1.3, 1, 0.95), smooth=True)
+        o.rotation_euler.z = rz
+        hx, hy = x + math.cos(rz) * 0.03, y + math.sin(rz) * 0.03
+        ico(0.016, (hx, hy, 0.062), b, 2, smooth=True)
+        ico(0.008, (hx, hy, 0.078), comb, 1)
+        ico(0.006, (hx + math.cos(rz) * 0.015, hy + math.sin(rz) * 0.015, 0.06), beak, 1)
+
+
+def rock_b():
+    st = foliage('pedra2', '#8a8274', '#cfc6b6')
+    for i, (x, y, r, sc) in enumerate([(0, 0, 0.06, (1.6, 1.1, 0.35)), (0.08, -0.03, 0.04, (1.3, 1, 0.5)), (-0.07, 0.02, 0.035, (1.2, 1, 0.6))]):
+        ico(r, (x, y, r * sc[2] * 0.6), st, 2, sc)
+
+
+def log():
+    bark = mat('tronco', '#6b4a2e', 0.9)
+    ring = mat('anel_tronco', '#d8b07a', 0.8)
+    cyl(0.03, 0.22, (0, 0, 0.03), bark, 10, rot=(0, math.pi / 2, 0.4), smooth=True)
+    cyl(0.031, 0.004, (0.1 * math.cos(0.4), 0.1 * math.sin(0.4), 0.03), ring, 10, rot=(0, math.pi / 2, 0.4))
+    cyl(0.035, 0.05, (-0.12, -0.06, 0.025), bark, 10, smooth=True)
+    cyl(0.036, 0.004, (-0.12, -0.06, 0.051), ring, 10)
+
+
+def house_rustic():
+    """casinha de taipa: parede ocre, telhado de palha, varanda com esteios"""
+    wall = mat('taipa', '#f3eadb', 0.9)
+    straw = mat('palha', '#b38a45', 0.95)
+    wood = mat('madeira', '#8a5a36', 0.8)
+    gable_house(0.22, 0.16, 0.12, 0.085, wall, straw, over=0.03, tiles=True)
+    cube((0.23, 0.17, 0.03), (0, 0, 0.015), mat('barrado', '#c47a45', 0.9))
+    cube((0.05, 0.006, 0.08), (-0.05, -0.088, 0.04), mat('porta', '#7a4a2a', 0.8))
+    cube((0.04, 0.006, 0.035), (0.05, -0.083, 0.065), mat('janela_escura', '#3a2a20', 0.9))
+    for x in (-0.13, 0.13):
+        cube((0.012, 0.012, 0.07), (x, -0.1, 0.035), wood)
+    cube((0.27, 0.012, 0.01), (0, -0.1, 0.07), wood)
+
+
+def capybara():
+    fur = foliage('capivara', '#6e4a2c', '#a87a4e')
+    dark = mat('capivara_focinho', '#3a2618', 0.9)
+    for i, (x, y, rz) in enumerate([(-0.04, 0.0, 0.25), (0.07, 0.04, -0.4)]):
+        sc = 1.0 if i == 0 else 0.75
+        o = ico(0.06 * sc, (x, y, 0.05 * sc), fur, 3, (1.55, 1, 0.9), smooth=True)
+        o.rotation_euler.z = rz
+        hx, hy = x + math.cos(rz) * 0.09 * sc, y + math.sin(rz) * 0.09 * sc
+        h = ico(0.035 * sc, (hx, hy, 0.065 * sc), fur, 2, (1.5, 1, 1.1), smooth=True)
+        h.rotation_euler.z = rz
+        ico(0.012 * sc, (hx + math.cos(rz) * 0.045 * sc, hy + math.sin(rz) * 0.045 * sc, 0.062 * sc), dark, 1)
+        for e in (-1, 1):
+            ico(0.008 * sc, (hx - math.sin(rz) * 0.022 * sc * e, hy + math.cos(rz) * 0.022 * sc * e, 0.098 * sc), dark, 1)
+
+
+def egret():
+    """garça-branca parada na beira da água"""
+    white = mat('garca', '#fbfbf6', 0.6)
+    beak = mat('garca_bico', '#e8b53a', 0.5)
+    leg = mat('garca_perna', '#2a2a26', 0.8)
+    for x in (-0.012, 0.012):
+        cyl(0.004, 0.11, (x, 0, 0.055), leg, 4)
+    ico(0.035, (0, 0, 0.13), white, 2, (1.5, 0.9, 0.85), smooth=True)
+    cyl(0.009, 0.1, (0.035, 0, 0.18), white, 6, 0.007, rot=(0, math.radians(-25), 0), smooth=True)
+    ico(0.016, (0.055, 0, 0.23), white, 2, (1.3, 1, 1), smooth=True)
+    cyl(0.005, 0.06, (0.09, 0, 0.228), beak, 5, 0.0, rot=(0, math.radians(95), 0))
+
+
+def loboguara():
+    """lobo-guará: pelo laranja, patas longas e pretas, orelhas grandes, crina escura"""
+    fur = foliage('lobo', '#b8531e', '#ee9a4a')
+    black = mat('lobo_preto', '#1f1a16', 0.9)
+    white = mat('lobo_branco', '#f3ead8', 0.8)
+    ico(0.05, (0, 0, 0.17), fur, 3, (1.8, 0.85, 0.85), smooth=True)
+    for x, y in [(-0.06, -0.025), (-0.06, 0.025), (0.06, -0.025), (0.06, 0.025)]:
+        cyl(0.009, 0.15, (x, y, 0.075), black, 6, 0.007)
+    cyl(0.02, 0.07, (0.1, 0, 0.2), fur, 8, 0.016, rot=(0, math.radians(-50), 0), smooth=True)
+    ico(0.03, (0.13, 0, 0.235), fur, 2, (1.4, 0.9, 0.9), smooth=True)
+    cyl(0.011, 0.04, (0.17, 0, 0.23), black, 6, 0.004, rot=(0, math.radians(100), 0))
+    for e in (-1, 1):
+        cyl(0.014, 0.05, (0.12, e * 0.016, 0.27), black, 4, 0.0, rot=(e * 0.25, 0, 0))
+    cube((0.08, 0.012, 0.02), (0.01, 0, 0.215), black, bevel=0.004)
+    cyl(0.016, 0.1, (-0.11, 0, 0.17), fur, 6, 0.01, rot=(0, math.radians(-120), 0), smooth=True)
+    ico(0.014, (-0.15, 0, 0.13), white, 1)
+
+
 # ---------------------------------------------------------------- partículas
 
 def p_sparkle():
@@ -577,6 +818,13 @@ OBJECTS = {
     'church': church, 'windmill': windmill, 'barn': barn,
     'wheat': wheat, 'haybale': haybale, 'tuft': tuft, 'flowers': flowers,
     'rock': rock, 'reeds': reeds, 'cow': cow, 'termite': termite_mound,
+    # v1.2
+    'tree_d': lambda: tree_round_more(3), 'tree_e': lambda: tree_round_more(4),
+    'pequi': pequi, 'lobeira': lobeira, 'ipe_white': lambda: ipe('#8f8a92', '#fbf3f6', 'ipe_branco'),
+    'canela': canela, 'tuft_gold': tuft_gold, 'sunflower': sunflower, 'corn': corn,
+    'fence': fence, 'well': well, 'garden': garden, 'scarecrow': scarecrow, 'cart': cart, 'chickens': chickens,
+    'rock_b': rock_b, 'log': log, 'house_d': house_rustic, 'house_c_terra': lambda: house(2, '#b8693f', '#3f8a5a'),
+    'capybara': capybara, 'egret': egret, 'loboguara': loboguara,
 }
 FX = {'sparkle': p_sparkle, 'leaf': p_leaf, 'drop': p_drop, 'puff': p_puff, 'petal': p_petal, 'butterfly': p_butterfly}
 

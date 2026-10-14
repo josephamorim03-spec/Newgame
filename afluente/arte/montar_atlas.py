@@ -27,6 +27,10 @@ def dry(im, plant):
     return im
 
 src, out_png, out_json = sys.argv[1:4]
+# versões secas: desde a v1.2 a secura é um campo contínuo desenhado por cima do vale, então o atlas não precisa
+# mais delas (SECOS=1 volta a gerar)
+import os
+SECOS = os.environ.get('SECOS') == '1'
 meta = json.load(open(f'{src}/meta.json'))
 items = []
 for name, m in meta.items():
@@ -40,13 +44,13 @@ for name, m in meta.items():
     box = im.getbbox()
     crop = im.crop(box)
     items.append((name, crop, m['ax'] - box[0], m['ay'] - box[1], m['unit']))
-    if not name.startswith('fx_'):
+    if SECOS and not name.startswith('fx_'):
         plant = name in PLANTS
         d = dry(crop.copy(), plant)
         f = 0.8 if plant else 1.0
         items.append((name + '~d', d, (m['ax'] - box[0]) * f, (m['ay'] - box[1]) * f, m['unit'] * f))
 items.sort(key=lambda t: -t[1].height)
-W, x, y, row, pos = 768, 1, 1, 0, {}
+W, x, y, row, pos = 1024, 1, 1, 0, {}
 for name, crop, ax, ay, unit in items:
     if x + crop.width + 1 > W:
         x, y, row = 1, y + row + 1, 0

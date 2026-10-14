@@ -29,3 +29,9 @@ Depois, reconstrua a página do protótipo para embutir o atlas novo.
 - Saída: `leito_seco.png` com 400×316 px por período. No jogo vira `leito_seco.webp` e é usada como padrão ancorado no mundo, com a mesma escala da água.
 
 Uso: `python leito_seco.py <pasta>` (com o `bpy` instalado no ambiente, como em `agua.py`).
+
+## v1.2: modelos novos e atlas sem versões secas
+
+- **Modelos novos**: `tree_d` e `tree_e` (formas de copa), `pequi`, `lobeira`, `ipe_white`, `canela`, `tuft_gold`, `sunflower`, `corn`, `fence`, `well`, `garden`, `scarecrow`, `cart`, `chickens`, `rock_b`, `log`, `house_d` (taipa e palha), `house_c_terra`, `capybara`, `egret` e `loboguara`.
+- **Renderizar só alguns**: `SOMENTE=pequi,lobeira venv/bin/python afluente_sprites.py saida/` acrescenta ao `meta.json` que já existe.
+- **Atlas**: `montar_atlas.py` não gera mais as versões secas (`~d`). No jogo, a secura é um campo contínuo desenhado por cima do vale. `SECOS=1` volta a gerá-las. Atlas de 1024 px de largura, com 56 sprites, em 385 KB.

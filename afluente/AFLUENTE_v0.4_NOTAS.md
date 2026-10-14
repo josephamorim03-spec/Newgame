@@ -266,3 +266,38 @@ Pedido: aperfeiçoar visuais e sensação de jogo (game feel).
   - Raios de sol suaves, mais fortes na seca.
 - **Correção**: a peça que ainda está caindo não entra no recorte de luz e umidade. Antes, o lugar dela "acendia" antes da hora.
 - O desenho de um quadro continua em cerca de 3 ms.
+
+## Composição, modelos novos, brejo e desempenho (v1.2)
+
+Pedido: trabalhar mais o 3D, criar variações dentro da própria variação (com um algoritmo), melhorar componentes e partículas. E a pergunta: o rio que acaba não deveria estreitar?
+
+- **22 modelos novos no Blender**:
+  - árvores: duas formas novas de copa, pequizeiro, lobeira e ipê-branco;
+  - plantas: canela-de-ema, capim-dourado, girassol e milho;
+  - campo e vila: cerca, poço, horta, espantalho, carro de boi, galinhas, pedras chatas, tronco caído, casinha de taipa com telhado de palha e casa de telha terracota;
+  - bichos: capivara, garça e lobo-guará.
+  - O atlas não guarda mais as versões secas, porque a secura agora é o campo contínuo. Com isso ficou menor que antes (385 KB, eram 421), mesmo com os modelos novos.
+- **Algoritmo de composição**, para cada terreno de cada peça:
+  - os triângulos vizinhos do mesmo terreno viram uma área;
+  - um arranjo é escolhido por sorteio estável e pelo contexto (água ao lado, tamanho da área);
+  - os objetos são espalhados com distância mínima (amostragem de Poisson) e densidade própria do arranjo;
+  - cada objeto varia em espécie, tamanho, espelhamento (plantas pequenas e bichos) e tom (5 tons de folhagem).
+- **Arranjos**:
+
+  | Terreno | Arranjos |
+  |---|---|
+  | Bosque | mata densa, clareira (com pequizeiro, flores, pedra ou cupinzeiro no meio), cerrado aberto, beira-rio (buritis e taboas colados na água); ipê de destaque em cerca de 1/3 dos bosques; sub-bosque |
+  | Vila | rua (com caminho de terra), praça (com poço ou árvore no meio), sítio (horta, galinhas, cerca, carro) |
+  | Campo | lavoura em fileiras na direção das linhas da textura (trigo, milho, girassol), com espantalho, fardos ou carro |
+  | Pasto | capim (com capim-dourado), florido (com canela-de-ema), cerrado (pequizeiro, cupinzeiros, às vezes um lobo-guará), pasto (vacas e cerca); capivara na beira d'água |
+
+- **Rio que termina**: estreita até sumir num **brejo**, com terra escura e úmida, poças, taboas e às vezes uma garça. A peça de "fim de rio" afina até o centro em vez de virar uma lagoa.
+- **Vida**:
+  - peixes que saltam em arco, com respingos na saída e na entrada;
+  - libélulas pairando sobre a água, que somem na seca;
+  - folhas caindo dos bosques na época das águas.
+- **Desempenho em telas 3× (iPhone)**:
+  - O campo de umidade é calculado em meia resolução e só é refeito quando algo muda. A mistura fica recortada pelo contorno das peças.
+  - A resolução vai até 2×.
+  - Qualidade adaptativa: se o aparelho passar de cerca de 26 ms por quadro, cai para 1,5× e tira vento e raios; depois cai para 1,25× e tira as manchas e o segundo passe da umidade.
+  - No zoom, no máximo 3 peças são redesenhadas por quadro.
