@@ -247,7 +247,7 @@ def gable_house(w, d, h, rh, wall, roof, over=0.025, tiles=True):
     ang = math.atan2(rh, d / 2)
     ln = math.hypot(rh, d / 2) + over
     rc = roof.node_tree.nodes['Principled BSDF'].inputs['Base Color'].default_value
-    dark = mat(roof.name + '_escuro', '#%02x%02x%02x' % tuple(int(255 * (min(1, c) ** (1 / 2.2)) * 0.78) for c in rc[:3]), 0.8)
+    dark = mat(roof.name + '_escuro', '#%02x%02x%02x' % tuple(int(255 * (min(1, c) ** (1 / 2.2)) * 0.62) for c in rc[:3]), 0.8)
     for side in (-1, 1):
         cy, cz = side * (d / 4 + over * 0.3), h + rh / 2 + 0.004
         cube((w + 2 * over, ln, t), (0, cy, cz), roof, bevel=0.003)
@@ -257,7 +257,7 @@ def gable_house(w, d, h, rh, wall, roof, over=0.025, tiles=True):
             for frac in (-0.3, -0.05, 0.2):
                 fy, fz = frac * ln, t / 2 + 0.003
                 y2, z2 = fy * math.cos(rot) - fz * math.sin(rot), fy * math.sin(rot) + fz * math.cos(rot)
-                cube((w + 2 * over, 0.008, 0.006), (0, cy + y2, cz + z2), dark)
+                cube((w + 2 * over, 0.009, 0.0025), (0, cy + y2, cz + z2), dark)
                 bpy.context.active_object.rotation_euler = (rot, 0, 0)
     cube((w + 2 * over + 0.004, 0.03, 0.02), (0, 0, h + rh + 0.006), dark, bevel=0.004)
 
@@ -384,9 +384,10 @@ def church():
     w, d, h = 0.3, 0.17, 0.17
     # nave, deslocada para a direita
     bpy.ops.object.select_all(action='DESELECT')
-    nave_x = 0.05
+    tw, th, tx, ty = 0.115, 0.4, -0.15, -0.035
+    nave_x = tx + tw / 2 + w / 2 + 0.006   # empena da nave encosta na lateral da torre
     before = set(bpy.context.scene.objects)
-    gable_house(w, d, h, 0.09, wall, rf)
+    gable_house(w, d, h, 0.09, wall, rf, over=0.0)
     for o in set(bpy.context.scene.objects) - before:
         o.location.x += nave_x
     cube((w + 0.006, d + 0.006, 0.024), (nave_x, 0, 0.012), trim)
@@ -395,7 +396,6 @@ def church():
         cube((0.034, 0.005, 0.07), (nave_x + x - 0.03, fy, h * 0.55), glass)
         cube((0.044, 0.004, 0.08), (nave_x + x - 0.03, fy + 0.001, h * 0.55), trim)
     # torre na ponta esquerda, um pouco à frente
-    tw, th, tx, ty = 0.115, 0.4, -0.15, -0.012
     cube((tw, tw, th), (tx, ty, th / 2), wall, bevel=0.004)
     for z in (0.012, th * 0.6, th):
         cube((tw + 0.012, tw + 0.012, 0.018), (tx, ty, z), trim)
