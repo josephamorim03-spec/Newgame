@@ -159,7 +159,7 @@ body.calm .app{max-width:none;padding:0}
 .paper{position:fixed;inset:0;pointer-events:none;z-index:1;opacity:.3;mix-blend-mode:multiply}
 .mute{position:absolute;left:4px;bottom:4px;width:36px;height:36px;border-radius:50%;border:0;background:var(--card);box-shadow:0 2px 0 var(--line);font-size:18px;font-weight:700;cursor:pointer}
 .mute.off{opacity:.45;text-decoration:line-through}
-.snap{width:100%;aspect-ratio:3/2;object-fit:cover;border-radius:16px;background:#d9ecdf;display:block}
+.snap{width:100%;aspect-ratio:2/1;object-fit:cover;border-radius:16px;background:#d9ecdf;display:block}
 .recenter{position:absolute;right:4px;bottom:4px;width:36px;height:36px;border-radius:50%;border:0;background:var(--card);box-shadow:0 2px 0 var(--line);font-size:18px;cursor:pointer}
 
 .hint{margin:0;min-height:38px;display:flex;align-items:center;justify-content:center;text-align:center;font-size:14.5px;font-weight:700;text-wrap:balance}
@@ -206,14 +206,56 @@ body.calm .app{max-width:none;padding:0}
 .row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .sheet .btn{width:100%}
 .note{font-size:12.5px}
-@media (prefers-reduced-motion:reduce){.banner{transition:none}.pill.bump b{animation:none}}
+/* v1.3 — fim de partida: marcos do vale (gotas), fauna e caderno */
+.drops{display:inline-flex;gap:2px;align-items:center;height:12px}
+.drops svg{width:9px;height:12px;display:block}
+.pill small.mk{letter-spacing:0;display:flex;align-items:center;gap:4px}
+.marcos{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.marco{display:flex;flex-direction:column;align-items:center;gap:1px;padding:8px 4px 6px;border-radius:14px;background:#eef6f2;text-align:center;font-variant-numeric:tabular-nums;transition:background .3s}
+.marco svg{width:26px;height:34px;transition:transform .35s cubic-bezier(.2,1.6,.4,1)}
+.marco b{font-family:var(--f-display);font-size:15px;line-height:1.1;color:var(--ink)}
+.marco small{font-size:12px;color:var(--muted);font-weight:700}
+.marco.on{background:#dff0fa}
+.marco.pop svg{transform:scale(1.35)}
+.resnear{margin:0;font-weight:700;color:var(--ink)!important;font-size:15px;text-wrap:balance}
+.gap{display:flex;flex-direction:column;gap:4px;background:#f4faf7;border-radius:14px;padding:10px 12px}
+.gap p{margin:0;color:var(--ink);font-size:13.5px}
+.gap .gl{display:grid;grid-template-columns:1fr auto auto;gap:2px 12px;font-size:13px;font-variant-numeric:tabular-nums}
+.gap .gl span:nth-child(3n+1){color:var(--muted)}
+.gap .gl b{text-align:right}
+.gap .gl .h{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:700;text-align:right}
+.fres{display:flex;flex-direction:column;gap:8px}
+.frow{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px}
+.fcard{flex:none;width:76px;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 4px;border-radius:12px;background:#f4faf7;text-align:center;font-size:11.5px;font-weight:700;line-height:1.15;animation:fIn .45s both cubic-bezier(.2,1.4,.4,1)}
+.fcard canvas{width:64px;height:48px}
+.fcard.new{background:#fff1d1}
+.fcard em{font-style:normal;font-size:10px;color:#7a4d00;letter-spacing:.06em;text-transform:uppercase}
+@keyframes fIn{from{transform:translateY(8px) scale(.85);opacity:0}}
+.fhint{display:grid;grid-template-columns:64px 1fr;gap:10px;align-items:center;background:#f4faf7;border-radius:12px;padding:8px 10px}
+.fhint canvas{width:64px;height:48px}
+.fhint p{margin:0;font-size:13px;color:var(--ink)}
+.fhint p b{font-family:var(--f-display);font-size:15px}
+.fhint .bar{height:6px;border-radius:3px;background:#dfe9e4;margin-top:4px;overflow:hidden}
+.fhint .bar i{display:block;height:100%;background:var(--good);border-radius:3px}
+.more{border-top:1px solid var(--line);padding-top:8px}
+.more summary{cursor:pointer;font-weight:700;color:var(--ink);padding:4px 0;list-style-position:inside}
+.more[open]>*:not(summary){margin-top:10px}
+.more>div,.more>p{margin-top:8px}
+.cgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.cgrid .fcard{width:auto;animation:none;padding:8px 4px}
+.cgrid .fcard small{font-weight:400;color:var(--muted);font-size:11px}
+.cgrid .fcard.off{color:var(--muted)}
+.rar{font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.cprog{height:8px;border-radius:4px;background:#dfe9e4;overflow:hidden}
+.cprog i{display:block;height:100%;background:linear-gradient(90deg,#3fa7d6,#3f9a4a)}
+@media (prefers-reduced-motion:reduce){.banner{transition:none}.pill.bump b{animation:none}.fcard{animation:none}.marco svg{transition:none}}
 </style>
 
 <div class="app">
   <header class="top">
     <div class="brand"><h1>Afluente</h1><p id="sub">Vale do dia</p></div>
     <div class="pill" id="leftBox" title="Peças restantes"><b id="left">22</b><small>peças</small></div>
-    <div class="pill" id="scoreBox"><b id="score">0</b><small>pontos</small></div>
+    <div class="pill" id="scoreBox"><b id="score">0</b><small id="scoreSub">pontos</small></div>
     <button class="round" id="helpBtn" aria-label="Menu"><svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M3 5.5h14M3 10h14M3 14.5h14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></button>
   </header>
   <div class="seasonbar" aria-live="polite">
@@ -256,9 +298,9 @@ body.calm .app{max-width:none;padding:0}
     <h1 class="htitle" id="homeTitle">Afluente</h1>
     <p class="hsub">Um vale do Cerrado por dia. Encaixe as peças, leve a água da nascente e proteja o rio na seca.</p>
     <button class="btn primary hbig" id="homeDaily"><span id="homeDailyT">Vale do dia</span><small id="homeDailyS"></small></button>
-    <div class="row"><button class="btn" id="homeTrain">Vale de treino</button><button class="btn" id="homeLessons">Lições</button></div>
+    <div class="row"><button class="btn" id="homeTrain">Vale de treino</button><button class="btn" id="homeBook">Caderno do Cerrado</button></div>
     <p class="hstreak" id="homeStreak"></p>
-    <div class="hfoot"><button type="button" class="link" id="homeHelp">Como jogar</button><button type="button" class="link" id="homeStatsBtn">Estatísticas</button><button type="button" class="link" id="homeSound">Som ligado</button></div>
+    <div class="hfoot"><button type="button" class="link" id="homeLessons">Lições</button><button type="button" class="link" id="homeHelp">Como jogar</button><button type="button" class="link" id="homeStatsBtn">Estatísticas</button><button type="button" class="link" id="homeSound">Som ligado</button></div>
   </div>
 </div>
 
@@ -268,7 +310,7 @@ body.calm .app{max-width:none;padding:0}
     <p class="note" id="menuWhere"></p>
     <button class="btn primary" id="menuResume">Continuar</button>
     <div class="row"><button class="btn" id="menuHome">Tela inicial</button><button class="btn" id="menuHelp">Como jogar</button></div>
-    <button class="btn" id="menuCalm">Contemplar o vale</button>
+    <div class="row"><button class="btn" id="menuCalm">Contemplar o vale</button><button class="btn" id="menuBook">Caderno</button></div>
     <button class="btn" id="menuRestart">Recomeçar este vale</button>
     <div class="toggles">
       <label class="tg"><input type="checkbox" id="optSound"><span>Som</span></label>
@@ -282,7 +324,7 @@ body.calm .app{max-width:none;padding:0}
 <div class="overlay" id="statsSheet" hidden role="dialog" aria-modal="true" aria-labelledby="statsTitle">
   <div class="sheet">
     <h2 id="statsTitle">Estatísticas</h2>
-    <div class="stats four" id="stGrid"></div>
+    <div class="stats" id="stGrid"></div>
     <p class="lstep">Últimos 7 dias</p>
     <div class="week" id="stWeek"></div>
     <p class="note" id="stNote"></p>
@@ -328,18 +370,39 @@ body.calm .app{max-width:none;padding:0}
 <div class="overlay" id="result" hidden role="dialog" aria-modal="true" aria-labelledby="resTitle">
   <div class="sheet">
     <img class="snap" id="resImg" alt="O vale que você construiu">
+    <p class="lstep" id="resKicker">A pilha acabou</p>
     <h2 id="resTitle">A pilha acabou</h2>
-    <div class="big"><b id="resTotal">0</b><span id="resPar">calculando o par…</span></div>
-    <p class="seasonline" id="resSeason"></p>
-    <p class="record" id="resRecord"></p>
-    <div class="report" id="resReport"></div>
-    <div class="stats" id="resStats"></div>
+    <div class="big"><b id="resTotal">0</b><span id="resPar">pontos</span></div>
+    <div class="marcos" id="resMarcos"></div>
+    <p class="resnear" id="resNear"></p>
+    <div class="gap" id="resGap" hidden></div>
+    <button class="btn primary" id="againBtn">Jogar de novo</button>
+    <div class="row"><button class="btn" id="otherBtn">Outro vale</button><button class="btn" id="resHome">Tela inicial</button></div>
+    <div class="fres" id="resFauna"></div>
+    <details class="more" id="resMore">
+      <summary>Detalhes da partida</summary>
+      <p class="seasonline" id="resSeason"></p>
+      <p class="record" id="resRecord"></p>
+      <div class="report" id="resReport"></div>
+      <div class="stats" id="resStats"></div>
+    </details>
     <textarea class="share" id="shareTxt" readonly aria-label="Resultado para compartilhar"></textarea>
-    <button class="btn primary" id="copyBtn">Copiar resultado</button>
-    <div class="row"><button class="btn" id="againBtn">Jogar de novo</button><button class="btn" id="otherBtn">Outro vale</button></div>
-    <div class="row"><button class="btn" id="viewBtn">Ver meu vale</button><button class="btn" id="resHome">Tela inicial</button></div>
+    <div class="row"><button class="btn" id="copyBtn">Copiar resultado</button><button class="btn" id="viewBtn">Ver meu vale</button></div>
     <p class="note next" id="resNext"></p>
     <p class="note" id="resNote"></p>
+  </div>
+</div>
+<div class="overlay" id="book" hidden role="dialog" aria-modal="true" aria-labelledby="bookTitle">
+  <div class="sheet">
+    <h2 id="bookTitle">Caderno do Cerrado</h2>
+    <p id="bookSub"></p>
+    <div class="cprog"><i id="bookBar"></i></div>
+    <p class="lstep">Pistas</p>
+    <div class="fres" id="bookHints"></div>
+    <p class="lstep">Bichos</p>
+    <div class="cgrid" id="bookGrid"></div>
+    <p class="note">Os bichos voltam quando o vale tem o lugar certo para eles. Não dão pontos: ficam no seu vale e no caderno.</p>
+    <button class="btn primary" id="bookClose">Fechar</button>
   </div>
 </div>
 
@@ -503,15 +566,15 @@ function Engine(){
   function rotations(e){const seen=new Set(),out=[];for(let r=0;r<6;r++){const x=rot(e,r),key=x.join('');if(!seen.has(key)){seen.add(key);out.push({r,e:x});}}return out;}
 
   // grupos: triângulos (peça, lado) de mesmo bioma conectados; tamanho = nº de peças distintas
-  function groups(board){
+  function groups(board,withG){
     const par=new Map();
     const f=x=>{let r=x;while(par.get(r)!==r)r=par.get(r);while(par.get(x)!==r){const n=par.get(x);par.set(x,r);x=n;}return r;};
     const u=(a,b)=>{const ra=f(a),rb=f(b);if(ra!==rb)par.set(ra,rb);};
-    for(const[k,t]of board)for(let i=0;i<6;i++)if(t.e[i]!=='G')par.set(k*6+i,k*6+i);
+    for(const[k,t]of board)for(let i=0;i<6;i++)if(withG||t.e[i]!=='G')par.set(k*6+i,k*6+i);
     for(const[k,t]of board){
       const w=[];
       for(let i=0;i<6;i++){
-        const b=t.e[i];if(b==='G')continue;
+        const b=t.e[i];if(b==='G'&&!withG)continue;
         if(b==='A')w.push(i);
         else if(t.e[(i+1)%6]===b)u(k*6+i,k*6+(i+1)%6);
         const n=board.get(nb(k,i));if(n&&n.e[opp(i)]===b)u(k*6+i,nb(k,i)*6+opp(i));
@@ -604,24 +667,76 @@ function Engine(){
       .sort((a,b)=>(b.rep.pts+4*b.rep.tiles)-(a.rep.pts+4*a.rep.tiles));
   }
   const over=s=>s.left<=0;
-  function replay(seedKey,actions){let s=newGame(seedKey);for(const a of actions||[]){if(over(s))break;s=place(s,a.k,a.r).state;}return s;}
 
-  // bot guloso (define o par): maior ganho imediato contando peças ganhas como 4 pontos
-  function parScore(seedKey){
+  // ---------- fauna do Cerrado (v1.3): bichos que voltam quando o vale tem o lugar certo para eles.
+  // Não dá pontos nem peças: é coleção (o Caderno) e vida no vale. Cada condição cabe numa frase e se vê no tabuleiro.
+  const FAUNA=[
+    {id:'seriema',name:'Seriema',rar:1,cond:'Um pasto com 6 peças.',hint:'Canta alto no capim aberto.'},
+    {id:'tucano',name:'Tucano',rar:1,cond:'Um bosque com 6 peças.',hint:'Precisa de mata para comer frutos.'},
+    {id:'joao',name:'João-de-barro',rar:1,cond:'Uma vila com 4 peças.',hint:'Faz casa de barro perto das casas da gente.'},
+    {id:'garca',name:'Garça',rar:1,cond:'2 brejos com água viva (rio vivo que termina em terra).',hint:'Pesca na água parada.'},
+    {id:'capivara',name:'Capivara',rar:2,cond:'6 peças com água viva ao mesmo tempo.',hint:'Não vive longe da água.'},
+    {id:'ema',name:'Ema',rar:2,cond:'Um campo com 8 peças.',hint:'Corre pelas lavouras grandes.'},
+    {id:'martim',name:'Martim-pescador',rar:2,cond:'Uma cachoeira com água viva.',hint:'Mergulha onde a água cai.'},
+    {id:'anta',name:'Anta',rar:2,cond:'Um bosque com 6 peças e rio vivo passando por dentro.',hint:'Mora na mata de galeria, à beira do rio.'},
+    {id:'lobo',name:'Lobo-guará',rar:3,cond:'Um pasto com 8 peças encostado num bosque com 8 peças.',hint:'Anda na beira entre o campo aberto e a mata.'},
+    {id:'tamandua',name:'Tamanduá-bandeira',rar:3,cond:'Um pasto com 12 peças.',hint:'Come cupim nos pastos sem fim.'},
+    {id:'onca',name:'Onça-pintada',rar:4,cond:'Na seca, 10 trechos de rio continuam correndo.',hint:'Só volta a um vale que cuida do rio na seca.'},
+  ];
+  // o que o vale oferece agora: maior região de cada bioma, água viva, brejos, cachoeira viva, mata com rio, pasto encostado em mata
+  function habitat(s){
+    const board=s.board,G=groups(board,true),big={G:0,C:0,B:0,V:0},bio=x=>board.get(Math.floor(x/6)).e[x%6];
+    const sizeOf=new Map();
+    for(const[r,set]of G.members){const b=bio(r);sizeOf.set(r,set.size);if(b in big&&set.size>big[b])big[b]=set.size;}
+    let gallery=0;for(const[r,set]of G.members){if(bio(r)!=='B'||set.size<6)continue;for(const k of set)if(s.alive.has(k)){gallery=Math.max(gallery,set.size);break;}}
+    let brejos=0,falls=false;
+    for(const k of s.alive){const t=board.get(k);if(t.sp==='falls')falls=true;
+      for(let d=0;d<6;d++){if(t.e[d]!=='A')continue;const n=board.get(nb(k,d));if(n&&n.e[opp(d)]!=='A'){brejos++;break;}}}
+    let edge=0;const pair=(a,b)=>{const ra=G.find(a),rb=G.find(b);edge=Math.max(edge,Math.min(sizeOf.get(ra)||0,sizeOf.get(rb)||0));};
+    for(const[k,t]of board)for(let i=0;i<6;i++){if(t.e[i]!=='G')continue;
+      const j=(i+1)%6,h=(i+5)%6;if(t.e[j]==='B')pair(k*6+i,k*6+j);if(t.e[h]==='B')pair(k*6+i,k*6+h);
+      const n=board.get(nb(k,i));if(n&&n.e[opp(i)]==='B')pair(k*6+i,nb(k,i)*6+opp(i));}
+    return{big,alive:s.alive.size-1,gallery,brejos,falls,edge,secaRun:s.seca?s.alive.size-1:0};
+  }
+  const FAUNA_TEST={seriema:h=>[h.big.G,6],tucano:h=>[h.big.B,6],joao:h=>[h.big.V,4],garca:h=>[h.brejos,2],
+    capivara:h=>[h.alive,6],ema:h=>[h.big.C,8],martim:h=>[h.falls?1:0,1],anta:h=>[h.gallery?6:0,6],
+    lobo:h=>[h.edge,8],tamandua:h=>[h.big.G,12],onca:h=>[h.secaRun,10]};
+  // progresso de cada bicho: [quanto o vale tem, quanto precisa]
+  function faunaProgress(s){const h=habitat(s),out={};for(const f of FAUNA)out[f.id]=FAUNA_TEST[f.id](h);return out;}
+  // registra os bichos que apareceram nesta partida (e em que jogada)
+  function faunaStep(s){if(s.lesson)return s;const pr=faunaProgress(s),fauna={...(s.fauna||{})};let add=false;
+    for(const f of FAUNA){const[a,b]=pr[f.id];if(a>=b&&fauna[f.id]==null){fauna[f.id]=s.turn;add=true;}}
+    return add?{...s,fauna}:s;}
+  function replay(seedKey,actions){let s=newGame(seedKey);for(const a of actions||[]){if(over(s))break;s=faunaStep(place(s,a.k,a.r).state);}return s;}
+
+  // ---------- bots de referência (v1.3): definem os marcos de cada vale.
+  // guloso: maior ganho imediato (peça ganha = 4 pontos). cuidadoso: + protege o rio para a seca.
+  // mestre: + persegue as missões. Os três jogam a mesma pilha que a pessoa, sem ver o futuro.
+  const questBefore=s=>new Map(questProgress(s).map(q=>[q.key+':'+q.edge,q.cur]));
+  function botValue(s,ns,rep,pol,before){
+    let v=rep.pts+4*rep.tiles;if(pol==='guloso')return v;
+    const b=balance(ns);v+=(b.phase===0&&b.turnsLeft<=5?2.5:1.2)*b.riverSafe;if(pol==='cuidadoso')return v;
+    before=before||questBefore(s);
+    if(before.size)for(const q of questProgress(ns)){if(q.flow)continue;const b0=before.get(q.key+':'+q.edge);if(b0!=null&&q.cur>b0)v+=2.5*Math.min(q.cur-b0,Math.max(0,q.n-b0));}
+    return v;
+  }
+  function botPlay(seedKey,pol){
     let s=newGame(seedKey);
     while(!over(s)&&s.turn<300){
-      let best=null,bv=-1e9;
+      let best=null,bv=-1e9;const before=pol==='mestre'?questBefore(s):null;
       for(const k of slots(s))for(const o of rotations(cur(s).e)){
-        if(!legal(s.board,k,o.e))continue;
-        const{rep}=place(s,k,o.r),v=rep.pts+4*rep.tiles;
+        const{state:ns,rep}=place(s,k,o.r),v=botValue(s,ns,rep,pol,before);
         if(v>bv){bv=v;best={k,r:o.r};}
       }
       if(!best)break;
       s=place(s,best.k,best.r).state;
     }
-    return{score:s.score,placed:s.placed,season:s.season};
+    const x=s.stats;
+    return{score:s.score,placed:s.placed,season:s.season,quests:s.questsDone,perfects:s.perfects,
+      src:{match:x.match,flow:x.flow,quest:x.quest,perfect:x.perfect,special:x.special,seca:x.kept},tiles:{quest:x.tQuest,perfect:x.tPerfect,season:x.tSeason},act:s.actions};
   }
-  return{DIRS,K,KQ,KR,nb,opp,SRC,START,SPECIALS,seasonAt,seasonName,phase,yearOf,balance,CYCLE,CFG,LESSONS,computeAlive,shielded,cur,peek,newGame,place,options,slots,legal,rotations,questProgress,over,replay,parScore,hashStr,rot,groups};
+  const parScore=seedKey=>botPlay(seedKey,'guloso');
+  return{DIRS,K,KQ,KR,nb,opp,SRC,START,SPECIALS,FAUNA,habitat,faunaProgress,faunaStep,botPlay,botValue,seasonAt,seasonName,phase,yearOf,balance,CYCLE,CFG,LESSONS,computeAlive,shielded,cur,peek,newGame,place,options,slots,legal,rotations,questProgress,over,replay,parScore,hashStr,rot,groups};
 }
 
 /* =====================================================================
@@ -633,6 +748,128 @@ const S3=Math.sqrt(3);
 let RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
 const NAME={C:'Campo',B:'Bosque',V:'Vila',A:'Rio',G:'Pasto'};
 
+// ---------- v1.3: marcos do vale e fauna do Cerrado
+// Marcos: três gotas por vale, definidas por bots que jogam a mesma pilha (ver Engine.botPlay).
+// Riacho = 70% do bot guloso · Ribeirão = bot guloso (o par) · Rio cheio = o melhor dos três bots (pelo menos 30% acima do par).
+const MKN=['Riacho','Ribeirão','Rio cheio'],MKT=['Fio d\'água','Riacho!','Ribeirão!','Rio cheio!'];
+const DROP_D='M12 1.5C12 1.5 3 12.5 3 19.5a9 9 0 0 0 18 0C21 12.5 12 1.5 12 1.5Z';
+function dropSvg(on){return`<svg viewBox="0 0 24 31" aria-hidden="true"><path d="${DROP_D}" fill="${on?'#3fa7d6':'rgba(255,255,255,.6)'}" stroke="${on?'#1f7ea6':'#9bb8b0'}" stroke-width="2.2"/>${on?'<path d="M8 19a4.5 4.5 0 0 0 3 4.4" fill="none" stroke="#c4f0fb" stroke-width="2" stroke-linecap="round"/>':''}</svg>`;}
+const dropsOf=(score,t)=>t?t.filter(x=>score>=x).length:0;
+// Fauna: silhuetas em 64×48 (chão em y=44). Cada camada: [caminho, preenchimento, traço, largura]
+const FAUNA_ART={
+  seriema:[
+    ['M18 26C20 18 32 16 40 20C44 22 44 27 40 30C34 33 24 32 18 26Z','#b39a74'],
+    ['M19 25L5 30L8 26L4 24L19 21Z','#8f7653'],
+    ['M38 22C40 15 42 11 45 9C48 7 51 8 52 10L57 11L52 12.5C50 14 47 15 46 17C44 20 44 23 42 25Z','#c4ac86'],
+    ['M46 8L44 2.5L47.5 6.5L48.5 1.5L49.5 7Z','#8f7653'],
+    ['M29 31L28 44M34 31L36 44',null,'#d4643a',2.2],
+    ['M52 10.4L57 11L52 12',null,'#d4643a',1.6],
+  ],
+  tucano:[
+    ['M4 39L60 37',null,'#7a5636',3],
+    ['M22 37C17 31 17 20 23 15.5C29 11 37 15 37 23C37 30 33 36 28 38Z','#22272b'],
+    ['M23 36L19 46L25 44.5L28 37Z','#22272b'],
+    ['M33 17.5C37.5 18.5 37.5 25 34.5 27.5C32.5 24.5 31.5 21 33 17.5Z','#fff6d6'],
+    ['M34.5 14.5C42 11 54 13 59 18.5C53 21 43 21.5 35.5 21Z','#f39126'],
+    ['M53 15.5C56 16.5 58 17.5 59 18.5C57 19.5 55 20 53 20.3Z','#2a2a2a'],
+    ['M31.4 16.2m-2.2 0a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0-4.4 0','#5fb3e0'],
+  ],
+  joao:[
+    ['M6 41C5 27 15 22 21 22C28 22 34 28 33 41Z','#b8774a'],
+    ['M10 41C10 33 15 29 20 29',null,'#9a5f39',1.4],
+    ['M20 35.5m-3.2 0a3.2 3.2 0 1 0 6.4 0a3.2 3.2 0 1 0-6.4 0','#3d2617'],
+    ['M4 41.5L36 41.5',null,'#7a5636',2.4],
+    ['M38 36C38 30.5 45 28 50.5 30C53.5 31 54.5 33.5 52.5 35.5C48.5 38.5 41 39 38 36Z','#c98a52'],
+    ['M50.5 28.6m-4.2 0a4.2 4.2 0 1 0 8.4 0a4.2 4.2 0 1 0-8.4 0','#c98a52'],
+    ['M54 27.6L59 28.6L54 30Z','#5a3a22'],
+    ['M39 35L31.5 31.5L34 37.5Z','#a86d3c'],
+    ['M44 37.5L43 42M47 37.5L48 42',null,'#5a3a22',1.4],
+    ['M51 30C49 33 45 34 41 33.5',null,'#efd2a8',1.6],
+  ],
+  garca:[
+    ['M14 44C20 42 26 46 32 44C38 42 44 46 50 44',null,'#7cc4de',1.6],
+    ['M30 30L29 43M34 30L36 43',null,'#3b3b3b',1.6],
+    ['M21 26C23 19.5 36 18.5 43 24C41 30.5 30 32.5 21 26Z','#fbfaf4','#a8bab5',1.1],
+    ['M22 26L12 30.5L19 23.5Z','#fbfaf4','#a8bab5',1.1],
+    ['M41 23.5C47 20 43 14 40.5 11C38.5 8 42 4 46.5 6',null,'#a8bab5',4.4],
+    ['M41 23.5C47 20 43 14 40.5 11C38.5 8 42 4 46.5 6',null,'#fbfaf4',2.6],
+    ['M46.5 6.2m-2.8 0a2.8 2.8 0 1 0 5.6 0a2.8 2.8 0 1 0-5.6 0','#fbfaf4','#a8bab5',1.1],
+    ['M49 5.2L59 7.4L49 7.8Z','#e8bf32'],
+  ],
+  capivara:[
+    ['M10 30C10 20 22 16 34 17C42 17 48 18 52 20C57 21 59 26 58 30C57 33 54 33 52 32C50 36 44 38 36 38L18 38C12 38 10 35 10 30Z','#9b6c46'],
+    ['M15 35h5.5v9h-5.5ZM26 36h5v8h-5ZM40 36h5v8h-5ZM47 33h5.5v11h-5.5Z','#7f5536'],
+    ['M47.5 17.5m-2.6 0a2.6 2.6 0 1 0 5.2 0a2.6 2.6 0 1 0-5.2 0','#7f5536'],
+    ['M53 23m-1.2 0a1.2 1.2 0 1 0 2.4 0a1.2 1.2 0 1 0-2.4 0','#2a1a10'],
+    ['M14 24C22 19 34 19 46 20',null,'#b5845c',1.6],
+  ],
+  ema:[
+    ['M25 31L23 44M31 31L33 44',null,'#6f6a5e',2.4],
+    ['M13 24C13 14 33 11 42 19C44 26 38 32 28 32C19 32 13 30 13 24Z','#a29d8c'],
+    ['M13 24C10 22 9 25 11 27C10 29 13 30 15 29Z','#8a8576'],
+    ['M40 20C44 14 44 8 46 4.5',null,'#a29d8c',3.6],
+    ['M47 4.5m-2.9 0a2.9 2.9 0 1 0 5.8 0a2.9 2.9 0 1 0-5.8 0','#a29d8c'],
+    ['M49.5 3.8L55 5.2L49.5 6.4Z','#5e5a50'],
+    ['M18 21C24 17 32 17 38 20',null,'#c2bdab',1.6],
+  ],
+  martim:[
+    ['M6 35L46 35',null,'#7a5636',2.6],
+    ['M8 44C14 42 20 46 26 44C32 42 38 46 44 44',null,'#7cc4de',1.6],
+    ['M25 28L17 37L22.5 37.5L29 31Z','#2b7d97'],
+    ['M23 23C23 15 35 12 40 18C42 24 38 30 30 32C26 32 23 28 23 23Z','#2f8aa6'],
+    ['M30 32C36 30 40 26 40.5 20C38 26 34 28 28 28.5Z','#cf6a3a'],
+    ['M36 13.5m-6.5 0a6.5 6.5 0 1 0 13 0a6.5 6.5 0 1 0-13 0','#2f8aa6'],
+    ['M41.5 11.5L58 15L41.5 16.5Z','#2a2a2a'],
+    ['M38 17C40 18 41 20 40 22',null,'#fff6e8',2],
+    ['M38.2 12.6m-1.1 0a1.1 1.1 0 1 0 2.2 0a1.1 1.1 0 1 0-2.2 0','#111'],
+  ],
+  anta:[
+    ['M8 30C8 20 18 15 32 15C42 15 48 18 52 22C55 24 58 25 60 28C61 30 59 32 57 31L54 30C52 34 50 36 46 36L44.5 44h-5L38 37L22 37L21 44h-5L15 36C10 35 8 33 8 30Z','#5c5048'],
+    ['M10 32L9 44h5L15 35Z','#4b413a'],
+    ['M46 17.5L48.5 12L51 18Z','#4b413a'],
+    ['M51.5 22.5m-1.1 0a1.1 1.1 0 1 0 2.2 0a1.1 1.1 0 1 0-2.2 0','#1a1410'],
+    ['M14 21C22 17 32 17 42 18',null,'#73665c',1.6],
+  ],
+  lobo:[
+    ['M18 27L17 44M23 28L24 44M38 27L37 44M43 26L45 44',null,'#2b1d17',2.6],
+    ['M14 22C8 24 6 30 8 37C10.5 33 12.5 28 15.5 25Z','#c6652f'],
+    ['M8 37C8.5 35 9.5 33.5 10.5 32.5L11.5 34C10 35 9 36 8 37Z','#f4ead8'],
+    ['M14 22C16 18 30 17 40 18C44 18 46 20 46 24C46 27 42 28 38 28L18 28C15 28 13 25 14 22Z','#cc6a33'],
+    ['M39 19.5L46 12C48 10 52 10 54 12L60 14.5C60 16.5 58 17.5 54 17.5L50 20.5L46 25Z','#cc6a33'],
+    ['M47.5 11.5L47.5 3.5L51 10.5ZM51 11L53.5 4.5L54.5 12.5Z','#cc6a33'],
+    ['M40 18.5L46.5 12.5L47 21L43 25Z','#2b1d17'],
+    ['M59 14.2m-1.2 0a1.2 1.2 0 1 0 2.4 0a1.2 1.2 0 1 0-2.4 0','#1a1410'],
+  ],
+  tamandua:[
+    ['M24 35h5v9h-5ZM38 34h5v10h-5Z','#55524b'],
+    ['M18 22C22 16 36 15 44 20C48 22 52 26 60 30L60 31.5C54 31 49 30 46 30C44 34 40 36 34 36L22 36C18 34 16 28 18 22Z','#8f8b80'],
+    ['M21 23C12 13 2 17 3.5 28C5 35 12 37 21 34Z','#6b665c'],
+    ['M6 24C9 22 13 22 17 25M5 29C9 27 14 27 19 30',null,'#5a564d',1.2],
+    ['M43.5 20.5L27.5 33L32.5 34.5L46.5 23.5Z','#f2efe6'],
+    ['M43 22L29.5 32.8L32 33.5L45 23.5Z','#1f1d1a'],
+    ['M51.5 25.5m-1 0a1 1 0 1 0 2 0a1 1 0 1 0-2 0','#1a1410'],
+  ],
+  onca:[
+    ['M13 27C6 29 4 35 8 41',null,'#e0a43c',3.2],
+    ['M12 26C14 19 26 17 38 18C44 18 48 20 50 22C52 19 56 18 59 20C61 22 61 26 58 28C56 29 54 29 52 28C50 32 46 34 42 34L42 44h-5L36 35L22 35L21 44h-5L15 34C12 32 11 29 12 26Z','#e2a63e'],
+    ['M53 19.5L54.5 15L57.5 18.5Z','#c98a2a'],
+    ['M58 23m-1.1 0a1.1 1.1 0 1 0 2.2 0a1.1 1.1 0 1 0-2.2 0','#1a1410'],
+    ['M20 23m-1.6 0a1.6 1.6 0 1 0 3.2 0a1.6 1.6 0 1 0-3.2 0M27 21m-1.6 0a1.6 1.6 0 1 0 3.2 0a1.6 1.6 0 1 0-3.2 0M34 22m-1.6 0a1.6 1.6 0 1 0 3.2 0a1.6 1.6 0 1 0-3.2 0M41 23m-1.6 0a1.6 1.6 0 1 0 3.2 0a1.6 1.6 0 1 0-3.2 0M24 28m-1.6 0a1.6 1.6 0 1 0 3.2 0a1.6 1.6 0 1 0-3.2 0M31 28.5m-1.6 0a1.6 1.6 0 1 0 3.2 0a1.6 1.6 0 1 0-3.2 0M38 28.5m-1.6 0a1.6 1.6 0 1 0 3.2 0a1.6 1.6 0 1 0-3.2 0M46 26m-1.4 0a1.4 1.4 0 1 0 2.8 0a1.4 1.4 0 1 0-2.8 0M17 29m-1.4 0a1.4 1.4 0 1 0 2.8 0a1.4 1.4 0 1 0-2.8 0',null,'#3a2a1a',1.1],
+    ['M8 41m-1.4 0a1.4 1.4 0 1 0 2.8 0',null,'#3a2a1a',1.1],
+  ],
+};
+const FSCALE={seriema:.72,tucano:.58,joao:.58,garca:.7,capivara:.58,ema:.8,martim:.54,anta:.72,lobo:.76,tamandua:.7,onca:.72};
+const FPATH={};
+function drawAnimal(g,id,x,y,h,o={}){ // (x,y) = pés do bicho no chão
+  const L=FAUNA_ART[id],k=h/48;if(!L)return;
+  if(!FPATH[id])FPATH[id]=L.map(l=>new Path2D(l[0]));
+  g.save();g.translate(x,y);g.scale(k*(o.flip?-1:1),k);g.translate(-32,-44);g.lineCap='round';g.lineJoin='round';
+  L.forEach((l,i)=>{const[,f,st,w]=l,P2=FPATH[id][i];if(f){g.fillStyle=o.sil||f;g.fill(P2);}if(st){g.strokeStyle=o.sil||st;g.lineWidth=w||1.4;g.stroke(P2);}});
+  g.restore();
+}
+function animalCanvas(id,sil){const c=document.createElement('canvas');c.width=128;c.height=96;const g=c.getContext('2d');
+  drawAnimal(g,id,64,90,90,{sil:sil?'#c9d6d1':null});return c;}
+
 const STORE='afluente:v04';
 function load(){try{return JSON.parse(localStorage.getItem(STORE))||{};}catch(e){return{};}}
 function save(d){try{localStorage.setItem(STORE,JSON.stringify(d));}catch(e){}}
@@ -641,7 +878,7 @@ function today(){const d=new Date(),p=n=>String(n).padStart(2,'0');return`${d.ge
 function valeNumber(k){const[y,m,d]=k.split('-').map(Number);return Math.floor((Date.UTC(y,m-1,d)-Date.UTC(2026,9,14))/864e5)+1;}
 function fmtDate(k){const[y,m,d]=k.split('-').map(Number);return new Date(y,m-1,d).toLocaleDateString('pt-BR',{day:'numeric',month:'short'});}
 
-const G={bursts:[],edgeFx:null,seedKey:'',s:null,undo:null,sel:null,valid:new Set(),qp:[],wet:new Set(),fx:new Map(),flow:null,floats:[],banners:[],lastRecord:null,resumedDone:false};
+const G={bursts:[],edgeFx:null,seedKey:'',s:null,undo:null,sel:null,valid:new Set(),qp:[],wet:new Set(),fx:new Map(),flow:null,floats:[],banners:[],lastRecord:null,resumedDone:false,fspot:{},fpop:{},fmax:{},hop:{},pulse:null,fnew:new Set()};
 
 // ---------- arte 3D (renderizada no Blender: afluente/arte/afluente_sprites.py)
 const ATLAS={"pequi":[1,1,177,141,66.0,89.4,232.727],"buriti":[179,1,156,125,50.0,110.4,232.727],"tree_d":[336,1,146,123,55.0,79.4,232.727],"tree_b":[483,1,128,118,48.0,77.4,232.727],"tree_a":[612,1,125,113,44.0,77.4,232.727],"church":[738,1,136,104,51.0,81.4,232.727],"pine":[875,1,105,101,42.0,66.4,232.727],"ipe_pink":[1,143,133,100,42.0,76.4,232.727],"cerrado_tree":[135,143,138,100,40.0,68.4,232.727],"ipe_white":[274,143,133,100,42.0,76.4,232.727],"ipe_yellow":[408,143,133,99,42.0,76.4,232.727],"tree_c":[542,143,111,96,27.0,83.4,232.727],"barn":[654,143,132,92,52.0,59.4,232.727],"tree_e":[787,143,109,89,26.0,73.4,232.727],"windmill":[897,143,123,84,49.0,62.4,232.727],"fx_sparkle":[1,244,84,84,42.0,42.0,282.353],"house_b_red":[86,244,93,72,27.0,51.4,232.727],"house_b_blue":[180,244,93,72,27.0,51.4,232.727],"house_b_terra":[274,244,93,72,27.0,51.4,232.727],"lobeira":[368,244,89,71,34.0,45.4,232.727],"house_d":[458,244,97,68,34.0,40.4,232.727],"house_a_blue":[556,244,100,66,35.0,43.4,232.727],"house_a_red":[657,244,100,65,35.0,42.4,232.727],"house_a_terra":[758,244,100,65,35.0,42.4,232.727],"bush":[859,244,78,61,33.0,37.4,232.727],"house_c_red":[1,329,120,61,46.0,40.4,232.727],"house_c_blue":[122,329,120,61,46.0,40.4,232.727],"corn":[243,329,76,61,34.0,42.4,232.727],"house_c_terra":[320,329,120,61,46.0,40.4,232.727],"cart":[441,329,103,58,30.0,35.4,232.727],"fx_puff":[545,329,76,54,37.0,28.0,282.353],"loboguara":[622,329,110,54,38.0,44.4,232.727],"well":[733,329,67,51,19.0,38.4,232.727],"wheat":[801,329,63,50,23.0,37.4,232.727],"haybale":[865,329,82,49,33.0,34.4,232.727],"cow":[1,391,83,49,24.0,33.4,232.727],"sunflower":[85,391,71,49,20.0,39.4,232.727],"termite":[157,391,51,48,19.0,32.4,232.727],"canela":[209,391,54,48,13.0,35.4,232.727],"scarecrow":[264,391,63,47,19.0,44.4,232.727],"capybara":[328,391,80,44,33.0,27.4,232.727],"garden":[409,391,70,43,33.0,22.4,232.727],"fx_drop":[480,391,34,42,17.0,21.0,282.353],"log":[515,391,71,40,38.0,19.4,232.727],"egret":[587,391,59,39,12.0,37.4,232.727],"reeds":[647,391,47,38,13.0,28.4,232.727],"tuft_gold":[695,391,43,38,14.0,30.4,232.727],"tuft":[739,391,35,35,10.0,25.4,232.727],"flowers":[775,391,52,35,20.0,24.4,232.727],"rock":[828,391,53,35,21.0,20.4,232.727],"fx_leaf":[882,391,58,34,29.0,17.0,282.353],"chickens":[941,391,51,34,21.0,19.4,232.727],"rock_b":[1,441,60,28,27.0,14.4,232.727],"fx_petal":[62,441,40,26,20.0,13.0,282.353],"fx_butterfly":[103,441,64,24,32.0,12.0,282.353],"fence":[168,441,78,22,33.0,16.4,232.727]};
@@ -703,6 +940,11 @@ const sfx={
   season(){[0,2,4,5,6].forEach((n,i)=>tone(NOTES[n],i*0.09,0.55,'triangle',0.07));tone(1567.98,0.5,0.9,'sine',0.05);},
   dry(){noise(0,1.8,380,0.08,0.5);tone(330,0.1,1.1,'sine',0.05,220);tone(262,0.45,1.2,'sine',0.04,196);},
   rain(){noise(0,2.4,2600,0.05,0.35);noise(0.2,2,900,0.035,0.5);for(let i=0;i<10;i++)tone(900+Math.random()*900,0.15+i*0.17,0.06,'sine',0.03,1600);},
+  // v1.3: um bicho apareceu (dois pios e uma nota); um marco do vale (gotas que sobem); fim: a última cheia
+  fauna(){tone(2300,0,0.09,'sine',0.045,3100);tone(2500,0.13,0.11,'sine',0.045,3400);marimba(NOTES[4],0.3,0.05);},
+  marco(i){[0,2,4].slice(0,i+1).forEach((n,j)=>marimba(NOTES[n+j],j*0.11,0.07));tone(1567.98,0.12*(i+1),0.6,'sine',0.035);},
+  drop(i){marimba(NOTES[[0,2,4][i]]*(i===2?2:1),0,0.08);tone(NOTES[[0,2,4][i]]*2,0.02,0.25,'sine',0.03);},
+  tick(){tone(1800+Math.random()*200,0,0.025,'sine',0.018);},
   water(){noise(0,1.0,650,0.07,0.6);for(let i=0;i<6;i++)tone(650+Math.random()*600,0.1+i*0.12,0.08,'sine',0.045,1300);},
 };
 
@@ -803,17 +1045,34 @@ function drawParts(g,t){
     g.restore();
   }
 }
-const par={},parS={};let parWorker=null;
+const par={},parS={},MK={};let parWorker=null;
+// os três bots de referência jogam o vale num Web Worker: guloso (o par, sai primeiro), cuidadoso e mestre
+function marcosOf(k){
+  const m=MK[k];if(!m||!m.guloso||!m.cuidadoso||!m.mestre)return null;
+  const g=m.guloso.score,top=m.mestre.score>=m.cuidadoso.score?'mestre':'cuidadoso';
+  const t3=Math.max(Math.round(g*1.3),m[top].score,g+2),t1=Math.min(g-1,Math.max(1,Math.round(g*0.7)));
+  return{t:[t1,g,t3],top,bot:m[top],par:m.guloso};
+}
+function gotBot(k,pol,r){
+  MK[k]=MK[k]||{};MK[k][pol]=r;
+  if(pol==='guloso'){par[k]=r.score;parS[k]=r.season;const d=k.startsWith('dia-')&&db.daily[k.slice(4)];if(d&&d.par==null){d.par=r.score;save(db);}}
+  const mk=marcosOf(k);
+  if(mk&&k.startsWith('dia-')){db.mk=db.mk||{};db.mk[k]=MK[k];const ks=Object.keys(db.mk).sort();while(ks.length>14)delete db.mk[ks.shift()];
+    const d=db.daily[k.slice(4)];if(d&&d.n==null)d.n=dropsOf(d.score,mk.t);save(db);}
+  if(k===G.seedKey){renderUI();if(!$('result').hidden)fillResult();}
+}
 function requestPar(k){
-  if(par[k]!=null)return;
+  if(MK[k])return;
+  if(db.mk&&db.mk[k]){MK[k]=db.mk[k];par[k]=MK[k].guloso.score;parS[k]=MK[k].guloso.season;return;}
+  MK[k]={};
   try{
     if(!parWorker){
-      const src=`const E=(${Engine.toString()})();onmessage=e=>{const r=E.parScore(e.data);postMessage({k:e.data,par:r.score,ps:r.season});};`;
+      const src=`const E=(${Engine.toString()})();onmessage=e=>{const k=e.data;for(const pol of['guloso','cuidadoso','mestre'])postMessage({k,pol,r:E.botPlay(k,pol)});};`;
       parWorker=new Worker(URL.createObjectURL(new Blob([src],{type:'text/javascript'})));
-      parWorker.onmessage=e=>{par[e.data.k]=e.data.par;parS[e.data.k]=e.data.ps;const r=e.data.k.startsWith('dia-')&&db.daily[e.data.k.slice(4)];if(r&&r.par==null){r.par=e.data.par;save(db);}if(!$('result').hidden)fillResult();};
+      parWorker.onmessage=e=>gotBot(e.data.k,e.data.pol,e.data.r);
     }
     parWorker.postMessage(k);
-  }catch(e){setTimeout(()=>{const r=E.parScore(k);par[k]=r.score;parS[k]=r.season;if(!$('result').hidden)fillResult();},400);}
+  }catch(e){let i=0;const pols=['guloso','cuidadoso','mestre'],step=()=>{gotBot(k,pols[i],E.botPlay(k,pols[i]));if(++i<3)setTimeout(step,300);};setTimeout(step,400);}
 }
 function persist(){db.progress={seedKey:G.seedKey,actions:G.s.actions};save(db);}
 window.claude?.hot?.snapshot?.(()=>({seedKey:G.seedKey,actions:G.s?G.s.actions:[]}));
@@ -960,6 +1219,10 @@ const FLIP=new Set(['tuft','tuft_gold','flowers','rock','rock_b','log','cow','ca
 const BUILD=new Set(['church','windmill','barn','well','garden','fence']);
 function pickW(r,list){let t=0;for(const[,w]of list)t+=w;r*=t;for(const[n,w]of list){if((r-=w)<0)return n;}return list[list.length-1][0];}
 function inTri(px,py,T){const[a,b,c]=T,d=(b[1]-c[1])*(a[0]-c[0])+(c[0]-b[0])*(a[1]-c[1]),l1=((b[1]-c[1])*(px-c[0])+(c[0]-b[0])*(py-c[1]))/d,l2=((c[1]-a[1])*(px-c[0])+(a[0]-c[0])*(py-c[1]))/d;return l1>=0&&l2>=0&&l1+l2<=1;}
+// v1.3: garça, capivara e lobo-guará de enfeite só entram no vale depois que o bicho voltou nesta partida (fauna)
+let FAUNA_ON=new Set();
+function syncFaunaDecor(){const on=new Set(G.lesson?[]:Object.keys((G.s&&G.s.fauna)||{}).filter(id=>id==='garca'||id==='capivara'||id==='lobo'));
+  if([...on].join()!==[...FAUNA_ON].join()){FAUNA_ON=on;TCACHE.clear();}}
 function compose(x,y,R,s,e,vs,sp,seed,o,decos,paths){
   const H=n=>h01(seed,n),tri=i=>{const[x1,y1]=vtx(x,y,R*0.97,i,-1),[x2,y2]=vtx(x,y,R*0.97,i,1);return[[x,y],[x1,y1],[x2,y2]];};
   const placed=[],add=(px,py,name,sc,rad,tag)=>{const h=H(Math.floor(px*13+py*7)&1023);
@@ -979,7 +1242,7 @@ function compose(x,y,R,s,e,vs,sp,seed,o,decos,paths){
   if(water.size===1&&!o.src&&o.kind!=='lake'){const i=[...water][0];ends.push([Math.cos(ang(i)),Math.sin(ang(i)),0.05]);}
   ends.forEach(([c,sn,dd],j)=>{const tx=x+c*R*0.866*dd,ty=y+sn*R*0.866*dd,px=-sn,py=c;
     add(tx+px*s*0.24,ty+py*s*0.24,'reeds',0.9,0.12);add(tx-px*s*0.22+c*s*0.1,ty-py*s*0.22+sn*s*0.1,'reeds',0.8,0.12);
-    if(H(j*7+90)<0.35)add(tx+c*s*0.16,ty+sn*s*0.16+s*0.02,'egret',1,0.12);});
+    if(FAUNA_ON.has('garca')&&H(j*7+90)<0.35)add(tx+c*s*0.16,ty+sn*s*0.16+s*0.02,'egret',1,0.12);});
   areas.forEach((A,ai)=>{
     const salt=200+ai*97+A.tris[0]*13,r0=H(salt),Ts=A.tris.map(tri);
     let cx=0,cy=0;for(const T of Ts){cx+=(T[0][0]+T[1][0]+T[2][0])/3;cy+=(T[0][1]+T[1][1]+T[2][1])/3;}cx/=Ts.length;cy/=Ts.length;
@@ -1041,10 +1304,10 @@ function compose(x,y,R,s,e,vs,sp,seed,o,decos,paths){
       else if(nm==='florido'){scatter(0.15,()=>0.65,per*3,(px,py,n)=>add(px,py,pickW(H(salt+n*7+3),[['flowers',4],['canela',2],['tuft',1]]),sc(n,0.8,1.1),0.1));}
       else if(nm==='cerrado'){add(cx,cy,pickW(H(salt+2),[['pequi',2],['cerrado_tree',3],['lobeira',1]]),sc(1),0.26);
         scatter(0.2,()=>0.6,per*2,(px,py,n)=>add(px,py,pickW(H(salt+n*7+3),[['termite',1.5],['tuft_gold',3],['lobeira',1],['canela',1.5],['rock_b',0.6]]),sc(n,0.85,1.1),0.12));
-        if(H(salt+77)<0.06)scatter(0.22,()=>1,1,(px,py)=>add(px,py,'loboguara',1,0.2));}
+        if(FAUNA_ON.has('lobo')&&H(salt+77)<0.06)scatter(0.22,()=>1,1,(px,py)=>add(px,py,'loboguara',1,0.2));}
       else{const ncow=1+Math.floor(H(salt+2)*2.4);scatter(0.24,()=>0.9,ncow,(px,py)=>add(px,py,'cow',sc(2,0.9,1.05),0.2));
         scatter(0.16,()=>0.5,per*2,(px,py,n)=>add(px,py,pickW(H(salt+n*7+3),[['tuft',3],['bush',1],['fence',1],['flowers',1]]),sc(n,0.8,1.05),0.1));}
-      if(nearW&&o.alive>0&&H(salt+88)<0.12)scatter(0.2,(px,py)=>toW(px,py)>0.2?1:0,1,(px,py)=>add(px,py,'capybara',1,0.18));
+      if(FAUNA_ON.has('capivara')&&nearW&&o.alive>0&&H(salt+88)<0.12)scatter(0.2,(px,py)=>toW(px,py)>0.2?1:0,1,(px,py)=>add(px,py,'capybara',1,0.18));
     }
   });
 }
@@ -1344,7 +1607,7 @@ function cellAt(px,py){
 
 // ---------- estado derivado
 function refresh(){
-  const s=G.s;
+  const s=G.s;syncFaunaDecor();
   G.valid=new Set(E.over(s)?[]:E.slots(s).filter(k=>E.rotations(E.cur(s).e).some(o=>E.legal(s.board,k,o.e))));
   G.qp=E.questProgress(s);G.bal=E.balance(s);document.body.dataset.ph=String(G.bal.phase);
   G.wet=new Set();for(const k of s.alive){G.wet.add(k);for(let d=0;d<6;d++)G.wet.add(E.nb(k,d));}
@@ -1374,6 +1637,10 @@ function startGame(seedKey,actions){
   TCACHE.clear();
   G.seedKey=seedKey;G.lesson=lessonOf(seedKey);G.lesPending=false;G.s=E.replay(seedKey,actions);
   if(G.lesson)document.body.dataset.lesson=String(G.lesson.n);else delete document.body.dataset.lesson;G.undo=null;G.sel=null;G.fx.clear();G.flow=null;G.floats=[];G.banners=[];
+  G.fspot={};G.fpop={};G.fmax={};G.hop={};G.pulse=null;G.fnew=new Set();G.resAnim=false;G.botView=false;
+  if(!G.lesson){const pr=E.faunaProgress(G.s);for(const id in pr)G.fmax[id]=pr[id][0];
+    // partida retomada: garante no caderno os bichos que já tinham aparecido
+    db.fauna=db.fauna||{};for(const id in G.s.fauna||{}){const key=seedKey+':'+id;if(!db.fauna[id]){FCOUNT.add(key);db.fauna[id]={n:1,first:today()};}else FCOUNT.add(key);}}
   cam.user=false;$('recenter').hidden=true;
   refresh();fit(true);if(!G.lesson)requestPar(seedKey);persist();renderUI();
   if(G.lesson)lessonCheck();else if(E.over(G.s))showResult();
@@ -1461,7 +1728,8 @@ function turn(dir){if(!G.sel)return;const n=G.sel.ops.length;if(n>1)sfx.rotate()
   {let d=((G.sel.ops[G.sel.i].r-r0)%6+6)%6;if(d>3)d-=6;if(d)G.rotFx={t0:performance.now(),ang:d*Math.PI/3};}previewQuests();renderUI();}
 function commit(){
   if(!G.sel||G.lesPending)return;
-  const o=G.sel.ops[G.sel.i],prev=G.s,{state,rep}=E.place(prev,G.sel.k,o.r),now=performance.now();
+  const o=G.sel.ops[G.sel.i],prev=G.s,pl=E.place(prev,G.sel.k,o.r),rep=pl.rep,now=performance.now();
+  const state=G.lesson?pl.state:E.faunaStep(pl.state);
   G.undo=prev;G.s=state;const k=G.sel.k;G.sel=null;G.selQ=[];
   G.fx.set(k,{k:'drop',t0:now});
   {const imp=now+DROP_MS*IMPACT;
@@ -1479,6 +1747,7 @@ function commit(){
   for(const c of rep.perfect){if(c!==k)G.fx.set(c,{k:'spark',t0:now+200});queueBanner('Peça perfeita! +1 peça','');}
   for(const q of rep.questsDone){G.fx.set(q.key,{k:'spark',t0:now+250});queueBanner(q.flow?'Missão: água ligada! +3 peças':`Missão: ${NAME[q.b]} ${q.n}! +3 peças`,'good');}
   yearEvents(state,rep,now);
+  if(!G.lesson){marcoEvents(prev,state);faunaEvents(prev,state,now);}
   for(const q of rep.questsFailed)queueBanner(q.flow?'O prazo da missão de água acabou':`O prazo acabou: ${NAME[q.b]} ficou em ${q.cur}/${q.n}`,'');
   // efeitos
   const[wx,wy]=wpos(k),te=state.board.get(k).e;
@@ -1495,7 +1764,78 @@ function commit(){
   setTimeout(()=>{bump('scoreBox');if(rep.tiles)bump('leftBox');},RM?0:DROP_MS*IMPACT);
   for(const id of['curTile','nextTile']){const el=$(id);el.classList.remove('swap');void el.offsetWidth;el.classList.add('swap');}
   refresh();persist();renderUI();
-  if(G.lesson)lessonCheck();else if(E.over(G.s))setTimeout(showResult,RM?200:1500);
+  if(G.lesson)lessonCheck();else if(E.over(G.s))endCeremony();
+}
+// v1.3: marco do vale alcançado durante a partida (como as metas do Islanders)
+function marcoEvents(prev,state){
+  const mk=marcosOf(G.seedKey);if(!mk)return;
+  const a=dropsOf(prev.score,mk.t),b=dropsOf(state.score,mk.t);
+  for(let i=a;i<b;i++){queueBanner(i<2?`${MKN[i]}! Próximo marco: ${MKN[i+1]} (${mk.t[i+1]})`:'Rio cheio! Você passou dos três bots','water');setTimeout(()=>sfx.marco(i),500+(i-a)*400);}
+}
+// v1.3: bichos que voltam ao vale (não dão pontos; entram no Caderno do Cerrado)
+const FCOUNT=new Set();
+function faunaEvents(prev,state,now){
+  const pf=prev.fauna||{},nf=state.fauna||{},daily=G.seedKey.startsWith('dia-');db.fauna=db.fauna||{};
+  for(const f of E.FAUNA){if(nf[f.id]==null||pf[f.id]!=null)continue;
+    const ever=db.fauna[f.id],key=G.seedKey+':'+f.id;
+    if(!FCOUNT.has(key)){FCOUNT.add(key);db.fauna[f.id]={n:(ever?ever.n:0)+1,first:ever?ever.first:(daily?G.seedKey.slice(4):today())};}
+    G.fnew=G.fnew||new Set();if(!ever)G.fnew.add(f.id);
+    G.fpop[f.id]=now+700;G.fspot[f.id]=faunaHome(f.id,state);
+    queueBanner(ever?`${f.name} apareceu no vale`:`Novo no caderno: ${f.name}!`,'good');setTimeout(sfx.fauna,700);
+    const sp=G.fspot[f.id];if(sp)emit('~#fff3c4',sp.x,sp.y-0.3,6,{v:0.8,life:900,size:0.25,alpha:0.8,add:true,delay:700});
+  }
+  trackFauna(state);save(db);
+}
+// quanto o vale chegou perto de cada bicho nesta partida (para a pista do fim)
+function trackFauna(st){const pr=E.faunaProgress(st);db.fbest=db.fbest||{};
+  for(const id in pr){G.fmax[id]=Math.max(G.fmax[id]||0,pr[id][0]);db.fbest[id]=Math.max(db.fbest[id]||0,pr[id][0]);}}
+// onde o bicho fica: numa peça do hábitat dele, escolhida de forma fixa
+function faunaHome(id,s){
+  const b=s.board,H={seriema:'G',tamandua:'G',lobo:'G',tucano:'B',anta:'B',onca:'B',joao:'V',ema:'C'}[id];
+  let keys=[],side=null;
+  if(H){const Gr=E.groups(b,true);let best=null,bs=0;
+    for(const[r,set]of Gr.members){const t=b.get(Math.floor(r/6));if(t.e[r%6]!==H)continue;
+      let sc=set.size;if(id==='anta'||id==='onca')for(const k of set)if(s.alive.has(k)){sc+=100;break;}
+      if(sc>bs){bs=sc;best=set;}}
+    if(best)keys=[...best].filter(k=>!b.get(k).src);side=H;}
+  else{for(const k of s.alive){const t=b.get(k);if(t.src)continue;
+    if(id==='martim'&&t.sp!=='falls')continue;
+    if(id==='garca'&&![0,1,2,3,4,5].some(d=>{const n=b.get(E.nb(k,d));return t.e[d]==='A'&&n&&n.e[E.opp(d)]!=='A';}))continue;
+    keys.push(k);}}
+  if(!keys.length)return null;
+  keys.sort((x,y)=>x-y);const k=keys[E.hashStr(id+G.seedKey)%keys.length],t=b.get(k);
+  let sides=[0,1,2,3,4,5].filter(i=>side?t.e[i]===side:t.e[i]!=='A');if(!sides.length)sides=[0,1,2,3,4,5];
+  const i=sides[E.hashStr(id)%sides.length],[wx,wy]=wpos(k);
+  return{k,x:wx+Math.cos(ang(i))*0.5,y:wy+Math.sin(ang(i))*0.5+0.12,flip:E.hashStr(id+'f')%2===1};
+}
+function drawFauna(g,s,sz,t,still){
+  const F=s.fauna;if(!F)return;
+  const list=Object.keys(F).map(id=>{let sp=G.fspot[id];if(!sp||!s.board.has(sp.k))sp=G.fspot[id]=faunaHome(id,s);return sp&&{id,sp};}).filter(Boolean).sort((a,b)=>a.sp.y-b.sp.y);
+  for(const{id,sp}of list){
+    const X=sp.x*sz+cam.x,Y=sp.y*sz+cam.y;let h=sz*(FSCALE[id]||0.55),dy=0,sc=1;
+    if(!still&&!RM){const p0=G.fpop[id];if(p0){const u=(t-p0)/520;if(u<0)continue;if(u<1)sc=easeOutBack(u);}
+      const hp=G.hop&&G.hop[id];if(hp&&t>hp&&t<hp+520)dy=-Math.sin(Math.PI*(t-hp)/520)*sz*0.18;
+      else dy=-Math.abs(Math.sin(t/700+id.length))*sz*0.02;}
+    g.fillStyle=css(LIGHT.shadow,0.18);g.beginPath();g.ellipse(X,Y,h*0.55*sc,h*0.12*sc,0,0,7);g.fill();
+    const sn=FSPR[id];
+    if(sn&&atlasReady&&ATLAS[sn]){g.save();g.translate(X,Y+dy);if(sp.flip)g.scale(-1,1);spr(g,sn,0,0,sz*sc*1.45);g.restore();}
+    else drawAnimal(g,id,X,Y+dy,h*sc,{flip:sp.flip});
+  }
+}
+const FSPR={capivara:'capybara',garca:'egret',lobo:'loboguara'};
+// fim de partida: a câmera mostra o vale inteiro e a água percorre o rio mais uma vez ("a última cheia")
+function endCeremony(){
+  G.resAnim=true;
+  if(RM){setTimeout(showResult,200);return;}
+  cam.user=false;$('recenter').hidden=true;
+  const ord=[...G.s.alive].filter(k=>k!==E.SRC).sort((a,b)=>(G.wdist.get(a)||0)-(G.wdist.get(b)||0));
+  setTimeout(()=>{fit(false);
+    const now=performance.now();G.pulse={order:ord,t0:now};if(ord.length)sfx.water();
+    ord.forEach((c,i)=>{const[ax,ay]=wpos(c);emit('ring',ax,ay,2,{v:0,life:1200,size:0.05,grow:5,alpha:0.55,delay:i*70,jx:0.4,jy:0.3,color:'#ffffff'});});
+    G.hop={};Object.keys(G.s.fauna||{}).forEach((id,i)=>{G.hop[id]=now+300+i*160;});
+    if(Object.keys(G.s.fauna||{}).length)setTimeout(sfx.fauna,400);
+  },650);
+  setTimeout(showResult,650+Math.min(2200,700+ord.length*70));
 }
 // a seca chega (conta o rio que continua correndo) e as chuvas voltam
 function yearEvents(state,rep,now){
@@ -1606,7 +1946,13 @@ function draw(t){
     g.restore();
   }
   G.chimneys=G.chimNext;
+  // a última cheia (fim de partida): um brilho percorre o rio vivo, da nascente para baixo
+  if(G.pulse){const P=G.pulse;let live=false;g.save();g.globalCompositeOperation='lighter';
+    P.order.forEach((k,i)=>{const u=(t-P.t0-i*70)/520;if(u<1)live=true;if(u<=0||u>=1)return;const[x,y]=scr(k);
+      hexPath(g,x,y,sz*0.98);g.fillStyle=`rgba(150,225,255,${(0.4*Math.sin(Math.PI*u)).toFixed(3)})`;g.fill();});
+    g.restore();if(!live)G.pulse=null;}
   boardLight(g,s,sz,t);
+  drawFauna(g,s,sz,t,false);
   if(!RM)for(const[k,t]of s.board)if(t.sp==='falls'&&s.alive.has(k)&&Math.random()<0.05){const[fx,fy]=wpos(k);emit('~#ffffff',fx+(Math.random()-0.5)*0.3,fy,1,{ang:-Math.PI/2,spread:0.8,v:0.25,life:1500,size:0.18,grow:1.8,alpha:0.45});}
   const dtc=Math.min(100,t-(G.lastTc||t));G.lastTc=t;
   if(!RM&&G.bb){
@@ -1915,10 +2261,18 @@ function tweenNum(el,to){
   const step=t=>{const u=Math.min(1,(t-t0)/d),v=Math.round(from+(to-from)*(1-Math.pow(1-u,3)));el.textContent=v;if(u<1&&el._v===to)requestAnimationFrame(step);};
   requestAnimationFrame(step);
 }
+// marcos durante a partida: gotas no placar e o próximo número a alcançar
+function paintScoreSub(){
+  const el=$('scoreSub'),mk=!G.lesson&&marcosOf(G.seedKey);
+  if(!mk){el.className='';el.textContent='pontos';$('scoreBox').title='';return;}
+  const n=dropsOf(G.s.score,mk.t);el.className='mk';
+  el.innerHTML=`<span class="drops">${[0,1,2].map(i=>dropSvg(i<n)).join('')}</span>${n<3?mk.t[n]:''}`;
+  $('scoreBox').title=n<3?`Próximo marco: ${MKN[n]}, com ${mk.t[n]} pontos`:'Rio cheio: você passou dos três bots';
+}
 function renderUI(){
   const s=G.s,over=E.over(s),daily=G.seedKey.startsWith('dia-');
   $('sub').textContent=G.lesson?'Aprendendo a jogar':daily?`Vale #${valeNumber(G.seedKey.slice(4))} · ${fmtDate(G.seedKey.slice(4))}`:'Vale de treino';
-  tweenNum($('score'),s.score);tweenNum($('left'),Math.max(0,s.left));
+  tweenNum($('score'),s.score);tweenNum($('left'),Math.max(0,s.left));paintScoreSub();
   $('leftBox').style.color=s.left<=3&&!over?'#c2410c':'';
   const tile=E.cur(s)||{e:['G','G','G','G','G','G']},nxt=E.peek(s,1);
   const cur=$('curTile'),nx=$('nextTile');
@@ -2025,19 +2379,38 @@ $('rotL').addEventListener('click',()=>turn(1));
 $('rotR').addEventListener('click',()=>turn(-1));
 $('placeBtn').addEventListener('click',commit);
 $('undoBtn').addEventListener('click',()=>{if(!G.undo)return;G.s=G.undo;G.undo=null;G.sel=null;G.fx.clear();G.flow=null;refresh();persist();renderUI();});
-document.addEventListener('keydown',e=>{if(!$('intro').hidden||!$('result').hidden||!$('lesEnd').hidden||!$('home').hidden||!$('menu').hidden)return;if(e.key==='r'||e.key==='R')turn(1);if(e.key==='Enter')commit();});
+document.addEventListener('keydown',e=>{if(!$('intro').hidden||!$('result').hidden||!$('lesEnd').hidden||!$('home').hidden||!$('menu').hidden||!$('book').hidden)return;if(e.key==='r'||e.key==='R')turn(1);if(e.key==='Enter')commit();});
 
 // ---------- resultado
 function showResult(){
-  const s=G.s,daily=G.seedKey.startsWith('dia-'),dk=G.seedKey.slice(4);
+  const s=G.s,daily=G.seedKey.startsWith('dia-'),dk=G.seedKey.slice(4),reviewing=G.resumedDone;
   if(G.resumedDone){G.resumedDone=false;G.lastRecord='novo';}
   else if(daily&&!db.daily[dk]){db.daily[dk]={score:s.score,placed:s.placed,quests:s.questsDone,perfects:s.perfects,actions:s.actions};save(db);G.lastRecord='novo';}
   else G.lastRecord=daily?'treino':'livre';
   // recorde pessoal (regras do ano no vale): mais pontos
   const bst=db.best7;G.newBest=false;
-  if(!G.reviewing&&(!bst||s.score>bst.score)){G.prevBest=bst||null;db.best7={season:s.season,score:s.score,placed:s.placed};save(db);G.newBest=true;}
-  try{$('resImg').src=snapshot();}catch(e){}
-  fillResult();$('result').hidden=false;
+  if(!reviewing&&(!bst||s.score>bst.score)){G.prevBest=bst||null;db.best7={season:s.season,score:s.score,placed:s.placed};save(db);G.newBest=true;}
+  // melhor resultado neste vale (vale do dia repetido como treino, ou o mesmo vale de treino de novo)
+  db.vbest=db.vbest||{};G.prevVBest=db.vbest[G.seedKey]||null;
+  if(!reviewing&&(!G.prevVBest||s.score>G.prevVBest.score)){db.vbest[G.seedKey]={score:s.score,d:today()};
+    const ks=Object.keys(db.vbest).sort((a,b)=>(db.vbest[a].d||'').localeCompare(db.vbest[b].d||''));while(ks.length>40)delete db.vbest[ks.shift()];}
+  if(db.fbest)for(const id in G.fmax)db.fbest[id]=Math.max(db.fbest[id]||0,G.fmax[id]);
+  save(db);
+  try{G.myImg=snapshot();$('resImg').src=G.myImg;}catch(e){}
+  G.botView=false;$('resMore').open=false;G.tally=!!G.resAnim;
+  fillResult();$('result').hidden=false;$('result').querySelector('.sheet').scrollTop=0;
+  if(G.resAnim){G.resAnim=false;tallyResult();}
+}
+// a contagem do fim: os pontos sobem e as gotas acendem uma a uma (o pico e o fim da partida)
+function tallyResult(){
+  const s=G.s,el=$('resTotal'),T0=performance.now(),dur=Math.min(1400,500+s.score*3);G.tally=true;
+  const mk=marcosOf(G.seedKey),marks=[...$('resMarcos').querySelectorAll('.marco')];
+  const lit=new Set();let lastTick=0;
+  const step=t=>{const u=Math.min(1,(t-T0)/dur),v=Math.round(s.score*(1-Math.pow(1-u,3)));el.textContent=v;
+    if(t-lastTick>55&&u<1){sfx.tick();lastTick=t;}
+    if(mk)mk.t.forEach((x,i)=>{if(v>=x&&!lit.has(i)){lit.add(i);const m=marks[i];if(m){m.classList.add('on','pop');m.querySelector('svg').outerHTML=dropSvg(true);setTimeout(()=>m.classList.remove('pop'),350);}sfx.drop(i);}});
+    if(u<1)requestAnimationFrame(step);else{G.tally=false;fillResult();}};
+  el.textContent='0';requestAnimationFrame(step);
 }
 function renderValley(st,w,h,bg,type){
   const c=document.createElement('canvas');c.width=w;c.height=h;const g=c.getContext('2d'),save={...cam},b=st.board;
@@ -2061,55 +2434,124 @@ function snapshot(){
   g.fillStyle='rgba(29,59,58,.09)';for(const k of b.keys()){const[x,y]=scr(k);hexPath(g,x+s*0.06,y+s*0.4,s);g.fill();}
   for(const k of[...b.keys()].sort((p,q)=>E.KR(p)-E.KR(q)||E.KQ(p)-E.KQ(q))){const[x,y]=scr(k),tl=b.get(k);
     const tv=tileVars(k,tl.e,b);drawTile(g,x,y,s,tl.e,{wet:G.wet.has(k),alive:G.s.alive.has(k)?1:0,src:tl.src,seed:k,blocked:blockedSides(b,k,tl.e),vs:tv.vs,sp:tv.sp,es:edgeState(b,k,tl.e),world:true,kind:tl.sp});}
+  drawFauna(g,G.s,s,0,true);
   Object.assign(cam,save);return c.toDataURL('image/jpeg',0.86);
 }
 function fillResult(){
-  const s=G.s,p=par[G.seedKey],daily=G.seedKey.startsWith('dia-'),dk=G.seedKey.slice(4);
-  $('resTitle').textContent=daily?`Vale #${valeNumber(dk)}: a pilha acabou`:'A pilha acabou';
-  $('resTotal').textContent=s.score;
-  const ps=parS[G.seedKey];
-  const yr=n=>`ano ${E.yearOf(n)} · ${E.CYCLE[E.phase(n)]}`;
-  $('resPar').textContent=p==null?'calculando o par…':`par do vale: ${p}`;
+  const s=G.s,daily=G.seedKey.startsWith('dia-'),dk=G.seedKey.slice(4),mk=marcosOf(G.seedKey),st=s.stats;
+  const n=mk?dropsOf(s.score,mk.t):-1,pl=(x,a,b)=>x===1?a:b;
+  {const d=daily&&db.daily[dk];if(d&&mk&&d.n==null){d.n=dropsOf(d.score,mk.t);save(db);}}
+  $('resKicker').textContent=(daily?`Vale #${valeNumber(dk)}`:'Vale de treino')+' · a pilha acabou';
+  $('resTitle').textContent=mk?MKT[n]:'O vale está pronto';
+  if(!G.tally)$('resTotal').textContent=s.score;
+  $('resPar').textContent='pontos';
+  // marcos: três gotas
+  $('resMarcos').innerHTML=[0,1,2].map(i=>{const on=mk&&!G.tally&&s.score>=mk.t[i];
+    return`<div class="marco${on?' on':''}">${dropSvg(on)}<b>${MKN[i]}</b><small>${mk?mk.t[i]:'…'}</small></div>`;}).join('');
+  // quase: quanto faltou para o próximo marco, e o melhor neste vale
+  const pv=G.prevVBest;let near='';
+  if(!mk)near='Calculando os marcos deste vale…';
+  else if(n<3){const d=mk.t[n]-s.score;near=`Faltaram ${d} ${pl(d,'ponto','pontos')} para o ${MKN[n]}.`;}
+  else near='Você passou dos três bots deste vale.';
+  if(pv&&mk)near+=s.score>pv.score?` Seu melhor neste vale (antes: ${pv.score}).`:` Seu melhor neste vale: ${pv.score}.`;
+  $('resNear').textContent=near;
+  // onde o bot do próximo marco ganhou de você: comparar as fontes de pontos e de peças
+  const gap=$('resGap');gap.hidden=!mk||n===3;
+  if(mk&&n<3){
+    const bot=n<=1?mk.par:mk.bot,who=n<=1?'Ribeirão':'Rio cheio',bs=bot.src,bt=bot.tiles;
+    const me={quest:st.quest,seca:st.kept,flow:st.flow+st.special,perfect:st.perfect};
+    const ROWS=[['Peças colocadas',s.placed,bot.placed],['Encaixes (pontos)',st.match,bs.match],['Missões cumpridas',s.questsDone,bot.quests],['Rio que aguentou a seca',st.kept,bs.seca],['Água viva (pontos)',me.flow,bs.flow+bs.special],['Peças perfeitas',s.perfects,bot.perfects]];
+    const adv={quest:`Missões dão +3 peças, e peças fazem a partida durar: o bot cumpriu ${bot.quests}, você ${s.questsDone}. Nas jogadas seguintes a uma missão, encoste na região marcada.`,
+      seca:`O bot deixou ${bs.seca} ${pl(bs.seca,'trecho','trechos')} de rio correndo nas secas; você, ${st.kept}. Encoste bosque no rio antes do laranja virar seca.`,
+      flow:`O bot ganhou ${bs.flow+bs.special} pontos com água viva; você, ${me.flow}. Ligue os rios soltos à nascente.`,
+      match:`Os encaixes renderam ${bs.match} pontos ao bot e ${st.match} a você. Antes de colocar, compare as casas: a que deixa mais lados verdes costuma valer mais.`,
+      perfect:`O bot fez ${bot.perfects} ${pl(bot.perfects,'peça perfeita','peças perfeitas')}; você, ${s.perfects}. Procure casas cercadas por 5 ou 6 peças.`};
+    const diffs={quest:bs.quest-me.quest+4*(bt.quest-st.tQuest),seca:bs.seca-me.seca+4*(bt.season-st.tSeason),flow:(bs.flow+bs.special)-me.flow,perfect:bs.perfect-me.perfect+4*(bt.perfect-st.tPerfect),match:(bs.match-st.match)*0.5};
+    const top=Object.entries(diffs).sort((a,b)=>b[1]-a[1])[0];
+    gap.innerHTML=`<p><b>Onde o bot do ${who} foi melhor</b></p><div class="gl"><span></span><span class="h">você</span><span class="h">bot</span>${ROWS.map(r=>`<span>${r[0]}</span><b>${r[1]}</b><b>${r[2]}</b>`).join('')}</div>`
+      +(top&&top[1]>0?`<p>${adv[top[0]]}</p>`:bot.placed>s.placed?`<p>O bot teve uma pilha mais longa: cada peça a mais é mais uma chance de encaixar.</p>`:`<p>Foi por pouco. A pilha é a mesma: dá para tentar de novo sabendo o que vem.</p>`)
+      +(bot.act?`<button type="button" class="link" id="botViewBtn">${G.botView?'Ver o meu vale':`Ver o vale do bot do ${who}`}</button>`:'');
+    const bvb=$('botViewBtn');if(bvb)bvb.addEventListener('click',()=>{G.botView=!G.botView;
+      try{$('resImg').src=G.botView?renderValley(E.replay(G.seedKey,bot.act),720,360,true,'image/jpeg'):G.myImg;}catch(e){}
+      $('result').querySelector('.sheet').scrollTop=0;fillResult();});
+  }
+  // botão principal: tentar o próximo marco neste vale (a pilha é a mesma, então dá para aprender com ela)
+  G.primaryOther=mk&&n===3;
+  $('againBtn').textContent=G.primaryOther?'Jogar outro vale':mk?`Tentar o ${MKN[n]} neste vale`:'Jogar este vale de novo';
+  $('otherBtn').textContent=G.primaryOther?'Repetir este vale':'Outro vale';
+  // bichos que apareceram nesta partida, e a pista mais perto
+  const F=s.fauna||{},seen=E.FAUNA.filter(f=>F[f.id]!=null),got=E.FAUNA.filter(f=>db.fauna&&db.fauna[f.id]).length;
+  const fb=$('resFauna');fb.innerHTML='';
+  const head=document.createElement('p');head.className='lstep';head.textContent=seen.length?`Voltaram ao seu vale: ${seen.length} ${pl(seen.length,'bicho','bichos')}`:'Nenhum bicho voltou desta vez';fb.appendChild(head);
+  if(seen.length){const row=document.createElement('div');row.className='frow';
+    seen.forEach((f,i)=>{const c=document.createElement('div');c.className='fcard'+(G.fnew.has(f.id)?' new':'');c.style.animationDelay=(G.tally?0.9+i*0.12:0)+'s';
+      c.appendChild(animalCanvas(f.id));c.insertAdjacentHTML('beforeend',`<span>${f.name}</span>${G.fnew.has(f.id)?'<em>novo!</em>':''}`);row.appendChild(c);});
+    fb.appendChild(row);}
+  const hint=nextFauna(1,true)[0];
+  if(hint){const[a,b]=hint.pr,c=document.createElement('div');c.className='fhint';c.appendChild(animalCanvas(hint.f.id,true));
+    c.insertAdjacentHTML('beforeend',`<div><p><b>${a>0&&a/b>=0.5?'Quase: ':'Próximo: '}${hint.f.name}</b></p><p>${hint.f.cond}${a>0?` Neste vale você chegou a ${Math.min(a,b-1)} de ${b}.`:''}</p><div class="bar"><i style="width:${Math.round(100*Math.min(a,b-1)/b)}%"></i></div></div>`);fb.appendChild(c);}
+  const ob=document.createElement('button');ob.type='button';ob.className='link';ob.textContent=`Abrir o Caderno do Cerrado (${got} de ${E.FAUNA.length})`;ob.addEventListener('click',showBook);fb.appendChild(ob);
+  // detalhes
+  const yr=n2=>`ano ${E.yearOf(n2)} · ${E.CYCLE[E.phase(n2)]}`;
   $('resSeason').textContent=`O vale chegou ao ${yr(s.season)}`;
   const rb=$('resRecord'),bst=db.best7;
   rb.className='record'+(G.newBest?' new':'');
-  rb.textContent=G.newBest?(G.prevBest?`Novo recorde! Antes: ${G.prevBest.score}`:'Primeiro recorde registrado!'):bst?`Seu recorde: ${bst.score}`:'';
-  // relatório: o que faltou, de onde vieram pontos e peças, melhor jogada e uma dica
-  const st=s.stats,B=E.balance(s);
-  let html=!B.seca&&B.turnsLeft<=2&&B.gain>0?`<p class="near">${B.turnsLeft===1?'Faltou 1 jogada':'Faltaram 2 jogadas'} para a seca, que renderia +${B.gain} ${B.gain===1?'peça':'peças'}.</p>`:'';
+  rb.textContent=G.newBest?(G.prevBest?`Recorde de pontos! Antes: ${G.prevBest.score}`:'Primeiro recorde registrado!'):bst?`Seu recorde de pontos: ${bst.score} (cada vale tem sorte diferente; os marcos medem você neste vale)`:'';
+  const B=E.balance(s);
+  let html=!B.seca&&B.turnsLeft<=2&&B.gain>0?`<p class="near">${B.turnsLeft===1?'Faltou 1 jogada':'Faltaram 2 jogadas'} para a seca, que renderia +${B.gain} ${pl(B.gain,'peça','peças')}.</p>`:'';
   for(const q of E.questProgress(s))if(!q.flow&&q.n-q.cur===1){html+=`<p>${({C:'O campo',B:'O bosque',V:'A vila'})[q.b]||'A região'} ficou com ${q.cur} de ${q.n}: faltou 1 peça para a missão.</p>`;break;}
-  const row=(a,b,cls='')=>`<li class="${cls}"><span>${a}</span><span>${b}</span></li>`;
+  const row=(a,b2,cls='')=>`<li class="${cls}"><span>${a}</span><span>${b2}</span></li>`;
   html+='<ul>'+row('Encaixes',`+${st.match}`)+row('Água viva',`+${st.flow}`)
     +row('Missões',`+${st.quest} · +${st.tQuest} peças`)+row('Peças perfeitas',`+${st.perfect} · +${st.tPerfect} peças`)
     +(st.special?row('Cachoeiras e lagoas',`+${st.special}`):'')
     +row('Rio que aguentou a seca',`+${st.kept} · +${st.tSeason} peças`)+(st.dried?row('Trechos secos na seca',`${st.dried}`,'bad'):'')
     +(st.failed.length?row(`Missões que o prazo levou (${st.failed.length})`,'—'):'')+'</ul>';
   if(st.best.pts>0)html+=`<p>Melhor jogada: <b>+${st.best.pts}</b> na jogada ${st.best.turn}.</p>`;
-  const wetShare=(s.everAlive.size-1)/Math.max(1,s.placed);
-  const tip=st.dried>=3?'Antes da seca, encoste bosque no rio, começando perto da nascente: um trecho sem mata corta o rio inteiro dali para baixo.'
-    :st.failed.length>=2?'Missões têm prazo (o número com ⏳): nas jogadas seguintes, dê preferência à região marcada.'
-    :wetShare<0.22?'Ligue mais rios à nascente: cada peça com água viva vale +2, e cachoeiras e lagoas valem bem mais.'
-    :s.perfects===0?'Procure buracos cercados por 5 ou 6 peças: encaixar todos os lados dá peça perfeita (+5 e +1 peça).'
-    :st.tQuest<6?'Missões são a maior fonte de peças: planeje o tamanho da região desde a primeira peça.'
-    :'Deixe rios soltos perto da nascente e ligue vários de uma vez: a água chegando em muitas peças rende muito.';
-  html+=`<p class="tip">Dica: ${tip}</p>`;
   $('resReport').innerHTML=html;
   $('resNext').textContent=daily?`Próximo vale do dia em ${untilTomorrow()}.`:'';
   $('resStats').innerHTML=`<div><small>peças</small><b>${s.placed}</b></div><div><small>missões</small><b>${s.questsDone}</b></div><div><small>perfeitas</small><b>${s.perfects}</b></div>`;
-  const head=daily?`Afluente #${valeNumber(dk)} — ${s.score} pts · ${yr(s.season)}`:`Afluente (treino) — ${s.score} pts · ${yr(s.season)}`;
-  $('shareTxt').value=`${head}${p!=null?` (par ${p})`:''}\n🧩 ${s.placed} peças · ✅ ${s.questsDone} missões · ✨ ${s.perfects} perfeitas\n💧 ${s.everAlive.size-1} peças com água · 🌳 ${st.kept} trechos aguentaram a seca`;
-  const rec=daily?db.daily[dk]:null;
-  $('resNote').textContent=G.lastRecord==='novo'?'Resultado do dia registrado. Pode jogar de novo para treinar; só a primeira partida conta.':
+  // texto para compartilhar: gotas e bichos (do resultado que conta, no vale do dia)
+  const rec=daily?db.daily[dk]:null,shareS=G.lastRecord==='treino'&&rec?rec.score:s.score,sn=mk?dropsOf(shareS,mk.t):-1;
+  const drops=sn>0?' '+'💧'.repeat(sn):'';
+  const head2=daily?`Afluente #${valeNumber(dk)} — ${shareS} pts${drops}`:`Afluente (treino) — ${s.score} pts${drops}`;
+  $('shareTxt').value=`${head2}${mk&&sn>0?` · ${MKN[sn-1]}`:''}\n🧩 ${s.placed} peças · ✅ ${s.questsDone} missões · ✨ ${s.perfects} perfeitas\n💧 ${s.everAlive.size-1} peças com água · 🐾 ${seen.length} ${pl(seen.length,'bicho','bichos')} no vale`;
+  $('resNote').textContent=G.lastRecord==='novo'?'Resultado do dia registrado. Pode jogar de novo para buscar o próximo marco; só a primeira partida conta para o dia.':
     G.lastRecord==='treino'&&rec?`Partida de treino. Seu resultado do dia continua ${rec.score}.`:'Vales de treino não contam para o resultado do dia.';
 }
+// pistas: os bichos que faltam no caderno, primeiro os mais comuns e os que o vale chegou mais perto
+function nextFauna(n,thisGame){
+  const pr=E.faunaProgress(G.s);
+  const here=thisGame&&G.s.fauna||{};
+  return E.FAUNA.filter(f=>!(db.fauna&&db.fauna[f.id])&&here[f.id]==null).map(f=>{const b=pr[f.id][1];
+      const a=thisGame?Math.max(G.fmax[f.id]||0,pr[f.id][0]):(db.fbest&&db.fbest[f.id])||0;return{f,pr:[a,b]};})
+    .sort((x,y)=>(x.f.rar-y.f.rar)||(y.pr[0]/y.pr[1]-x.pr[0]/x.pr[1])).slice(0,n);
+}
+function showBook(){
+  const got=E.FAUNA.filter(f=>db.fauna&&db.fauna[f.id]);
+  $('bookSub').textContent=got.length===E.FAUNA.length?'Todos os bichos voltaram. O Cerrado agradece.':`${got.length} de ${E.FAUNA.length} bichos já voltaram aos seus vales.`;
+  $('bookBar').style.width=Math.round(100*got.length/E.FAUNA.length)+'%';
+  const hb=$('bookHints');hb.innerHTML='';const hints=nextFauna(3,false),hid=new Set(hints.map(h=>h.f.id));
+  for(const h of hints){const[a,b]=h.pr,c=document.createElement('div');c.className='fhint';c.appendChild(animalCanvas(h.f.id,true));
+    c.insertAdjacentHTML('beforeend',`<div><p><b>${h.f.name}</b> <span class="rar">${['','comum','incomum','raro','lendário'][h.f.rar]}</span></p><p>${h.f.cond}</p>${a?`<div class="bar"><i style="width:${Math.round(100*Math.min(a,b-1)/b)}%"></i></div><p class="note">Seu melhor: ${Math.min(a,b-1)} de ${b}</p>`:''}</div>`);hb.appendChild(c);}
+  if(!hints.length)hb.innerHTML='<p>Nenhuma pista: o caderno está completo.</p>';
+  const gr=$('bookGrid');gr.innerHTML='';
+  for(const f of E.FAUNA){const rec=db.fauna&&db.fauna[f.id],c=document.createElement('div');c.className='fcard'+(rec?'':' off');
+    c.appendChild(animalCanvas(f.id,!rec));
+    c.insertAdjacentHTML('beforeend',rec?`<span>${f.name}</span><small>${f.cond}</small><small>em ${rec.n} ${rec.n===1?'vale':'vales'}</small>`:hid.has(f.id)?`<span>${f.name}</span><small>na pista acima</small>`:`<span>?</span><small>${f.hint}</small><small class="rar">${['','comum','incomum','raro','lendário'][f.rar]}</small>`);
+    gr.appendChild(c);}
+  $('book').hidden=false;$('book').querySelector('.sheet').scrollTop=0;$('bookClose').focus({preventScroll:true});
+}
+$('bookClose').addEventListener('click',()=>{$('book').hidden=true;});
 $('copyBtn').addEventListener('click',()=>{
   const t=$('shareTxt').value,b=$('copyBtn');
   const ok=()=>{b.textContent='Copiado!';setTimeout(()=>{b.textContent='Copiar resultado';},1600);};
   const fb=()=>{const ta=$('shareTxt');ta.focus();ta.select();try{document.execCommand('copy');ok();}catch(e){b.textContent='Texto selecionado: copie';}};
   try{navigator.clipboard.writeText(t).then(ok,fb);}catch(e){fb();}
 });
-$('againBtn').addEventListener('click',()=>{$('result').hidden=true;G.resumedDone=false;startGame(G.seedKey,[]);});
-$('otherBtn').addEventListener('click',()=>{$('result').hidden=true;startGame('treino-'+Date.now().toString(36),[]);});
+const replayVale=()=>{$('result').hidden=true;G.resumedDone=false;startGame(G.seedKey,[]);};
+const otherVale=()=>{$('result').hidden=true;startGame('treino-'+Date.now().toString(36),[]);};
+$('againBtn').addEventListener('click',()=>G.primaryOther?otherVale():replayVale());
+$('otherBtn').addEventListener('click',()=>G.primaryOther?replayVale():otherVale());
 $('viewBtn').addEventListener('click',()=>{$('result').hidden=true;enterCalm();});
 $('coachOk').addEventListener('click',()=>{$('coach').hidden=true;db[G.coachKind||'seenQuest']=true;G.coachKind=null;save(db);});
 $('helpBtn').addEventListener('click',openMenu);
@@ -2136,11 +2578,12 @@ function dailyState(){
 function showHome(){
   const D=dailyState();
   $('homeDailyT').textContent=`Vale do dia #${valeNumber(D.dk)}`;
-  $('homeDailyS').textContent=D.rec?`Jogado: ${D.rec.score} pontos · ver o resultado`:D.going?`Continuar · ${D.n} ${D.n===1?'peça colocada':'peças colocadas'}`:`${fmtDate(D.dk)} · o mesmo vale para todo mundo`;
+  $('homeDailyS').textContent=D.rec?`Jogado: ${D.rec.score} pontos${D.rec.n?` · ${MKN[D.rec.n-1]}`:''} · ver o resultado`:D.going?`Continuar · ${D.n} ${D.n===1?'peça colocada':'peças colocadas'}`:`${fmtDate(D.dk)} · o mesmo vale para todo mundo`;
   const st=streaks();
   $('homeStreak').textContent=st.cur>=2?`${st.cur} dias seguidos jogando`:D.rec?`Próximo vale em ${untilTomorrow()}`:'';
   $('homeSound').textContent=SND.on?'Som ligado':'Som desligado';
-  for(const id of['menu','intro','result','statsSheet','lessonsSheet','lesEnd'])$(id).hidden=true;
+  for(const id of['menu','intro','result','statsSheet','lessonsSheet','lesEnd','book'])$(id).hidden=true;
+  {const got=E.FAUNA.filter(f=>db.fauna&&db.fauna[f.id]).length;$('homeBook').textContent=got?`Caderno · ${got} de ${E.FAUNA.length}`:'Caderno do Cerrado';}
   $('home').hidden=false;renderHero();
 }
 function hideHome(){$('home').hidden=true;}
@@ -2153,6 +2596,8 @@ function playDaily(){
 $('homeDaily').addEventListener('click',playDaily);
 $('homeTrain').addEventListener('click',()=>{hideHome();startGame('treino-'+Date.now().toString(36),[]);});
 $('homeLessons').addEventListener('click',()=>showLessons());
+$('homeBook').addEventListener('click',showBook);
+$('menuBook').addEventListener('click',()=>{$('menu').hidden=true;showBook();});
 $('homeHelp').addEventListener('click',()=>{$('intro').hidden=false;$('introOk').focus();});
 $('homeStatsBtn').addEventListener('click',showStats);
 $('homeSound').addEventListener('click',()=>{SND.on=!SND.on;db.mute=!SND.on;save(db);paintMute();if(SND.on){unlockAudio();sfx.select();}else if(SND.el)SND.el.pause();$('homeSound').textContent=SND.on?'Som ligado':'Som desligado';});
@@ -2170,11 +2615,12 @@ $('lessonsClose').addEventListener('click',()=>{$('lessonsSheet').hidden=true;})
 function showStats(){
   const st=streaks(),vals=Object.values(db.daily),best=db.best7;
   const cell=(a,b)=>`<div><small>${a}</small><b>${b}</b></div>`;
-  $('stGrid').innerHTML=cell('vales do dia',st.played)+cell('recorde',best?best.score:'—')+cell('dias seguidos',st.cur)+cell('maior sequência',st.best);
+  const full=vals.filter(r=>r.n===3).length,got=E.FAUNA.filter(f=>db.fauna&&db.fauna[f.id]).length;
+  $('stGrid').innerHTML=cell('vales do dia',st.played)+cell('dias seguidos',st.cur)+cell('maior sequência',st.best)+cell('recorde',best?best.score:'—')+cell('rios cheios',full)+cell('bichos',`${got}/${E.FAUNA.length}`);
   const wk=$('stWeek');wk.innerHTML='';const d=new Date();d.setDate(d.getDate()-6);
   for(let i=0;i<7;i++){const k=dayKey(d),r=db.daily[k],div=document.createElement('div');
     div.className=(r?'on':'')+(i===6?' today':'');
-    div.innerHTML=`<small>${d.toLocaleDateString('pt-BR',{weekday:'short'}).replace('.','')}</small><b>${r?r.score:'—'}</b>`;
+    div.innerHTML=`<small>${d.toLocaleDateString('pt-BR',{weekday:'short'}).replace('.','')}</small><b>${r?r.score:'—'}</b>${r&&r.n!=null?`<span class="drops">${[0,1,2].map(i=>dropSvg(i<r.n)).join('')}</span>`:''}`;
     div.title=r?`${fmtDate(k)}: ${r.score} pontos${r.par!=null?` (par ${r.par})`:''}`:fmtDate(k);wk.appendChild(div);d.setDate(d.getDate()+1);}
   const above=vals.filter(r=>r.par!=null&&r.score>=r.par).length,withPar=vals.filter(r=>r.par!=null).length;
   $('stNote').textContent=withPar?`Você ficou acima do par em ${above} de ${withPar} ${withPar===1?'vale':'vales'}. Lições feitas: ${(db.lesDone||[]).length} de ${LES.length}.`:`Lições feitas: ${(db.lesDone||[]).length} de ${LES.length}.`;
@@ -2200,8 +2646,8 @@ $('optAmb').addEventListener('change',e=>{db.amb=e.target.checked;save(db);});
 $('optVib').addEventListener('change',e=>{db.vib=e.target.checked;save(db);if(db.vib)try{navigator.vibrate&&navigator.vibrate(12);}catch(_){}});
 $('optCalm').addEventListener('change',e=>{db.calm=e.target.checked;save(db);RM=e.target.checked||matchMedia('(prefers-reduced-motion: reduce)').matches;PARTS.length=0;});
 // toque fora da folha fecha (menus e estatísticas)
-for(const id of['menu','statsSheet','lessonsSheet'])$(id).addEventListener('click',e=>{if(e.target.id===id)$(id).hidden=true;});
-document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;if(G.calm){exitCalm();return;}for(const id of['menu','statsSheet','lessonsSheet','intro'])if(!$(id).hidden){$(id).hidden=true;return;}});
+for(const id of['menu','statsSheet','lessonsSheet','book'])$(id).addEventListener('click',e=>{if(e.target.id===id)$(id).hidden=true;});
+document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;if(G.calm){exitCalm();return;}for(const id of['book','menu','statsSheet','lessonsSheet','intro'])if(!$(id).hidden){$(id).hidden=true;return;}});
 
 // ---------- som: liga no primeiro toque; botão de mudo
 SND.on=!db.mute;
