@@ -179,17 +179,118 @@ def tree_pine(live):
     cyl(0.12 * k, 0.2 * k, (0, 0, 0.36 * k), leaf, 7, 0.0)
 
 
-def house(live, var=0):
-    wall = mat(f'parede{live}', '#fbf1df' if live else '#e2d6c0')
-    roof = mat(f'telhado{live}{var}', (['#e0663f', '#c9503a'][var]) if live else '#ad9179')
+def house(shape=0, roof='#e0663f', wall='#fbf1df'):
+    wl = mat(f'parede{wall}', wall)
+    rf = mat(f'telhado{roof}', roof)
     wood = mat('porta', '#6b4426')
-    win = mat(f'janela{live}', '#ffd257' if live else '#9e927c', emit='#ffcc4d' if live else None)
-    w, d, h = (0.24, 0.18, 0.14) if var == 0 else (0.18, 0.17, 0.2)
-    cube((w, d, h), (0, 0, h / 2), wall)
-    prism(w * 1.12, d * 0.62, 0.11 if var == 0 else 0.12, (0, 0, h), roof)
+    win = mat('janela', '#ffd257', emit='#ffcc4d')
+    w, d, h = [(0.24, 0.18, 0.14), (0.18, 0.17, 0.2), (0.34, 0.16, 0.12)][shape]
+    cube((w, d, h), (0, 0, h / 2), wl)
+    prism(w * 1.12, d * 0.62, [0.11, 0.12, 0.09][shape], (0, 0, h), rf)
     cube((0.045, 0.01, 0.075), (-w * 0.2, -d / 2 - 0.004, 0.0375), wood)
     cube((0.05, 0.01, 0.045), (w * 0.22, -d / 2 - 0.004, h * 0.6), win)
+    if shape == 2:
+        cube((0.05, 0.01, 0.045), (-w * 0.38, -d / 2 - 0.004, h * 0.6), win)
     cube((0.035, 0.035, 0.08), (w * 0.28, d * 0.15, h + 0.07), mat('chamine', '#9a6a4a'))
+
+
+def church():
+    wl, rf = mat('igreja', '#fbf6ea'), mat('telhado_igreja', '#c9503a')
+    cube((0.2, 0.32, 0.17), (0, 0.03, 0.085), wl)
+    prism(0.23, 0.19, 0.1, (0, 0.03, 0.17), rf)
+    obj = bpy.context.scene.collection.objects[-1]
+    obj.rotation_euler = (0, 0, math.pi / 2)
+    cube((0.11, 0.11, 0.36), (0, -0.16, 0.18), wl)
+    cyl(0.085, 0.13, (0, -0.16, 0.425), rf, 4, 0.0)
+    bpy.context.active_object.rotation_euler = (0, 0, math.pi / 4)
+    cube((0.05, 0.01, 0.08), (0, -0.216, 0.04), mat('porta', '#6b4426'))
+    cube((0.035, 0.01, 0.05), (0, -0.216, 0.27), mat('janela', '#ffd257', emit='#ffcc4d'))
+
+
+def windmill():
+    body, rf, blade = mat('moinho', '#efe4cf'), mat('telhado_moinho', '#7a4b2f'), mat('pas', '#f7f1e3')
+    cyl(0.1, 0.32, (0, 0, 0.16), body, 8, 0.07)
+    cyl(0.085, 0.09, (0, 0, 0.365), rf, 8, 0.0)
+    for k in range(4):
+        a = k * math.pi / 2 + math.radians(20)
+        cube((0.03, 0.006, 0.2), (math.cos(a) * 0.1, -0.11, 0.3 + math.sin(a) * 0.1), blade, (0, -a + math.pi / 2, 0))
+    cube((0.035, 0.01, 0.06), (0, -0.092, 0.03), mat('porta', '#6b4426'))
+
+
+def barn():
+    red, white = mat('celeiro', '#b8402f'), mat('celeiro_borda', '#f4ead8')
+    cube((0.3, 0.22, 0.16), (0, 0, 0.08), red)
+    prism(0.33, 0.14, 0.12, (0, 0, 0.16), mat('telhado_celeiro', '#6b4a3a'))
+    cube((0.09, 0.01, 0.11), (0, -0.112, 0.055), white)
+
+
+def haybale():
+    hay = mat('feno', '#e2bf5a')
+    for x, y in [(-0.07, 0.0), (0.08, 0.04)]:
+        bpy.ops.mesh.primitive_cylinder_add(vertices=12, radius=0.065, depth=0.09, location=(x, y, 0.065), rotation=(0, math.pi / 2, 0.3))
+        finish(bpy.context.active_object, hay)
+
+
+def cow():
+    body, white, dark = mat('vaca', '#8a5a3a'), mat('vaca_branca', '#f4ede2'), mat('vaca_escura', '#3b2a20')
+    cube((0.2, 0.09, 0.08), (0, 0, 0.1), body)
+    cube((0.08, 0.092, 0.05), (0.03, 0, 0.11), white)
+    cube((0.07, 0.07, 0.07), (0.13, 0, 0.13), body)
+    cube((0.03, 0.06, 0.03), (0.17, 0, 0.115), white)
+    for x, y in [(-0.07, -0.03), (-0.07, 0.03), (0.07, -0.03), (0.07, 0.03)]:
+        cube((0.022, 0.022, 0.065), (x, y, 0.032), dark)
+    o = bpy.context.scene.collection.objects
+    for ob in list(o):
+        if ob.type == 'MESH' and not ob.is_shadow_catcher:
+            ob.rotation_euler.z += math.radians(-25)
+            ob.location = (ob.location.x * math.cos(math.radians(-25)) - ob.location.y * math.sin(math.radians(-25)),
+                           ob.location.x * math.sin(math.radians(-25)) + ob.location.y * math.cos(math.radians(-25)), ob.location.z)
+
+
+def termite_mound():
+    clay = mat('cupinzeiro', '#b5653e')
+    cyl(0.07, 0.18, (0, 0, 0.09), clay, 7, 0.025)
+    ico(0.045, (0.04, 0.02, 0.06), clay, 1)
+
+
+def ipe(color):
+    trunk = mat('tronco', '#6e4a2b')
+    flower = mat(f'ipe{color}', color)
+    flower2 = mat(f'ipe2{color}', color, rough=0.9)
+    cyl(0.03, 0.2, (0, 0, 0.1), trunk, 6)
+    ico(0.15, (0, 0, 0.29), flower, 1, (1.15, 1.15, 0.8))
+    ico(0.09, (-0.08, -0.05, 0.34), flower2, 1)
+    ico(0.08, (0.09, 0.02, 0.27), flower2, 1)
+
+
+def buriti():
+    trunk, leaf = mat('buriti_tronco', '#8a6a48'), mat('buriti_folha', '#4f8f37')
+    cyl(0.025, 0.45, (0, 0, 0.225), trunk, 6, 0.02)
+    for k in range(7):
+        a = k / 7 * math.tau
+        bpy.ops.mesh.primitive_cone_add(vertices=3, radius1=0.05, radius2=0.0, depth=0.22,
+                                        location=(math.cos(a) * 0.09, math.sin(a) * 0.09, 0.45),
+                                        rotation=(math.cos(a + math.pi / 2) * 1.2, math.sin(a + math.pi / 2) * 1.2, 0))
+        o = bpy.context.active_object
+        o.rotation_euler = (math.radians(70) * math.sin(a) * -1, math.radians(70) * math.cos(a), 0)
+        o.scale = (1, 0.35, 1)
+        finish(o, leaf)
+
+
+def bush():
+    leaf, leaf2 = mat('arbusto', '#4d8f3c'), mat('arbusto2', '#68a849')
+    ico(0.09, (0, 0, 0.06), leaf, 1, (1.2, 1, 0.75))
+    ico(0.065, (0.07, -0.03, 0.08), leaf2, 1)
+    ico(0.055, (-0.07, -0.02, 0.05), leaf2, 1)
+
+
+def cerrado_tree():
+    trunk, leaf = mat('tronco_torto', '#5f4027'), mat('copa_cerrado', '#7a9a3e')
+    cyl(0.025, 0.14, (0.0, 0, 0.07), trunk, 6)
+    cyl(0.02, 0.14, (0.04, 0, 0.17), trunk, 6)
+    bpy.context.active_object.rotation_euler = (0, math.radians(35), 0)
+    ico(0.13, (0.07, 0, 0.25), leaf, 1, (1.4, 1.2, 0.55))
+    ico(0.07, (-0.05, -0.02, 0.21), leaf, 1, (1.3, 1.1, 0.6))
 
 
 def wheat(live):
@@ -285,14 +386,18 @@ def p_petal():
 
 
 OBJECTS = {
+    # árvores
     'tree_a': lambda: tree_round(True, 0), 'tree_b': lambda: tree_round(True, 1), 'tree_c': lambda: tree_round(True, 2),
-    'pine': lambda: tree_pine(True),
-    'tree_dry_a': lambda: tree_round(False, 0), 'tree_dry_b': lambda: tree_round(False, 1), 'pine_dry': lambda: tree_pine(False),
-    'house_a': lambda: house(True, 0), 'house_b': lambda: house(True, 1),
-    'house_dry_a': lambda: house(False, 0), 'house_dry_b': lambda: house(False, 1),
-    'wheat': lambda: wheat(True), 'wheat_dry': lambda: wheat(False),
-    'tuft': lambda: tuft(True), 'tuft_dry': lambda: tuft(False),
-    'flowers': flowers, 'rock': rock_small, 'reeds': reeds,
+    'pine': lambda: tree_pine(True), 'ipe_yellow': lambda: ipe('#f2c22e'), 'ipe_pink': lambda: ipe('#d8649c'),
+    'buriti': buriti, 'bush': bush, 'cerrado_tree': cerrado_tree,
+    # construções
+    'house_a_red': lambda: house(0, '#e0663f'), 'house_a_blue': lambda: house(0, '#4f7fa8'), 'house_a_terra': lambda: house(0, '#b8693f', '#f3e3c8'),
+    'house_b_red': lambda: house(1, '#c9503a'), 'house_b_blue': lambda: house(1, '#5a86a0', '#f6efe1'), 'house_b_terra': lambda: house(1, '#a85a35', '#f3e3c8'),
+    'house_c_red': lambda: house(2, '#d65a3a'), 'house_c_blue': lambda: house(2, '#4a7896'),
+    'church': church, 'windmill': windmill, 'barn': barn,
+    # campo e pasto
+    'wheat': lambda: wheat(True), 'haybale': haybale, 'tuft': lambda: tuft(True), 'flowers': flowers,
+    'rock': rock_small, 'reeds': reeds, 'cow': cow, 'termite': termite_mound,
 }
 FX = {'sparkle': p_sparkle, 'leaf': p_leaf, 'drop': p_drop, 'puff': p_puff, 'petal': p_petal}
 
