@@ -1,4 +1,4 @@
-# Identidade visual do Afluente (v1.0, "Contemplação")
+# Identidade visual do Afluente (v1.3, "Vale vivo")
 
 > **Uma maquete de madeira pintada, vista sob a luz do Cerrado.**
 > A água é o que dá cor ao vale. Longe dela, o capim vira palha.
@@ -115,8 +115,33 @@ Assim, duas peças iguais nunca ficam iguais, mas a mesma peça é sempre desenh
 
 **Rio que acaba**: estreita até sumir num brejo de terra escura, poças e taboas. É como nascem as veredas.
 
-## 9. Próximos passos possíveis
+## 9. Ambiente vivo e mundo que responde (v1.3)
+
+O vale tem **tempo próprio**. O jogador não controla nada disso, mas sente:
+
+- **Hora**:
+  - o dia anda com as jogadas;
+  - a luz vai da alvorada rosada ao meio-dia branco e ao entardecer dourado;
+  - a noite é azul, com estrelas, lua, janelas acesas e vaga-lumes.
+- **Vento** que muda de direção e de força: as faixas de luz, as copas, a fumaça e o capim se movem juntos, na mesma direção.
+- **Nuvens orgânicas**, com sombra deslocada pelo sol.
+- **Clima**: chuva nas águas (e arco-íris depois dela), redemoinhos de poeira na seca.
+- **Detalhe que só aparece de perto**: capim fio a fio, com sombra e vento.
+
+**Cada elemento parece o que é**: copas de folhas (e não bolas), mata seca ocre e rala, palha com fibra e capim em lâminas.
+
+**O mapa conta a história**, sem nenhum número na tela:
+
+| Situação | O que se vê |
+|---|---|
+| Pasto isolado | terra parada, sem bicho |
+| Pasto com água | gado curraleiro pastando |
+| Pasto ao lado da vila | ovelhas no cercado e galinhas |
+| Vila pequena → grande | taipa → telha → sobrado → venda e coreto |
+| Bosque longe da água na seca | copas ocres e ralas |
+
+## 10. Próximos passos possíveis
+
 
 - Floração **por espécie** nos bosques durante a seca: as copas de ipê trocam de folha para flor, com sprite novo no Blender.
-- **Hora do dia** dentro de uma partida longa (alvorada → meio-dia → entardecer).
 - **Lobo-guará** ou seriema raros andando no pasto: um momento especial para contemplar.

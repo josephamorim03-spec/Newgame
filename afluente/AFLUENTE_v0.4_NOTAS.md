@@ -301,3 +301,60 @@ Pedido: trabalhar mais o 3D, criar variações dentro da própria variação (co
   - A resolução vai até 2×.
   - Qualidade adaptativa: se o aparelho passar de cerca de 26 ms por quadro, cai para 1,5× e tira vento e raios; depois cai para 1,25× e tira as manchas e o segundo passe da umidade.
   - No zoom, no máximo 3 peças são redesenhadas por quadro.
+
+## v1.3: "Vale vivo" (ambiente que se move sozinho e mundo que responde ao mapa)
+
+**Cada elemento pensado em separado (Blender)**
+- **Copas de folhas**: as árvores deixaram de ser bolas 3D. Agora são centenas de folhas (cartões em losango) em volta de um miolo escuro, com cor variando folha a folha e um pouco de luz atravessando.
+- **Mata seca de verdade**: versões `_seco` das árvores, com metade das folhas em ocre e ferrugem e galhos aparecendo. Elas aparecem nos bosques longe da água durante a seca.
+- **Palha que parece palha**: material com fibras, usado nos fardos, no carro de boi, no telhado de taipa e nos sacos da venda.
+- **Capim feito de lâminas** curvas, não de bolinhas. O capim-dourado tem as cabecinhas amarelas.
+- **Bichos e vila**:
+  - ovelhas com corpo de lã em tufos, em duas poses (cabeça erguida e pastando);
+  - gado **curraleiro pé-duro** caramelo, a raça do Cerrado;
+  - cercado com cocho.
+- **Construções**: sobrado (duas versões), venda e coreto.
+- **Atlas**: 72 sprites, embutido como WebP (227 KB, o PNG tinha 680).
+
+**Ambiente simulado** (o jogador não controla nada disso)
+- **Hora do dia**: o dia anda conforme se joga. São 16 jogadas por dia, 12 de sol (6 h às 18 h) e 4 de noite.
+  - Alvorada rosada e entardecer dourado.
+  - À noite: céu azul-escuro com estrelas e lua, janelas acesas e vaga-lumes.
+  - As lições ficam sempre às 10 h.
+- **Vento** com direção e força que mudam devagar (soma de ondas, com rajadas). Ele move:
+  - as faixas de luz no capim;
+  - o balanço das árvores, em onda que atravessa o vale;
+  - a fumaça, o pólen e as folhas;
+  - o capim fio a fio.
+- **Nuvens**: tufos que nascem a barlavento, crescem, atravessam o vale levados pelo vento e se desfazem. A sombra cai deslocada conforme a posição do sol e a altura da nuvem.
+- **Clima**: chuva só nas águas, cerca de 14% de chance por jogada.
+  - Gotas inclinadas pelo vento, anéis na água e luz acinzentada.
+  - Quando a chuva passa de dia, vem o arco-íris.
+  - Na seca há redemoinhos de poeira.
+- **Capim fio a fio no zoom**: touceiras de lâminas afinadas, com sombra na direção oposta ao sol, que se curvam com as rajadas (as altas mais).
+  - Só aparece de perto e na qualidade máxima.
+  - No máximo 3600 lâminas, desenhadas em lote: um caminho por cor.
+  - Não nasce em cima de casas e árvores.
+- **Som**:
+  - camada de chuva;
+  - o vento acompanha a força do vento;
+  - grilos à noite;
+  - menos pássaros à noite e na chuva;
+  - cigarras só de dia na seca.
+
+**O mundo responde ao mapa**
+- **Pasto**:
+  - sem vila nem água: "morto", sem bicho, só capim seco, pedras e cupinzeiros;
+  - com vila ao lado: um cercado com ovelhas e galinhas (mais ovelhas se também tem água), e ovelhas soltas nas outras áreas de pasto da peça;
+  - com água: gado pastando, mais cabeças quanto maior o pasto.
+- **Bichos animados**: cada um alterna entre andar até um ponto perto e parar. A ovelha baixa a cabeça para pastar, vira para o lado em que anda e dá pulinhos ao andar.
+- **Vila cresce sozinha** com o tamanho da região:
+  - até 2 peças: casinhas de taipa;
+  - até 5: casas de telha;
+  - a partir de 6: sobrados;
+  - a partir de 10: venda, sobrado e praça com coreto.
+- **Lavouras perto da vila** ganham mais espantalhos, fardos e carros de boi.
+
+**Desempenho**
+- Fora do Contemplar, o quadro leva 2 a 4 ms no teste (o capim fio a fio custa cerca de 1,6 ms no zoom).
+- No Contemplar, o custo é dos recortes do rio, que já existia na v1.2. A qualidade adaptativa reduz a resolução quando passa de 26 ms.

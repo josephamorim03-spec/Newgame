@@ -114,11 +114,15 @@ def _mix_rgba(nt):
     return n, n.inputs['Factor'], ins[0], ins[1], out
 
 
+FOL_PAL = {}
+
+
 def foliage(name, dark, light, speck=None, speck_amt=0.0, speck_scale=40.0):
     """folhagem pintada: clara em cima, escura embaixo, com manchas (flores no caso dos ipês)"""
     m = bpy.data.materials.get(name)
     if m:
         return m
+    FOL_PAL[name] = (dark, light, speck)
     m = bpy.data.materials.new(name)
     m.use_nodes = True
     nt = m.node_tree
@@ -341,6 +345,195 @@ def cerrado_tree():
     blob(0.08, (-0.06, -0.02, 0.22), m, (1.4, 1.1, 0.55), seed=52)
 
 
+# ---------------------------------------------------------------- v1.3: copas feitas de folhas
+# Cada copa vira centenas de "cartas" de folha (losangos) espalhadas na casca de um elipsoide, em volta de um
+# núcleo escuro. Cada folha tem a própria cor (mais clara em cima e por fora, variação aleatória) e o material
+# deixa passar um pouco de luz (translucência), então as folhas contra o sol brilham.
+LEAFY = True
+TREE_FOL = {'folha0', 'folha1', 'folha2', 'folha3', 'folha4', 'ipe_amarelo', 'ipe_roxo', 'ipe_branco', 'arbusto',
+            'cerrado', 'pequi', 'lobeira'}
+DRYV = False            # versão de seca: folhas cor de palha e ferrugem, copa rala
+
+
+def _lerp(a, b, k):
+    return tuple(a[i] * (1 - k) + b[i] * k for i in range(3)) + (1.0,)
+
+
+def leaf_mat():
+    m = bpy.data.materials.get('folhas_cartas')
+    if m:
+        return m
+    m = bpy.data.materials.new('folhas_cartas')
+    m.use_nodes = True
+    nt = m.node_tree
+    out = nt.nodes['Material Output']
+    pb = nt.nodes['Principled BSDF']
+    pb.inputs['Roughness'].default_value = 0.62
+    ca = nt.nodes.new('ShaderNodeVertexColor')
+    ca.layer_name = 'Col'
+    nt.links.new(ca.outputs['Color'], pb.inputs['Base Color'])
+    tr = nt.nodes.new('ShaderNodeBsdfTranslucent')
+    nt.links.new(ca.outputs['Color'], tr.inputs['Color'])
+    mx = nt.nodes.new('ShaderNodeMixShader')
+    mx.inputs['Fac'].default_value = 0.22
+    nt.links.new(pb.outputs[0], mx.inputs[1])
+    nt.links.new(tr.outputs[0], mx.inputs[2])
+    nt.links.new(mx.outputs[0], out.inputs['Surface'])
+    return m
+
+
+def canopy(r, loc, sc, pal, seed, dens=1.0, leaf=0.032):
+    dark, light, speck = pal
+    D, L = hexcol(dark), hexcol(light)
+    if DRYV:
+        D, L = _lerp(D, hexcol('#5a4423'), 0.72), _lerp(L, hexcol('#cfa65a'), 0.7)
+        dens *= 0.5
+    rnd = random.Random(seed * 7919 + 13)
+    corec = _lerp(D, (0, 0, 0, 1), 0.35)
+    cm = bpy.data.materials.get('nucleo_' + dark + ('s' if DRYV else ''))
+    if not cm:
+        cm = bpy.data.materials.new('nucleo_' + dark + ('s' if DRYV else ''))
+        cm.use_nodes = True
+        cm.node_tree.nodes['Principled BSDF'].inputs['Base Color'].default_value = corec
+        cm.node_tree.nodes['Principled BSDF'].inputs['Roughness'].default_value = 0.9
+    blob_solid(r * (0.62 if DRYV else 0.8), loc, cm, sc, seed=seed, amount=0.3)
+    n = int(dens * 430 * (r / 0.12) ** 2 * (sc[0] * sc[1] + sc[1] * sc[2] + sc[0] * sc[2]) / 3)
+    verts, faces, cols = [], [], []
+    S = hexcol(speck) if speck else None
+    rust = hexcol('#a0582a')
+    for i in range(n):
+        u = rnd.uniform(-1, 1)
+        th = rnd.uniform(0, math.tau)
+        q = math.sqrt(1 - u * u)
+        nx, ny, nz = q * math.cos(th), q * math.sin(th), u
+        if nz < -0.45 and rnd.random() < 0.75:
+            continue
+        rr = r * (0.84 + 0.24 * rnd.random())
+        P = Vector((loc[0] + nx * rr * sc[0], loc[1] + ny * rr * sc[1], loc[2] + nz * rr * sc[2]))
+        nv = Vector((nx * sc[1] * sc[2], ny * sc[0] * sc[2], nz * sc[0] * sc[1])).normalized()
+        t1 = nv.cross(Vector((0, 0, 1)))
+        if t1.length < 1e-3:
+            t1 = Vector((1, 0, 0))
+        t1.normalize()
+        t2 = nv.cross(t1)
+        a = rnd.uniform(0, math.tau)
+        d1 = (t1 * math.cos(a) + t2 * math.sin(a) + nv * rnd.uniform(-0.7, 0.7)).normalized()
+        d2 = nv.cross(d1).normalized()
+        Ls = leaf * rnd.uniform(0.7, 1.35)
+        Wd = Ls * 0.55
+        b0 = len(verts)
+        verts += [tuple(P - d1 * Ls * 0.5), tuple(P + d2 * Wd * 0.5), tuple(P + d1 * Ls * 0.5), tuple(P - d2 * Wd * 0.5)]
+        faces.append((b0, b0 + 1, b0 + 2, b0 + 3))
+        k = max(0.0, min(1.0, 0.2 + 0.7 * (nz + 1) / 2 + rnd.uniform(-0.2, 0.2)))
+        c = _lerp(D, L, k)
+        if S and rnd.random() < 0.18:
+            c = _lerp(c, S, 0.7)
+        if DRYV and rnd.random() < 0.22:
+            c = _lerp(c, rust, 0.6)
+        cols.append(c)
+    me = bpy.data.meshes.new('folhas')
+    me.from_pydata(verts, [], faces)
+    me.update()
+    attr = me.color_attributes.new('Col', 'FLOAT_COLOR', 'CORNER')
+    for fi, c in enumerate(cols):
+        for li in range(4):
+            attr.data[fi * 4 + li].color = c
+    o = link(bpy.data.objects.new('copa', me))
+    o.data.materials.append(leaf_mat())
+    return o
+
+
+blob_solid = blob
+
+
+def blob(r, loc, m, scale=(1, 1, 1), seed=0, amount=0.28):
+    if LEAFY and m.name in TREE_FOL and r >= 0.045:
+        return canopy(r, loc, scale, FOL_PAL[m.name], seed)
+    return blob_solid(r, loc, m, scale, seed, amount)
+
+
+def straw_mat(name, base, light):
+    """palha e feno: fibras finas em faixas, com relevo e variação de cor"""
+    m = bpy.data.materials.get(name)
+    if m:
+        return m
+    m = bpy.data.materials.new(name)
+    m.use_nodes = True
+    nt = m.node_tree
+    pb = nt.nodes['Principled BSDF']
+    pb.inputs['Roughness'].default_value = 0.95
+    tc = nt.nodes.new('ShaderNodeTexCoord')
+    wv = nt.nodes.new('ShaderNodeTexWave')
+    wv.wave_type = 'RINGS'
+    wv.inputs['Scale'].default_value = 26.0
+    wv.inputs['Distortion'].default_value = 6.0
+    wv.inputs['Detail'].default_value = 4.0
+    nt.links.new(tc.outputs['Object'], wv.inputs['Vector'])
+    nz = nt.nodes.new('ShaderNodeTexNoise')
+    nz.inputs['Scale'].default_value = 160.0
+    nt.links.new(tc.outputs['Object'], nz.inputs['Vector'])
+    mixf = nt.nodes.new('ShaderNodeMath')
+    mixf.operation = 'MULTIPLY_ADD'
+    mixf.inputs[1].default_value = 0.6
+    nt.links.new(wv.outputs['Fac'], mixf.inputs[0])
+    nt.links.new(nz.outputs['Fac'], mixf.inputs[2])
+    mix, fac, a, b, out = _mix_rgba(nt)
+    a.default_value = hexcol(base)
+    b.default_value = hexcol(light)
+    nt.links.new(mixf.outputs[0], fac)
+    nt.links.new(out, pb.inputs['Base Color'])
+    bump = nt.nodes.new('ShaderNodeBump')
+    bump.inputs['Strength'].default_value = 0.55
+    bump.inputs['Distance'].default_value = 0.004
+    nt.links.new(mixf.outputs[0], bump.inputs['Height'])
+    nt.links.new(bump.outputs['Normal'], pb.inputs['Normal'])
+    return m
+
+
+def blades(n, rad, hmin, hmax, dark, light, seed, width=0.008, lean=0.5, heads=None):
+    """capim de verdade: lâminas achatadas e curvas, escuras na base e claras na ponta"""
+    rnd = random.Random(seed)
+    D, L = hexcol(dark), hexcol(light)
+    verts, faces, cols = [], [], []
+    for i in range(n):
+        a = rnd.random() * math.tau
+        rr = rad * math.sqrt(rnd.random())
+        x0, y0 = math.cos(a) * rr, math.sin(a) * rr
+        h = rnd.uniform(hmin, hmax)
+        dirr = a + rnd.uniform(-0.8, 0.8)
+        bend = lean * rnd.uniform(0.3, 1.0)
+        w = width * rnd.uniform(0.7, 1.2)
+        px, py = -math.sin(dirr), math.cos(dirr)
+        segs = 4
+        b0 = len(verts)
+        for j in range(segs + 1):
+            t = j / segs
+            off = bend * h * t * t
+            cx, cy, cz = x0 + math.cos(dirr) * off, y0 + math.sin(dirr) * off, h * t * (1 - 0.25 * t * bend)
+            ww = w * (1 - t) * 0.5 + 0.0008
+            verts += [(cx - px * ww, cy - py * ww, cz), (cx + px * ww, cy + py * ww, cz)]
+            c = _lerp(D, L, min(1, t * 1.1 + rnd.uniform(-0.1, 0.1)))
+            if j < segs:
+                faces.append((b0 + 2 * j, b0 + 2 * j + 1, b0 + 2 * j + 3, b0 + 2 * j + 2))
+                cols.append(c)
+    me = bpy.data.meshes.new('capim')
+    me.from_pydata(verts, [], faces)
+    me.update()
+    attr = me.color_attributes.new('Col', 'FLOAT_COLOR', 'CORNER')
+    for fi, c in enumerate(cols):
+        for li in range(4):
+            attr.data[fi * 4 + li].color = c
+    o = link(bpy.data.objects.new('capim', me))
+    o.data.materials.append(leaf_mat())
+    if heads:
+        hm = mat('cabecinha' + heads, heads, 0.5)
+        for i in range(n // 2):
+            a = rnd.random() * math.tau
+            rr = rad * math.sqrt(rnd.random())
+            ico(0.009, (math.cos(a) * rr * 1.2, math.sin(a) * rr * 1.2, rnd.uniform(hmin, hmax) * 1.05), hm, 1, smooth=True)
+    return o
+
+
 # ---------------------------------------------------------------- construções
 
 WALL = '#fbf3e4'
@@ -452,17 +645,13 @@ def wheat():
 
 
 def haybale():
-    hay = foliage('feno', '#c79a3a', '#f1d07a')
+    hay = straw_mat('feno_fibra', '#b98a32', '#f0cf78')
     for x, y, rz in [(-0.075, 0.0, 0.3), (0.085, 0.04, -0.2)]:
         cyl(0.066, 0.095, (x, y, 0.066), hay, 20, rot=(0, math.pi / 2, rz), smooth=True)
 
 
 def tuft():
-    g = foliage('capim', '#4f8a2e', '#9fd45e')
-    rnd = random.Random(3)
-    for i in range(14):
-        a, r, h = rnd.random() * math.tau, rnd.random() * 0.05, 0.07 + rnd.random() * 0.07
-        cyl(0.011, h, (math.cos(a) * r, math.sin(a) * r, h / 2), g, 3, 0.0, rot=(rnd.uniform(-.4, .4), rnd.uniform(-.4, .4), 0))
+    blades(46, 0.05, 0.07, 0.15, '#3f7326', '#b4dc6a', 3, width=0.01, lean=0.55)
 
 
 def flowers():
@@ -494,18 +683,34 @@ def reeds():
 
 
 def cow():
-    body = mat('vaca', '#f2ece2', 0.8)
-    spot = mat('vaca_mancha', '#3b2a22', 0.8)
-    nose = mat('vaca_focinho', '#e9a6a0', 0.8)
-    parts = []
-    parts.append(cube((0.2, 0.09, 0.085), (0, 0, 0.105), body, bevel=0.02))
-    parts.append(cube((0.07, 0.093, 0.05), (-0.03, 0, 0.115), spot, bevel=0.012))
-    parts.append(cube((0.075, 0.07, 0.07), (0.13, 0, 0.135), body, bevel=0.015))
-    parts.append(cube((0.03, 0.06, 0.035), (0.175, 0, 0.12), nose, bevel=0.008))
-    for x, y in [(-0.07, -0.03), (-0.07, 0.03), (0.07, -0.03), (0.07, 0.03)]:
-        parts.append(cube((0.022, 0.022, 0.065), (x, y, 0.032), spot))
+    """gado curraleiro (pé-duro), raça do Cerrado: caramelo, corpo arredondado, cupim leve, chifres em lira"""
+    body = mat('vaca', '#b8763e', 0.85)
+    belly = mat('vaca_barriga', '#e3c9a0', 0.9)
+    dark = mat('vaca_escuro', '#3a2a20', 0.8)
+    horn = mat('vaca_chifre', '#eadfc8', 0.6)
+    P = []
+    P.append(ico(0.1, (0, 0, 0.105), body, 3, (1.0, 0.48, 0.5), smooth=True))
+    P.append(ico(0.07, (-0.01, 0, 0.088), belly, 2, (1.1, 0.62, 0.42), smooth=True))
+    P.append(ico(0.032, (0.06, 0, 0.143), body, 2, (0.9, 0.75, 0.55), smooth=True))      # cupim (giba)
+    P.append(ico(0.045, (-0.075, 0, 0.115), body, 2, (0.8, 0.95, 0.95), smooth=True))  # anca
+    hd = ico(0.04, (0.125, 0, 0.13), body, 2, (1.25, 0.72, 0.78), smooth=True)
+    hd.rotation_euler.y = math.radians(22)
+    P.append(hd)
+    P.append(ico(0.022, (0.165, 0, 0.108), belly, 2, (1.0, 1.05, 0.85), smooth=True))  # focinho claro
+    P.append(ico(0.012, (0.182, 0, 0.1), dark, 1, (0.8, 1.4, 0.8), smooth=True))
+    for e in (-1, 1):
+        ear = ico(0.014, (0.112, e * 0.04, 0.14), body, 1, (0.7, 1.7, 0.45), smooth=True)
+        ear.rotation_euler.x = e * 0.5
+        P.append(ear)
+        h = cyl(0.006, 0.032, (0.122, e * 0.03, 0.16), horn, 6, 0.002, rot=(-e * 1.05, 0.2, 0))
+        P.append(h)
+    for x, y in [(-0.065, -0.026), (-0.065, 0.026), (0.06, -0.026), (0.06, 0.026)]:
+        P.append(cyl(0.011, 0.075, (x, y, 0.038), body, 8, 0.008, smooth=True))
+        P.append(cyl(0.0105, 0.012, (x, y, 0.006), dark, 8))
+    P.append(cyl(0.004, 0.08, (-0.11, 0, 0.09), body, 6, rot=(0, 0.35, 0)))
+    P.append(ico(0.009, (-0.124, 0, 0.05), dark, 1, (0.8, 0.8, 1.6), smooth=True))
     a = math.radians(-25)
-    for o in parts:
+    for o in P:
         x, y = o.location.x, o.location.y
         o.location.x, o.location.y = x * math.cos(a) - y * math.sin(a), x * math.sin(a) + y * math.cos(a)
         o.rotation_euler.z += a
@@ -577,15 +782,8 @@ def canela():
 
 
 def tuft_gold():
-    """capim-dourado: hastes finas com cabecinhas douradas"""
-    st = mat('dourado_haste', '#b8913a', 0.7)
-    hd = mat('dourado', '#f2c14a', 0.4, emit='#c89020', strength=0.15)
-    rnd = random.Random(13)
-    for i in range(16):
-        a, r, h = rnd.random() * math.tau, rnd.random() * 0.06, 0.08 + rnd.random() * 0.08
-        x, y = math.cos(a) * r, math.sin(a) * r
-        cyl(0.003, h, (x, y, h / 2), st, 3, rot=(rnd.uniform(-.25, .25), rnd.uniform(-.25, .25), 0))
-        ico(0.011, (x, y, h), hd, 1, smooth=True)
+    """capim-dourado: lâminas finas cor de palha com cabecinhas douradas"""
+    blades(40, 0.055, 0.09, 0.17, '#8a6a2a', '#e9c873', 13, width=0.006, lean=0.35, heads='#f2c14a')
 
 
 def sunflower():
@@ -671,7 +869,7 @@ def cart():
     for y in (-0.07, 0.07):
         cyl(0.055, 0.016, (0, y, 0.055), dark, 16, rot=(math.pi / 2, 0, 0))
     cube((0.2, 0.012, 0.012), (0.18, 0, 0.07), dark, (0, 0.15, 0))
-    hay = foliage('feno', '#c79a3a', '#f1d07a')
+    hay = straw_mat('feno_fibra', '#b98a32', '#f0cf78')
     blob(0.06, (0, 0, 0.13), hay, (1.4, 0.9, 0.5), seed=131, amount=0.3)
 
 
@@ -707,7 +905,7 @@ def log():
 def house_rustic():
     """casinha de taipa: parede ocre, telhado de palha, varanda com esteios"""
     wall = mat('taipa', '#f3eadb', 0.9)
-    straw = mat('palha', '#b38a45', 0.95)
+    straw = straw_mat('palha_fibra', '#9a7434', '#d9b468')
     wood = mat('madeira', '#8a5a36', 0.8)
     gable_house(0.22, 0.16, 0.12, 0.085, wall, straw, over=0.03, tiles=True)
     cube((0.23, 0.17, 0.03), (0, 0, 0.015), mat('barrado', '#c47a45', 0.9))
@@ -762,6 +960,106 @@ def loboguara():
     cube((0.08, 0.012, 0.02), (0.01, 0, 0.215), black, bevel=0.004)
     cyl(0.016, 0.1, (-0.11, 0, 0.17), fur, 6, 0.01, rot=(0, math.radians(-120), 0), smooth=True)
     ico(0.014, (-0.15, 0, 0.13), white, 1)
+
+
+# ---------------------------------------------------------------- v1.3: ovelhas, cercado, vila que cresce
+
+def sheep(pose=0):
+    """ovelha: corpo de lã feito de muitos tufos, cara e patas pretas; pose 0 cabeça erguida, 1 pastando"""
+    wool = mat('la', '#f4efe4', 0.98)
+    wool2 = mat('la_sombra', '#d9d1c2', 0.98)
+    black = mat('ovelha_preto', '#2a2420', 0.8)
+    rnd = random.Random(41 + pose)
+    for i in range(46):
+        u = rnd.uniform(-1, 1)
+        th = rnd.uniform(0, math.tau)
+        q = math.sqrt(1 - u * u)
+        x, y, z = q * math.cos(th) * 0.075, q * math.sin(th) * 0.045, u * 0.042
+        if z < -0.03:
+            continue
+        ico(rnd.uniform(0.018, 0.026), (x, y, 0.1 + z), wool if z > -0.005 else wool2, 2, smooth=True)
+    for x, y in [(-0.045, -0.022), (-0.045, 0.022), (0.045, -0.022), (0.045, 0.022)]:
+        cyl(0.007, 0.075, (x, y, 0.0375), black, 6, 0.006)
+    hx, hz = (0.09, 0.13) if pose == 0 else (0.1, 0.045)
+    hd = ico(0.024, (hx, 0, hz), black, 2, (1.5, 0.95, 1.0), smooth=True)
+    hd.rotation_euler.y = math.radians(-25 if pose == 0 else 55)
+    ico(0.016, (hx - 0.022, 0, hz + 0.018), wool, 2, smooth=True)
+    for e in (-1, 1):
+        ear = ico(0.01, (hx - 0.006, e * 0.026, hz + 0.004), black, 1, (1.8, 0.7, 0.5))
+        ear.rotation_euler.z = e * 0.6
+
+
+def pen():
+    """cercado de madeira com cocho de água"""
+    wood = mat('cerca', '#8a6040', 0.85)
+    W, D = 0.46, 0.3
+    for x in [-W / 2 + k * W / 4 for k in range(5)]:
+        for y in (-D / 2, D / 2):
+            cube((0.014, 0.014, 0.085), (x, y, 0.0425), wood, bevel=0.002)
+    for y in (-D / 2, D / 2):
+        for z in (0.035, 0.07):
+            cube((W, 0.008, 0.012), (0, y - 0.004, z), wood)
+    for x in (-W / 2, W / 2):
+        for yy in (-D / 4, D / 4):
+            cube((0.014, 0.014, 0.085), (x, yy, 0.0425), wood, bevel=0.002)
+        for z in (0.035, 0.07):
+            cube((0.008, D, 0.012), (x, 0, z), wood)
+    cube((0.1, 0.035, 0.03), (0.12, 0.06, 0.015), mat('cocho', '#6e4a2c', 0.9), bevel=0.003)
+    cube((0.088, 0.024, 0.004), (0.12, 0.06, 0.03), mat('agua_cocho', '#3c7d92', 0.15))
+
+
+def sobrado(wall='#f3e3c3', roof='#c75b3a', trim='#2f6aa3'):
+    """sobrado de dois andares com sacada, cunhais e telhado de telha"""
+    wm = mat(f'sobrado{wall}', wall, 0.8)
+    rf = mat(f'telhado{roof}', roof, 0.75)
+    tr = mat(f'friso{trim}', trim, 0.6)
+    w, d, h = 0.28, 0.19, 0.25
+    gable_house(w, d, h, 0.085, wm, rf)
+    cube((w + 0.006, d + 0.006, 0.026), (0, 0, 0.013), mat('rodape', '#d9c8a8', 0.9))
+    for sx in (-1, 1):
+        cube((0.016, 0.016, h), (sx * w / 2, -d / 2, h / 2), tr)
+    glow = mat('janela', '#ffd46a', 0.5, emit='#ffc94d', strength=2.2)
+    fy = -d / 2 - 0.004
+    for x in (-0.08, 0.0, 0.08):
+        cube((0.036, 0.006, 0.045), (x, fy, h * 0.33), glow)
+        cube((0.036, 0.006, 0.055), (x, fy, h * 0.78), glow)
+        for sx in (-1, 1):
+            cube((0.012, 0.007, 0.05), (x + sx * 0.026, fy, h * 0.33), tr)
+    cube((0.05, 0.007, 0.075), (0.0, fy - 0.001, 0.0375), mat('porta', '#7a4a2a', 0.8))
+    cube((w * 0.8, 0.05, 0.01), (0, -d / 2 - 0.025, h * 0.6), tr)
+    for k in range(9):
+        cube((0.005, 0.005, 0.04), (-w * 0.38 + k * w * 0.095, -d / 2 - 0.048, h * 0.6 + 0.02), tr)
+    cube((w * 0.8, 0.005, 0.005), (0, -d / 2 - 0.048, h * 0.6 + 0.04), tr)
+
+
+def venda():
+    """venda de esquina: toldo listrado, sacos e caixotes na porta"""
+    wall = mat('venda', '#f6e9cf', 0.8)
+    gable_house(0.24, 0.17, 0.14, 0.08, wall, mat('telhado#b8693f', '#b8693f', 0.75))
+    red, white = mat('toldo_v', '#cf4a34', 0.7), mat('toldo_b', '#fbf4e6', 0.7)
+    for k in range(6):
+        cube((0.04, 0.07, 0.006), (-0.1 + k * 0.04, -0.12, 0.12), red if k % 2 == 0 else white, (math.radians(-22), 0, 0))
+    cube((0.07, 0.006, 0.09), (0, -0.087, 0.045), mat('porta_venda', '#2f6aa3', 0.7))
+    sack = straw_mat('saco_fibra', '#cdb489', '#efe0bd')
+    for x in (-0.09, -0.06):
+        ico(0.022, (x, -0.13, 0.022), sack, 2, (1, 1, 1.2), smooth=True)
+    cube((0.04, 0.04, 0.035), (0.09, -0.13, 0.0175), mat('caixote', '#9a6a40', 0.85), bevel=0.003)
+    cube((0.035, 0.035, 0.03), (0.095, -0.13, 0.05), mat('caixote', '#9a6a40', 0.85), bevel=0.003)
+
+
+def coreto():
+    """coreto de praça: plataforma octogonal, colunas finas, telhado em ponta"""
+    white = mat('coreto', '#fbf7ee', 0.7)
+    blue = mat('coreto_azul', '#3f7fae', 0.6)
+    rf = mat('coreto_telhado', '#d06a42', 0.7)
+    cyl(0.17, 0.05, (0, 0, 0.025), white, 8, rot=(0, 0, math.pi / 8))
+    cyl(0.175, 0.012, (0, 0, 0.052), blue, 8, rot=(0, 0, math.pi / 8))
+    for k in range(8):
+        a = k * math.pi / 4 + math.pi / 8
+        cyl(0.008, 0.16, (math.cos(a) * 0.15, math.sin(a) * 0.15, 0.13), white, 6)
+    cyl(0.19, 0.016, (0, 0, 0.215), blue, 8, rot=(0, 0, math.pi / 8))
+    cyl(0.2, 0.11, (0, 0, 0.275), rf, 8, 0.0, rot=(0, 0, math.pi / 8))
+    ico(0.014, (0, 0, 0.34), mat('igreja_ouro', '#e0b040', 0.35), 2, smooth=True)
 
 
 # ---------------------------------------------------------------- partículas
@@ -825,7 +1123,12 @@ OBJECTS = {
     'fence': fence, 'well': well, 'garden': garden, 'scarecrow': scarecrow, 'cart': cart, 'chickens': chickens,
     'rock_b': rock_b, 'log': log, 'house_d': house_rustic, 'house_c_terra': lambda: house(2, '#b8693f', '#3f8a5a'),
     'capybara': capybara, 'egret': egret, 'loboguara': loboguara,
+    # v1.3
+    'sheep_a': lambda: sheep(0), 'sheep_b': lambda: sheep(1), 'pen': pen,
+    'sobrado': sobrado, 'sobrado_b': lambda: sobrado('#e8eef0', '#a8503a', '#3f8a5a'), 'venda': venda, 'coreto': coreto,
 }
+# versões de seca das árvores (copa rala, cor de palha e ferrugem): SECAS=1
+SECAS = ['tree_a', 'tree_b', 'tree_c', 'tree_d', 'tree_e', 'cerrado_tree', 'pequi', 'lobeira', 'bush']
 FX = {'sparkle': p_sparkle, 'leaf': p_leaf, 'drop': p_drop, 'puff': p_puff, 'petal': p_petal, 'butterfly': p_butterfly}
 
 
@@ -853,6 +1156,14 @@ if __name__ == '__main__':
             continue
         meta[n] = render(n, b, OBJ_PX, OBJ_SCALE, 0.24)
         print('ok', n, flush=True)
+    if os.environ.get('SECAS') == '1':
+        globals()['DRYV'] = True
+        for n in SECAS:
+            if only and n + '_seco' not in only.split(','):
+                continue
+            meta[n + '_seco'] = render(n + '_seco', OBJECTS[n], OBJ_PX, OBJ_SCALE, 0.24)
+            print('ok', n + '_seco', flush=True)
+        globals()['DRYV'] = False
     for n, b in FX.items():
         if only and 'fx_' + n not in only.split(','):
             continue

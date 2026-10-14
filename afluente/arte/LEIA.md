@@ -35,3 +35,17 @@ Uso: `python leito_seco.py <pasta>` (com o `bpy` instalado no ambiente, como em 
 - **Modelos novos**: `tree_d` e `tree_e` (formas de copa), `pequi`, `lobeira`, `ipe_white`, `canela`, `tuft_gold`, `sunflower`, `corn`, `fence`, `well`, `garden`, `scarecrow`, `cart`, `chickens`, `rock_b`, `log`, `house_d` (taipa e palha), `house_c_terra`, `capybara`, `egret` e `loboguara`.
 - **Renderizar só alguns**: `SOMENTE=pequi,lobeira venv/bin/python afluente_sprites.py saida/` acrescenta ao `meta.json` que já existe.
 - **Atlas**: `montar_atlas.py` não gera mais as versões secas (`~d`). No jogo, a secura é um campo contínuo desenhado por cima do vale. `SECOS=1` volta a gerá-las. Atlas de 1024 px de largura, com 56 sprites, em 385 KB.
+
+## v1.3: folhas, palha, capim, bichos e vila
+
+- **Copas de folhas** (`canopy()`): cartões em losango sobre uma casca elipsoide em volta de um miolo escuro, com cor por vértice e material translúcido (`leaf_mat`). O `blob()` usa isso automaticamente nas folhagens de árvore.
+- **Versões secas**: `SECAS=1 venv/bin/python afluente_sprites.py saida/` renderiza `<nome>_seco` (copa ocre e ferrugem, metade das folhas) para as árvores, o pequizeiro, a lobeira e o arbusto.
+- **Materiais**:
+  - `straw_mat()`: palha com fibras, usada nos fardos, no carro, no telhado de taipa e nos sacos;
+  - `blades()`: lâminas de capim curvas, usadas em `tuft` e `tuft_gold`.
+- **Modelos novos**:
+  - `sheep_a` e `sheep_b` (ovelha em pé e pastando);
+  - `pen` (cercado com cocho);
+  - `sobrado` e `sobrado_b`, `venda`, `coreto`;
+  - `cow`, refeito como gado curraleiro caramelo.
+- **WebP**: depois de montar o atlas, `python3 -c "from PIL import Image;Image.open('atlas.png').save('atlas.webp','WEBP',quality=90,method=6)"`. O jogo embute o `atlas.webp`.
