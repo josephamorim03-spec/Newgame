@@ -111,3 +111,33 @@ Pedido do teste: "não entendi as missões até o fim da primeira partida" e "o 
 
 - **Missões**: lista de missões abertas sobre o vale (toque numa para destacar a região e ler a regra); região da missão contornada no tabuleiro; ao escolher onde colocar, a prévia mostra o efeito em cada missão ("4→5/6", "✓" se cumpre, "✗" se estoura) e contorna a região; explicação curta na primeira peça com missão.
 - **Áudio no iOS**: o som é liberado no fim do toque (touchend/click), não no início; pede ao iOS uma sessão de "reprodução" (`navigator.audioSession`) e mantém um `<audio>` silencioso tocando, para não ser cortado pela chave de silêncio; retoma o som ao voltar para o app.
+
+## O ano no vale: sustentabilidade e seca (v0.6)
+
+Pedido: estações do ano avançando, com dificuldade no "inverno" para quem avança muito, e sustentabilidade. Análise completa, tentativas descartadas e números em `SUSTENTABILIDADE.md`.
+
+- **As estações passam pelo tempo, não mais pelos pontos**: a cada 4 peças a estação muda. O ano tem 16 jogadas: Águas → Cheia → Colheita → Seca.
+- **Colheita**: cada peça de campo com água viva por perto guarda 1 de comida (+1 ponto). Cada 2 de comida dão +1 peça.
+- **Seca**:
+  - O rio só corre por peças com **mata ciliar** (lado de bosque na peça, ou o lado da vizinha virado para ela é bosque).
+  - Trecho sem mata seca, junto com tudo rio abaixo.
+  - Durante a Colheita, os trechos em risco ficam marcados em laranja, com a etiqueta "sem mata" onde o rio corta.
+- **Ano novo**:
+  - Casa com água na seca e comida no celeiro: +3 e +1 peça. Casa com fome: −1 peça.
+  - As chuvas dão +2 peças.
+  - A fome cresce 0,5 por ano.
+- **Painel de equilíbrio** com três indicadores tocáveis:
+  - rio na seca;
+  - colheita ou celeiro;
+  - casas que vão comer.
+  - Tocar num indicador mostra a previsão e destaca as peças. Com uma peça escolhida, mostra o antes → depois.
+- **Faixas, sons e efeitos** para Cheia, Colheita, Seca e Ano novo. Na seca, a luz do vale fica quente.
+- **Fim de partida**:
+  - O relatório mostra colheitas, ano novo, fome e trechos secos, com dica tirada da partida.
+  - O recorde passa a ser por pontos e foi zerado, porque as regras mudaram.
+  - O par do vale é calculado pelas regras novas. Corrigido: o bot do par parava quando todas as jogadas davam saldo negativo.
+- **Simulação** (60 vales):
+  - Guloso: 2,6 anos, 212 pontos, 43 peças.
+  - Cuidadoso: 2,8 anos, 216 pontos, 46 peças. Seca 3× menos rio e alimenta quase o dobro de casas.
+  - Aleatório: vê o ano 1 inteiro.
+  - Simulador em `sim/ano_no_vale_teste.js`.
