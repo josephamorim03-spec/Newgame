@@ -3,7 +3,8 @@ function Engine(){
      Cada peça tem 6 lados: G pasto, C campo, B bosque, V vila, A água.
      - Qualquer peça cabe em qualquer casa vazia; lados que não combinam só não pontuam. Rio contra terra vira brejo.
      - +1 ponto por lado que combina. Peça cercada com os 6 lados combinando = Perfeita: +5 e +1 peça.
-     - Missões com número exato ("Bosque 7"): cumprir = +3 peças e pontos; passar do número = falha.
+     - Missões com prazo (v0.9): "Bosque 8 em 9 jogadas" — fazer a região chegar a N peças antes do prazo dá +3 peças;
+       passar do número não tem problema; se o prazo acaba, a missão só vai embora (sem castigo).
      - A água só corre no rio ligado à nascente; cada peça que passa a ter água viva rende +2.
      - O jogo acaba quando a pilha acaba.
      v0.5 — Estações do rio: metas de pontos crescentes; cada estação alcançada dá +4 peças e libera
@@ -21,7 +22,7 @@ function Engine(){
   const nb=(k,d)=>K(KQ(k)+DIRS[d][0],KR(k)+DIRS[d][1]);
   const opp=d=>(d+3)%6;
   const START=22,PERFECT_PTS=5,QUEST_TILES=3,FLOW_PTS=2,SEASON_TILES=0;
-  const CFG={aguas:8,seca:4,keptPts:1,keptDiv:2,divGrow:1,cap:99,rain:2,shield:'touch',...(typeof AFLUENTE_CFG!=='undefined'?AFLUENTE_CFG:{})};
+  const CFG={qMode:'prazo',qSlack:2,qMul:3,qSpan:3,flowDue:10,aguas:8,seca:4,keptPts:1,keptDiv:2,divGrow:1,cap:99,rain:2,shield:'touch',...(typeof AFLUENTE_CFG!=='undefined'?AFLUENTE_CFG:{})};
   const SEASON_AT=[0,0,35,95,180,290,420,570,740,930];
   const seasonAt=n=>n<SEASON_AT.length?SEASON_AT[n]:SEASON_AT[SEASON_AT.length-1]+220*(n-SEASON_AT.length+1);
   const CYCLE=['Águas','Seca'];
@@ -59,7 +60,7 @@ function Engine(){
     let quest=null;
     if(i%4===2){
       const bs=[...new Set(e)].filter(x=>x!=='G');
-      if(bs.length){const b=bs[Math.floor(rng()*bs.length)];quest=b==='A'?{b,flow:true}:{b,n:4+Math.floor(rng()*6)};}
+      if(bs.length){const b=bs[Math.floor(rng()*bs.length)];const r=rng();quest=b==='A'?{b,flow:true}:{b,n:4+Math.floor(r*6),add:2+Math.floor(r*(b==='V'?2:CFG.qSpan))};}
     }
     return{e,quest,sroll:rng(),spick:rng(),srot:Math.floor(rng()*6)};
   }
@@ -72,7 +73,7 @@ function Engine(){
       tiles:[['B','B','B','B','G','G'],['C','C','C','G','G','G'],F('G'),['B','B','G','G','G','G'],F('C')],left:5,noSeasons:true},
     'licao-2':{board:[[2,0,RIO,{flow:true}],[1,-1,F('G')],[0,1,F('G')]],
       tiles:[['G','A','G','G','A','G'],F('B'),F('G')],left:3,noSeasons:true},
-    'licao-3':{board:[[-1,0,F('B'),{b:'B',n:5}],[-2,0,F('B')],[-2,1,F('B')],[0,1,F('G')]],
+    'licao-3':{board:[[-1,0,F('B'),{b:'B',n:5,due:4}],[-2,0,F('B')],[-2,1,F('B')],[0,1,F('G')]],
       tiles:[F('B'),['G','G','G','B','B','B'],F('B'),F('G')],left:4,noSeasons:true},
     'licao-4':{board:[[3,1,F('B')],[3,0,F('B')],[2,0,F('B')],[1,1,F('C')],[1,2,F('C')],[2,2,F('C')]],
       tiles:[['C','C','C','B','B','B'],F('G'),F('G')],left:3,noSeasons:true},
@@ -94,7 +95,7 @@ function Engine(){
     const s=newGame('treino-'+seedKey);
     const board=new Map([[SRC,{e:['A','G','A','G','A','G'],src:true}]]),quests=[];
     for(const[q,r,e,qu]of L.board){const k=K(q,r);board.set(k,{e:e.slice(),i:-1});
-      if(qu)quests.push({key:k,edge:qu.flow?e.indexOf('A'):e.indexOf(qu.b),b:qu.flow?'A':qu.b,n:qu.n,flow:!!qu.flow,status:'open'});}
+      if(qu)quests.push({key:k,edge:qu.flow?e.indexOf('A'):e.indexOf(qu.b),b:qu.flow?'A':qu.b,n:qu.n,flow:!!qu.flow,status:'open',due:qu.due||999});}
     const tiles=L.tiles.map(e=>({e,quest:null,sroll:1,spick:0,srot:0})).concat(s.tiles.map(t=>({...t,sroll:1})));
     const alive=computeAlive(board,false);
     const n={...s,seedKey,lesson:seedKey,noSeasons:!!L.noSeasons,tiles,board,quests,left:L.left,clock:L.clock||0,alive,everAlive:new Set(alive),drawn:{}};
@@ -201,13 +202,18 @@ function Engine(){
     }
     // missões
     const quests=s.quests.map(q=>({...q}));
-    if(tile.quest){const edge=e.findIndex(b=>b===tile.quest.b);quests.push({key:k,edge,b:tile.quest.b,n:tile.quest.n,flow:!!tile.quest.flow,status:'open'});}
+    if(tile.quest){const edge=e.findIndex(b=>b===tile.quest.b),tq=tile.quest,T=s.turn+1;
+      // missão com prazo: crescer a região em +2 a +5 peças (ou levar água) em poucas jogadas; passar do número não tem problema
+      if(CFG.qMode==='prazo'){const n=tq.flow?0:G.size(k*6+edge)+tq.add;quests.push({key:k,edge,b:tq.b,n,flow:!!tq.flow,status:'open',due:T+(tq.flow?CFG.flowDue:Math.round(tq.add*CFG.qMul)+CFG.qSlack)});}
+      else quests.push({key:k,edge,b:tq.b,n:tq.n,flow:!!tq.flow,status:'open',due:999});}
     for(const q of quests){
       if(q.status!=='open')continue;
-      if(q.flow){if(alive.has(q.key)){q.status='done';rep.questsDone.push(q);rep.pts+=10;rep.tiles+=QUEST_TILES;rep.p.quest+=10;rep.t.quest+=QUEST_TILES;}continue;}
+      const late=CFG.qMode==='prazo'&&s.turn+1>=q.due;
+      if(q.flow){if(alive.has(q.key)){q.status='done';rep.questsDone.push(q);rep.pts+=10;rep.tiles+=QUEST_TILES;rep.p.quest+=10;rep.t.quest+=QUEST_TILES;}
+        else if(late){q.status='late';rep.questsFailed.push(q);}continue;}
       const size=G.size(q.key*6+q.edge);q.cur=size;
-      if(size===q.n){q.status='done';rep.questsDone.push(q);rep.pts+=2*q.n;rep.tiles+=QUEST_TILES;rep.p.quest+=2*q.n;rep.t.quest+=QUEST_TILES;}
-      else if(size>q.n){q.status='fail';rep.questsFailed.push(q);}
+      if(CFG.qMode==='prazo'?size>=q.n:size===q.n){q.status='done';rep.questsDone.push(q);rep.pts+=2*q.n;rep.tiles+=QUEST_TILES;rep.p.quest+=2*q.n;rep.t.quest+=QUEST_TILES;}
+      else if(CFG.qMode==='prazo'?late:size>q.n){q.status=CFG.qMode==='prazo'?'late':'fail';rep.questsFailed.push(q);}
     }
     // o tempo passa: Águas (8 jogadas) e Seca (4 jogadas)
     let score=s.score+rep.pts,season=s.season,seca=s.seca,clock=s.clock+1,curAlive=alive;rep.events=[];
@@ -240,7 +246,7 @@ function Engine(){
   }
   function questProgress(s){
     const G=groups(s.board);
-    return s.quests.filter(q=>q.status==='open').map(q=>({...q,cur:q.flow?0:G.size(q.key*6+q.edge)}));
+    return s.quests.filter(q=>q.status==='open').map(q=>({...q,cur:q.flow?0:G.size(q.key*6+q.edge),left:q.due-s.turn}));
   }
   function options(s,k){
     if(s.board.has(k))return[];

@@ -18,3 +18,14 @@ venv/bin/python montar_atlas.py saida/ atlas.png atlas.json
 ```
 
 Depois, reconstrua a página do protótipo para embutir o atlas novo.
+
+## Leito seco (`leito_seco.py`)
+
+- Reaproveita a cena de `agua.py` (câmera, sol, areia e seixos) sem a superfície da água.
+- Acrescenta uma crosta de barro rachado:
+  - os pontos vêm de uma grade 7×7 com sorteio, para não haver pontos colados, que criavam faixas escuras;
+  - as rachaduras são feitas com Worley;
+  - as placas têm relevo de verdade (bump).
+- Saída: `leito_seco.png` com 400×316 px por período. No jogo vira `leito_seco.webp` e é usada como padrão ancorado no mundo, com a mesma escala da água.
+
+Uso: `python leito_seco.py <pasta>` (com o `bpy` instalado no ambiente, como em `agua.py`).

@@ -21,7 +21,7 @@ Uma mecânica fica se cumpre três condições:
 | **Peça perfeita** | 6 lados combinando: +5 e +1 peça | 16% dos pontos, cerca de 6 peças por jogo | **Manter.** Premia planejar buracos. Lição 4. |
 | **Água viva** | Rio ligado à nascente; +2 por peça na primeira vez que recebe água | 7% dos pontos | **Manter.** É a identidade do jogo e a base da seca e das missões de água. Lição 2. |
 | **Brejo** | Rio contra terra termina num brejo e para ali | — | **Manter só como visual.** Explicado em uma frase na lição 2. |
-| **Missões de número exato** ("Bosque 5") | Cumprir: +3 peças; passar do número: perde | 22% dos pontos e a maior fonte de peças (cerca de 11 por jogo) | **Manter.** O "passar perde" é o que transforma a missão em decisão. Lição 3. |
+| **Missões com prazo** ("Bosque 4/6 · 10⏳"), na v0.9 | A região precisa chegar a N peças antes do prazo: +3 peças. Passar do número não tem problema; se o prazo acaba, a missão só vai embora | Maior fonte de peças quando a pessoa persegue as missões | **Mudada na v0.9.** Na regra antiga de número exato, passar do número perdia a missão. Ver seção 6. Lição 3. |
 | **Missão de água** | Levar água viva até a peça marcada: +3 peças | dentro das missões | **Manter.** Lição 2. |
 | **Pilha como vida** | O jogo acaba quando a pilha acaba; jogar bem ganha peças | — | **Manter.** É o laço do Dorfromantik. |
 | **Peças especiais** (Cachoeira, Lagoa, Ponte) | Entram na pilha com o tempo | 5% dos pontos | **Manter Cachoeira e Lagoa.** A Ponte ("terra combina com qualquer terra") é a regra mais obscura e é candidata a simplificar. Não ganhou lição: cada especial explica a si mesma quando aparece. |
@@ -106,3 +106,31 @@ Testado: as cinco lições se resolvem seguindo a casa marcada. Jogando só pelo
 - Quanto tempo as lições levaram? Alguém pulou?
 
 Se a seca ainda parecer um sistema à parte, o próximo passo é testar um **modo sem seca**: as mecânicas 1 a 7 sozinhas já formam um jogo completo. A seca entraria só a partir de um certo vale, como a primeira "página" do Caderno do Cerrado previsto em `FATOR_REPLAY.md`.
+
+## 6. Missões: de "número exato" para "prazo" (v0.9)
+
+Retorno do teste: "estourar a missão? Estou sendo punido por fazer mais do que se pede?" A crítica procede:
+
+- **No tema**, crescer o bosque não deveria ser erro.
+- **Na prática**, o número exato fazia a pessoa evitar encostar peças boas na região, ou seja, jogar contra o próprio encaixe.
+
+A regra nova põe a tensão no **tempo**, não num teto:
+
+- A peça de missão pede que a região cresça **+2 a +4 peças** (vila: +2 ou +3) em até **3 jogadas por peça pedida + 2**. Missão de água: 10 jogadas.
+- O número aparece na bandeira, junto com o prazo ("4/6 · 10⏳").
+- Passar do número não tem problema. Se o prazo acaba, a missão vai embora sem castigo.
+
+Simulação (30 vales):
+
+| Regra | Bot guloso: missões feitas | Bot que persegue missões | Peças por partida (persegue) |
+|---|---|---|---|
+| Número exato (antiga) | 3,8 | 4,7 | 56 |
+| Prazo curto (+N jogadas) | 1,0 | — | 36 |
+| **Prazo de 3 jogadas por peça + 2 (escolhida)** | **2,3** | **5,0** | **56** |
+
+O resultado mais importante é a diferença entre os bots:
+
+- Com prazo, quem **persegue** a missão faz mais que o dobro do guloso (5,0 contra 2,3).
+- Com número exato, a diferença era pequena (4,7 contra 3,8), porque as missões se cumpriam quase por acaso.
+
+Ou seja, a missão agora recompensa a **intenção**. O tamanho da partida continua o mesmo.

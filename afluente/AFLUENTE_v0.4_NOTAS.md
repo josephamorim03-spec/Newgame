@@ -192,3 +192,25 @@ Pedido: revisão final de menus, regras e gráficos.
 - **Correções**:
   - Regra `[hidden]` na própria página.
   - Frase "faltaram N jogadas para a seca" só aparece quando a seca renderia peças.
+
+## Missões com prazo, leito seco do Blender e som do vale (v0.9)
+
+Pedido: "estourar a missão não faz sentido", "as rachaduras parecem de outra arte", melhorar o som (por exemplo, ouvir a água de perto ao dar zoom) e ajustar mecânicas.
+
+- **Missões com prazo** no lugar do número exato:
+  - A região precisa chegar a N peças em até X jogadas, com o prazo (⏳) na bandeira e na lista.
+  - Passar do número não tem problema. Se o prazo acaba, a missão vai embora sem castigo e com um aviso neutro.
+  - Lição 3 refeita para a regra nova. Números em `MECANICAS.md`, seção 6.
+- **Leito seco** (`arte/leito_seco.py`):
+  - É o mesmo leito de areia e seixos da água, renderizado sem água, com barro rachado em relevo e iluminado pelo mesmo sol.
+  - Fica ancorado no mundo como a água, então quando a chuva volta a água cobre as mesmas pedras.
+  - Substitui as rachaduras desenhadas em vetor. São 18 KB.
+- **Som do vale** (sintetizado, sem arquivos):
+  - O ambiente segue a câmera e o zoom.
+  - **Riacho**: ruído filtrado, mais bolhas sintetizadas uma a uma. Quanto mais perto e mais água no centro da tela, mais bolhas e mais brilho. Vem do lado da tela onde está a água.
+  - **Cachoeira**: ronco grave quando está à vista.
+  - **Bosques**: pássaros, vindos do lado de cada bosque e mais raros na seca.
+  - **Capim**: vento que sobe e desce.
+  - **Seca**: cigarras.
+  - Nova chave "Sons do vale" no menu.
+- O indicador do rio mostra "+1 peça a cada N" quando a seca ainda não renderia peças.

@@ -243,6 +243,7 @@ body[data-lesson] .hint{font-size:15px;min-height:58px}
     <button class="btn" id="menuRestart">Recomeçar este vale</button>
     <div class="toggles">
       <label class="tg"><input type="checkbox" id="optSound"><span>Som</span></label>
+      <label class="tg"><input type="checkbox" id="optAmb"><span>Sons do vale</span></label>
       <label class="tg"><input type="checkbox" id="optVib"><span>Vibração</span></label>
       <label class="tg"><input type="checkbox" id="optCalm"><span>Menos movimento</span></label>
     </div>
@@ -275,7 +276,7 @@ body[data-lesson] .hint{font-size:15px;min-height:58px}
     <ul class="how">
       <li><canvas data-thumb="match" width="96" height="92"></canvas><div><b>Encaixe</b><span>Toque numa casa vazia, gire a peça e coloque. Cada lado que combina com o vizinho vale +1.</span></div></li>
       <li><canvas data-thumb="water" width="96" height="92"></canvas><div><b>Ligue os rios à nascente</b><span>A água só corre no rio ligado à nascente. Cada peça que recebe água viva vale +2. Rio que bate em terra vira brejo e para ali.</span></div></li>
-      <li><canvas data-thumb="quest" width="96" height="92"></canvas><div><b>Missões ganham peças</b><span>"Bosque 6": deixe aquele bosque com exatamente 6 peças. Cumpriu: +3 peças. Passou do número: perdeu.</span></div></li>
+      <li><canvas data-thumb="quest" width="96" height="92"></canvas><div><b>Missões ganham peças</b><span>"Bosque 6 · 5⏳": faça aquele bosque chegar a 6 peças em até 5 jogadas. Cumpriu: +3 peças. Passar de 6 não tem problema.</span></div></li>
       <li><canvas data-thumb="perfect" width="96" height="92"></canvas><div><b>Peça perfeita</b><span>Cercada e com os 6 lados combinando: +5 e +1 peça.</span></div></li>
       <li><canvas data-thumb="seca" width="96" height="92"></canvas><div><b>Seca e mata ciliar</b><span>A cada 8 jogadas vem a seca: só corre o rio com bosque na peça ou encostado. O rio que continua correndo rende pontos e peças. Depois as chuvas voltam com +2 peças.</span></div></li>
     </ul>
@@ -322,7 +323,8 @@ function Engine(){
      Cada peça tem 6 lados: G pasto, C campo, B bosque, V vila, A água.
      - Qualquer peça cabe em qualquer casa vazia; lados que não combinam só não pontuam. Rio contra terra vira brejo.
      - +1 ponto por lado que combina. Peça cercada com os 6 lados combinando = Perfeita: +5 e +1 peça.
-     - Missões com número exato ("Bosque 7"): cumprir = +3 peças e pontos; passar do número = falha.
+     - Missões com prazo (v0.9): "Bosque 8 em 9 jogadas" — fazer a região chegar a N peças antes do prazo dá +3 peças;
+       passar do número não tem problema; se o prazo acaba, a missão só vai embora (sem castigo).
      - A água só corre no rio ligado à nascente; cada peça que passa a ter água viva rende +2.
      - O jogo acaba quando a pilha acaba.
      v0.5 — Estações do rio: metas de pontos crescentes; cada estação alcançada dá +4 peças e libera
@@ -340,7 +342,7 @@ function Engine(){
   const nb=(k,d)=>K(KQ(k)+DIRS[d][0],KR(k)+DIRS[d][1]);
   const opp=d=>(d+3)%6;
   const START=22,PERFECT_PTS=5,QUEST_TILES=3,FLOW_PTS=2,SEASON_TILES=0;
-  const CFG={aguas:8,seca:4,keptPts:1,keptDiv:2,divGrow:1,cap:99,rain:2,shield:'touch',...(typeof AFLUENTE_CFG!=='undefined'?AFLUENTE_CFG:{})};
+  const CFG={qMode:'prazo',qSlack:2,qMul:3,qSpan:3,flowDue:10,aguas:8,seca:4,keptPts:1,keptDiv:2,divGrow:1,cap:99,rain:2,shield:'touch',...(typeof AFLUENTE_CFG!=='undefined'?AFLUENTE_CFG:{})};
   const SEASON_AT=[0,0,35,95,180,290,420,570,740,930];
   const seasonAt=n=>n<SEASON_AT.length?SEASON_AT[n]:SEASON_AT[SEASON_AT.length-1]+220*(n-SEASON_AT.length+1);
   const CYCLE=['Águas','Seca'];
@@ -378,7 +380,7 @@ function Engine(){
     let quest=null;
     if(i%4===2){
       const bs=[...new Set(e)].filter(x=>x!=='G');
-      if(bs.length){const b=bs[Math.floor(rng()*bs.length)];quest=b==='A'?{b,flow:true}:{b,n:4+Math.floor(rng()*6)};}
+      if(bs.length){const b=bs[Math.floor(rng()*bs.length)];const r=rng();quest=b==='A'?{b,flow:true}:{b,n:4+Math.floor(r*6),add:2+Math.floor(r*(b==='V'?2:CFG.qSpan))};}
     }
     return{e,quest,sroll:rng(),spick:rng(),srot:Math.floor(rng()*6)};
   }
@@ -391,7 +393,7 @@ function Engine(){
       tiles:[['B','B','B','B','G','G'],['C','C','C','G','G','G'],F('G'),['B','B','G','G','G','G'],F('C')],left:5,noSeasons:true},
     'licao-2':{board:[[2,0,RIO,{flow:true}],[1,-1,F('G')],[0,1,F('G')]],
       tiles:[['G','A','G','G','A','G'],F('B'),F('G')],left:3,noSeasons:true},
-    'licao-3':{board:[[-1,0,F('B'),{b:'B',n:5}],[-2,0,F('B')],[-2,1,F('B')],[0,1,F('G')]],
+    'licao-3':{board:[[-1,0,F('B'),{b:'B',n:5,due:4}],[-2,0,F('B')],[-2,1,F('B')],[0,1,F('G')]],
       tiles:[F('B'),['G','G','G','B','B','B'],F('B'),F('G')],left:4,noSeasons:true},
     'licao-4':{board:[[3,1,F('B')],[3,0,F('B')],[2,0,F('B')],[1,1,F('C')],[1,2,F('C')],[2,2,F('C')]],
       tiles:[['C','C','C','B','B','B'],F('G'),F('G')],left:3,noSeasons:true},
@@ -413,7 +415,7 @@ function Engine(){
     const s=newGame('treino-'+seedKey);
     const board=new Map([[SRC,{e:['A','G','A','G','A','G'],src:true}]]),quests=[];
     for(const[q,r,e,qu]of L.board){const k=K(q,r);board.set(k,{e:e.slice(),i:-1});
-      if(qu)quests.push({key:k,edge:qu.flow?e.indexOf('A'):e.indexOf(qu.b),b:qu.flow?'A':qu.b,n:qu.n,flow:!!qu.flow,status:'open'});}
+      if(qu)quests.push({key:k,edge:qu.flow?e.indexOf('A'):e.indexOf(qu.b),b:qu.flow?'A':qu.b,n:qu.n,flow:!!qu.flow,status:'open',due:qu.due||999});}
     const tiles=L.tiles.map(e=>({e,quest:null,sroll:1,spick:0,srot:0})).concat(s.tiles.map(t=>({...t,sroll:1})));
     const alive=computeAlive(board,false);
     const n={...s,seedKey,lesson:seedKey,noSeasons:!!L.noSeasons,tiles,board,quests,left:L.left,clock:L.clock||0,alive,everAlive:new Set(alive),drawn:{}};
@@ -520,13 +522,18 @@ function Engine(){
     }
     // missões
     const quests=s.quests.map(q=>({...q}));
-    if(tile.quest){const edge=e.findIndex(b=>b===tile.quest.b);quests.push({key:k,edge,b:tile.quest.b,n:tile.quest.n,flow:!!tile.quest.flow,status:'open'});}
+    if(tile.quest){const edge=e.findIndex(b=>b===tile.quest.b),tq=tile.quest,T=s.turn+1;
+      // missão com prazo: crescer a região em +2 a +5 peças (ou levar água) em poucas jogadas; passar do número não tem problema
+      if(CFG.qMode==='prazo'){const n=tq.flow?0:G.size(k*6+edge)+tq.add;quests.push({key:k,edge,b:tq.b,n,flow:!!tq.flow,status:'open',due:T+(tq.flow?CFG.flowDue:Math.round(tq.add*CFG.qMul)+CFG.qSlack)});}
+      else quests.push({key:k,edge,b:tq.b,n:tq.n,flow:!!tq.flow,status:'open',due:999});}
     for(const q of quests){
       if(q.status!=='open')continue;
-      if(q.flow){if(alive.has(q.key)){q.status='done';rep.questsDone.push(q);rep.pts+=10;rep.tiles+=QUEST_TILES;rep.p.quest+=10;rep.t.quest+=QUEST_TILES;}continue;}
+      const late=CFG.qMode==='prazo'&&s.turn+1>=q.due;
+      if(q.flow){if(alive.has(q.key)){q.status='done';rep.questsDone.push(q);rep.pts+=10;rep.tiles+=QUEST_TILES;rep.p.quest+=10;rep.t.quest+=QUEST_TILES;}
+        else if(late){q.status='late';rep.questsFailed.push(q);}continue;}
       const size=G.size(q.key*6+q.edge);q.cur=size;
-      if(size===q.n){q.status='done';rep.questsDone.push(q);rep.pts+=2*q.n;rep.tiles+=QUEST_TILES;rep.p.quest+=2*q.n;rep.t.quest+=QUEST_TILES;}
-      else if(size>q.n){q.status='fail';rep.questsFailed.push(q);}
+      if(CFG.qMode==='prazo'?size>=q.n:size===q.n){q.status='done';rep.questsDone.push(q);rep.pts+=2*q.n;rep.tiles+=QUEST_TILES;rep.p.quest+=2*q.n;rep.t.quest+=QUEST_TILES;}
+      else if(CFG.qMode==='prazo'?late:size>q.n){q.status=CFG.qMode==='prazo'?'late':'fail';rep.questsFailed.push(q);}
     }
     // o tempo passa: Águas (8 jogadas) e Seca (4 jogadas)
     let score=s.score+rep.pts,season=s.season,seca=s.seca,clock=s.clock+1,curAlive=alive;rep.events=[];
@@ -559,7 +566,7 @@ function Engine(){
   }
   function questProgress(s){
     const G=groups(s.board);
-    return s.quests.filter(q=>q.status==='open').map(q=>({...q,cur:q.flow?0:G.size(q.key*6+q.edge)}));
+    return s.quests.filter(q=>q.status==='open').map(q=>({...q,cur:q.flow?0:G.size(q.key*6+q.edge),left:q.due-s.turn}));
   }
   function options(s,k){
     if(s.board.has(k))return[];
@@ -654,6 +661,72 @@ const sfx={
   rain(){noise(0,2.4,2600,0.05,0.35);noise(0.2,2,900,0.035,0.5);for(let i=0;i<10;i++)tone(900+Math.random()*900,0.15+i*0.17,0.06,'sine',0.03,1600);},
   water(){noise(0,1.0,650,0.07,0.6);for(let i=0;i<6;i++)tone(650+Math.random()*600,0.1+i*0.12,0.08,'sine',0.045,1300);},
 };
+
+// ---------- som do vale: o ambiente segue a câmera. O que está no centro da tela soa mais; o zoom aproxima.
+// Riacho = ruído filtrado (corpo) + bolhas sintetizadas uma a uma (o "borbulhar" que aparece de perto);
+// cachoeira = ronco grave; bosques = pássaros; capim = vento; seca = cigarras.
+const AMB={n:null,lvl:{}};
+function ambStart(){
+  const a=audio();if(!a||AMB.n)return;
+  const buf=(sec,brown)=>{const n=Math.floor(a.sampleRate*sec),b=a.createBuffer(2,n,a.sampleRate);
+    for(let c=0;c<2;c++){const d=b.getChannelData(c);let last=0;for(let i=0;i<n;i++){const w=Math.random()*2-1;last=(last+0.02*w)/1.02;d[i]=brown?last*3.5:w;}}return b;};
+  const master=a.createGain();master.gain.value=0;master.connect(a.destination);
+  const layer=(type,freq,q,brown)=>{const src=a.createBufferSource();src.buffer=buf(4,brown);src.loop=true;
+    const f=a.createBiquadFilter();f.type=type;f.frequency.value=freq;f.Q.value=q;const g=a.createGain();g.gain.value=0;
+    const pn=a.createStereoPanner?a.createStereoPanner():null;src.connect(f);f.connect(g);if(pn){g.connect(pn);pn.connect(master);}else g.connect(master);
+    src.start();return{f,g,pn};};
+  const river=layer('bandpass',650,0.7,false),falls=layer('lowpass',700,0.6,true),wind=layer('lowpass',420,0.5,true),cic=layer('bandpass',5400,9,false);
+  // cigarras: o chiado pulsa rápido
+  const am=a.createGain();am.gain.value=0.5;cic.f.disconnect();cic.f.connect(am);am.connect(cic.g);
+  const lfo=a.createOscillator();lfo.frequency.value=24;const lg=a.createGain();lg.gain.value=0.5;lfo.connect(lg);lg.connect(am.gain);lfo.start();
+  // o vento sobe e desce devagar
+  const wl=a.createOscillator();wl.frequency.value=0.09;const wg=a.createGain();wg.gain.value=180;wl.connect(wg);wg.connect(wind.f.frequency);wl.start();
+  const bus=a.createGain();bus.gain.value=1;const bp=a.createStereoPanner?a.createStereoPanner():null;if(bp){bus.connect(bp);bp.connect(master);}else bus.connect(master);
+  AMB.n={master,river,falls,wind,cic,bus,bp};
+}
+function bubble(t,pan,vol,near){
+  const a=SND.ctx,o=a.createOscillator(),g=a.createGain(),f0=(near?500:350)+Math.random()*(near?1500:700),dur=0.025+Math.random()*0.06;
+  o.type='sine';o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(f0*(1.4+Math.random()*0.6),t+dur);
+  g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(vol,t+0.004);g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+  const pn=a.createStereoPanner?a.createStereoPanner():null;o.connect(g);if(pn){pn.pan.value=pan;g.connect(pn);pn.connect(AMB.n.master);}else g.connect(AMB.n.master);
+  o.start(t);o.stop(t+dur+0.02);
+}
+function chirp(t,pan,vol){
+  const a=SND.ctx,n=2+Math.floor(Math.random()*4),base=2400+Math.random()*1800,pn=a.createStereoPanner?a.createStereoPanner():null;
+  if(pn){pn.pan.value=pan;pn.connect(AMB.n.master);}
+  for(let i=0;i<n;i++){const o=a.createOscillator(),g=a.createGain(),st=t+i*(0.07+Math.random()*0.05),d=0.05+Math.random()*0.05,f=base*(0.85+Math.random()*0.35);
+    o.type='sine';o.frequency.setValueAtTime(f,st);o.frequency.exponentialRampToValueAtTime(f*(Math.random()<0.5?1.35:0.75),st+d);
+    g.gain.setValueAtTime(0.0001,st);g.gain.exponentialRampToValueAtTime(vol,st+0.01);g.gain.exponentialRampToValueAtTime(0.0001,st+d);
+    o.connect(g);g.connect(pn||AMB.n.master);o.start(st);o.stop(st+d+0.02);}
+}
+function ambUpdate(){
+  if(!AMB.n||!SND.ctx||!G.s)return;
+  const N=AMB.n,s=G.s,a=SND.ctx,on=SND.on&&db.amb!==false&&!document.hidden&&a.state==='running';
+  N.master.gain.setTargetAtTime(on?(!$('home').hidden||!$('result').hidden?0.45:1):0,a.currentTime,0.6);
+  if(!on)return;
+  const cx=W.w/2,cy=W.h/2,R=Math.max(160,Math.min(W.w,W.h)*0.55);
+  let wat=0,wx=0,fal=0,fx=0,grass=0,forest=0;const woods=[],waters=[];
+  for(const[k,t]of s.board){const[x,y]=scr(k),d=Math.hypot(x-cx,y-cy)/R;if(d>1.6)continue;const w=Math.exp(-d*d*1.6),px=Math.max(-1,Math.min(1,(x-cx)/R));
+    if(s.alive.has(k)&&t.e.includes('A')){wat+=w;wx+=w*px;waters.push([px,w]);if(t.sp==='falls'){fal+=w;fx+=w*px;}}
+    if(t.e.includes('G')||t.e.includes('C'))grass+=w;
+    if(t.e.includes('B')){forest+=w;woods.push([px,w]);}}
+  const zoom=Math.max(0,Math.min(1,(cam.s-20)/45));
+  const wp=wat?Math.max(-0.8,Math.min(0.8,wx/wat)):0;
+  N.river.g.gain.setTargetAtTime(Math.min(0.11,0.028*Math.sqrt(wat))*(0.6+0.6*zoom),a.currentTime,0.5);
+  N.river.f.frequency.setTargetAtTime(480+520*zoom,a.currentTime,0.5);
+  if(N.river.pn)N.river.pn.pan.setTargetAtTime(wp,a.currentTime,0.5);
+  N.falls.g.gain.setTargetAtTime(Math.min(0.16,0.08*Math.sqrt(fal))*(0.6+0.7*zoom),a.currentTime,0.5);
+  if(N.falls.pn)N.falls.pn.pan.setTargetAtTime(fal?Math.max(-0.8,Math.min(0.8,fx/fal)):0,a.currentTime,0.5);
+  N.wind.g.gain.setTargetAtTime((s.seca?0.05:0.022)+Math.min(0.03,0.006*Math.sqrt(grass)),a.currentTime,1.2);
+  N.cic.g.gain.setTargetAtTime(s.seca?0.014+0.01*Math.min(1,grass/6):0,a.currentTime,1.5);
+  // bolhas do riacho: mais e mais nítidas quanto mais perto e mais água no centro da tela
+  const rate=Math.min(16,wat*(1.5+10*zoom*zoom)),now=a.currentTime;
+  const ex=rate*0.12,nb=Math.floor(ex)+(Math.random()<ex-Math.floor(ex)?1:0);
+  for(let i=0;i<nb&&waters.length;i++){const[px]=waters[Math.floor(Math.random()*waters.length)];bubble(now+Math.random()*0.12,px*0.8,(0.006+0.016*zoom)*(0.6+Math.random()*0.8),zoom>0.4);}
+  // pássaros nos bosques (menos na seca)
+  if(woods.length&&Math.random()<Math.min(0.12,0.025*forest)*(s.seca?0.35:1)){const[px]=woods[Math.floor(Math.random()*woods.length)];chirp(now+Math.random()*0.1,px*0.9,0.012+0.012*zoom);}
+}
+setInterval(ambUpdate,120);
 
 // ---------- partículas (sprites do Blender), em coordenadas do mundo
 const PARTS=[];
@@ -987,12 +1060,12 @@ const LES=[
    goal:s=>[s.questsDone>=1,'Objetivo: levar água até a bandeira'],
    win:'Rio ligado à nascente tem água viva: cada peça que recebe água vale +2, e a missão de água dá +3 peças. Rio que bate em terra vira brejo e para ali.'},
   {id:'licao-3',title:'Missões',
-   intro:'A bandeira "3/5" pede um bosque com exatamente 5 peças. Ele tem 3. Toque na casa marcada.',
-   sel:'O balão mostra o efeito: 3→4/5. Com ✓ você cumpre; com ✗ o bosque passa de 5 e a missão se perde.',
-   after:'Falta pouco. Cuidado: passar de 5 perde a missão.',
-   goal:s=>{const q=E.questProgress(s)[0];return[s.questsDone>=1,`Objetivo: bosque com exatamente 5 peças (${q?q.cur:5}/5)`];},
-   fail:s=>s.stats.failed.length>0,failTxt:'O bosque passou de 5 e a missão se perdeu. Tente de novo e pare em 5.',
-   win:'Cumprir missão dá +3 peças na pilha, e a pilha é a vida da partida. Algumas peças trazem missões novas; o número fica na bandeira.'},
+   intro:'A bandeira "3/5 · 4⏳" pede que este bosque chegue a 5 peças em até 4 jogadas. Ele tem 3. Toque na casa marcada.',
+   sel:'O balão mostra o efeito: 3→4/5. Encoste bosque no bosque para ele crescer.',
+   after:'Falta pouco: mais uma peça de bosque encostada.',
+   goal:s=>{const q=E.questProgress(s)[0];return[s.questsDone>=1,`Objetivo: bosque com 5 peças (${q?q.cur:5}/5)${q&&q.left<50?` · ${q.left}⏳`:''}`];},
+   fail:s=>s.stats.failed.length>0,failTxt:'O prazo acabou antes de o bosque chegar a 5. Tente de novo.',
+   win:'Missões pedem que uma região cresça dentro de um prazo (o número com ⏳). Cumprir dá +3 peças na pilha, e a pilha é a vida da partida. Passar do número não tem problema.'},
   {id:'licao-4',title:'Peça perfeita',
    intro:'Esta casa está cercada pelos 6 lados. Toque nela.',
    sel:'Gire até os 6 lados ficarem verdes.',
@@ -1065,7 +1138,7 @@ function commit(){
   for(const c of rep.perfect){G.fx.set(c,{k:'spark',t0:now+200});queueBanner('Peça perfeita! +1 peça','');}
   for(const q of rep.questsDone){G.fx.set(q.key,{k:'spark',t0:now+250});queueBanner(q.flow?'Missão: água ligada! +3 peças':`Missão: ${NAME[q.b]} ${q.n}! +3 peças`,'good');}
   yearEvents(state,rep,now);
-  for(const q of rep.questsFailed)queueBanner(`Missão perdida: ${NAME[q.b]} passou de ${q.n}`,'');
+  for(const q of rep.questsFailed)queueBanner(q.flow?'O prazo da missão de água acabou':`O prazo acabou: ${NAME[q.b]} ficou em ${q.cur}/${q.n}`,'');
   // efeitos
   const[wx,wy]=wpos(k),te=state.board.get(k).e;
   emit('~#d6c39a',wx,wy+0.55,12,{ang:0,spread:Math.PI*2,v:0.45,g:-0.2,life:950,size:0.42,grow:1.3,alpha:0.45,jx:1.5,jy:0.25});
@@ -1077,7 +1150,7 @@ function commit(){
   }
   for(const c of rep.perfect){const[px,py]=wpos(c);emit('~#ffe6a0',px,py-0.3,10,{v:1.4,life:850,size:0.3,alpha:0.85,add:true,delay:200});emit('sparkle',px,py-0.3,7,{v:1.8,life:800,size:0.16,vr:3,delay:200,add:true});setTimeout(sfx.perfect,250);}
   for(const q of rep.questsDone){const[qx,qy]=wpos(q.key);emit('petal',qx,qy-0.5,20,{ang:-Math.PI/2,spread:2.3,v:2.4,g:2.2,life:1900,size:0.12,vr:4,flutter:true,vx:0.2,delay:250});emit('leaf',qx,qy-0.5,8,{ang:-Math.PI/2,spread:2,v:2.2,g:2.2,life:1800,size:0.12,vr:4,flutter:true,vx:0.2,delay:250});emit('~#ffe6a0',qx,qy-0.5,6,{v:1.2,life:800,size:0.3,alpha:0.7,add:true,delay:250});setTimeout(sfx.quest,350);}
-  if(rep.questsFailed.length)setTimeout(sfx.fail,350);
+  if(rep.questsFailed.length)setTimeout(()=>tone(392,0,0.35,'sine',0.04,330),350);
   bump('scoreBox');if(rep.tiles)bump('leftBox');
   refresh();persist();renderUI();
   if(G.lesson)lessonCheck();else if(E.over(G.s))setTimeout(showResult,RM?200:1500);
@@ -1162,7 +1235,6 @@ function draw(t){
       const r=o.rep;let txt=`+${r.pts}`;if(r.tiles)txt+=` · +${r.tiles} peça${r.tiles>1?'s':''}`;
       pill(g,x,y-sz*1.25,txt,r.tiles?'#3f9a4a':'#fffdf7',r.tiles?'#fff':'#1d3b3a',sz);
       if(r.questsDone.length)pill(g,x,y-sz*1.95,'✓ cumpre a missão',P.good,'#fff',sz);
-      else if(r.questsFailed.length)pill(g,x,y-sz*1.95,'✗ estoura a missão',P.bad,'#fff',sz);
       continue;
     }
     const tl=s.board.get(k),f=fxOf(k,t);y+=f.dy;
@@ -1228,15 +1300,15 @@ function draw(t){
      // o primeiro trecho sem mata, perto da nascente: é ali que o rio corta
      let k0=risk[0],d0=1e9;for(const k of risk){const d=hd(k,E.SRC);if(d<d0){d0=d;k0=k;}}
      if(!(G.sel&&G.sel.k===k0)){const[x,y]=scr(k0);pill(g,x,y-sz*0.2,'sem mata','#e07a2e','#fff',sz*0.8);}}}
-  if(G.sel&&G.selQ)for(const e of G.selQ)outline(e.region,e.st==='bad'?P.bad:e.st==='ok'?P.good:BIOME_DOT[e.q.b],0.75);
+  if(G.sel&&G.selQ)for(const e of G.selQ)outline(e.region,e.st==='bad'?'#c9874a':e.st==='ok'?P.good:BIOME_DOT[e.q.b],0.75);
   // marcadores de missão
   for(const q of G.qp){
-    const[x,y]=scr(q.key);const txt=q.flow?'ligar à água':`${q.cur}/${q.n}`;
+    const[x,y]=scr(q.key);const pz=q.left<50?` · ${q.left}⏳`:'';const txt=q.flow?`ligar à água${pz}`:`${q.cur}/${q.n}${pz}`;
     flag(g,x,y-sz*0.95,txt,q.b,sz);
   }
   if(G.sel&&G.selQ)for(const e of G.selQ){const[x,y]=scr(e.q.key);
-    const txt=e.fresh?`nova missão ${e.after}/${e.q.n}`:e.st==='ok'?`${e.before}→${e.after}/${e.q.n} ✓`:e.st==='bad'?`${e.before}→${e.after}/${e.q.n} ✗`:`${e.before}→${e.after}/${e.q.n}`;
-    pill(g,x,y-sz*1.6,txt,e.st==='bad'?P.bad:e.st==='ok'?P.good:'#fff1d1',e.st?'#fff':'#7a4d00',sz*0.85);}
+    const txt=e.fresh?`nova missão ${e.after}/${e.q.n}`:e.st==='ok'?`${e.before}→${e.after}/${e.q.n} ✓`:e.st==='bad'?`${e.after}/${e.q.n} · prazo acaba`:`${e.before}→${e.after}/${e.q.n}`;
+    pill(g,x,y-sz*1.6,txt,e.st==='bad'?'#c9874a':e.st==='ok'?P.good:'#fff1d1',e.st?'#fff':'#7a4d00',sz*0.85);}
   // números
   G.floats=G.floats.filter(f=>t-f.t0<1100);
   for(const f of G.floats){const u=(t-f.t0)/1100;if(u<0)continue;const[x,y]=scr(f.k);g.globalAlpha=u<0.15?u/0.15:1-Math.max(0,(u-0.6)/0.4);pill(g,x,y-sz*0.5-u*sz*0.9,f.txt,f.col,f.fg,sz);g.globalAlpha=1;}
@@ -1277,6 +1349,15 @@ function waterPats(g,t,s,x,y,world){
     pt.setTransform(new DOMMatrix([sc*1.7/200,0,0,sc*1.7/158,ox,oy]));return pt;};
   return[get(i%24),fr>0.03?get((i+1)%24):null,fr];
 }
+// leito seco renderizado no Blender (afluente/arte/leito_seco.py): os mesmos seixos do fundo da água, sem água,
+// com barro rachado. Ancorado no mundo como a água: quando a chuva volta, a água cobre as mesmas pedras.
+let DRY=null,DRYPAT=null;
+function loadDry(){const im=new Image();im.onload=()=>{DRY=im;};im.src="data:image/webp;base64,UklGRgRFAABXRUJQVlA4IPhEAAAQPgGdASqQATwBPlEijUQjoiGZ6e4QOAUEsZ3ADzFi3Vlx79C/uegHx75whf+J/6/n5vf/8v1Yf1X/fewj/b+ir5lvOi9Pn+U36b0K+mp/ueN+yJvNf5vv3sAon1FJ5u8BH3Vw5oC/sZ5nHHHkc0CvJm/4/PizQFlyHOLCDeN7++z5vAw0enb2k7us2MQoMrGK/PqlwOTewWhr+Lfkh544ZeisjAKj9zjTij7XqPknmCUfIm+Ff5nzKB/wgGJFLF2+xxvYjzDlIiE4nrSEjffdX//wRb+j03FqO7ld/BiXjmueXH35DMtieqzNdtP/tLS6HXlYdCPraqXHtaT5cuMr/ZBSbgd7W+nWNbr7w9O3Fvq5/5S5y32n2tWAxiLB6CKau2/F/y+8uDeJSQD73eQo+6DYVFRWaT/XIgTUjNJrMSKTztVFNjoD23r9hjy8Ap3IsFuUIEnbujWLPMSVYomCejZEdDpD61HO1bIfI/bEZVjrQSOy/75sEfAeaj+EuJS79JtSt374IWDRyBzwB1bMPenHRFceCa50ADHeNbX1PUAOZ5r0wBJURBn8VW7IDnG++7APsQmeG15vqhlGbOcJP31DwqoObcbpsj6f7+QdL1favtMoGpFU9rqURtZ2d1POFG+mEwHUrSUHeEAO0BM0mjxJI731F0X4UxBkemE2Q2HDQv+KERsbHIyF2zEHbULFuG32mBXvgEG/9yf9PqXXRWEyn60+NcEjdGFDJVb2Yf4w7o4B5oOR0eSgAwDxY36n50SM0k5TiWVOZjcO/vRG141jcZSpKvDR+ZzZWWNid2MIwHQtXdw2uUr78jI1g1iuwDoyxyvhgOlYaibxdxSlynoaW7ulwvhjeoeZAbIZ0a40f7xX3aFRyxW6uodLgxmnq7rqwus7DwAhZhERbMXbc0G8qdyICeOMfcSEWvBijtG1Clf4PT+9a3TL9N03HYj6LEwJMyzpPS8Ei233wiVB4U8DyJR2MVJIM+eb6Jgik9gfhEiYIZv4JFArpni3S1dVkdreZ5LDi9QpBcYRteNJoivsVMm6zlDgfrZo0ns82DTFHDna9uFqj+mDLX1vLZFxvEPWxXbMINocoU1rZj/990kzH8eQLW3WLvWykaQ/jsAqzw5phclN+y/XoyP809kNJB1NQ0LGHQDvYMFargGjbRYr8hww+yWwINYvpqFfUGrV+PieIOsVAZGEo3XeCjrQ+3teYUSQlvPq48V8AcJs/xe4GoeP9NHo2TA0EaykxJVRz78+vs/l1hnn6w8Wf/Ig3DUewwHQVskUwdbiV1Vza9JSG8IQXkI0UpapZgfbleRANfBX5FYxSWx/WYISdQ+ZFsh7VuuYcwAZ9a/dyz+ETq3OuQ9+mBxzeALBhBnTQ0fMC4pjUyMzfT8XksUdx/RRri/bu8rhGI+bj+UZI8bdMDaB27GPUqbidO/geq4YyGcj138Pl4joDuT+S3+7zT/Frxf2JWiUtO5CzBhTZ7K0mol/wwB3h3dI4gW0umwUrgOVQ/VLXE5cPTc3+VOQk03G0RbrsjIvO7KbX0BB+xn33UyOKIgyhYX3mmINeUM+ch+2L8QvCdkGqKPkdS1kXcX4FvEl9YQqTLkrvr4IJxx1O3vj0wcH09roqgO3Y/c1rFnORMRtrGJWNJBUhUp4oaJsB98Ytri0vd6UA6Vc0pjdORASUlEK6ASrmbMTwK6NYUDXs5fe7PX0Ljg5GD7lmUIsqcGIWquUme1jFnetgntNV5RUC+tENRysQgOA8s8Y6h9I7Z89SacGQ1YCHl5dbXVKbFAaREkjqxLGtbDl9FaOVXHd8tO5X/AGohhWAH5K5Jw4AFauLcG6To3n3EKSLKwYrzHqZ//uEE+SCZpSF7bxblZMfsytF8gaGP6zu3HN1d0CVMvusPRV0f7Bv4FkdpGJ2srYLLs6SMEAO09YGnRa0MS6BpRcWPt7uq8iXuPxMVUKw/uk74eMoJoUFimoF1HRwFYrXC/IobNtFgvlPbwbmX3NPEhtakcGkdTBiLO9X1cQo7DXx7yUV9rJq1cu4dgAICsSIw9gCix5mKpyGVfeEfr4GGvnhIkcq9cK873wLiLOFEz2UEeYILMNwz4CFO1MnV/X3MeOg6VCls8g02SLQXwZefrXJPqXqFj3JR+Jqp8+vSGY84HsTMMxDD4Wa1Qzq50ez+kwB96R3GbuOVC3xPU9OZXUvsz7PrFskNHIIEspZ7qnNEaJbFiJ3zN2DRy8EfFHKkUxzCcINBwRv/4SFdn9yRVbC19JuRT++hZ3DtNmkmKGk4aEwqOuEThy8D9EYDl0j7wBqDDtFsXHrjqoNWd26YxXGojCBynf8RgsJPpUXukC0yAcaWrTX3c0zAvlV/8rSp//6xaDTEBjq6gx6lk1qL+Oi5FupEG8xGDpPtucVQ7vyV00nQ2bzI8V/e1c5d08XBSQUvmHevcCFSMM/L0mvp/we2XGMsW9ozIc2kZ5Y0S5PsrNRGLJmMH78QVF+Qr+EbPdedGu8tlpmQdrZJrjXSmKmcO/WJzMWO5hAw+KxOfwbSfxrBQlxs8P1n680NLVxBrQexD7LCRKYRKJLmvalnwBATV27K2WW4u44R/vAUZpxD3ZoOiEU/7kMRG+rmMncXp3ezniG24xvK9K56be3nBr6a6LbCK1Q1PaUMe5ZewTl/4uC3WQIR/n98dCcRKAHoTAsuOEls3gYLEB309Qhi5lcAIxvGN0JOiEkFADntEQ5E+WCZUR2f+l9ESzz5pa21HpBeWJEqbw4h+32x4xC1fBETuRFdPY8IQGQeb+1bMlhRUnZFuWcN7yAttWviBl7x+7yS6v/c0OKLG1iiGfcxLZmPCyQLJlqJ/CXEtLYJpcy5b22Dw0Yjp2eJbEy3kuN0R9PM9qvhyiDUBd//1MoZ//Zz3d2Ps8vzVcWyCKwZ8tcFC534bh/uM9Cv9qVjemk44qHWtVo2bVLr1Cvo9Q5/qcbh0Yt7N7Na5u/YaEgV0TQQownQHpiE4/GCxLOIPljog5SWbhexsN0PprcsdM1K0JNlv//kyQxiSEOdrfi04r/7C8GA11ZfpyZwvMNyD5yK+KMy4166IMskgIeo2auGM9EU5I/wO8nrQ5D4o0KaXU446qOjrN5Q83mO3spaIxMav7rrcYWO1bR1Pai8qXItC5Fp/bOO8cuvwkLfNVVamRSOvQEDWSc1+yOFORl5Mjq99tPg+CwvPsIWrHmSk65nLcIem6M8b+b3rWd4/1wNMl92CBH66TfWCczJI6vGxifoQWyG9n20GPaWsopFtqBCTGD/ARf5f9um1wSUeV30UZnx+N6dgLBLzW4tcsYFHqfev2iSfYvV2U2Ko3iUX1scy1odKwmuE9Acvhwx6eIiVy4MzAOiQ3KDaqLGeEcsSnzg7gCaAA/vhv7oL5cz79dRUtYAr1yZWzMh1Mvhr84cGvnFNo94oP1T9kcjC7gM4lWoVClGFnFe6zhtd67Luio7a0t/yiWmCHdctGidC94Jc3eNvS3Rxl6Z77VcxW4nTNQ81zXDUk8/SlcuqVSX4D3OWG4lP5GfqMbVzy0D9aSbXsSnMFVGzt7YI3yDg3WFke3VbTxCQjfLFhYPQVrxff2jOll+QRIPuuccP43BLAZRw9KWzCXOGFN5B0IEHGoGsYNjcKCHjuTo396rk2tlu3Angh2RpzGx2BfC5jzCL28LSlqQBFLdoyywcYb12rChJ7IfDiJDO/q+f5blZwg+4+WuzGiXTcoBOTe88fonfJt6xICsyPZzPOLXcdWhhk4tAJ3Y0nm8h6Ey88Cad7EbQGr8C0fHiYJe8j7dQ5SXgzEBv/X0O/m5KoAMbw0cMNEJUwOlQckd6OobnWXN+uQs23niYK/G9/olWtYM3dDoptDRhc9YwCgh6//XVh6++DvRlFnUFcgyR56IqXwgI39Ap93RoKcya4zpKopNqbV4J0re1NKrjEUSykeio0vQ0ieSvTSgJ/gKcFTdSFgGwhxAW6/p7XFRoO8s+6g/LpKb0g18cW/3DrG7rKz6cIUKrsotXjmlKVK7dafLBHKA+8mvuEPPTUYkPAVE1aDPtVoixwPe8ZHyMYmNeovWfbxtbdx2Skiko6M5XlCALlnduwq/ln6xkgj5RmzpJDy5zAguu/F2Hz+z+uBuLulIX5BInvH52wSrg8cJoU/0V9K+mDjAQiCj0j/sW4JvNkMyfxOLRO9m/IA+wFnOYnbXyzPgYxpvs6zq7RYMs41aLf4vOOlgto1Ap2lTAXKxOJV+p7tgWwTv8KlwBXLGl2QKvEWS7XlyNre+JxWMO1ftfcXmP5A7z/MyCaRLZRcG4+TprI7O3OAe5Gxc7YK59ghrKkwHhrefE/rwVN1DUYrhvIpbf2pwnmqlYWBfUF+Mu1K/2e3kzMQbhvbghuObNczN1nVsC85KijqrHGlR23fmn11SHw69Pu8qBgJ0hZYyNQJG/I5XrdqGd2hO9dSLPO4DIMKXPwTQ5lSZp84CT5NfgOp7eepAziqTjOoKKMyohqBTu+IrJjZ+yQ4rMvxi56y74595vwPRNAlQ6G1dK8CIsnrv0WypC/kDdKogQCxp342Qc01zJvrt9VGzvO/jj6xpJIM/D5n4fNleCPDMqMccJHRDCuDFQuI+pfw6zMXvD6h8NnngaJVZ5mlvWeqjMMu12JxmtryfoJcS4i0Nq5Kjv3QfHEW34kYEoYlmOpVYvm7HRZNsCzksjL08oFFRTQC4wCQjClubR+hb2fT1tPHSO+0jL4FdbuSl/mQL069F46U39PnFZiKmx+0hytIIM/N6sr9fl4x/VHHlUFXETr1DD5GR8JvkecEWk97Oq3q7OBPsIDUdrdeBKKbbuxadNeXJd6oqqL8w6yIhREGPK4yRZIYNPEX9I6yVirtLtL7SokqVNeGNjrWRTvDawRzIQawBYzrFbFUhPUjOuxBvsaXJKt3DPVqEtTmCzdEoCF5WRTK764wUqo+nVI4L6rrX83zRNEReg64Fi3yk2AeJLntgeXXAkDBm6W4dzTQPKPXxnGNFsQv9zEzOzgE8jzoWFMB7rF0hDXEIzG1JiIWCIQanOrRjt1oKvt6ezIMikyorT1XE6RS+Uk5QMMqiJ9fpPg9pNqueifV/iiO1n2GMzADRuNDsm4yZsmb7VYk1ev/P5NAPdpBEFnnQZKEfS4CzaHTEkIiGgKH08Kuf2qxsYFNVQYk9NYeUfTwrUiQtg73h+YJawf5qVU6UIqPtbZvc4eP8pwX+Hvsitwvyymzv8u5BfnvBFWagu7rMd8VxIkZT0QVj17RFaJ0u8tMabqiHi2O5knr+ASm4mk2veoDKLggxx0WBtMkaqm5tfmQOV51RpyceXAol2xnaqlu6aKu8zFyEX3p/tBxKgiVOoBU32MZLwrGGX0oW0DrRZbklMkEfoMCHIARXglcWemxYN1qZpwzrsEmrp0Snujb5YF1v2W6JU6pLE0avGT6j+MdRGZ/NkC8ZRiAs8dlQoXoBsJZAL5FkYN5x4pgl3TBVmAh5ZpvNib4T3R55KTLlBk+DyOHW2QbDMBhHWNDTTEbgaLJzOzOw35HTA1Rwnc+hRorYLLJH4oKXn8PtEuSAE2uEf+kMKqhPGKjDR76OtEQerxfKmLYlQvvNWHWG5+R+X+u2bcZ6y2EbkZznPXBVaBaSk8ZcjqkPYQLeTZ7A8O+AqlcnDfXiRNoANkbsn6qH6fVI1mo1C5vBe8Npvih7ITrWHm3qgSxvE/TvPyJYTUDMH3E1GIf22xZyIkxPMaMN/fD4Dcc0YafyrpLK+LG6J2KusiIbTk7hnTYXbLwcRoIi6q9VqkemArR+O6m7dxK6/c6olWLF83CQ0nSHTMXVcMsgmluhVXaKixauw6fJ1P8ci2vPc0ROYY19nmrEnom/VzoFVQn4a1suCRmrxyQ839THr7rPhnFNiuCyNJBLSDp3Ru9iCmvMge3EVqWW5Wu3eJJWyRAH0PKGno67MWltCw0JlqVfoX02FO2+fH2XH511l2TgwpqGZVffiiK39zYIh3PypKLVCG45RB+nL3iWOaX5JKNF3hvoTxo+1jK8yM06vegcsSyHs4tjK/2q/62lkiePuNTAUVZo+Jd2SvAd+KNbRDAWK9B7a+I6CBuEoPp65nPINLY3WpvHitdZuemTxzYRRf5tDLwOsqGH7r+6Gf8q4gu72iKHSBqWEu6QYPz16MjPqKjlM9yRduOCAQZCMAWiHyBEXPHQjYe7dDZNVtx5q1NhW+MO9ioJsuyB8XO32ZYaUTMzomUSFD+A+a8sDaHAk0hWMd8dXv6g8n/7Vj2RMLVjwU0/FJwEYdGyLZtZ9n24rGAvcCGZhx+e7wfMsyEhGjQ4V/KitU9w1vkeOb0lTF+nzKKgqAt0adjVVvSo5WRK66z85GrwWZMdM0kxb69UFdRpqn+Hqb1djG4RnhW6JvaOH4HdAAca2HKZHYBvjBxiLzcqNfQ24TRFddsKlswVY/Ao9A48JcE6+SH+3ff7gfQE1EyVE6vWcuBtyTw2yEeOmG1RKimBlvUurqufZomK16nLwKsjQz1XTH+qY2csRrBONsX9Nbzy4MrWfMuso9oUb9rrtTSRUvG6vB3Es1vSF7BUGedETKbWrfRWneJ3p1W4ULCIy6kVShLhc2asQZmyt4uf+cxHFbdhPfJNIxcDjDqduptmykSwbP00zXoNhycVHt9TkRTtg0H89PJW9Dp2RWQSJJE91ZaAnogwyMvKVgvp421UQNp2oAdfsDS4qDxCQkReWoLnF5cu9LvEvoPyyFnIhINnbSjPpsvSHgSgfTf8je+lc7jKrE8uFjiwpY7zAXwWaQGbcj464+aWVk52Pv2vPo5UBF0aB0nZ2Krsc55IM1GOqbcE72WqZAwPVXlrN4nCUEev2L6PFAa67FHOLd6Febw58W8XfSwgNTFjcaWcOtSH+UdCElfiP34LXqMQGpfgSEAATFaY8KdNtuGRCaqoSW0PWW9Q8pjg00uzmFMlzJKsLdpZCnVNMIFw0jcV4szVUvkDzMNLZthVp0Z5gDodFP0RiWiiHgZ37mYh3sQZxNtQEDTUcJTG5iVSXKHiz8VN6R2pSYFDL3IbeFDUtTqDr4UVFbDXRS8ohJUjzHpfzETXmxqJyrDiERSXFA4Ix4mb676XMLwaJYBgeD9UPEZmtFrvLjVLIMqMNTlKcU/wTidyVmZTc0QmkJA1lAcgoOPYxnrKaoLvEylEZFuo3jG+Na61eDAxzrZXfVMaUu43FvVXlBgAgJaJEfARvm4wvhhi9VgMYPvUsqfEjktpLGYuPcSV0QJ7r1QOC73GPR6x7c+odSzCRUfYt1YTaEA97bPGfKtySiOE4PC3TatyTQYt4sfGKzRU+YPW16W2Y7QsdrOKB4rVPBuKN8kl6ulP4y39EDnCK353z6KObvVryRZ5jElm4H3UFwSOxsyP9HHMbrcGJp6uhTC4EG33grKZ+GI+oDAnN9DNGSVPf+Aa2N/ZjroG/+QpCBWumm6APVs8YfIVR7AKPPIa3pxabOPebs/mINUT8JPPYzh2ZssptOPS7KnTQo1ctMgSXqngmz9qMZwiJv4azk6zhKow7eRbCLAYcfsHX2HoZq71HnpjcXDH51LZ6edmcyEUexZLFHkBs2AddUVS07ScHqIV49Hu85+9a2iIebgY5oeBfIUqG5UOijyhTz25rpoT2Om2LLrj2WdK1cLSpK2yuKXnpb0CHwTdDzSTUtNDgr3Upc1t1R1vol3V5z2NK3kmbPvTtNHVTkeuo4pX1VO5yBlEU6mICkPn6kXOykQvcPcTMdeuUW8CuSFBrsG3OGZxwOwWfLjQr1BMzB+uSOTIcbWfgHUW9+h/wqmmO0ZD3kRmemHcPQoddWJfRiaBpSALpo14UCu3xFEGkHytRTck0yAgKJfG1HKLC3G9QvxG31N7Qa8LeYprKtVRgKKqy3gyTOyn3Q0IeQ45kNt0ZqM6iX7O+75sJ8uZJ5/Hh0X0BfaWvozOmKeBL9LaEndA4iZAguaVo2k2VCBlLWn7xdJqd20BPI2QVEizPKfp3av98hagPMVomfWtAEVQw/r6zWh9QTqCzDfWhnIcteHbtBSn0XLP2GThznRUZPeFWhrXBdtnpaDP3C3w9JDI1IuFilNt2Wy365++MAY4mS/X5p/zu9ZQRseKBq6UM3coSbZWuslqxdy6sN/zJQAUHc6wT3reUsO0aBmiW0wyaVSRPSsgiUbdZg4CPdYpcziNB3JF939ZwbplEekDQ7v8gRlKieDOVo0VmMBMaEsdaLTuNGhf0LPiU7TDGl0Jh1BWjubE6ByQtHIwyZ+niNPpqTugb+IGNsvHZ2jlOIaXzO5eX6i4tMf4Ha1Nme6xYD6Ve5ssDVOxhrgFUqY1AFAuuK/F9r+RTfyYCWHwBJgM1LGSLZB5BWbPh7zqGXKooU23RA6hwG/C7zgDW0fXeHiv8ef/twTQm/dpnrVtvilNKQBa029na9YtnXr9h7ihxjFAM7C7maf2bbxjtB/3tcm2LTNjXIvyPDH/UzIUkV7hVWCPYegJVyGsICuv/kP/obs2X6TfzHmMVjoM06nn0o4ZejQxSxyh8n8RaScXA2QfjJqmvEdUsNsXARd2Kw3J89vZcA/iSgLbGTG2kyYQh1Tj/JUm/2S7Erct0WLy3hfUl5cK2O6znLbxDTqvYOAHKI+tOa9jmhvLcowe5ywjbwutIDfG28UP3zAFvLD57zlJ1EajpiwQUn1H6DFlaK3mWC4A3K3PiP1hsziPSFTytDGZMxq0nj84oNVFdWLtE/JJEPBTDXXv5pXR9Ivb9QewYUf2QKmTKndZdDaIx9yjyfuWQ2inVgdB0sFcTcCNDxDE5TYAKL9bep1acBrcF2HoHjzwXbIVTrqJpQ5wDl1DnmZB6DUYIPSRIkLlKII8Yel/So0IrvCCjpYs5viNoikCmarQd8Ov3sEXnpXw3vair9T1XHmAyddb5uBtTqgtRwF+OmhtU2zfAkhFkPrcX+uFUavcTZawbd2NYLhOKNQi9qQh0ja6s7GuteT+We1ApvhmbkEz1sE7Ee4aTWIGcarjWYWl9i8vsD8RfGRair19vNGxoKPEyEZm5EgNZJNK5MFdv0BIXCSJzQuPlWd3SaxccElM/3RwkljXk20/iYn+8iUiAXkcrQxSQVmPgsdB2Qp8gPhk9RaWATD4C3kj7b6qymXp1qnF/+nEpbGLOhlPnZwMC3fdScomDWp5ee1joqYaF3jSBvlO32Eem2Pqk7s0SvhCKSOFeYNW+TOdmF/ix1ygm2cv5JEKYRPWl5XAQacCG/hhx4D0yb46+WlNHyfa1FB/f2Y/0jmheDUiydg4DRFGHwBozDfd4ZAN9SGfbW4XKX9OSBU3OVSfceU/8qASbshQqpBNoR+wLiujG+bqwvoh2raN2Gb2xqRY+WfrfjwDKgKuWCnEtY3MseQIx7yOKPSVi+DVaBQ31YFuABc6sPixn3V0SYhXQAYqwQjHT6H2Oo9YT1jJ5NgAY6rtgmyF1khKHg76QGplWQXu8CW71HNga3VjcBSbU/vxwhrtfSpn9JXx33Fqg3486DeN5S5EgRKhXUZk9575FbtCdfMs9sdY98vZOnW/13gUhsRwOTF3MCkbbVweHdycqzSemAklH7s+qfoyzq8/FXe+KL08c1Hs3OzMlnhIylzvY2o9d4aAEGRdp6II5maaZ/h3QsKa+jSTdWKZ7zZdE1vOWJ/f6WokH7W7KcgZjY2mNMA/q4w4RX1YWq/tnrHBhJ6WHZ0oXaFkg4Kvg/j4h4PHR4Z5GvlXHrQkS5WAmQyHfK8n9QSYGDLN7VVC40IEi8sB6VqNhx7nQEIm2JJLGc10v7+oHFxVBDz6m/2fdvkwTuIdwD8nnRwjYp6vJek1stQ1ShHYEf+nRTWahnao1Zzay0L3uOeoukemm9mzWZvin4G+9kerJC4iwXVlpnwM28vpGSBVS4veEgcyMFIPB4KHAE4d/n2Kk0bZpbappmIBPhhhrH9z51srPHlq6vd3OGNNXwNJfzS2sCdhIUjRe6oRg4qmcOxOnRnQtyBNdqxGOnjIf9IGXf71J0YZ6is8XcfAdCR86IwAqC1132GJMOizVHB089lC1wnDKNs+bpj9JRkmc1j1aRyRfgieimCQtiZ7cn2ZybqR0UwCRPUuPa8zmXV/JvMyWe/W2CfaxySB3ZS3mZET+fTXMMAufYOoZeONu1rm8l9SyWb7JItOhy7TZ8Uzaq0D1Th6Q1FaKejtytqbxw2AsTO9rAu+auiJD5kT9SCaR+YZAMYf+RO5wyakRBvM9ZhuQkGBNKmzjpmdWUCNQa1cyNdyIJ9JZAy2xiQVoKQMreAUJMw/3XgyOiuamtWBMDa1g8huUYmafLRKitiMO6uGEnLJxDsxoVVEbZu42vBQcN4JtXPKRz1JjpeEezgBGp68h93uzKuNWnLDdqwDSzuXKRxEd8sup53ptIwXNqXxCOSVE9+nB10ku7isF5EO4+oBNlnT0jAgSEQiyTNEJqvSN6az0uNdac2O1U5IB1HQeae2FjGN7RTykPDxtFfs6pDwX4ynepkSY60EIppk2xshfp0qotGEaXMMiSzpm5/vZJS7BqaAETiMPG6xe9H5QilIWxJwmwA5QCxbql0gyJ33jFOo8Y0pxYI1S15Y6BvbjucB4HX5CZiuCXh0tmal6IE8pgfn4s+/kSRHJqDwvuPkbvTpSM1Tm5JPwqP2ZyGijZCBiIWtM4ppQk1CPp+1yEAgc/f4YplVj6SNTCkTHykncu8OrgfyuDCXCsFql2Ggyc6yHBBDpKAqJWt0kY92hqqF36AcoVmqNSvEIE4kodIcHZhAw5NGHtr2QZOd/FC2oOhcWiXjWgTXVbnLq0JaNvOmX/95tKlTAyYP1+6pzwAxX6Du4iTzKeIEUXq3xrA4nY6Yykkz/TCgpN3yAXCxtxTn7pIlFAQvt83fa+ca9oV6Ua28Jso3OXxgPoRNS1Zq/moFnywrWg5LazlQAbfAgAy+zS4I3FItNTl1T6ko1eVcDfhhx8iyLvjyIOcVS+kkthMP/K2VAlZ6y8p3TPN9Ganf84Nz8ZqAU41oPx6+sp5s7N7TLMYaXH5P/sFsHlE4edgZQHIyTf+RJurS+qpCEi7rnF49Nnvhoji91ahwMReCoygg4jzoKIalKUEr5ybWBtUhCLwPGpS40ofmqZF65J2Nk1er46HvRr12JRvfODbG5phKTHUcLVD/IY77FtIuXxFMU4W6avjPKYRMdJG8qy/IW9gzQYObOMhZcHoJlkjFOHYnOIRUvfJwuKtrEPHcNspCB+7zd+cFRI70v4BbTMAKOJNPtMbj+of8ScaIiOG8suZ91TJebdE7CCbTbV/YIsw+lVyDA6qu8ArizqgThvvaRH6KpXbD2o3Pkfp/aXjmHbpcvo3bzPFJgw+7cs6M7NWT2lC4asWq4fYQ9pg+O7SffnK/nZMlOhMidjmMRsCwjTDyEsglC+Q9oyn0lCYXJmMz1WQvQPJ5RrP/fEHDSZttYNctWLMbvwVoGQhz8bzlS34baIkgNp8bD0oO+2soxvzaBnOkOh2F5852/PoWvpFe8G9TeRNS9CyGsRH6fvUzvIklicvu3CnAsC4H0gIPqafAkthQCNxctMntLUe8oxpCgHGOFfO7zWb3a46BfoPGtPBwfrQtSIHttHEQKfJne8p05s9uszHQKcrSKHyYqcTAyzWp+jrtdtXrE6DOkxzjrWB4QyYYl1UF8YwTx5CINcwzGkK57IKv9eMRQ31QIXPSPm3ynSegXaIoUM+ElFd5c6f0Xcn7uSr587ZqSIDJ9FcgShAV5o7hLzpMo479fvhsETl1uGXQ+mY8jGkNzSRbddNyB5FdxCeOHPdPUBOJRhkK9Xsw09iFap4uJLhZuk880hvPwTUE4dd/98UbAqg3J1lJ36YU9zpuiY9BhP1nELRRce0IkeSvzzdsQql4inwln9RgvucsHWw19R5aBp7FxOILxRPesqcIbg5Fs7devTUezxB4rjSTu88SGxSJcswt8cUXLUILlwAP/culMk+OJqqZWzsEUi8pf1QiZqAmN9gw9PbkxKyPpODT1jJlCP3VVMQfQJD4fZiJbF+/q5EDiGCnJmPghFpTtlUCqgdE9z85ZuL2R1A6ZHzGjzx3NzCp1RXoxPvr86/khy1AYeUuJHlp2zlmVHG/TUPY49YzvjLkZByNdW824XshqZ+OL+Ekag0M6dcP7wGS+ZPmNKScgSw5RP4pFIcsurlSICeK9QdU8dnfLXiDZdjGMAILmVfbOiagX99ZOonzbLBgfIzXPJLXILnuPk2GuvB9QD10kdCAdoDP1uOWdEmadX//7GavumF3HqYnQMac3P7qIKWb75/tcsF+oAt8O54ITOLC6mFGXneM/BnM8tFTBkUgxkw8e668O3+37AevwqH/Q/8tTU20f3sKYgjhhLWKVey4KLe+J8hrGVssrQcGPGbBEE4c79tTdnuPQm2xulyolCu+a6ITRb6Hn2cZkKCcPynEhmR0a5dFuOY9zVcZkN0cmD16rCfSgpLZv0uYca5F8MpRJMVLLxMFst8mcPrHwXOUBY3D2yunCZBzWMeU4dL89t9ncvx+/Sk7lGE/XDIONVNdks0HXh7OdFHAiCA5sItpnhX+kv66bulAoUfHlVLNw97tbRi2eKal5y7X8SaPK2ZXsGJYW88QOjYuR67//uhORwDb55LdX1NkGIVnqjON4Dfl559NQExmDcUrfII7/VafHee5Wl2EL8H9TCr8qXiymN4ih0GmDKTfZhRRxMzNKl2tyhfji6JRawRam3hNAXIW6GyBY18kUXyI1yLAVHjLzt/b4xRbaHtE8dKpJEG9d/UMpe8RkaiVcDHt/zm4vsZOv47ezEwuoD0aGg9TCaB8h0UJ0v3/0Xk+A5gGIO+w4nY5BDnllaEmPYzfo+JsZveAsLuCldy7o9mqcIeTo2XibYJ6h93dNMNPP+DKeorWn156h/XEX0qGpkFmn2SSUeGEzyAhYfGJziz+Qx3xGcQBLHDiDi6ggCwiKodXr9AgEfMn1PmILcYXqxPdzmaK8fuG4ZJhFqp12DTJcd5/CJ767PnlbFM5LcGBkXa8LPuzbvM5FHTx5JHSyByqpMlowtKpKkZVOpkqHT4sGmvK4Ox14+zDOQBMLqGrfyEvrt0MzlIkYsHuPT6y8EMdtkcfi4kL5ygVx8es4Y3BKOmOwHvWz72DH8pQ98HI+9Idzi1hwEuDX/riz4COFySc/1zR24LpjXaU895yOIN37eJ0wabtm5q7TZUKWYmxb4GI/K66lxCR4w41wdPanoRAo7uJOsN0H2qJlA3nlBguCTw5Im/ccgJXpHLNNMAy4+Qt+uPopZF78jhwAEkrVaB+Thnrm81ISD6uy5fqvkBcNvp78cIglWq8pOVMv1w4mbsM+xfBnRv3rLIuoApOkbDwJss8v8tBU1GF69i9y8SBb4l/kYJ0SKHEaZzwg6jayjTfMuitjdLi0xwuyj0FraMbM8U2e1klajdOZ38zXTVT1EbLbz6pV80GQzSRoJzKrE2x00klTMUdUdfdcGJoAUCQXuuqTcItTiRgoLlaZFuXUh4wpyKPiciXrDFe7WSMeZk2wUx3/7VPSQirAHclVNGsMtGrYwpKAQjI3UdGLXk0Po+2S2lrHREPSU2BwMZR9vOGJrUBTaWFpIWYjH0Z2AXp4rOjAj3gliBY/3e5uNYHZcwVR1wfsoYS6Ti94FvjAGPKThvgSttLhGWLZIN9wSJmlYVWC96SnzANbMudelT6GNQ9+JyFAZqZCGMgMp22irz8O0XkJ2Z0QSNDwPXGH4PCx3CS/WNl5Ovyh16FDIE/qMbGfzhPl8pBkjxwTQ1fBql2IdjlZ4Ax/Gsfu8TqY7g4zi14G1hUPqUbLBaIzP1+Ya+2PgwL5Z4Am/qYTH7+zp5TaO6JdWYQJl5A1sIaGUy6nRXCc6VXoXjXZiopMvzDh4sdthjvQg8N8O8InWPKoMJkY/rKDdIq2Zvrt2OE7TATglh5o+1Rwd+4Ji8CDehYGuF7xeZQZUS5o1aM6YVxj1uXLRzZoyeCOKX/A9q8IeGhmqrGfVke3Hntx0XO6AIutPioH/IKcwemyhfBacYKcPRj8k0/X05qsH3edvq6cyZ6LyItEc97FBpJxmuI6N04N2po0jNXi+leddvq55cQ+WU9k4z/OsDZHmBoxT9jmF9S1wMSZ4pNeSjv6v0J/oSR4t3Z+IewAmff6w97AgAA6Ula0raGmA5TEydA34iHqlOqwFX3+tq9ZeNkf3bjfSQxCSGYquWYPg/4PbaLDfdgnIZKo3K+82CQwvRCmXiWmj4RDNQtEGp84X8OxKHadpae0Tmm+ORWOlzSJanUjKOldus8kV34jYZoJrhYruz6ctbsYk1AiFpAUep+8p/DmWULqNfO3qw/20cJUea6o4UYjx5qJuq1dInEJ86gzjX88/IuWzCn4cqX6A0FhB34mfJL7Qhv2t73LKos3lY6nYmR5kezfwdl/Xq5Hq5RL/zHQ1jX8R9jLTC3OvUZdnUxIB8rn0/C/TmkUxvV9bBuWKoE74ktMIPufoq4JWp9tfTLEFiDVbIASOXpG+gqi/MB1nAlWJOSi6Wfilok+qBC4vN27tTe/lD9+xMabojUtWIW1UM4gwbGpqjsGjEqSUrz2rFxymCkGpCzrkptyfT4S2rtuLfz5Pvw1JOrOLzKJSTu+KyC4bUxwPeZsr92kERwHnGed15ZxanJgBdINgif0/TkBJ/6M+fxuIKzov2C2Q8Mdcq3Mti+NnIWeU1lCZA66EmWLAFt2dVOmRYtGFK3a7vwlAw2pRetsKdjev96D0q/NDsS2KIZ3Fsp1aJeBdep8xF6RPRI70NPf9bZMkIVYEP1g9aIi5TuRhyDPUVe6M2Kt6TrFXRR+nICXdUd/JL7aeXpBkwJL4ppedF7dISkF4zViKc9elDCQPJHX5pD3JIUa+finjBaC8cik5BCwyfDzrD+MuXxxXOs6fgQ/uyO893XzsR/I89HplaMJyrAXUcQtBmzOcElyY/KwXsoTnPUEgv3YAzBx8RU2hO67aybGyK3N8hcZCtqAv09Psy6kneEqIXcql+0Z4PGo5qvuSa6EvTwtQDSw0tpZC8Ayq3xtH0AIc7PgS80MwOBUECWEPYy1Ot1PCS/lpXv7K8YSowF60k6/ugVc+a7uqNB0CXClT0FMKqdRFIEjOSkt1w9HWHWySEtdDoq4kBikbQB1mgF3R32dX7tfiX2w2pP+MINFCByWVoiHuN62SbxRUE1AO3Nfo4txZaHihl+xfk/GNjkkGRg3ri2B7jQBpVjs9qoWs5Chn4EGfZvwq/8xs4Ehcv8mECr/J5IMW35i/qFRaS7jxVucm/oAo7m0X1OOGKA6QXlSuUaj+FbSgVvb3qWctdgJTaBziE7Yl9vO1+i6Hpas938P7fcAhticXwsrnKECu1A6n4Gw3xQj8B0Z9WYqGihNdTe0nme1dyCTXkKEPUpWu1qWOb9hmPkICjwgU1yC0S0f6+OJpKD9a18HQEcjCAa7Wjr4wGcmlq6qoJZRH7gLGt5LapIGtuTOjM5tC9bjZfhaYikhSGYOpyaUoVRJ/6BKZi9GOZ81qKRayCYLF5E0NSTcMkDJ5fVPCZ2J5nmZnuu+7uFed1Z1VHiWC52swo8X4l4s4ganQPuLeThrdHFVM0SFh4/PSXsxhYfcUXSn2KdXJPNfRXVCQ9gQnQAM3hzKlhgTgKiZkwkajII0oJoobnV6Wulou6BUtgHkEluAlv4mCZOgmvSPzTLcRwXVhmWOSDTnikiH3LszTt6JxA9cvcR7W/qs/FeB5PoThARY+oimJyTrCkDcu3R7uPnw9xH/6zRA1q48cr+xSqZlJt45BmiRb1cmi4ChOdfc4yTp7kJ6NBKqGMBdIFwvj6/foUS9ghjbbUgfPv5eZYd6xDDD9rDSmGdWRIbc9O8VlWzw2JSlU5/DE4lfWy+wwQ+lwqlWNCw7FIv4b/xarG5QKTOqwxvakEqZJKTmgSbaNNXCjlT1EZ4GpldVS3oRSb1+k82enLxT0O4J8MH/UnzHjp4wg53REl9Bhiu/6inLl7uEjubLRpJJA2ygXRkEePxWA7XJWzIexglz+MfjjtTi+LVGSryBGuCc6lQVupwne4KHwlO/rP0ypWu64vc2/zUcTDspclphFHQzzfe5lAgRih/2cM9poABJj618aaY62mMbLkdr964EKbeKC6ShAGWOfBPYSHrLlKGStY5r+RfYgrpAlrBzx+IKsL3JA1TEw+AowwpXd6DGD/HTpIEQTZg/5YeFQte6+wmFiXq+Ndg9ZX7H2029CVb8P1yHse6OsVrrbKoIvnRwnS7QdFdhO2BtboI2r2aS3J7+pQ4IXRtemy9n6T/7P2fOtGIWhTnKswNyHEkPzF7wfmQ9jd6ofsP4t7U9jBQP3pKAnjyzR1dyHk1X6m0HEf50/S9EjP4puWa9siML0aGvSM2yGO4Tn9quCS87XTdmqqWvqIH0flbRI95B613LShs5LvSgOuaciGxkR6RnX387l6K/bYFEtrUUhUhQT86FlY2395pBAP7OPri5ZgYdgGXkkvvMxXWvrzE6ARvCG6qf2KkMul7XFdi+hsQzlDk+Ww9BBREVmCQFxyv6vUI2WZL1XdYYXpL+QqtL/dmUQVIr99OVm6vHRGIIeXQVRXvtbsQ9luUYEiHtzWgUWKZGMwOcojdqNIsGqFKhRqwv8AImolsFASf52Mp6rLXFGAY1FM16L+k0A8Py/nUNC4fIQ4GjnJz/ru38P6v0fRfyu9y5eIOjhcNVCehIFgEOg3Ji4jh/mbI6cmday0oRSPPPboTC6H1KOvPjBoLUSYwOhukXXiW94Ju5Clfb7p/B78j/zPI6UqQ8f6h/96LHi+LxTRwn4eSJDmhToxM9BfDmGJ9d9Xs1KpgCMpI2y/w6243KyzT+DpuSAPDz8SjrRRoVuKUbFh/yC0b7YG4v14c37WT9bJeCBnyIIrHVZ22+PkF+9n0VN0B9L+NnEhRiBPP8FRiMcwS1MIKWHGe7DA3NuJBSwM6bZR3M1wgVrwkmxbyqpU66sBAtw10Ms1vQKg5nN+XZJvqyfedP13XFLPR38xoYLj1oL6+BGqiiRNyZRet2mPSsD9QeSaIV1ZK2rj4ZI8HoX8Gu+NI5z+3zIJBvwPwILtCQsWZQef93W4GYCirKyASfAX8FYPsOntFtBKx8mJZanJxrALstALMWliAlQXN10hbEVG206zkQIViMB5IEuNp+5DrD+Bi2rZJuUxC70w7xXY063zszBwJQKXIbzKpxIsnheMoyObAsEJxFrwNSG+fYkLyNCJOaes651yr0Y0rUu1zXOJIVUitmYYkBbDtNmFMxT4/wIPFMusSXzWgFds2ayTj5hlM82RFUo5zzbea+hmkn2bFmHT71Tf1kabOei4NCLNHIK3nUdF/XqS6hrJmnA4IM6/3qBirsMmRQaEFBGsv+j+nD+33E0VXSt0wApyXuhhhwjoJAdo6vS7i76rGPuH6A/leBo6xLut3PE3wm0FHUDHcFiWxMxlePyULLIPkYmzasP+bDzKPAgw0trbp4pLwOU5EpaKUFnCXu6AEGA3A20+HfPr5kyj3ofm1HNSJbSDT6u+G55la5zJmGnJxs+Hf0u2UDVUdKdC11CguWvijigvAxTVb3/kDz5fBEMojZ+BxJLGYZywVmIo1K8r67G+cFaW8zOudav7hs1FuuQ7y6gZv+2DjC8LhbnPydj30uVu8pDDQFWcEb6bhV18c3nNzhLFR7I7FjpUn63wh+6ffyDTF/dfInBPvbWwYB8sNmIDLAqrIbxwnyCGyS0vXKeZm/7ADMEt8JSHLemycUPq6+/rNlk9EiazcHam4BMarPx253JNVaiyaeY3Odbx6xCIFl4BRDZOeH84OvgFOgClaFlwtVqzkhPHt/5+DhRgOsjfxMYlsjkucp7slxE8JhzBXi4T2GIfbUK56LXaOBa/vOhge1UhIMb+lhjs3OZP7Q7//lnk3I9hw4XyYAkU4oBO8f2ZkY2RqrTxIn4cb/HHyapVqsIVio6UG8EVXAh2LWD4ocXdYhnsqiLVQwbPP/rgt0sfNRgCVz8w1DEtYjI7ppJhdvLUMYUmavyUjnR2JYM5XICSPlWfsWaW8tOFjVuBVBORg6F+F8qx9tr7bzmnCWzyq/gsP/pV/0eCecHHeZfqjRhkva52jRqeyjCYPrquH/eGMbflkR2XTXFRwlVCvLc6IfVUTRAVuwBF2/uIU+VrTkigHEnVsZq9Am1MZmpuCKGevYtfUIZNzBiGj64+QNfm/SfF1u0pxRBCXIcmtnKzpLMgE/1n+RGxfe86cbtzbwjnLcRHfeO5SvRs5d27ZV7DMG11MoOqqDp3AQnjKEcuzMulh3gUgz7/Uwxux/TZgb8EqpWg9dnZp1Iewf882JfINhF7L3miKCNS/NzcQyrebpjpb7pemIonuREcuY+iWwjg0Q41splzV3XZQmTeoDp6krEI/9O5c2KzZP3Mvw/rOnC5uK6+7On9l1MEIzuut0zdeh8CgS1PKf7jj/rG7UT3uj5ZzCOZzstNiveolUvt5y0dU5J9b4IdAR8iH9U22B26KP4zezPflNcQ5KfvEwDeUxUVpbLlUtaWuv0LvDZbgqgbyNbXLnJ2sYo0JwuzAIvgBlgoa10XOsYh5GZ9Oczcqr0qYDg4D+7eCuRhepFMS+waV6OkHYgSH11ESeDlUEU/bVxlKS4vaGxzJKz5DIYJW5E7h52lXgXwRuyIyZz2nXqg44Y4e/aisuy4ROK6KTBq9mGeOs6Q1EAwgFeaMFWRSNvnrLmbwNOM93nr1phYN04eusBiXykSgjtMsw4CVRIrAqwAqWjkvV1YtjfEUdvfikhH/Jc0OVm91qnElPPDBMKer8BeYsvTefOE6teEamo4pUE8K6tX7cT5z2Rd3Hsz9DWeclp4KLOHRj8dUeDFu5XXKkxBW5w+fwKvId3jvPRtIAItROnwjLdr/mzKMoGpX6MAfi6pftlhk1nvQ7iUhdJ+uk3OeA6qUVWvdvTM1u6w5K6pEUZVysSpLeakAl+b0aVHzHk+JndFKCukcVy/1LjAg1wWVAgO7g+blfTP8nq9DeRwT5qKIzezayd3gvMKT9nxPgHdQ1ZBkC+x1Db42l0kO1D0ibCopCX11cbtM9akcg5V3TG8fczPqcHGbCHeLfK0ZBuGZKPxnZ7p7OvegWysmDUq/TJXVUewajqXi2Jg7gcCqeoMQ8fjenNdzklbvVtw6pgo51Z5010E17O3yrT5L9dCpOItUSEp8XEOMZJH5KsRZ7twDj68pxxKGw3TL9c2slB/+PUFMFxlHowVQSVwuWR6DmyMropXduR6bJKSLgi49P/GxMrtAXuxf5Dns2y3tJistBf0OCtMz7OIXL+b4gYhdeiI+j8Mac9DceYhyRHinnu42ssOGZxT+xAkCn7ez7vCW4G55GuzXfedchPTIB518VJ3RJyGoBMrDqagPUkv85RufDDWY1848jW5uXtDPxxLX/Lmjhx1g5wcqStQjp3/odv+em5+JrJkwL7UcvcLNXoBVsgaCRflUGxevFdWtTCnLXRq6SwOiFAqIrz+6/ZR09ExoXD5UUISsLiJMnYokMAeOodQKjyVPllpzdVr2utPP/2PZQe3iETNYaNjFzzR/qRJQqOiJA7tzsUMx8JPtwv1hEMCgXMIdOFxf6YB9Mvs3AM+7v8EqBKkRhv8w9Edhq3BKEEf4540/E3CVCs1YSzRUOY4KCUisAWES7KqwZ7PLtFMfZhdE9JyaF91150Yz+MHRRuiBKkwyDFOOHTuU043SetYzQzCwXOILkyqwZSDMdqhd0NN8CgSQ3729laVu6aJPeZGi1DZwZNi0x4QzS9s5ndNReMLm87QjVm5w8RPQ4C7Vl2KIXzUK0rH3C2YPGLmX8wXHiphHfVjxZLPfJuX92unrarfSKES01Dcton79DhqNJRFxEMX2Avxq5w20Qjm6Lx28jc1Tx0J0ZB2Cnfv6u4Mzo0xElkknHirjTyL+TQn6uNSkSKpS1XOj0Z8YmGg8gV5FdgkGQyeoPhAtr+KOXosiH0daUG+5COCx1t+RgXS8J8arLUqagFSVil040AO0vy3EwIQaikmK+farjoezUUGSi+9QmHHPS3UK4QFOdjQVWpQ338bmcl4WuQIp+4EvJAwzGJKMXSbGdus1nYnfTCnYFwQZ/tccz+Yy732llvOU5jwHTnYpzvXXsbLkkARx6+QTL/puk4UoWO6rmdTBAreOOvaUPo/7zJ3iVbbfL6pnaH+/0KhL/zczcE4F9zSTzXdkjulWUWQUE9A9GNdXXS6/eHsmKkTBgGiOvOkNZLBByOt6aM2tBOFM5rWhVoAPykBuggo2enXzPvTzcJWaFA8kOFaql8Nf6Qd2LeOKv18arsFzJJPS/Dt4Lzf2H3BSrcr0YC3mocG0e3G2F0u6RQAPD7zWAFenjXKKIQyHs8nYyhSQbsjO3gVqz1p+VuHB3Ln7lhHHSEhyBMOyIltIkJsrK3ApRATwLM8SfDmG0vZT1ormj6qajzxnsBx+DYIqF/BsVk+HoUvaYMj11DD0QOm8Mvkfm676U/SMO8nBRTifIF1jcWrrVg3lzZqH8WT7/thmtXvg2qL+g24w7q0sBuqaXFGSIy9kk5e/8nF82lMA5/jWloC56MDDlLVvVcD+CyH6CIDxmBFtz6f9XQQMKubUCxnC2JdT/Yb4FnLY/HUbMl/pei6p6PGzTv3OkSX8Kw5T4b6DK0RIvjLNgc1BpsabsAS3JbJpMjL0XvW+pIgXE2hPsv0QqAHFZPHZYRuzXycppd2GYKuv7so9euPIMMZwegZ8c54W2BMtRmHXrTKkkwtP3oss2bX295mOCCvw/9NYOp14gBBck/r15ghRqzYOvAg/W41c0XMlpa+9QuGaW0actwDsVYrTlK5Lofh0XxIIaCXdfLmzVuEmKjF2jlcJHqz5irkpyy/AYQCE5A6OcIMRo51ExjBN2SN4Wiw73SKkIgzvQn/jrE/HKlWvC9XDaRpxiYu+kRgT0HrTVjV0t0oZV4PokQVvtvDI7XFjKsmHLkAFbQXcvfmYZIApxr2PCFmNl3Rrs2D9W+vz6IoCe+aDbvXdKeiM0NcSB1+s4gvv4/F9WyoPRiD9zbb34nWUTHqo9vlhZ25cR827hWjXu6ZuyqCfoxe3MXd5aY24sDUs7Mptx50eSB4OPeYyzU2bBevh5pHWBlUYCvZI+RvQzf1cUfjjjSoqIKPLaM6F7gN1V6vq/OSSAscNCIr9ZhKVicSHRi25pZjjeHk2DyXrM+uz1Fd4ewpFRh8m7G1RjxI8JVPsZfl1T8xSFuopNqKttBpkYEPv+Qn74vJmFtagaKa6mSZ761CwhMlEEBH4LpWPYS3Kg622dAs1iGm9OKla+TBQ9N8OHG7OU4NXhp21CeGrGXT0S7Ly2Hxh+PT3QWaLCJrKEm5U6iz1QeB8LqXFp1ByjA/v88hB9QH2cz0Gu7Ewed7+t8wqbWnIwJd1LJdemVnIH78nPntwaE4UMlL75YgoWXTu/TPKsWXEMb0C6NO5QGLWXhiMW2GXfyvaQP3WxVJl/1RQ8XmXQZi8qmae1RJ6pmpR8nusdRbXQmNANY62hMgMKxuvKRsuJ0zJ4Nu4KE3c7XK/t02hBTVePkltLNjOE6uANia2uC7jhMQajntgaR3/kaXLd8eJpyhZqvv0no+4CLI14kgT41P4+kqQRbjCoE3Z2bb7PYCmjpOfI0KF1zjPh4VpneZ3olmeueJkTH6tVZtwDAY35F7QY4fzlfyTeRBjIHL45nh81xOlu08DuR8LspWtKb7YSeAFqV2bQNSlA1j1lpI0oUfI+GqSSSvLdXHEHg1/Vcns9oOLNxZH5ZDdHVgqoDsXzoATBYTI1YHv1ellMcU3HKiW1N+PVicQZDh+hXwJoY8WXpuEblyOtj2KA+hahu62Of5XEkl66kerCG5Lx34tFjI4IX21fiSk2HFWd5LDQ4nmLUswTFNbeE+i3d9NwInvBt5WFKtdxZ/CBqUUhqh2HTv4YgLoLmteQu152fsxlN3B+EhYweWp9UDvpFGzFlOeJ9iYOQMABjW6mQ5n8e/IJv+5hySQylBi9K22nb6aC1oSAGGBN7gamd0n/IFd7W2MpLzyKXXFRx58Nf+Oaw5zZX+CM3r7mIgfKwzYcxtPox7rny8ThEM0sLoK8soTtp/X4uwuUiSep0qt4l66S/q+fYa/VUITguRlSz/UYQYnZkdlBtChOLgDsFBSolEjflwQAwVA5IEuaoHpuYpEkoQd2nVPaXnbFBzpiVpj+H7F4zTJq7C5k4sL4he8yJpD3djF7gz2nBSTTNtmeQLvH6bhdRuf8F1w+SnLNOpoDjN8sz5bFuroj3/CYojq0h98i59V+TWGdIo3yi/13e1gkzXnEyoA//n8qaMRK8N5tN7ykO7ED2noIA6Kg5BWzkYdg/CAJdKE2or+pUiza4GB1yYc584vBSFjct2OKAPomTc/iwizr8Rbg2ZN6jRIRNFb3TX8mETNgX9xbiaaKhYfS4gMLBt/8TWloS3tp7QnKJtJFacKDafPCeisp4IzUrWFhjO6nxb5nJz/paNNP2VAwkFo1ecFwnXUldu2m3Va9Mn2OiwFjGMbUVSBBgNnBCYyZhVIkm4K6Ndop3PsVV2OaH1Wo7RiL7yxxbfA/YeU+Ss/izc+Q+zKD3LciCmwgIgX4gycnC0qh3gmzNfOIZ+RnK6MvETgNN6by2YabuSvVCqgd8/+/ee5v4iAlTo0JBS0yHs7zHRY3BD7CyXejSrHVrH3hJcGvW2P6RRHrk593yROrwVOKbogOtrteFR5rYEq+A1WjbdqmgU6P36lQ2ESX0pNdq59lKRSmvuNin/2Vls4jJuiB0uTQv56bcB/pu6ltQ6OPSchL7ONmDOqCADj5ZIdamO913ngTin4i8uS1WCvcZ77uA9wci5iO+o7M5KYvWt2jtzSDhpBMS13cC6qjpJ0lu3JfDLpB8kG+GwmrtpJnBpAbZGBwVquz8Osp8R1BYpkmJEBy1h5A6i9FBMu8ih4D+ZEm/Lw/KKC9FhlGZuyzgQFzmRyEFjBV2BBKUdBoix0dKEEvIKpptFuogJMJ0reiY0azTn8jleLVTh/Bc5e3BPJbCfgcQyj2JwwFkRgfknOAYKdbYXu+EFmRnUm3ZtUTKXDNxlKfeDv1DoKPLDsi2jV5psB8+HThQyfDsvARpDumopK8vQqS9YXFfmeKM5iP5gX5sTB+adnEIA+sYtN0p5/Rh21tFSoMDEsEpPrT2tASyRkhIdfiuiwgJmPWayOsOJ1aZOxgSbDUfvI+dtN1AVcmxcY/DuRCCz2U9/ld+NJovwQlXymKUWJBPASCbOu/NVl3+8B0M8yT23cElFMQYDr98letoHExe4CsBiAR2knaLRjSZYe0MAzTJWvbgUF+xPHtV2K/zKtn/D8IPpdbdQAAA";}
+function dryPat(g,s,x,y,world){
+  if(!DRY)return null;const glob=g===ctx||world,sc=glob?cam.s:s,ox=glob?cam.x:x,oy=glob?cam.y:y;
+  const pt=g===ctx?(DRYPAT||(DRYPAT=g.createPattern(DRY,'repeat'))):g.createPattern(DRY,'repeat');
+  pt.setTransform(new DOMMatrix([sc*1.7/400,0,0,sc*1.7/316,ox,oy]));return pt;
+}
 function causticPats(g,t,s,x,y,world){
   if(!CAUS)return null;const tt=t==null||RM?0:t,glob=g===ctx||world;
   const mk=(i,u,vx,vy)=>{const pt=g===ctx?(CPAT[i]||(CPAT[i]=g.createPattern(CAUS,'repeat'))):g.createPattern(CAUS,'repeat');
@@ -1300,11 +1381,13 @@ function drawRiver(g,x,y,s,R,ws,o){
   const al=o.alive==null?0:o.alive,w=s*0.38,em=R*0.866,src=!!o.src,cr=src?s*0.42:null;
   // margem: areia seca por fora, terra molhada por dentro
   g.fillStyle='#d3b77f';g.fill(riverPath(x,y,R,ws,o,w*1.6,src?s*0.62:null));
-  g.fillStyle=al>0?'#8a7350':'#bea26b';g.fill(riverPath(x,y,R,ws,o,w*1.25,src?s*0.52:null));
+  const dp=dryPat(g,s,x,y,o.world),inner=riverPath(x,y,R,ws,o,w*1.25,src?s*0.52:null);
+  if(dp&&al<1){g.fillStyle=dp;g.fill(inner);g.fillStyle='rgba(150,118,70,.28)';g.fill(inner);}
+  else{g.fillStyle=al>0?'#8a7350':'#bea26b';g.fill(inner);}
   const P=riverPath(x,y,R,ws,o,w,cr);
-  // leito seco: areia com rachaduras
-  g.fillStyle='#d9c08a';g.fill(P);
-  if(al<1){
+  // leito: o barro rachado do Blender; sem a textura, areia lisa com rachaduras desenhadas
+  if(dp){g.fillStyle=dp;g.fill(P);}else g.fillStyle='#d9c08a',g.fill(P);
+  if(al<1&&!dp){
     g.save();g.clip(P);g.strokeStyle='rgba(120,92,52,.45)';g.lineWidth=Math.max(1,s*0.025);
     for(const i of ws){const a=ang(i),c=Math.cos(a),sn=Math.sin(a);for(let j=1;j<4;j++){const px=x+c*em*j/4,py=y+sn*em*j/4;
       g.beginPath();g.moveTo(px-sn*w*0.35,py+c*w*0.35);g.lineTo(px+c*w*0.12,py+sn*w*0.12);g.lineTo(px+sn*w*0.3,py-c*w*0.3);g.stroke();}}
@@ -1414,7 +1497,7 @@ function renderBal(){
   let txt,cls='';
   if(B.seca)txt=`Seca: ${B.riverSafe} ${B.riverSafe===1?'trecho correndo':'trechos correndo'}`;
   else if(!B.river)txt='Rio ligado à nascente: nenhum ainda';
-  else{txt=`Rio protegido para a seca: ${ar(B.riverSafe,A?A.riverSafe:0)} de ${A?A.river:B.river} → +${A?A.gain:B.gain} ${(A?A.gain:B.gain)===1?'peça':'peças'}`;
+  else{txt=`Rio protegido para a seca: ${ar(B.riverSafe,A?A.riverSafe:0)} de ${A?A.river:B.river}${(A?A.gain:B.gain)?` → +${A?A.gain:B.gain} ${(A?A.gain:B.gain)===1?'peça':'peças'}`:` · +1 peça a cada ${B.per}`}`;
     cls=B.risk.length?(B.turnsLeft<=4?'warn':''):'ok';}
   box.innerHTML='';const b=document.createElement('button');b.type='button';b.className='bchip '+cls+(G.focusSet?' on':'');
   b.innerHTML=`<i style="background:${BIOME_DOT.A}"></i>${txt}`;b.addEventListener('click',explainBal);box.appendChild(b);
@@ -1427,6 +1510,12 @@ function explainBal(){
     :'Ligue rios à nascente. Na seca, o rio com bosque encostado continua correndo e rende peças.';
   G.focusSet={keys:new Set(B.risk),col:'#e07a2e',until:performance.now()+3500};
   renderUI();flashHint(t);
+}
+// texto de uma missão aberta: o que pede, quanto falta e o prazo
+function questTxt(q){
+  const pz=q.left<50?` Prazo: ${q.left} ${q.left===1?'jogada':'jogadas'}.`:'';
+  return q.flow?`Missão: leve água viva (ligada à nascente) até a peça marcada. Cumprir: +3 peças.${pz}`
+    :`Missão: faça ${({C:'este campo',B:'este bosque',V:'esta vila'})[q.b]} chegar a ${q.n} peças (agora ${q.cur}). Cumprir: +3 peças; passar de ${q.n} não tem problema.${pz}`;
 }
 function renderUI(){
   const s=G.s,over=E.over(s),daily=G.seedKey.startsWith('dia-');
@@ -1445,7 +1534,7 @@ function renderUI(){
     const kinds=[...new Set(tile.e)].map(b=>NAME[b]).join(', ');
     info=`<b>Peça da vez</b><span>${kinds}</span>`;
     if(tile.sp){const SP=E.SPECIALS.find(x=>x.id===tile.sp);info=`<b>${SP.name}<span class="spc">especial</span></b><span>${SP.desc}</span>`;}
-    if(tile.quest)info+=tile.quest.flow?`<span class="quest"><i style="background:${BIOME_DOT.A}"></i>Missão: ligar à água</span>`:`<span class="quest"><i style="background:${BIOME_DOT[tile.quest.b]}"></i>Missão: ${NAME[tile.quest.b]} com ${tile.quest.n}</span>`;
+    if(tile.quest)info+=tile.quest.flow?`<span class="quest"><i style="background:${BIOME_DOT.A}"></i>Missão: água em ${E.CFG.flowDue} jogadas</span>`:`<span class="quest"><i style="background:${BIOME_DOT[tile.quest.b]}"></i>Missão: ${NAME[tile.quest.b]} +${tile.quest.add} em ${Math.round(tile.quest.add*E.CFG.qMul)+E.CFG.qSlack} jogadas</span>`;
   }
   $('curInfo').innerHTML=info;
   {const L=G.lesson,box=$('lesson');box.hidden=!L;
@@ -1454,19 +1543,19 @@ function renderUI(){
   // lista de missões abertas
   {const box=$('qchips');box.innerHTML='';
    const qs=G.qAll?G.qp:G.qp.slice().sort((a,b)=>(a.flow?50:a.n-a.cur)-(b.flow?50:b.n-b.cur)).slice(0,3);
-   for(const q of qs){const b=document.createElement('button');b.type='button';const near=!q.flow&&q.n-q.cur===1;
+   for(const q of qs){const b=document.createElement('button');b.type='button';const near=(!q.flow&&q.n-q.cur===1)||q.left<=2;
      b.className='qchip'+(near?' near':'')+(G.focusQ&&G.focusQ.key===q.key?' on':'');
-     b.innerHTML=`<i style="background:${BIOME_DOT[q.b]}"></i>${q.flow?'Ligar à água':`${NAME[q.b]} ${q.cur}/${q.n}`}${near?' · falta 1':''}`;
-     b.setAttribute('aria-label',q.flow?'Missão: levar água viva até a peça marcada':`Missão: ${NAME[q.b]} com exatamente ${q.n} peças, agora ${q.cur}`);
+     b.innerHTML=`<i style="background:${BIOME_DOT[q.b]}"></i>${q.flow?'Ligar à água':`${NAME[q.b]} ${q.cur}/${q.n}`}${q.left<50?` · ${q.left}⏳`:''}`;
+     b.setAttribute('aria-label',(q.flow?'Missão: levar água viva até a peça marcada':`Missão: ${NAME[q.b]} com ${q.n} peças, agora ${q.cur}`)+(q.left<50?`, faltam ${q.left} jogadas`:''));
      b.addEventListener('click',()=>{G.focusQ={key:q.key,edge:q.edge,b:q.b,flow:q.flow,until:performance.now()+3500};
-       renderUI();flashHint(q.flow?'Missão: leve água viva (ligada à nascente) até a peça marcada. Cumprir: +3 peças.':`Missão: deixe ${({C:'este campo',B:'este bosque',V:'esta vila'})[q.b]} com exatamente ${q.n} peças (agora ${q.cur}). Cumprir: +3 peças. Passar de ${q.n}: perde.`);});
+       renderUI();flashHint(questTxt(q));});
      box.appendChild(b);}
    if(G.qp.length>3){const b=document.createElement('button');b.type='button';b.className='qchip';b.textContent=G.qAll?'menos':`+${G.qp.length-3} ${G.qp.length-3===1?'missão':'missões'}`;
      b.addEventListener('click',()=>{G.qAll=!G.qAll;renderUI();});box.appendChild(b);}}
   // explicação na primeira peça com missão
   if(!over&&!G.lesson&&tile.quest&&!db.seenQuest&&$('coach').hidden){G.coachKind='seenQuest';
-    $('coachTxt').innerHTML=tile.quest.flow?'Esta peça traz uma <b>missão</b>: depois de colocada, leve <b>água viva</b> (ligada à nascente) até ela. Cumprir dá <b>+3 peças</b>.'
-      :`Esta peça traz uma <b>missão</b>: ${({C:'o campo',B:'o bosque',V:'a vila'})[tile.quest.b]} onde ela entrar precisa ter <b>exatamente ${tile.quest.n} peças</b>. Cumprir dá <b>+3 peças</b>; passar de ${tile.quest.n} perde a missão.`;
+    $('coachTxt').innerHTML=tile.quest.flow?`Esta peça traz uma <b>missão</b>: depois de colocada, leve <b>água viva</b> (ligada à nascente) até ela em até ${E.CFG.flowDue} jogadas. Cumprir dá <b>+3 peças</b>.`
+      :`Esta peça traz uma <b>missão</b>: ${({C:'o campo',B:'o bosque',V:'a vila'})[tile.quest.b]} onde ela entrar precisa crescer <b>+${tile.quest.add} peças</b> em até ${Math.round(tile.quest.add*E.CFG.qMul)+E.CFG.qSlack} jogadas. Cumprir dá <b>+3 peças</b>. Passar do número não tem problema; se o prazo acabar, a missão só vai embora.`;
     $('coach').hidden=false;}
   {const B=G.bal,n=B.turnsLeft,A=E.CFG.aguas,T=A+E.CFG.seca;
    const fr=B.phase?(A+(B.len-n))/T:(B.len-n)/T;
@@ -1477,7 +1566,7 @@ function renderUI(){
   const sel=G.sel;
   $('rotL').disabled=$('rotR').disabled=!sel||sel.ops.length<2;
   const pb=$('placeBtn');pb.disabled=!sel;
-  if(sel){const r=sel.ops[sel.i].rep;pb.textContent=`Colocar  +${r.pts}${r.tiles?` · +${r.tiles} peça`:''}${r.questsDone.length?' ✓':''}${r.questsFailed.length?' ✗':''}`;}
+  if(sel){const r=sel.ops[sel.i].rep;pb.textContent=`Colocar  +${r.pts}${r.tiles?` · +${r.tiles} peça`:''}${r.questsDone.length?' ✓':''}`;}
   else pb.textContent=over?'Fim':'Toque numa casa vazia';
   $('undoBtn').disabled=!G.undo;
   let h='';
@@ -1527,7 +1616,7 @@ function tap(x,y){
   const k=cellAt(x,y);if(k==null)return;
   if(G.sel&&G.sel.k===k){turn(1);return;}
   if(G.valid.has(k)){select(k);return;}
-  if(s.board.has(k)){const q=G.qp.find(q=>q.key===k);flashHint(q?(q.flow?'Missão: leve água viva até esta peça.':`Missão: este ${NAME[q.b].toLowerCase()} precisa ter exatamente ${q.n} peças (agora ${q.cur}).`):'Essa casa já tem peça. Toque numa casa vazia tracejada.');return;}
+  if(s.board.has(k)){const q=G.qp.find(q=>q.key===k);flashHint(q?questTxt(q):'Essa casa já tem peça. Toque numa casa vazia tracejada.');return;}
   const near=[0,1,2,3,4,5].some(d=>s.board.has(E.nb(k,d)));
   flashHint(near?'Toque numa casa tracejada.':'Coloque encostado no vale, numa casa tracejada.');
 }
@@ -1595,11 +1684,11 @@ function fillResult(){
     +row('Missões',`+${st.quest} · +${st.tQuest} peças`)+row('Peças perfeitas',`+${st.perfect} · +${st.tPerfect} peças`)
     +(st.special?row('Cachoeiras e lagoas',`+${st.special}`):'')
     +row('Rio que aguentou a seca',`+${st.kept} · +${st.tSeason} peças`)+(st.dried?row('Trechos secos na seca',`${st.dried}`,'bad'):'')
-    +(st.failed.length?row(`Missões estouradas (${st.failed.length})`,`−${st.failed.length*3} peças`,'bad'):'')+'</ul>';
+    +(st.failed.length?row(`Missões que o prazo levou (${st.failed.length})`,'—'):'')+'</ul>';
   if(st.best.pts>0)html+=`<p>Melhor jogada: <b>+${st.best.pts}</b> na jogada ${st.best.turn}.</p>`;
   const wetShare=(s.everAlive.size-1)/Math.max(1,s.placed);
   const tip=st.dried>=3?'Antes da seca, encoste bosque no rio, começando perto da nascente: um trecho sem mata corta o rio inteiro dali para baixo.'
-    :st.failed.length>=2?'Antes de crescer uma região com missão, confira o número no marcador: passar do número perde as 3 peças.'
+    :st.failed.length>=2?'Missões têm prazo (o número com ⏳): nas jogadas seguintes, dê preferência à região marcada.'
     :wetShare<0.22?'Ligue mais rios à nascente: cada peça com água viva vale +2, e cachoeiras e lagoas valem bem mais.'
     :s.perfects===0?'Procure buracos cercados por 5 ou 6 peças: encaixar todos os lados dá peça perfeita (+5 e +1 peça).'
     :st.tQuest<6?'Missões são a maior fonte de peças: planeje o tamanho da região desde a primeira peça.'
@@ -1698,7 +1787,7 @@ function openMenu(){
   const daily=G.seedKey.startsWith('dia-');
   $('menuWhere').textContent=G.lesson?`Lição ${G.lesson.n} de ${LES.length} · ${G.lesson.title}`:daily?`Vale do dia #${valeNumber(G.seedKey.slice(4))} · ${G.s.score} pontos · ${Math.max(0,G.s.left)} peças na pilha`:`Vale de treino · ${G.s.score} pontos`;
   $('menuRestart').textContent=G.lesson?'Recomeçar esta lição':'Recomeçar este vale';
-  $('optSound').checked=SND.on;$('optVib').checked=db.vib!==false;$('optCalm').checked=RM;
+  $('optSound').checked=SND.on;$('optAmb').checked=db.amb!==false;$('optVib').checked=db.vib!==false;$('optCalm').checked=RM;
   $('menu').hidden=false;$('menuResume').focus();
 }
 $('menuResume').addEventListener('click',()=>{$('menu').hidden=true;});
@@ -1706,6 +1795,7 @@ $('menuHome').addEventListener('click',showHome);
 $('menuHelp').addEventListener('click',()=>{$('menu').hidden=true;$('intro').hidden=false;$('introOk').focus();});
 $('menuRestart').addEventListener('click',()=>{$('menu').hidden=true;G.resumedDone=false;startGame(G.seedKey,[]);});
 $('optSound').addEventListener('change',e=>{SND.on=e.target.checked;db.mute=!SND.on;save(db);paintMute();if(SND.on){unlockAudio();sfx.select();}else if(SND.el)SND.el.pause();});
+$('optAmb').addEventListener('change',e=>{db.amb=e.target.checked;save(db);});
 $('optVib').addEventListener('change',e=>{db.vib=e.target.checked;save(db);if(db.vib)try{navigator.vibrate&&navigator.vibrate(12);}catch(_){}});
 $('optCalm').addEventListener('change',e=>{db.calm=e.target.checked;save(db);RM=e.target.checked||matchMedia('(prefers-reduced-motion: reduce)').matches;PARTS.length=0;});
 // toque fora da folha fecha (menus e estatísticas)
@@ -1724,6 +1814,7 @@ function unlockAudio(){
   try{if(navigator.audioSession&&navigator.audioSession.type!=='playback')navigator.audioSession.type='playback';}catch(e){}
   const a=audio();if(!a)return;
   if(a.state!=='running'){try{a.resume();}catch(e){}}
+  ambStart();
   if(!SND.primed){try{const b=a.createBuffer(1,1,22050),src=a.createBufferSource();src.buffer=b;src.connect(a.destination);src.start(0);SND.primed=true;}catch(e){}}
   if(!SND.el){try{const el=new Audio('data:audio/wav;base64,UklGRvQHAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YdAHAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgA==');el.loop=true;el.setAttribute('playsinline','');el.muted=false;
     const pr=el.play();if(pr&&pr.catch)pr.catch(()=>{});SND.el=el;}catch(e){}}
@@ -1737,6 +1828,7 @@ $('muteBtn').addEventListener('click',()=>{SND.on=!SND.on;db.mute=!SND.on;save(d
 function start(data){
   if(db.calm)RM=true;
   try{loadWater();}catch(e){}
+  try{loadDry();}catch(e){}
   introThumbs();
   const dailyKey='dia-'+today();let seedKey=dailyKey,actions=[];
   const snap=data&&data.seedKey?data:db.progress;
