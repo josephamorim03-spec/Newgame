@@ -80,3 +80,4 @@ Uso: `python leito_seco.py <pasta>` (com o `bpy` instalado no ambiente, como em 
 - `house_rustic` (`house_d`): paredes mais altas, barrado, batentes azuis, telhado de palha íngreme sem fiadas.
 - `straw_mat` passou a guardar a cor base, para que a cumeeira saia marrom-palha e não cinza.
 - `cow`: gado curraleiro caramelo (v1.4).
+- v1.8: `cart` com `hay_fiber_mat()` (faixas tortas cruzadas, sem anéis) e `hay_strands()` (fios soltos que seguem o monte e caem pelas bordas). Para trocar só ele no atlas: `atualizar_atlas.py` com uma pasta contendo `cart.png` e o `meta.json` dele, depois `embutir.py`.

@@ -527,3 +527,22 @@ Retorno: mesmo com as divisas onduladas (v1.5 e v1.6), ainda apareciam retas ent
 - montar o cache de 26 peças leva 150 ms (antes, 100 ms);
 - um quadro normal continua em cerca de 2,5 ms;
 - a peça fantasma guarda a sua máscara, porque ela só depende da forma da peça.
+
+## Enfeites sem sobreposição e feno de verdade (v1.8)
+
+Aplicado por cima do chão em manchas da v1.7.
+
+- **Feno do carro de boi** refeito no Blender. Era uma bolha lisa com anéis e parecia pão. Agora é:
+  - um monte irregular com textura de fios cruzados;
+  - 420 fios soltos por cima, alguns caindo pelas bordas;
+  - um carro com guardas de ripa.
+- **Construções não se empilham**:
+  - a folga vertical entre elas segue a altura real do sprite;
+  - o telhado não pode passar da borda de trás da própria peça (antes, a casa da frente encostava na de trás e parecia uma torre).
+- **Cercas soltas** no meio do pasto, nas divisas e nas ruas: removidas. Cerca só no sítio e no cercado.
+- **Cercado**: só em pasto grande ou em cerca de 40% dos outros. No resto, as ovelhas pastam soltas.
+- **Ipês só florescem na seca**. Nas águas, a mesma árvore aparece verde; o contexto da peça ganhou a estação.
+- **Rio seco**: a margem ficou estreita e suave, e saiu a faixa interna que parecia trilha de roda.
+- **Lagoa seca**: menor, com barro no meio e capim e taboas em volta, em vez de um disco de areia do tamanho da peça.
+- **Chão da mata** mais perto do capim: a mata é dada pelas árvores, não por um hexágono escuro.
+- **Fauna 3D** menor (de 2,1 para 1,55 vezes a escala da maquete), para não cobrir casas e árvores.
