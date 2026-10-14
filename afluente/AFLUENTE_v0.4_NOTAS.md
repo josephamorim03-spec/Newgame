@@ -240,3 +240,29 @@ Pedido: o jogo tem que ser contemplativo e bonito. Integrar técnicas de arte, p
   - sem frestas entre os triângulos do chão.
 - **Modo Contemplar**: botão de olho, item no menu e "Ver meu vale". Some a interface e a câmera passeia devagar.
 - **Emblema** na tela inicial (hexágono com rio e ipê). A tela inicial e o retrato do fim usam o fundo pintado.
+
+## Sensação de jogo (v1.1)
+
+Pedido: aperfeiçoar visuais e sensação de jogo (game feel).
+
+- **Colocar a peça**:
+  - A peça cai com peso: acelera, achata no impacto e volta com uma molinha.
+  - Os enfeites (árvores, casas) brotam com um pequeno exagero.
+  - As vizinhas dão um leve pulo em onda.
+  - Cada lado que combina acende em sequência, com uma nota de marimba pentatônica.
+  - O toque de madeira e a vibração saem no instante em que a peça encosta no chão, e não no toque do botão.
+- **Peça perfeita e missão**: anel de luz que se expande, brilho suave e um respiro de câmera de 2,5%.
+- **Escolher e girar**:
+  - A peça fantasma sobe, ganha sombra no chão e flutua.
+  - Girar anima a rotação, com um clique de madeira.
+- **Interface**:
+  - Pontos e peças contam até o valor novo, no ritmo do impacto.
+  - A peça da vez desliza do "depois".
+  - Botões afundam ao toque.
+  - As faixas entram com um pequeno salto.
+- **Vale**:
+  - Bosques sem casas balançam com o vento, na mesma direção das faixas de vento do capim.
+  - Na seca, a umidade recua devagar dos trechos que secam (2,4 s).
+  - Raios de sol suaves, mais fortes na seca.
+- **Correção**: a peça que ainda está caindo não entra no recorte de luz e umidade. Antes, o lugar dela "acendia" antes da hora.
+- O desenho de um quadro continua em cerca de 3 ms.

@@ -82,7 +82,22 @@ Os acentos ficam com as próprias peças: ipê amarelo `#f2c230`, ipê-rosa, tel
 - Um quadro completo (fundo, peças, umidade, luz, vento, vida) leva cerca de 3 ms no teste.
 - A umidade usa um canvas auxiliar do tamanho da tela. As texturas de luz e vento são geradas uma vez.
 
-## 7. Próximos passos possíveis
+## 7. Sensação de jogo (v1.1)
+
+Princípio: **cada ação tem peso, som e resposta no vale, sem pressa**. É a sensação de um brinquedo de madeira, não a de um caça-níquel.
+
+| Momento | O que acontece |
+|---|---|
+| **Escolher** | A peça sobe, com sombra no chão, e flutua devagar |
+| **Girar** | Gira suave, com um clique de madeira |
+| **Colocar** | Cai, achata, acomoda; os enfeites brotam e as vizinhas balançam |
+| **Impacto** | Toque de madeira grave, vibração curta, números que contam |
+| **Combinar** | Cada lado que combina acende em sequência, com uma nota de marimba pentatônica (subindo) |
+| **Perfeita e missão** | Anel de luz e um respiro de câmera |
+
+O tempo é o mesmo para tudo: a peça leva cerca de 190 ms para cair, e som, vibração e números saem no impacto.
+
+## 8. Próximos passos possíveis
 
 - Floração **por espécie** nos bosques durante a seca: as copas de ipê trocam de folha para flor, com sprite novo no Blender.
 - **Hora do dia** dentro de uma partida longa (alvorada → meio-dia → entardecer).
