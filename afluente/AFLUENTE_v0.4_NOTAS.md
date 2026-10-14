@@ -165,3 +165,30 @@ Pedido: "não sei se a sustentabilidade está boa ou se eu não entendi"; verifi
   - Guloso: 48 peças e 201 pontos.
   - Cuidadoso: 56 peças e 271 pontos.
   - As versões sem teto disparavam até 300 peças.
+
+## Menus e acabamento (v0.8)
+
+Pedido: revisão final de menus, regras e gráficos.
+
+- **Tela inicial**:
+  - Mostra um vale de vitrine (jogadas pré-calculadas, para abrir rápido), o título e uma frase sobre o jogo.
+  - O botão **Vale do dia** muda conforme o dia: "novo", "continuar · N peças" ou "jogado · ver o resultado".
+  - Tem também **Vale de treino** e **Lições**.
+  - Mostra a sequência de dias jogando ou, depois de jogar, quanto falta para o próximo vale.
+  - Links para Como jogar, Estatísticas e Som.
+  - Quem já joga abre o jogo por ela; quem nunca jogou abre direto na lição 1.
+- **Menu de pausa** (botão ☰, no lugar do "?"):
+  - Continuar, Tela inicial, Como jogar e Recomeçar (vale ou lição).
+  - Chaves de Som, Vibração e Menos movimento.
+  - Fecha tocando fora da folha ou com Esc.
+- **Estatísticas**:
+  - Vales do dia jogados, recorde, dias seguidos e maior sequência.
+  - Os últimos 7 dias, com pontos.
+  - Quantas vezes ficou acima do par e quantas lições foram feitas.
+  - O par de cada dia é guardado quando é calculado.
+- **Lições**: lista com as cinco, marcadas quando feitas, e qualquer uma pode ser refeita. "Pular lições" leva à tela inicial.
+- **Resultado do dia**: as jogadas ficam guardadas, então dá para rever o resultado mesmo depois de jogar outros vales. Novo botão Tela inicial e a contagem para o próximo vale do dia.
+- **Missões**: no máximo 3 aparecem sobre o vale (as mais perto de cumprir); as outras ficam num "+N".
+- **Correções**:
+  - Regra `[hidden]` na própria página.
+  - Frase "faltaram N jogadas para a seca" só aparece quando a seca renderia peças.
