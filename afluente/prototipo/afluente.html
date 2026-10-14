@@ -54,9 +54,17 @@ button{font:inherit;color:inherit}
 .report li span:last-child{text-align:right;font-weight:700}
 .report li.bad span{color:#b4432f}
 .report .tip{border-top:1px solid var(--line);padding-top:8px;color:var(--muted)}
+.qchips{position:absolute;left:0;right:0;top:2px;display:flex;flex-wrap:wrap;justify-content:center;gap:6px;pointer-events:none;z-index:2}
+.qchip{pointer-events:auto;display:inline-flex;align-items:center;gap:6px;border:0;border-radius:999px;padding:4px 11px;background:#fff1d1;color:#7a4d00;font:700 12.5px/1.2 var(--f-body);box-shadow:0 2px 0 rgba(122,77,0,.18);cursor:pointer}
+.qchip i{width:9px;height:9px;border-radius:50%;display:inline-block}
+.qchip.near{background:#ffd978}
+.qchip.on{outline:2px solid #7a4d00}
+.coach{position:absolute;left:8px;right:8px;bottom:8px;z-index:3;display:flex;gap:10px;align-items:center;padding:12px 12px 12px 14px;border-radius:16px;background:var(--card);box-shadow:0 4px 0 var(--line),0 8px 24px rgba(29,59,58,.18)}
+.coach p{margin:0;flex:1;font-size:13.5px;line-height:1.35;color:var(--ink)}
+.coach .btn{height:40px;flex:none}
 .board{position:relative;flex:1;min-height:0;touch-action:none}
 .board canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
-.banner{position:absolute;left:50%;top:6px;transform:translate(-50%,0);padding:6px 16px 4px;border-radius:18px;width:max-content;max-width:92%;box-sizing:border-box;text-align:center;line-height:1.15;background:var(--gold);color:#3b2504;font-family:var(--f-display);font-weight:800;font-size:18px;white-space:normal;text-wrap:balance;pointer-events:none;box-shadow:0 3px 0 #c9861a;transition:opacity .25s,transform .25s}
+.banner{position:absolute;left:50%;top:40px;z-index:4;transform:translate(-50%,0);padding:6px 16px 4px;border-radius:18px;width:max-content;max-width:92%;box-sizing:border-box;text-align:center;line-height:1.15;background:var(--gold);color:#3b2504;font-family:var(--f-display);font-weight:800;font-size:18px;white-space:normal;text-wrap:balance;pointer-events:none;box-shadow:0 3px 0 #c9861a;transition:opacity .25s,transform .25s}
 .banner.water{background:var(--water);color:#fff;box-shadow:0 3px 0 #1f7ea6}
 .banner.good{background:var(--good);color:#fff;box-shadow:0 3px 0 #2c7436}
 .banner[data-off]{opacity:0;transform:translate(-50%,-8px)}
@@ -127,7 +135,9 @@ button{font:inherit;color:inherit}
 
   <div class="board" id="boardWrap">
     <canvas id="board" aria-label="O vale"></canvas>
+    <div class="qchips" id="qchips"></div>
     <div class="banner" id="banner" data-off></div>
+    <div class="coach" id="coach" hidden><p id="coachTxt"></p><button class="btn primary" id="coachOk">Entendi</button></div>
     <button class="recenter" id="recenter" aria-label="Centralizar o vale" hidden>⌖</button>
     <button class="mute" id="muteBtn" aria-label="Som ligado" aria-pressed="false">♪</button>
   </div>
@@ -754,16 +764,28 @@ function startGame(seedKey,actions){
 }
 
 // ---------- seleção, giro e colocação
+function questRegion(board,q){if(q.flow)return new Set([q.key]);const G2=E.groups(board),r=G2.find(q.key*6+q.edge);return G2.members.get(r)||new Set([q.key]);}
+function previewQuests(){
+  G.selQ=[];if(!G.sel)return;
+  const o=G.sel.ops[G.sel.i],res=E.place(G.s,G.sel.k,o.r),ns=res.state,after=E.questProgress(ns);
+  const find=(L,q)=>L.find(x=>x.key===q.key&&x.edge===q.edge);
+  for(const q of G.qp){if(q.flow)continue;
+    let cur2=null,st='';const a=find(after,q),d=find(res.rep.questsDone,q),f=find(res.rep.questsFailed,q);
+    if(a)cur2=a.cur;else if(d){cur2=q.n;st='ok';}else if(f){cur2=f.cur;st='bad';}
+    if(cur2!=null&&cur2!==q.cur)G.selQ.push({q,before:q.cur,after:cur2,st,region:questRegion(ns.board,q)});}
+  const nq=after.find(x=>x.key===G.sel.k&&!x.flow);
+  if(nq)G.selQ.push({q:nq,before:null,after:nq.cur,st:nq.cur===nq.n?'ok':'',region:questRegion(ns.board,nq),fresh:true});
+}
 function select(k){
   const ops=E.options(G.s,k);if(!ops.length)return false;
   const byR=ops.slice().sort((a,b)=>a.r-b.r);
-  G.sel={k,ops:byR,i:byR.indexOf(ops[0])};sfx.select();renderUI();return true;
+  G.sel={k,ops:byR,i:byR.indexOf(ops[0])};previewQuests();sfx.select();renderUI();return true;
 }
-function turn(dir){if(!G.sel)return;const n=G.sel.ops.length;if(n>1)sfx.rotate();G.sel.i=(G.sel.i+dir+n)%n;renderUI();}
+function turn(dir){if(!G.sel)return;const n=G.sel.ops.length;if(n>1)sfx.rotate();G.sel.i=(G.sel.i+dir+n)%n;previewQuests();renderUI();}
 function commit(){
   if(!G.sel)return;
   const o=G.sel.ops[G.sel.i],prev=G.s,{state,rep}=E.place(prev,G.sel.k,o.r),now=performance.now();
-  G.undo=prev;G.s=state;const k=G.sel.k;G.sel=null;
+  G.undo=prev;G.s=state;const k=G.sel.k;G.sel=null;G.selQ=[];
   G.fx.set(k,{k:'drop',t0:now});
   G.floats.push({k,txt:`+${rep.pts}`,t0:now+120,col:'#fffdf7',fg:'#1d3b3a'});
   if(rep.newlyAlive.length){
@@ -902,11 +924,20 @@ function draw(t){
   // rótulo da nascente
   {const[x,y]=scr(E.SRC);g.font=`800 ${Math.max(11,sz*0.4)}px "Baloo 2",system-ui`;g.textAlign='center';g.textBaseline='middle';
     if(s.placed<3){const w=g.measureText('nascente').width+12;g.fillStyle='rgba(255,253,247,.92)';rr(g,x-w/2,y+sz*1.05,w,sz*0.56,sz*0.28);g.fill();g.fillStyle='#1d3b3a';g.fillText('nascente',x,y+sz*1.34);}}
+  // região da missão em destaque (toque na lista) e regiões que a peça fantasma vai mudar
+  const outline=(set,col,a)=>{g.save();g.globalAlpha=a;g.strokeStyle=col;g.lineWidth=Math.max(2,sz*0.08);g.lineJoin='round';
+    for(const k of set){const[x,y]=scr(k);hexPath(g,x,y,sz*0.9);g.stroke();}g.restore();};
+  if(G.focusQ&&t<G.focusQ.until){const fq=G.qp.find(q=>q.key===G.focusQ.key);if(fq)outline(questRegion(s.board,fq),BIOME_DOT[fq.b],0.55+0.35*Math.sin(t/180));}
+  else if(G.focusQ){G.focusQ=null;renderUI();}
+  if(G.sel&&G.selQ)for(const e of G.selQ)outline(e.region,e.st==='bad'?P.bad:e.st==='ok'?P.good:BIOME_DOT[e.q.b],0.75);
   // marcadores de missão
   for(const q of G.qp){
     const[x,y]=scr(q.key);const txt=q.flow?'ligar à água':`${q.cur}/${q.n}`;
     flag(g,x,y-sz*0.95,txt,q.b,sz);
   }
+  if(G.sel&&G.selQ)for(const e of G.selQ){const[x,y]=scr(e.q.key);
+    const txt=e.fresh?`nova missão ${e.after}/${e.q.n}`:e.st==='ok'?`${e.before}→${e.after}/${e.q.n} ✓`:e.st==='bad'?`${e.before}→${e.after}/${e.q.n} ✗`:`${e.before}→${e.after}/${e.q.n}`;
+    pill(g,x,y-sz*1.6,txt,e.st==='bad'?P.bad:e.st==='ok'?P.good:'#fff1d1',e.st?'#fff':'#7a4d00',sz*0.85);}
   // números
   G.floats=G.floats.filter(f=>t-f.t0<1100);
   for(const f of G.floats){const u=(t-f.t0)/1100;if(u<0)continue;const[x,y]=scr(f.k);g.globalAlpha=u<0.15?u/0.15:1-Math.max(0,(u-0.6)/0.4);pill(g,x,y-sz*0.5-u*sz*0.9,f.txt,f.col,f.fg,sz);g.globalAlpha=1;}
@@ -1096,6 +1127,20 @@ function renderUI(){
     if(tile.quest)info+=tile.quest.flow?`<span class="quest"><i style="background:${BIOME_DOT.A}"></i>Missão: ligar à água</span>`:`<span class="quest"><i style="background:${BIOME_DOT[tile.quest.b]}"></i>Missão: ${NAME[tile.quest.b]} com ${tile.quest.n}</span>`;
   }
   $('curInfo').innerHTML=info;
+  // lista de missões abertas
+  {const box=$('qchips');box.innerHTML='';
+   for(const q of G.qp){const b=document.createElement('button');b.type='button';const near=!q.flow&&q.n-q.cur===1;
+     b.className='qchip'+(near?' near':'')+(G.focusQ&&G.focusQ.key===q.key?' on':'');
+     b.innerHTML=`<i style="background:${BIOME_DOT[q.b]}"></i>${q.flow?'Ligar à água':`${NAME[q.b]} ${q.cur}/${q.n}`}${near?' · falta 1':''}`;
+     b.setAttribute('aria-label',q.flow?'Missão: levar água viva até a peça marcada':`Missão: ${NAME[q.b]} com exatamente ${q.n} peças, agora ${q.cur}`);
+     b.addEventListener('click',()=>{G.focusQ={key:q.key,edge:q.edge,b:q.b,flow:q.flow,until:performance.now()+3500};
+       flashHint(q.flow?'Missão: leve água viva (ligada à nascente) até a peça marcada. Cumprir: +3 peças.':`Missão: deixe ${({C:'este campo',B:'este bosque',V:'esta vila'})[q.b]} com exatamente ${q.n} peças (agora ${q.cur}). Cumprir: +3 peças. Passar de ${q.n}: perde.`);renderUI();});
+     box.appendChild(b);}}
+  // explicação na primeira peça com missão
+  if(!over&&tile.quest&&!db.seenQuest&&$('coach').hidden){
+    $('coachTxt').innerHTML=tile.quest.flow?'Esta peça traz uma <b>missão</b>: depois de colocada, leve <b>água viva</b> (ligada à nascente) até ela. Cumprir dá <b>+3 peças</b>.'
+      :`Esta peça traz uma <b>missão</b>: ${({C:'o campo',B:'o bosque',V:'a vila'})[tile.quest.b]} onde ela entrar precisa ter <b>exatamente ${tile.quest.n} peças</b>. Cumprir dá <b>+3 peças</b>; passar de ${tile.quest.n} perde a missão.`;
+    $('coach').hidden=false;}
   {const a=E.seasonAt(s.season),b=E.seasonAt(s.season+1),fr=Math.max(0,Math.min(1,(s.score-a)/(b-a)));
    const un=E.SPECIALS.find(x=>x.season===s.season+1);
    $('seasonName').textContent=`Estação ${s.season} · ${E.seasonName(s.season)}`;
@@ -1229,6 +1274,7 @@ $('copyBtn').addEventListener('click',()=>{
 $('againBtn').addEventListener('click',()=>{$('result').hidden=true;G.resumedDone=false;startGame(G.seedKey,[]);});
 $('otherBtn').addEventListener('click',()=>{$('result').hidden=true;startGame('treino-'+Date.now().toString(36),[]);});
 $('viewBtn').addEventListener('click',()=>{$('result').hidden=true;});
+$('coachOk').addEventListener('click',()=>{$('coach').hidden=true;db.seenQuest=true;save(db);});
 $('helpBtn').addEventListener('click',()=>{$('intro').hidden=false;$('introOk').focus();});
 $('introOk').addEventListener('click',()=>{$('intro').hidden=true;db.seenIntro=true;save(db);});
 
@@ -1236,8 +1282,22 @@ $('introOk').addEventListener('click',()=>{$('intro').hidden=true;db.seenIntro=t
 SND.on=!db.mute;
 function paintMute(){const b=$('muteBtn');b.classList.toggle('off',!SND.on);b.setAttribute('aria-pressed',String(!SND.on));b.setAttribute('aria-label',SND.on?'Som ligado':'Som desligado');}
 paintMute();
-document.addEventListener('pointerdown',()=>{audio();},{once:true});
-$('muteBtn').addEventListener('click',()=>{SND.on=!SND.on;db.mute=!SND.on;save(db);paintMute();if(SND.on)sfx.select();});
+// iOS: o som só pode ser liberado no fim de um toque (touchend/click), e a chave de silêncio corta o Web Audio.
+// Então: no toque, pedimos ao iOS uma sessão de "reprodução" (como música/vídeo), retomamos o contexto,
+// tocamos um silêncio curtíssimo e mantemos um <audio> silencioso tocando.
+function unlockAudio(){
+  if(!SND.on)return;
+  try{if(navigator.audioSession&&navigator.audioSession.type!=='playback')navigator.audioSession.type='playback';}catch(e){}
+  const a=audio();if(!a)return;
+  if(a.state!=='running'){try{a.resume();}catch(e){}}
+  if(!SND.primed){try{const b=a.createBuffer(1,1,22050),src=a.createBufferSource();src.buffer=b;src.connect(a.destination);src.start(0);SND.primed=true;}catch(e){}}
+  if(!SND.el){try{const el=new Audio('data:audio/wav;base64,UklGRvQHAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YdAHAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgA==');el.loop=true;el.setAttribute('playsinline','');el.muted=false;
+    const pr=el.play();if(pr&&pr.catch)pr.catch(()=>{});SND.el=el;}catch(e){}}
+  else if(SND.el.paused){const pr=SND.el.play();if(pr&&pr.catch)pr.catch(()=>{});}
+}
+for(const ev of['touchend','click','pointerup','keydown'])document.addEventListener(ev,unlockAudio,{capture:true,passive:true});
+document.addEventListener('visibilitychange',()=>{if(document.hidden){if(SND.el)SND.el.pause();}else if(SND.on){if(SND.ctx)SND.ctx.resume();if(SND.el){const pr=SND.el.play();if(pr&&pr.catch)pr.catch(()=>{});}}});
+$('muteBtn').addEventListener('click',()=>{SND.on=!SND.on;db.mute=!SND.on;save(db);paintMute();if(SND.on){unlockAudio();sfx.select();}else if(SND.el)SND.el.pause();});
 
 // ---------- início
 function start(data){
