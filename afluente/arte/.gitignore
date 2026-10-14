@@ -1,0 +1,5 @@
+venv/
+saida/
+fauna_saida/
+fx_saida/
+__pycache__/
