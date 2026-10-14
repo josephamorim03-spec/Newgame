@@ -194,6 +194,16 @@ O par do primeiro vale do dia saiu em 32 pontos, contra uma média de ~117. Diag
 
 Correção: córrego inicial de 2 casas, garantia de um Canal entre as 4 primeiras cartas e um aviso na prévia quando uma plantação cercaria a água. Em 60 vales diários seguidos: par médio 121 (mín. 85, máx. 137), nenhum vale travado; aleatório 44; guloso 78 (64% do par).
 
+### 9.2 Ajustes de apresentação após o primeiro teste
+
+A primeira versão do protótipo foi considerada pouco intuitiva e feia. Mudanças, sem alterar a pontuação:
+
+- **A água corre na hora** em que o canal é cavado e os terrenos ficam verdes imediatamente. Esperar a Cheia para ver a água fazia o gesto parecer sem efeito. O evento dos turnos 5/10/15/20 passa a se chamar **Colheita** na interface.
+- **Uma jogada = um gesto**: arrastar a partir da água cava (a carta de Canal é escolhida sozinha: a menor que comporta o traço); arrastar ou tocar carta + casa planta. Sem botão de confirmar; há **Desfazer** da última jogada (exceto depois de uma colheita).
+- **Prévia no próprio vale**: a peça arrastada mostra quanto renderia por colheita (`+3`) ou `sem água`; o canal mostra `2/3` casas.
+- **Dica animada** de um dedo arrastando a partir da água, até o primeiro canal.
+- **Arte em diorama**: peças com volume, tarde clara, rio contínuo atravessando as casas, terrenos secos e vivos bem diferentes.
+
 ## 10. Riscos e hipóteses abertas
 
 | Risco | Como verificar | Ajuste previsto |
