@@ -546,3 +546,7 @@ Aplicado por cima do chão em manchas da v1.7.
 - **Lagoa seca**: menor, com barro no meio e capim e taboas em volta, em vez de um disco de areia do tamanho da peça.
 - **Chão da mata** mais perto do capim: a mata é dada pelas árvores, não por um hexágono escuro.
 - **Fauna 3D** menor (de 2,1 para 1,55 vezes a escala da maquete), para não cobrir casas e árvores.
+- v1.8b:
+  - o gado pasta mais perto do seu ponto e mais longe do cercado, então não anda mais por cima da cerca;
+  - saiu a cerca solta das lavouras;
+  - borboletas com metade do tamanho (0,1 da peça).

@@ -1430,7 +1430,7 @@ function compose(x,y,R,s,e,vs,sp,seed,o,decos,paths){CUR_AREA=null;
       for(let a=-R;a<=R&&n<max;a+=s*0.25)for(let b=-R;b<=R&&n<max;b+=s*0.27){const j=H(Math.floor((a+R)*7+(b+R)*13)&1023);
         const px=x+u[0]*a+v[0]*b+(j-0.5)*s*0.05,py=y+u[1]*a+v[1]*b;if(!Ts.some(T=>inTri(px,py,T))||j>0.55||!free(px,py,0.16))continue;
         add(px,py,crop,crop==='haybale'?0.85:0.85+j*0.3,0.14);n++;}
-      const acc=pickW(H(salt+30),VIL?[['scarecrow',2],['haybale',2],['cart',2],['fence',1],['',1]]:[['haybale',1],['',4]]);
+      const acc=pickW(H(salt+30),VIL?[['scarecrow',2],['haybale',2],['cart',2],['',1]]:[['haybale',1],['',4]]);
       if(acc)scatter(0.2,()=>0.9,1,(px,py)=>add(px,py,acc,1,0.2));
     }else{ // pasto e campo nativo: a variante dá o chão, a vizinhança dá a vida
       const nm=A.vv.name,dead=!VIL&&!WAT;
@@ -1443,7 +1443,7 @@ function compose(x,y,R,s,e,vs,sp,seed,o,decos,paths){CUR_AREA=null;
         scatter(0.18,()=>0.6,per>=2?2:1,(px,py,n)=>add(px,py,n?'chickens':'bush',0.9,0.12));}
       else if(VIL){const ns=1+Math.floor(H(salt+4)*2);scatter(0.2,()=>0.8,ns,(px,py,j)=>dyn('sheep',px,py,0.85+H(salt+j)*0.2,0.14));} // soltas, pastando
       if(WAT&&(!VIL||per>=2)){ // água: o gado aparece, e mais bichos quanto mais pasto molhado
-        const ncow=(VIL?1:1+Math.floor(H(salt+2)*2.4))+(per>=3?1:0);scatter(0.26,()=>0.9,ncow,(px,py,j)=>dyn('cow',px,py,sc(2+j,0.9,1.05),0.16));}
+        const ncow=(VIL?1:1+Math.floor(H(salt+2)*2.4))+(per>=3?1:0);scatter(0.36,()=>0.9,ncow,(px,py,j)=>dyn('cow',px,py,sc(2+j,0.9,1.05),0.08));}
       const fill=dead?[['tuft_gold',3],['rock_b',1],['termite',1],['tuft',1]]
         :nm==='capim'?[['tuft',4],['tuft_gold',2],['rock',0.5],['flowers',0.8]]
         :nm==='florido'?[['flowers',4],['canela',2],['tuft',1]]
@@ -2351,7 +2351,7 @@ function draw(t){
     if(m)for(const b of G.bf){
       const m=ATLAS[b.ph>3.6&&ATLAS.fx_butterfly2?'fx_butterfly2':'fx_butterfly'];
       const u=(t-b.t0)/b.life,fade=Math.min(1,u*6,(1-u)*6),wx=b.home[0]+Math.sin(t*0.0011+b.ph)*0.42+Math.sin(t*0.0031+b.ph*2)*0.12,wy=b.home[1]-0.4+Math.cos(t*0.0017+b.ph)*0.25;
-      const X=wx*sz+cam.x,Y=wy*sz+cam.y,f=sz*0.2/Math.max(m[2],m[3]),flap=0.25+0.75*Math.abs(Math.sin(t*0.022+b.ph));
+      const X=wx*sz+cam.x,Y=wy*sz+cam.y,f=sz*0.1/Math.max(m[2],m[3]),flap=0.25+0.75*Math.abs(Math.sin(t*0.022+b.ph));
       g.save();g.globalAlpha=fade;g.translate(X,Y);g.scale(flap,1);blit(g,m,f,-m[2]*f/2,-m[3]*f/2,m[2]*f,m[3]*f);g.restore();
     }
   }
