@@ -37,3 +37,12 @@ Primeira versão proibia rio encostar em terra; no teste isso criou buracos onde
 2. A pilha acabando gera vontade de "só mais uma"?
 3. As missões exatas são lidas no mapa (marcadores `3/9`)?
 4. Ligar um rio seco à nascente é um momento memorável?
+
+## Polimento (v0.4.1)
+
+- **Arte 3D feita no Blender** (`arte/`): 3 árvores, pinheiro e versões secas; 2 casas e versões secas; trigo, capim, flores, pedra, junco. Terreno seco usa as versões secas; ao chegar água, o vale fica verde.
+- **Partículas** (também do Blender): poeira ao colocar, folhas ao plantar bosque, gotas onde a água chega, brilhos na peça perfeita, pétalas e folhas ao cumprir missão, fumaça nas chaminés das vilas com água.
+- **Som sintetizado** (sem arquivos): batida de madeira com notas que sobem conforme os lados combinam, água correndo, arpejo da peça perfeita, fanfarra da missão, aviso de missão perdida. Botão de mudo.
+- **Prévia da missão**: antes de colocar, a peça mostra "✓ cumpre a missão" ou "✗ estoura a missão".
+- **Primeira jogada guiada**: anel "toque aqui" na melhor casa nas duas primeiras peças.
+- **Foto do vale** na tela final.
