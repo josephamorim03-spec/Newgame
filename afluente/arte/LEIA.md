@@ -81,3 +81,31 @@ Uso: `python leito_seco.py <pasta>` (com o `bpy` instalado no ambiente, como em 
 - `straw_mat` passou a guardar a cor base, para que a cumeeira saia marrom-palha e não cinza.
 - `cow`: gado curraleiro caramelo (v1.4).
 - v1.8: `cart` com `hay_fiber_mat()` (faixas tortas cruzadas, sem anéis) e `hay_strands()` (fios soltos que seguem o monte e caem pelas bordas). Para trocar só ele no atlas: `atualizar_atlas.py` com uma pasta contendo `cart.png` e o `meta.json` dele, depois `embutir.py`.
+
+## v1.9: fauna com corpo contínuo (metaball) e esqueleto
+
+`fauna.py` foi refeito. O corpo de cada bicho deixou de ser um conjunto de esferas encostadas e virou uma superfície contínua só:
+
+- **Corpo** (`Corpo`): um metaball com tubos de raio variável (tronco, pescoço, cauda, pernas). Os tubos se fundem nas juntas como músculo sob a pele.
+  - O raio passado é o raio **visível**: as constantes `KB` (elemento sozinho) e `KC` (tubo denso) convertem para o raio de influência.
+  - `RESOLUCAO` (padrão 0,0021 u) controla a densidade da malha no render.
+- **Esqueleto** (`Sk`): cinemática direta, com quadril, joelho, pescoço, cabeça, cauda, asa e mão.
+  - Cada ponto do modelo é escrito na pose de repouso, junto com a junta a que pertence.
+  - A cada quadro, a pose recalcula as matrizes e o bicho inteiro é refeito.
+  - O joelho dobra na fase em que a pata volta para a frente.
+- **Malhas de detalhe** (`loft`): bicos, orelhas, pernas finas de ave, dedos, poleiros e mourão são anéis elípticos ao longo de um caminho, com 10 a 14 lados.
+  - Cada malha ganha UV ao longo do comprimento. É isso que faz o degradê do bico do tucano, com a ponta preta.
+  - As asas e a cauda da arara são placas de duas cores: azul por cima, amarelo por baixo.
+- **Pelagem** (`pele`): um material só por bicho, com:
+  - degradê pela normal;
+  - fios de ruído fino;
+  - regiões por coordenada do bicho (`abaixo`, `acima`, `elip`, `faixa` com limite): meias e crina pretas do lobo, faixa do tamanduá, barriga clara da onça;
+  - rosetas de Voronoi na onça.
+
+```sh
+PREVIA=1 AMOSTRAS=12 SOMENTE=onca,lobo venv/bin/python fauna.py /tmp/fz   # 2 quadros por animação, ~4 s por bicho
+AMOSTRAS=40 venv/bin/python fauna.py fauna_saida/                        # 184 quadros, ~6 min
+venv/bin/python montar_fauna.py fauna_saida/ fauna.webp fauna.json && python3 embutir.py && sh ../sim/gerar_index.sh
+```
+
+O tamanho no jogo não depende do render. O jogo mede a largura do corpo no atlas e aplica a tabela `FLEN` do protótipo. No joão-de-barro e nos bichos de poleiro, essa largura inclui o ninho ou o poleiro: se eles mudarem de tamanho, ajuste `FLEN`.

@@ -586,4 +586,11 @@ Os bugs de sobreposição vinham de um mesmo problema: cada elemento era posto e
 6. **Gado e ovelhas viraram agentes**, com posição no mundo. Andam até pontos válidos perto de casa, pastam parados e evitam esbarrar uns nos outros.
 7. **Aves**: a arara voando e os passarinhos usam a mesma tabela e ficam presos ao mundo, não à tela. Ficam numa camada acima de tudo e com um leve exagero de tamanho, por estarem mais perto da câmera.
 
+**Fauna com corpo contínuo** (no mesmo pacote). O pedido era "mais polígonos, menos bolas coladas". Os 12 bichos foram remodelados no Blender:
+- O corpo é uma superfície única (metaball). Tronco, pescoço, cabeça, cauda e pernas são tubos que se fundem, sem emendas visíveis.
+- Um esqueleto simples move quadril, joelho, pescoço e cauda. O joelho dobra quando a pata volta, e a arara bate as asas com o pulso atrasado em relação ao braço.
+- Bicos, orelhas, pernas de ave e poleiros são malhas lisas de 10 a 14 lados, com degradê ao longo do comprimento.
+- A pelagem tem regiões de cor: meias e crina pretas e ponta branca da cauda no lobo-guará, faixa preta com borda branca no tamanduá, barriga e focinho claros e rosetas na onça, papo branco no tucano, peito ruivo no martim.
+- O ninho do joão-de-barro ficou na proporção do pássaro.
+
 **Teste de invariantes**: num navegador sem tela, seis vales são jogados por um bot, e 1.600 quadros de cada um são conferidos célula a célula. O resultado foi zero bicho na água, em casa ou cerca, atrás de objeto alto, fora do tabuleiro ou fora do cercado, e zero violação da regra da fauna.
