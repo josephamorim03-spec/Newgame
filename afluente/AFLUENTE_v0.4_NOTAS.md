@@ -614,3 +614,23 @@ Aplicado por cima da tabela métrica e do mapa de colisão da v1.9.
   - o vale tinha altura zero e, desde a v1.5, a página travava;
   - agora o vale tem pelo menos 260 px e a página rola;
   - `draw()` não roda sem tamanho.
+
+## Bichos com corpo inteiro e profundidade de verdade (v1.9d)
+
+Defeito: o boi aparecia "em cima da cerca". Ele tinha duas causas.
+1. O mapa de colisão testava só um círculo de 3 cm nos pés do bicho, mas o desenho do boi tem cerca de 30 × 20 cm.
+2. Os bichos eram desenhados sempre por cima da imagem pronta dos enfeites da peça, sem ordem de profundidade.
+
+O que mudou:
+- **Corpo inteiro:** `wbody` testa o retângulo que o sprite ocupa, em 5 × 5 pontos, com um palmo de folga.
+  - Boi e ovelha solta não podem ter nenhum pedaço sobre cerca, cercado, casa, água, lavoura ou a área que um objeto alto cobre.
+  - O destino e o caminho também são testados com o corpo inteiro.
+- **Cercado:** as patas e a barriga da ovelha ficam no miolo. Toda ovelha nascida na área do cercado pertence a ele. No cercado, as ovelhas são um pouco menores e podem ficar encostadas, como rebanho.
+- **Áreas de colisão do tamanho do desenho:** a cerca do cercado e a copa das árvores ficaram mais largas.
+- **Profundidade:**
+  - nas peças com bichos, a imagem pronta guarda só chão, caminhos e sombras;
+  - os enfeites são desenhados a cada quadro, junto com os bichos, de trás para a frente: o arbusto na frente cobre a ovelha atrás dele;
+  - as peças sem bichos continuam com tudo pronto, sem custo extra.
+- **Teste automático novo:** 5 minutos simulados de animação em 4 vales, medindo cada vez que o corpo de um bicho cruza o desenho de um cercado, casa ou copa.
+  - Antes: de 862 a 3.454 cruzamentos com cercados por vale.
+  - Depois: zero. Os encostos em copa que ainda aparecem são ovelhas atrás de arbustos, desenhadas corretamente por trás deles.

@@ -1286,8 +1286,11 @@ function renderTileCache(k,e,o,res){
   const mk=()=>{const c=document.createElement('canvas');c.width=Wc;c.height=Hc;return c;};
   const ground=mk(),deco=mk(),[wx,wy]=wpos(k),anchor=[cx-wx*res,cy-wy*res],chim=[],dyn=[],lights=[],occ=[];
   drawTile(ground.getContext('2d'),cx,cy,res,e,{...o,t:undefined,layer:'ground',anchor});
-  drawTile(deco.getContext('2d'),cx,cy,res,e,{...o,t:undefined,layer:'deco',anchor,chim,dyn,lights,occ});
-  return{ground,deco,cx,cy,res,occ,chim:chim.map(([dx,dy])=>[wx+dx/res+0.09,wy+dy/res-0.42]),
+  const live=[];drawTile(deco.getContext('2d'),cx,cy,res,e,{...o,t:undefined,layer:'deco',anchor,chim,dyn,lights,occ,live});
+  // peça sem bichos: os enfeites ficam na imagem pronta. Com bichos: a imagem guarda chão, caminhos e sombras, e os
+  // enfeites são desenhados a cada quadro junto com os bichos, na ordem de profundidade (quem está na frente cobre)
+  if(!dyn.length){const dg=deco.getContext('2d');for(const L of live)sprV(dg,L[2],cx+L[0]*res,cy+L[1]*res,res,L[3],L[4],L[5]);live.length=0;}
+  return{ground,deco,cx,cy,res,occ,live,chim:chim.map(([dx,dy])=>[wx+dx/res+0.09,wy+dy/res-0.42]),
     dyn:dyn.map(([nm,dx,dy,sc,rad],i)=>[nm,dx/res,dy/res,sc,rad,i]),lights:lights.map(([dx,dy])=>[wx+dx/res,wy+dy/res-0.12])};
 }
 // contexto da peça para a composição: vila por perto, água por perto, tamanho da vila, seca longe da água
@@ -1310,20 +1313,23 @@ function drawTileCached(g,x,y,s,k,e,o){
   else g.drawImage(c.deco,dx,dy,c.deco.width*f,c.deco.height*f);
   if(G.chimNext&&o.wet)for(const ch of c.chim)G.chimNext.push(ch);
   if(G.lightsNext)for(const l of c.lights)G.lightsNext.push(l);
-  if(c.dyn.length&&o.t!=null)drawAnimals(g,x,y,s,k,c.dyn,o.t);
+  if(c.dyn.length||c.live.length)drawAnimals(g,x,y,s,k,c.dyn,o.t,c.live);
 }
 // gado e ovelhas (v1.9): cada um tem posição no mundo e anda até um ponto perto de casa que a regra permite,
 // em linha reta e só se o caminho estiver livre (sem água, casa, cerca, cercado, lavoura nem a área atrás de um
 // objeto alto). A ovelha do cercado fica dentro dele. Parado, pasta (a ovelha baixa a cabeça).
 const DYNST=new Map(),DYNSP={cow:0.05,sheep:0.065},DYNR={cow:0.05,sheep:0.035};
-function drawAnimals(g,x,y,s,k,dyn,t){
-  const[wx,wy]=wpos(k);
+function drawAnimals(g,x,y,s,k,dyn,t,live){
+  const[wx,wy]=wpos(k),Q=[];if(live)for(const L of live)Q.push([L[1],0,L]);
+  if(t==null)dyn=[];
   for(const[nm,hx,hy,sc,rad,i]of dyn){
     const key=k+':'+i+':'+nm,r=DYNR[nm]||0.04;let a=DYNST.get(key);
     if(!a||a.w!==G.world){
-      const hx0=wx+hx,hy0=wy+hy,rule=(wflag(hx0,hy0)&WB.CERC)?'cercado':'gado';
-      const p=(a&&!a.dead&&wnear(a.x,a.y,rule,r,0.1))||wnear(hx0,hy0,rule,r);
-      a=p?{x:p[0],y:p[1],hx:hx0,hy:hy0,tx:p[0],ty:p[1],mode:'para',until:t+Math.random()*5000,rule,r,rad:rule==='cercado'?0.14:Math.max(0.12,rad),w:G.world,lt:t,flip:h01(k,i)<0.5}:{dead:true,w:G.world};
+      let hx0=wx+hx,hy0=wy+hy;const pen=nm==='sheep'&&G.world&&G.world.pens.find(([px,py,hw,hd])=>Math.abs(hx0-px)<=hw&&Math.abs(hy0-py)<=hd*1.8);
+      if(pen){hx0=pen[0]+(hx0-pen[0])*0.7;hy0=pen[1];} // ovelha nascida na área do cercado é dele
+      const rule=(pen||(wflag(hx0,hy0)&WB.CERC))?'cercado':'gado',probe={rule,dim:bodyDim(nm,sc*(rule==='cercado'?0.85:1))};
+      const p=(a&&!a.dead&&wbodyNear(a.x,a.y,probe,0.1))||wbodyNear(hx0,hy0,probe);
+      a=p?{x:p[0],y:p[1],hx:hx0,hy:hy0,tx:p[0],ty:p[1],mode:'para',until:t+Math.random()*5000,rule,r,dim:probe.dim,rad:rule==='cercado'?0.14:Math.max(0.12,rad),w:G.world,lt:t,flip:h01(k,i)<0.5}:{dead:true,w:G.world};
       DYNST.set(key,a);if(DYNST.size>800)DYNST.delete(DYNST.keys().next().value);}
     if(a.dead)continue;
     const dt=Math.min(100,Math.max(0,t-a.lt));a.lt=t;
@@ -1332,14 +1338,17 @@ function drawAnimals(g,x,y,s,k,dyn,t){
         for(let q=0;q<8;q++){const ang2=Math.random()*Math.PI*2,rr=a.rad*(0.3+0.7*Math.random()),px=a.hx+Math.cos(ang2)*rr,py=a.hy+Math.sin(ang2)*rr*0.6;
           if(Math.hypot(px-a.x,py-a.y)<0.03)continue;
           // também não para em cima de outro bicho (o destino dos outros conta como ocupado)
-          let crowd=false;for(const o2 of DYNST.values())if(o2!==a&&!o2.dead&&Math.hypot(o2.tx-px,o2.ty-py)<r+(o2.r||0.04))crowd=true;
-          if(!crowd&&wok(px,py,a.rule,r)&&wseg(a.x,a.y,px,py,a.rule,r)){a.tx=px;a.ty=py;a.mode='anda';a.flip=px<a.x;break;}}
+          let crowd=false;for(const o2 of DYNST.values())if(o2!==a&&!o2.dead&&o2.dim&&Math.abs(o2.tx-px)<(o2.dim[0]+a.dim[0])*(a.rule==='cercado'?0.3:0.5)&&Math.abs(o2.ty-py)<(a.rule==='cercado'?0.03:0.07))crowd=true;
+          if(!crowd&&wbody(px,py,a)&&wbodySeg(a.x,a.y,px,py,a)){a.tx=px;a.ty=py;a.mode='anda';a.flip=px<a.x;break;}}
         if(a.mode==='para')a.until=t+2000+Math.random()*3000;}
       if(a.mode==='anda'){const dx=a.tx-a.x,dy=a.ty-a.y,d=Math.hypot(dx,dy),st=(DYNSP[nm]||0.05)*dt/1000;
         if(d<=st){a.x=a.tx;a.y=a.ty;a.mode='para';a.until=t+(nm==='cow'?5000:3000)+Math.random()*6000;}else{a.x+=dx/d*st;a.y+=dy/d*st;}}}
     const moving=a.mode==='anda',bob=moving?-Math.abs(Math.sin(t/95+i))*s*0.012:0;
     let name=nm;if(nm==='sheep')name=moving?'sheep_a':(Math.sin(t/900+i*2)>-0.4?'sheep_b':'sheep_a');
-    sprV(g,name,x+(a.x-wx)*s,y+(a.y-wy)*s+bob,s,sc*(DYNSC[nm]??0.8),a.flip,0);}
+    Q.push([a.y-wy,1,[name,(a.x-wx),(a.y-wy),sc*(DYNSC[nm]??0.8)*(a.rule==='cercado'?0.85:1),a.flip,bob]]);}
+  // enfeites e bichos juntos, de trás para a frente
+  Q.sort((p,q)=>p[0]-q[0]);
+  for(const[,kind,d]of Q){if(kind===0)sprV(g,d[2],x+d[0]*s,y+d[1]*s,s,d[3],d[4],d[5]);else sprV(g,d[0],x+d[1]*s,y+d[2]*s+d[5],s,d[3],d[4],0);}
 }
 function edgeState(board,k,e){const out=[];for(let d=0;d<6;d++){const n=board.get(E.nb(k,d));out.push(!n?0:(n.e[E.opp(d)]===e[d]?1:2));}return out;}
 
@@ -1378,7 +1387,7 @@ function buildWorld(s){
       const[w,h]=sprDim(name,d[3]),big=BIGS.has(name)||name.startsWith('house')||name.startsWith('sobrado'),tree=FOLIAGE.has(name)||name==='buriti'||name.startsWith('pine')||name.endsWith('_seco');
       W.objs.push([name,px,py,w,h]);
       if(name==='pen'){ // cercado: a cerca bloqueia, o miolo é do rebanho
-        const hw=w*0.46,hd=w*0.2;W.pens.push([px,py,hw,hd]);
+        const hw=w*0.53,hd=w*0.22;W.pens.push([px,py,hw,hd]);
         each(px,py,hw+WH,hd+WH,(qx,qy,q)=>{const ex=Math.abs(qx-px)/hw,ey=Math.abs(qy-py)/hd;if(ex<=0.78&&ey<=0.62){if(!(F[q]&WB.AGUA))F[q]|=WB.CERC;}else if(ex<=1&&ey<=1)F[q]|=WB.BLOQ;});
         each(px,py-h*0.5,w*0.5,h*0.5,(qx,qy,q)=>{if(qy<py-hd)F[q]|=WB.OCLU;});continue;}
       if(name==='fence'){each(px,py,w*0.5,0.035,(qx,qy,q)=>{F[q]|=WB.BLOQ;});each(px,py-h*0.5,w*0.5,h*0.5,(qx,qy,q)=>{F[q]|=WB.OCLU;});continue;}
@@ -1387,7 +1396,7 @@ function buildWorld(s){
         each(px,py-h*0.5,w*0.5,h*0.5,(qx,qy,q)=>{F[q]|=WB.OCLU;});continue;}
       if(tree){const r=Math.max(0.03,w*0.08);each(px,py,r,r*0.6,(qx,qy,q)=>{F[q]|=WB.BLOQ;});
         // a copa cobre o que está atrás dela
-        each(px,py-h*0.55,w*0.4,h*0.5,(qx,qy,q)=>{F[q]|=WB.OCLU;});continue;}
+        each(px,py-h*0.5,w*0.52,h*0.52,(qx,qy,q)=>{if(qy<py)F[q]|=WB.OCLU;});continue;}
       if(SOLID.has(name)){const r=Math.max(0.025,w*0.35);each(px,py,r,r*0.6,(qx,qy,q)=>{const ex=(qx-px)/r,ey=(qy-py)/(r*0.6);if(ex*ex+ey*ey<=1)F[q]|=WB.BLOQ;});
         if(h>0.12)each(px,py-h*0.5,w*0.45,h*0.45,(qx,qy,q)=>{F[q]|=WB.OCLU;});}
     }
@@ -1399,7 +1408,7 @@ function wflag(x,y){const W=G.world;if(!W)return 0;const i=Math.floor((x-W.x0)/W
 const WRULE={
   terra:f=>(f&WB.TERRA)&&!(f&(WB.AGUA|WB.BLOQ|WB.OCLU|WB.CERC)),
   gado:f=>(f&WB.TERRA)&&!(f&(WB.AGUA|WB.BLOQ|WB.OCLU|WB.CERC|WB.ROCA)),
-  cercado:f=>(f&WB.CERC)&&!(f&(WB.BLOQ|WB.OCLU|WB.AGUA)),
+  cercado:f=>(f&WB.CERC)&&!(f&(WB.BLOQ|WB.AGUA)),
   margem:f=>(f&WB.TERRA)&&(f&(WB.MARGEM|WB.AGUA))&&!(f&(WB.BLOQ|WB.OCLU)),          // capivara: na beira e na água rasa
   vau:f=>(f&WB.TERRA)&&(f&(WB.MARGEM|WB.AGUA))&&!(f&(WB.BLOQ|WB.OCLU)),             // garça: anda no raso
 };
@@ -1407,6 +1416,19 @@ const FRULE={seriema:'terra',ema:'terra',lobo:'terra',tamandua:'terra',onca:'ter
 // o bicho cabe ali? (o ponto e um pequeno círculo em volta, do tamanho do corpo)
 function wok(x,y,rule,r=0.03){const R2=WRULE[rule];if(!R2||!G.world)return true;
   for(const[dx,dy]of[[0,0],[r,0],[-r,0],[0,r*0.6],[0,-r*0.6]])if(!R2(wflag(x+dx,y+dy)))return false;return true;}
+// corpo inteiro do bicho (v1.9c): o retângulo que o sprite ocupa na tela, em unidades do mundo, testado em 5×4
+// pontos. Assim o boi não "sobe" na cerca: nenhum pedaço do desenho dele pode cair sobre cerca, cercado, casa,
+// água, lavoura ou a área que um objeto alto cobre. A ovelha do cercado: patas e barriga dentro do miolo.
+function bodyDim(nm,sc){const m=ATLAS[nm==='sheep'?'sheep_a':nm];const k=sc*(DYNSC[nm]??0.8);if(!m)return[0.2,0.15];return[m[2]/m[6]*k*0.82,m[3]/m[6]*k*0.8];}
+function wbody(x,y,a){const R2=WRULE[a.rule];if(!R2||!G.world)return true;const[w,h]=a.dim;
+  const ys=a.rule==='cercado'?[0.02,0,-h*0.3]:[0.015,0,-h*0.33,-h*0.66,-h*0.95];
+  const m=a.rule==='cercado'?0:0.025;
+  for(const dy of ys)for(const fx of[-0.5,-0.25,0,0.25,0.5])if(!R2(wflag(x+fx*(w+2*m),y+dy)))return false;return true;}
+function wbodySeg(ax,ay,bx,by,a){const d=Math.hypot(bx-ax,by-ay),n=Math.max(1,Math.ceil(d/WH));
+  for(let q=0;q<=n;q++){const u=q/n;if(!wbody(ax+(bx-ax)*u,ay+(by-ay)*u,a))return false;}return true;}
+function wbodyNear(x,y,a,maxR=0.45){if(wbody(x,y,a))return[x,y];
+  for(let rr=WH;rr<=maxR;rr+=WH)for(let q=0;q<16;q++){const t=q/16*Math.PI*2,px=x+Math.cos(t)*rr,py=y+Math.sin(t)*rr*0.8;if(wbody(px,py,a))return[px,py];}
+  return null;}
 // o caminho reto entre dois pontos é livre?
 function wseg(ax,ay,bx,by,rule,r){const d=Math.hypot(bx-ax,by-ay),n=Math.max(1,Math.ceil(d/(WH*0.5)));
   for(let q=0;q<=n;q++){const u=q/n;if(!wok(ax+(bx-ax)*u,ay+(by-ay)*u,rule,r))return false;}return true;}
@@ -1645,7 +1667,8 @@ function drawTile(g,x,y,s,e,o={}){
     // sombras primeiro, recortadas pelo chão da peça; depois os objetos
     if(SHADOW){g.save();g.beginPath();V.forEach(([vx,vy],q)=>q?g.lineTo(vx,vy):g.moveTo(vx,vy));g.closePath();g.clip();
       g.globalAlpha=(o.alpha??1)*0.72;for(const dd of decos)sprS(g,dd[2],dd[0],dd[1],s,dd[3]*1.3,dd[4]);g.restore();}
-    for(const dd of decos)sprV(g,dd[2],dd[0],dd[1],s,dd[3]*1.3,dd[4],dd[5]);
+    if(o.live)for(const dd of decos)o.live.push([(dd[0]-x)/s,(dd[1]-y)/s,dd[2],dd[3]*1.3,dd[4],dd[5]]);
+    else for(const dd of decos)sprV(g,dd[2],dd[0],dd[1],s,dd[3]*1.3,dd[4],dd[5]);
   }else{
     // sem atlas: marcas simples
     for(let i=0;i<6;i++){if(e[i]==='B'||e[i]==='V'){const[x1,y1]=vtx(x,y,R,i,-1),[x2,y2]=vtx(x,y,R,i,1);g.beginPath();g.arc((x+x1+x2)/3,(y+y1+y2)/3,s*0.12,0,7);g.fillStyle=e[i]==='B'?'#2f6b31':'#e0663f';g.fill();}}
