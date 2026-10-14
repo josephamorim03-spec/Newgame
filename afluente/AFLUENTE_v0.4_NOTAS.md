@@ -17,7 +17,7 @@
 | As peças são a vida; pontos são consequência | Pilha começa com 22; o jogo acaba quando ela acaba |
 | Jogar bem devolve peças | Peça perfeita (cercada, 6 lados combinando): +5 e +1 peça. Missão cumprida: +3 peças |
 | Missões com número exato criam planos e risco | "Bosque com 7": o grupo precisa ter exatamente 7 peças; passou, perdeu |
-| Peças ruins viram problema a contornar | Restrição única: água só encosta em água |
+| Peças ruins viram problema a contornar | Lados que não combinam só não pontuam; rio que bate em terra vira brejo e a água para ali |
 | Mundo aberto e bonito que cresce | Tabuleiro sem limite, câmera que acompanha, arrastar e pinçar |
 
 **Identidade própria:** a água só corre no rio ligado à nascente. Rios desconectados ficam como leito seco; ligar um deles faz a água descer por tudo de uma vez (+2 por peça que recebe água viva), e o terreno em volta fica verde. Há missões de "ligar à água".
@@ -29,7 +29,7 @@
 | Aleatório | 11 | 22 | 0,1 | 0 |
 | Guloso | 157 (49–313) | 39 (23–59) | 4,1 | 4,5 |
 
-Nenhuma partida travou (a água só encosta em água, mas o tabuleiro aberto sempre tem lugar).
+Primeira versão proibia rio encostar em terra; no teste isso criou buracos onde quase nenhuma peça cabia. Agora qualquer peça cabe em qualquer casa vazia (guloso: 136 pontos, 36 peças em média).
 
 ## A verificar com pessoas
 

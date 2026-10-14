@@ -123,7 +123,7 @@ button{font:inherit;color:inherit}
     <h2 id="introTitle">Monte o vale peça por peça</h2>
     <ul class="how">
       <li><canvas data-thumb="match" width="96" height="92"></canvas><div><b>Encaixe</b><span>Toque numa casa vazia, gire a peça e coloque. Cada lado que combina com o vizinho vale +1.</span></div></li>
-      <li><canvas data-thumb="water" width="96" height="92"></canvas><div><b>Água só encosta em água</b><span>A água só corre no rio ligado à nascente. Cada peça que recebe água viva vale +2.</span></div></li>
+      <li><canvas data-thumb="water" width="96" height="92"></canvas><div><b>Ligue os rios à nascente</b><span>A água só corre no rio ligado à nascente. Cada peça que recebe água viva vale +2. Rio que bate em terra vira brejo e para ali.</span></div></li>
       <li><canvas data-thumb="quest" width="96" height="92"></canvas><div><b>Missões ganham peças</b><span>"Bosque 6": deixe aquele bosque com exatamente 6 peças. Cumpriu: +3 peças. Passou do número: perdeu.</span></div></li>
       <li><canvas data-thumb="perfect" width="96" height="92"></canvas><div><b>Peça perfeita</b><span>Cercada e com os 6 lados combinando: +5 e +1 peça.</span></div></li>
     </ul>
@@ -152,7 +152,7 @@ button{font:inherit;color:inherit}
 function Engine(){
   /* Afluente v0.4 — encaixe de peças hexagonais (inspirado no laço do Dorfromantik) com água viva.
      Cada peça tem 6 lados: G pasto, C campo, B bosque, V vila, A água.
-     - Água só encosta em água (única restrição). Os outros lados podem não combinar.
+     - Qualquer peça cabe em qualquer casa vazia; lados que não combinam só não pontuam. Rio contra terra vira brejo.
      - +1 ponto por lado que combina. Peça cercada com os 6 lados combinando = Perfeita: +5 e +1 peça.
      - Missões com número exato ("Bosque 7"): cumprir = +3 peças e pontos; passar do número = falha.
      - A água só corre no rio ligado à nascente; cada peça que passa a ter água viva rende +2.
@@ -200,10 +200,9 @@ function Engine(){
     return s;
   }
 
-  function legal(board,k,e){
-    for(let d=0;d<6;d++){const n=board.get(nb(k,d));if(n&&((e[d]==='A')!==(n.e[opp(d)]==='A')))return false;}
-    return true;
-  }
+  // Qualquer peça cabe em qualquer casa vazia encostada no vale. Rio que bate em terra termina num brejo:
+  // aquele lado não combina (não pontua) e a água não passa. (A proibição antiga criava buracos impossíveis.)
+  function legal(board,k,e){return true;}
   function slots(s){
     const out=new Set();
     for(const k of s.board.keys())for(let d=0;d<6;d++){const n=nb(k,d);if(!s.board.has(n))out.add(n);}
@@ -392,12 +391,13 @@ function drawTile(g,x,y,s,e,o={}){
   if(ws.length){
     const al=o.alive==null?0:o.alive,em=R*0.866;
     const layer=(w,col,a)=>{g.globalAlpha=(o.alpha??1)*a;g.strokeStyle=col;g.fillStyle=col;g.lineWidth=w;g.lineCap='butt';
-      for(const i of ws){g.beginPath();g.moveTo(x,y);g.lineTo(x+Math.cos(ang(i))*em,y+Math.sin(ang(i))*em);g.stroke();}
+      for(const i of ws){const L=o.blocked&&o.blocked.includes(i)?em*0.55:em;g.beginPath();g.moveTo(x,y);g.lineTo(x+Math.cos(ang(i))*L,y+Math.sin(ang(i))*L);g.stroke();
+        if(L<em){g.beginPath();g.ellipse(x+Math.cos(ang(i))*L,y+Math.sin(ang(i))*L,w*0.85,w*0.6,ang(i),0,7);g.fill();}}
       g.beginPath();g.arc(x,y,ws.length===1||o.src?w*0.9:w/2,0,7);g.fill();};
     layer(s*0.5,P.bedBank,1);layer(s*0.36,P.bed,1);
     if(al>0){layer(s*0.5,P.bank,al);layer(s*0.36,P.water,al);
       if(!RM&&al>=1&&o.t!=null){g.globalAlpha=o.alpha??1;g.setLineDash([s*0.12,s*0.34]);g.lineDashOffset=-(o.t/50)%(s*0.46);g.strokeStyle=P.waterHi;g.lineWidth=s*0.06;g.lineCap='round';
-        for(const i of ws){g.beginPath();g.moveTo(x+Math.cos(ang(i))*em,y+Math.sin(ang(i))*em);g.lineTo(x,y);g.stroke();}g.setLineDash([]);}
+        for(const i of ws){const L=o.blocked&&o.blocked.includes(i)?em*0.55:em;g.beginPath();g.moveTo(x+Math.cos(ang(i))*L,y+Math.sin(ang(i))*L);g.lineTo(x,y);g.stroke();}g.setLineDash([]);}
     }
     g.globalAlpha=o.alpha??1;
   }
@@ -520,7 +520,7 @@ function draw(t){
     let[x,y]=scr(k);
     if(sel&&k===sel.k&&!s.board.has(k)){
       const o=sel.ops[sel.i];
-      drawTile(g,x,y-sz*0.12,sz,o.e,{wet:G.wet.has(k)||o.rep.newlyAlive.length>0,alive:o.rep.newlyAlive.includes(k)?1:0,alpha:0.95,t});
+      drawTile(g,x,y-sz*0.12,sz,o.e,{wet:G.wet.has(k)||o.rep.newlyAlive.length>0,alive:o.rep.newlyAlive.includes(k)?1:0,alpha:0.95,t,blocked:blockedSides(s.board,k,o.e)});
       for(const ed of o.rep.edges){
         const a=ang(ed.d),X=x+Math.cos(a)*sz*0.7,Y=y-sz*0.12+Math.sin(a)*sz*0.7;
         g.beginPath();g.arc(X,Y,sz*0.15,0,7);g.fillStyle=ed.m?P.good:P.bad;g.fill();g.strokeStyle='#fff';g.lineWidth=1.5;g.stroke();
@@ -534,7 +534,7 @@ function draw(t){
     }
     const tl=s.board.get(k),f=fxOf(k,t);y+=f.dy;
     g.save();if(f.sc!==1){g.translate(x,y);g.scale(f.sc,f.sc);g.translate(-x,-y);}
-    drawTile(g,x,y,sz,tl.e,{wet:G.wet.has(k),alive:aliveOf(k,t),src:tl.src,seed:k,t});
+    drawTile(g,x,y,sz,tl.e,{wet:G.wet.has(k),alive:aliveOf(k,t),src:tl.src,seed:k,t,blocked:blockedSides(s.board,k,tl.e)});
     if(f.spark!=null){g.globalAlpha=1-f.spark;hexPath(g,x,y,sz*(0.97+f.spark*0.5));g.strokeStyle='#fff6c8';g.lineWidth=3;g.stroke();g.globalAlpha=1;}
     g.restore();
   }
@@ -551,6 +551,7 @@ function draw(t){
   for(const f of G.floats){const u=(t-f.t0)/1100;if(u<0)continue;const[x,y]=scr(f.k);g.globalAlpha=u<0.15?u/0.15:1-Math.max(0,(u-0.6)/0.4);pill(g,x,y-sz*0.5-u*sz*0.9,f.txt,f.col,f.fg,sz);g.globalAlpha=1;}
   if(G.flow&&t-G.flow.t0>G.flow.order.length*120+400)G.flow=null;
 }
+function blockedSides(board,k,e){const out=[];for(let d=0;d<6;d++){if(e[d]!=='A')continue;const n=board.get(E.nb(k,d));if(n&&n.e[E.opp(d)]!=='A')out.push(d);}return out;}
 function pill(g,x,y,txt,bg,fg,sz){
   g.font=`800 ${Math.max(12,sz*0.46)}px "Baloo 2",system-ui,sans-serif`;g.textAlign='center';g.textBaseline='middle';
   const w=g.measureText(txt).width+sz*0.55,h=Math.max(18,sz*0.62);
@@ -607,7 +608,7 @@ function renderUI(){
   $('undoBtn').disabled=!G.undo;
   let h='';
   if(over)h='A pilha acabou.';
-  else if(sel){const o=sel.ops[sel.i];h=o.rep.edges.length?`Lados <em>verdes</em> combinam. Toque na peça ou use ↺ ↻ para girar.`:'Toque na peça ou use ↺ ↻ para girar.';if(sel.ops.length===1)h=E.rotations(sel.ops[0].e).length===1?'Peça igual de todos os lados: é só colocar.':'Só uma posição possível aqui (água só encosta em água).';}
+  else if(sel){const o=sel.ops[sel.i];h=o.rep.edges.length?`Lados <em>verdes</em> combinam. Toque na peça ou use ↺ ↻ para girar.`:'Toque na peça ou use ↺ ↻ para girar.';if(sel.ops.length===1)h='Peça igual de todos os lados: é só colocar.';}
   else if(s.placed===0)h='Toque numa casa vazia ao lado da nascente.';
   else if(s.left<=3)h=`Restam ${s.left} peça${s.left>1?'s':''}. Missões e peças perfeitas dão mais.`;
   else h='Toque numa casa vazia. A melhor posição já vem girada.';
@@ -651,7 +652,7 @@ function tap(x,y){
   if(G.valid.has(k)){select(k);return;}
   if(s.board.has(k)){const q=G.qp.find(q=>q.key===k);flashHint(q?(q.flow?'Missão: leve água viva até esta peça.':`Missão: este ${NAME[q.b].toLowerCase()} precisa ter exatamente ${q.n} peças (agora ${q.cur}).`):'Essa casa já tem peça. Toque numa casa vazia tracejada.');return;}
   const near=[0,1,2,3,4,5].some(d=>s.board.has(E.nb(k,d)));
-  flashHint(near?'Esta peça não cabe aqui: água só pode encostar em água.':'Coloque encostado no vale, numa casa tracejada.');
+  flashHint(near?'Toque numa casa tracejada.':'Coloque encostado no vale, numa casa tracejada.');
 }
 let hintTimer=0;function flashHint(t){$('hint').innerHTML=`<span>${t}</span>`;clearTimeout(hintTimer);hintTimer=setTimeout(renderUI,2600);}
 
