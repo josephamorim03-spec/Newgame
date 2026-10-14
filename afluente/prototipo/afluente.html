@@ -36,9 +36,27 @@ button{font:inherit;color:inherit}
 @keyframes bump{30%{transform:scale(1.25);color:var(--gold)}}
 .round{width:40px;height:40px;flex:none;border-radius:50%;border:0;background:var(--card);box-shadow:0 2px 0 var(--line);font-family:var(--f-display);font-weight:800;font-size:20px;cursor:pointer}
 
+.seasonbar{display:flex;flex-direction:column;gap:3px}
+.sb-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.sb-top b{font-family:var(--f-display);font-size:15px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.sb-top span{white-space:nowrap;flex:none}
+.sb-track{height:8px;border-radius:4px;background:rgba(29,59,58,.12);overflow:hidden}
+.sb-track i{display:block;height:100%;width:0;border-radius:4px;background:linear-gradient(90deg,#4fb3d9,#3f9a4a);transition:width .45s}
+.spc{display:inline-block;margin-left:6px;padding:0 7px;border-radius:999px;background:#e3f3fb;color:#1f6f97;font:700 11px/18px var(--f-body);vertical-align:middle}
+.seasonline{margin:0;font-family:var(--f-display);font-size:19px;color:var(--ink)!important}
+.record{margin:0;font-weight:700;color:#7a4d00!important}
+.record.new{color:#2f8a3e!important}
+.report{display:flex;flex-direction:column;gap:6px;background:#f4faf7;border-radius:14px;padding:12px 14px}
+.report p{margin:0;color:var(--ink);font-size:14px}
+.report .near{font-weight:700}
+.report ul{margin:0;padding:0;list-style:none;display:grid;grid-template-columns:1fr auto;gap:2px 12px;font-size:13.5px;font-variant-numeric:tabular-nums}
+.report li{display:contents}
+.report li span:last-child{text-align:right;font-weight:700}
+.report li.bad span{color:#b4432f}
+.report .tip{border-top:1px solid var(--line);padding-top:8px;color:var(--muted)}
 .board{position:relative;flex:1;min-height:0;touch-action:none}
 .board canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
-.banner{position:absolute;left:50%;top:6px;transform:translate(-50%,0);padding:6px 16px 4px;border-radius:999px;background:var(--gold);color:#3b2504;font-family:var(--f-display);font-weight:800;font-size:20px;white-space:nowrap;pointer-events:none;box-shadow:0 3px 0 #c9861a;transition:opacity .25s,transform .25s}
+.banner{position:absolute;left:50%;top:6px;transform:translate(-50%,0);padding:6px 16px 4px;border-radius:18px;width:max-content;max-width:92%;box-sizing:border-box;text-align:center;line-height:1.15;background:var(--gold);color:#3b2504;font-family:var(--f-display);font-weight:800;font-size:18px;white-space:normal;text-wrap:balance;pointer-events:none;box-shadow:0 3px 0 #c9861a;transition:opacity .25s,transform .25s}
 .banner.water{background:var(--water);color:#fff;box-shadow:0 3px 0 #1f7ea6}
 .banner.good{background:var(--good);color:#fff;box-shadow:0 3px 0 #2c7436}
 .banner[data-off]{opacity:0;transform:translate(-50%,-8px)}
@@ -73,6 +91,7 @@ button{font:inherit;color:inherit}
 
 .overlay{position:fixed;inset:0;z-index:20;display:flex;align-items:flex-end;justify-content:center;background:rgba(29,59,58,.45);padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px));padding-bottom:max(12px,env(safe-area-inset-bottom,0px));padding-top:env(safe-area-inset-top,0px)}
 .sheet{width:100%;max-width:500px;max-height:100%;overflow:auto;box-sizing:border-box;background:var(--card);border-radius:24px;padding:22px 20px 18px;display:flex;flex-direction:column;gap:12px;box-shadow:0 6px 0 var(--line)}
+.sheet>*{flex-shrink:0}
 .sheet h2{margin:0;font-family:var(--f-display);font-weight:800;font-size:30px;line-height:1;text-wrap:balance}
 .sheet p{margin:0;color:var(--muted)}
 .how{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:10px}
@@ -101,6 +120,10 @@ button{font:inherit;color:inherit}
     <div class="pill" id="scoreBox"><b id="score">0</b><small>pontos</small></div>
     <button class="round" id="helpBtn" aria-label="Como jogar">?</button>
   </header>
+  <div class="seasonbar" aria-live="polite">
+    <div class="sb-top"><b id="seasonName">Estação 1 · Estiagem</b><span id="seasonNext"></span></div>
+    <div class="sb-track"><i id="seasonFill"></i></div>
+  </div>
 
   <div class="board" id="boardWrap">
     <canvas id="board" aria-label="O vale"></canvas>
@@ -131,6 +154,7 @@ button{font:inherit;color:inherit}
       <li><canvas data-thumb="water" width="96" height="92"></canvas><div><b>Ligue os rios à nascente</b><span>A água só corre no rio ligado à nascente. Cada peça que recebe água viva vale +2. Rio que bate em terra vira brejo e para ali.</span></div></li>
       <li><canvas data-thumb="quest" width="96" height="92"></canvas><div><b>Missões ganham peças</b><span>"Bosque 6": deixe aquele bosque com exatamente 6 peças. Cumpriu: +3 peças. Passou do número: perdeu.</span></div></li>
       <li><canvas data-thumb="perfect" width="96" height="92"></canvas><div><b>Peça perfeita</b><span>Cercada e com os 6 lados combinando: +5 e +1 peça.</span></div></li>
+      <li><canvas data-thumb="water" width="96" height="92"></canvas><div><b>Estações do rio</b><span>Cada meta de pontos alcançada é uma estação nova: +3 peças e peças especiais na pilha (Cachoeira, Ponte, Lagoa). Até onde seu vale chega?</span></div></li>
     </ul>
     <p>O jogo acaba quando a pilha acaba. Jogar bem faz a pilha durar.</p>
     <button class="btn primary" id="introOk">Jogar</button>
@@ -142,6 +166,9 @@ button{font:inherit;color:inherit}
     <img class="snap" id="resImg" alt="O vale que você construiu">
     <h2 id="resTitle">A pilha acabou</h2>
     <div class="big"><b id="resTotal">0</b><span id="resPar">calculando o par…</span></div>
+    <p class="seasonline" id="resSeason"></p>
+    <p class="record" id="resRecord"></p>
+    <div class="report" id="resReport"></div>
     <div class="stats" id="resStats"></div>
     <textarea class="share" id="shareTxt" readonly aria-label="Resultado para compartilhar"></textarea>
     <button class="btn primary" id="copyBtn">Copiar resultado</button>
@@ -162,12 +189,24 @@ function Engine(){
      - +1 ponto por lado que combina. Peça cercada com os 6 lados combinando = Perfeita: +5 e +1 peça.
      - Missões com número exato ("Bosque 7"): cumprir = +3 peças e pontos; passar do número = falha.
      - A água só corre no rio ligado à nascente; cada peça que passa a ter água viva rende +2.
-     - O jogo acaba quando a pilha acaba. */
+     - O jogo acaba quando a pilha acaba.
+     v0.5 — Estações do rio: metas de pontos crescentes; cada estação alcançada dá +4 peças e libera
+     peças especiais (Cachoeira, Ponte, Lagoa) que começam a aparecer na pilha. Estatísticas para o relatório final. */
   const DIRS=[[1,0],[1,-1],[0,-1],[-1,0],[-1,1],[0,1]];
   const K=(q,r)=>(q+64)*128+(r+64),KQ=k=>Math.floor(k/128)-64,KR=k=>(k%128)-64;
   const nb=(k,d)=>K(KQ(k)+DIRS[d][0],KR(k)+DIRS[d][1]);
   const opp=d=>(d+3)%6;
-  const START=22,PERFECT_PTS=5,QUEST_TILES=3,FLOW_PTS=2;
+  const START=22,PERFECT_PTS=5,QUEST_TILES=3,FLOW_PTS=2,SEASON_TILES=3;
+  const SEASON_AT=[0,0,35,95,180,290,420,570,740,930];
+  const seasonAt=n=>n<SEASON_AT.length?SEASON_AT[n]:SEASON_AT[SEASON_AT.length-1]+220*(n-SEASON_AT.length+1);
+  const SEASON_NAME=['','Estiagem','Primeiras chuvas','Florada','Tempo das águas','Cheia','Fartura','Vale vivo'];
+  const seasonName=n=>n<SEASON_NAME.length?SEASON_NAME[n]:'Vale vivo '+(n-6);
+  // peças especiais: liberadas por estação
+  const SPECIALS=[
+    {id:'falls',season:2,name:'Cachoeira',e:['A','B','B','A','G','G'],desc:'+6 quando a água chega'},
+    {id:'bridge',season:3,name:'Ponte',e:['A','V','V','A','V','V'],desc:'os lados de terra combinam com qualquer terra'},
+    {id:'lake',season:4,name:'Lagoa',e:['A','A','G','A','A','G'],desc:'+8 e +1 peça quando a água chega'},
+  ];
   const SRC=K(0,0);
 
   function hashStr(s){let h=1779033703^s.length;for(let i=0;i<s.length;i++){h=Math.imul(h^s.charCodeAt(i),3432918353);h=h<<13|h>>>19;}h=Math.imul(h^h>>>16,2246822507);h=Math.imul(h^h>>>13,3266489909);return(h^h>>>16)>>>0;}
@@ -194,16 +233,35 @@ function Engine(){
       const bs=[...new Set(e)].filter(x=>x!=='G');
       if(bs.length){const b=bs[Math.floor(rng()*bs.length)];quest=b==='A'?{b,flow:true}:{b,n:4+Math.floor(rng()*6)};}
     }
-    return{e,quest};
+    return{e,quest,sroll:rng(),spick:rng(),srot:Math.floor(rng()*6)};
   }
 
   function newGame(seedKey){
-    const rng=mulberry32(hashStr('v04:'+seedKey));
+    const rng=mulberry32(hashStr('v05:'+seedKey));
     const tiles=[];for(let i=0;i<400;i++)tiles.push(genTile(rng,i));
     const board=new Map([[SRC,{e:['A','G','A','G','A','G'],src:true}]]);
     const s={seedKey,tiles,board,next:0,left:START,score:0,quests:[],alive:new Set([SRC]),perfectSet:new Set(),
-      placed:0,perfects:0,questsDone:0,turn:0,actions:[]};
+      placed:0,perfects:0,questsDone:0,turn:0,actions:[],season:1,drawn:{},
+      stats:{match:0,perfect:0,quest:0,flow:0,special:0,tPerfect:0,tQuest:0,tSeason:0,tSpecial:0,failed:[],best:{pts:0,turn:0,k:null}}};
+    resolve(s,0);resolve(s,1);
     return s;
+  }
+  // a peça de cada posição da pilha é decidida quando aparece (como "peça da vez" ou "depois") e não muda mais
+  function resolve(s,idx){
+    if(s.drawn[idx]||!s.tiles[idx])return;
+    const base=s.tiles[idx],open=SPECIALS.filter(x=>s.season>=x.season);
+    const p=Math.min(0.22,0.075*open.length+0.02*Math.max(0,s.season-4));
+    let t=base;
+    if(open.length&&base.sroll<p){const sp=open[Math.floor(base.spick*open.length)];t={e:rot(sp.e,base.srot),quest:null,sp:sp.id};}
+    s.drawn={...s.drawn,[idx]:t};
+  }
+  const cur=s=>s.drawn[s.next];
+  const peek=(s,n)=>s.drawn[s.next+n];
+  // lados combinam se são iguais; a Ponte combina com qualquer terra
+  function matches(a,ta,b,tb){
+    if(a===b)return true;
+    if(a==='A'||b==='A')return false;
+    return ta.sp==='bridge'||tb.sp==='bridge';
   }
 
   // Qualquer peça cabe em qualquer casa vazia encostada no vale. Rio que bate em terra termina num brejo:
@@ -239,38 +297,52 @@ function Engine(){
 
   function isPerfect(board,k){
     const t=board.get(k);if(!t)return false;
-    for(let d=0;d<6;d++){const n=board.get(nb(k,d));if(!n||n.e[opp(d)]!==t.e[d])return false;}
+    for(let d=0;d<6;d++){const n=board.get(nb(k,d));if(!n||!matches(t.e[d],t,n.e[opp(d)],n))return false;}
     return true;
   }
 
   /* aplica uma colocação e devolve o novo estado + o relatório do que aconteceu */
   function place(s,k,r){
-    const tile=s.tiles[s.next],e=rot(tile.e,r);
-    const board=new Map(s.board);board.set(k,{e,i:s.next});
-    const rep={pts:0,match:0,perfect:[],questsDone:[],questsFailed:[],newlyAlive:[],tiles:0,edges:[]};
-    for(let d=0;d<6;d++){const n=board.get(nb(k,d));if(n){const m=n.e[opp(d)]===e[d];rep.edges.push({d,m});if(m)rep.match++;}}
-    rep.pts+=rep.match;
+    const tile=cur(s),e=rot(tile.e,r),me={e,i:s.next,sp:tile.sp};
+    const board=new Map(s.board);board.set(k,me);
+    const rep={pts:0,match:0,perfect:[],questsDone:[],questsFailed:[],newlyAlive:[],tiles:0,edges:[],seasonUp:[],
+      p:{match:0,perfect:0,quest:0,flow:0,special:0},t:{perfect:0,quest:0,season:0,special:0}};
+    for(let d=0;d<6;d++){const n=board.get(nb(k,d));if(n){const m=matches(e[d],me,n.e[opp(d)],n);rep.edges.push({d,m});if(m)rep.match++;}}
+    rep.pts+=rep.match;rep.p.match=rep.match;
     const perfectSet=new Set(s.perfectSet);
-    for(const c of[k,...[0,1,2,3,4,5].map(d=>nb(k,d))])if(!perfectSet.has(c)&&isPerfect(board,c)){perfectSet.add(c);rep.perfect.push(c);rep.pts+=PERFECT_PTS;rep.tiles+=1;}
+    for(const c of[k,...[0,1,2,3,4,5].map(d=>nb(k,d))])if(!perfectSet.has(c)&&isPerfect(board,c)){perfectSet.add(c);rep.perfect.push(c);rep.pts+=PERFECT_PTS;rep.tiles+=1;rep.p.perfect+=PERFECT_PTS;rep.t.perfect+=1;}
     const G=groups(board);
     // água viva: grupos de água que contêm a nascente
     const alive=new Set();
     const srcRoots=new Set();for(let i=0;i<6;i++)if(board.get(SRC).e[i]==='A')srcRoots.add(G.find(SRC*6+i));
     for(const[kk,t]of board)for(let i=0;i<6;i++)if(t.e[i]==='A'&&srcRoots.has(G.find(kk*6+i))){alive.add(kk);break;}
-    for(const kk of alive)if(!s.alive.has(kk)){rep.newlyAlive.push(kk);rep.pts+=FLOW_PTS;}
+    for(const kk of alive)if(!s.alive.has(kk)){
+      rep.newlyAlive.push(kk);rep.pts+=FLOW_PTS;rep.p.flow+=FLOW_PTS;
+      const sp=board.get(kk).sp;
+      if(sp==='falls'){rep.pts+=6;rep.p.special+=6;}
+      if(sp==='lake'){rep.pts+=8;rep.p.special+=8;rep.tiles+=1;rep.t.special+=1;}
+    }
     // missões
     const quests=s.quests.map(q=>({...q}));
     if(tile.quest){const edge=e.findIndex(b=>b===tile.quest.b);quests.push({key:k,edge,b:tile.quest.b,n:tile.quest.n,flow:!!tile.quest.flow,status:'open'});}
     for(const q of quests){
       if(q.status!=='open')continue;
-      if(q.flow){if(alive.has(q.key)){q.status='done';rep.questsDone.push(q);rep.pts+=10;rep.tiles+=QUEST_TILES;}continue;}
+      if(q.flow){if(alive.has(q.key)){q.status='done';rep.questsDone.push(q);rep.pts+=10;rep.tiles+=QUEST_TILES;rep.p.quest+=10;rep.t.quest+=QUEST_TILES;}continue;}
       const size=G.size(q.key*6+q.edge);q.cur=size;
-      if(size===q.n){q.status='done';rep.questsDone.push(q);rep.pts+=2*q.n;rep.tiles+=QUEST_TILES;}
+      if(size===q.n){q.status='done';rep.questsDone.push(q);rep.pts+=2*q.n;rep.tiles+=QUEST_TILES;rep.p.quest+=2*q.n;rep.t.quest+=QUEST_TILES;}
       else if(size>q.n){q.status='fail';rep.questsFailed.push(q);}
     }
-    const n={...s,board,next:s.next+1,left:s.left-1+rep.tiles,score:s.score+rep.pts,quests,alive,perfectSet,
+    // estações: cada meta alcançada dá peças e libera especiais
+    const score=s.score+rep.pts;let season=s.season;
+    while(score>=seasonAt(season+1)){season++;rep.seasonUp.push(season);rep.tiles+=SEASON_TILES;rep.t.season+=SEASON_TILES;}
+    const st=s.stats,stats={match:st.match+rep.p.match,perfect:st.perfect+rep.p.perfect,quest:st.quest+rep.p.quest,flow:st.flow+rep.p.flow,
+      special:st.special+rep.p.special,tPerfect:st.tPerfect+rep.t.perfect,tQuest:st.tQuest+rep.t.quest,tSeason:st.tSeason+rep.t.season,
+      tSpecial:st.tSpecial+rep.t.special,failed:rep.questsFailed.length?st.failed.concat(rep.questsFailed.map(q=>({b:q.b,n:q.n,cur:q.cur}))):st.failed,
+      best:rep.pts>st.best.pts?{pts:rep.pts,turn:s.turn+1,k}:st.best};
+    const n={...s,board,next:s.next+1,left:s.left-1+rep.tiles,score,season,quests,alive,perfectSet,stats,
       placed:s.placed+1,perfects:s.perfects+rep.perfect.length,questsDone:s.questsDone+rep.questsDone.length,turn:s.turn+1,
       actions:s.actions.concat([{k,r}])};
+    resolve(n,n.next);resolve(n,n.next+1);
     return{state:n,rep};
   }
   function questProgress(s){
@@ -279,7 +351,7 @@ function Engine(){
   }
   function options(s,k){
     if(s.board.has(k))return[];
-    const tile=s.tiles[s.next];if(!tile)return[];
+    const tile=cur(s);if(!tile)return[];
     return rotations(tile.e).filter(o=>legal(s.board,k,o.e)).map(o=>{const{rep}=place(s,k,o.r);return{r:o.r,e:o.e,rep};})
       .sort((a,b)=>(b.rep.pts+4*b.rep.tiles)-(a.rep.pts+4*a.rep.tiles));
   }
@@ -291,7 +363,7 @@ function Engine(){
     let s=newGame(seedKey);
     while(!over(s)&&s.turn<300){
       let best=null,bv=-1;
-      for(const k of slots(s))for(const o of rotations(s.tiles[s.next].e)){
+      for(const k of slots(s))for(const o of rotations(cur(s).e)){
         if(!legal(s.board,k,o.e))continue;
         const{rep}=place(s,k,o.r),v=rep.pts+4*rep.tiles;
         if(v>bv){bv=v;best={k,r:o.r};}
@@ -299,9 +371,9 @@ function Engine(){
       if(!best)break;
       s=place(s,best.k,best.r).state;
     }
-    return{score:s.score,placed:s.placed};
+    return{score:s.score,placed:s.placed,season:s.season};
   }
-  return{DIRS,K,KQ,KR,nb,opp,SRC,START,newGame,place,options,slots,legal,rotations,questProgress,over,replay,parScore,hashStr,rot,groups};
+  return{DIRS,K,KQ,KR,nb,opp,SRC,START,SPECIALS,seasonAt,seasonName,cur,peek,newGame,place,options,slots,legal,rotations,questProgress,over,replay,parScore,hashStr,rot,groups};
 }
 
 /* =====================================================================
@@ -365,6 +437,7 @@ const sfx={
   perfect(){[0,2,4,5].forEach((n,i)=>tone(NOTES[n],i*0.08,0.45,'triangle',0.08));},
   quest(){[523.25,659.25,783.99,1046.5].forEach((f,i)=>tone(f,i*0.1,0.5,'square',0.035));tone(1567.98,0.42,0.7,'triangle',0.05);},
   fail(){tone(392,0,0.25,'triangle',0.08,330);tone(311,0.2,0.45,'triangle',0.07,247);},
+  season(){[0,2,4,5,6].forEach((n,i)=>tone(NOTES[n],i*0.09,0.55,'triangle',0.07));tone(1567.98,0.5,0.9,'sine',0.05);},
   water(){noise(0,1.0,650,0.07,0.6);for(let i=0;i<6;i++)tone(650+Math.random()*600,0.1+i*0.12,0.08,'sine',0.045,1300);},
 };
 
@@ -399,17 +472,17 @@ function drawParts(g,t){
     g.restore();
   }
 }
-const par={};let parWorker=null;
+const par={},parS={};let parWorker=null;
 function requestPar(k){
   if(par[k]!=null)return;
   try{
     if(!parWorker){
-      const src=`const E=(${Engine.toString()})();onmessage=e=>{postMessage({k:e.data,par:E.parScore(e.data).score});};`;
+      const src=`const E=(${Engine.toString()})();onmessage=e=>{const r=E.parScore(e.data);postMessage({k:e.data,par:r.score,ps:r.season});};`;
       parWorker=new Worker(URL.createObjectURL(new Blob([src],{type:'text/javascript'})));
-      parWorker.onmessage=e=>{par[e.data.k]=e.data.par;if(!$('result').hidden)fillResult();};
+      parWorker.onmessage=e=>{par[e.data.k]=e.data.par;parS[e.data.k]=e.data.ps;if(!$('result').hidden)fillResult();};
     }
     parWorker.postMessage(k);
-  }catch(e){setTimeout(()=>{par[k]=E.parScore(k).score;if(!$('result').hidden)fillResult();},400);}
+  }catch(e){setTimeout(()=>{const r=E.parScore(k);par[k]=r.score;parS[k]=r.season;if(!$('result').hidden)fillResult();},400);}
 }
 function persist(){db.progress={seedKey:G.seedKey,actions:G.s.actions};save(db);}
 window.claude?.hot?.snapshot?.(()=>({seedKey:G.seedKey,actions:G.s?G.s.actions:[]}));
@@ -533,7 +606,7 @@ function renderTileCache(k,e,o,res){
   return{ground,deco,cx,cy,res,chim:chim.map(([dx,dy])=>[wx+dx/res+0.09,wy+dy/res-0.42])};
 }
 function drawTileCached(g,x,y,s,k,e,o){
-  const sig=[e.join(''),o.wet?1:0,(o.vs||[]).join(''),(o.sp||[]).map(v=>v?1:0).join(''),(o.es||[]).join(''),(o.blocked||[]).join(''),o.alive>0?1:0,o.src?1:0,atlasReady?1:0].join('|');
+  const sig=[e.join(''),o.kind||'',o.wet?1:0,(o.vs||[]).join(''),(o.sp||[]).map(v=>v?1:0).join(''),(o.es||[]).join(''),(o.blocked||[]).join(''),o.alive>0?1:0,o.src?1:0,atlasReady?1:0].join('|');
   const res=Math.max(12,Math.min(s*(W.dpr||1),100));
   let c=TCACHE.get(k);
   if(!c||c.sig!==sig||Math.abs(c.res-res)/res>0.15){c=renderTileCache(k,e,o,res);c.sig=sig;TCACHE.set(k,c);}
@@ -600,6 +673,23 @@ function drawTile(g,x,y,s,e,o={}){
           for(const[nm,pr]of vv.props){acc+=pr*(j?0.6:1);if(r<acc){const[px,py]=pt(i,j+2,0.8);decos.push([px,py,nm+suf,sc(i*7+j)]);break;}}}
       }
     }
+    if(o.kind==='bridge'&&ws.length){
+      const a=ang(ws[0])+Math.PI/2,Lb=s*0.6,Wb=s*0.19,rl=Math.max(1,s*0.028);
+      g.save();g.translate(x,y);g.rotate(a);
+      g.fillStyle='rgba(25,40,30,.28)';g.fillRect(-Lb+s*0.02,-Wb/2+s*0.05,2*Lb,Wb);
+      g.fillStyle='#a9784a';g.fillRect(-Lb,-Wb/2,2*Lb,Wb);
+      g.strokeStyle='#7a5333';g.lineWidth=Math.max(1,s*0.014);for(let q=-Lb+Wb*0.22;q<Lb;q+=Wb*0.26){g.beginPath();g.moveTo(q,-Wb/2);g.lineTo(q,Wb/2);g.stroke();}
+      g.fillStyle='#6a4729';g.fillRect(-Lb,-Wb/2-rl,2*Lb,rl);g.fillRect(-Lb,Wb/2,2*Lb,rl);
+      for(const q of[-Lb,-Lb/2,0,Lb/2,Lb-rl]){g.fillRect(q,-Wb/2-rl*2.2,rl,rl*2.2);g.fillRect(q,Wb/2,rl,rl*2.2);}
+      g.restore();
+    }
+    if(o.kind==='falls'&&ws.length){const p2=ang(ws[0])+Math.PI/2,ww=s*0.38;
+      for(const sd of[-1,1])decos.push([x+Math.cos(p2)*ww*0.95*sd,y+Math.sin(p2)*ww*0.95*sd,'rock'+suf,1.25]);}
+    if(o.kind==='lake'&&o.alive>0){
+      for(let j=0;j<6;j++){const aa=h01(seed,j*5+40)*6.28,rr=s*0.42*(0.35+0.6*h01(seed,j*5+41)),px=x+Math.cos(aa)*rr,py=y+Math.sin(aa)*rr,rd=s*0.05;
+        g.fillStyle='#3e8c3b';g.beginPath();g.moveTo(px,py);g.arc(px,py,rd,aa+0.5,aa+0.5+5.5);g.closePath();g.fill();
+        if(j%2===0){g.fillStyle='#f5b3cd';g.beginPath();g.arc(px+rd*0.15,py-rd*0.2,rd*0.38,0,Math.PI*2);g.fill();}}
+    }
     decos.sort((a,b)=>a[1]-b[1]);for(const dd of decos)spr(g,dd[2],dd[0],dd[1],s,dd[3]*1.3);
   }else{
     // sem atlas: marcas simples
@@ -634,7 +724,7 @@ function cellAt(px,py){
 // ---------- estado derivado
 function refresh(){
   const s=G.s;
-  G.valid=new Set(E.over(s)?[]:E.slots(s).filter(k=>E.rotations(s.tiles[s.next].e).some(o=>E.legal(s.board,k,o.e))));
+  G.valid=new Set(E.over(s)?[]:E.slots(s).filter(k=>E.rotations(E.cur(s).e).some(o=>E.legal(s.board,k,o.e))));
   G.qp=E.questProgress(s);
   G.wet=new Set();for(const k of s.alive){G.wet.add(k);for(let d=0;d<6;d++)G.wet.add(E.nb(k,d));}
   G.wdist=new Map([[E.SRC,0]]);{const qu=[E.SRC];while(qu.length){const k=qu.shift(),t=s.board.get(k);
@@ -683,6 +773,10 @@ function commit(){
   }
   for(const c of rep.perfect){G.fx.set(c,{k:'spark',t0:now+200});queueBanner('Peça perfeita! +1 peça','');}
   for(const q of rep.questsDone){G.fx.set(q.key,{k:'spark',t0:now+250});queueBanner(q.flow?'Missão: água ligada! +3 peças':`Missão: ${NAME[q.b]} ${q.n}! +3 peças`,'good');}
+  for(const n of rep.seasonUp){const un=E.SPECIALS.find(x=>x.season===n);
+    queueBanner(`Estação ${n} · ${E.seasonName(n)}! +3 peças${un?', '+un.name+' liberada':''}`,'water');
+    setTimeout(sfx.season,450);
+    const ks=[...state.board.keys()];for(let j=0;j<Math.min(14,ks.length);j++){const[ex,ey]=wpos(ks[Math.floor(Math.random()*ks.length)]);emit('~#ffe6a0',ex,ey-0.3,1,{v:0.4,life:1200,size:0.5,alpha:0.7,add:true,delay:300+j*60});}}
   for(const q of rep.questsFailed)queueBanner(`Missão perdida: ${NAME[q.b]} passou de ${q.n}`,'');
   // efeitos
   const[wx,wy]=wpos(k),te=state.board.get(k).e;
@@ -749,7 +843,7 @@ function draw(t){
     if(sel&&k===sel.k&&!s.board.has(k)){
       const o=sel.ops[sel.i];
       const gv=tileVars(k,o.e,s.board);
-      drawTile(g,x,y-sz*0.12,sz,o.e,{wet:G.wet.has(k)||o.rep.newlyAlive.length>0,alive:o.rep.newlyAlive.includes(k)?1:0,alpha:0.95,t,blocked:blockedSides(s.board,k,o.e),seed:k,vs:gv.vs,es:edgeState(s.board,k,o.e)});
+      drawTile(g,x,y-sz*0.12,sz,o.e,{wet:G.wet.has(k)||o.rep.newlyAlive.length>0,alive:o.rep.newlyAlive.includes(k)?1:0,alpha:0.95,t,blocked:blockedSides(s.board,k,o.e),seed:k,vs:gv.vs,es:edgeState(s.board,k,o.e),kind:E.cur(s).sp});
       for(const ed of o.rep.edges){
         const a=ang(ed.d),X=x+Math.cos(a)*sz*0.7,Y=y-sz*0.12+Math.sin(a)*sz*0.7;
         g.beginPath();g.arc(X,Y,sz*0.15,0,7);g.fillStyle=ed.m?P.good:P.bad;g.fill();g.strokeStyle='#fff';g.lineWidth=1.5;g.stroke();
@@ -766,11 +860,12 @@ function draw(t){
     const tl=s.board.get(k),f=fxOf(k,t);y+=f.dy;
     g.save();if(f.sc!==1){g.translate(x,y);g.scale(f.sc,f.sc);g.translate(-x,-y);}
     const tv=tileVars(k,tl.e,s.board);
-    drawTileCached(g,x,y,sz,k,tl.e,{wet:G.wet.has(k),alive:aliveOf(k,t),src:tl.src,seed:k,t,blocked:blockedSides(s.board,k,tl.e),pat:wpat,flow:flowDirs(k),vs:tv.vs,sp:tv.sp,es:edgeState(s.board,k,tl.e)});
+    drawTileCached(g,x,y,sz,k,tl.e,{wet:G.wet.has(k),alive:aliveOf(k,t),src:tl.src,seed:k,t,blocked:blockedSides(s.board,k,tl.e),pat:wpat,flow:flowDirs(k),vs:tv.vs,sp:tv.sp,es:edgeState(s.board,k,tl.e),kind:tl.sp});
     if(f.spark!=null){g.globalAlpha=1-f.spark;hexPath(g,x,y,sz*(0.97+f.spark*0.5));g.strokeStyle='#fff6c8';g.lineWidth=3;g.stroke();g.globalAlpha=1;}
     g.restore();
   }
   G.chimneys=G.chimNext;
+  if(!RM)for(const[k,t]of s.board)if(t.sp==='falls'&&s.alive.has(k)&&Math.random()<0.05){const[fx,fy]=wpos(k);emit('~#ffffff',fx+(Math.random()-0.5)*0.3,fy,1,{ang:-Math.PI/2,spread:0.8,v:0.25,life:1500,size:0.18,grow:1.8,alpha:0.45});}
   const dtc=Math.min(100,t-(G.lastTc||t));G.lastTc=t;
   if(!RM&&G.bb){
     // sombras de nuvens passando devagar, só sobre as peças
@@ -868,7 +963,7 @@ function riverPath(x,y,R,ws,o,w,center){
     p.moveTo(x-nx,y-ny);p.lineTo(x+c*L-nx,y+sn*L-ny);p.lineTo(x+c*L+nx,y+sn*L+ny);p.lineTo(x+nx,y+ny);p.closePath();
     if(L<em*0.9){const rr=w*0.62;p.moveTo(x+c*L+rr,y+sn*L);p.arc(x+c*L,y+sn*L,rr,0,Math.PI*2);}
   }
-  const cr=center??(ws.length===1?w*1.15:w*0.5);p.moveTo(x+cr,y);p.arc(x,y,cr,0,Math.PI*2);
+  const cr=center??(o.kind==='lake'?w*1.5:ws.length===1?w*1.15:w*0.5);p.moveTo(x+cr,y);p.arc(x,y,cr,0,Math.PI*2);
   return p;
 }
 function drawRiver(g,x,y,s,R,ws,o){
@@ -897,6 +992,16 @@ function drawRiver(g,x,y,s,R,ws,o){
   // mais fundo no meio: a água fica mais azul e o leito some aos poucos
   g.fillStyle='rgba(20,150,175,.16)';g.fill(riverPath(x,y,R,ws,o,w*0.7,cr?cr*0.7:null));
   g.fillStyle='rgba(10,120,165,.18)';g.fill(riverPath(x,y,R,ws,o,w*0.42,cr?cr*0.45:null));
+  if(o.kind==='falls'){
+    const a=ang(ws[0]),tt=o.t==null||RM?0:o.t;
+    g.save();g.translate(x,y);g.rotate(a);
+    g.fillStyle='rgba(55,70,70,.38)';g.fillRect(-w*0.16,-w,w*0.12,w*2);
+    const fg=g.createLinearGradient(-w*0.04,0,w*0.6,0);fg.addColorStop(0,'rgba(255,255,255,.9)');fg.addColorStop(1,'rgba(255,255,255,0)');
+    g.fillStyle=fg;g.fillRect(-w*0.04,-w,w*0.64,w*2);
+    for(let k=0;k<9;k++){const ph=((tt/650)+k/9)%1,yy=-w*0.45+((k*0.37)%1)*w*0.9;g.globalAlpha=al*(1-ph)*0.9;g.fillStyle='#ffffff';
+      g.beginPath();g.arc(w*(0.04+ph*0.55),yy,w*(0.05+ph*0.07),0,Math.PI*2);g.fill();}
+    g.restore();g.globalAlpha=al;
+  }
   // céu refletido, mais claro do lado do sol
   const sky=g.createLinearGradient(x-s,y-s,x+s,y+s);sky.addColorStop(0,'rgba(255,255,255,.16)');sky.addColorStop(0.55,'rgba(255,255,255,0)');
   g.fillStyle=sky;g.fill(P);
@@ -976,20 +1081,26 @@ function renderUI(){
   $('sub').textContent=daily?`Vale #${valeNumber(G.seedKey.slice(4))} · ${fmtDate(G.seedKey.slice(4))}`:'Vale de treino';
   $('score').textContent=s.score;$('left').textContent=Math.max(0,s.left);
   $('leftBox').style.color=s.left<=3&&!over?'#c2410c':'';
-  const tile=s.tiles[s.next];
+  const tile=E.cur(s)||{e:['G','G','G','G','G','G']},nxt=E.peek(s,1);
   const cur=$('curTile'),nx=$('nextTile');
   if(!over){
-    thumb(cur,G.sel?G.sel.ops[G.sel.i].e:tile.e);
-    if(s.left>1)thumb(nx,s.tiles[s.next+1].e,{alpha:0.9});else nx.getContext('2d').clearRect(0,0,nx.width,nx.height);
+    thumb(cur,G.sel?G.sel.ops[G.sel.i].e:tile.e,{kind:tile.sp});
+    if(s.left>1&&nxt)thumb(nx,nxt.e,{alpha:0.9,kind:nxt.sp});else nx.getContext('2d').clearRect(0,0,nx.width,nx.height);
   }else{cur.getContext('2d').clearRect(0,0,cur.width,cur.height);nx.getContext('2d').clearRect(0,0,nx.width,nx.height);}
   let info='';
   if(over)info='<b>A pilha acabou</b>';
   else{
     const kinds=[...new Set(tile.e)].map(b=>NAME[b]).join(', ');
     info=`<b>Peça da vez</b><span>${kinds}</span>`;
+    if(tile.sp){const SP=E.SPECIALS.find(x=>x.id===tile.sp);info=`<b>${SP.name}<span class="spc">especial</span></b><span>${SP.desc}</span>`;}
     if(tile.quest)info+=tile.quest.flow?`<span class="quest"><i style="background:${BIOME_DOT.A}"></i>Missão: ligar à água</span>`:`<span class="quest"><i style="background:${BIOME_DOT[tile.quest.b]}"></i>Missão: ${NAME[tile.quest.b]} com ${tile.quest.n}</span>`;
   }
   $('curInfo').innerHTML=info;
+  {const a=E.seasonAt(s.season),b=E.seasonAt(s.season+1),fr=Math.max(0,Math.min(1,(s.score-a)/(b-a)));
+   const un=E.SPECIALS.find(x=>x.season===s.season+1);
+   $('seasonName').textContent=`Estação ${s.season} · ${E.seasonName(s.season)}`;
+   $('seasonNext').textContent=`${s.score}/${b} → ${un?un.name:'+3 peças'}`;
+   $('seasonFill').style.width=(fr*100).toFixed(1)+'%';}
   const sel=G.sel;
   $('rotL').disabled=$('rotR').disabled=!sel||sel.ops.length<2;
   const pb=$('placeBtn');pb.disabled=!sel;
@@ -1058,6 +1169,9 @@ function showResult(){
   if(G.resumedDone){G.resumedDone=false;G.lastRecord='novo';}
   else if(daily&&!db.daily[dk]){db.daily[dk]={score:s.score,placed:s.placed,quests:s.questsDone,perfects:s.perfects};save(db);G.lastRecord='novo';}
   else G.lastRecord=daily?'treino':'livre';
+  // recorde pessoal: estação mais alta; empate decide pelos pontos
+  const bst=db.best;G.newBest=false;
+  if(!G.reviewing&&(!bst||s.season>bst.season||(s.season===bst.season&&s.score>bst.score))){G.prevBest=bst||null;db.best={season:s.season,score:s.score,placed:s.placed};save(db);G.newBest=!!bst||true;}
   try{$('resImg').src=snapshot();}catch(e){}
   fillResult();$('result').hidden=false;
 }
@@ -1068,17 +1182,40 @@ function snapshot(){
   const bg=g.createLinearGradient(0,0,0,h);bg.addColorStop(0,'#cfe6de');bg.addColorStop(1,'#e9efd9');g.fillStyle=bg;g.fillRect(0,0,w,h);
   g.fillStyle='rgba(29,59,58,.09)';for(const k of b.keys()){const[x,y]=scr(k);hexPath(g,x+s*0.06,y+s*0.4,s);g.fill();}
   for(const k of[...b.keys()].sort((p,q)=>E.KR(p)-E.KR(q)||E.KQ(p)-E.KQ(q))){const[x,y]=scr(k),tl=b.get(k);
-    const tv=tileVars(k,tl.e,b);drawTile(g,x,y,s,tl.e,{wet:G.wet.has(k),alive:G.s.alive.has(k)?1:0,src:tl.src,seed:k,blocked:blockedSides(b,k,tl.e),vs:tv.vs,sp:tv.sp,es:edgeState(b,k,tl.e),world:true});}
+    const tv=tileVars(k,tl.e,b);drawTile(g,x,y,s,tl.e,{wet:G.wet.has(k),alive:G.s.alive.has(k)?1:0,src:tl.src,seed:k,blocked:blockedSides(b,k,tl.e),vs:tv.vs,sp:tv.sp,es:edgeState(b,k,tl.e),world:true,kind:tl.sp});}
   Object.assign(cam,save);return c.toDataURL('image/jpeg',0.86);
 }
 function fillResult(){
   const s=G.s,p=par[G.seedKey],daily=G.seedKey.startsWith('dia-'),dk=G.seedKey.slice(4);
   $('resTitle').textContent=daily?`Vale #${valeNumber(dk)}: a pilha acabou`:'A pilha acabou';
   $('resTotal').textContent=s.score;
-  $('resPar').textContent=p==null?'calculando o par…':s.score>p?`${s.score-p} acima do par (${p})`:s.score===p?`no par (${p})`:`par ${p}`;
+  const ps=parS[G.seedKey];
+  $('resPar').textContent=p==null?'calculando o par…':`par do vale: estação ${ps} · ${p}`;
+  $('resSeason').textContent=`Chegou à estação ${s.season} · ${E.seasonName(s.season)}`;
+  const rb=$('resRecord'),bst=db.best;
+  rb.className='record'+(G.newBest?' new':'');
+  rb.textContent=G.newBest?(G.prevBest?`Novo recorde! Antes: estação ${G.prevBest.season} · ${G.prevBest.score}`:'Primeiro recorde registrado!'):bst?`Seu recorde: estação ${bst.season} · ${bst.score}`:'';
+  // relatório: quanto faltou, de onde vieram pontos e peças, melhor jogada e uma dica
+  const st=s.stats,need=E.seasonAt(s.season+1)-s.score,nx=E.seasonName(s.season+1);
+  let html=`<p class="near">${need<=15?'Faltou muito pouco: ':''}${need} ponto${need>1?'s':''} para a estação ${s.season+1} (${nx}).</p>`;
+  for(const q of E.questProgress(s))if(!q.flow&&q.n-q.cur===1){html+=`<p>${({C:'O campo',B:'O bosque',V:'A vila'})[q.b]||'A região'} ficou com ${q.cur} de ${q.n}: faltou 1 peça para a missão.</p>`;break;}
+  const row=(a,b,cls='')=>`<li class="${cls}"><span>${a}</span><span>${b}</span></li>`;
+  html+='<ul>'+row('Encaixes',`+${st.match}`)+row('Água viva',`+${st.flow}`)
+    +row('Missões',`+${st.quest} · +${st.tQuest} peças`)+row('Peças perfeitas',`+${st.perfect} · +${st.tPerfect} peças`)
+    +(st.special?row('Cachoeiras e lagoas',`+${st.special}`):'')+row('Estações',`+${st.tSeason} peças`)
+    +(st.failed.length?row(`Missões estouradas (${st.failed.length})`,`−${st.failed.length*3} peças`,'bad'):'')+'</ul>';
+  if(st.best.pts>0)html+=`<p>Melhor jogada: <b>+${st.best.pts}</b> na jogada ${st.best.turn}.</p>`;
+  const wetShare=(s.alive.size-1)/Math.max(1,s.placed);
+  const tip=st.failed.length>=2?'Antes de crescer uma região com missão, confira o número no marcador: passar do número perde as 3 peças.'
+    :wetShare<0.22?'Ligue mais rios à nascente: cada peça com água viva vale +2, e cachoeiras e lagoas valem bem mais.'
+    :s.perfects===0?'Procure buracos cercados por 5 ou 6 peças: encaixar todos os lados dá peça perfeita (+5 e +1 peça).'
+    :st.tQuest<6?'Missões são a maior fonte de peças: planeje o tamanho da região desde a primeira peça.'
+    :'Deixe rios soltos perto da nascente e ligue vários de uma vez: a água chegando em muitas peças rende muito.';
+  html+=`<p class="tip">Dica: ${tip}</p>`;
+  $('resReport').innerHTML=html;
   $('resStats').innerHTML=`<div><small>peças</small><b>${s.placed}</b></div><div><small>missões</small><b>${s.questsDone}</b></div><div><small>perfeitas</small><b>${s.perfects}</b></div>`;
-  const head=daily?`Afluente #${valeNumber(dk)} — ${s.score} pts`:`Afluente (treino) — ${s.score} pts`;
-  $('shareTxt').value=`${head}${p!=null?` (par ${p})`:''}\n🧩 ${s.placed} peças · ✅ ${s.questsDone} missões · ✨ ${s.perfects} perfeitas\n💧 ${s.alive.size-1} peças com água`;
+  const head=daily?`Afluente #${valeNumber(dk)} — estação ${s.season} · ${s.score} pts`:`Afluente (treino) — estação ${s.season} · ${s.score} pts`;
+  $('shareTxt').value=`${head}${p!=null?` (par: estação ${ps} · ${p})`:''}\n🧩 ${s.placed} peças · ✅ ${s.questsDone} missões · ✨ ${s.perfects} perfeitas\n💧 ${s.alive.size-1} peças com água`;
   const rec=daily?db.daily[dk]:null;
   $('resNote').textContent=G.lastRecord==='novo'?'Resultado do dia registrado. Pode jogar de novo para treinar; só a primeira partida conta.':
     G.lastRecord==='treino'&&rec?`Partida de treino. Seu resultado do dia continua ${rec.score}.`:'Vales de treino não contam para o resultado do dia.';

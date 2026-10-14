@@ -143,6 +143,8 @@ Curta de propósito: seis degraus com sentido, não um moedor.
 
 ## 6. Ordem de construção recomendada
 
+> **Andamento:** fase 1 (estações, relatório, recorde) implementada na v0.5 — ver `AFLUENTE_v0.4_NOTAS.md`.
+
 1. **Estações do rio + Relatório do vale + recorde** — mexe no centro, é barato, e já dá para sentir se o "só mais uma" aparece.
 2. **Caderno do Cerrado** com as 3–4 primeiras páginas (peças e regras novas).
 3. **Estiagem** e **Vale da semana**.
