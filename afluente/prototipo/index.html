@@ -402,7 +402,7 @@ function drawParts(g,t){
     g.save();g.globalAlpha=p.alpha*fade;if(p.add)g.globalCompositeOperation='lighter';
     if(p.name[0]==='~'){const c=softTex(p.name.slice(1));g.drawImage(c,x-size/2,y-size/2,size,size);}
     else if(p.name==='dot'){g.fillStyle=p.color||'#ffffff';g.beginPath();g.arc(x,y,Math.max(0.8,size),0,7);g.fill();}
-    else if(p.name==='ring'){g.strokeStyle=p.color||'#ffffff';g.lineWidth=Math.max(0.8,cam.s*0.012);g.beginPath();g.ellipse(x,y,size,size*0.8,0,0,7);g.stroke();}
+    else if(p.name==='ring'){g.strokeStyle=p.color||'#ffffff';g.lineWidth=Math.max(0.8,cam.s*0.012);g.beginPath();g.arc(x,y,size,0,7);g.stroke();}
     else if(atlasReady){const m=ATLAS['fx_'+p.name];if(m){const f=size/Math.max(m[2],m[3]);g.translate(x,y);g.rotate(p.rot+p.vr*sec);
       if(p.flutter)g.scale(Math.cos(sec*7+p.rot*3),1);blit(g,m,f,-m[2]*f/2,-m[3]*f/2,m[2]*f,m[3]*f);}}
     g.restore();
@@ -875,9 +875,9 @@ function riverPath(x,y,R,ws,o,w,center){
     const L=o.blocked&&o.blocked.includes(i)?em*0.55:em/0.97,a=ang(i),c=Math.cos(a),sn=Math.sin(a),nx=-sn*w/2,ny=c*w/2;
     // todos os pedaços com a mesma orientação, para a união não abrir buracos
     p.moveTo(x-nx,y-ny);p.lineTo(x+c*L-nx,y+sn*L-ny);p.lineTo(x+c*L+nx,y+sn*L+ny);p.lineTo(x+nx,y+ny);p.closePath();
-    if(L<em*0.9){p.moveTo(x+c*L+w*0.95*Math.cos(a),y+sn*L+w*0.95*Math.sin(a));p.ellipse(x+c*L,y+sn*L,w*0.95,w*0.7,a,0,Math.PI*2);}
+    if(L<em*0.9){const rr=w*0.62;p.moveTo(x+c*L+rr,y+sn*L);p.arc(x+c*L,y+sn*L,rr,0,Math.PI*2);}
   }
-  const cr=center??(ws.length===1?w*0.95:w*0.5);p.moveTo(x+cr,y);p.arc(x,y,cr,0,Math.PI*2);
+  const cr=center??(ws.length===1?w*1.15:w*0.5);p.moveTo(x+cr,y);p.arc(x,y,cr,0,Math.PI*2);
   return p;
 }
 function drawRiver(g,x,y,s,R,ws,o){
@@ -934,7 +934,7 @@ function drawRiver(g,x,y,s,R,ws,o){
     g.globalAlpha=al;
     // brejo: anéis lentos onde o rio termina em terra
     if(o.blocked)for(const i of o.blocked){const a=ang(i),mx=x+Math.cos(a)*em*0.55,my=y+Math.sin(a)*em*0.55,ph=((t/2600)+i*0.3)%1;
-      g.globalAlpha=al*(1-ph)*0.6;g.strokeStyle='#ffffff';g.lineWidth=1.2;g.beginPath();g.ellipse(mx,my,w*0.9*ph,w*0.6*ph,a,0,Math.PI*2);g.stroke();}
+      g.globalAlpha=al*(1-ph)*0.6;g.strokeStyle='#ffffff';g.lineWidth=1.2;g.beginPath();g.arc(mx,my,w*0.6*ph,0,Math.PI*2);g.stroke();}
     g.globalAlpha=al;
   }
   g.restore();
@@ -943,7 +943,7 @@ function drawRiver(g,x,y,s,R,ws,o){
     g.save();g.beginPath();g.arc(x,y,cr,0,Math.PI*2);g.clip();
     const tt=t==null||RM?0:t;
     for(let r=0;r<3;r++){const ph=((tt/1800)+r/3)%1;g.globalAlpha=(1-ph)*0.75;g.strokeStyle='#ffffff';g.lineWidth=Math.max(1,s*0.03);
-      g.beginPath();g.ellipse(x,y,cr*0.15+cr*0.85*ph,(cr*0.15+cr*0.85*ph)*0.8,0,0,Math.PI*2);g.stroke();}
+      g.beginPath();g.arc(x,y,cr*0.15+cr*0.8*ph,0,Math.PI*2);g.stroke();}
     for(let b=0;b<4;b++){const ph=((tt/900)+b*0.27)%1,bx=x+Math.cos(b*1.9)*cr*0.25,by=y+Math.sin(b*1.9)*cr*0.2-ph*cr*0.1;
       g.globalAlpha=Math.sin(ph*Math.PI)*0.9;g.fillStyle='#ffffff';g.beginPath();g.arc(bx,by,s*0.025+ph*s*0.02,0,Math.PI*2);g.fill();}
     g.restore();
