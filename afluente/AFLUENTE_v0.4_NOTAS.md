@@ -214,3 +214,29 @@ Pedido: "estourar a missão não faz sentido", "as rachaduras parecem de outra a
   - **Seca**: cigarras.
   - Nova chave "Sons do vale" no menu.
 - O indicador do rio mostra "+1 peça a cada N" quando a seca ainda não renderia peças.
+
+## Contemplação: identidade visual (v1.0)
+
+Pedido: o jogo tem que ser contemplativo e bonito. Integrar técnicas de arte, pesquisar e aprofundar a identidade visual. Pesquisa, pilares e paleta estão em `IDENTIDADE_VISUAL.md`.
+
+- **Umidade contínua**: todas as peças são desenhadas verdes, e a secura é um campo que se espalha a partir da água viva, sem emendas em hexágono. Antes, cada peça trocava inteira entre molhada e seca.
+- **Luz por estação**: Águas (manhã fresca), Seca (tarde dourada) e arco-íris quando a chuva volta, com transição suave. O fundo da página acompanha.
+- **Fundo pintado**: céu, sol difuso, nuvens, chapadas em duas camadas com buritis, névoa e planície, com paralaxe. O quadro do vale se dissolve nas bordas.
+- **Sobre o vale**:
+  - manchas de luz em grande escala que costuram as peças;
+  - luz diagonal;
+  - ondas de vento no capim;
+  - vinheta;
+  - grão de papel.
+- **Vida**:
+  - brilhos na água;
+  - pétalas de ipê na seca;
+  - pólen e poeira no ar;
+  - bandos de pássaros e araras com sombra no chão.
+- **Maquete**:
+  - terra vermelha do Cerrado nas laterais das peças;
+  - casas vazias sem tracejado;
+  - divisas e bordas mais leves;
+  - sem frestas entre os triângulos do chão.
+- **Modo Contemplar**: botão de olho, item no menu e "Ver meu vale". Some a interface e a câmera passeia devagar.
+- **Emblema** na tela inicial (hexágono com rio e ipê). A tela inicial e o retrato do fim usam o fundo pintado.
