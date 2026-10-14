@@ -1,0 +1,874 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1f1710">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Afluente</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<style>
+/* Layout: app de uma tela em retrato. Cabeçalho, trilha de cheias, o vale ocupa o centro, mão e ações embaixo, ao alcance do polegar.
+   Visual único e deliberado: fim de tarde no Cerrado (terra escura, ocre, água viva). */
+:root{
+  --bg:#1f1710;
+  --panel:#2b2017;
+  --line:#47352a;
+  --ink:#f5e9d6;
+  --muted:#b8a084;
+  --water:#5bbde3;
+  --gold:#e9b84f;
+  --leaf:#86ad52;
+  --clay:#c8693d;
+  --f-display:"Bricolage Grotesque","Avenir Next",system-ui,sans-serif;
+  --f-body:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;
+  color-scheme:dark;
+}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.4;overscroll-behavior:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+button{font:inherit;color:inherit}
+.app{height:100%;box-sizing:border-box;max-width:520px;margin:0 auto;display:flex;flex-direction:column;gap:8px;padding-block:10px 12px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+
+.top{display:flex;align-items:center;gap:12px}
+.brand{flex:1;min-width:0}
+.brand h1{margin:0;font-family:var(--f-display);font-weight:800;font-size:26px;letter-spacing:-.02em;line-height:1}
+.brand p{margin:3px 0 0;color:var(--muted);font-size:13px}
+.score{text-align:right;font-variant-numeric:tabular-nums}
+.score b{display:block;font-family:var(--f-display);font-weight:700;font-size:30px;line-height:1;color:var(--gold)}
+.score small{color:var(--muted);font-size:11px;letter-spacing:.08em;text-transform:uppercase}
+.icon-btn{width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:var(--panel);font-family:var(--f-display);font-weight:700;font-size:18px;cursor:pointer}
+
+.track{display:grid;grid-template-columns:repeat(20,1fr);gap:3px;align-items:end}
+.track i{display:block;height:6px;border-radius:2px;background:var(--line)}
+.track i.done{background:var(--muted)}
+.track i.cheia{height:12px;background:#2f4b57}
+.track i.cheia.done{background:var(--water)}
+.track i.now{outline:2px solid var(--gold);outline-offset:1px}
+.status{margin:0;display:flex;justify-content:space-between;gap:8px;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.status strong{color:var(--ink);font-weight:700}
+.status .up{color:var(--water);font-weight:700}
+
+.board{position:relative;flex:1;min-height:0;border-radius:18px;background:radial-gradient(120% 90% at 50% 40%,#3a2b1d 0%,#261c13 70%);border:1px solid var(--line);overflow:hidden;touch-action:none}
+.board canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+.toast{position:absolute;left:50%;top:12px;transform:translateX(-50%);padding:6px 14px;border-radius:999px;background:rgba(20,40,52,.88);border:1px solid var(--water);color:var(--ink);font-family:var(--f-display);font-weight:700;font-size:16px;white-space:nowrap;pointer-events:none;transition:opacity .3s}
+.toast[data-off]{opacity:0}
+
+.hint{margin:0;min-height:20px;font-size:14px;text-align:center;color:var(--ink)}
+.hint em{font-style:normal;color:var(--gold)}
+
+.hand{display:grid;grid-template-columns:1fr 1fr 1fr .72fr;gap:8px}
+.card{position:relative;display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 4px 7px;border-radius:14px;border:1.5px solid var(--line);background:var(--panel);cursor:pointer;touch-action:none;min-width:0}
+.card svg{width:34px;height:34px}
+.card b{font-family:var(--f-display);font-weight:700;font-size:15px;line-height:1.1}
+.card span{font-size:11.5px;color:var(--muted);line-height:1.2;text-align:center}
+.card[aria-pressed="true"]{border-color:var(--gold);background:#3a2b1c;box-shadow:0 0 0 3px rgba(233,184,79,.18)}
+.card.next{cursor:default;opacity:.62;border-style:dashed;padding-top:6px}
+.card.next svg{width:26px;height:26px}
+.card.next em{font-style:normal;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.card.empty{visibility:hidden}
+.card:focus-visible,.btn:focus-visible,.icon-btn:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+
+.actions{display:grid;grid-template-columns:1fr 1fr 1.5fr;gap:8px}
+.btn{height:48px;border-radius:14px;border:1px solid var(--line);background:var(--panel);font-weight:700;font-size:15px;cursor:pointer;padding:0 8px}
+.btn.primary{background:var(--gold);border-color:var(--gold);color:#2a1d0c}
+.btn:disabled{opacity:.38;cursor:default}
+.btn.warn{border-color:var(--clay);color:#f3b597}
+
+.drag-ghost{position:fixed;z-index:30;width:52px;height:52px;margin:-60px 0 0 -26px;pointer-events:none;filter:drop-shadow(0 6px 10px rgba(0,0,0,.5))}
+
+.overlay{position:fixed;inset:0;z-index:20;display:flex;align-items:flex-end;justify-content:center;background:rgba(14,10,6,.72);padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px));padding-bottom:max(12px,env(safe-area-inset-bottom,0px));padding-top:env(safe-area-inset-top,0px)}
+.sheet{width:100%;max-width:500px;max-height:100%;overflow:auto;box-sizing:border-box;background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:22px 20px 18px;display:flex;flex-direction:column;gap:14px}
+.sheet h2{margin:0;font-family:var(--f-display);font-weight:800;font-size:28px;letter-spacing:-.02em;line-height:1.05;text-wrap:balance}
+.sheet p{margin:0;color:var(--muted)}
+.steps{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:12px;counter-reset:s}
+.steps li{display:grid;grid-template-columns:28px 1fr;gap:10px;align-items:start;counter-increment:s}
+.steps li::before{content:counter(s);display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--line);font-family:var(--f-display);font-weight:700;color:var(--gold)}
+.steps b{color:var(--ink)}
+.steps span{color:var(--muted)}
+.big{display:flex;align-items:baseline;gap:12px;font-variant-numeric:tabular-nums}
+.big b{font-family:var(--f-display);font-weight:800;font-size:56px;line-height:.9;color:var(--gold)}
+.big span{color:var(--muted)}
+.chips{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;font-variant-numeric:tabular-nums}
+.chips div{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:8px 6px;text-align:center}
+.chips small{display:block;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.chips b{font-family:var(--f-display);font-size:20px;color:var(--water)}
+.facts{margin:0;display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:14px}
+.facts dt{color:var(--muted)}
+.facts dd{margin:0;font-variant-numeric:tabular-nums}
+.share{width:100%;box-sizing:border-box;min-height:104px;resize:none;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:14px/1.45 ui-monospace,"SF Mono",Menlo,monospace;padding:10px 12px;-webkit-user-select:text;user-select:text}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.note{font-size:12.5px}
+@media (prefers-reduced-motion:reduce){.toast{transition:none}}
+</style>
+
+<div class="app" id="app">
+  <header class="top">
+    <div class="brand">
+      <h1>Afluente</h1>
+      <p id="sub">Vale do dia</p>
+    </div>
+    <div class="score"><b id="score">0</b><small>pontos</small></div>
+    <button class="icon-btn" id="helpBtn" aria-label="Como jogar">?</button>
+  </header>
+
+  <div class="track" id="track" aria-hidden="true"></div>
+  <p class="status" id="status"><span id="turnTxt">Turno 1 de 20</span><span id="cheiaTxt"></span></p>
+
+  <div class="board" id="boardWrap">
+    <canvas id="board" aria-label="Mapa do vale"></canvas>
+    <div class="toast" id="toast" data-off></div>
+  </div>
+
+  <p class="hint" id="hint" aria-live="polite"></p>
+  <div class="hand" id="hand"></div>
+  <div class="actions">
+    <button class="btn" id="passBtn" disabled>Descartar</button>
+    <button class="btn" id="cancelBtn" disabled>Cancelar</button>
+    <button class="btn primary" id="okBtn" disabled>Confirmar</button>
+  </div>
+</div>
+
+<div class="overlay" id="intro" hidden role="dialog" aria-modal="true" aria-labelledby="introTitle">
+  <div class="sheet">
+    <h2 id="introTitle">Leve a água pelo vale</h2>
+    <p>Um vale por dia, igual para todo mundo. São 20 cartas e uma jogada por turno.</p>
+    <ol class="steps">
+      <li><div><b>Plante.</b> <span>Toque numa carta de Campo, Bosque ou Povoado e depois numa casa iluminada. Também dá para arrastar a carta até o vale.</span></div></li>
+      <li><div><b>Cave.</b> <span>Com uma carta de Canal, encoste o dedo na água e arraste. O número na carta é quantas casas você pode cavar.</span></div></li>
+      <li><div><b>Espere a cheia.</b> <span>Nos turnos 5, 10, 15 e 20 a água enche os canais e colhe tudo que estiver encostado nela: Campo 2, Bosque 1, Povoado 3 (só se tocar um Campo irrigado). Campo ao lado de bosque e bosques juntos rendem +1.</span></div></li>
+      <li><div><b>Ligue a foz.</b> <span>Leve um canal até a foz e cada terreno produtivo rende +1 em todas as cheias seguintes.</span></div></li>
+    </ol>
+    <button class="btn primary" id="introOk">Começar</button>
+  </div>
+</div>
+
+<div class="overlay" id="result" hidden role="dialog" aria-modal="true" aria-labelledby="resTitle">
+  <div class="sheet">
+    <h2 id="resTitle">Vale completo</h2>
+    <div class="big"><b id="resTotal">0</b><span id="resPar">calculando o par…</span></div>
+    <div class="chips" id="resChips"></div>
+    <dl class="facts" id="resFacts"></dl>
+    <textarea class="share" id="shareTxt" readonly aria-label="Resultado para compartilhar"></textarea>
+    <button class="btn primary" id="copyBtn">Copiar resultado</button>
+    <div class="row">
+      <button class="btn" id="againBtn">Jogar de novo</button>
+      <button class="btn" id="otherBtn">Outro vale</button>
+    </div>
+    <button class="btn" id="viewBtn">Ver o vale</button>
+    <p class="note" id="resNote"></p>
+  </div>
+</div>
+
+<script>
+/* =====================================================================
+   Motor de regras do Afluente v0.3 (puro, determinístico, sem DOM).
+   Porta direta do simulador afluente/sim/afluente3.py (configuração final).
+   Também roda dentro de um Web Worker para calcular o par do dia.
+   ===================================================================== */
+function Engine(){
+  const DIRS=[[1,0],[1,-1],[0,-1],[-1,0],[-1,1],[0,1]];
+  const N=81, Q=new Int8Array(N), R=new Int8Array(N), DISK=[];
+  const idOf=(q,r)=>(Math.abs(q)<=4&&Math.abs(r)<=4&&Math.abs(q+r)<=4)?(q+4)*9+(r+4):-1;
+  for(let q=-4;q<=4;q++)for(let r=-4;r<=4;r++){const i=(q+4)*9+(r+4);Q[i]=q;R[i]=r;if(idOf(q,r)>=0)DISK.push(i);}
+  const NB=[];
+  for(let i=0;i<N;i++){NB[i]=[];if(idOf(Q[i],R[i])<0)continue;for(const[dq,dr]of DIRS){const j=idOf(Q[i]+dq,R[i]+dr);if(j>=0)NB[i].push(j);}}
+  const ring=i=>Math.max(Math.abs(Q[i]),Math.abs(R[i]),Math.abs(Q[i]+R[i]));
+  const hexdist=(a,b)=>{const dq=Q[a]-Q[b],dr=R[a]-R[b];return Math.max(Math.abs(dq),Math.abs(dr),Math.abs(dq+dr));};
+
+  const TURNS=20, CHEIAS=[5,10,15,20];
+  const CARDS=[['C',6],['B',5],['V',3],['L2',2],['L3',3],['L4',1]];
+  const T={C:1,B:2,V:3};
+
+  function hashStr(s){let h=1779033703^s.length;for(let i=0;i<s.length;i++){h=Math.imul(h^s.charCodeAt(i),3432918353);h=h<<13|h>>>19;}h=Math.imul(h^h>>>16,2246822507);h=Math.imul(h^h>>>13,3266489909);return(h^h>>>16)>>>0;}
+  function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+  function shuffle(arr,rng){for(let i=arr.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]];}return arr;}
+  function connected(set){
+    if(!set.size)return true;
+    const start=set.values().next().value,seen=new Set([start]),st=[start];
+    while(st.length){const c=st.pop();for(const n of NB[c])if(set.has(n)&&!seen.has(n)){seen.add(n);st.push(n);}}
+    return seen.size===set.size;
+  }
+  function inward(c,cells){let best=-1;for(const n of NB[c])if(cells.has(n)&&(best<0||ring(n)<ring(best)))best=n;return best;}
+
+  function makeValley(seedKey){
+    for(let salt=0;;salt++){
+      const rng=mulberry32(hashStr(seedKey+'#'+salt));
+      const cells=new Set(DISK);
+      let removed=0;
+      for(const c of shuffle(DISK.filter(c=>ring(c)===4),rng)){
+        if(removed===10)break;
+        cells.delete(c);
+        if(connected(cells))removed++;else cells.add(c);
+      }
+      const list=[...cells].sort((a,b)=>a-b);
+      const edge=list.filter(c=>NB[c].filter(n=>cells.has(n)).length<6);
+      const src=edge[Math.floor(rng()*edge.length)];
+      const far=edge.filter(c=>hexdist(c,src)>=7);
+      if(!far.length)continue;
+      const snk=far[Math.floor(rng()*far.length)];
+      // córrego inicial: duas casas já cavadas da nascente para dentro do vale
+      const s1=inward(src,cells);
+      let s2=-1;for(const n of NB[s1])if(cells.has(n)&&n!==src&&n!==snk&&!NB[n].includes(snk)&&(s2<0||ring(n)<ring(s2)))s2=n;
+      if(s2<0)continue;
+      const prot=new Set([src,snk,s1,s2,inward(snk,cells)]);
+      const rocks=new Set();
+      for(const c of shuffle(list.filter(c=>!prot.has(c)),rng)){
+        if(rocks.size===4)break;
+        const test=new Set(list.filter(x=>!rocks.has(x)&&x!==c&&x!==snk));
+        if(connected(test))rocks.add(c);
+      }
+      const build=new Uint8Array(N);
+      for(const c of list)if(!rocks.has(c)&&c!==src&&c!==snk)build[c]=1;
+      if(!build[s1]||!build[s2])continue;
+      const bset=new Set(list.filter(c=>build[c]));bset.add(src);
+      if(bset.size<24||!connected(bset))continue;
+      // menor caminho cavável da nascente até a foz (células de canal necessárias)
+      const dist=new Map([[src,0]]),qu=[src];
+      while(qu.length){const c=qu.shift();if(c===snk)break;for(const n of NB[c])if(!dist.has(n)&&(build[n]||n===snk)){dist.set(n,dist.get(c)+1);qu.push(n);}}
+      const need=dist.get(snk);
+      if(!need||need<6||need>10)continue;
+      const deck=[];for(const[k,n]of CARDS)for(let i=0;i<n;i++)deck.push(k);
+      shuffle(deck,rng);
+      if(!deck.slice(0,4).some(k=>k[0]==='L'))continue; // um canal entre as 4 primeiras cartas visíveis
+      const inV=new Uint8Array(N),rk=new Uint8Array(N);
+      for(const c of list)inV[c]=1;for(const c of rocks)rk[c]=1;
+      return{cells:list,inV,rocks:rk,build,src,snk,stream:[s1,s2],deck,need,salt};
+    }
+  }
+
+  function newGame(seedKey){
+    const v=makeValley(seedKey);
+    const canal=new Int16Array(N).fill(-1),filled=new Uint8Array(N);
+    canal[v.stream[0]]=v.src;canal[v.stream[1]]=v.stream[0];filled[v.stream[0]]=filled[v.stream[1]]=1;
+    return{seedKey,v,hand:v.deck.slice(0,3),queue:v.deck.slice(3),terr:new Int8Array(N),canal,
+      filled,turn:0,harvests:[],fozTurn:0,actions:[]};
+  }
+  const isWet=(s,c)=>c===s.v.src||s.canal[c]!==-1;
+  const isFree=(s,c)=>s.v.build[c]===1&&s.terr[c]===0&&s.canal[c]===-1;
+  const openFoz=(s,c)=>c===s.v.snk&&s.canal[c]===-1;
+  const cardLen=k=>k&&k[0]==='L'?+k[1]:0;
+  const isTerrainCard=k=>k==='C'||k==='B'||k==='V';
+
+  function plantCells(s){
+    const out=[];
+    for(const c of s.v.cells)if(isFree(s,c)&&NB[c].some(n=>s.terr[n]||isWet(s,n)))out.push(c);
+    return out;
+  }
+  function canStart(s,c){return(isFree(s,c)||openFoz(s,c))&&NB[c].some(n=>isWet(s,n));}
+  function canAppend(s,path,c,L){
+    if(path.length>=L||path.includes(c))return false;
+    if(!path.length)return canStart(s,c);
+    const last=path[path.length-1];
+    if(last===s.v.snk||!NB[last].includes(c))return false;
+    return isFree(s,c)||openFoz(s,c);
+  }
+
+  /* Pontuação de uma Cheia. Retorna também a produção por casa. */
+  function evaluate(s,terr,canal){
+    terr=terr||s.terr;canal=canal||s.canal;
+    const v=s.v,wet=c=>c===v.src||canal[c]!==-1,F=canal[v.snk]!==-1;
+    const irr=new Uint8Array(N),pts=new Int8Array(N);
+    for(const c of v.cells)if(terr[c]&&NB[c].some(wet))irr[c]=1;
+    let prod=0,C=0,B=0,V=0,count=0;
+    for(const c of v.cells){
+      const t=terr[c];if(!t||!irr[c])continue;
+      let p=0;
+      if(t===1){p=2;if(NB[c].some(n=>terr[n]===2&&irr[n]))p+=1;C++;}
+      else if(t===2){p=1;if(NB[c].some(n=>terr[n]===2&&irr[n]))p+=1;B++;}
+      else{if(!NB[c].some(n=>terr[n]===1&&irr[n]))continue;p=3;V++;}
+      if(F)p+=1;
+      pts[c]=p;prod+=p;count++;
+    }
+    return{prod,F,C,B,V,count,irr,pts};
+  }
+
+  function apply(s,a,log=true){
+    const n={...s,terr:s.terr.slice(),canal:s.canal.slice(),hand:s.hand.slice(),queue:s.queue.slice(),harvests:s.harvests.slice(),actions:log?s.actions.concat([a]):s.actions};
+    const card=n.hand.splice(a.i,1)[0];
+    if(n.queue.length)n.hand.push(n.queue.shift());
+    if(a.k==='T')n.terr[a.c]=T[card];
+    else if(a.k==='W'){
+      let prev=-1;
+      for(const c of a.p){
+        if(prev===-1)prev=NB[c].find(x=>isWet(s,x));
+        n.canal[c]=prev;prev=c;
+        if(c===s.v.snk&&!n.fozTurn)n.fozTurn=s.turn+1;
+      }
+    }
+    n.turn=s.turn+1;
+    if(CHEIAS.includes(n.turn)){
+      n.harvests.push(evaluate(n).prod);
+      n.filled=new Uint8Array(N);
+      for(const c of n.v.cells)if(n.canal[c]!==-1)n.filled[c]=1;
+    }
+    return n;
+  }
+  const total=s=>s.harvests.reduce((a,b)=>a+b,0);
+  function replay(seedKey,actions){let s=newGame(seedKey);for(const a of actions||[]){if(s.turn>=TURNS)break;s=apply(s,a);}return s;}
+
+  /* ---------- bot planejador (2 lances, cartas visíveis): define o par do dia ---------- */
+  function moves(s){
+    const out=[],seen=new Set();
+    s.hand.forEach((card,i)=>{
+      if(seen.has(card))return;seen.add(card);
+      if(isTerrainCard(card)){for(const c of plantCells(s))out.push({k:'T',i,c});return;}
+      const L=cardLen(card),keys=new Set(),path=[];
+      const ext=()=>{
+        const key=path.slice().sort((a,b)=>a-b).join(',');
+        if(!keys.has(key)){keys.add(key);out.push({k:'W',i,p:path.slice()});}
+        const last=path[path.length-1];
+        if(path.length===L||last===s.v.snk)return;
+        for(const n of NB[last])if(!path.includes(n)&&(isFree(s,n)||openFoz(s,n))){path.push(n);ext();path.pop();}
+      };
+      for(const c of s.v.cells)if(canStart(s,c)){path.push(c);ext();path.pop();}
+    });
+    if(!out.length)s.hand.forEach((_,i)=>out.push({k:'X',i}));
+    return out;
+  }
+  function staticValue(s){
+    const left=CHEIAS.filter(t=>t>s.turn).length,ev=evaluate(s);
+    let val=ev.prod*left;
+    if(left){
+      let fr=0;for(const c of s.v.cells)if(isFree(s,c)&&NB[c].some(n=>isWet(s,n)))fr++;
+      val+=3*Math.min(fr,4);
+      if(!ev.F){let d=99;for(const c of s.v.cells)if(isWet(s,c))d=Math.min(d,hexdist(c,s.v.snk));val-=d*(left/4);}
+    }
+    return val;
+  }
+  const gain=(s,n)=>n.harvests.length>s.harvests.length?n.harvests[n.harvests.length-1]:0;
+  function planMove(s,rng){
+    const c=moves(s).map(a=>{const n=apply(s,a,false);return{a,n,d:gain(s,n),v:gain(s,n)+staticValue(n)+rng()*1e-3};});
+    c.sort((x,y)=>y.v-x.v);
+    if(s.turn+1>=TURNS)return c[0].a;
+    let best=c[0].a,bv=-1e18;
+    for(const x of c.slice(0,12)){
+      let v2=-1e18;
+      for(const a2 of moves(x.n)){const n2=apply(x.n,a2,false);v2=Math.max(v2,gain(x.n,n2)+staticValue(n2));}
+      if(x.d+v2>bv){bv=x.d+v2;best=x.a;}
+    }
+    return best;
+  }
+  function planScore(seedKey){
+    let s=newGame(seedKey);const rng=mulberry32(hashStr('par:'+seedKey));
+    while(s.turn<TURNS)s=apply(s,planMove(s,rng),false);
+    return total(s);
+  }
+
+  return{N,Q,R,NB,DISK,TURNS,CHEIAS,T,newGame,apply,replay,evaluate,plantCells,canStart,canAppend,isWet,isFree,openFoz,
+    cardLen,isTerrainCard,total,moves,planScore,hashStr};
+}
+
+/* =====================================================================
+   Interface
+   ===================================================================== */
+const E=Engine();
+const $=id=>document.getElementById(id);
+const S3=Math.sqrt(3);
+const reduceMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const CARD={
+  C:{name:'Campo',note:'2 por cheia'},
+  B:{name:'Bosque',note:'1 por cheia'},
+  V:{name:'Povoado',note:'3 se tocar campo'},
+  L2:{name:'Canal 2',note:'cave 2 casas'},
+  L3:{name:'Canal 3',note:'cave 3 casas'},
+  L4:{name:'Canal 4',note:'cave 4 casas'},
+};
+const ICON={
+  C:'<svg viewBox="0 0 34 34" aria-hidden="true"><polygon points="17,2 30,9.5 30,24.5 17,32 4,24.5 4,9.5" fill="#c9b648"/><path d="M9 22l10-13M13 25l10-13M18 27l8-10" stroke="#6f8a2c" stroke-width="2" stroke-linecap="round"/></svg>',
+  B:'<svg viewBox="0 0 34 34" aria-hidden="true"><polygon points="17,2 30,9.5 30,24.5 17,32 4,24.5 4,9.5" fill="#35602f"/><circle cx="12" cy="14" r="5" fill="#6aa94c"/><circle cx="21" cy="12" r="4.5" fill="#7fbb58"/><circle cx="17" cy="21" r="5.5" fill="#5d9a45"/></svg>',
+  V:'<svg viewBox="0 0 34 34" aria-hidden="true"><polygon points="17,2 30,9.5 30,24.5 17,32 4,24.5 4,9.5" fill="#a8744a"/><rect x="8" y="16" width="8" height="7" fill="#ecdcbc"/><path d="M7 16.5l5-5 5 5z" fill="#c8563a"/><rect x="18" y="13" width="8" height="8" fill="#ecdcbc"/><path d="M17 13.5l5-5 5 5z" fill="#c8563a"/><rect x="21" y="16" width="2.5" height="2.5" fill="#e9b84f"/></svg>',
+  L:'<svg viewBox="0 0 34 34" aria-hidden="true"><polygon points="17,2 30,9.5 30,24.5 17,32 4,24.5 4,9.5" fill="#7a5233"/><path d="M6 21c5-6 9 2 14-4s6-4 8-5" stroke="#3c2817" stroke-width="7" fill="none" stroke-linecap="round"/><path d="M6 21c5-6 9 2 14-4s6-4 8-5" stroke="#5bbde3" stroke-width="3.2" fill="none" stroke-linecap="round"/></svg>',
+};
+const iconOf=k=>k[0]==='L'?ICON.L:ICON[k];
+
+// ---------- armazenamento local (opcional; o jogo funciona sem ele)
+const STORE='afluente:v03';
+function load(){try{return JSON.parse(localStorage.getItem(STORE))||{};}catch(e){return{};}}
+function save(d){try{localStorage.setItem(STORE,JSON.stringify(d));}catch(e){}}
+let db=load();db.daily=db.daily||{};
+
+// ---------- vale do dia
+function today(){const d=new Date();const p=n=>String(n).padStart(2,'0');return`${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`;}
+function valeNumber(dateKey){const[y,m,d]=dateKey.split('-').map(Number);return Math.floor((Date.UTC(y,m-1,d)-Date.UTC(2026,9,14))/864e5)+1;}
+function fmtDate(dateKey){const[y,m,d]=dateKey.split('-').map(Number);return new Date(y,m-1,d).toLocaleDateString('pt-BR',{day:'numeric',month:'short'});}
+
+// ---------- estado da interface
+const G={seedKey:'',state:null,sel:null,pend:null,anim:null,floats:[],shownScore:0,passArmed:false,lastRecord:null};
+const par={};
+let parWorker=null;
+function requestPar(seedKey){
+  if(par[seedKey]!=null)return;
+  try{
+    if(!parWorker){
+      const src=`const E=(${Engine.toString()})();onmessage=e=>{postMessage({k:e.data,par:E.planScore(e.data)});};`;
+      parWorker=new Worker(URL.createObjectURL(new Blob([src],{type:'text/javascript'})));
+      parWorker.onmessage=e=>{par[e.data.k]=e.data.par;if(!$('result').hidden)fillResult();};
+    }
+    parWorker.postMessage(seedKey);
+  }catch(e){
+    setTimeout(()=>{par[seedKey]=E.planScore(seedKey);if(!$('result').hidden)fillResult();},400);
+  }
+}
+
+function startGame(seedKey,actions){
+  G.seedKey=seedKey;
+  G.state=E.replay(seedKey,actions);
+  G.sel=null;G.pend=null;G.anim=null;G.floats=[];G.passArmed=false;
+  G.shownScore=E.total(G.state);
+  requestPar(seedKey);
+  persist();
+  layout();renderUI();
+  if(G.state.turn>=E.TURNS)showResult();
+}
+function persist(){db.progress={seedKey:G.seedKey,actions:G.state.actions};save(db);}
+window.claude?.hot?.snapshot?.(()=>({seedKey:G.seedKey,actions:G.state?G.state.actions:[]}));
+
+// ---------- geometria do canvas
+const cv=$('board'),ctx=cv.getContext('2d'),wrap=$('boardWrap');
+let L={s:20,cx:0,cy:0,w:0,h:0,dpr:1};
+function layout(){
+  const r=wrap.getBoundingClientRect(),dpr=Math.min(window.devicePixelRatio||1,3);
+  L.w=r.width;L.h=r.height;L.dpr=dpr;
+  cv.width=Math.round(r.width*dpr);cv.height=Math.round(r.height*dpr);
+  L.s=Math.max(8,Math.min(r.width/(9*S3+0.5),r.height/14.6));
+  L.cx=r.width/2;L.cy=r.height/2+L.s*0.15;
+}
+new ResizeObserver(()=>{layout();}).observe(wrap);
+const px=c=>[L.cx+L.s*S3*(E.Q[c]+E.R[c]/2),L.cy+L.s*1.5*E.R[c]];
+function cellAt(x,y){
+  const X=(x-L.cx)/L.s,Y=(y-L.cy)/L.s;
+  let q=S3/3*X-Y/3,r=2/3*Y,sx=-q-r;
+  let rq=Math.round(q),rr=Math.round(r),rs=Math.round(sx);
+  const dq=Math.abs(rq-q),dr=Math.abs(rr-r),ds=Math.abs(rs-sx);
+  if(dq>dr&&dq>ds)rq=-rr-rs;else if(dr>ds)rr=-rq-rs;
+  if(Math.abs(rq)>4||Math.abs(rr)>4||Math.abs(rq+rr)>4)return -1;
+  const c=(rq+4)*9+(rr+4);
+  return G.state&&G.state.v.inV[c]?c:-1;
+}
+
+// ---------- modelo de exibição (estado + jogada pendente)
+function selCard(){return G.sel==null?null:G.state.hand[G.sel];}
+function pendingAction(){
+  const p=G.pend;if(!p)return null;
+  if(p.k==='T')return{k:'T',i:G.sel,c:p.c};
+  if(p.k==='W'&&p.path.length)return{k:'W',i:G.sel,p:p.path.slice()};
+  return null;
+}
+function displayModel(){
+  const s=G.state;let terr=s.terr,canal=s.canal;
+  const a=pendingAction();
+  if(a&&a.k==='T'){terr=terr.slice();terr[a.c]=E.T[selCard()];}
+  if(a&&a.k==='W'){canal=canal.slice();let prev=-1;for(const c of a.p){if(prev===-1)prev=E.NB[c].find(x=>E.isWet(s,x));canal[c]=prev;prev=c;}}
+  return{terr,canal,ev:E.evaluate(s,terr,canal)};
+}
+function nextCheia(turn){return E.CHEIAS.find(t=>t>turn);}
+
+// ---------- desenho
+const COL={
+  soil:['#8a5d3b','#845839','#90633f','#7f5536'],soilEdge:'#5e3f27',
+  rock:'#7a736a',rockHi:'#a39b8f',
+  bed:'#3b2716',water:'#5bbde3',waterDeep:'#2f7fa6',
+  fieldDry:'#cdb98c',fieldLive:'#c6b743',fieldRowDry:'#a9946a',fieldRowLive:'#6d8a2b',
+  woodDry:'#7b6a4a',woodLive:'#2f5a2b',treeDry:'#968259',treeLive:['#5d9a45','#79b356','#6aa94c'],
+  townDry:'#8d6a4f',townLive:'#a8744a',wall:'#ecdcbc',wallDry:'#b9ab92',roofDry:'#7d6a58',roofLive:'#c8563a',lamp:'#e9b84f',
+  hl:'rgba(233,184,79,.95)',hlFill:'rgba(233,184,79,.16)',ink:'#f5e9d6',muted:'#b8a084',
+};
+function hexPath(x,y,r){ctx.beginPath();for(let k=0;k<6;k++){const a=Math.PI/180*(60*k-30);const X=x+r*Math.cos(a),Y=y+r*Math.sin(a);k?ctx.lineTo(X,Y):ctx.moveTo(X,Y);}ctx.closePath();}
+function hash(c){return(E.hashStr('c'+c+G.seedKey)%1000)/1000;}
+
+function drawField(x,y,s,live){
+  hexPath(x,y,s*0.94);ctx.fillStyle=live?COL.fieldLive:COL.fieldDry;ctx.fill();
+  ctx.save();hexPath(x,y,s*0.94);ctx.clip();
+  ctx.strokeStyle=live?COL.fieldRowLive:COL.fieldRowDry;ctx.lineWidth=Math.max(1.2,s*0.09);ctx.lineCap='round';
+  for(let k=-2;k<=2;k++){ctx.beginPath();ctx.moveTo(x-s+k*s*0.42,y+s);ctx.lineTo(x+s*0.2+k*s*0.42,y-s);ctx.stroke();}
+  ctx.restore();
+}
+function drawWood(x,y,s,live){
+  hexPath(x,y,s*0.94);ctx.fillStyle=live?COL.woodLive:COL.woodDry;ctx.fill();
+  const P=[[-0.32,-0.12,0.33],[0.3,-0.22,0.3],[0.02,0.3,0.36]];
+  P.forEach(([dx,dy,r],i)=>{ctx.beginPath();ctx.arc(x+dx*s,y+dy*s,r*s*(live?1:0.78),0,Math.PI*2);ctx.fillStyle=live?COL.treeLive[i]:COL.treeDry;ctx.fill();});
+}
+function drawTown(x,y,s,live,watered){
+  hexPath(x,y,s*0.94);ctx.fillStyle=live?COL.townLive:COL.townDry;ctx.fill();
+  const house=(hx,hy,w)=>{
+    ctx.fillStyle=live?COL.wall:COL.wallDry;ctx.fillRect(hx-w/2,hy-w*0.35,w,w*0.8);
+    ctx.beginPath();ctx.moveTo(hx-w*0.62,hy-w*0.3);ctx.lineTo(hx,hy-w*0.92);ctx.lineTo(hx+w*0.62,hy-w*0.3);ctx.closePath();
+    ctx.fillStyle=live?COL.roofLive:COL.roofDry;ctx.fill();
+    if(live){ctx.fillStyle=COL.lamp;ctx.fillRect(hx-w*0.14,hy-w*0.1,w*0.28,w*0.28);}
+  };
+  house(x-s*0.3,y+s*0.18,s*0.5);house(x+s*0.28,y+s*0.05,s*0.56);
+  if(watered&&!live){ctx.setLineDash([s*0.12,s*0.1]);hexPath(x,y,s*0.8);ctx.strokeStyle=COL.lamp;ctx.lineWidth=1.5;ctx.stroke();ctx.setLineDash([]);}
+}
+function drawDrop(x,y,s){
+  const r=s*0.17,X=x+s*0.42,Y=y-s*0.44;
+  ctx.beginPath();ctx.moveTo(X,Y-r*1.7);ctx.quadraticCurveTo(X+r*1.2,Y-r*0.1,X,Y+r);ctx.quadraticCurveTo(X-r*1.2,Y-r*0.1,X,Y-r*1.7);
+  ctx.fillStyle=COL.water;ctx.fill();ctx.strokeStyle='#14303d';ctx.lineWidth=1.2;ctx.stroke();
+}
+function waterProgress(c,now){
+  const s=G.state;
+  if(c===s.v.src)return 1;
+  const a=G.anim;
+  if(a&&a.newly.has(c)){const t=now-a.t0;return Math.max(0,Math.min(1,(t-a.dist.get(c)*a.step)/a.dur));}
+  return s.filled[c]?1:0;
+}
+
+function draw(now){
+  const s=G.state;if(!s)return;
+  ctx.setTransform(L.dpr,0,0,L.dpr,0,0);ctx.clearRect(0,0,L.w,L.h);
+  const sz=L.s,v=s.v,dm=displayModel(),busy=!!G.anim;
+  const card=selCard();
+
+  // casas do vale
+  for(const c of v.cells){
+    const[x,y]=px(c);
+    hexPath(x,y,sz*0.985);ctx.fillStyle=COL.soil[Math.floor(hash(c)*4)];ctx.fill();
+    ctx.strokeStyle=COL.soilEdge;ctx.lineWidth=1;ctx.stroke();
+    if(v.rocks[c]){
+      ctx.beginPath();ctx.ellipse(x-sz*0.12,y+sz*0.1,sz*0.46,sz*0.34,-0.3,0,Math.PI*2);ctx.fillStyle=COL.rock;ctx.fill();
+      ctx.beginPath();ctx.ellipse(x+sz*0.26,y-sz*0.16,sz*0.3,sz*0.24,0.4,0,Math.PI*2);ctx.fillStyle=COL.rockHi;ctx.fill();
+    }
+  }
+
+  // destaques de jogada legal
+  let hl=[];
+  if(card&&!busy&&s.turn<E.TURNS){
+    if(E.isTerrainCard(card))hl=E.plantCells(s);
+    else{const path=G.pend&&G.pend.k==='W'?G.pend.path:[];hl=v.cells.filter(c=>E.canAppend(s,path,c,E.cardLen(card)));}
+  }
+  for(const c of hl){const[x,y]=px(c);hexPath(x,y,sz*0.86);ctx.fillStyle=COL.hlFill;ctx.fill();ctx.strokeStyle=COL.hl;ctx.lineWidth=1.6;ctx.stroke();}
+
+  // foz
+  {const[x,y]=px(v.snk);const linked=dm.canal[v.snk]!==-1,p=waterProgress(v.snk,now);
+    hexPath(x,y,sz*0.94);ctx.fillStyle=p>0.5?COL.waterDeep:'#2a4a58';ctx.fill();
+    ctx.strokeStyle=linked?COL.water:'#4d7a8c';ctx.lineWidth=2;ctx.stroke();
+    ctx.strokeStyle='rgba(255,255,255,.45)';ctx.lineWidth=1.4;
+    for(const k of[-1,1]){ctx.beginPath();ctx.moveTo(x-sz*0.42,y+k*sz*0.2);ctx.quadraticCurveTo(x-sz*0.1,y+k*sz*0.2-sz*0.16,x,y+k*sz*0.2);ctx.quadraticCurveTo(x+sz*0.1,y+k*sz*0.2+sz*0.16,x+sz*0.42,y+k*sz*0.2);ctx.stroke();}
+  }
+
+  // canais: leito e água
+  const segs=[];
+  for(const c of v.cells)if(dm.canal[c]!==-1)segs.push([dm.canal[c],c]);
+  const pendSet=new Set(G.pend&&G.pend.k==='W'?G.pend.path:[]);
+  ctx.lineCap='round';ctx.lineJoin='round';
+  for(const[p,c]of segs){const[x1,y1]=px(p),[x2,y2]=px(c);ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.strokeStyle=pendSet.has(c)?'#5a3d24':COL.bed;ctx.lineWidth=sz*0.5;ctx.stroke();}
+  for(const[p,c]of segs){
+    const k=waterProgress(c,now);if(k<=0)continue;
+    const[x1,y1]=px(p),[x2,y2]=px(c);
+    ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x1+(x2-x1)*k,y1+(y2-y1)*k);ctx.strokeStyle=COL.water;ctx.lineWidth=sz*0.28;ctx.stroke();
+    if(!reduceMotion&&k>=1){
+      ctx.save();ctx.setLineDash([sz*0.18,sz*0.5]);ctx.lineDashOffset=-(now/60)%(sz*0.68);
+      ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.strokeStyle='rgba(255,255,255,.35)';ctx.lineWidth=sz*0.07;ctx.stroke();ctx.restore();
+    }
+  }
+  if(pendSet.size){ctx.save();ctx.setLineDash([sz*0.2,sz*0.18]);for(const[p,c]of segs)if(pendSet.has(c)){const[x1,y1]=px(p),[x2,y2]=px(c);ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.strokeStyle=COL.hl;ctx.lineWidth=2;ctx.stroke();}ctx.restore();}
+
+  // nascente
+  {const[x,y]=px(v.src);
+    ctx.beginPath();ctx.arc(x,y,sz*0.62,0,Math.PI*2);ctx.fillStyle=COL.waterDeep;ctx.fill();
+    ctx.beginPath();ctx.arc(x,y,sz*0.42,0,Math.PI*2);ctx.fillStyle=COL.water;ctx.fill();
+    const ph=reduceMotion?0.5:(now/1400)%1;
+    ctx.beginPath();ctx.arc(x,y,sz*(0.2+0.5*ph),0,Math.PI*2);ctx.strokeStyle=`rgba(255,255,255,${0.55*(1-ph)})`;ctx.lineWidth=1.5;ctx.stroke();
+  }
+
+  // terrenos
+  const wetNow=c=>E.NB[c].some(n=>n===v.src||(dm.canal[n]!==-1&&waterProgress(n,now)>=1&&!pendSet.has(n)));
+  for(const c of v.cells){
+    const t=dm.terr[c];if(!t)continue;
+    const[x,y]=px(c),productive=dm.ev.pts[c]>0,liveNow=productive&&wetNow(c);
+    const ghost=G.pend&&G.pend.k==='T'&&G.pend.c===c;
+    if(ghost)ctx.globalAlpha=0.72;
+    if(t===1)drawField(x,y,sz,liveNow);else if(t===2)drawWood(x,y,sz,liveNow);else drawTown(x,y,sz,liveNow,dm.ev.irr[c]===1);
+    if(productive&&!liveNow)drawDrop(x,y,sz);
+    if(ghost){ctx.globalAlpha=1;hexPath(x,y,sz*0.94);ctx.strokeStyle=COL.hl;ctx.lineWidth=2.5;ctx.stroke();}
+  }
+
+  // rótulos
+  ctx.font=`700 ${Math.max(9,sz*0.38)}px "Atkinson Hyperlegible",system-ui,sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';
+  for(const[c,txt]of[[v.src,'nascente'],[v.snk,'foz']]){const[x,y]=px(c);const ty=E.R[c]>0?y+sz*1.02:y-sz*1.02;ctx.fillStyle='rgba(20,14,8,.7)';const w=ctx.measureText(txt).width+8;ctx.fillRect(x-w/2,ty-sz*0.26,w,sz*0.52);ctx.fillStyle=COL.ink;ctx.fillText(txt,x,ty);}
+
+  // números da colheita
+  ctx.font=`800 ${Math.max(12,sz*0.62)}px "Bricolage Grotesque",system-ui,sans-serif`;
+  G.floats=G.floats.filter(f=>now-f.t0<1400);
+  for(const f of G.floats){
+    const t=now-f.t0;if(t<0)continue;const k=t/1400;const[x,y]=px(f.c);
+    ctx.globalAlpha=k<0.15?k/0.15:1-Math.max(0,(k-0.6)/0.4);
+    ctx.lineWidth=3;ctx.strokeStyle='rgba(20,14,8,.85)';ctx.strokeText('+'+f.p,x,y-sz*0.2-k*sz*0.9);
+    ctx.fillStyle=COL.lamp;ctx.fillText('+'+f.p,x,y-sz*0.2-k*sz*0.9);ctx.globalAlpha=1;
+  }
+}
+
+// ---------- laço de animação
+function frame(now){
+  const a=G.anim;
+  if(a){
+    const fillEnd=a.maxd*a.step+a.dur;
+    if(!a.harvested&&now-a.t0>=fillEnd){
+      a.harvested=true;a.tH=now;
+      let k=0;for(const c of a.tiles){G.floats.push({c,p:a.pts[c],t0:now+(reduceMotion?0:k*45)});k++;}
+      showToast(`${a.n}ª cheia  +${a.value}`);
+    }
+    if(a.harvested){
+      const t=Math.min(1,(now-a.tH)/700);
+      G.shownScore=Math.round(a.from+(a.to-a.from)*t);
+      $('score').textContent=G.shownScore;
+      if(now-a.tH>(reduceMotion?500:1300)){G.anim=null;G.shownScore=a.to;renderUI();if(G.state.turn>=E.TURNS)setTimeout(showResult,reduceMotion?100:500);}
+    }
+  }
+  draw(now);
+  requestAnimationFrame(frame);
+}
+
+let toastTimer=0;
+function showToast(txt){const t=$('toast');t.textContent=txt;delete t.dataset.off;clearTimeout(toastTimer);toastTimer=setTimeout(()=>{t.dataset.off='';},1900);}
+
+// ---------- confirmação de jogada
+function commit(a){
+  const prev=G.state,prevFilled=prev.filled;
+  const n=E.apply(prev,a);
+  G.state=n;G.sel=null;G.pend=null;G.passArmed=false;
+  persist();
+  if(n.harvests.length>prev.harvests.length){
+    const newly=new Set(),dist=new Map();
+    for(const c of n.v.cells)if(n.canal[c]!==-1&&!prevFilled[c])newly.add(c);
+    const d=c=>{if(dist.has(c))return dist.get(c);const p=n.canal[c];const v=(p===n.v.src||!newly.has(p))?0:d(p)+1;dist.set(c,v);return v;};
+    let maxd=0;for(const c of newly)maxd=Math.max(maxd,d(c));
+    const ev=E.evaluate(n),tiles=n.v.cells.filter(c=>ev.pts[c]>0);
+    tiles.sort((x,y)=>E.R[x]-E.R[y]||E.Q[x]-E.Q[y]);
+    const step=reduceMotion?0:110,dur=reduceMotion?1:280;
+    G.anim={t0:performance.now(),newly,dist,maxd:newly.size?maxd:0,step,dur,tiles,pts:ev.pts,value:n.harvests[n.harvests.length-1],
+      n:n.harvests.length,from:E.total(prev),to:E.total(n),harvested:false};
+  }else{G.shownScore=E.total(n);}
+  renderUI();
+}
+
+// ---------- UI textual
+function renderUI(){
+  const s=G.state,busy=!!G.anim,over=s.turn>=E.TURNS;
+  const isDaily=G.seedKey.startsWith('dia-');
+  $('sub').textContent=isDaily?`Vale #${valeNumber(G.seedKey.slice(4))} · ${fmtDate(G.seedKey.slice(4))}`:'Vale de treino';
+  if(!busy)$('score').textContent=E.total(s);
+  // trilha
+  const tr=$('track');tr.innerHTML='';
+  for(let t=1;t<=E.TURNS;t++){const i=document.createElement('i');if(E.CHEIAS.includes(t))i.className='cheia';if(t<=s.turn)i.classList.add('done');if(t===s.turn+1&&!over)i.classList.add('now');tr.appendChild(i);}
+  $('turnTxt').innerHTML=over?'<strong>Vale completo</strong>':`Turno <strong>${s.turn+1}</strong> de ${E.TURNS}`;
+  if(!over){
+    const nc=nextCheia(s.turn),k=nc-s.turn;
+    const base=E.evaluate(s).prod,a=pendingAction();
+    let txt=`Cheia ${k===1?'neste turno':`em ${k} turnos`} · renderia <strong>+${base}</strong>`;
+    if(a){const after=displayModel().ev.prod;if(after!==base)txt=`Cheia ${k===1?'neste turno':`em ${k} turnos`} · <strong>+${base}</strong> → <span class="up">+${after}</span>`;}
+    $('cheiaTxt').innerHTML=txt;
+  }else $('cheiaTxt').textContent=`Cheias ${s.harvests.join(' · ')}`;
+  // mão
+  const hand=$('hand');hand.innerHTML='';
+  for(let i=0;i<3;i++){
+    const k=s.hand[i],b=document.createElement('button');
+    b.className='card'+(k?'':' empty');b.type='button';
+    if(k){
+      b.innerHTML=`${iconOf(k)}<b>${CARD[k].name}</b><span>${CARD[k].note}</span>`;
+      b.setAttribute('aria-pressed',String(G.sel===i));b.disabled=busy||over;
+      b.setAttribute('aria-label',`${CARD[k].name}, ${CARD[k].note}`);
+      b.addEventListener('pointerdown',e=>cardDown(e,i));
+      b.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();selectCard(i);}});
+    }
+    hand.appendChild(b);
+  }
+  const nx=document.createElement('div');const nk=s.queue[0];
+  nx.className='card next'+(nk?'':' empty');
+  if(nk)nx.innerHTML=`<em>próxima</em>${iconOf(nk)}<span>${CARD[nk].name}</span>`;
+  hand.appendChild(nx);
+  // ações
+  const a=pendingAction();
+  $('okBtn').disabled=busy||!a;
+  $('okBtn').textContent=!a?'Confirmar':a.k==='T'?`Plantar ${CARD[selCard()].name}`:`Cavar ${a.p.length} ${a.p.length>1?'casas':'casa'}`;
+  $('cancelBtn').disabled=busy||(G.sel==null);
+  const pb=$('passBtn');pb.disabled=busy||G.sel==null||over;
+  pb.textContent=G.passArmed?'Descartar?':'Descartar';pb.classList.toggle('warn',G.passArmed);
+  // dica
+  let h='';
+  if(over)h='Vale completo.';
+  else if(busy)h='A cheia está chegando…';
+  else if(G.sel==null)h='Escolha uma carta.';
+  else{
+    const k=selCard();
+    if(E.isTerrainCard(k)){
+      if(!E.plantCells(s).length)h='Não há onde plantar. Descarte ou escolha outra carta.';
+      else if(a){
+        const t=s.terr.slice();t[a.c]=E.T[k];
+        const sealed=!s.v.cells.some(c=>E.canStart({...s,terr:t},c));
+        h=sealed?'<em>Atenção:</em> plantar aqui cerca a água e nenhum canal poderá ser cavado.':'Confira a prévia e confirme, ou toque em outra casa.';
+      }
+      else h='Toque numa <em>casa iluminada</em> ou arraste a carta até o vale.';
+    }else{
+      const Lk=E.cardLen(k);
+      if(!s.v.cells.some(c=>E.canStart(s,c)))h='A água está cercada. Descarte ou escolha outra carta.';
+      else if(!a)h=`Encoste na <em>água</em> e arraste até ${Lk} casas.`;
+      else h=a.p.length<Lk?`Continue arrastando (${a.p.length}/${Lk}) ou confirme.`:'Canal completo. Confirme ou toque num trecho para encurtar.';
+    }
+  }
+  $('hint').innerHTML=h;
+}
+
+// ---------- seleção e gestos
+function selectCard(i){
+  if(G.anim||G.state.turn>=E.TURNS)return;
+  if(G.sel===i){G.sel=null;G.pend=null;}else{G.sel=i;G.pend=null;}
+  G.passArmed=false;renderUI();
+}
+let cardDrag=null;
+function cardDown(e,i){
+  if(G.anim)return;
+  e.preventDefault();
+  if(G.sel!==i){G.sel=i;G.pend=null;G.passArmed=false;renderUI();}
+  else cardDrag={i,x:e.clientX,y:e.clientY,moved:false,toggle:true,id:e.pointerId};
+  if(!cardDrag)cardDrag={i,x:e.clientX,y:e.clientY,moved:false,toggle:false,id:e.pointerId};
+}
+let ghostEl=null;
+document.addEventListener('pointermove',e=>{
+  if(!cardDrag||e.pointerId!==cardDrag.id)return;
+  if(!cardDrag.moved&&Math.hypot(e.clientX-cardDrag.x,e.clientY-cardDrag.y)>10){
+    cardDrag.moved=true;ghostEl=document.createElement('div');ghostEl.className='drag-ghost';ghostEl.innerHTML=iconOf(G.state.hand[cardDrag.i]);
+    ghostEl.firstChild.style.width='100%';ghostEl.firstChild.style.height='100%';document.body.appendChild(ghostEl);
+  }
+  if(ghostEl){ghostEl.style.left=e.clientX+'px';ghostEl.style.top=e.clientY+'px';}
+});
+document.addEventListener('pointerup',e=>{
+  if(!cardDrag||e.pointerId!==cardDrag.id)return;
+  const d=cardDrag;cardDrag=null;
+  if(ghostEl){ghostEl.remove();ghostEl=null;}
+  if(!d.moved){if(d.toggle)selectCard(d.i);return;}
+  // a peça arrastada aparece acima do dedo; solta onde ela está, não onde está o dedo
+  const r=cv.getBoundingClientRect(),c=cellAt(e.clientX-r.left,e.clientY-r.top-34);
+  dropOnCell(c);
+});
+document.addEventListener('pointercancel',()=>{cardDrag=null;if(ghostEl){ghostEl.remove();ghostEl=null;}});
+
+function dropOnCell(c){
+  if(c<0||G.sel==null)return;
+  const s=G.state,k=selCard();
+  if(E.isTerrainCard(k)){if(E.plantCells(s).includes(c)){G.pend={k:'T',c};renderUI();}}
+  else if(E.canStart(s,c)){G.pend={k:'W',path:[c]};renderUI();}
+}
+
+// gesto no vale
+let boardDrag=null;
+function localXY(e){const r=cv.getBoundingClientRect();return[e.clientX-r.left,e.clientY-r.top];}
+cv.addEventListener('pointerdown',e=>{
+  e.preventDefault();
+  if(G.anim){G.anim.t0-=10000;if(G.anim.harvested)G.anim.tH-=10000;return;}
+  const s=G.state;if(s.turn>=E.TURNS||G.sel==null)return;
+  const[x,y]=localXY(e),c=cellAt(x,y);if(c<0)return;
+  const k=selCard();
+  if(E.isTerrainCard(k)){
+    if(E.plantCells(s).includes(c)){
+      if(G.pend&&G.pend.k==='T'&&G.pend.c===c){commit(pendingAction());return;}
+      G.pend={k:'T',c};renderUI();
+    }
+    return;
+  }
+  const Lk=E.cardLen(k);
+  let path=G.pend&&G.pend.k==='W'?G.pend.path:[];
+  const at=path.indexOf(c);
+  if(at>=0)path=path.slice(0,at+1);
+  else if(E.canAppend(s,path,c,Lk))path=path.concat([c]);
+  else if(E.isWet(s,c))path=[];
+  else if(E.canStart(s,c))path=[c];
+  else return;
+  G.pend={k:'W',path};
+  boardDrag={id:e.pointerId,x,y};
+  cv.setPointerCapture(e.pointerId);
+  renderUI();
+});
+cv.addEventListener('pointermove',e=>{
+  if(!boardDrag||e.pointerId!==boardDrag.id||!G.pend||G.pend.k!=='W')return;
+  const[x,y]=localXY(e);
+  const steps=Math.max(1,Math.ceil(Math.hypot(x-boardDrag.x,y-boardDrag.y)/(L.s*0.35)));
+  let changed=false;
+  for(let k=1;k<=steps;k++){
+    const c=cellAt(boardDrag.x+(x-boardDrag.x)*k/steps,boardDrag.y+(y-boardDrag.y)*k/steps);
+    if(c<0)continue;
+    const p=G.pend.path;
+    if(p.length&&c===p[p.length-1])continue;
+    if(p.length>=2&&c===p[p.length-2]){p.pop();changed=true;continue;}
+    if(p.length===1&&E.isWet(G.state,c)&&E.NB[c].includes(p[0])){p.pop();changed=true;continue;}
+    if(E.canAppend(G.state,p,c,E.cardLen(selCard()))){p.push(c);changed=true;}
+  }
+  boardDrag.x=x;boardDrag.y=y;
+  if(changed){renderUI();if(navigator.vibrate)try{navigator.vibrate(6);}catch(_){}}
+});
+const endBoardDrag=e=>{if(!boardDrag||e.pointerId!==boardDrag.id)return;boardDrag=null;if(G.pend&&G.pend.k==='W'&&!G.pend.path.length)G.pend=null;renderUI();};
+cv.addEventListener('pointerup',endBoardDrag);cv.addEventListener('pointercancel',endBoardDrag);
+
+$('okBtn').addEventListener('click',()=>{const a=pendingAction();if(a&&!G.anim)commit(a);});
+$('cancelBtn').addEventListener('click',()=>{if(G.pend)G.pend=null;else G.sel=null;G.passArmed=false;renderUI();});
+$('passBtn').addEventListener('click',()=>{
+  if(G.sel==null||G.anim)return;
+  if(!G.passArmed){G.passArmed=true;renderUI();return;}
+  commit({k:'X',i:G.sel});
+});
+
+// ---------- resultado
+function showResult(){
+  const s=G.state,isDaily=G.seedKey.startsWith('dia-'),dk=G.seedKey.slice(4);
+  if(G.resumedDone){G.resumedDone=false;G.lastRecord='novo';}
+  else if(isDaily&&!db.daily[dk]){
+    const ev=E.evaluate(s);
+    db.daily[dk]={score:E.total(s),harvests:s.harvests,fozTurn:s.fozTurn,C:ev.C,B:ev.B,V:ev.V};
+    save(db);G.lastRecord='novo';
+  }else G.lastRecord=isDaily?'treino':'livre';
+  fillResult();$('result').hidden=false;$('copyBtn').focus();
+}
+function fillResult(){
+  const s=G.state,ev=E.evaluate(s),tot=E.total(s),p=par[G.seedKey];
+  const isDaily=G.seedKey.startsWith('dia-'),dk=G.seedKey.slice(4);
+  $('resTitle').textContent=isDaily?`Vale #${valeNumber(dk)} completo`:'Vale de treino completo';
+  $('resTotal').textContent=tot;
+  $('resPar').textContent=p==null?'calculando o par…':`par ${p} · ${tot>=p?(tot>p?`${tot-p} acima`:'no par'):`${p-tot} abaixo`}`;
+  $('resChips').innerHTML=s.harvests.map((h,i)=>`<div><small>${i+1}ª cheia</small><b>${h}</b></div>`).join('');
+  $('resFacts').innerHTML=`<dt>Foz</dt><dd>${s.fozTurn?`ligada no turno ${s.fozTurn}`:'não ligada'}</dd>`+
+    `<dt>No fim</dt><dd>${ev.C} campos irrigados, ${ev.B} bosques vivos, ${ev.V} povoados prósperos</dd>`;
+  const head=isDaily?`Afluente #${valeNumber(dk)} — ${tot}${p!=null?` (par ${p})`:''}`:`Afluente (treino) — ${tot}${p!=null?` (par ${p})`:''}`;
+  $('shareTxt').value=`${head}\n${s.fozTurn?`🌊 foz no turno ${s.fozTurn}`:'🏜️ foz seca'}\nCheias ${s.harvests.join(' · ')}\n🌾${ev.C} 🌳${ev.B} 🏘️${ev.V}`;
+  const rec=isDaily?db.daily[dk]:null;
+  $('resNote').textContent=G.lastRecord==='novo'?'Resultado do dia registrado. Pode jogar de novo para treinar; só a primeira partida conta.':
+    G.lastRecord==='treino'&&rec?`Partida de treino. Seu resultado do dia continua ${rec.score}.`:'Vales de treino não contam para o resultado do dia.';
+}
+$('copyBtn').addEventListener('click',()=>{
+  const t=$('shareTxt').value,b=$('copyBtn');
+  const done=()=>{b.textContent='Copiado';setTimeout(()=>{b.textContent='Copiar resultado';},1600);};
+  const fallback=()=>{const ta=$('shareTxt');ta.focus();ta.select();try{document.execCommand('copy');done();}catch(e){b.textContent='Selecionado: copie manualmente';}};
+  try{navigator.clipboard.writeText(t).then(done,fallback);}catch(e){fallback();}
+});
+$('againBtn').addEventListener('click',()=>{$('result').hidden=true;G.resumedDone=false;startGame(G.seedKey,[]);});
+$('otherBtn').addEventListener('click',()=>{$('result').hidden=true;startGame('treino-'+Date.now().toString(36),[]);});
+$('viewBtn').addEventListener('click',()=>{$('result').hidden=true;});
+
+// ---------- ajuda
+$('helpBtn').addEventListener('click',()=>{$('intro').hidden=false;$('introOk').focus();});
+$('introOk').addEventListener('click',()=>{$('intro').hidden=true;db.seenIntro=true;save(db);});
+
+// ---------- início
+function start(data){
+  const dailyKey='dia-'+today();
+  let seedKey=dailyKey,actions=[];
+  const snap=data&&data.seedKey?data:db.progress;
+  if(snap&&snap.seedKey&&(snap.seedKey===dailyKey||snap.seedKey.startsWith('treino-'))&&Array.isArray(snap.actions)){
+    const s=E.replay(snap.seedKey,snap.actions);
+    if(s.turn<E.TURNS||snap.seedKey===dailyKey||(data&&data.seedKey)){
+      seedKey=snap.seedKey;actions=snap.actions;
+      G.resumedDone=s.turn>=E.TURNS&&!!db.daily[seedKey.slice(4)];
+    }
+  }
+  startGame(seedKey,actions);
+  if(!db.seenIntro)$('intro').hidden=false;
+  requestAnimationFrame(frame);
+}
+window.claude?.hot?.ready?window.claude.hot.ready(start):start(window.claude?.hot?.data??{});
+</script>
+
+</body>
+</html>

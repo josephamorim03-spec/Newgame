@@ -66,6 +66,7 @@ Um vale do Cerrado no fim da seca. Há uma nascente numa borda e a foz na borda 
 | Fim | Após o turno 20 e a 4ª Cheia. Não há derrota |
 | Pontuação | Soma das 4 Cheias |
 | Seed | Define vale, rochas, nascente, foz e ordem do baralho. Nada é sorteado durante a partida |
+| Córrego inicial | O vale começa com 2 casas de canal já cavadas da nascente para dentro, e há sempre um Canal entre as 4 primeiras cartas visíveis |
 
 ## 3. As duas jogadas
 
@@ -186,6 +187,12 @@ Leitura:
 **Limites desta evidência:** bots não são pessoas. O planejador olha dois lances à frente com heurística; um humano bom pode ser melhor ou diferente. Os números servem para eliminar regras quebradas e calibrar o ponto de partida, não para provar diversão.
 
 Para reproduzir: `cd afluente/sim && python3 final3.py` (v0.3) e `python3 stats.py` (v0.2).
+
+### 9.1 Correção encontrada no protótipo
+
+O par do primeiro vale do dia saiu em 32 pontos, contra uma média de ~117. Diagnóstico: o baralho trazia seis terrenos antes do primeiro canal, e plantar em volta da nascente **cercava a água** para o resto da partida. É o mesmo tipo de falha da v0.2 (uma decisão cedo mata a água), agora causada pelo próprio jogador.
+
+Correção: córrego inicial de 2 casas, garantia de um Canal entre as 4 primeiras cartas e um aviso na prévia quando uma plantação cercaria a água. Em 60 vales diários seguidos: par médio 121 (mín. 85, máx. 137), nenhum vale travado; aleatório 44; guloso 78 (64% do par).
 
 ## 10. Riscos e hipóteses abertas
 
