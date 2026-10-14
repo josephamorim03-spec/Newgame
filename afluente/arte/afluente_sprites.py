@@ -25,7 +25,7 @@ OUT = sys.argv[-1] if len(sys.argv) > 1 and not sys.argv[-1].endswith('.py') els
 os.makedirs(OUT, exist_ok=True)
 
 OBJ_PX, OBJ_SCALE = 256, 1.1      # objetos: 256 px cobrem 1,1 unidade
-FX_PX, FX_SCALE = 96, 0.34        # partículas
+FX_PX, FX_SCALE = 128, 0.34       # partículas (v1.5: 128 px, formas novas e variações)
 ELEV = math.radians(52)
 
 
@@ -1070,43 +1070,135 @@ def coreto():
 
 # ---------------------------------------------------------------- partículas
 
-def p_sparkle():
-    m = mat('brilho', '#fff3b0', emit='#ffe27a')
+def _flat(name, outline, m, bend=0.0, cup=0.0, thick=0.004):
+    """forma plana (folha, pétala, asa) a partir de um contorno 2D, com curvatura e espessura leves"""
+    n = len(outline)
+    verts = [(0.0, 0.0, cup)]
+    for (x, y) in outline:
+        verts.append((x, y, bend * x * x + cup * 0.0))
+    faces = [(0, i + 1, (i + 1) % n + 1) for i in range(n)]
+    o = mesh(name, verts, faces, m)
+    sol = o.modifiers.new('espessura', 'SOLIDIFY')
+    sol.thickness = thick
+    sub = o.modifiers.new('suave', 'SUBSURF')
+    sub.levels = 2
+    for poly in o.data.polygons:
+        poly.use_smooth = True
+    return o
+
+
+def _leaf_outline(L=0.13, W=0.05, n=24, tip=1.6):
     pts = []
-    for i in range(8):
-        a = i / 8 * math.tau + math.pi / 2
-        r = 0.15 if i % 2 == 0 else 0.035
-        pts.append((math.cos(a) * r, math.sin(a) * r, 0))
-    o = mesh('estrela', [(0, 0, 0)] + pts, [(0, i + 1, (i + 1) % 8 + 1) for i in range(8)], m)
+    for i in range(n):
+        t = i / n * math.tau
+        x = math.cos(t) * L / 2
+        w = W / 2 * math.sin(t) * (1 - 0.35 * (math.cos(t) > 0) * abs(math.cos(t)) ** tip)
+        pts.append((x, w))
+    return pts
+
+
+def p_sparkle():
+    m = mat('brilho', '#fff6c8', emit='#ffe27a', strength=4.0)
+    pts = []
+    for i in range(16):                         # estrela de 4 pontas longas e 4 curtas
+        a = i / 16 * math.tau + math.pi / 2
+        r = (0.16 if i % 4 == 0 else 0.07) if i % 2 == 0 else 0.02
+        pts.append((math.cos(a) * r, math.sin(a) * r))
+    o = _flat('estrela', pts, m, thick=0.002)
+    o.modifiers['suave'].levels = 0
     o.rotation_euler = (math.pi / 2 - ELEV, 0, 0)
 
 
+def _leaf(dark, light, rib):
+    m = foliage('folha_' + dark, dark, light)
+    o = _flat('folha', _leaf_outline(), m, bend=1.6)
+    cyl(0.0025, 0.12, (0, 0, 0.004), mat('nervura_' + rib, rib, 0.8), 5, 0.001, rot=(0, math.radians(90), 0))
+    cyl(0.003, 0.03, (-0.075, 0, 0.004), mat('cabo_' + rib, rib, 0.8), 5, 0.002, rot=(0, math.radians(90), 0))
+    for ob in bpy.context.scene.objects:
+        if ob.type == 'MESH' and ob is not o and ob.location.z < 0.05:
+            ob.parent = o
+    o.rotation_euler = (math.radians(40), math.radians(-15), math.radians(28))
+
+
 def p_leaf():
-    o = ico(0.07, (0, 0, 0), mat('folha_p', '#5aa847'), 2, (1.6, 0.7, 0.18), smooth=True)
-    o.rotation_euler = (math.radians(30), 0, math.radians(25))
+    _leaf('#3f8f3a', '#8cd068', '#2f6a2a')
 
 
-def p_drop():
-    ico(0.07, (0, 0, 0), mat('gota', '#4fc0ec', rough=0.1, trans=0.3), 3, (0.85, 0.85, 1.25), smooth=True)
+def p_leaf2():
+    _leaf('#7d9a2a', '#d6d65a', '#5f7420')
 
 
-def p_puff():
-    m = mat('fumaca', '#fbf7ef')
-    for x, y, z, r in [(0, 0, 0, 0.09), (0.07, 0.02, 0.03, 0.065), (-0.07, 0.01, 0.02, 0.06), (0.0, -0.02, 0.07, 0.06)]:
-        ico(r, (x, y, z), m, 3, smooth=True)
+def p_leaf3():
+    _leaf('#a8541c', '#f0a44a', '#7a3a14')
+
+
+def _petal(dark, light):
+    m = foliage('petala_' + dark, dark, light)
+    pts = []
+    for i in range(28):                          # pétala de ipê: base estreita, ponta larga e ondulada
+        t = i / 28 * math.tau
+        r = 0.11 * (0.5 + 0.5 * math.cos(t)) ** 0.7 * (1 + 0.07 * math.cos(5 * t))
+        pts.append((math.cos(t) * r, math.sin(t) * r * 0.8))
+    o = _flat('petala', pts, m, bend=-1.0, cup=0.0, thick=0.003)
+    o.rotation_euler = (math.pi / 2 - ELEV + math.radians(15), math.radians(10), math.radians(25))
 
 
 def p_petal():
-    o = ico(0.06, (0, 0, 0), mat('petala', '#f6a3c0'), 2, (1.2, 0.8, 0.15), smooth=True)
-    o.rotation_euler = (math.radians(50), math.radians(20), 0)
+    _petal('#b2457c', '#f6a8cf')
+
+
+def p_petal2():
+    _petal('#c99a12', '#ffe36a')
+
+
+def p_petal3():
+    _petal('#a9a1ac', '#fffafd')
+
+
+def p_drop():
+    m = mat('gota', '#5cc6ee', rough=0.05, trans=0.45)
+    ico(0.06, (0, 0, 0), m, 4, (0.9, 0.9, 1.0), smooth=True)
+    cyl(0.054, 0.12, (0, 0, 0.065), m, 24, 0.0, smooth=True)
+    ico(0.014, (-0.02, -0.04, 0.02), mat('gota_brilho', '#ffffff', emit='#ffffff', strength=3.0), 2, smooth=True)
+
+
+def p_puff():
+    m = foliage('fumaca', '#d9d0bf', '#fffaf0')
+    import random
+    R = random.Random(4)
+    for i in range(8):
+        a = i / 8 * math.tau
+        r = 0.045 + R.random() * 0.03
+        blob(r, (math.cos(a) * 0.06, math.sin(a) * 0.03, R.random() * 0.05), m, seed=i + 20, amount=0.3)
+    blob(0.075, (0, 0, 0.03), m, seed=30, amount=0.25)
+
+
+def _butterfly(col, edge, name):
+    base = mat('asa_' + name, col, 0.55)
+    dark = mat('borda_' + name, edge, 0.7)
+    fore = [(0.0, 0.0), (0.05, 0.02), (0.11, 0.075), (0.115, 0.1), (0.06, 0.1), (0.02, 0.06)]
+    hind = [(0.0, 0.0), (0.02, -0.01), (0.08, -0.03), (0.09, -0.07), (0.05, -0.085), (0.015, -0.04)]
+    for s in (-1, 1):
+        for shape, z in ((fore, 0.0), (hind, 0.0)):
+            outer = [(x * s * 1.0, y) for x, y in shape]
+            inner = [(x * s * 0.78 + 0.004 * s, y * 0.78) for x, y in shape]
+            o1 = _flat('asa', outer, dark, thick=0.002)
+            o2 = _flat('asa_in', inner, base, thick=0.002)
+            o2.location.z = 0.0015
+            for o in (o1, o2):
+                o.rotation_euler = (0, s * math.radians(-25), 0)
+    cyl(0.007, 0.09, (0, 0, 0.0), mat('corpo', '#2a2018'), 6, rot=(math.radians(90), 0, 0))
+    for o in bpy.context.scene.objects:
+        if o.type == 'MESH':
+            o.rotation_euler.x += math.radians(55)
 
 
 def p_butterfly():
-    m = mat('borboleta', '#ffb43a', 0.6)
-    for s in (-1, 1):
-        o = ico(0.06, (s * 0.055, 0, 0), m, 2, (1, 0.75, 0.12), smooth=True)
-        o.rotation_euler = (math.radians(55), s * math.radians(25), 0)
-    cyl(0.008, 0.08, (0, 0, 0), mat('corpo', '#3a2a20'), 6, rot=(math.radians(55), 0, 0))
+    _butterfly('#ffae2e', '#2a1a10', 'laranja')
+
+
+def p_butterfly2():
+    _butterfly('#3a8fe0', '#14243a', 'azul')
 
 
 OBJECTS = {
@@ -1135,7 +1227,8 @@ OBJECTS = {
 }
 # versões de seca das árvores (copa rala, cor de palha e ferrugem): SECAS=1
 SECAS = ['tree_a', 'tree_b', 'tree_c', 'tree_d', 'tree_e', 'cerrado_tree', 'pequi', 'lobeira', 'bush']
-FX = {'sparkle': p_sparkle, 'leaf': p_leaf, 'drop': p_drop, 'puff': p_puff, 'petal': p_petal, 'butterfly': p_butterfly}
+FX = {'sparkle': p_sparkle, 'leaf': p_leaf, 'leaf2': p_leaf2, 'leaf3': p_leaf3, 'drop': p_drop, 'puff': p_puff,
+      'petal': p_petal, 'petal2': p_petal2, 'petal3': p_petal3, 'butterfly': p_butterfly, 'butterfly2': p_butterfly2}
 
 
 def render(name, build, px, scale, shift, floor=True):

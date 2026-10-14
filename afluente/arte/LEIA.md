@@ -49,8 +49,29 @@ Uso: `python leito_seco.py <pasta>` (com o `bpy` instalado no ambiente, como em 
   - `sobrado` e `sobrado_b`, `venda`, `coreto`;
   - `cow`, refeito como gado curraleiro caramelo.
 - **WebP**: depois de montar o atlas, `python3 -c "from PIL import Image;Image.open('atlas.png').save('atlas.webp','WEBP',quality=90,method=6)"`. O jogo embute o `atlas.webp`.
+## v1.5: fauna animada, partículas novas e atualização parcial do atlas
 
-## v1.5: leito de riacho e casinha de taipa
+- **Instalar o Blender como módulo** (o `bpy` só existe para Python 3.11):
+  `uv venv -p 3.11 venv && uv pip install --python venv/bin/python bpy pillow`
+- **Fauna** (`fauna.py`): 11 bichos com juntas e duas animações de 8 quadros ("para" e "anda").
+  ```sh
+  AMOSTRAS=40 venv/bin/python fauna.py fauna_saida/      # ~7 min em 4 núcleos; SOMENTE=onca,lobo para refazer só alguns
+  venv/bin/python montar_fauna.py fauna_saida/ fauna.webp fauna.json
+  ```
+  `PREVIA=1 AMOSTRAS=16` renderiza só 2 quadros por animação, para conferir a modelagem.
+- **Partículas** (`afluente_sprites.py`, dicionário `FX`):
+  - folhas `leaf`, `leaf2` e `leaf3`;
+  - pétalas `petal`, `petal2` e `petal3`;
+  - `drop`, `puff` e `sparkle`;
+  - borboletas `butterfly` e `butterfly2`.
+  ```sh
+  SOMENTE=fx_leaf,fx_leaf2,... venv/bin/python afluente_sprites.py fx_saida/
+  venv/bin/python atualizar_atlas.py fx_saida/ atlas.png atlas.json   # troca só esses sprites no atlas atual
+  ```
+- **Embutir no protótipo**: `python3 embutir.py` grava `ATLAS`/`atlasImg` e `FATLAS`/`faunaImg` em `prototipo/afluente.html`. Depois rode `sh ../sim/gerar_index.sh`.
+- **Sombras**: o jogo separa, ao carregar, a sombra assada de cada sprite (pixels escuros com alfa ≤ 205) e a desenha recortada pelo chão da peça.
+
+## v1.6: leito de riacho e casinha de taipa
 
 - `leito_seco.py` não cobre mais tudo com placas rachadas:
   - areia com marcas de correnteza (ondas periódicas);

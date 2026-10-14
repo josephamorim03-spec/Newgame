@@ -388,8 +388,67 @@ Pedido: fazer a pessoa querer jogar de novo quando a partida termina. Estudar ou
 **Desempenho**
 - Fora do Contemplar, o quadro leva 2 a 4 ms no teste (o capim fio a fio custa cerca de 1,6 ms no zoom).
 - No Contemplar, o custo é dos recortes do rio, que já existia na v1.2. A qualidade adaptativa reduz a resolução quando passa de 26 ms.
+## Bichos em 3D, partículas do Blender e correções visuais (v1.5)
 
-## Terrenos coerentes de perto (v1.5)
+Feita em paralelo com a v1.4 (vale vivo) e juntada sobre ela. As partículas novas entraram no atlas WebP da v1.4.
+
+Retorno do teste no iPhone:
+- os bichos precisam de forma e animação 3D;
+- as partículas precisam de formas melhores;
+- os rótulos se sobrepõem e crescem demais no zoom;
+- a tela "pisca preto" antes de a peça assentar;
+- falta clareza e integração entre os terrenos.
+
+- **Fauna em 3D** (`arte/fauna.py`):
+  - Os 11 bichos foram modelados no Blender com "juntas" (quadril, ombro, pescoço, cabeça, cauda, tromba). As peças do corpo são filhas das juntas.
+  - Duas animações em laço de 8 quadros:
+    - **anda**: passo alternado nas aves; trote em diagonal nos quadrúpedes; pulinho no joão-de-barro e nos pássaros de poleiro;
+    - **para**: respira, bica o chão, olha para o lado, abana o rabo ou mexe a tromba.
+  - As araras que cruzam o céu também viraram um modelo do Blender, com 8 quadros de bater de asas.
+  - **Pássaros no mundo, não na tela**:
+    - os bandos (araras e pássaros ao longe) têm posição, altura e velocidade próprias em unidades do vale;
+    - arrastar a câmera não os leva junto, e o zoom os aumenta na mesma proporção do mapa;
+    - eles atravessam o vale de um lado ao outro, com uma deriva leve e a sombra no chão logo abaixo.
+    - Antes, a posição e o tamanho eram da tela: eles "grudavam" na tela e cresciam sozinhos no zoom.
+  - O tucano e o martim-pescador ficam num poleiro, e o joão-de-barro ao lado do ninho de barro com a porta virada para a câmera. A onça tem rosetas na superfície.
+  - `montar_fauna.py` recorta todos os quadros de um bicho pela mesma caixa, para a âncora não tremer, e gera `fauna.webp` (WebP com transparência) e `fauna.json`.
+- **No vale**:
+  - cada bicho tem um pequeno comportamento: fica parado (faz o ciclo e descansa), escolhe outro ponto do hábitat a até 3 casas e anda até lá, virando para o lado certo;
+  - a velocidade depende do bicho (o lobo-guará anda rápido; o tamanduá, devagar);
+  - os de poleiro ficam no lugar.
+  - No caderno, os cartões usam o mesmo render. A silhueta dos que faltam vem dele.
+- **Partículas novas** (`afluente_sprites.py`, 128 px):
+  - folhas com contorno, nervura e curvatura, em três tons (verde, amarela e seca; na seca caem mais folhas secas);
+  - pétalas de ipê em rosa, amarelo e branco;
+  - gota em forma de gota;
+  - poeira em nuvem;
+  - brilho de quatro pontas;
+  - borboletas laranja e azul, com borda escura.
+  - `atualizar_atlas.py` troca só esses sprites no atlas, sem renderizar tudo de novo. `embutir.py` põe os atlas no protótipo.
+- **Piscar preto (iPhone)**:
+  - A dica e o painel da peça mudavam de altura (por exemplo, a dica com duas linhas ou a missão na peça da vez). Isso redimensionava o canvas, e o Safari mostra um quadro vazio ao realocar.
+  - Agora os dois têm altura fixa. O canvas só é realocado quando o tamanho muda de verdade, e é redesenhado na mesma hora.
+  - Os canvas antigos do cache das peças são liberados na hora, porque o iOS demora a liberar memória.
+- **Rótulos**:
+  - todos os balões do vale passam por um arranjo único, por prioridade: "toque aqui", a peça escolhida, a prévia das missões, "sem mata", as bandeiras e a nascente;
+  - eles não se sobrepõem, não entram na faixa das missões no topo e têm tamanho limitado (12 a 15 px), sem crescer com o zoom;
+  - a prévia de uma missão substitui a bandeira dela, em vez de aparecer junto;
+  - "cumpre a missão" virou "· missão ✓" no balão da peça, e "nova missão" saiu (o painel já mostra).
+  - Contornos e marcas ✓/✗ também têm tamanho máximo.
+- **Zoom nítido**:
+  - o cache de cada peça vai até 200 px por raio (era 100);
+  - peças fora da tela não são desenhadas, e no zoom o cache delas é liberado.
+- **Sombras no lugar**:
+  - a sombra assada em cada sprite do Blender é separada no carregamento (pixels escuros e translúcidos);
+  - ela é desenhada antes dos objetos e recortada pelo chão da peça;
+  - as peças também são recortadas pelo seu contorno, com espaço para as copas.
+  - A mancha escura que flutuava sobre o céu na borda do vale sumiu.
+- **Integração entre terrenos**:
+  - a divisa entre dois terrenos de uma peça deixou de ser uma reta e virou uma curva suave: cada terreno avança sobre o outro em "línguas";
+  - nessas divisas entram moitas, tufos, flores e cercas (ecótonos);
+  - correção: a linha de divisa antiga era desenhada na aresta errada (entre o triângulo i e o i−1).
+
+## Terrenos coerentes de perto (v1.6)
 
 Reação a capturas do iPhone em que o vale, visto de perto, "não fazia sentido".
 
