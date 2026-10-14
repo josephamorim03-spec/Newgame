@@ -46,3 +46,11 @@ Primeira versão proibia rio encostar em terra; no teste isso criou buracos onde
 - **Prévia da missão**: antes de colocar, a peça mostra "✓ cumpre a missão" ou "✗ estoura a missão".
 - **Primeira jogada guiada**: anel "toque aqui" na melhor casa nas duas primeiras peças.
 - **Foto do vale** na tela final.
+
+## Água (v0.4.2)
+
+- **Superfície animada**: 48 quadros em laço gerados no navegador a partir de uma soma de ondas (números de onda inteiros, então a textura emenda sem costura). Para cada pixel calcula-se a normal da superfície, o reflexo do céu com Fresnel (mais céu nos ângulos rasantes) e o brilho especular do sol, que cintila quando as ondas passam.
+- **Ancorada no mundo**: a textura não "anda" com a câmera; só as ondas se movem.
+- **Margens**: areia seca, terra molhada, espuma fina na beira, água rasa clara junto à margem e mais funda no meio.
+- **Correnteza**: riscos de espuma descem o rio no sentido real do fluxo (distância pela rede viva a partir da nascente).
+- **Nascente** borbulhando com ondas concêntricas; **brejo** com anéis lentos onde o rio termina em terra; **leito seco** de areia rachada até a água chegar.

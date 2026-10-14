@@ -478,26 +478,10 @@ function drawTile(g,x,y,s,e,o={}){
       g.beginPath();g.moveTo(cx-h*0.6,cy-h*0.6);g.lineTo(cx,cy+h*0.3);g.lineTo(cx+h*0.6,cy-h*0.6);g.stroke();
     }
   }}
-  // rio: do centro até cada lado com água
-  const ws=[];for(let i=0;i<6;i++)if(e[i]==='A')ws.push(i);
-  if(ws.length){
-    const al=o.alive==null?0:o.alive,em=R*0.866;
-    const layer=(w,col,a)=>{g.globalAlpha=(o.alpha??1)*a;g.strokeStyle=col;g.fillStyle=col;g.lineWidth=w;g.lineCap='butt';
-      for(const i of ws){const L=o.blocked&&o.blocked.includes(i)?em*0.55:em;g.beginPath();g.moveTo(x,y);g.lineTo(x+Math.cos(ang(i))*L,y+Math.sin(ang(i))*L);g.stroke();
-        if(L<em){g.beginPath();g.ellipse(x+Math.cos(ang(i))*L,y+Math.sin(ang(i))*L,w*0.85,w*0.6,ang(i),0,7);g.fill();}}
-      g.beginPath();g.arc(x,y,ws.length===1||o.src?w*0.9:w/2,0,7);g.fill();};
-    layer(s*0.5,P.bedBank,1);layer(s*0.36,P.bed,1);
-    if(al>0){layer(s*0.5,P.bank,al);layer(s*0.36,P.water,al);
-      if(!RM&&al>=1&&o.t!=null){g.globalAlpha=o.alpha??1;g.setLineDash([s*0.12,s*0.34]);g.lineDashOffset=-(o.t/50)%(s*0.46);g.strokeStyle=P.waterHi;g.lineWidth=s*0.06;g.lineCap='round';
-        for(const i of ws){const L=o.blocked&&o.blocked.includes(i)?em*0.55:em;g.beginPath();g.moveTo(x+Math.cos(ang(i))*L,y+Math.sin(ang(i))*L);g.lineTo(x,y);g.stroke();}g.setLineDash([]);}
-    }
-    g.globalAlpha=o.alpha??1;
-  }
-  if(o.src){
-    g.beginPath();g.arc(x,y,s*0.36,0,7);g.fillStyle=P.bank;g.fill();g.beginPath();g.arc(x,y,s*0.28,0,7);g.fillStyle=P.water;g.fill();
-    const ph=RM||o.t==null?0.5:(o.t/1300)%1;g.beginPath();g.arc(x,y,s*(0.06+0.22*ph),0,7);g.strokeStyle=`rgba(255,255,255,${0.85*(1-ph)})`;g.lineWidth=2;g.stroke();
-  }
+  // contorno da peça, depois rio e nascente
   hexPath(g,x,y,R);g.strokeStyle='rgba(255,255,255,.3)';g.lineWidth=1;g.stroke();
+  const ws=[];for(let i=0;i<6;i++)if(e[i]==='A')ws.push(i);
+  if(ws.length)drawRiver(g,x,y,s,R,ws,o);
   if(atlasReady){decos.sort((p,q)=>p[1]-q[1]);for(const dd of decos)spr(g,dd[2],dd[0],dd[1],s,dd[3]*1.3);}
   g.restore();
 }
@@ -531,6 +515,9 @@ function refresh(){
   G.valid=new Set(E.over(s)?[]:E.slots(s).filter(k=>E.rotations(s.tiles[s.next].e).some(o=>E.legal(s.board,k,o.e))));
   G.qp=E.questProgress(s);
   G.wet=new Set();for(const k of s.alive){G.wet.add(k);for(let d=0;d<6;d++)G.wet.add(E.nb(k,d));}
+  G.wdist=new Map([[E.SRC,0]]);{const qu=[E.SRC];while(qu.length){const k=qu.shift(),t=s.board.get(k);
+    for(let d=0;d<6;d++){if(t.e[d]!=='A')continue;const n=E.nb(k,d),tn=s.board.get(n);
+      if(tn&&s.alive.has(n)&&tn.e[E.opp(d)]==='A'&&!G.wdist.has(n)){G.wdist.set(n,G.wdist.get(k)+1);qu.push(n);}}}}
   G.chimneys=[];
   for(const[k,t]of s.board){if(!G.wet.has(k))continue;const[wx,wy]=wpos(k);
     for(let i=0;i<6;i++)if(t.e[i]==='V'&&G.chimneys.length<40)G.chimneys.push([wx+Math.cos(ang(i))*0.56+0.06,wy+Math.sin(ang(i))*0.56+0.1-0.42]);}
@@ -624,6 +611,7 @@ function draw(t){
   // sombra do vale
   g.fillStyle='rgba(29,59,58,.09)';for(const k of s.board.keys()){const[x,y]=scr(k);hexPath(g,x+sz*0.06,y+sz*0.4,sz);g.fill();}
   // peças, de trás para frente
+  const wpat=boardWaterPattern(g,t);
   const keys=[...s.board.keys()];if(sel)keys.push(sel.k);
   keys.sort((a,b)=>E.KR(a)-E.KR(b)||E.KQ(a)-E.KQ(b));
   for(const k of keys){
@@ -646,7 +634,7 @@ function draw(t){
     }
     const tl=s.board.get(k),f=fxOf(k,t);y+=f.dy;
     g.save();if(f.sc!==1){g.translate(x,y);g.scale(f.sc,f.sc);g.translate(-x,-y);}
-    drawTile(g,x,y,sz,tl.e,{wet:G.wet.has(k),alive:aliveOf(k,t),src:tl.src,seed:k,t,blocked:blockedSides(s.board,k,tl.e)});
+    drawTile(g,x,y,sz,tl.e,{wet:G.wet.has(k),alive:aliveOf(k,t),src:tl.src,seed:k,t,blocked:blockedSides(s.board,k,tl.e),pat:wpat,flow:flowDirs(k)});
     if(f.spark!=null){g.globalAlpha=1-f.spark;hexPath(g,x,y,sz*(0.97+f.spark*0.5));g.strokeStyle='#fff6c8';g.lineWidth=3;g.stroke();g.globalAlpha=1;}
     g.restore();
   }
@@ -671,6 +659,116 @@ function draw(t){
   for(const f of G.floats){const u=(t-f.t0)/1100;if(u<0)continue;const[x,y]=scr(f.k);g.globalAlpha=u<0.15?u/0.15:1-Math.max(0,(u-0.6)/0.4);pill(g,x,y-sz*0.5-u*sz*0.9,f.txt,f.col,f.fg,sz);g.globalAlpha=1;}
   if(G.flow&&t-G.flow.t0>G.flow.order.length*120+400)G.flow=null;
 }
+
+// ---------- água: superfície animada que reflete o céu e o sol
+// Altura = soma de ondas com número de onda inteiro (a textura emenda sem costura) e frequência inteira no tempo
+// (o laço fecha). Cada pixel: normal da superfície -> reflexo do céu com Fresnel + brilho especular do sol.
+const WTEX=96,WNF=48,WT=4200;let WFRAMES=null,WPATS=null;
+function buildWater(){
+  const waves=[[1,2,0.9,1,0.3],[-2,1,0.75,2,1.7],[3,-1,0.5,1,4.1],[2,3,0.36,3,2.2],[-1,-4,0.3,2,5.3],[4,1,0.24,3,0.9],[-5,2,0.16,4,3.3],[3,5,0.12,5,1.1]];
+  const nrm=v=>{const l=Math.hypot(...v);return v.map(c=>c/l);};
+  const Ld=nrm([-0.45,-0.55,0.72]),V=nrm([0,0.62,0.78]);
+  const deep=[22,104,150],mid=[38,150,200],hor=[214,238,240],zen=[120,190,228];
+  WFRAMES=[];
+  for(let f=0;f<WNF;f++){
+    const c=document.createElement('canvas');c.width=c.height=WTEX;const cx=c.getContext('2d'),img=cx.createImageData(WTEX,WTEX),d=img.data;
+    const tp=f/WNF*Math.PI*2;
+    for(let y=0;y<WTEX;y++)for(let x=0;x<WTEX;x++){
+      const u=x/WTEX,v=y/WTEX;let hx=0,hy=0,h=0;
+      for(const[kx,ky,am,m,ph]of waves){const q=2*Math.PI*(kx*u+ky*v)-m*tp+ph,cs=Math.cos(q);hx+=am*kx*cs;hy+=am*ky*cs;h+=am*Math.sin(q);}
+      const S=0.11;let nx=-hx*S,ny=-hy*S,nz=1;const nl=Math.hypot(nx,ny,nz);nx/=nl;ny/=nl;nz/=nl;
+      const nv=nx*V[0]+ny*V[1]+nz*V[2],rx=2*nv*nx-V[0],ry=2*nv*ny-V[1],rz=2*nv*nz-V[2];
+      const fres=0.03+0.97*Math.pow(1-Math.max(0,nv),5);
+      const sk=Math.max(0,Math.min(1,rz)),k=0.5+0.5*Math.max(-1,Math.min(1,h/1.6));
+      const sp=Math.pow(Math.max(0,rx*Ld[0]+ry*Ld[1]+rz*Ld[2]),70)*1.7;
+      const mix=0.22+0.75*fres,i=(y*WTEX+x)*4;
+      for(let ch=0;ch<3;ch++){
+        const base=deep[ch]+(mid[ch]-deep[ch])*k,sky=hor[ch]+(zen[ch]-hor[ch])*sk;
+        d[i+ch]=Math.min(255,base*(1-mix)+sky*mix+sp*255);
+      }
+      d[i+3]=255;
+    }
+    cx.putImageData(img,0,0);WFRAMES.push(c);
+  }
+}
+function waterFrame(t){if(!WFRAMES)return null;return WFRAMES[t==null||RM?0:Math.floor(((t%WT)/WT)*WNF)%WNF];}
+// padrão ancorado no mundo (a água não "anda" com a câmera); um por quadro, transformado uma vez por desenho
+function boardWaterPattern(g,t){
+  const fr=waterFrame(t);if(!fr)return null;
+  WPATS=WPATS||new Map();let pt=WPATS.get(fr);if(!pt){pt=g.createPattern(fr,'repeat');WPATS.set(fr,pt);}
+  const k=cam.s*0.85/WTEX;pt.setTransform(new DOMMatrix([k,0,0,k,cam.x,cam.y]));return pt;
+}
+function riverPath(x,y,R,ws,o,w,center){
+  const p=new Path2D(),em=R*0.866;
+  for(const i of ws){
+    // um pouco além da borda, para cobrir a fresta entre as peças
+    const L=o.blocked&&o.blocked.includes(i)?em*0.55:em/0.97,a=ang(i),c=Math.cos(a),sn=Math.sin(a),nx=-sn*w/2,ny=c*w/2;
+    // todos os pedaços com a mesma orientação, para a união não abrir buracos
+    p.moveTo(x-nx,y-ny);p.lineTo(x+c*L-nx,y+sn*L-ny);p.lineTo(x+c*L+nx,y+sn*L+ny);p.lineTo(x+nx,y+ny);p.closePath();
+    if(L<em*0.9){p.moveTo(x+c*L+w*0.95*Math.cos(a),y+sn*L+w*0.95*Math.sin(a));p.ellipse(x+c*L,y+sn*L,w*0.95,w*0.7,a,0,Math.PI*2);}
+  }
+  const cr=center??(ws.length===1?w*0.95:w*0.5);p.moveTo(x+cr,y);p.arc(x,y,cr,0,Math.PI*2);
+  return p;
+}
+function drawRiver(g,x,y,s,R,ws,o){
+  const al=o.alive==null?0:o.alive,w=s*0.38,em=R*0.866,src=!!o.src,cr=src?s*0.42:null;
+  // margem: areia seca por fora, terra molhada por dentro
+  g.fillStyle='#d3b77f';g.fill(riverPath(x,y,R,ws,o,w*1.6,src?s*0.62:null));
+  g.fillStyle=al>0?'#8a7350':'#bea26b';g.fill(riverPath(x,y,R,ws,o,w*1.25,src?s*0.52:null));
+  const P=riverPath(x,y,R,ws,o,w,cr);
+  // leito seco: areia com rachaduras
+  g.fillStyle='#d9c08a';g.fill(P);
+  if(al<1){
+    g.save();g.clip(P);g.strokeStyle='rgba(120,92,52,.45)';g.lineWidth=Math.max(1,s*0.025);
+    for(const i of ws){const a=ang(i),c=Math.cos(a),sn=Math.sin(a);for(let j=1;j<4;j++){const px=x+c*em*j/4,py=y+sn*em*j/4;
+      g.beginPath();g.moveTo(px-sn*w*0.35,py+c*w*0.35);g.lineTo(px+c*w*0.12,py+sn*w*0.12);g.lineTo(px+sn*w*0.3,py-c*w*0.3);g.stroke();}}
+    g.restore();
+  }
+  if(al<=0)return;
+  g.save();g.globalAlpha*=al;
+  // espuma fina na beira (aparece só como um anel por fora da água)
+  g.fillStyle='rgba(255,255,255,.8)';g.fill(riverPath(x,y,R,ws,o,w*1.1,cr?cr*1.07:null));
+  g.clip(P);
+  // superfície: ondas refletindo o céu e o sol
+  const pat=o.pat||(()=>{const fr=waterFrame(o.t);if(!fr)return null;const pt=g.createPattern(fr,'repeat');const k=s*0.85/WTEX;pt.setTransform(new DOMMatrix([k,0,0,k,x,y]));return pt;})();
+  g.fillStyle=pat||'#2b9ccf';g.fillRect(x-s*1.1,y-s*1.1,s*2.2,s*2.2);
+  // raso clarinho junto às margens, mais fundo no meio
+  g.fillStyle='rgba(150,226,236,.38)';g.fill(P);
+  const P2=riverPath(x,y,R,ws,o,w*0.58,cr?cr*0.66:null);
+  if(pat){g.globalAlpha=al*0.85;g.fillStyle=pat;g.fill(P2);g.globalAlpha=al;}
+  g.fillStyle='rgba(8,60,100,.12)';g.fill(P2);
+  const t=o.t;
+  if(t!=null&&!RM){
+    // correnteza: riscos de espuma descendo o rio, no sentido em que a água corre
+    g.lineCap='round';
+    for(const i of ws){
+      const blocked=o.blocked&&o.blocked.includes(i),L=em*(blocked?0.55:1),a=ang(i),c=Math.cos(a),sn=Math.sin(a),dir=o.flow?o.flow[i]:1;
+      for(let j=0;j<3;j++){
+        const ph=((t/1500)+((i*7+j*13)%10)/10)%1,d=dir>0?ph:1-ph,off=(j-1)*w*0.26,len=w*0.55;
+        const px=x+c*L*d-sn*off,py=y+sn*L*d+c*off;
+        g.globalAlpha=al*Math.sin(ph*Math.PI)*0.55;g.strokeStyle='#ffffff';g.lineWidth=Math.max(1,w*0.07);
+        g.beginPath();g.moveTo(px-c*len/2*dir,py-sn*len/2*dir);g.lineTo(px+c*len/2*dir,py+sn*len/2*dir);g.stroke();
+      }
+    }
+    g.globalAlpha=al;
+    // brejo: anéis lentos onde o rio termina em terra
+    if(o.blocked)for(const i of o.blocked){const a=ang(i),mx=x+Math.cos(a)*em*0.55,my=y+Math.sin(a)*em*0.55,ph=((t/2600)+i*0.3)%1;
+      g.globalAlpha=al*(1-ph)*0.6;g.strokeStyle='#ffffff';g.lineWidth=1.2;g.beginPath();g.ellipse(mx,my,w*0.9*ph,w*0.6*ph,a,0,Math.PI*2);g.stroke();}
+    g.globalAlpha=al;
+  }
+  g.restore();
+  if(src){
+    // nascente: olho d'água borbulhando, com ondas concêntricas
+    g.save();g.beginPath();g.arc(x,y,cr,0,Math.PI*2);g.clip();
+    const tt=t==null||RM?0:t;
+    for(let r=0;r<3;r++){const ph=((tt/1800)+r/3)%1;g.globalAlpha=(1-ph)*0.75;g.strokeStyle='#ffffff';g.lineWidth=Math.max(1,s*0.03);
+      g.beginPath();g.ellipse(x,y,cr*0.15+cr*0.85*ph,(cr*0.15+cr*0.85*ph)*0.8,0,0,Math.PI*2);g.stroke();}
+    for(let b=0;b<4;b++){const ph=((tt/900)+b*0.27)%1,bx=x+Math.cos(b*1.9)*cr*0.25,by=y+Math.sin(b*1.9)*cr*0.2-ph*cr*0.1;
+      g.globalAlpha=Math.sin(ph*Math.PI)*0.9;g.fillStyle='#ffffff';g.beginPath();g.arc(bx,by,s*0.025+ph*s*0.02,0,Math.PI*2);g.fill();}
+    g.restore();
+  }
+}
+function flowDirs(k){const out=[],dk=G.wdist&&G.wdist.get(k);for(let d=0;d<6;d++){const n=E.nb(k,d),dn=G.wdist&&G.wdist.get(n);out.push(dk!=null&&dn!=null&&dn<dk?-1:1);}return out;}
 function blockedSides(board,k,e){const out=[];for(let d=0;d<6;d++){if(e[d]!=='A')continue;const n=board.get(E.nb(k,d));if(n&&n.e[E.opp(d)]!=='A')out.push(d);}return out;}
 function pill(g,x,y,txt,bg,fg,sz){
   g.font=`800 ${Math.max(12,sz*0.46)}px "Baloo 2",system-ui,sans-serif`;g.textAlign='center';g.textBaseline='middle';
@@ -834,6 +932,7 @@ $('muteBtn').addEventListener('click',()=>{SND.on=!SND.on;db.mute=!SND.on;save(d
 
 // ---------- início
 function start(data){
+  try{buildWater();}catch(e){WFRAMES=null;}
   introThumbs();
   const dailyKey='dia-'+today();let seedKey=dailyKey,actions=[];
   const snap=data&&data.seedKey?data:db.progress;
