@@ -1070,27 +1070,27 @@ def loboguara():
 # ---------------------------------------------------------------- v1.3: ovelhas, cercado, vila que cresce
 
 def sheep(pose=0):
-    """ovelha: corpo de lã feito de muitos tufos, cara e patas pretas; pose 0 cabeça erguida, 1 pastando"""
-    wool = mat('la', '#f4efe4', 0.98)
-    wool2 = mat('la_sombra', '#d9d1c2', 0.98)
+    """ovelha: corpo de lã em tufos grandes (creme, com a barriga em sombra), cara, orelhas e patas pretas bem visíveis;
+    pose 0 cabeça erguida, 1 pastando. (v1.8c: de cima, a versão anterior era só uma bola branca e lia como nuvem)"""
+    wool = mat('la', '#efe6d2', 0.98)
+    wool2 = mat('la_sombra', '#c9bea8', 0.98)
     black = mat('ovelha_preto', '#2a2420', 0.8)
     rnd = random.Random(41 + pose)
-    for i in range(46):
-        u = rnd.uniform(-1, 1)
+    cyl_body = ico(0.06, (0, 0, 0.1), wool2, 3, (1.3, 0.78, 0.62), smooth=True)
+    for i in range(22):
+        u = rnd.uniform(-0.2, 1)
         th = rnd.uniform(0, math.tau)
         q = math.sqrt(1 - u * u)
-        x, y, z = q * math.cos(th) * 0.075, q * math.sin(th) * 0.045, u * 0.042
-        if z < -0.03:
-            continue
-        ico(rnd.uniform(0.018, 0.026), (x, y, 0.1 + z), wool if z > -0.005 else wool2, 2, smooth=True)
-    for x, y in [(-0.045, -0.022), (-0.045, 0.022), (0.045, -0.022), (0.045, 0.022)]:
-        cyl(0.007, 0.075, (x, y, 0.0375), black, 6, 0.006)
-    hx, hz = (0.09, 0.13) if pose == 0 else (0.1, 0.045)
-    hd = ico(0.024, (hx, 0, hz), black, 2, (1.5, 0.95, 1.0), smooth=True)
+        x, y, z = q * math.cos(th) * 0.068, q * math.sin(th) * 0.04, u * 0.034
+        ico(rnd.uniform(0.022, 0.03), (x, y, 0.105 + z), wool, 2, smooth=True)
+    for x, y in [(-0.045, -0.024), (-0.045, 0.024), (0.045, -0.024), (0.045, 0.024)]:
+        cyl(0.009, 0.08, (x, y, 0.04), black, 6, 0.007)
+    hx, hz = (0.098, 0.135) if pose == 0 else (0.105, 0.05)
+    hd = ico(0.031, (hx, 0, hz), black, 2, (1.5, 0.95, 1.0), smooth=True)
     hd.rotation_euler.y = math.radians(-25 if pose == 0 else 55)
-    ico(0.016, (hx - 0.022, 0, hz + 0.018), wool, 2, smooth=True)
+    ico(0.02, (hx - 0.026, 0, hz + 0.02), wool, 2, smooth=True)
     for e in (-1, 1):
-        ear = ico(0.01, (hx - 0.006, e * 0.026, hz + 0.004), black, 1, (1.8, 0.7, 0.5))
+        ear = ico(0.013, (hx - 0.008, e * 0.033, hz + 0.006), black, 1, (1.9, 0.7, 0.5))
         ear.rotation_euler.z = e * 0.6
 
 
