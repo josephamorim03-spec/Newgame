@@ -141,3 +141,27 @@ Pedido: estações do ano avançando, com dificuldade no "inverno" para quem ava
   - Cuidadoso: 2,8 anos, 216 pontos, 46 peças. Seca 3× menos rio e alimenta quase o dobro de casas.
   - Aleatório: vê o ano 1 inteiro.
   - Simulador em `sim/ano_no_vale_teste.js`.
+
+## Auditoria, seca simplificada e lições (v0.7)
+
+Pedido: "não sei se a sustentabilidade está boa ou se eu não entendi"; verificar todas as mecânicas; criar um onboarding com fases e mapas específicos. A análise completa está em `MECANICAS.md`.
+
+- **Auditoria**: as mecânicas foram avaliadas por três critérios: criar uma decisão, caber em uma frase visível no tabuleiro e ter consequência perto da decisão.
+  - Ficam: encaixe, peça perfeita, água viva, missões, pilha, especiais, desfazer e vale do dia.
+  - A Ponte fica marcada como candidata a simplificar.
+- **Sustentabilidade simplificada**:
+  - Saem colheita, celeiro, casas e fome.
+  - O ano tem Águas (8 jogadas) e Seca (4). Na seca, só corre o rio com bosque encostado.
+  - Quando a seca chega, cada trecho protegido vale +1 e rende peças: 1 a cada 2 trechos no ano 1, a cada 3 no ano 2, e assim por diante. A seca fica mais dura a cada ano.
+  - As chuvas voltam com +2 peças.
+  - Na tela: o indicador "Rio protegido para a seca: 3 de 4 → +1 peça", o aviso em laranja nas 4 jogadas antes da seca e a etiqueta "sem mata".
+- **Lições**: cinco vales prontos (encaixe, água viva, missões, peça perfeita, seca), cada um com objetivo, casa marcada, texto por passo e tela de acerto ou de "tentar de novo".
+  - Quem nunca jogou começa por elas.
+  - O link "Pular lições" fica sempre visível.
+  - Dá para refazer as lições pelo "?".
+  - O motor ganhou vales prontos (`licao-1` … `licao-5`) com peças fixas e reprodução determinística.
+- **Recorde** zerado de novo, porque as regras mudaram.
+- **Simulação** (30 vales):
+  - Guloso: 48 peças e 201 pontos.
+  - Cuidadoso: 56 peças e 271 pontos.
+  - As versões sem teto disparavam até 300 peças.

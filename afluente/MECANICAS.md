@@ -1,0 +1,108 @@
+# Auditoria das mecânicas e onboarding (v0.7)
+
+Pedido: verificar todas as mecânicas (como funcionam e se há fundamento para mantê-las), decidir sobre a sustentabilidade e criar um onboarding com fases iniciais em mapas específicos.
+
+Os números abaixo vêm de 30 vales simulados com as regras da v0.7 (simulador em `sim/`). O bot **guloso** busca só o ganho imediato; o **cuidadoso** também pesa o rio protegido para a seca.
+
+## 1. Critério
+
+Uma mecânica fica se cumpre três condições:
+
+1. **Cria uma decisão**: muda onde ou como a peça é colocada.
+2. **Pode ser explicada em uma frase e vista no tabuleiro**, sem conta escondida.
+3. **Tem consequência perto da decisão**: a pessoa liga causa e efeito.
+
+## 2. Mecânica por mecânica
+
+| Mecânica | O que faz | Peso no jogo (guloso) | Veredito |
+|---|---|---|---|
+| **Encaixe de lados** | +1 por lado igual ao do vizinho | 45% dos pontos | **Manter.** É o núcleo e é visível na hora (✓ verde). Lição 1. |
+| **Qualquer peça cabe em qualquer casa** | Lado que não combina só não pontua | — | **Manter.** A proibição antiga criava buracos impossíveis. |
+| **Peça perfeita** | 6 lados combinando: +5 e +1 peça | 16% dos pontos, cerca de 6 peças por jogo | **Manter.** Premia planejar buracos. Lição 4. |
+| **Água viva** | Rio ligado à nascente; +2 por peça na primeira vez que recebe água | 7% dos pontos | **Manter.** É a identidade do jogo e a base da seca e das missões de água. Lição 2. |
+| **Brejo** | Rio contra terra termina num brejo e para ali | — | **Manter só como visual.** Explicado em uma frase na lição 2. |
+| **Missões de número exato** ("Bosque 5") | Cumprir: +3 peças; passar do número: perde | 22% dos pontos e a maior fonte de peças (cerca de 11 por jogo) | **Manter.** O "passar perde" é o que transforma a missão em decisão. Lição 3. |
+| **Missão de água** | Levar água viva até a peça marcada: +3 peças | dentro das missões | **Manter.** Lição 2. |
+| **Pilha como vida** | O jogo acaba quando a pilha acaba; jogar bem ganha peças | — | **Manter.** É o laço do Dorfromantik. |
+| **Peças especiais** (Cachoeira, Lagoa, Ponte) | Entram na pilha com o tempo | 5% dos pontos | **Manter Cachoeira e Lagoa.** A Ponte ("terra combina com qualquer terra") é a regra mais obscura e é candidata a simplificar. Não ganhou lição: cada especial explica a si mesma quando aparece. |
+| **Ano no vale da v0.6** (colheita, celeiro, casas, fome crescente) | Contas de comida e consumo a cada ano | Efeito pequeno nos pontos | **Retirado.** Detalhes na seção 3. |
+| **Seca e mata ciliar (v0.7)** | Na seca, só corre o rio com bosque encostado; o rio protegido rende pontos e peças | 4–15% dos pontos e cerca de 8 peças por jogo (com as chuvas) | **Manter, para testar.** Uma regra, visível, com aviso antes. Lição 5. |
+| **Desfazer** | Volta a última peça | — | **Manter.** É jogo casual e o desfazer reduz frustração. |
+| **Vale do dia, par, recorde, relatório** | Mesmo vale para todos; meta e retrato da partida | — | **Manter.** É o motor do "só mais uma". |
+
+## 3. Sustentabilidade: o que deu errado e o que mudou
+
+A ideia (o rio precisa da mata para atravessar a seca) é boa e verdadeira para o Cerrado. A v0.6 errou na **forma**:
+
+- **Regras demais**: colheita, celeiro, casas, comida por casa crescendo, fome, chuvas. Eram seis regras novas para um jogo cujo núcleo cabe em três.
+- **Contas escondidas**: "Casas 4/6" depende de comida ÷ consumo do ano e de água na seca. Ninguém faz essa conta olhando o vale.
+- **Consequência longe da decisão**: o campo colocado agora só pesava 8 jogadas depois, no ano novo.
+- **Punição sentida como injusta**: perder peças por "fome" de casas que a pilha obrigou a colocar.
+
+A v0.7 fica com **uma regra só**, espacial e visível:
+
+> **Na seca, o rio só corre onde há bosque encostado.**
+
+Como fica:
+
+- O ano tem **Águas (8 jogadas)** e **Seca (4 jogadas)**, as duas estações do Cerrado.
+- Nas 4 jogadas antes da seca, o rio que vai secar fica **em laranja**, com "sem mata" no ponto onde o rio corta.
+- **Quando a seca chega**, cada trecho que continua correndo vale **+1** e rende **peças**:
+  - no ano 1, +1 peça a cada 2 trechos;
+  - no ano 2, a cada 3;
+  - no ano 3, a cada 4.
+  - Essa é a **dificuldade que cresce** quando se avança: a seca fica mais dura a cada ano.
+- **As chuvas voltam** com **+2 peças**, e o rio corre de novo.
+- Na tela, um indicador mostra "Rio protegido para a seca: 3 de 4 → +1 peça" e, com uma peça escolhida, o antes e o depois.
+
+Por que essa calibragem (30 vales por linha):
+
+| Regra da seca | Guloso: peças | Cuidadoso: peças | Problema |
+|---|---|---|---|
+| +1 peça a cada 2 trechos, sempre | 47 | 90, chegando a 300 | **Disparada**: o rio protegido cresce e paga todo ano |
+| No máximo 3 ou 4 peças por seca, + chuvas | 67–72 | 73–101, chegando a 300 | Ainda dispara |
+| A cada 2, 3, 4… sem chuvas | 35 | 36 | A seca quase não rende e as partidas ficam curtas |
+| **A cada 2, 3, 4… + chuvas de +2 (escolhida)** | **48** | **56** | Duração igual à da v0.5 (cerca de 47 peças) |
+
+Com a regra escolhida:
+
+- quem protege o rio faz **35% mais pontos** (271 contra 201);
+- seca **metade** dos trechos;
+- mantém **5×** mais rio correndo na seca.
+
+## 4. Onboarding: as lições
+
+Hoje o jogo se explicava numa folha de texto antes de jogar. Ninguém aprende assim: as regras só fazem sentido com a peça na mão. A v0.7 troca a folha por **cinco lições curtas**, cada uma num vale pronto.
+
+### Princípios
+
+- **Uma mecânica por lição**, num vale montado para ela, com peças fixas (sempre as mesmas).
+- **Um objetivo visível** no cartão do topo, com o progresso ("Objetivo: 6 lados combinando (4/6)").
+- **A casa certa vem marcada** ("toque aqui") e a peça já vem girada. O texto muda a cada passo: antes de escolher, com a peça escolhida, depois de colocar.
+- **O erro é parte da lição.** Na lição 3, passar de 5 perde a missão. Na lição 5, quem joga só pelos pontos deixa o rio secar. Nos dois casos a tela diz o que aconteceu e oferece "Tentar de novo".
+- **Curto**: 1 a 3 jogadas por lição, cerca de 2 minutos no total.
+- **Sem prisão**: o link "Pular lições" fica sempre visível, e as lições podem ser refeitas pelo botão "?".
+- **Esconder o que ainda não foi ensinado**: a barra do ano só aparece na lição da seca, e a lista de missões fica escondida durante as lições.
+- Quem nunca fez as lições começa por elas. No fim, o botão leva ao vale do dia.
+
+### As cinco lições
+
+| Lição | Vale | Objetivo | Ensina |
+|---|---|---|---|
+| 1 · Encaixe | Nascente, um bosque e um campo | 6 lados combinando | Tocar, girar, colocar; +1 por lado; qualquer peça cabe |
+| 2 · Água viva | Uma peça de rio com bandeira, a 2 casas da nascente | Levar água até a bandeira | Água viva, +2 por peça, missão de água (+3 peças), brejo |
+| 3 · Missões | Bosque de 3 peças com a missão "5" | Bosque com exatamente 5 | Número exato, prévia "3→4/5", ✗ quando passa; missão = peças na pilha |
+| 4 · Peça perfeita | Uma casa cercada por bosque e campo | Fechar com os 6 lados combinando | Peça perfeita: +5 e +1 peça |
+| 5 · Seca e mata ciliar | Rio de 3 trechos sem mata; seca em 2 jogadas | 3 trechos protegidos | Laranja = vai secar; bosque encostado protege; a seca rende peças |
+
+Testado: as cinco lições se resolvem seguindo a casa marcada. Jogando só pelos pontos, a lição 5 falha, que é justamente o que ela precisa mostrar.
+
+## 5. O que observar no teste com pessoas
+
+- Alguém precisou abrir o "?" depois das lições?
+- Na primeira partida de verdade, a pessoa olhou o laranja antes da seca?
+- Ela entende de onde vêm as peças da pilha (missões, perfeitas, seca, chuvas)?
+- A seca parece justa ou punitiva?
+- Quanto tempo as lições levaram? Alguém pulou?
+
+Se a seca ainda parecer um sistema à parte, o próximo passo é testar um **modo sem seca**: as mecânicas 1 a 7 sozinhas já formam um jogo completo. A seca entraria só a partir de um certo vale, como a primeira "página" do Caderno do Cerrado previsto em `FATOR_REPLAY.md`.

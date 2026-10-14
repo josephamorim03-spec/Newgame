@@ -1,5 +1,7 @@
 # O ano no vale: estações, seca e sustentabilidade (v0.6)
 
+> **Revisado na v0.7.** As regras abaixo (colheita, casas e fome) foram retiradas por serem difíceis de entender. O que ficou da ideia (seca e mata ciliar) e por quê está em `MECANICAS.md`, seção 3. Este texto fica como registro da análise da v0.6.
+
 Pedido: trabalhar a ideia de sustentabilidade com as estações do ano avançando, criar dificuldade no "inverno" para quem avança muito, ver se vale a pena e se faz sentido com as mecânicas.
 
 Resumo: **vale a pena**, na forma descrita abaixo. A seca do Cerrado fica no lugar do inverno. A estação muda pelo tempo (a cada 4 peças), não pelos pontos. A dificuldade cresce porque as casas comem mais a cada ano. Tudo isso dá função a campo, vila e bosque, que antes serviam só para encaixar. A seção 8 traz as ressalvas.

@@ -40,20 +40,17 @@ button{font:inherit;color:inherit}
 .sb-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}
 .sb-top b{font-family:var(--f-display);font-size:15px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .sb-top span{white-space:nowrap;flex:none}
-.sb-track{position:relative;height:8px;border-radius:4px;overflow:hidden;
-  background:linear-gradient(90deg,#cfe9f4 0 24.6%,transparent 0 25.4%,#c5ddef 0 49.6%,transparent 0 50.4%,#f4e6bf 0 74.6%,transparent 0 75.4%,#efd9c0 0)}
-.sb-track i{position:absolute;inset:0;background:linear-gradient(90deg,#4fb3d9 0 24.6%,transparent 0 25.4%,#2a86c4 0 49.6%,transparent 0 50.4%,#e0ad2e 0 74.6%,transparent 0 75.4%,#c9874a 0);clip-path:inset(0 100% 0 0);transition:clip-path .45s}
+.sb-track{position:relative;height:8px;border-radius:4px;overflow:hidden;background:linear-gradient(90deg,#cfe9f4 0 66.2%,transparent 0 67.2%,#efd9c0 0)}
+.sb-track i{position:absolute;inset:0;background:linear-gradient(90deg,#3fa7d6 0 66.2%,transparent 0 67.2%,#c9874a 0);clip-path:inset(0 100% 0 0);transition:clip-path .45s}
 .sb-track u{position:absolute;top:0;bottom:0;width:3px;margin-left:-1.5px;border-radius:2px;background:#1d3b3a;transition:left .45s}
 .bal{display:flex;gap:6px;margin-top:3px;min-height:26px}
-.bchip{flex:1 1 0;min-width:0;display:flex;align-items:center;justify-content:center;gap:5px;border:0;border-radius:999px;padding:3px 8px;background:var(--card);color:var(--ink);
-  font:700 12px/1.2 var(--f-body);box-shadow:0 2px 0 var(--line);cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
+.bchip{flex:1 1 0;min-width:0;display:flex;align-items:center;justify-content:center;gap:6px;border:0;border-radius:999px;padding:3px 10px;background:var(--card);color:var(--ink);
+  font:700 12.5px/1.2 var(--f-body);box-shadow:0 2px 0 var(--line);cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
 .bchip i{width:9px;height:9px;border-radius:50%;flex:none}
 .bchip.warn{background:#ffe4cc;color:#8a3a0c;box-shadow:0 2px 0 #f0b98f}
 .bchip.ok{background:#e3f3dc;color:#24592b;box-shadow:0 2px 0 #b5d9a8}
-.bchip em{font-style:normal;opacity:.8}
 .bchip.on{outline:2px solid currentColor}
-body[data-ph="2"]{--sky:#eef0d2;--sky-2:#f5f0dc}
-body[data-ph="3"]{--sky:#f1e4c9;--sky-2:#f6ecda}
+body[data-ph="1"]{--sky:#f1e4c9;--sky-2:#f6ecda}
 .spc{display:inline-block;margin-left:6px;padding:0 7px;border-radius:999px;background:#e3f3fb;color:#1f6f97;font:700 11px/18px var(--f-body);vertical-align:middle}
 .seasonline{margin:0;font-family:var(--f-display);font-size:19px;color:var(--ink)!important}
 .record{margin:0;font-weight:700;color:#7a4d00!important}
@@ -74,6 +71,17 @@ body[data-ph="3"]{--sky:#f1e4c9;--sky-2:#f6ecda}
 .coach{position:absolute;left:8px;right:8px;bottom:8px;z-index:3;display:flex;gap:10px;align-items:center;padding:12px 12px 12px 14px;border-radius:16px;background:var(--card);box-shadow:0 4px 0 var(--line),0 8px 24px rgba(29,59,58,.18)}
 .coach p{margin:0;flex:1;font-size:13.5px;line-height:1.35;color:var(--ink)}
 .coach .btn{height:40px;flex:none}
+.lesson{position:absolute;left:8px;right:8px;top:6px;z-index:3;padding:9px 12px 8px;border-radius:16px;background:var(--card);box-shadow:0 3px 0 var(--line),0 6px 18px rgba(29,59,58,.14)}
+.lhead{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.lhead b{font-family:var(--f-display);font-size:16px;color:var(--ink)}
+.lhead button{border:0;background:none;color:var(--muted);font:600 12.5px var(--f-body);text-decoration:underline;padding:4px;cursor:pointer;flex:none}
+.lgoal{margin:2px 0 0;font-weight:700;font-size:13.5px;color:#7a4d00}
+.lgoal.done{color:var(--good)}
+.lstep{margin:0;color:var(--muted);font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.06em}
+body[data-lesson] .qchips{display:none}
+body[data-lesson] .banner{top:78px}
+body[data-lesson]:not([data-lesson="5"]) .seasonbar{visibility:hidden}
+body[data-lesson] .hint{font-size:15px;min-height:58px}
 .board{position:relative;flex:1;min-height:0;touch-action:none}
 .board canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
 .banner{position:absolute;left:50%;top:40px;z-index:4;transform:translate(-50%,0);padding:6px 16px 4px;border-radius:18px;width:max-content;max-width:92%;box-sizing:border-box;text-align:center;line-height:1.15;background:var(--gold);color:#3b2504;font-family:var(--f-display);font-weight:800;font-size:18px;white-space:normal;text-wrap:balance;pointer-events:none;box-shadow:0 3px 0 #c9861a;transition:opacity .25s,transform .25s}
@@ -150,6 +158,7 @@ body[data-ph="3"]{--sky:#f1e4c9;--sky-2:#f6ecda}
   <div class="board" id="boardWrap">
     <canvas id="board" aria-label="O vale"></canvas>
     <div class="qchips" id="qchips"></div>
+    <div class="lesson" id="lesson" hidden><div class="lhead"><b id="lesTitle"></b><button type="button" id="lesSkip">Pular lições</button></div><p class="lgoal" id="lesGoal"></p></div>
     <div class="banner" id="banner" data-off></div>
     <div class="coach" id="coach" hidden><p id="coachTxt"></p><button class="btn primary" id="coachOk">Entendi</button></div>
     <button class="recenter" id="recenter" aria-label="Centralizar o vale" hidden>⌖</button>
@@ -178,11 +187,21 @@ body[data-ph="3"]{--sky:#f1e4c9;--sky-2:#f6ecda}
       <li><canvas data-thumb="water" width="96" height="92"></canvas><div><b>Ligue os rios à nascente</b><span>A água só corre no rio ligado à nascente. Cada peça que recebe água viva vale +2. Rio que bate em terra vira brejo e para ali.</span></div></li>
       <li><canvas data-thumb="quest" width="96" height="92"></canvas><div><b>Missões ganham peças</b><span>"Bosque 6": deixe aquele bosque com exatamente 6 peças. Cumpriu: +3 peças. Passou do número: perdeu.</span></div></li>
       <li><canvas data-thumb="perfect" width="96" height="92"></canvas><div><b>Peça perfeita</b><span>Cercada e com os 6 lados combinando: +5 e +1 peça.</span></div></li>
-      <li><canvas data-thumb="year" width="96" height="92"></canvas><div><b>O ano no vale</b><span>A cada 4 peças muda a estação: Águas, Cheia, Colheita e Seca. Na Colheita, cada campo com água guarda comida (+1).</span></div></li>
-      <li><canvas data-thumb="seca" width="96" height="92"></canvas><div><b>Seca e mata ciliar</b><span>Na Seca só corre o rio com bosque na peça ou encostado. No ano novo, cada casa com água e comida dá +3 e +1 peça; com fome, −1. A cada ano as casas comem mais.</span></div></li>
+      <li><canvas data-thumb="seca" width="96" height="92"></canvas><div><b>Seca e mata ciliar</b><span>A cada 8 jogadas vem a seca: só corre o rio com bosque na peça ou encostado. O rio que continua correndo rende pontos e peças. Depois as chuvas voltam com +2 peças.</span></div></li>
     </ul>
-    <p>O jogo acaba quando a pilha acaba. Um vale equilibrado faz a pilha durar mais anos.</p>
+    <p>O jogo acaba quando a pilha acaba. Jogar bem faz a pilha durar.</p>
     <button class="btn primary" id="introOk">Jogar</button>
+    <button class="btn" id="introLessons">Fazer as lições (2 minutos)</button>
+  </div>
+</div>
+
+<div class="overlay" id="lesEnd" hidden role="dialog" aria-modal="true" aria-labelledby="lesEndTitle">
+  <div class="sheet">
+    <p class="lstep" id="lesEndStep"></p>
+    <h2 id="lesEndTitle"></h2>
+    <p id="lesEndTxt"></p>
+    <button class="btn primary" id="lesEndGo"></button>
+    <button class="btn" id="lesEndAlt"></button>
   </div>
 </div>
 
@@ -217,26 +236,27 @@ function Engine(){
      - O jogo acaba quando a pilha acaba.
      v0.5 — Estações do rio: metas de pontos crescentes; cada estação alcançada dá +4 peças e libera
      peças especiais (Cachoeira, Ponte, Lagoa) que começam a aparecer na pilha. Estatísticas para o relatório final.
-     v0.6 — O ano no vale (sustentabilidade). O tempo passa: a cada 4 peças colocadas a estação muda,
-       num ano de 16 jogadas: Águas → Cheia → Colheita → Seca (o inverno do Cerrado).
-       Colheita: cada peça com campo e água viva por perto guarda 1 de comida (+1 ponto) e cada 2 rendem +1 peça.
-       Seca: o rio só corre por peças com mata ciliar (lado de bosque na própria peça, ou o lado da vizinha virado
-         para ela é bosque). Trecho sem mata seca, e tudo rio abaixo seca junto, até as chuvas voltarem.
-       Ano novo (volta das Águas): cada casa (peça com vila) que teve água por perto na seca e comida no celeiro
-         rende +3 e +1 peça; casa com fome custa −1 peça. A fome cresce: no ano 2 cada casa come 1,5; no ano 3, 2…
-         As chuvas voltam com +2 peças. A água que volta não pontua de novo (só a primeira vez que uma peça recebe água).
-       As peças especiais entram na pilha conforme o ano anda (Cachoeira na Cheia, Ponte na Colheita, Lagoa na Seca). */
+     v0.7 — O ano no vale, simplificado: duas estações, como no Cerrado. Águas (8 jogadas) e Seca (4 jogadas).
+       Uma regra só: na Seca, o rio só corre por peças com mata ciliar (lado de bosque na própria peça, ou o lado
+       da vizinha virado para ela é bosque). Trecho sem mata seca, e tudo rio abaixo seca junto.
+       Quando a seca chega, cada trecho de rio que continua correndo vale +1 e rende peças: no ano 1, +1 peça a
+       cada 2 trechos; no ano 2, a cada 3; no ano 3, a cada 4 (a seca fica mais dura a cada ano).
+       Nas chuvas o rio volta a correr e a pilha ganha +2 peças (a água que volta não pontua de novo).
+       As peças especiais entram na pilha conforme o tempo passa.
+     Lições: vales prontos (licao-1 … licao-5) com peças fixas, para ensinar uma mecânica de cada vez. */
   const DIRS=[[1,0],[1,-1],[0,-1],[-1,0],[-1,1],[0,1]];
   const K=(q,r)=>(q+64)*128+(r+64),KQ=k=>Math.floor(k/128)-64,KR=k=>(k%128)-64;
   const nb=(k,d)=>K(KQ(k)+DIRS[d][0],KR(k)+DIRS[d][1]);
   const opp=d=>(d+3)%6;
   const START=22,PERFECT_PTS=5,QUEST_TILES=3,FLOW_PTS=2,SEASON_TILES=0;
-  const CFG={slen:4,harvestDiv:2,fedDiv:1,hungryDiv:1,rainTiles:2,housePts:3,grow:true,growRate:0.5,gainCap:99,shield:'touch',...(typeof AFLUENTE_CFG!=='undefined'?AFLUENTE_CFG:{})};
+  const CFG={aguas:8,seca:4,keptPts:1,keptDiv:2,divGrow:1,cap:99,rain:2,shield:'touch',...(typeof AFLUENTE_CFG!=='undefined'?AFLUENTE_CFG:{})};
   const SEASON_AT=[0,0,35,95,180,290,420,570,740,930];
   const seasonAt=n=>n<SEASON_AT.length?SEASON_AT[n]:SEASON_AT[SEASON_AT.length-1]+220*(n-SEASON_AT.length+1);
-  const CYCLE=['Águas','Cheia','Colheita','Seca'];
-  const phase=n=>(n-1)%4; // 0 Águas, 1 Cheia, 2 Colheita, 3 Seca
-  const seasonName=n=>CYCLE[phase(n)]+(n>4?' · ano '+Math.ceil(n/4):'');
+  const CYCLE=['Águas','Seca'];
+  const phase=n=>(n-1)%2; // 0 Águas, 1 Seca
+  const yearOf=n=>Math.ceil(n/2);
+  const seasonLen=n=>phase(n)?CFG.seca:CFG.aguas;
+  const seasonName=n=>CYCLE[phase(n)]+' · ano '+yearOf(n);
   // peças especiais: liberadas por estação
   const SPECIALS=[
     {id:'falls',season:2,name:'Cachoeira',e:['A','B','B','A','G','G'],desc:'+6 quando a água chega'},
@@ -272,15 +292,41 @@ function Engine(){
     return{e,quest,sroll:rng(),spick:rng(),srot:Math.floor(rng()*6)};
   }
 
+  // ---------- lições: vales prontos, peças fixas, uma mecânica de cada vez
+  const F=b=>[b,b,b,b,b,b];
+  const RIO=['A','G','G','A','G','G'];
+  const LESSONS={
+    'licao-1':{board:[[1,-1,F('B')],[-1,0,F('C')],[0,1,F('G')],[2,-1,F('B')]],
+      tiles:[['B','B','B','B','G','G'],['C','C','C','G','G','G'],F('G'),['B','B','G','G','G','G'],F('C')],left:5,noSeasons:true},
+    'licao-2':{board:[[2,0,RIO,{flow:true}],[1,-1,F('G')],[0,1,F('G')]],
+      tiles:[['G','A','G','G','A','G'],F('B'),F('G')],left:3,noSeasons:true},
+    'licao-3':{board:[[-1,0,F('B'),{b:'B',n:5}],[-2,0,F('B')],[-2,1,F('B')],[0,1,F('G')]],
+      tiles:[F('B'),['G','G','G','B','B','B'],F('B'),F('G')],left:4,noSeasons:true},
+    'licao-4':{board:[[3,1,F('B')],[3,0,F('B')],[2,0,F('B')],[1,1,F('C')],[1,2,F('C')],[2,2,F('C')]],
+      tiles:[['C','C','C','B','B','B'],F('G'),F('G')],left:3,noSeasons:true},
+    'licao-5':{board:[[1,0,RIO],[2,0,RIO],[3,0,RIO],[0,1,F('G')],[1,1,F('C')]],
+      tiles:[F('B'),F('B'),F('G'),F('G')],left:3,clock:6},
+  };
   function newGame(seedKey){
+    const L=LESSONS[seedKey];if(L)return lessonGame(seedKey,L);
     const rng=mulberry32(hashStr('v05:'+seedKey));
     const tiles=[];for(let i=0;i<400;i++)tiles.push(genTile(rng,i));
     const board=new Map([[SRC,{e:['A','G','A','G','A','G'],src:true}]]);
     const s={seedKey,tiles,board,next:0,left:START,score:0,quests:[],alive:new Set([SRC]),perfectSet:new Set(),
-      placed:0,perfects:0,questsDone:0,turn:0,actions:[],season:1,drawn:{},everAlive:new Set([SRC]),seca:false,food:0,
-      stats:{match:0,perfect:0,quest:0,flow:0,special:0,tPerfect:0,tQuest:0,tSeason:0,tSpecial:0,failed:[],best:{pts:0,turn:0,k:null},harvest:0,village:0,tVillage:0,hungry:0,dried:0}};
+      placed:0,perfects:0,questsDone:0,turn:0,clock:0,actions:[],season:1,drawn:{},everAlive:new Set([SRC]),seca:false,
+      stats:{match:0,perfect:0,quest:0,flow:0,special:0,tPerfect:0,tQuest:0,tSeason:0,tSpecial:0,failed:[],best:{pts:0,turn:0,k:null},kept:0,dried:0,secas:0}};
     resolve(s,0);resolve(s,1);
     return s;
+  }
+  function lessonGame(seedKey,L){
+    const s=newGame('treino-'+seedKey);
+    const board=new Map([[SRC,{e:['A','G','A','G','A','G'],src:true}]]),quests=[];
+    for(const[q,r,e,qu]of L.board){const k=K(q,r);board.set(k,{e:e.slice(),i:-1});
+      if(qu)quests.push({key:k,edge:qu.flow?e.indexOf('A'):e.indexOf(qu.b),b:qu.flow?'A':qu.b,n:qu.n,flow:!!qu.flow,status:'open'});}
+    const tiles=L.tiles.map(e=>({e,quest:null,sroll:1,spick:0,srot:0})).concat(s.tiles.map(t=>({...t,sroll:1})));
+    const alive=computeAlive(board,false);
+    const n={...s,seedKey,lesson:seedKey,noSeasons:!!L.noSeasons,tiles,board,quests,left:L.left,clock:L.clock||0,alive,everAlive:new Set(alive),drawn:{}};
+    resolve(n,0);resolve(n,1);return n;
   }
   // a peça de cada posição da pilha é decidida quando aparece (como "peça da vez" ou "depois") e não muda mais
   function resolve(s,idx){
@@ -304,20 +350,16 @@ function Engine(){
         if(!tn||alive.has(n)||tn.e[opp(d)]!=='A')continue;if(seca&&!shielded(board,n))continue;alive.add(n);q.push(n);}}
     return alive;
   }
-  const wetTile=(board,alive,k)=>{if(alive.has(k))return true;for(let d=0;d<6;d++)if(alive.has(nb(k,d)))return true;return false;};
-  function foodCount(board,alive){let n=0;for(const[k,t]of board)if(t.e.includes('C')&&wetTile(board,alive,k))n++;return n;}
-  function houses(board,alive){let h=0,w=0;for(const[k,t]of board){if(!t.e.includes('V'))continue;h++;if(wetTile(board,alive,k))w++;}return{houses:h,watered:w};}
-  // previsões para o painel de equilíbrio: o que a seca vai secar, quanta comida a colheita guarda, quantas casas comem
+  // previsão da seca: quais trechos de rio secariam, quantos continuam correndo
+  // a seca fica mais dura a cada ano: ano 1, 1 peça a cada 2 trechos; ano 2, a cada 3; ano 3, a cada 4…
+  const keptDiv=year=>CFG.keptDiv+CFG.divGrow*(year-1);
+  const secaGain=(kept,year)=>Math.min(CFG.cap,Math.floor(kept/keptDiv(year)));
   function balance(s){
     const full=s.seca?computeAlive(s.board,false):s.alive,aliveSeca=s.seca?s.alive:computeAlive(s.board,true);
-    const risk=[],dryHouses=[],fields=[],homes=[];
-    for(const k of full)if(k!==SRC&&!aliveSeca.has(k))risk.push(k);
-    for(const[k,t]of s.board){if(t.e.includes('C')&&wetTile(s.board,full,k))fields.push(k);
-      if(t.e.includes('V')){homes.push(k);if(!wetTile(s.board,aliveSeca,k))dryHouses.push(k);}}
-    const ph=phase(s.season),year=Math.floor((s.season-1)/4)+1,need=CFG.grow?1+CFG.growRate*(year-1):1;
-    const food=ph<2?fields.length:s.food,watered=homes.length-dryHouses.length,fed=Math.min(watered,Math.floor(food/need));
-    return{phase:ph,year,need,seca:s.seca,food:s.food,foodNow:fields.length,foodFc:food,houses:homes.length,watered,fed,
-      river:full.size-1,riverSafe:aliveSeca.size-1,risk,dryHouses,fields,homes,turnsLeft:CFG.slen-(s.turn%CFG.slen),slen:CFG.slen};
+    const risk=[];for(const k of full)if(k!==SRC&&!aliveSeca.has(k))risk.push(k);
+    const len=seasonLen(s.season),safe=aliveSeca.size-1;
+    return{phase:phase(s.season),year:yearOf(s.season),seca:s.seca,river:full.size-1,riverSafe:safe,risk,
+      gain:secaGain(safe,yearOf(s.season)),per:keptDiv(yearOf(s.season)),turnsLeft:len-s.clock,len,noSeasons:!!s.noSeasons};
   }
   const cur=s=>s.drawn[s.next];
   const peek=(s,n)=>s.drawn[s.next+n];
@@ -395,21 +437,20 @@ function Engine(){
       if(size===q.n){q.status='done';rep.questsDone.push(q);rep.pts+=2*q.n;rep.tiles+=QUEST_TILES;rep.p.quest+=2*q.n;rep.t.quest+=QUEST_TILES;}
       else if(size>q.n){q.status='fail';rep.questsFailed.push(q);}
     }
-    // estações: cada meta alcançada dá peças e libera especiais
-    let score=s.score+rep.pts,season=s.season,seca=s.seca,food=s.food,curAlive=alive;rep.events=[];
-    let harvest=0,village=0,tVillage=0,hungry=0,dried=0;
-    // o tempo passa: a cada CFG.slen jogadas, uma estação nova
-    if((s.turn+1)%CFG.slen===0){
-      season++;rep.seasonUp.push(season);
-      const ph=phase(season);
-      if(ph===2){food=foodCount(board,curAlive);score+=food;harvest+=food;const g=Math.floor(food/CFG.harvestDiv);rep.tiles+=g;rep.t.season+=g;rep.events.push({type:'colheita',food,pts:food,gain:g});}
-      else if(ph===3){const before=curAlive;seca=true;curAlive=computeAlive(board,true);const lost=[...before].filter(k=>!curAlive.has(k));dried+=lost.length;rep.events.push({type:'seca',dried:lost.length,lost,kept:curAlive.size-1});}
-      else if(ph===0){
-        const yr=Math.floor((season-1)/4),need=CFG.grow?1+CFG.growRate*(yr-1):1,hv=houses(board,curAlive),fed=Math.min(hv.watered,Math.floor(food/need)),hun=hv.houses-fed;
-        const pts=CFG.housePts*fed,gain=Math.min(CFG.gainCap,Math.floor(fed/CFG.fedDiv))+CFG.rainTiles,lose=Math.floor(hun/CFG.hungryDiv);
-        score+=pts;village+=pts;tVillage+=gain-lose;hungry+=hun;rep.tiles+=gain-lose;rep.lose=(rep.lose||0)+lose;
-        seca=false;food=0;const before=curAlive;curAlive=computeAlive(board,false);var back=[...curAlive].filter(k=>!before.has(k));
-        rep.events.push({type:'ano',year:yr+1,need,houses:hv.houses,watered:hv.watered,fed,hungry:hun,pts,gain,lose,rain:CFG.rainTiles,back});
+    // o tempo passa: Águas (8 jogadas) e Seca (4 jogadas)
+    let score=s.score+rep.pts,season=s.season,seca=s.seca,clock=s.clock+1,curAlive=alive;rep.events=[];
+    let kept=0,dried=0,tSeca=0,secas=0;
+    if(!s.noSeasons&&clock>=seasonLen(season)){
+      season++;clock=0;rep.seasonUp.push(season);
+      if(phase(season)===1){ // chegou a seca: só corre o rio com mata ciliar
+        const before=curAlive;seca=true;curAlive=computeAlive(board,true);
+        const lost=[...before].filter(x=>!curAlive.has(x)),keptN=curAlive.size-1,pts=keptN*CFG.keptPts,gain=secaGain(keptN,yearOf(season));
+        score+=pts;rep.tiles+=gain;rep.t.season+=gain;kept=keptN;dried=lost.length;tSeca=gain;secas=1;
+        rep.events.push({type:'seca',lost,kept:keptN,keptKeys:[...curAlive].filter(x=>x!==SRC),pts,gain,per:keptDiv(yearOf(season)),year:yearOf(season)});
+      }else{ // as chuvas voltam
+        seca=false;const before=curAlive;curAlive=computeAlive(board,false);
+        rep.tiles+=CFG.rain;rep.t.season+=CFG.rain;
+        rep.events.push({type:'chuva',back:[...curAlive].filter(x=>!before.has(x)),year:yearOf(season),rain:CFG.rain});
       }
     }
     rep.pts=score-s.score;
@@ -417,9 +458,9 @@ function Engine(){
       special:st.special+rep.p.special,tPerfect:st.tPerfect+rep.t.perfect,tQuest:st.tQuest+rep.t.quest,tSeason:st.tSeason+rep.t.season,
       tSpecial:st.tSpecial+rep.t.special,failed:rep.questsFailed.length?st.failed.concat(rep.questsFailed.map(q=>({b:q.b,n:q.n,cur:q.cur}))):st.failed,
       best:rep.pts>st.best.pts?{pts:rep.pts,turn:s.turn+1,k}:st.best,
-      harvest:st.harvest+harvest,village:st.village+village,tVillage:st.tVillage+tVillage,hungry:st.hungry+hungry,dried:st.dried+dried};
+      kept:st.kept+kept,dried:st.dried+dried,secas:st.secas+secas};
     for(const kk of curAlive)everAlive.add(kk);
-    const n={...s,board,next:s.next+1,left:(()=>{const L=s.left-1+rep.tiles;return L<1&&L+(rep.lose||0)>=1?1:L;})(),score,season,quests,alive:curAlive,everAlive,seca,food,perfectSet,stats,
+    const n={...s,board,next:s.next+1,left:s.left-1+rep.tiles,score,season,clock,quests,alive:curAlive,everAlive,seca,perfectSet,stats,
       placed:s.placed+1,perfects:s.perfects+rep.perfect.length,questsDone:s.questsDone+rep.questsDone.length,turn:s.turn+1,
       actions:s.actions.concat([{k,r}])};
     resolve(n,n.next);resolve(n,n.next+1);
@@ -453,7 +494,7 @@ function Engine(){
     }
     return{score:s.score,placed:s.placed,season:s.season};
   }
-  return{DIRS,K,KQ,KR,nb,opp,SRC,START,SPECIALS,seasonAt,seasonName,phase,balance,CYCLE,CFG,computeAlive,shielded,cur,peek,newGame,place,options,slots,legal,rotations,questProgress,over,replay,parScore,hashStr,rot,groups};
+  return{DIRS,K,KQ,KR,nb,opp,SRC,START,SPECIALS,seasonAt,seasonName,phase,yearOf,balance,CYCLE,CFG,LESSONS,computeAlive,shielded,cur,peek,newGame,place,options,slots,legal,rotations,questProgress,over,replay,parScore,hashStr,rot,groups};
 }
 
 /* =====================================================================
@@ -518,7 +559,6 @@ const sfx={
   quest(){[523.25,659.25,783.99,1046.5].forEach((f,i)=>tone(f,i*0.1,0.5,'square',0.035));tone(1567.98,0.42,0.7,'triangle',0.05);},
   fail(){tone(392,0,0.25,'triangle',0.08,330);tone(311,0.2,0.45,'triangle',0.07,247);},
   season(){[0,2,4,5,6].forEach((n,i)=>tone(NOTES[n],i*0.09,0.55,'triangle',0.07));tone(1567.98,0.5,0.9,'sine',0.05);},
-  harvest(){[0,2,4,2,4,6].forEach((n,i)=>tone(NOTES[n],i*0.075,0.32,'triangle',0.06));noise(0.05,0.5,3200,0.025,0.7);},
   dry(){noise(0,1.8,380,0.08,0.5);tone(330,0.1,1.1,'sine',0.05,220);tone(262,0.45,1.2,'sine',0.04,196);},
   rain(){noise(0,2.4,2600,0.05,0.35);noise(0.2,2,900,0.035,0.5);for(let i=0;i<10;i++)tone(900+Math.random()*900,0.15+i*0.17,0.06,'sine',0.03,1600);},
   water(){noise(0,1.0,650,0.07,0.6);for(let i=0;i<6;i++)tone(650+Math.random()*600,0.1+i*0.12,0.08,'sine',0.045,1300);},
@@ -824,17 +864,80 @@ function refresh(){
   for(const[k,t]of s.board){if(!G.wet.has(k))continue;const[wx,wy]=wpos(k);
     for(let i=0;i<6;i++)if(t.e[i]==='V'&&G.chimneys.length<40)G.chimneys.push([wx+Math.cos(ang(i))*0.56+0.06,wy+Math.sin(ang(i))*0.56+0.1-0.42]);}
   G.best=null;
-  if(s.placed<2&&!E.over(s)){let bv=-1;for(const k of G.valid){const o=E.options(s,k)[0];if(o&&o.rep.pts+4*o.rep.tiles>bv){bv=o.rep.pts+4*o.rep.tiles;G.best=k;}}}
+  if(G.lesson&&!E.over(s)){let bv=-1e9;const nearSrc=k=>[0,1,2,3,4,5].some(d=>E.nb(k,d)===E.SRC);
+    for(const k of G.valid)for(const o of E.options(s,k)){let v=o.rep.pts+4*o.rep.tiles;
+      if(G.lesson.n===5)v+=6*E.balance(E.place(s,k,o.r).state).riverSafe;else if(G.lesson.n!==2&&nearSrc(k))v-=6;
+      if(v>bv){bv=v;G.best=k;}}}
+  else if(s.placed<2&&!E.over(s)){let bv=-1;for(const k of G.valid){const o=E.options(s,k)[0];if(o&&o.rep.pts+4*o.rep.tiles>bv){bv=o.rep.pts+4*o.rep.tiles;G.best=k;}}}
   if(!cam.user)fit(false);
 }
 
 function startGame(seedKey,actions){
   TCACHE.clear();
-  G.seedKey=seedKey;G.s=E.replay(seedKey,actions);G.undo=null;G.sel=null;G.fx.clear();G.flow=null;G.floats=[];G.banners=[];
+  G.seedKey=seedKey;G.lesson=lessonOf(seedKey);G.lesPending=false;G.s=E.replay(seedKey,actions);
+  if(G.lesson)document.body.dataset.lesson=String(G.lesson.n);else delete document.body.dataset.lesson;G.undo=null;G.sel=null;G.fx.clear();G.flow=null;G.floats=[];G.banners=[];
   cam.user=false;$('recenter').hidden=true;
-  refresh();fit(true);requestPar(seedKey);persist();renderUI();
-  if(E.over(G.s))showResult();
+  refresh();fit(true);if(!G.lesson)requestPar(seedKey);persist();renderUI();
+  if(G.lesson)lessonCheck();else if(E.over(G.s))showResult();
 }
+
+// ---------- lições
+const LES=[
+  {id:'licao-1',title:'Encaixe',
+   intro:'Toque na casa marcada para escolher onde a peça vai.',
+   sel:'Lados com ✓ verde combinam com o vizinho. Toque na peça (ou em ↻) para girar; depois, em Colocar.',
+   after:'Cada lado que combina vale +1. Escolha casas onde mais lados ficam verdes.',
+   goal:s=>[s.stats.match>=6,`Objetivo: 6 lados combinando (${Math.min(6,s.stats.match)}/6)`],
+   win:'Encaixar é o centro do jogo: cada lado igual ao do vizinho vale +1 ponto. Qualquer peça cabe em qualquer casa; o lado que não combina só não pontua.'},
+  {id:'licao-2',title:'Água viva',
+   intro:'A nascente solta água pelos lados de rio. A peça da bandeira só ganha água se o rio chegar até ela. Toque na casa marcada.',
+   sel:'Gire até os dois lados de rio ficarem verdes: um encosta na nascente, o outro na peça da bandeira.',
+   after:'Leve o rio da nascente até a peça da bandeira.',
+   goal:s=>[s.questsDone>=1,'Objetivo: levar água até a bandeira'],
+   win:'Rio ligado à nascente tem água viva: cada peça que recebe água vale +2, e a missão de água dá +3 peças. Rio que bate em terra vira brejo e para ali.'},
+  {id:'licao-3',title:'Missões',
+   intro:'A bandeira "3/5" pede um bosque com exatamente 5 peças. Ele tem 3. Toque na casa marcada.',
+   sel:'O balão mostra o efeito: 3→4/5. Com ✓ você cumpre; com ✗ o bosque passa de 5 e a missão se perde.',
+   after:'Falta pouco. Cuidado: passar de 5 perde a missão.',
+   goal:s=>{const q=E.questProgress(s)[0];return[s.questsDone>=1,`Objetivo: bosque com exatamente 5 peças (${q?q.cur:5}/5)`];},
+   fail:s=>s.stats.failed.length>0,failTxt:'O bosque passou de 5 e a missão se perdeu. Tente de novo e pare em 5.',
+   win:'Cumprir missão dá +3 peças na pilha, e a pilha é a vida da partida. Algumas peças trazem missões novas; o número fica na bandeira.'},
+  {id:'licao-4',title:'Peça perfeita',
+   intro:'Esta casa está cercada pelos 6 lados. Toque nela.',
+   sel:'Gire até os 6 lados ficarem verdes.',
+   after:'',
+   goal:s=>[s.perfects>=1,'Objetivo: uma peça com os 6 lados combinando'],
+   win:'Peça perfeita (6 lados combinando): +5 pontos e +1 peça. Procure casas cercadas.'},
+  {id:'licao-5',title:'Seca e mata ciliar',
+   intro:'Em 2 jogadas chega a seca. Na seca, o rio só corre onde há bosque encostado (mata ciliar). O rio em laranja vai secar. Toque na casa marcada.',
+   sel:'Veja o laranja sumir do rio perto do bosque: bosque encostado protege o rio.',
+   after:'Mais uma jogada antes da seca. Proteja o trecho que ainda está em laranja.',
+   goal:s=>{const B=E.balance(s);return[s.stats.kept>=3,`Objetivo: 3 trechos de rio protegidos (${s.stats.secas?s.stats.kept:B.riverSafe}/3)`];},
+   fail:s=>s.stats.secas>0&&s.stats.kept<3,failTxt:'Algum trecho ficou sem mata e secou, e o rio secou dali para baixo. Tente de novo.',
+   win:'A cada 8 jogadas vem a seca, que dura 4. Quando ela chega, cada trecho de rio que continua correndo vale +1 e rende peças (no ano 1, +1 a cada 2 trechos; a seca fica mais dura a cada ano). Depois as chuvas voltam com +2 peças.'},
+];
+function lessonOf(k){const i=LES.findIndex(l=>l.id===k);return i<0?null:{...LES[i],n:i+1};}
+function lessonCheck(){
+  const L=G.lesson,s=G.s;if(!L||G.lesPending)return;
+  const[ok]=L.goal(s),bad=!ok&&((L.fail&&L.fail(s))||E.over(s));
+  if(ok||bad){G.lesPending=true;G.sel=null;G.best=null;renderUI();setTimeout(()=>showLessonEnd(ok),RM?200:1700);}
+}
+function showLessonEnd(ok){
+  const L=G.lesson;if(!L)return;const last=L.n===LES.length;
+  $('lesEndStep').textContent=`Lição ${L.n} de ${LES.length} · ${L.title}`;
+  $('lesEndTitle').textContent=ok?(last?'Pronto: você já sabe jogar!':'Muito bem!'):'Quase!';
+  $('lesEndTxt').textContent=ok?L.win+(last?' Agora é o vale do dia: todo mundo joga o mesmo vale.':''):(L.failTxt||'A pilha acabou antes do objetivo. Tente de novo.');
+  $('lesEndGo').textContent=ok?(last?'Jogar o vale do dia':'Próxima lição'):'Tentar de novo';
+  $('lesEndAlt').textContent=ok?'Repetir esta lição':'Pular lições';
+  G.lesEndOk=ok;if(ok&&last){db.tutDone=true;save(db);}
+  $('lesEnd').hidden=false;$('lesEndGo').focus();
+}
+function leaveLessons(){db.tutDone=true;db.seenIntro=true;save(db);$('lesEnd').hidden=true;startGame('dia-'+today(),[]);}
+$('lesEndGo').addEventListener('click',()=>{const L=G.lesson;$('lesEnd').hidden=true;
+  if(!G.lesEndOk)startGame(L.id,[]);else if(L.n<LES.length)startGame(LES[L.n].id,[]);else leaveLessons();});
+$('lesEndAlt').addEventListener('click',()=>{const L=G.lesson;$('lesEnd').hidden=true;if(G.lesEndOk)startGame(L.id,[]);else leaveLessons();});
+$('lesSkip').addEventListener('click',leaveLessons);
+$('introLessons').addEventListener('click',()=>{$('intro').hidden=true;db.seenIntro=true;save(db);startGame('licao-1',[]);});
 
 // ---------- seleção, giro e colocação
 function questRegion(board,q){if(q.flow)return new Set([q.key]);const G2=E.groups(board),r=G2.find(q.key*6+q.edge);return G2.members.get(r)||new Set([q.key]);}
@@ -846,18 +949,19 @@ function previewQuests(){
     let cur2=null,st='';const a=find(after,q),d=find(res.rep.questsDone,q),f=find(res.rep.questsFailed,q);
     if(a)cur2=a.cur;else if(d){cur2=q.n;st='ok';}else if(f){cur2=f.cur;st='bad';}
     if(cur2!=null&&cur2!==q.cur)G.selQ.push({q,before:q.cur,after:cur2,st,region:questRegion(ns.board,q)});}
-  G.selBal=E.balance(ns);G.selRep=res.rep;
+  G.selBal=E.balance(ns);
   const nq=after.find(x=>x.key===G.sel.k&&!x.flow);
   if(nq)G.selQ.push({q:nq,before:null,after:nq.cur,st:nq.cur===nq.n?'ok':'',region:questRegion(ns.board,nq),fresh:true});
 }
 function select(k){
   const ops=E.options(G.s,k);if(!ops.length)return false;
   const byR=ops.slice().sort((a,b)=>a.r-b.r);
-  G.sel={k,ops:byR,i:byR.indexOf(ops[0])};previewQuests();sfx.select();renderUI();return true;
+  let pick=ops[0];if(G.lesson&&G.lesson.n===5){let bv=-1e9;for(const o of ops){const v=E.balance(E.place(G.s,k,o.r).state).riverSafe*6+o.rep.pts;if(v>bv){bv=v;pick=o;}}}
+  G.sel={k,ops:byR,i:byR.indexOf(pick)};previewQuests();sfx.select();renderUI();return true;
 }
 function turn(dir){if(!G.sel)return;const n=G.sel.ops.length;if(n>1)sfx.rotate();G.sel.i=(G.sel.i+dir+n)%n;previewQuests();renderUI();}
 function commit(){
-  if(!G.sel)return;
+  if(!G.sel||G.lesPending)return;
   const o=G.sel.ops[G.sel.i],prev=G.s,{state,rep}=E.place(prev,G.sel.k,o.r),now=performance.now();
   G.undo=prev;G.s=state;const k=G.sel.k;G.sel=null;G.selQ=[];
   G.fx.set(k,{k:'drop',t0:now});
@@ -869,7 +973,7 @@ function commit(){
   }
   for(const c of rep.perfect){G.fx.set(c,{k:'spark',t0:now+200});queueBanner('Peça perfeita! +1 peça','');}
   for(const q of rep.questsDone){G.fx.set(q.key,{k:'spark',t0:now+250});queueBanner(q.flow?'Missão: água ligada! +3 peças':`Missão: ${NAME[q.b]} ${q.n}! +3 peças`,'good');}
-  yearEvents(prev,state,rep,now);
+  yearEvents(state,rep,now);
   for(const q of rep.questsFailed)queueBanner(`Missão perdida: ${NAME[q.b]} passou de ${q.n}`,'');
   // efeitos
   const[wx,wy]=wpos(k),te=state.board.get(k).e;
@@ -885,30 +989,27 @@ function commit(){
   if(rep.questsFailed.length)setTimeout(sfx.fail,350);
   bump('scoreBox');if(rep.tiles)bump('leftBox');
   refresh();persist();renderUI();
-  if(E.over(G.s))setTimeout(showResult,RM?200:1500);
+  if(G.lesson)lessonCheck();else if(E.over(G.s))setTimeout(showResult,RM?200:1500);
 }
-// o ano anda: Cheia, Colheita, Seca e Ano novo, com faixa, som e efeito no vale
-function yearEvents(prev,state,rep,now){
+// a seca chega (conta o rio que continua correndo) e as chuvas voltam
+function yearEvents(state,rep,now){
   const pl=(n,a,b)=>n===1?a:b;
-  for(const n of rep.seasonUp){const ph=E.phase(n),un=E.SPECIALS.find(x=>x.season===n),ev=rep.events.find(e=>e.type===['ano','','colheita','seca'][ph]);
-    if(ph===1){queueBanner('Cheia! Depois da Colheita vem a seca: ponha bosque encostado no rio','water');setTimeout(sfx.season,450);
-      if(!db.seenYear&&$('coach').hidden){G.coachKind='seenYear';$('coachTxt').innerHTML='O <b>tempo passa</b>: a cada 4 peças muda a estação. Na <b>Colheita</b>, campos com água guardam comida. Na <b>Seca</b>, só corre o rio com <b>bosque encostado</b> (mata ciliar). No <b>ano novo</b>, cada casa com água e comida dá +3 e +1 peça; com fome, −1 peça. Toque nos indicadores acima do vale.';$('coach').hidden=false;}}
-    else if(ph===2&&ev){queueBanner(ev.food?`Colheita: ${ev.food} de comida no celeiro! +${ev.pts}${ev.gain?` · +${ev.gain} ${pl(ev.gain,'peça','peças')}`:''}`:'Colheita sem comida: nenhum campo tinha água','good');
-      setTimeout(sfx.harvest,450);
-      for(const k of E.balance(prev).fields){const[fx,fy]=wpos(k);emit('~#ffd76a',fx,fy-0.2,2,{ang:-Math.PI/2,spread:1,v:0.6,life:1300,size:0.35,alpha:0.75,add:true,delay:300+Math.random()*500,jx:1,jy:0.5});}}
-    else if(ph===3&&ev){queueBanner(ev.dried?`Chegou a seca: ${ev.dried} ${pl(ev.dried,'trecho de rio secou','trechos de rio secaram')}`:'Chegou a seca: a mata ciliar segurou o rio!',ev.dried?'dry':'good');
+  for(const ev of rep.events){
+    if(ev.type==='seca'){
+      queueBanner(ev.kept?`Chegou a seca! ${ev.kept} ${pl(ev.kept,'trecho de rio','trechos de rio')} com mata: +${ev.pts}${ev.gain?` · +${ev.gain} ${pl(ev.gain,'peça','peças')}`:''}`:'Chegou a seca: sem mata ciliar, o rio secou',ev.kept?'good':'dry');
+      if(ev.lost.length&&ev.kept)queueBanner(`${ev.lost.length} ${pl(ev.lost.length,'trecho sem mata secou','trechos sem mata secaram')}`,'dry');
       setTimeout(sfx.dry,350);
-      for(const k of ev.lost){const[dx,dy]=wpos(k);emit('~#d9b98a',dx,dy,5,{ang:-Math.PI/2,spread:2.5,v:0.35,g:-0.1,life:1600,size:0.5,grow:1.2,alpha:0.55,delay:250+Math.random()*400,jx:1.2,jy:0.6});}}
-    else if(ph===0&&ev){
-      queueBanner(`Ano ${ev.year}! ${ev.houses?`${ev.fed} de ${ev.houses} ${pl(ev.houses,'casa comeu','casas comeram')}: +${ev.pts}${ev.fed?` · +${ev.fed} ${pl(ev.fed,'peça','peças')}`:''}`:'Nenhuma casa no vale ainda'}`,'good');
-      if(ev.hungry)queueBanner(`${ev.hungry} ${pl(ev.hungry,'casa passou','casas passaram')} fome: −${ev.lose} ${pl(ev.lose,'peça','peças')}`,'dry');
-      queueBanner(`As chuvas voltaram! +${ev.rain} peças`,'water');
-      setTimeout(sfx.rain,350);
+      for(const k of ev.lost){const[dx,dy]=wpos(k);emit('~#d9b98a',dx,dy,5,{ang:-Math.PI/2,spread:2.5,v:0.35,g:-0.1,life:1600,size:0.5,grow:1.2,alpha:0.55,delay:250+Math.random()*400,jx:1.2,jy:0.6});}
+      for(const k of ev.keptKeys){const[kx,ky]=wpos(k);emit('~#bff0ff',kx,ky-0.1,2,{v:0.4,life:1100,size:0.3,alpha:0.7,add:true,delay:400+Math.random()*500,jx:0.8,jy:0.4});}
+    }
+    if(ev.type==='chuva'){
+      queueBanner(`As chuvas voltaram! Ano ${ev.year}${ev.rain?` · +${ev.rain} peças`:''}`,'water');setTimeout(sfx.rain,350);
       const[x0,x1,y0,y1]=G.bb||[-3,3,-3,3];
       for(let j=0;j<70;j++)emit('dot',x0-1+Math.random()*(x1-x0+2),y0-2.5+Math.random()*1.5,1,{ang:Math.PI/2+0.25,spread:0.05,v:9,life:520,size:0.016,color:'#d7f1ff',alpha:0.8,delay:Math.random()*1800});
-      if(ev.back.length){const ord=ev.back.slice().sort((a,b)=>hd(a,E.SRC)-hd(b,E.SRC));G.flow={order:ord,t0:now+600};}}
-    if(un)queueBanner(`${un.name} entrou na pilha: ${un.desc}`,'water');
+      if(ev.back.length){const ord=ev.back.slice().sort((a,b)=>hd(a,E.SRC)-hd(b,E.SRC));G.flow={order:ord,t0:now+600};}
+    }
   }
+  if(!state.lesson)for(const n of rep.seasonUp){const un=E.SPECIALS.find(x=>x.season===n);if(un)queueBanner(`${un.name} entrou na pilha: ${un.desc}`,'water');}
 }
 function hd(a,b){const dq=E.KQ(a)-E.KQ(b),dr=E.KR(a)-E.KR(b);return Math.max(Math.abs(dq),Math.abs(dr),Math.abs(dq+dr));}
 function bump(id){const el=$(id);el.classList.remove('bump');void el.offsetWidth;el.classList.add('bump');}
@@ -1025,16 +1126,17 @@ function draw(t){
     for(const k of set){const[x,y]=scr(k);hexPath(g,x,y,sz*0.9);g.stroke();}g.restore();};
   if(G.focusQ&&t<G.focusQ.until){const fq=G.qp.find(q=>q.key===G.focusQ.key);if(fq)outline(questRegion(s.board,fq),BIOME_DOT[fq.b],0.55+0.35*Math.sin(t/180));}
   else if(G.focusQ){G.focusQ=null;renderUI();}
-  // trechos de rio que vão secar (avisados na Colheita, ou ao tocar no painel)
-  if(G.focusSet&&t<G.focusSet.until)outline(G.focusSet.keys,G.focusSet.col,0.55+0.35*Math.sin(t/180));
-  else{if(G.focusSet){G.focusSet=null;renderUI();}
-    const B=G.bal;if(B&&B.phase===2&&B.risk.length&&!E.over(s)){const pu=0.5+0.5*Math.sin(t/260);
-      g.save();g.fillStyle=`rgba(224,122,46,${0.14+0.1*pu})`;for(const k of B.risk){const[x,y]=scr(k);hexPath(g,x,y,sz*0.9);g.fill();}
-      g.setLineDash([sz*0.2,sz*0.1]);g.lineDashOffset=-t/60;g.globalAlpha=0.9;g.strokeStyle='#e07a2e';g.lineWidth=Math.max(2.5,sz*0.1);g.lineJoin='round';
-      for(const k of B.risk){const[x,y]=scr(k);hexPath(g,x,y,sz*0.9);g.stroke();}g.restore();
-      // o primeiro trecho sem mata, perto da nascente: é ali que o rio corta
-      let k0=B.risk[0],d0=1e9;for(const k of B.risk){const d=hd(k,E.SRC);if(d<d0){d0=d;k0=k;}}
-      const[x,y]=scr(k0);pill(g,x,y-sz*0.2,'sem mata','#e07a2e','#fff',sz*0.8);}}
+  // trechos de rio que vão secar: avisados nas últimas jogadas antes da seca, ou ao tocar no indicador
+  {const B=G.bal,show=G.focusSet&&t<G.focusSet.until;
+   if(!show&&G.focusSet){G.focusSet=null;renderUI();}
+   const risk=G.sel&&G.selBal?G.selBal.risk:B?B.risk:[];
+   if(B&&!B.seca&&risk.length&&!E.over(s)&&(show||B.turnsLeft<=4)){const pu=0.5+0.5*Math.sin(t/260);
+     g.save();g.fillStyle=`rgba(224,122,46,${0.14+0.1*pu})`;for(const k of risk){const[x,y]=scr(k);hexPath(g,x,y,sz*0.9);g.fill();}
+     g.setLineDash([sz*0.2,sz*0.1]);g.lineDashOffset=-t/60;g.globalAlpha=0.9;g.strokeStyle='#e07a2e';g.lineWidth=Math.max(2.5,sz*0.1);g.lineJoin='round';
+     for(const k of risk){const[x,y]=scr(k);hexPath(g,x,y,sz*0.9);g.stroke();}g.restore();
+     // o primeiro trecho sem mata, perto da nascente: é ali que o rio corta
+     let k0=risk[0],d0=1e9;for(const k of risk){const d=hd(k,E.SRC);if(d<d0){d0=d;k0=k;}}
+     if(!(G.sel&&G.sel.k===k0)){const[x,y]=scr(k0);pill(g,x,y-sz*0.2,'sem mata','#e07a2e','#fff',sz*0.8);}}}
   if(G.sel&&G.selQ)for(const e of G.selQ)outline(e.region,e.st==='bad'?P.bad:e.st==='ok'?P.good:BIOME_DOT[e.q.b],0.75);
   // marcadores de missão
   for(const q of G.qp){
@@ -1208,42 +1310,36 @@ function introThumbs(){
     if(k==='match')thumb(c,['B','B','B','C','C','C']);
     else if(k==='water')thumb(c,['A','G','G','A','G','G']);
     else if(k==='quest'){const r=thumb(c,['B','B','B','B','G','G']);flag(r.g,r.x,r.y-r.s*0.7,'6',"B",r.s*0.9);}
-    else if(k==='year')thumb(c,['A','C','C','A','C','C']);
     else if(k==='seca')thumb(c,['A','B','B','A','B','G']);
     else thumb(c,['V','V','C','C','C','V']);
   });
 }
 
 // ---------- texto e controles
-// painel de equilíbrio: rio na seca, comida, casas. Com uma peça escolhida, mostra o antes → depois.
+// indicador do rio na seca: quantos trechos têm mata ciliar e quanto isso rende quando a seca chegar
 function renderBal(){
-  const B=G.bal,A=G.selBal,box=$('bal'),ph=B.phase,arrow=(a,b)=>A&&a!==b?`${a}→${b}`:`${a}`;
-  const chips=[];
-  if(B.seca)chips.push({id:'rio',dot:BIOME_DOT.A,txt:`Rio correndo ${arrow(B.river-B.risk.length,A?A.river-A.risk.length:0)}`,cls:'',keys:B.risk});
-  else{const r=A?A.riverSafe:B.riverSafe;chips.push({id:'rio',dot:BIOME_DOT.A,txt:`Rio na seca ${arrow(B.riverSafe,r)}/${A?A.river:B.river}`,cls:B.risk.length&&ph>=1?'warn':B.river&&!B.risk.length?'ok':'',keys:B.risk});}
-  if(ph<2)chips.push({id:'comida',dot:BIOME_DOT.C,txt:`Colheita ${arrow(B.foodNow,A?A.foodNow:0)}`,cls:'',keys:B.fields});
-  else chips.push({id:'comida',dot:BIOME_DOT.C,txt:`Celeiro ${B.food}`,cls:'',keys:B.fields});
-  chips.push({id:'casas',dot:BIOME_DOT.V,txt:(A?A.houses:B.houses)?`Casas ${arrow(B.fed,A?A.fed:0)}/${A?A.houses:B.houses}`:'Sem casas',cls:B.houses&&B.fed<B.houses&&ph>=1?'warn':B.houses&&B.fed===B.houses?'ok':'',keys:B.dryHouses.length?B.dryHouses:B.homes});
-  box.innerHTML='';
-  for(const c of chips){const b=document.createElement('button');b.type='button';b.className='bchip '+c.cls+(G.focusSet&&G.focusSet.id===c.id?' on':'');
-    b.innerHTML=`<i style="background:${c.dot}"></i>${c.txt}`;b.addEventListener('click',()=>explainBal(c.id,c.keys));box.appendChild(b);}
+  const B=G.bal,A=G.sel?G.selBal:null,box=$('bal');
+  const ar=(a,b)=>A&&a!==b?`${a}→${b}`:`${a}`;
+  let txt,cls='';
+  if(B.seca)txt=`Seca: ${B.riverSafe} ${B.riverSafe===1?'trecho correndo':'trechos correndo'}`;
+  else if(!B.river)txt='Rio ligado à nascente: nenhum ainda';
+  else{txt=`Rio protegido para a seca: ${ar(B.riverSafe,A?A.riverSafe:0)} de ${A?A.river:B.river} → +${A?A.gain:B.gain} ${(A?A.gain:B.gain)===1?'peça':'peças'}`;
+    cls=B.risk.length?(B.turnsLeft<=4?'warn':''):'ok';}
+  box.innerHTML='';const b=document.createElement('button');b.type='button';b.className='bchip '+cls+(G.focusSet?' on':'');
+  b.innerHTML=`<i style="background:${BIOME_DOT.A}"></i>${txt}`;b.addEventListener('click',explainBal);box.appendChild(b);
 }
-function explainBal(id,keys){
-  const B=G.bal,n=B.turnsLeft,j=n===1?'jogada':'jogadas',ph=B.phase;
-  let t='';
-  if(id==='rio')t=B.seca?`É seca: só corre o rio com mata ciliar (bosque na peça ou encostado nela). As chuvas voltam em ${n} ${j}.`
-    :B.risk.length?`Na seca só corre o rio com mata ciliar: bosque na própria peça ou encostado nela. ${B.risk.length} ${B.risk.length===1?'trecho vai':'trechos vão'} secar (em laranja).`
-    :B.river?'Todo o rio tem mata ciliar: vai continuar correndo na seca.':'Ligue rios à nascente; na seca, só corre o que tiver bosque encostado.';
-  if(id==='comida')t=ph<2?`Na Colheita (${ph===1?`em ${n} ${j}`:'Cheia, depois Colheita'}), cada campo com água por perto guarda 1 de comida: +1 ponto e cada 2 dão +1 peça. Hoje: ${B.foodNow}.`
-    :`Celeiro: ${B.food} de comida para o ano novo. Este ano cada casa come ${String(B.need).replace('.',',')}.`;
-  if(id==='casas')t=B.houses?`No ano novo, cada casa (vila) com água por perto na seca e comida no celeiro dá +3 e +1 peça; com fome, −1 peça. Previsão: ${B.fed} de ${B.houses} comem (cada uma come ${String(B.need).replace('.',',')}).`
-    :'Ainda não há casas. Vilas precisam de água na seca e de comida da colheita.';
-  G.focusSet={id,keys:new Set(keys),col:id==='rio'?'#e07a2e':id==='comida'?BIOME_DOT.C:BIOME_DOT.V,until:performance.now()+3500};
+function explainBal(){
+  const B=G.bal,n=B.turnsLeft,j=n===1?'jogada':'jogadas';
+  const t=B.seca?`É seca: só corre o rio com mata ciliar (bosque na peça ou encostado nela). As chuvas voltam em ${n} ${j}.`
+    :B.risk.length?`Na seca (em ${n} ${j}), só corre o rio com bosque na peça ou encostado nela. ${B.risk.length} ${B.risk.length===1?'trecho vai':'trechos vão'} secar (em laranja). Cada trecho que continuar correndo vale +1, e cada ${B.per} trechos, +1 peça (a seca fica mais dura a cada ano).`
+    :B.river?`Todo o rio tem mata ciliar: na seca ele continua correndo e rende +${B.riverSafe} e +${B.gain} ${B.gain===1?'peça':'peças'}.`
+    :'Ligue rios à nascente. Na seca, o rio com bosque encostado continua correndo e rende peças.';
+  G.focusSet={keys:new Set(B.risk),col:'#e07a2e',until:performance.now()+3500};
   renderUI();flashHint(t);
 }
 function renderUI(){
   const s=G.s,over=E.over(s),daily=G.seedKey.startsWith('dia-');
-  $('sub').textContent=daily?`Vale #${valeNumber(G.seedKey.slice(4))} · ${fmtDate(G.seedKey.slice(4))}`:'Vale de treino';
+  $('sub').textContent=G.lesson?'Aprendendo a jogar':daily?`Vale #${valeNumber(G.seedKey.slice(4))} · ${fmtDate(G.seedKey.slice(4))}`:'Vale de treino';
   $('score').textContent=s.score;$('left').textContent=Math.max(0,s.left);
   $('leftBox').style.color=s.left<=3&&!over?'#c2410c':'';
   const tile=E.cur(s)||{e:['G','G','G','G','G','G']},nxt=E.peek(s,1);
@@ -1261,6 +1357,9 @@ function renderUI(){
     if(tile.quest)info+=tile.quest.flow?`<span class="quest"><i style="background:${BIOME_DOT.A}"></i>Missão: ligar à água</span>`:`<span class="quest"><i style="background:${BIOME_DOT[tile.quest.b]}"></i>Missão: ${NAME[tile.quest.b]} com ${tile.quest.n}</span>`;
   }
   $('curInfo').innerHTML=info;
+  {const L=G.lesson,box=$('lesson');box.hidden=!L;
+   if(L){const[ok,txt]=L.goal(s);$('lesTitle').textContent=`Lição ${L.n} de ${LES.length} · ${L.title}`;
+     const gl=$('lesGoal');gl.textContent=(ok?'✓ ':'')+txt;gl.className='lgoal'+(ok?' done':'');}}
   // lista de missões abertas
   {const box=$('qchips');box.innerHTML='';
    for(const q of G.qp){const b=document.createElement('button');b.type='button';const near=!q.flow&&q.n-q.cur===1;
@@ -1271,14 +1370,14 @@ function renderUI(){
        renderUI();flashHint(q.flow?'Missão: leve água viva (ligada à nascente) até a peça marcada. Cumprir: +3 peças.':`Missão: deixe ${({C:'este campo',B:'este bosque',V:'esta vila'})[q.b]} com exatamente ${q.n} peças (agora ${q.cur}). Cumprir: +3 peças. Passar de ${q.n}: perde.`);});
      box.appendChild(b);}}
   // explicação na primeira peça com missão
-  if(!over&&tile.quest&&!db.seenQuest&&$('coach').hidden){G.coachKind='seenQuest';
+  if(!over&&!G.lesson&&tile.quest&&!db.seenQuest&&$('coach').hidden){G.coachKind='seenQuest';
     $('coachTxt').innerHTML=tile.quest.flow?'Esta peça traz uma <b>missão</b>: depois de colocada, leve <b>água viva</b> (ligada à nascente) até ela. Cumprir dá <b>+3 peças</b>.'
       :`Esta peça traz uma <b>missão</b>: ${({C:'o campo',B:'o bosque',V:'a vila'})[tile.quest.b]} onde ela entrar precisa ter <b>exatamente ${tile.quest.n} peças</b>. Cumprir dá <b>+3 peças</b>; passar de ${tile.quest.n} perde a missão.`;
     $('coach').hidden=false;}
-  {const B=G.bal,ph=B.phase,n=B.turnsLeft,nx=['Cheia','Colheita','Seca','Ano '+(B.year+1)][ph];
-   const fr=(ph*B.slen+(B.slen-n))/(4*B.slen);
-   $('seasonName').textContent=`Ano ${B.year} · ${E.CYCLE[ph]}`;
-   $('seasonNext').textContent=over?'':`${nx} em ${n} ${n===1?'jogada':'jogadas'}`;
+  {const B=G.bal,n=B.turnsLeft,A=E.CFG.aguas,T=A+E.CFG.seca;
+   const fr=B.phase?(A+(B.len-n))/T:(B.len-n)/T;
+   $('seasonName').textContent=`Ano ${B.year} · ${E.CYCLE[B.phase]}`;
+   $('seasonNext').textContent=over?'':`${B.phase?'Chuvas':'Seca'} em ${n} ${n===1?'jogada':'jogadas'}`;
    $('seasonFill').style.clipPath=`inset(0 ${(100-fr*100).toFixed(2)}% 0 0)`;$('sbMark').style.left=(fr*100).toFixed(2)+'%';
    renderBal();}
   const sel=G.sel;
@@ -1291,10 +1390,11 @@ function renderUI(){
   if(over)h='A pilha acabou.';
   else if(sel){const o=sel.ops[sel.i];h=o.rep.edges.length?`Lados <em>verdes</em> combinam. Toque na peça ou use ↺ ↻ para girar.`:'Toque na peça ou use ↺ ↻ para girar.';if(sel.ops.length===1)h='Peça igual de todos os lados: é só colocar.';}
   else if(s.placed===0)h='Toque numa casa vazia ao lado da nascente.';
-  else if(G.bal.phase===2&&G.bal.risk.length)h=`A seca vem em ${G.bal.turnsLeft} ${G.bal.turnsLeft===1?'jogada':'jogadas'}: ${G.bal.risk.length} ${G.bal.risk.length===1?'trecho de rio':'trechos de rio'} sem mata (em laranja). Bosque encostado protege.`;
+  else if(!G.bal.seca&&G.bal.turnsLeft<=4&&G.bal.risk.length)h=`A seca vem em ${G.bal.turnsLeft} ${G.bal.turnsLeft===1?'jogada':'jogadas'}: o rio em laranja vai secar. Bosque encostado nele protege.`;
   else if(G.bal.seca)h='É seca: rio sem bosque encostado fica seco até as chuvas voltarem.';
   else if(s.left<=3)h=`Restam ${s.left} peça${s.left>1?'s':''}. Missões e peças perfeitas dão mais.`;
   else h='Toque numa casa vazia. A melhor posição já vem girada.';
+  if(G.lesson&&!over){const L=G.lesson;h=G.sel?L.sel:(s.placed===0||!L.after?L.intro:L.after);}
   $('hint').innerHTML=`<span>${h}</span>`;
 }
 
@@ -1329,7 +1429,7 @@ cv.addEventListener('wheel',e=>{e.preventDefault();const[mx,my]=lxy(e),k=Math.ma
 function userCam(){cam.user=true;$('recenter').hidden=false;}
 $('recenter').addEventListener('click',()=>{cam.user=false;$('recenter').hidden=true;fit(false);});
 function tap(x,y){
-  const s=G.s;if(E.over(s))return;
+  const s=G.s;if(E.over(s)||G.lesPending)return;
   const k=cellAt(x,y);if(k==null)return;
   if(G.sel&&G.sel.k===k){turn(1);return;}
   if(G.valid.has(k)){select(k);return;}
@@ -1343,7 +1443,7 @@ $('rotL').addEventListener('click',()=>turn(1));
 $('rotR').addEventListener('click',()=>turn(-1));
 $('placeBtn').addEventListener('click',commit);
 $('undoBtn').addEventListener('click',()=>{if(!G.undo)return;G.s=G.undo;G.undo=null;G.sel=null;G.fx.clear();G.flow=null;refresh();persist();renderUI();});
-document.addEventListener('keydown',e=>{if(!$('intro').hidden||!$('result').hidden)return;if(e.key==='r'||e.key==='R')turn(1);if(e.key==='Enter')commit();});
+document.addEventListener('keydown',e=>{if(!$('intro').hidden||!$('result').hidden||!$('lesEnd').hidden)return;if(e.key==='r'||e.key==='R')turn(1);if(e.key==='Enter')commit();});
 
 // ---------- resultado
 function showResult(){
@@ -1352,8 +1452,8 @@ function showResult(){
   else if(daily&&!db.daily[dk]){db.daily[dk]={score:s.score,placed:s.placed,quests:s.questsDone,perfects:s.perfects};save(db);G.lastRecord='novo';}
   else G.lastRecord=daily?'treino':'livre';
   // recorde pessoal (regras do ano no vale): mais pontos
-  const bst=db.best6;G.newBest=false;
-  if(!G.reviewing&&(!bst||s.score>bst.score)){G.prevBest=bst||null;db.best6={season:s.season,score:s.score,placed:s.placed};save(db);G.newBest=true;}
+  const bst=db.best7;G.newBest=false;
+  if(!G.reviewing&&(!bst||s.score>bst.score)){G.prevBest=bst||null;db.best7={season:s.season,score:s.score,placed:s.placed};save(db);G.newBest=true;}
   try{$('resImg').src=snapshot();}catch(e){}
   fillResult();$('result').hidden=false;
 }
@@ -1372,28 +1472,25 @@ function fillResult(){
   $('resTitle').textContent=daily?`Vale #${valeNumber(dk)}: a pilha acabou`:'A pilha acabou';
   $('resTotal').textContent=s.score;
   const ps=parS[G.seedKey];
-  const yr=n=>`ano ${Math.ceil(n/4)} · ${E.CYCLE[E.phase(n)]}`;
-  $('resPar').textContent=p==null?'calculando o par…':`par do vale: ${p} (${yr(ps)})`;
+  const yr=n=>`ano ${E.yearOf(n)} · ${E.CYCLE[E.phase(n)]}`;
+  $('resPar').textContent=p==null?'calculando o par…':`par do vale: ${p}`;
   $('resSeason').textContent=`O vale chegou ao ${yr(s.season)}`;
-  const rb=$('resRecord'),bst=db.best6;
+  const rb=$('resRecord'),bst=db.best7;
   rb.className='record'+(G.newBest?' new':'');
-  rb.textContent=G.newBest?(G.prevBest?`Novo recorde! Antes: ${G.prevBest.score} (${yr(G.prevBest.season)})`:'Primeiro recorde registrado!'):bst?`Seu recorde: ${bst.score} (${yr(bst.season)})`:'';
+  rb.textContent=G.newBest?(G.prevBest?`Novo recorde! Antes: ${G.prevBest.score}`:'Primeiro recorde registrado!'):bst?`Seu recorde: ${bst.score}`:'';
   // relatório: o que faltou, de onde vieram pontos e peças, melhor jogada e uma dica
-  const st=s.stats,B=E.balance(s),nx=['a Cheia','a Colheita','a seca','o ano novo'][B.phase];
-  let html=B.turnsLeft<=2?`<p class="near">Faltou ${B.turnsLeft===1?'1 jogada':'2 jogadas'} para ${nx}.</p>`:'';
+  const st=s.stats,B=E.balance(s);
+  let html=!B.seca&&B.turnsLeft<=2&&B.riverSafe?`<p class="near">Faltou ${B.turnsLeft===1?'1 jogada':'2 jogadas'} para a seca, que renderia +${B.gain} ${B.gain===1?'peça':'peças'}.</p>`:'';
   for(const q of E.questProgress(s))if(!q.flow&&q.n-q.cur===1){html+=`<p>${({C:'O campo',B:'O bosque',V:'A vila'})[q.b]||'A região'} ficou com ${q.cur} de ${q.n}: faltou 1 peça para a missão.</p>`;break;}
   const row=(a,b,cls='')=>`<li class="${cls}"><span>${a}</span><span>${b}</span></li>`;
   html+='<ul>'+row('Encaixes',`+${st.match}`)+row('Água viva',`+${st.flow}`)
     +row('Missões',`+${st.quest} · +${st.tQuest} peças`)+row('Peças perfeitas',`+${st.perfect} · +${st.tPerfect} peças`)
     +(st.special?row('Cachoeiras e lagoas',`+${st.special}`):'')
-    +row('Colheitas',`+${st.harvest} · +${st.tSeason} peças`)
-    +row('Ano novo (casas e chuvas)',`+${st.village} · ${st.tVillage<0?'−':'+'}${Math.abs(st.tVillage)} peças`,st.tVillage<0?'bad':'')
-    +(st.hungry?row('Casas com fome',`${st.hungry}`,'bad'):'')+(st.dried?row('Trechos de rio secos na seca',`${st.dried}`,'bad'):'')
+    +row('Rio que aguentou a seca',`+${st.kept} · +${st.tSeason} peças`)+(st.dried?row('Trechos secos na seca',`${st.dried}`,'bad'):'')
     +(st.failed.length?row(`Missões estouradas (${st.failed.length})`,`−${st.failed.length*3} peças`,'bad'):'')+'</ul>';
   if(st.best.pts>0)html+=`<p>Melhor jogada: <b>+${st.best.pts}</b> na jogada ${st.best.turn}.</p>`;
   const wetShare=(s.everAlive.size-1)/Math.max(1,s.placed);
-  const tip=st.dried>=3?'Na seca, rio sem mata seca e as casas perto dele ficam sem água. Ponha bosque encostado no rio antes da Colheita.'
-    :st.hungry>=3?'Casas com fome custam peças. Antes da Colheita, encoste campos no rio: cada campo com água guarda 1 de comida.'
+  const tip=st.dried>=3?'Antes da seca, encoste bosque no rio, começando perto da nascente: um trecho sem mata corta o rio inteiro dali para baixo.'
     :st.failed.length>=2?'Antes de crescer uma região com missão, confira o número no marcador: passar do número perde as 3 peças.'
     :wetShare<0.22?'Ligue mais rios à nascente: cada peça com água viva vale +2, e cachoeiras e lagoas valem bem mais.'
     :s.perfects===0?'Procure buracos cercados por 5 ou 6 peças: encaixar todos os lados dá peça perfeita (+5 e +1 peça).'
@@ -1403,7 +1500,7 @@ function fillResult(){
   $('resReport').innerHTML=html;
   $('resStats').innerHTML=`<div><small>peças</small><b>${s.placed}</b></div><div><small>missões</small><b>${s.questsDone}</b></div><div><small>perfeitas</small><b>${s.perfects}</b></div>`;
   const head=daily?`Afluente #${valeNumber(dk)} — ${s.score} pts · ${yr(s.season)}`:`Afluente (treino) — ${s.score} pts · ${yr(s.season)}`;
-  $('shareTxt').value=`${head}${p!=null?` (par ${p})`:''}\n🧩 ${s.placed} peças · ✅ ${s.questsDone} missões · ✨ ${s.perfects} perfeitas\n🌾 ${st.harvest} comida · 🏠 ${st.village/3} casas alimentadas · 💧 ${s.everAlive.size-1} peças com água`;
+  $('shareTxt').value=`${head}${p!=null?` (par ${p})`:''}\n🧩 ${s.placed} peças · ✅ ${s.questsDone} missões · ✨ ${s.perfects} perfeitas\n💧 ${s.everAlive.size-1} peças com água · 🌳 ${st.kept} trechos aguentaram a seca`;
   const rec=daily?db.daily[dk]:null;
   $('resNote').textContent=G.lastRecord==='novo'?'Resultado do dia registrado. Pode jogar de novo para treinar; só a primeira partida conta.':
     G.lastRecord==='treino'&&rec?`Partida de treino. Seu resultado do dia continua ${rec.score}.`:'Vales de treino não contam para o resultado do dia.';
@@ -1448,12 +1545,13 @@ function start(data){
   introThumbs();
   const dailyKey='dia-'+today();let seedKey=dailyKey,actions=[];
   const snap=data&&data.seedKey?data:db.progress;
-  if(snap&&snap.seedKey&&(snap.seedKey===dailyKey||snap.seedKey.startsWith('treino-'))&&Array.isArray(snap.actions)){
+  if(!db.tutDone&&!(snap&&snap.seedKey&&snap.seedKey.startsWith('licao-')))seedKey='licao-1';
+  else if(snap&&snap.seedKey&&(snap.seedKey===dailyKey||snap.seedKey.startsWith('treino-')||snap.seedKey.startsWith('licao-'))&&Array.isArray(snap.actions)){
     const s=E.replay(snap.seedKey,snap.actions);
     if(!E.over(s)||snap.seedKey===dailyKey||(data&&data.seedKey)){seedKey=snap.seedKey;actions=snap.actions;G.resumedDone=E.over(s)&&!!db.daily[seedKey.slice(4)];}
   }
   resize();startGame(seedKey,actions);
-  if(!db.seenIntro)$('intro').hidden=false;
+  if(!db.seenIntro&&!G.lesson)$('intro').hidden=false;
   requestAnimationFrame(frame);
   if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{introThumbs();renderUI();});
 }
