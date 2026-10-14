@@ -404,7 +404,12 @@ Retorno do teste no iPhone:
   - Duas animações em laço de 8 quadros:
     - **anda**: passo alternado nas aves; trote em diagonal nos quadrúpedes; pulinho no joão-de-barro e nos pássaros de poleiro;
     - **para**: respira, bica o chão, olha para o lado, abana o rabo ou mexe a tromba.
-  - As araras que cruzam o céu também viraram um modelo do Blender, com 8 quadros de bater de asas. Elas não crescem mais com o zoom (antes viravam manchas vermelhas enormes).
+  - As araras que cruzam o céu também viraram um modelo do Blender, com 8 quadros de bater de asas.
+  - **Pássaros no mundo, não na tela**:
+    - os bandos (araras e pássaros ao longe) têm posição, altura e velocidade próprias em unidades do vale;
+    - arrastar a câmera não os leva junto, e o zoom os aumenta na mesma proporção do mapa;
+    - eles atravessam o vale de um lado ao outro, com uma deriva leve e a sombra no chão logo abaixo.
+    - Antes, a posição e o tamanho eram da tela: eles "grudavam" na tela e cresciam sozinhos no zoom.
   - O tucano e o martim-pescador ficam num poleiro, e o joão-de-barro ao lado do ninho de barro com a porta virada para a câmera. A onça tem rosetas na superfície.
   - `montar_fauna.py` recorta todos os quadros de um bicho pela mesma caixa, para a âncora não tremer, e gera `fauna.webp` (WebP com transparência) e `fauna.json`.
 - **No vale**:

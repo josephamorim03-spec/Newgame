@@ -1793,23 +1793,32 @@ function vignette(g,w,h){const v=g.createRadialGradient(w/2,h*0.52,Math.min(w,h)
   v.addColorStop(0,'rgba(0,0,0,0)');v.addColorStop(1,css(LIGHT.shadow,0.16));g.fillStyle=v;g.fillRect(0,0,w,h);}
 // pássaros: bandos ao longe (silhuetas) e, às vezes, um casal de araras mais perto; a sombra passa pelo chão
 const BIRDS=[];
+// v1.5: os pássaros voam no mundo, não na tela. Cada bando tem posição, altura e velocidade próprias em unidades
+// do vale (1 = raio da peça): arrastar a câmera não os leva junto, e o zoom os aumenta na mesma proporção do mapa.
+// A sombra fica no chão, logo abaixo, deslocada para o sudeste (o sol vem do noroeste).
 function drawBirds(g,sz,t){
   if(RM)return;
   if(!G.nextFlock)G.nextFlock=t+6000+Math.random()*8000;
+  const[bx0,bx1,by0,by1]=G.bb||[-4,4,-4,4];
   if(t>G.nextFlock){G.nextFlock=t+(G.calm?12000:22000)+Math.random()*20000;
-    const arara=Math.random()<0.35,dir=Math.random()<0.5?1:-1,n=arara?2:3+Math.floor(Math.random()*5),y0=W.h*(0.12+Math.random()*0.5),sp=(arara?0.07:0.05)*W.w/1000;
-    for(let i=0;i<n;i++)BIRDS.push({t0:t+i*(arara?220:140),x0:dir>0?-40-i*14:W.w+40+i*14,y0:y0+(arara?i*10:Math.abs(i-n/2)*7)*(1+Math.random()*0.2),dir,sp,arara,ph:Math.random()*6,size:arara?1:0.55+Math.random()*0.2});}
-  for(let i=BIRDS.length-1;i>=0;i--){const b=BIRDS[i],u=t-b.t0;if(u<0)continue;const x=b.x0+b.dir*b.sp*u,y=b.y0+Math.sin(u/900+b.ph)*6;
-    if(x<-80||x>W.w+80){BIRDS.splice(i,1);continue;}
-    const fl=Math.sin(u/(b.arara?130:95)+b.ph),S=(b.arara?9:6)*b.size*Math.min(1.2,Math.max(0.8,sz/34)); // pássaros ao longe: não crescem com o zoom
-    // sombra no chão, mais embaixo
-    g.fillStyle=css(LIGHT.shadow,0.10);g.beginPath();g.ellipse(x+S*1.2,y+W.h*0.18,S*1.3,S*0.4,0,0,7);g.fill();
+    const arara=Math.random()<0.35,dir=Math.random()<0.5?1:-1,n=arara?2:3+Math.floor(Math.random()*5);
+    const gy=by0-1+Math.random()*(by1-by0+2),alt=arara?0.9+Math.random()*0.5:1.4+Math.random()*1.0,sp=arara?1.0:0.85,drift=(Math.random()-0.5)*0.25;
+    for(let i=0;i<n;i++)BIRDS.push({t0:t,sx:(dir>0?bx0-5:bx1+5)-dir*(arara?i*0.35:Math.abs(i-n/2)*0.3+i*0.12),gy:gy+(arara?i*0.18:(i-n/2)*0.22),
+      alt:alt+(arara?0:(Math.random()-0.5)*0.15),dir,sp,drift,arara,ph:Math.random()*6,size:arara?1:0.55+Math.random()*0.2});}
+  for(let i=BIRDS.length-1;i>=0;i--){const b=BIRDS[i],u=t-b.t0;if(u<0)continue;
+    const sec=u/1000,wx=b.sx+b.dir*b.sp*sec,wy=b.gy+b.drift*sec+Math.sin(u/1400+b.ph)*0.06,alt=b.alt+Math.sin(u/900+b.ph)*0.05;
+    if(b.dir>0?wx>bx1+6:wx<bx0-6){BIRDS.splice(i,1);continue;}
+    const gx=wx*cam.s+cam.x,gyS=wy*cam.s+cam.y,x=gx,y=gyS-alt*cam.s*0.8;
+    if(x<-200||x>W.w+200||y<-200||y>W.h+300)continue;
+    const fl=Math.sin(u/(b.arara?130:95)+b.ph),S=cam.s*(b.arara?0.22:0.16)*b.size;
+    // sombra no chão
+    g.fillStyle=css(LIGHT.shadow,0.10);g.beginPath();g.ellipse(gx+alt*cam.s*0.35,gyS,S*1.2,S*0.38,0,0,7);g.fill();
     g.save();g.translate(x,y);g.scale(b.dir,1);
     const am=b.arara&&faunaReady&&FATLAS['arara_voa'+(Math.floor(u/75+b.ph)%8)];
     if(am){const f=S*2.6/am[2];g.drawImage(FBODY,am[0],am[1],am[2],am[3],-am[4]*f,-am[5]*f,am[2]*f,am[3]*f);}
     else if(b.arara){g.fillStyle='#d8352a';g.beginPath();g.ellipse(0,0,S*0.9,S*0.32,0,0,7);g.fill();g.beginPath();g.moveTo(-S*0.7,0);g.lineTo(-S*2.1,S*0.15);g.lineTo(-S*0.7,S*0.22);g.fill();
       g.fillStyle='#2f6fcf';g.beginPath();g.moveTo(-S*0.2,0);g.lineTo(S*0.25,-S*1.3*fl);g.lineTo(S*0.5,0);g.fill();g.fillStyle='#f3c623';g.beginPath();g.arc(S*0.85,-S*0.05,S*0.16,0,7);g.fill();}
-    else{g.strokeStyle=css(LIGHT.shadow,0.55);g.lineWidth=Math.max(1.2,S*0.16);g.lineCap='round';g.beginPath();g.moveTo(-S,-S*0.6*fl);g.quadraticCurveTo(-S*0.4,-S*0.15,0,0);g.quadraticCurveTo(S*0.4,-S*0.15,S,-S*0.6*fl);g.stroke();}
+    else{g.strokeStyle=css(LIGHT.shadow,0.55);g.lineWidth=Math.max(1,S*0.16);g.lineCap='round';g.beginPath();g.moveTo(-S,-S*0.6*fl);g.quadraticCurveTo(-S*0.4,-S*0.15,0,0);g.quadraticCurveTo(S*0.4,-S*0.15,S,-S*0.6*fl);g.stroke();}
     g.restore();}
 }
 
