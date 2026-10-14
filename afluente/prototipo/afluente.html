@@ -1183,6 +1183,74 @@ function terrainPat(g,key,s,x,y,world,anchor){
   const pt=g.createPattern(tex(key),'repeat'),k=(world?cam.s:s)*TEXU/(TEXPX*TEXR);
   pt.setTransform(new DOMMatrix(world?[k,0,0,k,cam.x,cam.y]:[k,0,0,k,x,y]));return pt;
 }
+// ---------- chão em manchas (v1.5): máscara de cobertura por distância, em baixa resolução, ampliada com suavização.
+// Para cada terreno da peça (fora o capim de base), cada ponto recebe a "distância para dentro" da união dos seus
+// triângulos. Arestas onde o terreno continua (o vizinho é igual) não limitam a mancha; onde ele muda, a mancha
+// some em degradê, com ruído preso ao mundo (as peças vizinhas combinam). A máscara pequena (44×50) é ampliada
+// com suavização: é o desfoque, sem ctx.filter (que o Safari ignora). Depois: textura do terreno só dentro da
+// máscara ("source-in") e por cima do capim. Ideia de "texture splatting" com borda por ruído.
+const SPL={m:null,t:null},SPLC=new Map();
+const SPLORD={G:0,C:1,V:2,B:3};
+const smst=(a,b,v)=>{const t=Math.min(1,Math.max(0,(v-a)/(b-a)));return t*t*(3-2*t);};
+// cobertura de um terreno num ponto (0 a 1): usada pela máscara do chão e para tirar enfeites que caíram fora da mancha
+function splatCov(x,y,R,e,vs,es,S,O){
+  const key=i=>landOf(e[i])+vs[i],tri=[];
+  for(let i=0;i<6;i++){const A=vtx(x,y,R,i,-1),B=vtx(x,y,R,i,1),cx=(x+A[0]+B[0])/3,cy=(y+A[1]+B[1])/3,k=key(i);
+    // arestas: centro→A (encosta no i+1), A→B (borda da peça, lado i), B→centro (encosta no i−1); "dura" = o terreno continua
+    const hard=[key((i+1)%6)===k,es[i]!==2,key((i+5)%6)===k],ed=[[[x,y],A],[A,B],[B,[x,y]]];
+    tri.push({k,E:ed.map(([P,Q],q)=>{let nx=-(Q[1]-P[1]),ny=Q[0]-P[0];const l=Math.hypot(nx,ny)||1;nx/=l;ny/=l;if(nx*(cx-P[0])+ny*(cy-P[1])<0){nx=-nx;ny=-ny;}return[P[0],P[1],nx,ny,hard[q]];})});}
+  const W0=R*0.06,IN=R*0.1,NZ=R*0.13,HM=R*0.18,KS=R*0.07;
+  const f=(px,py,k,out,ks)=>{
+    const wx=(px-O[0])/S,wy=(py-O[1])/S,n=(0.45*Math.sin(wx*2.7+wy*1.9)+0.25*Math.sin(-wx*1.8+wy*3.6+1.3)+0.18*Math.sin(wx*6.1+wy*4.7+2.2)+0.12*Math.sin(-wx*11.3+wy*9.1+0.7))*NZ;
+    // mínimo suave entre as arestas: cantos arredondados, e as pontas das cunhas recuam do centro
+    if(out){for(let q=0;q<ks.length;q++)out[q]=-1e9;
+      for(const T2 of tri){const qi=ks.indexOf(T2.k);if(qi<0)continue;let acc=0;
+        for(const[ex,ey,nx,ny,h]of T2.E){acc+=Math.exp(-((px-ex)*nx+(py-ey)*ny+(h?HM:-IN))/KS);}
+        const d=-KS*Math.log(acc);if(d>out[qi])out[qi]=d;}
+      for(let q=0;q<ks.length;q++)out[q]=smst(-W0,W0,out[q]+n);return out;}
+    let best=-1e9;
+    for(const T2 of tri){if(T2.k!==k)continue;let acc=0;
+      for(const[ex,ey,nx,ny,h]of T2.E){acc+=Math.exp(-((px-ex)*nx+(py-ey)*ny+(h?HM:-IN))/KS);}
+      const d=-KS*Math.log(acc);if(d>best)best=d;}
+    return smst(-W0,W0,best+n);};
+  return f;
+}
+function splatSpace(x,y,s,o){return{S:o.anchor?s:o.world?cam.s:s,O:o.anchor?o.anchor:o.world?[cam.x,cam.y]:[x,y]};}
+function splatGround(g,x,y,s,R,e,vs,es,dk,baseKey,o){
+  const key=i=>landOf(e[i])+vs[i],keys=[...new Set([0,1,2,3,4,5].map(key))].filter(k=>k+dk!==baseKey).sort((p,q)=>SPLORD[p[0]]-SPLORD[q[0]]);
+  if(!keys.length)return;
+  const{S,O}=splatSpace(x,y,s,o),cov=splatCov(x,y,R,e,vs,es,S,O);
+  const bw=R*1.8,bh=R*2.1,bx=x-bw/2,by=y-bh/2,dpr=g.getTransform?Math.max(1,Math.abs(g.getTransform().a)):1;
+  const MW=44,MH=50,TW=Math.max(8,Math.ceil(bw*dpr)),TH=Math.max(8,Math.ceil(bh*dpr));
+  if(!SPL.m){SPL.m=document.createElement('canvas');SPL.t=document.createElement('canvas');}
+  // peças desenhadas fora do cache (a peça fantasma, as miniaturas): a máscara só depende da forma, então guarda
+  const local=!o.anchor&&!o.world,ck=local?[e.join(''),vs.join(','),es.join(''),dk,Math.round(R*dpr)].join('|'):null;
+  let C=ck&&SPLC.get(ck);
+  if(!C){
+    const M=SPL.m,T=SPL.t;if(M.width!==MW||M.height!==MH){M.width=MW;M.height=MH;}if(T.width!==TW||T.height!==TH){T.width=TW;T.height=TH;}
+    C=document.createElement('canvas');C.width=TW;C.height=TH;const cg=C.getContext('2d');
+    const mg=M.getContext('2d'),tg=T.getContext('2d'),img=mg.createImageData(MW,MH),D=img.data,NK=keys.length;
+    // uma passada calcula a cobertura de todos os terrenos; fora do hexágono fica zero
+    const A2=new Float32Array(MW*MH*NK),tmp=new Array(NK),hx=R*1.06*0.866,hy=R*1.06;
+    for(let v=0;v<MH;v++)for(let u=0;u<MW;u++){const px=bx+(u+0.5)/MW*bw,py=by+(v+0.5)/MH*bh,dx=Math.abs(px-x),dy=Math.abs(py-y);
+      if(dx>hx||dy>hy||dx*0.5+dy*0.866>hy*0.866+1)continue;cov(px,py,null,tmp,keys);for(let q=0;q<NK;q++)A2[(v*MW+u)*NK+q]=tmp[q];}
+    for(let ki=0;ki<NK;ki++){const k=keys[ki];
+      for(let q=0;q<MW*MH;q++){const o4=q*4;D[o4]=D[o4+1]=D[o4+2]=255;D[o4+3]=Math.round(A2[q*NK+ki]*255);}
+      mg.putImageData(img,0,0);
+      tg.save();tg.setTransform(1,0,0,1,0,0);tg.globalCompositeOperation='copy';tg.imageSmoothingEnabled=true;tg.imageSmoothingQuality='high';
+      tg.drawImage(M,0,0,TW,TH);
+      // textura do terreno no espaço de T: mundo → g-px (S,O) → T-px (desloca bx,by e escala dpr)
+      const pt=tg.createPattern(tex(k+dk),'repeat'),ks=S*TEXU/TEXPX*dpr;pt.setTransform(new DOMMatrix([ks,0,0,ks,(O[0]-bx)*dpr,(O[1]-by)*dpr]));
+      tg.globalCompositeOperation='source-in';tg.fillStyle=pt;tg.fillRect(0,0,TW,TH);tg.restore();
+      cg.drawImage(T,0,0);
+    }
+    if(ck){SPLC.set(ck,C);if(SPLC.size>24){const k0=SPLC.keys().next().value;const c0=SPLC.get(k0);c0.width=c0.height=0;SPLC.delete(k0);}}
+  }
+  g.save();g.beginPath();for(let q=0;q<6;q++){const a=Math.PI/180*(60*q-30),X=x+R*1.035*Math.cos(a),Y=y+R*1.035*Math.sin(a);q?g.lineTo(X,Y):g.moveTo(X,Y);}g.closePath();g.clip();
+  g.drawImage(C,0,0,TW,TH,bx,by,bw,bh);
+  g.restore();
+  if(!ck){C.width=C.height=0;}
+}
 // regiões: mesma regra de conexão do jogo, mas o rio conta como pasto (é o chão em volta dele)
 function regions(board){
   const par=new Map(),f=x=>{let r=x;while(par.get(r)!==r)r=par.get(r);while(par.get(x)!==r){const n=par.get(x);par.set(x,r);x=n;}return r;};
@@ -1269,7 +1337,8 @@ function inTri(px,py,T){const[a,b,c]=T,d=(b[1]-c[1])*(a[0]-c[0])+(c[0]-b[0])*(a[
 let FAUNA_ON=new Set();
 function syncFaunaDecor(){const on=new Set(G.lesson?[]:Object.keys((G.s&&G.s.fauna)||{}).filter(id=>id==='garca'||id==='capivara'||id==='lobo'));
   if([...on].join()!==[...FAUNA_ON].join()){FAUNA_ON=on;tcClear();}}
-function compose(x,y,R,s,e,vs,sp,seed,o,decos,paths){
+let CUR_AREA=null;
+function compose(x,y,R,s,e,vs,sp,seed,o,decos,paths){CUR_AREA=null;
   const cx_=o.ctx||'',VIL=cx_.includes('v'),WAT=cx_.includes('w'),DRY=cx_.includes('d'),TIER=+(cx_.match(/t(\d)/)||[0,2])[1];
   const dryName=nm=>DRY&&ATLAS[nm+'_seco']&&h01(seed,nm.length*7+3)<0.85?nm+'_seco':nm;
   const H=n=>h01(seed,n),tri=i=>{const[x1,y1]=vtx(x,y,R*0.97,i,-1),[x2,y2]=vtx(x,y,R*0.97,i,1);return[[x,y],[x1,y1],[x2,y2]];};
@@ -1285,7 +1354,7 @@ function compose(x,y,R,s,e,vs,sp,seed,o,decos,paths){
       if(big&&tag!=='sp'&&(dx+hw>R*0.84||dx*0.5+dy*0.866>R*0.866-hd))return false;
       for(const f of foot){if(!big&&!f[4])continue;const ex=(px-f[0])/(hw+f[2]),ey=(py-f[1])/(hd+f[3]);if(ex*ex+ey*ey<1)return false;}
       foot.push([px,py,hw,hd,big]);}
-    decos.push([px,py,name,sc,FLIP.has(name)&&h<0.5,FOLIAGE.has(name)?Math.floor(H((Math.floor(px*31+py*17)&1023)+5)*TINTS.length):0]);placed.push([px,py,(rad||0.16)*s]);if(o.occ)o.occ.push([(px-x)/s,(py-y)/s,(rad||0.16)*0.85]);return true;};
+    decos.push([px,py,name,sc,FLIP.has(name)&&h<0.5,FOLIAGE.has(name)?Math.floor(H((Math.floor(px*31+py*17)&1023)+5)*TINTS.length):0,CUR_AREA]);placed.push([px,py,(rad||0.16)*s]);if(o.occ)o.occ.push([(px-x)/s,(py-y)/s,(rad||0.16)*0.85]);return true;};
   const free=(px,py,r)=>placed.every(q=>Math.hypot(q[0]-px,q[1]-py)>=Math.max(r*s,q[2]*0.85));
   // áreas
   const seen=new Set(),areas=[];
@@ -1304,7 +1373,7 @@ function compose(x,y,R,s,e,vs,sp,seed,o,decos,paths){
   ends.forEach(([c,sn,dd],j)=>{const tx=x+c*R*0.866*dd,ty=y+sn*R*0.866*dd,px=-sn,py=c;
     add(tx+px*s*0.24,ty+py*s*0.24,'reeds',0.9,0.12);add(tx-px*s*0.22+c*s*0.1,ty-py*s*0.22+sn*s*0.1,'reeds',0.8,0.12);
     if(FAUNA_ON.has('garca')&&H(j*7+90)<0.35)add(tx+c*s*0.16,ty+sn*s*0.16+s*0.02,'egret',1,0.12);});
-  areas.forEach((A,ai)=>{
+  areas.forEach((A,ai)=>{CUR_AREA=landOf(A.b)+vs[A.tris[0]];
     const salt=200+ai*97+A.tris[0]*13,r0=H(salt),Ts=A.tris.map(tri);
     let cx=0,cy=0;for(const T of Ts){cx+=(T[0][0]+T[1][0]+T[2][0])/3;cy+=(T[0][1]+T[1][1]+T[2][1])/3;}cx/=Ts.length;cy/=Ts.length;
     const nearW=A.tris.some(i=>water.has((i+1)%6)||water.has((i+5)%6));
@@ -1402,36 +1471,18 @@ function drawTile(g,x,y,s,e,o={}){
   g.beginPath();g.moveTo(V[0][0],V[0][1]);[1,2,3,4].forEach(k=>g.lineTo(V[k][0],V[k][1]));[4,3,2,1,0].forEach(k=>g.lineTo(V[k][0],V[k][1]+d));g.closePath();{const sg=g.createLinearGradient(0,y+R*0.4,0,y+R+d);sg.addColorStop(0,dry?'#a9784e':'#8a5a35');sg.addColorStop(0.28,dry?'#c07a50':'#b4613b');sg.addColorStop(1,dry?'#8e5236':'#74351f');g.fillStyle=sg;}g.fill();
   if(s>14){g.save();g.clip();g.strokeStyle='rgba(255,214,170,.18)';g.lineWidth=Math.max(0.8,s*0.018);g.beginPath();g.moveTo(V[0][0],V[0][1]+d*0.62);[1,2,3,4].forEach(k=>g.lineTo(V[k][0],V[k][1]+d*0.62));g.stroke();g.restore();}
   g.beginPath();g.moveTo(V[0][0],V[0][1]);[1,2,3,4].forEach(k=>g.lineTo(V[k][0],V[k][1]));g.strokeStyle=dry?'rgba(150,140,70,.7)':'rgba(70,120,40,.75)';g.lineWidth=Math.max(1,s*0.05);g.stroke();
-  // chão: cada triângulo com a textura contínua da sua região
-  for(let i=0;i<6;i++){
-    const b=landOf(e[i]),[x1,y1]=vtx(x,y,R*1.01,i,-1),[x2,y2]=vtx(x,y,R*1.01,i,1);
-    g.beginPath();g.moveTo(x,y);g.lineTo(x1,y1);g.lineTo(x2,y2);g.closePath();
-    g.fillStyle=terrainPat(g,b+vs[i]+(dry?'d':''),s,x,y,o.world,o.anchor);g.fill();g.strokeStyle=g.fillStyle;g.lineWidth=Math.max(1,s*0.03);g.lineJoin='round';g.stroke();
-  }
-  // divisas entre terrenos diferentes dentro da peça (v1.4): em vez de uma reta, uma borda orgânica.
-  // Cada terreno avança em "línguas" irregulares sobre o vizinho (como o capim invadindo a lavoura), dos dois
-  // lados, e a reta some. O triângulo i encosta no i+1 pela aresta que vai do centro até vtx(i,-1).
-  g.lineCap='round';
-  for(let i=0;i<6;i++){const j=(i+1)%6,bi=landOf(e[i]),bj=landOf(e[j]);
-    if(bi===bj&&vs[i]===vs[j])continue;
-    if(e[i]==='A'||e[j]==='A')continue;
-    const[vx,vy]=vtx(x,y,R,i,-1);
-    if(bi===bj){g.strokeStyle='rgba(70,55,25,.06)';g.lineWidth=Math.max(1,s*0.04);g.beginPath();g.moveTo(x,y);g.lineTo(vx,vy);g.stroke();continue;}
-    // uma curva só, suave (meio-pontos com quadráticas); de um lado da reta o terreno i avança, do outro o j
-    const ux=vx-x,uy=vy-y,ul=Math.hypot(ux,uy)||1,nx=-uy/ul,ny=ux/ul,N=6,sd=o.seed??0;
-    const pts=[[x,y]];for(let q=1;q<N;q++){const u=q/N,amp=R*(0.07+0.07*h01(sd,i*40+q*3))*Math.sin(Math.PI*u)*(q%2?1:-1)*(h01(sd,i*7)<0.5?1:-1);
-      pts.push([x+ux*u+nx*amp,y+uy*u+ny*amp]);}pts.push([vx,vy]);
-    const lens=()=>{g.beginPath();g.moveTo(x,y);for(let q=1;q<pts.length-1;q++){const m0=pts[q],m1=pts[q+1],mx=(m0[0]+m1[0])/2,my=(m0[1]+m1[1])/2;q<pts.length-2?g.quadraticCurveTo(m0[0],m0[1],mx,my):g.quadraticCurveTo(m0[0],m0[1],m1[0],m1[1]);}g.closePath();};
-    // recorte do triângulo um pouco ampliado: cobre o fio de borda (o traço de anti-serrilhado) do vizinho
-    const triPath=t2=>{const[a1,a2]=[vtx(x,y,R,t2,-1),vtx(x,y,R,t2,1)],cx=(x+a1[0]+a2[0])/3,cy=(y+a1[1]+a2[1])/3,k=1.08,P2=[[x,y],a1,a2].map(([px,py])=>[cx+(px-cx)*k,cy+(py-cy)*k]);
-      g.beginPath();g.moveTo(P2[0][0],P2[0][1]);g.lineTo(P2[1][0],P2[1][1]);g.lineTo(P2[2][0],P2[2][1]);g.closePath();};
-    for(const[t2,b,vv]of[[j,bi,vs[i]],[i,bj,vs[j]]]){g.save();triPath(t2);g.clip();lens();g.fillStyle=terrainPat(g,b+vv+(dry?'d':''),s,x,y,o.world,o.anchor);g.fill();g.restore();}
-  }
-  // bordas: nada onde combina; linha onde não combina; brilho onde a borda está livre
-  const es=o.es||[0,0,0,0,0,0];
+  // chão (v1.5): capim de base contínuo + cada terreno como uma mancha de borda suave ("splat"), em vez de seis
+  // triângulos com texturas diferentes (que deixavam retas e emendas). Onde o terreno continua (no vizinho de
+  // dentro da peça ou na peça ao lado) a mancha vai até a aresta; onde muda, ela recua em degradê com borda
+  // irregular, e o capim de base aparece entre os dois, como um ecótono. O ruído da borda vem da posição no
+  // mundo, então peças vizinhas combinam.
+  const es=o.es||[0,0,0,0,0,0],dk=dry?'d':'',baseKey='G0'+dk;
+  g.beginPath();V.forEach(([vx,vy],q)=>{const X=x+(vx-x)*1.035,Y=y+(vy-y)*1.035;q?g.lineTo(X,Y):g.moveTo(X,Y);});g.closePath();
+  g.fillStyle=terrainPat(g,baseKey,s,x,y,o.world,o.anchor);g.fill();
+  splatGround(g,x,y,s,R,e,vs,es,dk,baseKey,o);
+  // bordas: brilho onde a borda está livre (onde não combina, as manchas já recuam e o capim faz a passagem)
   for(let i=0;i<6;i++){const[x1,y1]=vtx(x,y,R,i,-1),[x2,y2]=vtx(x,y,R,i,1);
-    if(es[i]===2){g.strokeStyle='rgba(70,55,25,.12)';g.lineWidth=Math.max(1,s*0.035);g.beginPath();g.moveTo(x1,y1);g.lineTo(x2,y2);g.stroke();}
-    else if(es[i]===0){g.strokeStyle='rgba(255,255,255,.22)';g.lineWidth=1;g.beginPath();g.moveTo(x1,y1);g.lineTo(x2,y2);g.stroke();}}
+    if(es[i]===0){g.strokeStyle='rgba(255,255,255,.22)';g.lineWidth=1;g.beginPath();g.moveTo(x1,y1);g.lineTo(x2,y2);g.stroke();}}
   }
   // rio e nascente
   const ws=[];for(let i=0;i<6;i++)if(e[i]==='A')ws.push(i);
@@ -1465,10 +1516,13 @@ function drawTile(g,x,y,s,e,o={}){
     // caminhos de terra das ruas (por baixo dos objetos)
     for(const[pa,pb]of paths){g.lineCap='round';g.strokeStyle='rgba(176,138,88,.5)';g.lineWidth=s*0.17;g.beginPath();g.moveTo(pa[0],pa[1]);g.lineTo(pb[0],pb[1]);g.stroke();
       g.strokeStyle='rgba(232,208,160,.45)';g.lineWidth=s*0.08;g.stroke();}
+    // enfeites de um terreno que caíram onde a mancha dele já sumiu (a borda recua) não entram
+    {const{S,O}=splatSpace(x,y,s,o),cov=splatCov(x,y,R,e,vs,o.es||[0,0,0,0,0,0],S,O),bk='G0';
+     for(let q=decos.length-1;q>=0;q--){const dd=decos[q];if(dd[6]&&dd[6]!==bk&&cov(dd[0],dd[1],dd[6])<({C:0.45,V:0.15,B:-1}[dd[6][0]]??0.1))decos.splice(q,1);}}
     decos.sort((a,b)=>a[1]-b[1]);
     // sombras primeiro, recortadas pelo chão da peça; depois os objetos
     if(SHADOW){g.save();g.beginPath();V.forEach(([vx,vy],q)=>q?g.lineTo(vx,vy):g.moveTo(vx,vy));g.closePath();g.clip();
-      for(const dd of decos)sprS(g,dd[2],dd[0],dd[1],s,dd[3]*1.3,dd[4]);g.restore();}
+      g.globalAlpha=(o.alpha??1)*0.72;for(const dd of decos)sprS(g,dd[2],dd[0],dd[1],s,dd[3]*1.3,dd[4]);g.restore();}
     for(const dd of decos)sprV(g,dd[2],dd[0],dd[1],s,dd[3]*1.3,dd[4],dd[5]);
   }else{
     // sem atlas: marcas simples

@@ -490,3 +490,40 @@ Reação a capturas do iPhone em que o vale, visto de perto, "não fazia sentido
 **Desempenho no zoom máximo**: cerca de 2 ms por quadro no teste.
 - Preencher o leito seco duas vezes com textura custava cerca de 60 ms; virou cor lisa.
 - Com 220 px por unidade, o navegador do teste perdia a aceleração das telas grandes. Por isso o limite ficou em 160.
+
+## Chão em manchas: integração entre terrenos refeita (v1.7)
+
+Feita sobre a v1.6 (terrenos coerentes). Mantém a pegada real dos objetos, o leito de riacho seco e a vila sobre capim, e troca só o desenho do chão.
+
+Retorno: mesmo com as divisas onduladas (v1.5 e v1.6), ainda apareciam retas entre os terrenos, cunhas e emendas entre peças.
+
+**Por que acontecia**:
+- o chão era pintado como seis triângulos, cada um com a textura do seu terreno;
+- toda divisa era uma aresta reta, e entre peças vizinhas sobrava um fio de anti-serrilhado;
+- as curvas da tentativa anterior só deformavam um trecho de cada reta.
+
+**O que a pesquisa trouxe**:
+- **Texture splatting**: uma camada de base e cada terreno por cima, revelado por uma máscara de opacidade. A borda da máscara é perturbada por ruído para não ser geométrica.
+- **Mesclar só perto da borda** (Catlike Coding, Hex Map): mesclar o hexágono inteiro vira borrão; o terreno precisa continuar legível.
+- **Máscara desfocada antes de usar** (fórum MonoGame) e ruído na borda (shader de hexágonos do Godot Shaders).
+- **Dorfromantik** é modular: peças curadas que se recombinam por regras, com cores por bioma.
+- **O `ctx.filter` (blur) não funciona de forma confiável no Safari**. O desfoque precisa vir de outro jeito.
+
+**Como ficou**:
+1. **Capim de base contínuo**: o hexágono inteiro, um pouco maior que a peça, recebe a mesma textura de capim presa ao mundo. As emendas entre peças somem.
+2. **Uma mancha por terreno** (campo, vila, bosque e variantes de pasto). Para cada ponto calcula-se a "distância para dentro" da união dos triângulos daquele terreno:
+   - **arestas onde o terreno continua** (no triângulo vizinho ou na peça ao lado) não limitam a mancha;
+   - **onde o terreno muda**, a mancha recua e some em degradê;
+   - os cantos são arredondados (mínimo suave entre as arestas), então as pontas das cunhas recuam do centro;
+   - a borda tem ruído preso ao mundo, de quatro oitavas, e por isso combina entre peças vizinhas.
+3. **A máscara é calculada em 44×50 e ampliada com suavização**: a ampliação faz o desfoque, sem `ctx.filter`.
+   - A textura do terreno entra só dentro da máscara (`source-in`), por cima do capim.
+   - Os terrenos são desenhados em ordem fixa: pasto, campo, vila e bosque.
+4. **Entre dois terrenos diferentes aparece uma faixa de capim** (um ecótono). As moitas e flores da v1.5 continuam nessa faixa.
+5. **Enfeites que caíram fora da própria mancha** (trigo ou horta no capim) são retirados. As árvores ficam, porque a mata avançando sobre o capim é natural.
+6. **A sombra assada dos sprites** ficou 28% mais clara.
+
+**Custo**:
+- montar o cache de 26 peças leva 150 ms (antes, 100 ms);
+- um quadro normal continua em cerca de 2,5 ms;
+- a peça fantasma guarda a sua máscara, porque ela só depende da forma da peça.
