@@ -587,3 +587,23 @@ Os bugs de sobreposição vinham de um mesmo problema: cada elemento era posto e
 7. **Aves**: a arara voando e os passarinhos usam a mesma tabela e ficam presos ao mundo, não à tela. Ficam numa camada acima de tudo e com um leve exagero de tamanho, por estarem mais perto da câmera.
 
 **Teste de invariantes**: num navegador sem tela, seis vales são jogados por um bot, e 1.600 quadros de cada um são conferidos célula a célula. O resultado foi zero bicho na água, em casa ou cerca, atrás de objeto alto, fora do tabuleiro ou fora do cercado, e zero violação da regra da fauna.
+
+## Nuvens de verdade, ovelha legível e tela baixa (v1.9b)
+
+Aplicado por cima da tabela métrica e do mapa de colisão da v1.9.
+
+- **Nuvens numa camada acima do vale.** Antes, o corpo da nuvem era um véu quase invisível. Agora:
+  - são 4 formas de nuvem vista de cima, geradas uma vez;
+  - os tufos crescem a partir do centro, sempre encostados, sem bolinhas soltas;
+  - cada tufo pega sol no alto à esquerda e tem a borda azulada;
+  - têm paralaxe de altura: ficam maiores e andam mais quando a câmera se move, por isso leem como algo mais perto do olho;
+  - somem quando o zoom chega perto do chão;
+  - a sombra no chão tem a mesma forma, deslocada pela posição do sol.
+- **Ovelha legível.** De cima, era uma bola branca e parecia nuvem. Agora tem tufos maiores, barriga em sombra, e cara, orelhas e patas pretas maiores.
+- **Ovelhas fora da água:**
+  - o ponto de partida e o passeio ficam longe do rio pela soma da margem com o raio do passeio;
+  - nada de ovelha solta na peça da nascente.
+- **Tela baixa** (celular deitado com as barras do navegador, até 540 px de altura):
+  - o vale tinha altura zero e, desde a v1.5, a página travava;
+  - agora o vale tem pelo menos 260 px e a página rola;
+  - `draw()` não roda sem tamanho.
