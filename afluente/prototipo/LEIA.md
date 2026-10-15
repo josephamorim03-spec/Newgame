@@ -1,6 +1,7 @@
 # Afluente — protótipo v0.3
 
 - `afluente.html`: a página publicada como Artifact (sem `<html>`/`<head>`, que o Artifact acrescenta).
+- `afluente3d.html` (v3.2): o jogo com o tabuleiro em 3D, num arquivo só que abre direto no navegador. Gere de novo depois de editar `afluente.html` ou `../jogo3d/vale3d.js`, com `sh ../sim/gerar_3d.sh` (usa o esbuild pelo npx). Capturas: `node ../sim/olhar_3d.js pasta`. Teste das peças 3D: `node ../sim/vale3d_teste.js`.
 - `index.html`: a mesma página como documento completo, para abrir localmente ou publicar (ex.: Netlify). Gere de novo a partir de `afluente.html` depois de editar, com `sh ../sim/gerar_index.sh`.
 - Depois de mudar um motor, copie-o para o simulador com `node ../sim/extrair_motor.js`. Ele extrai o motor de regras (`function Engine` → `ano_no_vale_motor.js`) e, desde a v2.0, o do clima (`function Atmos` → `atmos_motor.js`, testado por `atmos_teste.js`).
 

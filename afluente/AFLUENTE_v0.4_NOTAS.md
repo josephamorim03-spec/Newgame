@@ -1239,3 +1239,57 @@ Detalhes em `ALDEIA_E_RECURSOS.md`, seção 3.7, e em `sim/revisao/resultados/v3
 - `sim/licoes_teste.js`: as 5 lições se resolvem pela casa marcada. O guloso continua sem resolver a lição 5, como antes.
 - `sim/coerencia_teste.js` e `sim/atmos_teste.js`: sem mudança.
 - `sim/interface_teste.js`: 77 telas, 0 erros. Os 31 avisos são rótulos escondidos debaixo do cartão de boas-vindas ou de outro rótulo, e uma quebra de linha no menu. Nos dois celulares menores, conferidos contra a v3.0, são os mesmos avisos.
+
+## O tabuleiro em 3D (v3.2)
+
+**O pedido:** "a nova versão em HTML com os novos visuais em 3D". A prévia 3D da outra sessão (`prototipo3d/`) é um diorama de 6 peças montadas à mão: o rio e a vila têm lugar fixo e não leem o jogo. Escolheu-se integrar já: o jogo ganha um tabuleiro 3D que monta qualquer vale a partir das regras.
+
+**Arquivos:**
+- `prototipo/afluente3d.html`: o jogo inteiro, com o tabuleiro em 3D, num arquivo só (2,5 MB) que abre direto no navegador.
+- `jogo3d/vale3d.js`: o módulo 3D, que usa o three.js da prévia.
+- `sim/gerar_3d.sh`: gera o HTML; empacota com o esbuild e embute no `afluente.html`.
+
+O `afluente.html` e o `index.html` continuam 2D. Sem o módulo, ou sem WebGL, o jogo desenha em 2D como antes.
+
+### Como funciona
+
+- **Só as peças viram 3D.** O céu, as nuvens, a chuva, os rótulos, as missões, as faixas e os números continuam no canvas 2D. O 3D desenha as peças numa imagem que entra no meio do desenho do 2D, no lugar das peças.
+- **A câmera casa com o 2D:**
+  - é ortográfica, inclinada 40° da vertical, com o quadro esticado na vertical por 1/cos 40°;
+  - por isso o chão de cada peça fica exatamente onde o 2D o punha, e o toque, as casas vazias e os rótulos continuam certos sem mudar nada;
+  - um ponto a uma altura h sobe h·tan 40° na tela. Assim a fumaça das chaminés e o brilho das janelas, que o 2D desenha, saem dos telhados do 3D.
+- **Cada peça é montada a partir dos seis lados:**
+  - **o chão:** cada setor tem a cor do seu terreno. Pasto, mata, lavoura em fileiras e terra de vila ficam verdes se a peça é irrigada e cor de palha se não é, com uma mistura suave na divisa;
+  - **a laje de terra** embaixo da peça;
+  - **o rio:** um canal cavado de cada lado de água até o centro, com poço na nascente, nas veredas, na lagoa e no fim de um canal sozinho. A água é uma lâmina com brilho que corre. Quando a peça perde a água na seca, a lâmina baixa devagar até sumir no leito, que fica cor de areia;
+  - **a mata:** árvores de copa baixa-poligonal que balançam com o vento do céu. Na seca, a mata sem água fica parda e alguns ipês florescem, amarelos, rosa e brancos. A mata cortada pela aldeia, em toco, vira tocos e lenha;
+  - **a lavoura:** milho nas fileiras;
+  - **o pasto:** capim e, às vezes, gado;
+  - **a vila:** casas caiadas com barra colorida e telha, chaminé e horta. Vila maior tem mais casas e sobrados, e a de 10 peças ou mais ganha capela;
+  - **a nascente e as veredas:** buritis em volta do poço.
+- **As janelas acendem à noite.** Na seca, só as das casas atendidas pela despensa. É o primeiro gancho do contrato da aldeia (`ALDEIA_E_RECURSOS.md`, seção 10).
+- **Luz do jogo:** o sol vem da posição real do céu (`Atmos`), com sombras. A cor do sol e a do céu vêm da mesma paleta do 2D: águas, seca, chuva e noite.
+- **Animações do 2D que continuam:**
+  - a peça que cai e quica ao ser posta;
+  - a peça escolhida flutuando e girando;
+  - o brilho da peça perfeita;
+  - os lados que combinam;
+  - os trechos que vão secar, em laranja.
+- **Menu:** "Visual: 3D" troca para o 2D e volta. A escolha fica guardada.
+
+### O que ainda falta (próximos passos do visual)
+
+- **Bichos.** Os do Caderno continuam como desenhos 2D por cima do 3D, e os da prévia (com esqueleto) ainda não entram.
+- **Objetos da prévia.** As casas, árvores e pessoas da prévia são muito mais detalhadas, mas presas ao diorama. Trazer cada uma como "molde" para as peças é o próximo passo.
+- **A cachoeira** ainda não tem queda d'água própria.
+- **A aldeia:** contorno do alcance, fardos e celeiro cheios no ano farto.
+
+### Testes
+
+- `sim/vale3d_teste.js` (novo): monta 400 peças de todos os tipos e estados (seca, irrigada, cortada, nascente, vereda, lagoa, cachoeira, vila grande) sem erro, com geometria válida e casas e água onde precisa.
+- `sim/olhar_3d.js` (novo): capturas do jogo em 3D, com WebGL por software:
+  - situações: início, meio, peça escolhida, seca, fim de partida, perto, nascente e corte;
+  - sem erros no console;
+  - 14 jogadas de verdade, com a troca 2D↔3D, também sem erros.
+- **Custo:** com WebGL por software, o quadro passa de cerca de 71 ms (2D) para 81 ms (3D). Numa placa de vídeo de verdade deve ser bem menos, e o controle automático de qualidade do jogo baixa a resolução se ficar lento.
+- `sim/interface_teste.js` (o 2D, depois de separar as marcas da peça escolhida numa função): 77 telas, 0 erros, os mesmos 31 avisos da v3.1. `coerencia_teste.js` e `licoes_teste.js` sem mudança.

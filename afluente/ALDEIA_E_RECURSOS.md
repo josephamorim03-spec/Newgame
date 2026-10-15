@@ -291,6 +291,8 @@ Hoje a prévia 3D (`prototipo3d/`) mostra 4 peças fixas e lê só o clima (`Atm
 | `{type:'despensa'}` | chegada da seca, depois da colheita | `year`, `gather:[[k,'c'\|'l',n]]`, `cut:[k]`, `casasOk:[k]`, `atendidas`, `casas`, `fri`, `comidaGain`, `lenhaGain`, `store` | números voam de cada peça para a despensa (`gather`); as matas em `cut` perdem as árvores e mostram tocos e lenha empilhada; as casas em `casasOk` ganham fumaça na chaminé e janela acesa à noite; as outras ficam apagadas na friagem |
 | `{type:'ano'}` | volta das chuvas | `year`, `atendidas`, `casas`, `fri`, `pts`, `tiles`, `farto` | faixa "Ano farto" ou "Ano de aperto"; no farto, fardos e celeiro cheios; a mata de `s.cut` rebrota |
 
+> **v3.2:** o tabuleiro 3D do jogo (`jogo3d/vale3d.js`, `prototipo/afluente3d.html`) já lê este contrato. `casasOk` acende as janelas à noite, e `s.cut` e `s.toco` viram tocos e lenha. Os ganchos 3 a 5 abaixo ainda faltam.
+
 ### 10.4 Ganchos do visual, em ordem de valor
 
 1. **Casas acesas e apagadas** (`casasOk`): fumaça e janela acesa. É o retorno principal da regra e usa arte que já existe.
