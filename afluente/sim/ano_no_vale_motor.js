@@ -32,8 +32,8 @@ function Engine(){
   const nb=(k,d)=>K(KQ(k)+DIRS[d][0],KR(k)+DIRS[d][1]);
   const opp=d=>(d+3)%6;
   const START=22,PERFECT_PTS=5,QUEST_TILES=2,FLOW_PTS=2,SEASON_TILES=0;
-  const CFG={qMode:'prazo',qSlack:3,qMul:4,qMulT:{B:4,C:4,V:6},qSpan:3,flowDue:10,aguas:8,seca:4,keptPts:1,keptDiv:2,divGrow:1,cap:2,rain:2,shield:'touch',
-    riverFit:'brejo',veredas:2,veredaDist:3,afluPts:10,afluTiles:QUEST_TILES,cheia:1,rioPct:0.32,opening:true,flowSeca:true,look:1,lookK:3,lookPols:['cuidadoso'],...(typeof AFLUENTE_CFG!=='undefined'?AFLUENTE_CFG:{})};
+  const CFG={qMode:'prazo',qSlack:3,qMul:4,qMulT:{B:4,C:4,V:6},qSpan:3,flowDue:10,aguas:8,seca:4,keptPts:0,keptDiv:2,divGrow:1,cap:2,rain:2,shield:'touch',
+    econ:true,irrig:'borda',yC:2,yG:1,yV:1,vMax:3,yB:1,flowPts:1,riverFit:'brejo',veredas:2,veredaDist:3,afluPts:10,afluTiles:QUEST_TILES,cheia:0,rioPct:0.32,opening:true,flowSeca:true,look:1,lookK:3,lookPols:['cuidadoso'],...(typeof AFLUENTE_CFG!=='undefined'?AFLUENTE_CFG:{})};
   const SEASON_AT=[0,0,35,95,180,290,420,570,740,930];
   const seasonAt=n=>n<SEASON_AT.length?SEASON_AT[n]:SEASON_AT[SEASON_AT.length-1]+220*(n-SEASON_AT.length+1);
   const CYCLE=['Águas','Seca'];
@@ -152,6 +152,24 @@ function Engine(){
     // a mata precisa encostar no rio: lado de bosque na própria peça, ou o lado da vizinha virado para ela é bosque
     if(t.e.includes('B'))return true;for(let d=0;d<6;d++){const n=board.get(nb(k,d));if(n&&n.e[opp(d)]==='B')return true;}return false;}
   // água viva: da nascente, passando por lados de água que se encontram; na seca, só por peças protegidas
+  // ---------- a economia do vale (v3): cada terreno rende conforme a água e os vizinhos, e tudo se vê no vale
+  // lavoura verde (água viva na peça ou ao lado) rende CFG.yC; pasto verde, CFG.yG (o gado bebe); vila com água rende
+  // CFG.yV por lavoura verde encostada (comida), até CFG.vMax; mata encostada no rio rende CFG.yB (mata ciliar).
+  // A jogada vale o quanto ela faz o vale produzir a mais; na chegada da seca vem a colheita: o vale rende o que produz
+  // com a água da seca (só corre o rio com mata).
+  function yieldOf(board,green,k){const t=board.get(k);if(!t||t.src)return null;const has=b=>t.e.includes(b),gr=green.has(k);
+    const y={c:0,p:0,v:0,m:0};
+    if(has('C')&&gr)y.c=CFG.yC;
+    if(has('G')&&gr)y.p=CFG.yG;
+    if(has('V')&&gr){let food=has('C')?1:0;for(let d=0;d<6;d++){const n=board.get(nb(k,d));if(n&&!n.src&&n.e.includes('C')&&green.has(nb(k,d)))food++;}y.v=Math.min(CFG.vMax,food)*CFG.yV;}
+    if(has('B')){let r=has('A');for(let d=0;d<6&&!r;d++){const n=board.get(nb(k,d));if(n&&n.e[opp(d)]==='A')r=true;}if(r)y.m=CFG.yB;}
+    y.sum=y.c+y.p+y.v+y.m;return y;}
+  // irrigada (v3): com CFG.irrig='borda', só a peça que o rio vivo toca — o rio passa por ela ou corre na beira dela
+  // (o lado da vizinha virado para ela é água viva). É o caminho do rio que decide o que produz.
+  function irrigSet(board,alive){if(CFG.irrig!=='borda')return greenSet(board,alive);const g=new Set();
+    for(const[k,t]of board){if(t.src)continue;if(alive.has(k)&&t.e.includes('A')){g.add(k);continue;}
+      for(let d=0;d<6;d++){const n=board.get(nb(k,d));if(n&&alive.has(nb(k,d))&&n.e[opp(d)]==='A'){g.add(k);break;}}}return g;}
+  function production(board,alive){if(!CFG.econ)return 0;const green=irrigSet(board,alive);let P=0;for(const k of board.keys()){const y=yieldOf(board,green,k);if(y)P+=y.sum;}return P;}
   const nSrc=(board,set)=>{let n=0;for(const k of set)if(!board.get(k).src)n++;return n;};
   // peça verde: água viva nela ou encostada (é o que o vale desenha úmido e o que a cheia rega)
   function greenSet(board,alive){const g=new Set();for(const[k,t]of board){if(t.src)continue;
@@ -175,7 +193,8 @@ function Engine(){
     const risk=[];for(const k of full)if(!s.board.get(k).src&&!aliveSeca.has(k))risk.push(k);
     const len=seasonLen(s.season),safe=nSrc(s.board,aliveSeca),green=greenSet(s.board,full).size;
     const ver=[...s.board.values()].filter(t=>t.vereda).length;
-    return{phase:phase(s.season),year:yearOf(s.season),seca:s.seca,river:nSrc(s.board,full),riverSafe:safe,risk,green,cheia:green*CFG.cheia,
+    const prod=production(s.board,s.alive),harvest=production(s.board,aliveSeca);
+    return{prod,harvest,phase:phase(s.season),year:yearOf(s.season),seca:s.seca,river:nSrc(s.board,full),riverSafe:safe,risk,green,cheia:green*CFG.cheia,
       veredas:ver,joined:(s.joined||[]).length,
       gain:secaGain(safe,yearOf(s.season)),per:keptDiv(yearOf(s.season)),turnsLeft:len-s.clock,len,noSeasons:!!s.noSeasons};
   }
@@ -237,7 +256,7 @@ function Engine(){
     const tile=cur(s),pass=k==null,e=pass?null:rot(tile.e,r),me=pass?null:{e,i:s.next,sp:tile.sp};
     const board=new Map(s.board);if(!pass)board.set(k,me);
     const rep={pts:0,match:0,perfect:[],questsDone:[],questsFailed:[],newlyAlive:[],tiles:0,edges:[],seasonUp:[],aflu:[],pass,
-      p:{match:0,perfect:0,quest:0,flow:0,special:0,aflu:0,cheia:0},t:{perfect:0,quest:0,season:0,special:0,aflu:0}};
+      p:{match:0,perfect:0,quest:0,flow:0,special:0,aflu:0,cheia:0,prod:0,harvest:0},t:{perfect:0,quest:0,season:0,special:0,aflu:0}};
     if(!pass)for(let d=0;d<6;d++){const n=board.get(nb(k,d));if(n){const m=matches(e[d],me,n.e[opp(d)],n);rep.edges.push({d,m});if(m)rep.match++;}}
     rep.pts+=rep.match;rep.p.match=rep.match;
     const perfectSet=new Set(s.perfectSet);
@@ -246,8 +265,9 @@ function Engine(){
     // água viva (na seca, só por mata ciliar)
     const alive=computeAlive(board,s.seca);
     const everAlive=new Set(s.everAlive);
+    if(CFG.econ){const dP=production(board,alive)-production(s.board,s.alive);rep.prod=dP;if(dP>0){rep.pts+=dP;rep.p.prod=dP;}}
     for(const kk of alive)if(!s.alive.has(kk)){
-      rep.newlyAlive.push(kk);if(everAlive.has(kk))continue;everAlive.add(kk);rep.pts+=FLOW_PTS;rep.p.flow+=FLOW_PTS;
+      rep.newlyAlive.push(kk);if(everAlive.has(kk))continue;everAlive.add(kk);rep.pts+=CFG.flowPts;rep.p.flow+=CFG.flowPts;
       const sp=board.get(kk).sp;
       if(sp==='falls'){rep.pts+=6;rep.p.special+=6;}
       if(sp==='lake'){rep.pts+=8;rep.p.special+=8;rep.tiles+=1;rep.t.special+=1;}
@@ -289,7 +309,9 @@ function Engine(){
         const before=curAlive;seca=true;curAlive=computeAlive(board,true);
         const lost=[...before].filter(x=>!curAlive.has(x)),keptN=nSrc(board,curAlive),pts=keptN*CFG.keptPts,gain=secaGain(keptN,yearOf(season));
         score+=pts;rep.tiles+=gain;rep.t.season+=gain;kept=keptN;dried=lost.length;tSeca=gain;secas=1;
-        rep.events.push({type:'seca',lost,kept:keptN,keptKeys:[...curAlive].filter(x=>!board.get(x).src),pts,gain,per:keptDiv(yearOf(season)),year:yearOf(season)});
+        let harvest=0,hy=[];if(CFG.econ){const gs=irrigSet(board,curAlive);for(const kk of board.keys()){const y=yieldOf(board,gs,kk);if(y&&y.sum){harvest+=y.sum;hy.push([kk,y.sum]);}}
+          score+=harvest;rep.p.harvest+=harvest;}
+        rep.events.push({type:'seca',lost,kept:keptN,keptKeys:[...curAlive].filter(x=>!board.get(x).src),pts,gain,per:keptDiv(yearOf(season)),year:yearOf(season),harvest,hy});
         // missões de água: a peça precisa estar com água correndo agora, na seca
         for(const q of quests){if(q.status!=='open'||!q.seca)continue;
           if(curAlive.has(q.key)){q.status='done';rep.questsDone.push(q);score+=10;rep.tiles+=QUEST_TILES;rep.p.quest+=10;rep.t.quest+=QUEST_TILES;}
@@ -308,7 +330,7 @@ function Engine(){
       tSpecial:st.tSpecial+rep.t.special,failed:rep.questsFailed.length?st.failed.concat(rep.questsFailed.map(q=>({b:q.b,n:q.n,cur:q.cur}))):st.failed,
       best:rep.pts>st.best.pts?{pts:rep.pts,turn:s.turn+1,k}:st.best,
       kept:st.kept+kept,dried:st.dried+dried,secas:st.secas+secas,
-      aflu:(st.aflu||0)+rep.p.aflu,tAflu:(st.tAflu||0)+rep.t.aflu,cheia:(st.cheia||0)+rep.p.cheia,cheias:(st.cheias||0)+(rep.p.cheia?1:0),passes:(st.passes||0)+(pass?1:0)};
+      aflu:(st.aflu||0)+rep.p.aflu,tAflu:(st.tAflu||0)+rep.t.aflu,cheia:(st.cheia||0)+rep.p.cheia,cheias:(st.cheias||0)+(rep.p.cheia?1:0),prod:(st.prod||0)+rep.p.prod,harvest:(st.harvest||0)+rep.p.harvest,harvests:(st.harvests||0)+(rep.p.harvest?1:0),passes:(st.passes||0)+(pass?1:0)};
     for(const kk of curAlive)everAlive.add(kk);
     const n={...s,board,next:s.next+1,left:s.left-1+rep.tiles,score,season,clock,quests,alive:curAlive,everAlive,seca,perfectSet,stats,
       placed:s.placed+(pass?0:1),perfects:s.perfects+rep.perfect.length,questsDone:s.questsDone+rep.questsDone.length,turn:s.turn+1,
@@ -376,7 +398,9 @@ function Engine(){
   const questBefore=s=>new Map(questProgress(s).map(q=>[q.key+':'+q.edge,q.cur]));
   function botValue(s,ns,rep,pol,before){
     let v=rep.pts+4*rep.tiles;if(pol==='guloso')return v;
-    const b=balance(ns);v+=(b.phase===0&&b.turnsLeft<=5?2.5:1.2)*b.riverSafe+0.35*b.cheia;if(pol==='cuidadoso')return v;
+    {const aS=computeAlive(ns.board,true),safe=nSrc(ns.board,aS),near=phase(ns.season)===0&&seasonLen(ns.season)-ns.clock<=5;
+     v+=(near?2.5:1.2)*safe+(CFG.cheia?0.35*greenSet(ns.board,computeAlive(ns.board,false)).size*CFG.cheia:0)+(CFG.econ?(near?0.8:0.35)*production(ns.board,aS):0);}
+    if(pol==='cuidadoso')return v;
     before=before||questBefore(s);
     if(before.size)for(const q of questProgress(ns)){if(q.flow)continue;const b0=before.get(q.key+':'+q.edge);if(b0!=null&&q.cur>b0)v+=2.5*Math.min(q.cur-b0,Math.max(0,q.n-b0));}
     return v;
@@ -398,8 +422,8 @@ function Engine(){
     }
     const x=s.stats;
     return{score:s.score,placed:s.placed,season:s.season,quests:s.questsDone,perfects:s.perfects,
-      src:{match:x.match,flow:x.flow,quest:x.quest,perfect:x.perfect,special:x.special,seca:x.kept,cheia:x.cheia||0},aflu:(s.joined||[]).length,tiles:{quest:x.tQuest,perfect:x.tPerfect,season:x.tSeason},act:s.actions};
+      src:{match:x.match,flow:x.flow,quest:x.quest,perfect:x.perfect,special:x.special,seca:x.kept,cheia:x.cheia||0,prod:x.prod||0,harvest:x.harvest||0},aflu:(s.joined||[]).length,tiles:{quest:x.tQuest,perfect:x.tPerfect,season:x.tSeason},act:s.actions};
   }
   const parScore=seedKey=>botPlay(seedKey,'guloso');
-  return{questDue,pass,canPlay,greenSet,mainNet,QUEST_TILES,DIRS,K,KQ,KR,nb,opp,SRC,START,SPECIALS,FAUNA,habitat,faunaProgress,faunaStep,botPlay,botValue,seasonAt,seasonName,phase,yearOf,balance,CYCLE,CFG,LESSONS,computeAlive,shielded,cur,peek,newGame,place,options,slots,legal,rotations,questProgress,over,replay,parScore,hashStr,rot,groups};
+  return{irrigSet,production,yieldOf,questDue,pass,canPlay,greenSet,mainNet,QUEST_TILES,DIRS,K,KQ,KR,nb,opp,SRC,START,SPECIALS,FAUNA,habitat,faunaProgress,faunaStep,botPlay,botValue,seasonAt,seasonName,phase,yearOf,balance,CYCLE,CFG,LESSONS,computeAlive,shielded,cur,peek,newGame,place,options,slots,legal,rotations,questProgress,over,replay,parScore,hashStr,rot,groups};
 }

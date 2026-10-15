@@ -123,6 +123,17 @@ Sai com código 1 se houver erro e, com a pasta, salva uma captura de cada tela.
 - 32 rótulos de nível 1 e 2 escondidos: presos ao terreno, discretos e sem grudar na borda, os de pouca prioridade cedem o lugar mais vezes. A informação continua nas fichas do topo;
 - "Contemplar o vale" em 2 linhas no menu da tela de 360 px.
 
+**Estado na v3.0:** 77 telas, 0 erros. Os avisos são todos de tipos já aceitos:
+
+- rótulos de nível 1 e 2 escondidos, cuja informação continua nas fichas do topo;
+- "Contemplar o vale" em 2 linhas no menu de 360 px.
+
+Mudanças da v3.0:
+
+- no celular estreito, no máximo 2 fichas de missão numa linha (as outras viram "+N", com 44 px de toque);
+- o próximo marco no placar fica compacto acima de mil ("1,1k");
+- o número dos pontos encolhe um pouco abaixo de 430 px, para não espremer o título.
+
 **Estado na v2.4:** 77 telas, 0 erros e 12 avisos aceitos:
 
 - dez rótulos de nível 1 escondidos: "vereda" e "nascente" nas primeiras jogadas, quando o vale aberto com as veredas divide a tela com as fichas e os botões dos cantos;

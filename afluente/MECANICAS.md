@@ -171,3 +171,22 @@ O que a missão faz agora:
 - o fracasso continua sem castigo: a missão só vai embora.
 
 Pelos três critérios da seção 1, ela fica.
+
+## 9. A economia do vale (v3.0)
+
+Cada terreno passa a ter uma função, e cada função cabe numa frase:
+
+- lavoura irrigada +2;
+- pasto irrigado +1;
+- vila com água +1 por lavoura irrigada encostada, até 3;
+- mata junto ao rio +1.
+
+Irrigada é a peça que o rio vivo toca. A jogada vale o encaixe mais o quanto o vale passa a produzir, e a colheita, na chegada da seca, soma a produção com a água da seca.
+
+Pelos critérios da seção 1:
+
+1. **Cria decisão.** Onde passa o rio, onde fica a lavoura e onde fica a vila mudam os pontos. Planejar dá 26% a 45% a mais que só olhar o ganho imediato.
+2. **Cabe numa frase e se vê no vale.** O verde é o irrigado, e a prévia mostra o número em cada peça que muda.
+3. **A consequência fica perto da decisão.** O ganho de produção entra na jogada; a colheita repete esse ganho a cada ano e é anunciada pela barra do ano.
+
+Saíram a cheia e os pontos por trecho na seca, porque a colheita faz o mesmo papel com mais sentido.

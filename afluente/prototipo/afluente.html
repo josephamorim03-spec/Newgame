@@ -34,6 +34,7 @@ button{font:inherit;color:inherit}
 .brand p{margin:2px 0 0;color:var(--muted);font-size:var(--t-sm)}
 .pill{display:flex;flex-direction:column;align-items:center;min-width:64px;padding:4px 10px 2px;border-radius:16px;background:var(--card);box-shadow:0 2px 0 var(--line);font-variant-numeric:tabular-nums}
 .pill b{font-family:var(--f-display);font-weight:800;font-size:var(--t-3xl);line-height:1}
+@media (max-width:430px){.pill b{font-size:clamp(var(--t-xl),7vw,var(--t-3xl))}}
 .pill small{font-size:var(--t-micro);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
 .pill.bump b{animation:bump .5s}
 .dock canvas.swap{animation:swapIn .38s cubic-bezier(.2,1.4,.4,1)}
@@ -62,6 +63,7 @@ button{font:inherit;color:inherit}
 .bchip.ok{background:#e3f3dc;color:#24592b;box-shadow:0 2px 0 #b5d9a8}
 .bchip.on{outline:2px solid currentColor}
 .bchip.af{flex:none;padding:3px 9px}
+.qchip.more{min-width:44px;justify-content:center}
 .bal.duo .bchip:not(.af) .lg{display:none}
 body[data-ph="1"]{--sky:#f1e4c9;--sky-2:#f6ecda}
 .spc{display:inline-block;margin-left:6px;padding:0 7px;border-radius:999px;background:#e3f3fb;color:#1f6f97;font:700 var(--t-xs)/18px var(--f-body);vertical-align:middle}
@@ -169,7 +171,8 @@ body.calm .app{max-width:none;padding:0}
 .hint.vazio{min-height:0;height:0} /* v2.3: sem dica, o espaço volta para o vale */
 
 .dock{height:96px;box-sizing:border-box;overflow:hidden;display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;background:var(--card);border-radius:20px;padding:8px 12px 8px 8px;box-shadow:0 3px 0 var(--line)}
-.dock canvas.cur{width:84px;height:80px}
+.dock canvas.cur{width:84px;height:80px;touch-action:none;cursor:grab}
+#dragGhost{position:fixed;left:0;top:0;width:76px;height:72px;pointer-events:none;z-index:60;filter:drop-shadow(0 10px 8px rgba(29,59,58,.28));transform:translate(-50%,-50%) scale(1.05)}
 .dock .info{min-width:0;max-height:80px;overflow:hidden;display:flex;flex-direction:column;gap:2px}
 .dock .info>*{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 .dock .info b{font-family:var(--f-display);font-size:var(--t-lg);line-height:1.1}
@@ -312,6 +315,7 @@ body.calm .app{max-width:none;padding:0}
     <canvas class="cur" id="curTile" width="168" height="160" aria-hidden="true"></canvas>
     <div class="info" id="curInfo"></div>
     <div class="next"><em>depois</em><canvas id="nextTile" width="92" height="88" aria-hidden="true"></canvas></div>
+    <canvas id="dragGhost" width="152" height="144" hidden aria-hidden="true"></canvas>
   </div>
   <div class="controls">
     <button class="btn icon" id="rotL" aria-label="Girar para a esquerda" disabled>↺</button>
@@ -378,10 +382,11 @@ body.calm .app{max-width:none;padding:0}
     <h2 id="introTitle">Monte o vale peça por peça</h2>
     <ul class="how">
       <li><canvas data-thumb="match" width="96" height="92"></canvas><div><b>Encaixe</b><span>Toque numa casa vazia, gire a peça e coloque. Cada lado que combina com o vizinho vale +1. Rio não se corta: na ponta de um rio só entra rio (a água a mais vira brejo).</span></div></li>
-      <li><canvas data-thumb="water" width="96" height="92"></canvas><div><b>Leve a água pelo vale</b><span>A água nasce na nascente e nas duas veredas e corre pelo rio ligado a elas: +2 por peça que recebe água. Ligue o rio de uma vereda ao da nascente: é um afluente, +10 e +2 peças.</span></div></li>
+      <li><canvas data-thumb="water" width="96" height="92"></canvas><div><b>Leve a água pelo vale</b><span>A água nasce na nascente e nas duas veredas e corre pelo rio ligado a elas. Peça com água viva nela ou ao lado fica verde, e o que é verde produz. Ligar o rio de uma vereda ao da nascente é um afluente: +10 e +2 peças.</span></div></li>
+      <li><canvas data-thumb="prod" width="96" height="92"></canvas><div><b>O vale produz</b><span>Lavoura verde +2 · pasto verde +1 · vila com água +1 por lavoura verde encostada (até 3) · mata junto ao rio +1. Cada jogada vale o quanto o vale passa a produzir, e a prévia mostra o que muda em cada peça.</span></div></li>
       <li><canvas data-thumb="quest" width="96" height="92"></canvas><div><b>Missões ganham peças</b><span>"Bosque 6 · 5⏳": faça aquele bosque chegar a 6 peças em até 5 jogadas. Cumpriu: +2 peças. A missão de água pede água correndo naquela peça quando a seca chegar.</span></div></li>
       <li><canvas data-thumb="perfect" width="96" height="92"></canvas><div><b>Peça perfeita</b><span>Cercada e com os 6 lados combinando: +5 e +1 peça.</span></div></li>
-      <li><canvas data-thumb="seca" width="96" height="92"></canvas><div><b>Seca e mata ciliar</b><span>A cada 8 jogadas vem a seca: só corre o rio com bosque na peça ou encostado. Depois as chuvas voltam com +2 peças e a cheia: cada peça verde, com água viva nela ou ao lado, vale +1.</span></div></li>
+      <li><canvas data-thumb="seca" width="96" height="92"></canvas><div><b>Colheita e seca</b><span>A cada 8 jogadas vem a seca, e com ela a colheita: o vale rende tudo o que produz com a água que sobra. Na seca só corre o rio com bosque encostado (mata ciliar). Depois as chuvas voltam com +2 peças.</span></div></li>
     </ul>
     <p>O jogo acaba quando a pilha acaba. Jogar bem faz a pilha durar.</p>
     <button class="btn primary" id="introOk">Jogar</button>
@@ -480,8 +485,8 @@ function Engine(){
   const nb=(k,d)=>K(KQ(k)+DIRS[d][0],KR(k)+DIRS[d][1]);
   const opp=d=>(d+3)%6;
   const START=22,PERFECT_PTS=5,QUEST_TILES=2,FLOW_PTS=2,SEASON_TILES=0;
-  const CFG={qMode:'prazo',qSlack:3,qMul:4,qMulT:{B:4,C:4,V:6},qSpan:3,flowDue:10,aguas:8,seca:4,keptPts:1,keptDiv:2,divGrow:1,cap:2,rain:2,shield:'touch',
-    riverFit:'brejo',veredas:2,veredaDist:3,afluPts:10,afluTiles:QUEST_TILES,cheia:1,rioPct:0.32,opening:true,flowSeca:true,look:1,lookK:3,lookPols:['cuidadoso'],...(typeof AFLUENTE_CFG!=='undefined'?AFLUENTE_CFG:{})};
+  const CFG={qMode:'prazo',qSlack:3,qMul:4,qMulT:{B:4,C:4,V:6},qSpan:3,flowDue:10,aguas:8,seca:4,keptPts:0,keptDiv:2,divGrow:1,cap:2,rain:2,shield:'touch',
+    econ:true,irrig:'borda',yC:2,yG:1,yV:1,vMax:3,yB:1,flowPts:1,riverFit:'brejo',veredas:2,veredaDist:3,afluPts:10,afluTiles:QUEST_TILES,cheia:0,rioPct:0.32,opening:true,flowSeca:true,look:1,lookK:3,lookPols:['cuidadoso'],...(typeof AFLUENTE_CFG!=='undefined'?AFLUENTE_CFG:{})};
   const SEASON_AT=[0,0,35,95,180,290,420,570,740,930];
   const seasonAt=n=>n<SEASON_AT.length?SEASON_AT[n]:SEASON_AT[SEASON_AT.length-1]+220*(n-SEASON_AT.length+1);
   const CYCLE=['Águas','Seca'];
@@ -600,6 +605,24 @@ function Engine(){
     // a mata precisa encostar no rio: lado de bosque na própria peça, ou o lado da vizinha virado para ela é bosque
     if(t.e.includes('B'))return true;for(let d=0;d<6;d++){const n=board.get(nb(k,d));if(n&&n.e[opp(d)]==='B')return true;}return false;}
   // água viva: da nascente, passando por lados de água que se encontram; na seca, só por peças protegidas
+  // ---------- a economia do vale (v3): cada terreno rende conforme a água e os vizinhos, e tudo se vê no vale
+  // lavoura verde (água viva na peça ou ao lado) rende CFG.yC; pasto verde, CFG.yG (o gado bebe); vila com água rende
+  // CFG.yV por lavoura verde encostada (comida), até CFG.vMax; mata encostada no rio rende CFG.yB (mata ciliar).
+  // A jogada vale o quanto ela faz o vale produzir a mais; na chegada da seca vem a colheita: o vale rende o que produz
+  // com a água da seca (só corre o rio com mata).
+  function yieldOf(board,green,k){const t=board.get(k);if(!t||t.src)return null;const has=b=>t.e.includes(b),gr=green.has(k);
+    const y={c:0,p:0,v:0,m:0};
+    if(has('C')&&gr)y.c=CFG.yC;
+    if(has('G')&&gr)y.p=CFG.yG;
+    if(has('V')&&gr){let food=has('C')?1:0;for(let d=0;d<6;d++){const n=board.get(nb(k,d));if(n&&!n.src&&n.e.includes('C')&&green.has(nb(k,d)))food++;}y.v=Math.min(CFG.vMax,food)*CFG.yV;}
+    if(has('B')){let r=has('A');for(let d=0;d<6&&!r;d++){const n=board.get(nb(k,d));if(n&&n.e[opp(d)]==='A')r=true;}if(r)y.m=CFG.yB;}
+    y.sum=y.c+y.p+y.v+y.m;return y;}
+  // irrigada (v3): com CFG.irrig='borda', só a peça que o rio vivo toca — o rio passa por ela ou corre na beira dela
+  // (o lado da vizinha virado para ela é água viva). É o caminho do rio que decide o que produz.
+  function irrigSet(board,alive){if(CFG.irrig!=='borda')return greenSet(board,alive);const g=new Set();
+    for(const[k,t]of board){if(t.src)continue;if(alive.has(k)&&t.e.includes('A')){g.add(k);continue;}
+      for(let d=0;d<6;d++){const n=board.get(nb(k,d));if(n&&alive.has(nb(k,d))&&n.e[opp(d)]==='A'){g.add(k);break;}}}return g;}
+  function production(board,alive){if(!CFG.econ)return 0;const green=irrigSet(board,alive);let P=0;for(const k of board.keys()){const y=yieldOf(board,green,k);if(y)P+=y.sum;}return P;}
   const nSrc=(board,set)=>{let n=0;for(const k of set)if(!board.get(k).src)n++;return n;};
   // peça verde: água viva nela ou encostada (é o que o vale desenha úmido e o que a cheia rega)
   function greenSet(board,alive){const g=new Set();for(const[k,t]of board){if(t.src)continue;
@@ -623,7 +646,8 @@ function Engine(){
     const risk=[];for(const k of full)if(!s.board.get(k).src&&!aliveSeca.has(k))risk.push(k);
     const len=seasonLen(s.season),safe=nSrc(s.board,aliveSeca),green=greenSet(s.board,full).size;
     const ver=[...s.board.values()].filter(t=>t.vereda).length;
-    return{phase:phase(s.season),year:yearOf(s.season),seca:s.seca,river:nSrc(s.board,full),riverSafe:safe,risk,green,cheia:green*CFG.cheia,
+    const prod=production(s.board,s.alive),harvest=production(s.board,aliveSeca);
+    return{prod,harvest,phase:phase(s.season),year:yearOf(s.season),seca:s.seca,river:nSrc(s.board,full),riverSafe:safe,risk,green,cheia:green*CFG.cheia,
       veredas:ver,joined:(s.joined||[]).length,
       gain:secaGain(safe,yearOf(s.season)),per:keptDiv(yearOf(s.season)),turnsLeft:len-s.clock,len,noSeasons:!!s.noSeasons};
   }
@@ -685,7 +709,7 @@ function Engine(){
     const tile=cur(s),pass=k==null,e=pass?null:rot(tile.e,r),me=pass?null:{e,i:s.next,sp:tile.sp};
     const board=new Map(s.board);if(!pass)board.set(k,me);
     const rep={pts:0,match:0,perfect:[],questsDone:[],questsFailed:[],newlyAlive:[],tiles:0,edges:[],seasonUp:[],aflu:[],pass,
-      p:{match:0,perfect:0,quest:0,flow:0,special:0,aflu:0,cheia:0},t:{perfect:0,quest:0,season:0,special:0,aflu:0}};
+      p:{match:0,perfect:0,quest:0,flow:0,special:0,aflu:0,cheia:0,prod:0,harvest:0},t:{perfect:0,quest:0,season:0,special:0,aflu:0}};
     if(!pass)for(let d=0;d<6;d++){const n=board.get(nb(k,d));if(n){const m=matches(e[d],me,n.e[opp(d)],n);rep.edges.push({d,m});if(m)rep.match++;}}
     rep.pts+=rep.match;rep.p.match=rep.match;
     const perfectSet=new Set(s.perfectSet);
@@ -694,8 +718,9 @@ function Engine(){
     // água viva (na seca, só por mata ciliar)
     const alive=computeAlive(board,s.seca);
     const everAlive=new Set(s.everAlive);
+    if(CFG.econ){const dP=production(board,alive)-production(s.board,s.alive);rep.prod=dP;if(dP>0){rep.pts+=dP;rep.p.prod=dP;}}
     for(const kk of alive)if(!s.alive.has(kk)){
-      rep.newlyAlive.push(kk);if(everAlive.has(kk))continue;everAlive.add(kk);rep.pts+=FLOW_PTS;rep.p.flow+=FLOW_PTS;
+      rep.newlyAlive.push(kk);if(everAlive.has(kk))continue;everAlive.add(kk);rep.pts+=CFG.flowPts;rep.p.flow+=CFG.flowPts;
       const sp=board.get(kk).sp;
       if(sp==='falls'){rep.pts+=6;rep.p.special+=6;}
       if(sp==='lake'){rep.pts+=8;rep.p.special+=8;rep.tiles+=1;rep.t.special+=1;}
@@ -737,7 +762,9 @@ function Engine(){
         const before=curAlive;seca=true;curAlive=computeAlive(board,true);
         const lost=[...before].filter(x=>!curAlive.has(x)),keptN=nSrc(board,curAlive),pts=keptN*CFG.keptPts,gain=secaGain(keptN,yearOf(season));
         score+=pts;rep.tiles+=gain;rep.t.season+=gain;kept=keptN;dried=lost.length;tSeca=gain;secas=1;
-        rep.events.push({type:'seca',lost,kept:keptN,keptKeys:[...curAlive].filter(x=>!board.get(x).src),pts,gain,per:keptDiv(yearOf(season)),year:yearOf(season)});
+        let harvest=0,hy=[];if(CFG.econ){const gs=irrigSet(board,curAlive);for(const kk of board.keys()){const y=yieldOf(board,gs,kk);if(y&&y.sum){harvest+=y.sum;hy.push([kk,y.sum]);}}
+          score+=harvest;rep.p.harvest+=harvest;}
+        rep.events.push({type:'seca',lost,kept:keptN,keptKeys:[...curAlive].filter(x=>!board.get(x).src),pts,gain,per:keptDiv(yearOf(season)),year:yearOf(season),harvest,hy});
         // missões de água: a peça precisa estar com água correndo agora, na seca
         for(const q of quests){if(q.status!=='open'||!q.seca)continue;
           if(curAlive.has(q.key)){q.status='done';rep.questsDone.push(q);score+=10;rep.tiles+=QUEST_TILES;rep.p.quest+=10;rep.t.quest+=QUEST_TILES;}
@@ -756,7 +783,7 @@ function Engine(){
       tSpecial:st.tSpecial+rep.t.special,failed:rep.questsFailed.length?st.failed.concat(rep.questsFailed.map(q=>({b:q.b,n:q.n,cur:q.cur}))):st.failed,
       best:rep.pts>st.best.pts?{pts:rep.pts,turn:s.turn+1,k}:st.best,
       kept:st.kept+kept,dried:st.dried+dried,secas:st.secas+secas,
-      aflu:(st.aflu||0)+rep.p.aflu,tAflu:(st.tAflu||0)+rep.t.aflu,cheia:(st.cheia||0)+rep.p.cheia,cheias:(st.cheias||0)+(rep.p.cheia?1:0),passes:(st.passes||0)+(pass?1:0)};
+      aflu:(st.aflu||0)+rep.p.aflu,tAflu:(st.tAflu||0)+rep.t.aflu,cheia:(st.cheia||0)+rep.p.cheia,cheias:(st.cheias||0)+(rep.p.cheia?1:0),prod:(st.prod||0)+rep.p.prod,harvest:(st.harvest||0)+rep.p.harvest,harvests:(st.harvests||0)+(rep.p.harvest?1:0),passes:(st.passes||0)+(pass?1:0)};
     for(const kk of curAlive)everAlive.add(kk);
     const n={...s,board,next:s.next+1,left:s.left-1+rep.tiles,score,season,clock,quests,alive:curAlive,everAlive,seca,perfectSet,stats,
       placed:s.placed+(pass?0:1),perfects:s.perfects+rep.perfect.length,questsDone:s.questsDone+rep.questsDone.length,turn:s.turn+1,
@@ -824,7 +851,9 @@ function Engine(){
   const questBefore=s=>new Map(questProgress(s).map(q=>[q.key+':'+q.edge,q.cur]));
   function botValue(s,ns,rep,pol,before){
     let v=rep.pts+4*rep.tiles;if(pol==='guloso')return v;
-    const b=balance(ns);v+=(b.phase===0&&b.turnsLeft<=5?2.5:1.2)*b.riverSafe+0.35*b.cheia;if(pol==='cuidadoso')return v;
+    {const aS=computeAlive(ns.board,true),safe=nSrc(ns.board,aS),near=phase(ns.season)===0&&seasonLen(ns.season)-ns.clock<=5;
+     v+=(near?2.5:1.2)*safe+(CFG.cheia?0.35*greenSet(ns.board,computeAlive(ns.board,false)).size*CFG.cheia:0)+(CFG.econ?(near?0.8:0.35)*production(ns.board,aS):0);}
+    if(pol==='cuidadoso')return v;
     before=before||questBefore(s);
     if(before.size)for(const q of questProgress(ns)){if(q.flow)continue;const b0=before.get(q.key+':'+q.edge);if(b0!=null&&q.cur>b0)v+=2.5*Math.min(q.cur-b0,Math.max(0,q.n-b0));}
     return v;
@@ -846,10 +875,10 @@ function Engine(){
     }
     const x=s.stats;
     return{score:s.score,placed:s.placed,season:s.season,quests:s.questsDone,perfects:s.perfects,
-      src:{match:x.match,flow:x.flow,quest:x.quest,perfect:x.perfect,special:x.special,seca:x.kept,cheia:x.cheia||0},aflu:(s.joined||[]).length,tiles:{quest:x.tQuest,perfect:x.tPerfect,season:x.tSeason},act:s.actions};
+      src:{match:x.match,flow:x.flow,quest:x.quest,perfect:x.perfect,special:x.special,seca:x.kept,cheia:x.cheia||0,prod:x.prod||0,harvest:x.harvest||0},aflu:(s.joined||[]).length,tiles:{quest:x.tQuest,perfect:x.tPerfect,season:x.tSeason},act:s.actions};
   }
   const parScore=seedKey=>botPlay(seedKey,'guloso');
-  return{questDue,pass,canPlay,greenSet,mainNet,QUEST_TILES,DIRS,K,KQ,KR,nb,opp,SRC,START,SPECIALS,FAUNA,habitat,faunaProgress,faunaStep,botPlay,botValue,seasonAt,seasonName,phase,yearOf,balance,CYCLE,CFG,LESSONS,computeAlive,shielded,cur,peek,newGame,place,options,slots,legal,rotations,questProgress,over,replay,parScore,hashStr,rot,groups};
+  return{irrigSet,production,yieldOf,questDue,pass,canPlay,greenSet,mainNet,QUEST_TILES,DIRS,K,KQ,KR,nb,opp,SRC,START,SPECIALS,FAUNA,habitat,faunaProgress,faunaStep,botPlay,botValue,seasonAt,seasonName,phase,yearOf,balance,CYCLE,CFG,LESSONS,computeAlive,shielded,cur,peek,newGame,place,options,slots,legal,rotations,questProgress,over,replay,parScore,hashStr,rot,groups};
 }
 
 /* =====================================================================
@@ -3180,7 +3209,15 @@ function dryField(g,s,sz,t){
     m.fillStyle=s.seca?'rgb(214,168,96)':'rgb(214,192,128)';m.fillRect(0,0,wpx,hpx);
     m.setTransform(f*sz,0,0,f*sz,f*cam.x,f*cam.y);m.globalCompositeOperation='destination-out';
     const r=s.seca?1.45:2.05;
-    for(const[k,a]of list){const[x,y]=wpos(k);
+    // v3: com a irrigação pela borda, a umidade nasce ao longo do canal do rio vivo (e não do centro da peça): fica
+    // verde o que o rio toca, que é o que produz. Chão molhado pela chuva e a umidade que recua continuam pela peça.
+    const chan=E.CFG.econ&&E.CFG.irrig==='borda',rc=s.seca?0.95:1.2;
+    for(const[k,a]of list){const[x,y]=wpos(k),tl=s.board.get(k);
+      if(chan&&tl&&s.alive.has(k)&&(tl.e.includes('A')||tl.src)){const pts=tl.src?[[0,0,1.25]]:[[0,0,rc*0.85]];
+        for(let d=0;d<6;d++)if(tl.e[d]==='A'){const an=ang(d);pts.push([Math.cos(an)*0.7,Math.sin(an)*0.7,rc]);}
+        for(const[dx,dy,rr]of pts){const cx=x+dx,cy=y-0.15+dy,gr=m.createRadialGradient(cx,cy,0,cx,cy,rr);
+          gr.addColorStop(0,`rgba(0,0,0,${a})`);gr.addColorStop(0.55,`rgba(0,0,0,${0.85*a})`);gr.addColorStop(1,'rgba(0,0,0,0)');m.fillStyle=gr;m.fillRect(cx-rr,cy-rr,2*rr,2*rr);}
+        continue;}
       const gr=m.createRadialGradient(x,y-0.15,0,x,y-0.15,r);gr.addColorStop(0,`rgba(0,0,0,${a})`);gr.addColorStop(0.5,`rgba(0,0,0,${0.9*a})`);gr.addColorStop(1,'rgba(0,0,0,0)');
       m.fillStyle=gr;m.fillRect(x-r,y-r-0.15,2*r,2*r);}}
   g.save();g.setTransform(W.dpr*sz,0,0,W.dpr*sz,W.dpr*cam.x,W.dpr*cam.y);g.clip(boardClip(s,t));g.setTransform(W.dpr,0,0,W.dpr,0,0);
@@ -3451,10 +3488,17 @@ function refresh(){
   const s=G.s;syncFaunaDecor();
   G.valid=new Set(E.over(s)?[]:E.slots(s).filter(k=>E.rotations(E.cur(s).e).some(o=>E.legal(s.board,k,o.e))));
   G.qp=E.questProgress(s);G.bal=E.balance(s);document.body.dataset.ph=String(G.bal.phase);
-  G.wet=new Set();for(const k of s.alive){G.wet.add(k);for(let d=0;d<6;d++)G.wet.add(E.nb(k,d));}
+  G.wet=new Set();if(E.CFG.econ&&E.CFG.irrig==='borda'){for(const k of s.alive)G.wet.add(k);for(const k of E.irrigSet(s.board,s.alive))G.wet.add(k);} // v3: verde = o que o rio toca
+  else for(const k of s.alive){G.wet.add(k);for(let d=0;d<6;d++)G.wet.add(E.nb(k,d));}
   G.wdist=new Map();{const qu=[];for(const[k,t]of s.board)if(t.src){G.wdist.set(k,0);qu.push(k);}while(qu.length){const k=qu.shift(),t=s.board.get(k);
     for(let d=0;d<6;d++){if(t.e[d]!=='A')continue;const n=E.nb(k,d),tn=s.board.get(n);
       if(tn&&s.alive.has(n)&&tn.e[E.opp(d)]==='A'&&!G.wdist.has(n)){G.wdist.set(n,G.wdist.get(k)+1);qu.push(n);}}}}
+  // v2.4b: distância pela rede inteira de rios, a partir das fontes (inclui trechos secos): dá o lado de onde a água
+  // vinha, para a água recuar rio acima quando seca e para a "língua" rasa na peça seca vizinha da água viva
+  G.fdist=new Map();{const qu=[];for(const[k,t]of s.board)if(t.src){G.fdist.set(k,0);qu.push(k);}while(qu.length){const k=qu.shift(),t=s.board.get(k);
+    for(let d=0;d<6;d++){if(t.e[d]!=='A')continue;const n=E.nb(k,d),tn=s.board.get(n);if(tn&&tn.e[E.opp(d)]==='A'&&!G.fdist.has(n)){G.fdist.set(n,G.fdist.get(k)+1);qu.push(n);}}}}
+  G.seep=new Map();if(s.seca)for(const[k,t]of s.board){if(t.src||s.alive.has(k))continue;
+    for(let d=0;d<6;d++){if(t.e[d]!=='A')continue;const n=E.nb(k,d),tn=s.board.get(n);if(tn&&s.alive.has(n)&&tn.e[E.opp(d)]==='A'){G.seep.set(k,d);break;}}}
   G.reg=regions(s.board);G.mapClim=mapClimate(s);
   G.worldDirty=true;
   G.flowerSpots=[];G.bb=null;
@@ -3508,7 +3552,7 @@ const LES=[
    sel:'Gire até os dois lados de rio ficarem verdes: um encosta na nascente, o outro na peça da bandeira.',
    after:'Leve o rio da nascente até a peça da bandeira.',
    goal:s=>[s.questsDone>=1,'Objetivo: levar água até a bandeira'],
-   win:'Rio ligado à nascente tem água viva: cada peça que recebe água vale +2. No vale de verdade há também duas veredas: ligar o rio de uma delas ao da nascente é um afluente, +10 e +2 peças.'},
+   win:'Rio ligado à nascente tem água viva, e o que encosta nele fica verde: lavoura verde produz +2, pasto verde +1, vila com água ganha +1 por lavoura verde ao lado. No vale de verdade há também duas veredas: ligar o rio de uma delas ao da nascente é um afluente, +10 e +2 peças.'},
   {id:'licao-3',title:'Missões',
    intro:'A bandeira "3/5 · 4⏳" pede que este bosque chegue a 5 peças em até 4 jogadas. Ele tem 3. Toque na casa marcada.',
    sel:'O balão mostra o efeito: 3→4/5. Encoste bosque no bosque para ele crescer.',
@@ -3528,7 +3572,7 @@ const LES=[
    after:'Mais uma jogada antes da seca. Proteja o trecho que ainda está em laranja.',
    goal:s=>{const B=E.balance(s);return[s.stats.kept>=3,`Objetivo: 3 trechos de rio protegidos (${s.stats.secas?s.stats.kept:B.riverSafe}/3)`];},
    fail:s=>s.stats.secas>0&&s.stats.kept<3,failTxt:'Algum trecho ficou sem mata e secou, e o rio secou dali para baixo. Tente de novo.',
-   win:'A cada 8 jogadas vem a seca, que dura 4. Quando ela chega, cada trecho de rio que continua correndo vale +1 e rende até 2 peças. Depois as chuvas voltam com +2 peças e a cheia: cada peça verde do vale vale +1.'},
+   win:'A cada 8 jogadas vem a seca, que dura 4, e com ela a colheita: o vale rende tudo o que produz com a água que sobrou. Rio com mata ciliar continua correndo e mantém verde o que está em volta. Depois as chuvas voltam com +2 peças.'},
 ];
 function lessonOf(k){const i=LES.findIndex(l=>l.id===k);return i<0?null:{...LES[i],n:i+1};}
 function lessonCheck(){
@@ -3556,8 +3600,12 @@ $('introLessons').addEventListener('click',()=>{$('intro').hidden=true;db.seenIn
 // ---------- seleção, giro e colocação
 function questRegion(board,q){if(q.flow)return new Set([q.key]);const G2=E.groups(board),r=G2.find(q.key*6+q.edge);return G2.members.get(r)||new Set([q.key]);}
 function previewQuests(){
-  G.selQ=[];G.selBal=null;if(!G.sel)return;
+  G.selQ=[];G.selBal=null;G.selY=[];if(!G.sel)return;
   const o=G.sel.ops[G.sel.i],res=E.place(G.s,G.sel.k,o.r),ns=res.state,after=E.questProgress(ns);
+  // v3: a economia do vale na prévia: quanto cada peça passa a produzir com esta jogada (lavoura que ganha água, vila que
+  // ganha comida...). Aparece em cima de cada peça que muda, para a pessoa ver o porquê do número
+  if(E.CFG.econ){const g0=E.irrigSet(G.s.board,G.s.alive),g1=E.irrigSet(ns.board,ns.alive);
+    for(const kk of ns.board.keys()){const a=G.s.board.has(kk)?E.yieldOf(G.s.board,g0,kk):null,b=E.yieldOf(ns.board,g1,kk),d=(b?b.sum:0)-(a?a.sum:0);if(d)G.selY.push([kk,d]);}}
   const find=(L,q)=>L.find(x=>x.key===q.key&&x.edge===q.edge);
   for(const q of G.qp){if(q.flow)continue;
     let cur2=null,st='';const a=find(after,q),d=find(res.rep.questsDone,q),f=find(res.rep.questsFailed,q);
@@ -3797,7 +3845,11 @@ function yearEvents(state,rep,now){
   for(const ev of rep.events){
     if(ev.type==='seca'){
       G.dryFx={keys:ev.lost,t0:now+300};G.drain={order:ev.lost.slice().sort((a,b)=>(G.wdist.get(b)??0)-(G.wdist.get(a)??0)),t0:now+250};
-      queueBanner(ev.kept?`Chegou a seca! ${ev.kept} ${pl(ev.kept,'trecho de rio','trechos de rio')} com mata: +${ev.pts}${ev.gain?` · +${ev.gain} ${pl(ev.gain,'peça','peças')}`:''}`:'Chegou a seca: sem mata ciliar, o rio secou',ev.kept?'good':'dry');
+      queueBanner(ev.kept?`Chegou a seca! ${ev.kept} ${pl(ev.kept,'trecho de rio','trechos de rio')} com mata${ev.pts?`: +${ev.pts}`:''}${ev.gain?` · +${ev.gain} ${pl(ev.gain,'peça','peças')}`:''}`:'Chegou a seca: sem mata ciliar, o rio secou',ev.kept?'good':'dry');
+      // a colheita é o pico do ano: depois do aviso da seca, cada peça que produz sobe o seu número, uma a uma, da
+      // nascente para fora, com um tique; e a faixa mostra o total
+      if(ev.harvest){queueBanner(`Colheita! O vale produziu +${ev.harvest}`,'good');const T0=RM?0:1900,dt=RM?0:85;
+        ev.hy.slice().sort((a,b)=>hd(a[0],E.SRC)-hd(b[0],E.SRC)).slice(0,70).forEach(([kk,v],i)=>{G.floats.push({k:kk,txt:`+${v}`,t0:now+T0+i*dt,col:'#e3f3dc',fg:'#24592b'});if(!RM&&i%2===0)setTimeout(()=>sfx.tick&&sfx.tick(),T0+i*dt);});}
       if(ev.lost.length&&ev.kept)queueBanner(`${ev.lost.length} ${pl(ev.lost.length,'trecho sem mata secou','trechos sem mata secaram')}`,'dry');
       setTimeout(sfx.dry,350);
       for(const k of ev.lost){const[dx,dy]=wpos(k);emit('~#d9b98a',dx,dy,5,{ang:-Math.PI/2,spread:2.5,v:0.35,g:-0.1,life:1600,size:0.5,grow:1.2,alpha:0.55,delay:250+Math.random()*400,jx:1.2,jy:0.6});}
@@ -3843,7 +3895,7 @@ function fxOf(k,t){
 // água que chega (v1.10): a frente desce o rio a partir da nascente (pela distância ao longo do rio, não pela
 // distância à peça posta) e cada peça enche do lado por onde a água entra, com espuma na frente. Na seca, os
 // trechos que perderam a água esvaziam (a lâmina encolhe até sumir), do mais baixo para o mais alto.
-const FILL_STEP=170,FILL_DUR=520,DRAIN_STEP=140,DRAIN_DUR=1100;
+const FILL_STEP=170,FILL_DUR=520,DRAIN_STEP=320,DRAIN_DUR=2400; // v2.4b: a seca baixa a água devagar, no ritmo da umidade (2,4 s)
 function flowRank(f){if(!f.rank){const L=f.order.slice().sort((a,b)=>(G.wdist.get(a)??hd(a,E.SRC))-(G.wdist.get(b)??hd(b,E.SRC)));
   const w0=G.wdist.get(L[0])??0;f.rank=new Map(L.map((k,i)=>[k,Math.min(i,(G.wdist.get(k)??i)-w0)]));}return f.rank;}
 function fillOf(k,t){
@@ -3884,7 +3936,9 @@ function draw(t){
   const PASS=new Map();
   for(const k of keys){if(sel&&k===sel.k&&!s.board.has(k))continue;let[x,y]=scr(k);if(x<-sz*1.7||x>W.w+sz*1.7||y<-sz*2.8||y>W.h+sz*1.9)continue;
     const tl=s.board.get(k),f=fxOf(k,t),tv=tileVars(k,tl.e,s.board);y+=f.dy;
-    const o={ctx:tileCtx(s,k,tl),dsc:f.dsc,wet:true,alive:aliveOf(k,t),fill:fillOf(k,t),src:tl.src,ver:tl.vereda,seed:k,t,blocked:blockedSides(s.board,k,tl.e),pat:wpat,flow:flowDirs(k),vs:tv.vs,sp:tv.sp,es:edgeState(s.board,k,tl.e),kind:tl.sp};
+    const drn=!!(G.drain&&!s.alive.has(k)&&G.drain.order.includes(k)),fl=fillOf(k,t);
+    const o={ctx:tileCtx(s,k,tl),dsc:f.dsc,wet:true,alive:drn&&fl>0?1:aliveOf(k,t),fill:fl,src:tl.src,ver:tl.vereda,seed:k,t,blocked:blockedSides(s.board,k,tl.e),pat:wpat,flow:drn?flowDirsFull(k):flowDirs(k),
+      seep:drn&&fl>0?null:G.seep&&G.seep.has(k)?G.seep.get(k):null,drain:drn&&fl>0,vs:tv.vs,sp:tv.sp,es:edgeState(s.board,k,tl.e),kind:tl.sp};
     PASS.set(k,{f,o});g.save();if(f.sx!==1||f.sy!==1){const by=y+sz*0.5;g.translate(x,by);g.scale(f.sx,f.sy);g.translate(-x,-by);}
     drawTileCached(g,x,y,sz,k,tl.e,{...o,pass:'chao'});g.restore();}
   for(const[k,{f,o}]of PASS){const tl=s.board.get(k);if(!tl.e.includes('A'))continue;let[x,y]=scr(k);y+=f.dy;
@@ -3918,7 +3972,8 @@ function draw(t){
         if(ed.m){g.moveTo(X-u*0.07,Y);g.lineTo(X-u*0.01,Y+u*0.06);g.lineTo(X+u*0.08,Y-u*0.06);}else{g.moveTo(X-u*0.06,Y-u*0.06);g.lineTo(X+u*0.06,Y+u*0.06);g.moveTo(X+u*0.06,Y-u*0.06);g.lineTo(X-u*0.06,Y+u*0.06);}
         g.stroke();
       }
-      const r=o.rep;let txt=`+${r.pts}`;if(r.tiles)txt+=` · +${r.tiles} peça${r.tiles>1?'s':''}`;
+      for(const[kk,d]of G.selY||[]){if(kk===sel.k)continue;const[yx,yy]=scr(kk);pill(g,yx,yy-sz*0.05,`${d>0?'+':''}${d}`,d>0?'#e3f3dc':'#ffe4cc',d>0?'#24592b':'#8a3a0c',sz*0.8);}
+      const r=o.rep;let txt=`+${r.pts}`;if(r.prod>0)txt+=` · produção +${r.prod}`;if(r.tiles)txt+=` · +${r.tiles} peça${r.tiles>1?'s':''}`;
       if(r.questsDone.length)txt+=' · missão ✓';
       label(x,y-sz*1.25,txt,{bg:r.tiles?'#3f9a4a':'#fffdf7',fg:r.tiles?'#fff':'#1d3b3a',pri:PRI.jogada});
       continue;
@@ -4156,7 +4211,8 @@ function riverRel(dx,dy,K){let best=1e9;
 function tubeAt(T,u){const P=T.pts,n=P.length-1,f=Math.max(0,Math.min(n-1e-6,u*n)),j=Math.floor(f),r=f-j,[ax,ay]=P[j],[bx,by]=P[j+1],l=Math.hypot(bx-ax,by-ay)||1;
   return[ax+(bx-ax)*r,ay+(by-ay)*r,(bx-ax)/l,(by-ay)/l,T.wf[j]+(T.wf[j+1]-T.wf[j])*r];}
 function drawRiver(g,x,y,s,R,ws,o){
-  const al=o.alive==null?0:o.alive,w=s*0.38,em=R*0.866,src=!!o.src,dryLake=o.kind==='lake'&&al<=0,cr=src?s*0.42:dryLake?w*1.05:null;
+  // v2.4b: secando, o leito descoberto já tem cara de leito seco
+  const al=o.alive==null?0:o.drain?Math.min(o.alive,0.999):o.alive,w=s*0.38,em=R*0.866,src=!!o.src,dryLake=o.kind==='lake'&&al<=0,cr=src?s*0.42:dryLake?w*1.05:null;
   // brejo onde o rio acaba (v1.10): em cada ponta do esqueleto, terra escura e úmida que se abre para a frente e,
   // com água, poças pequenas espalhadas no sentido em que a água seguiria. Tudo dentro da peça.
   const K=riverSkel(ws,o,o.seed??0),sd0=(o.seed??0)|0,inHex=(px,py,m)=>{for(let e=0;e<6;e++){const ea=ang(e);if((px-x)*Math.cos(ea)+(py-y)*Math.sin(ea)+m>em*0.97)return false;}return true;};
@@ -4196,8 +4252,30 @@ function drawRiver(g,x,y,s,R,ws,o){
       g.beginPath();g.moveTo(px-sn*w*0.35,py+c*w*0.35);g.lineTo(px+c*w*0.12,py+sn*w*0.12);g.lineTo(px+sn*w*0.3,py-c*w*0.3);g.stroke();}}
     g.restore();
   }
+  // v2.4b: na seca, a peça logo abaixo da água viva não corta seco: a água entra rasa pelo lado de cima, afina,
+  // deixa o leito aparecer e some no barro molhado, com poças adiante (o nível baixando, e não um corte na emenda)
+  if(al<=0&&o.seep!=null&&!src){const a=ang(o.seep),ix=x+Math.cos(a)*em,iy=y+Math.sin(a)*em,L=R*(0.82+0.16*h01(sd0,91)),ga=g.globalAlpha;
+    g.save();g.beginPath();g.arc(ix,iy,L*1.12,0,7);g.clip();
+    const mud=g.createRadialGradient(ix,iy,0,ix,iy,L*1.12);mud.addColorStop(0,'rgba(78,58,36,.55)');mud.addColorStop(0.7,'rgba(84,62,38,.32)');mud.addColorStop(1,'rgba(84,62,38,0)');
+    g.fillStyle=mud;g.fill(riverPath(x,y,R,ws,o,w*1.02,cr));
+    const Pn=riverPath(x,y,R,ws,o,w*0.66,cr?cr*0.6:null);g.beginPath();g.arc(ix,iy,L,0,7);g.clip();g.clip(Pn);
+    const wp=waterPats(g,o.t,s,x,y,o.world);g.globalAlpha=ga*0.9;
+    if(wp){g.fillStyle=wp[0];g.fill(Pn);}else{g.fillStyle='#4aa9c9';g.fill(Pn);}
+    g.globalAlpha=ga; // o azul mais fundo do meio do rio continua na emenda e vai sumindo (sem linha entre as peças)
+    for(const[f,c]of[[0.7,'20,150,175,.16'],[0.42,'10,120,165,.18']]){const dg=g.createRadialGradient(ix,iy,0,ix,iy,L*0.55);dg.addColorStop(0,`rgba(${c})`);dg.addColorStop(1,`rgba(${c.slice(0,c.lastIndexOf(','))},0)`);
+      g.fillStyle=dg;g.fill(riverPath(x,y,R,ws,o,w*f,cr?cr*f:null));}
+    const sh=g.createRadialGradient(ix,iy,L*0.12,ix,iy,L);
+    sh.addColorStop(0,'rgba(196,170,120,0)');sh.addColorStop(0.45,'rgba(186,158,108,.28)');sh.addColorStop(0.8,'rgba(150,118,74,.72)');sh.addColorStop(1,'rgba(128,98,62,.96)');
+    g.fillStyle=sh;g.fill(Pn);g.fillStyle='rgba(235,245,240,.28)';g.beginPath();g.arc(ix,iy,L*0.62,0,7);g.lineWidth=Math.max(1,s*0.012);g.strokeStyle='rgba(240,248,245,.35)';g.stroke();
+    g.restore();
+    // poças adiante, onde o fundo ainda guarda água
+    const fx=Math.cos(a+Math.PI),fy=Math.sin(a+Math.PI);for(let j=0;j<3;j++){const hq=h01(sd0+31,j*7),d=L*(0.85+0.35*hq),px=ix+fx*d+(-fy)*w*(h01(sd0+37,j)-0.5)*0.9,py=iy+fy*d+fx*w*(h01(sd0+41,j)-0.5)*0.9,pr=w*(0.1+0.08*h01(sd0+43,j));
+      if(!inHex(px,py,pr*1.5))continue;g.fillStyle='rgba(84,62,38,.4)';g.beginPath();g.ellipse(px,py+pr*0.15,pr*1.7,pr*1.2,0,0,7);g.fill();
+      g.fillStyle='rgba(78,128,138,.78)';g.beginPath();g.ellipse(px,py,pr*1.3,pr*0.9,0,0,7);g.fill();g.fillStyle='rgba(235,250,255,.45)';g.beginPath();g.ellipse(px-pr*0.35,py-pr*0.25,pr*0.4,pr*0.18,0,0,7);g.fill();}}
   if(al<=0)return;
   g.save();g.globalAlpha*=al;
+  // v2.4b: secando, o nível baixa: a água fica rasa (o leito aparece) enquanto a frente recua rio acima
+  if(o.drain&&o.fill!=null)g.globalAlpha*=0.35+0.65*o.fill;
   // frente d'água (v1.10): enchendo, a água só existe até um raio a partir do lado por onde entra
   let front=null;
   if(o.fill!=null&&o.fill<1){const inf=o.flow?o.flow.findIndex((v,i)=>v<0&&ws.includes(i)):-1,ix=inf>=0?x+Math.cos(ang(inf))*em:x,iy=inf>=0?y+Math.sin(ang(inf))*em:y;
@@ -4285,6 +4363,7 @@ function drawRiver(g,x,y,s,R,ws,o){
     g.restore();
   }
 }
+function flowDirsFull(k){const out=[],dk=G.fdist&&G.fdist.get(k);for(let d=0;d<6;d++){const n=E.nb(k,d),dn=G.fdist&&G.fdist.get(n);out.push(dk!=null&&dn!=null&&dn<dk?-1:1);}return out;}
 function flowDirs(k){const out=[],dk=G.wdist&&G.wdist.get(k);for(let d=0;d<6;d++){const n=E.nb(k,d),dn=G.wdist&&G.wdist.get(n);out.push(dk!=null&&dn!=null&&dn<dk?-1:1);}return out;}
 function blockedSides(board,k,e){const out=[];for(let d=0;d<6;d++){if(e[d]!=='A')continue;const n=board.get(E.nb(k,d));if(n&&n.e[E.opp(d)]!=='A')out.push(d);}return out;}
 function pill(g,x,y,txt,bg,fg,sz){
@@ -4367,6 +4446,7 @@ function introThumbs(){
     else if(k==='water')thumb(c,['A','G','G','A','G','G']);
     else if(k==='quest'){const r=thumb(c,['B','B','B','B','G','G']);flag(r.g,r.x,r.y-r.s*0.7,'6',"B",r.s*0.9);}
     else if(k==='seca')thumb(c,['A','B','B','A','B','G']);
+    else if(k==='prod')thumb(c,['C','C','C','V','V','A']);
     else thumb(c,['V','V','C','C','C','V']);
   });
 }
@@ -4377,7 +4457,10 @@ function renderBal(){
   const B=G.bal,A=G.sel?G.selBal:null,box=$('bal');
   const ar=(a,b)=>A&&a!==b?`${a}→${b}`:`${a}`;
   let txt,cls='';
-  if(B.seca)txt=`Seca: ${B.riverSafe} ${B.riverSafe===1?'trecho correndo':'trechos correndo'}`;
+  if(E.CFG.econ){ // v3: o que importa para a seca é a colheita: quanto o vale vai produzir com a água que sobrar
+    if(B.seca)txt=`Seca: produção ${B.prod}<span class="lg"> · ${B.riverSafe} ${B.riverSafe===1?'trecho correndo':'trechos correndo'}</span>`;
+    else{txt=`Colheita<span class="lg"> na seca</span>: ${ar(B.harvest,A?A.harvest:0)}${B.river?` · rio ${ar(B.riverSafe,A?A.riverSafe:0)}/${A?A.river:B.river}`:''}`;cls=B.risk.length?(B.turnsLeft<=4?'warn':''):'ok';}}
+  else if(B.seca)txt=`Seca: ${B.riverSafe} ${B.riverSafe===1?'trecho correndo':'trechos correndo'}`;
   else if(!B.river)txt='Rio ligado à nascente: nenhum ainda';
   else{txt=`Rio protegido<span class="lg"> para a seca</span>: ${ar(B.riverSafe,A?A.riverSafe:0)} de ${A?A.river:B.river}${(A?A.gain:B.gain)?` → +${A?A.gain:B.gain} ${(A?A.gain:B.gain)===1?'peça':'peças'}`:` · +1 peça a cada ${B.per}`}`;
     cls=B.risk.length?(B.turnsLeft<=4?'warn':''):'ok';}
@@ -4394,6 +4477,9 @@ function renderBal(){
 }
 function explainBal(){
   const B=G.bal,n=B.turnsLeft,j=n===1?'jogada':'jogadas';
+  if(E.CFG.econ){const t=B.seca?`É seca: só corre o rio com mata ciliar (bosque na peça ou encostado). O vale produz ${B.prod} agora. As chuvas voltam em ${n} ${j}.`
+      :`Em ${n} ${j} vem a seca, e com ela a colheita: o vale rende o que produz com a água que sobrar (hoje, ${B.harvest}). Lavoura verde +2, pasto verde +1, vila com água +1 por lavoura verde encostada, mata junto ao rio +1. ${B.risk.length?`${B.risk.length} ${B.risk.length===1?'trecho de rio vai':'trechos de rio vão'} secar (em laranja): bosque encostado protege.`:''}`;
+    G.focusSet={keys:new Set(B.risk),col:'#e07a2e',until:performance.now()+3500};renderUI();flashHint(t);return;}
   const t=B.seca?`É seca: só corre o rio com mata ciliar (bosque na peça ou encostado nela). As chuvas voltam em ${n} ${j}.`
     :B.risk.length?`Na seca (em ${n} ${j}), só corre o rio com bosque na peça ou encostado nela. ${B.risk.length} ${B.risk.length===1?'trecho vai':'trechos vão'} secar (em laranja). Cada trecho que continuar correndo vale +1, e cada ${B.per} trechos, +1 peça (até 2 por seca; a seca fica mais dura a cada ano).`
     :B.river?`Todo o rio tem mata ciliar: na seca ele continua correndo e rende +${B.riverSafe} e +${B.gain} ${B.gain===1?'peça':'peças'}.`
@@ -4418,7 +4504,8 @@ function paintScoreSub(){
   const el=$('scoreSub'),mk=!G.lesson&&marcosOf(G.seedKey);
   if(!mk){el.className='';el.textContent='pontos';$('scoreBox').title='';return;}
   const n=dropsOf(G.s.score,mk.t);el.className='mk';
-  el.innerHTML=`<span class="drops">${[0,1,2].map(i=>dropSvg(i<n)).join('')}</span>${n<3?mk.t[n]:''}`;
+  const cpt=x=>x>=1000?(x/1000).toFixed(x>=10000?0:1).replace('.',',')+'k':x; // v3: os marcos passam de mil; o placar não pode espremer o título
+  el.innerHTML=`<span class="drops">${[0,1,2].map(i=>dropSvg(i<n)).join('')}</span>${n<3?cpt(mk.t[n]):''}`;
   $('scoreBox').title=n<3?`Próximo marco: ${MKN[n]}, com ${mk.t[n]} pontos`:'Rio cheio: você passou dos três bots';
 }
 function renderUI(){
@@ -4446,7 +4533,8 @@ function renderUI(){
      const gl=$('lesGoal');gl.textContent=(ok?'✓ ':'')+txt;gl.className='lgoal'+(ok?' done':'');}}
   // lista de missões abertas
   {const box=$('qchips');box.innerHTML='';
-   const qs=G.qAll?G.qp:G.qp.slice().sort((a,b)=>(a.flow?50:a.n-a.cur)-(b.flow?50:b.n-b.cur)).slice(0,3);
+   const QMAX=W.w&&W.w<430?2:3;
+   const qs=G.qAll?G.qp:G.qp.slice().sort((a,b)=>(a.flow?50:a.n-a.cur)-(b.flow?50:b.n-b.cur)).slice(0,QMAX);
    for(const q of qs){const b=document.createElement('button');b.type='button';const near=(!q.flow&&q.n-q.cur===1)||q.left<=2;
      b.className='qchip'+(near?' near':'')+(G.focusQ&&G.focusQ.key===q.key?' on':'');
      b.innerHTML=`<i style="background:${BIOME_DOT[q.b]}"></i>${q.flow?(q.seca?'Água na seca':'Ligar à água'):`${NAME[q.b]} ${q.cur}/${q.n}`}${q.left<50?` · ${q.left}⏳`:''}`;
@@ -4454,7 +4542,7 @@ function renderUI(){
      b.addEventListener('click',()=>{G.focusQ={key:q.key,edge:q.edge,b:q.b,flow:q.flow,until:performance.now()+3500};
        renderUI();flashHint(questTxt(q));});
      box.appendChild(b);}
-   if(G.qp.length>3){const b=document.createElement('button');b.type='button';b.className='qchip';b.textContent=G.qAll?'menos':`+${G.qp.length-3} ${G.qp.length-3===1?'missão':'missões'}`;
+   if(G.qp.length>QMAX){const b=document.createElement('button');b.type='button';b.className='qchip more';b.textContent=G.qAll?'menos':`+${G.qp.length-QMAX}`;b.setAttribute('aria-label',`mais ${G.qp.length-QMAX} ${G.qp.length-QMAX===1?'missão':'missões'}`);
      b.addEventListener('click',()=>{G.qAll=!G.qAll;renderUI();});box.appendChild(b);}}
   // explicação na primeira peça com missão
   // v2.4: na primeira partida de verdade, as veredas e a regra da água
@@ -4468,7 +4556,7 @@ function renderUI(){
   {const B=G.bal,n=B.turnsLeft,A=E.CFG.aguas,T=A+E.CFG.seca;
    const fr=B.phase?(A+(B.len-n))/T:(B.len-n)/T;
    $('seasonName').textContent=`Ano ${B.year} · ${E.CYCLE[B.phase]}`;
-   $('seasonNext').textContent=over?'':`${B.phase?'Chuvas':'Seca'} em ${n} ${n===1?'jogada':'jogadas'}${B.phase&&B.cheia?` · cheia +${B.cheia}`:''}`;
+   $('seasonNext').textContent=over?'':`${B.phase?'Chuvas':E.CFG.econ?'Colheita e seca':'Seca'} em ${n} ${n===1?'jogada':'jogadas'}${B.phase&&B.cheia?` · cheia +${B.cheia}`:''}`;
    $('seasonFill').style.clipPath=`inset(0 ${(100-fr*100).toFixed(2)}% 0 0)`;$('sbMark').style.left=(fr*100).toFixed(2)+'%';
    renderBal();}
   const sel=G.sel;
@@ -4486,9 +4574,9 @@ function renderUI(){
   else if(!G.bal.seca&&G.bal.turnsLeft<=4&&G.bal.risk.length)h=`Seca em ${G.bal.turnsLeft} ${G.bal.turnsLeft===1?'jogada':'jogadas'}: o rio em laranja vai secar.`;
   else if(G.bal.seca&&s.placed>0&&G.bal.risk&&learn)h='É seca: rio sem bosque encostado fica seco.';
   else if(learn){
-    if(sel){const o=sel.ops[sel.i];h=o.rep.edges.length?'Lados <em>verdes</em> combinam. Toque na peça para girar.':'Toque na peça para girar.';if(sel.ops.length===1)h='É só colocar.';}
-    else if(s.placed===0)h='Toque numa casa vazia. Rio não se corta.';
-    else h='Toque numa casa vazia.';}
+    if(sel){const o=sel.ops[sel.i];h=o.rep.edges.length?'Lados <em>verdes</em> combinam. Toque na peça para girar e em Colocar.':'Toque na peça para girar e em Colocar.';if(sel.ops.length===1)h='É só colocar.';}
+    else if(s.placed===0)h='Arraste a peça até o vale (ou toque numa casa). Rio não se corta.';
+    else h='Arraste a peça até o vale, ou toque numa casa.';}
   if(G.lesson&&!over){const L=G.lesson;h=G.sel?L.sel:(s.placed===0||!L.after?L.intro:L.after);}
   $('hint').innerHTML=h?`<span>${h}</span>`:'';$('hint').classList.toggle('vazio',!h);
   // o topo coberto mudou (missões novas, lição): reenquadra o vale na área livre
@@ -4524,6 +4612,23 @@ function endPtr(e){
 cv.addEventListener('pointerup',endPtr);cv.addEventListener('pointercancel',endPtr);
 cv.addEventListener('wheel',e=>{e.preventDefault();const[mx,my]=lxy(e),k=Math.max(12,Math.min(110,cam.ts*(e.deltaY<0?1.12:0.89)))/cam.ts;cam.tx=mx-(mx-cam.tx)*k;cam.ty=my-(my-cam.ty)*k;cam.ts*=k;userCam();},{passive:false});
 function userCam(){cam.user=true;$('recenter').hidden=false;}
+// v3: arrastar a peça da barra até o vale. A peça fica um pouco acima do dedo (para ser vista); sobre uma casa válida
+// ela encaixa no vale com a prévia (lados verdes, +N); soltar coloca. Tocar na peça da barra gira a peça escolhida.
+const DRAG_UP=58;let drag=null;
+{const ct=$('curTile'),gh=$('dragGhost');
+ const at=e=>{const r=cv.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top-DRAG_UP;return{x,y,in:x>=0&&y>=-DRAG_UP*0.5&&x<=r.width&&y<=r.height};};
+ ct.addEventListener('pointerdown',e=>{if(E.over(G.s)||G.lesPending||G.calm||!G.valid.size)return;e.preventDefault();ct.setPointerCapture(e.pointerId);
+   drag={id:e.pointerId,x0:e.clientX,y0:e.clientY,moved:false,k:null,had:G.sel?G.sel.k:null};});
+ ct.addEventListener('pointermove',e=>{if(!drag||e.pointerId!==drag.id)return;
+   if(!drag.moved&&Math.hypot(e.clientX-drag.x0,e.clientY-drag.y0)<8)return;
+   if(!drag.moved){drag.moved=true;const t=E.cur(G.s);if(t){gh.hidden=false;thumb(gh,G.sel?G.sel.ops[G.sel.i].e:t.e,{kind:t.sp});}}
+   const a=at(e),k=a.in?cellAt(a.x,a.y):null;
+   if(k!=null&&G.valid.has(k)){gh.hidden=true;if(!G.sel||G.sel.k!==k){select(k);drag.k=k;}}
+   else{gh.hidden=false;gh.style.left=e.clientX+'px';gh.style.top=(e.clientY-DRAG_UP)+'px';if(G.sel){G.sel=null;G.selQ=[];renderUI();}drag.k=null;}});
+ const end=e=>{if(!drag||e.pointerId!==drag.id)return;const d=drag;drag=null;gh.hidden=true;
+   if(!d.moved){if(G.sel)turn(1);else if(G.best!=null&&G.valid.has(G.best))select(G.best);return;}
+   if(e.type==='pointerup'&&d.k!=null&&G.sel&&G.sel.k===d.k)commit();else{G.sel=null;G.selQ=[];renderUI();}};
+ ct.addEventListener('pointerup',end);ct.addEventListener('pointercancel',end);}
 $('recenter').addEventListener('click',()=>{cam.user=false;$('recenter').hidden=true;fit(false);});
 function tap(x,y){
   if(G.calm){exitCalm();return;}
@@ -4622,7 +4727,7 @@ function fillResult(){
   if(mk&&n<3){
     const bot=n<=1?mk.par:mk.bot,who=n<=1?'Ribeirão':'Rio cheio',bs=bot.src,bt=bot.tiles;
     const me={quest:st.quest,seca:st.kept,flow:st.flow+st.special,perfect:st.perfect};
-    const ROWS=[['Peças colocadas',s.placed,bot.placed],['Encaixes (pontos)',st.match,bs.match],['Missões cumpridas',s.questsDone,bot.quests],['Rio que aguentou a seca',st.kept,bs.seca],['Água viva (pontos)',me.flow,bs.flow+bs.special],['Cheias (pontos)',st.cheia||0,bs.cheia||0],['Afluentes',(s.joined||[]).length,bot.aflu||0],['Peças perfeitas',s.perfects,bot.perfects]];
+    const ROWS=[['Peças colocadas',s.placed,bot.placed],['Encaixes (pontos)',st.match,bs.match],['Missões cumpridas',s.questsDone,bot.quests],['Rio que aguentou a seca',st.kept,bs.seca],['Água viva (pontos)',me.flow,bs.flow+bs.special],['Produção das jogadas',st.prod||0,bs.prod||0],['Colheitas (pontos)',st.harvest||0,bs.harvest||0],['Afluentes',(s.joined||[]).length,bot.aflu||0],['Peças perfeitas',s.perfects,bot.perfects]];
     const adv={quest:`Missões dão +${E.QUEST_TILES} peças, e peças fazem a partida durar: o bot cumpriu ${bot.quests}, você ${s.questsDone}. Nas jogadas seguintes a uma missão, encoste na região marcada.`,
       seca:`O bot deixou ${bs.seca} ${pl(bs.seca,'trecho','trechos')} de rio correndo nas secas; você, ${st.kept}. Encoste bosque no rio antes do laranja virar seca.`,
       flow:`O bot ganhou ${bs.flow+bs.special} pontos com água viva; você, ${me.flow}. Ligue os rios soltos à nascente.`,
@@ -4666,6 +4771,7 @@ function fillResult(){
   html+='<ul>'+row('Encaixes',`+${st.match}`)+row('Água viva',`+${st.flow}`)
     +row('Missões',`+${st.quest} · +${st.tQuest} peças`)+row('Peças perfeitas',`+${st.perfect} · +${st.tPerfect} peças`)
     +(st.special?row('Cachoeiras e lagoas',`+${st.special}`):'')
+    +(st.prod?row('Produção das jogadas',`+${st.prod}`):'')+(st.harvest?row(`Colheitas (${st.harvests})`,`+${st.harvest}`):'')
     +(st.cheia?row(`Cheias (${st.cheias})`,`+${st.cheia}`):'')+((s.joined||[]).length?row(`Afluentes (${s.joined.length})`,`+${st.aflu} · +${st.tAflu} peças`):'')
     +row('Rio que aguentou a seca',`+${st.kept} · +${st.tSeason} peças`)+(st.dried?row('Trechos secos na seca',`${st.dried}`,'bad'):'')
     +(st.failed.length?row(`Missões que o prazo levou (${st.failed.length})`,'—'):'')+'</ul>';
@@ -4677,7 +4783,7 @@ function fillResult(){
   const rec=daily?db.daily[dk]:null,shareS=G.lastRecord==='treino'&&rec?rec.score:s.score,sn=mk?dropsOf(shareS,mk.t):-1;
   const drops=sn>0?' '+'💧'.repeat(sn):'';
   const head2=daily?`Afluente #${valeNumber(dk)} — ${shareS} pts${drops}`:`Afluente (treino) — ${s.score} pts${drops}`;
-  $('shareTxt').value=`${head2}${mk&&sn>0?` · ${MKN[sn-1]}`:''}\n🧩 ${s.placed} peças · ✅ ${s.questsDone} missões · ✨ ${s.perfects} perfeitas\n💧 ${[...s.everAlive].filter(k=>!s.board.get(k).src).length} peças com água · 🌊 ${(s.joined||[]).length} ${pl((s.joined||[]).length,'afluente','afluentes')} · 🐾 ${seen.length} ${pl(seen.length,'bicho','bichos')} no vale${s.undos?` · ↶ ${s.undos}`:' · sem desfazer'}`;
+  $('shareTxt').value=`${head2}${mk&&sn>0?` · ${MKN[sn-1]}`:''}\n🧩 ${s.placed} peças · 🌾 ${s.stats.harvest||0} de colheita · ✅ ${s.questsDone} missões · ✨ ${s.perfects} perfeitas\n💧 ${[...s.everAlive].filter(k=>!s.board.get(k).src).length} peças com água · 🌊 ${(s.joined||[]).length} ${pl((s.joined||[]).length,'afluente','afluentes')} · 🐾 ${seen.length} ${pl(seen.length,'bicho','bichos')} no vale${s.undos?` · ↶ ${s.undos}`:' · sem desfazer'}`;
   $('resNote').textContent=G.lastRecord==='novo'?'Resultado do dia registrado. Pode jogar de novo para buscar o próximo marco; só a primeira partida conta para o dia.':
     G.lastRecord==='treino'&&rec?`Partida de treino. Seu resultado do dia continua ${rec.score}.`:'Vales de treino não contam para o resultado do dia.';
 }

@@ -1091,3 +1091,83 @@ O que se lê:
 | `atmos_teste.js` | tudo certo |
 | `coerencia_teste.js` | tudo coerente: chuva × seca, com a cheia e as veredas, que nunca secam |
 | `interface_teste.js` | 0 erros, 12 avisos aceitos (ver `INTERFACE.md`) |
+
+## O vale que produz (v3.0)
+
+**O retorno:** "ainda não estou achando divertido". Questionário curto, com as respostas da pessoa:
+
+- **O que tira a graça** (as quatro alternativas foram marcadas):
+  - colocar peça não é gostoso;
+  - as jogadas não parecem importar;
+  - tem coisa demais na tela e nas regras;
+  - fica monótono e longo.
+- **A sensação desejada:** "Montar e contemplar, mas também administrar. Um ar de construção de cidades, onde botar a água, o pasto etc. deve importar e não ser meramente estético; tem que ter o mínimo de estratégia."
+- **Um defeito de visual:** na seca, a água acabava de uma peça para a outra num corte seco.
+
+**O diagnóstico:**
+
+- Até a v2.4 o núcleo ainda era o do Dorfromantik: +1 por lado que combina.
+- A água, a seca e as missões eram camadas por cima desse núcleo.
+- Onde ficava o pasto ou a vila só mudava o desenho. Pesar isso em bots não mede diversão, e as respostas pediam outra coisa: **um vale que funciona como uma pequena economia**, como num construtor de cidades.
+
+### A regra nova: cada terreno tem uma função
+
+Peça **irrigada** é aquela que o rio vivo toca: o rio passa por ela, ou corre na beira dela, quando o lado da vizinha virado para ela é água viva. Só a irrigada produz.
+
+| Terreno | Produz | No vale |
+|---|---|---|
+| Lavoura | +2 se irrigada | sem água, a lavoura fica seca |
+| Pasto | +1 se irrigado | o gado bebe no rio |
+| Vila | +1 por lavoura irrigada encostada (comida), até +3, e só se a vila também tiver água | a vila precisa de água e de comida |
+| Mata | +1 se encosta no rio | é a mata ciliar, que também segura o rio na seca |
+
+- **A jogada** vale o encaixe, mais **o quanto o vale passa a produzir**. Levar o rio até uma lavoura que estava seca, ou pôr uma vila ao lado de lavouras com água, dá pontos agora.
+- **A colheita** vem na chegada da seca. O vale rende tudo o que produz **com a água da seca**: só corre o rio com mata ciliar, e o que fica sem água não rende. É o pico do ano: depois da faixa "Chegou a seca", cada peça que produz sobe o seu número, uma a uma, com um tique, e vem "Colheita! O vale produziu +N".
+- **Saíram**, por se sobrepor à colheita:
+  - a cheia (+1 por peça verde);
+  - os pontos por trecho de rio na seca.
+
+  A seca continua dando até 2 peças, e as chuvas continuam com +2.
+- **Água viva**: cada peça que recebe água vale +1 (eram +2). O valor da água agora está no que ela irriga.
+
+**Por que irrigar pela borda.** Com "água viva na peça ou ao lado", 94% a 98% do vale ficava verde: tudo produzia, e a posição voltava a não importar. Com a irrigação pela borda, quem joga bem irriga cerca de 50% do vale e quem está começando cerca de 13%. A água vira um recurso: o caminho do rio decide o que produz.
+
+### O que se vê é o que produz
+
+- **A umidade do chão** nasce ao longo do canal do rio vivo, e não do centro da peça. Fica verde o que o rio toca, e o resto mostra a terra seca.
+- **Os enfeites secos** seguem a mesma regra.
+- **Na prévia**, além do "+N · produção +M" da peça, aparece em cima de cada peça vizinha o quanto ela passa a produzir ("+2" na lavoura que ganha água, "+1" na vila que ganha comida). A pessoa vê o porquê do número.
+- **No painel**, "Colheita na seca: 13→15 · rio 4/6", e na seca "Seca: produção 25". Tocar no painel explica a regra.
+- **Na barra do ano**, "Colheita e seca em N jogadas".
+
+### Colocar a peça
+
+- **Arrastar a peça** da barra até o vale. Ela fica um pouco acima do dedo para ser vista. Sobre uma casa válida, ela encaixa no vale com a prévia (lados verdes, produção); soltar coloca. Fora do vale, ela volta para a barra.
+- **Tocar na peça da barra** gira a peça escolhida.
+- Tocar numa casa e em "Colocar" continua funcionando.
+
+### A seca sem corte seco
+
+- **Ao chegar a seca**, a água baixa devagar, no ritmo da umidade (2,4 s): o rio fica raso, o leito aparece e a frente recua rio acima.
+- **Depois**, a peça seca logo abaixo da água viva recebe uma língua rasa. A água entra pelo lado de cima, afina, deixa o leito aparecer e some no barro molhado, com poças adiante. O azul do meio do rio continua na emenda.
+
+### Números (`sim/v24_teste.js`, 16 vales; `sim/revisao/resultados/v3_economia.txt`)
+
+| Jogador | Pontos | Jogadas: mediana / máx | Vale irrigado | Produção + colheita |
+|---|---:|---|---:|---:|
+| aleatório | 39 | 26 / 29 | 13% | 59% |
+| guloso | 359 | 46 / 103 | 50% | 40% |
+| cuidadoso (vê a peça seguinte) | 453 | 51 / 100 | 53% | 46% |
+| mestre | 522 | 55 / 148 | 51% | 45% |
+
+O que se lê:
+
+- **As jogadas importam mais que antes.** O cuidadoso, que pensa na colheita da seca, faz 26% mais que o guloso (era 6% a 25% nas versões anteriores). O mestre faz 45% mais.
+- **A duração** fica no alvo de 20 a 25 minutos para quem joga muito bem.
+- **Os bots** levam até 6 s por vale (até 20 s com a máquina ocupada por outros testes).
+
+### O que este passo não resolve
+
+- **Os bots não dizem se ficou divertido.** O teste com pessoas segue sendo o próximo passo (`REVISAO_RETENCAO_v2.4.md`, seção 5).
+- **As lições** ensinam a água e a seca, mas ainda não têm uma lição própria de produção. Os textos foram atualizados: a lição 2 explica o verde que produz, e a lição 5 a colheita.
+- **Missões e peças especiais** continuam como estavam. Se a economia agradar, as missões podem virar encomendas da vila ("a vila pede 3 lavouras irrigadas"), mais no tom de construção.
