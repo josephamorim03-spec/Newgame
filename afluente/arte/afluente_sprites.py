@@ -677,10 +677,37 @@ def flowers():
         ico(0.007, (x, y - 0.002, h + 0.016), mat('miolo', '#e8a13a'), 1)
 
 
+def pedra_mat(name, dark, light, lichen=None, amt=0.0):
+    """pedra do cerrado: escura nas faces de baixo e nas frestas, clara no alto; líquen em pintas"""
+    return foliage(name, dark, light, lichen, amt, 70.0)
+
+
+def pedra(r, loc, m, sc=(1, 1, 1), seed=0, rough=0.32, sub=2, smooth=False, rz=0.0):
+    """pedra (v1.10): esfera subdividida com os vértices sacudidos ao acaso (rough) e sombreamento facetado, com um
+    chanfro leve que acende as quinas; achatada e meio enterrada. Com smooth=True e rough baixo vira seixo rolado."""
+    o = ico(r, loc, m, sub, sc, smooth=smooth)
+    o.rotation_euler.z = rz
+    R = random.Random(9000 + seed)
+    for v in o.data.vertices:
+        k = 1 + R.uniform(-rough, rough) * 0.6
+        v.co = v.co * k
+        if v.co.z < -r * 0.35:                 # base reta (assenta no chão)
+            v.co.z = -r * 0.35
+    if not smooth:
+        bv = o.modifiers.new('quina', 'BEVEL')
+        bv.width = r * 0.06
+        bv.segments = 1
+        bv.angle_limit = math.radians(25)
+    o.location.x += seed * 0.0001
+    return o
+
+
 def rock():
-    st = foliage('pedra', '#8e877c', '#d2ccc0')
-    ico(0.07, (0, 0, 0.03), st, 2, (1.25, 1, 0.65), smooth=False)
-    ico(0.045, (0.075, 0.03, 0.02), st, 2, (1, 1, 0.7))
+    """matacão de arenito com duas pedras menores, meio enterrados, com líquen"""
+    st = pedra_mat('pedra_arenito', '#2e2822', '#86745c', '#a8a47a', 0.25)
+    pedra(0.068, (0, 0, 0.022), st, (1.3, 1.0, 0.72), 1, rz=0.4)
+    pedra(0.042, (0.078, 0.03, 0.012), st, (1.15, 1.0, 0.7), 2, rz=1.3)
+    pedra(0.028, (-0.07, -0.035, 0.008), st, (1.2, 1.0, 0.6), 3, rz=2.1)
 
 
 def reeds():
@@ -998,9 +1025,37 @@ def chickens():
 
 
 def rock_b():
-    st = foliage('pedra2', '#8a8274', '#cfc6b6')
-    for i, (x, y, r, sc) in enumerate([(0, 0, 0.06, (1.6, 1.1, 0.35)), (0.08, -0.03, 0.04, (1.3, 1, 0.5)), (-0.07, 0.02, 0.035, (1.2, 1, 0.6))]):
-        ico(r, (x, y, r * sc[2] * 0.6), st, 2, sc)
+    """lajes de canga (laterita): placas chatas, avermelhadas, quebradas em degraus"""
+    st = pedra_mat('pedra_canga', '#2a1e18', '#7a5a46', '#6e6a48', 0.25)
+    for i, (x, y, r, sc, rz) in enumerate([(0, 0, 0.05, (1.45, 1.1, 0.62), 0.3), (0.07, -0.03, 0.034, (1.3, 1, 0.7), 1.1),
+                                           (-0.06, 0.025, 0.03, (1.25, 1, 0.75), 2.4), (0.025, 0.05, 0.02, (1.2, 1, 0.8), 0.8)]):
+        pedra(r, (x, y, r * sc[2] * 0.3), st, sc, 10 + i, rough=0.34, rz=rz)
+
+
+SEIXO_CORES = [('seixo_cinza', '#4a4640', '#9a9388'), ('seixo_ocre', '#5e4428', '#b08a56'),
+               ('seixo_ferro', '#4a2818', '#9a5a38'), ('seixo_quartzo', '#7c7668', '#dcd6c8'),
+               ('seixo_escuro', '#2e2c28', '#6e6a60')]
+
+
+def pebbles(var=0):
+    """seixos de leito de rio (v1.10): rolados, lisos, de cores e tamanhos variados, meio enterrados na areia e
+    alinhados com a correnteza (o grupo é alongado em x; o jogo espelha e gira entre peças)"""
+    R = random.Random(500 + var)
+    n = (9, 7, 12)[var % 3]
+    pts = []
+    for i in range(n * 4):
+        if len(pts) >= n:
+            break
+        x, y = R.gauss(0, 0.07), R.gauss(0, 0.028)
+        r = R.choice((0.011, 0.014, 0.017, 0.022, 0.028)) * (1.25 if i == 0 else 1.0)
+        if any(math.hypot(x - a, y - b) < (r + c) * 0.95 for a, b, c in pts):
+            continue
+        pts.append((x, y, r))
+    for i, (x, y, r) in enumerate(pts):
+        nome, d, l = SEIXO_CORES[R.randrange(len(SEIXO_CORES))]
+        m = pedra_mat(nome, d, l)
+        pedra(r, (x, y, r * 0.22), m, (1.3 + R.random() * 0.4, 1.0, 0.55 + R.random() * 0.15), 30 + var * 20 + i,
+              rough=0.1, sub=3, smooth=True, rz=R.uniform(-0.35, 0.35))
 
 
 def log():
@@ -1333,6 +1388,8 @@ OBJECTS = {
     # v1.3
     'sheep_a': lambda: sheep(0), 'sheep_b': lambda: sheep(1), 'pen': pen,
     'sobrado': sobrado, 'sobrado_b': lambda: sobrado('#e8eef0', '#a8503a', '#3f8a5a'), 'venda': venda, 'coreto': coreto,
+    # v1.10: pedras facetadas e seixos de leito
+    'pebbles': lambda: pebbles(0), 'pebbles_b': lambda: pebbles(1), 'pebbles_c': lambda: pebbles(2),
 }
 # versões de seca das árvores (copa rala, cor de palha e ferrugem): SECAS=1
 SECAS = ['tree_a', 'tree_b', 'tree_c', 'tree_d', 'tree_e', 'cerrado_tree', 'pequi', 'lobeira', 'bush']

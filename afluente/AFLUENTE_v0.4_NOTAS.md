@@ -635,6 +635,107 @@ O que mudou:
   - Antes: de 862 a 3.454 cruzamentos com cercados por vale.
   - Depois: zero. Os encostos em copa que ainda aparecem são ovelhas atrás de arbustos, desenhadas corretamente por trás deles.
 
+## Rio com forma própria, pedras de verdade, nuvens que se formam e mapa que reage (v1.10)
+
+**Fim do riacho.** Antes, todo rio que acabava virava a mesma cunha triangular, e o rio que batia em terra também. Agora cada peça tem um **esqueleto do rio**, sorteado pela própria peça:
+- **Meandro:** os braços fazem uma curva suave. O deslocamento lateral é zero e sem inclinação no centro e na borda, então o canal continua emendando reto com a peça vizinha.
+- **Fim de riacho:** língua que afina e se curva (40%), poça de contorno irregular (35%) ou braços de vereda que se abrem no brejo (25%).
+- **Rio que bate em terra:** termina em língua ou poça, e nunca em estrela.
+- **Dentro da peça:** o fim inteiro, com a margem de areia, cabe na peça. Se passar da borda, encolhe para o lado aberto.
+- **Pontas:** brejo escuro e, com água, poças com halo de lama, sempre dentro da peça. Antes, essas poças apareciam flutuando na borda.
+- **Um esqueleto só:** o desenho, a composição dos enfeites e o mapa de colisão usam o mesmo esqueleto. Água, buritis, seixos e bichos concordam sobre onde está o rio.
+- **Custo:** o contorno é montado uma vez por peça, em unidades da peça, e só transformado a cada quadro.
+
+**Pedras do rio seco.** As pedras antigas eram bolhas claras de poucos polígonos e, de longe, pareciam nuvenzinhas no chão. Agora:
+- `rock` é um matacão de arenito facetado, com quinas chanfradas e líquen;
+- `rock_b` são pedras de canga (laterita);
+- três grupos novos de seixos rolados (`pebbles`, `pebbles_b`, `pebbles_c`): lisos, de cinco cores (cinza, ocre, ferro, quartzo, escuro), meio enterrados e alongados no sentido da correnteza.
+
+No leito seco, os seixos seguem o fundo do canal, afastados da borda da peça (o vizinho tem os seus), com um matacão às vezes no barranco e capim nas margens.
+
+**Nuvens que se formam.** Antes eram 4 desenhos fixos que só aumentavam e diminuíam. Agora são cúmulos montados tufo a tufo:
+- **Onde nascem:** a maioria nasce sobre o vale, de preferência sobre mata e água viva (evapotranspiração). Na seca, nascem poucas e ralas.
+- **Como crescem:** tufos novos brotam encostados nos antigos, para os lados e um pouco para cima, e cada um incha em cerca de 3 s.
+- **Como se desfazem:** pela borda, com os tufos de fora encolhendo primeiro.
+- **Chuva:** com chuva, as nuvens escurecem aos poucos.
+- **Visibilidade:** ficam bem visíveis na visão de cima, inclusive no começo da partida, quando a câmera ainda está próxima. Ficam transparentes quando a câmera desce perto do chão e ficam mais claras enquanto o jogador escolhe onde pôr a peça.
+- **Desenho:** cada nuvem é montada numa imagem opaca e só então desenhada com transparência, sem manchas de sobreposição. A imagem é refeita a cada 150 ms. O custo caiu de ~8 ms para ~0,1 ms por quadro com 6 a 12 nuvens.
+- **Correção:** um passo de tempo negativo (relógio voltando) não faz mais o tempo das nuvens andar para trás.
+
+**Física da água.**
+- **Chegada:** quando a água chega, ela desce o rio a partir da nascente, pela distância ao longo do rio, e cada peça enche a partir do lado por onde a água entra, com uma frente de espuma. Antes, cada peça só aparecia em degradê, na ordem da distância até a peça colocada.
+- **Seca:** os trechos que perdem a água esvaziam, com a lâmina encolhendo do trecho mais baixo para o mais alto.
+
+**O mapa reage ao baque da peça.**
+- Os bichos da fauna até 1,7 casa de distância fogem um pouco, mais rápido, para um ponto que a regra da espécie permite.
+- Os bichos de poleiro dão um pulinho.
+- O gado e as ovelhas se afastam dentro da área de casa, sem atravessar cerca nem água.
+- Passarinhos pousados na mata vizinha levantam voo e sobem.
+- O rio vivo ao lado faz ondas.
+
+**Testes.**
+- Invariantes do mundo: zero bicho na água, em bloqueio ou fora do tabuleiro. Zero gado solto atrás de objeto alto: desde a v1.9d, a ovelha do cercado pode ficar atrás da cerca, porque a profundidade é ordenada. Zero violação de fauna.
+- Quadro médio de 2,3 ms com nuvens.
+## Motor de disposição com geometria exata e nuvens do Blender (v2.0)
+
+### Diagnóstico
+- **Ponto de apoio:** o motor supunha que cada sprite ficava centrado no ponto de apoio e que esse ponto era o pé. Na verdade, a âncora é o centro do objeto em 3D. O cercado se estende 30 px abaixo dela (a cerca da frente), e o boi é assimétrico (28 px à esquerda, 41 à direita). Toda colisão errava lado e tamanho.
+- **Pegada:** só construções e árvores tinham pegada. Lavoura, feno e enfeites usavam um círculo genérico.
+- **Ordem:** quem ganhava o espaço dependia da ordem das áreas. Se a lavoura viesse antes, o cercado entrava por cima dela.
+- **Profundidade:** os bichos eram desenhados por cima de tudo da peça.
+
+### Arquitetura nova
+1. **Geometria exata** (`arte/caixas.py` gera `caixas.json`, embutido como `const BOX`).
+   - Para cada sprite: o retângulo do corpo (sem a sombra, com a mesma regra de separação do jogo) e a faixa que toca o chão, relativos à âncora.
+   - `objGeom()` dá, para qualquer objeto, o desenho na tela (`sb`) e a base no chão (`fb`).
+2. **Regras de disposição** (`add()` do `compose`), na ordem:
+   1. **Água:** a base nunca fica sobre o canal ou a margem. Construção, cercado, árvore e lavoura também não cobrem o rio com o desenho.
+   2. **Terreno:** a base de construção, cercado e lavoura fica inteira dentro da área do próprio terreno. Os demais objetos são testados pelo centro.
+   3. **Peça:** o desenho de construção e cercado cabe inteiro no hexágono. Isso elimina as sobreposições entre peças vizinhas.
+   4. **Ninguém em cima de ninguém:**
+      - construção e cercado, pelo desenho inteiro;
+      - lavoura contra árvore, pelo desenho;
+      - o resto, pela base.
+   5. **Prioridade:** vila, depois pasto (cercado), lavoura e mata. O cercado procura onde cabe (centro da área, depois os pontos mais próximos, em dois tamanhos); se não cabe, as ovelhas ficam soltas. Igreja, moinho e celeiro procuram posições ao longo do seu triângulo.
+3. **Mapa de colisão dos bichos** com as mesmas caixas:
+   - base de construções, cercas e troncos bloqueia;
+   - o desenho acima da base marca oclusão;
+   - lavoura inteira é proibida para o gado;
+   - o canal tem o comprimento do rio desenhado.
+4. **Bichos:** corpo exato (as duas orientações, porque viram ao andar) testado contra o mapa.
+5. **Profundidade:**
+   - o cercado é desenhado em duas metades (cerca de trás e cerca da frente), ordenadas junto com as ovelhas;
+   - nas peças com bichos, os enfeites são ordenados com eles.
+
+### Medição
+`medidor.js` usa a geometria exata em 6 vales, com 5 minutos de animação em cada:
+
+| Defeito | Antes (4 vales) | Depois (6 vales) |
+|---|---|---|
+| Sobreposição de construção ou cercado | 24 | 0 |
+| Sobreposição entre peças | 3 | 0 |
+| Objeto sobre a água | 41 | 0 |
+| Invasão de terreno | 22 | 2 |
+| Bicho sobre água ou objeto | — | 0 |
+
+As 2 invasões que restam são especiais (igreja e moinho) numa vila de um triângulo só, onde nada cabe.
+
+### Nuvens (combinadas com a v1.10)
+- **Simulação da v1.10:** as nuvens nascem sobre a mata e a água, crescem tufo a tufo e se desfazem pela borda.
+- **Desenho:** cada tufo agora é um **tufo com volume renderizado no Blender** (`arte/nuvens.py` com `TUFO=1`, 3 formas em `tufos.webp`, 24 KB), em vez de um disco com degradê. Por isso parecem cúmulos, não bolhas.
+- **Camada de cima:** na visão geral, as nuvens passam sobre o vale com paralaxe de altura e somem quando o zoom desce. Enquanto o jogador escolhe onde pôr a peça, ficam a 25% (antes 45%) para não esconder a jogada.
+- **Modo cúmulo inteiro:** `nuvens.py` sem `TUFO` continua gerando os 4 cúmulos inteiros, para uso futuro (por exemplo, uma moldura no horizonte).
+
+### Medição final (v1.10 + motor v2.0, 6 vales, 5 min de animação)
+
+| Defeito | v1.10 sozinha | Com o motor v2.0 |
+|---|---|---|
+| Sobreposição de construção ou cercado | 33 | 0 |
+| Objeto sobre a água | 16 | 0 |
+| Invasão de terreno | 30 | 2 |
+| Sobreposição entre peças | 3 | 0 |
+| Bichos sobre água ou objetos | 0 | 0 |
+
 ## O céu do vale: clima com física (v2.0)
 
 Pedido: estudar ventos, monções, moinhos, umidade, chuva, formação e precipitação de nuvens, e tamanhos e tipos de nuvens, e aplicar isso ao jogo junto com a tabela métrica e a física da v1.9. O estudo completo, com fontes, está em `CLIMA.md`.
@@ -659,6 +760,12 @@ Pedido: estudar ventos, monções, moinhos, umidade, chuva, formação e precipi
   - os cúmulos têm a base reta no mesmo nível, que sobe ao longo da tarde;
   - há bigornas com cortina de chuva ao longe, relâmpago mudo, véus de altostrato, nimbostrato e cirrostrato, e halo de 22°.
 - **Sombras no vale na escala métrica:** um cúmulo de 400 m cobre 20 unidades. A pancada faz uma sombra escura, e a borda da chuva atravessa o vale.
+- **Os tufos da v1.10 obedecem à física:**
+  - nascem pela cobertura de cúmulos e placas;
+  - passam mais alto quando o ar está seco (nível de condensação);
+  - crescem em torre na tarde instável;
+  - andam com o vento da altura das nuvens;
+  - escurecem com a pancada.
 - **Chuva física:**
   - gotas de Marshall-Palmer na velocidade terminal (garoa fina e deitada, temporal grosso e em pé);
   - o chão de cada peça molha no time-lapse da pancada e seca pela evaporação no relógio do jogo;
@@ -675,13 +782,12 @@ Pedido: estudar ventos, monções, moinhos, umidade, chuva, formação e precipi
   - a peça com moinho passou a ser desenhada a cada quadro, na ordem de profundidade: com vento do norte, as velas ficam atrás da torre.
 - **Caderno do Céu:** 18 nuvens e fenômenos para ver (arco-íris, halo, virga, frente de rajada...). Não dão pontos.
 - **Boletim no Contemplar:** hora, temperatura, umidade, vento (m/s e Beaufort), o nome da nuvem com a altura da base e as voltas do moinho.
-- **Som:**
-  - a chuva soa pela intensidade;
-  - as cigarras só cantam no calor;
-  - sapos e pererecas cantam nas noites molhadas das Águas;
-  - o trovão estala perto e ronca grave longe.
+- **Som** (junto com o som do vale de `SOM.md`):
+  - a chuva, o vento e a noite que o som ouve agora são os calculados;
+  - as cigarras só cantam no calor (acima de 21 °C);
+  - cada raio tem o seu trovão (`CALL.trovao`), vindo do lado do raio e atrasado pela distância; perto, estala antes de roncar.
 - **Números (10 anos de jogo):**
   - Águas: tarde a 25 °C e 57% de umidade, base dos cúmulos a 1.170 m, pancadas entre 13 h e 15 h;
   - Seca: tarde a 26 °C e 34%, base a 2.270 m, sem chuva no chão.
 - **O que não muda:** as regras e os pontos. O clima é o mundo respondendo ao mapa, como a fauna. Mudar regra pelo clima fica para um teste próprio (ver `CLIMA.md`, seção 5).
-- **Desempenho:** o quadro custa o mesmo que antes (4,5 ms contra 5,3 ms no teste sem tela).
+- **Desempenho:** o quadro custa o mesmo que antes (5,6 ms contra 5,8 ms no teste sem tela; 6,3 ms numa pancada).

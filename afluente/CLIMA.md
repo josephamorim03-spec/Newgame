@@ -14,7 +14,8 @@
 - **O mapa muda o céu.** Água viva e mata põem umidade no ar. Um vale verde tem tardes mais úmidas, mais cúmulos e mais pancadas que um vale de vila seca. Não há conta na tela: isso se vê.
 - **Nuvens pelos 10 gêneros da OMM**, com altura e largura reais:
   - no horizonte, cada nuvem aparece com o tamanho angular de verdade;
-  - no vale, as sombras têm a escala da tabela métrica: um cúmulo de 400 m cobre 20 unidades.
+  - no vale, as sombras têm a escala da tabela métrica: um cúmulo de 400 m cobre 20 unidades;
+  - os tufos de volume que passam baixo sobre o vale (v1.10, renderizados no Blender) passaram a obedecer à física: quantos nascem, quão alto passam, quanto crescem em torre, para onde vão e quando escurecem.
 - **Chuva física:**
   - gotas de Marshall-Palmer com velocidade terminal medida e inclinadas pelo vento;
   - a cortina da pancada atravessa o vale com borda visível;
@@ -169,16 +170,16 @@
 | Hora e sol | posição astronômica (latitude, declinação, ângulo horário) | o sol nasce à direita (leste); sombras, brilho no céu e luz quente seguem o sol | `ATM.sun`, `envStep` |
 | Temperatura e umidade | climatologia + ciclo diário (mínima às 6 h, máxima às 15 h) + mapa; Magnus | boletim do Contemplar; neblina; ar seco e enfumaçado na Seca (serras apagadas) | `Sky.thermo` |
 | Vento | sinótico da monção + mistura diurna + rajadas + frente de rajada | capim, copas, fumaça, chuva inclinada, moinho, som do vento | `Sky.step` |
-| Cúmulos | térmicas + nível de condensação | no horizonte, base reta no mesmo nível, subindo ao longo do dia; sombras de 300 m a 1,5 km | `covers`, `hzStep`, `ovStep` |
+| Cúmulos | térmicas + nível de condensação | no horizonte, base reta no mesmo nível, subindo ao longo do dia; sombras de 300 m a 1,5 km; sobre o vale, os tufos da v1.10 nascem pela cobertura de cúmulos, passam mais alto com o ar seco e crescem em torre na tarde instável | `covers`, `hzStep`, `ovStep`, `cloudsStep` |
 | Pancada | célula com cortina (mm/h), vida acelerada, anda com o vento das nuvens | sombra escura; borda da chuva atravessando o vale; chão molhando por peça | `spawnCell`, `rainAt`, `rainFx`, `wetGround` |
 | Chuva contínua (ZCAS) | Ci → Cs → As → Ns | véus no céu, teto escuro e chuva fina | `eplan`, `drawSkyBand` |
 | Gotas | Marshall-Palmer + velocidade terminal | garoa fina e deitada; temporal grosso e em pé | `ATM.drops`, `rainFx` |
-| Raio e trovão | 343 m/s | clarão e raio sobre o vale; trovão segundos depois (estalo perto, ronco longe); relâmpago mudo ao longe | `flashFx`, `thunder` |
+| Raio e trovão | 343 m/s | clarão e raio sobre o vale; trovão segundos depois, vindo do lado do raio pela escuta do vale (estalo perto, ronco longe); relâmpago mudo ao longe | `flashFx`, `thunder` (voz `CALL.trovao` de `SOM.md`) |
 | Neblina | orvalho + ar frio no fundo do vale + água | véu na madrugada, flocos sobre o rio, que viram estrato de manhã | `fogOf`, `fogFx` |
 | Arco-íris e halo | 42°/51° do ponto antissolar; 22° do sol | arcos parciais na borda do céu de manhã e à tarde nas Águas | `rainbowFx` |
 | Redemoinho | térmica forte + vento fraco + chão seco | só na Seca, de dia, com vento < 5,5 m/s | `devilsStep` |
 | Moinho | perfil log + abrigo + λ ≈ 2 + partida e freio | velas viram para o vento e giram; param à noite; recolhidas na ventania | `ATM.mill`, `drawMill` |
-| Som | — | chuva pela intensidade; cigarras só no calor; sapos e pererecas nas noites molhadas | `ambUpdate` |
+| Som | — | o som do vale (`SOM.md`) ouve a chuva, o vento e a noite calculados; cigarras só no calor (acima de 21 °C) | `ambUpdate` |
 
 ## 3. Escalas e relógios
 
@@ -225,7 +226,7 @@
   - ponto de orvalho nunca acima da temperatura;
   - nada negativo;
   - mesma semente, mesmo céu; sementes diferentes, céus diferentes.
-- **Desempenho:** o quadro custa o mesmo que na v1.9d (4,5 ms contra 5,3 ms no teste sem tela, celular em pé, 2×).
+- **Desempenho:** o quadro custa o mesmo que antes. No teste sem tela (celular em pé, 2×), deu 5,6 ms contra 5,8 ms da versão sem o clima novo; numa pancada, 6,3 ms contra 5,2 ms.
 
 ## 5. O que ficou de fora, e por quê
 
@@ -246,7 +247,8 @@
 
 - `prototipo/afluente.html`:
   - `function Atmos()`: o motor;
-  - `envStep`, `drawSkyBand`, `hzStep`, `ovStep`, `cloudShadows`, `rainFx`, `wetGround`, `fogFx`, `flashFx`, `rainbowFx`: o desenho;
+  - `envStep`, `drawSkyBand`, `hzStep`, `ovStep`, `skyShadows`, `rainFx`, `wetGround`, `fogFx`, `flashFx`, `rainbowFx`: o desenho;
+  - `cloudsStep`: os tufos da v1.10, agora dirigidos pela atmosfera;
   - `drawMill`: o moinho;
   - `CEU`, `ceuMark`, `ceuIcon`: o Caderno do Céu;
   - `skyCard`: o boletim.
