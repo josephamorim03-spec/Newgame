@@ -69,10 +69,12 @@ button:focus-visible { outline: 3px solid var(--water); outline-offset: 2px; }
 .pacote canvas { width: 46px; height: 46px; }
 .grande { border: 0; border-radius: 14px; background: var(--ink); color: var(--card); min-height: 46px; font: 800 17px var(--f-title); }
 .num { font: 800 44px/1 var(--f-title); }
+@media (max-width: 520px) { .marca { display: none; } .topo { gap: 6px; padding-block: 8px; } .chip { padding: 5px 9px; font-size: 13px; } .chip small { font-size: 11px; } .redondo { width: 34px; height: 34px; }
+  .dots i { width: 5px; height: 5px; } #cMao { width: 72px; height: 72px; } #msg { font-size: 13px; } }
 </style>
 
 <canvas id="vale" aria-label="O vale: toque numa casa vazia para colocar a peça"></canvas>
-<div class="topo">
+<div class="topo" id="topo">
   <span class="marca">Afluente</span>
   <span class="chip" title="Gente no vale (pontos)">👥 <b id="tGente">0</b></span>
   <span class="chip" title="Peças na pilha">🂠 <b id="tPilha">22</b></span>
@@ -81,7 +83,7 @@ button:focus-visible { outline: 3px solid var(--water); outline-offset: 2px; }
   <span class="dir"><button class="redondo" id="bDesfazer" aria-label="Desfazer a última peça">↶</button><button class="redondo" id="bAjuda" aria-label="Como se joga">?</button></span>
 </div>
 <div class="toast" id="toast" aria-live="polite"></div>
-<div class="mao"><div class="painel">
+<div class="mao"><div class="painel" id="painel">
   <div class="pecas"><canvas id="cMao" width="168" height="168" aria-label="Peça na mão (toque para girar)"></canvas>
     <div class="prox">depois <canvas id="cProx" width="52" height="52"></canvas></div></div>
   <div class="lado"><div id="msg"></div>
@@ -125,13 +127,14 @@ let W = 0, H = 0, dpr = 1;
 function resize() { dpr = Math.min(2, devicePixelRatio || 1); W = innerWidth; H = innerHeight; cv.width = W * dpr; cv.height = H * dpr; fit(true); draw(); }
 const hexXY = (q, r) => [SQ3 * (q + r / 2), 1.5 * r];
 // o centro da vista fica no meio do espaço livre entre a faixa de cima e a mão
-const midY = () => (64 + H - 150) / 2;
+const topY = () => ($('topo')?.getBoundingClientRect().bottom || 64) + 6, botY = () => ($('painel')?.getBoundingClientRect().top || H - 150) - 6;
+const midY = () => (topY() + botY()) / 2;
 const toScr = (x, y) => [W / 2 + (x - cam.x) * cam.z, midY() + (y - cam.y) * cam.z];
 // enquadra o vale (peças, casas vazias e olhos-d'água); suave depois de cada peça
 let camT = null;
 function fit(now) { if (!G) return; let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9; const add = k => { const [x, y] = hexXY(KQ(k), KR(k)); x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); };
   for (const k of G.board.keys()) add(k); for (const k of G.slots()) add(k); for (const k of G.S.springs.keys()) add(k);
-  const z = Math.max(18, Math.min(72, Math.min((W - 24) / (x1 - x0 + 2), (H - 64 - 150 - 16) / (y1 - y0 + 2.2))));
+  const z = Math.max(18, Math.min(72, Math.min((W - 24) / (x1 - x0 + 2), (botY() - topY()) / (y1 - y0 + 2.2))));
   camT = { x: (x0 + x1) / 2, y: (y0 + y1) / 2, z }; if (now) { Object.assign(cam, camT); camT = null; } else loop(); }
 function pick(px, py) { const x = (px - W / 2) / cam.z + cam.x, y = (py - midY()) / cam.z + cam.y; const r = y / 1.5, q = x / SQ3 - r / 2;
   let rx = Math.round(q), rz = Math.round(r), ry = Math.round(-q - r); const dx = Math.abs(rx - q), dz = Math.abs(rz - r), dy = Math.abs(ry + q + r);
@@ -185,7 +188,7 @@ function colocar() { if (!sel || !sel.opts.length) return; const o = sel.opts[se
   sel = null; ghostI = 0; toast(res.ev.map(e => e.txt)); refresh(); fit(false); }
 function passar() { G.skip(); acts.push({ t: 's' }); sel = null; toast(['A peça não cabia em lugar nenhum: passou a vez']); refresh(); }
 function desfazer() { if (!acts.length) return; let a = acts.slice(); while (a.length && a[a.length - 1].t === 'c') a.pop(); a.pop(); rebuild(a); sel = null; toast(['Desfeito']); refresh(); }
-function toast(list) { const box = $('toast'); box.innerHTML = ''; for (const t of list) { const d = document.createElement('div'); d.textContent = t; box.appendChild(d); } toastT = list.length ? 4.5 : 0; }
+function toast(list) { const box = $('toast'); box.style.top = topY() + 'px'; box.innerHTML = ''; for (const t of list) { const d = document.createElement('div'); d.textContent = t; box.appendChild(d); } toastT = list.length ? 4.5 : 0; }
 
 // ---------- texto da prévia (o que essa peça faz aqui)
 const reqTxt = r => `${PEDIDOS[r.t].icone} ${PEDIDOS[r.t].txt(r.n)}`;
