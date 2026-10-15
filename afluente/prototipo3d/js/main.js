@@ -8,6 +8,7 @@ import { mergeGeometries } from './addons/BufferGeometryUtils.js';
 import { NOISE, WIND, CLOUDS } from './glsl.js';
 import { U, HEAD, LIGHT_END, shared, ramp, toon } from './mat.js';
 import { hexEdgeDist } from './world.js';
+import { fbm } from './world.js';
 import { R, TILES, CENTER, RIVER, riverHalfWidth, heightAt, riverInfo, waterDist, biomeAt, SPRING, POOL_R, WATER_Y, vnoise, inHex, inAnyTile, dirtAt, fieldAt, blocked, LAYOUT, rockyAt, waterLevelAt, riverLevel, FALL, CLIFF_X, DROP, LAKE, lakeDist } from './world.js';
 import { buildProps } from './props.js';
 import { buildFauna } from './fauna.js';
@@ -152,16 +153,37 @@ groundMat.onBeforeCompile = sh => { shared(sh); sh.uniforms.uCenter = { value: n
 for (const t of TILES) { const { pos, idx } = sectorGrid(t.c, mobile ? 26 : 32); const m = new THREE.Mesh(finishGround(pos, idx, 0, 0), groundMat); m.receiveShadow = true; scene.add(m); }
 const outside = P => P.some(([x, z]) => !inAnyTile(x, z, 0.999));
 { const near = latticeGeometry(0, 150, mobile ? 1.6 : 1.25, outside); const m = new THREE.Mesh(finishGround(near.pos, near.idx, 1, 0.1), groundMat); m.receiveShadow = true; scene.add(m);
-  const far = latticeGeometry(145, 1500, 14, () => true); scene.add(new THREE.Mesh(finishGround(far.pos, far.idx, 1, 0.25), groundMat)); }
-// chapadas ao longe (ficam azuladas pela névoa, como as montanhas de Hyrule)
-{ const mat = toon({ color: 0x7f9a5a, fog: false });
-  mat.onBeforeCompile = sh => { shared(sh); sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying float vMy;').replace('#include <begin_vertex>', '#include <begin_vertex>\nvMy=clamp((modelMatrix*vec4(position,1.0)).y/70.0,0.0,1.0);');
-    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying float vMy;uniform vec3 uSkyZen,uSkyHor;')
-    .replace('#include <fog_fragment>', 'gl_FragColor.rgb=mix(gl_FragColor.rgb,mix(uSkyHor,uSkyZen,0.3),0.5+0.35*(1.0-smoothstep(0.0,0.75,vMy)));'); };
-  for (let i = 0; i < 10; i++) { const a = i / 10 * Math.PI * 2 + rnd() * 0.5, d = 1300 + rnd() * 1000, w = 300 + rnd() * 420, h = 40 + rnd() * 60;
-    const cg = new THREE.CylinderGeometry(w * 0.82, w, h, 32, 1); const p = cg.attributes.position;
-    for (let j = 0; j < p.count; j++) { const x = p.getX(j), z = p.getZ(j); p.setX(j, x * (0.85 + 0.3 * vnoise(x * 0.01 + i, z * 0.01))); p.setZ(j, z * (0.6 + 0.3 * vnoise(z * 0.01, x * 0.01 + i))); }
-    cg.computeVertexNormals(); const cm = new THREE.Mesh(cg, mat); cm.position.set(CENTER[0] + Math.cos(a) * d, h / 2 - 3, CENTER[1] + Math.sin(a) * d); scene.add(cm); } }
+   }
+const ringFog = { value: 0.002 }, ringFogC = { value: new THREE.Color() };
+// chapadas ao longe: um anel de relevo (700 a 2600 m) com mesas de topo plano, paredão de arenito em camadas, talude de
+// mata e o cerrado em volta; a névoa azul vai apagando com a distância (perspectiva aérea, como as montanhas de Hyrule)
+{ const NR = mobile ? 80 : 120, NA = mobile ? 220 : 340, r0 = 150, r1 = 2700, pos = [], idx = [];
+  const mesaH = (x, z) => { const m = fbm(x * 0.0011 + 5, z * 0.0011 - 3, 3), m2 = fbm(x * 0.004, z * 0.004, 2);
+    const plateau = THREE.MathUtils.smoothstep(m + (m2 - 0.5) * 0.06, 0.53, 0.56);          // borda nítida: o paredão
+    const talus = THREE.MathUtils.smoothstep(m, 0.42, 0.535) * 0.35;                            // encosta que desce até a planície
+    const top = 70 + 60 * fbm(x * 0.0006 + 9, z * 0.0006, 2);
+    return Math.max(plateau, talus) * top + (fbm(x * 0.003, z * 0.003, 2) - 0.5) * 8; };
+  for (let j = 0; j <= NR; j++) { const r = r0 + (r1 - r0) * Math.pow(j / NR, 1.6); for (let i = 0; i < NA; i++) { const a = i / NA * Math.PI * 2, x = CENTER[0] + Math.cos(a) * r, z = CENTER[1] + Math.sin(a) * r;
+      const fade = THREE.MathUtils.smoothstep(r, 520, 820), base = heightAt(x, z) - 0.1; pos.push(x, base + (mesaH(x, z) - base) * fade - (1 - fade) * 0 , z); } }   // perto, emenda com o chão do vale
+  for (let j = 0; j < NR; j++) for (let i = 0; i < NA; i++) { const a = j * NA + i, b = j * NA + (i + 1) % NA, c = a + NA, d = b + NA; idx.push(a, b, c, b, d, c); }   // virado para cima
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals();
+  const mat = toon({ color: 0xffffff, fog: false });
+  mat.onBeforeCompile = sh => { shared(sh); sh.uniforms.uC = { value: new THREE.Vector2(CENTER[0], CENTER[1]) }; sh.uniforms.uFogD = ringFog; sh.uniforms.uFogC = ringFogC;
+    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vWp;varying float vNy;').replace('#include <begin_vertex>', '#include <begin_vertex>\nvWp=(modelMatrix*vec4(transformed,1.0)).xyz;vNy=normal.y;');
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vWp;varying float vNy;uniform vec2 uC;uniform float uFogD;uniform vec3 uFogC;\n' + HEAD)
+      .replace('#include <color_fragment>', `vec2 p=vWp.xz;float steep=1.0-smoothstep(0.55,0.85,vNy);
+        vec3 cer=mix(vec3(0.50,0.58,0.26),vec3(0.66,0.62,0.30),vnoise(p*0.01));cer=mix(cer,vec3(0.74,0.62,0.36),uSeca*0.7);
+        vec3 mata=mix(vec3(0.24,0.40,0.16),vec3(0.32,0.48,0.2),vnoise(p*0.02));
+        float strata=fract(vWp.y*0.11+vnoise(p*0.01)*0.6);vec3 rock=mix(vec3(0.72,0.44,0.30),vec3(0.86,0.62,0.44),smoothstep(0.3,0.7,strata))*(0.85+0.2*vnoise(vec2(p.x+p.y,vWp.y)*0.08));
+        float lowSlope=smoothstep(0.85,0.6,vNy)*(1.0-smoothstep(25.0,55.0,vWp.y));
+        float dc=length(p-uC);cer=mix(mix(vec3(0.42,0.58,0.16),vec3(0.55,0.68,0.22),vnoise(p*0.03)),cer,smoothstep(200.0,700.0,dc));
+        vec3 col=mix(cer,mata,lowSlope*0.8+smoothstep(0.62,0.7,vnoise(p*0.006))*0.4*(1.0-steep));col=mix(col,rock,steep*smoothstep(15.0,30.0,vWp.y));
+        diffuseColor.rgb=toLin(col);`)
+      .replace('#include <lights_fragment_end>', LIGHT_END(0))
+      .replace('#include <fog_fragment>', `{float d=length(vWp.xz-uC);float k=smoothstep(600.0,3200.0,d)*0.6+0.06;vec3 haze=mix(uSkyHor,uSkyZen,0.18+0.15*smoothstep(0.0,120.0,vWp.y));
+        gl_FragColor.rgb=mix(gl_FragColor.rgb,haze,k);
+        float fd=uFogD*length(vWp-cameraPosition),f=(1.0-exp(-fd*fd))*(1.0-smoothstep(160.0,420.0,d));gl_FragColor.rgb=mix(gl_FragColor.rgb,uFogC,f);}`); };   // perto, a mesma névoa do vale
+  const m = new THREE.Mesh(g, mat); m.receiveShadow = false; scene.add(m); }
 
 // ---------- capim: lâminas na placa de vídeo, presas ao chão num retalho em volta do ponto que a câmera olha. Cada lâmina
 // lê do mapa do vale a altura do chão, a densidade, o tamanho e o tipo; curva com o vento do lugar e com a chuva; e a
@@ -729,6 +751,7 @@ function frame() {
   const ctx = { pxPerUnit: renderer.domElement.height / (2 * Math.tan(camera.fov * Math.PI / 360)), hour: ST.hour }; if (window.__petalPx) window.__petalPx.value = ctx.pxPerUnit; if (window.__mistPx) window.__mistPx.value = ctx.pxPerUnit; window.__hour = ST.hour; ctx.people = gente.people; props.update(dt, ctx); fauna.update(dt, ctx); gente.update(dt);
   if ((skyfx.fx.strikes || 0) !== lastStrikes) { lastStrikes = skyfx.fx.strikes || 0; setTimeout(() => { fauna.startle(); gente.startle(); }, 250); }   // o trovão logo depois do clarão assusta gente e bicho clouds.update(dt, camera); ctx.Rr = c.Rr; ctx.hour = ST.hour; skyfx.update(dt, ctx);
   { const f = skyfx.fx.flash; if (f > 0) { skyLight.intensity += f * 3; U.uSkyZen.value.lerp(new THREE.Color(0.85, 0.88, 1), f * 0.5); U.uSkyHor.value.lerp(new THREE.Color(0.9, 0.92, 1), f * 0.45); } }   // clarão do raio
+  ringFog.value = scene.fog.density; ringFogC.value.copy(scene.fog.color);
   renderReflection();
   renderer.render(scene, camera);
   // quadros por segundo medidos no relógio de verdade (o dt do jogo é limitado a 0,1 s e enganava quando o aparelho sofria)
