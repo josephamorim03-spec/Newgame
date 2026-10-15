@@ -5,6 +5,7 @@
 import * as THREE from 'three';
 import { U } from './mat.js';
 import { mat, paint, merge, col, V3 } from './props.js';
+import { tag, READ3 } from './regua.js';
 import { LAYOUT, TILES, heightAt, waterDist, inHex, inBoxAt, blocked, inAnyTile, WATER_Y, SPRING, POOL_R, RIVER } from './world.js';
 
 const rnd = (() => { let a = 424242; return () => { a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; })();
@@ -64,7 +65,7 @@ export function buildFauna(scene, { mobile = false, shade = null } = {}) {
   // ---------- comportamento: pastar, andar até um ponto, ficar parado olhando; separação; não sair da área; abrigo na chuva
   function spawn(make, n, o) { for (let i = 0; i < n; i++) { const a = { ...make(), ...o, st: 'idle', t: rnd() * 3, ph: rnd() * 6, sp: 0, h: rnd() * 6.28, tgt: null, look: rnd() * 6 };
     let x, z, k = 0; do { [x, z] = o.pick(null); k++; } while (k < 50 && all.some(b => Math.hypot(b.x - x, b.z - z) < (o.sep || 1.5)));
-    a.x = x; a.z = z; scene.add(a.g); a.g.traverse(m => { if (m.isMesh) m.castShadow = !mobile || o.big; }); all.push(a); } }
+    a.x = x; a.z = z; a.g.scale.setScalar(o.scale || 1); scene.add(a.g); if (o.name) tag(a.g, o.name); a.g.traverse(m => { if (m.isMesh) m.castShadow = !mobile || o.big; }); all.push(a); } }
   const pickIn = (test, around, R) => () => { for (let k = 0; k < 200; k++) { const x = around[0] + (rnd() - 0.5) * 2 * R, z = around[1] + (rnd() - 0.5) * 2 * R; if (test(x, z)) return [x, z]; } return [...around]; };
   const near = (a, R, test) => { for (let k = 0; k < 60; k++) { const x = a.x + (rnd() - 0.5) * 2 * R, z = a.z + (rnd() - 0.5) * 2 * R; if (test(x, z)) return [x, z]; } return null; };
   function brain(a, dt) {
@@ -102,20 +103,20 @@ export function buildFauna(scene, { mobile = false, shade = null } = {}) {
   const inCorral = (x, z) => inBoxAt(x, z, Cr.p, Cr.w - 1.6, Cr.d - 1.6, Cr.rot);
   const inPasto = (x, z) => inHex(x, z, tP.c, 0.86) && !inBoxAt(x, z, Cr.p, Cr.w + 2, Cr.d + 2, Cr.rot);
   const cowO = (area, pick) => ({ area, pick, pg: 0.55, pw: 0.3, vw: 0.75, vg: 0.06, turn: 0.8, stride: 1.6, sep: 2.2, roam: 7, gp: 1.05, dropNeck: 0.32, big: true });
-  spawn(() => cow([0xeeeae2, 0xe2ddd2, 0xd6d0c6][Math.floor(rnd() * 3)]), 3, cowO(inCorral, pickIn(inCorral, Cr.p, Cr.w / 2)));
-  spawn(() => cow([0xeeeae2, 0xe2ddd2, 0xcfc8bd][Math.floor(rnd() * 3)]), 5, { ...cowO(inPasto, pickIn(inPasto, tP.c, 17)), shade });
+  spawn(() => cow([0xeeeae2, 0xe2ddd2, 0xd6d0c6][Math.floor(rnd() * 3)]), 3, { ...cowO(inCorral, pickIn(inCorral, Cr.p, Cr.w / 2)), name: 'boi nelore' });
+  spawn(() => cow([0xeeeae2, 0xe2ddd2, 0xcfc8bd][Math.floor(rnd() * 3)]), 5, { ...cowO(inPasto, pickIn(inPasto, tP.c, 17)), shade, name: 'boi nelore' });
   // capivaras na beira do rio (peça do rio e da mata)
   const bank = (x, z) => { const w = waterDist(x, z); return w > 0.4 && w < 4.5 && inAnyTile(x, z, 0.9) && !blocked(x, z) && (inHex(x, z, TILES[0].c, 0.92) || inHex(x, z, TILES[1].c, 0.92)); };
-  spawn(capybara, 4, { area: bank, pick: pickIn(bank, [TILES[0].c[0] + 10, TILES[0].c[1]], 9), pg: 0.6, pw: 0.25, vw: 0.5, vg: 0.04, turn: 1.2, stride: 0.7, sep: 1.0, roam: 4, gp: 0.6, dropNeck: 0.05 });
+  spawn(capybara, 4, { name: 'capivara', scale: 0.85, area: bank, pick: pickIn(bank, [TILES[0].c[0] + 10, TILES[0].c[1]], 9), pg: 0.6, pw: 0.25, vw: 0.5, vg: 0.04, turn: 1.2, stride: 0.7, sep: 1.0, roam: 4, gp: 0.6, dropNeck: 0.05 });
   // a garça no raso da vereda e do córrego
   const shallow = (x, z) => { const d = WATER_Y - heightAt(x, z); return d > 0.05 && d < 0.32 && inAnyTile(x, z, 0.95); };
-  spawn(garca, 1, { area: shallow, pick: pickIn(shallow, SPRING, 9), pg: 0.0, pw: 0.35, vw: 0.25, vg: 0, turn: 1.2, stride: 0.5, sep: 1, roam: 3, gp: 0, strike: true, water: true });
+  spawn(garca, 1, { name: 'garça-branca', scale: 0.85, area: shallow, pick: pickIn(shallow, SPRING, 9), pg: 0.0, pw: 0.35, vw: 0.25, vg: 0, turn: 1.2, stride: 0.5, sep: 1, roam: 3, gp: 0, strike: true, water: true });
   // seriema no cerrado
   const cerr = (x, z) => inHex(x, z, tD.c, 0.9) && !blocked(x, z);
-  spawn(seriema, 2, { area: cerr, pick: pickIn(cerr, tD.c, 16), pg: 0.25, pw: 0.6, vw: 1.4, vg: 0.1, turn: 2.5, stride: 0.55, sep: 2, roam: 9, gp: 0.8, peck: true, dropNeck: 0.1 });
+  spawn(seriema, 2, { name: 'seriema', scale: 0.8, area: cerr, pick: pickIn(cerr, tD.c, 16), pg: 0.25, pw: 0.6, vw: 1.4, vg: 0.1, turn: 2.5, stride: 0.55, sep: 2, roam: 9, gp: 0.8, peck: true, dropNeck: 0.1 });
   // galinhas ciscando entre as casas
   const quintal = (x, z) => inHex(x, z, tV.c, 0.8) && !blocked(x, z, 0.2);
-  spawn(() => galinha([0xf4f0e6, 0xa8502a, 0x3a3230, 0xc8803a][Math.floor(rnd() * 4)]), 6, { area: quintal, pick: pickIn(quintal, tV.c, 10), pg: 0.6, pw: 0.35, vw: 0.6, vg: 0.05, turn: 4, stride: 0.22, sep: 0.6, roam: 3, gp: 0.9, peck: true, dropNeck: 0.05 });
+  spawn(() => galinha([0xf4f0e6, 0xa8502a, 0x3a3230, 0xc8803a][Math.floor(rnd() * 4)]), 6, { name: 'galinha', area: quintal, pick: pickIn(quintal, tV.c, 10), pg: 0.6, pw: 0.35, vw: 0.6, vg: 0.05, turn: 4, stride: 0.22, sep: 0.6, roam: 3, gp: 0.9, peck: true, dropNeck: 0.05 });
   updaters.push((dt, time) => { for (const a of all) { brain(a, dt); pose(a, dt, time); } });
 
   // ---------- araras: um casal dando voltas largas sobre o vale, batendo asa e planando
@@ -128,12 +129,12 @@ export function buildFauna(scene, { mobile = false, shade = null } = {}) {
     return { g, wings }; };
   const M2 = mat({ vertexColors: true, side: THREE.DoubleSide });
   const fly = []; { const c0 = [TILES.reduce((s, t) => s + t.c[0], 0) / TILES.length, TILES.reduce((s, t) => s + t.c[1], 0) / TILES.length];
-    for (let i = 0; i < 2; i++) { const b = arara(); scene.add(b.g); fly.push({ ...b, c: c0, R: 38, alt: 26, w: 0.2, off: i * 0.06, side: i ? 1.4 : -1.4, flap: 7.5 }); }
+    for (let i = 0; i < 2; i++) { const b = arara(); scene.add(b.g); tag(b.g, 'arara (envergadura)'); fly.push({ ...b, c: c0, R: 38, alt: 26, w: 0.2, off: i * 0.06, side: i ? 1.4 : -1.4, flap: 7.5 }); }
     // bando de passarinhos, longe e alto, em silhueta
     const sil = mat({ color: 0x2e3238, side: THREE.DoubleSide });
-    for (let i = 0; i < (mobile ? 9 : 14); i++) { const g = new THREE.Group(); const body = new THREE.Mesh(new THREE.SphereGeometry(0.08, 6, 4).scale(1, 0.8, 2), sil); g.add(body);
-      const wings = [1, -1].map(s => { const p = pivot(g, 0.03 * s, 0, 0); p.add(new THREE.Mesh(new THREE.PlaneGeometry(0.26, 0.1).translate(0.13 * s, 0, 0).rotateX(-Math.PI / 2), sil)); p.userData.s = s; return p; });
-      scene.add(g); fly.push({ g, wings, c: [c0[0] - 60, c0[1] - 40], R: 22 + rnd() * 6, alt: 34 + rnd() * 5, w: 0.33, off: i * 0.045 + rnd() * 0.02, side: (rnd() - 0.5) * 6, flap: 14, jit: rnd() * 6 }); } }
+    for (let i = 0; i < (mobile ? 9 : 14); i++) { const g = new THREE.Group(); const body = new THREE.Mesh(new THREE.SphereGeometry(0.05, 6, 4).scale(1, 0.8, 2), sil); g.add(body);
+      const wings = [1, -1].map(s => { const p = pivot(g, 0.03 * s, 0, 0); p.add(new THREE.Mesh(new THREE.PlaneGeometry(0.14, 0.07).translate(0.07 * s, 0, 0).rotateX(-Math.PI / 2), sil)); p.userData.s = s; return p; });
+      scene.add(g); tag(g, 'passarinho do bando (envergadura)'); fly.push({ g, wings, c: [c0[0] - 60, c0[1] - 40], R: 22 + rnd() * 6, alt: 34 + rnd() * 5, w: 0.33, off: i * 0.045 + rnd() * 0.02, side: (rnd() - 0.5) * 6, flap: 14, jit: rnd() * 6 }); } }
   updaters.push((dt, time) => { for (const f of fly) { const a = time * f.w + f.off * 6.28, wob = Math.sin(time * 0.13 + f.off * 9) * 8;
     const x = f.c[0] + Math.cos(a) * (f.R + wob) + Math.cos(a) * f.side, z = f.c[1] + Math.sin(a) * (f.R * 0.7 + wob), y = f.alt + Math.sin(time * 0.5 + f.off * 20) * 2;
     const dx = -Math.sin(a), dz = Math.cos(a) * 0.7; f.g.position.set(x, y, z); f.g.rotation.set(0, Math.atan2(dx, dz), 0); f.g.rotateZ(-0.35);
@@ -151,7 +152,7 @@ export function buildFauna(scene, { mobile = false, shade = null } = {}) {
     const im = new THREE.InstancedMesh(geo, bm, N), flowers = [], tL = tile('lavoura'), tB = tile('mata');
     const homes = [[tL.c[0] + 10, tL.c[1], 0xffc21a], [tP.c[0], tP.c[1], 0xf6a91a], [tP.c[0] - 6, tP.c[1] - 8, 0xfff2a0], [tB.c[0] - 2, tB.c[1] + 6, 0x3a8cff], [tD.c[0], tD.c[1], 0xf08a2a]];
     for (let i = 0; i < N; i++) { const h = homes[i % homes.length]; flowers.push({ home: h, p: V3(h[0] + (rnd() - 0.5) * 8, 0, h[1] + (rnd() - 0.5) * 8), v: V3(), tgt: V3(), t: 0, rest: 0 }); im.setColorAt(i, col(h[2]).multiplyScalar(0.9 + rnd() * 0.2)); }
-    im.frustumCulled = false; scene.add(im); const Mx = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), one = V3(1.6, 1.6, 1.6);
+    im.frustumCulled = false; scene.add(im); tag(im, 'borboleta (envergadura, na régua)', READ3(0.08) / 0.2); const Mx = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), one = V3(1, 1, 1).multiplyScalar(READ3(0.08) / 0.2);
     updaters.push((dt, time) => { const night = U.uDay.value < 0.25, rain = U.uRain.value > 0.3;
       flowers.forEach((b, i) => { b.t -= dt; if (b.t <= 0) { b.tgt.set(b.home[0] + (rnd() - 0.5) * 12, 0, b.home[1] + (rnd() - 0.5) * 12); b.t = 2 + rnd() * 4; }
         const gy = heightAt(b.p.x, b.p.z), want = night || rain ? gy + 0.3 : gy + 0.6 + Math.sin(time * 1.3 + i) * 0.4 + 0.5;
@@ -166,14 +167,14 @@ export function buildFauna(scene, { mobile = false, shade = null } = {}) {
     for (let i = 0; i < N; i++) { const g = new THREE.Group(), c = col(i % 2 ? 0x2a7ad8 : 0xd8402a);
       g.add(new THREE.Mesh(merge([paint(new THREE.CylinderGeometry(0.008, 0.012, 0.11, 5).rotateX(Math.PI / 2).translate(0, 0, -0.04), c), ell(0.018, 0.018, 0.02, 0, 0, 0.03, c, 6)], K), M));
       const w = new THREE.Mesh(merge([paint(new THREE.PlaneGeometry(0.16, 0.025).rotateX(-Math.PI / 2).translate(0, 0.004, 0.012), col(0xe8f0ff)), paint(new THREE.PlaneGeometry(0.15, 0.022).rotateX(-Math.PI / 2).translate(0, 0.004, -0.008), col(0xe8f0ff))], K), dm); g.add(w);
-      g.scale.setScalar(1.6); scene.add(g); const i0 = Math.floor(rnd() * 200); drag.push({ g, w, p: V3(RIVER[i0][0], 0, RIVER[i0][1]), tgt: null, t: 0 }); }
+      g.scale.setScalar(READ3(0.07) / 0.16); scene.add(g); tag(g, 'libélula (envergadura, na régua)'); const i0 = Math.floor(rnd() * 200); drag.push({ g, w, p: V3(RIVER[i0][0], 0, RIVER[i0][1]), tgt: null, t: 0 }); }
     updaters.push((dt, time) => { for (const d of drag) { d.t -= dt; if (d.t <= 0 || !d.tgt) { const i0 = Math.floor(rnd() * 200), r = RIVER[i0]; d.tgt = V3(r[0] + (rnd() - 0.5) * 3, 0, r[1] + (rnd() - 0.5) * 3); d.t = 1.5 + rnd() * 3; }
       const dx = d.tgt.x - d.p.x, dz = d.tgt.z - d.p.z, dist = Math.hypot(dx, dz), sp = dist > 0.2 ? Math.min(5, dist * 3) : 0;
       if (dist > 0.01) { d.p.x += dx / dist * sp * dt; d.p.z += dz / dist * sp * dt; d.g.rotation.y = Math.atan2(dx, dz); }
       d.p.y = WATER_Y - U.uWaterDrop.value + 0.45 + Math.sin(time * 2 + d.t) * 0.08; d.g.position.copy(d.p); d.w.rotation.z = Math.sin(time * 60) * 0.3; d.g.visible = U.uDay.value > 0.3 && U.uRain.value < 0.4; } }); }
 
   // ---------- peixe pulando: um arco prateado de vez em quando, com o anel na água na saída e na volta
-  { const fish = new THREE.Mesh(merge([ell(0.035, 0.05, 0.16, 0, 0, 0, col(0xb8c8c8), 8), paint(new THREE.PlaneGeometry(0.09, 0.08).rotateY(Math.PI / 2).translate(0, 0, -0.18), col(0x8a9a9a))], K), M); fish.visible = false; scene.add(fish);
+  { const fish = new THREE.Mesh(merge([ell(0.035, 0.05, 0.16, 0, 0, 0, col(0xb8c8c8), 8), paint(new THREE.PlaneGeometry(0.09, 0.08).rotateY(Math.PI / 2).translate(0, 0, -0.18), col(0x8a9a9a))], K), M); fish.visible = false; scene.add(fish); tag(fish, 'peixe'); fish.userData.reguaGeo = true;
     const ringM = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0, depthWrite: false }), rings = [0, 1].map(() => { const r = new THREE.Mesh(new THREE.RingGeometry(0.85, 1, 24).rotateX(-Math.PI / 2), ringM.clone()); r.renderOrder = 3; scene.add(r); return r; });
     let t = 3, jump = null; updaters.push(dt => { const wy = WATER_Y - U.uWaterDrop.value + 0.02;
       if (!jump) { t -= dt; if (t <= 0) { const i0 = 10 + Math.floor(rnd() * 160), [x, z] = RIVER[i0], [x2, z2] = RIVER[i0 + 2]; jump = { a: V3(x, wy, z), b: V3(x2 + (x2 - x) * 0.2, wy, z2 + (z2 - z) * 0.2), k: 0 }; } }

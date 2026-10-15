@@ -7,10 +7,11 @@ import { OrbitControls } from './addons/OrbitControls.js';
 import { mergeGeometries } from './addons/BufferGeometryUtils.js';
 import { NOISE, WIND, CLOUDS } from './glsl.js';
 import { U, HEAD, LIGHT_END, shared, ramp, toon } from './mat.js';
-import { R, TILES, CENTER, RIVER, riverHalfWidth, heightAt, riverInfo, waterDist, biomeAt, SPRING, POOL_R, WATER_Y, vnoise, inHex, inAnyTile, dirtAt, fieldAt, blocked } from './world.js';
+import { R, TILES, CENTER, RIVER, riverHalfWidth, heightAt, riverInfo, waterDist, biomeAt, SPRING, POOL_R, WATER_Y, vnoise, inHex, inAnyTile, dirtAt, fieldAt, blocked, LAYOUT } from './world.js';
 import { buildProps } from './props.js';
 import { buildFauna } from './fauna.js';
 import { buildClouds } from './clouds.js';
+import { tag, audit, person } from './regua.js';
 import { createGameCamera } from './camera.js';
 import { leafTexture, fanTexture, barkTexture, earthTexture, stoneTexture } from './textures.js';
 
@@ -219,6 +220,10 @@ const barkTex = barkTexture(5);
 const TEX = { cerrado: leafTexture(7, { n: 110, size: 26, round: 0.62, spread: 0.4 }), mata: leafTexture(9, { n: 170, size: 22, round: 0.5, spread: 0.42 }),
   ipe: leafTexture(13, { n: 140, size: 18, round: 0.65, spread: 0.4 }), buriti: fanTexture(11) };
 const LEAFC = { cerrado: 0x9fbf3e, mata: 0x5f9a33, ipe: 0x8fb33c, buriti: 0x8cc04a, sombra: 0x86b23c };
+// o que chega perto demais da lente (copas altas quando a câmera desce no zoom) se desfaz em pontilhado, sem tapar o mapa
+const NEAR_FADE = `{vec3 ab=uFocus-cameraPosition;float t=clamp(dot(vWp-cameraPosition,ab)/dot(ab,ab),0.0,1.0),dl=length(vWp-cameraPosition-ab*t),rr=2.5+0.12*length(ab);
+  float fade=max((1.0-smoothstep(rr*0.6,rr,dl))*(1.0-smoothstep(0.7,0.9,t))*0.9,1.0-smoothstep(6.0,14.0,distance(vWp,cameraPosition)));
+  if(hash21(floor(gl_FragCoord.xy))<fade)discard;}\n`;   // entre a câmera e o ponto que se olha, as copas abrem uma janela pontilhada
 function treeMaterials(kind) {
   const wood = toon({ map: barkTex, color: kind === 'buriti' ? 0xb8a98a : kind === 'mata' ? 0xa08a6c : 0x8f7356 });
   const leaf = toon({ map: TEX[kind], alphaTest: 0.5, side: THREE.DoubleSide, color: LEAFC[kind] });
@@ -234,11 +239,11 @@ function treeMaterials(kind) {
         transformed+=inverse(mat3(modelMatrix))*dw;vLr=lr;vAo=ao;vTint=tint;vWp=(modelMatrix*vec4(transformed,1.0)).xyz;`);
     if (depth) { sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying float vLr;varying vec3 vWp;varying float vAo;varying float vTint;\n'); return; }
     sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying float vLr;varying vec3 vWp;varying float vAo;varying float vTint;uniform float uDry;\n' + HEAD)
-      .replace('#include <map_fragment>', isLeaf ? /* glsl */`#include <map_fragment>
+      .replace('#include <map_fragment>', NEAR_FADE + (isLeaf ? /* glsl */`#include <map_fragment>
         if(vLr<uSeca*uDry*0.5)discard;
         vec3 ochre=vec3(0.86,0.58,0.24)*dot(diffuseColor.rgb,vec3(0.45)),yel=vec3(1.0,0.82,0.16)*(0.7+0.5*dot(diffuseColor.rgb,vec3(0.33)));
         diffuseColor.rgb=uDry>0.9?mix(diffuseColor.rgb,yel,uSeca):mix(diffuseColor.rgb,ochre,uSeca*uDry*step(0.5,fract(vLr*7.3)));
-        diffuseColor.rgb*=(0.92+0.16*fract(vLr*13.7))*mix(0.42,1.12,vAo)*mix(vec3(1.06,1.0,0.82),vec3(0.9,1.02,1.06),vTint);` : '#include <map_fragment>\ndiffuseColor.rgb*=mix(1.0,0.72,uWet);')
+        diffuseColor.rgb*=(0.92+0.16*fract(vLr*13.7))*mix(0.42,1.12,vAo)*mix(vec3(1.06,1.0,0.82),vec3(0.9,1.02,1.06),vTint);` : '#include <map_fragment>\ndiffuseColor.rgb*=mix(1.0,0.72,uWet);'))
       .replace('#include <lights_fragment_end>', LIGHT_END(isLeaf ? '2.2' : 0)); };
   wood.onBeforeCompile = sh => sway(sh, false, false); leaf.onBeforeCompile = sh => sway(sh, true, false);
   const leafDepth = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking, map: TEX[kind], alphaTest: 0.5 }); leafDepth.onBeforeCompile = sh => sway(sh, true, true);
@@ -278,7 +283,7 @@ function finish(geos, H, withLr) { const g = mergeGeometries(geos);
   if (!g.attributes.ao) g.setAttribute('ao', new THREE.BufferAttribute(new Float32Array(p.count).fill(1), 1));
   g.setAttribute('tint', new THREE.BufferAttribute(new Float32Array(p.count).fill(rnd()), 1)); return g; }
 const SPECIES = {
-  cerrado: { trunk: [2.2, 3.4], r: 0.24, crook: 0.55, lean: 0.25, branches: 3, levels: 2, spread: 0.95, decay: 0.72, cards: 22, card: 2.4, cluster: 2.0 },
+  cerrado: { trunk: [1.5, 2.4], r: 0.22, crook: 0.6, lean: 0.25, branches: 3, levels: 2, spread: 1.05, decay: 0.7, cards: 22, card: 2.1, cluster: 1.7 },
   ipe: { trunk: [4, 5.5], r: 0.27, crook: 0.4, lean: 0.12, branches: 3, levels: 2, spread: 0.8, decay: 0.75, cards: 20, card: 2.4, cluster: 2.0 },
   mata: { trunk: [3.6, 5.2], r: 0.36, crook: 0.22, lean: 0.06, branches: 4, levels: 3, spread: 0.85, decay: 0.74, cards: 15, card: 3.2, cluster: 2.6 },
   sombra: { trunk: [2.6, 3.4], r: 0.5, crook: 0.3, lean: 0.08, branches: 5, levels: 3, spread: 1.0, decay: 0.72, cards: 13, card: 3.4, cluster: 2.8 },
@@ -293,7 +298,7 @@ function makeTree(kind, scale = 1) {
   if (P.r > 0.1) { const rr = P.r * scale * 1.3, fl = new THREE.CylinderGeometry(rr, rr * 1.9, 0.7, 7, 1, true), uvA = fl.attributes.uv;
     for (let k = 0; k < uvA.count; k++) uvA.setXY(k, uvA.getX(k) * 2, uvA.getY(k) * 0.5); fl.translate(0, 0.05, 0); out.wood.push(fl); }
   let H = 0; for (const t of out.tips) H = Math.max(H, t.y); const center = out.tips.reduce((a, t) => a.add(t), new THREE.Vector3()).multiplyScalar(1 / out.tips.length);
-  leafCards(out, out.tips, center, { ...P, card: P.card * scale, cluster: P.cluster * scale }); const tm = treeMesh(out, H + P.cluster * scale, MATS[kind]); tm.userData.kind = kind; return tm;
+  leafCards(out, out.tips, center, { ...P, card: P.card * scale, cluster: P.cluster * scale }); const tm = treeMesh(out, H + P.cluster * scale, MATS[kind]); tm.userData.kind = kind; return tag(tm, { cerrado: 'árvore do cerrado', ipe: 'ipê', mata: 'árvore da mata de galeria', sombra: 'árvore de sombra do pasto', moita: 'moita' }[kind]);
 }
 function makeBuriti() {
   const H = 13 + rnd() * 5, out = { wood: [], leaf: [] }, lean = new THREE.Vector3((rnd() - 0.5) * 0.08, 1, (rnd() - 0.5) * 0.08).normalize();
@@ -309,7 +314,7 @@ function makeBuriti() {
     fan.applyMatrix4(new THREE.Matrix4().makeRotationAxis(droop, Math.PI / 2)); fan.translate(end.x, end.y, end.z);
     const nn = droop.clone().add(new THREE.Vector3(0, 1.2, 0)).normalize(), nor = fan.attributes.normal; for (let k = 0; k < nor.count; k++) nor.setXYZ(k, nn.x, nn.y, nn.z);
     fan.setAttribute('lr', new THREE.Float32BufferAttribute(new Array(4).fill(rnd()), 1)); out.leaf.push(fan); }
-  return treeMesh(out, H + 3, MATS.buriti);
+  return tag(treeMesh(out, H + 3, MATS.buriti), 'buriti');
 }
 // cupinzeiros (Cornitermes): domos de argila laranja-avermelhada, encaroçados, às vezes com uma torrinha do lado;
 // e pedras de quartzito, facetadas, com líquen em cima e escuras de umidade na beira d'água
@@ -331,7 +336,7 @@ function makeTermite() {
   const h = 1.0 + rnd() * 1.1, r0 = 0.4 + rnd() * 0.22 + h * 0.12, parts = [lump(r0, h, rnd() * 50)];
   if (rnd() < 0.55) { const h2 = h * (0.45 + rnd() * 0.3), g2 = lump(r0 * 0.55, h2, rnd() * 50, 14), a = rnd() * 6.28; g2.translate(Math.cos(a) * r0 * 0.7, 0, Math.sin(a) * r0 * 0.7); parts.push(g2); }
   const g = mergeGeometries(parts); g.translate(0, -0.12, 0);
-  const m = new THREE.Mesh(g, termiteMat); m.castShadow = m.receiveShadow = true; return m; }
+  const m = new THREE.Mesh(g, termiteMat); m.castShadow = m.receiveShadow = true; return tag(m, 'cupinzeiro'); }
 const stoneMat = toon({ color: 0xc9c2b2, map: stoneTex });
 stoneMat.onBeforeCompile = sh => { shared(sh);
   sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vWp;varying vec3 vWn;').replace('#include <begin_vertex>', '#include <begin_vertex>\nvWp=(modelMatrix*vec4(transformed,1.0)).xyz;vWn=normalize(mat3(modelMatrix)*objectNormal);');
@@ -348,7 +353,7 @@ function makeStone(size, flat = 0.7) {
     const k = 1 + (vnoise(x * 1.3 + o, z * 1.3 + y) - 0.5) * 0.5 + (vnoise(x * 3.1 + o, y * 3.1 - z) - 0.5) * 0.18;
     p.setXYZ(i, x * k * sx * size, Math.max(y, -0.55) * k * flat * size, z * k * sz * size); }
   g.computeVertexNormals();                // facetas planas: pedra talhada à moda dos jogos pintados
-  const m = new THREE.Mesh(g, stoneMat); m.castShadow = m.receiveShadow = true; return m; }
+  const m = new THREE.Mesh(g, stoneMat); m.castShadow = m.receiveShadow = true; return tag(m, 'pedra'); }
 const ROCKS_IN_WATER = [];
 function putStone(x, z, size, flat, y) { const m = makeStone(size, flat); m.position.set(x, y ?? heightAt(x, z) - size * flat * 0.25, z); m.rotation.y = rnd() * 6.28; scene.add(m); placed.push([x, z, size * 1.4]); return m; }
 
@@ -378,7 +383,7 @@ const shadeTree = scene.children.find(o => o.userData.kind === 'sombra' && inHex
 const clouds = buildClouds(scene, CENTER, { mobile });
 const fauna = buildFauna(scene, { mobile, shade: shadeTree ? [shadeTree.position.x, shadeTree.position.z] : null });
 // moitas: o sub-bosque da mata e os arbustos do cerrado, que fecham o vão entre o capim e as copas
-scatter(tB, 16, () => makeTree('moita', 0.9 + rnd() * 0.6), (x, z) => { const w = waterDist(x, z); return w > 1.2 && w < 14; }, 2.2);
+scatter(tB, 16, () => makeTree('moita', 0.9 + rnd() * 0.35), (x, z) => { const w = waterDist(x, z); return w > 1.2 && w < 14; }, 2.2);
 scatter(tD, 6, () => makeTree('moita', 0.8 + rnd() * 0.5), () => true, 2.5);
 scatter(tA, 4, () => makeTree('moita', 0.8 + rnd() * 0.4), (x, z) => { const w = waterDist(x, z); return w > 1.5 && w < 6; }, 2.5);
 { let tries = 0; while (ROCKS_IN_WATER.length < 6 && tries++ < 400) { const i = 4 + Math.floor(rnd() * 220), [x0, z0] = RIVER[i], ri = riverInfo(x0, z0), w = riverHalfWidth(ri.s);
@@ -542,6 +547,19 @@ function fitShadow() {
 function grassLod() { for (const m of grass.children) { const g = m.geometry, d = Math.hypot(camera.position.x - g.userData.c[0], camera.position.y, camera.position.z - g.userData.c[1]);
   g.instanceCount = Math.round(g.userData.full * Math.max(0.3, Math.min(1, 1.3 - d / 190))); } }
 
+// ---------- régua: bonecos de 1,70 m pelo vale e a tabela do que foi medido, para conferir as proporções
+let people = null;
+function showRegua(on) {
+  if (on && !people) { people = new THREE.Group(); const L = LAYOUT, h0 = L.houses[0], c = Math.cos(h0.rot), s = Math.sin(h0.rot), lx = -h0.w * 0.22 + 1.1, lz = h0.d / 2 + 1.1;
+    const cer = scene.children.find(o => o.userData.kind === 'cerrado'), spots = [[h0.p[0] + lx * c + lz * s, h0.p[1] - lx * s + lz * c], [L.corral.p[0] + 1, L.corral.p[1] + L.corral.d / 2 + 1.2],
+      [L.field.tile.c[0] + L.field.cornMaxX + 0.6, L.field.tile.c[1] - 4], [L.mill.p[0] - 1.5, L.mill.p[1] + 3], [SPRING[0] + POOL_R + 1.4, SPRING[1] + 1], cer ? [cer.position.x + 1.6, cer.position.z + 0.8] : [CENTER[0], CENTER[1]]];
+    for (const [x, z] of spots) { const p = person(toon({ color: 0xffffff })); p.position.set(x, heightAt(x, z) - 0.02, z); people.add(p); } scene.add(people); }
+  if (people) people.visible = on; const box = $('regua'); box.hidden = !on;
+  if (on) { const rows = audit(scene); const med = rows.filter(r => r.ok !== null), bad = med.filter(r => !r.ok); box.innerHTML = `<b>Régua · ${med.length} coisas medidas</b>${bad.length ? `<div class="erro">⚠ ${bad.length} fora do tamanho real</div>` : '<div>✓ todas no tamanho real · bonecos de 1,70 m</div>'}<details><summary>ver a tabela</summary>` + rows.map(r => r.ok === null ? '' : `<div class="${r.ok ? 'ok' : 'erro'}">${r.ok ? '✓' : '⚠'} ${r.name}${r.n > 1 ? ` (${r.n})` : ''}: ${r.txt}</div>`).join('') + '</details>'; }
+}
+chips('cRegua', 'regua', v => v === 'sim'); let reguaOn = false;
+window.__regua = () => audit(scene);
+
 const clock = new THREE.Clock(); let fpsT = 0, fpsN = 0, slow = 0;
 const fmtH = h => `${String(Math.floor(h) % 24).padStart(2, '0')}:${String(Math.round((h % 1) * 60) % 60).padStart(2, '0')}`;
 function frame() {
@@ -550,7 +568,9 @@ function frame() {
   if (ST.cam !== camMode) { camMode = ST.cam; const game = camMode === 'jogo'; gameCam.state.enabled = game; controls.enabled = !game; $('giro').hidden = !game;
     if (game) { gameCam.state.fx = controls.target.x; gameCam.state.fz = controls.target.z; } else { controls.target.copy(gameCam.focus); } }
   if (camMode === 'jogo') gameCam.update(dt); else controls.update();
-  fitShadow(); grassLod();
+  if (!!ST.regua !== reguaOn) { reguaOn = !!ST.regua; showRegua(reguaOn); }
+  if (people && reguaOn) for (const p of people.children) p.rotation.y = Math.atan2(camera.position.x - p.position.x, camera.position.z - p.position.z);
+  U.uFocus.value.copy(camMode === 'jogo' ? gameCam.focus : controls.target); fitShadow(); grassLod();
   const ctx = { pxPerUnit: renderer.domElement.height / (2 * Math.tan(camera.fov * Math.PI / 360)) }; props.update(dt, ctx); fauna.update(dt, ctx); clouds.update(dt, camera);
   renderReflection();
   renderer.render(scene, camera);

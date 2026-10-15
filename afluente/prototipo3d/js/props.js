@@ -6,6 +6,7 @@ import { mergeGeometries } from './addons/BufferGeometryUtils.js';
 import { NOISE, WIND } from './glsl.js';
 import { U, HEAD, LIGHT_END, shared, toon } from './mat.js';
 import { LAYOUT, heightAt, hexEdgeDist, blocked, inHex } from './world.js';
+import { tag } from './regua.js';
 import { plasterTexture, roofTexture, plankTexture, stoneTexture, chitaTexture } from './textures.js';
 
 const rnd = (() => { let a = 98765; return () => { a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; })();
@@ -125,7 +126,8 @@ export function buildProps(scene, { mobile = false } = {}) {
     add(curt, curtainMats[ci], ['position', 'uv']);
     g.position.set(h.p[0], groundY(h.p, w, d, h.rot), h.p[1]); g.rotation.y = h.rot; scene.add(g); g.updateMatrixWorld(true);
     for (const [x, ry, wx, wz, s] of spills) { const c = new THREE.Vector3(x, 0, 0.15 + s * 0.45).applyAxisAngle(new THREE.Vector3(0, 1, 0), ry).add(new THREE.Vector3(wx, 0, wz));
-      const pl = new THREE.Mesh(new THREE.PlaneGeometry(s, s * 0.9).rotateX(-Math.PI / 2).rotateY(ry), spillMat); pl.position.set(c.x, groundAt(g, c.x, c.z) + 0.04, c.z); pl.renderOrder = 4; g.add(pl); }
+      const pl = new THREE.Mesh(new THREE.PlaneGeometry(s, s * 0.9).rotateX(-Math.PI / 2).rotateY(ry), spillMat); pl.position.set(c.x, groundAt(g, c.x, c.z) + 0.04, c.z); pl.renderOrder = 4; pl.userData.noRegua = true; g.add(pl); }
+    tag(g, chapel ? 'capela (com a torre)' : 'casa');
     return g;
   }
   for (const h of LAYOUT.houses) house(h);
@@ -144,10 +146,10 @@ export function buildProps(scene, { mobile = false } = {}) {
       paint(new THREE.CylinderGeometry(0.07, 0.07, 1.9, 8).rotateZ(Math.PI / 2).translate(0, 1.55, 0), col(0x8a6a4a)), paint(box(0.3, 0.32, 0.3, 0.1, 1.15, 0, 1), col(0x6a6a70))]);
     const rf = merge([paint(box(2.5, 0.07, 0.9, 0, 0, 0, 1).rotateX(0.55).translate(0, 2.05, 0.36), col(0xb4563a)), paint(box(2.5, 0.07, 0.9, 0, 0, 0, 1).rotateX(-0.55).translate(0, 2.05, -0.36), col(0xb4563a))]);
     g.add(ring, inner, top, water, new THREE.Mesh(wood, woodMat), new THREE.Mesh(rf, roofMat)); g.traverse(o => { if (o.isMesh) o.castShadow = o.receiveShadow = true; });
-    g.position.set(W.p[0], heightAt(W.p[0], W.p[1]) + 0.0, W.p[1]); g.rotation.y = 0.4; scene.add(g); }
+    g.position.set(W.p[0], heightAt(W.p[0], W.p[1]) + 0.0, W.p[1]); g.rotation.y = 0.4; scene.add(g); tag(g, 'poço'); }
 
   // ---------- cercas: esteios a cada ~2,2 m seguindo o chão, duas ou três réguas um pouco tortas; uma porteira aberta
-  function fence(pts, { closed = true, gate = -1, posts = 1.35, rails = [0.5, 0.95], step = 2.2, color = 0x9a8470 } = {}) {
+  function fence(pts, { name = '', closed = true, gate = -1, posts = 1.35, rails = [0.5, 0.95], step = 2.2, color = 0x9a8470 } = {}) {
     const geos = [], P = [];
     const segs = closed ? pts.length : pts.length - 1;
     for (let i = 0; i < segs; i++) { const a = pts[i], b = pts[(i + 1) % pts.length], n = Math.max(1, Math.round(Math.hypot(b[0] - a[0], b[1] - a[1]) / step));
@@ -159,18 +161,20 @@ export function buildProps(scene, { mobile = false } = {}) {
     for (let i = 0; i < last; i++) { if (i === gate) continue; const [ax, az] = P[i], [bx, bz] = P[(i + 1) % P.length], ya = Y[i], yb = Y[(i + 1) % P.length], L = Math.hypot(bx - ax, bz - az), ang = Math.atan2(bz - az, bx - ax);
       for (const r of rails) { const g = box(L + 0.2, 0.09, 0.05, 0, 0, 0, 1); g.rotateZ(Math.atan2(yb - ya, L) + (rnd() - 0.5) * 0.04).rotateY(-ang).translate((ax + bx) / 2, (ya + yb) / 2 + r + (rnd() - 0.5) * 0.05, (az + bz) / 2);
         geos.push(paint(g, col(color).multiplyScalar(0.9 + rnd() * 0.2))); } }
-    const m = new THREE.Mesh(merge(geos), woodMat); m.castShadow = m.receiveShadow = true; scene.add(m); return P;
+    const m = new THREE.Mesh(merge(geos), woodMat); m.castShadow = m.receiveShadow = true; scene.add(m);
+    if (name) { const base = Y.reduce((a, b) => a + b, 0) / Y.length, gr = new THREE.Group(); gr.position.y = base; scene.add(gr); scene.remove(m); m.position.y = -base; gr.add(m); tag(gr, name); }
+    return P;
   }
   const rectPts = (o, w, d, rot) => [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([u, v]) => { const x = u * w / 2, z = v * d / 2, c = Math.cos(rot), s = Math.sin(rot); return [o[0] + x * c + z * s, o[1] - x * s + z * c]; });
   // curral no pasto, com cocho de madeira
-  { const Cr = LAYOUT.corral; fence(rectPts(Cr.p, Cr.w, Cr.d, Cr.rot), { gate: 1, rails: [0.45, 0.85, 1.2], posts: 1.5 });
+  { const Cr = LAYOUT.corral; fence(rectPts(Cr.p, Cr.w, Cr.d, Cr.rot), { name: 'cerca do curral', gate: 1, rails: [0.45, 0.85, 1.2], posts: 1.5 });
     const c = Math.cos(Cr.rot), s = Math.sin(Cr.rot), lx = -Cr.w * 0.28, lz = -Cr.d * 0.3, x = Cr.p[0] + lx * c + lz * s, z = Cr.p[1] - lx * s + lz * c;
     const cocho = new THREE.Group(); cocho.add(new THREE.Mesh(merge([paint(box(2.6, 0.12, 0.7, 0, 0.5, 0, 1), col(0x8a6a4a)), paint(box(2.6, 0.45, 0.08, 0, 0.72, 0.33, 1), col(0x8a6a4a)), paint(box(2.6, 0.45, 0.08, 0, 0.72, -0.33, 1), col(0x8a6a4a)),
       paint(box(0.08, 0.45, 0.7, 1.28, 0.72, 0, 1), col(0x8a6a4a)), paint(box(0.08, 0.45, 0.7, -1.28, 0.72, 0, 1), col(0x8a6a4a)), paint(box(0.12, 0.5, 0.12, 1.1, 0.25, 0.25, 1), col(0x6a4a3a)), paint(box(0.12, 0.5, 0.12, -1.1, 0.25, -0.25, 1), col(0x6a4a3a))]), woodMat),
       new THREE.Mesh(new THREE.PlaneGeometry(2.45, 0.55).rotateX(-Math.PI / 2).translate(0, 0.86, 0), mat({ color: 0xc9b25a })));
     cocho.traverse(o => { if (o.isMesh) o.castShadow = o.receiveShadow = true; }); cocho.position.set(x, heightAt(x, z), z); cocho.rotation.y = Cr.rot; scene.add(cocho); }
   // horta cercada de varas, com canteiros de terra e couves, alfaces e cebolinhas
-  { const Gd = LAYOUT.garden; fence(rectPts(Gd.p, Gd.w, Gd.d, Gd.rot), { gate: 2, rails: [0.3, 0.6, 0.85], posts: 1.0, step: 1.0, color: 0xa89474 });
+  { const Gd = LAYOUT.garden; fence(rectPts(Gd.p, Gd.w, Gd.d, Gd.rot), { name: 'cerca da horta', gate: 2, rails: [0.3, 0.6, 0.85], posts: 1.0, step: 1.0, color: 0xa89474 });
     const beds = [], plants = [], c = Math.cos(Gd.rot), s = Math.sin(Gd.rot), y0 = heightAt(Gd.p[0], Gd.p[1]);
     for (let b = 0; b < 3; b++) { const lx = -Gd.w / 2 + 0.95 + b * 1.55; beds.push(paint(box(1.0, 0.25, Gd.d - 1.0, lx, 0.05, 0, 1), col(0x6e4630)));
       for (let k = 0; k < 6; k++) plants.push([lx + (rnd() - 0.5) * 0.4, -Gd.d / 2 + 0.85 + k * (Gd.d - 1.7) / 5, b]); }
@@ -216,8 +220,8 @@ export function buildProps(scene, { mobile = false } = {}) {
     const inst = (geo, m, list, yaw, sc) => { const im = new THREE.InstancedMesh(geo, m, list.length);
       list.forEach(([x, z], i) => { q.setFromEuler(new THREE.Euler((rnd() - 0.5) * 0.08, yaw(), (rnd() - 0.5) * 0.08)); const s = sc(); M.compose(V3(x, heightAt(x, z) - 0.05, z), q, V3(s, s, s)); im.setMatrixAt(i, M); });
       im.castShadow = !mobile; im.receiveShadow = true; scene.add(im); return im; };
-    inst(cornGeo(), plantMat(2.1, 0.95), corn, () => rnd() * 6.28, () => 0.85 + rnd() * 0.3);
-    inst(sunGeo(), plantMat(1.75, 0.8), sun, () => (rnd() - 0.5) * 0.5, () => 0.85 + rnd() * 0.3); }
+    tag(inst(cornGeo(), plantMat(2.1, 0.95), corn, () => rnd() * 6.28, () => 0.85 + rnd() * 0.3), 'milho', 1);
+    tag(inst(sunGeo(), plantMat(1.75, 0.8), sun, () => (rnd() - 0.5) * 0.5, () => 0.85 + rnd() * 0.3), 'girassol', 1); }
 
   // ---------- moinho: torre caiada, chapéu que gira para encarar o vento e quatro pás de lona; a velocidade segue o vento
   { const Mp = LAYOUT.mill.p, g = new THREE.Group(), y0 = heightAt(Mp[0], Mp[1]) - 0.1, Ht = 7.2;
@@ -233,7 +237,7 @@ export function buildProps(scene, { mobile = false } = {}) {
       for (let k = 0; k < 6; k++) { const bar = box(1.0, 0.06, 0.06, 0.55, 1.15 + k * 0.6, 0.12, 1); bar.rotateZ(a); sails.push(paint(bar, col(0x8a6a4a))); }
       const cl = new THREE.PlaneGeometry(0.95, 3.3, 1, 4).translate(0.56, 2.65, 0.16); const p = cl.attributes.position; for (let k = 0; k < p.count; k++) p.setZ(k, p.getZ(k) + 0.06 * Math.sin((p.getX(k) - 0.08) / 0.95 * Math.PI)); cl.rotateZ(a); cloth.push(cl); }
     rotor.add(new THREE.Mesh(merge(sails), woodMat), new THREE.Mesh(merge(cloth.map(c => { c.computeVertexNormals(); return c; }), ['position', 'normal', 'uv']), mat({ color: 0xf2e9d6, side: THREE.DoubleSide }, { frag: 'diffuseColor.rgb*=mix(1.0,0.8,uWet);', rim: '2.0' })));
-    g.traverse(o => { if (o.isMesh) o.castShadow = o.receiveShadow = true; }); g.position.set(Mp[0], y0, Mp[1]); scene.add(g);
+    g.traverse(o => { if (o.isMesh) o.castShadow = o.receiveShadow = true; }); g.position.set(Mp[0], y0, Mp[1]); scene.add(g); tag(g, 'moinho (com as pás)');
     let w = 0, yaw = 0; updaters.push(dt => { const wd = U.uWindDir.value, target = Math.atan2(-wd.x, -wd.y); let dy = target - yaw; dy = Math.atan2(Math.sin(dy), Math.cos(dy)); yaw += dy * Math.min(1, dt * 0.25); cap.rotation.y = yaw;
       const u = U.uWindBase.value, tgt = u < 1.3 ? 0 : 2.2 * u / 4.6; w += (tgt - w) * Math.min(1, dt * 0.35); rotor.rotation.z -= w * dt; }); }
 

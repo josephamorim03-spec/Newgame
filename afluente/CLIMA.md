@@ -417,3 +417,32 @@ Na nascente, o chão é de brejo, mais estreito e com capim.
 - Não usados como fonte de números, mas fórmulas clássicas de livro-texto: Magnus (pressão de vapor), nível de condensação de ~125 m/°C, perfil logarítmico do vento, limite de Betz, escala de Beaufort, ângulos do arco-íris e do halo.
 
 **Ressalva honesta:** a climatologia do motor usa valores arredondados, de ordem de grandeza. Não consegui abrir a tabela oficial das normais do INMET (1991–2020) para Brasília. As notícias e notas usadas concordam nas faixas (umidade da tarde da Seca entre 15% e 40%; mais de 90% da chuva de outubro a abril). Se for preciso precisão, a tabela do INMET é o próximo passo, e basta trocar os pontos em `CLIM`.
+
+## 12. Régua no 3D (prévia 3D)
+
+A prévia 3D usa a mesma ideia da §11, ajustada para uma câmera que tem zoom: **tudo o que tem 30 cm ou mais é desenhado no tamanho real**, e o que é menor ganha um exagero suave, sempre o mesmo e sem trocar a ordem:
+
+`READ3(L) = L` para `L ≥ 0,3 m`; `READ3(L) = 0,3·(L/0,3)^0,6` para `L < 0,3 m` (borboleta de 8 cm → 14 cm; libélula de 7 cm → 13 cm).
+
+Cada coisa do vale tem uma etiqueta e é **medida em metros** a cada abertura (`js/regua.js`): altura acima do chão e maior medida na horizontal, comparadas com o tamanho de verdade. No painel **Clima › Régua › Sim** aparece a tabela medida e seis **bonecos de 1,70 m** pelo vale (porta da casa, porteira do curral, beira do milho, moinho, vereda e cerrado), para conferir a olho.
+
+| | Medido | Real |
+|---|---|---|
+| Árvore do cerrado | 5,0–7,0 m | 3–8 m |
+| Ipê | 11–12 m | 5–12 m |
+| Mata de galeria | 12,6–17 m | 9–20 m |
+| Árvore de sombra do pasto | 11–12 m (copa 12–14 m) | 8–15 m |
+| Buriti | 19,6–23,7 m | 14–26 m |
+| Cupinzeiro | 0,9–1,8 m | 0,6–2,4 m |
+| Casa (cumeeira · comprimento) | 5,2 m · 7–8 m | 4–6,2 m · 6–10,5 m |
+| Capela com a torre | 12,6 m | 10–15 m |
+| Moinho com as pás | 12,5 m | 10–16 m |
+| Milho · girassol | 2,4 m · 1,9 m | 1,8–2,8 m · 1,5–3 m |
+| Boi nelore (altura · comprimento) | 1,7 m · 3,0 m | 1,35–1,75 m · 2,3–3,0 m |
+| Capivara | 0,67 m · 1,28 m | 0,45–0,7 m · 1,0–1,4 m |
+| Garça-branca · seriema · galinha | 1,0 m · 0,9 m · 0,47 m | 0,85–1,05 · 0,7–0,95 · 0,3–0,55 m |
+| Arara (envergadura) | 1,1 m | 0,9–1,3 m |
+
+**O que a régua pegou e foi corrigido:** árvore do cerrado alta demais (até 9,7 m → até 7 m, tronco mais baixo e copa mais larga, como as tortas do cerrado), moitas de 3,2 m, capivara de 79 cm de altura e 1,5 m, garça de 1,2 m, seriema de 1,1 m, passarinhos do bando com 54 cm de envergadura, borboleta de 32 cm e libélula de 26 cm.
+
+**Câmera do jogo e copas altas:** com o zoom, a câmera desce para 18–25 m e entra nas copas dos buritis (20–24 m). As copas que ficam entre a câmera e o ponto que se olha abrem uma janela pontilhada, e o que chega a menos de 14 m da lente se desfaz; a sombra delas no chão continua inteira.
