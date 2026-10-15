@@ -7,7 +7,7 @@ import { OrbitControls } from './addons/OrbitControls.js';
 import { mergeGeometries } from './addons/BufferGeometryUtils.js';
 import { NOISE, WIND, CLOUDS } from './glsl.js';
 import { U, HEAD, LIGHT_END, shared, ramp, toon } from './mat.js';
-import { R, TILES, CENTER, RIVER, riverHalfWidth, heightAt, riverInfo, waterDist, biomeAt, SPRING, POOL_R, WATER_Y, vnoise, inHex, inAnyTile, dirtAt, fieldAt, blocked, LAYOUT } from './world.js';
+import { R, TILES, CENTER, RIVER, riverHalfWidth, heightAt, riverInfo, waterDist, biomeAt, SPRING, POOL_R, WATER_Y, vnoise, inHex, inAnyTile, dirtAt, fieldAt, blocked, LAYOUT, rockyAt } from './world.js';
 import { buildProps } from './props.js';
 import { buildFauna } from './fauna.js';
 import { buildClouds } from './clouds.js';
@@ -92,18 +92,18 @@ function latticeGeometry(r0, r1, step, keepTri) {
 function finishGround(pos, idx, out, drop) {
   for (let t = 0; t < idx.length; t += 3) { const A = idx[t] * 3, B = idx[t + 1] * 3, C = idx[t + 2] * 3;   // virados para cima
     if ((pos[C] - pos[A]) * (pos[B + 2] - pos[A + 2]) - (pos[B] - pos[A]) * (pos[C + 2] - pos[A + 2]) < 0) { const k = idx[t + 1]; idx[t + 1] = idx[t + 2]; idx[t + 2] = k; } }
-  const n = pos.length / 3, nor = new Float32Array(n * 3), bio = new Float32Array(n * 4), ex = new Float32Array(n * 2), wd = new Float32Array(n), ou = new Float32Array(n).fill(out), e = 0.35;
+  const n = pos.length / 3, nor = new Float32Array(n * 3), bio = new Float32Array(n * 4), ex = new Float32Array(n * 3), wd = new Float32Array(n), ou = new Float32Array(n).fill(out), e = 0.35;
   for (let i = 0; i < n; i++) { const x = pos[i * 3], z = pos[i * 3 + 2]; pos[i * 3 + 1] = heightAt(x, z) - drop;
     const hx = heightAt(x + e, z) - heightAt(x - e, z), hz = heightAt(x, z + e) - heightAt(x, z - e), v = new THREE.Vector3(-hx, 2 * e, -hz).normalize();
-    nor.set([v.x, v.y, v.z], i * 3); bio.set(biomeAt(x, z), i * 4); wd[i] = waterDist(x, z); if (!out) ex.set([fieldAt(x, z), dirtAt(x, z)], i * 2); }
+    nor.set([v.x, v.y, v.z], i * 3); bio.set(biomeAt(x, z), i * 4); wd[i] = waterDist(x, z); if (!out) ex.set([fieldAt(x, z), dirtAt(x, z), rockyAt(x, z)], i * 3); }
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
-  g.setAttribute('bio', new THREE.BufferAttribute(bio, 4)); g.setAttribute('wd', new THREE.BufferAttribute(wd, 1)); g.setAttribute('ou', new THREE.BufferAttribute(ou, 1)); g.setAttribute('ex', new THREE.BufferAttribute(ex, 2)); g.setIndex(idx); return g;
+  g.setAttribute('bio', new THREE.BufferAttribute(bio, 4)); g.setAttribute('wd', new THREE.BufferAttribute(wd, 1)); g.setAttribute('ou', new THREE.BufferAttribute(ou, 1)); g.setAttribute('ex', new THREE.BufferAttribute(ex, 3)); g.setIndex(idx); return g;
 }
 const groundMat = toon();
 groundMat.onBeforeCompile = sh => { shared(sh); sh.uniforms.uCenter = { value: new THREE.Vector2(CENTER[0], CENTER[1]) };
-  sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute vec4 bio;attribute vec2 ex;attribute float wd;attribute float ou;varying vec4 vBio;varying vec2 vEx;varying float vWd;varying vec3 vWp;varying float vOu;')
+  sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute vec4 bio;attribute vec3 ex;attribute float wd;attribute float ou;varying vec4 vBio;varying vec3 vEx;varying float vWd;varying vec3 vWp;varying float vOu;')
     .replace('#include <begin_vertex>', '#include <begin_vertex>\nvBio=bio;vEx=ex;vWd=wd;vOu=ou;vWp=(modelMatrix*vec4(transformed,1.0)).xyz;');
-  sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec4 vBio;varying vec2 vEx;varying float vWd;varying vec3 vWp;varying float vOu;uniform vec2 uCenter;float vHaze;\n' + HEAD + HEXF)
+  sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec4 vBio;varying vec3 vEx;varying float vWd;varying vec3 vWp;varying float vOu;uniform vec2 uCenter;float vHaze;\n' + HEAD + HEXF)
     .replace('#include <color_fragment>', /* glsl */`
       vec2 p=vWp.xz;float n1=fbm(p*0.05),n2=fbm(p*0.4+3.1),n3=vnoise(p*2.4);
       // pasto: verde-amarelado vivo, com manchas mais escuras e mais claras (como pinceladas)
@@ -120,6 +120,8 @@ groundMat.onBeforeCompile = sh => { shared(sh); sh.uniforms.uCenter = { value: n
       // terra batida da vila e dos caminhos: avermelhada, mais clara onde se pisa, com tufos de capim nas bordas
       vec3 earth=mix(vec3(0.66,0.46,0.31),vec3(0.80,0.62,0.45),n2)*(0.9+0.2*n3);earth=mix(earth,vec3(0.84,0.72,0.55),uSeca*0.4);
       col=mix(col,earth,smoothstep(0.2,0.7,vEx.y+(n3-0.5)*0.35));
+      // lajedo: cascalho e areia clara de quartzito entre tufos ralos
+      vec3 grav=mix(vec3(0.66,0.60,0.50),vec3(0.84,0.80,0.70),vnoise(p*5.0))*(0.85+0.3*vnoise(p*17.0));col=mix(col,grav,smoothstep(0.25,0.75,vEx.z+(n3-0.5)*0.4)*0.85);
       float bank=1.0-smoothstep(0.0,2.0,vWd);vec3 sand=mix(vec3(0.78,0.66,0.46),vec3(0.86,0.76,0.56),n3);
       col=mix(col,sand,bank*0.55);
       float wl=${WATER_Y.toFixed(3)}-uWaterDrop-0.06*vOu,dep=(wl-vWp.y)*(1.0-smoothstep(0.3,1.2,vWd)),under=smoothstep(-0.02,0.05,dep);
@@ -164,7 +166,7 @@ const fieldTex = (() => { const N = FIELD.res, d = new Float32Array(N * N * 4), 
     const inT = inAnyTile(x, z, 0.995); d[k] = heightAt(x, z) - (inT ? 0 : 0.1); if (!inT) continue;
     const b = biomeAt(x, z), wd = waterDist(x, z);
     d[k + 1] = wd < 0.35 ? 0 : Math.min(1, b[0] * 1.0 + b[2] * 0.92 + b[1] * 0.2) * (0.85 + 0.3 * (vnoise(x * 0.3, z * 0.3) - 0.5));
-    d[k + 1] *= blocked(x, z, -0.5) ? 0 : (1 - Math.min(1, dirtAt(x, z) * 1.4)) * (1 - 0.9 * fieldAt(x, z));
+    d[k + 1] *= blocked(x, z, -0.5) ? 0 : (1 - Math.min(1, dirtAt(x, z) * 1.4)) * (1 - 0.9 * fieldAt(x, z)) * (1 - 0.8 * rockyAt(x, z));
     d[k + 2] = (b[2] > 0.5 ? 0.6 + 0.4 * vnoise(x * 0.15, z * 0.15) : b[1] > 0.5 ? 0.24 : 0.26 + 0.24 * vnoise(x * 0.2 + 7, z * 0.2)) * (wd < 2.5 && wd > 0.35 ? 1.5 : 1);
     d[k + 3] = b[2] > 0.5 ? 1 : b[1] > 0.5 ? 0.5 : 0; }
   const t = new THREE.DataTexture(d, N, N, THREE.RGBAFormat, THREE.FloatType); t.minFilter = t.magFilter = THREE.LinearFilter; t.needsUpdate = true; return t; })();
@@ -219,16 +221,17 @@ const grass = new THREE.Group(); for (const g of bladeGeos) { const m = new THRE
 const barkTex = barkTexture(5);
 const TEX = { cerrado: leafTexture(7, { n: 110, size: 26, round: 0.62, spread: 0.4 }), mata: leafTexture(9, { n: 170, size: 22, round: 0.5, spread: 0.42 }),
   ipe: leafTexture(13, { n: 140, size: 18, round: 0.65, spread: 0.4 }), buriti: fanTexture(11) };
-const LEAFC = { cerrado: 0x9fbf3e, mata: 0x5f9a33, ipe: 0x8fb33c, buriti: 0x8cc04a, sombra: 0x86b23c };
+const LEAFC = { ipeRosa: 0x8fb33c, ipeBranco: 0x8fb33c, cerrado: 0x9fbf3e, mata: 0x5f9a33, ipe: 0x8fb33c, buriti: 0x8cc04a, sombra: 0x86b23c };
 // o que chega perto demais da lente (copas altas quando a câmera desce no zoom) se desfaz em pontilhado, sem tapar o mapa
 const NEAR_FADE = `{vec3 ab=uFocus-cameraPosition;float t=clamp(dot(vWp-cameraPosition,ab)/dot(ab,ab),0.0,1.0),dl=length(vWp-cameraPosition-ab*t),rr=2.5+0.12*length(ab);
-  float fade=max((1.0-smoothstep(rr*0.6,rr,dl))*(1.0-smoothstep(0.7,0.9,t))*0.9,1.0-smoothstep(6.0,14.0,distance(vWp,cameraPosition)));
+  float fade=max((1.0-smoothstep(rr*0.6,rr,dl))*(1.0-smoothstep(0.7,0.9,t))*0.9,1.0-smoothstep(3.0,7.0,distance(vWp,cameraPosition)));
   if(hash21(floor(gl_FragCoord.xy))<fade)discard;}\n`;   // entre a câmera e o ponto que se olha, as copas abrem uma janela pontilhada
 function treeMaterials(kind) {
   const wood = toon({ map: barkTex, color: kind === 'buriti' ? 0xb8a98a : kind === 'mata' ? 0xa08a6c : 0x8f7356 });
   const leaf = toon({ map: TEX[kind], alphaTest: 0.5, side: THREE.DoubleSide, color: LEAFC[kind] });
-  const dry = { cerrado: 0.5, mata: 0.05, ipe: 1, buriti: 0.1, sombra: 0.2 }[kind];
-  const sway = (sh, isLeaf, depth) => { shared(sh); sh.uniforms.uDry = { value: dry };
+  const dry = { cerrado: 0.5, mata: 0.05, ipe: 1, ipeRosa: 1, ipeBranco: 1, buriti: 0.1, sombra: 0.2 }[kind];
+  const bloom = new THREE.Color({ ipeRosa: 0xf27aaa, ipeBranco: 0xf8f4ec }[kind] || 0xffd12a);   // ipê amarelo, rosa ou branco, florindo na seca
+  const sway = (sh, isLeaf, depth) => { shared(sh); sh.uniforms.uDry = { value: dry }; sh.uniforms.uBloom = { value: bloom };
     sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute float flex;attribute float lr;attribute float ao;attribute float tint;varying float vLr;varying vec3 vWp;varying float vAo;varying float vTint;\n' + NOISE + WIND)
       .replace('#include <begin_vertex>', /* glsl */`#include <begin_vertex>
         vec3 tp=(modelMatrix*vec4(0.0,0.0,0.0,1.0)).xyz;float hs=hash21(tp.xz);
@@ -238,10 +241,10 @@ function treeMaterials(kind) {
         ${isLeaf ? 'dw+=vec3(sin(uTime*11.0+position.x*3.1+lr*20.0),sin(uTime*13.0+position.z*2.3)*0.5,cos(uTime*10.0+position.y*2.7))*0.05*(0.25+q)*flex;' : ''}
         transformed+=inverse(mat3(modelMatrix))*dw;vLr=lr;vAo=ao;vTint=tint;vWp=(modelMatrix*vec4(transformed,1.0)).xyz;`);
     if (depth) { sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying float vLr;varying vec3 vWp;varying float vAo;varying float vTint;\n'); return; }
-    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying float vLr;varying vec3 vWp;varying float vAo;varying float vTint;uniform float uDry;\n' + HEAD)
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying float vLr;varying vec3 vWp;varying float vAo;varying float vTint;uniform float uDry;uniform vec3 uBloom;\n' + HEAD)
       .replace('#include <map_fragment>', NEAR_FADE + (isLeaf ? /* glsl */`#include <map_fragment>
         if(vLr<uSeca*uDry*0.5)discard;
-        vec3 ochre=vec3(0.86,0.58,0.24)*dot(diffuseColor.rgb,vec3(0.45)),yel=vec3(1.0,0.82,0.16)*(0.7+0.5*dot(diffuseColor.rgb,vec3(0.33)));
+        vec3 ochre=vec3(0.86,0.58,0.24)*dot(diffuseColor.rgb,vec3(0.45)),yel=uBloom*(0.75+0.45*dot(diffuseColor.rgb,vec3(0.33)));
         diffuseColor.rgb=uDry>0.9?mix(diffuseColor.rgb,yel,uSeca):mix(diffuseColor.rgb,ochre,uSeca*uDry*step(0.5,fract(vLr*7.3)));
         diffuseColor.rgb*=(0.92+0.16*fract(vLr*13.7))*mix(0.42,1.12,vAo)*mix(vec3(1.06,1.0,0.82),vec3(0.9,1.02,1.06),vTint);` : '#include <map_fragment>\ndiffuseColor.rgb*=mix(1.0,0.72,uWet);'))
       .replace('#include <lights_fragment_end>', LIGHT_END(isLeaf ? '2.2' : 0)); };
@@ -252,6 +255,7 @@ function treeMaterials(kind) {
 }
 const MATS = { cerrado: treeMaterials('cerrado'), mata: treeMaterials('mata'), ipe: treeMaterials('ipe'), buriti: treeMaterials('buriti') };
 TEX.sombra = TEX.cerrado; MATS.sombra = treeMaterials('sombra'); MATS.moita = MATS.cerrado;
+TEX.ipeRosa = TEX.ipeBranco = TEX.ipe; MATS.ipeRosa = treeMaterials('ipeRosa'); MATS.ipeBranco = treeMaterials('ipeBranco');
 function limb(out, p0, dir, len, r0, r1, depth, P, v0 = 0) {
   let p = p0.clone(), d = dir.clone(), v = v0; const segs = 3;
   for (let s = 0; s < segs; s++) { const L = len / segs, ra = r0 + (r1 - r0) * s / segs, rb = r0 + (r1 - r0) * (s + 1) / segs;
@@ -284,7 +288,7 @@ function finish(geos, H, withLr) { const g = mergeGeometries(geos);
   g.setAttribute('tint', new THREE.BufferAttribute(new Float32Array(p.count).fill(rnd()), 1)); return g; }
 const SPECIES = {
   cerrado: { trunk: [1.5, 2.4], r: 0.22, crook: 0.6, lean: 0.25, branches: 3, levels: 2, spread: 1.05, decay: 0.7, cards: 22, card: 2.1, cluster: 1.7 },
-  ipe: { trunk: [4, 5.5], r: 0.27, crook: 0.4, lean: 0.12, branches: 3, levels: 2, spread: 0.8, decay: 0.75, cards: 20, card: 2.4, cluster: 2.0 },
+  ipe: { trunk: [2.9, 4.0], r: 0.27, crook: 0.4, lean: 0.12, branches: 3, levels: 2, spread: 0.8, decay: 0.75, cards: 20, card: 2.4, cluster: 2.0 },
   mata: { trunk: [3.6, 5.2], r: 0.36, crook: 0.22, lean: 0.06, branches: 4, levels: 3, spread: 0.85, decay: 0.74, cards: 15, card: 3.2, cluster: 2.6 },
   sombra: { trunk: [2.6, 3.4], r: 0.5, crook: 0.3, lean: 0.08, branches: 5, levels: 3, spread: 1.0, decay: 0.72, cards: 13, card: 3.4, cluster: 2.8 },
   moita: { trunk: [0.3, 0.5], r: 0.05, crook: 0.6, lean: 0.3, branches: 4, levels: 1, spread: 1.1, decay: 1.1, cards: 9, card: 1.3, cluster: 0.9 },
@@ -293,12 +297,12 @@ function treeMesh(out, H, M) { const g = new THREE.Group();
   const w = new THREE.Mesh(finish(out.wood, H, false), M.wood); w.castShadow = w.receiveShadow = true; w.customDepthMaterial = M.woodDepth;
   const l = new THREE.Mesh(finish(out.leaf, H, true), M.leaf); l.castShadow = l.receiveShadow = true; l.customDepthMaterial = M.leafDepth; g.add(w, l); return g; }
 function makeTree(kind, scale = 1) {
-  const out = { wood: [], leaf: [], tips: [] }, P = SPECIES[kind], th = (P.trunk[0] + rnd() * (P.trunk[1] - P.trunk[0])) * scale;
+  const out = { wood: [], leaf: [], tips: [] }, P = SPECIES[kind] || SPECIES.ipe, th = (P.trunk[0] + rnd() * (P.trunk[1] - P.trunk[0])) * scale;
   limb(out, new THREE.Vector3(0, -0.3, 0), new THREE.Vector3((rnd() - 0.5) * P.lean, 1, (rnd() - 0.5) * P.lean).normalize(), th, P.r * scale * 1.3, P.r * scale * 0.85, 0, P);
   if (P.r > 0.1) { const rr = P.r * scale * 1.3, fl = new THREE.CylinderGeometry(rr, rr * 1.9, 0.7, 7, 1, true), uvA = fl.attributes.uv;
     for (let k = 0; k < uvA.count; k++) uvA.setXY(k, uvA.getX(k) * 2, uvA.getY(k) * 0.5); fl.translate(0, 0.05, 0); out.wood.push(fl); }
   let H = 0; for (const t of out.tips) H = Math.max(H, t.y); const center = out.tips.reduce((a, t) => a.add(t), new THREE.Vector3()).multiplyScalar(1 / out.tips.length);
-  leafCards(out, out.tips, center, { ...P, card: P.card * scale, cluster: P.cluster * scale }); const tm = treeMesh(out, H + P.cluster * scale, MATS[kind]); tm.userData.kind = kind; return tag(tm, { cerrado: 'árvore do cerrado', ipe: 'ipê', mata: 'árvore da mata de galeria', sombra: 'árvore de sombra do pasto', moita: 'moita' }[kind]);
+  leafCards(out, out.tips, center, { ...P, card: P.card * scale, cluster: P.cluster * scale }); const tm = treeMesh(out, H + P.cluster * scale, MATS[kind]); tm.userData.kind = kind; return tag(tm, { cerrado: 'árvore do cerrado', ipe: 'ipê', ipeRosa: 'ipê', ipeBranco: 'ipê', mata: 'árvore da mata de galeria', sombra: 'árvore de sombra do pasto', moita: 'moita' }[kind]);
 }
 function makeBuriti() {
   const H = 13 + rnd() * 5, out = { wood: [], leaf: [] }, lean = new THREE.Vector3((rnd() - 0.5) * 0.08, 1, (rnd() - 0.5) * 0.08).normalize();
@@ -372,7 +376,22 @@ scatter(tC, 1, () => makeTree('sombra', 1.15), (x, z) => Math.hypot(x - tC.c[0],
 scatter(tC, 2, () => makeTree('cerrado', 1.05), () => true, 9);
 scatter(tC, 4, makeTermite, () => true, 4);
 scatter(tD, 9, () => makeTree('cerrado', 0.8 + rnd() * 0.4), () => true, 5.5);
-scatter(tD, 2, () => makeTree('ipe'), () => true, 7);
+scatter(tD, 1, () => makeTree('ipe'), () => true, 7); scatter(tD, 1, () => makeTree('ipeRosa'), () => true, 7);
+scatter(tC, 1, () => makeTree('ipeRosa', 0.9), () => true, 8);
+// canela-de-ema: arbusto do cerrado pedregoso, caules grossos e fibrosos que se bifurcam, tufos de folhas finas e flor lilás nas águas
+const canelaMats = { stem: toon({ map: barkTex, color: 0x6a625a }), leaf: toon({ color: 0x7f9c5a, side: THREE.DoubleSide }), flor: toon({ color: 0xb48ad8 }) };
+canelaMats.flor.onBeforeCompile = sh => { shared(sh); sh.vertexShader = sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\ntransformed*=1.0-uSeca;').replace('#include <common>', '#include <common>\nuniform float uSeca;'); };
+function makeCanela() {
+  const stems = [], leaves = [], flowers = [], H = 0.8 + rnd() * 0.7;
+  const grow = (p, d, L, r, depth) => { const e = p.clone().addScaledVector(d, L), g = new THREE.CylinderGeometry(r * 0.8, r, L, 6); g.translate(0, L / 2, 0); g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), d)); g.translate(p.x, p.y, p.z); stems.push(g);
+    if (depth < 2 && rnd() < 0.85) for (let k = 0; k < 2; k++) { const a = rnd() * 6.28, nd = d.clone().add(new THREE.Vector3(Math.cos(a) * 0.55, 0.15, Math.sin(a) * 0.55)).normalize(); grow(e, nd, L * 0.75, r * 0.75, depth + 1); }
+    else { for (let k = 0; k < 24; k++) { const b = new THREE.PlaneGeometry(0.035, 0.44).translate(0, 0.22, 0).rotateX(0.25 + rnd() * 0.95).rotateY(rnd() * 6.28); b.translate(e.x, e.y, e.z); leaves.push(b); }
+      if (rnd() < 0.8) { const f = new THREE.ConeGeometry(0.04, 0.08, 6).rotateX(Math.PI).translate(e.x, e.y + 0.12, e.z); flowers.push(f); } } };
+  grow(new THREE.Vector3(0, -0.05, 0), new THREE.Vector3((rnd() - 0.5) * 0.2, 1, (rnd() - 0.5) * 0.2).normalize(), H * 0.5, 0.1, 0);
+  const g = new THREE.Group(); for (const [list, m] of [[stems, canelaMats.stem], [leaves, canelaMats.leaf], [flowers, canelaMats.flor]]) if (list.length) { const me = new THREE.Mesh(mergeGeometries(list.map(x => x.index ? x.toNonIndexed() : x)), m); me.castShadow = me.receiveShadow = true; g.add(me); }
+  return tag(g, 'canela-de-ema');
+}
+scatter(tD, 10, makeCanela, (x, z) => rockyAt(x, z) > 0.35, 1.5);
 scatter(tD, 5, makeTermite, () => true, 3);
 const tV = TILES.find(t => t.kind === 'vila'), tL = TILES.find(t => t.kind === 'lavoura');
 scatter(tV, 2, () => makeTree('sombra', 0.95), () => true, 8);        // mangueiras do quintal
@@ -381,7 +400,7 @@ scatter(tL, 3, () => makeTree('cerrado', 0.9), () => true, 6);
 const props = buildProps(scene, { mobile });
 const shadeTree = scene.children.find(o => o.userData.kind === 'sombra' && inHex(o.position.x, o.position.z, tC.c, 1));
 const clouds = buildClouds(scene, CENTER, { mobile });
-const fauna = buildFauna(scene, { mobile, shade: shadeTree ? [shadeTree.position.x, shadeTree.position.z] : null });
+const fauna = buildFauna(scene, { mobile, shade: shadeTree ? [shadeTree.position.x, shadeTree.position.z] : null, termites: scene.children.filter(o => o.userData.regua === 'cupinzeiro').map(o => [o.position.x, o.position.z]) });
 // moitas: o sub-bosque da mata e os arbustos do cerrado, que fecham o vão entre o capim e as copas
 scatter(tB, 16, () => makeTree('moita', 0.9 + rnd() * 0.35), (x, z) => { const w = waterDist(x, z); return w > 1.2 && w < 14; }, 2.2);
 scatter(tD, 6, () => makeTree('moita', 0.8 + rnd() * 0.5), () => true, 2.5);
@@ -392,8 +411,8 @@ scatter(tA, 4, () => makeTree('moita', 0.8 + rnd() * 0.4), (x, z) => { const w =
     putStone(x, z, size, flat, WATER_Y + 0.12 + rnd() * 0.15 - size * flat * 0.9); ROCKS_IN_WATER.push([x, z, size * 0.95]); }
   for (const t of [tA, tB]) for (let k = 0, n = 0; k < 300 && n < 4; k++) { const x = t.c[0] + (rnd() - 0.5) * 2 * R, z = t.c[1] + (rnd() - 0.5) * 2 * R, w = waterDist(x, z);
     if (!inHex(x, z, t.c, 0.9) || w < 0.1 || w > 2.2 || placed.some(p => Math.hypot(p[0] - x, p[1] - z) < 2.5)) continue; putStone(x, z, 0.25 + rnd() * 0.4, 0.6); n++; }
-  for (const [t, n] of [[tD, 5], [tC, 2]]) for (let k = 0, c = 0; k < 300 && c < n; k++) { const x = t.c[0] + (rnd() - 0.5) * 2 * R, z = t.c[1] + (rnd() - 0.5) * 2 * R;
-    if (!inHex(x, z, t.c, 0.88) || placed.some(p => Math.hypot(p[0] - x, p[1] - z) < 3)) continue; putStone(x, z, 0.3 + rnd() * 0.7, 0.55 + rnd() * 0.25); c++; } }
+  for (const [t, n] of [[tD, 9], [tC, 2]]) for (let k = 0, c = 0; k < 400 && c < n; k++) { const x = t.c[0] + (rnd() - 0.5) * 2 * R, z = t.c[1] + (rnd() - 0.5) * 2 * R;
+    if (!inHex(x, z, t.c, 0.88) || (t === tD && rockyAt(x, z) < 0.4) || placed.some(p => Math.hypot(p[0] - x, p[1] - z) < 3)) continue; putStone(x, z, 0.3 + rnd() * 0.7, 0.55 + rnd() * 0.25); c++; } }
 
 // ---------- água: transparente no raso (vê-se o leito de seixos e as cáusticas), turquesa e depois verde-garrafa no fundo,
 // reflexo de verdade do céu e das árvores (a cena desenhada de novo por uma câmera espelhada), ondinhas que descem com a
@@ -560,7 +579,7 @@ function showRegua(on) {
 chips('cRegua', 'regua', v => v === 'sim'); let reguaOn = false;
 window.__regua = () => audit(scene);
 
-const clock = new THREE.Clock(); let fpsT = 0, fpsN = 0, slow = 0;
+const clock = new THREE.Clock(); let fpsT = 0, fpsT0 = 0, fpsN = 0, slow = 0;
 const fmtH = h => `${String(Math.floor(h) % 24).padStart(2, '0')}:${String(Math.round((h % 1) * 60) % 60).padStart(2, '0')}`;
 function frame() {
   const dt = Math.min(0.1, clock.getDelta()); U.uTime.value += dt; U.uFlowClk.value += dt * (0.55 + U.uRain.value * 0.5);
@@ -570,11 +589,12 @@ function frame() {
   if (camMode === 'jogo') gameCam.update(dt); else controls.update();
   if (!!ST.regua !== reguaOn) { reguaOn = !!ST.regua; showRegua(reguaOn); }
   if (people && reguaOn) for (const p of people.children) p.rotation.y = Math.atan2(camera.position.x - p.position.x, camera.position.z - p.position.z);
-  U.uFocus.value.copy(camMode === 'jogo' ? gameCam.focus : controls.target); fitShadow(); grassLod();
+  if (camMode === 'jogo') U.uFocus.value.copy(gameCam.focus); else U.uFocus.value.copy(camera.position).add(camera.getWorldDirection(_v).multiplyScalar(0.01));   // câmera livre: só some o que encosta na lente fitShadow(); grassLod();
   const ctx = { pxPerUnit: renderer.domElement.height / (2 * Math.tan(camera.fov * Math.PI / 360)) }; props.update(dt, ctx); fauna.update(dt, ctx); clouds.update(dt, camera);
   renderReflection();
   renderer.render(scene, camera);
-  fpsN++; fpsT += dt; if (fpsT > 1) { const fps = fpsN / fpsT; $('info').textContent = `${fmtH(ST.hour)} · ${ST.seca ? 'Seca' : 'Águas'} · vento ${c.base.toFixed(1)} m/s · ${c.Rr > 0.2 ? `chuva ${c.Rr.toFixed(0)} mm/h` : 'sem chuva'} · ${fps.toFixed(0)} qps`;
+  // quadros por segundo medidos no relógio de verdade (o dt do jogo é limitado a 0,1 s e enganava quando o aparelho sofria)
+  const now = performance.now(); fpsN++; fpsT = (now - (fpsT0 || now)) / 1000; if (!fpsT0) fpsT0 = now; if (fpsT > 1) { const fps = fpsN / fpsT; fpsT0 = now; $('info').textContent = `${fmtH(ST.hour)} · ${ST.seca ? 'Seca' : 'Águas'} · vento ${c.base.toFixed(1)} m/s · ${c.Rr > 0.2 ? `chuva ${c.Rr.toFixed(0)} mm/h` : 'sem chuva'} · ${fps.toFixed(0)} qps`;
     $('hora').value = ST.hour; if (fps < 26 && dpr > 1) { if (++slow >= 2) { dpr = Math.max(1, dpr - 0.3); renderer.setPixelRatio(dpr); resize(); slow = 0; } } else slow = 0; fpsN = 0; fpsT = 0; }
   requestAnimationFrame(frame);
 }

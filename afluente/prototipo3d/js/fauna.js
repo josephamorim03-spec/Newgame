@@ -15,7 +15,8 @@ const cone = (r, L, c, s = 7) => paint(new THREE.ConeGeometry(r, L, s), c);
 const K = ['position', 'normal', 'color'];
 const tile = k => TILES.find(t => t.kind === k);
 
-export function buildFauna(scene, { mobile = false, shade = null } = {}) {
+export function buildFauna(scene, opts = {}) {
+  const { mobile = false, shade = null } = opts;
   const M = mat({ vertexColors: true }, { rim: '2.6' });
   const mesh = (gs, parent, castShadow = true) => { const m = new THREE.Mesh(merge(gs, K), M); m.castShadow = castShadow; m.receiveShadow = true; parent.add(m); return m; };
   const pivot = (parent, x, y, z) => { const g = new THREE.Group(); g.position.set(x, y, z); parent.add(g); return g; };
@@ -61,6 +62,53 @@ export function buildFauna(scene, { mobile = false, shade = null } = {}) {
   const garca = () => bird({ body: [0.11, 0.13, 0.26], bodyC: col(0xf6f6f2), neck: [[0.1, 0.06, 0.045], [0.14, -0.03, 0.035], [0.12, 0.05, 0.032]], headC: col(0xf6f6f2), beak: [0.05, 0.13], beakC: col(0xf2c21a), legL: 0.62, legC: col(0x1e1e1e), tail: [0.09, 0.18, 0.2, col(0xf0f0ea)] });
   const seriema = () => bird({ body: [0.13, 0.15, 0.27], bodyC: col(0xa58e6e), neck: [[0.12, 0.05, 0.05], [0.12, 0.03, 0.04]], headC: col(0xb8a684), beak: [0.05, 0.06], beakC: col(0xc8402a), legL: 0.5, legC: col(0xd0603a), crest: [0.09, 0.12, col(0x6a5a46)], tail: [0.1, 0.3, 0.05, col(0x7a6a52)] });
   const galinha = c => bird({ body: [0.12, 0.12, 0.16], bodyC: col(c), neck: [[0.08, 0.04, 0.045]], headC: col(c), beak: [0.045, 0.03], beakC: col(0xe8b02a), legL: 0.13, legC: col(0xe8b02a), crest: [0.07, 0.06, col(0xd8282a)], tail: [0.08, 0.16, -0.7, col(c).multiplyScalar(0.7)], s: 0.8 });
+  // ---------- bichos do cerrado que faltavam (tamanhos reais; ver regua.js)
+  const legSet = (g, pts, r0, r1, L, c, foot) => pts.map(([x, y, z, ph]) => { const p = pivot(g, x, y, z); mesh([cyl(r0, r1, L, c), ...(foot ? [ell(r1 * 1.2, 0.04, r1 * 1.5, 0, -L, 0.02, foot, 6)] : [])], p); p.userData.ph = ph; return p; });
+  const caps = (r, L, c, x, y, z, rx = Math.PI / 2) => paint(new THREE.CapsuleGeometry(r, L, 5, 12).rotateX(rx).translate(x, y, z), c);
+  function lobo() {   // lobo-guará: pernas longas de meia preta, pelo laranja-avermelhado, crina preta, orelhas grandes, cauda com ponta branca
+    const g = new THREE.Group(), o = col(0xc8622a), k = col(0x1e1a18), w = col(0xf2ece0);
+    mesh([caps(0.16, 0.5, o, 0, 0.82, 0), ell(0.06, 0.12, 0.3, 0, 1.0, 0.18, k)], g);
+    const tail = pivot(g, 0, 0.86, -0.42); mesh([ell(0.09, 0.09, 0.24, 0, -0.08, -0.18, o).rotateX(0.5), ell(0.06, 0.06, 0.08, 0, -0.2, -0.36, w)], tail);
+    const head = pivot(g, 0, 0.95, 0.4); mesh([ell(0.1, 0.1, 0.13, 0, 0.04, 0.06, o), cone(0.05, 0.2, o).rotateX(Math.PI / 2).translate(0, 0.0, 0.24), ell(0.022, 0.02, 0.02, 0, 0.0, 0.34, k, 6),
+      cone(0.055, 0.17, o).translate(0.065, 0.2, 0.0), cone(0.055, 0.17, o).translate(-0.065, 0.2, 0.0), ell(0.06, 0.05, 0.05, 0, -0.04, 0.1, w)], head);
+    const legs = legSet(g, [[0.09, 0.72, 0.28, 0], [-0.09, 0.72, 0.28, Math.PI], [0.09, 0.74, -0.28, Math.PI], [-0.09, 0.74, -0.28, 0]], 0.045, 0.028, 0.72, k);
+    return { g, head, legs, tail, headY: 0.95 };
+  }
+  function tamandua() {   // tamanduá-bandeira: corpo cinza com a faixa preta e branca no ombro, focinho comprido, cauda de bandeira
+    const g = new THREE.Group(), c = col(0x6e655c), k = col(0x1e1a18), w = col(0xe8e2d4);
+    mesh([ell(0.2, 0.27, 0.55, 0, 0.5, 0, c), paint(new THREE.TorusGeometry(0.24, 0.05, 6, 16, Math.PI).rotateY(Math.PI / 2).rotateZ(0).translate(0, 0.52, 0.12).scale(1, 1.1, 1), k),
+      ell(0.21, 0.06, 0.05, 0, 0.66, 0.2, w)], g);
+    const tail = pivot(g, 0, 0.6, -0.5); mesh([ell(0.07, 0.2, 0.45, 0, -0.04, -0.36, col(0x5a524a)).rotateX(0.2)], tail);
+    const head = pivot(g, 0, 0.62, 0.48); mesh([ell(0.08, 0.09, 0.12, 0, 0, 0.04, c), paint(new THREE.CylinderGeometry(0.025, 0.06, 0.42, 8).rotateX(Math.PI / 2).translate(0, -0.03, 0.3), c),
+      ell(0.03, 0.04, 0.02, 0.06, 0.06, 0.0, c, 6), ell(0.03, 0.04, 0.02, -0.06, 0.06, 0.0, c, 6)], head); head.rotation.x = 0.4;
+    const legs = legSet(g, [[0.12, 0.4, 0.35, 0], [-0.12, 0.4, 0.35, Math.PI], [0.12, 0.42, -0.35, Math.PI], [-0.12, 0.42, -0.35, 0]], 0.07, 0.05, 0.4, w, k);
+    return { g, head, legs, tail, headY: 0.62 };
+  }
+  function anta() {   // anta: corpo pesado marrom-escuro, tromba curta, crina baixa, orelhas de borda clara, pernas curtas e grossas
+    const g = new THREE.Group(), c = col(0x4a3e38), d = col(0x3a302c);
+    mesh([caps(0.33, 0.95, c, 0, 0.72, 0), ell(0.05, 0.1, 0.35, 0, 1.02, 0.35, d)], g);
+    const head = pivot(g, 0, 0.82, 0.72); mesh([ell(0.14, 0.17, 0.26, 0, -0.05, 0.12, c), cone(0.07, 0.2, d).rotateX(Math.PI / 2 + 0.6).translate(0, -0.16, 0.36),
+      ell(0.05, 0.07, 0.02, 0.1, 0.13, 0.0, col(0xc8bcae), 6), ell(0.05, 0.07, 0.02, -0.1, 0.13, 0.0, col(0xc8bcae), 6), ell(0.02, 0.02, 0.02, 0.1, 0.0, 0.18, col(0x111111), 5), ell(0.02, 0.02, 0.02, -0.1, 0.0, 0.18, col(0x111111), 5)], head);
+    const legs = legSet(g, [[0.17, 0.5, 0.42, 0], [-0.17, 0.5, 0.42, Math.PI], [0.17, 0.5, -0.45, Math.PI], [-0.17, 0.5, -0.45, 0]], 0.085, 0.07, 0.5, d, col(0x2a2420));
+    return { g, head, legs, headY: 0.82 };
+  }
+  const rosette = (() => { const c = document.createElement('canvas'); c.width = c.height = 128; const x = c.getContext('2d'); x.fillStyle = '#dca546'; x.fillRect(0, 0, 128, 128);
+    for (let i = 0; i < 26; i++) { const px = rnd() * 128, py = rnd() * 128, r = 5 + rnd() * 4; x.fillStyle = '#b8782a'; x.beginPath(); x.arc(px, py, r * 0.7, 0, 7); x.fill();
+      x.strokeStyle = '#1e1610'; x.lineWidth = 2.6; for (let k = 0; k < 4; k++) { const a = k * 1.57 + rnd(); x.beginPath(); x.arc(px, py, r, a, a + 1.1); x.stroke(); } }
+    for (let i = 0; i < 40; i++) { x.fillStyle = '#1e1610'; x.beginPath(); x.arc(rnd() * 128, rnd() * 128, 1.5 + rnd() * 1.5, 0, 7); x.fill(); }
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(2, 2); return t; })();
+  const MJ = mat({ map: rosette }, { rim: '2.6' });
+  function onca() {   // onça-pintada: dourada de rosetas, cabeça larga, cauda comprida; anda na beira da mata ao entardecer e à noite
+    const g = new THREE.Group(), body = new THREE.Mesh(merge([only2(new THREE.CapsuleGeometry(0.2, 0.85, 5, 14).rotateX(Math.PI / 2).translate(0, 0.52, 0))], ['position', 'normal', 'uv']), MJ);
+    body.castShadow = true; g.add(body);
+    const tail = pivot(g, 0, 0.6, -0.55); { const t = new THREE.Mesh(merge([only2(new THREE.CylinderGeometry(0.035, 0.05, 0.7, 8).translate(0, -0.35, 0).rotateX(1.15))], ['position', 'normal', 'uv']), MJ); tail.add(t); }
+    const head = pivot(g, 0, 0.62, 0.55); { const h = new THREE.Mesh(merge([only2(new THREE.SphereGeometry(0.15, 14, 10).scale(1, 0.9, 1.05).translate(0, 0, 0.06))], ['position', 'normal', 'uv']), MJ); head.add(h);
+      mesh([ell(0.08, 0.06, 0.06, 0, -0.04, 0.18, col(0xe8d8b8)), ell(0.025, 0.02, 0.02, 0, -0.01, 0.23, col(0x3a2a24), 6), cone(0.04, 0.06, col(0xb8782a)).translate(0.09, 0.13, 0.0), cone(0.04, 0.06, col(0xb8782a)).translate(-0.09, 0.13, 0.0)], head); }
+    const legs = legSet(g, [[0.11, 0.42, 0.32, 0], [-0.11, 0.42, 0.32, Math.PI], [0.11, 0.44, -0.34, Math.PI], [-0.11, 0.44, -0.34, 0]], 0.065, 0.055, 0.42, col(0xd09a40), col(0xe8d8b8));
+    return { g, head, legs, tail, headY: 0.62 };
+  }
+  const only2 = g => { g.setAttribute('color', new THREE.BufferAttribute(new Float32Array(g.attributes.position.count * 3).fill(1), 3)); return g; };
+  const ema = () => bird({ body: [0.24, 0.27, 0.4], bodyC: col(0x8c8174), neck: [[0.2, 0.06, 0.065], [0.22, 0.04, 0.05], [0.2, 0.03, 0.045]], headC: col(0xa59a8c), beak: [0.06, 0.07], beakC: col(0x6a625a), legL: 0.6, legC: col(0x8a8478), tail: null, s: 1.4 });
 
   // ---------- comportamento: pastar, andar até um ponto, ficar parado olhando; separação; não sair da área; abrigo na chuva
   function spawn(make, n, o) { for (let i = 0; i < n; i++) { const a = { ...make(), ...o, st: 'idle', t: rnd() * 3, ph: rnd() * 6, sp: 0, h: rnd() * 6.28, tgt: null, look: rnd() * 6 };
@@ -72,7 +120,7 @@ export function buildFauna(scene, { mobile = false, shade = null } = {}) {
     a.t -= dt; const rain = U.uRain.value, shelter = a.shade && rain > 0.35;
     if (a.t <= 0) {
       if (shelter) { a.st = 'walk'; a.tgt = near({ x: a.shade[0], z: a.shade[1] }, 3.2, a.area) || a.shade; a.t = 10; }
-      else { const r = rnd(); if (r < a.pg) { a.st = 'graze'; a.t = 4 + rnd() * 9; } else if (r < a.pg + a.pw) { a.st = 'walk'; a.tgt = near(a, a.roam, a.area); a.t = 25; if (!a.tgt) { a.st = 'idle'; a.t = 2; } } else { a.st = 'idle'; a.t = 2 + rnd() * 5; } } }
+      else { const r = rnd(); if (r < a.pg) { a.st = 'graze'; a.t = 4 + rnd() * 9; } else if (r < a.pg + a.pw) { a.st = 'walk'; a.tgt = a.targets && a.targets.length ? (([x, z]) => [x + 0.9, z + 0.6])(a.targets[Math.floor(rnd() * a.targets.length)]) : near(a, a.roam, a.area); a.t = 25; if (!a.tgt) { a.st = 'idle'; a.t = 2; } } else { a.st = 'idle'; a.t = 2 + rnd() * 5; } } }
     let want = 0, dh = null;
     if (a.st === 'walk' && a.tgt) { const dx = a.tgt[0] - a.x, dz = a.tgt[1] - a.z, d = Math.hypot(dx, dz);
       if (d < 0.35) { a.st = shelter ? 'idle' : (rnd() < 0.7 ? 'graze' : 'idle'); a.t = 3 + rnd() * 6; } else { want = a.vw * Math.min(1, d / 1.5 + 0.3); dh = Math.atan2(dx, dz); } }
@@ -87,6 +135,7 @@ export function buildFauna(scene, { mobile = false, shade = null } = {}) {
   }
   function pose(a, dt, time) {
     const gy = a.water ? Math.max(heightAt(a.x, a.z), heightAt(a.x, a.z)) : heightAt(a.x, a.z), mv = Math.min(1, a.sp / Math.max(0.05, a.vw));
+    if (a.when) a.g.visible = a.when();
     a.g.position.set(a.x, gy + (a.biped ? Math.abs(Math.sin(a.ph)) * 0.02 * mv : Math.abs(Math.sin(a.ph)) * 0.025 * mv) - 0.02, a.z); a.g.rotation.y = a.h;
     for (const l of a.legs) l.rotation.x = Math.sin(a.ph + l.userData.ph) * (a.biped ? 0.55 : 0.42) * mv;
     let pitch = 0, yaw = 0;
@@ -117,6 +166,19 @@ export function buildFauna(scene, { mobile = false, shade = null } = {}) {
   // galinhas ciscando entre as casas
   const quintal = (x, z) => inHex(x, z, tV.c, 0.8) && !blocked(x, z, 0.2);
   spawn(() => galinha([0xf4f0e6, 0xa8502a, 0x3a3230, 0xc8803a][Math.floor(rnd() * 4)]), 6, { name: 'galinha', area: quintal, pick: pickIn(quintal, tV.c, 10), pg: 0.6, pw: 0.35, vw: 0.6, vg: 0.05, turn: 4, stride: 0.22, sep: 0.6, roam: 3, gp: 0.9, peck: true, dropNeck: 0.05 });
+  // emas no pasto e no cerrado; lobo-guará andando sozinho; tamanduá indo de cupinzeiro em cupinzeiro; anta na beira da mata;
+  // onça na borda da mata, só ao entardecer e à noite (de dia ela descansa escondida)
+  const campo = (x, z) => (inHex(x, z, tD.c, 0.9) || inPasto(x, z)) && !blocked(x, z);
+  spawn(ema, 3, { name: 'ema', area: campo, pick: pickIn(campo, tD.c, 16), pg: 0.45, pw: 0.45, vw: 1.2, vg: 0.08, turn: 1.6, stride: 0.9, sep: 1.6, roam: 10, gp: 1.0, peck: true, dropNeck: 0.25 });
+  spawn(lobo, 1, { name: 'lobo-guará', area: campo, pick: pickIn(campo, tD.c, 14), pg: 0.15, pw: 0.7, vw: 1.5, vg: 0.1, turn: 1.8, stride: 1.1, sep: 2, roam: 14, gp: 0.7, dropNeck: 0.15 });
+  const termites = (opts.termites || []).filter(([x, z]) => campo(x, z) || inHex(x, z, tP.c, 0.95));
+  spawn(tamandua, 1, { name: 'tamanduá-bandeira', area: (x, z) => campo(x, z) || inHex(x, z, tP.c, 0.9), pick: pickIn(campo, tD.c, 12), pg: 0.5, pw: 0.45, vw: 0.45, vg: 0.03, turn: 1.0, stride: 0.6, sep: 1.6, roam: 12, gp: 0.5, dropNeck: 0.1,
+    targets: termites });
+  const mataBeira = (x, z) => { const w = waterDist(x, z); return w > 0.6 && w < 6 && inHex(x, z, tile('mata').c, 0.9) && !blocked(x, z); };
+  spawn(anta, 1, { name: 'anta', area: mataBeira, pick: pickIn(mataBeira, tile('mata').c, 14), pg: 0.5, pw: 0.35, vw: 0.6, vg: 0.05, turn: 0.9, stride: 0.9, sep: 2, roam: 6, gp: 0.7, dropNeck: 0.1 });
+  const bordaMata = (x, z) => inHex(x, z, tile('mata').c, 0.98) && !inHex(x, z, tile('mata').c, 0.55) && !blocked(x, z);
+  spawn(onca, 1, { name: 'onça-pintada', area: bordaMata, pick: pickIn(bordaMata, tile('mata').c, 18), pg: 0.1, pw: 0.75, vw: 0.9, vg: 0.05, turn: 1.4, stride: 0.95, sep: 2, roam: 12, gp: 0.3, dropNeck: 0.05,
+    when: () => U.uDay.value < 0.55 });
   updaters.push((dt, time) => { for (const a of all) { brain(a, dt); pose(a, dt, time); } });
 
   // ---------- araras: um casal dando voltas largas sobre o vale, batendo asa e planando

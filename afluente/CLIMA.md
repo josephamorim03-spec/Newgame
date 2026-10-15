@@ -442,7 +442,18 @@ Cada coisa do vale tem uma etiqueta e é **medida em metros** a cada abertura (`
 | Capivara | 0,67 m · 1,28 m | 0,45–0,7 m · 1,0–1,4 m |
 | Garça-branca · seriema · galinha | 1,0 m · 0,9 m · 0,47 m | 0,85–1,05 · 0,7–0,95 · 0,3–0,55 m |
 | Arara (envergadura) | 1,1 m | 0,9–1,3 m |
+| Ema | 1,3–1,6 m | 1,3–1,65 m |
+| Lobo-guará (altura · comprimento) | ~1,1 m · ~1,5 m | 0,95–1,25 m · 1,3–1,65 m |
+| Tamanduá-bandeira | ~0,8 m · ~2,2 m | 0,55–0,9 m · 1,8–2,3 m |
+| Anta | ~1,1 m · ~2,1 m | 0,9–1,25 m · 1,8–2,3 m |
+| Onça-pintada | ~0,8 m · ~2,0 m | 0,65–0,95 m · 1,6–2,4 m |
+| Canela-de-ema | 0,8–1,6 m | 0,8–2,0 m |
 
 **O que a régua pegou e foi corrigido:** árvore do cerrado alta demais (até 9,7 m → até 7 m, tronco mais baixo e copa mais larga, como as tortas do cerrado), moitas de 3,2 m, capivara de 79 cm de altura e 1,5 m, garça de 1,2 m, seriema de 1,1 m, passarinhos do bando com 54 cm de envergadura, borboleta de 32 cm e libélula de 26 cm.
 
 **Câmera do jogo e copas altas:** com o zoom, a câmera desce para 18–25 m e entra nas copas dos buritis (20–24 m). As copas que ficam entre a câmera e o ponto que se olha abrem uma janela pontilhada, e o que chega a menos de 14 m da lente se desfaz; a sombra delas no chão continua inteira.
+
+**Medir sempre:** a régua roda a cada abertura da prévia e a cada mudança que eu faço (a tabela de `js/regua.js` é a referência); um bicho ou planta novo só entra com etiqueta e faixa real. Na leva dos bichos do cerrado ela pegou o ipê com 13,4 m (tronco encurtado), o tamanduá com 1,1 m de altura (cauda mais baixa) e a onça com 1,4 m de comprimento (a cauda estava virada para a frente).
+
+**Contador de quadros:** o "qps" do rodapé passou a medir no relógio de verdade. Antes ele somava o passo do jogo, que é limitado a 0,1 s, e num aparelho lento mostrava ~10–13 qps quando o real era menos de 1.
+

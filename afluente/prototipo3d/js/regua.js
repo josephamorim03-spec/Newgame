@@ -35,6 +35,12 @@ export const TABELA = {
   'borboleta (envergadura, na régua)': { l: [0.1, 0.18] },
   'libélula (envergadura, na régua)': { l: [0.1, 0.16] },
   'peixe': { l: [0.25, 0.45] },
+  'ema': { h: [1.3, 1.65] },
+  'lobo-guará': { h: [0.95, 1.25], l: [1.3, 1.65] },
+  'tamanduá-bandeira': { h: [0.55, 0.9], l: [1.8, 2.3] },
+  'anta': { h: [0.9, 1.25], l: [1.8, 2.3] },
+  'onça-pintada': { h: [0.65, 0.95], l: [1.6, 2.4] },
+  'canela-de-ema': { h: [0.8, 2.0] },
 };
 export const tag = (o, name, scale) => { o.userData.regua = name; if (scale) o.userData.reguaScale = scale; return o; };
 

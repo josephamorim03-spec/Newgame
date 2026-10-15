@@ -89,6 +89,8 @@ export function biomeAt(x, z) {
   return out;
 }
 
+// lajedos do cerrado: manchas de chão pedregoso onde o capim é ralo e crescem a canela-de-ema e as pedras
+export function rockyAt(x, z) { const t = TILES.find(u => u.kind === 'cerrado'); if (!t || !inHex(x, z, t.c, 0.95)) return 0; return smooth(0.5, 0.62, fbm(x * 0.09 + 31, z * 0.09 - 17, 3)); }
 // distância (m) de um ponto à borda do hexágono de centro c (positiva dentro)
 export function hexEdgeDist(x, z, c) { const dx = Math.abs(x - c[0]), dz = Math.abs(z - c[1]); return R * 0.866 - Math.max(dx, dx * 0.5 + dz * 0.866); }
 export const inAnyTile = (x, z, k = 1) => TILES.some(t => inHex(x, z, t.c, k));
