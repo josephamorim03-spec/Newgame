@@ -293,7 +293,10 @@ function treeMaterials(kind) {
         float sw=(0.06*q+0.022*q*sin(uTime*w+hs*40.0)+0.004*sin(uTime*0.9+hs*9.0))*f;
         vec3 dw=vec3(uWindDir.x,0.0,uWindDir.y)*sw*8.0;
         ${isLeaf ? 'dw+=vec3(sin(uTime*11.0+position.x*3.1+lr*20.0),sin(uTime*13.0+position.z*2.3)*0.5,cos(uTime*10.0+position.y*2.7))*0.05*(0.25+q)*flex;' : ''}
-        transformed+=inverse(mat3(modelMatrix))*dw;vLr=lr;vAo=ao;vTint=tint;vWp=(modelMatrix*vec4(transformed,1.0)).xyz;`);
+        transformed+=inverse(mat3(modelMatrix))*dw;vLr=lr;vAo=ao;vTint=tint;vWp=(modelMatrix*vec4(transformed,1.0)).xyz;`)
+      // copa como volume (o truque dos jogos pintados): a normal de cada folha se inclina para fora do eixo da árvore, a partir
+      // de um ponto abaixo dela, e a luz lê a copa como uma massa macia, com lado de sol, lado de sombra e o contorno claro
+    if (isLeaf) sh.vertexShader = sh.vertexShader.replace('#include <beginnormal_vertex>', '#include <beginnormal_vertex>\n{vec3 wp0=(modelMatrix*vec4(position,1.0)).xyz;vec3 rel=wp0-torg;vec3 nw=normalize(vec3(rel.x,rel.y*0.45+0.6,rel.z));objectNormal=normalize(mix(objectNormal,inverse(mat3(modelMatrix))*nw,0.72));}');
     if (depth) { sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying float vLr;varying vec3 vWp;varying float vAo;varying float vTint;\n'); return; }
     sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying float vLr;varying vec3 vWp;varying float vAo;varying float vTint;uniform float uDry;uniform vec3 uBloom;\n' + HEAD)
       .replace('#include <map_fragment>', NEAR_FADE + (isLeaf ? /* glsl */`#include <map_fragment>
