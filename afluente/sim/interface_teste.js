@@ -1,4 +1,4 @@
-// Auditor de interface (v2.2). Uso: node interface_teste.js [pasta_de_capturas] [telas] [situações]
+// Auditor de interface (v2.3). Uso: node interface_teste.js [pasta_de_capturas] [telas] [situações]
 // Abre o protótipo num navegador sem tela em vários tamanhos e situações do jogo e mede, sem olhar:
 // - FONTE: texto visível menor que 11 px (erro) ou 12 px (aviso; só legendas em maiúsculas podem ficar em 11);
 // - CORTE: texto que não cabe e é cortado sem reticências (erro) ou com reticências (aviso);

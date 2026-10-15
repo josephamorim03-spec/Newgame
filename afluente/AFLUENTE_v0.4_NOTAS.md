@@ -847,3 +847,104 @@ Os seixos são lisos e polidos.
 - A tela treme de leve, um pouco mais na peça perfeita.
 - Um anel de choque corre no chão.
 - O capim em volta é empurrado para fora numa onda que se afasta da peça. Isso se soma à fuga dos bichos, à revoada e às ondas no rio da v1.10.
+
+## Bichos que reagem ao tempo e ao território (v2.2)
+
+A cada quadro, `wxStep()` resume o ambiente em fatores:
+- noite, chuva e crepúsculo;
+- sol forte: entre cerca de 10h30 e 15h30, sem nuvem, mais forte na seca;
+- vento e seca;
+- disposição das aves e das borboletas.
+
+Cada espécie tem o horário de atividade que a voz já usava (`VOZ`, dia e noite) e uma ficha `FBEH` dizendo o que faz na chuva, no calor, à noite e na seca:
+
+| Bicho | Chuva | Sol forte | Noite |
+|---|---|---|---|
+| Tucano, martim-pescador, joão-de-barro | recolhem (somem aos poucos na copa ou no ninho) | — | dormem escondidos |
+| Seriema | vai para perto das árvores | — | dorme escondida |
+| Ema | fica parada | — | — |
+| Garça | continua pescando | — | dorme escondida |
+| Capivara | fica mais ativa e vai para a água | vai para a água | ativa |
+| Anta, tamanduá | vão para a mata | vão para a mata | ativos (anta, à noite) |
+| Lobo-guará, onça | vão para a mata | descansam | ativos (mais à noite e no crepúsculo) |
+| Gado | abrigo na borda da mata | sombra na borda da mata | dorme parado |
+| Ovelhas | as do cercado se juntam no meio | as soltas vão para a sombra | dormem de cabeça baixa |
+
+- **Gado na seca:** chega mais perto da beira do rio.
+- **Bandos de pássaros:** muito mais frequentes no amanhecer e no fim de tarde; quase nenhum na chuva, à noite ou com vento forte.
+- **Borboletas:** vão embora quando a chuva chega e não aparecem à noite nem com vento forte.
+- **Vaga-lumes:** menos na chuva.
+- **Voz:** bicho recolhido não canta.
+
+**Território:** abrigo é a borda da mata, isto é, um semicírculo na frente das árvores próximas, do lado do pasto, com o corpo inteiro testado no mapa de colisão. O gado pode encostar na copa, mas não no tronco. O abrigo fica dentro da própria peça do bicho, porque ele é desenhado com ela. Se não houver abrigo alcançável, ele fica parado.
+
+**Teste (`clima.js`, um vale com toda a fauna, 2,5 minutos de jogo em cada situação):**
+- na chuva, as aves de poleiro somem, os bandos param e a capivara vai para a água;
+- os bois abrigados vão de 2 para 4 de 12 (os outros não têm árvore na própria peça), e quanto eles andam cai de 0,92 para 0,12;
+- à noite a seriema também some, e o gado quase não anda;
+- no fim de tarde, os bois voltam a pastar.
+
+O medidor de sobreposições continua sem nenhuma.
+
+**Com o céu com física (v2.0 do céu):** hora, sol, chuva, vento e nuvens agora vêm do simulador do céu (`G.sky`). O comportamento só lê os campos do ambiente (`ENV.rain`, `ENV.night`, `ENV.golden`, `ENV.dawn`, `ENV.hour`, `ENV.cloud`, `ENV.wind.s`), então segue o céu novo sem mudanças. O teste `clima2.js` força hora, sol e chuva interceptando `G.sky.step`.
+
+## Coerência, sistema de interface e caça a bugs (v2.3)
+
+**O pedido:** verificar as incoerências entre o que se vê e as regras (o rio secando com chuva, por exemplo); arrumar sobreposições, tamanhos de fonte e prioridades da interface com um sistema; e procurar bugs e glitches das muitas mudanças visuais.
+
+### Coerência entre o clima e as regras
+
+O caso que motivou: uma pancada podia cair na última jogada das Águas, e logo depois a seca secava o rio sob o chão encharcado. Agora:
+- as chuvas rareiam nas últimas jogadas da estação e param antes da seca;
+- a pancada não atravessa a Seca;
+- desfazer não traz uma falsa "volta das chuvas".
+
+Também ficaram coerentes:
+- leito seco sob chuva;
+- palha molhada;
+- lua sob nuvens;
+- bichos e brilhos de noite e na chuva;
+- trovão na garoa;
+- clarão de dia;
+- lição da seca;
+- fumaça de igreja.
+
+Tabela completa: `CLIMA.md`, seção 8. Teste: `sim/coerencia_teste.js`, com 12.830 quadros: tudo coerente.
+
+### Sistema de interface
+
+Regras em `INTERFACE.md`:
+- 7 níveis de prioridade com nome (guia, jogada, prévia, aviso, alerta, info, ambiente);
+- rótulos do vale que desviam da interface e da peça escolhida, e obrigatórios que nunca somem;
+- escala tipográfica única em tokens: 22 tamanhos soltos viraram 9, com mínimo de 11 px;
+- área de toque mínima de 44 px;
+- layout próprio para celular deitado (vale à esquerda, painel à direita);
+- enquadramento do vale abaixo das missões e da lição.
+
+Auditor: `sim/interface_teste.js`, com 7 telas × 11 situações. Antes, 492 erros; agora, 0.
+
+### Bugs corrigidos
+
+Vêm de uma revisão de código e dos testes:
+- **timers do fim da partida e da lição:** recomeçar no meio da cerimônia gravava o resultado de outra partida;
+- **som:** o equilíbrio de volume `VK` nunca era aplicado;
+- **relógio do céu:** voltava para trás ao recomeçar e ao sair do Contemplar (o tempo contemplado agora passa de verdade);
+- **poças:** não se atualizavam com enfeites novos;
+- **lâmina d'água:** a de peças desfeitas inflava a névoa;
+- **nuvens:** nasciam todas de uma vez depois de céu limpo;
+- **água nova:** perdia a animação quando a chuva voltava na mesma jogada;
+- **estado de uma partida que vazava para a próxima:** partículas, borboletas, bichos e moinho;
+- **minutos do boletim:** arredondados errado;
+- **boi atravessando cerca fina** na diagonal, entre duas amostras do caminho;
+- **três trechos de código que um comentário tinha anulado:** um deles travava o jogo em segundos e foi pego pelos auditores antes de ser publicado.
+
+### Testes desta versão
+
+| Teste | Resultado |
+|---|---|
+| `atmos_teste.js` | tudo certo |
+| lições | 9 OK; a lição 5 jogada só pelos pontos falha, como deve |
+| `coerencia_teste.js` | tudo coerente |
+| `interface_teste.js` | 0 erros |
+
+O desempenho é o mesmo da versão anterior.

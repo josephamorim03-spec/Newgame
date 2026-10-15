@@ -259,8 +259,43 @@
   - `CEU`, `ceuMark`, `ceuIcon`: o Caderno do Céu;
   - `skyCard`: o boletim.
 - `sim/atmos_motor.js`: cópia do motor, gerada por `node sim/extrair_motor.js`, que agora extrai também o `Engine`.
-- `sim/atmos_teste.js`: o teste do clima. Uso: `node atmos_teste.js atmos_motor.js 10`.
+- `sim/atmos_teste.js`: o teste do clima. Uso: `node atmos_teste.js atmos_motor.js` (20 anos de jogo por padrão).
+- `sim/coerencia_teste.js`: o teste de coerência no navegador (seção 8).
 - `arte/afluente_sprites.py`: modelo novo `windmill_torre` (o moinho sem velas) e atlas atualizado com `atualizar_atlas.py` e `embutir.py`.
+
+## 8. Coerência com as regras do jogo (v2.3)
+
+**Princípio:** o mundo que se vê não pode contradizer a regra. Se o jogo diz "a seca chegou e o rio secou", o céu não pode estar despejando um temporal um segundo antes.
+
+| Incoerência encontrada | Como ficou |
+|---|---|
+| Uma pancada na última jogada das Águas, e logo depois a seca secando o rio sob o chão encharcado | As chuvas **rareiam nas últimas jogadas** e param na última. É o fim das águas de verdade: a chuva some a 0,0 mm/h na última jogada, contra 3,5 mm/h no começo da estação. A ZCAS sempre termina antes. O hint diz "Ainda chove, mas a seca vem em N jogadas" quando é o caso. |
+| A pancada que já existia continuava na Seca, com raio, cortina de chuva e arco-íris | Na Seca, a célula vira nuvem seca: sem chuva no chão, sem raio. |
+| Desfazer a jogada que trouxe a seca disparava "as chuvas voltaram" (frente com raios) | A frente só vem numa estação nova de verdade. |
+| O leito seco continuava de areia rachada sob temporal | Com chuva, o leito vira barro escuro com água empoçada no fundo. O rio não corre, porque a água só vem da nascente. |
+| O campo de palha não reagia à chuva | Onde a chuva molhou, a palha recua: o chão fica verde-escuro molhado e volta a secar. |
+| Lua e estrelas atrás de nuvem de chuva | Somem com céu encoberto ou chuva. |
+| Araras, bandos, borboletas, libélulas, pólen e brilhos de sol de noite ou na chuva | Só de dia, com tempo bom (junto com o comportamento dos bichos da v2.2). |
+| Trovão ao começar uma garoa contínua (ZCAS) | Trovão só com pancada de verdade, com raio. |
+| Clarão do raio igual sob o sol e na noite | Mais forte no escuro (noite ou embaixo da tempestade). |
+| Lição da seca com céu de Águas | O céu segue a estação do jogo, também nas lições, sempre com tempo bom. |
+| Fumaça saindo de igreja e de moinho | Construção especial não tem chaminé. |
+
+**Teste automático** (`sim/coerencia_teste.js`): joga partidas inteiras com o tempo correndo e confere a cada quadro:
+
+- na seca, não chove no chão e não cai raio;
+- na última jogada antes da seca, a chuva já parou;
+- todo raio vem de uma pancada com chuva;
+- arco-íris só com o sol entre 0° e 42°;
+- neblina só de madrugada e de manhã;
+- redemoinho só na seca;
+- nada nasce no céu de noite ou na chuva forte;
+- gado, ovelhas e fauna só onde o mapa de colisão deixa (o gado pode se abrigar sob a copa, não no tronco);
+- nada de NaN, nenhum erro de JavaScript.
+
+O teste roda 12.830 quadros em 4 vales e uma lição: **tudo coerente**.
+
+O motor também tem o seu teste (`atmos_teste.js`): "chuva média na última jogada das águas: 0,000 mm/h" e "desfazer a seca não traz a frente das chuvas".
 
 ## Fontes
 

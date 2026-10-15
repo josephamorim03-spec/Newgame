@@ -199,7 +199,7 @@ function Atmos(){
       S.tf=tf;
       S.flashes.length=0;
       const dH=hoursBetween(S.tf0==null?tf:S.tf0,tf);S.tf0=tf;
-      for(let i=S.cells.length-1;i>=0;i--){const c=S.cells[i];if(phase===1&&!c.virga){c.virga=true;c.flash=0;c.R0=0;} // v2.2: na seca a pancada vira nuvem seca
+      for(let i=S.cells.length-1;i>=0;i--){const c=S.cells[i];if(phase===1&&!c.virga){c.virga=true;c.flash=0;c.R0=0;} // v2.3: na seca a pancada vira nuvem seca
         c.age+=dt*(phase===1?5:1);c.gh+=dH;c.x+=c.vx*dt;c.y+=c.vy*dt;if(prog(c)>=1){S.cells.splice(i,1);continue;}
         const a=act(c);c.act=a;c.u=prog(c);c.R0e=c.virga?0:c.R0*(S.taper??1);if(c.flash&&a>0.45&&c.R0e>12){c.nextF-=dt;if(c.nextF<=0){const r=mulberry32(c.seed+(c.age*1000|0));c.nextF=c.flash*(0.4+1.2*r());
           const fx=c.x+(r()-0.5)*c.r*1.6,fy=c.y+(r()-0.5)*c.r*1.6,fd=Math.hypot(fx,fy);S.flashes.push({x:fx,y:fy,dist:fd,delay:fd/343,power:0.5+0.5*r(),cell:c.id});}}}

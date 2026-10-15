@@ -1,4 +1,4 @@
-// Teste de coerência entre o mundo que se vê e as regras do jogo (v2.2). Uso: node coerencia_teste.js [vales]
+// Teste de coerência entre o mundo que se vê e as regras do jogo (v2.3). Uso: node coerencia_teste.js [vales]
 // Joga partidas inteiras no protótipo (navegador sem tela), com o tempo correndo, e confere a cada quadro:
 // - na seca não chove no chão, não cai raio e não há cortina de chuva (só virga);
 // - na última jogada antes da seca as chuvas já pararam (nada de pancada e, logo depois, o rio secando);
@@ -38,7 +38,7 @@ const N=+process.argv[2]||3,url='file://'+path.resolve(__dirname,'../prototipo/i
       const nbf=(G.bf||[]).length;if(nbf>bf&&(ENV.night>0.3||ENV.rain>0.1))fail('borboleta de noite/na chuva','borboleta nasceu de noite ou na chuva');bf=nbf;
       if(FLIES.length&&(ENV.night>0.5||ENV.rain>0.3))fail('libélula de noite/na chuva','libélula de noite ou na chuva');
       // o mundo: gado e ovelhas e os bichos da fauna só onde a regra da espécie deixa (nada de bicho na água, em casa ou cerca)
-      if(st.quadros%10===0&&G.world){for(const a of DYNST.values())if(a&&!a.dead&&a.w===G.world&&a.dim&&!wbody(a.x,a.y,a))fail('bicho fora do lugar',`gado/ovelha (${a.rule}) num lugar proibido`);
+      if(st.quadros%10===0&&G.world){for(const a of DYNST.values())if(a&&!a.dead&&a.w===G.world&&a.dim&&!wbody(a.x,a.y,a.rule==='gado'&&WRULE.abrigo?{...a,rule:'abrigo'}:a)) /* v2.2 dos bichos: gado pode se abrigar sob a copa (não no tronco) */fail('bicho fora do lugar',`gado/ovelha (${a.rule}) num lugar proibido`);
         for(const id in G.fa){const a=G.fa[id];if(a&&a.w===G.world&&!wok(a.x,a.y,FRULE[id]||'terra',fRad(id)))fail('fauna fora do lugar',`${id} num lugar proibido`);}}};
     for(let v=0;v<N;v++){const seed='dia-t'+(v*5+1),bp=E.botPlay(seed,'guloso');startGame(seed,[]);
       for(const a of bp.act){const res=E.place(G.s,a.k,a.r);G.undo=G.s;G.s=res.state;yearEvents(G.s,res.rep,t);refresh();for(let i=0;i<70;i++)frame();}
