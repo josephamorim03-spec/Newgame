@@ -1,0 +1,18 @@
+guloso
+  ano 1 (20 vales): casas 2.1 | comida perto 3.5 (longe 0.8) | mata perto 4.2 (na beira do rio 2.3; longe 1.1) | pasto encostado na vila 2.6
+  ano 2 (20 vales): casas 4.5 | comida perto 9.4 (longe 1.9) | mata perto 8.9 (na beira do rio 5.5; longe 1.7) | pasto encostado na vila 5.9
+  ano 3 (18 vales): casas 6.6 | comida perto 14.1 (longe 2.9) | mata perto 13.3 (na beira do rio 8.8; longe 2.7) | pasto encostado na vila 8.8
+  ano 4 (11 vales): casas 8.6 | comida perto 18.6 (longe 2.7) | mata perto 18.4 (na beira do rio 11.8; longe 3.5) | pasto encostado na vila 12.6
+  ano 5 (2 vales): casas 11.0 | comida perto 17.5 (longe 9.5) | mata perto 23.0 (na beira do rio 14.5; longe 6.0) | pasto encostado na vila 15.5
+  ano 6 (1 vales): casas 12.0 | comida perto 13.0 (longe 14.0) | mata perto 20.0 (na beira do rio 10.0; longe 14.0) | pasto encostado na vila 12.0
+  ano 7 (1 vales): casas 14.0 | comida perto 23.0 (longe 10.0) | mata perto 31.0 (na beira do rio 17.0; longe 9.0) | pasto encostado na vila 18.0
+  ano 8 (1 vales): casas 16.0 | comida perto 23.0 (longe 10.0) | mata perto 32.0 (na beira do rio 17.0; longe 10.0) | pasto encostado na vila 21.0
+cuidadoso
+  ano 1 (20 vales): casas 2.1 | comida perto 4.3 (longe 0.5) | mata perto 4.3 (na beira do rio 2.2; longe 0.9) | pasto encostado na vila 2.8
+  ano 2 (20 vales): casas 4.5 | comida perto 11.5 (longe 1.9) | mata perto 8.8 (na beira do rio 5.8; longe 1.9) | pasto encostado na vila 6.3
+  ano 3 (20 vales): casas 6.7 | comida perto 17.6 (longe 3.4) | mata perto 13.6 (na beira do rio 9.0; longe 2.5) | pasto encostado na vila 9.6
+  ano 4 (14 vales): casas 8.7 | comida perto 21.6 (longe 6.1) | mata perto 17.4 (na beira do rio 12.1; longe 4.6) | pasto encostado na vila 12.9
+  ano 5 (6 vales): casas 11.0 | comida perto 28.3 (longe 7.8) | mata perto 19.2 (na beira do rio 13.7; longe 6.7) | pasto encostado na vila 17.5
+  ano 6 (4 vales): casas 14.8 | comida perto 30.8 (longe 8.8) | mata perto 23.5 (na beira do rio 16.0; longe 10.0) | pasto encostado na vila 19.8
+  ano 7 (1 vales): casas 14.0 | comida perto 38.0 (longe 12.0) | mata perto 29.0 (na beira do rio 17.0; longe 11.0) | pasto encostado na vila 15.0
+  ano 8 (1 vales): casas 16.0 | comida perto 40.0 (longe 15.0) | mata perto 29.0 (na beira do rio 19.0; longe 13.0) | pasto encostado na vila 19.0
