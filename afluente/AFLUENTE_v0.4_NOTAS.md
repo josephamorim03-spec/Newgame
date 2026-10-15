@@ -1293,3 +1293,18 @@ O `afluente.html` e o `index.html` continuam 2D. Sem o módulo, ou sem WebGL, o 
   - 14 jogadas de verdade, com a troca 2D↔3D, também sem erros.
 - **Custo:** com WebGL por software, o quadro passa de cerca de 71 ms (2D) para 81 ms (3D). Numa placa de vídeo de verdade deve ser bem menos, e o controle automático de qualidade do jogo baixa a resolução se ficar lento.
 - `sim/interface_teste.js` (o 2D, depois de separar as marcas da peça escolhida numa função): 77 telas, 0 erros, os mesmos 31 avisos da v3.1. `coerencia_teste.js` e `licoes_teste.js` sem mudança.
+
+## O vale que pede (protótipo v4)
+
+**O retorno:** "pense sobre a gameplay, ainda não tô achando divertido".
+
+**O diagnóstico e a proposta** estão em `DIVERSAO_v4.md`:
+
+- **Os números:** em 77% das jogadas a melhor casa empata com a segunda, 44% das jogadas são quietas, e o jogo tem cerca de 20 regras.
+- **O que não resolve:** dois testes de fórmula mostraram que o problema não está na conta dos pontos.
+- **A proposta:** 5 regras. As vilas pedem, a vila que cresce deixa você escolher o pacote, e a seca é a prova do ano.
+
+**O protótipo:** está nos dois HTML, como modo à parte ("✨ Vale novo (teste)" na tela inicial). Ele está descrito na seção 8 do `DIVERSAO_v4.md`. O jogo de sempre não mudou, com duas exceções:
+- o placar final não mostra mais linhas em que você e o bot fizeram 0;
+- a contagem dos pontos no fim não passa mais por um número negativo no primeiro quadro.
+

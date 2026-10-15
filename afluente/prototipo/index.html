@@ -203,6 +203,7 @@ body.calm .app{max-width:none;padding:0}
 .undo:disabled{opacity:.35}
 
 .overlay{position:fixed;inset:0;z-index:20;display:flex;align-items:flex-end;justify-content:center;background:rgba(29,59,58,.45);padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px));padding-bottom:max(12px,env(safe-area-inset-bottom,0px));padding-top:env(safe-area-inset-top,0px)}
+.pacs{display:grid;grid-template-columns:1fr 1fr;gap:10px}.pac{display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 8px;border:2px solid var(--line);border-radius:18px;background:#fff;color:var(--ink);font-family:inherit;cursor:pointer;min-height:44px}.pac b{font-family:var(--f-display);font-weight:800;font-size:var(--t-xl)}.pac .pt{display:flex;flex-wrap:wrap;justify-content:center;gap:2px}.pac canvas{width:40px;height:38px}.pac small{font-size:var(--t-sm);opacity:.85;text-align:center}.pac:active{transform:scale(.97)}.pacsub{margin:0;font-size:var(--t-md);line-height:1.35}.v4i p{margin:0;font-size:var(--t-md);line-height:1.4}
 .sheet{width:100%;max-width:500px;max-height:100%;overflow:auto;box-sizing:border-box;background:var(--card);border-radius:24px;padding:22px 20px 18px;display:flex;flex-direction:column;gap:12px;box-shadow:0 6px 0 var(--line)}
 .sheet>*{flex-shrink:0}
 .sheet h2{margin:0;font-family:var(--f-display);font-weight:800;font-size:var(--t-3xl);line-height:1;text-wrap:balance}
@@ -344,11 +345,29 @@ body.calm .app{max-width:none;padding:0}
     <p class="hsub">Um vale do Cerrado por dia. Encaixe as peças, leve a água da nascente e proteja o rio na seca.</p>
     <button class="btn primary hbig" id="homeDaily"><span id="homeDailyT">Vale do dia</span><small id="homeDailyS"></small></button>
     <div class="row"><button class="btn" id="homeTrain">Vale de treino</button><button class="btn" id="homeBook">Caderno do Cerrado</button></div>
+    <button class="btn" id="homeV4">✨ Vale novo (teste): as vilas pedem</button>
     <p class="hstreak" id="homeStreak"></p>
     <div class="hfoot"><button type="button" class="link" id="homeLessons">Lições</button><button type="button" class="link" id="homeHelp">Como jogar</button><button type="button" class="link" id="homeStatsBtn">Estatísticas</button><button type="button" class="link" id="homeSound">Som ligado</button></div>
   </div>
 </div>
 
+<div class="overlay" id="pacote" hidden role="dialog" aria-modal="true" aria-labelledby="pacTitle">
+  <div class="sheet">
+    <h2 id="pacTitle">A vila cresceu!</h2>
+    <p id="pacSub" class="pacsub"></p>
+    <div class="pacs" id="pacOpts"></div>
+  </div>
+</div>
+<div class="overlay" id="v4i" hidden role="dialog" aria-modal="true" aria-labelledby="v4iTitle">
+  <div class="sheet v4i">
+    <h2 id="v4iTitle">Vale novo (teste)</h2>
+    <p>Encaixe as peças como sempre: lado igual ao vizinho vale +1, e rio só encosta em rio.</p>
+    <p><b>As vilas pedem uma coisa de cada vez</b>, na plaquinha sobre elas: lavoura com água, mata, o rio passando, mais casas.</p>
+    <p>Cumpriu o pedido: <b>a vila cresce</b> e <b>você escolhe o que chega</b> na pilha entre dois pacotes.</p>
+    <p>Na seca, o rio sem mata encostada seca. Cada vila que fica com rio e comida ganha uma peça. Acabou a pilha, acabou o vale.</p>
+    <button class="btn primary" id="v4iOk">Jogar</button>
+  </div>
+</div>
 <div class="overlay" id="desp" hidden role="dialog" aria-modal="true" aria-labelledby="despTitle">
   <div class="sheet">
     <h2 id="despTitle">A despensa da aldeia</h2>
@@ -508,6 +527,7 @@ function Engine(){
   const START=22,PERFECT_PTS=5,QUEST_TILES=2,FLOW_PTS=2,SEASON_TILES=0;
   const CFG={qMode:'prazo',qSlack:3,qMul:4,qMulT:{B:4,C:4,V:6},qSpan:3,flowDue:10,aguas:8,seca:4,keptPts:1,keptDiv:2,divGrow:1,cap:0,rain:2,shield:'touch',
     aldeia:true,alcance:2,dComida:2,dLenha:1,friMul:2,friP:0.35,lenhaMata:1,spoil:0.5,pCasa:5,pecaFarto:3,pecaMeio:2,prov0:{comida:8,lenha:3},toco:1,colheita:1,
+    v4:{pedPts:10,packN:3,secaPeca:1,secaPts:5,ativas:3,facil:3,chuva:0,raio:1},
     econ:true,irrig:'borda',yC:2,yG:1,yV:1,vMax:3,yB:1,flowPts:1,riverFit:'brejo',veredas:2,veredaDist:3,afluPts:10,afluTiles:QUEST_TILES,cheia:0,rioPct:0.32,opening:true,flowSeca:true,look:1,lookK:3,lookPols:['cuidadoso'],...(typeof AFLUENTE_CFG!=='undefined'?AFLUENTE_CFG:{})};
   const SEASON_AT=[0,0,35,95,180,290,420,570,740,930];
   const seasonAt=n=>n<SEASON_AT.length?SEASON_AT[n]:SEASON_AT[SEASON_AT.length-1]+220*(n-SEASON_AT.length+1);
@@ -574,7 +594,7 @@ function Engine(){
     const alive0=computeAlive(board,false);
     const s={seedKey,tiles,board,next:0,left:START,score:0,quests:[],alive:alive0,perfectSet:new Set(),
       placed:0,perfects:0,questsDone:0,turn:0,clock:0,actions:[],season:1,drawn:{},everAlive:new Set(alive0),seca:false,joined:[],undos:0,
-      store:{...CFG.prov0},protect:true,cut:new Set(),toco:new Map(),pend:null,
+      store:{...CFG.prov0},protect:true,cut:new Set(),toco:new Map(),pend:null,v4:seedKey.startsWith('v4-'),vilas:[],packs:[],packsTaken:0,
       stats:{match:0,perfect:0,quest:0,flow:0,special:0,tPerfect:0,tQuest:0,tSeason:0,tSpecial:0,failed:[],best:{pts:0,turn:0,k:null},kept:0,dried:0,secas:0,
         aflu:0,tAflu:0,cheia:0,cheias:0,passes:0,atend:0,casasAno:0,fartos:0,anos:0,cortes:0,fri:0,pCasa:0,tCasa:0}};
     resolve(s,0);resolve(s,1);
@@ -616,7 +636,7 @@ function Engine(){
   // a peça de cada posição da pilha é decidida quando aparece (como "peça da vez" ou "depois") e não muda mais
   function resolve(s,idx){
     if(s.drawn[idx]||!s.tiles[idx])return;
-    const base=s.tiles[idx],open=SPECIALS.filter(x=>s.season>=x.season);
+    const base=s.tiles[idx],open=s.v4?[]:SPECIALS.filter(x=>s.season>=x.season);
     const p=Math.min(0.22,0.075*open.length+0.02*Math.max(0,s.season-4));
     let t=base;
     if(open.length&&base.sroll<p){const sp=open[Math.floor(base.spick*open.length)];t={e:rot(sp.e,base.srot),quest:null,sp:sp.id};}
@@ -714,7 +734,7 @@ function Engine(){
     const len=seasonLen(s.season),safe=nSrc(s.board,aliveSeca),green=greenSet(s.board,full).size;
     const ver=[...s.board.values()].filter(t=>t.vereda).length;
     const prod=production(s.board,s.alive),harvest=production(s.board,aliveSeca);
-    let desp=null;if(CFG.aldeia&&!s.lesson&&!s.noSeasons){if(s.seca)desp={seca:true,...(s.pend||{atendidas:0,casas:0,fri:false}),store:s.store,cut:[...(s.cut||[])],toco:[...(s.toco||new Map()).keys()]};
+    let desp=null;if(CFG.aldeia&&!s.lesson&&!s.noSeasons&&!s.v4){if(s.seca)desp={seca:true,...(s.pend||{atendidas:0,casas:0,fri:false}),store:s.store,cut:[...(s.cut||[])],toco:[...(s.toco||new Map()).keys()]};
       else{const P=despensaPlan(s.board,s,nextSeca(s));desp={...P,cutSet:undefined,aliveS:undefined,reach:undefined,reachKeys:[...P.reach.keys()],store:s.store,protect:s.protect,
         alt:s.protect?(()=>{const Q=despensaPlan(s.board,s,nextSeca(s),false);return{atendidas:Q.atendidas,lenhaHave:Q.lenhaHave,comidaHave:Q.comidaHave,cut:Q.cut.length};})():null};}}
     return{prod,harvest,desp,phase:phase(s.season),year:yearOf(s.season),seca:s.seca,river:nSrc(s.board,full),riverSafe:safe,risk,green,cheia:green*CFG.cheia,
@@ -774,6 +794,49 @@ function Engine(){
     return true;
   }
 
+  // ---------- v4: o vale que pede (protótipo do núcleo novo, DIVERSAO_v4.md). Só nos vales "v4-…".
+  const REQ={lav:{ic:'🌾',um:'lavoura com água encostada',mt:'lavouras com água encostadas'},mata:{ic:'🌳',um:'mata encostada',mt:'matas encostadas'},
+    agua:{ic:'💧',um:'o rio passando pela vila',mt:'o rio passando pela vila'},casas:{ic:'🏠',um:'casa na vila',mt:'casas na vila'},pasto:{ic:'🐄',um:'pasto com água encostado',mt:'pastos com água encostados'}};
+  const PACKS={roca:{nome:'Roça',ic:'🌾',m:'C'},mata:{nome:'Mata',ic:'🌳',m:'B'},gente:{nome:'Gente',ic:'🏠',m:'V'},pasto:{nome:'Pasto',ic:'🐄',m:'G'},rio:{nome:'Rio',ic:'💧',m:'A'}};
+  const PACK_FOR={lav:'roca',mata:'mata',casas:'gente',pasto:'pasto',agua:'rio'};
+  // vilas: regiões de lados de vila; a casa de cada uma é a peça mais antiga dela
+  function vilaRegions(board,G){const seen=new Set(),out=[];
+    for(const[k,t]of board)for(let i=0;i<6;i++)if(t.e[i]==='V'){const r=G.find(k*6+i);if(seen.has(r))continue;seen.add(r);
+      const T=G.members.get(r)||new Set([k]);let home=k;for(const x of board.keys())if(T.has(x)){home=x;break;}out.push({tiles:T,home});}
+    return out;}
+  // o entorno da vila: as peças dela e as que estão a até CFG.v4.raio casas
+  const ringOf=(board,T)=>{let ring=new Set(T),edge=[...T];for(let r=0;r<CFG.v4.raio;r++){const nx=[];for(const x of edge)for(let d=0;d<6;d++){const n=nb(x,d);if(board.has(n)&&!ring.has(n)){ring.add(n);nx.push(n);}}edge=nx;}return ring;};
+  // quanto a vila tem do que pediu (nas peças dela e nas encostadas)
+  function reqCount(t,board,T,wet,alive){if(t==='casas')return T.size;const ring=ringOf(board,T);
+    if(t==='agua'){for(const x of ring)if(alive.has(x))return 1;return 0;}
+    let c=0;for(const x of ring){const e=board.get(x).e;
+      if(t==='lav'&&wet.has(x)&&e.includes('C'))c++;
+      else if(t==='mata'&&e.filter(b=>b==='B').length>=2)c++;
+      else if(t==='pasto'&&wet.has(x)&&!e.includes('C')&&e.filter(b=>b==='G').length>=3)c++;}
+    return c;}
+  function newReq(s,board,T,wet,alive,home,lvl){const r=mulberry32(hashStr('ped:'+s.seedKey+':'+home+':'+lvl)),ag=reqCount('agua',board,T,wet,alive);
+    if(lvl===0&&!ag)return{t:'agua',n:1};
+    const opts=['lav','lav','mata','casas','pasto'].concat(ag?[]:['agua']),t=opts[Math.floor(r()*opts.length)];
+    if(t==='agua')return{t,n:1};
+    const add=lvl<CFG.v4.facil?1:lvl<CFG.v4.facil+3?2:3;return{t,n:reqCount(t,board,T,wet,alive)+(t==='casas'?add+1:add)};}
+  function packTiles(id,r){const m=PACKS[id].m,L=['B','C','G','V'],out=[],N=CFG.v4.packN;
+    for(let i=0;i<N;i++){let e;
+      if(m==='A'||(i===N-1&&(id==='roca'||id==='pasto'))){const ports=[[0,3],[0,2],[0,2,4]][Math.floor(r()*3)],a=m==='A'?L[Math.floor(r()*4)]:m;e=[0,1,2,3,4,5].map(d=>ports.includes(d)?'A':a);}
+      else{e=Array(6).fill(m);if(r()<0.6){const o=L[Math.floor(r()*4)],n=1+Math.floor(r()*2);for(let j=0;j<n;j++)e[j]=o;}}
+      out.push({e:rot(e,Math.floor(r()*6)),quest:null,pack:id});}
+    return out;}
+  // dois pacotes: um que ajuda o pedido novo da vila e outro sorteado
+  function packOffer(s,v){const r=mulberry32(hashStr('pac:'+s.seedKey+':'+v.home+':'+v.lvl)),ids=Object.keys(PACKS),a=PACK_FOR[v.req.t];let b=a;while(b===a)b=ids[Math.floor(r()*ids.length)];
+    const mk=id=>({id,nome:PACKS[id].nome,ic:PACKS[id].ic,tiles:packTiles(id,r)}),sw=r()<0.5;return{home:v.home,lvl:v.lvl,opts:sw?[mk(b),mk(a)]:[mk(a),mk(b)],best:sw?1:0};}
+  // escolher o pacote: as peças entram logo depois da peça seguinte (a que já está à vista não muda)
+  function choosePack(s,i){if(!s.packs||!s.packs.length)return s;const P=s.packs[0],o=P.opts[i?1:0],at=s.next+2;
+    const tiles=s.tiles.slice(0,at).concat(o.tiles,s.tiles.slice(at)),drawn={};for(const k in s.drawn)if(+k<at)drawn[k]=s.drawn[k];
+    const n={...s,tiles,drawn,left:s.left+o.tiles.length,packs:s.packs.slice(1),packsTaken:(s.packsTaken||0)+1,actions:s.actions.concat([{t:'pacote',i:i?1:0}])};
+    resolve(n,n.next);resolve(n,n.next+1);return n;}
+  // em que vila (e em que nível) está cada peça: para o desenho fazer a vila crescer
+  function vilaLevels(s){const out=new Map();if(!s.v4)return out;const regs=vilaRegions(s.board,groups(s.board));
+    for(const R of regs){const v=(s.vilas||[]).find(x=>R.tiles.has(x.home));for(const k of R.tiles)out.set(k,Math.max(out.get(k)||0,v?v.lvl:0));}return out;}
+
   /* aplica uma colocação e devolve o novo estado + o relatório do que aconteceu */
   function place(s,k,r){
     const tile=cur(s),pass=k==null,e=pass?null:rot(tile.e,r),me=pass?null:{e,i:s.next,sp:tile.sp};
@@ -788,7 +851,7 @@ function Engine(){
     // água viva (na seca, só por mata ciliar)
     const alive=computeAlive(board,s.seca,s.seca?s.cut:null);
     const everAlive=new Set(s.everAlive);
-    if(CFG.econ){const dP=production(board,alive)-production(s.board,s.alive);rep.prod=dP;if(dP>0){rep.pts+=dP;rep.p.prod=dP;}}
+    if(CFG.econ&&!s.v4){const dP=production(board,alive)-production(s.board,s.alive);rep.prod=dP;if(dP>0){rep.pts+=dP;rep.p.prod=dP;}}
     for(const kk of alive)if(!s.alive.has(kk)){
       rep.newlyAlive.push(kk);if(everAlive.has(kk))continue;everAlive.add(kk);rep.pts+=CFG.flowPts;rep.p.flow+=CFG.flowPts;
       const sp=board.get(kk).sp;
@@ -805,7 +868,7 @@ function Engine(){
     const flowSeca=CFG.flowSeca&&!s.noSeasons;
     // não nasce missão que a pilha não consegue cumprir
     const leftAfter=s.left-1+rep.tiles;
-    if(!pass&&tile.quest&&(tile.quest.flow?leftAfter>=3:leftAfter>=tile.quest.add+1)){const edge=e.findIndex(b=>b===tile.quest.b),tq=tile.quest,T=s.turn+1;
+    if(!pass&&!s.v4&&tile.quest&&(tile.quest.flow?leftAfter>=3:leftAfter>=tile.quest.add+1)){const edge=e.findIndex(b=>b===tile.quest.b),tq=tile.quest,T=s.turn+1;
       if(tq.flow&&flowSeca){// prazo: a próxima seca (se faltar pouco para ela, a do ano seguinte)
         const ph=phase(s.season),len=seasonLen(s.season);let rem=ph===0?len-s.clock:(len-s.clock)+CFG.aguas;if(ph===0&&rem<3)rem+=CFG.seca+CFG.aguas;
         quests.push({key:k,edge,b:'A',n:0,flow:true,seca:true,status:'open',due:s.turn+rem});}
@@ -831,7 +894,7 @@ function Engine(){
       season++;clock=0;rep.seasonUp.push(season);
       if(phase(season)===1){ // chegou a seca: só corre o rio com mata ciliar
         const before=curAlive;seca=true;
-        const useAld=CFG.aldeia&&!s.lesson,plan=useAld?despensaPlan(board,{...s,store},season):null;
+        const useAld=CFG.aldeia&&!s.lesson&&!s.v4,plan=useAld?despensaPlan(board,{...s,store},season):null;
         if(plan){cut=plan.cutSet;curAlive=plan.aliveS;store={comida:plan.comidaHave-plan.atendidas*CFG.dComida,lenha:plan.lenhaHave-plan.atendidas*plan.lenhaCasa};
           pend={atendidas:plan.atendidas,casas:plan.casas,fri:plan.fri,casasOk:plan.casasOk,novos:plan.cut};ald.cortes=plan.cut.length;ald.fri=plan.fri?1:0;
           rep.events.push({type:'despensa',year:yearOf(season),...plan,cutSet:undefined,aliveS:undefined,reach:undefined,store});}
@@ -839,8 +902,11 @@ function Engine(){
         const lost=[...before].filter(x=>!curAlive.has(x)),keptN=nSrc(board,curAlive),pts=keptN*CFG.keptPts,gain=secaGain(keptN,yearOf(season));
         score+=pts;rep.tiles+=gain;rep.t.season+=gain;kept=keptN;dried=lost.length;tSeca=gain;secas=1;
         // a colheita do vale em pontos (v3). Com a aldeia ela vale CFG.colheita por ponto produzido: o rio vivo na seca rende
-        let harvest=0,hy=[];const hMul=CFG.aldeia&&!s.lesson?CFG.colheita:1;if(CFG.econ&&hMul){const gs=irrigSet(board,curAlive);for(const kk of board.keys()){const y=yieldOf(board,gs,kk);if(y&&y.sum){harvest+=y.sum;hy.push([kk,y.sum]);}}
+        let harvest=0,hy=[];const hMul=s.v4?0:CFG.aldeia&&!s.lesson?CFG.colheita:1;if(CFG.econ&&hMul){const gs=irrigSet(board,curAlive);for(const kk of board.keys()){const y=yieldOf(board,gs,kk);if(y&&y.sum){harvest+=y.sum;hy.push([kk,y.sum]);}}
           harvest=Math.floor(harvest*hMul);score+=harvest;rep.p.harvest+=harvest;}
+        if(s.v4){const wS=new Set([...curAlive,...irrigSet(board,curAlive)]),res=[];
+          for(const R of vilaRegions(board,G).sort((a,b)=>b.tiles.size-a.tiles.size||a.home-b.home).slice(0,CFG.v4.ativas)){const ag=reqCount('agua',board,R.tiles,wS,curAlive)>0,food=reqCount('lav',board,R.tiles,wS,curAlive)+reqCount('pasto',board,R.tiles,wS,curAlive)>0;res.push({home:R.home,ok:ag&&food,ag,food});}
+          const okN=res.filter(x=>x.ok).length,tl=okN*CFG.v4.secaPeca;rep.tiles+=tl;rep.t.season+=tl;score+=okN*CFG.v4.secaPts;rep.events.push({type:'prova',res,ok:okN,tiles:tl,pts:okN*CFG.v4.secaPts});}
         rep.events.push({type:'seca',lost,kept:keptN,keptKeys:[...curAlive].filter(x=>!board.get(x).src),pts,gain,per:keptDiv(yearOf(season)),year:yearOf(season),harvest,hy});
         // missões de água: a peça precisa estar com água correndo agora, na seca
         for(const q of quests){if(q.status!=='open'||!q.seca)continue;
@@ -852,7 +918,7 @@ function Engine(){
         if(CFG.toco&&pend&&pend.novos)for(const k of pend.novos)tocoNovo.set(k,CFG.toco);
         const rebrota=[...cut].filter(x=>!tocoNovo.has(x));
         seca=false;cut=new Set();toco=tocoNovo;const before=curAlive;curAlive=computeAlive(board,false);
-        rep.tiles+=CFG.rain;rep.t.season+=CFG.rain;
+        {const rn=s.v4?CFG.v4.chuva:CFG.rain;rep.tiles+=rn;rep.t.season+=rn;}
         // o ano da aldeia: casas atendidas na seca rendem pontos e trazem gente nova (peças)
         if(pend){// peças fixas por ano (não crescem com a aldeia, senão a pilha dispara): todas atendidas +3; metade ou mais +2
           const pts=pend.atendidas*CFG.pCasa,tl=!pend.casas?0:pend.atendidas>=pend.casas?CFG.pecaFarto:2*pend.atendidas>=pend.casas?CFG.pecaMeio:0;score+=pts;rep.tiles+=tl;
@@ -863,6 +929,22 @@ function Engine(){
         rep.events.push({type:'chuva',back:[...curAlive].filter(x=>!before.has(x)),year:yearOf(season),rain:CFG.rain,cheia:cp,green});
       }
     }
+    // v4: o vale que pede. Cada vila tem um nível e um pedido; cumprido, ela cresce e oferece dois pacotes de peças
+    let vilas=s.vilas||[];const packs=(s.packs||[]).slice();rep.v4=[];
+    if(s.v4){const wet=new Set([...curAlive,...irrigSet(board,curAlive)]),nv=[];
+      // só as CFG.v4.ativas vilas maiores pedem (poucas placas no vale); as outras são vilarejos que ainda não pedem
+      const regs=vilaRegions(board,G).sort((a,b)=>b.tiles.size-a.tiles.size||a.home-b.home);
+      regs.forEach((R,ri)=>{const old=vilas.filter(v=>R.tiles.has(v.home)).sort((a,b)=>b.lvl-a.lvl||a.home-b.home);
+        const v=old[0]?{...old[0]}:{home:R.home,lvl:0,req:null,cur:0};
+        if(ri>=CFG.v4.ativas){v.req=null;v.cur=0;v.size=R.tiles.size;nv.push(v);return;}
+        if(!v.req)v.req=newReq(s,board,R.tiles,wet,curAlive,v.home,v.lvl);
+        const before=old[0]?old[0].cur:0,rq=v.req;let cur=reqCount(rq.t,board,R.tiles,wet,curAlive);
+        if(cur>=rq.n){v.lvl++;const pts=CFG.v4.pedPts*v.lvl;score+=pts;v.req=newReq(s,board,R.tiles,wet,curAlive,v.home,v.lvl);
+          packs.push(packOffer(s,v));rep.events.push({type:'pedido',home:v.home,lvl:v.lvl,req:rq,pts,next:v.req});
+          rep.v4.push({home:v.home,t:rq.t,before,after:rq.n,n:rq.n,done:true});cur=reqCount(v.req.t,board,R.tiles,wet,curAlive);}
+        else if(cur!==before&&old[0]&&old[0].req===rq)rep.v4.push({home:v.home,t:rq.t,before,after:cur,n:rq.n,done:false});
+        v.cur=cur;v.size=R.tiles.size;nv.push(v);});
+      vilas=nv;}
     rep.pts=score-s.score;
     const st=s.stats,stats={match:st.match+rep.p.match,perfect:st.perfect+rep.p.perfect,quest:st.quest+rep.p.quest,flow:st.flow+rep.p.flow,
       special:st.special+rep.p.special,tPerfect:st.tPerfect+rep.t.perfect,tQuest:st.tQuest+rep.t.quest,tSeason:st.tSeason+rep.t.season,
@@ -872,7 +954,7 @@ function Engine(){
       aflu:(st.aflu||0)+rep.p.aflu,tAflu:(st.tAflu||0)+rep.t.aflu,cheia:(st.cheia||0)+rep.p.cheia,cheias:(st.cheias||0)+(rep.p.cheia?1:0),prod:(st.prod||0)+rep.p.prod,harvest:(st.harvest||0)+rep.p.harvest,harvests:(st.harvests||0)+(rep.p.harvest?1:0),
       atend:(st.atend||0)+ald.atend,casasAno:(st.casasAno||0)+ald.casas,fartos:(st.fartos||0)+ald.farto,anos:(st.anos||0)+ald.ano,cortes:(st.cortes||0)+ald.cortes,fri:(st.fri||0)+ald.fri,pCasa:(st.pCasa||0)+ald.pts,tCasa:(st.tCasa||0)+ald.tiles,passes:(st.passes||0)+(pass?1:0)};
     for(const kk of curAlive)everAlive.add(kk);
-    const n={...s,board,next:s.next+1,left:s.left-1+rep.tiles,score,season,clock,quests,alive:curAlive,everAlive,seca,perfectSet,stats,store,cut,toco,pend,
+    const n={...s,board,next:s.next+1,left:s.left-1+rep.tiles,score,season,clock,quests,alive:curAlive,everAlive,seca,perfectSet,stats,store,cut,toco,pend,vilas,packs,
       placed:s.placed+(pass?0:1),perfects:s.perfects+rep.perfect.length,questsDone:s.questsDone+rep.questsDone.length,turn:s.turn+1,
       actions:s.actions.concat([{k:pass?null:k,r:pass?0:r}]),joined};
     resolve(n,n.next);resolve(n,n.next+1);
@@ -888,7 +970,7 @@ function Engine(){
     return rotations(tile.e).filter(o=>legal(s.board,k,o.e)).map(o=>{const{rep}=place(s,k,o.r);return{r:o.r,e:o.e,rep};})
       .sort((a,b)=>(b.rep.pts+4*b.rep.tiles)-(a.rep.pts+4*a.rep.tiles));
   }
-  const over=s=>s.left<=0;
+  const over=s=>s.left<=0&&!(s.packs&&s.packs.length);
 
   // ---------- fauna do Cerrado (v1.3): bichos que voltam quando o vale tem o lugar certo para eles.
   // Não dá pontos nem peças: é coleção (o Caderno) e vida no vale. Cada condição cabe numa frase e se vê no tabuleiro.
@@ -930,7 +1012,7 @@ function Engine(){
     for(const f of FAUNA){const[a,b]=pr[f.id];if(a>=b&&fauna[f.id]==null){fauna[f.id]=s.turn;add=true;}}
     return add?{...s,fauna}:s;}
   const setProtect=(s,v)=>({...s,protect:!!v,actions:s.actions.concat([{t:'mata',v:!!v}])});
-  function replay(seedKey,actions){let s=newGame(seedKey);for(const a of actions||[]){if(a.t==='mata'){s=setProtect(s,a.v);continue;}if(over(s))break;s=faunaStep(place(s,a.k,a.r).state);}return s;}
+  function replay(seedKey,actions){let s=newGame(seedKey);for(const a of actions||[]){if(a.t==='mata'){s=setProtect(s,a.v);continue;}if(a.t==='pacote'){s=choosePack(s,a.i);continue;}if(over(s))break;s=faunaStep(place(s,a.k,a.r).state);}return s;}
   const pass=s=>place(s,null,0);
 
   // ---------- bots de referência (v1.3): definem os marcos de cada vale.
@@ -940,7 +1022,9 @@ function Engine(){
   function botValue(s,ns,rep,pol,before){
     let v=rep.pts+4*rep.tiles;if(pol==='guloso')return v;
     {const near=phase(ns.season)===0&&seasonLen(ns.season)-ns.clock<=5;
-     if(CFG.aldeia&&!ns.lesson&&!ns.seca){const P=despensaPlan(ns.board,ns,nextSeca(ns)),safe=nSrc(ns.board,P.aliveS);
+     if(ns.v4){const aS=computeAlive(ns.board,true,null),safe=nSrc(ns.board,aS);let pr=0;
+       for(const vv of ns.vilas||[])if(vv.req)pr+=Math.min(vv.cur,vv.req.n)/Math.max(1,vv.req.n);v+=(near?2.5:1.2)*safe+6*pr;}
+     else if(CFG.aldeia&&!ns.lesson&&!ns.seca){const P=despensaPlan(ns.board,ns,nextSeca(ns)),safe=nSrc(ns.board,P.aliveS);
        v+=(near?2.5:1.2)*safe+(near?1:0.45)*CFG.pCasa*P.atendidas+0.15*(P.comidaHave+P.lenhaHave);}
      else{const aS=computeAlive(ns.board,true,ns.seca?ns.cut:ns.toco),safe=nSrc(ns.board,aS);
        v+=(near?2.5:1.2)*safe+(CFG.cheia?0.35*greenSet(ns.board,computeAlive(ns.board,false)).size*CFG.cheia:0)+(CFG.econ?(near?0.8:0.35)*production(ns.board,aS):0);}}
@@ -959,17 +1043,20 @@ function Engine(){
       const before=pol==='mestre'?questBefore(s):null,cand=[];
       for(const k of slots(s))for(const o of rotations(cur(s).e)){if(!legal(s.board,k,o.e))continue;
         const{state:ns,rep}=place(s,k,o.r);cand.push({k,r:o.r,ns,v:botValue(s,ns,rep,pol,before)});}
+      while(s.packs&&s.packs.length)s=choosePack(s,s.packs[0].best);
+      if(over(s))break;
       if(!cand.length){s=pass(s);continue;}
       cand.sort((a,b)=>b.v-a.v);let best=cand[0];
       if(CFG.look&&CFG.lookPols.includes(pol)){let bv=-1e9;for(const c of cand.slice(0,CFG.lookK)){const v=c.v+0.9*bestNext(c.ns);if(v>bv){bv=v;best=c;}}}
       s=best.ns;
+      while(s.packs&&s.packs.length)s=choosePack(s,s.packs[0].best);
     }
     const x=s.stats;
     return{score:s.score,placed:s.placed,season:s.season,quests:s.questsDone,perfects:s.perfects,
       src:{match:x.match,flow:x.flow,quest:x.quest,perfect:x.perfect,special:x.special,seca:x.kept,cheia:x.cheia||0,prod:x.prod||0,harvest:x.harvest||0,atend:x.atend||0},atend:x.atend||0,aflu:(s.joined||[]).length,tiles:{quest:x.tQuest,perfect:x.tPerfect,season:x.tSeason},act:s.actions};
   }
   const parScore=seedKey=>botPlay(seedKey,'guloso');
-  return{despensaPlan,aldeiaOf,friagem,setProtect,nextSeca,irrigSet,production,yieldOf,questDue,pass,canPlay,greenSet,mainNet,QUEST_TILES,DIRS,K,KQ,KR,nb,opp,SRC,START,SPECIALS,FAUNA,habitat,faunaProgress,faunaStep,botPlay,botValue,seasonAt,seasonName,phase,yearOf,balance,CYCLE,CFG,LESSONS,computeAlive,shielded,cur,peek,newGame,place,options,slots,legal,rotations,questProgress,over,replay,parScore,hashStr,rot,groups};
+  return{choosePack,vilaLevels,REQ,PACKS,despensaPlan,aldeiaOf,friagem,setProtect,nextSeca,irrigSet,production,yieldOf,questDue,pass,canPlay,greenSet,mainNet,QUEST_TILES,DIRS,K,KQ,KR,nb,opp,SRC,START,SPECIALS,FAUNA,habitat,faunaProgress,faunaStep,botPlay,botValue,seasonAt,seasonName,phase,yearOf,balance,CYCLE,CFG,LESSONS,computeAlive,shielded,cur,peek,newGame,place,options,slots,legal,rotations,questProgress,over,replay,parScore,hashStr,rot,groups};
 }
 
 /* =====================================================================
@@ -3578,6 +3665,8 @@ function cellAt(px,py){
 function refresh(){
   const s=G.s;syncFaunaDecor();
   G.valid=new Set(E.over(s)?[]:E.slots(s).filter(k=>E.rotations(E.cur(s).e).some(o=>E.legal(s.board,k,o.e))));
+  // v4: casas onde a peça da vez ajuda o pedido de uma vila (e onde faz a vila crescer)
+  G.hot=new Map();if(s.v4&&!E.over(s)&&!(s.packs&&s.packs.length))for(const k of G.valid)for(const o of E.options(s,k)){const ch=(o.rep.v4||[]).filter(c=>c.done||c.after>c.before);if(ch.length){const d=ch.some(c=>c.done);if(!G.hot.has(k)||d)G.hot.set(k,d);}}
   G.qp=E.questProgress(s);G.bal=E.balance(s);document.body.dataset.ph=String(G.bal.phase);
   G.wet=new Set();if(E.CFG.econ&&E.CFG.irrig==='borda'){for(const k of s.alive)G.wet.add(k);for(const k of E.irrigSet(s.board,s.alive))G.wet.add(k);} // v3: verde = o que o rio toca
   else for(const k of s.alive){G.wet.add(k);for(let d=0;d<6;d++)G.wet.add(E.nb(k,d));}
@@ -3627,6 +3716,7 @@ function startGame(seedKey,actions,undos){
   PARTS.length=0;G.bf=[];FLIES.length=0;BIRDS.length=0;FISH.length=0;G.dryFx=null;G.flow=null;MILLST.clear();AMB.rainOn=false;AMB.afterRain=0;
   ENV.wet.clear();ENV.wetness=0;ENV.hz.length=0;ENV.ov.length=0;ENV.drops.length=0;ENV.clouds.length=0;G.ceuSeen=new Set();
   refresh();fit(true);if(!G.lesson)requestPar(seedKey);persist();renderUI();
+  $('pacote').hidden=true;G.pacFor=null;if(G.s.v4){if(!actions||!actions.length)$('v4i').hidden=false;else v4Pack();}
   if(G.lesson)lessonCheck();else if(E.over(G.s))showResult();
 }
 
@@ -3691,11 +3781,12 @@ $('introLessons').addEventListener('click',()=>{$('intro').hidden=true;db.seenIn
 // ---------- seleção, giro e colocação
 function questRegion(board,q){if(q.flow)return new Set([q.key]);const G2=E.groups(board),r=G2.find(q.key*6+q.edge);return G2.members.get(r)||new Set([q.key]);}
 function previewQuests(){
-  G.selQ=[];G.selBal=null;G.selY=[];if(!G.sel)return;
+  G.selQ=[];G.selBal=null;G.selY=[];G.selV4=null;if(!G.sel)return;
   const o=G.sel.ops[G.sel.i],res=E.place(G.s,G.sel.k,o.r),ns=res.state,after=E.questProgress(ns);
   // v3: a economia do vale na prévia: quanto cada peça passa a produzir com esta jogada (lavoura que ganha água, vila que
   // ganha comida...). Aparece em cima de cada peça que muda, para a pessoa ver o porquê do número
-  if(E.CFG.econ){const g0=E.irrigSet(G.s.board,G.s.alive),g1=E.irrigSet(ns.board,ns.alive);
+  if(G.s.v4)G.selV4=new Map((res.rep.v4||[]).map(c=>[c.home,c]));
+  if(E.CFG.econ&&!G.s.v4){const g0=E.irrigSet(G.s.board,G.s.alive),g1=E.irrigSet(ns.board,ns.alive);
     for(const kk of ns.board.keys()){const a=G.s.board.has(kk)?E.yieldOf(G.s.board,g0,kk):null,b=E.yieldOf(ns.board,g1,kk),d=(b?b.sum:0)-(a?a.sum:0);if(d)G.selY.push([kk,d]);}}
   const find=(L,q)=>L.find(x=>x.key===q.key&&x.edge===q.edge);
   for(const q of G.qp){if(q.flow)continue;
@@ -3716,6 +3807,7 @@ function turn(dir){if(!G.sel)return;const n=G.sel.ops.length;if(n>1)sfx.rotate()
   {let d=((G.sel.ops[G.sel.i].r-r0)%6+6)%6;if(d>3)d-=6;if(d)G.rotFx={t0:performance.now(),ang:d*Math.PI/3};}previewQuests();renderUI();}
 function commit(){
   if(!G.sel||G.lesPending)return;
+  if(G.s.packs&&G.s.packs.length){v4Pack();return;}
   const o=G.sel.ops[G.sel.i],prev=G.s,pl=E.place(prev,G.sel.k,o.r),rep=pl.rep,now=performance.now();
   const state=G.lesson?pl.state:E.faunaStep(pl.state);
   G.undo=prev;G.s=state;const k=G.sel.k;G.sel=null;G.selQ=[];
@@ -3740,6 +3832,7 @@ function commit(){
     const[vx,vy]=wpos(v);emit('ring',vx,vy,4,{v:0,life:1500,size:0.06,grow:6,alpha:0.7,delay:300,jx:0.3,jy:0.2,color:'#ffffff'});setTimeout(sfx.quest,380);}
   if(!G.lesson&&prev.left>5&&state.left<=5&&!E.over(state))queueBanner(`Últimas ${state.left} peças`,'');
   yearEvents(state,rep,now);
+  if(state.packs&&state.packs.length)setTimeout(v4Pack,RM?0:1300);
   if(!G.lesson){marcoEvents(prev,state);faunaEvents(prev,state,now);}
   for(const q of rep.questsFailed)queueBanner(q.flow?(q.seca?'Missão de água: a seca chegou e a peça ficou sem água':'O prazo da missão de água acabou'):`O prazo acabou: ${NAME[q.b]} ficou em ${q.cur}/${q.n}`,'');
   // efeitos
@@ -3934,6 +4027,9 @@ function endCeremony(){
 function yearEvents(state,rep,now){
   const pl=(n,a,b)=>n===1?a:b;
   for(const ev of rep.events){
+    if(ev.type==='pedido'){queueBanner(`A vila cresceu! Nível ${ev.lvl} · +${ev.pts}`,'good');G.bursts.push({k:ev.home,t0:now+DROP_MS,col:'#ffd27a'});G.fx.set(ev.home,{k:'spark',t0:now+DROP_MS});if(!RM)setTimeout(()=>sfx.quest&&sfx.quest(),DROP_MS);}
+    if(ev.type==='prova'&&ev.res.length){queueBanner(`A seca: ${ev.ok} de ${ev.res.length} ${pl(ev.res.length,'vila ficou','vilas ficaram')} com rio e comida${ev.tiles?` · +${ev.tiles} ${pl(ev.tiles,'peça','peças')}`:''}`,ev.ok===ev.res.length?'good':'dry');
+      ev.res.forEach((r,i)=>G.floats.push({k:r.home,txt:r.ok?'✓ rio e comida':!r.ag?'✗ sem rio':'✗ sem comida',t0:now+900+i*200,col:r.ok?'#e3f3dc':'#ffe4cc',fg:r.ok?'#24592b':'#8a3a0c'}));}
     if(ev.type==='despensa'){
       if(!rep.events.some(e=>e.type==='seca'&&e.harvest))queueBanner(`Colheita da aldeia: 🌾 +${ev.comidaGain} · 🪵 +${ev.lenhaGain}`,'good');
       if(ev.cut.length)queueBanner(`A aldeia cortou ${ev.cut.length} ${pl(ev.cut.length,'mata','matas')} da beira do rio`,'dry');
@@ -3963,7 +4059,7 @@ function yearEvents(state,rep,now){
       if(ev.back.length){const ord=ev.back.slice().sort((a,b)=>hd(a,E.SRC)-hd(b,E.SRC));if(G.flow&&now-G.flow.t0<4000){const o0=G.flow.order;G.flow={order:o0.concat(ord.filter(k=>!o0.includes(k))),t0:G.flow.t0};}else G.flow={order:ord,t0:now+600};}
     }
   }
-  if(!state.lesson)for(const n of rep.seasonUp){const un=E.SPECIALS.find(x=>x.season===n);if(un)queueBanner(`${un.name} entrou na pilha: ${un.desc}`,'water');}
+  if(!state.lesson&&!state.v4)for(const n of rep.seasonUp){const un=E.SPECIALS.find(x=>x.season===n);if(un)queueBanner(`${un.name} entrou na pilha: ${un.desc}`,'water');}
 }
 function hd(a,b){const dq=E.KQ(a)-E.KQ(b),dr=E.KR(a)-E.KR(b);return Math.max(Math.abs(dq),Math.abs(dr),Math.abs(dq+dr));}
 function bump(id){const el=$(id);el.classList.remove('bump');void el.offsetWidth;el.classList.add('bump');}
@@ -4005,15 +4101,16 @@ function fillOf(k,t){
 function aliveOf(k,t){return G.s.alive.has(k)&&fillOf(k,t)>0?1:0;}
 // v3.2: o tabuleiro em 3D. O módulo (jogo3d/vale3d.js) só vem embutido no afluente3d.html; sem ele, ou sem WebGL,
 // o jogo desenha em 2D como sempre. O 3D entrega a imagem das peças; o resto (céu, rótulos, números) segue no 2D.
+const v4Lv=s=>{if(G.vlFor!==s){G.vlFor=s;G.vl=E.vilaLevels(s);}return G.vl;};
 function use3d(){return !!(window.V3D&&db.v3d!==false&&V3D.ok());}
 function draw3d(g,s,sz,t,sel){
   const lit=s.seca&&s.pend&&s.pend.casasOk?new Set(s.pend.casasOk):null,tiles=[];
   for(const[k,tl]of s.board){const[wx,wz]=wpos(k),ctx=tileCtx(s,k,tl),f=fxOf(k,t);
     const drn=!!(G.drain&&!s.alive.has(k)&&G.drain.order.includes(k)),fl=fillOf(k,t),water=s.alive.has(k)||drn?fl:0;
-    const cut=!!((s.cut&&s.cut.has(k))||(s.toco&&s.toco.has(k))),L=!lit||lit.has(k),tier=+((ctx.match(/t(\d)/)||[0,0])[1]),wet=G.wet.has(k);
+    const vl=s.v4?v4Lv(s).get(k):null,cut=!!((s.cut&&s.cut.has(k))||(s.toco&&s.toco.has(k))),L=!lit||lit.has(k),tier=vl!=null?Math.min(4,vl+1):+((ctx.match(/t(\d)/)||[0,0])[1]),wet=G.wet.has(k);
     tiles.push({k,wx,wz,e:tl.e,seed:k*7919+13,water,f,dy:f.dy||0,sx:f.sx||1,sy:f.sy||1,smoke:tl.e.includes('V')&&(lit?L:wet),
       flags:{wet,alive:s.alive.has(k),seca:!!s.seca,src:!!tl.src,vereda:!!tl.vereda,sp:tl.sp||null,cut,lit:L,tier},
-      sig:tl.e.join('')+'|'+ctx+(cut?'x':'')+(L?'L':'')+(s.alive.has(k)?'a':'')+(tl.src?'S':'')+(tl.vereda?'v':'')+(tl.sp||'')});}
+      sig:tl.e.join('')+'|'+ctx+(vl!=null?'n'+vl:'')+(cut?'x':'')+(L?'L':'')+(s.alive.has(k)?'a':'')+(tl.src?'S':'')+(tl.vereda?'v':'')+(tl.sp||'')});}
   let S=null,mk=null;
   if(sel&&!s.board.has(sel.k)){const o=sel.ops[sel.i],[wx,wz]=wpos(sel.k),[x,y0]=scr(sel.k);
     const su=Math.min(1,(t-(G.selT||0))/260),lift=easeOutBack(su),bob=RM?0:Math.sin(t/520)*sz*0.03,y=y0-sz*0.1*lift+bob;
@@ -4046,6 +4143,7 @@ function selMarks(g,x,y,sz,o){const sel=G.sel;
       const r=o.rep;let txt=`+${r.pts}`;if(r.prod>0)txt+=` · produção +${r.prod}`;
       {const D0=G.bal&&G.bal.desp,D1=G.selBal&&G.selBal.desp;if(D0&&D1&&!D0.seca&&!D1.seca){const dc=D1.comidaHave-D0.comidaHave,dl=D1.lenhaHave-D0.lenhaHave;if(dc)txt+=` · 🌾${dc>0?'+':''}${dc}`;if(dl)txt+=` · 🪵${dl>0?'+':''}${dl}`;}}if(r.tiles)txt+=` · +${r.tiles} peça${r.tiles>1?'s':''}`;
       if(r.questsDone.length)txt+=' · missão ✓';
+      if(r.v4&&r.v4.some(c=>c.done))txt+=' · a vila cresce!';
       label(x,y-sz*1.25,txt,{bg:r.tiles?'#3f9a4a':'#fffdf7',fg:r.tiles?'#fff':'#1d3b3a',pri:PRI.jogada});
 }
 function draw(t){
@@ -4062,8 +4160,9 @@ function draw(t){
   if(!E.over(s))for(const k of G.valid){
     if(sel&&sel.k===k)continue;const[x,y]=scr(k);
     if(G.calm)break;
-    hexPath(g,x,y,sz*0.84);g.fillStyle='rgba(255,255,255,.13)';g.fill();
-    g.strokeStyle='rgba(255,255,255,.3)';g.lineWidth=1;g.stroke();
+    const ht=G.hot&&G.hot.get(k);
+    hexPath(g,x,y,sz*0.84);g.fillStyle=ht!=null?(ht?'rgba(255,205,90,.42)':'rgba(255,225,140,.26)'):'rgba(255,255,255,.13)';g.fill();
+    g.strokeStyle=ht!=null?(ht?'rgba(240,170,40,.95)':'rgba(240,190,80,.7)'):'rgba(255,255,255,.3)';g.lineWidth=ht!=null?2:1;g.stroke();
   }
   // sombra do vale (cor da luz do momento)
   g.fillStyle=LIGHT.shadowCss;for(const k of s.board.keys()){const[x,y]=scr(k);hexPath(g,x+sz*0.06,y+sz*0.4,sz);g.fill();}
@@ -4189,6 +4288,11 @@ function draw(t){
       {bg:e.st==='bad'?'#c9874a':e.st==='ok'?P.good:'#fff1d1',fg:e.st?'#fff':'#7a4d00',dot:e.st?null:BIOME_DOT[q.b],pri:PRI.previa});
     else label(x,y-sz*0.95,q.flow?`ligar à água${pz}`:`${q.cur}/${q.n}${pz}`,{dot:BIOME_DOT[q.b],pri:G.lesson?PRI.aviso:(!q.flow&&q.n-q.cur===1)||q.left<=2?PRI.alerta:PRI.info}); // na lição, a bandeira é o assunto
   }
+  // v4: a placa de cada vila com o pedido dela (e, com a peça escolhida, o que ela muda)
+  if(!G.calm&&s.v4)for(const v of s.vilas||[]){if(!v.req)continue;const[x,y]=scr(v.home),R=E.REQ[v.req.t],ch=G.sel&&G.selV4?G.selV4.get(v.home):null;
+    const W1={lav:'lavoura',mata:'mata',casas:'casas',pasto:'pasto',agua:'rio'}[v.req.t];
+    const txt=ch?(ch.done?`${R.ic} ✓ cresce!`:`${R.ic} ${W1} ${ch.before}→${ch.after}/${v.req.n}`):v.req.t==='agua'?`${R.ic} quer o rio`:`${R.ic} ${W1} ${v.cur}/${v.req.n}`;
+    label(x,y-sz*0.95,txt,{bg:ch?(ch.done?P.good:'#fff1d1'):'#fffaf0',fg:ch&&ch.done?'#fff':'#5a3b12',pri:ch?PRI.previa:PRI.alerta});}
   // números
   // lados que combinam: uma linha de luz por lado, no ritmo das notas
   if(G.edgeFx&&!G.calm){const E2=G.edgeFx,[x,y]=scr(E2.k);let alive=false;
@@ -4596,7 +4700,10 @@ function renderBal(){
   const ar=(a,b)=>A&&a!==b?`${a}→${b}`:`${a}`;
   let txt,cls='';
   const D=B.desp,DA=A&&A.desp;
-  if(D&&(D.seca?D.casas:D.casas)){ // v3.1: a despensa da aldeia (comida e lenha para a seca)
+  if(G.s&&G.s.v4){ // v4: o que importa para a seca é o rio com mata (e as vilas com rio e comida)
+    if(B.seca)txt=`Seca: ${B.riverSafe} ${B.riverSafe===1?'trecho correndo':'trechos correndo'}`;
+    else{txt=`Rio seguro<span class="lg"> na seca</span>: ${ar(B.riverSafe,A?A.riverSafe:0)}/${A?A.river:B.river}`;cls=B.risk.length?(B.turnsLeft<=4?'warn':''):'ok';}}
+  else if(D&&(D.seca?D.casas:D.casas)){ // v3.1: a despensa da aldeia (comida e lenha para a seca)
     if(D.seca)txt=`Seca: ${D.atendidas}/${D.casas} ${D.casas===1?'casa atendida':'casas atendidas'}${D.fri?' ❄':''}`;
     else{const f=(a,b)=>DA&&DA.casas!==undefined&&a!==b?`${a}→${b}`:`${a}`;
       txt=`🌾 ${f(D.comidaHave,DA?DA.comidaHave:0)}/${DA?DA.needC:D.needC} · 🪵 ${f(D.lenhaHave,DA?DA.lenhaHave:0)}/${DA?DA.needL:D.needL}${D.fri?' ❄':''}<span class="lg"> · colheita ${ar(B.harvest,A?A.harvest:0)}</span>`;
@@ -4610,7 +4717,7 @@ function renderBal(){
     cls=B.risk.length?(B.turnsLeft<=4?'warn':''):'ok';}
   box.innerHTML='';box.classList.toggle('duo',!!(B.veredas&&B.joined<B.veredas));const b=document.createElement('button');b.type='button';b.className='bchip '+cls+(G.focusSet&&!G.focusSet.af?' on':'');
   b.innerHTML=`<i style="background:${BIOME_DOT.A}"></i><span class="bt">${txt}</span>`; // o texto é um item só (o flex separa itens)
-  b.addEventListener('click',()=>{if(B.desp&&B.desp.casas)openDesp();else explainBal();});box.appendChild(b);
+  b.addEventListener('click',()=>{if(G.s.v4)explainV4();else if(B.desp&&B.desp.casas)openDesp();else explainBal();});box.appendChild(b);
   if(B.veredas&&B.joined<B.veredas){const a=document.createElement('button');a.type='button';a.className='bchip af'+(G.focusSet&&G.focusSet.af?' on':'');
     a.setAttribute('aria-label',`Afluentes: ${B.joined} de ${B.veredas} veredas ligadas ao rio da nascente`);
     a.innerHTML=`<i style="background:#7fd1f0"></i><span class="bt"><span class="lg">Afluentes </span>${B.joined}/${B.veredas}</span>`;
@@ -4619,6 +4726,27 @@ function renderBal(){
       flashHint(`As veredas são olhos-d'água que nunca secam. Leve o rio de uma vereda até o rio da nascente: é um afluente, +${E.CFG.afluPts} e +${E.CFG.afluTiles} peças.`);});
     box.appendChild(a);}
 }
+// ---------- v4 (protótipo "o vale que pede", DIVERSAO_v4.md)
+const V4NOME={C:'lavoura',B:'mata',G:'pasto',V:'vila'};
+function reqTxt(q,cur){const R=E.REQ[q.t];if(q.t==='agua')return`${R.ic} ${R.um}`;const n=q.t==='casas'?q.n:q.n-(cur||0);return q.t==='casas'?`${R.ic} chegar a ${q.n} casas`:`${R.ic} mais ${n} ${n===1?R.um:R.mt}`;}
+function packDesc(o){const c={};for(const t of o.tiles){const k=t.e.includes('A')?'rio':V4NOME[[...'CBGV'].sort((a,b)=>t.e.filter(x=>x===b).length-t.e.filter(x=>x===a).length)[0]];c[k]=(c[k]||0)+1;}
+  return Object.entries(c).map(([k,n])=>`${n} ${k==='rio'?(n>1?'rios':'rio'):k+(n>1?(k==='mata'?'s':k==='vila'?'s':'s'):'')}`).join(' + ');}
+function v4Pack(){const s=G.s;if(!s||!s.v4||!s.packs||!s.packs.length){$('pacote').hidden=true;G.pacFor=null;return;}
+  const P=s.packs[0];if(G.pacFor===P&&!$('pacote').hidden)return;G.pacFor=P;const v=(s.vilas||[]).find(x=>x.home===P.home);
+  $('pacTitle').textContent=`A vila cresceu! Nível ${P.lvl}`;
+  $('pacSub').textContent=(v&&v.req?`Agora ela pede ${reqTxt(v.req,v.cur)}. `:'')+'O que chega na pilha?';
+  const box=$('pacOpts');box.innerHTML='';
+  P.opts.forEach((o,i)=>{const b=document.createElement('button');b.type='button';b.className='pac';
+    b.innerHTML=`<b>${o.ic} ${o.nome}</b><span class="pt"></span><small>${packDesc(o)}</small>`;const pt=b.querySelector('.pt');
+    for(const t of o.tiles){const c=document.createElement('canvas');c.width=80;c.height=76;pt.appendChild(c);try{thumb(c,t.e);}catch(e){}}
+    b.addEventListener('click',()=>{if(G.s.packs[0]!==P)return;G.s=E.choosePack(G.s,i);$('pacote').hidden=true;G.pacFor=null;refresh();persist();renderUI();
+      queueBanner(`${o.ic} ${o.nome}: +${o.tiles.length} peças na pilha`,'good');setTimeout(v4Pack,250);});
+    box.appendChild(b);});
+  $('pacote').hidden=false;}
+function explainV4(){const B=G.bal,n=B.turnsLeft,j=n===1?'jogada':'jogadas';
+  flashHint(B.seca?`É seca: só corre o rio com mata encostada. As chuvas voltam em ${n} ${j}.`
+    :`Em ${n} ${j} vem a seca: o rio sem mata encostada seca, e cada vila que ficar com rio e comida (lavoura ou pasto com água) ganha uma peça. ${B.risk.length?`${B.risk.length} ${B.risk.length===1?'trecho vai':'trechos vão'} secar (em laranja).`:''}`);
+  G.focusSet={keys:new Set(B.risk),col:'#e07a2e',until:performance.now()+3500};renderUI();}
 // v3.1: a despensa da aldeia: o que entra na colheita, o que a aldeia pede na seca e a chave da mata do rio
 function despTxt(){const B=G.bal,D=B.desp;if(!D)return'';const pl=(n,a,b)=>n===1?a:b;
   if(D.seca)return`<p>É seca. A despensa separou o que a aldeia vai gastar: <b>${D.atendidas} de ${D.casas}</b> ${pl(D.casas,'casa atendida','casas atendidas')}${D.fri?' (com friagem: lenha em dobro)':''}. Quando as chuvas voltarem, cada casa atendida vale +${E.CFG.pCasa}; com todas atendidas vêm +${E.CFG.pecaFarto} peças, com metade ou mais, +${E.CFG.pecaMeio}.</p><p><small>Guardado para o ano que vem: 🌾 ${D.store.comida} · 🪵 ${D.store.lenha}. ${D.cut&&D.cut.length?`${D.cut.length} ${pl(D.cut.length,'mata da beira do rio está em toco','matas da beira do rio estão em toco')}: ${pl(D.cut.length,'não segura','não seguram')} o rio nesta seca, e a cortada agora ainda fica em toco na seca que vem.`:''}</small></p>`;
@@ -4672,7 +4800,7 @@ function paintScoreSub(){
 }
 function renderUI(){
   const s=G.s,over=E.over(s),daily=G.seedKey.startsWith('dia-');
-  $('sub').textContent=G.lesson?'Aprendendo a jogar':daily?`Vale #${valeNumber(G.seedKey.slice(4))} · ${fmtDate(G.seedKey.slice(4))}`:'Vale de treino';
+  $('sub').textContent=G.lesson?'Aprendendo a jogar':daily?`Vale #${valeNumber(G.seedKey.slice(4))} · ${fmtDate(G.seedKey.slice(4))}`:G.s.v4?'Vale novo (teste)':'Vale de treino';
   tweenNum($('score'),s.score);tweenNum($('left'),Math.max(0,s.left));paintScoreSub();
   $('leftBox').style.color=s.left<=3&&!over?'#c2410c':'';
   const tile=E.cur(s)||{e:['G','G','G','G','G','G']},nxt=E.peek(s,1);
@@ -4718,7 +4846,7 @@ function renderUI(){
   {const B=G.bal,n=B.turnsLeft,A=E.CFG.aguas,T=A+E.CFG.seca;
    const fr=B.phase?(A+(B.len-n))/T:(B.len-n)/T;
    $('seasonName').textContent=`Ano ${B.year} · ${E.CYCLE[B.phase]}`;
-   $('seasonNext').textContent=over?'':`${B.phase?'Chuvas':E.CFG.econ?'Colheita e seca':'Seca'} em ${n} ${n===1?'jogada':'jogadas'}${B.phase&&B.cheia?` · cheia +${B.cheia}`:''}${B.desp&&B.desp.fri?' · ❄ friagem':''}`;
+   $('seasonNext').textContent=over?'':`${B.phase?'Chuvas':E.CFG.econ&&!G.s.v4?'Colheita e seca':'Seca'} em ${n} ${n===1?'jogada':'jogadas'}${B.phase&&B.cheia?` · cheia +${B.cheia}`:''}${B.desp&&B.desp.fri?' · ❄ friagem':''}`;
    $('seasonFill').style.clipPath=`inset(0 ${(100-fr*100).toFixed(2)}% 0 0)`;$('sbMark').style.left=(fr*100).toFixed(2)+'%';
    renderBal();}
   const sel=G.sel;
@@ -4835,7 +4963,7 @@ function tallyResult(){
   const s=G.s,el=$('resTotal'),T0=performance.now(),dur=Math.min(1400,500+s.score*3);G.tally=true;
   const mk=marcosOf(G.seedKey),marks=[...$('resMarcos').querySelectorAll('.marco')];
   const lit=new Set();let lastTick=0;
-  const step=t=>{const u=Math.min(1,(t-T0)/dur),v=Math.round(s.score*(1-Math.pow(1-u,3)));el.textContent=v;
+  const step=t=>{const u=Math.max(0,Math.min(1,(t-T0)/dur)),v=Math.round(s.score*(1-Math.pow(1-u,3)));el.textContent=v;
     if(t-lastTick>55&&u<1){sfx.tick();lastTick=t;}
     if(mk)mk.t.forEach((x,i)=>{if(v>=x&&!lit.has(i)){lit.add(i);const m=marks[i];if(m){m.classList.add('on','pop');m.querySelector('svg').outerHTML=dropSvg(true);setTimeout(()=>m.classList.remove('pop'),350);}sfx.drop(i);}});
     if(u<1)requestAnimationFrame(step);else{G.tally=false;fillResult();}};
@@ -4870,7 +4998,7 @@ function fillResult(){
   const s=G.s,daily=G.seedKey.startsWith('dia-'),dk=G.seedKey.slice(4),mk=marcosOf(G.seedKey),st=s.stats;
   const n=mk?dropsOf(s.score,mk.t):-1,pl=(x,a,b)=>x===1?a:b;
   {const d=daily&&db.daily[dk];if(d&&mk&&d.n==null){d.n=dropsOf(d.score,mk.t);save(db);}}
-  $('resKicker').textContent=(daily?`Vale #${valeNumber(dk)}`:'Vale de treino')+' · a pilha acabou';
+  $('resKicker').textContent=(daily?`Vale #${valeNumber(dk)}`:G.s.v4?'Vale novo (teste)':'Vale de treino')+' · a pilha acabou';
   $('resTitle').textContent=mk?MKT[n]:'O vale está pronto';
   if(!G.tally)$('resTotal').textContent=s.score;
   $('resPar').textContent='pontos';
@@ -4897,7 +5025,7 @@ function fillResult(){
       perfect:`O bot fez ${bot.perfects} ${pl(bot.perfects,'peça perfeita','peças perfeitas')}; você, ${s.perfects}. Procure casas cercadas por 5 ou 6 peças.`};
     const diffs={quest:bs.quest-me.quest+4*(bt.quest-st.tQuest),seca:bs.seca-me.seca+4*(bt.season-st.tSeason),flow:(bs.flow+bs.special)-me.flow,perfect:bs.perfect-me.perfect+4*(bt.perfect-st.tPerfect),match:(bs.match-st.match)*0.5};
     const top=Object.entries(diffs).sort((a,b)=>b[1]-a[1])[0];
-    gap.innerHTML=`<p><b>Onde o bot do ${who} foi melhor</b></p><div class="gl"><span></span><span class="h">você</span><span class="h">bot</span>${ROWS.map(r=>`<span>${r[0]}</span><b>${r[1]}</b><b>${r[2]}</b>`).join('')}</div>`
+    gap.innerHTML=`<p><b>Onde o bot do ${who} foi melhor</b></p><div class="gl"><span></span><span class="h">você</span><span class="h">bot</span>${ROWS.filter(r=>r[1]||r[2]).map(r=>`<span>${r[0]}</span><b>${r[1]}</b><b>${r[2]}</b>`).join('')}</div>`+(s.v4?`<p>Suas vilas cresceram ${(s.vilas||[]).reduce((a,v)=>a+v.lvl,0)} vezes, e você escolheu ${s.packsTaken||0} ${(s.packsTaken||0)===1?'pacote':'pacotes'}.</p>`:'')
       +(top&&top[1]>0?`<p>${adv[top[0]]}</p>`:bot.placed>s.placed?`<p>O bot teve uma pilha mais longa: cada peça a mais é mais uma chance de encaixar.</p>`:`<p>Foi por pouco. A pilha é a mesma: dá para tentar de novo sabendo o que vem.</p>`)
       +(bot.act?`<button type="button" class="link" id="botViewBtn">${G.botView?'Ver o meu vale':`Ver o vale do bot do ${who}`}</button>`:'');
     const bvb=$('botViewBtn');if(bvb)bvb.addEventListener('click',()=>{G.botView=!G.botView;
@@ -5032,6 +5160,8 @@ function playDaily(){
 }
 $('homeDaily').addEventListener('click',playDaily);
 $('homeTrain').addEventListener('click',()=>{hideHome();startGame('treino-'+Date.now().toString(36),[]);});
+$('homeV4').addEventListener('click',()=>{hideHome();startGame('v4-'+Date.now().toString(36),[]);});
+$('v4iOk').addEventListener('click',()=>{$('v4i').hidden=true;});
 $('homeLessons').addEventListener('click',()=>showLessons());
 $('homeBook').addEventListener('click',showBook);
 $('menuBook').addEventListener('click',()=>{$('menu').hidden=true;showBook();});

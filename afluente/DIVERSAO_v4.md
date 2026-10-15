@@ -153,3 +153,52 @@ Recursos, época difícil, sustentabilidade e progresso continuam, mas como **pe
 | 4 | Peças novas nos pacotes (moinho, curral, ponte, cais) e as vilas crescendo no 3D | médio |
 
 Os scripts desta análise estão em `sim/revisao/`: `momento.js`, `nucleo_v4.js` e `uma_coisa.js`.
+
+---
+
+## 8. O protótipo (feito)
+
+**Onde:** no `prototipo/afluente3d.html` (e no `index.html` 2D), botão **"✨ Vale novo (teste): as vilas pedem"** na tela inicial. Cada toque abre um vale novo. O jogo de sempre continua igual.
+
+**O que tem:**
+
+- **As regras:** as 5 regras da seção 5, no motor (vales `v4-…`).
+- **Placas:**
+  - só as **3 vilas maiores** pedem, para ter poucas placas no vale;
+  - a placa diz o pedido numa palavra e o quanto falta ("🌾 lavoura 1/2");
+  - com a peça escolhida, mostra o que ela muda ("🌾 lavoura 1→2/2" ou "✓ cresce!").
+- **Casas douradas:** onde a peça da vez ajuda um pedido, a casa vazia fica dourada. Fica mais forte onde ela faz a vila crescer.
+- **"A vila cresceu!":** escolha entre dois pacotes de 3 peças, com as peças desenhadas. Um ajuda o pedido novo da vila e o outro é sorteado. As peças entram logo depois da peça seguinte, que continua sendo a única à vista.
+- **A seca:** cada vila mostra "✓ rio e comida", "✗ sem rio" ou "✗ sem comida", e cada ✓ dá uma peça.
+- **No 3D**, a vila cresce com o nível: mais casas, sobrados e, no nível 3, capela.
+- **Saem neste modo:**
+  - as missões sorteadas e as especiais;
+  - a despensa;
+  - a produção e a colheita em pontos;
+  - as peças da chuva.
+
+  As peças vêm dos pedidos, da seca, das perfeitas e dos afluentes.
+
+**Números** (bots, 10 vales; servem só para a duração):
+
+| | Jogadas: mediana / máx | A vila cresce |
+|---|---|---|
+| guloso | 65 / 99 | 8 vezes por partida |
+| cuidadoso | 66 / 109 | 8 |
+| mestre | 74 / 109 | 12 |
+
+**O que a medida de "querer" mostrou** (`sim/revisao/querer_v4.js`):
+
+- **Quanto acontece:** em **23%** das jogadas a peça na mão tem uma casa que avança um pedido (mediana de 3 casas entre ~26). Em 11%, ela faz uma vila crescer na hora.
+- **O que se testou para subir:** o alcance de 2 casas subiu isso para 30%, mas a partida passou de 100 jogadas, e ficou o alcance de 1.
+- **Os pacotes:** entram aí, porque a escolha traz as peças que as vilas pedem.
+- **O que só o teste diz:** se 1 jogada em 4 com "isso!", mais as casas douradas e a escolha do pacote, já dão vontade. Se não derem, os próximos passos são:
+  - **dois pedidos por vila,** para mais casas douradas;
+  - **pacote de 2 peças,** para escolher mais vezes.
+
+**O roteiro do teste** está na seção 6. Jogue um vale de sempre e um vale novo no mesmo dia, e repare:
+
+- se você torce pela peça seguinte;
+- se hesita na escolha do pacote;
+- se a vila crescendo dá gosto;
+- se dá vontade de jogar outro.
