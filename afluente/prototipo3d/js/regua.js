@@ -9,6 +9,9 @@ export const READ3 = L => L >= 0.3 ? L : 0.3 * Math.pow(L / 0.3, 0.6);
 // tamanho de verdade (h = altura total acima do chão; l = maior medida na horizontal), em metros
 export const TABELA = {
   'pessoa (referência)': { h: [1.6, 1.8] },
+  'homem': { h: [1.6, 1.98] },
+  'mulher': { h: [1.48, 1.84] },
+  'criança': { h: [0.95, 1.5] },
   'árvore do cerrado': { h: [3, 8], l: [2.5, 9] },
   'ipê': { h: [5, 12] },
   'árvore da mata de galeria': { h: [9, 20] },
@@ -57,10 +60,11 @@ export const tag = (o, name, scale) => { o.userData.regua = name; if (scale) o.u
 function measure(o) {
   if (o.isInstancedMesh || o.userData.reguaGeo) { const g = o.geometry; g.computeBoundingBox(); const b = g.boundingBox, s = o.userData.reguaScale || 1;
     return { h: b.max.y * s, l: Math.max(b.max.x - b.min.x, b.max.z - b.min.z) * s }; }
+  const undo = o.userData.reguaRest ? o.userData.reguaRest() : null;   // gente sentada ou agachada é medida em pé
   const ry = o.rotation.y; o.rotation.y = 0; o.updateMatrixWorld(true);
   const b = new THREE.Box3(), cb = new THREE.Box3();
   o.traverse(c => { if ((c.isMesh || c.isLineSegments) && !c.isSprite && !c.userData.noRegua && c.visible !== false) { cb.setFromObject(c, false); b.union(cb); } });
-  o.rotation.y = ry; o.updateMatrixWorld(true);
+  o.rotation.y = ry; if (undo) undo(); o.updateMatrixWorld(true);
   return { h: b.max.y - o.getWorldPosition(new THREE.Vector3()).y, l: Math.max(b.max.x - b.min.x, b.max.z - b.min.z) };
 }
 export function audit(scene) {

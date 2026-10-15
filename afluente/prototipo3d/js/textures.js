@@ -138,3 +138,19 @@ export function plankTexture(seed = 41) {
   for (let i = 0; i < 4; i++) { const x = R() * W, y = R() * H; g.fillStyle = 'rgba(90,75,60,0.6)'; g.beginPath(); g.ellipse(x, y, 3, 6, 0, 0, 7); g.fill(); }
   return tex(c, true);
 }
+
+// xadrez de camisa de roça: listras cruzadas de duas cores sobre um fundo
+export function xadrezTexture(base = '#b83a2a', a = '#1e1a18', b = '#f0e8d8', seed = 47) {
+  const S = 64, c = document.createElement('canvas'); c.width = c.height = S; const g = c.getContext('2d');
+  g.fillStyle = base; g.fillRect(0, 0, S, S);
+  g.globalAlpha = 0.55; g.fillStyle = a; for (let i = 0; i < S; i += 16) { g.fillRect(i, 0, 6, S); g.fillRect(0, i, S, 6); }
+  g.globalAlpha = 0.5; g.fillStyle = b; for (let i = 8; i < S; i += 16) { g.fillRect(i + 1, 0, 2, S); g.fillRect(0, i + 1, S, 2); }
+  g.globalAlpha = 1; return tex(c, true);
+}
+// brim de calça (jeans) e tecido liso com trama, em tons de cinza para tingir
+export function tramaTexture(seed = 53) {
+  const S = 64, c = document.createElement('canvas'); c.width = c.height = S; const g = c.getContext('2d'), R = rng(seed);
+  g.fillStyle = 'rgb(220,220,220)'; g.fillRect(0, 0, S, S);
+  for (let y = 0; y < S; y += 2) for (let x = 0; x < S; x += 2) { const l = 190 + R() * 60; g.fillStyle = `rgb(${l},${l},${l})`; g.fillRect(x + ((y / 2) % 2), y, 1.5, 1.5); }
+  return tex(c, true);
+}

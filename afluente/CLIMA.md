@@ -456,6 +456,11 @@ Cada coisa do vale tem uma etiqueta e é **medida em metros** a cada abertura (`
 | Tucano (com o bico) | ~0,6 m | 0,45–0,68 m |
 | João-de-barro (na régua) · ninho | ~0,24 m · ~0,35 m | 0,19–0,28 m · 0,22–0,4 m |
 | Martim-pescador | ~0,39 m | 0,3–0,45 m |
+| Homem (13 variações de roupa; com chapéu) | 1,64–1,84 m (1,8–1,9 m com chapéu) | 1,6–1,98 m |
+| Mulher | 1,52–1,68 m (1,6–1,7 m com o coque/lenço) | 1,48–1,84 m |
+| Criança | 1,05–1,35 m | 0,95–1,5 m |
+
+Gente sentada, agachada ou com a enxada no alto é medida **em pé** (a régua desfaz a pose para medir), e a ferramenta e a lata d'água na cabeça não contam na altura.
 
 **O que a régua pegou e foi corrigido:** árvore do cerrado alta demais (até 9,7 m → até 7 m, tronco mais baixo e copa mais larga, como as tortas do cerrado), moitas de 3,2 m, capivara de 79 cm de altura e 1,5 m, garça de 1,2 m, seriema de 1,1 m, passarinhos do bando com 54 cm de envergadura, borboleta de 32 cm e libélula de 26 cm.
 
