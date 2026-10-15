@@ -87,3 +87,33 @@ export function stoneTexture(seed = 23) {
     g.fillStyle = R() < 0.6 ? 'rgba(225,215,150,0.75)' : 'rgba(150,165,120,0.7)'; for (let k = 0; k < 6; k++) { g.beginPath(); g.arc(x + (R() - 0.5) * r * 1.6, y + (R() - 0.5) * r * 1.6, r * (0.3 + R() * 0.4), 0, 7); g.fill(); } }
   return tex(c, true);
 }
+
+// reboco caiado: quase branco, com manchas suaves de umidade e de cal mais grossa (a cor vem do material)
+export function plasterTexture(seed = 31) {
+  const S = 256, c = document.createElement('canvas'); c.width = c.height = S; const g = c.getContext('2d'), R = rng(seed);
+  g.fillStyle = 'rgb(236,234,230)'; g.fillRect(0, 0, S, S);
+  for (let i = 0; i < 70; i++) { const x = R() * S, y = R() * S, r = 10 + R() * 40, l = 214 + R() * 40; g.fillStyle = `rgba(${l},${l},${l * 0.98},0.35)`; g.beginPath(); g.ellipse(x, y, r, r * 0.6, R() * 3, 0, 7); g.fill(); }
+  for (let i = 0; i < 2500; i++) { const l = 200 + R() * 55; g.fillStyle = `rgba(${l},${l},${l},0.35)`; g.fillRect(R() * S, R() * S, 1.5, 1.5); }
+  g.strokeStyle = 'rgba(150,145,140,0.25)'; g.lineWidth = 1; for (let i = 0; i < 6; i++) { let x = R() * S, y = R() * S; g.beginPath(); g.moveTo(x, y); for (let k = 0; k < 5; k++) { x += (R() - 0.5) * 22; y += R() * 14; g.lineTo(x, y); } g.stroke(); }
+  return tex(c, true);
+}
+// telha colonial (capa e canal): fileiras de telhas curvas, cada uma com seu tom, sombra embaixo e brilho em cima
+export function roofTexture(seed = 37) {
+  const W = 256, H = 256, c = document.createElement('canvas'); c.width = W; c.height = H; const g = c.getContext('2d'), R = rng(seed), cols = 8, rows = 6, tw = W / cols, th = H / rows;
+  g.fillStyle = 'rgb(120,110,104)'; g.fillRect(0, 0, W, H);
+  for (let r = 0; r < rows; r++) for (let k = 0; k < cols; k++) { const x = k * tw, y = r * th, l = 175 + R() * 70;
+    const gr = g.createLinearGradient(x, 0, x + tw, 0); gr.addColorStop(0, `rgb(${l * 0.62},${l * 0.6},${l * 0.58})`); gr.addColorStop(0.45, `rgb(${l},${l * 0.97},${l * 0.94})`); gr.addColorStop(1, `rgb(${l * 0.6},${l * 0.58},${l * 0.56})`);
+    g.fillStyle = gr; g.beginPath(); g.moveTo(x + 2, y + th + 3); g.lineTo(x + 3, y + 1); g.quadraticCurveTo(x + tw / 2, y - 3, x + tw - 3, y + 1); g.lineTo(x + tw - 2, y + th + 3); g.closePath(); g.fill();
+    g.fillStyle = 'rgba(40,30,25,0.35)'; g.fillRect(x + 2, y + th - 4, tw - 4, 4);
+    if (R() < 0.25) { g.fillStyle = `rgba(${R() < 0.5 ? '60,70,40' : '30,30,30'},0.25)`; g.beginPath(); g.ellipse(x + tw / 2, y + th * 0.7, tw * 0.3, th * 0.25, 0, 0, 7); g.fill(); } }
+  return tex(c, true);
+}
+// madeira de cerca e de tábua: veios compridos e nós, cinza-amarronzada do tempo
+export function plankTexture(seed = 41) {
+  const W = 64, H = 256, c = document.createElement('canvas'); c.width = W; c.height = H; const g = c.getContext('2d'), R = rng(seed);
+  g.fillStyle = 'rgb(200,192,182)'; g.fillRect(0, 0, W, H);
+  for (let i = 0; i < 60; i++) { const x = R() * W, l = 140 + R() * 90; g.strokeStyle = `rgba(${l},${l * 0.96},${l * 0.9},0.6)`; g.lineWidth = 1 + R() * 2; g.beginPath(); g.moveTo(x, 0);
+    for (let y = 0; y <= H; y += 16) g.lineTo(x + Math.sin(y * 0.03 + i) * 2 + (R() - 0.5), y); g.stroke(); }
+  for (let i = 0; i < 4; i++) { const x = R() * W, y = R() * H; g.fillStyle = 'rgba(90,75,60,0.6)'; g.beginPath(); g.ellipse(x, y, 3, 6, 0, 0, 7); g.fill(); }
+  return tex(c, true);
+}
