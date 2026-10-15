@@ -790,4 +790,60 @@ Pedido: estudar ventos, monções, moinhos, umidade, chuva, formação e precipi
   - Águas: tarde a 25 °C e 57% de umidade, base dos cúmulos a 1.170 m, pancadas entre 13 h e 15 h;
   - Seca: tarde a 26 °C e 34%, base a 2.270 m, sem chuva no chão.
 - **O que não muda:** as regras e os pontos. O clima é o mundo respondendo ao mapa, como a fauna. Mudar regra pelo clima fica para um teste próprio (ver `CLIMA.md`, seção 5).
-- **Desempenho:** o quadro custa o mesmo que antes (5,6 ms contra 5,8 ms no teste sem tela; 6,3 ms numa pancada).
+- **Desempenho:** o quadro custa o mesmo que antes (no teste sem tela, 4,9 ms contra 4,8 ms; zoom de perto 64 ms contra 63 ms). Os sprites do céu são gerados em meia resolução, e as nuvens do horizonte somem no zoom de perto: somadas às peças em cache (~48 MB), elas estouravam o cache de imagens.
+
+## Natureza crível: buriti, casca, pedras, capim, vento e chuva (v2.1)
+
+> Junto com o céu com física (v2.0): as rajadas abaixo vêm das rajadas do motor da atmosfera e da frente de rajada das pancadas. O chão encharca e as poças aparecem peça por peça, pela lâmina de água de cada uma, só onde a cortina da chuva passou (ver `CLIMA.md`).
+
+**Buriti refeito.** O topo marrom era uma esfera ("coco") no meio de 9 triângulos verdes. Agora o buriti é uma palmeira de verdade:
+- **Estipe:** de 14 lados, mais grosso na base, com anéis de cicatriz das folhas em relevo.
+- **Coroa:** 13 folhas em leque, cada uma com 24 folíolos que caem na ponta e são dobrados em V, sobre pecíolos longos. As folhas velhas ficam baixas e caídas; as novas, altas.
+- **Flecha:** uma folha nova, fechada e pontuda, no meio da coroa.
+- **Saia:** folhas secas penduradas abaixo da coroa.
+- **Cachos:** frutos escamosos castanho-avermelhados, pendurados entre as folhas.
+
+**Madeira.** Todos os troncos ganharam um material de casca com relevo (bump) e 12 lados em vez de 7:
+- `fissurada`: placas de cortiça separadas por fendas verticais, típica das árvores do Cerrado;
+- `aneis`: palmeiras;
+- `lisa`.
+
+**Pedras.** Textura procedural de pedra, com relevo:
+- cor manchada;
+- algumas rachaduras quebradas (rede de Voronoi mascarada por ruído, para não virar casca de tartaruga);
+- estratos tortos no arenito, poros e grãos de ferro na canga;
+- quinas mais claras e cavidades mais escuras (*pointiness*);
+- placas de líquen só nas faces de cima.
+
+Os seixos são lisos e polidos.
+
+**Sprites mais nítidos.** Os objetos passaram a ser renderizados a 320 px por 1,1 unidade, em vez de 256. Também diminuíram as cabecinhas do capim-dourado.
+
+**Capim cobrindo o chão.** O capim existia só em touceiras (os "montinhos") sobre um chão verde liso. Agora:
+- **Texturas do chão:** tapetes de lâminas desenhadas, em três camadas (sombra, meio e ponta ao sol). A resolução subiu de 2 para 3 vezes, ou seja, 192 px por unidade em vez de 128.
+  - No pasto o tapete é denso; no campo nativo, mais alto e dourado.
+  - No chão da mata há folhas caídas e capim ralo de sombra; na vila, capim ralo.
+- **Capim vivo:** lâminas soltas espalhadas por todo o chão de capim, não em tufos:
+  - o pasto fica cheio; a mata e a vila, ralas;
+  - não nasce capim na lavoura, na água nem embaixo dos enfeites;
+  - quanto mais perto a câmera, mais lâminas aparecem, até 3.400 por quadro.
+
+**Vento.**
+- **Rajadas:** a cada 14–38 s (mais frequentes com chuva e na seca), o vento sopra forte por 2–5 s. Nessas horas:
+  - o capim deita em onda e as matas balançam mais;
+  - folhas voam das matas;
+  - na seca, sobe poeira do chão seco.
+- **Capim:** curva com a onda de vento que atravessa o vale.
+
+**Chuva.**
+- **O chão encharca** (em ~20 s; seca em ~1 min): o vale escurece e satura.
+- **Poças** aparecem nas partes baixas do pasto e da vila. Ficam fora do rio e dos enfeites, refletem o céu e pegam pingos.
+- **Capim:** deita e escurece.
+- **Respingos:** pulam do chão.
+- **Rio:** a correnteza acelera e a enxurrada turva a água.
+- **Depois da chuva:** sobe uma névoa baixa da mata e da água.
+
+**Sensação do baque.**
+- A tela treme de leve, um pouco mais na peça perfeita.
+- Um anel de choque corre no chão.
+- O capim em volta é empurrado para fora numa onda que se afasta da peça. Isso se soma à fuga dos bichos, à revoada e às ondas no rio da v1.10.

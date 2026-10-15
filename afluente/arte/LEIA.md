@@ -132,3 +132,16 @@ O tamanho no jogo não depende do render. O jogo mede a largura do corpo no atla
 - A geometria do rotor segue `windmill()`: cubo a 0,3 u de altura e 0,125 u à frente do eixo; braços de 0,22 u; lona de 0,03 a 0,19 u do cubo, com 0,045 u de largura.
 - Para refazer: `SOMENTE=windmill_torre venv/bin/python afluente_sprites.py saida_v20/`, depois `venv/bin/python atualizar_atlas.py saida_v20 atlas.png atlas.json`, o WebP e `python3 embutir.py`.
 - O sprite `windmill`, com as velas, continua no atlas para o mapa de colisão (a pegada é a mesma).
+
+## v2.1: casca, pedra e buriti
+
+- `casca(nome, escuro, claro, tipo)` é um material de tronco com relevo. Tipos: `fissurada` (cortiça do Cerrado), `aneis` (palmeiras) e `lisa`. Use `tronco_mat()` nas árvores comuns.
+- `pedra_mat(nome, escuro, claro, líquen, quantidade, tipo)` é um material de pedra procedural, com manchas, rachaduras quebradas, quinas e cavidades (*pointiness*), líquen e relevo. Tipos: `arenito` (estratos), `canga` (poros) e `seixo` (liso).
+- `buriti()` foi refeito: leques de folíolos (`_leaflet_strip`), saia seca e cachos.
+- Os objetos agora são renderizados a `OBJ_PX = 320` (antes 256). Para refazer tudo:
+  ```sh
+  SECAS=1 venv/bin/python afluente_sprites.py saida/   # 80 sprites, ~25 min
+  venv/bin/python montar_atlas.py saida atlas.png atlas.json
+  python3 caixas.py
+  ```
+  Depois gere o `atlas.webp` e rode `embutir.py`. `caixas.py` precisa rodar sempre que o atlas mudar: a geometria do motor de disposição vem dele.

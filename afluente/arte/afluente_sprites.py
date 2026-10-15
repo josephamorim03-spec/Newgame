@@ -24,7 +24,7 @@ from bpy_extras.object_utils import world_to_camera_view
 OUT = sys.argv[-1] if len(sys.argv) > 1 and not sys.argv[-1].endswith('.py') else 'sprites_out'
 os.makedirs(OUT, exist_ok=True)
 
-OBJ_PX, OBJ_SCALE = 256, 1.1      # objetos: 256 px cobrem 1,1 unidade
+OBJ_PX, OBJ_SCALE = 320, 1.1      # objetos: 320 px cobrem 1,1 unidade (v1.11; antes 256)
 FX_PX, FX_SCALE = 128, 0.34       # partículas (v1.5: 128 px, formas novas e variações)
 ELEV = math.radians(52)
 
@@ -269,7 +269,7 @@ def gable_house(w, d, h, rh, wall, roof, over=0.025, tiles=True):
 # ---------------------------------------------------------------- árvores
 
 def trunk(h, r=0.03, lean=0.0):
-    return cyl(r, h, (lean * 0.5, 0, h / 2), mat('tronco', '#6b4a2e', 0.9), 7, r * 0.7, rot=(0, lean * 2, 0), smooth=True)
+    return cyl(r, h, (lean * 0.5, 0, h / 2), tronco_mat(), 12, r * 0.7, rot=(0, lean * 2, 0), smooth=True)
 
 
 def tree_round(var=0):
@@ -306,27 +306,163 @@ def pine():
 def ipe(petal, petal_light, name):
     m = foliage(name, petal, petal_light, speck='#fff3d6', speck_amt=0.55, speck_scale=55)
     trunk(0.2, 0.026, lean=0.04)
-    cyl(0.014, 0.12, (0.06, 0, 0.2), mat('tronco', '#6b4a2e', 0.9), 6, 0.01, rot=(0, 0.7, 0))
+    cyl(0.014, 0.12, (0.06, 0, 0.2), tronco_mat(), 6, 0.01, rot=(0, 0.7, 0))
     for i, (x, y, z, r, sz) in enumerate([(0.0, 0.0, 0.3, 0.14, (1.25, 1.15, 0.8)), (-0.1, -0.03, 0.28, 0.09, (1, 1, 0.85)),
                                           (0.11, 0.02, 0.3, 0.09, (1, 1, 0.85)), (0.02, -0.05, 0.37, 0.09, (1.1, 1, 0.8))]):
         blob(r, (x, y, z), m, sz, seed=i + 31)
 
 
+def casca(name, dark, light, kind='fissurada', scale=1.0):
+    """casca de árvore (v2.1) com relevo de verdade (bump):
+    - 'fissurada': placas de cortiça separadas por fendas fundas e verticais (árvores do Cerrado);
+    - 'aneis': cicatrizes das folhas em anéis (buriti, palmeiras);
+    - 'lisa': casca fina com manchas."""
+    m = bpy.data.materials.get(name)
+    if m:
+        return m
+    m = bpy.data.materials.new(name)
+    m.use_nodes = True
+    nt = m.node_tree
+    p = nt.nodes['Principled BSDF']
+    p.inputs['Roughness'].default_value = 0.92
+    tc = nt.nodes.new('ShaderNodeTexCoord')
+    mp = nt.nodes.new('ShaderNodeMapping')
+    nt.links.new(tc.outputs['Object'], mp.inputs['Vector'])
+    noise = nt.nodes.new('ShaderNodeTexNoise')
+    noise.inputs['Scale'].default_value = 60.0 * scale
+    noise.inputs['Detail'].default_value = 6.0
+    nt.links.new(mp.outputs['Vector'], noise.inputs['Vector'])
+    if kind == 'fissurada':
+        mp.inputs['Scale'].default_value = (3.2 * scale, 3.2 * scale, 0.75 * scale)   # placas altas e estreitas
+        tex = nt.nodes.new('ShaderNodeTexVoronoi')
+        tex.feature = 'DISTANCE_TO_EDGE'
+        tex.inputs['Scale'].default_value = 26.0
+        nt.links.new(mp.outputs['Vector'], tex.inputs['Vector'])
+        ramp = nt.nodes.new('ShaderNodeValToRGB')
+        ramp.color_ramp.elements[0].position = 0.0
+        ramp.color_ramp.elements[1].position = 0.16
+        nt.links.new(tex.outputs['Distance'], ramp.inputs['Fac'])
+        h = ramp.outputs['Color']
+    elif kind == 'aneis':
+        mp.inputs['Scale'].default_value = (1.0, 1.0, 1.0)
+        tex = nt.nodes.new('ShaderNodeTexWave')
+        tex.wave_type = 'BANDS'
+        tex.bands_direction = 'Z'
+        tex.inputs['Scale'].default_value = 34.0 * scale
+        tex.inputs['Distortion'].default_value = 3.0
+        tex.inputs['Detail'].default_value = 3.0
+        nt.links.new(mp.outputs['Vector'], tex.inputs['Vector'])
+        ramp = nt.nodes.new('ShaderNodeValToRGB')
+        ramp.color_ramp.elements[0].position = 0.35
+        ramp.color_ramp.elements[1].position = 0.75
+        ramp.color_ramp.elements[0].color = (0.35, 0.35, 0.35, 1)
+        nt.links.new(tex.outputs['Fac'], ramp.inputs['Fac'])
+        h = ramp.outputs['Color']
+    else:
+        mp.inputs['Scale'].default_value = (1.0, 1.0, 0.5)
+        h = noise.outputs['Fac']
+    mix, fac, a_, b_, out = _mix_rgba(nt)
+    a_.default_value = hexcol(dark)
+    b_.default_value = hexcol(light)
+    mul = nt.nodes.new('ShaderNodeMath')
+    mul.operation = 'MULTIPLY'
+    nt.links.new(h, mul.inputs[0])
+    nt.links.new(noise.outputs['Fac'], mul.inputs[1])
+    add = nt.nodes.new('ShaderNodeMath')
+    add.operation = 'MULTIPLY_ADD'
+    add.inputs[1].default_value = 1.6
+    add.inputs[2].default_value = -0.15
+    nt.links.new(mul.outputs[0], add.inputs[0])
+    nt.links.new(add.outputs[0], fac)
+    nt.links.new(out, p.inputs['Base Color'])
+    bump = nt.nodes.new('ShaderNodeBump')
+    bump.inputs['Strength'].default_value = 0.85
+    bump.inputs['Distance'].default_value = 0.004
+    nt.links.new(h if kind != 'lisa' else noise.outputs['Fac'], bump.inputs['Height'])
+    nt.links.new(bump.outputs['Normal'], p.inputs['Normal'])
+    return m
+
+
+def tronco_mat():
+    return casca('tronco', '#3a2716', '#8a6644', 'fissurada')
+
+
+def _leaflet_strip(verts, faces, base, d, up, side, L, w, droop, fold, seg=5):
+    """um folíolo: fita afinando, curvando para baixo na ponta e dobrada em V no meio"""
+    i0 = len(verts)
+    for k in range(seg + 1):
+        u = k / seg
+        c = base + d * (L * u) + up * (-droop * L * u * u)
+        ww = w * (1 - u) ** 0.8 + 0.0006
+        verts += [tuple(c - side * ww), tuple(c + up * (fold * ww)), tuple(c + side * ww)]
+    for k in range(seg):
+        a = i0 + k * 3
+        faces += [(a, a + 3, a + 4, a + 1), (a + 1, a + 4, a + 5, a + 2)]
+
+
 def buriti():
-    bark = mat('buriti_tronco', '#8a6a48', 0.9)
-    leaf = foliage('buriti_folha', '#2f6b2e', '#7cbf4f')
-    cyl(0.026, 0.48, (0, 0, 0.24), bark, 8, 0.02, smooth=True)
+    """buriti (Mauritia flexuosa) v2.1: estipe reto com anéis; coroa de folhas em leque (cada leque com ~24
+    folíolos que caem na ponta) sobre pecíolos longos; flecha nova no meio; saia de folhas secas pendurada e
+    cachos de frutos escamosos castanho-avermelhados. Sem o disco marrom no topo."""
+    from mathutils import Vector as V
+    rnd = random.Random(31)
+    bark = casca('buriti_tronco', '#5e5040', '#9c8c74', 'aneis', 0.55)
+    leaf = foliage('buriti_folha', '#1c4420', '#5c9640')
+    dry = foliage('buriti_seca', '#5a4024', '#b08a52')
+    fruit = foliage('buriti_fruto', '#3a160c', '#8a3a1e')
+    H = 0.5
+    # estipe: 14 lados, um pouco mais grosso na base e com leve curva
+    bpy.ops.mesh.primitive_cylinder_add(vertices=14, radius=0.024, depth=H, location=(0, 0, H / 2))
+    tr = bpy.context.active_object
+    for v in tr.data.vertices:
+        z = v.co.z / H + 0.5
+        k = 1.25 - 0.3 * z
+        v.co.x, v.co.y = v.co.x * k + 0.012 * z * z, v.co.y * k
+    finish(tr, bark, True)
+    top = V((0.012, 0, H))
+
+    def leque(base_dir, elev, Lp, n, L, mat, droop, spread=2.6, wl=0.009, name='leque'):
+        verts, faces = [], []
+        d = V((math.cos(base_dir) * math.cos(elev), math.sin(base_dir) * math.cos(elev), math.sin(elev)))
+        # pecíolo
+        pb = top + d * Lp
+        for k in range(n):
+            ph = (k / (n - 1) - 0.5) * spread + rnd.uniform(-0.05, 0.05)
+            hd = V((math.cos(base_dir + ph), math.sin(base_dir + ph), 0))
+            el = elev * 0.6 + 0.35 - abs(ph) * 0.25
+            dd = (hd * math.cos(el) + V((0, 0, math.sin(el)))).normalized()
+            side = dd.cross(V((0, 0, 1))).normalized()
+            up = side.cross(dd).normalized()
+            _leaflet_strip(verts, faces, pb, dd, up, side, L * rnd.uniform(0.85, 1.1), wl, droop * rnd.uniform(0.8, 1.2), 0.5)
+        o = mesh(name, verts, faces, mat)
+        for poly in o.data.polygons:
+            poly.use_smooth = True
+        # pecíolo: haste fina do topo até o leque
+        seg = pb - top
+        c = cyl(0.0035, seg.length, tuple(top + seg / 2), mat, 6, 0.0025, smooth=True)
+        c.rotation_euler = V((0, 0, 1)).rotation_difference(seg).to_euler()
+
+    # saia de folhas secas, penduradas abaixo da coroa
     for k in range(9):
-        a = k / 9 * math.tau
-        tilt = math.radians(55 + (k % 3) * 12)
-        L = 0.2 + 0.03 * (k % 2)
-        # folha em leque: triângulos achatados abrindo a partir do topo
-        tip = (math.cos(a) * L * math.sin(tilt), math.sin(a) * L * math.sin(tilt), 0.48 + L * math.cos(tilt) - 0.05)
-        sx, sy = -math.sin(a) * 0.05, math.cos(a) * 0.05
-        mid = (tip[0] * 0.55, tip[1] * 0.55, 0.48 + (tip[2] - 0.48) * 0.55 + 0.03)
-        mesh(f'folha{k}', [(0, 0, 0.48), (mid[0] + sx, mid[1] + sy, mid[2]), tip, (mid[0] - sx, mid[1] - sy, mid[2])],
-             [(0, 1, 2, 3)], leaf)
-    ico(0.035, (0, 0, 0.47), mat('buriti_coco', '#7a4a26'), 2, smooth=True)
+        a = k / 9 * math.tau + rnd.uniform(-0.2, 0.2)
+        leque(a, math.radians(-62 + rnd.uniform(-8, 8)), 0.05, 14, 0.09, dry, 0.2, spread=0.9, wl=0.007, name='seca')
+    # coroa verde: folhas velhas mais baixas e caídas, novas mais altas
+    for k in range(13):
+        a = k / 13 * math.tau + rnd.uniform(-0.15, 0.15)
+        old = k % 3 == 0
+        elev = math.radians(rnd.uniform(-5, 8) if old else rnd.uniform(25, 55))
+        leque(a, elev, rnd.uniform(0.08, 0.11), 24, rnd.uniform(0.12, 0.15), leaf, 0.7 if old else 0.45)
+    # flecha: folha nova, fechada e pontuda, apontando para cima
+    cyl(0.006, 0.12, (0.012, 0, H + 0.06), leaf, 8, 0.0005, smooth=True)
+    # cachos de frutos pendurados entre as folhas
+    for c in range(3):
+        a = c / 3 * math.tau + 0.6
+        base = top + V((math.cos(a) * 0.03, math.sin(a) * 0.03, -0.01))
+        for j in range(26):
+            u = j / 25
+            p = base + V((math.cos(a) * (0.02 + 0.025 * u), math.sin(a) * (0.02 + 0.025 * u), -0.07 * u))
+            p += V((rnd.uniform(-0.009, 0.009), rnd.uniform(-0.009, 0.009), rnd.uniform(-0.006, 0.006)))
+            ico(0.0062, tuple(p), fruit, 1, (1, 1, 1.2), smooth=True)
 
 
 def bush():
@@ -337,7 +473,7 @@ def bush():
 
 def cerrado_tree():
     m = foliage('cerrado', '#4e6e2c', '#a3bd5a')
-    t = mat('tronco_torto', '#5a3c24', 0.9)
+    t = casca('tronco_torto', '#2e1e12', '#7a5634', 'fissurada', 1.3)
     cyl(0.024, 0.14, (0.0, 0, 0.07), t, 7, 0.02, smooth=True)
     cyl(0.02, 0.15, (0.045, 0, 0.18), t, 7, 0.015, rot=(0, math.radians(35), 0), smooth=True)
     cyl(0.015, 0.1, (-0.03, 0, 0.17), t, 6, 0.01, rot=(0, math.radians(-40), 0), smooth=True)
@@ -531,7 +667,7 @@ def blades(n, rad, hmin, hmax, dark, light, seed, width=0.008, lean=0.5, heads=N
         for i in range(n // 2):
             a = rnd.random() * math.tau
             rr = rad * math.sqrt(rnd.random())
-            ico(0.009, (math.cos(a) * rr * 1.2, math.sin(a) * rr * 1.2, rnd.uniform(hmin, hmax) * 1.05), hm, 1, smooth=True)
+            ico(0.0055, (math.cos(a) * rr * 1.2, math.sin(a) * rr * 1.2, rnd.uniform(hmin, hmax) * 1.05), hm, 2, (1, 1, 1.3), smooth=True)
     return o
 
 
@@ -677,9 +813,118 @@ def flowers():
         ico(0.007, (x, y - 0.002, h + 0.016), mat('miolo', '#e8a13a'), 1)
 
 
-def pedra_mat(name, dark, light, lichen=None, amt=0.0):
-    """pedra do cerrado: escura nas faces de baixo e nas frestas, clara no alto; líquen em pintas"""
-    return foliage(name, dark, light, lichen, amt, 70.0)
+def pedra_mat(name, dark, light, lichen=None, amt=0.0, kind='arenito'):
+    """pedra (v2.1) com textura de verdade:
+    - cor manchada (ruído fino) entre o escuro e o claro, clara no alto e escura nas faces de baixo;
+    - rachaduras (Voronoi, distância à borda) escuras e afundadas no relevo;
+    - 'arenito': estratos (faixas horizontais tortas); 'canga': poros e grãos de ferro; 'seixo': liso e polido;
+    - quinas mais claras e cavidades mais escuras (pointiness da malha);
+    - líquen em placas só nas faces de cima."""
+    m = bpy.data.materials.get(name)
+    if m:
+        return m
+    m = bpy.data.materials.new(name)
+    m.use_nodes = True
+    nt = m.node_tree
+    p = nt.nodes['Principled BSDF']
+    p.inputs['Roughness'].default_value = 0.55 if kind == 'seixo' else 0.9
+    L = nt.links
+    tc = nt.nodes.new('ShaderNodeTexCoord')
+    geo = nt.nodes.new('ShaderNodeNewGeometry')
+    co = tc.outputs['Object']
+
+    def node(t, **kw):
+        n = nt.nodes.new(t)
+        for k, v in kw.items():
+            setattr(n, k, v)
+        return n
+
+    def math_(op, a, b=None, v=None):
+        n = node('ShaderNodeMath', operation=op)
+        L.new(a, n.inputs[0])
+        if b is not None:
+            L.new(b, n.inputs[1])
+        elif v is not None:
+            n.inputs[1].default_value = v
+        return n.outputs[0]
+
+    def mr(val, a, b, c=0.0, d=1.0):
+        n = node('ShaderNodeMapRange')
+        n.inputs['From Min'].default_value, n.inputs['From Max'].default_value = a, b
+        n.inputs['To Min'].default_value, n.inputs['To Max'].default_value = c, d
+        L.new(val, n.inputs['Value'])
+        return n.outputs['Result']
+
+    def mix(colA, colB, f):
+        mx, fac, ia, ib, out = _mix_rgba(nt)
+        if isinstance(colA, tuple):
+            ia.default_value = colA
+        else:
+            L.new(colA, ia)
+        if isinstance(colB, tuple):
+            ib.default_value = colB
+        else:
+            L.new(colB, ib)
+        L.new(f, fac)
+        return out
+
+    nz = node('ShaderNodeTexNoise')
+    nz.inputs['Scale'].default_value = 150.0
+    nz.inputs['Detail'].default_value = 10.0
+    nz.inputs['Roughness'].default_value = 0.62
+    L.new(co, nz.inputs['Vector'])
+    sep = node('ShaderNodeSeparateXYZ')
+    L.new(geo.outputs['Normal'], sep.inputs[0])
+    up = mr(sep.outputs['Z'], -0.4, 1.0)
+    col = mix(hexcol(dark), hexcol(light), math_('ADD', math_('MULTIPLY', up, v=0.5), math_('MULTIPLY', mr(nz.outputs['Fac'], 0.3, 0.7), v=0.6)))
+    height = nz.outputs['Fac']
+    if kind != 'seixo':
+        vo = node('ShaderNodeTexVoronoi', feature='DISTANCE_TO_EDGE')
+        vo.inputs['Scale'].default_value = 32.0
+        L.new(co, vo.inputs['Vector'])
+        cm = node('ShaderNodeTexNoise')
+        cm.inputs['Scale'].default_value = 40.0
+        L.new(co, cm.inputs['Vector'])
+        # só alguns trechos da rede de Voronoi viram fenda (a máscara de ruído quebra a "casca de tartaruga")
+        crack = math_('MULTIPLY', mr(vo.outputs['Distance'], 0.0, 0.035, 1.0, 0.0), mr(cm.outputs['Fac'], 0.52, 0.62))
+        col = mix(col, hexcol(dark), math_('MULTIPLY', crack, v=0.75))
+        height = math_('SUBTRACT', height, math_('MULTIPLY', crack, v=0.6))
+    if kind == 'arenito':
+        wv = node('ShaderNodeTexWave', wave_type='BANDS', bands_direction='Z')
+        wv.inputs['Scale'].default_value = 85.0
+        wv.inputs['Distortion'].default_value = 6.0
+        wv.inputs['Detail'].default_value = 4.0
+        L.new(co, wv.inputs['Vector'])
+        col = mix(col, hexcol('#a88a62'), math_('MULTIPLY', mr(wv.outputs['Fac'], 0.4, 0.9), v=0.3))
+        height = math_('ADD', height, math_('MULTIPLY', wv.outputs['Fac'], v=0.25))
+    elif kind == 'canga':
+        po = node('ShaderNodeTexVoronoi')
+        po.inputs['Scale'].default_value = 320.0
+        L.new(co, po.inputs['Vector'])
+        pore = mr(po.outputs['Distance'], 0.0, 0.18, 1.0, 0.0)
+        col = mix(col, hexcol('#1e120c'), math_('MULTIPLY', pore, v=0.7))
+        height = math_('SUBTRACT', height, math_('MULTIPLY', pore, v=0.5))
+    # quinas claras, cavidades escuras
+    pt = mr(geo.outputs['Pointiness'], 0.46, 0.56)
+    col = mix(col, hexcol('#000000'), math_('MULTIPLY', math_('SUBTRACT', pt, v=0.5, ), v=-0.5) if False else math_('MULTIPLY', mr(geo.outputs['Pointiness'], 0.5, 0.42), v=0.45))
+    col = mix(col, hexcol(light), math_('MULTIPLY', pt, v=0.35))
+    if lichen:
+        lv = node('ShaderNodeTexVoronoi')
+        lv.inputs['Scale'].default_value = 70.0
+        L.new(co, lv.inputs['Vector'])
+        ln = node('ShaderNodeTexNoise')
+        ln.inputs['Scale'].default_value = 30.0
+        L.new(co, ln.inputs['Vector'])
+        patch = math_('MULTIPLY', mr(lv.outputs['Distance'], 0.45, 0.2), mr(ln.outputs['Fac'], 0.5, 0.65))
+        patch = math_('MULTIPLY', patch, mr(sep.outputs['Z'], 0.2, 0.7))
+        col = mix(col, hexcol(lichen), math_('MULTIPLY', patch, v=min(0.6, amt * 2.2)))
+    L.new(col, p.inputs['Base Color'])
+    bump = node('ShaderNodeBump')
+    bump.inputs['Strength'].default_value = 0.35 if kind == 'seixo' else 0.8
+    bump.inputs['Distance'].default_value = 0.003
+    L.new(height, bump.inputs['Height'])
+    L.new(bump.outputs['Normal'], p.inputs['Normal'])
+    return m
 
 
 def pedra(r, loc, m, sc=(1, 1, 1), seed=0, rough=0.32, sub=2, smooth=False, rz=0.0):
@@ -704,7 +949,7 @@ def pedra(r, loc, m, sc=(1, 1, 1), seed=0, rough=0.32, sub=2, smooth=False, rz=0
 
 def rock():
     """matacão de arenito com duas pedras menores, meio enterrados, com líquen"""
-    st = pedra_mat('pedra_arenito', '#2e2822', '#86745c', '#a8a47a', 0.25)
+    st = pedra_mat('pedra_arenito', '#2e261e', '#8e7a5e', '#8e9a6a', 0.25, 'arenito')
     pedra(0.068, (0, 0, 0.022), st, (1.3, 1.0, 0.72), 1, rz=0.4)
     pedra(0.042, (0.078, 0.03, 0.012), st, (1.15, 1.0, 0.7), 2, rz=1.3)
     pedra(0.028, (-0.07, -0.035, 0.008), st, (1.2, 1.0, 0.6), 3, rz=2.1)
@@ -786,7 +1031,7 @@ def tree_round_more(var):
 def pequi():
     """pequizeiro: copa larga em guarda-chuva, tronco grosso e torto, frutos verdes"""
     m = foliage('pequi', '#3b6a26', '#9fc860')
-    t = mat('tronco_pequi', '#5b3f28', 0.9)
+    t = casca('tronco_pequi', '#33241a', '#7e6048', 'fissurada', 1.1)
     cyl(0.04, 0.16, (0, 0, 0.08), t, 8, 0.03, smooth=True)
     cyl(0.026, 0.13, (0.05, 0, 0.19), t, 7, 0.018, rot=(0, math.radians(30), 0), smooth=True)
     cyl(0.024, 0.12, (-0.05, 0.01, 0.18), t, 7, 0.016, rot=(0.2, math.radians(-32), 0), smooth=True)
@@ -800,7 +1045,7 @@ def pequi():
 def lobeira():
     """lobeira: arbusto de folhas grandes cinza-esverdeadas e frutos redondos (fruta-do-lobo)"""
     m = foliage('lobeira', '#4f6b3e', '#a9c08a')
-    cyl(0.018, 0.1, (0, 0, 0.05), mat('tronco', '#6b4a2e', 0.9), 6, 0.014)
+    cyl(0.018, 0.1, (0, 0, 0.05), tronco_mat(), 6, 0.014)
     for i, (x, y, z, r) in enumerate([(0, 0, 0.13, 0.085), (-0.07, 0.01, 0.1, 0.065), (0.07, -0.01, 0.11, 0.07)]):
         blob(r, (x, y, z), m, (1.25, 1.1, 0.8), seed=i + 101, amount=0.4)
     fr = mat('lobeira_fruto', '#9db84a', 0.5)
@@ -1026,7 +1271,7 @@ def chickens():
 
 def rock_b():
     """lajes de canga (laterita): placas chatas, avermelhadas, quebradas em degraus"""
-    st = pedra_mat('pedra_canga', '#2a1e18', '#7a5a46', '#6e6a48', 0.25)
+    st = pedra_mat('pedra_canga', '#2a1a12', '#8a5a3e', '#7e8a5a', 0.2, 'canga')
     for i, (x, y, r, sc, rz) in enumerate([(0, 0, 0.05, (1.45, 1.1, 0.62), 0.3), (0.07, -0.03, 0.034, (1.3, 1, 0.7), 1.1),
                                            (-0.06, 0.025, 0.03, (1.25, 1, 0.75), 2.4), (0.025, 0.05, 0.02, (1.2, 1, 0.8), 0.8)]):
         pedra(r, (x, y, r * sc[2] * 0.3), st, sc, 10 + i, rough=0.34, rz=rz)
@@ -1053,13 +1298,13 @@ def pebbles(var=0):
         pts.append((x, y, r))
     for i, (x, y, r) in enumerate(pts):
         nome, d, l = SEIXO_CORES[R.randrange(len(SEIXO_CORES))]
-        m = pedra_mat(nome, d, l)
+        m = pedra_mat(nome, d, l, kind='seixo')
         pedra(r, (x, y, r * 0.22), m, (1.3 + R.random() * 0.4, 1.0, 0.55 + R.random() * 0.15), 30 + var * 20 + i,
               rough=0.1, sub=3, smooth=True, rz=R.uniform(-0.35, 0.35))
 
 
 def log():
-    bark = mat('tronco', '#6b4a2e', 0.9)
+    bark = tronco_mat()
     ring = mat('anel_tronco', '#d8b07a', 0.8)
     cyl(0.03, 0.22, (0, 0, 0.03), bark, 10, rot=(0, math.pi / 2, 0.4), smooth=True)
     cyl(0.031, 0.004, (0.1 * math.cos(0.4), 0.1 * math.sin(0.4), 0.03), ring, 10, rot=(0, math.pi / 2, 0.4))

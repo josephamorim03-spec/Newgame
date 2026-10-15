@@ -169,9 +169,9 @@
 |---|---|---|---|
 | Hora e sol | posição astronômica (latitude, declinação, ângulo horário) | o sol nasce à direita (leste); sombras, brilho no céu e luz quente seguem o sol | `ATM.sun`, `envStep` |
 | Temperatura e umidade | climatologia + ciclo diário (mínima às 6 h, máxima às 15 h) + mapa; Magnus | boletim do Contemplar; neblina; ar seco e enfumaçado na Seca (serras apagadas) | `Sky.thermo` |
-| Vento | sinótico da monção + mistura diurna + rajadas + frente de rajada | capim, copas, fumaça, chuva inclinada, moinho, som do vento | `Sky.step` |
+| Vento | sinótico da monção + mistura diurna + rajadas + frente de rajada | capim, copas, fumaça, chuva inclinada, moinho, som do vento; as rajadas da v2.1 (capim em onda, folhas e poeira voando) vêm das rajadas do motor e da frente de rajada | `Sky.step`, `ENV.gust` |
 | Cúmulos | térmicas + nível de condensação | no horizonte, base reta no mesmo nível, subindo ao longo do dia; sombras de 300 m a 1,5 km; sobre o vale, os tufos da v1.10 nascem pela cobertura de cúmulos, passam mais alto com o ar seco e crescem em torre na tarde instável | `covers`, `hzStep`, `ovStep`, `cloudsStep` |
-| Pancada | célula com cortina (mm/h), vida acelerada, anda com o vento das nuvens | sombra escura; borda da chuva atravessando o vale; chão molhando por peça | `spawnCell`, `rainAt`, `rainFx`, `wetGround` |
+| Pancada | célula com cortina (mm/h), vida acelerada, anda com o vento das nuvens | sombra escura; borda da chuva atravessando o vale; chão molhando e poças (v2.1) só nas peças onde a chuva passou; respingos onde chove | `spawnCell`, `rainAt`, `rainFx`, `wetGround` |
 | Chuva contínua (ZCAS) | Ci → Cs → As → Ns | véus no céu, teto escuro e chuva fina | `eplan`, `drawSkyBand` |
 | Gotas | Marshall-Palmer + velocidade terminal | garoa fina e deitada; temporal grosso e em pé | `ATM.drops`, `rainFx` |
 | Raio e trovão | 343 m/s | clarão e raio sobre o vale; trovão segundos depois, vindo do lado do raio pela escuta do vale (estalo perto, ronco longe); relâmpago mudo ao longe | `flashFx`, `thunder` (voz `CALL.trovao` de `SOM.md`) |
@@ -226,7 +226,13 @@
   - ponto de orvalho nunca acima da temperatura;
   - nada negativo;
   - mesma semente, mesmo céu; sementes diferentes, céus diferentes.
-- **Desempenho:** o quadro custa o mesmo que antes. No teste sem tela (celular em pé, 2×), deu 5,6 ms contra 5,8 ms da versão sem o clima novo; numa pancada, 6,3 ms contra 5,2 ms.
+- **Desempenho:** o quadro custa o mesmo que antes. No teste sem tela (celular em pé, 2×, sobre a v2.1):
+  - visão normal: 4,9 ms contra 4,8 ms;
+  - numa pancada: 5,7 ms contra 4,2 ms;
+  - zoom de perto: 64 ms contra 63 ms.
+- **Cuidado de memória:** as peças em cache já ocupam ~48 MB de imagem no zoom de perto. Somando os sprites do céu, isso estourava o cache de imagens e triplicava o quadro. Por isso:
+  - os sprites do céu são gerados em meia resolução (nuvem ao longe é macia);
+  - as nuvens do horizonte somem no zoom de perto, quando a câmera olha o chão.
 
 ## 5. O que ficou de fora, e por quê
 
