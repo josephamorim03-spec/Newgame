@@ -6,7 +6,7 @@ import * as THREE from 'three';
 import { U } from './mat.js';
 import { mat, paint, merge, col, V3 } from './props.js';
 import { tag, READ3 } from './regua.js';
-import { LAYOUT, TILES, heightAt, waterDist, inHex, inBoxAt, blocked, inAnyTile, WATER_Y, SPRING, POOL_R, RIVER } from './world.js';
+import { LAYOUT, TILES, heightAt, waterDist, inHex, inBoxAt, blocked, inAnyTile, WATER_Y, SPRING, POOL_R, RIVER, LAKE, lakeDist } from './world.js';
 
 const rnd = (() => { let a = 424242; return () => { a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; })();
 const ell = (rx, ry, rz, x, y, z, c, s = 12) => paint(new THREE.SphereGeometry(1, s, Math.max(6, Math.round(s * 0.7))).scale(rx, ry, rz).translate(x, y, z), c);
@@ -163,7 +163,7 @@ export function buildFauna(scene, opts = {}) {
     a.t -= dt; const rain = U.uRain.value, shelter = a.shade && rain > 0.35;
     if (a.t <= 0) {
       if (shelter) { a.st = 'walk'; a.tgt = near({ x: a.shade[0], z: a.shade[1] }, 3.2, a.area) || a.shade; a.t = 10; }
-      else { const r = rnd(); if (r < a.pg) { a.st = 'graze'; a.t = 4 + rnd() * 9; } else if (r < a.pg + a.pw) { a.st = 'walk'; a.tgt = a.targets && a.targets.length ? (([x, z]) => [x + 0.9, z + 0.6])(a.targets[Math.floor(rnd() * a.targets.length)]) : near(a, a.roam, a.area); a.t = 25; if (!a.tgt) { a.st = 'idle'; a.t = 2; } } else { a.st = 'idle'; a.t = 2 + rnd() * 5; } } }
+      else { const r = rnd(); if (r < a.pg) { a.st = 'graze'; a.t = 4 + rnd() * 9; } else if (r < a.pg + a.pw) { a.st = 'walk'; a.tgt = a.follow ? near(a.follow, 2.5, a.area) : a.targets && a.targets.length ? (([x, z]) => [x + 0.9, z + 0.6])(a.targets[Math.floor(rnd() * a.targets.length)]) : near(a, a.roam, a.area); a.t = 25; if (!a.tgt) { a.st = 'idle'; a.t = 2; } } else { a.st = 'idle'; a.t = 2 + rnd() * 5; } } }
     let want = 0, dh = null;
     if (a.st === 'walk' && a.tgt) { const dx = a.tgt[0] - a.x, dz = a.tgt[1] - a.z, d = Math.hypot(dx, dz);
       if (d < 0.35) { a.st = shelter ? 'idle' : (rnd() < 0.7 ? 'graze' : 'idle'); a.t = 3 + rnd() * 6; } else { want = a.vw * Math.min(1, d / 1.5 + 0.3); dh = Math.atan2(dx, dz); } }
@@ -207,6 +207,17 @@ export function buildFauna(scene, opts = {}) {
   // seriema no cerrado
   const cerr = (x, z) => inHex(x, z, tD.c, 0.9) && !blocked(x, z);
   spawn(seriema, 2, { name: 'seriema', scale: 0.8, area: cerr, pick: pickIn(cerr, tD.c, 16), pg: 0.25, pw: 0.6, vw: 1.4, vg: 0.1, turn: 2.5, stride: 0.55, sep: 2, roam: 9, gp: 0.8, peck: true, dropNeck: 0.1 });
+  // garça-moura na beira da lagoa (cinza, pescoço comprido, bem maior que a garça-branca); capivaras também na lagoa
+  const moura = () => bird({ body: [0.14, 0.16, 0.32], bodyC: col(0x8e96a0), neck: [[0.12, 0.07, 0.05], [0.16, -0.03, 0.04], [0.14, 0.06, 0.036]], headC: col(0xe8e8e4), beak: [0.055, 0.15], beakC: col(0xe0b030), legL: 0.66, legC: col(0x2a2a2a),
+    crest: [0.1, 0.1, col(0x1a1a1e)], tail: [0.1, 0.2, 0.25, col(0x6e7680)] });
+  const lagoaRaso = (x, z) => { const d = lakeDist(x, z); return d > -1.4 && d < 0.2; };
+  spawn(moura, 1, { name: 'garça-moura', scale: 0.88, area: lagoaRaso, pick: pickIn(lagoaRaso, LAKE.c, LAKE.r + 2), pg: 0, pw: 0.3, vw: 0.3, vg: 0, turn: 1, stride: 0.6, sep: 1, roam: 4, gp: 0, strike: true, water: true });
+  const lagoaBeira = (x, z) => { const d = lakeDist(x, z); return d > 0.4 && d < 5 && !blocked(x, z); };
+  spawn(capybara, 3, { name: 'capivara', scale: 0.85, area: lagoaBeira, pick: pickIn(lagoaBeira, LAKE.c, LAKE.r + 4), pg: 0.6, pw: 0.25, vw: 0.5, vg: 0.04, turn: 1.2, stride: 0.7, sep: 1.0, roam: 4, gp: 0.6, dropNeck: 0.05 });
+  // bando de seriemas no cerradão: a primeira escolhe o rumo e as outras vão atrás
+  const tCd = tile('cerradao'), cerrd = (x, z) => inHex(x, z, tCd.c, 0.9) && !blocked(x, z);
+  const lead = all.length; spawn(seriema, 4, { name: 'seriema', scale: 0.8, area: cerrd, pick: pickIn(cerrd, tCd.c, 14), pg: 0.25, pw: 0.6, vw: 1.4, vg: 0.1, turn: 2.5, stride: 0.55, sep: 1.4, roam: 9, gp: 0.8, peck: true, dropNeck: 0.1 });
+  for (let k = 1; k < 4; k++) all[lead + k].follow = all[lead];
   // galinhas ciscando entre as casas
   const quintal = (x, z) => inHex(x, z, tV.c, 0.8) && !blocked(x, z, 0.2);
   spawn(() => galinha([0xf4f0e6, 0xa8502a, 0x3a3230, 0xc8803a][Math.floor(rnd() * 4)]), 6, { name: 'galinha', area: quintal, pick: pickIn(quintal, tV.c, 10), pg: 0.6, pw: 0.35, vw: 0.6, vg: 0.05, turn: 4, stride: 0.22, sep: 0.6, roam: 3, gp: 0.9, peck: true, dropNeck: 0.05 });
