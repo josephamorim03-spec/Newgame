@@ -179,7 +179,7 @@ export function Cloth({ strips = 22, rows = 8, len = 0.6, r0x = 0.17, r0z = 0.12
   const mesh = new THREE.Mesh(geo, m); mesh.frustumCulled = false; mesh.castShadow = true; mesh.receiveShadow = true;
   const ringR = (r, a) => [(r0x + flare * r / rows) * Math.cos(a), (r0z + flare * 0.8 * r / rows) * Math.sin(a)];
   const tmp = new THREE.Vector3(), M = new THREE.Matrix4();
-  let ready = false, hasLast = false; const hp = new THREE.Vector3(), last = new THREE.Vector3();
+  let ready = false, hasLast = false; const Md = new THREE.Matrix4(), Mi = new THREE.Matrix4(), lastM = new THREE.Matrix4();
   function anchor(hipsWorld, waistY, k, out) { const a = rest[k], [x, z] = ringR(0, a); out.set(x, waistY - 0.95 + drop, z).applyMatrix4(hipsWorld); return out; }
   function reset(hipsWorld, waistY) { for (let r = 0; r <= rows; r++) for (let k = 0; k < ns; k++) { const a = rest[k], [x, z] = ringR(r, a), i = at(r, k) * 3; tmp.set(x, waistY - 0.95 + drop - r * seg * 0.98, z).applyMatrix4(hipsWorld); P.set([tmp.x, tmp.y, tmp.z], i); O.set([tmp.x, tmp.y, tmp.z], i); } ready = true; }
   // pernas: cápsulas (a, b, raio) em coordenadas do mundo
@@ -187,9 +187,10 @@ export function Cloth({ strips = 22, rows = 8, len = 0.6, r0x = 0.17, r0z = 0.12
     if (!ready) reset(hipsWorld, waistY);
     anchor(hipsWorld, waistY, 0, tmp); if (tmp.distanceToSquared(new THREE.Vector3(P[0], P[1], P[2])) > 1) reset(hipsWorld, waistY);
     // o pano vai junto com o corpo (só o balanço que sobra é simulado): aguenta quadros lentos sem a saia ficar para trás
-    hp.setFromMatrixPosition(hipsWorld); if (hasLast) { const dx = hp.x - last.x, dy = hp.y - last.y, dz = hp.z - last.z;
-      for (let i = 0; i < N * 3; i += 3) { P[i] += dx; P[i + 1] += dy; P[i + 2] += dz; O[i] += dx * 0.92; O[i + 1] += dy * 0.92; O[i + 2] += dz * 0.92; } }
-    last.copy(hp); hasLast = true;
+    // leva o pano com o movimento todo do quadril (andar e virar), sem deixar a saia para trás nem esticar quando o quadro é lento
+    if (hasLast) { Md.copy(hipsWorld).multiply(Mi.copy(lastM).invert()); const e = Md.elements;
+      for (let i = 0; i < N * 3; i += 3) for (const A of [P, O]) { const x = A[i], y = A[i + 1], z = A[i + 2]; A[i] = e[0] * x + e[4] * y + e[8] * z + e[12]; A[i + 1] = e[1] * x + e[5] * y + e[9] * z + e[13]; A[i + 2] = e[2] * x + e[6] * y + e[10] * z + e[14]; } }
+    lastM.copy(hipsWorld); hasLast = true;
     const g = -9.8 * dt * dt, damp = 0.94, segS = seg * scale;
     const t = performance.now() * 0.001;
     for (let r = 1; r <= rows; r++) for (let k = 0; k < ns; k++) { const i = at(r, k) * 3, rr = r / rows;

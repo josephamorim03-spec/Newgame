@@ -470,3 +470,13 @@ Gente sentada, agachada ou com a enxada no alto é medida **em pé** (a régua d
 
 **Contador de quadros:** o "qps" do rodapé passou a medir no relógio de verdade. Antes ele somava o passo do jogo, que é limitado a 0,1 s, e num aparelho lento mostrava ~10–13 qps quando o real era menos de 1.
 
+
+## 13. Gente e bicho reagem ao tempo (prévia 3D)
+
+- **Chuva:** acima de ~0,3 da chuva a gente corre para casa com a mão na cabeça (fica só o velho da varanda à noite); as galinhas vão para a varanda mais perto, as ovelhas se juntam no meio do aprisco, o gado vai para a sombra da árvore.
+- **Vento forte (> ~6 m/s):** quem está parado se inclina contra o vento e segura o chapéu; saia e avental são pano e abrem com o arrasto (≈ 0,028·u² m/s², a 10 m/s balançam sem virar bandeira).
+- **Calor da seca (11h–15h30):** quem trabalha no sol enxuga a testa de vez em quando; o gado procura a sombra.
+- **Raio:** o trovão assusta: a gente se encolhe, as crianças correm para casa, os bichos disparam e o gado deitado levanta.
+- **Medo e fuga:** cada bicho tem distância de fuga e velocidade de corrida (galinha 2,2 m, capivara 5 m, seriema 7 m, ema 8 m, lobo-guará 12 m…); criança correndo assusta mais, e todos fogem da onça. Fugindo, o bicho ofega (respira mais rápido) por um tempo.
+- **Noite:** o gado e as ovelhas deitam com as pernas dobradas debaixo do corpo e levantam de manhã ou com susto.
+- **O resto do tempo:** todos respiram, o gado espanta mosca com o rabo de vez em quando, os bichos parados olham para quem chega e a gente olha para as crianças que passam correndo.

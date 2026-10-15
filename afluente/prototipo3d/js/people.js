@@ -71,7 +71,7 @@ export function buildPeople(scene, { mobile = false } = {}) {
     p.legs[0].hp.getWorldPosition(_a); p.legs[0].kn.getWorldPosition(_b); p.legs[0].ft.getWorldPosition(_c); p.legs[1].hp.getWorldPosition(_d); p.legs[1].kn.getWorldPosition(_e); p.legs[1].ft.getWorldPosition(_f);
     _h1.copy(_a).lerp(_d, -0.1); _h2.copy(_d).lerp(_a, -0.1); _h1.y += 0.03 * sc; _h2.y += 0.03 * sc;
     const caps = [[_a, _b, 0.09 * bw * sc], [_b, _c, 0.062 * sc], [_d, _e, 0.09 * bw * sc], [_e, _f, 0.062 * sc], [_h1, _h2, 0.125 * bw * sc]];
-    const wv = U.uWindBase.value * (1 + U.uWindIu.value * 0.6), wd = U.uWindDir.value, wind = { x: wd.x * wv * wv * 0.08, z: wd.y * wv * wv * 0.08 };
+    const wv = U.uWindBase.value * (1 + U.uWindIu.value * 0.6), wd = U.uWindDir.value, wind = { x: wd.x * wv * wv * 0.028, z: wd.y * wv * wv * 0.028 };   // arrasto do vento no pano de algodão: a 10 m/s a saia abre e balança, mas não vira bandeira
     for (const c of p.cloth) c.step(Math.min(dt, 1 / 30), p.pelvis.matrixWorld, p.waistY, caps, heightAt, sc, wind);
   }
 
@@ -143,10 +143,14 @@ export function buildPeople(scene, { mobile = false } = {}) {
     const st = Math.min(d, speed * dt); p.x += Math.sin(p.h) * st; p.z += Math.cos(p.h) * st; p.ph += st / (speed > 2 ? 0.55 : 0.38) * Math.PI; set(p, { ...walkPose(p, speed, speed > 2), k: Math.min(1, dt * 12) }); return false; };
 
   let time = 0;
-  updaters.push(dt => { time += dt; const day = U.uDay.value, rain = U.uRain.value, away = day < 0.3 || rain > 0.45;
+  let scare = 0, kidsHome = 0;
+  updaters.push(dt => { time += dt; scare = Math.max(0, scare - dt); kidsHome = Math.max(0, kidsHome - dt); const day = U.uDay.value, rain = U.uRain.value, away = day < 0.3 || rain > 0.3;
     for (const p of people) { const k = Math.min(1, dt * 6); let yOff = 0;
-      const stay = p.night && day < 0.3 && rain < 0.45;   // o da varanda fica, com o lampião
-      if (away && !stay) { if (p.st !== 'casa') { const d = doors[p.home].at; if (goTo(p, d[0], d[1], dt, p.job === 'brincar' ? 2.6 : 1.3)) { p.st = 'casa'; p.g.visible = false; } } }
+      const stay = p.night && day < 0.3 && rain < 0.3;   // o da varanda fica, com o lampião
+      const kidScared = p.job === 'brincar' && kidsHome > 0; p.running = false;
+      if ((away || kidScared) && !stay) { if (p.st !== 'casa') { const d = doors[p.home].at, run = rain > 0.3 || kidScared; p.running = run;
+          if (goTo(p, d[0], d[1], dt, run ? 2.8 : 1.3)) { p.st = 'casa'; p.g.visible = false; }
+          else if (rain > 0.3) { p.arms[1].sh.rotation.x = -2.75; p.arms[1].el.rotation.x = -1.7; p.arms[1].sh.rotation.z = -0.35; p.head.rotation.x = 0.25; } } }   // corre com a mão na cabeça
       else if (p.st === 'casa' || p.st === 'voltando') { p.g.visible = true; if (p.st === 'casa') { const d = doors[p.home].at; p.x = d[0]; p.z = d[1]; p.st = 'voltando'; }
         const bx = p.job === 'brincar' ? p.x0 + Math.cos(p.k) * (p.rad || 2.6) : p.x0, bz = p.job === 'brincar' ? p.z0 + Math.sin(p.k) * (p.rad || 2.6) : p.z0;
         if (goTo(p, bx, bz, dt, p.job === 'brincar' ? 2.6 : 1.2)) { p.st = 'post'; p.h = p.face ?? p.h; } }
@@ -175,7 +179,20 @@ export function buildPeople(scene, { mobile = false } = {}) {
           case 'pescar': set(p, { py: 0.18, hp: [-1.5, -1.4], kn: [0.35, 0.3], sh: [-0.3, -0.9 + Math.sin(t * 0.7) * 0.05], el: [-0.5, -0.6], sp: -0.1, k }); p.h = p.face; break;
         } }
       const gy = p.job === 'sentar' && p.st === 'post' ? groundAtHouse(L.houses[0]) : heightAt(p.x, p.z);
+      // reações ao tempo, por cima do ofício: respira, segura o chapéu e se inclina contra o vento forte, enxuga a testa no calor
+      // da seca, se encolhe com o trovão, olha para quem passa
+      if (p.g.visible && p.st !== 'casa') { const br = Math.sin(time * 1.6 + p.ph); p.spine.rotation.x += br * 0.012;
+        const wb = U.uWindBase.value * (1 + U.uWindIu.value * 0.5), q = Math.max(0, Math.min(1, (wb - 5) / 6)), wd = U.uWindDir.value;
+        if (q > 0) { const fx = Math.sin(p.h), fz = Math.cos(p.h), along = fx * wd.x + fz * wd.y, side = fz * wd.x - fx * wd.y;
+          p.spine.rotation.x += -along * 0.16 * q; p.spine.rotation.z = side * 0.1 * q;
+          if (p.s.hat && p.job !== 'sentar' && p.job !== 'lavar' && (p.st === 'post')) { p.arms[0].sh.rotation.x = -2.7; p.arms[0].el.rotation.x = -1.8; p.arms[0].sh.rotation.z = 0.3; } }
+        else p.spine.rotation.z *= 0.9;
+        const hour = window.__hour ?? 15, hot = U.uSeca.value > 0.6 && hour > 11 && hour < 15.5 && day > 0.6 && rain < 0.05;
+        if (hot && p.st === 'post' && ['enxada', 'colher', 'varrer', 'vaqueiro'].includes(p.job)) { const c = (time * 0.12 + p.ph) % 1; if (c < 0.08) { p.arms[0].sh.rotation.x = -2.5; p.arms[0].el.rotation.x = -2.0; p.arms[0].sh.rotation.z = 0.45; p.head.rotation.x = -0.15; } }
+        if (scare > 1.4) { p.spine.rotation.x += 0.15; p.head.rotation.x = 0.35; for (const a of p.arms) { a.sh.rotation.z = (a === p.arms[0] ? 0.35 : -0.35); } }
+        if (['conversa', 'varrer', 'agua', 'sentar', 'vaqueiro', 'pescar'].includes(p.job) && p.st === 'post') { let bt = null, bd = 6; for (const o of people) { if (o === p || !o.g.visible) continue; const d = Math.hypot(o.x - p.x, o.z - p.z); if (d < bd && (o.running || o.job === 'brincar')) { bd = d; bt = o; } }
+          if (bt) { let e = Math.atan2(bt.x - p.x, bt.z - p.z) - p.h; e = Math.atan2(Math.sin(e), Math.cos(e)); p.head.rotation.y += (Math.max(-1.0, Math.min(1.0, e)) - p.head.rotation.y) * Math.min(1, dt * 3); } } }
       p.g.position.set(p.x, gy + yOff, p.z); p.g.rotation.y = p.h; stepCloth(p, dt); } });
 
-  return { update(dt) { for (const f of updaters) f(dt); }, people };
+  return { update(dt) { for (const f of updaters) f(dt); }, people, startle() { scare = 2.2; kidsHome = 15; } };
 }

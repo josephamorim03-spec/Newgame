@@ -88,7 +88,7 @@ export function buildSkyFx(scene, camera, { mobile = false, focus } = {}) {
       // raios: só na chuva forte (≥ ~12 mm/h)
       const R = ctx.Rr || 0; nextBolt -= dt;
       if (R > 12 && nextBolt <= 0 && !bolt) { const f = focus(), a = rnd() * 6.283, d = 60 + rnd() * 260; const b = strikeAt ? makeBolt(strikeAt[0], strikeAt[1]) : makeBolt(f.x + Math.cos(a) * d, f.z + Math.sin(a) * d); strikeAt = null; scene.add(b.m);
-        bolt = b; boltT = 0; nextBolt = 5 + rnd() * 10 * (25 / Math.max(12, R)); glow.position.copy(b.top).lerp(b.bottom, 0.25); glow.scale.setScalar(160);
+        bolt = b; boltT = 0; fx.strikes = (fx.strikes || 0) + 1; nextBolt = 5 + rnd() * 10 * (25 / Math.max(12, R)); glow.position.copy(b.top).lerp(b.bottom, 0.25); glow.scale.setScalar(160);
         const dist = camera.position.distanceTo(b.bottom); thunders.push({ t: dist / 343, dist }); }
       if (bolt) { boltT = holdBolt ? 0.01 : boltT + dt; const pulse = (t => Math.max(0, 1 - t / 0.07))(boltT) + 0.8 * Math.max(0, 1 - Math.abs(boltT - 0.16) / 0.05) + 0.6 * Math.max(0, 1 - Math.abs(boltT - 0.3) / 0.06);
         boltMat.opacity = Math.min(1, pulse); glow.material.opacity = Math.min(1, pulse) * 0.7; fx.flash = Math.min(1, pulse);
