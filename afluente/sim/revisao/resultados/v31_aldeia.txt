@@ -1,0 +1,48 @@
+# v3.1 aldeia e despensa — node v24_teste.js 16 (vales dia-t0..15)
+rand       pts 60 (30–91) | jogadas med 29 p90 32 máx 32 | verde 12% rio vivo 22% afluentes 0.00 | descartes 0.00 secos 2.6 | bot até 0.0 s
+   pontos: encaixe 24% perfeita 0% missão 1% água 2% especiais 3% afluente 0% cheia 0% produção 16% colheita 26%
+   aldeia: anos 2.0/partida · fartos 34% · casas atendidas 42% · matas da beira cortadas 0.0/partida · secas com friagem 0.9/partida · pontos da aldeia 23%
+   missões: V 0.9/partida 0% cumpridas 57% vencidas · B 1.3/partida 0% cumpridas 60% vencidas · água 0.9/partida 7% cumpridas 80% vencidas · C 1.5/partida 0% cumpridas 38% vencidas
+guloso     pts 506 (157–1752) | jogadas med 47 p90 71 máx 124 | verde 50% rio vivo 84% afluentes 0.75 | descartes 0.00 secos 18.3 | bot até 6.7 s
+   pontos: encaixe 19% perfeita 4% missão 7% água 3% especiais 10% afluente 1% cheia 0% produção 10% colheita 23%
+   aldeia: anos 3.8/partida · fartos 43% · casas atendidas 67% · matas da beira cortadas 0.0/partida · secas com friagem 1.8/partida · pontos da aldeia 15%
+   missões: V 2.0/partida 38% cumpridas 41% vencidas · B 2.1/partida 18% cumpridas 56% vencidas · C 2.4/partida 36% cumpridas 54% vencidas · água 2.1/partida 48% cumpridas 52% vencidas
+cuidadoso  pts 719 (262–1921) | jogadas med 66 p90 83 máx 116 | verde 52% rio vivo 90% afluentes 0.88 | descartes 0.00 secos 8.1 | bot até 24.1 s
+   pontos: encaixe 15% perfeita 4% missão 6% água 3% especiais 9% afluente 1% cheia 0% produção 8% colheita 25%
+   aldeia: anos 4.6/partida · fartos 60% · casas atendidas 83% · matas da beira cortadas 0.0/partida · secas com friagem 2.3/partida · pontos da aldeia 17%
+   missões: V 2.1/partida 41% cumpridas 44% vencidas · B 2.6/partida 21% cumpridas 64% vencidas · C 2.8/partida 34% cumpridas 55% vencidas · água 2.2/partida 66% cumpridas 34% vencidas
+mestre     pts 704 (231–2002) | jogadas med 65 p90 77 máx 126 | verde 49% rio vivo 84% afluentes 0.44 | descartes 0.00 secos 6.4 | bot até 12.4 s
+   pontos: encaixe 15% perfeita 3% missão 9% água 3% especiais 9% afluente 1% cheia 0% produção 8% colheita 25%
+   aldeia: anos 4.6/partida · fartos 50% · casas atendidas 74% · matas da beira cortadas 0.0/partida · secas com friagem 2.1/partida · pontos da aldeia 17%
+   missões: V 2.3/partida 57% cumpridas 27% vencidas · B 2.6/partida 55% cumpridas 33% vencidas · C 2.7/partida 56% cumpridas 33% vencidas · água 2.4/partida 63% cumpridas 32% vencidas
+cuidadoso:corta pts 824 (345–2827) | jogadas med 59 p90 101 máx 153 | verde 51% rio vivo 86% afluentes 0.94 | descartes 0.00 secos 23.6 | bot até 41.1 s
+   pontos: encaixe 14% perfeita 4% missão 5% água 3% especiais 9% afluente 1% cheia 0% produção 8% colheita 24%
+   aldeia: anos 5.0/partida · fartos 90% · casas atendidas 97% · matas da beira cortadas 12.2/partida · secas com friagem 2.1/partida · pontos da aldeia 21%
+   missões: V 2.3/partida 39% cumpridas 53% vencidas · B 3.0/partida 25% cumpridas 60% vencidas · C 3.1/partida 31% cumpridas 53% vencidas · água 2.4/partida 51% cumpridas 46% vencidas
+guloso:corta pts 567 (216–1539) | jogadas med 57 p90 79 máx 118 | verde 51% rio vivo 84% afluentes 0.56 | descartes 0.00 secos 33.9 | bot até 5.2 s
+   pontos: encaixe 19% perfeita 5% missão 7% água 3% especiais 10% afluente 1% cheia 0% produção 10% colheita 22%
+   aldeia: anos 4.1/partida · fartos 52% · casas atendidas 75% · matas da beira cortadas 10.5/partida · secas com friagem 2.0/partida · pontos da aldeia 16%
+   missões: V 2.3/partida 35% cumpridas 43% vencidas · B 2.3/partida 28% cumpridas 61% vencidas · C 2.4/partida 46% cumpridas 44% vencidas · água 2.2/partida 46% cumpridas 51% vencidas
+
+# vale a vale: cuidadoso protegendo × cortando (corte_par.js, toco 1)
+dia-t0	881	68	885	68
+dia-t1	360	45	468	55
+dia-t2	407	52	439	54
+dia-t3	642	64	664	64
+dia-t4	860	68	803	68
+dia-t5	1177	83	898	71
+dia-t6	445	46	582	57
+dia-t7	329	43	576	56
+dia-t8	637	66	483	56
+dia-t9	860	68	1145	82
+dia-t10	557	53	363	42
+dia-t11	262	34	345	44
+dia-t12	331	43	501	53
+dia-t13	1921	116	2827	153
+dia-t14	869	69	646	59
+dia-t15	969	77	1566	101
+protege med 642 (66 jog) · corta med 646 (59 jog) · corta ganha em 11/16 · diferença mediana 30%
+
+# toco 2 e 3
+protege med 642 (66 jog) · corta med 730 (65 jog) · corta ganha em 11/16 · diferença mediana 20%
+protege med 642 (66 jog) · corta med 660 (59 jog) · corta ganha em 10/16 · diferença mediana 15%
