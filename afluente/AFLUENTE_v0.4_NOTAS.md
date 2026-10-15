@@ -634,3 +634,45 @@ O que mudou:
 - **Teste automático novo:** 5 minutos simulados de animação em 4 vales, medindo cada vez que o corpo de um bicho cruza o desenho de um cercado, casa ou copa.
   - Antes: de 862 a 3.454 cruzamentos com cercados por vale.
   - Depois: zero. Os encostos em copa que ainda aparecem são ovelhas atrás de arbustos, desenhadas corretamente por trás deles.
+
+## Rio com forma própria, pedras de verdade, nuvens que se formam e mapa que reage (v1.10)
+
+**Fim do riacho.** Antes, todo rio que acabava virava a mesma cunha triangular, e o rio que batia em terra também. Agora cada peça tem um **esqueleto do rio**, sorteado pela própria peça:
+- **Meandro:** os braços fazem uma curva suave. O deslocamento lateral é zero e sem inclinação no centro e na borda, então o canal continua emendando reto com a peça vizinha.
+- **Fim de riacho:** língua que afina e se curva (40%), poça de contorno irregular (35%) ou braços de vereda que se abrem no brejo (25%).
+- **Rio que bate em terra:** termina em língua ou poça, e nunca em estrela.
+- **Dentro da peça:** o fim inteiro, com a margem de areia, cabe na peça. Se passar da borda, encolhe para o lado aberto.
+- **Pontas:** brejo escuro e, com água, poças com halo de lama, sempre dentro da peça. Antes, essas poças apareciam flutuando na borda.
+- **Um esqueleto só:** o desenho, a composição dos enfeites e o mapa de colisão usam o mesmo esqueleto. Água, buritis, seixos e bichos concordam sobre onde está o rio.
+- **Custo:** o contorno é montado uma vez por peça, em unidades da peça, e só transformado a cada quadro.
+
+**Pedras do rio seco.** As pedras antigas eram bolhas claras de poucos polígonos e, de longe, pareciam nuvenzinhas no chão. Agora:
+- `rock` é um matacão de arenito facetado, com quinas chanfradas e líquen;
+- `rock_b` são pedras de canga (laterita);
+- três grupos novos de seixos rolados (`pebbles`, `pebbles_b`, `pebbles_c`): lisos, de cinco cores (cinza, ocre, ferro, quartzo, escuro), meio enterrados e alongados no sentido da correnteza.
+
+No leito seco, os seixos seguem o fundo do canal, afastados da borda da peça (o vizinho tem os seus), com um matacão às vezes no barranco e capim nas margens.
+
+**Nuvens que se formam.** Antes eram 4 desenhos fixos que só aumentavam e diminuíam. Agora são cúmulos montados tufo a tufo:
+- **Onde nascem:** a maioria nasce sobre o vale, de preferência sobre mata e água viva (evapotranspiração). Na seca, nascem poucas e ralas.
+- **Como crescem:** tufos novos brotam encostados nos antigos, para os lados e um pouco para cima, e cada um incha em cerca de 3 s.
+- **Como se desfazem:** pela borda, com os tufos de fora encolhendo primeiro.
+- **Chuva:** com chuva, as nuvens escurecem aos poucos.
+- **Visibilidade:** ficam bem visíveis na visão de cima, inclusive no começo da partida, quando a câmera ainda está próxima. Ficam transparentes quando a câmera desce perto do chão e ficam mais claras enquanto o jogador escolhe onde pôr a peça.
+- **Desenho:** cada nuvem é montada numa imagem opaca e só então desenhada com transparência, sem manchas de sobreposição. A imagem é refeita a cada 150 ms. O custo caiu de ~8 ms para ~0,1 ms por quadro com 6 a 12 nuvens.
+- **Correção:** um passo de tempo negativo (relógio voltando) não faz mais o tempo das nuvens andar para trás.
+
+**Física da água.**
+- **Chegada:** quando a água chega, ela desce o rio a partir da nascente, pela distância ao longo do rio, e cada peça enche a partir do lado por onde a água entra, com uma frente de espuma. Antes, cada peça só aparecia em degradê, na ordem da distância até a peça colocada.
+- **Seca:** os trechos que perdem a água esvaziam, com a lâmina encolhendo do trecho mais baixo para o mais alto.
+
+**O mapa reage ao baque da peça.**
+- Os bichos da fauna até 1,7 casa de distância fogem um pouco, mais rápido, para um ponto que a regra da espécie permite.
+- Os bichos de poleiro dão um pulinho.
+- O gado e as ovelhas se afastam dentro da área de casa, sem atravessar cerca nem água.
+- Passarinhos pousados na mata vizinha levantam voo e sobem.
+- O rio vivo ao lado faz ondas.
+
+**Testes.**
+- Invariantes do mundo: zero bicho na água, em bloqueio ou fora do tabuleiro. Zero gado solto atrás de objeto alto: desde a v1.9d, a ovelha do cercado pode ficar atrás da cerca, porque a profundidade é ordenada. Zero violação de fauna.
+- Quadro médio de 2,3 ms com nuvens.

@@ -109,3 +109,14 @@ venv/bin/python montar_fauna.py fauna_saida/ fauna.webp fauna.json && python3 em
 ```
 
 O tamanho no jogo não depende do render. O jogo mede a largura do corpo no atlas e aplica a tabela `FLEN` do protótipo. No joão-de-barro e nos bichos de poleiro, essa largura inclui o ninho ou o poleiro: se eles mudarem de tamanho, ajuste `FLEN`.
+
+## v1.10: pedras facetadas e seixos
+
+- `pedra()` em `afluente_sprites.py`: esfera subdividida com os vértices sacudidos ao acaso, base reta e chanfro leve nas quinas. Com `smooth=True` e `rough` baixo, vira seixo rolado.
+- Sprites novos: `pebbles`, `pebbles_b` e `pebbles_c` (grupos de seixos de leito). `rock` e `rock_b` foram refeitos.
+- Para refazer só esses sprites:
+  ```sh
+  SOMENTE=rock,rock_b,pebbles,pebbles_b,pebbles_c venv/bin/python afluente_sprites.py /tmp/rk
+  venv/bin/python atualizar_atlas.py /tmp/rk atlas.png atlas.json
+  ```
+  Depois gere o `atlas.webp` e rode `embutir.py`.
