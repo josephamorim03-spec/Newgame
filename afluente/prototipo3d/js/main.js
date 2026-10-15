@@ -379,6 +379,32 @@ scatter(tC, 4, makeTermite, () => true, 4);
 scatter(tD, 9, () => makeTree('cerrado', 0.8 + rnd() * 0.4), () => true, 5.5);
 scatter(tD, 1, () => makeTree('ipe'), () => true, 7); scatter(tD, 1, () => makeTree('ipeRosa'), () => true, 7);
 scatter(tC, 1, () => makeTree('ipeRosa', 0.9), () => true, 8);
+// pétalas de ipê: na seca, com a árvore florida, caem devagar (~1 m/s), dançam e o vento leva; embaixo forma um tapete da cor da flor
+{ const ipes = scene.children.filter(o => /^ipe/.test(o.userData.kind || '')), N = mobile ? 60 : 110, base = [], seed = [], colA = [], rad = [], gyA = [];
+  const BL = { ipe: 0xffd12a, ipeRosa: 0xf27aaa, ipeBranco: 0xf8f4ec };
+  for (const t of ipes) { const bb = new THREE.Box3().setFromObject(t.children[1] || t), c = bb.getCenter(new THREE.Vector3()), r = Math.max(bb.max.x - bb.min.x, bb.max.z - bb.min.z) / 2, cc = new THREE.Color(BL[t.userData.kind]);
+    for (let i = 0; i < N; i++) { base.push(c.x, bb.max.y * 0.8 + bb.min.y * 0.2, c.z); seed.push(rnd()); colA.push(cc.r, cc.g, cc.b); rad.push(r * 0.8); gyA.push(heightAt(c.x, c.z)); }
+    const carpet = new THREE.Mesh(new THREE.CircleGeometry(r * 1.15, 28).rotateX(-Math.PI / 2), petalCarpet(cc)); carpet.position.set(c.x, heightAt(c.x, c.z) + 0.05, c.z); carpet.renderOrder = 3; scene.add(carpet); }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(base, 3)); g.setAttribute('seed', new THREE.Float32BufferAttribute(seed, 1));
+  g.setAttribute('pcol', new THREE.Float32BufferAttribute(colA, 3)); g.setAttribute('rad', new THREE.Float32BufferAttribute(rad, 1)); g.setAttribute('gy', new THREE.Float32BufferAttribute(gyA, 1));
+  const pm = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, uniforms: { uTime: U.uTime, uSeca: U.uSeca, uWindDir: U.uWindDir, uWindBase: U.uWindBase, uDay: U.uDay, uPx: { value: 600 } },
+    vertexShader: `attribute float seed,rad,gy;attribute vec3 pcol;uniform float uTime,uSeca,uWindBase,uPx;uniform vec2 uWindDir;varying vec3 vC;varying float vA;
+      void main(){float T=max(2.0,position.y-gy)*(0.9+0.25*fract(seed*5.3));float k=fract(uTime/T+seed*7.0);float a=seed*628.3;
+        vec3 p=position+vec3(cos(a)*rad*fract(seed*13.1),0.0,sin(a)*rad*fract(seed*13.1));
+        float drop=k*T*1.0;p.y-=drop;p.xz+=uWindDir*uWindBase*0.8*k*T*0.5+vec2(sin(uTime*2.3+seed*40.0),cos(uTime*1.9+seed*30.0))*0.35;
+        vC=pcol;vA=uSeca*smoothstep(0.6,0.9,uSeca)*(1.0-smoothstep(0.85,1.0,k))*step(0.0,p.y-0.0+50.0);
+        vec4 mv=viewMatrix*vec4(p,1.0);gl_Position=projectionMatrix*mv;gl_PointSize=0.2*uPx/max(1.0,-mv.z)+1.5;}`,
+    fragmentShader: `uniform float uDay;varying vec3 vC;varying float vA;void main(){if(vA<0.02)discard;vec2 c=gl_PointCoord-0.5;if(abs(c.x)+abs(c.y)>0.5)discard;gl_FragColor=vec4(vC*(0.3+0.7*uDay),vA);
+      #include <colorspace_fragment>
+    }` });
+  const pts = new THREE.Points(g, pm); pts.frustumCulled = false; scene.add(pts); window.__petalPx = pm.uniforms.uPx; }
+function petalCarpet(c) { const m = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, uniforms: { uSeca: U.uSeca, uC: { value: c }, uDay: U.uDay },
+  vertexShader: 'varying vec2 vUv;varying vec3 vWp;void main(){vUv=uv;vec4 w=modelMatrix*vec4(position,1.0);vWp=w.xyz;gl_Position=projectionMatrix*viewMatrix*w;}',
+  fragmentShader: `uniform float uSeca,uDay;uniform vec3 uC;varying vec2 vUv;varying vec3 vWp;${NOISE}
+    void main(){float r=length(vUv-0.5)*2.0;float n=vnoise(vWp.xz*7.0)*0.6+vnoise(vWp.xz*19.0)*0.4;float a=step(0.42+r*0.35,n)*(1.0-smoothstep(0.7,1.0,r))*smoothstep(0.6,0.95,uSeca);
+      if(a<0.01)discard;gl_FragColor=vec4(uC*(0.3+0.7*uDay)*0.95,a);
+      #include <colorspace_fragment>
+    }` }); return m; }
 // canela-de-ema: arbusto do cerrado pedregoso, caules grossos e fibrosos que se bifurcam, tufos de folhas finas e flor lilás nas águas
 const canelaMats = { stem: toon({ map: barkTex, color: 0x6a625a }), leaf: toon({ color: 0x7f9c5a, side: THREE.DoubleSide }), flor: toon({ color: 0xb48ad8 }) };
 canelaMats.flor.onBeforeCompile = sh => { shared(sh); sh.vertexShader = sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\ntransformed*=1.0-uSeca;').replace('#include <common>', '#include <common>\nuniform float uSeca;'); };
@@ -592,7 +618,7 @@ function frame() {
   if (!!ST.regua !== reguaOn) { reguaOn = !!ST.regua; showRegua(reguaOn); }
   if (people && reguaOn) for (const p of people.children) p.rotation.y = Math.atan2(camera.position.x - p.position.x, camera.position.z - p.position.z);
   if (camMode === 'jogo') U.uFocus.value.copy(gameCam.focus); else U.uFocus.value.copy(camera.position).add(camera.getWorldDirection(_v).multiplyScalar(0.01));   // câmera livre: só some o que encosta na lente fitShadow(); grassLod();
-  const ctx = { pxPerUnit: renderer.domElement.height / (2 * Math.tan(camera.fov * Math.PI / 360)) }; props.update(dt, ctx); fauna.update(dt, ctx); clouds.update(dt, camera); ctx.Rr = c.Rr; ctx.hour = ST.hour; skyfx.update(dt, ctx);
+  const ctx = { pxPerUnit: renderer.domElement.height / (2 * Math.tan(camera.fov * Math.PI / 360)), hour: ST.hour }; if (window.__petalPx) window.__petalPx.value = ctx.pxPerUnit; props.update(dt, ctx); fauna.update(dt, ctx); clouds.update(dt, camera); ctx.Rr = c.Rr; ctx.hour = ST.hour; skyfx.update(dt, ctx);
   { const f = skyfx.fx.flash; if (f > 0) { skyLight.intensity += f * 3; U.uSkyZen.value.lerp(new THREE.Color(0.85, 0.88, 1), f * 0.5); U.uSkyHor.value.lerp(new THREE.Color(0.9, 0.92, 1), f * 0.45); } }   // clarão do raio
   renderReflection();
   renderer.render(scene, camera);

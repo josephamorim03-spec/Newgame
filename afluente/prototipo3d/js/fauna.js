@@ -30,8 +30,12 @@ export function buildFauna(scene, opts = {}) {
       ell(0.12, 0.08, 0.2, 0, 0.72, -0.3, grey)], g);
     const tail = pivot(g, 0, 1.4, -1.06); mesh([cyl(0.035, 0.02, 0.85, w), ell(0.06, 0.14, 0.06, 0, -0.9, 0, dark)], tail); tail.rotation.x = 0.12;
     const head = pivot(g, 0, 1.36, 1.12);
-    mesh([ell(0.14, 0.15, 0.2, 0, 0.02, 0.12, w), paint(new THREE.CapsuleGeometry(0.1, 0.32, 4, 10).rotateX(Math.PI / 2 - 0.5).translate(0, -0.1, 0.32), w), ell(0.11, 0.1, 0.09, 0, -0.22, 0.5, dark), ell(0.025, 0.025, 0.025, 0.13, 0.06, 0.3, dark, 6), ell(0.025, 0.025, 0.025, -0.13, 0.06, 0.3, dark, 6),
-      ell(0.05, 0.16, 0.025, 0.19, -0.1, 0.1, grey), ell(0.05, 0.16, 0.025, -0.19, -0.1, 0.1, grey), cone(0.035, 0.14, col(0x5a5048)).translate(0.09, 0.2, 0.08), cone(0.035, 0.14, col(0x5a5048)).translate(-0.09, 0.2, 0.08)], head);
+    // cabeça de nelore: comprida e estreita, apontada para baixo, focinho escuro, orelhas compridas caídas, chifres curtos para cima
+    const face = paint(new THREE.CylinderGeometry(0.115, 0.075, 0.42, 10).translate(0, 0.21, 0).rotateX(2.26).translate(0, 0.06, 0.08), w);
+    mesh([ell(0.12, 0.13, 0.14, 0, 0.05, 0.06, w), face, ell(0.085, 0.07, 0.07, 0, -0.21, 0.4, dark), ell(0.02, 0.015, 0.015, 0.04, -0.2, 0.46, col(0x1a1818), 5), ell(0.02, 0.015, 0.015, -0.04, -0.2, 0.46, col(0x1a1818), 5),
+      ell(0.024, 0.024, 0.024, 0.105, 0.02, 0.14, col(0x1a1818), 6), ell(0.024, 0.024, 0.024, -0.105, 0.02, 0.14, col(0x1a1818), 6),
+      ell(0.045, 0.17, 0.02, 0, -0.12, 0, grey).rotateX(0.2).rotateZ(0.6).translate(0.15, 0.02, 0.03), ell(0.045, 0.17, 0.02, 0, -0.12, 0, grey).rotateX(0.2).rotateZ(-0.6).translate(-0.15, 0.02, 0.03),
+      cone(0.03, 0.12, col(0x6a6258)).translate(0, 0.06, 0).rotateX(-0.3).rotateZ(-0.35).translate(0.08, 0.15, 0.02), cone(0.03, 0.12, col(0x6a6258)).translate(0, 0.06, 0).rotateX(-0.3).rotateZ(0.35).translate(-0.08, 0.15, 0.02)], head);
     const legs = [[0.17, 0.98, 0.58, 0], [-0.17, 0.98, 0.58, Math.PI], [0.17, 1.0, -0.66, Math.PI], [-0.17, 1.0, -0.66, 0]].map(([x, y, z, ph]) => { const p = pivot(g, x, y, z);
       mesh([cyl(0.085, 0.045, 0.96, w), ell(0.055, 0.06, 0.065, 0, -0.95, 0.02, dark, 6), ell(0.06, 0.06, 0.06, 0, -0.55, 0, w, 6)], p); p.userData.ph = ph; return p; });
     return { g, head, legs, tail, headY: 1.42 };

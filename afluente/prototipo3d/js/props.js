@@ -33,7 +33,9 @@ function mat(o, { frag = '', vdecl = '', vert = '', fdecl = '', rim = 0, uni = {
 
 export function buildProps(scene, { mobile = false } = {}) {
   const plaster = plasterTexture(31), roofT = roofTexture(37), plank = plankTexture(41), stoneT = stoneTexture(29);
-  const roofMat = mat({ map: roofT, vertexColors: true }, { frag: 'diffuseColor.rgb*=mix(1.0,0.72,uWet);' });
+  const roofMat = mat({ map: roofT, vertexColors: true }, { frag: `{float lo=1.0-smoothstep(2.4,4.6,vLp.y);float moss=smoothstep(0.58,0.8,fbm(vWp.xz*0.8+vWp.y*0.6))*(0.35+0.65*lo)*(1.0-uSeca*0.5);
+    diffuseColor.rgb=mix(diffuseColor.rgb,toLin(vec3(0.40,0.47,0.25))*(0.75+0.5*vnoise(vWp.xz*14.0)),moss*0.6);
+    diffuseColor.rgb*=1.0-0.22*smoothstep(0.62,0.9,vnoise(vec2((vWp.x+vWp.z)*2.2,vWp.y*0.45)));diffuseColor.rgb*=mix(1.0,0.7,uWet);}` });   // musgo e manchas de chuva, mais na parte baixa do telhado
   const woodMat = mat({ map: plank, vertexColors: true }, { frag: 'diffuseColor.rgb*=mix(1.0,0.75,uWet);' });
   const glowMat = mat({ color: 0x2b2622, emissive: 0xffb45a, emissiveIntensity: 0 });
   const stoneMat = mat({ map: stoneT, color: 0xbab4a8 });
@@ -76,9 +78,14 @@ export function buildProps(scene, { mobile = false } = {}) {
     for (const sx of [1, -1]) { const x = sx * w / 2, tri = [[x, H, -d / 2], [x, H, d / 2], [x, H + rh, 0]]; if (sx < 0) tri.reverse(); for (const v of tri) { gp.push(...v); gu.push(v[2] / 5, v[1] / 5); } }
     gab.setAttribute('position', new THREE.Float32BufferAttribute(gp, 3)); gab.setAttribute('uv', new THREE.Float32BufferAttribute(gu, 2)); gab.computeVertexNormals(); walls.push(gab);
     const L = (d / 2 + ov) / Math.cos(pitch), rc = col(h.roof);
-    for (const side of [0, 1]) { const sl = box(w + 2 * ov, 0.1, L, 0, 0, 0, 1); const uv = sl.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * 1 / 1.6, uv.getY(i) / 2.1);
-      sl.rotateX(pitch).translate(0, H + rh - L / 2 * Math.sin(pitch) + 0.08, L / 2 * Math.cos(pitch)); if (side) sl.rotateY(Math.PI); roof.push(paint(sl, rc)); }
-    roof.push(paint(new THREE.CylinderGeometry(0.14, 0.14, w + 2 * ov, 8).rotateZ(Math.PI / 2).translate(0, H + rh + 0.1, 0), rc.clone().multiplyScalar(0.8)));
+    const rows = Math.max(4, Math.round(L / 0.36)), rl = L / rows;
+    for (const side of [0, 1]) for (let r = 0; r < rows; r++) { const sl = box(w + 2 * ov + (rnd() - 0.5) * 0.06, 0.07, rl * 1.18, 0, 0, 0, 1), uv = sl.attributes.uv;
+      for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * (w + 2 * ov) / 1.6 + r * 0.37, uv.getY(i) * rl * 1.18 / 2.1 + r * rl / 2.1);
+      const s0 = (r + 0.5) * rl; sl.rotateX(pitch + 0.05 + (rnd() - 0.5) * 0.02).rotateY((rnd() - 0.5) * 0.008).translate((rnd() - 0.5) * 0.04, H + rh - s0 * Math.sin(pitch) + 0.1, s0 * Math.cos(pitch));
+      if (side) sl.rotateY(Math.PI); roof.push(paint(sl, rc.clone().multiplyScalar(0.9 + rnd() * 0.18))); }
+    roof.push(paint(new THREE.CylinderGeometry(0.14, 0.14, w + 2 * ov, 8).rotateZ(Math.PI / 2).translate(0, H + rh + 0.12, 0), rc.clone().multiplyScalar(0.8)));
+    for (let x = -w / 2 - ov + 0.25; x < w / 2 + ov; x += 0.42) roof.push(paint(box(0.05, 0.29, 0.29, x, H + rh + 0.12, 0, 1), col(0xcfae94)));   // argamassa da cumeeira
+    for (const sz of [1, -1]) for (let x = -w / 2 - ov + 0.3; x < w / 2 + ov - 0.1; x += 0.6) { const c = box(0.07, 0.09, ov + 0.25, 0, 0, 0, 1); c.rotateX(pitch * sz).translate(x, H - 0.02 - (ov / 2) * Math.tan(pitch), sz * (d / 2 + ov / 2 - 0.05)); wood.push(paint(c, col(0x6a4a34))); }   // caibros
     // peças de fachada montadas num plano local (parede em z=0, para fora +z) e levadas para a parede certa
     const place = (geo, x, y, ry, wx, wz) => geo.translate(x, y, 0).rotateY(ry).translate(wx, 0, wz);
     function windowAt(x, y, ry, wx, wz, ww = 0.8, wh = 0.9) {
@@ -246,19 +253,20 @@ export function buildProps(scene, { mobile = false } = {}) {
     scene.updateMatrixWorld(true);
     for (const s of src) { const p = s.local.clone().applyMatrix4(s.g.matrixWorld); for (let i = 0; i < N; i++) { base.push(p.x, p.y, p.z); seed.push(i / N + rnd() * 0.02); } }
     const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(base, 3)); g.setAttribute('seed', new THREE.Float32BufferAttribute(seed, 1));
-    const sm = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, uniforms: { uPx: { value: 600 } },
-      vertexShader: `attribute float seed;uniform float uTime,uWindBase,uPx,uRain;uniform vec2 uWindDir;varying float vA;varying float vAge;
+    const sm = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, uniforms: { uPx: { value: 600 }, uSmoke: { value: 1 } },
+      vertexShader: `attribute float seed;uniform float uTime,uWindBase,uPx,uRain,uSmoke;uniform vec2 uWindDir;varying float vA;varying float vAge;
         void main(){float life=9.0;float a=fract(uTime/life+seed);vec3 p=position+vec3(0.0,a*5.5*(1.0-0.4*uRain),0.0);
           p.xz+=uWindDir*uWindBase*0.5*a*life*0.55+vec2(sin(seed*40.0+uTime*0.7),cos(seed*31.0+uTime*0.6))*a*0.7;
-          vec4 mv=viewMatrix*vec4(p,1.0);gl_Position=projectionMatrix*mv;gl_PointSize=(0.35+a*2.4)*uPx/max(1.0,-mv.z);
-          vA=(1.0-a)*smoothstep(0.0,0.06,a)*0.6;vAge=a;}`,
+          vec4 mv=viewMatrix*vec4(p,1.0);gl_Position=projectionMatrix*mv;gl_PointSize=(0.35+a*(1.4+1.6*uSmoke))*uPx/max(1.0,-mv.z);
+          vA=(1.0-a)*smoothstep(0.0,0.06,a)*0.75*uSmoke;vAge=a;}`,
       fragmentShader: `uniform float uDay;uniform vec3 uSunC;varying float vA;varying float vAge;
         void main(){vec2 c=gl_PointCoord-0.5;float d=length(c);if(d>0.5)discard;float lit=step(0.0,-c.y+c.x*0.3);
           vec3 cc=mix(vec3(0.62,0.62,0.66),vec3(0.95,0.94,0.92),0.5+0.5*lit)*(0.22+0.78*uDay);gl_FragColor=vec4(cc,vA*(1.0-smoothstep(0.25,0.5,d)));
           #include <colorspace_fragment>
         }` });
-    Object.assign(sm.uniforms, U, { uPx: sm.uniforms.uPx }); const pts = new THREE.Points(g, sm); pts.frustumCulled = false; pts.renderOrder = 6; scene.add(pts);
-    updaters.push((dt, ctx) => { sm.uniforms.uPx.value = ctx.pxPerUnit; }); }
+    Object.assign(sm.uniforms, U, { uPx: sm.uniforms.uPx, uSmoke: sm.uniforms.uSmoke }); const pts = new THREE.Points(g, sm); pts.frustumCulled = false; pts.renderOrder = 6; scene.add(pts);
+    updaters.push((dt, ctx) => { sm.uniforms.uPx.value = ctx.pxPerUnit; const h = ctx.hour ?? 15, b = (c, w) => Math.exp(-(((h - c) / w) ** 2));
+      sm.uniforms.uSmoke.value = (0.22 + 0.78 * Math.max(b(6.8, 1.1), b(11.4, 0.7), b(18.2, 1.2), h > 19.5 || h < 5.5 ? 0.35 : 0)) * (1 - 0.4 * U.uRain.value); }); }   // café da manhã, almoço e janta no fogão a lenha
 
   return { update(dt, ctx) { glowMat.emissiveIntensity = Math.pow(1 - U.uDay.value, 1.5) * 1.8 + U.uRain.value * 0.2 * (1 - U.uDay.value); for (const f of updaters) f(dt, ctx); },
     smokeOK: smokeSrc.length };
