@@ -345,6 +345,64 @@ O motor também tem o seu teste (`atmos_teste.js`): "chuva média na última jog
 | Correnteza dando saltos quando a chuva muda | Fase `tempo × (1 + chuva)` | Relógio acumulado (`ENV.flowClk`): a chuva acelera a correnteza sem saltos |
 | Peixe gigante caindo na margem | Peixe de ~3 m saltando 9 m numa direção qualquer | Peixe de ~40 cm salta ~1,6 m **ao longo do canal**; os anéis da saída e da entrada têm ~1 m |
 
+## 11. Régua: tamanhos e física na tabela métrica (v2.3)
+
+**O problema:** a borboleta estava maior que o boi, e as flores e os girassóis maiores que vários bichos. Medindo cada coisa como o jogo a desenha (1 u = 20 m), a régua era desigual: casas, árvores e igreja estavam perto do real, mas o pequeno estava muito exagerado.
+
+**A regra agora:** o que tem 3 m ou mais é desenhado no tamanho real. O que é menor ganha um exagero suave para continuar legível, sempre o mesmo e sem trocar a ordem (o que é maior de verdade continua maior na tela):
+
+`READ(L) = L` para `L ≥ 3 m`; `READ(L) = 3·(L/3)^0,6` para `L < 3 m`.
+
+| | Real | Antes | Agora |
+|---|---|---|---|
+| Borboleta (envergadura) | 8 cm | 2 m | 34 cm |
+| Libélula | 7 cm | 1,8 m | 31 cm |
+| Galinhas | 45 cm | 1,1 m | 50 cm |
+| Flores do campo | 45 cm | 2,4 m | 0,8 m |
+| Touceira de capim | 0,6 m | 3,5 m | 1,1 m |
+| Lâmina de capim | pasto 0,3–0,7 m; capim nativo até 1,2 m | 0,6–2,3 m | 0,3–0,7 m; nativo até 1,2 m |
+| Trigo | 0,9 m | 3,9 m | 1,4 m |
+| Canela-de-ema | 1,5 m | 4,0 m | 2,0 m |
+| Cupinzeiro | 1,6 m | 3,3 m | 1,9 m |
+| Girassol | 2,0 m | 4,1 m | 2,2 m |
+| Milho | 2,3 m | 4,4 m | 2,4 m |
+| Boi (comprimento × altura) | 2,4 × 1,4 m | 5,1 × 2,4 m | 3,0 × 1,4 m |
+| Ovelha (comprimento) | 1,3 m | 3,0 m | 1,9 m |
+| Onça (comprimento com cauda) | 2,4 m | 5,2 m | 2,6 m |
+| Anta | 2,0 m | 5,2 m | 2,4 m |
+| Capivara | 1,2 m | 3,1 m | 1,7 m |
+| João-de-barro | 20 cm | 1,2 m | 0,6 m |
+| Arara voando | 1,1 m | ~5 m | ~1,6 m |
+| Casas, igreja, árvores, moinho | 4–14 m | já no real | sem mudança |
+
+A lavoura ficou mais densa, com plantas menores e mais juntas: o campo continua cheio. Lá, o espantalho e o feno são postos antes das plantas.
+
+**Física das partículas:** antes, tudo caía como pedra (`x = v·t`, `y = v·t + ½g·t²`), e as folhas sopradas saíam a 16–36 m/s com 6 m/s de vento. Agora o que é leve sente o ar: sai com a velocidade inicial e, em `tau` segundos, passa a andar com o vento e a cair na velocidade-limite.
+
+`x(t) = x₀ + v_lim·t + (v₀ − v_lim)·tau·(1 − e^(−t/tau))`
+
+| Partícula | Tamanho | tau | Velocidade-limite |
+|---|---|---|---|
+| Folha arrancada pela rajada, folha caindo | 10 cm (na régua: 39 cm; antes 1,8 m) | 0,6 s | anda com o vento, cai a ~1,2 m/s |
+| Pétala de ipê | 7 cm (na régua: 31 cm; antes 2 m) | 0,5 s | anda com o vento, cai a ~1 m/s |
+| Poeira da seca | nuvem | 0,4 s | anda com o vento |
+| Fumaça da chaminé | pluma | 1,2 s | sobe ~1,5 m/s e anda com o vento |
+| Névoa da mata e da água | véu | 2 s | anda com 60% do vento |
+| Vaga-lume | brilho | — | ~0,5 m/s (antes 2,4 m/s) |
+
+Os efeitos de jogada (folhas e pétalas quando a peça cai ou uma missão se cumpre) usam folhas do mesmo tamanho e o mesmo arrasto.
+
+**Capim no lugar certo:** o mapa de colisão dos bichos passou a marcar as ruas da vila (`WB.RUA`). O capim só nasce onde o chão é capim: fora da água, das construções, da área que um objeto alto cobre na tela, da lavoura e das ruas. Antes nascia nas ruas de terra e, desenhado depois das casas, aparecia em cima dos telhados. Na margem de fora, a vegetação chega até a beira.
+
+**Margem do rio:** antes eram duas faixas lisas (areia e marrom) paralelas à água. Agora, de fora para dentro:
+- terra úmida que passa por baixo do capim, num degradê sem borda;
+- barro com a textura do leito (renderizado no Blender), com seixos;
+- barro molhado mais escuro junto da água;
+- na margem de lá, a face do barranco (o degrau até a água);
+- uma linha d'água fina.
+
+Na nascente, o chão é de brejo, mais estreito e com capim.
+
 ## Fontes
 
 - Estação chuvosa do Cerrado (mais de 90% da chuva de outubro a abril) e veranicos — [Embrapa, circular técnica](https://www.infoteca.cnptia.embrapa.br/infoteca/bitstream/doc/548605/1/cirtec09.pdf); [Embrapa, comunicado técnico](https://www.infoteca.cnptia.embrapa.br/infoteca/bitstream/doc/548606/1/comtec04.pdf); [duração da estação chuvosa e veranicos no Cerrado (UFV)](https://locus.ufv.br/handle/123456789/33732)

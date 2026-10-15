@@ -1786,7 +1786,8 @@ function emit(name,wx,wy,n,o){
     const a=(o.ang??-Math.PI/2)+(Math.random()-0.5)*(o.spread??Math.PI*2),v=(o.v??1)*(0.6+Math.random()*0.8);
     PARTS.push({name:nm,wx:wx+(Math.random()-0.5)*(o.jx??0),wy:wy+(Math.random()-0.5)*(o.jy??0),vx:Math.cos(a)*v+(o.vx??0),vy:Math.sin(a)*v,
       g:o.g??0,life:(o.life??800)*(0.8+Math.random()*0.4),t0:now+(o.delay??0),size:(o.size??0.2)*(0.75+Math.random()*0.5),
-      grow:o.grow??0,rot:Math.random()*6.28,vr:(o.vr??0)*(Math.random()-0.5),alpha:o.alpha??1,color:o.color,flutter:o.flutter,add:o.add});
+      grow:o.grow??0,rot:Math.random()*6.28,vr:(o.vr??0)*(Math.random()-0.5),alpha:o.alpha??1,color:o.color,flutter:o.flutter,add:o.add,
+      tau:o.tau,tx:o.tx??0,ty:(o.ty??0)*(0.75+Math.random()*0.5)});
   }
   if(PARTS.length>380)PARTS.splice(0,PARTS.length-380);
 }
@@ -1798,7 +1799,13 @@ function drawParts(g,t){
   for(let i=PARTS.length-1;i>=0;i--){
     const p=PARTS[i],age=t-p.t0;if(age<0)continue;if(age>p.life){PARTS.splice(i,1);continue;}
     const u=age/p.life,sec=age/1000;
-    const x=(p.wx+p.vx*sec)*cam.s+cam.x,y=(p.wy+p.vy*sec+0.5*p.g*sec*sec)*cam.s+cam.y,size=p.size*cam.s*(1+p.grow*u);
+    // v2.3: com tau, a partícula sente o ar: sai com (vx, vy) e em ~tau segundos passa a andar com o vento e a cair na
+    // velocidade-limite (tx, ty), x(t) = x0 + vT·t + (v0 − vT)·tau·(1 − e^(−t/tau)). Folha, pétala, poeira e fumaça
+    // são assim; sem tau (pedra, respingo pesado) vale a queda livre de antes
+    let px,py;if(p.tau){const e=p.tau*(1-Math.exp(-sec/p.tau));px=p.wx+p.tx*sec+(p.vx-p.tx)*e;py=p.wy+p.ty*sec+(p.vy-p.ty)*e;
+      if(p.flutter)px+=Math.sin(sec*4.2+p.rot*5)*0.006;}
+    else{px=p.wx+p.vx*sec;py=p.wy+p.vy*sec+0.5*p.g*sec*sec;}
+    const x=px*cam.s+cam.x,y=py*cam.s+cam.y,size=p.size*cam.s*(1+p.grow*u);
     const fade=u<0.12?u/0.12:1-Math.max(0,(u-0.45)/0.55);
     g.save();g.globalAlpha=p.alpha*fade;if(p.add)g.globalCompositeOperation='lighter';
     if(p.name[0]==='~'){const c=softTex(p.name.slice(1));g.drawImage(c,x-size/2,y-size/2,size,size);}
@@ -1856,6 +1863,19 @@ function vtx(x,y,R,i,side){const a=ang(i)+side*Math.PI/6;return[x+R*Math.cos(a),
 function hexPath(g,x,y,R){g.beginPath();for(let k=0;k<6;k++){const a=Math.PI/180*(60*k-30);const X=x+R*Math.cos(a),Y=y+R*Math.sin(a);k?g.lineTo(X,Y):g.moveTo(X,Y);}g.closePath();}
 function rr(g,x,y,w,h,r){g.beginPath();g.moveTo(x+r,y);g.arcTo(x+w,y,x+w,y+h,r);g.arcTo(x+w,y+h,x,y+h,r);g.arcTo(x,y+h,x,y,r);g.arcTo(x,y,x+w,y,r);g.closePath();}
 function h01(a,b){return(E.hashStr(a+':'+b)%10000)/10000;}
+// ---------- régua (v2.3): tudo no vale segue a tabela métrica (1 u = 20 m). O que tem 3 m ou mais é desenhado no tamanho
+// real; o que é menor ganha um exagero suave para continuar legível, READ(L) = 3·(L/3)^0,6, que nunca troca a ordem
+// (o que é maior de verdade continua maior na tela): borboleta de 8 cm → 34 cm; flor de 45 cm → 96 cm; boi de 2,4 m → 2,6 m.
+// Antes a borboleta tinha 2 m, as flores 2,4 m, a onça 5 m e o boi 5 m. Tabela completa em CLIMA.md, seção 11.
+const READ=L=>L>=3?L:3*Math.pow(L/3,0.6);
+// vento do momento em unidades do vale por segundo (1 u = 20 m), para o que o ar carrega
+const airU=()=>[Math.cos(ENV.wind.a)*ENV.wind.ms/20,Math.sin(ENV.wind.a)*ENV.wind.ms/20*0.5];
+// altura real (m) dos enfeites pequenos; o fator de cada sprite sai da altura que ele tem hoje no atlas (BOX)
+const REAL_H={flowers:0.45,tuft:0.6,tuft_gold:0.5,reeds:2.0,sunflower:2.0,corn:2.3,wheat:0.9,chickens:0.45,termite:1.6,canela:1.5};
+const SZK={};
+function sizeK(n){if(n in SZK)return SZK[n];const b=n.replace(/_seco$/,'').replace(/~d$/,''),L=REAL_H[b];let k=1;
+  if(L&&typeof ATLAS!=='undefined'&&ATLAS[b]&&BOX[b])k=READ(L)/((-BOX[b][1])/ATLAS[b][6]*1.3*20);
+  return SZK[n]=k;}
 // hash inteiro rápido (0..1) para efeitos de muitas partes por quadro (gotas)
 function fh(n){n=Math.imul(n^n>>>16,0x45d9f3b);n=Math.imul(n^n>>>16,0x45d9f3b);return((n^n>>>16)>>>0)/4294967296;}
 
@@ -2160,7 +2180,7 @@ function edgeState(board,k,e){const out=[];for(let d=0;d<6;d++){const n=board.ge
 // (até 0,14 u da água), BLOQ (pegada de casa, cercado, cerca, tronco, pedra, cupinzeiro), OCLU (a área "atrás" de
 // um objeto alto, que ele cobriria na tela: um bicho ali seria desenhado por cima dele), CERC (dentro do cercado),
 // ROCA (lavoura). Os bichos só escolhem destinos e caminhos que a regra da espécie permite.
-const WB={TERRA:1,AGUA:2,MARGEM:4,BLOQ:8,OCLU:16,CERC:32,ROCA:64};
+const WB={TERRA:1,AGUA:2,MARGEM:4,BLOQ:8,OCLU:16,CERC:32,ROCA:64,RUA:128}; // RUA (v2.3): rua de terra da vila (o capim não nasce nela)
 const WH=0.04;
 const SOLID=new Set(['church','windmill','barn','well','sobrado','sobrado_b','venda','coreto','garden','cart','haybale','scarecrow','chickens','termite','rock','rock_b','log','bush','pequi','lobeira']);
 const CROPS=new Set(['wheat','corn','sunflower']);
@@ -2186,6 +2206,8 @@ function buildWorld(s){
       if(d<0.3)F[q]|=WB.AGUA;else if(d<0.44)F[q]|=WB.MARGEM;});
     // objetos do layout da peça
     const L=layoutOf(k,tl.e,tileStatic(s,k));
+    for(const[a,b]of L.paths){const ax=cx+a[0],ay=cy+a[1],vx=b[0]-a[0],vy=b[1]-a[1],l2=vx*vx+vy*vy||1e-9,hw=0.085; // ruas (meia-largura do desenho)
+      each(ax+vx/2,ay+vy/2,Math.abs(vx)/2+hw,Math.abs(vy)/2+hw,(qx,qy,q)=>{const t=Math.max(0,Math.min(1,((qx-ax)*vx+(qy-ay)*vy)/l2));if(Math.hypot(qx-ax-vx*t,qy-ay-vy*t)<hw)F[q]|=WB.RUA;});}
     for(const d of L.decos){const name=d[2],sc=d[3]*1.3/1.3,px=cx+d[0],py=cy+d[1];
       const[w,h]=sprDim(name,d[3]),big=BIGS.has(name)||name.startsWith('house')||name.startsWith('sobrado'),tree=FOLIAGE.has(name)||name==='buriti'||name.startsWith('pine')||name.endsWith('_seco');
       const G2=objGeom(name,d[3]*1.3,d[4],px,py);W.objs.push([name,px,py,w,h]);
@@ -2273,7 +2295,7 @@ function objGeom(name,k,flip,px,py,s=1){const m=ATLAS[name],B=typeof BOX!=='unde
   return{c,sb:[px+l,py+B[1]*u,px+r,py+B[3]*u],fb:[fc-fw,py-db,fc+fw,py+db],fc,db};}
 const ovr=(a,b,t)=>Math.min(a[2],b[2])-Math.max(a[0],b[0])>t&&Math.min(a[3],b[3])-Math.max(a[1],b[1])>t;
 const MSCALE={chickens:0.55,haybale:0.55,cart:0.66,pen:0.76,capybara:0.42,egret:0.66,loboguara:0.5};
-const DYNSC={cow:0.88,sheep:0.72}; // gado e ovelhas que andam (desenhados fora do atlas da peça)
+const DYNSC={cow:0.52,sheep:0.44}; // v2.3 régua: boi de 2,4 m × 1,4 m → 3 m × 1,4 m na tela (antes 5 m); ovelha de 1,3 m → 1,8 m (antes 3 m) // gado e ovelhas que andam (desenhados fora do atlas da peça)
 const LAYC=new Map();
 function layoutOf(k,e,o){
   const vs=o.vs||[0,0,0,0,0,0],sp=o.sp||[],es=o.es||[0,0,0,0,0,0];
@@ -2302,7 +2324,8 @@ function compose(x,y,R,s,e,vs,sp,seed,o,decos,paths){CUR_AREA=null;CUR_TS=null;C
   const SECA=(o.ctx||'').includes('s'),foot=[],wOf=(name,sc)=>{const m=ATLAS[name];return m?m[2]/m[6]*sc*1.3*s:0.3*s;};
   const OBJ=[],inHex=(qx,qy,k)=>{const dx=Math.abs(qx-x),dy=Math.abs(qy-y);return dx<=R*0.866*k&&dx*0.5+dy*0.866<=R*0.866*k;};
   const inArea=(qx,qy)=>!CUR_TSIN||CUR_TSIN.some(T=>inTri(qx,qy,T));
-  const placed=[],add=(px,py,name,sc,rad,tag)=>{if(!SECA&&name.startsWith('ipe_'))name=name==='ipe_white'?'tree_a':'tree_d';
+  const placed=[],add=(px,py,name,sc,rad,tag)=>{sc*=sizeK(name);rad*=Math.sqrt(sizeK(name)); // v2.3: régua
+    if(!SECA&&name.startsWith('ipe_'))name=name==='ipe_white'?'tree_a':'tree_d';
     sc*=MSCALE[name]??1;const ux=(px-x)/s,uy=(py-y)/s,h=H(Math.floor(ux*1300+uy*700)&1023),flip=FLIP.has(name)&&h<0.5,wet=tag==='w'||WATERY.has(name);
     const G2=objGeom(name,sc*1.3,flip,px,py,s);
     if(G2){const{c,sb,fb,fc}=G2,big=c==='B'||c==='P',fpts=[[fb[0],fb[1]],[fb[2],fb[1]],[fb[0],fb[3]],[fb[2],fb[3]],[fc,py]];
@@ -2403,12 +2426,12 @@ function compose(x,y,R,s,e,vs,sp,seed,o,decos,paths){CUR_AREA=null;CUR_TS=null;C
     }else if(A.b==='C'){
       // lavoura em fileiras, na direção das linhas da textura da variante
       const nm=A.vv.name,crop=nm==='milho'?'corn':nm==='girassol'?'sunflower':nm==='trigo'?'wheat':'haybale',th=nm==='trigo'?Math.PI/4:0;
-      const u=[Math.cos(th),Math.sin(th)],v=[-u[1],u[0]];let n=0;const max=nm==='roças'?per:per*3;
-      for(let a=-R;a<=R&&n<max;a+=s*0.25)for(let b=-R;b<=R&&n<max;b+=s*0.27){const j=H(Math.floor((a+R)/s*700+(b+R)/s*1300)&1023);
-        const px=x+u[0]*a+v[0]*b+(j-0.5)*s*0.05,py=y+u[1]*a+v[1]*b;if(!Ts.some(T=>inTri(px,py,T))||j>0.55||!free(px,py,0.16))continue;
-        add(px,py,crop,crop==='haybale'?0.85:0.85+j*0.3,0.14);n++;}
       const acc=pickW(H(salt+30),VIL?[['scarecrow',2],['haybale',2],['cart',2],['',1]]:[['haybale',1],['',4]]);
-      if(acc)scatter(0.2,()=>0.9,1,(px,py)=>add(px,py,acc,1,0.2));
+      if(acc)/* v2.3: o espantalho e o feno primeiro (a lavoura na escala é mais densa e tomava o lugar) */scatter(0.2,()=>0.9,1,(px,py)=>add(px,py,acc,1,0.2));
+      const kc=Math.max(0.5,Math.min(1,sizeK(crop))),u=[Math.cos(th),Math.sin(th)],v=[-u[1],u[0]];let n=0;const max=nm==='roças'?per:Math.round(per*3/kc/kc); // v2.3: plantas na escala, mais juntas
+      for(let a=-R;a<=R&&n<max;a+=s*0.25*kc)for(let b=-R;b<=R&&n<max;b+=s*0.27*kc){const j=H(Math.floor((a+R)/s*700+(b+R)/s*1300)&1023);
+        const px=x+u[0]*a+v[0]*b+(j-0.5)*s*0.05,py=y+u[1]*a+v[1]*b;if(!Ts.some(T=>inTri(px,py,T))||j>0.55||!free(px,py,0.16*kc))continue;
+        add(px,py,crop,crop==='haybale'?0.85:0.85+j*0.3,0.14);n++;}
     }else{ // pasto e campo nativo: a variante dá o chão, a vizinhança dá a vida
       const nm=A.vv.name,dead=!VIL&&!WAT;
       const dyn=(an,px,py,sc2,rad)=>{if(inRiver(px,py,s*((an==='cow'?0.12:0.08)+rad*1.15)))return;if(o.dyn)o.dyn.push([an,px-x,py-y,sc2,rad]);placed.push([px,py,0.2*s]);};
@@ -3019,7 +3042,7 @@ function nightLights(g,sz,t){
     g.globalAlpha=ENV.night*0.85;g.fillStyle='#ffe2a0';const d=Math.max(1,sz*0.022);g.fillRect(px-d/2,py-d/2,d,d);}
   g.restore();
   if(!RM&&Math.random()<ENV.night*0.25*(1-0.85*ENV.rain)){const[x0,x1,y0,y1]=G.bb||[-3,3,-3,3];
-    emit('~#d8ff8a',x0+Math.random()*(x1-x0),y0+Math.random()*(y1-y0),1,{ang:-Math.PI/2,spread:6,v:0.12,life:2600,size:0.06,alpha:0.9,add:true});}
+    emit('~#d8ff8a',x0+Math.random()*(x1-x0),y0+Math.random()*(y1-y0),1,{ang:-Math.PI/2,spread:6,v:0.025,life:2600,size:0.04,alpha:0.9,add:true}); /* v2.3: vaga-lume a ~0,5 m/s */}
 }
 
 // ---------- luz, fundo e vida (v1.0)
@@ -3157,7 +3180,10 @@ const GRASS=new Map();
 // mais perto a câmera, mais lâminas aparecem (o orçamento por quadro é fixo). O vento curva as lâminas em rajadas
 // que atravessam o vale; a chuva as deita e escurece; o baque de uma peça manda uma onda pelo capim em volta.
 function grassFor(k,tl){
-  const tc=TCACHE.get(k),occ=tc?tc.occ:null,c=GRASS.get(k);if(c&&c.e===tl.e&&c.occ===occ)return c.list;
+  const tc=TCACHE.get(k),occ=tc?tc.occ:null,c=GRASS.get(k);if(c&&c.e===tl.e&&c.occ===occ&&c.w===G.world)return c.list;
+  // v2.3: o mapa de colisão diz onde o chão é capim. Antes o capim nascia nas ruas de terra da vila e, desenhado
+  // depois das casas, aparecia em cima dos telhados (a lâmina atrás da casa era pintada por cima dela)
+  const NOGRASS=WB.AGUA|WB.BLOQ|WB.OCLU|WB.ROCA|WB.RUA; // a margem de fora (MARGEM) tem capim: a vegetação chega na beira
   const list=[],[wx,wy]=wpos(k),ws=[];for(let i=0;i<6;i++)if(tl.e[i]==='A')ws.push(i);
   const RK=ws.length?riverSkel(ws,{blocked:blockedSides(G.s.board,k,tl.e),src:tl.src,kind:tl.sp},k):null;
   for(let i=0;i<6;i++){const L=landOf(tl.e[i]);const dens=L==='G'?1:L==='B'?0.4:L==='V'?0.22:0;if(!dens)continue;
@@ -3166,10 +3192,11 @@ function grassFor(k,tl){
     for(let j=0;j<N;j++){let a=h01(k,i*997+j*3+1),b=h01(k,i*997+j*3+2);if(a+b>1){a=1-a;b=1-b;}
       const px=((x1-wx)*a+(x2-wx)*b)*0.94,py=((y1-wy)*a+(y2-wy)*b)*0.94;
       if(occ&&occ.some(q=>Math.hypot(q[0]-px,(q[1]-py)*1.6)<q[2]))continue;
-      if(RK&&riverRel(px,py,RK)<0.4)continue;
+      if(RK&&riverRel(px,py,RK)<0.31)continue;
+      if(G.world){const f=wflag(wx+px,wy+py);if(!(f&WB.TERRA)||(f&NOGRASS))continue;}
       const u=h01(k,i*997+j*3+3);
-      list.push([wx+px,wy+py,(tall?0.08:0.05)*(0.55+0.9*u)*(L==='G'?1:0.8),(h01(k,i*997+j*3+4)-0.5)*0.9,(u*7.31)%1,h01(k,i*997+j*3+5),L==='B'?1:0]);}}
-  GRASS.set(k,{e:tl.e,occ,list});return list;
+      list.push([wx+px,wy+py,(tall?0.04:0.024)*(0.55+0.9*u)*(L==='G'?1:0.8),/* v2.3 régua: pasto 0,3–0,7 m, capim nativo alto até 1,2 m */(h01(k,i*997+j*3+4)-0.5)*0.9,(u*7.31)%1,h01(k,i*997+j*3+5),L==='B'?1:0]);}}
+  GRASS.set(k,{e:tl.e,occ,list,w:G.world});return list;
 }
 function grassBlades(g,s,sz,t){
   if(RM||sz<28)return;const fade=clamp01((sz-28)/14),dens=clamp01((sz-24)/76)*(QUAL.lvl>0?0.45:1),W2=ENV.wind,ca=Math.cos(W2.a),sa=Math.sin(W2.a),T=t/1000;
@@ -3264,14 +3291,14 @@ function lifeFx(g,s,sz,t){
     emit('sparkle',x+(Math.random()-0.5)*0.5,y+(Math.random()-0.5)*0.35,1,{v:0,life:700,size:0.08+Math.random()*0.06,vr:2,add:true,alpha:0.9});}
   if((ENV.gust||0)>0.25&&Math.random()<dt/70*ENV.gust){const fs=[...s.board].filter(([k,tl])=>tl.e.filter(c=>c==='B').length>=2);
     if(fs.length){const[k]=fs[Math.floor(Math.random()*fs.length)],[x,y]=wpos(k);const W2=ENV.wind;
-      emit(s.seca?'leaf2':'leaf',x+(Math.random()-0.5)*1.1,y-0.4-Math.random()*0.3,1,{ang:W2.a,spread:0.6,v:0.8+ENV.gust,vx:W2.x*1.6,g:0.5,life:2600,size:0.09,vr:5,flutter:true,alpha:0.95});}}
+      {const[ax,ay]=airU();emit(s.seca?'leaf2':'leaf',x+(Math.random()-0.5)*1.1,y-0.4-Math.random()*0.3,1,{ang:W2.a,spread:0.6,v:0.03,tau:0.6,tx:ax,ty:ay+0.06,life:4200,size:READ(0.1)/20,vr:5,flutter:true,alpha:0.95});}}} // v2.3: folha de 10 cm, com o vento, caindo a ~1,2 m/s
   if(s.seca&&(ENV.gust||0)>0.35&&Math.random()<dt/90){const dr=[...s.board.keys()].filter(k=>!G.wet.has(k));if(dr.length){const[x,y]=wpos(dr[Math.floor(Math.random()*dr.length)]);
-    emit('~#dcc08a',x+(Math.random()-0.5)*1.2,y+(Math.random()-0.5)*0.8,1,{ang:ENV.wind.a,spread:0.4,v:0.6,vx:ENV.wind.x,life:1800,size:0.35,grow:2,alpha:0.3});}}
+    {const[ax,ay]=airU();emit('~#dcc08a',x+(Math.random()-0.5)*1.2,y+(Math.random()-0.5)*0.8,1,{ang:ENV.wind.a,spread:0.4,v:0.05,tau:0.4,tx:ax,ty:ay-0.01,life:2400,size:0.3,grow:2,alpha:0.3});}}} // v2.3: a poeira anda com o vento
   if((ENV.wetness||0)>0.45&&ENV.rain<0.35&&ENV.night<0.7&&Math.random()<dt/420*ENV.wetness){const ms=[...s.board].filter(([k,tl])=>tl.e.includes('B')||s.alive.has(k));
     if(ms.length){const[k]=ms[Math.floor(Math.random()*ms.length)],[x,y]=wpos(k); // névoa baixa saindo da mata e da água
-      emit('~#ffffff',x+(Math.random()-0.5)*1.2,y+(Math.random()-0.5)*0.7,1,{ang:ENV.wind.a,spread:0.5,v:0.04,vx:ENV.wind.x*0.15,life:7000,size:0.9,grow:1.6,alpha:0.16*ENV.wetness});}}
+      {const[ax,ay]=airU();emit('~#ffffff',x+(Math.random()-0.5)*1.2,y+(Math.random()-0.5)*0.7,1,{ang:ENV.wind.a,spread:0.5,v:0.01,tau:2,tx:ax*0.6,ty:ay*0.6-0.01,life:7000,size:0.9,grow:1.6,alpha:0.16*ENV.wetness});}}}
   if(s.seca&&Math.random()<dt/260){const fs=[...s.board].filter(([k,tl])=>tl.e.includes('B'));if(fs.length){const[k]=fs[Math.floor(Math.random()*fs.length)],[x,y]=wpos(k);
-    emit('petal',x+(Math.random()-0.5)*1.2,y-0.6,1,{ang:Math.PI/2,spread:1,v:0.25,g:0.35,vx:0.25,life:3200,size:0.1,vr:3,flutter:true,alpha:0.95});}}
+    {const[ax,ay]=airU();emit('petal',x+(Math.random()-0.5)*1.2,y-0.6,1,{ang:Math.PI/2,spread:1,v:0.02,tau:0.5,tx:ax,ty:ay+0.05,life:5000,size:READ(0.07)/20,vr:3,flutter:true,alpha:0.95});}}}
   // v2.3: pólen só com tempo seco e de dia
   if(ENV.rain<0.15&&ENV.night<0.5&&Math.random()<dt/(s.seca?300:900)){const[x0,x1,y0,y1]=G.bb||[-3,3,-3,3];
     emit('~'+(s.seca?'#ffe7a8':'#ffffff'),x0-1+Math.random()*(x1-x0+2),y0-1+Math.random()*(y1-y0+2),1,{ang:-0.3,spread:0.6,v:0.12,vx:ENV.wind.x*0.5,life:5000,size:0.07,alpha:0.55*(1-ENV.night),add:true});}
@@ -3306,13 +3333,13 @@ function waterLife(g,s,sz,t){
   if(FLIES.length>want)FLIES.length=want;
   for(const f of FLIES){if(t>f.next){const k=alive[Math.floor(Math.random()*alive.length)],[wx,wy]=wpos(k);f.tx=wx+(Math.random()-0.5)*0.8;f.ty=wy-0.25-Math.random()*0.3;f.next=t+900+Math.random()*2200;}
     f.x+=(f.tx-f.x)*Math.min(1,dt/180);f.y+=(f.ty-f.y)*Math.min(1,dt/180);
-    const px=f.x*sz+cam.x+Math.sin(t/120+f.ph)*sz*0.012,py=f.y*sz+cam.y+Math.cos(t/170+f.ph)*sz*0.01,L=sz*0.09;
+    const px=f.x*sz+cam.x+Math.sin(t/120+f.ph)*sz*0.012,py=f.y*sz+cam.y+Math.cos(t/170+f.ph)*sz*0.01,L=sz*READ(0.07)/20; // v2.3 régua (antes 1,8 m)
     g.save();g.translate(px,py);g.fillStyle='rgba(255,255,255,.45)';const fl=0.6+0.4*Math.abs(Math.sin(t/18+f.ph));
     for(const sd of[-1,1]){g.beginPath();g.ellipse(L*0.1,sd*L*0.38*fl,L*0.36,L*0.11,sd*0.25,0,7);g.fill();g.beginPath();g.ellipse(-L*0.12,sd*L*0.34*fl,L*0.3,L*0.1,-sd*0.25,0,7);g.fill();}
     g.strokeStyle=f.hue;g.lineWidth=Math.max(1,L*0.12);g.lineCap='round';g.beginPath();g.moveTo(-L*0.55,0);g.lineTo(L*0.4,0);g.stroke();g.restore();}
   // folhas que se soltam dos bosques com o vento (na época das águas)
   if(!s.seca&&Math.random()<dt/1400){const fs=[...s.board].filter(([k,tl])=>tl.e.includes('B'));if(fs.length){const[k]=fs[Math.floor(Math.random()*fs.length)],[x,y]=wpos(k);
-    emit('leaf',x+(Math.random()-0.5)*1.2,y-0.7,1,{ang:Math.PI/2,spread:1,v:0.2,g:0.3,vx:ENV.wind.x*0.8,life:3400,size:0.1,vr:3,flutter:true,alpha:0.95});}}
+    {const[ax,ay]=airU();emit('leaf',x+(Math.random()-0.5)*1.2,y-0.7,1,{ang:Math.PI/2,spread:1,v:0.02,tau:0.6,tx:ax,ty:ay+0.06,life:5000,size:READ(0.1)/20,vr:3,flutter:true,alpha:0.95});}}}
 }
 function vignette(g,w,h){const v=g.createRadialGradient(w/2,h*0.52,Math.min(w,h)*0.35,w/2,h*0.52,Math.max(w,h)*0.78);
   v.addColorStop(0,'rgba(0,0,0,0)');v.addColorStop(1,css(LIGHT.shadow,0.16));g.fillStyle=v;g.fillRect(0,0,w,h);}
@@ -3340,7 +3367,7 @@ function drawBirds(g,sz,t){
     if(b.dir>0?wx>bx1+6:wx<bx0-6){BIRDS.splice(i,1);continue;}
     const gx=wx*cam.s+cam.x,gyS=wy*cam.s+cam.y,x=gx,y=gyS-alt*cam.s*0.8;
     if(x<-200||x>W.w+200||y<-200||y>W.h+300)continue;
-    const fl=Math.sin(u/(b.arara?130:95)+b.ph),S=cam.s*(b.arara?0.08:0.04)*b.size;
+    const fl=Math.sin(u/(b.arara?130:95)+b.ph),S=cam.s*(b.arara?0.034:0.026)*b.size; // v2.3 régua: periquito ~0,9 m e arara ~1,6 m na tela (antes ~1,5 m e ~5 m)
     // sombra no chão
     g.fillStyle=css(LIGHT.shadow,0.10);g.beginPath();g.ellipse(gx+alt*cam.s*0.35,gyS,S*1.2,S*0.38,0,0,7);g.fill();
     g.save();g.translate(x,y);g.scale(b.dir,1);
@@ -3573,14 +3600,14 @@ function commit(){
        if(state.alive.has(n)&&tl.e.includes('A')){const[nx,ny]=wpos(n),mx=(wx+nx)/2*0.35+nx*0.65,my=(wy+ny)/2*0.35+ny*0.65;
          emit('ring',mx,my,3,{v:0,life:1500,size:0.04,grow:4.5,alpha:0.5,delay:DROP_MS*IMPACT+40,jx:0.25,jy:0.18,color:'#ffffff'});}}}}
   emit('~#d6c39a',wx,wy+0.55,12,{ang:0,spread:Math.PI*2,v:0.45,g:-0.2,life:950,size:0.42,grow:1.3,alpha:0.45,jx:1.5,jy:0.25});
-  if(te.includes('B'))emit('leaf',wx,wy-0.25,7,{ang:-Math.PI/2,spread:1.8,v:1.3,g:1.6,life:1500,size:0.13,vr:3,flutter:true,vx:0.15});
+  if(te.includes('B'))emit('leaf',wx,wy-0.25,7,{ang:-Math.PI/2,spread:1.8,v:0.5,tau:0.35,tx:0.03,ty:0.06,life:2000,size:0.03,vr:3,flutter:true}); /* v2.3 */
   setTimeout(()=>{sfx.place(rep.match,te,wx,wy);ambReact(k,rep);try{if(db.vib!==false&&navigator.vibrate)navigator.vibrate(rep.perfect.length?[12,40,18]:12);}catch(_){}},RM?0:DROP_MS*IMPACT);
   if(rep.newlyAlive.length){
     setTimeout(sfx.water,150);
     G.flow.order.slice().sort((a,b)=>hd(a,E.SRC)-hd(b,E.SRC)).forEach((c,i)=>{const[ax,ay]=wpos(c),dl=150+i*FILL_STEP+FILL_DUR*0.6;emit('dot',ax,ay-0.05,12,{ang:-Math.PI/2,spread:1.9,v:1.3,g:6.5,life:560,size:0.022,color:'#eefaff',delay:dl,jx:0.3,jy:0.2});emit('ring',ax,ay,4,{v:0,life:1300,size:0.05,grow:5,alpha:0.65,delay:dl+50,jx:0.5,jy:0.4,color:'#ffffff'});});
   }
   for(const c of rep.perfect){const[px,py]=wpos(c);emit('~#ffe6a0',px,py-0.3,10,{v:1.4,life:850,size:0.3,alpha:0.85,add:true,delay:200});emit('sparkle',px,py-0.3,7,{v:1.8,life:800,size:0.16,vr:3,delay:200,add:true});setTimeout(sfx.perfect,250);}
-  for(const q of rep.questsDone){const[qx,qy]=wpos(q.key);emit('petal',qx,qy-0.5,20,{ang:-Math.PI/2,spread:2.3,v:2.4,g:2.2,life:1900,size:0.12,vr:4,flutter:true,vx:0.2,delay:250});emit('leaf',qx,qy-0.5,8,{ang:-Math.PI/2,spread:2,v:2.2,g:2.2,life:1800,size:0.12,vr:4,flutter:true,vx:0.2,delay:250});emit('~#ffe6a0',qx,qy-0.5,6,{v:1.2,life:800,size:0.3,alpha:0.7,add:true,delay:250});setTimeout(sfx.quest,350);}
+  for(const q of rep.questsDone){const[qx,qy]=wpos(q.key);emit('petal',qx,qy-0.5,20,{ang:-Math.PI/2,spread:2.3,v:0.9,tau:0.35,tx:0.03,ty:0.06,life:2400,size:0.028,vr:4,flutter:true,delay:250});emit('leaf',qx,qy-0.5,8,{ang:-Math.PI/2,spread:2,v:0.8,tau:0.35,tx:0.03,ty:0.06,life:2300,size:0.03,vr:4,flutter:true,delay:250});emit('~#ffe6a0',qx,qy-0.5,6,{v:1.2,life:800,size:0.3,alpha:0.7,add:true,delay:250});setTimeout(sfx.quest,350);}
   if(rep.questsFailed.length)setTimeout(()=>tone(392,0,0.35,'sine',0.04,330),350);
   setTimeout(()=>{bump('scoreBox');if(rep.tiles)bump('leftBox');},RM?0:DROP_MS*IMPACT);
   for(const id of['curTile','nextTile']){const el=$(id);el.classList.remove('swap');void el.offsetWidth;el.classList.add('swap');}
@@ -3653,7 +3680,9 @@ function faunaHome(id,s){const c=faunaCand(id,s);if(!c.keys.length)return null;
   for(let q=0;q<c.keys.length;q++){const k=c.keys[(i0+q)%c.keys.length];
     for(let v=0;v<3;v++){const[x,y]=faunaPoint(id,s,k,'h'+G.seedKey+v),p=wnear(x,y,FRULE[id]||'terra',fRad(id),0.35);if(p)return{k,x:p[0],y:p[1],flip:E.hashStr(id+'f')%2===1};}}
   return null;}
-const FLEN={seriema:0.117,ema:0.195,tucano:0.085,joao:0.062,garca:0.13,martim:0.075,capivara:0.156,anta:0.26,lobo:0.208,tamandua:0.26,onca:0.26,arara:0.175};
+// v2.3 régua: comprimento real (m, do bico/focinho à cauda) → READ → unidades. Antes a onça e a anta tinham 5 m
+const FREAL={seriema:0.9,ema:1.4,tucano:0.6,joao:0.2,garca:1.0,martim:0.4,capivara:1.2,anta:2.0,lobo:1.8,tamandua:2.1,onca:2.4,arara:1.0};
+const FLEN={};for(const id in FREAL)FLEN[id]=READ(FREAL[id])/20;
 const fRad=id=>Math.max(0.025,(FLEN[id]||0.15)*0.3);
 const FBW={};// largura do corpo de cada bicho no atlas (unidades na escala 1), medida no carregamento
 function fScale(id){return(FLEN[id]||0.15)/(FBW[id]||0.3);}
@@ -3897,7 +3926,7 @@ function draw(t){
     if(m)for(const b of G.bf){
       const m=ATLAS[b.ph>3.6&&ATLAS.fx_butterfly2?'fx_butterfly2':'fx_butterfly'];
       const u=(t-b.t0)/b.life,fade=Math.min(1,u*6,(1-u)*6),wx=b.home[0]+Math.sin(t*0.0011+b.ph)*0.42+Math.sin(t*0.0031+b.ph*2)*0.12,wy=b.home[1]-0.4+Math.cos(t*0.0017+b.ph)*0.25;
-      const X=wx*sz+cam.x,Y=wy*sz+cam.y,f=sz*0.1/Math.max(m[2],m[3]),flap=0.25+0.75*Math.abs(Math.sin(t*0.022+b.ph));
+      const X=wx*sz+cam.x,Y=wy*sz+cam.y,f=sz*(READ(0.08)/20)/Math.max(m[2],m[3]),flap=0.25+0.75*Math.abs(Math.sin(t*0.022+b.ph));
       g.save();g.globalAlpha=fade;g.translate(X,Y);g.scale(flap,1);blit(g,m,f,-m[2]*f/2,-m[3]*f/2,m[2]*f,m[3]*f);g.restore();
     }
   }
@@ -3910,7 +3939,7 @@ function draw(t){
     label(x,y,'toque aqui',{bg:'#1d3b3a',fg:'#fffdf7',pri:PRI.guia});}
   // fumaça das chaminés das vilas com água
   const dt=Math.min(100,t-(G.lastT||t));G.lastT=t;
-  if(!RM&&atlasReady)for(const[cx,cy]of G.chimneys||[])if(Math.random()<dt/2600)emit('~#f3f0ea',cx,cy,1,{ang:-Math.PI/2,spread:0.3,v:0.17,vx:ENV.wind.x*0.4,life:3000,size:0.12,grow:2.6,alpha:0.42*(1-ENV.rain*0.6)});
+  if(!RM&&atlasReady)for(const[cx,cy]of G.chimneys||[])if(Math.random()<dt/2600){const[ax,ay]=airU();emit('~#f3f0ea',cx,cy,1,{ang:-Math.PI/2,spread:0.3,v:0.1,tau:1.2,tx:ax,ty:ay-0.075,life:3600,size:0.12,grow:2.6,alpha:0.42*(1-ENV.rain*0.6)});}
   drawParts(g,t);fogFx(g,s,sz,t);
   drawBirds(g,sz,t);cloudBodies(g,sz,t);rainFx(g,s,sz,t);todGrade(g,W.w,W.h);flashFx(g,W.w,W.h,t);nightLights(g,sz,t);if(ENV.night<0.6&&ENV.rain<0.5&&ENV.oc<0.7)sunRays(g,W.w,W.h,t);vignette(g,W.w,W.h);
   // rótulo da nascente
@@ -4114,10 +4143,17 @@ function drawRiver(g,x,y,s,R,ws,o){
   // margem: areia seca por fora, terra molhada por dentro
   const dp=dryPat(g,s,x,y,o.world);
   if(al<=0&&!src){g.fillStyle='rgba(190,165,115,.5)';g.fill(riverPath(x,y,R,ws,o,w*1.38,dryLake?w*1.3:null));}
-  else{g.fillStyle='#d3b77f';g.fill(riverPath(x,y,R,ws,o,w*1.6,src?s*0.62:null));
-    const inner=riverPath(x,y,R,ws,o,w*1.25,src?s*0.52:null);
+  else{ // v2.3: margem com cara de margem. Antes: duas faixas lisas (areia e marrom) paralelas à água. Agora, de fora para dentro:
+    // terra úmida que passa por baixo do capim (sem borda), barro com textura (a mesma do leito do Blender) meio coberto,
+    // o barro molhado mais escuro junto da água e, na margem de lá, a face do barranco (o degrau até a água)
+    const cen=f=>src?s*f:null,ga=g.globalAlpha;
+    // degradê contínuo (14 passos finos, sem listras): de nada, por baixo do capim, até barro quase cheio perto da água
+    for(let q=0;q<14;q++){const f=1.95-q*0.05,P2=riverPath(x,y,R,ws,o,w*f,cen(0.44+0.18*(f-1.25)/0.7));g.fillStyle=src?'rgba(120,112,64,.06)':'rgba(138,112,70,.085)';g.fill(P2); /* nascente: chão de brejo, mais estreito e com capim */
+      if(dp&&q%3===1){g.globalAlpha=ga*0.12;g.fillStyle=dp;g.fill(P2);g.globalAlpha=ga;}}
+    const inner=riverPath(x,y,R,ws,o,w*1.24,cen(0.52));
     if(dp&&al<1){g.fillStyle=dp;g.fill(inner);g.fillStyle='rgba(150,118,70,.28)';g.fill(inner);}
-    else{g.fillStyle=al>0?'#8a7350':'#bea26b';g.fill(inner);}}
+    else{g.fillStyle='rgba(92,72,46,.78)';g.fill(inner);if(dp){g.globalAlpha=ga*0.3;g.fillStyle=dp;g.fill(inner);g.globalAlpha=ga;}}
+    if(al>0){g.save();g.translate(0,-s*0.028);g.fillStyle='rgba(64,48,30,.6)';g.fill(riverPath(x,y,R,ws,o,w*1.04,cen(0.45)));g.restore();}}
   const P=riverPath(x,y,R,ws,o,w,cr);
   // leito: o barro rachado do Blender; sem a textura, areia lisa com rachaduras desenhadas
   if(dp){g.fillStyle=dp;g.fill(P);}else g.fillStyle='#d9c08a',g.fill(P);
@@ -4142,7 +4178,7 @@ function drawRiver(g,x,y,s,R,ws,o){
     const u=o.fill,ease=1-Math.pow(1-u,2),rr=Math.max(0.5,ease*R*(inf>=0?1.95:1.1));front={ix,iy,rr,u};
     g.beginPath();g.arc(ix,iy,rr,0,Math.PI*2);g.clip();}
   // espuma fina na beira (aparece só como um anel por fora da água)
-  g.fillStyle='rgba(255,255,255,.5)';g.fill(riverPath(x,y,R,ws,o,w*1.08,cr?cr*1.06:null));
+  g.fillStyle='rgba(235,240,230,.32)';g.fill(riverPath(x,y,R,ws,o,w*1.06,cr?cr*1.04:null)); // v2.3: linha d'água fina
   g.clip(P);
   // água de verdade: quadros renderizados, misturados entre si
   const wp=waterPats(g,o.t,s,x,y,o.world);

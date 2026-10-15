@@ -976,6 +976,12 @@ Os girassóis 3D passam a ser as flores de verdade.
 
 **Pinheiro sem "bolas" (v2.3).** O pinheiro da mata era feito de três cones lisos empilhados e parecia uma pilha de bolas, sem folhas, ao lado das outras árvores, que têm copa de folhas. Agora é um pinheiro-bravo (*Podocarpus*), a conífera nativa das matas de galeria do Cerrado: andares de ramos com folhas estreitas, no mesmo estilo das outras copas.
 
+**Régua métrica, capim, margem e partículas (v2.3).** Detalhes em `CLIMA.md`, seção 11.
+- **Régua única:** o que tem 3 m ou mais fica no tamanho real; o que é menor ganha um exagero suave, igual para todos e sem trocar a ordem, `READ(L) = 3·(L/3)^0,6`. A borboleta passou de 2 m para 34 cm, as flores de 2,4 m para 0,8 m, o boi de 5 m para 3 m de comprimento, e a onça e a anta de 5 m para 2,5 m.
+- **Capim:** só onde o chão é capim. Antes nascia nas ruas da vila e aparecia em cima dos telhados.
+- **Margem do rio:** terra úmida em degradê, barro com textura e seixos, o barranco e a linha d'água, no lugar das duas faixas lisas.
+- **Partículas:** folhas, pétalas, poeira, fumaça e névoa sentem o ar (arrasto): andam com o vento e caem na velocidade-limite. Antes caíam como pedra, e as folhas sopradas iam a até 36 m/s.
+
 ## A água no centro (v2.4)
 
 **O pedido:** juntar os estudos (`REVISAO_MECANICAS_v2.3.md`, `REVISAO_RETENCAO_v2.4.md`, `AGUA_E_PREVIA_v2.5.md`) e ajustar o jogo; ver se as missões fazem sentido; manter só uma peça seguinte visível; e aplicar o que os estudos mostraram que melhora, respeitando o clima, o terreno e a interface.
