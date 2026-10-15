@@ -676,3 +676,116 @@ No leito seco, os seixos seguem o fundo do canal, afastados da borda da peça (o
 **Testes.**
 - Invariantes do mundo: zero bicho na água, em bloqueio ou fora do tabuleiro. Zero gado solto atrás de objeto alto: desde a v1.9d, a ovelha do cercado pode ficar atrás da cerca, porque a profundidade é ordenada. Zero violação de fauna.
 - Quadro médio de 2,3 ms com nuvens.
+## Motor de disposição com geometria exata e nuvens do Blender (v2.0)
+
+### Diagnóstico
+- **Ponto de apoio:** o motor supunha que cada sprite ficava centrado no ponto de apoio e que esse ponto era o pé. Na verdade, a âncora é o centro do objeto em 3D. O cercado se estende 30 px abaixo dela (a cerca da frente), e o boi é assimétrico (28 px à esquerda, 41 à direita). Toda colisão errava lado e tamanho.
+- **Pegada:** só construções e árvores tinham pegada. Lavoura, feno e enfeites usavam um círculo genérico.
+- **Ordem:** quem ganhava o espaço dependia da ordem das áreas. Se a lavoura viesse antes, o cercado entrava por cima dela.
+- **Profundidade:** os bichos eram desenhados por cima de tudo da peça.
+
+### Arquitetura nova
+1. **Geometria exata** (`arte/caixas.py` gera `caixas.json`, embutido como `const BOX`).
+   - Para cada sprite: o retângulo do corpo (sem a sombra, com a mesma regra de separação do jogo) e a faixa que toca o chão, relativos à âncora.
+   - `objGeom()` dá, para qualquer objeto, o desenho na tela (`sb`) e a base no chão (`fb`).
+2. **Regras de disposição** (`add()` do `compose`), na ordem:
+   1. **Água:** a base nunca fica sobre o canal ou a margem. Construção, cercado, árvore e lavoura também não cobrem o rio com o desenho.
+   2. **Terreno:** a base de construção, cercado e lavoura fica inteira dentro da área do próprio terreno. Os demais objetos são testados pelo centro.
+   3. **Peça:** o desenho de construção e cercado cabe inteiro no hexágono. Isso elimina as sobreposições entre peças vizinhas.
+   4. **Ninguém em cima de ninguém:**
+      - construção e cercado, pelo desenho inteiro;
+      - lavoura contra árvore, pelo desenho;
+      - o resto, pela base.
+   5. **Prioridade:** vila, depois pasto (cercado), lavoura e mata. O cercado procura onde cabe (centro da área, depois os pontos mais próximos, em dois tamanhos); se não cabe, as ovelhas ficam soltas. Igreja, moinho e celeiro procuram posições ao longo do seu triângulo.
+3. **Mapa de colisão dos bichos** com as mesmas caixas:
+   - base de construções, cercas e troncos bloqueia;
+   - o desenho acima da base marca oclusão;
+   - lavoura inteira é proibida para o gado;
+   - o canal tem o comprimento do rio desenhado.
+4. **Bichos:** corpo exato (as duas orientações, porque viram ao andar) testado contra o mapa.
+5. **Profundidade:**
+   - o cercado é desenhado em duas metades (cerca de trás e cerca da frente), ordenadas junto com as ovelhas;
+   - nas peças com bichos, os enfeites são ordenados com eles.
+
+### Medição
+`medidor.js` usa a geometria exata em 6 vales, com 5 minutos de animação em cada:
+
+| Defeito | Antes (4 vales) | Depois (6 vales) |
+|---|---|---|
+| Sobreposição de construção ou cercado | 24 | 0 |
+| Sobreposição entre peças | 3 | 0 |
+| Objeto sobre a água | 41 | 0 |
+| Invasão de terreno | 22 | 2 |
+| Bicho sobre água ou objeto | — | 0 |
+
+As 2 invasões que restam são especiais (igreja e moinho) numa vila de um triângulo só, onde nada cabe.
+
+### Nuvens (combinadas com a v1.10)
+- **Simulação da v1.10:** as nuvens nascem sobre a mata e a água, crescem tufo a tufo e se desfazem pela borda.
+- **Desenho:** cada tufo agora é um **tufo com volume renderizado no Blender** (`arte/nuvens.py` com `TUFO=1`, 3 formas em `tufos.webp`, 24 KB), em vez de um disco com degradê. Por isso parecem cúmulos, não bolhas.
+- **Camada de cima:** na visão geral, as nuvens passam sobre o vale com paralaxe de altura e somem quando o zoom desce. Enquanto o jogador escolhe onde pôr a peça, ficam a 25% (antes 45%) para não esconder a jogada.
+- **Modo cúmulo inteiro:** `nuvens.py` sem `TUFO` continua gerando os 4 cúmulos inteiros, para uso futuro (por exemplo, uma moldura no horizonte).
+
+### Medição final (v1.10 + motor v2.0, 6 vales, 5 min de animação)
+
+| Defeito | v1.10 sozinha | Com o motor v2.0 |
+|---|---|---|
+| Sobreposição de construção ou cercado | 33 | 0 |
+| Objeto sobre a água | 16 | 0 |
+| Invasão de terreno | 30 | 2 |
+| Sobreposição entre peças | 3 | 0 |
+| Bichos sobre água ou objetos | 0 | 0 |
+
+## Natureza crível: buriti, casca, pedras, capim, vento e chuva (v2.1)
+
+**Buriti refeito.** O topo marrom era uma esfera ("coco") no meio de 9 triângulos verdes. Agora o buriti é uma palmeira de verdade:
+- **Estipe:** de 14 lados, mais grosso na base, com anéis de cicatriz das folhas em relevo.
+- **Coroa:** 13 folhas em leque, cada uma com 24 folíolos que caem na ponta e são dobrados em V, sobre pecíolos longos. As folhas velhas ficam baixas e caídas; as novas, altas.
+- **Flecha:** uma folha nova, fechada e pontuda, no meio da coroa.
+- **Saia:** folhas secas penduradas abaixo da coroa.
+- **Cachos:** frutos escamosos castanho-avermelhados, pendurados entre as folhas.
+
+**Madeira.** Todos os troncos ganharam um material de casca com relevo (bump) e 12 lados em vez de 7:
+- `fissurada`: placas de cortiça separadas por fendas verticais, típica das árvores do Cerrado;
+- `aneis`: palmeiras;
+- `lisa`.
+
+**Pedras.** Textura procedural de pedra, com relevo:
+- cor manchada;
+- algumas rachaduras quebradas (rede de Voronoi mascarada por ruído, para não virar casca de tartaruga);
+- estratos tortos no arenito, poros e grãos de ferro na canga;
+- quinas mais claras e cavidades mais escuras (*pointiness*);
+- placas de líquen só nas faces de cima.
+
+Os seixos são lisos e polidos.
+
+**Sprites mais nítidos.** Os objetos passaram a ser renderizados a 320 px por 1,1 unidade, em vez de 256. Também diminuíram as cabecinhas do capim-dourado.
+
+**Capim cobrindo o chão.** O capim existia só em touceiras (os "montinhos") sobre um chão verde liso. Agora:
+- **Texturas do chão:** tapetes de lâminas desenhadas, em três camadas (sombra, meio e ponta ao sol). A resolução subiu de 2 para 3 vezes, ou seja, 192 px por unidade em vez de 128.
+  - No pasto o tapete é denso; no campo nativo, mais alto e dourado.
+  - No chão da mata há folhas caídas e capim ralo de sombra; na vila, capim ralo.
+- **Capim vivo:** lâminas soltas espalhadas por todo o chão de capim, não em tufos:
+  - o pasto fica cheio; a mata e a vila, ralas;
+  - não nasce capim na lavoura, na água nem embaixo dos enfeites;
+  - quanto mais perto a câmera, mais lâminas aparecem, até 3.400 por quadro.
+
+**Vento.**
+- **Rajadas:** a cada 14–38 s (mais frequentes com chuva e na seca), o vento sopra forte por 2–5 s. Nessas horas:
+  - o capim deita em onda e as matas balançam mais;
+  - folhas voam das matas;
+  - na seca, sobe poeira do chão seco.
+- **Capim:** curva com a onda de vento que atravessa o vale.
+
+**Chuva.**
+- **O chão encharca** (em ~20 s; seca em ~1 min): o vale escurece e satura.
+- **Poças** aparecem nas partes baixas do pasto e da vila. Ficam fora do rio e dos enfeites, refletem o céu e pegam pingos.
+- **Capim:** deita e escurece.
+- **Respingos:** pulam do chão.
+- **Rio:** a correnteza acelera e a enxurrada turva a água.
+- **Depois da chuva:** sobe uma névoa baixa da mata e da água.
+
+**Sensação do baque.**
+- A tela treme de leve, um pouco mais na peça perfeita.
+- Um anel de choque corre no chão.
+- O capim em volta é empurrado para fora numa onda que se afasta da peça. Isso se soma à fuga dos bichos, à revoada e às ondas no rio da v1.10.

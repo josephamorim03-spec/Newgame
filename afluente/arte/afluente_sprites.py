@@ -313,7 +313,7 @@ def ipe(petal, petal_light, name):
 
 
 def casca(name, dark, light, kind='fissurada', scale=1.0):
-    """casca de árvore (v1.11) com relevo de verdade (bump):
+    """casca de árvore (v2.1) com relevo de verdade (bump):
     - 'fissurada': placas de cortiça separadas por fendas fundas e verticais (árvores do Cerrado);
     - 'aneis': cicatrizes das folhas em anéis (buriti, palmeiras);
     - 'lisa': casca fina com manchas."""
@@ -401,7 +401,7 @@ def _leaflet_strip(verts, faces, base, d, up, side, L, w, droop, fold, seg=5):
 
 
 def buriti():
-    """buriti (Mauritia flexuosa) v1.11: estipe reto com anéis; coroa de folhas em leque (cada leque com ~24
+    """buriti (Mauritia flexuosa) v2.1: estipe reto com anéis; coroa de folhas em leque (cada leque com ~24
     folíolos que caem na ponta) sobre pecíolos longos; flecha nova no meio; saia de folhas secas pendurada e
     cachos de frutos escamosos castanho-avermelhados. Sem o disco marrom no topo."""
     from mathutils import Vector as V
@@ -804,7 +804,7 @@ def flowers():
 
 
 def pedra_mat(name, dark, light, lichen=None, amt=0.0, kind='arenito'):
-    """pedra (v1.11) com textura de verdade:
+    """pedra (v2.1) com textura de verdade:
     - cor manchada (ruído fino) entre o escuro e o claro, clara no alto e escura nas faces de baixo;
     - rachaduras (Voronoi, distância à borda) escuras e afundadas no relevo;
     - 'arenito': estratos (faixas horizontais tortas); 'canga': poros e grãos de ferro; 'seixo': liso e polido;

@@ -120,3 +120,21 @@ O tamanho no jogo não depende do render. O jogo mede a largura do corpo no atla
   venv/bin/python atualizar_atlas.py /tmp/rk atlas.png atlas.json
   ```
   Depois gere o `atlas.webp` e rode `embutir.py`.
+## v2.0: geometria exata e nuvens
+
+- `caixas.py` lê `atlas.png` e `atlas.json` e grava `caixas.json`, com o corpo de cada sprite (sem a sombra) e a faixa que toca o chão, relativos à âncora. `embutir.py` embute esse arquivo como `const BOX`. Rode os dois sempre que o atlas mudar.
+- `nuvens.py <pasta>`: 4 cúmulos inteiros com volume (Cycles, 12 rebatimentos no volume), na câmera e no sol dos sprites.
+- `TUFO=1 nuvens.py <pasta>`: 3 tufos com volume. Monte a faixa (3 × 256) em `tufos.webp`; o jogo usa esses tufos para desenhar as nuvens que se formam (v1.10).
+
+## v2.1: casca, pedra e buriti
+
+- `casca(nome, escuro, claro, tipo)` é um material de tronco com relevo. Tipos: `fissurada` (cortiça do Cerrado), `aneis` (palmeiras) e `lisa`. Use `tronco_mat()` nas árvores comuns.
+- `pedra_mat(nome, escuro, claro, líquen, quantidade, tipo)` é um material de pedra procedural, com manchas, rachaduras quebradas, quinas e cavidades (*pointiness*), líquen e relevo. Tipos: `arenito` (estratos), `canga` (poros) e `seixo` (liso).
+- `buriti()` foi refeito: leques de folíolos (`_leaflet_strip`), saia seca e cachos.
+- Os objetos agora são renderizados a `OBJ_PX = 320` (antes 256). Para refazer tudo:
+  ```sh
+  SECAS=1 venv/bin/python afluente_sprites.py saida/   # 80 sprites, ~25 min
+  venv/bin/python montar_atlas.py saida atlas.png atlas.json
+  python3 caixas.py
+  ```
+  Depois gere o `atlas.webp` e rode `embutir.py`. `caixas.py` precisa rodar sempre que o atlas mudar: a geometria do motor de disposição vem dele.
