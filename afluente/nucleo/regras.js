@@ -51,12 +51,16 @@ export const PEDIDOS = {
   pasto: { icone: '🐄', txt: n => `${n} campo${n > 1 ? 's' : ''} com água perto` },
 };
 
-export function Game({ seed = 'vale', pilha = 22, nascente = 4, aguas = 8, seca = 4 } = {}) {
+// start (opcional): o vale inicial, [{q, r, e, src}], por exemplo o vale montado à mão da prévia 3D; sem ele, nascente e vila
+export function Game({ seed = 'vale', pilha = 22, nascente = 4, aguas = 8, seca = 4, start = null } = {}) {
   const rng = rngOf('v5:' + seed), board = new Map();
   const S = { left: pilha, gente: 0, season: 1, clock: 0, order: 0, queue: [], vilas: new Map(), springs: new Map(), escolha: [], log: [], over: false, aguas, seca, ano: 1 };
   const put = (q, r, e, extra = {}) => board.set(K(q, r), { q, r, e: e.slice(), order: S.order++, ...extra });
+  if (start) for (const t of start) put(t.q, t.r, t.e, t.src ? { src: nascente, fixed: true, nasc: true } : { fixed: true });
+  else {
   put(0, 0, ['A', 'G', 'G', 'A', 'G', 'G'], { src: nascente, fixed: true, nasc: true });   // a nascente: o rio sai para leste e para oeste
   put(0, 1, ['V', 'V', 'V', 'V', 'V', 'V'], { fixed: true });                          // a primeira vila, encostada no rio
+  }
   const isSeca = () => S.season % 2 === 0;
   const flowOf = vazao;
 

@@ -30,3 +30,14 @@ Protótipo jogável para testar se a regra nova diverte, antes de levá-la ao va
 | Jogadas que ligam um olho-d'água | 13% |
 | Jogadas em que nada acontece | 38% (eram 44% no jogo de hoje) |
 | Bot ao acaso | não atende nenhum pedido e acaba em 20 jogadas: jogar bem faz diferença |
+
+**No vale 3D:** o núcleo v5 roda também no tabuleiro 3D da prévia (`../prototipo3d/js/board5.js`), que agora o usa por padrão (`?jogo=v3` volta às regras antigas). Na tela aparecem:
+- a vazão no placar (💧 usada/total);
+- as plaquinhas dos pedidos sobre as vilas, com o que a peça escolhida muda;
+- os olhos-d'água como poços claros no chão;
+- "sem água" sobre quem ficou seco, e "seca na seca" nas últimas jogadas antes da seca;
+- as casas douradas onde a peça na mão ajuda um pedido;
+- a escolha de pacote. A vila atendida ganha uma casa nova no vale.
+
+O vale começa com as 11 peças montadas à mão da prévia. Para isso, `Game` aceita `start`, e sem `start` continua igual. Mesma semente: `?vale=nome`.
+
