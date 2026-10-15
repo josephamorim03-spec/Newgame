@@ -17,7 +17,7 @@ Uma mecânica fica se cumpre três condições:
 | Mecânica | O que faz | Peso no jogo (guloso) | Veredito |
 |---|---|---|---|
 | **Encaixe de lados** | +1 por lado igual ao do vizinho | 45% dos pontos | **Manter.** É o núcleo e é visível na hora (✓ verde). Lição 1. |
-| **Qualquer peça cabe em qualquer casa** | Lado que não combina só não pontua | — | **Manter.** A proibição antiga criava buracos impossíveis. |
+| **Qualquer peça cabe em qualquer casa** | Lado que não combina só não pontua | — | **Manter.** A proibição antiga criava buracos impossíveis. *(v2.4 voltou a exigir água com água; v2.3 'brejo' manteve só "rio não se corta": ver as notas.)* |
 | **Peça perfeita** | 6 lados combinando: +5 e +1 peça | 16% dos pontos, cerca de 6 peças por jogo | **Manter.** Premia planejar buracos. Lição 4. |
 | **Água viva** | Rio ligado à nascente; +2 por peça na primeira vez que recebe água | 7% dos pontos | **Manter.** É a identidade do jogo e a base da seca e das missões de água. Lição 2. |
 | **Brejo** | Rio contra terra termina num brejo e para ali | — | **Manter só como visual.** Explicado em uma frase na lição 2. |

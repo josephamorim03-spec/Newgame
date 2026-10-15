@@ -175,6 +175,7 @@ body.calm .app{max-width:none;padding:0}
 
 .hint{margin:0;min-height:38px;height:40px;overflow:hidden;line-height:1.25;display:flex;align-items:center;justify-content:center;text-align:center;font-size:var(--t-md);font-weight:700;text-wrap:balance}
 .hint em{font-style:normal;color:var(--good)}
+.hint.vazio{min-height:0;height:0} /* v2.3: sem dica, o espaço volta para o vale */
 
 .dock{height:96px;box-sizing:border-box;overflow:hidden;display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;background:var(--card);border-radius:20px;padding:8px 12px 8px 8px;box-shadow:0 3px 0 var(--line)}
 .dock canvas.cur{width:84px;height:80px}
@@ -385,7 +386,7 @@ body.calm .app{max-width:none;padding:0}
   <div class="sheet">
     <h2 id="introTitle">Monte o vale peça por peça</h2>
     <ul class="how">
-      <li><canvas data-thumb="match" width="96" height="92"></canvas><div><b>Encaixe</b><span>Toque numa casa vazia, gire a peça e coloque. Cada lado que combina com o vizinho vale +1. Água só encosta em água.</span></div></li>
+      <li><canvas data-thumb="match" width="96" height="92"></canvas><div><b>Encaixe</b><span>Toque numa casa vazia, gire a peça e coloque. Cada lado que combina com o vizinho vale +1. Rio não se corta: na ponta de um rio só entra rio (a água a mais vira brejo).</span></div></li>
       <li><canvas data-thumb="water" width="96" height="92"></canvas><div><b>Leve a água pelo vale</b><span>A água nasce na nascente e nas duas veredas e corre pelo rio ligado a elas: +2 por peça que recebe água. Ligue o rio de uma vereda ao da nascente: é um afluente, +10 e +2 peças.</span></div></li>
       <li><canvas data-thumb="quest" width="96" height="92"></canvas><div><b>Missões ganham peças</b><span>"Bosque 6 · 5⏳": faça aquele bosque chegar a 6 peças em até 5 jogadas. Cumpriu: +2 peças. A missão de água pede água correndo naquela peça quando a seca chegar.</span></div></li>
       <li><canvas data-thumb="perfect" width="96" height="92"></canvas><div><b>Peça perfeita</b><span>Cercada e com os 6 lados combinando: +5 e +1 peça.</span></div></li>
@@ -474,7 +475,7 @@ function Engine(){
        As peças especiais entram na pilha conforme o tempo passa.
      Lições: vales prontos (licao-1 … licao-5) com peças fixas, para ensinar uma mecânica de cada vez.
      v2.4 — A água no centro (ver REVISAO_*.md e AGUA_E_PREVIA_v2.5.md):
-       - água só encosta em água: lado de rio encosta em rio (ou casa vazia), lado de terra nunca encosta em água.
+       - rio não se corta (v2.3, riverFit 'brejo'): lado de rio do vizinho pede rio; a água a mais da peça nova termina num brejo.
          Se a peça não cabe em casa nenhuma, ela é deixada passar (pass);
        - o vale abre com a nascente, um trecho de rio e duas veredas (olhos-d'água que nunca secam). O rio de uma
          vereda que chega ao rio da nascente é um afluente: +10 e +2 peças;
@@ -489,7 +490,7 @@ function Engine(){
   const opp=d=>(d+3)%6;
   const START=22,PERFECT_PTS=5,QUEST_TILES=2,FLOW_PTS=2,SEASON_TILES=0;
   const CFG={qMode:'prazo',qSlack:3,qMul:4,qMulT:{B:4,C:4,V:6},qSpan:3,flowDue:10,aguas:8,seca:4,keptPts:1,keptDiv:2,divGrow:1,cap:2,rain:2,shield:'touch',
-    riverFit:true,veredas:2,veredaDist:3,afluPts:10,afluTiles:QUEST_TILES,cheia:1,rioPct:0.32,opening:true,flowSeca:true,look:1,lookK:3,lookPols:['cuidadoso'],...(typeof AFLUENTE_CFG!=='undefined'?AFLUENTE_CFG:{})};
+    riverFit:'brejo',veredas:2,veredaDist:3,afluPts:10,afluTiles:QUEST_TILES,cheia:1,rioPct:0.32,opening:true,flowSeca:true,look:1,lookK:3,lookPols:['cuidadoso'],...(typeof AFLUENTE_CFG!=='undefined'?AFLUENTE_CFG:{})};
   const SEASON_AT=[0,0,35,95,180,290,420,570,740,930];
   const seasonAt=n=>n<SEASON_AT.length?SEASON_AT[n]:SEASON_AT[SEASON_AT.length-1]+220*(n-SEASON_AT.length+1);
   const CYCLE=['Águas','Seca'];
@@ -645,9 +646,13 @@ function Engine(){
 
   // Qualquer peça cabe em qualquer casa vazia encostada no vale. Rio que bate em terra termina num brejo:
   // aquele lado não combina (não pontua) e a água não passa. (A proibição antiga criava buracos impossíveis.)
-  // v2.4: água só encosta em água. Lado de rio encosta em rio (ou em casa vazia); lado de terra nunca encosta em água.
-  function legal(board,k,e){if(!CFG.riverFit)return true;
-    for(let d=0;d<6;d++){const n=board.get(nb(k,d));if(n&&(e[d]==='A')!==(n.e[opp(d)]==='A'))return false;}return true;}
+  // v2.4: água só encosta em água (riverFit true). v2.3 'brejo' (padrão): o rio do vale não se corta; a água a mais da peça nova vira brejo.
+  // v2.3 (pedido do teste): riverFit 'brejo' = o rio que já está no vale nunca é cortado por terra (lado de água vizinho
+  // pede água), mas a peça nova pode ter um lado de água a mais contra terra: ali a água termina num brejo. Assim a peça
+  // de rio que liga dois rios sempre entra, mesmo que o formato não seja o exato, e não sobram casas impossíveis.
+  function legal(board,k,e){if(!CFG.riverFit)return true;const soft=CFG.riverFit==='brejo';
+    for(let d=0;d<6;d++){const n=board.get(nb(k,d));if(!n)continue;const nw=n.e[opp(d)]==='A',mw=e[d]==='A';
+      if(soft?(nw&&!mw):(nw!==mw))return false;}return true;}
   const canPlay=s=>{const t=cur(s);if(!t)return false;const rs=rotations(t.e);
     for(const k of slots(s))for(const o of rs)if(legal(s.board,k,o.e))return true;return false;};
   function slots(s){
@@ -1019,7 +1024,7 @@ function Atmos(){
     const prog=c=>Math.max(c.age/c.life,c.gh/c.lifeH),act=c=>{const u=prog(c);return sst(0.12,0.3,u)*(1-sst(0.72,1,u));};
     function rainAt(x,y){let R=0;if(S.phase===1)return 0;for(const c of S.cells){const a=act(c);if(a<=0||c.virga)continue;const q=Math.hypot(x-c.x,y-c.y)/c.r;if(q>=1)continue;
         R+=c.R0*c.g*a*(1-0.35*q*q)*(1-sst(0.78,1,q))*(S.taper??1);}
-      return R+(S.out?S.out.nsR:0);}
+      return R+(S.out&&(S.taper??1)>0?S.out.nsR:0);} // v2.3: a garoa de fundo vem do quadro anterior; com as chuvas já paradas (taper 0) ela não entra
     function outflowAt(x,y){let ux=0,uy=0,cool=0;for(const c of S.cells){const a=act(c);if(a<0.25)continue;
         const dx=x-c.x,dy=y-c.y,d=Math.hypot(dx,dy)||1,u=prog(c),rf=c.r*(1+1.2*sst(0.25,0.8,u)),G=(2.5+c.R0/9)*a;
         const k=Math.exp(-(((d-rf)/(0.5*c.r))**2))+(d<rf?0.55:0);ux+=dx/d*G*k;uy+=dy/d*G*k;cool=Math.max(cool,a*(d<rf*1.2?1:Math.exp(-(((d-rf*1.2)/c.r)**2))));}
@@ -2104,8 +2109,10 @@ function drawTileCached(g,x,y,s,k,e,o){
   let c=TCACHE.get(k);
   if(!c||c.sig!==sig||(Math.abs(c.res-res)/res>0.15&&G.rebuild-->0)){tcFree(c);c=renderTileCache(k,e,o,res);c.sig=sig;TCACHE.set(k,c);}
   const f=s/c.res,dx=x-c.cx*f,dy=y-c.cy*f;
-  g.drawImage(c.ground,dx,dy,c.ground.width*f,c.ground.height*f);
-  if(e.includes('A'))drawTile(g,x,y,s,e,{...o,layer:'river',alive:o.fill>0&&o.fill<1?1:o.alive});
+  // v2.3: três passadas no vale (chão de todas as peças, água de todas, enfeites); sem 'pass', tudo de uma vez
+  if(!o.pass||o.pass==='chao')g.drawImage(c.ground,dx,dy,c.ground.width*f,c.ground.height*f);
+  if((!o.pass||o.pass==='agua')&&e.includes('A'))drawTile(g,x,y,s,e,{...o,layer:'river',alive:o.fill>0&&o.fill<1?1:o.alive});
+  if(o.pass==='chao'||o.pass==='agua')return;
   // v2.3: sem inclinar a peça inteira (as árvores do fundo corriam mais que as da frente, como papel entortando);
   // agora cada árvore verga sozinha em drawAnimals
   const by=y+s*0.35,ds=o.dsc==null?1:o.dsc;
@@ -2330,6 +2337,10 @@ function compose(x,y,R,s,e,vs,sp,seed,o,decos,paths){CUR_AREA=null;CUR_TS=null;C
   const RK=water.size?riverSkel([...water].sort((a,b)=>a-b),o,seed):null;
   const inRiver=(px,py,r)=>{const dx=px-x,dy=py-y;if((o.src||o.kind==='lake')&&Math.hypot(dx,dy)<s*0.62+r)return true;
     return!!RK&&riverRel(dx/R,dy/R,RK)<(s*0.3+r)/R;};
+  // só a água (sem a margem): para saber se um desenho alto cobre o canal na tela
+  const inWater=(px,py)=>{const dx=px-x,dy=py-y;if((o.src||o.kind==='lake')&&Math.hypot(dx,dy)<s*0.44)return true;return!!RK&&riverRel(dx/R,dy/R,RK)<0.21;};
+  // v2.3: amostras do desenho inteiro (12 pontos), não só da base: a copa de uma árvore ao sul do rio sobe na tela e tapava o canal
+  const bodyInWater=sb=>{let n=0;for(let i=0;i<3;i++)for(let j=0;j<4;j++){const qx=sb[0]+(sb[2]-sb[0])*(0.15+0.35*i),qy=sb[1]+(sb[3]-sb[1])*(0.1+0.27*j);if(inWater(qx,qy))n++;}return n;};
   const SECA=(o.ctx||'').includes('s'),foot=[],wOf=(name,sc)=>{const m=ATLAS[name];return m?m[2]/m[6]*sc*1.3*s:0.3*s;};
   const OBJ=[],inHex=(qx,qy,k)=>{const dx=Math.abs(qx-x),dy=Math.abs(qy-y);return dx<=R*0.866*k&&dx*0.5+dy*0.866<=R*0.866*k;};
   const inArea=(qx,qy)=>!CUR_TSIN||CUR_TSIN.some(T=>inTri(qx,qy,T));
@@ -2340,7 +2351,9 @@ function compose(x,y,R,s,e,vs,sp,seed,o,decos,paths){CUR_AREA=null;CUR_TS=null;C
     if(G2){const{c,sb,fb,fc}=G2,big=c==='B'||c==='P',fpts=[[fb[0],fb[1]],[fb[2],fb[1]],[fb[0],fb[3]],[fb[2],fb[3]],[fc,py]];
       // 1) água: a base nunca; o desenho de construção, cercado, árvore e lavoura também não cobre o canal
       if(!wet){if(fpts.some(([qx,qy])=>inRiver(qx,qy,0.01*s)))return false;
-        if(c!=='p'&&[[sb[0],sb[3]],[sb[2],sb[3]],[fc,(sb[1]+sb[3])/2]].some(([qx,qy])=>inRiver(qx,qy,0)))return false;}
+        if(c!=='p'&&[[sb[0],sb[3]],[sb[2],sb[3]],[fc,(sb[1]+sb[3])/2]].some(([qx,qy])=>inRiver(qx,qy,0)))return false;
+        if(c==='T'||c==='B')if(bodyInWater(sb)>0)return false;}
+      else if(c==='T'&&RK&&bodyInWater(sb)>2)return false; // buriti na beira: no máximo a ponta das folhas sobre a água
       // 2) terreno: a base de construção, cercado e lavoura fica inteira na área do próprio terreno; o resto, pelo centro
       if(tag!=='sp'){if((big||c==='C')?!fpts.every(([qx,qy])=>inArea(qx,qy)):!inArea(fc,py))return false;}
       // 3) peça: construção e cercado cabem inteiros (o desenho) no hexágono; o resto, pela base
@@ -2500,7 +2513,9 @@ function drawTile(g,x,y,s,e,o={}){
   }
   // rio e nascente
   const ws=[];for(let i=0;i<6;i++)if(e[i]==='A')ws.push(i);
-  if(ws.length&&(!L0||L0==='river'))drawRiver(g,x,y,s,R,ws,o);
+  if(ws.length&&(!L0||L0==='river')){ // v2.3: o rio de cada peça fica no próprio hexágono (as margens semitransparentes de duas peças não se somam na emenda)
+    g.save();g.beginPath();V.forEach(([vx,vy],q)=>{const X=x+(vx-x)*1.0015,Y=y+(vy-y)*1.0015;q?g.lineTo(X,Y):g.moveTo(X,Y);});g.closePath();g.clip();
+    drawRiver(g,x,y,s,R,ws,o);g.restore();}
   // objetos 3D espalhados de forma natural (pontos aleatórios fixos dentro de cada triângulo)
   if(L0==='ground'||L0==='river'){g.restore();return;}
   if(atlasReady){
@@ -2728,8 +2743,8 @@ function cloudBodies(g,sz,t){
   const cx0=W.w/2,cy0=W.h*0.45,q=Math.min(1,40/sz)*0.75,sel=G.sel?0.25:1; // escolhendo onde pôr a peça: quase transparentes
   G.cloudA=(G.cloudA??sel)+(sel-(G.cloudA??sel))*0.08;
   g.save();
-  for(const c of ENV.clouds){const e=cloudEnv(c),a=(0.86+0.1*c.dark)*e*zf*G.cloudA;if(a<0.01)continue;
-    const proj=p=>{const k=1+0.12*(c.alt+p.z),wx=(c.x+p.x)*sz+cam.x,wy=(c.y+p.y-(c.alt+p.z)*0.9)*sz+cam.y;return[cx0+(wx-cx0)*k,cy0+(wy-cy0)*k,sz*k];};
+  for(const c of ENV.clouds){const e=cloudEnv(c),a=(0.7+0.14*c.dark)*e*zf*G.cloudA;if(a<0.01)continue; // v2.3: um pouco mais transparentes
+    const proj=p=>{const k=1+0.09*(c.alt+p.z),wx=(c.x+p.x)*sz+cam.x,wy=(c.y+p.y-(c.alt+p.z)*1.3)*sz+cam.y; /* v2.3: mais altas (sobem mais na tela) e menos aumentadas */return[cx0+(wx-cx0)*k,cy0+(wy-cy0)*k,sz*k];};
     const R=cloudRender(c,'body',proj,q,t,sz);if(!R)continue;
     g.globalAlpha=a;g.drawImage(R[0],0,0,R[1],R[2],R[3],R[4],R[5],R[6]);}
   g.restore();
@@ -2954,10 +2969,10 @@ function rainFx(g,s,sz,t){
 // neblina: véu baixo sobre o vale e flocos mais densos sobre o rio (o fundo do vale esfria e a água umedece o ar)
 function fogFx(g,s,sz,t){const o=ENV.atm;if(!o||RM&&o.fog<0.02)return;const f=o.fog,fw=o.fogW;if(f<0.02&&fw<0.04)return;
   g.save();g.setTransform(W.dpr*sz,0,0,W.dpr*sz,W.dpr*cam.x,W.dpr*cam.y);g.clip(boardClip(s,t));g.setTransform(W.dpr,0,0,W.dpr,0,0);
-  const col=ENV.night>0.4?'#c9d4ee':'#f4f6f4';g.globalAlpha=0.38*f;g.fillStyle=col;g.fillRect(0,0,W.w,W.h);g.restore();
+  const col=ENV.night>0.4?'#c9d4ee':'#f4f6f4',selK=G.sel?0.5:1;g.globalAlpha=0.22*f*selK;g.fillStyle=col;g.fillRect(0,0,W.w,W.h);g.restore(); // v2.3: véu mais leve (antes 0,38); escolhendo a casa, metade
   if(fw<0.04||QUAL.lvl>=2)return;const tex=softTex(col),T=t/1000;g.save();
   for(const k of s.alive){const[wx,wy]=wpos(k);for(let i=0;i<2;i++){const ph=h01(k,i+40)*6.28,dx=Math.sin(T*0.05+ph)*0.6+ENV.wind.x*((T*0.15+ph)%3-1.5),
-      x=(wx+dx)*sz+cam.x,y=(wy+Math.cos(T*0.04+ph)*0.25)*sz+cam.y,r=sz*(1.3+0.6*h01(k,i+50));g.globalAlpha=0.3*fw;g.drawImage(tex,x-r,y-r*0.45,2*r,r*0.9);}}
+      x=(wx+dx)*sz+cam.x,y=(wy+Math.cos(T*0.04+ph)*0.25)*sz+cam.y,r=sz*(1.3+0.6*h01(k,i+50));g.globalAlpha=0.18*fw*(G.sel?0.5:1);g.drawImage(tex,x-r,y-r*0.45,2*r,r*0.9);}}
   g.restore();if(fw>0.4)ceuMark('neblina');}
 // relâmpago: clarão suave (sem piscar mais de 3 vezes por segundo) e o raio entre a nuvem e o chão
 function flashFx(g,w,h,t){if(RM)return;
@@ -3303,9 +3318,9 @@ function lifeFx(g,s,sz,t){
       {const[ax,ay]=airU();emit(s.seca?'leaf2':'leaf',x+(Math.random()-0.5)*1.1,y-0.4-Math.random()*0.3,1,{ang:W2.a,spread:0.6,v:0.03,tau:0.6,tx:ax,ty:ay+0.06,life:4200,size:READ(0.1)/20,vr:5,flutter:true,alpha:0.95});}}} // v2.3: folha de 10 cm, com o vento, caindo a ~1,2 m/s
   if(s.seca&&(ENV.gust||0)>0.35&&Math.random()<dt/90){const dr=[...s.board.keys()].filter(k=>!G.wet.has(k));if(dr.length){const[x,y]=wpos(dr[Math.floor(Math.random()*dr.length)]);
     {const[ax,ay]=airU();emit('~#dcc08a',x+(Math.random()-0.5)*1.2,y+(Math.random()-0.5)*0.8,1,{ang:ENV.wind.a,spread:0.4,v:0.05,tau:0.4,tx:ax,ty:ay-0.01,life:2400,size:0.3,grow:2,alpha:0.3});}}} // v2.3: a poeira anda com o vento
-  if((ENV.wetness||0)>0.45&&ENV.rain<0.35&&ENV.night<0.7&&Math.random()<dt/420*ENV.wetness){const ms=[...s.board].filter(([k,tl])=>tl.e.includes('B')||s.alive.has(k));
+  if((ENV.wetness||0)>0.45&&ENV.rain<0.35&&ENV.night<0.7&&Math.random()<dt/700*ENV.wetness){const ms=[...s.board].filter(([k,tl])=>tl.e.includes('B')||s.alive.has(k));
     if(ms.length){const[k]=ms[Math.floor(Math.random()*ms.length)],[x,y]=wpos(k); // névoa baixa saindo da mata e da água
-      {const[ax,ay]=airU();emit('~#ffffff',x+(Math.random()-0.5)*1.2,y+(Math.random()-0.5)*0.7,1,{ang:ENV.wind.a,spread:0.5,v:0.01,tau:2,tx:ax*0.6,ty:ay*0.6-0.01,life:7000,size:0.9,grow:1.6,alpha:0.16*ENV.wetness});}}}
+      {const[ax,ay]=airU();emit('~#ffffff',x+(Math.random()-0.5)*1.2,y+(Math.random()-0.5)*0.7,1,{ang:ENV.wind.a,spread:0.5,v:0.01,tau:2,tx:ax*0.6,ty:ay*0.6-0.01,life:7000,size:0.9,grow:1.6,alpha:0.09*ENV.wetness});}}}
   if(s.seca&&Math.random()<dt/260){const fs=[...s.board].filter(([k,tl])=>tl.e.includes('B'));if(fs.length){const[k]=fs[Math.floor(Math.random()*fs.length)],[x,y]=wpos(k);
     {const[ax,ay]=airU();emit('petal',x+(Math.random()-0.5)*1.2,y-0.6,1,{ang:Math.PI/2,spread:1,v:0.02,tau:0.5,tx:ax,ty:ay+0.05,life:5000,size:READ(0.07)/20,vr:3,flutter:true,alpha:0.95});}}}
   // v2.3: pólen só com tempo seco e de dia
@@ -3496,9 +3511,9 @@ const LES=[
    sel:'Lados com ✓ verde combinam com o vizinho. Toque na peça (ou em ↻) para girar; depois, em Colocar.',
    after:'Cada lado que combina vale +1. Escolha casas onde mais lados ficam verdes.',
    goal:s=>[s.stats.match>=6,`Objetivo: 6 lados combinando (${Math.min(6,s.stats.match)}/6)`],
-   win:'Encaixar é o centro do jogo: cada lado igual ao do vizinho vale +1 ponto. Terra cabe ao lado de qualquer terra (o lado diferente só não pontua), mas água só encosta em água.'},
+   win:'Encaixar é o centro do jogo: cada lado igual ao do vizinho vale +1 ponto. Terra cabe ao lado de qualquer terra (o lado diferente só não pontua), mas rio não se corta: na ponta de um rio só entra rio.'},
   {id:'licao-2',title:'Água viva',
-   intro:'A nascente solta água pelos lados de rio, e água só encosta em água. A peça da bandeira só ganha água se o rio chegar até ela. Toque na casa marcada.',
+   intro:'A nascente solta água pelos lados de rio, e rio não se corta: na ponta de um rio só entra rio. A peça da bandeira só ganha água se o rio chegar até ela. Toque na casa marcada.',
    sel:'Gire até os dois lados de rio ficarem verdes: um encosta na nascente, o outro na peça da bandeira.',
    after:'Leve o rio da nascente até a peça da bandeira.',
    goal:s=>[s.questsDone>=1,'Objetivo: levar água até a bandeira'],
@@ -3872,6 +3887,18 @@ function draw(t){
   // recorte das peças: o hexágono, a lateral de terra embaixo e espaço para as copas em cima. Assim a sombra
   // das árvores na borda do vale não fica "flutuando" sobre o céu.
   g.save();g.setTransform(W.dpr*sz,0,0,W.dpr*sz,W.dpr*cam.x,W.dpr*cam.y);g.clip(decoClip(s,sel,t));g.setTransform(W.dpr,0,0,W.dpr,0,0);
+  // v2.3: primeiro o chão e a água de todas as peças, depois os enfeites. O chão de cada peça sai um pouco maior que o
+  // hexágono (para não abrir fresta) e, desenhado peça a peça, cobria uma tirinha da água da peça de trás: uma linha
+  // atravessando o rio na emenda. Com o chão todo antes, a água fica contínua de uma peça para a outra.
+  const PASS=new Map();
+  for(const k of keys){if(sel&&k===sel.k&&!s.board.has(k))continue;let[x,y]=scr(k);if(x<-sz*1.7||x>W.w+sz*1.7||y<-sz*2.8||y>W.h+sz*1.9)continue;
+    const tl=s.board.get(k),f=fxOf(k,t),tv=tileVars(k,tl.e,s.board);y+=f.dy;
+    const o={ctx:tileCtx(s,k,tl),dsc:f.dsc,wet:true,alive:aliveOf(k,t),fill:fillOf(k,t),src:tl.src,ver:tl.vereda,seed:k,t,blocked:blockedSides(s.board,k,tl.e),pat:wpat,flow:flowDirs(k),vs:tv.vs,sp:tv.sp,es:edgeState(s.board,k,tl.e),kind:tl.sp};
+    PASS.set(k,{f,o});g.save();if(f.sx!==1||f.sy!==1){const by=y+sz*0.5;g.translate(x,by);g.scale(f.sx,f.sy);g.translate(-x,-by);}
+    drawTileCached(g,x,y,sz,k,tl.e,{...o,pass:'chao'});g.restore();}
+  for(const[k,{f,o}]of PASS){const tl=s.board.get(k);if(!tl.e.includes('A'))continue;let[x,y]=scr(k);y+=f.dy;
+    g.save();if(f.sx!==1||f.sy!==1){const by=y+sz*0.5;g.translate(x,by);g.scale(f.sx,f.sy);g.translate(-x,-by);}
+    drawTileCached(g,x,y,sz,k,tl.e,{...o,pass:'agua'});g.restore();}
   for(const k of keys){
     let[x,y]=scr(k);
     // fora da tela: não desenha e, no zoom, solta o cache grande
@@ -3905,10 +3932,9 @@ function draw(t){
       label(x,y-sz*1.25,txt,{bg:r.tiles?'#3f9a4a':'#fffdf7',fg:r.tiles?'#fff':'#1d3b3a',pri:PRI.jogada});
       continue;
     }
-    const tl=s.board.get(k),f=fxOf(k,t);y+=f.dy;
+    const tl=s.board.get(k),P1=PASS.get(k);if(!P1)continue;const{f,o}=P1;y+=f.dy;
     g.save();if(f.sx!==1||f.sy!==1){const by=y+sz*0.5;g.translate(x,by);g.scale(f.sx,f.sy);g.translate(-x,-by);}
-    const tv=tileVars(k,tl.e,s.board);
-    drawTileCached(g,x,y,sz,k,tl.e,{ctx:tileCtx(s,k,tl),dsc:f.dsc,wet:true,alive:aliveOf(k,t),fill:fillOf(k,t),src:tl.src,ver:tl.vereda,seed:k,t,blocked:blockedSides(s.board,k,tl.e),pat:wpat,flow:flowDirs(k),vs:tv.vs,sp:tv.sp,es:edgeState(s.board,k,tl.e),kind:tl.sp});
+    drawTileCached(g,x,y,sz,k,tl.e,{...o,pass:2});
     if(f.spark!=null){g.globalAlpha=1-f.spark;hexPath(g,x,y,sz*(0.97+f.spark*0.5));g.strokeStyle='#fff6c8';g.lineWidth=3;g.stroke();g.globalAlpha=1;}
     g.restore();
   }
@@ -4299,7 +4325,7 @@ function uiObstacles(t){
   const bn=$('banner');if(bn.dataset.off==null)add(bn);
   return UIOBS.list=out;}
 function layoutLabels(g,sz,t){
-  const fs=Math.round(Math.min(15,Math.max(12,sz*0.4))),h=Math.round(fs*1.6),pad=Math.round(fs*0.65),gap=h+4;
+  const fs=Math.round(Math.min(13,Math.max(12,sz*0.34))),h=Math.round(fs*1.55),pad=Math.round(fs*0.55),gap=h+3; // v2.3: menores e discretos
   const obs=uiObstacles(t??performance.now()),placed=[],rec=[];
   const hit=(r,list)=>list.some(q=>r[0]<q[2]&&r[2]>q[0]&&r[1]<q[3]&&r[3]>q[1]);
   // a peça escolhida (com as marcas dos lados) e os números que estão subindo também ocupam espaço
@@ -4308,20 +4334,21 @@ function layoutLabels(g,sz,t){
   g.save();g.font=`800 ${fs}px "Baloo 2",system-ui,sans-serif`;g.textBaseline='middle';g.textAlign='left';
   LBL.sort((a,b)=>b.pri-a.pri);
   for(const L of LBL){
-    if(L.x<-60||L.x>W.w+60||L.y<-80||L.y>W.h+60)continue;
+    // v2.3: o rótulo é do terreno: anda com o vale e não gruda na borda da tela. Terreno fora da vista, rótulo fora da vista
+    // (antes ele ficava preso na borda e parecia seguir a tela); e só procura lugar logo ao lado do terreno
+    if(L.x<4||L.x>W.w-4||L.y<4||L.y>W.h-4)continue;
     const dw=L.dot?h*0.5+3:0,w=g.measureText(L.txt).width+pad*2+dw,ob=L.pri>=PRI.jogada?obs:obs.concat(busy);
     let ok=null,best=null;
-    // v2.4: com vales mais espalhados (veredas), o alerta procura também um pouco mais longe antes de sumir
-    for(const dx of[0,-w*0.6,w*0.6,-w*1.1,w*1.1])for(const dy of[0,-gap,gap,-2*gap,2*gap,-3*gap,3*gap,4*gap,5*gap,6*gap]){
-      if((Math.abs(dx)>w||dy>4*gap)&&L.pri<PRI.alerta)continue;
-      const x=Math.min(W.w-w/2-6,Math.max(w/2+6,L.x+dx)),y=Math.min(W.h-h/2-6,Math.max(h/2+6,L.y+dy)),r=[x-w/2-3,y-h/2-3,x+w/2+3,y+h/2+3];
+    const offs=L.pri>=PRI.alerta?[[0,0],[0,-gap],[0,gap],[-w*0.6,0],[w*0.6,0],[-w*0.6,-gap],[w*0.6,-gap],[-w*0.6,gap],[w*0.6,gap],[0,-2*gap],[0,2*gap],[-w*1.1,0],[w*1.1,0],[0,3*gap],[-w*0.6,2*gap],[w*0.6,2*gap]]:[[0,0],[0,-gap],[-w*0.6,0],[w*0.6,0]];
+    for(const[dx,dy]of offs){
+      const x=L.x+dx,y=L.y+dy,r=[x-w/2-3,y-h/2-3,x+w/2+3,y+h/2+3];if(r[0]<2||r[1]<2||r[2]>W.w-2||r[3]>W.h-2)continue;
       if(!best)best={x,y,r};
       if(!hit(r,placed)&&!hit(r,ob)){ok={x,y,r};break;}
       if(dx===0&&!best.free&&!hit(r,placed))best={x,y,r,free:1};}
-    if(!ok){if(L.pri<PRI_OBRIG){rec.push({txt:L.txt,pri:L.pri,drop:1});continue;}ok=best;}
+    if(!ok){if(L.pri<PRI_OBRIG||!best){rec.push({txt:L.txt,pri:L.pri,drop:1});continue;}ok=best;}
     placed.push(ok.r);rec.push({txt:L.txt,pri:L.pri,r:ok.r});const{x,y}=ok;
-    g.fillStyle='rgba(29,59,58,.2)';rr(g,x-w/2,y-h/2+2,w,h,h/2);g.fill();
-    g.fillStyle=L.bg;rr(g,x-w/2,y-h/2,w,h,h/2);g.fill();
+    g.globalAlpha=L.pri>=PRI_OBRIG?1:0.9;g.fillStyle='rgba(29,59,58,.14)';rr(g,x-w/2,y-h/2+1.5,w,h,h/2);g.fill();
+    g.fillStyle=L.bg;rr(g,x-w/2,y-h/2,w,h,h/2);g.fill();g.globalAlpha=1;
     let tx=x-w/2+pad;if(L.dot){g.beginPath();g.arc(tx+h*0.22,y,h*0.22,0,7);g.fillStyle=L.dot;g.fill();tx+=dw;}
     g.fillStyle=L.fg;g.fillText(L.txt,tx,y+1);
   }
@@ -4441,7 +4468,7 @@ function renderUI(){
   // explicação na primeira peça com missão
   // v2.4: na primeira partida de verdade, as veredas e a regra da água
   if(!over&&!G.lesson&&G.bal.veredas&&s.placed===0&&!db.seenVereda&&$('coach').hidden){G.coachKind='seenVereda';
-    $('coachTxt').innerHTML=`Além da nascente, o vale tem duas <b>veredas</b>: olhos-d'água que nunca secam. Leve o rio de uma vereda até o rio da nascente: é um <b>afluente</b>, +${E.CFG.afluPts} e +${E.CFG.afluTiles} peças. Água só encosta em água.`;
+    $('coachTxt').innerHTML=`Além da nascente, o vale tem duas <b>veredas</b>: olhos-d'água que nunca secam. Leve o rio de uma vereda até o rio da nascente: é um <b>afluente</b>, +${E.CFG.afluPts} e +${E.CFG.afluTiles} peças. Rio não se corta.`;
     $('coach').hidden=false;}
   if(!over&&!G.lesson&&tile.quest&&!db.seenQuest&&$('coach').hidden){G.coachKind='seenQuest';
     $('coachTxt').innerHTML=tile.quest.flow?`Esta peça traz uma <b>missão de água</b>: quando a seca chegar, ela precisa ter <b>água correndo</b>, com o rio ligado e bosque encostado. Cumprir dá <b>+${E.QUEST_TILES} peças</b>.`
@@ -4457,21 +4484,22 @@ function renderUI(){
   $('rotL').disabled=$('rotR').disabled=!sel||sel.ops.length<2;
   const pb=$('placeBtn');pb.disabled=!sel;
   if(sel){const r=sel.ops[sel.i].rep;pb.textContent=`Colocar  +${r.pts}${r.tiles?` · +${r.tiles} peça`:''}${r.questsDone.length?' ✓':''}`;}
-  else pb.textContent=over?'Fim':G.valid.size?'Toque numa casa vazia':'Deixar a peça passar';
+  else pb.textContent=over?'Fim':G.valid.size?'Colocar':'Deixar passar'; // v2.3: o botão diz a ação, não explica
   if(!sel&&!over&&!G.valid.size&&!G.lesPending)pb.disabled=false;
   $('undoBtn').disabled=!G.undo||!!G.resAnim; // v2.3: não desfaz durante a cerimônia do fim
-  let h='';
+  // v2.3: na partida, só o que pede ação agora (peça sem casa, seca chegando, seca). As explicações (como girar, o que
+  // combina, onde tocar) ficam nas lições e na primeira partida de quem ainda não fez o tutorial
+  let h='';const learn=!db.tutDone||(s.placed<3&&!(db.lesDone||[]).length);
   if(over)h='A pilha acabou.';
-  else if(sel){const o=sel.ops[sel.i];h=o.rep.edges.length?`Lados <em>verdes</em> combinam. Toque na peça ou use ↺ ↻ para girar.`:'Toque na peça ou use ↺ ↻ para girar.';if(sel.ops.length===1)h='Peça igual de todos os lados: é só colocar.';}
-  else if(!G.valid.size)h='Esta peça não cabe em nenhuma casa: água só encosta em água. Deixe-a passar.';
-  else if(s.placed===0)h='Toque numa casa vazia. Água só encosta em água.';
-  else if(!G.bal.seca&&G.bal.turnsLeft<=4&&G.bal.risk.length)h=`${ENV.R>0.5?'Ainda chove, mas a seca':'A seca'} vem em ${G.bal.turnsLeft} ${G.bal.turnsLeft===1?'jogada':'jogadas'}: o rio em laranja vai secar. Bosque encostado nele protege.`;
-  else if(G.bal.seca)h='É seca: rio sem bosque encostado fica seco até as chuvas voltarem.';
-  else if(s.left<=3)h=`Restam ${s.left} peça${s.left>1?'s':''}. Missões e peças perfeitas dão mais.`;
-  else if(tile.e.includes('A')&&s.placed<12)h='Peça de rio: o rio só continua em rio (ou numa casa vazia).';
-  else h='Toque numa casa vazia. A melhor posição já vem girada.';
+  else if(!sel&&!G.valid.size)h='Esta peça não cabe em nenhuma casa (rio não se corta). Deixe-a passar.';
+  else if(!G.bal.seca&&G.bal.turnsLeft<=4&&G.bal.risk.length)h=`Seca em ${G.bal.turnsLeft} ${G.bal.turnsLeft===1?'jogada':'jogadas'}: o rio em laranja vai secar.`;
+  else if(G.bal.seca&&s.placed>0&&G.bal.risk&&learn)h='É seca: rio sem bosque encostado fica seco.';
+  else if(learn){
+    if(sel){const o=sel.ops[sel.i];h=o.rep.edges.length?'Lados <em>verdes</em> combinam. Toque na peça para girar.':'Toque na peça para girar.';if(sel.ops.length===1)h='É só colocar.';}
+    else if(s.placed===0)h='Toque numa casa vazia. Rio não se corta.';
+    else h='Toque numa casa vazia.';}
   if(G.lesson&&!over){const L=G.lesson;h=G.sel?L.sel:(s.placed===0||!L.after?L.intro:L.after);}
-  $('hint').innerHTML=`<span>${h}</span>`;
+  $('hint').innerHTML=h?`<span>${h}</span>`:'';$('hint').classList.toggle('vazio',!h);
   // o topo coberto mudou (missões novas, lição): reenquadra o vale na área livre
   if(!cam.user&&!G.calm&&W.w&&Math.abs(overlayTop()-(G.fitTop??-99))>4)fit(G.fitTop==null);
 }

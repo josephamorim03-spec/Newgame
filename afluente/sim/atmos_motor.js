@@ -158,7 +158,7 @@ function Atmos(){
     const prog=c=>Math.max(c.age/c.life,c.gh/c.lifeH),act=c=>{const u=prog(c);return sst(0.12,0.3,u)*(1-sst(0.72,1,u));};
     function rainAt(x,y){let R=0;if(S.phase===1)return 0;for(const c of S.cells){const a=act(c);if(a<=0||c.virga)continue;const q=Math.hypot(x-c.x,y-c.y)/c.r;if(q>=1)continue;
         R+=c.R0*c.g*a*(1-0.35*q*q)*(1-sst(0.78,1,q))*(S.taper??1);}
-      return R+(S.out?S.out.nsR:0);}
+      return R+(S.out&&(S.taper??1)>0?S.out.nsR:0);} // v2.3: a garoa de fundo vem do quadro anterior; com as chuvas já paradas (taper 0) ela não entra
     function outflowAt(x,y){let ux=0,uy=0,cool=0;for(const c of S.cells){const a=act(c);if(a<0.25)continue;
         const dx=x-c.x,dy=y-c.y,d=Math.hypot(dx,dy)||1,u=prog(c),rf=c.r*(1+1.2*sst(0.25,0.8,u)),G=(2.5+c.R0/9)*a;
         const k=Math.exp(-(((d-rf)/(0.5*c.r))**2))+(d<rf?0.55:0);ux+=dx/d*G*k;uy+=dy/d*G*k;cool=Math.max(cool,a*(d<rf*1.2?1:Math.exp(-(((d-rf*1.2)/c.r)**2))));}

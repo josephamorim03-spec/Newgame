@@ -982,6 +982,22 @@ Os girassóis 3D passam a ser as flores de verdade.
 - **Margem do rio:** terra úmida em degradê, barro com textura e seixos, o barranco e a linha d'água, no lugar das duas faixas lisas.
 - **Partículas:** folhas, pétalas, poeira, fumaça e névoa sentem o ar (arrasto): andam com o vento e caem na velocidade-limite. Antes caíam como pedra, e as folhas sopradas iam a até 36 m/s.
 
+**Teste no celular: casas impossíveis, emenda da água, rio tapado, nuvens, neblina e interface (v2.3).**
+- **Regra da água (`riverFit: 'brejo'`).** O encaixe exato da v2.4 (água só com água, terra só com terra) deixava 23% das casas vazias apagadas a cada jogada. Uma casa entre dois rios de origens diferentes só aceitava uma peça de formato exato; uma peça de rio que ligava os dois, mas tinha um lado a mais, não entrava. Agora o rio do vale não se corta (a ponta de um rio só recebe rio), mas a água a mais da peça nova termina num brejo. Com 30 vales e os bots:
+
+  | | v2.4 (exato) | v2.3 (brejo) | sem regra |
+  |---|---|---|---|
+  | Casas apagadas por jogada | 6,9 (23%) | 4,3 (15%) | 0 |
+  | Rio vivo no fim (guloso / cuidadoso) | 96% / 98% | 92% / 96% | 89% / 91% |
+  | Afluentes por partida | 0,8 / 1,1 | 0,5 / 0,8 | 0,2 / 0,4 |
+  | Pontos | 381 / 451 | 388 / 461 | 310 / 503 |
+
+  O ganho da v2.4 (rio vivo) fica quase todo, sem casas impossíveis entre rios. Textos das lições e da dica: "rio não se corta".
+- **Emenda da água.** O chão de cada peça sai um pouco maior que o hexágono e, desenhado peça a peça, cobria uma tirinha da água da peça de trás: uma linha atravessando o rio. Agora o vale é desenhado em três passadas (o chão de todas as peças, a água de todas, depois os enfeites), e o rio de cada peça fica recortado no próprio hexágono.
+- **Rio tapado.** Árvores e buritis só testavam a base contra o rio; a copa, que sobe na tela, cobria o canal. Agora o desenho inteiro é testado: árvore não cobre o canal, e o buriti na beira cobre no máximo a ponta das folhas.
+- **Nuvens e neblina.** Os tufos de nuvem ficaram mais altos na tela, menos aumentados e um pouco mais transparentes. A neblina foi de 38% para 22% de opacidade (e metade disso enquanto se escolhe a casa); a névoa que sobe depois da chuva ficou mais rala.
+- **Interface.** Os rótulos do vale andam com o terreno e não grudam mais na borda da tela; são menores e discretos. A dica explicativa saiu da partida (fica nas lições e na primeira partida); sem dica, o espaço volta para o vale. O botão diz "Colocar".
+
 ## A água no centro (v2.4)
 
 **O pedido:** juntar os estudos (`REVISAO_MECANICAS_v2.3.md`, `REVISAO_RETENCAO_v2.4.md`, `AGUA_E_PREVIA_v2.5.md`) e ajustar o jogo; ver se as missões fazem sentido; manter só uma peça seguinte visível; e aplicar o que os estudos mostraram que melhora, respeitando o clima, o terreno e a interface.

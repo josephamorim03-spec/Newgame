@@ -18,7 +18,7 @@ function Engine(){
        As peças especiais entram na pilha conforme o tempo passa.
      Lições: vales prontos (licao-1 … licao-5) com peças fixas, para ensinar uma mecânica de cada vez.
      v2.4 — A água no centro (ver REVISAO_*.md e AGUA_E_PREVIA_v2.5.md):
-       - água só encosta em água: lado de rio encosta em rio (ou casa vazia), lado de terra nunca encosta em água.
+       - rio não se corta (v2.3, riverFit 'brejo'): lado de rio do vizinho pede rio; a água a mais da peça nova termina num brejo.
          Se a peça não cabe em casa nenhuma, ela é deixada passar (pass);
        - o vale abre com a nascente, um trecho de rio e duas veredas (olhos-d'água que nunca secam). O rio de uma
          vereda que chega ao rio da nascente é um afluente: +10 e +2 peças;
@@ -33,7 +33,7 @@ function Engine(){
   const opp=d=>(d+3)%6;
   const START=22,PERFECT_PTS=5,QUEST_TILES=2,FLOW_PTS=2,SEASON_TILES=0;
   const CFG={qMode:'prazo',qSlack:3,qMul:4,qMulT:{B:4,C:4,V:6},qSpan:3,flowDue:10,aguas:8,seca:4,keptPts:1,keptDiv:2,divGrow:1,cap:2,rain:2,shield:'touch',
-    riverFit:true,veredas:2,veredaDist:3,afluPts:10,afluTiles:QUEST_TILES,cheia:1,rioPct:0.32,opening:true,flowSeca:true,look:1,lookK:3,lookPols:['cuidadoso'],...(typeof AFLUENTE_CFG!=='undefined'?AFLUENTE_CFG:{})};
+    riverFit:'brejo',veredas:2,veredaDist:3,afluPts:10,afluTiles:QUEST_TILES,cheia:1,rioPct:0.32,opening:true,flowSeca:true,look:1,lookK:3,lookPols:['cuidadoso'],...(typeof AFLUENTE_CFG!=='undefined'?AFLUENTE_CFG:{})};
   const SEASON_AT=[0,0,35,95,180,290,420,570,740,930];
   const seasonAt=n=>n<SEASON_AT.length?SEASON_AT[n]:SEASON_AT[SEASON_AT.length-1]+220*(n-SEASON_AT.length+1);
   const CYCLE=['Águas','Seca'];
@@ -189,9 +189,13 @@ function Engine(){
 
   // Qualquer peça cabe em qualquer casa vazia encostada no vale. Rio que bate em terra termina num brejo:
   // aquele lado não combina (não pontua) e a água não passa. (A proibição antiga criava buracos impossíveis.)
-  // v2.4: água só encosta em água. Lado de rio encosta em rio (ou em casa vazia); lado de terra nunca encosta em água.
-  function legal(board,k,e){if(!CFG.riverFit)return true;
-    for(let d=0;d<6;d++){const n=board.get(nb(k,d));if(n&&(e[d]==='A')!==(n.e[opp(d)]==='A'))return false;}return true;}
+  // v2.4: água só encosta em água (riverFit true). v2.3 'brejo' (padrão): o rio do vale não se corta; a água a mais da peça nova vira brejo.
+  // v2.3 (pedido do teste): riverFit 'brejo' = o rio que já está no vale nunca é cortado por terra (lado de água vizinho
+  // pede água), mas a peça nova pode ter um lado de água a mais contra terra: ali a água termina num brejo. Assim a peça
+  // de rio que liga dois rios sempre entra, mesmo que o formato não seja o exato, e não sobram casas impossíveis.
+  function legal(board,k,e){if(!CFG.riverFit)return true;const soft=CFG.riverFit==='brejo';
+    for(let d=0;d<6;d++){const n=board.get(nb(k,d));if(!n)continue;const nw=n.e[opp(d)]==='A',mw=e[d]==='A';
+      if(soft?(nw&&!mw):(nw!==mw))return false;}return true;}
   const canPlay=s=>{const t=cur(s);if(!t)return false;const rs=rotations(t.e);
     for(const k of slots(s))for(const o of rs)if(legal(s.board,k,o.e))return true;return false;};
   function slots(s){

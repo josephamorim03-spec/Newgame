@@ -42,8 +42,17 @@ A regra é uma só: **quanto mais a informação muda a jogada que a pessoa vai 
    - os números que sobem depois de uma jogada.
    A lista é lida da própria página a cada 250 ms (`uiObstacles`).
 4. **Obrigatórios** (nível 5 para cima): sem lugar livre, ficam na melhor posição possível em vez de sumir.
-5. **Tamanho:** de 12 a 15 px, conforme o zoom. Não crescem com o zoom nem ficam ilegíveis de longe.
+5. **Tamanho:** 12 a 13 px, discretos (fundo um pouco transparente). Não crescem com o zoom nem ficam ilegíveis de longe.
+6. **Presos ao terreno (v2.3):** o rótulo anda com o vale. Se o terreno sai da tela, o rótulo sai junto; ele nunca gruda na borda da tela. Antes, preso à borda, ele parecia seguir a tela quando se arrastava o mapa. Também só procura lugar logo ao lado do terreno: até uma linha para cima, e os alertas até duas linhas e um pouco para os lados.
 6. O resultado de cada quadro fica em `G.lbl`, para o auditor.
+
+## 2.1 Textos na partida (v2.3)
+
+Durante a partida, a linha de dica só aparece quando há algo a fazer agora:
+- a peça não cabe em casa nenhuma: deixar passar;
+- a seca chega em até 4 jogadas e há rio em risco.
+
+As explicações (onde tocar, como girar, o que combina) ficam nas lições e na primeira partida de quem ainda não fez o tutorial. Sem dica, a linha some e o espaço volta para o vale. O botão principal diz a ação ("Colocar", "Deixar passar"), e não explica.
 
 ## 3. Tipografia: uma escala só
 
@@ -108,6 +117,11 @@ Em cada uma, mede:
 | JS | qualquer erro de JavaScript | — |
 
 Sai com código 1 se houver erro e, com a pasta, salva uma captura de cada tela.
+
+**Estado depois do teste no celular (v2.3, rótulos presos ao terreno):** 77 telas, 0 erros e 33 avisos aceitos:
+
+- 32 rótulos de nível 1 e 2 escondidos: presos ao terreno, discretos e sem grudar na borda, os de pouca prioridade cedem o lugar mais vezes. A informação continua nas fichas do topo;
+- "Contemplar o vale" em 2 linhas no menu da tela de 360 px.
 
 **Estado na v2.4:** 77 telas, 0 erros e 12 avisos aceitos:
 
