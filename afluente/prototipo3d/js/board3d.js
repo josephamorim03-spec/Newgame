@@ -120,7 +120,7 @@ export function buildBoard(api) {
     const nB = e.filter(x => x === 'B').length, nG = e.filter(x => x === 'G').length;
     tries(nB * 3, () => api.makeTree(t.cerrado ? 'pequi' : 'mata', 0.85 + rnd() * 0.3), (x, z) => inSector(x, z, 'B') && waterDist(x, z) > 1.8, 4.6);
     tries(nB * 3, () => api.makeTree('moita', 0.8 + rnd() * 0.5), (x, z) => inSector(x, z, 'B') && waterDist(x, z) > 1.2, 2.2);
-    tries(Math.ceil(nG * 0.6), () => api.makeTree(rnd() < 0.15 ? 'ipe' : 'cerrado', 0.85 + rnd() * 0.35), (x, z) => inSector(x, z, 'G') && waterDist(x, z) > 3, 7);
+    tries(Math.ceil(nG * 0.6), () => (rnd() < 0.15 ? api.makeTree('ipe', 0.8 + rnd() * 0.15) : api.makeTree('cerrado', 0.85 + rnd() * 0.35)), (x, z) => inSector(x, z, 'G') && waterDist(x, z) > 3, 7);
     tries(Math.ceil(nG * 0.5), api.makeTermite, (x, z) => inSector(x, z, 'G'), 3);
     if (A.length) { tries(A.length + 1, api.makeBuriti, (x, z) => { const w = waterDist(x, z); return w > 0.8 && w < 3.5; }, 4); tries(A.length * 2, () => api.makeTree('moita', 0.8 + rnd() * 0.4), (x, z) => { const w = waterDist(x, z); return w > 1.4 && w < 6; }, 2.5); }
     const trees = scene.children.filter(o => !before.has(o) && o.isGroup && (o.userData.kind || o.userData.regua === 'buriti'));
