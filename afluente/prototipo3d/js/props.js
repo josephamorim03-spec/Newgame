@@ -239,7 +239,7 @@ export function buildProps(scene, { mobile = false } = {}) {
     rotor.add(new THREE.Mesh(merge(sails), woodMat), new THREE.Mesh(merge(cloth.map(c => { c.computeVertexNormals(); return c; }), ['position', 'normal', 'uv']), mat({ color: 0xf2e9d6, side: THREE.DoubleSide }, { frag: 'diffuseColor.rgb*=mix(1.0,0.8,uWet);', rim: '2.0' })));
     g.traverse(o => { if (o.isMesh) o.castShadow = o.receiveShadow = true; }); g.position.set(Mp[0], y0, Mp[1]); scene.add(g); tag(g, 'moinho (com as pás)');
     let w = 0, yaw = 0; updaters.push(dt => { const wd = U.uWindDir.value, target = Math.atan2(-wd.x, -wd.y); let dy = target - yaw; dy = Math.atan2(Math.sin(dy), Math.cos(dy)); yaw += dy * Math.min(1, dt * 0.25); cap.rotation.y = yaw;
-      const u = U.uWindBase.value, tgt = u < 1.3 ? 0 : 2.2 * u / 4.6; w += (tgt - w) * Math.min(1, dt * 0.35); rotor.rotation.z -= w * dt; }); }
+      const u = U.uWindBase.value, tgt = u < 2.2 || u >= 11 ? 0 : 2 * u / 4.4; /* como o motor Atmos: arranca com 2,2 m/s, razão de velocidade 2, recolhe as pás a 11 m/s */ w += (tgt - w) * Math.min(1, dt * 0.35); rotor.rotation.z -= w * dt; }); }
 
   // ---------- fumaça das chaminés: bolinhas que sobem, crescem, clareiam e o vento leva
   { const N = 26, src = smokeSrc.filter(s => s.on), base = [], seed = [];

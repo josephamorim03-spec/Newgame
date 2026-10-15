@@ -11,6 +11,7 @@ import { R, TILES, CENTER, RIVER, riverHalfWidth, heightAt, riverInfo, waterDist
 import { buildProps } from './props.js';
 import { buildFauna } from './fauna.js';
 import { buildClouds } from './clouds.js';
+import { buildSkyFx } from './skyfx.js';
 import { tag, audit, person } from './regua.js';
 import { createGameCamera } from './camera.js';
 import { leafTexture, fanTexture, barkTexture, earthTexture, stoneTexture } from './textures.js';
@@ -400,6 +401,7 @@ scatter(tL, 3, () => makeTree('cerrado', 0.9), () => true, 6);
 const props = buildProps(scene, { mobile });
 const shadeTree = scene.children.find(o => o.userData.kind === 'sombra' && inHex(o.position.x, o.position.z, tC.c, 1));
 const clouds = buildClouds(scene, CENTER, { mobile });
+const skyfx = buildSkyFx(scene, camera, { mobile, focus: () => camMode === 'jogo' ? gameCam.focus : controls.target });
 const fauna = buildFauna(scene, { mobile, shade: shadeTree ? [shadeTree.position.x, shadeTree.position.z] : null, termites: scene.children.filter(o => o.userData.regua === 'cupinzeiro').map(o => [o.position.x, o.position.z]) });
 // moitas: o sub-bosque da mata e os arbustos do cerrado, que fecham o vão entre o capim e as copas
 scatter(tB, 16, () => makeTree('moita', 0.9 + rnd() * 0.35), (x, z) => { const w = waterDist(x, z); return w > 1.2 && w < 14; }, 2.2);
@@ -476,10 +478,10 @@ function renderReflection() {
   mirrorCam.copy(camera); mirrorCam.position.set(cp.x, 2 * wy - cp.y, cp.z); mirrorCam.up.set(0, 1, 0); mirrorCam.lookAt(tg.x, 2 * wy - tg.y, tg.z); mirrorCam.updateMatrixWorld();
   mirrorCam.projectionMatrix.copy(camera.projectionMatrix); mirrorCam.projectionMatrixInverse.copy(camera.projectionMatrixInverse);
   waterMat.uniforms.uReflMat.value.multiplyMatrices(BIAS, mirrorCam.projectionMatrix).multiply(mirrorCam.matrixWorldInverse);
-  reflClip[0].constant = -wy; water.visible = grass.visible = rain.visible = false; skyDome.position.copy(mirrorCam.position);
+  reflClip[0].constant = -wy; water.visible = grass.visible = rain.visible = skyfx.bowMesh.visible = false; skyDome.position.copy(mirrorCam.position);
   renderer.shadowMap.autoUpdate = false; renderer.clippingPlanes = reflClip; renderer.setRenderTarget(reflRT); renderer.render(scene, mirrorCam);
   renderer.setRenderTarget(null); renderer.clippingPlanes = []; renderer.shadowMap.autoUpdate = true;
-  water.visible = grass.visible = rain.visible = true; skyDome.position.copy(cp);
+  water.visible = grass.visible = rain.visible = true; skyfx.bowMesh.visible = skyfx.fx.bow > 0.005; skyDome.position.copy(cp);
 }
 
 // ---------- chuva: riscos caindo na velocidade terminal e inclinados pelo vento (tudo na GPU)
@@ -590,7 +592,8 @@ function frame() {
   if (!!ST.regua !== reguaOn) { reguaOn = !!ST.regua; showRegua(reguaOn); }
   if (people && reguaOn) for (const p of people.children) p.rotation.y = Math.atan2(camera.position.x - p.position.x, camera.position.z - p.position.z);
   if (camMode === 'jogo') U.uFocus.value.copy(gameCam.focus); else U.uFocus.value.copy(camera.position).add(camera.getWorldDirection(_v).multiplyScalar(0.01));   // câmera livre: só some o que encosta na lente fitShadow(); grassLod();
-  const ctx = { pxPerUnit: renderer.domElement.height / (2 * Math.tan(camera.fov * Math.PI / 360)) }; props.update(dt, ctx); fauna.update(dt, ctx); clouds.update(dt, camera);
+  const ctx = { pxPerUnit: renderer.domElement.height / (2 * Math.tan(camera.fov * Math.PI / 360)) }; props.update(dt, ctx); fauna.update(dt, ctx); clouds.update(dt, camera); ctx.Rr = c.Rr; ctx.hour = ST.hour; skyfx.update(dt, ctx);
+  { const f = skyfx.fx.flash; if (f > 0) { skyLight.intensity += f * 3; U.uSkyZen.value.lerp(new THREE.Color(0.85, 0.88, 1), f * 0.5); U.uSkyHor.value.lerp(new THREE.Color(0.9, 0.92, 1), f * 0.45); } }   // clarão do raio
   renderReflection();
   renderer.render(scene, camera);
   // quadros por segundo medidos no relógio de verdade (o dt do jogo é limitado a 0,1 s e enganava quando o aparelho sofria)
@@ -599,4 +602,4 @@ function frame() {
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
-window.__previa = { gameCam,  ST, U, renderer, scene, camera, controls, fauna, clouds };
+window.__previa = { skyfx, gameCam,  ST, U, renderer, scene, camera, controls, fauna, clouds };
