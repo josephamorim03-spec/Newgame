@@ -470,3 +470,25 @@ Gente sentada, agachada ou com a enxada no alto é medida **em pé** (a régua d
 
 **Contador de quadros:** o "qps" do rodapé passou a medir no relógio de verdade. Antes ele somava o passo do jogo, que é limitado a 0,1 s, e num aparelho lento mostrava ~10–13 qps quando o real era menos de 1.
 
+
+## 13. Gente e bicho reagem ao tempo (prévia 3D)
+
+- **Chuva:** acima de ~0,3 da chuva a gente corre para casa com a mão na cabeça (fica só o velho da varanda à noite); as galinhas vão para a varanda mais perto, as ovelhas se juntam no meio do aprisco, o gado vai para a sombra da árvore.
+- **Vento forte (> ~6 m/s):** quem está parado se inclina contra o vento e segura o chapéu; saia e avental são pano e abrem com o arrasto (≈ 0,028·u² m/s², a 10 m/s balançam sem virar bandeira).
+- **Calor da seca (11h–15h30):** quem trabalha no sol enxuga a testa de vez em quando; o gado procura a sombra.
+- **Raio:** o trovão assusta: a gente se encolhe, as crianças correm para casa, os bichos disparam e o gado deitado levanta.
+- **Medo e fuga:** cada bicho tem distância de fuga e velocidade de corrida (galinha 2,2 m, capivara 5 m, seriema 7 m, ema 8 m, lobo-guará 12 m…); criança correndo assusta mais, e todos fogem da onça. Fugindo, o bicho ofega (respira mais rápido) por um tempo.
+- **Noite:** o gado e as ovelhas deitam com as pernas dobradas debaixo do corpo e levantam de manhã ou com susto.
+- **O resto do tempo:** todos respiram, o gado espanta mosca com o rabo de vez em quando, os bichos parados olham para quem chega e a gente olha para as crianças que passam correndo.
+
+## 14. Orçamento de desenho (prévia 3D)
+
+Medido no quadro inicial (sombra + tela, sem o reflexo): antes ~1.100 desenhos e 3,5 milhões de triângulos; agora ~880 desenhos e 2,8 milhões, com o grosso no capim (1,1 M, que já é proporcional ao aparelho) e no milho.
+
+- **Árvores juntadas:** todas as árvores de uma espécie viram uma malha só (cada vértice guarda a origem da sua árvore, e o vento continua árvore por árvore): de ~300 desenhos para 40.
+- **Trigo:** colmo em fita e espiga em losango (~80 triângulos por touceira, antes ~550): de 1,26 M para 0,15 M; trigo e feijão sem sombra.
+- **Boi:** cabeça e canela+casco numa malha cada (de 23 para 11 desenhos por boi). Bicho pequeno não projeta sombra.
+- **Reflexo da água:** só desenha céu, chão, chapadas, árvores, construções grandes e nuvens.
+- **Nuvens, milho e cabelo** com menos polígonos.
+- **Pano:** longe da câmera a saia fica parada e só é atualizada de vez em quando.
+- **Qualidade automática (0 cheia, 1 média, 2 leve):** abaixo de ~24 quadros por segundo por 3 s desce um degrau (capim 100/65/40%, sombra 2048/1024/768, reflexo 50/35/18% da tela, lavoura sem sombra, pano só perto) e depois a resolução; acima de ~50 por 6 s sobe. O celular começa no degrau 1.

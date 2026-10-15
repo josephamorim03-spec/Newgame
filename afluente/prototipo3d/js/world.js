@@ -148,6 +148,8 @@ export const LAYOUT = {
   celeiro: { p: off(tRo, 9.5, 8), rot: -0.5, w: 8, d: 6 },
   wheat: { tile: tRo, maxX: 0.5 }, roca: { tile: tRo, minX: 2.5 },
   coreto: { p: off(tPr, 0, 0) },
+  oven: { p: off(tV, 1.5, -12.5), rot: 0.2 },
+  cavalete: { p: off(tPr, 5.5, 9), rot: -0.3 },
   venda: { p: off(tPr, -9, -7), rot: 0.5, w: 7.5, d: 6 },
   sobrado: { p: off(tPr, 9, -6.5), rot: -0.5, w: 7, d: 6 },
   praca: { c: off(tPr, 0, 0), r: 8.5 },
@@ -176,5 +178,5 @@ export function blocked(x, z, pad = 0) {
   return L.houses.some(h => inBox(h.p, h.w + 3, h.d + 3, h.rot)) || inBox(L.chapel.p, 8, 12, L.chapel.rot) || Math.hypot(x - L.well.p[0], z - L.well.p[1]) < 2.2 + pad
     || inBox(L.garden.p, L.garden.w + 1, L.garden.d + 1, L.garden.rot) || inBox(L.paiol.p, L.paiol.w + 2.5, L.paiol.d + 2.5, L.paiol.rot) || inBox(L.bales.p, 3.4, 2.4, L.bales.rot)
     || Math.hypot(x - L.scarecrow.p[0], z - L.scarecrow.p[1]) < 1.0 + pad || inBox(L.cart.p, 5, 2.6, L.cart.rot) || inBox(L.sheepPen.p, L.sheepPen.w + 1, L.sheepPen.d + 1, L.sheepPen.rot) || inBox(L.celeiro.p, L.celeiro.w + 3, L.celeiro.d + 3, L.celeiro.rot)
-    || inBox(L.venda.p, L.venda.w + 3, L.venda.d + 3, L.venda.rot) || inBox(L.sobrado.p, L.sobrado.w + 3, L.sobrado.d + 3, L.sobrado.rot) || Math.hypot(x - L.coreto.p[0], z - L.coreto.p[1]) < 4.2 + pad || inBox(L.corral.p, L.corral.w + 1, L.corral.d + 1, L.corral.rot) || Math.hypot(x - L.mill.p[0], z - L.mill.p[1]) < 3.5 + pad;
+    || inBox(L.venda.p, L.venda.w + 3, L.venda.d + 3, L.venda.rot) || inBox(L.sobrado.p, L.sobrado.w + 3, L.sobrado.d + 3, L.sobrado.rot) || Math.hypot(x - L.coreto.p[0], z - L.coreto.p[1]) < 4.2 + pad || Math.hypot(x - L.oven.p[0], z - L.oven.p[1]) < 2.6 + pad || Math.hypot(x - L.cavalete.p[0], z - L.cavalete.p[1]) < 2.2 + pad || inBox(L.corral.p, L.corral.w + 1, L.corral.d + 1, L.corral.rot) || Math.hypot(x - L.mill.p[0], z - L.mill.p[1]) < 3.5 + pad;
 }

@@ -6,6 +6,7 @@ import * as THREE from 'three';
 import { U } from './mat.js';
 import { mat, paint, merge, col, V3 } from './props.js';
 import { tag, READ3 } from './regua.js';
+import { mergeGeometries } from './addons/BufferGeometryUtils.js';
 import { LAYOUT, TILES, heightAt, waterDist, inHex, inBoxAt, blocked, inAnyTile, WATER_Y, SPRING, POOL_R, RIVER, LAKE, lakeDist } from './world.js';
 
 const rnd = (() => { let a = 424242; return () => { a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; })();
@@ -37,6 +38,7 @@ export function buildFauna(scene, opts = {}) {
     const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(colA, 3)); g.setIndex(idx);
     g.computeVertexNormals(); return g.toNonIndexed ? (() => { const n = g; n.computeVertexNormals(); return n; })() : g;
   }
+  const mergeGeos = gs => { const out = mergeGeometries(gs.map(x => { const y = x.index ? x.toNonIndexed() : x; for (const n of Object.keys(y.attributes)) if (!['position', 'normal', 'color'].includes(n)) y.deleteAttribute(n); if (!y.attributes.normal) y.computeVertexNormals(); return y; })); return out; };
   const CM = mat({ vertexColors: true }, { rim: '2.4', frag: 'diffuseColor.rgb*=0.95+0.1*vnoise(vWp.xz*14.0+vWp.y*9.0);diffuseColor.rgb*=mix(1.0,0.82,uWet);' });
   const cmesh = (geo, parent) => { const m = new THREE.Mesh(geo, CM); m.castShadow = true; m.receiveShadow = true; parent.add(m); return m; };
   function cow(tone) {   // nelore: branco a cinza-claro, cupim alto sobre a cernelha, barbela que pende do pescoço ao peito, garupa caída,
@@ -58,8 +60,8 @@ export function buildFauna(scene, opts = {}) {
     const leg = (x, z, front, ph) => { const hip = pivot(g, x, front ? 0.86 : 0.92, z), knee = pivot(hip, 0, front ? -0.42 : -0.453, front ? 0.0 : -0.08);
       const up = front ? [[0.04, 0.1], [-0.16, 0.088], [-0.3, 0.062], [-0.43, 0.05]] : [[0.04, 0.12], [-0.2, 0.095], [-0.36, 0.06], [-0.465, 0.05]];
       cmesh(loft(up.map(([y, r]) => ({ z: -y, y: 0, rx: r * 0.78, rt: r, rb: r, e: 2, c: w }))).rotateX(Math.PI / 2).rotateX(front ? 0 : 0.175), hip);
-      const lowL = front ? 0.4 : 0.38; cmesh(loft([[0.03, 0.05], [-0.06, 0.042], [-0.2, 0.034], [-lowL + 0.08, 0.035], [-lowL + 0.05, 0.043]].map(([y, r]) => ({ z: -y, y: 0, rx: r, rt: r, rb: r, e: 2, c: w })), 10).rotateX(Math.PI / 2), knee);
-      const hoof = new THREE.CylinderGeometry(0.035, 0.05, 0.07, 10).translate(0, -lowL + 0.035, 0.01); paint(hoof, dark); hoof.deleteAttribute('uv'); cmesh(hoof, knee);
+      const lowL = front ? 0.4 : 0.38; const lowG = (loft([[0.03, 0.05], [-0.06, 0.042], [-0.2, 0.034], [-lowL + 0.08, 0.035], [-lowL + 0.05, 0.043]].map(([y, r]) => ({ z: -y, y: 0, rx: r, rt: r, rb: r, e: 2, c: w })), 10).rotateX(Math.PI / 2));
+      const hoof = new THREE.CylinderGeometry(0.035, 0.05, 0.07, 10).translate(0, -lowL + 0.035, 0.01); paint(hoof, dark); hoof.deleteAttribute('uv'); cmesh(mergeGeos([lowG, hoof]), knee);
       hip.userData.ph = ph; hip.userData.low = knee; hip.userData.front = front; return hip; };
     // loft() usa anéis em z; para as pernas montamos anéis em y (o eixo da perna): reescreve com x/y/z certos
     const legs = [leg(0.115, 0.46, true, 0), leg(-0.115, 0.46, true, Math.PI), leg(0.13, -0.6, false, Math.PI), leg(-0.13, -0.6, false, 0)];
@@ -67,14 +69,15 @@ export function buildFauna(scene, opts = {}) {
     const head = pivot(g, 0, 1.33, 0.95);
     const hd = [[0, 0.085, 0.09, 0.1], [0.08, 0.1, 0.1, 0.11], [0.18, 0.092, 0.085, 0.1], [0.3, 0.075, 0.07, 0.085], [0.42, 0.068, 0.065, 0.075], [0.49, 0.07, 0.06, 0.07], [0.53, 0.05, 0.045, 0.05]];
     const hgeo = loft(hd.map(([t, rx, rt, rb]) => ({ z: t, y: 0, rx, rt, rb, e: 2.4, c: t > 0.44 ? dark : t < 0.12 ? grey : w })), 16);
-    hgeo.rotateX(0.95).translate(0, 0.02, 0.02); cmesh(hgeo, head);
-    const hp = (geo, c) => { paint(geo, c); geo.deleteAttribute('uv'); cmesh(geo, head); };
+    hgeo.rotateX(0.95).translate(0, 0.02, 0.02); const headParts = [hgeo];
+    const hp = (geo, c) => { paint(geo, c); geo.deleteAttribute('uv'); headParts.push(geo); };
     for (const sx of [-1, 1]) {
       hp(new THREE.SphereGeometry(1, 10, 8).scale(0.035, 0.11, 0.022).rotateZ(sx * 1.2).rotateY(sx * 0.3).translate(sx * 0.15, 0.0, -0.02), grey);   // orelha média, para o lado e um pouco caída
       hp(new THREE.ConeGeometry(0.03, bull ? 0.12 : 0.1, 8).rotateZ(sx * -0.5).rotateX(-0.3).translate(sx * 0.085, 0.09, -0.03), col(0x5a5048));       // chifre curto e grosso
       hp(new THREE.SphereGeometry(1, 8, 6).scale(0.02, 0.016, 0.022).translate(sx * 0.088, -0.035, 0.1), col(0x141210));                            // olho
       hp(new THREE.SphereGeometry(1, 6, 5).scale(0.012, 0.01, 0.01).translate(sx * 0.03, -0.39, 0.33), col(0x0a0a0a));                               // narina
     }
+    cmesh(mergeGeos(headParts), head);
     const K2 = 1.08; for (const c of [...g.children]) { c.position.multiplyScalar(K2); c.scale.multiplyScalar(K2); }   // tamanho de um nelore adulto (a escala fica no corpo, o grupo segue livre)
     return { g, head, legs, tail, headY: 1.33 * K2, cowLegs: true };
   }
@@ -156,11 +159,37 @@ export function buildFauna(scene, opts = {}) {
   // ---------- comportamento: pastar, andar até um ponto, ficar parado olhando; separação; não sair da área; abrigo na chuva
   function spawn(make, n, o) { for (let i = 0; i < n; i++) { const a = { ...make(), ...o, st: 'idle', t: rnd() * 3, ph: rnd() * 6, sp: 0, h: rnd() * 6.28, tgt: null, look: rnd() * 6 };
     let x, z, k = 0; do { [x, z] = o.pick(null); k++; } while (k < 50 && all.some(b => Math.hypot(b.x - x, b.z - z) < (o.sep || 1.5)));
-    a.x = x; a.z = z; a.g.scale.setScalar(o.scale || 1); scene.add(a.g); if (o.name) tag(a.g, o.name); a.g.traverse(m => { if (m.isMesh) m.castShadow = !mobile || o.big; }); all.push(a); } }
+    a.x = x; a.z = z; a.g.scale.setScalar(o.scale || 1); scene.add(a.g); if (o.name) tag(a.g, o.name); a.g.traverse(m => { if (m.isMesh) m.castShadow = o.big || (!mobile && ['ema', 'anta', 'lobo-guará', 'onça-pintada', 'tamanduá-bandeira', 'garça-moura', 'garça-branca'].includes(o.name)); });   /* bicho pequeno não projeta sombra: metade dos desenhos da sombra */ all.push(a); } }
   const pickIn = (test, around, R) => () => { for (let k = 0; k < 200; k++) { const x = around[0] + (rnd() - 0.5) * 2 * R, z = around[1] + (rnd() - 0.5) * 2 * R; if (test(x, z)) return [x, z]; } return [...around]; };
   const near = (a, R, test) => { for (let k = 0; k < 60; k++) { const x = a.x + (rnd() - 0.5) * 2 * R, z = a.z + (rnd() - 0.5) * 2 * R; if (test(x, z)) return [x, z]; } return null; };
+  // ---------- medo: cada bicho tem uma distância de fuga e uma velocidade de corrida; foge de gente (mais de criança correndo)
+  // e da onça; o raio assusta todo mundo; na chuva as galinhas vão para a varanda e as ovelhas se juntam; no calor da seca o
+  // gado procura sombra; à noite o gado e as ovelhas deitam
+  const FEAR = { 'galinha': [2.2, 2.6], 'capivara': [5, 2.4], 'seriema': [7, 3.6], 'ema': [8, 4.5], 'garça-branca': [5, 1.4], 'garça-moura': [6, 1.4], 'ovelha': [2.6, 1.8],
+    'boi nelore': [1.8, 1.3], 'lobo-guará': [12, 3.2], 'anta': [7, 2.2], 'tamanduá-bandeira': [4, 1.0], 'joão-de-barro (na régua)': [1.6, 1.8], 'onça-pintada': [11, 2.6] };
+  let threats = [];
+  const porches = LAYOUT.houses.map(h => [h.p[0] + (-h.w * 0.1) * Math.cos(h.rot) + (h.d / 2 + 1.1) * Math.sin(h.rot), h.p[1] - (-h.w * 0.1) * Math.sin(h.rot) + (h.d / 2 + 1.1) * Math.cos(h.rot)]);
   function brain(a, dt) {
-    a.t -= dt; const rain = U.uRain.value, shelter = a.shade && rain > 0.35;
+    const name = a.g.userData.regua, fear = FEAR[name], day = U.uDay.value;
+    // quem ameaça: gente por perto (criança correndo assusta mais) e a onça (para quem não é onça)
+    if (fear && a.st !== 'lie') { let best = null, bd = 1e9;
+      for (const t of threats) { if (t.who === a) continue; if (name === 'onça-pintada' && !t.person) continue; const r = fear[0] * (t.onca ? 2.2 : t.fast ? 1.5 : 1);
+        const d = Math.hypot(t.x - a.x, t.z - a.z); if (d < r && d < bd) { bd = d; best = t; } }
+      if (best) { a.st = 'flee'; a.t = 1.8 + rnd(); a.from = [best.x, best.z]; } }
+    a.t -= dt; const rain = U.uRain.value, hour = window.__hour ?? 15, hot = U.uSeca.value > 0.6 && hour > 11 && hour < 15.5 && day > 0.6 && rain < 0.05;
+    const shelter = a.shade && (rain > 0.35 || hot);
+    if (a.st === 'startle') { a.st = 'flee'; a.from = [a.x + (rnd() - 0.5), a.z + (rnd() - 0.5)]; }
+    if (a.st === 'flee') { if (a.t <= 0) { a.st = 'idle'; a.t = 1 + rnd() * 2; }
+      else { let dx = a.x - a.from[0], dz = a.z - a.from[1]; const d = Math.hypot(dx, dz) || 1; dx /= d; dz /= d;
+        let e = Math.atan2(dx, dz) + Math.sin(a.ph * 0.3) * 0.3 - a.h; e = Math.atan2(Math.sin(e), Math.cos(e)); a.h += Math.max(-a.turn * 2.5 * dt, Math.min(a.turn * 2.5 * dt, e));
+        a.sp += (fear[1] - a.sp) * Math.min(1, dt * 4); const nx = a.x + Math.sin(a.h) * a.sp * dt, nz = a.z + Math.cos(a.h) * a.sp * dt;
+        if (a.area(nx, nz)) { a.x = nx; a.z = nz; } else a.h += (rnd() < 0.5 ? 1 : -1) * Math.PI * 0.5 * dt * 4;
+        a.ph += a.sp * dt / a.stride * Math.PI * 2; return; } }
+    // noite: gado e ovelha deitam; de dia levantam
+    if ((name === 'boi nelore' || name === 'ovelha') && !(a.st === 'flee')) { if (day < 0.22 && a.st !== 'lie' && rnd() < dt * 0.2) { a.st = 'lie'; a.sp = 0; } if (a.st === 'lie') { if (day > 0.3) { a.st = 'idle'; a.t = 2; } else return; } }
+    if (a.t <= 0 && rain > 0.35 && name === 'galinha') { let bp = porches[0], bd = 1e9; for (const p of porches) { const d = Math.hypot(p[0] - a.x, p[1] - a.z); if (d < bd) { bd = d; bp = p; } }
+      a.st = 'walk'; a.tgt = [bp[0] + (rnd() - 0.5) * 1.6, bp[1] + (rnd() - 0.5) * 1.0]; a.t = 12; }
+    if (a.t <= 0 && rain > 0.35 && name === 'ovelha') { const P = LAYOUT.sheepPen.p; a.st = 'walk'; a.tgt = [P[0] + (rnd() - 0.5) * 1.5, P[1] + (rnd() - 0.5) * 1.5]; a.t = 10; }
     if (a.t <= 0) {
       if (shelter) { a.st = 'walk'; a.tgt = near({ x: a.shade[0], z: a.shade[1] }, 3.2, a.area) || a.shade; a.t = 10; }
       else { const r = rnd(); if (r < a.pg) { a.st = 'graze'; a.t = 4 + rnd() * 9; } else if (r < a.pg + a.pw) { a.st = 'walk'; a.tgt = a.follow ? near(a.follow, 2.5, a.area) : a.targets && a.targets.length ? (([x, z]) => [x + 0.9, z + 0.6])(a.targets[Math.floor(rnd() * a.targets.length)]) : near(a, a.roam, a.area); a.t = 25; if (!a.tgt) { a.st = 'idle'; a.t = 2; } } else { a.st = 'idle'; a.t = 2 + rnd() * 5; } } }
@@ -179,16 +208,26 @@ export function buildFauna(scene, opts = {}) {
   function pose(a, dt, time) {
     const gy = a.water ? Math.max(heightAt(a.x, a.z), heightAt(a.x, a.z)) : heightAt(a.x, a.z), mv = Math.min(1, a.sp / Math.max(0.05, a.vw));
     if (a.when) a.g.visible = a.when();
-    a.g.position.set(a.x, gy + (a.biped ? Math.abs(Math.sin(a.ph)) * 0.02 * mv : Math.abs(Math.sin(a.ph)) * 0.025 * mv) - 0.02, a.z); a.g.rotation.y = a.h;
-    for (const l of a.legs) { const sw = Math.sin(a.ph + l.userData.ph); l.rotation.x = sw * (a.biped ? 0.55 : a.cowLegs ? 0.32 : 0.42) * mv;
-      if (l.userData.low) l.userData.low.rotation.x = (l.userData.front ? 1 : -1) * Math.max(0, Math.cos(a.ph + l.userData.ph)) * 0.55 * mv; }   // dobra o joelho/jarrete ao levantar a pata
+    a.lie = (a.lie || 0) + (((a.st === 'lie') ? 1 : 0) - (a.lie || 0)) * Math.min(1, dt * 1.2);
+    const lieDrop = a.lie * (a.cowLegs ? 0.62 : 0.38) * (a.g.scale.x || 1);
+    a.g.position.set(a.x, gy + (a.biped ? Math.abs(Math.sin(a.ph)) * 0.02 * mv : Math.abs(Math.sin(a.ph)) * 0.025 * mv) - 0.02 - lieDrop, a.z); a.g.rotation.y = a.h;
+    // respiração (mais rápida depois de correr)
+    a.pant = Math.max(0, (a.pant || 0) + (a.sp > a.vw * 1.3 ? dt : -dt * 0.15)); const br = Math.sin(time * (1.4 + Math.min(3, a.pant) * 1.2) + a.look);
+    const body = a.g.children[0]; if (body && body.isMesh) { body.scale.set(1 + br * 0.007, 1 + br * 0.012, 1); }
+    for (const l of a.legs) { const sw = Math.sin(a.ph + l.userData.ph); l.rotation.x = sw * (a.biped ? 0.55 : a.cowLegs ? 0.32 : 0.42) * mv * (1 - a.lie) + a.lie * (l.userData.front ? -1.25 : 1.2);
+      if (l.userData.low) l.userData.low.rotation.x = (l.userData.front ? 1 : -1) * Math.max(0, Math.cos(a.ph + l.userData.ph)) * 0.55 * mv * (1 - a.lie) + a.lie * (l.userData.front ? 2.2 : -2.3); }   // dobra o joelho/jarrete ao levantar a pata; deitado, pernas dobradas debaixo do corpo
     let pitch = 0, yaw = 0;
     if (a.st === 'graze') { pitch = a.gp + (a.peck ? Math.max(0, Math.sin(time * 9 + a.look)) * 0.5 : Math.sin(time * 1.3 + a.look) * 0.08); }
-    else if (a.st === 'idle') { yaw = Math.sin(time * 0.4 + a.look) * 0.5; pitch = a.strike && Math.sin(time * 0.5 + a.look) > 0.97 ? 0.9 : 0; }
+    else if (a.st === 'idle' || a.st === 'lie') { yaw = Math.sin(time * 0.4 + a.look) * 0.5; pitch = a.strike && Math.sin(time * 0.5 + a.look) > 0.97 ? 0.9 : a.st === 'lie' ? -0.2 : 0;
+      // olha para quem está chegando
+      let bt = null, bd = 7; for (const t of threats) { if (t.who === a) continue; const d = Math.hypot(t.x - a.x, t.z - a.z); if (d < bd) { bd = d; bt = t; } }
+      if (bt) { let e = Math.atan2(bt.x - a.x, bt.z - a.z) - a.h; e = Math.atan2(Math.sin(e), Math.cos(e)); yaw = Math.max(-1.1, Math.min(1.1, e)); } }
+    else if (a.st === 'flee') { pitch = -0.25; }
     a.head.rotation.x += (pitch - a.head.rotation.x) * Math.min(1, dt * (a.peck ? 12 : 2.5)); a.head.rotation.y += (yaw - a.head.rotation.y) * Math.min(1, dt * 2);
     if (a.head.userData.y0 === undefined) a.head.userData.y0 = a.head.position.y;
     a.head.position.y = a.head.userData.y0 - (a.dropNeck || 0) * Math.max(0, a.head.rotation.x);
-    if (a.tail) a.tail.rotation.z = Math.sin(time * 1.7 + a.look) * 0.25;
+    if (a.tail) { const fly = Math.sin(time * 0.37 + a.look * 3) > 0.75 ? 1 : 0; a.fly = (a.fly || 0) + (fly - (a.fly || 0)) * Math.min(1, dt * 3);   // espanta mosca de vez em quando
+      a.tail.rotation.z = Math.sin(time * (1.7 + a.fly * 6) + a.look) * (0.18 + a.fly * 0.55); a.tail.rotation.x = a.st === 'flee' ? -0.5 : 0; }
   }
 
   // gado: três no curral, cinco soltos no pasto (que vão para a sombra da árvore quando chove forte)
@@ -281,7 +320,10 @@ export function buildFauna(scene, opts = {}) {
       g.position.copy(P); g.rotation.x = st === 'mergulha' ? 1.2 : st === 'sobe' ? -0.5 : 0;
       const flap = st === 'para' ? Math.sin(time * 40) * 0.9 : st === 'mergulha' ? 0.9 : Math.sin(time * 18) * 0.7; for (const w of wings) w.rotation.z = w.userData.s * flap;
       if (splash >= 0) { splash += dt; ring.scale.setScalar(0.1 + splash * 0.6); ring.material.opacity = Math.max(0, 0.7 * (1 - splash / 1.4)); if (splash > 1.4) splash = -1; } }); }
-  updaters.push((dt, time) => { for (const a of all) { brain(a, dt); pose(a, dt, time); } });
+  updaters.push((dt, time, ctx) => {
+    threats = []; for (const p of (ctx && ctx.people) || []) if (p.g.visible) threats.push({ x: p.x, z: p.z, person: true, fast: p.job === 'brincar' || p.running });
+    for (const a of all) if (a.g.userData.regua === 'onça-pintada' && a.g.visible) threats.push({ x: a.x, z: a.z, onca: true, who: a });
+    for (const a of all) { brain(a, dt); pose(a, dt, time); } });
 
   // ---------- araras: um casal dando voltas largas sobre o vale, batendo asa e planando
   const arara = () => { const g = new THREE.Group(), red = col(0xd8302a), blue = col(0x2a5ec8), yel = col(0xf2c21a);
@@ -357,5 +399,6 @@ export function buildFauna(scene, opts = {}) {
     const pts = new THREE.Points(g, fm); pts.frustumCulled = false; scene.add(pts); updaters.push((dt, time, ctx) => { fm.uniforms.uPx.value = ctx.pxPerUnit; }); }
 
   let time = 0;
-  return { update(dt, ctx) { time += dt; for (const f of updaters) f(dt, time, ctx); }, animals: all };
+  return { update(dt, ctx) { time += dt; for (const f of updaters) f(dt, time, ctx); }, animals: all,
+    startle() { for (const a of all) if (a.g.visible && FEAR[a.g.userData.regua] && a.st !== 'lie') { a.st = 'startle'; a.t = 1.2 + rnd() * 1.5; } else if (a.st === 'lie' && rnd() < 0.5) { a.st = 'idle'; a.t = 1; } } };
 }

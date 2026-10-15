@@ -177,6 +177,29 @@ export function buildProps(scene, { mobile = false } = {}) {
         posts.push(paint(new THREE.CylinderGeometry(0.05, 0.08, 3.2, 8).translate(px, py + 1.6, pz), col(0x2a2a2e)), paint(new THREE.CylinderGeometry(0.16, 0.1, 0.3, 6).translate(px, py + 3.3, pz), col(0x2a2a2e)));
         halos.push({ g: scene, p: new THREE.Vector3(px, py + 3.15, pz) }); } }
     const bm = new THREE.Mesh(merge([...bench, ...posts].map(p => { if (!p.attributes.uv) p.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(p.attributes.position.count * 2), 2)); return p; })), woodMat); bm.castShadow = true; scene.add(bm); }
+  // ---------- forno de barro (cúpula de adobe sobre base de pedra, boca em arco, chaminezinha) com o tabuleiro de pão ao lado;
+  // a boca brilha em brasa e solta fumaça de manhã cedo
+  { const O = LAYOUT.oven, g = new THREE.Group(), clay = col(0xc8865a), parts = [];
+    parts.push(paint(new THREE.CylinderGeometry(1.15, 1.25, 0.7, 14).translate(0, 0.35, 0), col(0x9a948a)));
+    const dome = new THREE.SphereGeometry(1.0, 18, 12, 0, Math.PI * 2, 0, Math.PI / 2); const dp = dome.attributes.position; for (let i = 0; i < dp.count; i++) { const k = 1 + (Math.sin(dp.getX(i) * 9) * Math.cos(dp.getZ(i) * 7)) * 0.03; dp.setXYZ(i, dp.getX(i) * k, dp.getY(i) * 0.85 * k, dp.getZ(i) * k); }
+    dome.translate(0, 0.7, 0); parts.push(paint(dome, clay));
+    parts.push(paint(new THREE.CylinderGeometry(0.42, 0.42, 0.35, 12, 1, false, -Math.PI / 2, Math.PI).rotateX(Math.PI / 2).translate(0, 0.9, 0.86), clay.clone().multiplyScalar(0.9)));
+    parts.push(paint(new THREE.CylinderGeometry(0.1, 0.13, 0.4, 8).translate(-0.35, 1.6, -0.3), clay.clone().multiplyScalar(0.85)));
+    const tb = [paint(box(1.2, 0.06, 0.6, 1.7, 0.85, 0.6, 1), col(0x8a6a4a))]; for (const [x, z] of [[1.2, 0.35], [2.2, 0.35], [1.2, 0.85], [2.2, 0.85]]) tb.push(paint(box(0.06, 0.85, 0.06, x, 0.42, z, 1), col(0x7a5a3e)));
+    for (let k = 0; k < 6; k++) tb.push(paint(new THREE.SphereGeometry(1, 8, 6).scale(0.11, 0.06, 0.08).translate(1.3 + (k % 3) * 0.2, 0.92, 0.45 + Math.floor(k / 3) * 0.25), col(0xc8904a)));
+    g.add(new THREE.Mesh(merge(parts.map(p => { if (!p.attributes.uv) p.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(p.attributes.position.count * 2), 2)); return p; })), woodMat), new THREE.Mesh(merge(tb), woodMat));
+    const mouth = new THREE.Mesh(new THREE.CircleGeometry(0.32, 14, 0, Math.PI).translate(0, 0, 0).rotateY(0), mat({ color: 0x1a120c, emissive: 0xff7a2a, emissiveIntensity: 0.6 })); mouth.position.set(0, 0.72, 1.035); g.add(mouth);
+    g.traverse(o => { if (o.isMesh) o.castShadow = o.receiveShadow = true; }); g.position.set(O.p[0], heightAt(O.p[0], O.p[1]) - 0.05, O.p[1]); g.rotation.y = O.rot; scene.add(g); tag(g, 'forno de barro (com o tabuleiro)');
+    smokeSrc.push({ g, local: V3(-0.35, 1.85, -0.3), on: true });
+    updaters.push((dt, ctx) => { const h = ctx.hour ?? 15; mouth.material.emissiveIntensity = (h > 4.5 && h < 9 ? 1.6 : 0.25) * (0.8 + 0.2 * Math.sin(performance.now() * 0.009)); }); }
+  // ---------- cavalete do carpinteiro na praça: dois cavaletes, uma tábua sendo serrada, pilha de tábuas e o serrote
+  { const Cv = LAYOUT.cavalete, g = new THREE.Group(), w = [], wd = col(0x9a7a52);
+    for (const x of [-0.6, 0.6]) { for (const sz of [-1, 1]) { const l = box(0.06, 0.85, 0.06, 0, 0, 0, 1); l.rotateX(sz * 0.25).translate(x, 0.4, sz * 0.12); w.push(paint(l, wd.clone().multiplyScalar(0.85))); } w.push(paint(box(0.1, 0.08, 0.1, x, 0.8, 0, 1), wd)); }
+    w.push(paint(box(2.2, 0.04, 0.28, 0.2, 0.86, 0, 0.8), col(0xc8a070)));
+    for (let k = 0; k < 6; k++) w.push(paint(box(2.4, 0.04, 0.26, 0, 0.03 + k * 0.045, 1.1 + (k % 2) * 0.04, 0.8), col(0xb89060).multiplyScalar(0.9 + (k % 3) * 0.06)));
+    w.push(paint(box(0.5, 0.1, 0.006, 0, 0, 0, 1).rotateZ(-0.35).translate(-0.7, 0.98, 0.05), col(0x9aa0a6)));
+    g.add(new THREE.Mesh(merge(w), woodMat)); g.traverse(o => { if (o.isMesh) o.castShadow = o.receiveShadow = true; });
+    g.position.set(Cv.p[0], heightAt(Cv.p[0], Cv.p[1]) - 0.03, Cv.p[1]); g.rotation.y = Cv.rot; scene.add(g); tag(g, 'cavalete de carpinteiro'); }
   // ---------- celeiro: tábuas pintadas de vermelho, portão grande, janela do feno no oitão e telhado de telha
   { const Ce = LAYOUT.celeiro, w = Ce.w, d = Ce.d, H = 3.6, pitch = 0.5, rh = d / 2 * Math.tan(pitch), ov = 0.5, g = new THREE.Group(), wood = [], roof = [], red = col(0xa8402e);
     for (let x = -w / 2; x < w / 2 - 0.01; x += 0.3) for (const sz of [1, -1]) wood.push(paint(box(0.29, H + 0.6, 0.06, x + 0.15, (H + 0.6) / 2 - 0.6, sz * d / 2, 0.8), red.clone().multiplyScalar(0.88 + rnd() * 0.2)));
@@ -301,7 +324,7 @@ export function buildProps(scene, { mobile = false } = {}) {
     frag: `{float l=dot(diffuseColor.rgb,vec3(0.3,0.5,0.2));diffuseColor.rgb=mix(diffuseColor.rgb,toLin(vec3(0.78,0.66,0.42))*(l*2.2+0.25),uSeca*${dry.toFixed(2)});}` });
   // milho: colmo, folhas compridas em arco alternadas, pendão no alto e uma espiga
   function cornGeo() { const H = 2.1, parts = [paint(new THREE.CylinderGeometry(0.016, 0.028, H, 5, 3).translate(0, H / 2, 0), col(0x7fae46))];
-    for (let i = 0; i < 7; i++) { const y = 0.35 + i * 0.22, L = 0.85 - Math.abs(i - 2.5) * 0.07, a = i * Math.PI * 0.95 + (rnd() - 0.5) * 0.5, seg = 5, pos = [], cl = [], idx = [];
+    for (let i = 0; i < 7; i++) { const y = 0.35 + i * 0.22, L = 0.85 - Math.abs(i - 2.5) * 0.07, a = i * Math.PI * 0.95 + (rnd() - 0.5) * 0.5, seg = 3, pos = [], cl = [], idx = [];
       for (let k = 0; k <= seg; k++) { const t = k / seg, x = t * L, yy = 0.38 * L * t - 0.55 * L * t * t, w = 0.045 * (1 - t * 0.9) + 0.008;
         pos.push(x, yy, -w, x, yy + 0.01, w); const c = col(0x4f8a2e).lerp(col(0x9cc85a), t * 0.8); cl.push(c.r, c.g, c.b, c.r, c.g, c.b); }
       for (let k = 0; k < seg; k++) idx.push(k * 2, k * 2 + 2, k * 2 + 1, k * 2 + 1, k * 2 + 2, k * 2 + 3);
@@ -325,28 +348,29 @@ export function buildProps(scene, { mobile = false } = {}) {
       if (lx < F.cornMaxX) corn.push([x + (rnd() - 0.5) * 0.08, zz]); else if (lx > F.sunMinX && lx < F.sunMaxX && Math.round(z / 0.5) % 2 === 0) sun.push([x, zz]); }
     if (mobile) for (let i = corn.length - 1; i > 0; i -= 3) corn.splice(i, 1);
     const M = new THREE.Matrix4(), q = new THREE.Quaternion();
-    const inst = (geo, m, list, yaw, sc) => { const im = new THREE.InstancedMesh(geo, m, list.length);
+    const inst = (geo, m, list, yaw, sc, opts2 = {}) => { const im = new THREE.InstancedMesh(geo, m, list.length);
       list.forEach(([x, z], i) => { q.setFromEuler(new THREE.Euler((rnd() - 0.5) * 0.08, yaw(), (rnd() - 0.5) * 0.08)); const s = sc(); M.compose(V3(x, heightAt(x, z) - 0.05, z), q, V3(s, s, s)); im.setMatrixAt(i, M); });
-      im.castShadow = !mobile; im.receiveShadow = true; scene.add(im); return im; };
+      im.castShadow = !mobile && !opts2.noShadow; im.receiveShadow = true; scene.add(im); return im; };
     // trigo: touceiras de 6 a 8 colmos com espiga; mandioca: hastes com folhas em mão; feijão: moitinhas baixas
     { const Wt = LAYOUT.wheat, Rc = LAYOUT.roca, tt = Wt.tile, wheat = [], mand = [], feij = [];
-      for (let x = tt.c[0] - 19; x < tt.c[0] + 19; x += 0.42) for (let z = tt.c[1] - 20; z < tt.c[1] + 20; z += 0.42) { const lx = x - tt.c[0], xx = x + (rnd() - 0.5) * 0.2, zz = z + (rnd() - 0.5) * 0.2;
+      for (let x = tt.c[0] - 19; x < tt.c[0] + 19; x += 0.5) for (let z = tt.c[1] - 20; z < tt.c[1] + 20; z += 0.5) { const lx = x - tt.c[0], xx = x + (rnd() - 0.5) * 0.2, zz = z + (rnd() - 0.5) * 0.2;
         if (hexEdgeDist(xx, zz, tt.c) < 1.0 || blocked(xx, zz, 0.6)) continue;
         if (lx < Wt.maxX) wheat.push([xx, zz]); else if (lx > Rc.minX && Math.round(x / 0.42) % 3 === 0) { if (lx < 9.5) { if (Math.round(z / 0.42) % 3 === 0) mand.push([x, z]); } else if (Math.round(z / 0.42) % 2 === 0) feij.push([x, z]); } }
       if (mobile) for (let i = wheat.length - 1; i > 0; i -= 2) wheat.splice(i, 1);
+      // trigo barato: cada colmo é uma fita (2 triângulos) e a espiga um losango (8), ~80 triângulos por touceira
       const wheatGeo = (() => { const parts = []; for (let k = 0; k < 7; k++) { const a = k / 7 * 6.28, r = 0.04 + rnd() * 0.05, lean = (rnd() - 0.5) * 0.25, h = 0.85 + rnd() * 0.2, x = Math.cos(a) * r, z = Math.sin(a) * r;
-          parts.push(paint(new THREE.CylinderGeometry(0.004, 0.006, h, 4).translate(x, h / 2, z).rotateZ(lean), col(0xb8a44a)), paint(new THREE.SphereGeometry(1, 6, 5).scale(0.012, 0.06, 0.012).translate(x, h + 0.04, z).rotateZ(lean), col(0xd9b45a)));
-          parts.push(paint(new THREE.PlaneGeometry(0.012, 0.3).translate(0, 0.15, 0).rotateZ(0.6).rotateY(a).translate(x, 0.25, z), col(0x9aaa4a))); }
+          parts.push(paint(new THREE.PlaneGeometry(0.012, h).translate(0, h / 2, 0).rotateY(a).translate(x, 0, z).rotateZ(lean), col(0xb8a44a)), paint(new THREE.OctahedronGeometry(1, 0).scale(0.016, 0.06, 0.016).translate(x, h + 0.04, z).rotateZ(lean), col(0xd9b45a)));
+          if (k % 2 === 0) parts.push(paint(new THREE.PlaneGeometry(0.014, 0.3).translate(0, 0.15, 0).rotateZ(0.6).rotateY(a).translate(x, 0.25, z), col(0x9aaa4a))); }
         return merge(parts.map(p => { if (!p.attributes.uv) p.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(p.attributes.position.count * 2), 2)); p.computeVertexNormals(); return p; })); })();
       const mandGeo = (() => { const parts = []; for (let k = 0; k < 3; k++) { const a = k * 2.1, l = (rnd() - 0.5) * 0.25; parts.push(paint(new THREE.CylinderGeometry(0.012, 0.018, 1.5, 5).translate(0, 0.75, 0).rotateZ(l).rotateY(a), col(0x8a6a50)));
           for (let j = 0; j < 4; j++) { const hy = 0.8 + j * 0.2, ry = j * 1.7 + a; for (let f = 0; f < 6; f++) parts.push(paint(new THREE.PlaneGeometry(0.035, 0.2).translate(0, 0.1, 0).rotateZ(0.9 + (f - 2.5) * 0.25).rotateY(ry + f * 0.4).translate(Math.sin(l) * -hy, hy, 0).rotateY(a), col(0x4f8a3a).lerp(col(0x7aaa4a), f / 6))); } }
         return merge(parts.map(p => { if (!p.attributes.uv) p.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(p.attributes.position.count * 2), 2)); p.computeVertexNormals(); return p; })); })();
       const feijGeo = (() => { const parts = []; for (let k = 0; k < 14; k++) { const a = rnd() * 6.28, r = rnd() * 0.18, y = 0.15 + rnd() * 0.3; parts.push(paint(new THREE.SphereGeometry(1, 6, 4).scale(0.06, 0.02, 0.05).rotateY(a).translate(Math.cos(a) * r, y, Math.sin(a) * r), col(0x5f9a3a).multiplyScalar(0.85 + rnd() * 0.3))); }
         parts.push(paint(new THREE.CylinderGeometry(0.008, 0.012, 0.4, 4).translate(0, 0.2, 0), col(0x6a8a3a))); return merge(parts.map(p => { if (!p.attributes.uv) p.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(p.attributes.position.count * 2), 2)); p.computeVertexNormals(); return p; })); })();
-      tag(inst(wheatGeo, plantMat(1.0, 0.6), wheat, () => rnd() * 6.28, () => 0.9 + rnd() * 0.2), 'trigo', 1.1);
+      tag(inst(wheatGeo, plantMat(1.0, 0.6), wheat, () => rnd() * 6.28, () => 0.9 + rnd() * 0.2, { noShadow: true }), 'trigo', 1.1);
       tag(inst(mandGeo, plantMat(1.6, 0.4), mand, () => rnd() * 6.28, () => 0.85 + rnd() * 0.3), 'mandioca', 1.15);
-      tag(inst(feijGeo, plantMat(0.5, 0.8), feij, () => rnd() * 6.28, () => 0.9 + rnd() * 0.2), 'feijão', 1.1); }
-    tag(inst(cornGeo(), plantMat(2.1, 0.95), corn, () => rnd() * 6.28, () => 0.85 + rnd() * 0.3), 'milho', 1);
+      tag(inst(feijGeo, plantMat(0.5, 0.8), feij, () => rnd() * 6.28, () => 0.9 + rnd() * 0.2, { noShadow: true }), 'feijão', 1.1); }
+    window.__crops = window.__crops || []; tag(inst(cornGeo(), plantMat(2.1, 0.95), corn, () => rnd() * 6.28, () => 0.85 + rnd() * 0.3), 'milho', 1);
     tag(inst(sunGeo(), plantMat(1.75, 0.8), sun, () => (rnd() - 0.5) * 0.5, () => 0.85 + rnd() * 0.3), 'girassol', 1); }
 
   // ---------- moinho: torre caiada, chapéu que gira para encarar o vento e quatro pás de lona; a velocidade segue o vento
