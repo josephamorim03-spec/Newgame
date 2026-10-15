@@ -6,8 +6,8 @@ import * as THREE from 'three';
 import { OrbitControls } from './addons/OrbitControls.js';
 import { mergeGeometries } from './addons/BufferGeometryUtils.js';
 import { NOISE, WIND, CLOUDS } from './glsl.js';
-import { R, TILES, CENTER, heightAt, riverInfo, waterDist, biomeAt, SPRING, POOL_R, WATER_Y, vnoise, inHex, inAnyTile } from './world.js';
-import { leafTexture, fanTexture, barkTexture } from './textures.js';
+import { R, TILES, CENTER, RIVER, riverHalfWidth, heightAt, riverInfo, waterDist, biomeAt, SPRING, POOL_R, WATER_Y, vnoise, inHex, inAnyTile } from './world.js';
+import { leafTexture, fanTexture, barkTexture, earthTexture, stoneTexture } from './textures.js';
 
 const ATM = window.ATM;
 const $ = id => document.getElementById(id);
@@ -32,7 +32,8 @@ if (innerWidth < innerHeight) { controls.target.set(CENTER[0] - 2, 6, CENTER[1] 
 controls.enableDamping = true; controls.dampingFactor = 0.08;
 controls.minDistance = 16; controls.maxDistance = 220; controls.minPolarAngle = 0.3; controls.maxPolarAngle = 1.42;
 controls.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN };
-function resize() { const w = innerWidth, h = innerHeight; renderer.setSize(w, h, false); camera.aspect = w / h; camera.fov = w < h ? 50 : 38; camera.updateProjectionMatrix(); }
+const reflRT = new THREE.WebGLRenderTarget(2, 2, { colorSpace: THREE.SRGBColorSpace });   // reflexo da água (ver mais abaixo)
+function resize() { const w = innerWidth, h = innerHeight; renderer.setSize(w, h, false); reflRT.setSize(Math.ceil(w * dpr * (mobile ? 0.35 : 0.5)), Math.ceil(h * dpr * (mobile ? 0.35 : 0.5))); camera.aspect = w / h; camera.fov = w < h ? 50 : 38; camera.updateProjectionMatrix(); }
 addEventListener('resize', resize); resize();
 
 // ---------- uniformes que todas as superfícies compartilham (vento, nuvens, estação, chuva, sol)
@@ -124,9 +125,12 @@ groundMat.onBeforeCompile = sh => { shared(sh); sh.uniforms.uCenter = { value: n
       vec3 soil=mix(vec3(0.70,0.38,0.18),vec3(0.80,0.48,0.24),n2);
       vec3 col=grass*vBio.x+litter*vBio.y+cerr*vBio.z+soil*vBio.w;
       col=mix(col,soil,smoothstep(0.72,0.86,fbm(p*0.11+7.0))*0.5*(1.0-vBio.y));
-      float bank=1.0-smoothstep(0.0,2.4,vWd);vec3 sand=mix(vec3(0.78,0.66,0.46),vec3(0.86,0.76,0.56),n3);
-      col=mix(col,sand,bank*0.8);
-      float under=1.0-smoothstep(-0.3,0.15,vWd);col=mix(col,mix(vec3(0.62,0.58,0.42),vec3(0.74,0.70,0.54),n3),under);
+      float bank=1.0-smoothstep(0.0,2.0,vWd);vec3 sand=mix(vec3(0.78,0.66,0.46),vec3(0.86,0.76,0.56),n3);
+      col=mix(col,sand,bank*0.55);
+      float wl=${WATER_Y.toFixed(3)}-uWaterDrop-0.06*vOu,dep=(wl-vWp.y)*(1.0-smoothstep(0.3,1.2,vWd)),under=smoothstep(-0.02,0.05,dep);
+      vec3 bed=mix(vec3(0.62,0.57,0.44),vec3(0.80,0.74,0.58),n3);float peb=smoothstep(0.5,0.72,vnoise(p*6.0));
+      bed=mix(bed,mix(vec3(0.50,0.48,0.45),vec3(0.80,0.77,0.70),vnoise(p*11.0+4.0)),peb*0.85);bed*=0.82+0.18*vnoise(p*23.0);
+      col=mix(col,bed,under);col*=1.0-0.2*smoothstep(-0.15,0.0,dep)*(1.0-under);
       col*=0.9+0.2*n3;
       float wet=clamp(uWet*0.8+bank*0.35,0.0,1.0);col*=mix(1.0,0.68,wet);
       float puddle=smoothstep(0.6,0.68,fbm(p*0.09+11.0))*smoothstep(0.45,0.9,uWet)*(1.0-vBio.y)*(1.0-under)*(1.0-vOu);
@@ -135,7 +139,10 @@ groundMat.onBeforeCompile = sh => { shared(sh); sh.uniforms.uCenter = { value: n
       if(vOu>0.5){float l=dot(col,vec3(0.3,0.5,0.2));col=mix(col,vec3(l),0.2)*1.04+0.03;
         float he=hexEdge(vWp.xz);col=mix(col,col*1.25+0.04,(1.0-smoothstep(0.0,0.45,he))*0.5*(1.0-smoothstep(45.0,90.0,dc)));vHaze=smoothstep(40.0,480.0,dc)*0.55;}
       else{float he=hexEdge(vWp.xz);col*=1.0-(1.0-smoothstep(0.0,0.3,he))*0.12;vHaze=0.0;}
-      diffuseColor.rgb=toLin(col);`)
+      diffuseColor.rgb=toLin(col);
+      if(under>0.0){vec2 cq=p*1.6;float t=uTime*0.7;float a=vnoise(cq+vec2(t,-t*0.6)),b=vnoise(cq*1.4+vec2(-t*0.7,t*0.5)+a*1.5);
+        float caus=pow(clamp(1.0-abs(a-b)*3.0,0.0,1.0),5.0)*cloudShadow(p)*uDay*smoothstep(0.0,0.25,dep)*(1.0-0.6*uRain);
+        diffuseColor.rgb*=mix(vec3(1.0),exp(-vec3(1.5,0.5,0.4)*max(dep,0.0)*0.7)*(1.0+caus*2.0),under);}`)
     .replace('#include <lights_fragment_end>', LIGHT_END(0))
     .replace('#include <fog_fragment>', '#include <fog_fragment>\ngl_FragColor.rgb=mix(gl_FragColor.rgb,fogColor,vHaze);');
 };
@@ -293,11 +300,46 @@ function makeBuriti() {
     fan.setAttribute('lr', new THREE.Float32BufferAttribute(new Array(4).fill(rnd()), 1)); out.leaf.push(fan); }
   return treeMesh(out, H + 3, MATS.buriti);
 }
-const termiteMat = toon({ color: 0xc0703c, map: barkTex });
-function makeTermite() { const h = 0.9 + rnd() * 1.0, g = new THREE.ConeGeometry(0.6 + rnd() * 0.35, h, 14, 8); const p = g.attributes.position, o = rnd() * 50;
+// cupinzeiros (Cornitermes): domos de argila laranja-avermelhada, encaroçados, às vezes com uma torrinha do lado;
+// e pedras de quartzito, facetadas, com líquen em cima e escuras de umidade na beira d'água
+const earthTex = earthTexture(17), stoneTex = stoneTexture(23);
+const termiteMat = toon({ color: 0xd27a48, map: earthTex });
+termiteMat.onBeforeCompile = sh => { shared(sh);
+  sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying float vLy;varying vec3 vWp;').replace('#include <begin_vertex>', '#include <begin_vertex>\nvLy=position.y;vWp=(modelMatrix*vec4(transformed,1.0)).xyz;');
+  sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying float vLy;varying vec3 vWp;\n' + HEAD)
+    .replace('#include <map_fragment>', '#include <map_fragment>\ndiffuseColor.rgb*=mix(vec3(0.62,0.6,0.5),vec3(1.0),smoothstep(0.0,0.35,vLy))*mix(1.0,0.7,uWet);')
+    .replace('#include <lights_fragment_end>', LIGHT_END(0)); };
+function lump(r0, h, o, seg = 18) {
+  const prof = []; for (let i = 0; i <= 12; i++) { const t = i / 12; prof.push(new THREE.Vector2(Math.max(0.001, r0 * Math.pow(1 - Math.pow(t, 1.5), 0.75) * (1 + 0.15 * (1 - t) * (1 - t))), h * t)); }
+  const g = new THREE.LatheGeometry(prof, seg); const p = g.attributes.position;
   for (let i = 0; i < p.count; i++) { const x = p.getX(i), y = p.getY(i), z = p.getZ(i), a = Math.atan2(z, x);
-    const k = 1 + (vnoise(a * 2.2 + o, y * 2.5) - 0.5) * 0.7 + (vnoise(a * 6 + o, y * 7) - 0.5) * 0.25; p.setX(i, x * k); p.setZ(i, z * k); p.setY(i, y + (vnoise(a * 3 + o, 1) - 0.5) * 0.12); }
-  g.computeVertexNormals(); g.translate(0, h / 2 - 0.1, 0); const m = new THREE.Mesh(g, termiteMat); m.castShadow = m.receiveShadow = true; return m; }
+    const k = 1 + (vnoise(a * 1.6 + o, y * 1.8) - 0.5) * 0.45 + (vnoise(a * 5 + o, y * 6) - 0.5) * 0.22; p.setX(i, x * k); p.setZ(i, z * k); }
+  g.computeVertexNormals(); return g;
+}
+function makeTermite() {
+  const h = 1.0 + rnd() * 1.1, r0 = 0.4 + rnd() * 0.22 + h * 0.12, parts = [lump(r0, h, rnd() * 50)];
+  if (rnd() < 0.55) { const h2 = h * (0.45 + rnd() * 0.3), g2 = lump(r0 * 0.55, h2, rnd() * 50, 14), a = rnd() * 6.28; g2.translate(Math.cos(a) * r0 * 0.7, 0, Math.sin(a) * r0 * 0.7); parts.push(g2); }
+  const g = mergeGeometries(parts); g.translate(0, -0.12, 0);
+  const m = new THREE.Mesh(g, termiteMat); m.castShadow = m.receiveShadow = true; return m; }
+const stoneMat = toon({ color: 0xc9c2b2, map: stoneTex });
+stoneMat.onBeforeCompile = sh => { shared(sh);
+  sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vWp;varying vec3 vWn;').replace('#include <begin_vertex>', '#include <begin_vertex>\nvWp=(modelMatrix*vec4(transformed,1.0)).xyz;vWn=normalize(mat3(modelMatrix)*objectNormal);');
+  sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vWp;varying vec3 vWn;\n' + HEAD)
+    .replace('#include <map_fragment>', `#include <map_fragment>
+      float wl=${WATER_Y.toFixed(3)}-uWaterDrop;float moss=smoothstep(0.55,0.85,vWn.y)*smoothstep(0.35,0.6,fbm(vWp.xz*3.0+vWp.y))*(1.0-uSeca*0.6);
+      diffuseColor.rgb=mix(diffuseColor.rgb,toLin(vec3(0.42,0.55,0.20))*(0.8+0.4*vnoise(vWp.xz*20.0)),moss*0.75);
+      float wet=1.0-smoothstep(wl+0.02,wl+0.16,vWp.y);diffuseColor.rgb*=mix(1.0,0.68,max(wet,uWet*0.6));
+      diffuseColor.rgb=mix(diffuseColor.rgb,diffuseColor.rgb*vec3(0.55,0.75,0.72),1.0-smoothstep(wl-0.05,wl+0.02,vWp.y));`)
+    .replace('#include <lights_fragment_end>', LIGHT_END(0)); };
+function makeStone(size, flat = 0.7) {
+  const g = new THREE.IcosahedronGeometry(1, 2), p = g.attributes.position, o = rnd() * 40, sx = 0.8 + rnd() * 0.5, sz = 0.8 + rnd() * 0.4;
+  for (let i = 0; i < p.count; i++) { const x = p.getX(i), y = p.getY(i), z = p.getZ(i);
+    const k = 1 + (vnoise(x * 1.3 + o, z * 1.3 + y) - 0.5) * 0.5 + (vnoise(x * 3.1 + o, y * 3.1 - z) - 0.5) * 0.18;
+    p.setXYZ(i, x * k * sx * size, Math.max(y, -0.55) * k * flat * size, z * k * sz * size); }
+  g.computeVertexNormals();                // facetas planas: pedra talhada à moda dos jogos pintados
+  const m = new THREE.Mesh(g, stoneMat); m.castShadow = m.receiveShadow = true; return m; }
+const ROCKS_IN_WATER = [];
+function putStone(x, z, size, flat, y) { const m = makeStone(size, flat); m.position.set(x, y ?? heightAt(x, z) - size * flat * 0.25, z); m.rotation.y = rnd() * 6.28; scene.add(m); placed.push([x, z, size * 1.4]); return m; }
 
 const placed = [];
 function place(obj, x, z, minD) { if (placed.some(p => Math.hypot(p[0] - x, p[1] - z) < Math.min(minD, p[2]))) return false;
@@ -315,47 +357,82 @@ scatter(tC, 4, makeTermite, () => true, 4);
 scatter(tD, 9, () => makeTree('cerrado', 0.8 + rnd() * 0.4), () => true, 5.5);
 scatter(tD, 2, () => makeTree('ipe'), () => true, 7);
 scatter(tD, 5, makeTermite, () => true, 3);
+{ let tries = 0; while (ROCKS_IN_WATER.length < 6 && tries++ < 400) { const i = 4 + Math.floor(rnd() * 220), [x0, z0] = RIVER[i], ri = riverInfo(x0, z0), w = riverHalfWidth(ri.s);
+    if (!inAnyTile(x0, z0, 0.85) || Math.hypot(x0 - SPRING[0], z0 - SPRING[1]) < POOL_R + 2 || ROCKS_IN_WATER.some(r => Math.hypot(r[0] - x0, r[1] - z0) < 5)) continue;
+    const side = rnd() < 0.5 ? -1 : 1, off = side * w * (0.45 + rnd() * 0.45), x = x0 - ri.tz * off, z = z0 + ri.tx * off, size = 0.4 + rnd() * 0.35, flat = 0.75;
+    putStone(x, z, size, flat, WATER_Y + 0.12 + rnd() * 0.15 - size * flat * 0.9); ROCKS_IN_WATER.push([x, z, size * 0.95]); }
+  for (const t of [tA, tB]) for (let k = 0, n = 0; k < 300 && n < 4; k++) { const x = t.c[0] + (rnd() - 0.5) * 2 * R, z = t.c[1] + (rnd() - 0.5) * 2 * R, w = waterDist(x, z);
+    if (!inHex(x, z, t.c, 0.9) || w < 0.1 || w > 2.2 || placed.some(p => Math.hypot(p[0] - x, p[1] - z) < 2.5)) continue; putStone(x, z, 0.25 + rnd() * 0.4, 0.6); n++; }
+  for (const [t, n] of [[tD, 5], [tC, 2]]) for (let k = 0, c = 0; k < 300 && c < n; k++) { const x = t.c[0] + (rnd() - 0.5) * 2 * R, z = t.c[1] + (rnd() - 0.5) * 2 * R;
+    if (!inHex(x, z, t.c, 0.88) || placed.some(p => Math.hypot(p[0] - x, p[1] - z) < 3)) continue; putStone(x, z, 0.3 + rnd() * 0.7, 0.55 + rnd() * 0.25); c++; } }
 
-// ---------- água: turquesa no raso, azul-petróleo no fundo, céu refletido, brilhos do sol, espuma branca na beira,
-// correnteza no sentido do rio e anéis de chuva
-const waterMat = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, fog: true, uniforms: THREE.UniformsUtils.merge([THREE.UniformsLib.fog, {}]),
-  vertexShader: /* glsl */`attribute vec2 flow;attribute float wd;varying vec2 vFlow;varying float vWd;varying vec3 vWp;uniform float uWaterDrop;
+// ---------- água: transparente no raso (vê-se o leito de seixos e as cáusticas), turquesa e depois verde-garrafa no fundo,
+// reflexo de verdade do céu e das árvores (a cena desenhada de novo por uma câmera espelhada), ondinhas que descem com a
+// correnteza, espuma na beira e em volta das pedras, brilhos do sol e anéis de chuva
+const ROCKV = Array.from({ length: 8 }, (_, i) => ROCKS_IN_WATER[i] ? new THREE.Vector3(...ROCKS_IN_WATER[i]) : new THREE.Vector3(0, 0, -1));
+const waterMat = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, fog: true,
+  uniforms: THREE.UniformsUtils.merge([THREE.UniformsLib.fog, { uReflMat: { value: new THREE.Matrix4() } }]),
+  vertexShader: /* glsl */`attribute vec2 flow;attribute float dep;varying vec2 vFlow;varying float vDep;varying vec3 vWp;uniform float uWaterDrop;
     #include <fog_pars_vertex>
-    void main(){vec3 p=position;p.y-=uWaterDrop;vec4 w=modelMatrix*vec4(p,1.0);vWp=w.xyz;vFlow=flow;vWd=wd;vec4 mvPosition=viewMatrix*w;gl_Position=projectionMatrix*mvPosition;
+    void main(){vec3 p=position;p.y-=uWaterDrop;vec4 w=modelMatrix*vec4(p,1.0);vWp=w.xyz;vFlow=flow;vDep=dep-uWaterDrop;vec4 mvPosition=viewMatrix*w;gl_Position=projectionMatrix*mvPosition;
     #include <fog_vertex>
     }`,
-  fragmentShader: /* glsl */`varying vec2 vFlow;varying float vWd;varying vec3 vWp;
+  fragmentShader: /* glsl */`varying vec2 vFlow;varying float vDep;varying vec3 vWp;uniform sampler2D uRefl;uniform mat4 uReflMat;uniform vec3 uRocks[8];
     ${HEAD}
     #include <fog_pars_fragment>
     float hgt(vec2 q){return vnoise(q*vec2(0.55,1.1)-vec2(uFlowClk*0.55,0.0))*0.6+vnoise(q*vec2(1.6,2.4)-vec2(uFlowClk*1.3,0.0))*0.3+vnoise(q*vec2(4.0,5.5)-vec2(uFlowClk*2.2,0.0))*0.1;}
-    void main(){vec2 p=vWp.xz;vec2 f=length(vFlow)>0.01?normalize(vFlow):vec2(1.0,0.0);vec2 s=vec2(-f.y,f.x);vec2 q=vec2(dot(p,f),dot(p,s));
-      float e=0.12,h0=hgt(q),hx=hgt(q+vec2(e,0.0))-h0,hy=hgt(q+vec2(0.0,e))-h0;vec2 gq=vec2(hx,hy)/e*0.2*(0.6+0.6*uRain);vec2 gw=f*gq.x+s*gq.y;
+    void main(){float d=vDep;if(d<=0.0)discard;
+      vec2 p=vWp.xz;vec2 f=length(vFlow)>0.01?normalize(vFlow):vec2(1.0,0.0);vec2 s=vec2(-f.y,f.x);vec2 q=vec2(dot(p,f),dot(p,s));float fl=clamp(length(vFlow),0.0,1.0);
+      float e=0.1,h0=hgt(q),hx=hgt(q+vec2(e,0.0))-h0,hy=hgt(q+vec2(0.0,e))-h0;vec2 gq=vec2(hx,hy)/e*(0.05+0.07*fl+0.25*uRain);vec2 gw=f*gq.x+s*gq.y;
       float ring=0.0;if(uRain>0.01){vec2 c=floor(p*1.7),fp=fract(p*1.7)-0.5;float r=hash21(c);float t=fract(uTime*1.1+r*7.0);vec2 o=(vec2(hash21(c+3.1),hash21(c+7.7))-0.5)*0.5;
-        vec2 dv=fp-o;float d=length(dv);ring=(1.0-smoothstep(0.0,0.05,abs(d-t*0.42)))*(1.0-t)*step(r,uRain*0.9+0.1);gw+=dv/max(d,0.001)*ring*0.5;}
-      vec3 N=normalize(vec3(-gw.x,1.0,-gw.y));vec3 V=normalize(cameraPosition-vWp);float fr=0.03+0.55*pow(1.0-max(dot(N,V),0.0),5.0);
-      vec3 Rf=reflect(-V,N);vec3 sky=mix(uSkyHor,uSkyZen,pow(clamp(Rf.y,0.0,1.0),0.6));float cs=cloudShadow(p);
-      float depth=1.0-smoothstep(-2.2,-0.1,vWd);
-      vec3 shallow=vec3(0.30,0.82,0.76),deep=vec3(0.04,0.42,0.55);vec3 body=toLin(mix(shallow,deep,depth))*(0.55+0.45*cs)*(0.06+0.94*uDay);
-      vec3 col=mix(body,sky,fr);
-      float glint=pow(max(dot(Rf,uSunW),0.0),300.0);col+=uSunC*step(0.55,glint+0.3*hash21(floor(p*6.0)))*glint*3.0*cs;   // brilhos
-      float foam=smoothstep(-0.65,-0.05,vWd)*smoothstep(0.42,0.62,vnoise(q*vec2(1.2,4.0)-vec2(uFlowClk*1.1,0.0)));
-      foam+=smoothstep(-0.25,0.0,vWd)*0.7;col=mix(col,vec3(0.95,0.98,1.0)*(0.1+0.9*uDay),clamp(foam,0.0,1.0)*0.8);col+=ring*0.25*uDay;
-      gl_FragColor=vec4(col,clamp(mix(0.72,0.95,depth)+foam*0.3,0.0,1.0));
+        vec2 dv=fp-o;float dd=length(dv);ring=(1.0-smoothstep(0.0,0.05,abs(dd-t*0.42)))*(1.0-t)*step(r,uRain*0.9+0.1);gw+=dv/max(dd,0.001)*ring*0.5;}
+      float foam=0.0;
+      for(int i=0;i<8;i++){vec3 rk=uRocks[i];if(rk.z<=0.0)continue;vec2 dr=p-rk.xy;float al=dot(dr,f),ac=dot(dr,s),dist=length(dr);
+        float ringF=1.0-smoothstep(rk.z*0.8,rk.z+0.25+0.3*vnoise(vec2(atan(dr.y,dr.x)*3.0,uFlowClk*2.0)),dist);
+        float wake=exp(-ac*ac/(rk.z*rk.z*0.7))*smoothstep(0.0,0.5,al)*exp(-al/(2.0+rk.z*3.0));
+        foam+=ringF*0.9+wake*smoothstep(0.42,0.68,vnoise(vec2(al*2.2-uFlowClk*3.5,ac*4.0)));gw+=normalize(dr+1e-3)*(wake+ringF*0.4)*0.12;}
+      vec3 N=normalize(vec3(-gw.x,1.0,-gw.y));vec3 V=normalize(cameraPosition-vWp);float cv=max(dot(N,V),0.0);
+      float F=(0.03+0.75*pow(1.0-cv,4.0))*smoothstep(0.0,0.05,d);float cs=cloudShadow(p);
+      vec4 rc=uReflMat*vec4(vWp,1.0);vec2 ruv=rc.xy/rc.w+N.xz*0.035;vec3 refl=texture2D(uRefl,clamp(ruv,0.002,0.998)).rgb;
+      float Tl=dot(exp(-vec3(1.6,0.6,0.5)*d*0.9),vec3(0.3,0.4,0.3));
+      vec3 scat=toLin(mix(vec3(0.26,0.78,0.74),vec3(0.06,0.42,0.46),smoothstep(0.3,1.3,d)))*(0.3+0.7*cs)*(0.04+0.96*uDay);
+      vec3 col=scat*(1.0-Tl)*(1.0-F)+refl*F;float A=1.0-Tl*(1.0-F);
+      vec3 Rf=reflect(-V,N);float glint=pow(max(dot(Rf,uSunW),0.0),500.0);col+=uSunC*step(0.5,glint+0.35*hash21(floor(p*7.0)))*glint*5.0*cs;A=min(1.0,A+glint*0.5);
+      foam+=(1.0-smoothstep(0.02,0.14,d))*smoothstep(0.35,0.62,vnoise(q*vec2(2.0,7.0)-vec2(uFlowClk*1.4,0.0)))*smoothstep(0.0,0.015,d);
+      foam+=0.5*fl*smoothstep(0.66,0.82,vnoise(q*vec2(0.9,3.6)-vec2(uFlowClk*1.7,0.0)))*smoothstep(0.3,0.8,d);
+      foam=clamp(foam,0.0,1.0);vec3 fc=vec3(0.95,0.98,1.0)*(0.08+0.92*uDay)*(0.65+0.35*cs);
+      col=col/max(A,1e-3);col=mix(col,fc,foam*0.9);col+=ring*0.2*uDay;A=max(A,foam*0.9);
+      gl_FragColor=vec4(col,A);
       #include <colorspace_fragment>
       #include <fog_fragment>
     }`,
 });
-Object.assign(waterMat.uniforms, U);
-{ const pos = [], flow = [], wdA = [], idx = [];
-  for (const t of [tA, tB]) { const { pos: P, idx: I } = sectorGrid(t.c, mobile ? 40 : 52), base = pos.length / 3, keep = [];
-    for (let i = 0; i < P.length / 3; i++) { const x = P[i * 3], z = P[i * 3 + 2], ri = riverInfo(x, z), w = waterDist(x, z); keep.push(w < 1.2);
-      const pool = Math.hypot(x - SPRING[0], z - SPRING[1]) < POOL_R + 1; pos.push(x, WATER_Y, z); flow.push(pool ? ri.tx * 0.3 : ri.tx, pool ? ri.tz * 0.3 : ri.tz); wdA.push(w); }
+Object.assign(waterMat.uniforms, U); waterMat.uniforms.uRefl = { value: reflRT.texture }; waterMat.uniforms.uRocks = { value: ROCKV };
+let water;
+{ const pos = [], flow = [], depA = [], idx = [];
+  for (const t of [tA, tB]) { const { pos: P, idx: I } = sectorGrid(t.c, mobile ? 44 : 60), base = pos.length / 3, keep = [];
+    for (let i = 0; i < P.length / 3; i++) { const x = P[i * 3], z = P[i * 3 + 2], ri = riverInfo(x, z), dep = WATER_Y - heightAt(x, z); keep.push(dep > -0.2);
+      const pool = Math.hypot(x - SPRING[0], z - SPRING[1]) < POOL_R + 1, sp = pool ? 0.25 : Math.min(1, 0.4 + 0.6 * (1 - ri.d / (riverHalfWidth(ri.s) + 0.5)));
+      pos.push(x, WATER_Y, z); flow.push(ri.tx * sp, ri.tz * sp); depA.push(dep); }
     for (let i = 0; i < I.length; i += 3) if (keep[I[i]] || keep[I[i + 1]] || keep[I[i + 2]]) idx.push(base + I[i], base + I[i + 1], base + I[i + 2]); }
   const L = latticeGeometry(0, 150, 0.9, P => outside(P) && P.some(([x, z]) => waterDist(x, z) < 1.4)), base = pos.length / 3;
-  for (let i = 0; i < L.pos.length / 3; i++) { const x = L.pos[i * 3], z = L.pos[i * 3 + 2], ri = riverInfo(x, z); pos.push(x, WATER_Y - 0.06, z); flow.push(ri.tx, ri.tz); wdA.push(waterDist(x, z)); }
+  for (let i = 0; i < L.pos.length / 3; i++) { const x = L.pos[i * 3], z = L.pos[i * 3 + 2], ri = riverInfo(x, z); pos.push(x, WATER_Y - 0.06, z); flow.push(ri.tx, ri.tz); depA.push(WATER_Y + 0.04 - heightAt(x, z)); }
   for (const v of L.idx) idx.push(base + v);
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('flow', new THREE.Float32BufferAttribute(flow, 2));
-  g.setAttribute('wd', new THREE.Float32BufferAttribute(wdA, 1)); g.setIndex(idx); const m = new THREE.Mesh(g, waterMat); m.renderOrder = 2; scene.add(m); }
+  g.setAttribute('dep', new THREE.Float32BufferAttribute(depA, 1)); g.setIndex(idx); water = new THREE.Mesh(g, waterMat); water.renderOrder = 2; scene.add(water); }
+// o reflexo: a câmera espelhada no plano da água desenha o que fica acima dela (sem capim e sem chuva, para sair barato)
+const mirrorCam = new THREE.PerspectiveCamera(), reflClip = [new THREE.Plane(new THREE.Vector3(0, 1, 0), 0)];
+const BIAS = new THREE.Matrix4().set(0.5, 0, 0, 0.5, 0, 0.5, 0, 0.5, 0, 0, 0.5, 0.5, 0, 0, 0, 1);
+function renderReflection() {
+  const wy = WATER_Y - U.uWaterDrop.value, cp = camera.position, tg = controls.target;
+  mirrorCam.copy(camera); mirrorCam.position.set(cp.x, 2 * wy - cp.y, cp.z); mirrorCam.up.set(0, 1, 0); mirrorCam.lookAt(tg.x, 2 * wy - tg.y, tg.z); mirrorCam.updateMatrixWorld();
+  mirrorCam.projectionMatrix.copy(camera.projectionMatrix); mirrorCam.projectionMatrixInverse.copy(camera.projectionMatrixInverse);
+  waterMat.uniforms.uReflMat.value.multiplyMatrices(BIAS, mirrorCam.projectionMatrix).multiply(mirrorCam.matrixWorldInverse);
+  reflClip[0].constant = -wy; water.visible = grass.visible = rain.visible = false; skyDome.position.copy(mirrorCam.position);
+  renderer.shadowMap.autoUpdate = false; renderer.clippingPlanes = reflClip; renderer.setRenderTarget(reflRT); renderer.render(scene, mirrorCam);
+  renderer.setRenderTarget(null); renderer.clippingPlanes = []; renderer.shadowMap.autoUpdate = true;
+  water.visible = grass.visible = rain.visible = true; skyDome.position.copy(cp);
+}
 
 // ---------- chuva: riscos caindo na velocidade terminal e inclinados pelo vento (tudo na GPU)
 const DROPS = mobile ? 4500 : 9000;
@@ -423,7 +500,7 @@ const fmtH = h => `${String(Math.floor(h) % 24).padStart(2, '0')}:${String(Math.
 function frame() {
   const dt = Math.min(0.1, clock.getDelta()); U.uTime.value += dt; U.uFlowClk.value += dt * (0.55 + U.uRain.value * 0.5);
   const c = climate(dt); controls.update();
-  skyDome.position.copy(camera.position);
+  renderReflection();
   renderer.render(scene, camera);
   fpsN++; fpsT += dt; if (fpsT > 1) { const fps = fpsN / fpsT; $('info').textContent = `${fmtH(ST.hour)} · ${ST.seca ? 'Seca' : 'Águas'} · vento ${c.base.toFixed(1)} m/s · ${c.Rr > 0.2 ? `chuva ${c.Rr.toFixed(0)} mm/h` : 'sem chuva'} · ${fps.toFixed(0)} qps`;
     $('hora').value = ST.hour; if (fps < 26 && dpr > 1) { if (++slow >= 2) { dpr = Math.max(1, dpr - 0.3); renderer.setPixelRatio(dpr); resize(); slow = 0; } } else slow = 0; fpsN = 0; fpsT = 0; }

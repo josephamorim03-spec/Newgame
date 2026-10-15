@@ -60,3 +60,30 @@ export function barkTexture(seed = 5) {
   for (let i = 0; i < 46; i++) { let x = R() * W, y = 0; g.beginPath(); g.moveTo(x, y); while (y < H) { y += 8 + R() * 14; x += (R() - 0.5) * 7; g.lineTo(x, y); } g.stroke(); }
   return tex(c, true);
 }
+
+// terra de cupinzeiro: torrões de argila laterítica (laranja-avermelhada) com grãos, canais de chuva escorrendo e crosta mais clara
+export function earthTexture(seed = 17) {
+  const W = 256, H = 256, c = document.createElement('canvas'); c.width = W; c.height = H; const g = c.getContext('2d'), R = rng(seed);
+  g.fillStyle = 'rgb(190,182,172)'; g.fillRect(0, 0, W, H);
+  for (let i = 0; i < 900; i++) { const x = R() * W, y = R() * H, r = 2 + R() * 7, lum = 150 + R() * 100;     // torrões
+    g.fillStyle = `rgb(${lum},${lum * 0.96},${lum * 0.92})`; g.beginPath(); g.ellipse(x, y, r, r * (0.6 + R() * 0.5), R() * 3, 0, 7); g.fill();
+    g.fillStyle = 'rgba(60,50,45,0.25)'; g.beginPath(); g.ellipse(x + r * 0.3, y + r * 0.35, r * 0.8, r * 0.4, 0, 0, 7); g.fill(); }
+  for (let i = 0; i < 3000; i++) { const l = R() < 0.5 ? 70 : 245; g.fillStyle = `rgba(${l},${l},${l},0.5)`; g.fillRect(R() * W, R() * H, 1.4, 1.4); }   // grãos
+  g.strokeStyle = 'rgba(70,58,50,0.35)'; g.lineWidth = 2;                                                    // canais de chuva
+  for (let i = 0; i < 22; i++) { let x = R() * W, y = R() * H * 0.3; g.beginPath(); g.moveTo(x, y); while (y < H) { y += 6 + R() * 10; x += (R() - 0.5) * 5; g.lineTo(x, y); } g.stroke(); }
+  return tex(c, true);
+}
+
+// pedra de quartzito do cerrado: bege acinzentada, salpicada, com veios e manchas de líquen
+export function stoneTexture(seed = 23) {
+  const W = 256, H = 256, c = document.createElement('canvas'); c.width = W; c.height = H; const g = c.getContext('2d'), R = rng(seed);
+  g.fillStyle = 'rgb(200,196,186)'; g.fillRect(0, 0, W, H);
+  for (let i = 0; i < 160; i++) { const x = R() * W, y = R() * H, r = 8 + R() * 30, lum = 165 + R() * 70;
+    g.fillStyle = `rgba(${lum},${lum * 0.98},${lum * 0.93},0.5)`; g.beginPath(); g.ellipse(x, y, r, r * 0.6, R() * 3, 0, 7); g.fill(); }
+  for (let i = 0; i < 5000; i++) { const l = R() < 0.6 ? 110 + R() * 40 : 240; g.fillStyle = `rgba(${l},${l},${l * 0.95},0.55)`; g.fillRect(R() * W, R() * H, 1.2, 1.2); }
+  g.lineWidth = 1.2; for (let i = 0; i < 9; i++) { g.strokeStyle = R() < 0.5 ? 'rgba(90,85,80,0.45)' : 'rgba(250,248,240,0.6)'; let x = R() * W, y = R() * H; g.beginPath(); g.moveTo(x, y);
+    for (let k = 0; k < 8; k++) { x += (R() - 0.3) * 30; y += (R() - 0.5) * 18; g.lineTo(x, y); } g.stroke(); }
+  for (let i = 0; i < 26; i++) { const x = R() * W, y = R() * H, r = 3 + R() * 9;                        // líquen
+    g.fillStyle = R() < 0.6 ? 'rgba(225,215,150,0.75)' : 'rgba(150,165,120,0.7)'; for (let k = 0; k < 6; k++) { g.beginPath(); g.arc(x + (R() - 0.5) * r * 1.6, y + (R() - 0.5) * r * 1.6, r * (0.3 + R() * 0.4), 0, 7); g.fill(); } }
+  return tex(c, true);
+}
