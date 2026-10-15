@@ -124,6 +124,7 @@ export function dirtAt(x, z) {
 }
 // peso da lavoura (1 dentro da peça, caindo a zero na borda) e o lugar das fileiras
 export function fieldAt(x, z) { const t = LAYOUT.field.tile; return smooth(0.3, 1.6, hexEdgeDist(x, z, t.c)); }
+export function inBoxAt(x, z, o, w, d, rot) { const dx = x - o[0], dz = z - o[1], c = Math.cos(rot), s = Math.sin(rot), u = dx * c - dz * s, v = dx * s + dz * c; return Math.abs(u) < w / 2 && Math.abs(v) < d / 2; }
 // lugares onde nada cresce nem se planta por cima (casas, capela, curral, horta, moinho)
 export function blocked(x, z, pad = 0) {
   const L = LAYOUT, inBox = (o, w, d, rot) => { const dx = x - o[0], dz = z - o[1], c = Math.cos(rot), s = Math.sin(rot), u = dx * c - dz * s, v = dx * s + dz * c; return Math.abs(u) < w / 2 + pad && Math.abs(v) < d / 2 + pad; };

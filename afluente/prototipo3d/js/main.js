@@ -9,6 +9,7 @@ import { NOISE, WIND, CLOUDS } from './glsl.js';
 import { U, HEAD, LIGHT_END, shared, ramp, toon } from './mat.js';
 import { R, TILES, CENTER, RIVER, riverHalfWidth, heightAt, riverInfo, waterDist, biomeAt, SPRING, POOL_R, WATER_Y, vnoise, inHex, inAnyTile, dirtAt, fieldAt, blocked } from './world.js';
 import { buildProps } from './props.js';
+import { buildFauna } from './fauna.js';
 import { leafTexture, fanTexture, barkTexture, earthTexture, stoneTexture } from './textures.js';
 
 const ATM = window.ATM;
@@ -287,7 +288,7 @@ function makeTree(kind, scale = 1) {
   if (P.r > 0.1) { const rr = P.r * scale * 1.3, fl = new THREE.CylinderGeometry(rr, rr * 1.9, 0.7, 7, 1, true), uvA = fl.attributes.uv;
     for (let k = 0; k < uvA.count; k++) uvA.setXY(k, uvA.getX(k) * 2, uvA.getY(k) * 0.5); fl.translate(0, 0.05, 0); out.wood.push(fl); }
   let H = 0; for (const t of out.tips) H = Math.max(H, t.y); const center = out.tips.reduce((a, t) => a.add(t), new THREE.Vector3()).multiplyScalar(1 / out.tips.length);
-  leafCards(out, out.tips, center, { ...P, card: P.card * scale, cluster: P.cluster * scale }); return treeMesh(out, H + P.cluster * scale, MATS[kind]);
+  leafCards(out, out.tips, center, { ...P, card: P.card * scale, cluster: P.cluster * scale }); const tm = treeMesh(out, H + P.cluster * scale, MATS[kind]); tm.userData.kind = kind; return tm;
 }
 function makeBuriti() {
   const H = 13 + rnd() * 5, out = { wood: [], leaf: [] }, lean = new THREE.Vector3((rnd() - 0.5) * 0.08, 1, (rnd() - 0.5) * 0.08).normalize();
@@ -368,6 +369,8 @@ scatter(tV, 2, () => makeTree('sombra', 0.95), () => true, 8);        // manguei
 scatter(tV, 5, () => makeTree('moita', 0.8 + rnd() * 0.4), () => true, 3);
 scatter(tL, 3, () => makeTree('cerrado', 0.9), () => true, 6);
 const props = buildProps(scene, { mobile });
+const shadeTree = scene.children.find(o => o.userData.kind === 'sombra' && inHex(o.position.x, o.position.z, tC.c, 1));
+const fauna = buildFauna(scene, { mobile, shade: shadeTree ? [shadeTree.position.x, shadeTree.position.z] : null });
 // moitas: o sub-bosque da mata e os arbustos do cerrado, que fecham o vão entre o capim e as copas
 scatter(tB, 16, () => makeTree('moita', 0.9 + rnd() * 0.6), (x, z) => { const w = waterDist(x, z); return w > 1.2 && w < 14; }, 2.2);
 scatter(tD, 6, () => makeTree('moita', 0.8 + rnd() * 0.5), () => true, 2.5);
@@ -515,7 +518,7 @@ const fmtH = h => `${String(Math.floor(h) % 24).padStart(2, '0')}:${String(Math.
 function frame() {
   const dt = Math.min(0.1, clock.getDelta()); U.uTime.value += dt; U.uFlowClk.value += dt * (0.55 + U.uRain.value * 0.5);
   const c = climate(dt); controls.update();
-  props.update(dt, { pxPerUnit: renderer.domElement.height / (2 * Math.tan(camera.fov * Math.PI / 360)) });
+  const ctx = { pxPerUnit: renderer.domElement.height / (2 * Math.tan(camera.fov * Math.PI / 360)) }; props.update(dt, ctx); fauna.update(dt, ctx);
   renderReflection();
   renderer.render(scene, camera);
   fpsN++; fpsT += dt; if (fpsT > 1) { const fps = fpsN / fpsT; $('info').textContent = `${fmtH(ST.hour)} · ${ST.seca ? 'Seca' : 'Águas'} · vento ${c.base.toFixed(1)} m/s · ${c.Rr > 0.2 ? `chuva ${c.Rr.toFixed(0)} mm/h` : 'sem chuva'} · ${fps.toFixed(0)} qps`;
@@ -523,4 +526,4 @@ function frame() {
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
-window.__previa = { ST, U, renderer, scene, camera, controls };
+window.__previa = { ST, U, renderer, scene, camera, controls, fauna };

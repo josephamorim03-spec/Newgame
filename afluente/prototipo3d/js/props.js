@@ -210,3 +210,5 @@ export function buildProps(scene, { mobile = false } = {}) {
   return { update(dt, ctx) { glowMat.emissiveIntensity = Math.pow(1 - U.uDay.value, 1.5) * 1.8 + U.uRain.value * 0.2 * (1 - U.uDay.value); for (const f of updaters) f(dt, ctx); },
     smokeOK: smokeSrc.length };
 }
+
+export { mat, paint, merge, box, col, V3 };
