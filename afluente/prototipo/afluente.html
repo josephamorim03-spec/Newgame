@@ -2044,7 +2044,11 @@ function drawAnimals(g,x,y,s,k,dyn,t,live){
           if(!crowd&&wbody(px,py,a)&&wbodySeg(a.x,a.y,px,py,a)){a.tx=px;a.ty=py;a.mode='anda';a.flip=px<a.x;break;}}
         if(a.mode==='para')a.until=t+2000+Math.random()*3000;}
       if(a.mode==='anda'){const dx=a.tx-a.x,dy=a.ty-a.y,d=Math.hypot(dx,dy),st=(DYNSP[nm]||0.05)*(a.boost&&t<a.boost?3:Math.max(0.4,Math.min(1.2,ac)))*dt/1000;
-        if(d<=st){a.x=a.tx;a.y=a.ty;a.mode='para';a.until=t+(nm==='cow'?5000:3000)+Math.random()*6000;}else{a.x+=dx/d*st;a.y+=dy/d*st;}}}
+        // v2.3: cada passo é conferido no mapa de hoje (o caminho foi checado na escolha, mas o mapa pode ter mudado e a amostragem tem frestas).
+        // Se o passo põe o corpo na água ou na cerca, o bicho para onde está; se já estava num lugar ruim, deixa andar para sair.
+        const bw=a.rule==='gado'&&WRULE.abrigo?{...a,rule:'abrigo'}:a,nx=d<=st?a.tx:a.x+dx/d*st,ny=d<=st?a.ty:a.y+dy/d*st;
+        if(a.w===G.world&&!wbody(nx,ny,bw)&&wbody(a.x,a.y,bw)){a.tx=a.x;a.ty=a.y;a.mode='para';a.until=t+1500+Math.random()*2000;}
+        else if(d<=st){a.x=a.tx;a.y=a.ty;a.mode='para';a.until=t+(nm==='cow'?5000:3000)+Math.random()*6000;}else{a.x=nx;a.y=ny;}}}
     const moving=a.mode==='anda',bob=moving?-Math.abs(Math.sin(t/95+i))*s*0.012:0;
     let name=nm;if(nm==='sheep')name=moving?'sheep_a':(WX.night>0.6||Math.sin(t/900+i*2)>-0.4?'sheep_b':'sheep_a');
     Q.push([a.y-wy,1,[name,(a.x-wx),(a.y-wy),sc*(DYNSC[nm]??0.8)*(a.rule==='cercado'?0.85:1),a.flip,bob]]);}
