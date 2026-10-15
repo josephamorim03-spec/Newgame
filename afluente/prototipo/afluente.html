@@ -356,6 +356,7 @@ body.calm .app{max-width:none;padding:0}
     <button class="btn primary" id="menuResume">Continuar</button>
     <div class="row"><button class="btn" id="menuHome">Tela inicial</button><button class="btn" id="menuHelp">Como jogar</button></div>
     <div class="row"><button class="btn" id="menuCalm">Contemplar o vale</button><button class="btn" id="menuBook">Caderno</button></div>
+    <div class="row" id="menu3dRow" hidden><button class="btn" id="menu3d">Visual: 3D</button></div>
     <button class="btn" id="menuRestart">Recomeçar este vale</button>
     <div class="toggles">
       <label class="tg"><input type="checkbox" id="optSound"><span>Som</span></label>
@@ -3993,6 +3994,51 @@ function fillOf(k,t){
   return G.s.alive.has(k)?1:0;
 }
 function aliveOf(k,t){return G.s.alive.has(k)&&fillOf(k,t)>0?1:0;}
+// v3.2: o tabuleiro em 3D. O módulo (jogo3d/vale3d.js) só vem embutido no afluente3d.html; sem ele, ou sem WebGL,
+// o jogo desenha em 2D como sempre. O 3D entrega a imagem das peças; o resto (céu, rótulos, números) segue no 2D.
+function use3d(){return !!(window.V3D&&db.v3d!==false&&V3D.ok());}
+function draw3d(g,s,sz,t,sel){
+  const lit=s.seca&&s.pend&&s.pend.casasOk?new Set(s.pend.casasOk):null,tiles=[];
+  for(const[k,tl]of s.board){const[wx,wz]=wpos(k),ctx=tileCtx(s,k,tl),f=fxOf(k,t);
+    const drn=!!(G.drain&&!s.alive.has(k)&&G.drain.order.includes(k)),fl=fillOf(k,t),water=s.alive.has(k)||drn?fl:0;
+    const cut=!!((s.cut&&s.cut.has(k))||(s.toco&&s.toco.has(k))),L=!lit||lit.has(k),tier=+((ctx.match(/t(\d)/)||[0,0])[1]),wet=G.wet.has(k);
+    tiles.push({k,wx,wz,e:tl.e,seed:k*7919+13,water,f,dy:f.dy||0,sx:f.sx||1,sy:f.sy||1,smoke:tl.e.includes('V')&&(lit?L:wet),
+      flags:{wet,alive:s.alive.has(k),seca:!!s.seca,src:!!tl.src,vereda:!!tl.vereda,sp:tl.sp||null,cut,lit:L,tier},
+      sig:tl.e.join('')+'|'+ctx+(cut?'x':'')+(L?'L':'')+(s.alive.has(k)?'a':'')+(tl.src?'S':'')+(tl.vereda?'v':'')+(tl.sp||'')});}
+  let S=null,mk=null;
+  if(sel&&!s.board.has(sel.k)){const o=sel.ops[sel.i],[wx,wz]=wpos(sel.k),[x,y0]=scr(sel.k);
+    const su=Math.min(1,(t-(G.selT||0))/260),lift=easeOutBack(su),bob=RM?0:Math.sin(t/520)*sz*0.03,y=y0-sz*0.1*lift+bob;
+    const ru=G.rotFx?Math.min(1,(t-G.rotFx.t0)/230):1,rot=G.rotFx&&ru<1?G.rotFx.ang*(1-easeOutBack(ru)):0;
+    g.fillStyle=css(LIGHT.shadow,0.16*su);g.beginPath();g.ellipse(x+sz*0.05,y0+sz*0.1,sz*0.85,sz*0.62,0,0,7);g.fill();
+    const al=o.rep.newlyAlive.includes(sel.k);
+    S={k:sel.k,wx,wz,e:o.e,seed:sel.k*7919+13,water:al?1:0,lift:(y0-(y-sz*0.12))/(sz*V3D.TAN),rot,scale:0.86+0.14*lift,
+      flags:{wet:al,alive:al,seca:!!s.seca,src:false,vereda:false,sp:E.cur(s).sp||null,cut:false,lit:true,tier:0},sig:'G'+o.e.join('')+(al?'a':'')+(s.seca?'s':'')};
+    if(!rot)mk=[x,y,o];}
+  const A=ENV.atm&&ENV.atm.sun,az=(A?A.az:120)*Math.PI/180,el=Math.max(8,A?A.elev:45)*Math.PI/180;
+  const res=V3D.frame({W:W.w,H:W.h,dpr:W.dpr,cam,t,tiles,sel:S,wind:ENV.wind.s,quality:QUAL.lvl,
+    light:{sun:LIGHT.sun,top:LIGHT.top,plain:LIGHT.plain,night:ENV.night,elev:ENV.elev,overcast:ENV.oc||0,sunDir:[Math.sin(az)*Math.cos(el),Math.sin(el),-Math.cos(az)*Math.cos(el)]}});
+  if(!res)return false;
+  g.drawImage(res.canvas,0,0,W.w,W.h);
+  G.chimNext=res.chim;G.lightsNext=res.lights;
+  for(const T of tiles)if(T.f.spark!=null){const[x,y]=scr(T.k);g.globalAlpha=1-T.f.spark;hexPath(g,x,y+T.dy,sz*(0.97+T.f.spark*0.5));g.strokeStyle='#fff6c8';g.lineWidth=3;g.stroke();g.globalAlpha=1;}
+  if(mk)selMarks(g,mk[0],mk[1],sz,mk[2]);
+  return true;
+}
+// marcas da peça escolhida: lados que combinam, números nas vizinhas e o rótulo do ganho (2D e 3D)
+function selMarks(g,x,y,sz,o){const sel=G.sel;
+      for(const ed of o.rep.edges){
+        const a=ang(ed.d),X=x+Math.cos(a)*sz*0.7,Y=y-sz*0.12+Math.sin(a)*sz*0.7,u=Math.min(sz,80);
+        g.beginPath();g.arc(X,Y,u*0.15,0,7);g.fillStyle=ed.m?P.good:P.bad;g.fill();g.strokeStyle='#fff';g.lineWidth=1.5;g.stroke();
+        g.strokeStyle='#fff';g.lineWidth=Math.max(1.5,u*0.05);g.lineCap='round';g.beginPath();
+        if(ed.m){g.moveTo(X-u*0.07,Y);g.lineTo(X-u*0.01,Y+u*0.06);g.lineTo(X+u*0.08,Y-u*0.06);}else{g.moveTo(X-u*0.06,Y-u*0.06);g.lineTo(X+u*0.06,Y+u*0.06);g.moveTo(X+u*0.06,Y-u*0.06);g.lineTo(X-u*0.06,Y+u*0.06);}
+        g.stroke();
+      }
+      for(const[kk,d]of G.selY||[]){if(kk===sel.k)continue;const[yx,yy]=scr(kk);pill(g,yx,yy-sz*0.05,`${d>0?'+':''}${d}`,d>0?'#e3f3dc':'#ffe4cc',d>0?'#24592b':'#8a3a0c',sz*0.8);}
+      const r=o.rep;let txt=`+${r.pts}`;if(r.prod>0)txt+=` · produção +${r.prod}`;
+      {const D0=G.bal&&G.bal.desp,D1=G.selBal&&G.selBal.desp;if(D0&&D1&&!D0.seca&&!D1.seca){const dc=D1.comidaHave-D0.comidaHave,dl=D1.lenhaHave-D0.lenhaHave;if(dc)txt+=` · 🌾${dc>0?'+':''}${dc}`;if(dl)txt+=` · 🪵${dl>0?'+':''}${dl}`;}}if(r.tiles)txt+=` · +${r.tiles} peça${r.tiles>1?'s':''}`;
+      if(r.questsDone.length)txt+=' · missão ✓';
+      label(x,y-sz*1.25,txt,{bg:r.tiles?'#3f9a4a':'#fffdf7',fg:r.tiles?'#fff':'#1d3b3a',pri:PRI.jogada});
+}
 function draw(t){
   const s=G.s;if(!s||!(W.w>20&&W.h>20&&cam.s>1))return; // sem tamanho (layout ainda não pronto) não desenha
   if(G.shake){const u=(t-G.shake.t0)/280;if(u>=1){cv.style.transform='';G.shake=null;}else if(u>0){const a=G.shake.amp*(1-u)*(1-u);cv.style.transform=`translate(${(a*0.35*Math.sin(u*31)).toFixed(2)}px,${(a*Math.sin(u*44)).toFixed(2)}px)`;}}
@@ -4012,6 +4058,8 @@ function draw(t){
   }
   // sombra do vale (cor da luz do momento)
   g.fillStyle=LIGHT.shadowCss;for(const k of s.board.keys()){const[x,y]=scr(k);hexPath(g,x+sz*0.06,y+sz*0.4,sz);g.fill();}
+  const D3=use3d()&&draw3d(g,s,sz,t,sel);
+  if(!D3){
   // peças, de trás para frente
   const wpat=boardWaterPattern(g,t);
   const keys=[...s.board.keys()];if(sel)keys.push(sel.k);
@@ -4054,18 +4102,7 @@ function draw(t){
        else drawTile(g,x,y-sz*0.12,sz,o.e,to);}
       g.restore();
       if(rot)continue;
-      for(const ed of o.rep.edges){
-        const a=ang(ed.d),X=x+Math.cos(a)*sz*0.7,Y=y-sz*0.12+Math.sin(a)*sz*0.7,u=Math.min(sz,80);
-        g.beginPath();g.arc(X,Y,u*0.15,0,7);g.fillStyle=ed.m?P.good:P.bad;g.fill();g.strokeStyle='#fff';g.lineWidth=1.5;g.stroke();
-        g.strokeStyle='#fff';g.lineWidth=Math.max(1.5,u*0.05);g.lineCap='round';g.beginPath();
-        if(ed.m){g.moveTo(X-u*0.07,Y);g.lineTo(X-u*0.01,Y+u*0.06);g.lineTo(X+u*0.08,Y-u*0.06);}else{g.moveTo(X-u*0.06,Y-u*0.06);g.lineTo(X+u*0.06,Y+u*0.06);g.moveTo(X+u*0.06,Y-u*0.06);g.lineTo(X-u*0.06,Y+u*0.06);}
-        g.stroke();
-      }
-      for(const[kk,d]of G.selY||[]){if(kk===sel.k)continue;const[yx,yy]=scr(kk);pill(g,yx,yy-sz*0.05,`${d>0?'+':''}${d}`,d>0?'#e3f3dc':'#ffe4cc',d>0?'#24592b':'#8a3a0c',sz*0.8);}
-      const r=o.rep;let txt=`+${r.pts}`;if(r.prod>0)txt+=` · produção +${r.prod}`;
-      {const D0=G.bal&&G.bal.desp,D1=G.selBal&&G.selBal.desp;if(D0&&D1&&!D0.seca&&!D1.seca){const dc=D1.comidaHave-D0.comidaHave,dl=D1.lenhaHave-D0.lenhaHave;if(dc)txt+=` · 🌾${dc>0?'+':''}${dc}`;if(dl)txt+=` · 🪵${dl>0?'+':''}${dl}`;}}if(r.tiles)txt+=` · +${r.tiles} peça${r.tiles>1?'s':''}`;
-      if(r.questsDone.length)txt+=' · missão ✓';
-      label(x,y-sz*1.25,txt,{bg:r.tiles?'#3f9a4a':'#fffdf7',fg:r.tiles?'#fff':'#1d3b3a',pri:PRI.jogada});
+      selMarks(g,x,y,sz,o);
       continue;
     }
     const tl=s.board.get(k),P1=PASS.get(k);if(!P1)continue;const{f,o}=P1;y+=f.dy;
@@ -4075,13 +4112,14 @@ function draw(t){
     g.restore();
   }
   g.restore();
+  }
   G.chimneys=G.chimNext;G.lights=G.lightsNext;
   // a última cheia (fim de partida): um brilho percorre o rio vivo, da nascente para baixo
   if(G.pulse){const P=G.pulse;let live=false;g.save();g.globalCompositeOperation='lighter';
     P.order.forEach((k,i)=>{const u=(t-P.t0-i*70)/520;if(u<1)live=true;if(u<=0||u>=1)return;const[x,y]=scr(k);
       hexPath(g,x,y,sz*0.98);g.fillStyle=`rgba(150,225,255,${(0.4*Math.sin(Math.PI*u)).toFixed(3)})`;g.fill();});
     g.restore();if(!live)G.pulse=null;}
-  grassBlades(g,s,sz,t);boardLight(g,s,sz,t);
+  if(!D3){grassBlades(g,s,sz,t);boardLight(g,s,sz,t);}
   drawFauna(g,s,sz,t,false);
   if(!RM)for(const[k,t]of s.board)if(t.sp==='falls'&&s.alive.has(k)&&Math.random()<0.05){const[fx,fy]=wpos(k);emit('~#ffffff',fx+(Math.random()-0.5)*0.3,fy,1,{ang:-Math.PI/2,spread:0.8,v:0.25,life:1500,size:0.18,grow:1.8,alpha:0.45});}
   const dtc=Math.min(100,t-(G.lastTc||t));G.lastTc=t;
@@ -4102,8 +4140,8 @@ function draw(t){
     }
   }
   // seca: o vale fica com luz quente e poeirenta
-  if(s.seca){g.save();g.fillStyle='rgba(222,170,95,.10)';for(const k of s.board.keys()){const[x,y]=scr(k);hexPath(g,x,y,sz);g.fill();}g.restore();}
-  lifeFx(g,s,sz,t);waterLife(g,s,sz,t);
+  if(s.seca&&!D3){g.save();g.fillStyle='rgba(222,170,95,.10)';for(const k of s.board.keys()){const[x,y]=scr(k);hexPath(g,x,y,sz);g.fill();}g.restore();}
+  if(!D3){lifeFx(g,s,sz,t);waterLife(g,s,sz,t);}
   // dica da primeira jogada: onde tocar
   if(G.best!=null&&!sel&&!G.calm){const[x,y]=scr(G.best),ph=RM?0.5:(t/900)%1;
     hexPath(g,x,y,sz*(0.8+0.25*ph));g.strokeStyle=`rgba(255,255,255,${0.95*(1-ph)})`;g.lineWidth=3;g.stroke();
@@ -5027,6 +5065,9 @@ function openMenu(){
 }
 $('menuResume').addEventListener('click',()=>{$('menu').hidden=true;});
 $('menuCalm').addEventListener('click',()=>{$('menu').hidden=true;enterCalm();});
+// v3.2: visual 2D ou 3D (só no afluente3d.html, que traz o módulo 3D)
+if(window.V3D){$('menu3dRow').hidden=false;const lbl=()=>{$('menu3d').textContent=db.v3d===false?'Visual: 2D (tocar para 3D)':'Visual: 3D (tocar para 2D)';};lbl();
+  $('menu3d').addEventListener('click',()=>{db.v3d=db.v3d===false;save(db);lbl();});}
 $('calmBtn').addEventListener('click',enterCalm);
 $('menuHome').addEventListener('click',showHome);
 $('menuHelp').addEventListener('click',()=>{$('menu').hidden=true;$('intro').hidden=false;$('introOk').focus();});
