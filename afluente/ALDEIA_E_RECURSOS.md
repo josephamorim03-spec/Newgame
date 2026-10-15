@@ -4,6 +4,8 @@
 
 Este documento propõe **a etapa 1** com regras e números. As etapas 2 e 3 ficam só esboçadas, para serem decididas depois do teste da etapa 1.
 
+> **Estado (v3.1):** as regras da etapa 1 estão no motor, calibradas com os bots, e há uma interface mínima para jogar e testar. O visual fica por último, como pedido: a seção 10 diz o que o motor entrega para o desenho, no 2D de hoje e no 3D da outra sessão. Os números que mudaram na calibração estão marcados abaixo e resumidos na seção 3.7.
+
 ---
 
 ## 1. A ideia em uma frase
@@ -87,18 +89,18 @@ Quando as chuvas voltam:
 
 | Resultado | O que acontece |
 |---|---|
-| **Ano farto**: comida e lenha cobriram todas as casas | **+5 pontos por casa** e **+1 peça a cada 3 casas** (chega gente nova). As casas mostram fumaça e fardos, e conta para o nível da aldeia |
-| **Ano de aperto**: faltou comida ou lenha | sem bônus. As casas sem lenha passaram a friagem apagadas, e a faixa diz quantas. **Nada é destruído** e ninguém morre: no ano seguinte tudo produz de novo |
+| **Ano farto**: comida e lenha cobriram todas as casas | **+5 pontos por casa** e **+3 peças** (chega gente nova). As casas mostram fumaça e fardos, e conta para o nível da aldeia |
+| **Ano de aperto**: faltou comida ou lenha | **+5 por casa atendida**, e **+2 peças** se pelo menos metade das casas foi atendida. Sem isso, nada. As casas sem lenha passaram a friagem apagadas, e a faixa diz quantas. **Nada é destruído** e ninguém morre: no ano seguinte tudo produz de novo |
 
 A mata cortada rebrota nas chuvas e volta a proteger o rio.
 
 ### 3.5 O que muda nos pontos
 
 - **Continua:** a jogada vale o encaixe e o quanto o vale passa a produzir (v3). É o retorno imediato.
-- **Sai:** a colheita em pontos (v3). Agora ela enche a despensa, e o ano farto paga os pontos.
+- ~~**Sai:** a colheita em pontos (v3).~~ **Mudou na calibração (3.7):** a colheita continua em pontos, e volta o +1 por trecho de rio que aguenta a seca. Sem isso, cortar a mata da beira não custava nada.
 - **A conta da pilha:**
   - saem as 2 peças da seca;
-  - entra +1 peça a cada 3 casas no ano farto;
+  - entram +3 peças no ano farto e +2 no ano em que pelo menos metade das casas foi atendida (v3.1: o número é fixo e não cresce com a aldeia, ver 3.7);
   - a chuva continua com +2.
 - **Peças por missão, perfeitas e afluentes:** sem mudança.
 
@@ -119,11 +121,52 @@ O que se lê:
 - **Lenha:** mais da metade da mata perto das vilas, quase dois terços, está na beira do rio. Sem cortar a beira, a lenha cobre só 68% a 90% do que a aldeia pede, e menos ainda nas secas com friagem. Para atravessar a seca sem ferir o rio, é preciso **plantar mata perto da vila e longe do rio**. É o dilema de sustentabilidade que se pediu, e ele aparece sozinho no mapa de hoje: ninguém precisa inventar escassez.
 - **A dificuldade cresce com a aldeia.** O ano 1 é fácil (2 casas). Do ano 2 em diante a lenha aperta, porque a aldeia cresce mais rápido que a mata no alcance. É a "época difícil" que fica mais dura quando se avança, como pedido no começo do projeto, mas pela geometria do vale e não por uma conta escondida.
 
-Os números finais (2 de comida por casa, 1 de lenha, dobro na friagem, +5 por casa e +1 peça a cada 3) são o ponto de partida. Vão ser recalibrados com um bot que conheça a despensa, mirando três coisas:
+Os números finais (2 de comida por casa, 1 de lenha, dobro na friagem, +5 por casa e +1 peça a cada 3) são o ponto de partida (o que mudou está em 3.7). Vão ser recalibrados com um bot que conheça a despensa, mirando três coisas:
 
 - o guloso passa aperto em cerca de metade dos anos 2 em diante;
 - quem planeja passa aperto em poucos;
 - a duração continua até cerca de 150 jogadas para quem joga muito bem.
+
+### 3.7 Como ficou depois da calibração (v3.1)
+
+A etapa 1 foi implementada no motor e jogada pelos bots (`sim/v24_teste.js`, 16 vales do dia). Quatro coisas mudaram em relação à proposta acima, cada uma por um motivo que a simulação mostrou:
+
+| Proposta | Implementado | Por quê |
+|---|---|---|
+| +1 peça a cada 3 casas atendidas | **+3 peças** no ano farto e **+2** com metade ou mais das casas atendidas | Peça por casa cresce com a aldeia: a pilha disparava e partidas passavam de 400 jogadas. Um número fixo por ano mantém o freio |
+| despensa começa vazia | **provisão inicial**: 8 de comida e 3 de lenha | No ano 1, com 2 ou 3 casas, até o bot cuidadoso passava aperto em metade dos vales, por falta de comida das primeiras peças |
+| mata cortada rebrota nas chuvas | **fica em toco por mais um ano**: na seca seguinte não dá lenha nem segura o rio | Cortar não tinha custo depois daquela seca |
+| a colheita sai dos pontos | **a colheita continua em pontos**, e volta o **+1 por trecho de rio que aguenta a seca** | Sem isso, o rio vivo na seca não valia nada fora da aldeia, e cortar a mata da beira era sempre melhor: +15% a +18% de pontos |
+
+**A troca do corte, medida seca a seca** (`sim/revisao/troca.js`, mesmo estado, com e sem a chave, nas secas em que cortar muda algo):
+
+- **O que cortar dá:** 4,8 matas cortadas, +1,7 casa atendida (+8,6 pontos) e +0,7 peça (cerca de +5). Ao todo, cerca de **+13,6**.
+- **O que cortar custa:** 5,8 trechos de rio a mais secam (−5,8) e a colheita cai 10,2. Ao todo, cerca de **−16**.
+
+Para quem planeja, cortar custa um pouco mais do que dá na mesma seca. Na partida inteira o resultado empata: as peças do ano farto se acumulam.
+
+**A partida inteira** (16 vales do dia; vale a vale em `sim/revisao/corte_par.js`):
+
+| Jogador | Pontos (média) | Jogadas: mediana / máx | Anos fartos | Casas atendidas | Matas da beira cortadas | Trechos secos |
+|---|---:|---|---:|---:|---:|---:|
+| aleatório | 60 | 29 / 32 | 34% | 42% | 0 | 2,6 |
+| guloso | 506 | 47 / 124 | 43% | 67% | 0 | 18,3 |
+| guloso, cortando | 567 | 57 / 118 | 52% | 75% | 10,5 | 33,9 |
+| cuidadoso | 719 | 66 / 116 | 60% | 83% | 0 | 8,1 |
+| cuidadoso, cortando | 824 | 59 / 153 | 90% | 97% | 12,2 | 23,6 |
+| mestre | 704 | 65 / 126 | 50% | 74% | 0 | 6,4 |
+
+O que se lê:
+
+- **A duração voltou ao alvo.** O mestre faz mediana de 65 jogadas e no máximo 126, perto da v3.0 (55 / 148).
+- **A aldeia pesa sem dominar.** Ela rende de 15% a 21% dos pontos e a colheita, de 22% a 26%.
+- **Planejar compensa.** O cuidadoso tem 60% de anos fartos e o guloso 43%. O guloso passa aperto em mais da metade dos anos, o cuidadoso em 4 de cada 10.
+- **Cortar ou proteger é uma escolha, não uma resposta certa.**
+  - Vale a vale, o cuidadoso que corta a partida toda empata na mediana com o que protege (646 contra 642 pontos). Ele ganha em 11 dos 16 vales e perde feio em 5.
+  - A média pende para o corte (+15%) por causa de dois vales em que a partida se estendeu muito.
+  - O preço fica à vista: o rio seca 3 vezes mais e as matas ficam em toco.
+  - Testamos toco de 2 e 3 anos e não mudou: o corte continua empatado, e a regra fica mais difícil de explicar. Ficou 1 ano.
+- **A escolha que o bot não faz** é desligar a chave só nos anos de friagem. Uma pessoa pode fazer isso, e deve ser o melhor jogo. **É o primeiro ponto a observar no teste com pessoas:** quem corta sempre e não sente o custo mostra que a regra precisa de mais peso.
 
 ---
 
@@ -212,3 +255,48 @@ Pede arte nova: barco, cais e estrada.
   - mata cortada com tocos;
   - fardos e celeiro cheios.
 - **Lição nova**, "A aldeia e a seca": uma vila, uma mata perto e a chave.
+
+---
+
+## 10. Contrato do motor para o visual (2D de hoje e 3D da outra sessão)
+
+As regras da aldeia vivem só no motor (`function Engine`, extraído em `sim/ano_no_vale_motor.js`). O desenho **lê** o que está abaixo e nunca decide nada: quem desenha não precisa saber a conta, e trocar o 2D pelo 3D não muda nenhuma regra.
+
+Hoje a prévia 3D (`prototipo3d/`) mostra 4 peças fixas e lê só o clima (`Atmos`). Para ela mostrar a aldeia, basta carregar o motor como o `sim/` já faz (`ano_no_vale_motor.js`), montar o vale com `E.newGame`/`E.replay` e ler os campos abaixo. Nada do motor precisa mudar.
+
+### 10.1 Estado da partida (`s`)
+
+| Campo | Tipo | O que é |
+|---|---|---|
+| `s.store` | `{comida, lenha}` | o que está guardado na despensa: começa com a provisão (`CFG.prov0`, 8 e 3) e depois é o que sobrou da última seca. A comida perde metade na colheita seguinte |
+| `s.protect` | `bool` | a chave "Proteger a mata do rio" (padrão `true`). Muda só por `E.setProtect(s,v)`, que grava `{t:'mata',v}` em `s.actions`, então o replay e o vale do dia reproduzem a escolha |
+| `s.cut` | `Set` de chaves de casa | matas da beira do rio cortadas nesta seca. Vazio fora da seca: a mata rebrota quando as chuvas voltam |
+| `s.pend` | `{atendidas, casas, fri, casasOk}` ou `null` | o que a aldeia separou na chegada da seca, pago quando as chuvas voltam. `casasOk` é a lista das casas atendidas |
+| `s.seca` | `bool` | já existia: é a época difícil |
+
+### 10.2 Funções de leitura
+
+| Função | Devolve | Para quê, no visual |
+|---|---|---|
+| `E.aldeiaOf(board)` | `{casas:[k], reach:Map(k→distância)}` | o contorno do alcance (2 casas em volta de cada vila) |
+| `E.balance(s).desp` | nas Águas: o plano da próxima seca (`comidaHave`, `needC`, `lenhaHave`, `needL`, `atendidas`, `casas`, `fri`, `cut`, `gather`, `reachKeys`, `casasOk`) e `alt`, o mesmo plano com a chave desligada. Na seca: `{seca:true, atendidas, casas, fri, casasOk, store, cut}` | a ficha 🌾/🪵, a prévia da peça e quais casas vão ficar acesas |
+| `E.despensaPlan(board,s,season,protect)` | o plano completo de uma seca | simulações e bots |
+| `E.friagem(seedKey,season)` | `bool` | a mesma frente fria do céu (`Atmos`). O visual pode anunciar a friagem desde as Águas |
+| `E.nextSeca(s)` | número da estação | qual seca a prévia está olhando |
+
+### 10.3 Eventos de `E.place(...).rep.events`
+
+| Evento | Quando | Campos | O que o visual faz |
+|---|---|---|---|
+| `{type:'despensa'}` | chegada da seca, depois da colheita | `year`, `gather:[[k,'c'\|'l',n]]`, `cut:[k]`, `casasOk:[k]`, `atendidas`, `casas`, `fri`, `comidaGain`, `lenhaGain`, `store` | números voam de cada peça para a despensa (`gather`); as matas em `cut` perdem as árvores e mostram tocos e lenha empilhada; as casas em `casasOk` ganham fumaça na chaminé e janela acesa à noite; as outras ficam apagadas na friagem |
+| `{type:'ano'}` | volta das chuvas | `year`, `atendidas`, `casas`, `fri`, `pts`, `tiles`, `farto` | faixa "Ano farto" ou "Ano de aperto"; no farto, fardos e celeiro cheios; a mata de `s.cut` rebrota |
+
+### 10.4 Ganchos do visual, em ordem de valor
+
+1. **Casas acesas e apagadas** (`casasOk`): fumaça e janela acesa. É o retorno principal da regra e usa arte que já existe.
+2. **Mata cortada** (`s.cut`): menos árvores, tocos (`log`) e versões secas (`*_seco`) até as chuvas. No 2D de hoje, a peça cortada já usa o desenho seco (marca `d` em `tileCtx`).
+3. **O alcance**: um contorno suave das casas de `reachKeys` enquanto a peça está escolhida.
+4. **A despensa à vista**: fardos de feno e lenha empilhada na vila, crescendo com `store`.
+5. **A friagem**: o céu já faz isso (`Atmos`). Falta só a geada nas folhas na seca com `fri`.
+
+A ordem de cada coisa no tempo é a do evento: primeiro a lenha é cortada, depois a seca decide que rio corre, depois a colheita conta. O visual deve mostrar nessa ordem, para o custo de cortar a mata aparecer junto com a escolha.

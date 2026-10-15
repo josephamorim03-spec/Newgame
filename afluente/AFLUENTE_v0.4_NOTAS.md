@@ -1171,3 +1171,71 @@ O que se lê:
 - **Os bots não dizem se ficou divertido.** O teste com pessoas segue sendo o próximo passo (`REVISAO_RETENCAO_v2.4.md`, seção 5).
 - **As lições** ensinam a água e a seca, mas ainda não têm uma lição própria de produção. Os textos foram atualizados: a lição 2 explica o verde que produz, e a lição 5 a colheita.
 - **Missões e peças especiais** continuam como estavam. Se a economia agradar, as missões podem virar encomendas da vila ("a vila pede 3 lavouras irrigadas"), mais no tom de construção.
+
+## A aldeia e a despensa (v3.1)
+
+**O pedido:** recursos, uma época difícil, sustentabilidade e a aldeia trabalhando sozinha por prioridades, com o encaixe de peças continuando como a ação principal. Primeiro as regras e o motor; o visual fica por último, porque a outra sessão está fazendo o 3D. A proposta completa e o contrato para o visual estão em `ALDEIA_E_RECURSOS.md`.
+
+### As regras (etapa 1)
+
+- **Casas e alcance.** Cada peça com vila é uma casa. A aldeia colhe o que está a até 2 casas de alguma vila.
+- **A despensa** tem dois estoques e nenhum outro:
+
+  | Estoque | Entra, na chegada da seca | Sai, durante a seca |
+  |---|---|---|
+  | Comida | lavoura irrigada +2, pasto irrigado +1, no alcance | 2 por casa |
+  | Lenha | +1 por mata no alcance que não está na beira do rio | 1 por casa, ou 2 com friagem |
+
+  A comida que sobra perde metade de um ano para o outro, e a lenha fica guardada. A aldeia começa com uma provisão de 8 de comida e 3 de lenha.
+- **A chave "Proteger a mata do rio"** fica ligada por padrão. Desligada, quando falta lenha, a aldeia também corta a mata da beira do rio, a mais perto primeiro e só o quanto falta. A mata cortada não segura o rio nesta seca, então o rio dela seca e a colheita cai na mesma hora. Ela rebrota quando as chuvas voltam. A chave fica gravada nas ações, então o replay e o vale do dia reproduzem a escolha.
+- **A friagem** é a mesma frente fria do céu (`Atmos`): o mesmo sorteio pela semente e pela estação. A barra do ano a anuncia desde as Águas.
+- **A ordem na chegada da seca:** a aldeia junta a lenha (cortando, se a chave deixar), depois a seca decide que rio corre, depois a colheita conta.
+- **Na volta das chuvas:**
+  - cada casa atendida vale +5;
+  - ano farto, com todas as casas atendidas, traz +3 peças;
+  - pelo menos metade das casas atendidas traz +2 peças.
+
+  Ninguém morre e nada é destruído: o aperto só tira o bônus.
+- **A mata cortada vira toco** e leva um ano para rebrotar: na seca seguinte ela ainda não dá lenha nem segura o rio. Cortar resolve este ano e cobra o próximo.
+- **O rio na seca volta a valer.** A colheita da v3 continua em pontos (o vale todo rende o que produz com a água da seca), e cada trecho de rio que continua correndo vale +1, como na v2.4.
+- **Saíram** as peças da seca por trecho de rio (até 2). As peças do ano da aldeia ficaram no lugar delas.
+
+### Interface mínima
+
+- **A ficha da despensa** no painel: `🌾 comida/precisa · 🪵 lenha/precisa`, com ❄ quando há friagem. Na seca mostra quantas casas foram atendidas. Tocar abre a ficha com a explicação e a chave.
+- **A prévia da peça** mostra o que ela muda na despensa (🌾+2, 🪵+1).
+- **Faixas** na chegada da seca (o que a aldeia juntou e quantas casas atendeu) e na volta das chuvas (ano farto ou de aperto).
+- **A mata cortada** usa o desenho seco até rebrotar (na seca e no ano em que fica em toco).
+- **O resultado** mostra "Aldeia: N de M anos fartos" e as matas da beira do rio cortadas. O texto para compartilhar ganhou "🏡 N anos fartos".
+
+O resto do visual (fumaça e janela acesa nas casas atendidas, tocos, fardos e celeiro, o contorno do alcance) fica para depois, seguindo o contrato da seção 10 de `ALDEIA_E_RECURSOS.md`.
+
+### Calibração
+
+Detalhes em `ALDEIA_E_RECURSOS.md`, seção 3.7, e em `sim/revisao/resultados/v31_aldeia.txt`.
+
+| Jogador | Pontos (média) | Jogadas: mediana / máx | Anos fartos | Matas da beira cortadas | Trechos secos |
+|---|---:|---|---:|---:|---:|
+| aleatório | 60 | 29 / 32 | 34% | 0 | 2,6 |
+| guloso | 506 | 47 / 124 | 43% | 0 | 18,3 |
+| cuidadoso | 719 | 66 / 116 | 60% | 0 | 8,1 |
+| cuidadoso, cortando | 824 | 59 / 153 | 90% | 12,2 | 23,6 |
+| mestre | 704 | 65 / 126 | 50% | 0 | 6,4 |
+
+- **Peças fixas por ano.** A primeira versão dava +1 peça a cada 3 casas atendidas, e as partidas passavam de 400 jogadas, porque a recompensa crescia com a aldeia. Com +3 e +2 por ano, a duração voltou à da v3.0.
+- **O corte precisava de preço.** Com a colheita fora dos pontos, cortar a mata da beira rendia 15% a 18% a mais. A colheita voltou aos pontos, o rio que aguenta a seca voltou a valer +1, e a mata cortada fica em toco por um ano.
+- **Como ficou:** seca a seca, cortar dá cerca de +13,6 e custa cerca de −16. Na partida inteira, cortar sempre empata na mediana com proteger (646 contra 642). O corte ganha em 11 dos 16 vales, e o rio seca 3 vezes mais.
+- **É o primeiro ponto a observar no teste com pessoas.** O melhor jogo provavelmente é cortar só nos anos de friagem, coisa que o bot não faz.
+
+### Testes desta versão
+
+- `sim/aldeia_teste.js` (novo):
+  - a friagem da regra é a do céu em 144 secas (40% com friagem);
+  - os estoques nunca ficam negativos e as casas atendidas nunca passam das casas;
+  - só há corte com a chave desligada, e só na mata da beira dentro do alcance;
+  - o toco não dá lenha, não é cortado de novo e não segura o rio;
+  - a mata rebrota no tempo certo;
+  - o replay é idêntico, com e sem a chave.
+- `sim/licoes_teste.js`: as 5 lições se resolvem pela casa marcada. O guloso continua sem resolver a lição 5, como antes.
+- `sim/coerencia_teste.js` e `sim/atmos_teste.js`: sem mudança.
+- `sim/interface_teste.js`: 77 telas, 0 erros. Os 31 avisos são rótulos escondidos debaixo do cartão de boas-vindas ou de outro rótulo, e uma quebra de linha no menu. Nos dois celulares menores, conferidos contra a v3.0, são os mesmos avisos.

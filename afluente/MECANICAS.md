@@ -190,3 +190,16 @@ Pelos critérios da seção 1:
 3. **A consequência fica perto da decisão.** O ganho de produção entra na jogada; a colheita repete esse ganho a cada ano e é anunciada pela barra do ano.
 
 Saíram a cheia e os pontos por trecho na seca, porque a colheita faz o mesmo papel com mais sentido.
+
+## 10. A aldeia e a despensa (v3.1)
+
+Cada peça com vila é uma casa. A aldeia colhe o que está a até 2 casas dela: comida da lavoura e do pasto irrigados, lenha da mata. Na seca, cada casa come 2 e queima 1 de lenha (2 com friagem, a mesma frente fria do céu). A chave "Proteger a mata do rio" decide se a aldeia pode cortar a mata da beira quando falta lenha. A mata cortada não segura o rio e fica em toco por um ano. Nas chuvas, cada casa atendida vale +5; o ano farto traz +3 peças, e metade ou mais das casas atendidas, +2.
+
+Pelos critérios da seção 1:
+
+1. **Cria decisão.** Onde fica a mata (perto da vila e longe do rio, ou na beira) e se a chave fica ligada. Planejar dá 60% de anos fartos, contra 43% de quem só olha o ganho imediato.
+2. **Cabe numa frase e se vê no vale.** A ficha da despensa mostra o que tem e o que falta antes da seca, e a prévia da peça mostra 🌾 e 🪵.
+3. **A consequência fica perto da decisão.** O corte, a seca do rio e a colheita menor acontecem na mesma virada da seca. O toco cobra no ano seguinte.
+
+A colheita da seção 9 continua em pontos, e o rio que aguenta a seca voltou a valer +1 por trecho: sem isso, cortar a mata da beira não custava nada (`ALDEIA_E_RECURSOS.md`, seção 3.7).
+

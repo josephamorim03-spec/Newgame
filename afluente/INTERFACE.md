@@ -123,6 +123,8 @@ Sai com código 1 se houver erro e, com a pasta, salva uma captura de cada tela.
 - 32 rótulos de nível 1 e 2 escondidos: presos ao terreno, discretos e sem grudar na borda, os de pouca prioridade cedem o lugar mais vezes. A informação continua nas fichas do topo;
 - "Contemplar o vale" em 2 linhas no menu da tela de 360 px.
 
+**Estado na v3.1 (a aldeia e a despensa):** 77 telas, 0 erros e 31 avisos dos mesmos tipos aceitos. A ficha do rio dá lugar à da despensa quando há aldeia: `🌾 comida/precisa · 🪵 lenha/precisa`, com ❄ se vem friagem, e a colheita ao lado, escondida quando a ficha divide a linha com a de afluentes. Na seca, a ficha mostra "Seca: N/M casas atendidas". Tocar abre a ficha da despensa, com a chave "Proteger a mata do rio", e destaca em laranja os trechos que vão secar.
+
 **Estado na v3.0:** 77 telas, 0 erros. Os avisos são todos de tipos já aceitos:
 
 - rótulos de nível 1 e 2 escondidos, cuja informação continua nas fichas do topo;
