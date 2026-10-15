@@ -634,3 +634,56 @@ O que mudou:
 - **Teste automático novo:** 5 minutos simulados de animação em 4 vales, medindo cada vez que o corpo de um bicho cruza o desenho de um cercado, casa ou copa.
   - Antes: de 862 a 3.454 cruzamentos com cercados por vale.
   - Depois: zero. Os encostos em copa que ainda aparecem são ovelhas atrás de arbustos, desenhadas corretamente por trás deles.
+
+## Motor de disposição com geometria exata e nuvens do Blender (v2.0)
+
+### Diagnóstico
+- **Ponto de apoio:** o motor supunha que cada sprite ficava centrado no ponto de apoio e que esse ponto era o pé. Na verdade, a âncora é o centro do objeto em 3D. O cercado se estende 30 px abaixo dela (a cerca da frente), e o boi é assimétrico (28 px à esquerda, 41 à direita). Toda colisão errava lado e tamanho.
+- **Pegada:** só construções e árvores tinham pegada. Lavoura, feno e enfeites usavam um círculo genérico.
+- **Ordem:** quem ganhava o espaço dependia da ordem das áreas. Se a lavoura viesse antes, o cercado entrava por cima dela.
+- **Profundidade:** os bichos eram desenhados por cima de tudo da peça.
+
+### Arquitetura nova
+1. **Geometria exata** (`arte/caixas.py` gera `caixas.json`, embutido como `const BOX`).
+   - Para cada sprite: o retângulo do corpo (sem a sombra, com a mesma regra de separação do jogo) e a faixa que toca o chão, relativos à âncora.
+   - `objGeom()` dá, para qualquer objeto, o desenho na tela (`sb`) e a base no chão (`fb`).
+2. **Regras de disposição** (`add()` do `compose`), na ordem:
+   1. **Água:** a base nunca fica sobre o canal ou a margem. Construção, cercado, árvore e lavoura também não cobrem o rio com o desenho.
+   2. **Terreno:** a base de construção, cercado e lavoura fica inteira dentro da área do próprio terreno. Os demais objetos são testados pelo centro.
+   3. **Peça:** o desenho de construção e cercado cabe inteiro no hexágono. Isso elimina as sobreposições entre peças vizinhas.
+   4. **Ninguém em cima de ninguém:**
+      - construção e cercado, pelo desenho inteiro;
+      - lavoura contra árvore, pelo desenho;
+      - o resto, pela base.
+   5. **Prioridade:** vila, depois pasto (cercado), lavoura e mata. O cercado procura onde cabe (centro da área, depois os pontos mais próximos, em dois tamanhos); se não cabe, as ovelhas ficam soltas. Igreja, moinho e celeiro procuram posições ao longo do seu triângulo.
+3. **Mapa de colisão dos bichos** com as mesmas caixas:
+   - base de construções, cercas e troncos bloqueia;
+   - o desenho acima da base marca oclusão;
+   - lavoura inteira é proibida para o gado;
+   - o canal tem o comprimento do rio desenhado.
+4. **Bichos:** corpo exato (as duas orientações, porque viram ao andar) testado contra o mapa.
+5. **Profundidade:**
+   - o cercado é desenhado em duas metades (cerca de trás e cerca da frente), ordenadas junto com as ovelhas;
+   - nas peças com bichos, os enfeites são ordenados com eles.
+
+### Medição
+`medidor.js` usa a geometria exata em 6 vales, com 5 minutos de animação em cada:
+
+| Defeito | Antes (4 vales) | Depois (6 vales) |
+|---|---|---|
+| Sobreposição de construção ou cercado | 24 | 0 |
+| Sobreposição entre peças | 3 | 0 |
+| Objeto sobre a água | 41 | 0 |
+| Invasão de terreno | 22 | 2 |
+| Bicho sobre água ou objeto | — | 0 |
+
+As 2 invasões que restam são especiais (igreja e moinho) numa vila de um triângulo só, onde nada cabe.
+
+### Nuvens
+- **Forma:** `arte/nuvens.py` renderiza 4 cúmulos com volume no Blender (Cycles): metaball com base achatada, densidade com ruído e 12 rebatimentos de luz no volume, que é o que deixa a nuvem branca. Usam a câmera e o sol dos sprites, e vão para `nuvens.webp` (46 KB).
+- **Camada de cima:**
+  - a maioria forma uma moldura em volta do vale, mais alta e com mais paralaxe; as outras atravessam;
+  - quase opacas na visão geral, somem no zoom;
+  - durante o jogo, o corpo só aparece fora do anel de casas vazias e nunca esconde uma jogada; no miolo, só a sombra passa;
+  - no Contemplar, atravessam o vale inteiras;
+  - a sombra no chão é a silhueta da própria nuvem, deslocada pelo sol.

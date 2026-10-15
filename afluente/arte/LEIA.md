@@ -109,3 +109,8 @@ venv/bin/python montar_fauna.py fauna_saida/ fauna.webp fauna.json && python3 em
 ```
 
 O tamanho no jogo não depende do render. O jogo mede a largura do corpo no atlas e aplica a tabela `FLEN` do protótipo. No joão-de-barro e nos bichos de poleiro, essa largura inclui o ninho ou o poleiro: se eles mudarem de tamanho, ajuste `FLEN`.
+
+## v2.0: geometria exata e nuvens
+
+- `caixas.py` lê `atlas.png` e `atlas.json` e grava `caixas.json`, com o corpo de cada sprite (sem a sombra) e a faixa que toca o chão, relativos à âncora. `embutir.py` embute esse arquivo como `const BOX`. Rode os dois sempre que o atlas mudar.
+- `nuvens.py <pasta>`: 4 cúmulos com volume (Cycles, 12 rebatimentos no volume), na câmera e no sol dos sprites. Depois, monte a faixa: 4 × 384×288 → `nuvens.webp`.
