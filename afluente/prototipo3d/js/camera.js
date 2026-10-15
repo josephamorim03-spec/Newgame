@@ -6,7 +6,7 @@ import * as THREE from 'three';
 
 export function createGameCamera(camera, dom, { center, radius = 75, groundY = () => 0 }) {
   const S = { fx: center[0], fz: center[1], dist: 110, distT: 110, yawK: 0, yaw: 0, tilt: 0, tiltT: 0, enabled: true };
-  const STEP = Math.PI / 3, MIN = 24, MAX = 175;
+  const STEP = Math.PI / 3, MIN = 24, MAX = 200;
   const elevOf = d => THREE.MathUtils.degToRad(THREE.MathUtils.lerp(46, 62, THREE.MathUtils.clamp((d - MIN) / (MAX - MIN), 0, 1)));
   const clampFocus = () => { const dx = S.fx - center[0], dz = S.fz - center[1], r = Math.hypot(dx, dz); if (r > radius) { S.fx = center[0] + dx / r * radius; S.fz = center[1] + dz / r * radius; } };
   const pxToM = () => 2 * Math.tan(camera.fov * Math.PI / 360) * S.dist / dom.clientHeight;
