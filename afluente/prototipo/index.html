@@ -967,8 +967,13 @@ function Atmos(){
       // de dia o sol mistura o ar e o vento chega ao chão; de noite o ar parado se separa e o vento cai
       const mix=0.45+0.8*heating(h)+0.1*Math.sin(Math.PI*h/24),th0=thermo(Rs,h,map,S.out?S.out.oc:0,0,c01(S.rainHist));
       let v=Math.max(0.2,Rs.wind*mix*(1+0.18*noise1(sk+'ws',S.t/40)));
-      const sig=0.12+0.35*heating(h),gst=Math.pow(Math.max(0,Math.sin(S.t/7.3+3*noise1(sk+'g',S.t/30))),3)+0.5*Math.max(0,noise1(sk+'g2',S.t/2.1));
-      const vg=v*(1+sig*2.2*gst);
+      // turbulência (v2.3): u = U·(1 + Iu·n), com n de média zero e desvio 1, feito de redemoinhos de 1,6 s, 6 s e 25 s
+      // (rajada, lufada e as pausas das térmicas). Iu = σu/U é a intensidade de turbulência de campo aberto:
+      // ~0,10 de noite (ar estável) e ~0,27 na tarde de sol (térmicas). A rajada de pico fica em 1,5–1,8 × o vento médio,
+      // como nas estações do Cerrado. Antes as rajadas só somavam (o vento médio de verdade ficava ~20% acima do anunciado)
+      // e vinham num pulso regular a cada 46 s.
+      const Iu=0.1+0.17*heating(h),nT=(0.55*noise1(sk+'t1',S.t/1.6)+0.45*noise1(sk+'t2',S.t/6)+0.35*noise1(sk+'t3',S.t/25))/0.394;
+      const vg=Math.max(0.15*v,v*(1+Iu*nT));
       const steer=toVec(S.windA+15,Rs.wind*1.6+1.8); // vento na altura das nuvens: mais forte e um pouco girado
       // eventos de jogada: pancadas (determinísticas pela semente e pela jogada)
       const prevPhase=S.phase;S.phase=phase;
@@ -998,14 +1003,14 @@ function Atmos(){
       const cv=covers(Rs,p,h,th,CI,map,S.anvil,S.rainHist);
       const nsR=cv.zc*taper*(1.2+2.5*c01(0.5+0.5*noise1(sk+'ns',S.t/50)));
       // vento final: o sinótico com rajadas mais a frente de rajada das pancadas
-      const[wx0,wy0]=toVec(S.windA,vg),wx=wx0+ox,wy=wy0+oy,wv=Math.hypot(wx,wy),wfrom=((Math.atan2(-wx,wy)/RAD)+360)%360;
+      const[wx0,wy0]=toVec(S.windA,vg),[mx0,my0]=toVec(S.windA,v),wx=wx0+ox,wy=wy0+oy,wv=Math.hypot(wx,wy),wfrom=((Math.atan2(-wx,wy)/RAD)+360)%360;
       const sunp=sun(Rs.doy,h),fog=inp.lesson?0:fogOf(th,v,h,cv.oc,false),fogW=inp.lesson?0:fogOf(th,v,h,cv.oc,true);
       // a neblina da madrugada levanta e vira estrato quando o sol esquenta o chão
       cv.St=Math.max(cv.St,c01(Math.max(fog,fogW*0.6)*1.4)*sst(6.5,8,h)*(1-sst(9.5,11,h)));cv.oc=Math.max(cv.oc,cv.St*0.9);
       const dr=drops(Rf);
       const vis=1/(1/Rs.vis+1/visRain(Rf)+fog*2+cv.Ns*0.05);
       S.out={hour:h,T:th.T,Td:th.Td,RH:th.RH,lcl:th.lcl,p:P0,rho:rhoOf(th.T),R:Rf,Rv,nsR,drops:dr,vis,fog,fogW,
-        wind:{ms:wv,mean:v,from:wfrom,x:wx,y:wy,bft:beaufort(wv),dir:compass(wfrom),gust:sig*2.2*gst},steer,
+        wind:{ms:wv,mean:v,base:Math.hypot(mx0+ox,my0+oy),bx:mx0+ox,by:my0+oy,iu:Iu,from:wfrom,x:wx,y:wy,bft:beaufort(wv),dir:compass(wfrom),gust:Math.max(0,vg-v)},steer,
         sun:sunp,cv,oc:cv.oc,CI,cells:S.cells,flashes:S.flashes,phase,sp,fria:Rs.fria||0,veranico:p.veranico,zcas:cv.zc,cool,regime:Rs};
       return S.out;}
     return{step,rainAt,outflowAt,act,state:S};
@@ -1220,7 +1225,7 @@ function millWind(k){const s=G.s,tl=s&&s.board.get(k);if(!tl)return{v:ENV.wind.m
   const fa=ENV.wind.from*Math.PI/180,ux=Math.sin(fa),uy=-Math.cos(fa);let best=-2,bd=0;
   for(let d=0;d<6;d++){const a=ang(d),dot=Math.cos(a)*ux+Math.sin(a)*uy;if(dot>best){best=dot;bd=d;}}
   const n=s.board.get(E.nb(k,bd)),shel=n&&n.e[E.opp(bd)]==='B'?0.62:n&&n.e.filter(x=>x==='B').length>=3?0.75:1;
-  return{v:ENV.wind.ms*shel,z0,shel};}
+  const[mx,my]=wpos(k);return{v:windAt(mx,my)*shel,z0,shel};} // v2.3: o vento do lugar, com a rajada que está passando
 function drawMill(g,X,Y,s,k,key,tk,t){
   let st=key!=null?MILLST.get(key):null;
   if(key!=null&&!st){st={yaw:ENV.wind.from,th:h01(key,1)*6.28,w:0,lt:t||0,k:tk};MILLST.set(key,st);if(MILLST.size>60)MILLST.delete(MILLST.keys().next().value);}
@@ -1732,7 +1737,7 @@ function drawParts(g,t){
     g.save();g.globalAlpha=p.alpha*fade;if(p.add)g.globalCompositeOperation='lighter';
     if(p.name[0]==='~'){const c=softTex(p.name.slice(1));g.drawImage(c,x-size/2,y-size/2,size,size);}
     else if(p.name==='dot'){g.fillStyle=p.color||'#ffffff';g.beginPath();g.arc(x,y,Math.max(0.8,size),0,7);g.fill();}
-    else if(p.name==='ring'){g.strokeStyle=p.color||'#ffffff';g.lineWidth=Math.max(0.8,cam.s*0.012);g.beginPath();g.arc(x,y,size,0,7);g.stroke();}
+    else if(p.name==='ring'){g.strokeStyle=p.color||'#ffffff';g.lineWidth=Math.max(0.8,Math.min(cam.s*0.012,size*0.25));g.beginPath();g.arc(x,y,size,0,7);g.stroke();}
     else if(atlasReady){const m=ATLAS['fx_'+p.name];if(m){const f=size/Math.max(m[2],m[3]);g.translate(x,y);g.rotate(p.rot+p.vr*sec);
       if(p.flutter)g.scale(Math.cos(sec*7+p.rot*3),1);blit(g,m,f,-m[2]*f/2,-m[3]*f/2,m[2]*f,m[3]*f);}}
     g.restore();
@@ -1785,6 +1790,8 @@ function vtx(x,y,R,i,side){const a=ang(i)+side*Math.PI/6;return[x+R*Math.cos(a),
 function hexPath(g,x,y,R){g.beginPath();for(let k=0;k<6;k++){const a=Math.PI/180*(60*k-30);const X=x+R*Math.cos(a),Y=y+R*Math.sin(a);k?g.lineTo(X,Y):g.moveTo(X,Y);}g.closePath();}
 function rr(g,x,y,w,h,r){g.beginPath();g.moveTo(x+r,y);g.arcTo(x+w,y,x+w,y+h,r);g.arcTo(x+w,y+h,x,y+h,r);g.arcTo(x,y+h,x,y,r);g.arcTo(x,y,x+w,y,r);g.closePath();}
 function h01(a,b){return(E.hashStr(a+':'+b)%10000)/10000;}
+// hash inteiro rápido (0..1) para efeitos de muitas partes por quadro (gotas)
+function fh(n){n=Math.imul(n^n>>>16,0x45d9f3b);n=Math.imul(n^n>>>16,0x45d9f3b);return((n^n>>>16)>>>0)/4294967296;}
 
 // ---------- terreno: variantes por região, texturas contínuas no mundo
 // Cada região conectada (o mesmo campo, o mesmo bosque...) recebe uma variante; peças vizinhas da mesma região
@@ -1983,7 +1990,8 @@ function renderTileCache(k,e,o,res){
   const live=[];drawTile(deco.getContext('2d'),cx,cy,res,e,{...o,t:undefined,layer:'deco',anchor,chim,dyn,lights,occ,live});
   // peça sem bichos: os enfeites ficam na imagem pronta. Com bichos: a imagem guarda chão, caminhos e sombras, e os
   // enfeites são desenhados a cada quadro junto com os bichos, na ordem de profundidade (quem está na frente cobre)
-  if(!dyn.length&&!live.some(L=>L[2]==='windmill')){const dg=deco.getContext('2d'); // v2.0: peça com moinho também é desenhada a cada quadro
+  // v2.3: peça com árvore também é desenhada a cada quadro (cada árvore verga sobre a própria base com o vento do lugar)
+  if(!dyn.length&&!live.some(L=>L[2]==='windmill')&&!(QUAL.wind&&!RM&&ENV.swayOn&&live.some(L=>objCls(L[2])==='T'))){const dg=deco.getContext('2d'); // v2.0: peça com moinho também é desenhada a cada quadro
    for(const L of live)sprV(dg,L[2],cx+L[0]*res,cy+L[1]*res,res,L[3],L[4],L[5]);live.length=0;}
   return{ground,deco,cx,cy,res,occ,live,chim:chim.map(([dx,dy])=>[wx+dx/res+0.09,wy+dy/res-0.42]),
     dyn:dyn.map(([nm,dx,dy,sc,rad],i)=>[nm,dx/res,dy/res,sc,rad,i]),lights:lights.map(([dx,dy])=>[wx+dx/res,wy+dy/res-0.12])};
@@ -1996,15 +2004,17 @@ function tileCtx(s,k,tl){
   return(vil?'v':'')+(G.wet.has(k)?'w':'')+(tier?'t'+tier:'')+(s.seca&&!G.wet.has(k)?'d':'')+(s.seca?'s':'');
 }
 function drawTileCached(g,x,y,s,k,e,o){
-  const sig=[o.ctx||'',e.join(''),o.kind||'',o.wet?1:0,(o.vs||[]).join(''),(o.sp||[]).map(v=>v?1:0).join(''),(o.es||[]).join(''),(o.blocked||[]).join(''),o.alive>0?1:0,o.src?1:0,atlasReady?1:0].join('|');
+  const sig=[o.ctx||'',e.join(''),o.kind||'',o.wet?1:0,(o.vs||[]).join(''),(o.sp||[]).map(v=>v?1:0).join(''),(o.es||[]).join(''),(o.blocked||[]).join(''),o.alive>0?1:0,o.src?1:0,atlasReady?1:0,QUAL.wind&&ENV.swayOn?1:0].join('|');
   const res=Math.max(12,Math.min(s*(W.dpr||1),200));
   let c=TCACHE.get(k);
   if(!c||c.sig!==sig||(Math.abs(c.res-res)/res>0.15&&G.rebuild-->0)){tcFree(c);c=renderTileCache(k,e,o,res);c.sig=sig;TCACHE.set(k,c);}
   const f=s/c.res,dx=x-c.cx*f,dy=y-c.cy*f;
   g.drawImage(c.ground,dx,dy,c.ground.width*f,c.ground.height*f);
   if(e.includes('A'))drawTile(g,x,y,s,e,{...o,layer:'river',alive:o.fill>0&&o.fill<1?1:o.alive});
-  const by=y+s*0.35,sway=!RM&&o.t!=null&&e.includes('B')&&!e.includes('V')&&!o.kind?(()=>{const W2=ENV.wind,ph=(x*Math.cos(W2.a)+y*Math.sin(W2.a))/Math.max(10,s)*0.9-o.t/1000*(1.2+1.6*W2.s);return Math.cos(W2.a)*(0.004+0.03*W2.s+0.035*(ENV.gust||0))*(0.55+0.45*Math.sin(ph));})():0,ds=o.dsc==null?1:o.dsc;
-  if(sway||ds!==1){g.save();g.translate(x,by);if(sway)g.transform(1,0,sway,1,0,0);if(ds!==1)g.scale(ds,ds);g.translate(-x,-by);g.drawImage(c.deco,dx,dy,c.deco.width*f,c.deco.height*f);g.restore();}
+  // v2.3: sem inclinar a peça inteira (as árvores do fundo corriam mais que as da frente, como papel entortando);
+  // agora cada árvore verga sozinha em drawAnimals
+  const by=y+s*0.35,ds=o.dsc==null?1:o.dsc;
+  if(ds!==1){g.save();g.translate(x,by);g.scale(ds,ds);g.translate(-x,-by);g.drawImage(c.deco,dx,dy,c.deco.width*f,c.deco.height*f);g.restore();}
   else g.drawImage(c.deco,dx,dy,c.deco.width*f,c.deco.height*f);
   if(G.chimNext&&o.wet)for(const ch of c.chim)G.chimNext.push(ch);
   if(G.lightsNext)for(const l of c.lights)G.lightsNext.push(l);
@@ -2064,7 +2074,17 @@ function drawAnimals(g,x,y,s,k,dyn,t,live){
   // enfeites e bichos juntos, de trás para a frente
   Q.sort((p,q)=>p[0]-q[0]);
   for(const[,kind,d]of Q){if(kind===2||kind===3){const Y=y+d[1]*s;g.save();g.beginPath();if(kind===2)g.rect(x+d[0]*s-s,Y-s,2*s,s);else g.rect(x+d[0]*s-s,Y,2*s,s);g.clip();sprV(g,d[2],x+d[0]*s,Y,s,d[3],d[4],d[5]);g.restore();}
-    else if(kind===0){if(d[2]==='windmill'&&t!=null)drawMill(g,x+d[0]*s,y+d[1]*s,s,d[3],k+':'+d[0].toFixed(2)+':'+d[1].toFixed(2),k,t);else sprV(g,d[2],x+d[0]*s,y+d[1]*s,s,d[3],d[4],d[5]);}else sprV(g,d[0],x+d[1]*s,y+d[2]*s+d[5],s,d[3],d[4],0);}
+    else if(kind===0){if(d[2]==='windmill'&&t!=null)drawMill(g,x+d[0]*s,y+d[1]*s,s,d[3],k+':'+d[0].toFixed(2)+':'+d[1].toFixed(2),k,t);
+      else if(t!=null&&!RM&&objCls(d[2])==='T'){
+        // v2.3: a árvore verga sobre a própria base. A força é o vento no lugar dela ao quadrado (a rajada que passa
+        // pelo capim chega na copa); a copa oscila na frequência própria (0,3–0,6 Hz, árvores de 8–15 m), cada uma
+        // com a sua, mais um tremor fraco. O buriti, alto e de folhas grandes, verga mais e mais devagar.
+        const X=x+d[0]*s,Y=y+d[1]*s,px=wx+d[0],py=wy+d[1],q=windQ(windAt(px,py-0.25)),hh=h01(k,Math.round(d[0]*997)+Math.round(d[1]*991)*3),palm=d[2]==='buriti';
+        const w=2*Math.PI*(palm?0.28:0.33+0.27*hh),T=t/1000,amp=q*(palm?1.5:1)*(0.85+0.3*hh);
+        const sh=amp*(0.05+0.02*Math.sin(T*w+hh*40)+0.007*Math.sin(T*w*2.7+hh*17));
+        if(sh>0.0008){g.save();g.translate(X,Y);g.transform(1,0,-Math.cos(ENV.wind.a)*sh,1,0,0);g.translate(-X,-Y);sprV(g,d[2],X,Y,s,d[3],d[4],d[5]);g.restore();}
+        else sprV(g,d[2],X,Y,s,d[3],d[4],d[5]);}
+      else sprV(g,d[2],x+d[0]*s,y+d[1]*s,s,d[3],d[4],d[5]);}else sprV(g,d[0],x+d[1]*s,y+d[2]*s+d[5],s,d[3],d[4],0);}
 }
 function edgeState(board,k,e){const out=[];for(let d=0;d<6;d++){const n=board.get(E.nb(k,d));out.push(!n?0:(n.e[E.opp(d)]===e[d]?1:2));}return out;}
 
@@ -2358,7 +2378,7 @@ function drawTile(g,x,y,s,e,o={}){
   const R=s*1.003,d=s*0.28,dry=!o.wet;
   const vs=o.vs||[0,0,0,0,0,0],sp=o.sp||[];
   g.save();if(o.alpha!=null)g.globalAlpha=o.alpha;
-  const V=[];for(let k=0;k<6;k++){const a=Math.PI/180*(60*k-30);V.push([x+R*Math.cos(a),y+R*Math.sin(a)]);}
+  const V=[];for(let k=0;k<6;k++){const a=Math.PI/180*(60*k-30)+(o.rot||0);V.push([x+R*Math.cos(a),y+R*Math.sin(a)]);}
   const L0=o.layer;
   if(L0!=='deco'&&L0!=='river'){
   // lateral (só aparece na borda do vale)
@@ -2390,14 +2410,16 @@ function drawTile(g,x,y,s,e,o={}){
       const px=x+(x1-x)*r1+(x2-x)*r2,py=y+(y1-y)*r1+(y2-y)*r2;return[cx+(px-cx)*shrink,cy+(py-cy)*shrink];};
     const sc=j=>0.88+h01(seed,j*13+5)*0.26;
     // layout único da peça, em unidades do mundo (v1.9): o mesmo para qualquer resolução e para o mapa de colisão
-    const LY=layoutOf(o.seed,e,o),paths=LY.paths.map(([a,b])=>[[x+a[0]*s,y+a[1]*s],[x+b[0]*s,y+b[1]*s]]);
-    for(const d of LY.decos)decos.push([x+d[0]*s,y+d[1]*s,d[2],d[3],d[4],d[5],d[6]]);
+    // v2.3: o.rot (peça escolhida girando) gira as posições, mas árvores e casas ficam em pé, como numa peça de verdade
+    const rc=Math.cos(o.rot||0),rs=Math.sin(o.rot||0),RP=(px,py)=>[x+(px*rc-py*rs)*s,y+(px*rs+py*rc)*s];
+    const LY=layoutOf(o.seed,e,o),paths=LY.paths.map(([a,b])=>[RP(a[0],a[1]),RP(b[0],b[1])]);
+    for(const d of LY.decos)decos.push([...RP(d[0],d[1]),d[2],d[3],d[4],d[5],d[6]]);
     if(o.chim)for(const c of LY.chim)o.chim.push([c[0]*s,c[1]*s]);
     if(o.lights)for(const c of LY.lights)o.lights.push([c[0]*s,c[1]*s]);
     if(o.occ)for(const c of LY.occ)o.occ.push(c);
     if(o.dyn)for(const d of LY.dyn)o.dyn.push([d[0],d[1]*s,d[2]*s,d[3],d[4]]);
     if(o.kind==='bridge'&&ws.length){
-      const a=ang(ws[0])+Math.PI/2,Lb=s*0.6,Wb=s*0.19,rl=Math.max(1,s*0.028);
+      const a=ang(ws[0])+Math.PI/2+(o.rot||0),Lb=s*0.6,Wb=s*0.19,rl=Math.max(1,s*0.028);
       g.save();g.translate(x,y);g.rotate(a);
       g.fillStyle='rgba(25,40,30,.28)';g.fillRect(-Lb+s*0.02,-Wb/2+s*0.05,2*Lb,Wb);
       g.fillStyle='#a9784a';g.fillRect(-Lb,-Wb/2,2*Lb,Wb);
@@ -2406,10 +2428,10 @@ function drawTile(g,x,y,s,e,o={}){
       for(const q of[-Lb,-Lb/2,0,Lb/2,Lb-rl]){g.fillRect(q,-Wb/2-rl*2.2,rl,rl*2.2);g.fillRect(q,Wb/2,rl,rl*2.2);}
       g.restore();
     }
-    if(o.kind==='falls'&&ws.length){const p2=ang(ws[0])+Math.PI/2,ww=s*0.38;
+    if(o.kind==='falls'&&ws.length){const p2=ang(ws[0])+Math.PI/2+(o.rot||0),ww=s*0.38;
       for(const sd of[-1,1])decos.push([x+Math.cos(p2)*ww*0.95*sd,y+Math.sin(p2)*ww*0.95*sd,'rock'+suf,1.25]);}
     if(o.kind==='lake'&&o.alive>0){
-      for(let j=0;j<6;j++){const aa=h01(seed,j*5+40)*6.28,rr=s*0.42*(0.35+0.6*h01(seed,j*5+41)),px=x+Math.cos(aa)*rr,py=y+Math.sin(aa)*rr,rd=s*0.05;
+      for(let j=0;j<6;j++){const aa=h01(seed,j*5+40)*6.28+(o.rot||0),rr=s*0.42*(0.35+0.6*h01(seed,j*5+41)),px=x+Math.cos(aa)*rr,py=y+Math.sin(aa)*rr,rd=s*0.05;
         g.fillStyle='#3e8c3b';g.beginPath();g.moveTo(px,py);g.arc(px,py,rd,aa+0.5,aa+0.5+5.5);g.closePath();g.fill();
         if(j%2===0){g.fillStyle='#f5b3cd';g.beginPath();g.arc(px+rd*0.15,py-rd*0.2,rd*0.38,0,Math.PI*2);g.fill();}}
     }
@@ -2431,9 +2453,18 @@ function drawTile(g,x,y,s,e,o={}){
 
 // ---------- ambiente (v2.0): a atmosfera do vale. O motor (Atmos) calcula temperatura, umidade, vento, nuvens e
 // chuva com unidades de verdade; aqui isso vira luz, céu, sombras, gotas, neblina, raios e som. Ver afluente/CLIMA.md.
-const ENV={tf:2,hour:8,night:0,golden:0,dawn:0,elev:0.6,sun:[-0.5,-0.8],sh:[0.3,0.35],wind:{a:0.4,s:0.5,x:0.4,y:0.1,ms:3,from:315},
+const ENV={tf:2,hour:8,night:0,golden:0,dawn:0,elev:0.6,sun:[-0.5,-0.8],sh:[0.3,0.35],wind:{a:0.4,s:0.5,x:0.4,y:0.1,ms:3,from:315,base:3,iu:0.15,fa:0.4,bc:1,bs:0},wadv:[0,0],wT:0,
   cloud:0.35,clouds:[],storm:0,rain:0,R:0,oc:0,fog:0,fogW:0,atm:null,devils:[],drops:[],last:0,flashes:[],bolts:[],wet:new Map(),hz:[],ov:[],bow:0,halo:0,cssT:0,seenT:0};
 const clamp01=v=>v<0?0:v>1?1:v;
+// rajadas no espaço (v2.3): manchas alongadas no sentido do vento, de ~70 m, ~30 m e ~14 m (as "ondas" do capim),
+// levadas pelo vento médio e mudando devagar. Valor de média zero e desvio ≈ 1.
+function gustAt(x,y){const W2=ENV.wind,X=x-ENV.wadv[0],Y=y-ENV.wadv[1],xi=X*W2.bc+Y*W2.bs,et=-X*W2.bs+Y*W2.bc,T=ENV.wT;
+  return(0.6*Math.sin(xi*1.7+1.3*Math.sin(et*0.9+0.4)+T*0.07)*(0.65+0.35*Math.sin(et*2.1-xi*0.5))
+    +0.45*Math.sin(xi*4.3+et*1.6+2*Math.sin(et*0.7-T*0.11))+0.3*Math.sin(xi*9.1-et*3.3+1.7+T*0.23))/0.482;}
+// vento no ponto (m/s) e a força que ele faz no capim e nas copas: o arrasto cresce com o quadrado da velocidade,
+// então 3 m/s mal mexe o capim e 10 m/s (força 5, "árvores pequenas balançam") deita o capim e verga as matas
+function windAt(x,y){const W2=ENV.wind;return Math.max(0,W2.base*(1+W2.iu*gustAt(x,y)));}
+const windQ=u=>Math.min(1.4,(u/10)*(u/10));
 const UM=ATM.M,LAPSE=15; // metros por unidade do vale (20); aceleração da vida das nuvens de chuva
 function hourOfTurn(u){return ATM.hourOf(u);}
 // o mapa no clima: água viva e mata põem umidade no ar; mata refresca a tarde; vila esquenta (refeito no refresh)
@@ -2460,9 +2491,18 @@ function envStep(t){
   // vento (m/s) para o desenho: força 0..1 = 9 m/s, ângulo na tela (o y é achatado pela câmera)
   const wv=o.wind,W2=ENV.wind;W2.ms=wv.ms;W2.from=wv.from;W2.s=clamp01(wv.ms/9);W2.a=Math.atan2(wv.y,wv.x);
   W2.x=Math.cos(W2.a)*W2.s;W2.y=Math.sin(W2.a)*W2.s*0.5;
-  // rajada do momento (0..1) para o desenho da v2.1 (capim em onda, matas balançando, folhas e poeira voando):
-  // vem das rajadas do motor (mais fortes de dia, com o sol misturando o ar) e da frente de rajada das pancadas
-  ENV.gust=clamp01(wv.gust*0.7+(o.cool>0.25?clamp01((wv.ms-5)/6):0));
+  // v2.3: as rajadas andam pelo vale com o vento médio (hipótese de Taylor: o campo de turbulência é levado pelo vento).
+  // wadv é quanto o ar já andou (em unidades do vale); o desenho lê fase e força daí, nunca de t × velocidade,
+  // que fazia as ondas correrem para frente e para trás a cada mudança do vento.
+  W2.base=wv.base??wv.ms;W2.iu=wv.iu??0.15;{const ma=Math.atan2(wv.by??wv.y,wv.bx??wv.x),d=Math.atan2(Math.sin(ma-W2.fa),Math.cos(ma-W2.fa));
+    W2.fa+=RM||jump?d:d*Math.min(1,dt*0.15);W2.bc=Math.cos(W2.fa);W2.bs=Math.sin(W2.fa);}
+  ENV.skyX=(ENV.skyX||0)+W2.x*120*dt;ENV.flowClk=(ENV.flowClk||0)+dt*(1+ENV.rain*0.9);ENV.wadv[0]+=Math.cos(W2.fa)*W2.base/UM*dt;ENV.wadv[1]+=Math.sin(W2.fa)*W2.base/UM*dt;ENV.wT+=dt;
+  // rajada do momento (0..1) para folhas e poeira: pela escala Beaufort, poeira e folhas soltas a partir da
+  // brisa moderada (força 4, 5,5–8 m/s); antes de 4,5 m/s nada voa
+  ENV.gust=clamp01((wv.ms-4.5)/6);
+  // árvores desenhadas uma a uma só quando há vento que as mova (rajada acima de ~2,5 m/s); com ar parado a peça volta
+  // a ser uma imagem pronta. Com folga entre ligar e desligar, para não refazer as peças toda hora
+  {const qv=windQ(W2.base*(1+W2.iu*1.5));if(qv>0.07)ENV.swayOn=true;else if(qv<0.04)ENV.swayOn=false;}
   ENV.R=o.R;ENV.rain=clamp01(Math.sqrt(o.R/25));ENV.oc=o.oc;ENV.fog=o.fog;ENV.fogW=o.fogW;
   // as nuvens de tufos sobre o vale (v1.10) seguem a física: quantas pela cobertura de cúmulos e placas; escuras com pancada
   ENV.storm=o.cells.reduce((m,c)=>Math.max(m,c.virga?0:(c.act||0)),0);
@@ -2697,7 +2737,7 @@ function drawSkyBand(g,w,h,L,cm,t){
     g.restore();}
   g.globalAlpha=1;
   // teto de chuva: a base esfarrapada do nimbostrato
-  if(cv.Ns>0.2){const S=skySprite('sc',1),wp=w*0.7;g.globalAlpha=0.5*cv.Ns;for(let i=-1;i<3;i++){const x=((i*wp+t*0.004*ENV.wind.x*30)%(w*1.4))-wp*0.2;g.drawImage(S.c,x,hy*0.55,wp,wp*S.asp*0.8);}g.globalAlpha=1;}
+  if(cv.Ns>0.2){const S=skySprite('sc',1),wp=w*0.7;g.globalAlpha=0.5*cv.Ns;for(let i=-1;i<3;i++){const x=((((i*wp+(ENV.skyX||0))%(w*1.4))+w*1.4)%(w*1.4))-wp*0.2;/* v2.3: posição acumulada, não t × vento */g.drawImage(S.c,x,hy*0.55,wp,wp*S.asp*0.8);}g.globalAlpha=1;}
   rainbowFx(g,w,h,P,o,t);
 }
 const relAz=a=>((a%360)+540)%360-180; // ângulo relativo ao norte (centro da tela), de -180 a 180
@@ -2750,10 +2790,14 @@ function skyShadows(g,s,sz,t){
   for(const c of ENV.ov){const a=c.dark*ovEnv(c)*sunK;if(a<0.008)continue;const w=c.w/UM,h=c.h/UM,x=c.x/UM,y=c.y/UM;
     if(x+w/2<bb[0]-2||x-w/2>bb[1]+2||y+h/2<bb[2]-2||y-h/2>bb[3]+2)continue;
     const S=cloudSprite(c.v);g.globalAlpha=a;g.save();g.translate(x,y);g.rotate(c.rot);g.drawImage(S.dark,-w/2,-h/2,w,h);g.restore();}
-  // pancadas: a torre e a bigorna fazem uma sombra grande e escura, e a cortina de chuva é um véu cinza
-  for(const c of o.cells){const a=c.act||0;if(a<=0.01)continue;const x=c.x/UM,y=c.y/UM,r=c.r/UM;
-    const R1=r*2.4,gr=g.createRadialGradient(x,y,0,x,y,R1);gr.addColorStop(0,`rgba(20,32,44,${(0.24*a*sunK+0.05*a).toFixed(3)})`);gr.addColorStop(0.6,`rgba(20,32,44,${(0.15*a*sunK).toFixed(3)})`);gr.addColorStop(1,'rgba(20,32,44,0)');
-    g.globalAlpha=1;g.fillStyle=gr;g.fillRect(x-R1,y-R1,2*R1,2*R1);}
+  // pancadas (v2.3): a torre e a bigorna têm quilômetros, e a peça tem 20 m. Debaixo delas a luz cai por igual em
+  // tudo o que se vê (chão, laterais, árvores e o entorno), como a luz da noite. Antes era uma mancha escura recortada
+  // no formato das peças, que vazava acima delas e deixava a lateral e a borda claras. Aqui só se mede o quanto
+  // escurece no meio da tela; o escurecimento é aplicado em todGrade.
+  {const fx=(W.w/2-cam.x)/sz,fy=(W.h*0.5-cam.y)/sz;let d=0;
+   for(const c of o.cells){const a=c.act||0;if(a<=0.01)continue;const q=Math.hypot(fx-c.x/UM,fy-c.y/UM)/(c.r/UM*2.4);if(q>=1)continue;
+     const k=q<0.6?1-q/0.6*(1-0.15/0.24):(1-q)/0.4*(0.15/0.24);d=Math.max(d,a*(0.24*sunK+0.05)*k);}
+   ENV.stormDim=(ENV.stormDim||0)+(d-(ENV.stormDim||0))*0.08;}
   g.restore();
 }
 // nuvens vistas de cima (para sombras e fiapos): tufos numa elipse, sem base reta; versão escura para a sombra
@@ -2795,12 +2839,15 @@ function rainFx(g,s,sz,t){
     const wy=d[1]<W.h*0.3?(W.h*0.55-cam.y)/sz:(d[1]-cam.y)/sz,R=G.sky.rainAt((d[0]-cam.x)/sz*UM,wy*UM);if(R<0.05)continue;
     const k=0.018*(0.7+0.3*clamp01(R/10)),P=d[2]>1.6?P2:P1;P.moveTo(d[0],d[1]);P.lineTo(d[0]-vx*k,d[1]-vy*k);}
   g.save();g.lineCap='round';g.strokeStyle=`rgba(232,242,255,${(0.34+0.2*ENV.rain).toFixed(3)})`;g.lineWidth=1.2;g.stroke(P1);g.lineWidth=2;g.stroke(P2);g.restore();
-  // anéis na água viva e respingos no chão onde chove
-  const alive=[...s.alive];if(alive.length&&Math.random()<Math.min(1,Rmax/12)){const k=alive[Math.floor(Math.random()*alive.length)],[wx,wy]=wpos(k);
-    if(G.sky.rainAt(wx*UM,wy*UM)>0.2)emit('ring',wx+(Math.random()-0.5)*0.6,wy+(Math.random()-0.5)*0.4,1,{v:0,life:600,size:0.02,grow:4,alpha:0.6,color:'#ffffff'});}
-  if(G.bb&&sz>22&&Rmax>0.5){const keys=[...s.board.keys()],nn=Math.round(clamp01(Rmax/20)*3*(QUAL.lvl?0.5:1));
-    for(let q=0;q<nn;q++){const k=keys[Math.floor(Math.random()*keys.length)],[wx,wy]=wpos(k);if(G.sky.rainAt(wx*UM,wy*UM)<0.3)continue;
-      emit('dot',wx+(Math.random()-0.5)*1.5,wy+(Math.random()-0.5)*1.2,3,{ang:-Math.PI/2,spread:2.6,v:0.5,g:5,life:260,size:0.01,color:'#eef6ff',alpha:0.75,jx:0.01,jy:0.005});}}
+  // respingos no chão (v2.3): pontinhos que piscam onde a gota bate (a gota de 1–3 mm espirra uns centímetros),
+  // dentro de cada peça onde chove e na quantidade da chuva dela. Os anéis na água ficam no desenho do rio (dentro
+  // do canal). Antes: anéis de ~2 m em volta do meio da peça (caíam fora da água) e partículas que quicavam alto.
+  if(sz>40&&Rmax>0.5){g.save();g.fillStyle='rgba(236,244,255,.9)';const T=t/180,zz=Math.max(0.8,sz*0.004);
+    for(const k of s.board.keys()){const[cx,cy]=scr(k);if(cx<-sz||cx>W.w+sz||cy<-sz||cy>W.h+sz)continue;const[wx,wy]=wpos(k),Rl=G.sky.rainAt(wx*UM,wy*UM);if(Rl<0.5)continue;
+      const n=Math.min(30,Math.round(Rl*0.8*clamp01(sz/120)*(QUAL.lvl?0.5:1))),sd=Math.imul(k|0,2654435761)>>>0;
+      for(let i=0;i<n;i++){const u=T+fh(sd+i*31),slot=Math.floor(u),f=u-slot,a=fh(sd^Math.imul(slot,2654435761)^Math.imul(i,40503))*6.283,rr=Math.sqrt(fh((sd+Math.imul(slot,97)+Math.imul(i,7919))|0))*0.82;
+        const X=cx+Math.cos(a)*rr*sz,Y=cy+Math.sin(a)*rr*sz*0.866,z=zz*(0.6+f);g.globalAlpha=(1-f)*0.5;g.fillRect(X-z,Y-z*0.6-f*zz,z*2,z*1.2);}}
+    g.restore();}
   // visibilidade baixa na chuva forte: o ar fica cinza-claro
   if(o.vis<12){g.fillStyle=`rgba(214,222,230,${(0.16*clamp01(1-o.vis/12)).toFixed(3)})`;g.fillRect(0,0,W.w,W.h);}
 }
@@ -2834,6 +2881,7 @@ function todGrade(g,w,h){
   g.save();
   if(ENV.night>0.02){g.globalCompositeOperation='multiply';g.globalAlpha=ENV.night*0.5;g.fillStyle='#4a5c9a';g.fillRect(0,0,w,h);}
   const gray=Math.max(ENV.rain*0.22,ENV.oc*0.2);if(gray>0.02){g.globalCompositeOperation='multiply';g.globalAlpha=gray;g.fillStyle='#9aa5b0';g.fillRect(0,0,w,h);}
+  if((ENV.stormDim||0)>0.01){g.globalCompositeOperation='multiply';g.globalAlpha=Math.min(0.6,ENV.stormDim*1.6);g.fillStyle='#55657a';g.fillRect(0,0,w,h);} // v2.3: debaixo da pancada
   if(ENV.golden>0.02){g.globalCompositeOperation='soft-light';g.globalAlpha=ENV.golden*0.45*(1-ENV.oc*0.6);g.fillStyle='#ff9a4a';g.fillRect(0,0,w,h);}
   if(ENV.dawn>0.02){g.globalCompositeOperation='soft-light';g.globalAlpha=ENV.dawn*0.35*(1-ENV.oc*0.6);g.fillStyle='#ff8fa0';g.fillRect(0,0,w,h);}
   if(ENV.fog>0.05){g.globalCompositeOperation='screen';g.globalAlpha=ENV.fog*0.12;g.fillStyle='#dfe6ee';g.fillRect(0,0,w,h);}
@@ -2985,8 +3033,12 @@ function buildLightTex(){
   for(let y=0;y<n;y++)for(let x=0;x<n;x++){let v=0;for(const[a,b,ph,am]of W2)v+=am*Math.sin(2*Math.PI*(a*x+b*y)/n+ph);v/=3.2;const i=(y*n+x)*4;
     d[i]=128+v*60;d[i+1]=128+v*52;d[i+2]=128+v*30-12*Math.max(0,-v);d[i+3]=255;}
   g.putImageData(im,0,0);MACRO=c;
-  const w=document.createElement('canvas');w.width=256;w.height=2;const gw=w.getContext('2d'),iw=gw.createImageData(256,2);
-  for(let x=0;x<256;x++){const u=x/256,b=Math.exp(-(((u-0.3)/0.06)**2))+0.6*Math.exp(-(((u-0.72)/0.035)**2)),v=128+b*90;for(let y=0;y<2;y++){const i=(y*256+x)*4;iw.data[i]=v;iw.data[i+1]=v;iw.data[i+2]=v*0.94;iw.data[i+3]=255;}}
+  // v2.3: em vez de faixas retas de lado a lado, manchas alongadas no sentido do vento (o capim mostra o lado claro
+  // das folhas onde a rajada passa). Repete sem emenda: 256 × 128 px = 6 × 3 unidades do vale
+  const w=document.createElement('canvas');w.width=256;w.height=128;const gw=w.getContext('2d'),iw=gw.createImageData(256,128),Rw=rng(9),WV=[];
+  for(let i=0;i<8;i++)WV.push([1+Math.floor(Rw()*2),(1+Math.floor(Rw()*4))*(Rw()<0.5?-1:1),Rw()*6.28,0.5+Rw()*0.5]);
+  for(let y=0;y<128;y++)for(let x=0;x<256;x++){let v=0;for(const[a,b,ph,am]of WV)v+=am*Math.sin(2*Math.PI*(a*x/256+b*y/128)+ph);
+    const bb=Math.pow(Math.max(0,v/2.2),2),c=128+Math.min(1,bb)*95,i=(y*256+x)*4;iw.data[i]=c;iw.data[i+1]=c;iw.data[i+2]=c*0.94;iw.data[i+3]=255;}
   gw.putImageData(iw,0,0);WINDT=w;
   // papel: grão fino, quase imperceptível
   try{const pc=document.createElement('canvas');pc.width=pc.height=160;const pg=pc.getContext('2d'),pi=pg.createImageData(160,160),PR=rng(9);
@@ -2995,17 +3047,17 @@ function buildLightTex(){
 }
 let DCLIP=null,DCLIPFOR=null;
 function decoClip(s,sel,t){
-  const extra=[];if(sel&&!s.board.has(sel.k))extra.push([sel.k,[0.45,0,-0.6,-1.2,-1.6]]);
+  const extra=[];if(sel&&!s.board.has(sel.k))extra.push([sel.k,[0.45,0,-0.6,-1.2,-1.6],1.3]);
   for(const[k,f]of G.fx)if(f.k==='drop'&&t<f.t0+DROP_MS)extra.push([k,[-1.6,-2.2]]);
   if(!extra.length&&DCLIPFOR===s.board)return DCLIP;
   const P=new Path2D(),hx=(x,y,R)=>{for(let q=0;q<6;q++){const a=Math.PI/180*(60*q-30),X=x+R*Math.cos(a),Y=y+R*Math.sin(a);q?P.lineTo(X,Y):P.moveTo(X,Y);}P.closePath();};
   for(const k of s.board.keys()){const[x,y]=wpos(k);hx(x,y+0.45,1.0);hx(x,y,1.05);hx(x,y-0.55,1.05);hx(x,y-1.05,0.95);}
-  for(const[k,oys]of extra){const[x,y]=wpos(k);for(const oy of oys)hx(x,y+oy,1.08);}
+  for(const[k,oys,rr]of extra){const[x,y]=wpos(k);for(const oy of oys)hx(x,y+oy,rr||1.08);}
   if(extra.length)return P;DCLIP=P;DCLIPFOR=s.board;return P;}
 let BCLIP=null,BCLIPFOR=null;
 function boardClip(s,t){let skip=null;if(t!=null)for(const[k,f]of G.fx)if(f.k==='drop'&&t<f.t0+DROP_MS*IMPACT)skip=k;
   if(skip==null&&BCLIPFOR===s.board)return BCLIP;const P=new Path2D();
-  for(const k of s.board.keys()){if(k===skip)continue;const[x,y]=wpos(k);for(const oy of[0,-0.45]){for(let q=0;q<6;q++){const a=Math.PI/180*(60*q-30),X=x+1.0*Math.cos(a),Y=y+oy+1.0*Math.sin(a);q?P.lineTo(X,Y):P.moveTo(X,Y);}P.closePath();}}
+  for(const k of s.board.keys()){if(k===skip)continue;const[x,y]=wpos(k);for(const oy of[0,0.28]){/* v2.3: a peça e a lateral de terra */for(let q=0;q<6;q++){const a=Math.PI/180*(60*q-30),X=x+1.0*Math.cos(a),Y=y+oy+1.0*Math.sin(a);q?P.lineTo(X,Y):P.moveTo(X,Y);}P.closePath();}}
   if(skip!=null)return P;BCLIP=P;BCLIPFOR=s.board;return P;}
 // campo de umidade: palha por cima de todo o vale, "apagada" em volta de cada peça com água viva
 let DM=null;
@@ -3059,9 +3111,10 @@ function grassBlades(g,s,sz,t){
     const dry=s.seca||!G.wet.has(k);
     for(const[bx,by,h,lean,r,lod,forest]of grassFor(k,tl)){if(lod>dens)continue;if(++n>3400)break;
       const X=bx*sz+cam.x,Y=by*sz+cam.y;if(X<-20||X>W.w+20||Y<-20||Y>W.h+30)continue;
-      const H=h*sz*(1-0.2*rain),wave=0.5+0.5*Math.sin((bx*ca+by*sa)*1.3-T*(1.4+2.4*W2.s)+r*1.2);
-      // vento: rajada que atravessa (onda) + a rajada forte do momento; chuva: lâminas deitam um pouco
-      let bend=lean*0.5+(0.08+W2.s*(0.55+H/sz*6)*wave+gust*0.6*wave)*ca+rain*0.25*(lean>0?1:-1),bendY=0;
+      const H=h*sz*(1-0.2*rain),q=windQ(windAt(bx,by));
+      // vento (v2.3): a força do vento no lugar (a rajada que está passando) deita a lâmina, mais um tremor de ~1,5 Hz;
+      // com 3 m/s o capim quase não deita, com 10 m/s deita bem. Chuva: lâminas deitam um pouco
+      let bend=lean*0.5+(0.02+0.75*q+0.12*q*Math.sin(T*9.4+r*6.28))*ca+rain*0.25*(lean>0?1:-1),bendY=0;
       if(S){const dx=bx-S.x,dy=by-S.y,d=Math.hypot(dx,dy);if(d<2.2){const ta=S.t0+d/2.4*1000;if(t>ta&&t<ta+1600){const e=Math.exp(-(t-ta)/320)*(1-d/2.2);bend+=dx/(d||1)*e*1.1;bendY=dy/(d||1)*e*0.4;}}}
       const tx=X+bend*H,ty=Y-H*Math.sqrt(Math.max(0.12,1-bend*bend*0.5))+bendY*H,qx=X+bend*H*0.25,qy=Y-H*0.6;
       const p=P[(dry?6:forest?3:0)+(r<0.38?0:r<0.78?1:2)];
@@ -3086,9 +3139,24 @@ function puddlesFor(k,tl){const tc=TCACHE.get(k),occ=tc?tc.occ:null,c=PUDDLE.get
 // v2.0 (céu com física): cada peça tem a sua lâmina de água (ENV.wet, em mm): o chão escurece e as poças aparecem
 // só onde a cortina da pancada passou, e somem com a evaporação.
 const wetOf=k=>clamp01((ENV.wet.get(k)||0)/0.3);
+// chão molhado como um campo contínuo (v2.3): a umidade de cada peça vira uma média ponderada (gaussiana de 0,55 u)
+// numa imagem de 8 px por unidade, presa ao mundo. Chuva igual dá escurecimento igual, sem emenda; onde a borda da
+// chuva passou, a passagem é suave. Antes cada hexágono escurecia por inteiro, com aresta reta entre peças.
+const WETF={c:null,t:-1e9,board:null};
+function wetField(s,t){
+  if(WETF.c&&WETF.board===s.board&&Math.abs(t-WETF.t)<250)return WETF;
+  const bb=G.bb;if(!bb)return null;const PX=8,x0=bb[0]-1.5,y0=bb[2]-1.5,w=Math.ceil((bb[1]-bb[0]+3)*PX),h=Math.ceil((bb[3]-bb[2]+3)*PX);
+  if(!WETF.c)WETF.c=document.createElement('canvas');const c=WETF.c;if(c.width!==w||c.height!==h){c.width=w;c.height=h;}
+  const SW=new Float32Array(w*h),SV=new Float32Array(w*h),R=Math.ceil(1.4*PX),k2=1/(2*0.55*0.55*PX*PX);
+  for(const k of s.board.keys()){const v=wetOf(k),[cx,cy]=wpos(k),px=(cx-x0)*PX,py=(cy-y0)*PX;
+    for(let j=Math.max(0,Math.floor(py-R)),j1=Math.min(h-1,Math.ceil(py+R));j<=j1;j++)for(let i=Math.max(0,Math.floor(px-R)),i1=Math.min(w-1,Math.ceil(px+R));i<=i1;i++){
+      const dx=i+0.5-px,dy=j+0.5-py,ww=Math.exp(-(dx*dx+dy*dy)*k2),q=j*w+i;SW[q]+=ww;SV[q]+=ww*v;}}
+  const c2=c.getContext('2d'),im=c2.createImageData(w,h),d=im.data;
+  for(let q=0;q<w*h;q++){const a=SW[q]>1e-4?SV[q]/SW[q]:0;d[q*4]=138;d[q*4+1]=160;d[q*4+2]=138;d[q*4+3]=Math.round(a*0.32*255);}
+  c2.putImageData(im,0,0);WETF.t=t;WETF.x0=x0;WETF.y0=y0;WETF.PX=PX;WETF.board=s.board;return WETF;}
 function wetGround(g,s,sz,t){if(!ENV.wet.size)return;
-  g.save();g.globalCompositeOperation='multiply';g.fillStyle='#8aa08a';
-  for(const[k]of ENV.wet){if(!s.board.has(k))continue;const wt=wetOf(k);if(wt<0.02)continue;const[x,y]=scr(k);g.globalAlpha=wt*0.32;hexPath(g,x,y,sz*1.01);g.fill();}g.restore();
+  {let any=false;for(const k of ENV.wet.keys())if(wetOf(k)>=0.02){any=true;break;}
+   const F=any?wetField(s,t):null;if(F){g.save();g.globalCompositeOperation='multiply';g.imageSmoothingEnabled=true;g.drawImage(F.c,F.x0*sz+cam.x,F.y0*sz+cam.y,F.c.width/F.PX*sz,F.c.height/F.PX*sz);g.restore();}}
   if(RM||sz<20)return;g.save();
   for(const[k,tl]of s.board){const wt=wetOf(k);if(wt<0.05)continue;const[cx,cy]=scr(k);if(cx<-sz||cx>W.w+sz||cy<-sz||cy>W.h+sz)continue;
     for(const[px,py,r,h]of puddlesFor(k,tl)){const X=px*sz+cam.x,Y=py*sz+cam.y,R=r*sz*clamp01(wt*1.6-0.2)*(0.8+0.2*h);if(R<1)continue;
@@ -3096,8 +3164,10 @@ function wetGround(g,s,sz,t){if(!ENV.wet.size)return;
       const gr=g.createLinearGradient(X-R,Y-R*0.5,X+R,Y+R*0.5);gr.addColorStop(0,'rgba(214,232,240,.85)');gr.addColorStop(1,'rgba(120,150,165,.8)');
       g.fillStyle=gr;g.beginPath();g.ellipse(X,Y,R,R*0.5,0,0,7);g.fill();
       g.fillStyle='rgba(255,255,255,.55)';g.beginPath();g.ellipse(X-R*0.35,Y-R*0.15,R*0.35,R*0.08,-0.1,0,7);g.fill();
-      if(G.sky&&G.sky.rainAt(px*UM,py*UM)>0.3)for(let q=0;q<2;q++){const ph=((t/700)+h*7+q*0.5)%1,qx=X+(h01(k,q*7+Math.floor(t/700+h*7+q*0.5))-0.5)*R*1.2,qy=Y+(h01(k,q*9+Math.floor(t/700+h*7+q*0.5))-0.5)*R*0.5;
-        g.globalAlpha=(1-ph)*0.7*ENV.rain;g.strokeStyle='#ffffff';g.lineWidth=1;g.beginPath();g.ellipse(qx,qy,R*0.3*ph+0.5,R*0.15*ph+0.3,0,0,7);g.stroke();}}}
+      if(G.sky&&G.sky.rainAt(px*UM,py*UM)>0.3){g.save();g.beginPath();g.ellipse(X,Y,R*0.92,R*0.46,0,0,7);g.clip(); // v2.3: covinhas pequenas, só dentro da poça
+        for(let q=0;q<4;q++){const ph=((t/400)+h*7+q*0.25)%1,sl=Math.floor(t/400+h*7+q*0.25),qx=X+(h01(k,q*7+sl)-0.5)*R*1.5,qy=Y+(h01(k,q*9+sl)-0.5)*R*0.7;
+          g.globalAlpha=(1-ph)*0.6*ENV.rain;g.strokeStyle='#ffffff';g.lineWidth=1;g.beginPath();g.ellipse(qx,qy,Math.max(0.6,R*0.1*ph),Math.max(0.4,R*0.05*ph),0,0,7);g.stroke();}
+        g.restore();}}}
   g.restore();}
 function boardLight(g,s,sz,t){
   if(!MACRO)buildLightTex();
@@ -3111,9 +3181,10 @@ function boardLight(g,s,sz,t){
   const sx0=ENV.sun[0]<0?0:W.w,lg=g.createLinearGradient(sx0,0,W.w-sx0,W.h);lg.addColorStop(0,css(LIGHT.warm,1));lg.addColorStop(0.55,'rgba(128,128,128,1)');lg.addColorStop(1,css(LIGHT.cool,1));
   g.globalAlpha=LIGHT.wa+0.12;g.fillStyle=lg;g.fillRect(0,0,W.w,W.h);
   // vento no capim: faixas de luz que atravessam o vale devagar
-  if(!RM&&QUAL.wind){const wp=g.createPattern(WINDT,'repeat'),ph=(t/1000)*(0.2+0.75*ENV.wind.s);
-    wp.setTransform(new DOMMatrix().translateSelf(cam.x,cam.y).rotateSelf(ENV.wind.a*57.3).scaleSelf(sz*6.5/256,sz).translateSelf(-ph*40,0));
-    g.globalAlpha=(s.seca?0.3:0.22)+0.35*ENV.wind.s;g.fillStyle=wp;g.fillRect(0,0,W.w,W.h);}
+  if(!RM&&QUAL.wind){const W2=ENV.wind,al=Math.min(0.42,0.03+0.4*windQ(W2.base))*(1-ENV.night*0.6);
+    if(al>0.02){const wp=g.createPattern(WINDT,'repeat'); // v2.3: as manchas andam com o ar (wadv), na velocidade do vento médio
+      wp.setTransform(new DOMMatrix().translateSelf(cam.x,cam.y).scaleSelf(sz,sz).translateSelf(ENV.wadv[0],ENV.wadv[1]).rotateSelf(W2.fa*57.2958).scaleSelf(6/256,6/256));
+      g.globalAlpha=al;g.fillStyle=wp;g.fillRect(0,0,W.w,W.h);}}
   g.restore();
 }
 // brilhos do sol na água, pétalas de ipê na seca, pólen no ar
@@ -3150,13 +3221,17 @@ function waterLife(g,s,sz,t){
   if(RM)return;const alive=[...s.alive].filter(k=>k!==E.SRC);if(!alive.length){FLIES.length=0;return;}
   const dt=Math.min(100,t-(G.lastWL||t));G.lastWL=t;
   // peixe: um salto em arco de vez em quando, com respingos na saída e na entrada
-  if(Math.random()<dt/(s.seca?14000:7000)){const k=alive[Math.floor(Math.random()*alive.length)],[wx,wy]=wpos(k),a=Math.random()*6.28;
-    FISH.push({x:wx+Math.cos(a)*0.15,y:wy+Math.sin(a)*0.1,dx:Math.cos(a)*0.45,t0:t});emit('ring',wx+Math.cos(a)*0.15,wy+Math.sin(a)*0.1,1,{v:0,life:900,size:0.04,grow:5,alpha:0.7,color:'#ffffff'});fishSplash(wx+Math.cos(a)*0.15,wy+Math.sin(a)*0.1);}
-  for(let i=FISH.length-1;i>=0;i--){const f=FISH[i],u=(t-f.t0)/650;if(u>1){emit('ring',f.x+f.dx,f.y,1,{v:0,life:900,size:0.04,grow:5,alpha:0.7,color:'#ffffff'});
-      emit('dot',f.x+f.dx,f.y-0.02,6,{ang:-Math.PI/2,spread:1.6,v:0.9,g:5,life:450,size:0.012,color:'#eefaff'});FISH.splice(i,1);continue;}
-    const px=(f.x+f.dx*u)*sz+cam.x,py=(f.y-Math.sin(u*Math.PI)*0.32)*sz+cam.y,rot=Math.atan2(-Math.cos(u*Math.PI)*0.32*Math.PI,f.dx)*0.8;
-    g.save();g.translate(px,py);g.rotate(rot);g.fillStyle='#c9d6dc';g.beginPath();g.ellipse(0,0,sz*0.07,sz*0.025,0,0,7);g.fill();
-    g.fillStyle='#8fa3ad';g.beginPath();g.moveTo(-sz*0.06,0);g.lineTo(-sz*0.1,-sz*0.03);g.lineTo(-sz*0.1,sz*0.03);g.fill();g.restore();}
+  // v2.3: na escala do vale (1 u = 20 m): um peixe de ~40 cm salta ~1,6 m ao longo do canal, a ~0,6 m de altura, e sai e
+  // cai dentro da água; os anéis têm ~1 m. Antes: peixe de ~3 m, salto de 9 m em direção qualquer (caía na margem)
+  if(Math.random()<dt/(s.seca?14000:7000)){const k=alive[Math.floor(Math.random()*alive.length)],[wx,wy]=wpos(k),tl=s.board.get(k),arms=[];
+    if(tl)for(let d=0;d<6;d++)if(tl.e[d]==='A')arms.push(d);
+    const a=arms.length?ang(arms[Math.floor(Math.random()*arms.length)])+(Math.random()-0.5)*0.3:Math.random()*6.28,r0=0.03+Math.random()*0.12,sx=wx+Math.cos(a)*r0,sy=wy+Math.sin(a)*r0,L=0.08*(Math.random()<0.5?-1:1);
+    FISH.push({x:sx,y:sy,dx:Math.cos(a)*L,dy:Math.sin(a)*L,t0:t});emit('ring',sx,sy,1,{v:0,life:900,size:0.008,grow:3,alpha:0.6,color:'#ffffff'});fishSplash(sx,sy);}
+  for(let i=FISH.length-1;i>=0;i--){const f=FISH[i],u=(t-f.t0)/650;if(u>1){emit('ring',f.x+f.dx,f.y+f.dy,1,{v:0,life:900,size:0.008,grow:3,alpha:0.6,color:'#ffffff'});
+      emit('dot',f.x+f.dx,f.y+f.dy-0.005,5,{ang:-Math.PI/2,spread:1.4,v:0.25,g:2.5,life:350,size:0.005,color:'#eefaff'});FISH.splice(i,1);continue;}
+    const H=0.03,px=(f.x+f.dx*u)*sz+cam.x,py=(f.y+f.dy*u-Math.sin(u*Math.PI)*H)*sz+cam.y,rot=Math.atan2(f.dy-Math.cos(u*Math.PI)*H*Math.PI,f.dx);
+    g.save();g.translate(px,py);g.rotate(rot);const fl=sz*0.011,fw=Math.max(0.8,sz*0.004);g.fillStyle='#c9d6dc';g.beginPath();g.ellipse(0,0,fl,fw,0,0,7);g.fill();
+    g.fillStyle='#8fa3ad';g.beginPath();g.moveTo(-fl*0.85,0);g.lineTo(-fl*1.4,-fw*1.2);g.lineTo(-fl*1.4,fw*1.2);g.fill();g.restore();}
   // libélulas: pairam sobre a água e dão arrancadas curtas
   const want=s.seca||ENV.night>0.5||ENV.rain>0.3?0:Math.min(3,Math.ceil(alive.length/6)); // v2.3: libélulas de dia e sem chuva
   while(FLIES.length<want){const k=alive[Math.floor(Math.random()*alive.length)],[wx,wy]=wpos(k);FLIES.push({x:wx,y:wy-0.3,tx:wx,ty:wy-0.3,next:t+800,hue:Math.random()<0.5?'#3fb6c9':'#d24a3a',ph:Math.random()*6});}
@@ -3683,8 +3758,13 @@ function draw(t){
       g.fillStyle=css(LIGHT.shadow,0.16*su);g.beginPath();g.ellipse(x+sz*0.05,y+sz*0.1,sz*0.85,sz*0.62,0,0,7);g.fill();
       y=y-sz*0.1*lift+bob;
       const ru=G.rotFx?Math.min(1,(t-G.rotFx.t0)/230):1,rot=G.rotFx&&ru<1?G.rotFx.ang*(1-easeOutBack(ru)):0;
-      g.save();g.translate(x,y-sz*0.12);g.scale(0.86+0.14*lift,0.86+0.14*lift);if(rot)g.rotate(rot);g.translate(-x,-(y-sz*0.12));
-      drawTile(g,x,y-sz*0.12,sz,o.e,{wet:true,alive:o.rep.newlyAlive.includes(k)?1:0,alpha:0.95,t,blocked:blockedSides(s.board,k,o.e),seed:k,vs:gv.vs,es:edgeState(s.board,k,o.e),kind:E.cur(s).sp});
+      g.save();g.translate(x,y-sz*0.12);g.scale(0.86+0.14*lift,0.86+0.14*lift);g.translate(-x,-(y-sz*0.12));
+      {const to={wet:true,alive:o.rep.newlyAlive.includes(k)?1:0,alpha:0.95,t,blocked:blockedSides(s.board,k,o.e),seed:k,vs:gv.vs,es:edgeState(s.board,k,o.e),kind:E.cur(s).sp};
+       if(rot){ // v2.3: no giro, o chão e o rio giram; árvores, casas e pedras acompanham sem tombar (antes giravam deitadas e a copa saía do recorte)
+         g.save();g.translate(x,y-sz*0.12);g.rotate(rot);g.translate(-x,-(y-sz*0.12));
+         drawTile(g,x,y-sz*0.12,sz,o.e,{...to,layer:'ground'});drawTile(g,x,y-sz*0.12,sz,o.e,{...to,layer:'river'});g.restore();
+         drawTile(g,x,y-sz*0.12,sz,o.e,{...to,layer:'deco',rot});}
+       else drawTile(g,x,y-sz*0.12,sz,o.e,to);}
       g.restore();
       if(rot)continue;
       for(const ed of o.rep.edges){
@@ -3998,6 +4078,17 @@ function drawRiver(g,x,y,s,R,ws,o){
     g.strokeStyle=`rgba(255,255,255,${(0.85*(1-u*0.5)).toFixed(3)})`;g.lineWidth=Math.max(1.5,w*0.14);g.beginPath();g.arc(ix,iy,Math.max(1,rr-w*0.06+wob),0,Math.PI*2);g.stroke();g.restore();}
   // chuva (v2.1): a enxurrada turva a água
   if(ENV.rain>0.05||(ENV.wetness||0)>0.05){g.fillStyle=`rgba(150,122,78,${(0.2*Math.max(ENV.rain,(ENV.wetness||0)*0.6)).toFixed(3)})`;g.fill(P);}
+  // chuva na água (v2.3): uma gota faz um anel de 10–20 cm que some em ~0,35 s. De 20 m de altura isso é um
+  // pontilhado fino que pisca, e a água arrepiada perde o reflexo. Tudo dentro do canal (o recorte da água), na
+  // quantidade da chuva que cai sobre esta peça. Antes eram anéis de ~2 m lançados em volta do meio da peça.
+  if(o.t!=null&&!RM&&G.sky&&o.seed!=null){const[wx0,wy0]=wpos(o.seed),Rl=G.sky.rainAt(wx0*UM,wy0*UM);
+    if(Rl>0.3){const n=Math.min(70,Math.round((6+Rl*1.6)*clamp01(s/90))),rr=Math.max(0.9,s*0.007),T=o.t/350,sd=Math.imul(o.seed|0,2654435761)>>>0;
+      g.fillStyle=`rgba(200,214,224,${(0.12*clamp01(Rl/25)).toFixed(3)})`;g.fill(P);
+      g.strokeStyle='rgba(236,246,255,.8)';g.fillStyle='rgba(240,248,255,.85)';g.lineWidth=Math.max(0.7,s*0.004);
+      for(let i=0;i<n;i++){const u=T+fh(sd+i*7919),slot=Math.floor(u),f=u-slot,hx=fh(sd^Math.imul(slot,374761393)^Math.imul(i,668265263)),hy=fh((sd+Math.imul(slot,22695477)+Math.imul(i,1103515245))|0);
+        const px=x+(hx-0.5)*1.8*R,py=y+(hy-0.5)*1.6*R,r=rr*(0.4+1.6*f);g.globalAlpha=al*(1-f)*0.85;
+        if(r<1.4)g.fillRect(px-0.6,py-0.6,1.2,1.2);else{g.beginPath();g.ellipse(px,py,r,r*0.6,0,0,7);g.stroke();}}
+      g.globalAlpha=al;}}
   // céu refletido, mais claro do lado do sol
   const sky=g.createLinearGradient(x-s,y-s,x+s,y+s);sky.addColorStop(0,'rgba(255,255,255,.16)');sky.addColorStop(0.55,'rgba(255,255,255,0)');
   g.fillStyle=sky;g.fill(P);
@@ -4010,7 +4101,7 @@ function drawRiver(g,x,y,s,R,ws,o){
     for(const[q,T]of K.tubes.entries()){
       const dir=(o.flow?o.flow[T.arm]:1)*T.out,n=T.thin?1:3;
       for(let j=0;j<n;j++){
-        const ph=((t/(T.cap?2600:1500))*(1+ENV.rain*0.9)+((q*7+j*13)%10)/10)%1,u=dir>0?ph:1-ph,[cx,cy,tx,ty,wf]=tubeAt(T,u),off=(n>1?(j-1)*0.26:0)*w*wf,len=w*0.55*Math.max(0.35,wf);
+        const ph=(((ENV.flowClk||t/1000)*1000/(T.cap?2600:1500))+((q*7+j*13)%10)/10)%1,/* v2.3: relógio acumulado (a chuva acelera sem saltos) */u=dir>0?ph:1-ph,[cx,cy,tx,ty,wf]=tubeAt(T,u),off=(n>1?(j-1)*0.26:0)*w*wf,len=w*0.55*Math.max(0.35,wf);
         const px=x+cx*R-ty*off,py=y+cy*R+tx*off;
         g.globalAlpha=al*Math.sin(ph*Math.PI)*0.2;g.strokeStyle='#ffffff';g.lineWidth=Math.max(1,w*0.07*Math.max(0.5,wf));
         g.beginPath();g.moveTo(px-tx*len/2,py-ty*len/2);g.lineTo(px+tx*len/2,py+ty*len/2);g.stroke();

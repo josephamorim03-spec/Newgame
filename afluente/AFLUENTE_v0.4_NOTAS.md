@@ -955,3 +955,22 @@ O desempenho é o mesmo da versão anterior.
 - cabeças de 20 a 40 cm espalhadas, algumas em botão.
 
 Os girassóis 3D passam a ser as flores de verdade.
+
+**Vento mais físico (v2.3).** O vento vinha em ondas e forte demais. Detalhes em `CLIMA.md`, seção 9.
+- As ondas do capim, o balanço das matas e as faixas de luz usavam `tempo × vento`: cada mudança de vento dava um salto de fase, e as ondas corriam para frente e para trás. Agora as rajadas são um campo levado pelo ar, na velocidade do vento médio.
+- A rajada do motor só somava. Agora é turbulência de média zero, com a intensidade medida em campo aberto (σu/U de 0,10 à noite a 0,27 na tarde de sol).
+- Capim e copas reagem ao quadrado da velocidade: brisa leve quase não mexe, vento de 10 m/s verga a mata.
+- Folhas e poeira só voam a partir da brisa moderada (Beaufort).
+- O moinho gira com a rajada que está passando por ele.
+
+**Peça girando sem árvore "pelada" (v2.3).** No giro da peça escolhida, a peça inteira girava como uma figura, com árvores e casas juntas. As árvores deitavam de lado, e a copa das que estavam na borda saía do recorte da peça, deixando só o tronco. Agora o chão e o rio giram, e árvores, casas e pedras acompanham o giro sem tombar, como numa peça de verdade. O recorte da peça escolhida também ficou mais largo.
+
+**Chuva e árvores mais naturais (v2.3).** Detalhes em `CLIMA.md`, seções 9 e 10.
+- **Pancada:** o "filtro preto" era uma sombra recortada no formato das peças, que vazava acima delas e deixava a lateral e a borda claras. Agora a luz cai por igual na cena toda, como a luz da noite.
+- **Chão molhado:** escurece num campo contínuo, sem aresta reta entre peças.
+- **Gotas na água:** anéis pequenos (10 a 20 cm na escala do vale), só dentro da água. Antes eram anéis de ~2 m que caíam na margem.
+- **Respingos no chão e covinhas nas poças:** pequenos, sem quicar e sem sair da poça.
+- **Correnteza:** acelera com a chuva sem dar saltos.
+- **Peixe:** na escala do vale, salta ao longo do canal e não cai mais na margem.
+- **Árvores:** cada uma verga sobre a própria base com a rajada que passa por ela, na própria frequência. Antes a peça inteira entortava junta, de um lado para o outro.
+

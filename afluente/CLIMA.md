@@ -119,6 +119,11 @@
 - **Dia × noite:**
   - de dia o sol mistura o ar, o vento desce até o chão e vem em **rajadas**;
   - à noite o ar perto do chão fica parado e separado do de cima: a fumaça sobe reta.
+- **Turbulência:** a rajada é uma flutuação em torno do vento médio, para mais e para menos (média zero).
+  - A **intensidade de turbulência** `Iu = σu/U` em campo aberto fica perto de 0,10 com ar estável (noite) e de 0,25 a 0,30 na tarde de sol.
+  - A rajada de pico de 3 s fica em 1,4 a 1,8 vez o vento médio.
+- **Hipótese de Taylor:** os redemoinhos são levados pelo vento médio quase sem mudar. Por isso a "onda" que se vê passar no capim anda na velocidade do vento, e o que sente um ponto fixo é esse campo passando por ele.
+- **Força no capim e nas copas:** o arrasto cresce com o **quadrado** da velocidade. Com 3 m/s o capim mal deita; com 10 m/s (força 5, "árvores pequenas balançam") deita bem. Uma árvore de 10 a 15 m oscila na própria frequência, perto de 0,3 a 0,6 Hz.
 
 ### 1.7 Moinhos de vento
 
@@ -169,7 +174,7 @@
 |---|---|---|---|
 | Hora e sol | posição astronômica (latitude, declinação, ângulo horário) | o sol nasce à direita (leste); sombras, brilho no céu e luz quente seguem o sol | `ATM.sun`, `envStep` |
 | Temperatura e umidade | climatologia + ciclo diário (mínima às 6 h, máxima às 15 h) + mapa; Magnus | boletim do Contemplar; neblina; ar seco e enfumaçado na Seca (serras apagadas) | `Sky.thermo` |
-| Vento | sinótico da monção + mistura diurna + rajadas + frente de rajada | capim, copas, fumaça, chuva inclinada, moinho, som do vento; as rajadas da v2.1 (capim em onda, folhas e poeira voando) vêm das rajadas do motor e da frente de rajada | `Sky.step`, `ENV.gust` |
+| Vento | sinótico da monção + mistura diurna + turbulência de média zero + frente de rajada | capim, copas, fumaça, chuva inclinada, moinho, som do vento; desde a v2.3 capim, copas, faixas de luz e moinho leem o campo de rajadas levado pelo ar (seção 9) | `Sky.step`, `gustAt`, `windAt`, `ENV.gust` |
 | Cúmulos | térmicas + nível de condensação | no horizonte, base reta no mesmo nível, subindo ao longo do dia; sombras de 300 m a 1,5 km; sobre o vale, os tufos da v1.10 nascem pela cobertura de cúmulos, passam mais alto com o ar seco e crescem em torre na tarde instável | `covers`, `hzStep`, `ovStep`, `cloudsStep` |
 | Pancada | célula com cortina (mm/h), vida acelerada, anda com o vento das nuvens | sombra escura; borda da chuva atravessando o vale; chão molhando e poças (v2.1) só nas peças onde a chuva passou; respingos onde chove | `spawnCell`, `rainAt`, `rainFx`, `wetGround` |
 | Chuva contínua (ZCAS) | Ci → Cs → As → Ns | véus no céu, teto escuro e chuva fina | `eplan`, `drawSkyBand` |
@@ -296,6 +301,49 @@
 O teste roda 12.830 quadros em 4 vales e uma lição: **tudo coerente**.
 
 O motor também tem o seu teste (`atmos_teste.js`): "chuva média na última jogada das águas: 0,000 mm/h" e "desfazer a seca não traz a frente das chuvas".
+
+## 9. Vento que se vê (v2.3)
+
+**O problema:** o vento do jogo vinha em ondas e parecia forte demais. Havia três causas:
+
+| Causa | Efeito na tela | Como ficou |
+|---|---|---|
+| A fase das ondas era `tempo × velocidade do vento`. Como o tempo já passa de centenas de segundos, qualquer mudança pequena no vento dava um salto enorme de fase | As ondas do capim, o balanço das matas e as faixas de luz corriam para frente e para trás, em surtos | As rajadas são um campo que **anda com o ar**: o jogo soma quanto o ar andou a cada quadro (`ENV.wadv`) e lê a fase daí. Nada mais é `t × vento` (o mesmo erro movia as nuvens em placa do céu) |
+| A rajada do motor só somava (`sin³` positivo, num pulso regular a cada 46 s) | Vento médio de verdade ~20% acima do anunciado; σu/U = 0,47 nas tardes das Águas, quase o dobro do real | Turbulência de **média zero** com a intensidade de campo aberto: `u = U·(1 + Iu·n)`, `Iu` de 0,10 a 0,27, com redemoinhos de 1,6 s, 6 s e 25 s |
+| O capim e as matas reagiam à velocidade (linear) e a faixas de luz de lado a lado da tela, sempre visíveis | Mesmo com 2 a 3 m/s tudo balançava | A força segue o **quadrado** da velocidade no lugar; as faixas viraram manchas alongadas no sentido do vento, que só aparecem com vento de verdade |
+
+**Como funciona agora:**
+
+- **O motor** dá o vento médio `U`, a intensidade `Iu` e o vento do momento no ponto de foco (para o som, as folhas e a poeira).
+- **O desenho** usa um campo de rajadas (`gustAt`) com manchas de ~70 m, ~30 m e ~14 m, alongadas no sentido do vento e levadas por ele (Taylor). O vento num lugar é `windAt(x, y) = U·(1 + Iu·campo)`.
+  - **Capim:** cada lâmina deita conforme `(u/10)²`, com um tremor de ~1,5 Hz por cima.
+  - **Árvores:** cada árvore verga sobre a **própria base**, conforme `(u/10)²` no lugar dela, e oscila na própria frequência (0,3 a 0,6 Hz, uma diferente da outra). O buriti verga mais e mais devagar. Antes a peça inteira entortava como uma folha de papel: as árvores do fundo corriam mais que as da frente e todas iam e voltavam juntas.
+  - **Faixas de luz:** manchas claras que andam com o ar; a força acompanha `(U/10)²`.
+  - **Moinho:** gira com o vento do lugar dele. Quando uma rajada passa pelo capim, chega nas velas.
+- **Folhas e poeira** só voam a partir da brisa moderada, pela escala Beaufort: começam em 4,5 m/s e ficam no máximo com 10 m/s.
+
+**Números** (`atmos_teste.js` e o medidor do vento):
+
+| | Antes | Depois |
+|---|---|---|
+| Tarde das Águas: σu/U | 0,47 | 0,23 |
+| Tarde das Águas: rajada de pico ÷ médio (p95) | 1,99 | 1,42 |
+| Tarde das Águas: mediana do vento do momento ÷ médio | 1,2 | 1,0 |
+| Tarde da Seca: σu/U | 0,25 | 0,24 |
+| Noite: σu/U | 0,12 | 0,12 |
+| Movimento na tela (diferença entre quadros, tarde de seca) | 3,2 | 1,5 |
+
+## 10. Chuva que se vê (v2.3)
+
+| O que estava ruim | Causa | Como ficou |
+|---|---|---|
+| "Filtro preto" da pancada impreciso e vazando para fora da peça | A sombra da pancada era recortada no formato das peças, mais um hexágono "suspenso" acima de cada uma (feito para as copas). Escurecia o fundo acima da peça, com lados retos, e deixava a lateral de terra e a borda claras | A torre e a bigorna têm quilômetros; a peça tem 20 m. Debaixo delas a luz cai **por igual** em tudo o que se vê, como a luz da noite (`ENV.stormDim`, em `todGrade`). O recorte das sombras de nuvem passou a ser a peça mais a lateral de terra |
+| Peça molhada com aresta reta contra a vizinha | Cada hexágono escurecia por inteiro conforme a chuva no centro dele | Campo contínuo de umidade (`wetField`): média ponderada das peças, numa imagem presa ao mundo. Chuva igual escurece igual; onde a borda da chuva passou, a passagem é suave |
+| Anéis grandes na água, muitas vezes fora dela | Anéis de ~2 m de diâmetro lançados em volta do meio da peça, sem saber onde está a água | Uma gota faz um anel de 10 a 20 cm que some em ~0,35 s. Agora é um pontilhado fino de anéis pequenos **dentro do canal** (recortado pela água), na quantidade da chuva sobre a peça. A água arrepiada perde um pouco do reflexo |
+| Respingos no chão "pipocando" | Partículas que quicavam alto | Pontinhos que piscam onde a gota bate, dentro de cada peça onde chove |
+| Covinhas das poças maiores que a poça | Anéis de até 60% da poça, sem recorte | Covinhas pequenas, recortadas pela poça |
+| Correnteza dando saltos quando a chuva muda | Fase `tempo × (1 + chuva)` | Relógio acumulado (`ENV.flowClk`): a chuva acelera a correnteza sem saltos |
+| Peixe gigante caindo na margem | Peixe de ~3 m saltando 9 m numa direção qualquer | Peixe de ~40 cm salta ~1,6 m **ao longo do canal**; os anéis da saída e da entrada têm ~1 m |
 
 ## Fontes
 

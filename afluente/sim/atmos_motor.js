@@ -181,8 +181,13 @@ function Atmos(){
       // de dia o sol mistura o ar e o vento chega ao chão; de noite o ar parado se separa e o vento cai
       const mix=0.45+0.8*heating(h)+0.1*Math.sin(Math.PI*h/24),th0=thermo(Rs,h,map,S.out?S.out.oc:0,0,c01(S.rainHist));
       let v=Math.max(0.2,Rs.wind*mix*(1+0.18*noise1(sk+'ws',S.t/40)));
-      const sig=0.12+0.35*heating(h),gst=Math.pow(Math.max(0,Math.sin(S.t/7.3+3*noise1(sk+'g',S.t/30))),3)+0.5*Math.max(0,noise1(sk+'g2',S.t/2.1));
-      const vg=v*(1+sig*2.2*gst);
+      // turbulência (v2.3): u = U·(1 + Iu·n), com n de média zero e desvio 1, feito de redemoinhos de 1,6 s, 6 s e 25 s
+      // (rajada, lufada e as pausas das térmicas). Iu = σu/U é a intensidade de turbulência de campo aberto:
+      // ~0,10 de noite (ar estável) e ~0,27 na tarde de sol (térmicas). A rajada de pico fica em 1,5–1,8 × o vento médio,
+      // como nas estações do Cerrado. Antes as rajadas só somavam (o vento médio de verdade ficava ~20% acima do anunciado)
+      // e vinham num pulso regular a cada 46 s.
+      const Iu=0.1+0.17*heating(h),nT=(0.55*noise1(sk+'t1',S.t/1.6)+0.45*noise1(sk+'t2',S.t/6)+0.35*noise1(sk+'t3',S.t/25))/0.394;
+      const vg=Math.max(0.15*v,v*(1+Iu*nT));
       const steer=toVec(S.windA+15,Rs.wind*1.6+1.8); // vento na altura das nuvens: mais forte e um pouco girado
       // eventos de jogada: pancadas (determinísticas pela semente e pela jogada)
       const prevPhase=S.phase;S.phase=phase;
@@ -212,14 +217,14 @@ function Atmos(){
       const cv=covers(Rs,p,h,th,CI,map,S.anvil,S.rainHist);
       const nsR=cv.zc*taper*(1.2+2.5*c01(0.5+0.5*noise1(sk+'ns',S.t/50)));
       // vento final: o sinótico com rajadas mais a frente de rajada das pancadas
-      const[wx0,wy0]=toVec(S.windA,vg),wx=wx0+ox,wy=wy0+oy,wv=Math.hypot(wx,wy),wfrom=((Math.atan2(-wx,wy)/RAD)+360)%360;
+      const[wx0,wy0]=toVec(S.windA,vg),[mx0,my0]=toVec(S.windA,v),wx=wx0+ox,wy=wy0+oy,wv=Math.hypot(wx,wy),wfrom=((Math.atan2(-wx,wy)/RAD)+360)%360;
       const sunp=sun(Rs.doy,h),fog=inp.lesson?0:fogOf(th,v,h,cv.oc,false),fogW=inp.lesson?0:fogOf(th,v,h,cv.oc,true);
       // a neblina da madrugada levanta e vira estrato quando o sol esquenta o chão
       cv.St=Math.max(cv.St,c01(Math.max(fog,fogW*0.6)*1.4)*sst(6.5,8,h)*(1-sst(9.5,11,h)));cv.oc=Math.max(cv.oc,cv.St*0.9);
       const dr=drops(Rf);
       const vis=1/(1/Rs.vis+1/visRain(Rf)+fog*2+cv.Ns*0.05);
       S.out={hour:h,T:th.T,Td:th.Td,RH:th.RH,lcl:th.lcl,p:P0,rho:rhoOf(th.T),R:Rf,Rv,nsR,drops:dr,vis,fog,fogW,
-        wind:{ms:wv,mean:v,from:wfrom,x:wx,y:wy,bft:beaufort(wv),dir:compass(wfrom),gust:sig*2.2*gst},steer,
+        wind:{ms:wv,mean:v,base:Math.hypot(mx0+ox,my0+oy),bx:mx0+ox,by:my0+oy,iu:Iu,from:wfrom,x:wx,y:wy,bft:beaufort(wv),dir:compass(wfrom),gust:Math.max(0,vg-v)},steer,
         sun:sunp,cv,oc:cv.oc,CI,cells:S.cells,flashes:S.flashes,phase,sp,fria:Rs.fria||0,veranico:p.veranico,zcas:cv.zc,cool,regime:Rs};
       return S.out;}
     return{step,rainAt,outflowAt,act,state:S};
