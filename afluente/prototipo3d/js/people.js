@@ -121,9 +121,14 @@ export function buildPeople(scene, { mobile = false } = {}) {
     { make: () => homem({ hat: 'couro', top: { mat: MAT.trama, color: 0x8a6a4a }, bottom: { mat: MAT.trama, color: 0x5a4030 }, sleeves: 'longa', shoes: 0x4a2a18 }), job: 'vaqueiro', post: rot2(L.corral.p, L.corral.rot, -L.corral.w / 2 + 1, L.corral.d / 2 + 0.75), face: L.corral.rot + Math.PI, span: L.corral.w - 2, dirRot: L.corral.rot, home: 0 },
     lav && { make: () => mulher({ hat: 'lenco', apron: false, sleeves: 'curta' }), job: 'lavar', post: lav, face: towardWater(...lav), home: 2 },
     { make: () => homem({ hat: 'palha', tool: 'vara', sleeves: 'arregaçada' }), job: 'pescar', post: pes, face: Math.atan2(SPRING[0] - pes[0], SPRING[1] - pes[1]), home: 0 },
+    // praça e roça: o vendeiro na porta da venda, crianças em volta do coreto, a ceifadora no trigo
+    { make: () => homem({ hat: null, apron: false, top: { mat: MAT.trama, color: 0xf0ebe0 }, sleeves: 'arregaçada', beard: 'bigode' }), job: 'conversa', post: rot2(L.venda.p, L.venda.rot, -L.venda.w * 0.26, L.venda.d / 2 + 1.0), face: L.venda.rot, home: 1 },
+    { make: () => crianca(), job: 'brincar', post: L.coreto.p, rad: 4.4, home: 2, k: 0.5 },
+    { make: () => crianca(), job: 'brincar', post: L.coreto.p, rad: 4.4, home: 2, k: 2.6 },
+    { make: () => mulher({ tool: 'balaio', hat: 'palha', dress: false, top: { mat: MAT.trama, color: 0xf4efe6 }, bottom: { mat: MAT.trama, color: 0x8a6a4a }, skirt: 0 }), job: 'colher', post: [L.wheat.tile.c[0] - 5, L.wheat.tile.c[1] + 2], span: 10, home: 1 },
   ].filter(Boolean);
-  const list = mobile ? roles.filter((r, i) => [0, 2, 4, 5, 8, 10, 11].includes(i)) : roles;
-  for (const r of list) { const p = person(r.make()); Object.assign(p, r); const [x, z] = r.post; p.x = x; p.z = z; p.h = r.face ?? rnd() * 6.28; p.z0 = z; p.x0 = x; p.dir = 1; people.push(p); }
+  const list = mobile ? roles.filter((r, i) => [0, 2, 4, 5, 8, 10, 11, 13, 14].includes(i)) : roles;
+  for (const r of list) { const p = person(r.make()); Object.assign(p, r); const [x, z] = r.post; p.x = x + (r.job === 'brincar' ? Math.cos(r.k) * (r.rad || 2.6) : 0); p.z = z + (r.job === 'brincar' ? Math.sin(r.k) * (r.rad || 2.6) : 0); p.h = r.face ?? rnd() * 6.28; p.z0 = z; p.x0 = x; p.dir = 1; people.push(p); }
 
   // ---------- poses (ângulos em radianos; + na coluna inclina para a frente, − no ombro levanta o braço para a frente)
   const set = (p, o) => { const k = o.k ?? 1, lerp = (obj, key, v) => { obj[key] += (v - obj[key]) * k; };
@@ -143,7 +148,8 @@ export function buildPeople(scene, { mobile = false } = {}) {
       const stay = p.night && day < 0.3 && rain < 0.45;   // o da varanda fica, com o lampião
       if (away && !stay) { if (p.st !== 'casa') { const d = doors[p.home].at; if (goTo(p, d[0], d[1], dt, p.job === 'brincar' ? 2.6 : 1.3)) { p.st = 'casa'; p.g.visible = false; } } }
       else if (p.st === 'casa' || p.st === 'voltando') { p.g.visible = true; if (p.st === 'casa') { const d = doors[p.home].at; p.x = d[0]; p.z = d[1]; p.st = 'voltando'; }
-        if (goTo(p, p.x0, p.z0, dt, p.job === 'brincar' ? 2.6 : 1.2)) { p.st = 'post'; p.h = p.face ?? p.h; } }
+        const bx = p.job === 'brincar' ? p.x0 + Math.cos(p.k) * (p.rad || 2.6) : p.x0, bz = p.job === 'brincar' ? p.z0 + Math.sin(p.k) * (p.rad || 2.6) : p.z0;
+        if (goTo(p, bx, bz, dt, p.job === 'brincar' ? 2.6 : 1.2)) { p.st = 'post'; p.h = p.face ?? p.h; } }
       else { // no posto, fazendo o ofício
         const t = time + p.ph;
         switch (p.job) {
@@ -161,7 +167,7 @@ export function buildPeople(scene, { mobile = false } = {}) {
             if (p.lata && p.cyc < 2) p.lata.visible = false; break; }
           case 'sentar': set(p, { py: (p.seatY ?? 0) + 0.47, hp: [-1.5, -1.45], kn: [1.45, 1.5], sh: [-0.45, -0.5], el: [-0.7, -0.6], hy: Math.sin(t * 0.3) * 0.5, hx: 0.05, k }); p.h = p.face; yOff = 0; break;
           case 'conversa': { const g2 = Math.max(0, Math.sin(t * 1.3)); set(p, { sh: [-0.4 - g2 * 0.5, -0.2], el: [-1.1 - g2 * 0.3, -0.3], hx: Math.sin(t * 2.1) * 0.08, hy: Math.sin(t * 0.4) * 0.2, k }); p.h = p.face; break; }
-          case 'brincar': { const a = time * 1.3 + p.k, cx = p.x0 + Math.cos(a) * 2.6, cz = p.z0 + Math.sin(a) * 2.6; goTo(p, cx, cz, dt, 3.2); break; }
+          case 'brincar': { const rr = p.rad || 2.6, a = time * 1.3 * 2.6 / rr + p.k, cx = p.x0 + Math.cos(a) * rr, cz = p.z0 + Math.sin(a) * rr; goTo(p, cx, cz, dt, 3.2); break; }
           case 'vaqueiro': { p.cyc = p.cyc ?? 0; const dx = Math.cos(p.dirRot), dz = -Math.sin(p.dirRot);
             if (p.cyc === 0) { if (goTo(p, p.x0 + dx * p.span * (p.side ? 1 : 0), p.z0 + dz * p.span * (p.side ? 1 : 0), dt, 0.9)) { p.cyc = 1; p.w8 = 6 + rnd() * 6; } }
             else { p.w8 -= dt; p.h += (p.face - p.h) * k; set(p, { sp: 0.18, sh: [-1.3, -1.25], el: [-0.9, -0.8], hy: Math.sin(t * 0.5) * 0.4, k }); if (p.w8 < 0) { p.cyc = 0; p.side = !p.side; } } break; }

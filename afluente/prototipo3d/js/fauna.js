@@ -6,7 +6,7 @@ import * as THREE from 'three';
 import { U } from './mat.js';
 import { mat, paint, merge, col, V3 } from './props.js';
 import { tag, READ3 } from './regua.js';
-import { LAYOUT, TILES, heightAt, waterDist, inHex, inBoxAt, blocked, inAnyTile, WATER_Y, SPRING, POOL_R, RIVER } from './world.js';
+import { LAYOUT, TILES, heightAt, waterDist, inHex, inBoxAt, blocked, inAnyTile, WATER_Y, SPRING, POOL_R, RIVER, LAKE, lakeDist } from './world.js';
 
 const rnd = (() => { let a = 424242; return () => { a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; })();
 const ell = (rx, ry, rz, x, y, z, c, s = 12) => paint(new THREE.SphereGeometry(1, s, Math.max(6, Math.round(s * 0.7))).scale(rx, ry, rz).translate(x, y, z), c);
@@ -23,23 +23,62 @@ export function buildFauna(scene, opts = {}) {
   const all = [], updaters = [];
 
   // ---------- quadrúpedes
-  function cow(tone) {   // nelore: branco-acinzentado, cupim sobre a cernelha, barbela, orelhas caídas, chifres curtos
-    const g = new THREE.Group(), w = col(tone), grey = w.clone().multiplyScalar(0.82), dark = col(0x3e3a38);
-    const trunk = paint(new THREE.CapsuleGeometry(0.36, 1.25, 6, 12).rotateX(Math.PI / 2).scale(0.82, 1.0, 1).translate(0, 1.06, -0.05), w);   // tronco comprido de lombo reto
-    mesh([trunk, ell(0.3, 0.2, 0.36, 0, 1.3, -0.62, w), ell(0.17, 0.2, 0.24, 0, 1.5, 0.5, grey), ell(0.18, 0.26, 0.34, 0, 1.24, 0.86, w).rotateX(0), ell(0.06, 0.24, 0.3, 0, 0.84, 0.82, grey),
-      ell(0.12, 0.08, 0.2, 0, 0.72, -0.3, grey)], g);
-    const tail = pivot(g, 0, 1.4, -1.06); mesh([cyl(0.035, 0.02, 0.85, w), ell(0.06, 0.14, 0.06, 0, -0.9, 0, dark)], tail); tail.rotation.x = 0.12;
-    const head = pivot(g, 0, 1.36, 1.12);
-    // cabeça de nelore: comprida e estreita, apontada para baixo, focinho escuro, orelhas compridas caídas, chifres curtos para cima
-    const face = paint(new THREE.CylinderGeometry(0.115, 0.075, 0.42, 10).translate(0, 0.21, 0).rotateX(2.26).translate(0, 0.06, 0.08), w);
-    mesh([ell(0.12, 0.13, 0.14, 0, 0.05, 0.06, w), face, ell(0.085, 0.07, 0.07, 0, -0.21, 0.4, dark), ell(0.02, 0.015, 0.015, 0.04, -0.2, 0.46, col(0x1a1818), 5), ell(0.02, 0.015, 0.015, -0.04, -0.2, 0.46, col(0x1a1818), 5),
-      ell(0.024, 0.024, 0.024, 0.105, 0.02, 0.14, col(0x1a1818), 6), ell(0.024, 0.024, 0.024, -0.105, 0.02, 0.14, col(0x1a1818), 6),
-      ell(0.045, 0.17, 0.02, 0, -0.12, 0, grey).rotateX(0.2).rotateZ(0.6).translate(0.15, 0.02, 0.03), ell(0.045, 0.17, 0.02, 0, -0.12, 0, grey).rotateX(0.2).rotateZ(-0.6).translate(-0.15, 0.02, 0.03),
-      cone(0.03, 0.12, col(0x6a6258)).translate(0, 0.06, 0).rotateX(-0.3).rotateZ(-0.35).translate(0.08, 0.15, 0.02), cone(0.03, 0.12, col(0x6a6258)).translate(0, 0.06, 0).rotateX(-0.3).rotateZ(0.35).translate(-0.08, 0.15, 0.02)], head);
-    const legs = [[0.17, 0.98, 0.58, 0], [-0.17, 0.98, 0.58, Math.PI], [0.17, 1.0, -0.66, Math.PI], [-0.17, 1.0, -0.66, 0]].map(([x, y, z, ph]) => { const p = pivot(g, x, y, z);
-      mesh([cyl(0.085, 0.045, 0.96, w), ell(0.055, 0.06, 0.065, 0, -0.95, 0.02, dark, 6), ell(0.06, 0.06, 0.06, 0, -0.55, 0, w, 6)], p); p.userData.ph = ph; return p; });
-    return { g, head, legs, tail, headY: 1.42 };
+  // corpo de bicho em anéis ao longo de um eixo (loft): cada anel tem centro, meia-largura, altura de cima e de baixo e cor;
+  // 'shape(a, ring)' deixa mexer no raio por ângulo (cupim, barbela). Faz uma malha contínua, sem emendas.
+  function loft(rings, seg = 20, shape = null, closeEnds = true) {
+    const pos = [], colA = [], idx = [], per = seg + 1;
+    rings.forEach((r, i) => { for (let k = 0; k <= seg; k++) { const a = k / seg * Math.PI * 2, ca = Math.cos(a), sa = Math.sin(a), e = r.e || 2.2;
+      const sx = Math.sign(ca) * Math.pow(Math.abs(ca), 2 / e), sy = Math.sign(sa) * Math.pow(Math.abs(sa), 2 / e); let rx = r.rx, ry = sa > 0 ? r.rt : r.rb;
+      let x = sx * rx, y = sy * ry; if (shape) [x, y] = shape(x, y, a, r, i);
+      const c = typeof r.c === 'function' ? r.c(a) : r.c; pos.push(r.x || 0, r.y, r.z); pos[pos.length - 3] += x; pos[pos.length - 2] += y; colA.push(c.r, c.g, c.b); } });
+    for (let i = 0; i + 1 < rings.length; i++) for (let k = 0; k < seg; k++) { const a = i * per + k, b = a + per; idx.push(a, b, a + 1, a + 1, b, b + 1); }
+    if (closeEnds) for (const [ri, flip] of [[0, true], [rings.length - 1, false]]) { const r = rings[ri], c0 = pos.length / 3, c = typeof r.c === 'function' ? r.c(-Math.PI / 2) : r.c;
+      pos.push(r.x || 0, r.y, r.z); colA.push(c.r, c.g, c.b); for (let k = 0; k < seg; k++) { const a = ri * per + k; if (flip) idx.push(c0, a + 1, a); else idx.push(c0, a, a + 1); } }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(colA, 3)); g.setIndex(idx);
+    g.computeVertexNormals(); return g.toNonIndexed ? (() => { const n = g; n.computeVertexNormals(); return n; })() : g;
   }
+  const CM = mat({ vertexColors: true }, { rim: '2.4', frag: 'diffuseColor.rgb*=0.95+0.1*vnoise(vWp.xz*14.0+vWp.y*9.0);diffuseColor.rgb*=mix(1.0,0.82,uWet);' });
+  const cmesh = (geo, parent) => { const m = new THREE.Mesh(geo, CM); m.castShadow = true; m.receiveShadow = true; parent.add(m); return m; };
+  function cow(tone) {   // nelore: branco a cinza-claro, cupim alto sobre a cernelha, barbela que pende do pescoço ao peito, garupa caída,
+    // cabeça longa e estreita de perfil reto, focinho e cascos pretos, orelhas médias, chifres curtos e grossos, vassoura do rabo preta
+    const g = new THREE.Group(), w = col(tone), grey = w.clone().lerp(col(0x8a8680), 0.45), dark = col(0x2a2624), bull = rnd() < 0.35;
+    const shade = z => a => { const top = Math.max(0, Math.sin(a)); const k = Math.max(0, Math.min(1, (z - 0.2) / 0.6)) * (bull ? 0.8 : 0.45); return w.clone().lerp(grey, k * (0.4 + 0.6 * top)).multiplyScalar(0.96 + 0.04 * top); };
+    const R = (z, y, rx, rt, rb, e = 2.2) => ({ z, y, rx, rt, rb, e, c: shade(z) });
+    const body = [R(-0.9, 1.16, 0.06, 0.05, 0.07), R(-0.84, 1.15, 0.15, 0.1, 0.2), R(-0.72, 1.1, 0.23, 0.17, 0.3), R(-0.52, 1.03, 0.265, 0.27, 0.38), R(-0.25, 0.99, 0.275, 0.33, 0.4),
+      R(0.05, 0.98, 0.27, 0.35, 0.4), R(0.3, 0.99, 0.25, 0.36, 0.39), R(0.48, 1.02, 0.21, 0.34, 0.41), R(0.62, 1.08, 0.165, 0.27, 0.38), R(0.76, 1.17, 0.125, 0.19, 0.3), R(0.88, 1.25, 0.105, 0.13, 0.2), R(0.94, 1.29, 0.085, 0.1, 0.13)];
+    const hump = (bull ? 0.2 : 0.13), shape = (x, y, a, r) => { const z = r.z, s = Math.sin(a);
+      const hz = Math.exp(-(((z - 0.44) / 0.13) ** 2)); if (s > 0) { const top = Math.pow(s, 6); y += hump * hz * top; x *= 1 - 0.35 * hz * top; }   // cupim
+      const dz = Math.max(0, Math.min(1, (z - 0.45) / 0.25)) * Math.max(0, Math.min(1, (0.95 - z) / 0.2)); if (s < 0) { const bot = Math.pow(-s, 5); y -= 0.12 * dz * bot; x *= 1 - 0.7 * dz * bot; }   // barbela
+      if (z < -0.5 && s < 0) x *= 1 - 0.25 * Math.pow(-s, 3);   // coxas
+      return [x, y]; };
+    cmesh(loft(body, 22, shape), g);
+    // rabo: sai do alto da garupa e cai até o jarrete, com a vassoura preta
+    const tail = pivot(g, 0, 1.18, -0.88); cmesh(loft([[0, 0.032, w], [0.25, 0.018, w], [0.62, 0.014, w], [0.7, 0.042, dark], [0.86, 0.012, dark]].map(([d, r, c]) => ({ z: d, y: 0, rx: r, rt: r, rb: r, e: 2, c })), 8).rotateX(Math.PI / 2 - 0.08), tail);
+    // pernas: braço/coxa, canela fina, quartela e casco; a de trás dobra no jarrete para trás
+    const leg = (x, z, front, ph) => { const hip = pivot(g, x, front ? 0.86 : 0.92, z), knee = pivot(hip, 0, front ? -0.42 : -0.453, front ? 0.0 : -0.08);
+      const up = front ? [[0.04, 0.1], [-0.16, 0.088], [-0.3, 0.062], [-0.43, 0.05]] : [[0.04, 0.12], [-0.2, 0.095], [-0.36, 0.06], [-0.465, 0.05]];
+      cmesh(loft(up.map(([y, r]) => ({ z: -y, y: 0, rx: r * 0.78, rt: r, rb: r, e: 2, c: w }))).rotateX(Math.PI / 2).rotateX(front ? 0 : 0.175), hip);
+      const lowL = front ? 0.4 : 0.38; cmesh(loft([[0.03, 0.05], [-0.06, 0.042], [-0.2, 0.034], [-lowL + 0.08, 0.035], [-lowL + 0.05, 0.043]].map(([y, r]) => ({ z: -y, y: 0, rx: r, rt: r, rb: r, e: 2, c: w })), 10).rotateX(Math.PI / 2), knee);
+      const hoof = new THREE.CylinderGeometry(0.035, 0.05, 0.07, 10).translate(0, -lowL + 0.035, 0.01); paint(hoof, dark); hoof.deleteAttribute('uv'); cmesh(hoof, knee);
+      hip.userData.ph = ph; hip.userData.low = knee; hip.userData.front = front; return hip; };
+    // loft() usa anéis em z; para as pernas montamos anéis em y (o eixo da perna): reescreve com x/y/z certos
+    const legs = [leg(0.115, 0.46, true, 0), leg(-0.115, 0.46, true, Math.PI), leg(0.13, -0.6, false, Math.PI), leg(-0.13, -0.6, false, 0)];
+    // cabeça: pivô na nuca, aponta para a frente e para baixo
+    const head = pivot(g, 0, 1.33, 0.95);
+    const hd = [[0, 0.085, 0.09, 0.1], [0.08, 0.1, 0.1, 0.11], [0.18, 0.092, 0.085, 0.1], [0.3, 0.075, 0.07, 0.085], [0.42, 0.068, 0.065, 0.075], [0.49, 0.07, 0.06, 0.07], [0.53, 0.05, 0.045, 0.05]];
+    const hgeo = loft(hd.map(([t, rx, rt, rb]) => ({ z: t, y: 0, rx, rt, rb, e: 2.4, c: t > 0.44 ? dark : t < 0.12 ? grey : w })), 16);
+    hgeo.rotateX(0.95).translate(0, 0.02, 0.02); cmesh(hgeo, head);
+    const hp = (geo, c) => { paint(geo, c); geo.deleteAttribute('uv'); cmesh(geo, head); };
+    for (const sx of [-1, 1]) {
+      hp(new THREE.SphereGeometry(1, 10, 8).scale(0.035, 0.11, 0.022).rotateZ(sx * 1.2).rotateY(sx * 0.3).translate(sx * 0.15, 0.0, -0.02), grey);   // orelha média, para o lado e um pouco caída
+      hp(new THREE.ConeGeometry(0.03, bull ? 0.12 : 0.1, 8).rotateZ(sx * -0.5).rotateX(-0.3).translate(sx * 0.085, 0.09, -0.03), col(0x5a5048));       // chifre curto e grosso
+      hp(new THREE.SphereGeometry(1, 8, 6).scale(0.02, 0.016, 0.022).translate(sx * 0.088, -0.035, 0.1), col(0x141210));                            // olho
+      hp(new THREE.SphereGeometry(1, 6, 5).scale(0.012, 0.01, 0.01).translate(sx * 0.03, -0.39, 0.33), col(0x0a0a0a));                               // narina
+    }
+    const K2 = 1.08; for (const c of [...g.children]) { c.position.multiplyScalar(K2); c.scale.multiplyScalar(K2); }   // tamanho de um nelore adulto (a escala fica no corpo, o grupo segue livre)
+    return { g, head, legs, tail, headY: 1.33 * K2, cowLegs: true };
+  }
+
   function capybara() {   // capivara: barril marrom-avermelhado, cabeça quadrada, quase sem pescoço, pernas curtas
     const g = new THREE.Group(), b = col(0x8d5a37), d = col(0x5a3824);
     mesh([ell(0.27, 0.26, 0.52, 0, 0.5, 0, b), ell(0.25, 0.22, 0.3, 0, 0.5, -0.32, b)], g);
@@ -124,7 +163,7 @@ export function buildFauna(scene, opts = {}) {
     a.t -= dt; const rain = U.uRain.value, shelter = a.shade && rain > 0.35;
     if (a.t <= 0) {
       if (shelter) { a.st = 'walk'; a.tgt = near({ x: a.shade[0], z: a.shade[1] }, 3.2, a.area) || a.shade; a.t = 10; }
-      else { const r = rnd(); if (r < a.pg) { a.st = 'graze'; a.t = 4 + rnd() * 9; } else if (r < a.pg + a.pw) { a.st = 'walk'; a.tgt = a.targets && a.targets.length ? (([x, z]) => [x + 0.9, z + 0.6])(a.targets[Math.floor(rnd() * a.targets.length)]) : near(a, a.roam, a.area); a.t = 25; if (!a.tgt) { a.st = 'idle'; a.t = 2; } } else { a.st = 'idle'; a.t = 2 + rnd() * 5; } } }
+      else { const r = rnd(); if (r < a.pg) { a.st = 'graze'; a.t = 4 + rnd() * 9; } else if (r < a.pg + a.pw) { a.st = 'walk'; a.tgt = a.follow ? near(a.follow, 2.5, a.area) : a.targets && a.targets.length ? (([x, z]) => [x + 0.9, z + 0.6])(a.targets[Math.floor(rnd() * a.targets.length)]) : near(a, a.roam, a.area); a.t = 25; if (!a.tgt) { a.st = 'idle'; a.t = 2; } } else { a.st = 'idle'; a.t = 2 + rnd() * 5; } } }
     let want = 0, dh = null;
     if (a.st === 'walk' && a.tgt) { const dx = a.tgt[0] - a.x, dz = a.tgt[1] - a.z, d = Math.hypot(dx, dz);
       if (d < 0.35) { a.st = shelter ? 'idle' : (rnd() < 0.7 ? 'graze' : 'idle'); a.t = 3 + rnd() * 6; } else { want = a.vw * Math.min(1, d / 1.5 + 0.3); dh = Math.atan2(dx, dz); } }
@@ -141,7 +180,8 @@ export function buildFauna(scene, opts = {}) {
     const gy = a.water ? Math.max(heightAt(a.x, a.z), heightAt(a.x, a.z)) : heightAt(a.x, a.z), mv = Math.min(1, a.sp / Math.max(0.05, a.vw));
     if (a.when) a.g.visible = a.when();
     a.g.position.set(a.x, gy + (a.biped ? Math.abs(Math.sin(a.ph)) * 0.02 * mv : Math.abs(Math.sin(a.ph)) * 0.025 * mv) - 0.02, a.z); a.g.rotation.y = a.h;
-    for (const l of a.legs) l.rotation.x = Math.sin(a.ph + l.userData.ph) * (a.biped ? 0.55 : 0.42) * mv;
+    for (const l of a.legs) { const sw = Math.sin(a.ph + l.userData.ph); l.rotation.x = sw * (a.biped ? 0.55 : a.cowLegs ? 0.32 : 0.42) * mv;
+      if (l.userData.low) l.userData.low.rotation.x = (l.userData.front ? 1 : -1) * Math.max(0, Math.cos(a.ph + l.userData.ph)) * 0.55 * mv; }   // dobra o joelho/jarrete ao levantar a pata
     let pitch = 0, yaw = 0;
     if (a.st === 'graze') { pitch = a.gp + (a.peck ? Math.max(0, Math.sin(time * 9 + a.look)) * 0.5 : Math.sin(time * 1.3 + a.look) * 0.08); }
     else if (a.st === 'idle') { yaw = Math.sin(time * 0.4 + a.look) * 0.5; pitch = a.strike && Math.sin(time * 0.5 + a.look) > 0.97 ? 0.9 : 0; }
@@ -167,6 +207,17 @@ export function buildFauna(scene, opts = {}) {
   // seriema no cerrado
   const cerr = (x, z) => inHex(x, z, tD.c, 0.9) && !blocked(x, z);
   spawn(seriema, 2, { name: 'seriema', scale: 0.8, area: cerr, pick: pickIn(cerr, tD.c, 16), pg: 0.25, pw: 0.6, vw: 1.4, vg: 0.1, turn: 2.5, stride: 0.55, sep: 2, roam: 9, gp: 0.8, peck: true, dropNeck: 0.1 });
+  // garça-moura na beira da lagoa (cinza, pescoço comprido, bem maior que a garça-branca); capivaras também na lagoa
+  const moura = () => bird({ body: [0.14, 0.16, 0.32], bodyC: col(0x8e96a0), neck: [[0.12, 0.07, 0.05], [0.16, -0.03, 0.04], [0.14, 0.06, 0.036]], headC: col(0xe8e8e4), beak: [0.055, 0.15], beakC: col(0xe0b030), legL: 0.66, legC: col(0x2a2a2a),
+    crest: [0.1, 0.1, col(0x1a1a1e)], tail: [0.1, 0.2, 0.25, col(0x6e7680)] });
+  const lagoaRaso = (x, z) => { const d = lakeDist(x, z); return d > -1.4 && d < 0.2; };
+  spawn(moura, 1, { name: 'garça-moura', scale: 0.88, area: lagoaRaso, pick: pickIn(lagoaRaso, LAKE.c, LAKE.r + 2), pg: 0, pw: 0.3, vw: 0.3, vg: 0, turn: 1, stride: 0.6, sep: 1, roam: 4, gp: 0, strike: true, water: true });
+  const lagoaBeira = (x, z) => { const d = lakeDist(x, z); return d > 0.4 && d < 5 && !blocked(x, z); };
+  spawn(capybara, 3, { name: 'capivara', scale: 0.85, area: lagoaBeira, pick: pickIn(lagoaBeira, LAKE.c, LAKE.r + 4), pg: 0.6, pw: 0.25, vw: 0.5, vg: 0.04, turn: 1.2, stride: 0.7, sep: 1.0, roam: 4, gp: 0.6, dropNeck: 0.05 });
+  // bando de seriemas no cerradão: a primeira escolhe o rumo e as outras vão atrás
+  const tCd = tile('cerradao'), cerrd = (x, z) => inHex(x, z, tCd.c, 0.9) && !blocked(x, z);
+  const lead = all.length; spawn(seriema, 4, { name: 'seriema', scale: 0.8, area: cerrd, pick: pickIn(cerrd, tCd.c, 14), pg: 0.25, pw: 0.6, vw: 1.4, vg: 0.1, turn: 2.5, stride: 0.55, sep: 1.4, roam: 9, gp: 0.8, peck: true, dropNeck: 0.1 });
+  for (let k = 1; k < 4; k++) all[lead + k].follow = all[lead];
   // galinhas ciscando entre as casas
   const quintal = (x, z) => inHex(x, z, tV.c, 0.8) && !blocked(x, z, 0.2);
   spawn(() => galinha([0xf4f0e6, 0xa8502a, 0x3a3230, 0xc8803a][Math.floor(rnd() * 4)]), 6, { name: 'galinha', area: quintal, pick: pickIn(quintal, tV.c, 10), pg: 0.6, pw: 0.35, vw: 0.6, vg: 0.05, turn: 4, stride: 0.22, sep: 0.6, roam: 3, gp: 0.9, peck: true, dropNeck: 0.05 });

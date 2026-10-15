@@ -54,6 +54,18 @@ export const TABELA = {
   'joão-de-barro (na régua)': { l: [0.19, 0.28] },
   'ninho de joão-de-barro': { l: [0.22, 0.4] },
   'martim-pescador': { l: [0.3, 0.45] },
+  'venda': { h: [4.0, 6.5], l: [6, 10.5] },
+  'sobrado': { h: [7.0, 9.5], l: [6, 11] },
+  'coreto': { h: [5.0, 7.5], l: [5.5, 8] },
+  'celeiro': { h: [5.0, 7.5], l: [7, 12] },
+  'trigo': { h: [0.8, 1.3] },
+  'mandioca': { h: [1.2, 2.2] },
+  'feijão': { h: [0.35, 0.7] },
+  'pequizeiro': { h: [6, 12] },
+  'lobeira': { h: [2.5, 5] },
+  'pinheiro-bravo': { h: [8, 18] },
+  'taboa': { h: [1.2, 2.6] },
+  'garça-moura': { h: [0.95, 1.3] },
 };
 export const tag = (o, name, scale) => { o.userData.regua = name; if (scale) o.userData.reguaScale = scale; return o; };
 
