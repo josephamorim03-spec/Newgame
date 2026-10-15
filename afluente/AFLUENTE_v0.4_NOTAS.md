@@ -789,3 +789,41 @@ Os seixos são lisos e polidos.
 - A tela treme de leve, um pouco mais na peça perfeita.
 - Um anel de choque corre no chão.
 - O capim em volta é empurrado para fora numa onda que se afasta da peça. Isso se soma à fuga dos bichos, à revoada e às ondas no rio da v1.10.
+
+## Bichos que reagem ao tempo e ao território (v2.2)
+
+A cada quadro, `wxStep()` resume o ambiente em fatores:
+- noite, chuva e crepúsculo;
+- sol forte: entre cerca de 10h30 e 15h30, sem nuvem, mais forte na seca;
+- vento e seca;
+- disposição das aves e das borboletas.
+
+Cada espécie tem o horário de atividade que a voz já usava (`VOZ`, dia e noite) e uma ficha `FBEH` dizendo o que faz na chuva, no calor, à noite e na seca:
+
+| Bicho | Chuva | Sol forte | Noite |
+|---|---|---|---|
+| Tucano, martim-pescador, joão-de-barro | recolhem (somem aos poucos na copa ou no ninho) | — | dormem escondidos |
+| Seriema | vai para perto das árvores | — | dorme escondida |
+| Ema | fica parada | — | — |
+| Garça | continua pescando | — | dorme escondida |
+| Capivara | fica mais ativa e vai para a água | vai para a água | ativa |
+| Anta, tamanduá | vão para a mata | vão para a mata | ativos (anta, à noite) |
+| Lobo-guará, onça | vão para a mata | descansam | ativos (mais à noite e no crepúsculo) |
+| Gado | abrigo na borda da mata | sombra na borda da mata | dorme parado |
+| Ovelhas | as do cercado se juntam no meio | as soltas vão para a sombra | dormem de cabeça baixa |
+
+- **Gado na seca:** chega mais perto da beira do rio.
+- **Bandos de pássaros:** muito mais frequentes no amanhecer e no fim de tarde; quase nenhum na chuva, à noite ou com vento forte.
+- **Borboletas:** vão embora quando a chuva chega e não aparecem à noite nem com vento forte.
+- **Vaga-lumes:** menos na chuva.
+- **Voz:** bicho recolhido não canta.
+
+**Território:** abrigo é a borda da mata, isto é, um semicírculo na frente das árvores próximas, do lado do pasto, com o corpo inteiro testado no mapa de colisão. O gado pode encostar na copa, mas não no tronco. O abrigo fica dentro da própria peça do bicho, porque ele é desenhado com ela. Se não houver abrigo alcançável, ele fica parado.
+
+**Teste (`clima.js`, um vale com toda a fauna, 2,5 minutos de jogo em cada situação):**
+- na chuva, as aves de poleiro somem, os bandos param e a capivara vai para a água;
+- os bois abrigados vão de 2 para 4 de 12 (os outros não têm árvore na própria peça), e quanto eles andam cai de 0,92 para 0,12;
+- à noite a seriema também some, e o gado quase não anda;
+- no fim de tarde, os bois voltam a pastar.
+
+O medidor de sobreposições continua sem nenhuma.

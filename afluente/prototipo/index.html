@@ -1233,6 +1233,41 @@ const VOZ={
   tamandua:{dia:0.8,noite:0.6,iv:30,v:0.9,reach:0.8},onca:{dia:0.05,noite:1,iv:75,v:0.9,reach:2.2},
   cow:{dia:1,noite:0.3,iv:90,v:0.9,reach:1.5},sheep:{dia:1,noite:0.2,iv:70,v:0.8,reach:1.2},
 };
+// ---------- tempo e bichos (v2.2). Cada espécie tem o seu horário (dia/noite, os mesmos da voz) e o que faz quando
+// chove, quando o sol aperta e na seca. Os fatores abaixo são recalculados a cada quadro a partir do ambiente.
+const WX={night:0,rain:0,crep:0,heat:0,wind:0,seca:false,bird:1,butter:1};
+function wxStep(){const s=G.s;WX.night=ENV.night;WX.rain=ENV.rain;WX.crep=Math.max(ENV.golden,ENV.dawn);WX.wind=ENV.wind.s;WX.seca=!!(s&&s.seca);
+  // sol forte: entre ~10h30 e ~15h30, sem nuvem; na seca pesa mais
+  WX.heat=clamp01(1-Math.abs(ENV.hour-13)/2.6)*(1-ENV.night)*(1-0.7*ENV.cloud)*(1-ENV.rain)*(WX.seca?1:0.6);
+  WX.bird=(1-0.92*WX.rain)*(1-0.95*WX.night)*(1-0.6*clamp01((WX.wind-0.65)/0.35))*(1+0.7*WX.crep);
+  WX.butter=(1-WX.rain)*(1-WX.night)*(1-clamp01((WX.wind-0.55)/0.3))*(0.6+0.4*(1-WX.heat));}
+// o que cada bicho faz: chuva ('some' = recolhe na copa/ninho, 'mata' = vai para perto das árvores, 'agua' = vai para a
+// água, 'arvore' = abrigo sob a árvore, 'junto' = o rebanho se junta, 'segue' = não liga); calor; noite ('some' dorme escondido)
+const FBEH={seriema:{chuva:'mata',noite:'some'},ema:{chuva:'para'},tucano:{chuva:'some',noite:'some'},martim:{chuva:'some',noite:'some'},
+  joao:{chuva:'some',noite:'some'},garca:{chuva:'segue',noite:'some'},capivara:{chuva:'agua',calor:'agua'},anta:{chuva:'mata',calor:'mata'},
+  lobo:{chuva:'mata',calor:'para'},tamandua:{chuva:'mata',calor:'mata'},onca:{chuva:'mata',calor:'para'},
+  cow:{chuva:'arvore',calor:'arvore',seca:'agua'},sheep:{chuva:'junto',calor:'arvore'}};
+// disposição para andar (0 = parado, descansando; >1 = agitado), pelo horário da espécie e pelo tempo
+function wxAct(id){const p=VOZ[id],b=FBEH[id]||{};if(!p)return 1;let a=p.dia*(1-WX.night)+p.noite*WX.night+0.4*WX.crep*Math.max(p.dia,p.noite);
+  a*=(b.chuva==='agua'||b.chuva==='segue')?1+0.4*WX.rain:1-0.6*WX.rain;if(b.calor==='para')a*=1-0.7*WX.heat;return a;}
+// o que o bicho busca agora, pelo tempo: 'abrigo' (árvore), 'agua', 'junto', 'some', ou null
+function wxWant(id){const b=FBEH[id]||{};
+  if(WX.night>0.55&&b.noite==='some')return'some';
+  if(WX.rain>0.45&&b.chuva)return b.chuva==='mata'||b.chuva==='arvore'?'abrigo':b.chuva==='segue'||b.chuva==='para'?null:b.chuva;
+  if(WX.heat>0.35&&b.calor)return b.calor==='mata'||b.calor==='arvore'?'abrigo':b.calor==='para'?null:b.calor;
+  if(WX.seca&&b.seca)return b.seca;return null;}
+// árvores do mundo (copas que dão sombra e abrigo), do mapa de colisão
+function wxTrees(){const W=G.world;if(!W)return[];if(W.trees)return W.trees;
+  return W.trees=W.objs.filter(o=>(FOLIAGE.has(o[0])&&o[0]!=='bush')||o[0]==='buriti'||o[0].endsWith('_seco')).map(o=>[o[1],o[2]]);}
+// um lugar de abrigo (na frente do tronco) ou de água perto de (x,y), que a regra aceita e o caminho reto alcança
+function wxSpot(kind,x,y,ok,seg,maxD=1.1){
+  if(kind==='abrigo'){ // borda da mata: um semicírculo na frente de cada árvore próxima, do mais perto ao mais longe
+    const T=wxTrees().map(t=>[t,Math.hypot(t[0]-x,t[1]-y)]).filter(q=>q[1]<maxD).sort((p,q)=>p[1]-q[1]).slice(0,10);
+    for(const[[tx,ty]]of T)for(const rr of[0.17,0.24,0.32])for(let q=0;q<7;q++){const an=Math.PI*(0.08+0.84*q/6),px=tx+Math.cos(an)*rr*1.1,py=ty+Math.sin(an)*rr*0.75;
+      if(ok(px,py)&&seg(px,py))return[px,py];}}
+  if(kind==='agua'){for(let rr=0.08;rr<=maxD;rr+=0.08)for(let q=0;q<12;q++){const an=q/12*6.283,px=x+Math.cos(an)*rr,py=y+Math.sin(an)*rr*0.8,f=wflag(px,py);
+      if((f&(WB.AGUA|WB.MARGEM))&&ok(px,py)&&seg(px,py))return[px,py];}}
+  return null;}
 function act(p){return p.dia*(1-ENV.night)+p.noite*ENV.night+0.4*(ENV.golden+ENV.dawn)*Math.max(p.dia,p.noite);}
 // sorteia um ponto (peça) pelo quanto ele é ouvido: de perto, os sons vêm do que está na tela
 function pickNear(list){let tot=0;for(const p of list)tot+=p[2];let r=Math.random()*tot;for(const p of list)if((r-=p[2])<0)return p;return list[list.length-1];}
@@ -1309,7 +1344,7 @@ function ambUpdate(){
   // depois da chuva: pingos caindo das árvores
   if(now<AMB.afterRain&&L.forest.pts.length&&chance(1.5*z,dt)){const p=jit(pickNear(L.forest.pts),1);spot(p[0],p[1],0.4,CALL.plic);}
   // os bichos da fauna, cada um de onde está e no seu horário
-  for(const id in (s.fauna||{})){const ag=G.fa&&G.fa[id],p=VOZ[id];if(!ag||!p)continue;
+  for(const id in (s.fauna||{})){const ag=G.fa&&G.fa[id],p=VOZ[id];if(!ag||!p||(ag.vis!=null&&ag.vis<0.3))continue;
     const r=act(p)*(1-rain*0.7)*(seca&&id!=='onca'?0.7:1);if(chance(r/p.iv,dt))spot(ag.x,ag.y,p.v,CALL[id],{reach:p.reach});}
   // gado e ovelhas (cada um conta; poucos falam ao mesmo tempo)
   // (num rebanho grande cada um fala menos, para não virar coro)
@@ -1662,6 +1697,18 @@ function drawAnimals(g,x,y,s,k,dyn,t,live){
         for(let q=0;q<10;q++){const an=base+(q%2?1:-1)*Math.floor((q+1)/2)*0.4,L=a.rad*(0.6+0.4*Math.random()),px=a.hx+Math.cos(an)*L,py=a.hy+Math.sin(an)*L*0.6;
           if(wbody(px,py,a)&&wbodySeg(a.x,a.y,px,py,a)){a.tx=px;a.ty=py;a.mode='anda';a.flip=px<a.x;a.boost=t+1400;break;}}}}}
     if(!RM){
+      const want=wxWant(nm),ac=wxAct(nm);
+      if(a.mode==='para'&&t>a.until&&ac<0.3)a.until=t+6000+Math.random()*6000; // noite: dorme parado
+      if(a.mode==='para'&&t>a.until&&a.rule==='gado'&&(want==='abrigo'||want==='agua')){
+        const b2={...a,rule:want==='abrigo'?'abrigo':a.rule};
+        const inT=(px,py)=>{const dx=Math.abs(px-wx),dy=Math.abs(py-wy);return dx<=0.7&&dx*0.5+dy*0.866<=0.72;}; // dentro da própria peça (é desenhado com ela)
+        const p=wxSpot(want,a.x,a.y,(px,py)=>inT(px,py)&&wbody(px,py,b2),(px,py)=>wbodySeg(a.x,a.y,px,py,b2),1.2);
+        if(p&&Math.hypot(p[0]-a.x,p[1]-a.y)>0.04){a.tx=p[0];a.ty=p[1];a.mode='anda';a.flip=p[0]<a.x;}else a.until=t+5000+Math.random()*4000;}
+      if(a.mode==='para'&&t>a.until&&a.rule==='cercado'&&want==='junto'){ // rebanho junto, perto do meio do cercado
+        const pen=G.world&&G.world.pens.find(([px,py,hw,hd])=>Math.abs(a.hx-px)<=hw*1.2&&Math.abs(a.hy-py)<=hd*2);
+        if(pen){for(let q=0;q<8;q++){const px=pen[0]+(Math.random()-0.5)*pen[2]*0.5,py=pen[1]+(Math.random()-0.5)*pen[3]*0.5;
+            if(wbody(px,py,a)&&wbodySeg(a.x,a.y,px,py,a)){a.tx=px;a.ty=py;a.mode='anda';a.flip=px<a.x;break;}}}
+        if(a.mode==='para')a.until=t+5000+Math.random()*4000;}
       if(a.mode==='para'&&t>a.until){ // escolhe um destino livre perto de casa
         for(let q=0;q<8;q++){const ang2=Math.random()*Math.PI*2,rr=a.rad*(0.3+0.7*Math.random()),px=a.hx+Math.cos(ang2)*rr,py=a.hy+Math.sin(ang2)*rr*0.6;
           if(Math.hypot(px-a.x,py-a.y)<0.03)continue;
@@ -1669,10 +1716,10 @@ function drawAnimals(g,x,y,s,k,dyn,t,live){
           let crowd=false;for(const o2 of DYNST.values())if(o2!==a&&!o2.dead&&o2.dim&&Math.abs(o2.tx-px)<(o2.dim[0]+a.dim[0])*(a.rule==='cercado'?0.3:0.5)&&Math.abs(o2.ty-py)<(a.rule==='cercado'?0.03:0.07))crowd=true;
           if(!crowd&&wbody(px,py,a)&&wbodySeg(a.x,a.y,px,py,a)){a.tx=px;a.ty=py;a.mode='anda';a.flip=px<a.x;break;}}
         if(a.mode==='para')a.until=t+2000+Math.random()*3000;}
-      if(a.mode==='anda'){const dx=a.tx-a.x,dy=a.ty-a.y,d=Math.hypot(dx,dy),st=(DYNSP[nm]||0.05)*(a.boost&&t<a.boost?3:1)*dt/1000;
+      if(a.mode==='anda'){const dx=a.tx-a.x,dy=a.ty-a.y,d=Math.hypot(dx,dy),st=(DYNSP[nm]||0.05)*(a.boost&&t<a.boost?3:Math.max(0.4,Math.min(1.2,ac)))*dt/1000;
         if(d<=st){a.x=a.tx;a.y=a.ty;a.mode='para';a.until=t+(nm==='cow'?5000:3000)+Math.random()*6000;}else{a.x+=dx/d*st;a.y+=dy/d*st;}}}
     const moving=a.mode==='anda',bob=moving?-Math.abs(Math.sin(t/95+i))*s*0.012:0;
-    let name=nm;if(nm==='sheep')name=moving?'sheep_a':(Math.sin(t/900+i*2)>-0.4?'sheep_b':'sheep_a');
+    let name=nm;if(nm==='sheep')name=moving?'sheep_a':(WX.night>0.6||Math.sin(t/900+i*2)>-0.4?'sheep_b':'sheep_a');
     Q.push([a.y-wy,1,[name,(a.x-wx),(a.y-wy),sc*(DYNSC[nm]??0.8)*(a.rule==='cercado'?0.85:1),a.flip,bob]]);}
   // enfeites e bichos juntos, de trás para a frente
   Q.sort((p,q)=>p[0]-q[0]);
@@ -1738,6 +1785,7 @@ const WRULE={
   terra:f=>(f&WB.TERRA)&&!(f&(WB.AGUA|WB.BLOQ|WB.OCLU|WB.CERC)),
   gado:f=>(f&WB.TERRA)&&!(f&(WB.AGUA|WB.BLOQ|WB.OCLU|WB.CERC|WB.ROCA)),
   cercado:f=>(f&WB.CERC)&&!(f&(WB.BLOQ|WB.AGUA)),
+  abrigo:f=>(f&WB.TERRA)&&!(f&(WB.AGUA|WB.BLOQ|WB.CERC|WB.ROCA)), // gado sob a copa (v2.2)
   margem:f=>(f&WB.TERRA)&&(f&(WB.MARGEM|WB.AGUA))&&!(f&(WB.BLOQ|WB.OCLU)),          // capivara: na beira e na água rasa
   vau:f=>(f&WB.TERRA)&&(f&(WB.MARGEM|WB.AGUA))&&!(f&(WB.BLOQ|WB.OCLU)),             // garça: anda no raso
 };
@@ -1759,7 +1807,7 @@ function wbody(x,y,a){const R2=WRULE[a.rule];if(!R2||!G.world)return true;
   const m=a.rule==='cercado'?0:0.025;
   for(const dy of ys)for(const fx of[-0.5,-0.25,0,0.25,0.5])if(!R2(wflag(x+fx*(w+2*m),y+dy)))return false;return true;}
 function wbodySeg(ax,ay,bx,by,a){const d=Math.hypot(bx-ax,by-ay),n=Math.max(1,Math.ceil(d/WH));
-  for(let q=0;q<=n;q++){const u=q/n;if(!wbody(ax+(bx-ax)*u,ay+(by-ay)*u,a))return false;}return true;}
+  for(let q=1;q<=n;q++){const u=q/n;if(!wbody(ax+(bx-ax)*u,ay+(by-ay)*u,a))return false;}return true;}
 function wbodyNear(x,y,a,maxR=0.45){if(wbody(x,y,a))return[x,y];
   for(let rr=WH;rr<=maxR;rr+=WH)for(let q=0;q<16;q++){const t=q/16*Math.PI*2,px=x+Math.cos(t)*rr,py=y+Math.sin(t)*rr*0.8;if(wbody(px,py,a))return[px,py];}
   return null;}
@@ -2228,7 +2276,7 @@ function nightLights(g,sz,t){
     g.globalAlpha=ENV.night*0.32*fl;g.drawImage(tex,px-r,py-r*0.7,r*2,r*1.4);
     g.globalAlpha=ENV.night*0.85;g.fillStyle='#ffe2a0';const d=Math.max(1,sz*0.022);g.fillRect(px-d/2,py-d/2,d,d);}
   g.restore();
-  if(!RM&&Math.random()<ENV.night*0.25){const[x0,x1,y0,y1]=G.bb||[-3,3,-3,3];
+  if(!RM&&Math.random()<ENV.night*0.25*(1-0.85*ENV.rain)){const[x0,x1,y0,y1]=G.bb||[-3,3,-3,3];
     emit('~#d8ff8a',x0+Math.random()*(x1-x0),y0+Math.random()*(y1-y0),1,{ang:-Math.PI/2,spread:6,v:0.12,life:2600,size:0.06,alpha:0.9,add:true});}
 }
 
@@ -2503,7 +2551,8 @@ function drawBirds(g,sz,t){
   if(RM)return;
   if(!G.nextFlock)G.nextFlock=t+6000+Math.random()*8000;
   const[bx0,bx1,by0,by1]=G.bb||[-4,4,-4,4];
-  if(t>G.nextFlock){G.nextFlock=t+(G.calm?12000:22000)+Math.random()*20000;
+  if(t>G.nextFlock&&Math.random()>Math.min(0.97,WX.bird)){G.nextFlock=t+6000+Math.random()*6000;}
+  else if(t>G.nextFlock){G.nextFlock=t+((G.calm?12000:22000)+Math.random()*20000)/Math.max(0.5,Math.min(1.6,WX.bird));
     const arara=Math.random()<0.35,dir=Math.random()<0.5?1:-1,n=arara?2:3+Math.floor(Math.random()*5);
     const gy=by0-1+Math.random()*(by1-by0+2),alt=arara?0.9+Math.random()*0.5:1.4+Math.random()*1.0,sp=arara?1.0:0.85,drift=(Math.random()-0.5)*0.25;
     for(let i=0;i<n;i++)BIRDS.push({t0:t,sx:(dir>0?bx0-5:bx1+5)-dir*(arara?i*0.35:Math.abs(i-n/2)*0.3+i*0.12),gy:gy+(arara?i*0.18:(i-n/2)*0.22),
@@ -2818,6 +2867,12 @@ function faunaStepAgents(s,t,dt){
           for(let q=0;q<12;q++){const an=base+(q%2?1:-1)*Math.floor((q+1)/2)*0.35,L=0.4+0.4*Math.random(),px=a.x+Math.cos(an)*L,py=a.y+Math.sin(an)*L*0.7;
             if(wok(px,py,rule,r)&&wseg(a.x,a.y,px,py,rule,r)){a.tx=px;a.ty=py;a.mode='anda';a.flip=px<a.x;a.boost=t+1700;break;}}}
         else{G.hop=G.hop||{};G.hop[id]=t;}}}}
+    // tempo (v2.2): recolhido some aos poucos (copa, ninho, toca); parado quando é hora de descansar; abrigo e água
+    const want=wxWant(id),ac=wxAct(id);a.vis=(a.vis??1)+(((want==='some')?0:1)-(a.vis??1))*Math.min(1,dt/700);
+    if(a.mode==='para'&&t>a.until&&!RM&&v>0&&(want==='abrigo'||want==='agua')){const rule=FRULE[id]||'terra',r=fRad(id);
+      const p=wxSpot(want,a.x,a.y,(px,py)=>wok(px,py,rule,r),(px,py)=>wseg(a.x,a.y,px,py,rule,r),1.6);
+      if(p&&Math.hypot(p[0]-a.x,p[1]-a.y)>0.05){a.tx=p[0];a.ty=p[1];a.mode='anda';a.flip=p[0]<a.x;}else a.until=t+4000+Math.random()*4000;}
+    if(a.mode==='para'&&t>a.until&&!RM&&(ac<0.25||want==='some'))a.until=t+5000+Math.random()*5000; // descansa
     if(a.mode==='para'&&t>a.until&&!RM){
       if(v>0){const c=faunaCand(id,s);if(c.keys.length){
           // o próximo ponto: uma peça do hábitat por perto (até 2,5 casas)
@@ -2830,7 +2885,7 @@ function faunaStepAgents(s,t,dt){
       else{a.mode='anda';a.until=t+8/7*1000;} // poleiro: um ciclo de "anda" (pulinho ou cabeça) no lugar
     }
     if(a.mode==='anda'){
-      if(v>0){const dx=a.tx-a.x,dy=a.ty-a.y,d=Math.hypot(dx,dy),st=v*(a.boost&&t<a.boost?2.6:1)*dt/1000;
+      if(v>0){const dx=a.tx-a.x,dy=a.ty-a.y,d=Math.hypot(dx,dy),st=v*(a.boost&&t<a.boost?2.6:Math.max(0.35,Math.min(1.4,ac)))*dt/1000;
         if(d<=st){a.x=a.tx;a.y=a.ty;a.mode='para';a.until=t+3500+Math.random()*6000;a.cyc=t;}
         else{a.x+=dx/d*st;a.y+=dy/d*st;}}
       else if(t>a.until){a.mode='para';a.until=t+4000+Math.random()*6000;a.cyc=t;}
@@ -2852,9 +2907,10 @@ function drawFauna(g,s,sz,t,still){
     const X=a.x*sz+cam.x,Y=a.y*sz+cam.y;let dy=0,sc=1;
     if(!still&&!RM){const p0=G.fpop[id];if(p0){const u=(t-p0)/520;if(u<0)continue;if(u<1)sc=easeOutBack(u);}
       const hp=G.hop&&G.hop[id];if(hp&&t>hp&&t<hp+520)dy=-Math.sin(Math.PI*(t-hp)/520)*sz*0.18;}
+    const vis=still?1:(a.vis??1);if(vis<0.02)continue;
     const m=faunaReady&&FATLAS[still?`${id}_para0`:faunaFrame(a,t)];
     if(m){const f=sz*fScale(id)*sc/m[6];
-      g.save();g.translate(X,Y);if(a.flip)g.scale(-1,1);
+      g.save();g.globalAlpha*=vis;g.translate(X,Y);if(a.flip)g.scale(-1,1);
       g.drawImage(FSHADOW,m[0],m[1],m[2],m[3],-m[4]*f,-m[5]*f,m[2]*f,m[3]*f);
       g.drawImage(FBODY,m[0],m[1],m[2],m[3],-m[4]*f,-m[5]*f+dy,m[2]*f,m[3]*f);g.restore();}
     else{g.fillStyle=css(LIGHT.shadow,0.18);g.beginPath();g.ellipse(X,Y,sz*0.3*sc,sz*0.07*sc,0,0,7);g.fill();
@@ -2948,7 +3004,7 @@ function aliveOf(k,t){return G.s.alive.has(k)&&fillOf(k,t)>0?1:0;}
 function draw(t){
   const s=G.s;if(!s||!(W.w>20&&W.h>20&&cam.s>1))return; // sem tamanho (layout ainda não pronto) não desenha
   if(G.shake){const u=(t-G.shake.t0)/280;if(u>=1){cv.style.transform='';G.shake=null;}else if(u>0){const a=G.shake.amp*(1-u)*(1-u);cv.style.transform=`translate(${(a*0.35*Math.sin(u*31)).toFixed(2)}px,${(a*Math.sin(u*44)).toFixed(2)}px)`;}}
-  envStep(t);
+  envStep(t);wxStep();
   if(G.calm)calmCam(t);
   cam.s+=(cam.ts-cam.s)*0.18;cam.x+=(cam.tx-cam.x)*0.18;cam.y+=(cam.ty-cam.y)*0.18;
   const g=ctx,sz=cam.s;patFrame++;G.chimNext=[];G.lightsNext=[];G.rebuild=3;
@@ -3021,7 +3077,8 @@ function draw(t){
     cloudShadows(g,s,sz,t);
     // borboletas sobre pastos floridos e bosques de ipê
     G.bf=G.bf||[];
-    if(atlasReady&&G.flowerSpots.length&&G.bf.length<Math.min(5,G.flowerSpots.length)&&Math.random()<dtc/1400)
+    if(WX.rain>0.3)for(const b of G.bf)b.life=Math.min(b.life,t-b.t0+1200);
+    if(atlasReady&&G.flowerSpots.length&&G.bf.length<Math.min(5,G.flowerSpots.length)*WX.butter&&Math.random()<dtc/1400*WX.butter)
       G.bf.push({home:G.flowerSpots[Math.floor(Math.random()*G.flowerSpots.length)],t0:t,ph:Math.random()*6.28,life:9000+Math.random()*5000});
     const m=ATLAS.fx_butterfly;
     G.bf=G.bf.filter(b=>t-b.t0<b.life);
