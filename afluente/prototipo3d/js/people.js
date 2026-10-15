@@ -11,6 +11,7 @@ import { mat, paint, merge, col } from './props.js';
 import { tag } from './regua.js';
 import { LAYOUT, TILES, heightAt, waterDist, inHex, RIVER, SPRING, POOL_R } from './world.js';
 import { chitaTexture, xadrezTexture, tramaTexture } from './textures.js';
+import { buildBody, Cloth } from './body.js';
 
 const rnd = (() => { let a = 31337; return () => { a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; })();
 const pick = a => a[Math.floor(rnd() * a.length)];
@@ -27,72 +28,51 @@ export function buildPeople(scene, { mobile = false } = {}) {
     xadrez: [['#b83a2a', '#1e1a18', '#f0e8d8'], ['#2f5a9a', '#14202e', '#e8eef4'], ['#3a7a4a', '#1a2a1a', '#f0d070'], ['#8a5a2a', '#2a1a10', '#f0e0c0']].map(([a, b, c], i) => T(xadrezTexture(a, b, c, 70 + i))) };
   const people = [], updaters = [];
 
-  // ---------- montar uma pessoa (altura de referência 1,70 m; a escala dá a altura de cada um)
+  // ---------- montar uma pessoa: corpo de malha única com esqueleto (body.js), saia e avental de pano, cabelo, chapéu e ferramenta
+  const clothes = [];
   function person(s) {
-    const g = new THREE.Group(), parts = new Map(), add = (pivot, geo, m, c) => { if (!parts.has(pivot)) parts.set(pivot, new Map()); const pm = parts.get(pivot); if (!pm.has(m)) pm.set(m, []); pm.get(m).push(paint(geo, c)); };
-    const pivot = (parent, x, y, z) => { const p = new THREE.Group(); p.position.set(x, y, z); parent.add(p); return p; };
-    const f = s.sex === 'f', bw = s.build, skin = col(s.skin), hair = col(s.hairColor), shoe = col(s.shoes || 0x3a2a20);
-    const top = s.top, topM = top.mat, topC = col(top.color || 0xffffff), botM = s.bottom.mat, botC = col(s.bottom.color || 0xffffff);
-    const pelvis = pivot(g, 0, 0.95, 0), spine = pivot(pelvis, 0, 0.05, 0), head = pivot(spine, 0, 0.47, 0.0);
-    // tronco e quadril
-    add(spine, new THREE.CapsuleGeometry(0.15, 0.2, 4, 12).scale((f ? 1.05 : 1.22) * bw, 1, 0.66 * bw).translate(0, 0.25, 0), topM, topC);
-    if (f) add(spine, ell(0.13 * bw, 0.06, 0.06, 0, 0.3, 0.07), topM, topC);
-    add(pelvis, ell((f ? 0.17 : 0.155) * bw, 0.12, 0.11 * bw, 0, 0.0, 0), s.dress ? topM : botM, s.dress ? topC : botC);
-    add(spine, new THREE.CylinderGeometry(0.048, 0.055, 0.1, 10).translate(0, 0.5, 0), MAT.liso, skin);
-    if (s.skirt) { const L = s.skirt, prof = [new THREE.Vector2(0.16 * bw, 0.06), new THREE.Vector2(0.2 * bw, -0.15), new THREE.Vector2((0.24 + L * 0.12) * bw, -L)].reverse();   // de baixo para cima: a face de fora fica para fora
-      add(pelvis, new THREE.LatheGeometry(prof, 14), s.dress ? topM : botM, s.dress ? topC : botC); }
-    if (s.apron) { const r = (0.21 + (s.skirt || 0) * 0.06) * bw; add(pelvis, new THREE.CylinderGeometry(r, r * 0.9 + 0.03, 0.46, 10, 1, true, -0.75, 1.5).scale(1, 1, 0.8).translate(0, -0.2, 0.01), MAT.liso, col(0xf2ede2));
-      add(pelvis, new THREE.CylinderGeometry(0.162 * bw, 0.162 * bw, 0.035, 14).scale(1, 1, 0.74).translate(0, 0.07, 0), MAT.liso, col(0xf2ede2)); }
-    if (s.belt) add(pelvis, new THREE.CylinderGeometry(0.158 * bw, 0.158 * bw, 0.04, 14).scale(1, 1, 0.72).translate(0, 0.07, 0), MAT.liso, col(0x3a2418));
-    // cabeça: rosto, orelhas, nariz, olhos, sobrancelhas, boca; cabelo e chapéu
-    add(head, ell(0.092, 0.112, 0.102, 0, 0.11, 0.01), MAT.liso, skin);
-    for (const sx of [-1, 1]) { add(head, ell(0.018, 0.03, 0.012, sx * 0.093, 0.1, 0.0, 6), MAT.liso, skin); add(head, ell(0.012, 0.014, 0.008, sx * 0.034, 0.125, 0.095, 6), MAT.liso, col(0x1a1410));
-      add(head, new THREE.BoxGeometry(0.03, 0.007, 0.01).translate(sx * 0.034, 0.148, 0.098), MAT.liso, hair); }
-    add(head, ell(0.016, 0.024, 0.02, 0, 0.098, 0.108, 6), MAT.liso, skin.clone().multiplyScalar(0.95)); add(head, new THREE.BoxGeometry(0.03, 0.006, 0.006).translate(0, 0.062, 0.1), MAT.liso, col(0x7a3a30));
-    const hs = s.hair;
-    if (hs === 'curto') add(head, ell(0.097, 0.07, 0.105, 0, 0.165, 0.0), MAT.liso, hair);
-    if (hs === 'careca') add(head, ell(0.097, 0.05, 0.1, 0, 0.12, -0.02).scale(1, 1, 1), MAT.liso, hair.clone().lerp(skin, 0.3));
-    if (hs === 'crespo') add(head, ell(0.12, 0.1, 0.12, 0, 0.17, -0.01), MAT.liso, hair);
-    if (hs === 'coque') { add(head, ell(0.098, 0.075, 0.108, 0, 0.16, -0.005), MAT.liso, hair); add(head, ell(0.05, 0.05, 0.05, 0, 0.19, -0.1), MAT.liso, hair); }
-    if (hs === 'longo') { add(head, ell(0.1, 0.08, 0.11, 0, 0.16, -0.005), MAT.liso, hair); add(head, ell(0.09, 0.16, 0.05, 0, 0.0, -0.07), MAT.liso, hair); }
-    if (hs === 'tranca') { add(head, ell(0.099, 0.075, 0.108, 0, 0.16, -0.005), MAT.liso, hair); for (let k = 0; k < 4; k++) add(head, ell(0.025, 0.035, 0.025, 0, 0.06 - k * 0.06, -0.1 - k * 0.006, 6), MAT.liso, hair); }
-    const hat = s.hat;
-    if (hat === 'palha') { add(head, new THREE.CylinderGeometry(0.21, 0.22, 0.015, 18).translate(0, 0.205, 0), MAT.liso, col(0xe2cf8a)); add(head, new THREE.CylinderGeometry(0.085, 0.1, 0.09, 14).translate(0, 0.255, 0), MAT.liso, col(0xe2cf8a));
-      add(head, new THREE.CylinderGeometry(0.101, 0.101, 0.02, 14).translate(0, 0.22, 0), MAT.liso, col(0x8a3a2a)); }
-    if (hat === 'couro') { const br = new THREE.CylinderGeometry(0.19, 0.19, 0.02, 18); const p = br.attributes.position; for (let i = 0; i < p.count; i++) { const x = p.getX(i), z = p.getZ(i); p.setY(i, p.getY(i) + Math.max(0, Math.abs(z) / 0.19 - 0.2) * 0.07 - (Math.abs(x) / 0.19) * 0.01); }
-      br.computeVertexNormals(); add(head, br.translate(0, 0.21, 0), MAT.liso, col(0x7a4a2a)); add(head, new THREE.SphereGeometry(0.1, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2).scale(1, 0.95, 1.05).translate(0, 0.2, 0), MAT.liso, col(0x6a3a22)); }
-    if (hat === 'bone') { add(head, new THREE.SphereGeometry(0.102, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2).translate(0, 0.15, 0), MAT.liso, col(s.hatColor || 0x2f6aa0)); add(head, new THREE.BoxGeometry(0.14, 0.012, 0.1).translate(0, 0.152, 0.13), MAT.liso, col(s.hatColor || 0x2f6aa0)); }
-    if (hat === 'lenco') { add(head, new THREE.SphereGeometry(0.104, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.55).translate(0, 0.12, -0.005), topM === MAT.liso ? MAT.liso : MAT.chita[s.lenco || 0], col(s.hatColor || 0xffffff));
-      add(head, ell(0.04, 0.03, 0.03, 0, 0.11, -0.11, 6), MAT.chita[s.lenco || 0], col(0xffffff)); }
-    // braços: manga (curta, longa ou arregaçada), antebraço e mão
-    const arms = [-1, 1].map(sx => { const sh = pivot(spine, sx * (f ? 0.17 : 0.2) * bw, 0.41, 0); const longS = s.sleeves === 'longa';
-      add(sh, cap(f ? 0.04 : 0.047, 0.2, 0, 0.02, 0), topM, topC); if (s.sleeves !== 'nenhuma') add(sh, cap(f ? 0.048 : 0.055, s.sleeves === 'curta' ? 0.04 : 0.12, 0, 0.03, 0), topM, topC);
-      const el = pivot(sh, 0, -0.29, 0); add(el, cap(0.036, 0.2, 0, 0.0, 0), longS ? topM : MAT.liso, longS ? topC : skin); add(el, ell(0.038, 0.05, 0.028, 0, -0.29, 0.005, 8), MAT.liso, skin);
-      return { sh, el }; });
-    // pernas: calça (ou pele/meia sob a saia), joelho, canela e calçado
-    const legs = [-1, 1].map(sx => { const hp = pivot(pelvis, sx * 0.085 * bw, -0.05, 0), under = s.skirt && s.skirt > 0.4;
-      add(hp, cap(0.07 * bw, 0.28, 0, 0.0, 0), under ? MAT.liso : botM, under ? skin : botC);
-      const kn = pivot(hp, 0, -0.41, 0), shin = s.skirt ? (s.skirt > 0.8 ? botC : skin) : botC;
-      add(kn, cap(0.05, 0.3, 0, 0.02, 0), s.skirt && s.skirt <= 0.8 ? MAT.liso : (s.skirt ? (s.dress ? topM : botM) : botM), s.skirt && s.skirt <= 0.8 ? skin : shin);
-      add(kn, new THREE.BoxGeometry(0.085, 0.07, 0.21).translate(0, -0.44, 0.04), MAT.liso, shoe); return { hp, kn }; });
+    const g = new THREE.Group(), texOf = m => (m && m !== MAT.trama && m.map) ? m.map : null;
+    const spec = { ...s, top: { color: s.top.color, tex: texOf(s.top.mat) }, bottom: { color: s.bottom.color, tex: texOf(s.bottom.mat) },
+      pants: s.sex === 'c' && !s.dress ? 'bermuda' : 'longa', beard: s.sex === 'm' ? (s.beard ?? pick(['bigode', null, null, 'barba', 'bigode'])) : null,
+      lencoColor: pick([0xc83a2a, 0x2f6aa0, 0xe0a020, 0xf4efe6, 0x7a3a8a]) };
+    const body = buildBody(spec); g.add(body.mesh);
+    const { hips: pelvis, spine, head } = body, arms = body.arms.map(a => ({ sh: a.sh, el: a.el, ha: a.ha })), legs = body.legs.map(l => ({ hp: l.hp, kn: l.kn, ft: l.ft }));
+    const lisoT = (geo, c) => { const m = new THREE.Mesh(geo, MAT.liso); paint(geo, col(c)); m.castShadow = true; return m; };
     // ferramenta na mão direita
-    const tool = new THREE.Group(); arms[1].el.add(tool); tool.position.set(0, -0.29, 0.02);
-    const T2 = (geo, c) => add(tool, geo, MAT.liso, col(c));
-    if (s.tool === 'enxada') { T2(new THREE.CylinderGeometry(0.018, 0.018, 1.3, 6).rotateX(Math.PI / 2).translate(0, 0, 0.35), 0x9a7a52); T2(new THREE.BoxGeometry(0.2, 0.17, 0.012).translate(0, -0.08, 1.0), 0x6a6e72); }
-    if (s.tool === 'vassoura') { T2(new THREE.CylinderGeometry(0.014, 0.014, 1.25, 6).translate(0, -0.45, 0), 0xb08a5a); T2(new THREE.ConeGeometry(0.12, 0.28, 8).translate(0, -1.15, 0), 0x6a4a2a); }
-    if (s.tool === 'vara') { const v = new THREE.CylinderGeometry(0.008, 0.016, 2.6, 5).translate(0, 1.3, 0).rotateX(0.75); T2(v, 0x8a7a4a); }
-    if (s.tool === 'balaio') { T2(new THREE.CylinderGeometry(0.2, 0.15, 0.25, 12, 1, true).translate(0.18, -0.08, 0), 0xb08a52); }
-    let lata = null; if (s.tool === 'lata') { lata = new THREE.Group(); head.add(lata); lata.position.set(0, 0.24, 0); add(lata, new THREE.CylinderGeometry(0.13, 0.13, 0.32, 14).translate(0, 0.16, 0), MAT.liso, col(0xb8bcc0)); add(lata, new THREE.TorusGeometry(0.09, 0.025, 6, 12).rotateX(Math.PI / 2), MAT.liso, col(0xe8e0d0)); }
-    // juntar por articulação e por tecido
-    for (const [pv, pm] of parts) for (const [m, gs] of pm) { const geo = merge(gs.map(x => { if (!x.attributes.uv) x.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(x.attributes.position.count * 2), 2)); return x; }), K);
-      geo.computeVertexNormals(); const me = new THREE.Mesh(geo, m); me.castShadow = pv === spine || pv === pelvis || pv === head; me.receiveShadow = true; if (pv === tool || pv === lata) me.userData.noRegua = true; pv.add(me); }   /* ferramenta e lata não contam na altura */
-    g.scale.setScalar(s.h / 1.70); if (s.sex === 'c') head.scale.setScalar(1.22);
-    const P = { g, pelvis, spine, head, arms, legs, tool, lata, s, x: 0, z: 0, h: 0, ph: rnd() * 6, t: 0, st: 'post', sit: 0 };
+    const tool = new THREE.Group(); arms[1].ha.add(tool); tool.position.set(0, -0.05, 0.01);
+    const T2 = (geo, c) => tool.add(lisoT(geo, c));
+    if (s.tool === 'enxada') { T2(new THREE.CylinderGeometry(0.016, 0.016, 1.3, 6).rotateX(Math.PI / 2).translate(0, 0, 0.35), 0x9a7a52); T2(new THREE.BoxGeometry(0.2, 0.17, 0.012).translate(0, -0.08, 1.0), 0x6a6e72); }
+    if (s.tool === 'vassoura') { T2(new THREE.CylinderGeometry(0.013, 0.013, 1.25, 6).translate(0, -0.45, 0), 0xb08a5a); T2(new THREE.ConeGeometry(0.12, 0.28, 8).translate(0, -1.15, 0), 0x6a4a2a); }
+    if (s.tool === 'vara') T2(new THREE.CylinderGeometry(0.007, 0.015, 2.6, 5).translate(0, 1.3, 0).rotateX(0.75), 0x8a7a4a);
+    if (s.tool === 'balaio') T2(new THREE.CylinderGeometry(0.2, 0.15, 0.25, 14, 1, true).translate(0.18, -0.08, 0), 0xb08a52);
+    tool.traverse(o => { o.userData.noRegua = true; });
+    let lata = null; if (s.tool === 'lata') { lata = new THREE.Group(); head.add(lata); lata.position.set(0, 0.24, 0); lata.add(lisoT(new THREE.CylinderGeometry(0.13, 0.13, 0.32, 16).translate(0, 0.16, 0), 0xb8bcc0), lisoT(new THREE.TorusGeometry(0.09, 0.025, 6, 14).rotateX(Math.PI / 2), 0xe8e0d0));
+      lata.traverse(o => { o.userData.noRegua = true; }); }
+    // saia (pano) e avental (pano por cima, só na frente)
+    const cl = [];
+    if (s.skirt) { const len = s.sex === 'c' ? 0.36 : s.skirt <= 0.56 ? 0.5 : s.skirt <= 0.7 ? 0.62 : 0.82, bw = body.bw;
+      const t = texOf(s.dress ? s.top.mat : s.bottom.mat), tex = t ? Object.assign(t.clone(), { needsUpdate: true }) : null; if (tex) { tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.repeat.set(1, 1); }
+      cl.push(Cloth({ strips: mobile ? 16 : 22, rows: 8, len, r0x: 0.14 * bw, r0z: 0.105 * bw, flare: 0.13 + len * 0.08, tex, color: tex ? 0xffffff : (s.dress ? s.top.color : s.bottom.color) })); }
+    if (s.apron) cl.push(Cloth({ strips: 8, rows: 6, len: (s.skirt ? 0.5 : 0.55), r0x: 0.155 * body.bw, r0z: 0.125 * body.bw, flare: 0.08, arc: [Math.PI / 2 - 0.8, Math.PI / 2 + 0.8], color: 0xf2ede2, margin: 0.055, drop: -0.02, minK: 0.92 }));
+    for (const c of cl) { scene.add(c.mesh); clothes.push(c); }
+    g.scale.setScalar(s.h / 1.70);
+    const P = { g, pelvis, spine, head, arms, legs, tool, lata, s, cloth: cl, waistY: body.waistY, bw: body.bw, x: 0, z: 0, h: 0, ph: rnd() * 6, t: 0, st: 'post', sit: 0 };
     P.rest = () => { const saved = [pelvis.position.y, spine.rotation.x, ...arms.flatMap(a => [a.sh.rotation.x, a.el.rotation.x]), ...legs.flatMap(l => [l.hp.rotation.x, l.kn.rotation.x])];
       pelvis.position.y = 0.95; spine.rotation.x = 0; for (const a of arms) a.sh.rotation.x = a.el.rotation.x = 0; for (const l of legs) l.hp.rotation.x = l.kn.rotation.x = 0;
       return () => { let i = 0; pelvis.position.y = saved[i++]; spine.rotation.x = saved[i++]; for (const a of arms) { a.sh.rotation.x = saved[i++]; a.el.rotation.x = saved[i++]; } for (const l of legs) { l.hp.rotation.x = saved[i++]; l.kn.rotation.x = saved[i++]; } }; };
     g.userData.reguaRest = P.rest; tag(g, s.sex === 'c' ? 'criança' : s.sex === 'f' ? 'mulher' : 'homem');
     scene.add(g); return P;
+  }
+  // o pano anda junto: presa na cintura, bate nas pernas e no quadril, cai no chão, o vento sopra
+  const _a = new THREE.Vector3(), _b = new THREE.Vector3(), _c = new THREE.Vector3(), _d = new THREE.Vector3(), _e = new THREE.Vector3(), _f = new THREE.Vector3(), _h1 = new THREE.Vector3(), _h2 = new THREE.Vector3();
+  function stepCloth(p, dt) {
+    if (!p.cloth.length) return; const vis = p.g.visible; for (const c of p.cloth) c.mesh.visible = vis; if (!vis) { for (const c of p.cloth) c.reset(); return; }
+    p.g.updateMatrixWorld(true); const sc = p.g.scale.x, bw = p.bw;
+    p.legs[0].hp.getWorldPosition(_a); p.legs[0].kn.getWorldPosition(_b); p.legs[0].ft.getWorldPosition(_c); p.legs[1].hp.getWorldPosition(_d); p.legs[1].kn.getWorldPosition(_e); p.legs[1].ft.getWorldPosition(_f);
+    _h1.copy(_a).lerp(_d, -0.1); _h2.copy(_d).lerp(_a, -0.1); _h1.y += 0.03 * sc; _h2.y += 0.03 * sc;
+    const caps = [[_a, _b, 0.09 * bw * sc], [_b, _c, 0.062 * sc], [_d, _e, 0.09 * bw * sc], [_e, _f, 0.062 * sc], [_h1, _h2, 0.125 * bw * sc]];
+    const wv = U.uWindBase.value * (1 + U.uWindIu.value * 0.6), wd = U.uWindDir.value, wind = { x: wd.x * wv * wv * 0.08, z: wd.y * wv * wv * 0.08 };
+    for (const c of p.cloth) c.step(Math.min(dt, 1 / 30), p.pelvis.matrixWorld, p.waistY, caps, heightAt, sc, wind);
   }
 
   // ---------- quem é quem
@@ -189,7 +169,7 @@ export function buildPeople(scene, { mobile = false } = {}) {
           case 'pescar': set(p, { py: 0.18, hp: [-1.5, -1.4], kn: [0.35, 0.3], sh: [-0.3, -0.9 + Math.sin(t * 0.7) * 0.05], el: [-0.5, -0.6], sp: -0.1, k }); p.h = p.face; break;
         } }
       const gy = p.job === 'sentar' && p.st === 'post' ? groundAtHouse(L.houses[0]) : heightAt(p.x, p.z);
-      p.g.position.set(p.x, gy + yOff, p.z); p.g.rotation.y = p.h; } });
+      p.g.position.set(p.x, gy + yOff, p.z); p.g.rotation.y = p.h; stepCloth(p, dt); } });
 
   return { update(dt) { for (const f of updaters) f(dt); }, people };
 }
