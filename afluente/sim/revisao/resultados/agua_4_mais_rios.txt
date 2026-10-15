@@ -1,0 +1,12 @@
+rand              pts 43 (med 40, 24–80) | peças 27 (med 26, 26–32) p90 28 anos 3.0
+   pontos: encaixe 32% perf 0% missão 5% água 18% esp 4% seca 4% cheia 37% afluente 0%
+   peças ganhas: missão 0.5 perf 0.0 seca 0.2 chuva 4.0 esp 0.0 afluente 0.0
+   rio: peças c/ rio 10.6, vivas no fim 2.0 (19%), vale verde 38% afluentes 0.00 | missões 0.3 bichos 0.3 secos 0.7 descartes 0.00
+guloso            pts 408 (med 359, 124–1313) | peças 54 (med 52, 29–112) p90 77 anos 4.9
+   pontos: encaixe 26% perf 10% missão 9% água 11% esp 8% seca 8% cheia 28% afluente 1%
+   peças ganhas: missão 6.8 perf 7.8 seca 5.7 chuva 7.9 esp 2.0 afluente 1.5
+   rio: peças c/ rio 23.0, vivas no fim 21.6 (94%), vale verde 86% afluentes 0.50 | missões 3.4 bichos 6.3 secos 21.2 descartes 0.00
+cuidadoso         pts 445 (med 371, 113–1752) | peças 56 (med 53, 28–137) p90 79 anos 5.2
+   pontos: encaixe 23% perf 7% missão 8% água 11% esp 9% seca 11% cheia 31% afluente 1%
+   peças ganhas: missão 7.0 perf 6.5 seca 8.9 chuva 8.4 esp 2.1 afluente 1.1
+   rio: peças c/ rio 24.1, vivas no fim 23.2 (96%), vale verde 90% afluentes 0.38 | missões 3.5 bichos 6.0 secos 7.9 descartes 0.00

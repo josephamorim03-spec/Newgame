@@ -1,0 +1,12 @@
+motor.js cuidadoso: jogadas med 42 p75 54 p90 77 máx 107 | rotação ≠ interface: 1.9% das jogadas (custo imediato médio 0.6)
+  decil: pts/jogada | % jogadas ≤1 pt | peças ganhas/jogada | missões/jogada
+  1: 2.0 | 56% | 0.13 | 0.04
+  2: 3.4 | 24% | 0.47 | 0.09
+  3: 4.2 | 16% | 0.70 | 0.11
+  4: 4.2 | 13% | 0.61 | 0.09
+  5: 4.8 | 8% | 0.65 | 0.08
+  6: 4.9 | 7% | 0.61 | 0.07
+  7: 5.1 | 8% | 0.68 | 0.07
+  8: 5.2 | 7% | 0.63 | 0.06
+  9: 4.6 | 6% | 0.51 | 0.03
+  10: 3.7 | 6% | 0.29 | 0.00

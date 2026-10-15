@@ -1,0 +1,16 @@
+rand              pts 20 (med 17, 6–83) | peças 27 (med 26, 26–39) anos 3.0
+   pontos: encaixe 73% perf 0% missão 11% água 9% esp 4% seca 4%
+   peças ganhas: missão 0.7 perf 0.0 seca 0.1 chuva 4.0 esp 0.0
+   rio: peças c/ rio 8.4, vivas no fim 0.9 (11%), máx vivo 0.9 | missões 0.2 bichos 0.2 secos 0.4 descartes 0.00
+slotbest_rotrand  pts 184 (med 155, 61–714) | peças 44 (med 42, 27–107) anos 4.1
+   pontos: encaixe 41% perf 10% missão 17% água 13% esp 11% seca 8%
+   peças ganhas: missão 8.0 perf 3.7 seca 2.9 chuva 6.1 esp 1.1
+   rio: peças c/ rio 15.1, vivas no fim 12.9 (86%), máx vivo 12.9 | missões 2.7 bichos 5.6 secos 11.7 descartes 0.00
+guloso            pts 272 (med 229, 62–964) | peças 54 (med 50, 27–131) anos 4.9
+   pontos: encaixe 38% perf 14% missão 18% água 11% esp 10% seca 8%
+   peças ganhas: missão 11.1 perf 7.9 seca 3.4 chuva 7.8 esp 1.5
+   rio: peças c/ rio 19.0, vivas no fim 16.1 (85%), máx vivo 16.1 | missões 3.7 bichos 6.6 secos 18.8 descartes 0.00
+cuidadoso         pts 308 (med 243, 64–1503) | peças 59 (med 52, 27–186) anos 5.4
+   pontos: encaixe 36% perf 12% missão 16% água 11% esp 11% seca 14%
+   peças ganhas: missão 11.8 perf 7.4 seca 6.9 chuva 8.8 esp 2.0
+   rio: peças c/ rio 20.9, vivas no fim 18.0 (86%), máx vivo 18.0 | missões 3.9 bichos 7.0 secos 6.9 descartes 0.00

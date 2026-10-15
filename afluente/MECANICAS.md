@@ -143,3 +143,31 @@ Ou seja, a missão agora recompensa a **intenção**. O tamanho da partida conti
 | **Fauna** (11 bichos por hábitat) | Sim, e por gosto: crescer o pasto para o lobo-guará custa pontos | Sim: "Um pasto com 8 peças encostado num bosque com 8" | Sim: o bicho aparece na hora, no lugar do hábitat | **Manter**, sem pontos, para não virar mais uma conta |
 
 Detalhes, números e o que foi descartado estão em `FATOR_REPLAY_2.md`.
+
+## 8. Missões durante a partida (v2.4)
+
+A pergunta: as missões fazem sentido no meio da partida?
+
+A medida foi feita com bots: o guloso, o cuidadoso e o mestre, que persegue missões. Foram 30 a 60 vales, nas regras da v2.3 e nas da água no centro. Simuladores: `sim/revisao/missoes.js` e `sim/v24_teste.js`.
+
+| Achado | v2.3 | Problema |
+|---|---|---|
+| Missões de vila cumpridas | 17% (guloso) e 35% (mestre) | A vila é rara na pilha (13% da terra), mas tinha o mesmo prazo que bosque e campo |
+| Missões nascidas no último décimo da partida | 0 cumpridas, em dezenas | A pilha acabava antes do prazo. Era uma promessa impossível no fim |
+| Missões abertas quando a pilha acaba | cerca de 20% | O mesmo efeito |
+| Missão de água, com o rio que encaixa | 95% cumpridas | Ficou automática: levar água até a peça vira consequência de jogar |
+
+O que mudou:
+
+- **Prazo pela raridade do terreno**: 4 jogadas por peça pedida em bosque e campo, 6 em vila, mais 3 de folga. Vila cumprida pelo mestre: de 28% para 54%.
+- **Missão só nasce se a pilha pode cumpri-la**: são precisas pelo menos as peças pedidas, mais 1.
+- **Missão de água virou "água na seca"**: a peça marcada precisa ter água correndo quando a seca chegar. Ela junta as duas regras da água, ligar e proteger com mata, e separa quem cuida do rio. O guloso cumpre 41%, e o cuidadoso 88%.
+- **Recompensa de +2 peças** (eram 3). Isso freia a pilha, que com mais água viva crescia demais.
+
+O que a missão faz agora:
+
+- dá uma meta de médio prazo visível, com bandeira, ficha, prévia "3→4/5" e prazo;
+- premia a intenção: quem persegue cumpre perto do dobro do guloso;
+- o fracasso continua sem castigo: a missão só vai embora.
+
+Pelos três critérios da seção 1, ela fica.

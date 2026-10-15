@@ -1,0 +1,12 @@
+m_encaixe_agua.js mestre: jogadas med 77 p75 90 p90 329 máx 354 | rotação ≠ interface: 2.8% das jogadas (custo imediato médio 0.6)
+  decil: pts/jogada | % jogadas ≤1 pt | peças ganhas/jogada | missões/jogada
+  1: 4.8 | 30% | 0.40 | 0.08
+  2: 7.9 | 13% | 0.74 | 0.13
+  3: 10.7 | 8% | 0.85 | 0.10
+  4: 13.0 | 9% | 0.86 | 0.09
+  5: 14.4 | 5% | 0.88 | 0.11
+  6: 16.8 | 8% | 0.91 | 0.10
+  7: 19.0 | 9% | 0.91 | 0.09
+  8: 21.8 | 7% | 0.88 | 0.09
+  9: 21.8 | 6% | 0.92 | 0.10
+  10: 23.1 | 9% | 0.61 | 0.04
