@@ -974,3 +974,96 @@ Os girassóis 3D passam a ser as flores de verdade.
 - **Peixe:** na escala do vale, salta ao longo do canal e não cai mais na margem.
 - **Árvores:** cada uma verga sobre a própria base com a rajada que passa por ela, na própria frequência. Antes a peça inteira entortava junta, de um lado para o outro.
 
+## A água no centro (v2.4)
+
+**O pedido:** juntar os estudos (`REVISAO_MECANICAS_v2.3.md`, `REVISAO_RETENCAO_v2.4.md`, `AGUA_E_PREVIA_v2.5.md`) e ajustar o jogo; ver se as missões fazem sentido; manter só uma peça seguinte visível; e aplicar o que os estudos mostraram que melhora, respeitando o clima, o terreno e a interface.
+
+**O problema que mais pesava:** o jogo se chama *Afluente*, mas a água quase não importava.
+
+- Quem jogava bem terminava com 45% do vale verde, e quem estava começando com 19%.
+- A água rendia 19% dos pontos.
+- Ligar um rio seco a outro, que é o "afluente" do nome, acontecia em 0,4% das jogadas.
+
+### Regras novas
+
+| Regra | Em uma frase | Por quê |
+|---|---|---|
+| **Água só encosta em água** | Lado de rio só encosta em rio (ou numa casa vazia); lado de terra nunca encosta em água | O rio parava de morrer em brejo por descuido. O rio vivo no fim passou de 47% para 95%. A regra é a mesma do Dorfromantik |
+| **Deixar passar** | Se a peça não cabe em casa nenhuma, o botão vira "Deixar a peça passar" | É a saída de segurança. Em centenas de partidas simuladas, nunca foi preciso |
+| **Veredas e afluentes** | O vale abre com duas veredas a 3 casas da nascente. São olhos-d'água que nunca secam. Ligar o rio de uma vereda ao rio da nascente é um afluente: +10 e +2 peças | O nome vira literal, a partida ganha uma meta de rota e o vale começa com três fontes de água |
+| **Vale com começo** | Um trecho de rio de 2 peças sai da nascente, para o lado oposto às veredas | As primeiras jogadas eram o pior trecho do jogo: 56% delas rendiam 1 ponto ou menos |
+| **A cheia** | Quando as chuvas voltam, cada peça verde (com água viva nela ou ao lado) vale +1 | O verde que o vale já desenhava passa a ser a regra, e a água rende a cada ano |
+| **Mais rios** | 32% das peças da pilha têm rio (eram 24%) | Mais chances de levar água |
+| **Freios da pilha** | A seca dá no máximo 2 peças, e a missão dá 2 peças (eram 3) | Sem freio, com tanta água viva, a partida de quem joga muito bem não acabava. Com o freio, o bot mestre joga no máximo 95 jogadas (de 13 a 19 min) |
+| **Missão de água** | A peça marcada precisa ter água correndo quando a seca chegar | A versão antiga, "levar água até a peça", virou automática com o rio que encaixa: 95% eram cumpridas sem esforço. A nova junta ligar o rio e proteger com mata |
+| **Prazo das missões de terra** | 4 jogadas por peça pedida em bosque e campo, 6 em vila, mais 3 | A vila é mais rara na pilha e quase nunca dava tempo: 28% de missões cumpridas pelo bot que as persegue. Agora são 54% |
+| **Nada de missão impossível** | Uma peça só traz missão se a pilha ainda tiver peças para cumpri-la | Nenhuma missão nascida no último décimo da partida era cumprida |
+| **Ponte** | Saiu | Era a regra mais obscura e quase não aparecia |
+
+### O que não mudou
+
+- **Uma peça seguinte visível**, como pedido. O estudo da v2.5 mostrou que a segunda peça soma pouco (+11% na mediana).
+- **A rotação automática**: o bot cuidadoso escolhe outra rotação em só 2% das jogadas.
+- **A chuva de +2 peças**: é a rede de segurança do começo.
+- **Fauna sem pontos**, Caderno, lições, Contemplar, clima e som.
+
+### Bots dos marcos
+
+- O bot cuidadoso agora **vê a peça seguinte**, como a pessoa. Antes, os bots das gotas ignoravam até a peça que já aparecia na tela, e um bot que só olhasse a peça seguinte passava do Rio cheio em 11 de 18 vales.
+- O mestre continua olhando uma peça só. Com a peça seguinte ele levava até 54 s por vale, o que é lento demais para o Web Worker de um celular.
+- Os três bots valorizam o vale verde, por causa da cheia.
+
+### Interface
+
+- **Casas que não aceitam a peça** não aparecem. O botão principal vira "Deixar a peça passar" quando nenhuma casa serve.
+- **Veredas** desenhadas como olho-d'água com buritizal em volta, com o rótulo "vereda" nas primeiras jogadas. Elas não secam na seca e espalham umidade como a nascente.
+- **Ficha "Afluentes 0/2"** ao lado do indicador do rio. Tocar nela destaca as veredas que faltam.
+- **Barra do ano**: na seca, mostra a prévia da cheia ("Chuvas em 3 jogadas · cheia +24").
+- **Faixas novas**:
+  - "Afluente! A vereda chegou ao rio";
+  - "A cheia regou N peças verdes: +N", com brilho sobre as peças;
+  - "Missão: água na seca!" ou "a seca chegou e a peça ficou sem água";
+  - "Últimas 5 peças";
+  - "A peça desceu o rio".
+- **Cartões de primeira vez**: um explica as veredas e o afluente; o de missão traz o novo prazo e +2 peças.
+- **Desfazer contado**: o desfazer continua livre. O resultado do vale do dia guarda quantas vezes foi usado, e o texto para compartilhar mostra "↶ N" ou "sem desfazer".
+- **Resultado**: novas linhas "Cheias" e "Afluentes", inclusive na comparação com o bot. O texto para compartilhar ganhou "🌊 N afluentes".
+- **Como jogar e lições**: os textos seguem as regras novas. A lição 1 diz que água só encosta em água, a lição 2 apresenta as veredas e a lição 5 apresenta a cheia. As cinco lições continuam se resolvendo pela casa marcada.
+
+### Bug corrigido
+
+O indicador "Rio protegido para a seca" **não aparecia desde a v2.3**. Um comentário no fim da linha tinha anulado o código que punha a ficha na tela. Era o aviso principal da seca.
+
+### Números (`sim/v24_teste.js`, 20 vales; mestre com os mesmos vales)
+
+| Jogador | Pontos | Jogadas: mediana / máx | Vale verde | Rio vivo | Afluentes (de 2) | Missões cumpridas: vila / bosque / campo / água |
+|---|---:|---|---:|---:|---:|---|
+| aleatório | 44 | 27 / 30 | 47% | 28% | 0 | 0 / 0 / 0 / 0% |
+| guloso | 402 | 53 / 78 | 89% | 95% | 0,95 | 24 / 31 / 28 / 41% |
+| cuidadoso (vê a peça seguinte) | 501 | 62 / 83 | 92% | 97% | 1,25 | 20 / 26 / 29 / 88% |
+| mestre | 549 | 59 / 95 | 91% | 97% | 1,20 | 54 / 44 / 52 / 71% |
+
+Antes (v2.3): o guloso fazia 169 pontos, com 45% do vale verde e 47% do rio vivo.
+
+O que se lê:
+
+- **A água pesa** mais da metade dos pontos: 53% no guloso e 63% no aleatório, somando água viva, especiais, cheia e afluentes.
+- **Proteger o rio compensa.** O cuidadoso faz 25% mais pontos que o guloso e seca 3× menos trechos (6 contra 20).
+- **Missões premiam a intenção.** Quem as persegue cumpre perto do dobro.
+- **Ninguém precisou deixar uma peça passar.**
+
+### Outros bugs corrigidos
+
+- **Cartão de dica** de uma partida passava para a próxima: abria no vale do dia e continuava aberto por cima da lição. Agora fecha ao começar outra partida, e volta quando fizer sentido.
+
+### Testes desta versão
+
+| Teste | Resultado |
+|---|---|
+| lições | 9 OK; a lição 5 jogada só pelos pontos falha, como deve |
+| aberturas de vale (600 sementes) | nenhum conflito de encaixe; sempre há jogada |
+| `v24_teste.js` | números acima; 0 descartes |
+| fluxos no navegador | deixar passar, desfazer contado, retomar partida guardada; sem erros de JavaScript |
+| `atmos_teste.js` | tudo certo |
+| `coerencia_teste.js` | tudo coerente: chuva × seca, com a cheia e as veredas, que nunca secam |
+| `interface_teste.js` | 0 erros, 12 avisos aceitos (ver `INTERFACE.md`) |

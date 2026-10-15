@@ -9,3 +9,5 @@ Desde a v0.4 o motor (`function Engine`) implementa o encaixe de peças descrito
 Antes de publicar uma mudança visual (v2.3), rode os auditores, que precisam do Playwright com o Chromium:
 - `node ../sim/interface_teste.js [pasta]`: fontes, cortes, sobreposições, toque e rótulos em 7 telas × 11 situações. Regras em `../INTERFACE.md`.
 - `node ../sim/coerencia_teste.js`: o que se vê não contradiz as regras (chuva × seca, bichos, raios), quadro a quadro. Ver `../CLIMA.md`, seção 8.
+
+Desde a v2.4 (a água no centro), o simulador de referência das regras é `../sim/v24_teste.js`. Ele joga com os bots dos marcos do próprio motor (`Engine.botPlay`), que respeitam a regra "água só encosta em água" e deixam a peça passar quando ela não cabe. Ele mede pontos, duração, vale verde, rio vivo, afluentes, cheia e missões por tipo. Uso: `node ../sim/v24_teste.js 20 rand,guloso,cuidadoso,mestre`. Os simuladores antigos (`ano_no_vale_teste.js` e `replay_teste.js`) ainda rodam, mas não aplicam essa regra. Os estudos que levaram à v2.4 estão em `../REVISAO_MECANICAS_v2.3.md`, `../REVISAO_RETENCAO_v2.4.md` e `../AGUA_E_PREVIA_v2.5.md`, com scripts e resultados em `../sim/revisao/`.

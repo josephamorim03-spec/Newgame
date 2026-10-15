@@ -1,0 +1,20 @@
+rand              pts 13 (med 11, 4–44) | peças 26 (med 26, 26–32) anos 3.0
+   pontos: encaixe 87% perf 0% missão 8% água 3% esp 1% seca 1%
+   peças ganhas: missão 0.3 perf 0.0 seca 0.0 chuva 4.0 esp 0.0
+   rio: peças c/ rio 8.2, vivas no fim 0.2 (3%), máx vivo 0.2 | missões 0.1 bichos 0.3 secos 0.1
+slotbest_rotrand  pts 91 (med 84, 34–230) | peças 34 (med 32, 26–54) anos 3.3
+   pontos: encaixe 58% perf 9% missão 23% água 4% esp 2% seca 3%
+   peças ganhas: missão 5.1 perf 1.7 seca 0.3 chuva 4.6 esp 0.1
+   rio: peças c/ rio 11.0, vivas no fim 1.9 (18%), máx vivo 1.9 | missões 1.7 bichos 3.7 secos 1.5
+guloso            pts 177 (med 161, 46–512) | peças 44 (med 43, 26–88) anos 4.1
+   pontos: encaixe 46% perf 15% missão 20% água 8% esp 6% seca 6%
+   peças ganhas: missão 8.4 perf 5.3 seca 1.7 chuva 6.2 esp 0.6
+   rio: peças c/ rio 15.1, vivas no fim 7.0 (47%), máx vivo 7.0 | missões 2.8 bichos 5.8 secos 7.4
+cuidadoso         pts 194 (med 158, 41–681) | peças 46 (med 42, 26–107) anos 4.3
+   pontos: encaixe 43% perf 13% missão 18% água 8% esp 8% seca 9%
+   peças ganhas: missão 8.7 perf 5.0 seca 3.3 chuva 6.7 esp 0.8
+   rio: peças c/ rio 15.9, vivas no fim 7.8 (49%), máx vivo 7.8 | missões 2.9 bichos 6.1 secos 1.9
+mestre            pts 354 (med 241, 51–2041) | peças 67 (med 54, 27–239) anos 6.0
+   pontos: encaixe 35% perf 12% missão 24% água 7% esp 8% seca 14%
+   peças ganhas: missão 19.1 perf 8.2 seca 5.8 chuva 10.0 esp 1.7
+   rio: peças c/ rio 24.1, vivas no fim 12.1 (50%), máx vivo 12.1 | missões 6.4 bichos 6.9 secos 7.0

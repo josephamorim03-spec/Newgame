@@ -1,0 +1,8 @@
+guloso            pts 164 (med 145, 47–399) | peças 41 (med 40, 26–71) anos 3.9
+   pontos: encaixe 51% perf 13% missão 20% água 7% esp 5% seca 5%
+   peças ganhas: missão 7.4 perf 4.4 seca 1.3 chuva 5.8 esp 0.4
+   rio: peças c/ rio 14.0, vivas no fim 5.6 (40%), máx vivo 5.6 | missões 2.5 bichos 5.6 secos 5.7 descartes 0.00
+cuidadoso         pts 201 (med 165, 47–880) | peças 46 (med 42, 26–122) anos 4.3
+   pontos: encaixe 47% perf 13% missão 19% água 7% esp 6% seca 10%
+   peças ganhas: missão 8.7 perf 5.1 seca 3.3 chuva 6.6 esp 0.6
+   rio: peças c/ rio 16.2, vivas no fim 6.8 (42%), máx vivo 6.8 | missões 2.9 bichos 5.8 secos 1.3 descartes 0.00

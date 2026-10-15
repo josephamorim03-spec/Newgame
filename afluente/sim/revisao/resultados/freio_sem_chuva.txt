@@ -1,0 +1,12 @@
+rand              pts 16 (med 14, 3–78) | peças 23 (med 22, 22–33) anos 2.2
+   pontos: encaixe 70% perf 0% missão 12% água 9% esp 4% seca 5%
+   peças ganhas: missão 0.6 perf 0.0 seca 0.1 chuva 0.0 esp 0.0
+   rio: peças c/ rio 6.8, vivas no fim 0.8 (12%), máx vivo 0.8 | missões 0.2 bichos 0.2 secos 0.4 descartes 0.00
+guloso            pts 169 (med 150, 42–485) | peças 37 (med 35, 22–74) anos 3.7
+   pontos: encaixe 41% perf 13% missão 20% água 12% esp 9% seca 6%
+   peças ganhas: missão 8.4 perf 4.4 seca 2.1 chuva 0.0 esp 0.6
+   rio: peças c/ rio 12.4, vivas no fim 10.6 (85%), máx vivo 10.6 | missões 2.8 bichos 5.4 secos 7.5 descartes 0.00
+cuidadoso         pts 168 (med 160, 41–850) | peças 38 (med 37, 22–109) anos 3.8
+   pontos: encaixe 39% perf 11% missão 18% água 13% esp 10% seca 9%
+   peças ganhas: missão 8.0 perf 3.6 seca 3.3 chuva 0.0 esp 0.8
+   rio: peças c/ rio 12.7, vivas no fim 11.2 (89%), máx vivo 11.2 | missões 2.7 bichos 5.2 secos 2.7 descartes 0.00

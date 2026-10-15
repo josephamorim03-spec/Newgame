@@ -1,0 +1,12 @@
+rand       pts 44 (24–68) | jogadas med 27 p90 29 máx 30 | verde 47% rio vivo 28% afluentes 0.00 | descartes 0.00 secos 2.6 | bot até 0.0 s
+   pontos: encaixe 29% perfeita 0% missão 0% água 7% especiais 6% afluente 0% cheia 50%
+   missões: V 0.7/partida 0% cumpridas 69% vencidas · B 1.1/partida 0% cumpridas 61% vencidas · C 1.4/partida 0% cumpridas 48% vencidas · água 0.8/partida 0% cumpridas 94% vencidas
+guloso     pts 402 (119–697) | jogadas med 53 p90 75 máx 78 | verde 89% rio vivo 95% afluentes 0.95 | descartes 0.00 secos 20.0 | bot até 0.7 s
+   pontos: encaixe 25% perfeita 8% missão 7% água 10% especiais 13% afluente 2% cheia 28%
+   missões: V 1.6/partida 24% cumpridas 64% vencidas · B 2.3/partida 31% cumpridas 53% vencidas · C 2.3/partida 28% cumpridas 54% vencidas · água 1.9/partida 41% cumpridas 51% vencidas
+cuidadoso  pts 501 (244–808) | jogadas med 62 p90 77 máx 83 | verde 92% rio vivo 97% afluentes 1.25 | descartes 0.00 secos 6.0 | bot até 2.9 s
+   pontos: encaixe 21% perfeita 5% missão 7% água 10% especiais 13% afluente 2% cheia 29%
+   missões: V 2.0/partida 20% cumpridas 56% vencidas · B 2.5/partida 26% cumpridas 66% vencidas · C 2.4/partida 29% cumpridas 67% vencidas · água 2.1/partida 88% cumpridas 10% vencidas
+mestre     pts 549 (283–1040) | jogadas med 59 p90 89 máx 95 | verde 91% rio vivo 97% afluentes 1.20 | descartes 0.00 secos 9.4 | bot até 1.9 s
+   pontos: encaixe 20% perfeita 4% missão 10% água 9% especiais 13% afluente 2% cheia 29%
+   missões: V 2.0/partida 54% cumpridas 27% vencidas · B 2.8/partida 44% cumpridas 53% vencidas · C 2.4/partida 52% cumpridas 46% vencidas · água 2.4/partida 71% cumpridas 17% vencidas

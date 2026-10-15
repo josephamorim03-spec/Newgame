@@ -1,0 +1,38 @@
+
+celular-pequeno · inicio
+  · RÓTULO: "vereda" (prioridade 1) escondido
+
+celular-pequeno · faixa
+  · RÓTULO: "6/8 · 10⏳" (prioridade 2) escondido
+
+celular-pequeno · menu
+  · QUEBRA: #menuCalm "Contemplar o vale" em 2 linhas
+
+celular-pequeno · contemplar
+  · RÓTULO: "vereda" (prioridade 1) escondido
+
+iphone-se · inicio
+  · RÓTULO: "vereda" (prioridade 1) escondido
+
+iphone-se · contemplar
+  · RÓTULO: "vereda" (prioridade 1) escondido
+
+celular · inicio
+  · RÓTULO: "vereda" (prioridade 1) escondido
+
+celular · contemplar
+  · RÓTULO: "vereda" (prioridade 1) escondido
+
+celular-grande · inicio
+  · RÓTULO: "vereda" (prioridade 1) escondido
+
+celular-grande · contemplar
+  · RÓTULO: "vereda" (prioridade 1) escondido
+
+deitado · inicio
+  · RÓTULO: "vereda" (prioridade 1) escondido
+
+deitado · contemplar
+  · RÓTULO: "vereda" (prioridade 1) escondido
+
+77 telas: 0 erro(s), 12 aviso(s)

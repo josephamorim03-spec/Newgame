@@ -109,7 +109,15 @@ Em cada uma, mede:
 
 Sai com código 1 se houver erro e, com a pasta, salva uma captura de cada tela.
 
-**Estado atual:** 77 telas, 0 erros e 4 avisos aceitos:
+**Estado na v2.4:** 77 telas, 0 erros e 12 avisos aceitos:
+
+- dez rótulos de nível 1 escondidos: "vereda" e "nascente" nas primeiras jogadas, quando o vale aberto com as veredas divide a tela com as fichas e os botões dos cantos;
+- uma bandeira de nível 2 escondida no celular de 360 px, durante a faixa de aviso;
+- "Contemplar o vale" em 2 linhas no menu da tela de 360 px.
+
+Na v2.4, o rótulo de alerta (nível 3) para cima também procura lugar mais longe, até 6 linhas abaixo e uma largura para o lado, antes de sumir. E o cartão de dica de uma partida não passa para a próxima.
+
+**Estado na v2.3:** 77 telas, 0 erros e 4 avisos aceitos:
 
 - "Contemplar o vale" em 2 linhas no menu da tela de 360 px;
 - três bandeiras de nível 2 escondidas em celulares pequenos. A informação continua nas fichas do topo.

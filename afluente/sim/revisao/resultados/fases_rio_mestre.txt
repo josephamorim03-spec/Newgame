@@ -1,0 +1,12 @@
+m_encaixe_rio.js mestre: jogadas med 76 p75 115 p90 341 máx 400 | rotação ≠ interface: 1.9% das jogadas (custo imediato médio 0.6)
+  decil: pts/jogada | % jogadas ≤1 pt | peças ganhas/jogada | missões/jogada
+  1: 3.5 | 41% | 0.46 | 0.09
+  2: 6.2 | 16% | 0.83 | 0.13
+  3: 7.0 | 12% | 0.88 | 0.12
+  4: 7.6 | 9% | 0.85 | 0.10
+  5: 8.3 | 8% | 0.89 | 0.09
+  6: 8.5 | 11% | 0.88 | 0.09
+  7: 9.2 | 7% | 0.93 | 0.09
+  8: 10.4 | 9% | 0.91 | 0.09
+  9: 9.9 | 8% | 0.86 | 0.08
+  10: 9.5 | 8% | 0.67 | 0.04
