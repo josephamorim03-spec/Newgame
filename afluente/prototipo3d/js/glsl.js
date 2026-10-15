@@ -26,7 +26,8 @@ float windQ(float u){return min(1.4,(u/10.0)*(u/10.0));}
 export const CLOUDS = /* glsl */`
 uniform vec2 uCloudOff;  // deslocamento das nuvens (m), levado pelo vento lá de cima
 uniform float uCloudCov; // cobertura de cúmulos (0..1)
-float cloudShadow(vec2 p){if(uCloudCov<0.02)return 1.0;
-  float n=fbm2((p+uCloudOff)*0.006)*0.75+fbm2((p+uCloudOff*1.1)*0.017)*0.25;
-  float c=smoothstep(1.0-uCloudCov*0.95,1.0-uCloudCov*0.95+0.18,n);return 1.0-0.72*c;}
+uniform vec4 uCl[12];    // sombra de cada nuvem no chão: centro (x, z), raio (m) e densidade, já projetada na direção do sol
+float cloudShadow(vec2 p){float c=0.0,n=vnoise(p*0.045)*0.5+vnoise(p*0.13)*0.25;
+  for(int i=0;i<12;i++){vec4 C=uCl[i];if(C.w<0.01)continue;float r=length((p-C.xy)/C.z)+(n-0.37)*0.55;c=max(c,(1.0-smoothstep(0.62,0.95,r))*C.w);}
+  return 1.0-0.68*c;}
 `;

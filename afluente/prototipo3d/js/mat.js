@@ -8,7 +8,7 @@ export const U = {
   uTime: { value: 0 }, uWindDir: { value: new THREE.Vector2(1, 0) }, uWadv: { value: new THREE.Vector2() }, uWindBase: { value: 3 }, uWindIu: { value: 0.2 },
   uCloudOff: { value: new THREE.Vector2() }, uCloudCov: { value: 0.3 }, uSeca: { value: 0 }, uWet: { value: 0 }, uRain: { value: 0 }, uWaterDrop: { value: 0 },
   uSunW: { value: new THREE.Vector3(0, 1, 0) }, uSunC: { value: new THREE.Color() }, uRim: { value: new THREE.Color() }, uSkyZen: { value: new THREE.Color() }, uSkyHor: { value: new THREE.Color() },
-  uDay: { value: 1 }, uFlowClk: { value: 0 },
+  uDay: { value: 1 }, uFlowClk: { value: 0 }, uCl: { value: Array.from({ length: 12 }, () => new THREE.Vector4()) },
 };
 // as paletas dos shaders são escritas em sRGB (como num pincel) e convertidas para a luz linear com toLin
 export const HEAD = NOISE + WIND + CLOUDS + 'uniform float uSeca,uWet,uRain,uWaterDrop,uDay,uFlowClk;uniform vec3 uSunW,uSunC,uRim,uSkyZen,uSkyHor;vec3 toLin(vec3 c){return pow(max(c,0.0),vec3(2.2));}\n';

@@ -10,6 +10,7 @@ import { U, HEAD, LIGHT_END, shared, ramp, toon } from './mat.js';
 import { R, TILES, CENTER, RIVER, riverHalfWidth, heightAt, riverInfo, waterDist, biomeAt, SPRING, POOL_R, WATER_Y, vnoise, inHex, inAnyTile, dirtAt, fieldAt, blocked } from './world.js';
 import { buildProps } from './props.js';
 import { buildFauna } from './fauna.js';
+import { buildClouds } from './clouds.js';
 import { leafTexture, fanTexture, barkTexture, earthTexture, stoneTexture } from './textures.js';
 
 const ATM = window.ATM;
@@ -28,8 +29,8 @@ const scene = new THREE.Scene();
 scene.fog = new THREE.FogExp2(0xa9cfe6, 0.0026);
 const camera = new THREE.PerspectiveCamera(38, 1, 0.5, 9000);
 const controls = new OrbitControls(camera, renderer.domElement);
-controls.target.set(CENTER[0], 3, CENTER[1]);
-camera.position.set(CENTER[0] + 14, 44, CENTER[1] + 104);
+controls.target.set(CENTER[0], 7, CENTER[1] - 4);
+camera.position.set(CENTER[0] + 14, 31, CENTER[1] + 110);
 // celular em pé: a câmera sobe e se afasta para as 4 peças caberem na largura estreita
 if (innerWidth < innerHeight) { controls.target.set(CENTER[0] - 8, 4, CENTER[1] - 4); camera.position.set(CENTER[0] + 16, 62, CENTER[1] + 92); }
 controls.enableDamping = true; controls.dampingFactor = 0.08;
@@ -50,7 +51,7 @@ const skyMat = new THREE.ShaderMaterial({ side: THREE.BackSide, depthWrite: fals
   fragmentShader: `varying vec3 vDir;\n${HEAD}\nvoid main(){vec3 d=normalize(vDir);float h=d.y;
     vec3 col=mix(uSkyHor,uSkyZen,pow(clamp(h,0.0,1.0),0.55));col=mix(col,uSkyHor*0.92,1.0-smoothstep(-0.25,0.0,h));
     float sd=max(dot(d,uSunW),0.0);col+=uSunC*(pow(sd,8.0)*0.35+pow(sd,90.0)*0.6)*uDay;col+=uSunC*smoothstep(0.9995,0.99975,sd)*2.0*uDay;
-    if(h>0.0){vec2 p=d.xz/(h+0.08)*900.0+uCloudOff*0.6;float n=fbm2(p*0.0012)*0.7+fbm2(p*0.004)*0.3;float c=smoothstep(1.0-uCloudCov*0.9,1.12-uCloudCov*0.9,n);
+    if(h>0.0){vec2 p=d.xz/(h+0.08)*900.0+uCloudOff*0.6;float n=fbm2(p*0.0012)*0.7+fbm2(p*0.004)*0.3;float c=smoothstep(1.0-uCloudCov*0.45,1.12-uCloudCov*0.45,n)*0.8;
       float lit=smoothstep(0.0,0.35,fbm2(p*0.0024+uSunW.xz*1.5)-0.3+uSunW.y*0.4);vec3 cc=mix(uSkyHor*0.82+vec3(0.04),vec3(1.0)*(0.55+0.45*uDay)+uSunC*0.25,lit);
       cc=mix(cc,cc*0.62,uRain);col=mix(col,cc,c*smoothstep(0.0,0.12,h)*(1.0-0.35*smoothstep(0.6,1.0,h)));
       float st=step(0.9985,hash21(floor(d.xz/(h+0.3)*900.0)));col+=vec3(st)*(1.0-uDay)*(1.0-c)*0.9;}
@@ -370,6 +371,7 @@ scatter(tV, 5, () => makeTree('moita', 0.8 + rnd() * 0.4), () => true, 3);
 scatter(tL, 3, () => makeTree('cerrado', 0.9), () => true, 6);
 const props = buildProps(scene, { mobile });
 const shadeTree = scene.children.find(o => o.userData.kind === 'sombra' && inHex(o.position.x, o.position.z, tC.c, 1));
+const clouds = buildClouds(scene, CENTER, { mobile });
 const fauna = buildFauna(scene, { mobile, shade: shadeTree ? [shadeTree.position.x, shadeTree.position.z] : null });
 // moitas: o sub-bosque da mata e os arbustos do cerrado, que fecham o vão entre o capim e as copas
 scatter(tB, 16, () => makeTree('moita', 0.9 + rnd() * 0.6), (x, z) => { const w = waterDist(x, z); return w > 1.2 && w < 14; }, 2.2);
@@ -460,8 +462,8 @@ const rainGeo = new THREE.BufferGeometry(); { const p = new Float32Array(DROPS *
 const rainMat = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, uniforms: { uTime: U.uTime, uRain: U.uRain, uBox: { value: new THREE.Vector3() }, uVel: { value: new THREE.Vector3(0, -7, 0) }, uCol: { value: new THREE.Color(0.8, 0.85, 0.9) } },
   vertexShader: `attribute vec3 seed;attribute float tip;uniform float uTime,uRain;uniform vec3 uBox,uVel;varying float vA;
     void main(){float H=46.0;float fall=-uVel.y;float t=mod(uTime*fall+seed.y*H,H);vec3 p=uBox+vec3((seed.x-0.5)*84.0,H-t-6.0,(seed.z-0.5)*84.0);
-      p.xz-=uVel.xz*(t/fall);p-=uVel*0.075*tip;vA=step(seed.x*0.37+seed.z*0.63,uRain*1.05)*(1.0-tip*0.6);gl_Position=projectionMatrix*viewMatrix*vec4(p,1.0);}`,
-  fragmentShader: `uniform vec3 uCol;varying float vA;void main(){if(vA<0.01)discard;gl_FragColor=vec4(uCol,vA*0.55);}` });
+      p.xz-=uVel.xz*(t/fall);p-=uVel*0.11*tip;vA=step(seed.x*0.37+seed.z*0.63,uRain*1.05)*(1.0-tip*0.6);gl_Position=projectionMatrix*viewMatrix*vec4(p,1.0);}`,
+  fragmentShader: `uniform vec3 uCol;varying float vA;void main(){if(vA<0.01)discard;gl_FragColor=vec4(uCol,vA*0.36);}` });
 const rain = new THREE.LineSegments(rainGeo, rainMat); rain.frustumCulled = false; rain.renderOrder = 5; scene.add(rain);
 
 // ---------- clima: o motor do jogo + o que a pessoa escolhe nos controles
@@ -499,7 +501,7 @@ function climate(dt) {
   U.uRim.value.copy(hor).multiplyScalar(0.35 * day + 0.08);
   // névoa azul: o longe fica azulado (perspectiva aérea); mais densa com chuva e neblina
   scene.fog.color.copy(hor).lerp(zen, 0.08); scene.fog.density = 0.0018 + rainAmt * 0.0016 + o.fog * 0.006;
-  rainMat.uniforms.uBox.value.copy(controls.target);
+  { const f = camera.getWorldDirection(new THREE.Vector3()); f.y = 0; f.normalize(); rainMat.uniforms.uBox.value.set(camera.position.x + f.x * 32, 0, camera.position.z + f.z * 32); }   // a chuva cai em volta de quem olha
   const ms = Math.max(base, o.wind.ms) * (ST.wind === 'auto' ? 1 : base / Math.max(0.5, o.wind.base));
   rainMat.uniforms.uVel.value.set(U.uWindDir.value.x * ms * 0.9, -6.5, U.uWindDir.value.y * ms * 0.9); rainMat.uniforms.uCol.value.setRGB(0.85, 0.9, 0.95).multiplyScalar(0.35 + 0.65 * day);
   return { Rr, base };
@@ -518,7 +520,7 @@ const fmtH = h => `${String(Math.floor(h) % 24).padStart(2, '0')}:${String(Math.
 function frame() {
   const dt = Math.min(0.1, clock.getDelta()); U.uTime.value += dt; U.uFlowClk.value += dt * (0.55 + U.uRain.value * 0.5);
   const c = climate(dt); controls.update();
-  const ctx = { pxPerUnit: renderer.domElement.height / (2 * Math.tan(camera.fov * Math.PI / 360)) }; props.update(dt, ctx); fauna.update(dt, ctx);
+  const ctx = { pxPerUnit: renderer.domElement.height / (2 * Math.tan(camera.fov * Math.PI / 360)) }; props.update(dt, ctx); fauna.update(dt, ctx); clouds.update(dt, camera);
   renderReflection();
   renderer.render(scene, camera);
   fpsN++; fpsT += dt; if (fpsT > 1) { const fps = fpsN / fpsT; $('info').textContent = `${fmtH(ST.hour)} · ${ST.seca ? 'Seca' : 'Águas'} · vento ${c.base.toFixed(1)} m/s · ${c.Rr > 0.2 ? `chuva ${c.Rr.toFixed(0)} mm/h` : 'sem chuva'} · ${fps.toFixed(0)} qps`;
@@ -526,4 +528,4 @@ function frame() {
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
-window.__previa = { ST, U, renderer, scene, camera, controls, fauna };
+window.__previa = { ST, U, renderer, scene, camera, controls, fauna, clouds };
