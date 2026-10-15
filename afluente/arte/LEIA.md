@@ -109,3 +109,10 @@ venv/bin/python montar_fauna.py fauna_saida/ fauna.webp fauna.json && python3 em
 ```
 
 O tamanho no jogo não depende do render. O jogo mede a largura do corpo no atlas e aplica a tabela `FLEN` do protótipo. No joão-de-barro e nos bichos de poleiro, essa largura inclui o ninho ou o poleiro: se eles mudarem de tamanho, ajuste `FLEN`.
+
+## v2.0: moinho sem velas
+
+- `windmill_torre`: só a torre, o capelo e a porta do moinho. As velas são desenhadas no jogo (`drawMill`), viradas para o vento e girando com ele, com a mesma projeção da câmera (ortográfica, 52°).
+- A geometria do rotor segue `windmill()`: cubo a 0,3 u de altura e 0,125 u à frente do eixo; braços de 0,22 u; lona de 0,03 a 0,19 u do cubo, com 0,045 u de largura.
+- Para refazer: `SOMENTE=windmill_torre venv/bin/python afluente_sprites.py saida_v20/`, depois `venv/bin/python atualizar_atlas.py saida_v20 atlas.png atlas.json`, o WebP e `python3 embutir.py`.
+- O sprite `windmill`, com as velas, continua no atlas para o mapa de colisão (a pegada é a mesma).

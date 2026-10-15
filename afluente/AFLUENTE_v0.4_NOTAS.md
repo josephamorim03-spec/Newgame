@@ -634,3 +634,54 @@ O que mudou:
 - **Teste automático novo:** 5 minutos simulados de animação em 4 vales, medindo cada vez que o corpo de um bicho cruza o desenho de um cercado, casa ou copa.
   - Antes: de 862 a 3.454 cruzamentos com cercados por vale.
   - Depois: zero. Os encostos em copa que ainda aparecem são ovelhas atrás de arbustos, desenhadas corretamente por trás deles.
+
+## O céu do vale: clima com física (v2.0)
+
+Pedido: estudar ventos, monções, moinhos, umidade, chuva, formação e precipitação de nuvens, e tamanhos e tipos de nuvens, e aplicar isso ao jogo junto com a tabela métrica e a física da v1.9. O estudo completo, com fontes, está em `CLIMA.md`.
+
+- **Motor novo `function Atmos()`**, no mesmo padrão do `Engine`: puro, sem DOM, determinístico pela semente do vale e testado em node (`sim/atmos_teste.js`).
+  - Temperatura, ponto de orvalho e umidade relativa (fórmula de Magnus).
+  - Base dos cúmulos pelo nível de condensação (125 m por °C).
+  - Vento da monção: noroeste nas Águas, leste na Seca, com mistura de dia, calmaria à noite, rajadas e frente de rajada.
+  - Os 10 gêneros de nuvem da OMM, com altura e largura reais.
+  - Pancadas com cortina de chuva em mm/h, ZCAS, veranico e friagem.
+  - Sol pela posição astronômica (15,8° S).
+- **O mapa muda o céu:**
+  - água viva e mata põem umidade no ar (a evapotranspiração do Cerrado);
+  - a mata refresca a tarde e a vila esquenta;
+  - no teste, o vale úmido tem 62% de umidade à tarde contra 50% do vale árido, e mais cúmulos e pancadas.
+- **Estações:**
+  - "As chuvas voltaram!" traz a frente com pancada, rajada e raios;
+  - na Seca não chove no chão, só há virga no fim dela;
+  - a fumaça do fim da Seca apaga as serras.
+- **Céu do horizonte** (a câmera olha para o norte, grande-angular de 100°):
+  - cada nuvem aparece com o tamanho angular de verdade;
+  - os cúmulos têm a base reta no mesmo nível, que sobe ao longo da tarde;
+  - há bigornas com cortina de chuva ao longe, relâmpago mudo, véus de altostrato, nimbostrato e cirrostrato, e halo de 22°.
+- **Sombras no vale na escala métrica:** um cúmulo de 400 m cobre 20 unidades. A pancada faz uma sombra escura, e a borda da chuva atravessa o vale.
+- **Chuva física:**
+  - gotas de Marshall-Palmer na velocidade terminal (garoa fina e deitada, temporal grosso e em pé);
+  - o chão de cada peça molha no time-lapse da pancada e seca pela evaporação no relógio do jogo;
+  - o trovão chega depois do clarão, na velocidade do som (343 m/s);
+  - o clarão nunca pisca mais de 3 vezes por segundo, e com "reduzir movimento" não há clarão.
+- **Neblina:** na madrugada calma e clara, sobre o rio. Ela levanta como estrato de manhã.
+- **Arco-íris de verdade:** só com o sol a menos de 42° e às costas, e chuva do lado oposto. Tem o primário, o secundário (51°) e a faixa de Alexandre, e aparece em parte, na borda do céu.
+- **Moinho que gira com o vento:**
+  - a torre foi re-renderizada no Blender sem as velas (`windmill_torre`);
+  - as velas são desenhadas em 3D, projetadas pela mesma câmera de 52°;
+  - o capelo vira para o vento devagar;
+  - o rotor gira com ω = 2·v/R pelo vento no cubo (perfil logarítmico pela rugosidade da peça e abrigo de mata a barlavento);
+  - para abaixo de 2,2 m/s e recolhe as velas acima de 11 m/s;
+  - a peça com moinho passou a ser desenhada a cada quadro, na ordem de profundidade: com vento do norte, as velas ficam atrás da torre.
+- **Caderno do Céu:** 18 nuvens e fenômenos para ver (arco-íris, halo, virga, frente de rajada...). Não dão pontos.
+- **Boletim no Contemplar:** hora, temperatura, umidade, vento (m/s e Beaufort), o nome da nuvem com a altura da base e as voltas do moinho.
+- **Som:**
+  - a chuva soa pela intensidade;
+  - as cigarras só cantam no calor;
+  - sapos e pererecas cantam nas noites molhadas das Águas;
+  - o trovão estala perto e ronca grave longe.
+- **Números (10 anos de jogo):**
+  - Águas: tarde a 25 °C e 57% de umidade, base dos cúmulos a 1.170 m, pancadas entre 13 h e 15 h;
+  - Seca: tarde a 26 °C e 34%, base a 2.270 m, sem chuva no chão.
+- **O que não muda:** as regras e os pontos. O clima é o mundo respondendo ao mapa, como a fauna. Mudar regra pelo clima fica para um teste próprio (ver `CLIMA.md`, seção 5).
+- **Desempenho:** o quadro custa o mesmo que antes (4,5 ms contra 5,3 ms no teste sem tela).
