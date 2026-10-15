@@ -79,19 +79,20 @@ export function buildBody(s) {
     [0.80, 0.1, 0.07, 0.08], [0.86, 0.165, 0.1, 0.12], [0.93, 0.168, 0.1, 0.115], [1.0, 0.158, 0.098, 0.1], [1.06, 0.152, 0.098, 0.095],
     [1.14, 0.165, 0.11, 0.1], [1.22, 0.18, 0.125, 0.105], [1.3, 0.185, 0.122, 0.105], [1.355, 0.19, 0.105, 0.1], [1.39, 0.178, 0.09, 0.09], [1.418, 0.142, 0.08, 0.08], [1.44, 0.095, 0.066, 0.066], [1.458, 0.064, 0.056, 0.058]
   ];
+  const shawl = s.warm && f ? C(s.warmColor || 0x8a4a3a) : null, jacket = s.warm && !f ? C(s.warmColor || 0x5a4a3a) : null;
   const torso = tor.map(([y, rx, rzF, rzB]) => { const shirt = y >= shirtBottom && y < 1.44, pants = y < shirtBottom;
-    const c = y >= 1.44 ? skin : shirt ? top : (dressTop ? top : bot);
-    return { y, cx: 0, cz: 0, rx: rx * bw, rzF: rzF * bw, rzB: rzB * bw, e: y > 1.18 && y < 1.34 ? 2.5 : 2.1, c, pat: (shirt || dressTop) && y < 1.44 ? topPat : 0, b: W(y, 0.98, 1.2), perim: 3 }; });
+    let c = y >= 1.44 ? skin : shirt ? top : (dressTop ? top : bot); if (shawl && y >= 1.16 && y < 1.44) c = shawl; if (jacket && y >= 0.9 && y < 1.44) c = jacket;
+    return { y, cx: 0, cz: 0, rx: rx * bw, rzF: rzF * bw, rzB: rzB * bw, e: y > 1.18 && y < 1.34 ? 2.5 : 2.1, c, pat: (shirt || dressTop) && y < 1.44 && !(shawl && y >= 1.16) && !(jacket && y >= 0.9) ? topPat : 0, b: W(y, 0.98, 1.2), perim: 3 }; });
   // pescoço até a cabeça
   torso.push({ y: 1.5, cx: 0, cz: 0.005, rx: 0.052, rzF: 0.05, rzB: 0.05, c: skin, b: [[B.spine, 0.5], [B.head, 0.5]] }, { y: 1.55, cx: 0, cz: 0.01, rx: 0.05, rzF: 0.05, rzB: 0.05, c: skin, b: [[B.head, 1]] });
   bd.tube(torso, 18, true, true);
   // ---------- braços (levemente afastados do corpo)
   const shX = (f ? 0.165 : 0.19) * bw;
-  const sleeveEnd = s.sleeves === 'longa' ? 0.87 : s.sleeves === 'arregaçada' ? 1.06 : s.sleeves === 'curta' ? 1.27 : 1.42;
+  const sleeveEnd = s.warm ? 0.87 : s.sleeves === 'longa' ? 0.87 : s.sleeves === 'arregaçada' ? 1.06 : s.sleeves === 'curta' ? 1.27 : 1.42;
   for (const sx of [-1, 1]) { const sh = sx < 0 ? B.shL : B.shR, el = sx < 0 ? B.elL : B.elR, ha = sx < 0 ? B.haL : B.haR;
     const ax = y => sx * (shX - 0.022 + (1.41 - y) * 0.07), arm = [[1.43, 0.03, sh], [1.41, 0.05, sh], [1.37, 0.052, sh], [1.28, 0.043, sh], [1.18, 0.037, sh], [1.12, 0.034, -1], [1.06, 0.038, el], [0.98, 0.034, el], [0.9, 0.03, el], [0.865, 0.029, -2]];
     bd.tube(arm.map(([y, r, b]) => { const sleeve = y >= sleeveEnd; const rr = (sleeve ? (y < 1.12 ? Math.max(r, 0.04) + 0.006 : r + 0.005) : r) * (f ? 0.9 : 1) * (0.9 + 0.1 * bw);
-      return { y, cx: ax(y) + (y > 1.36 ? sx * 0.008 : 0), cz: 0, rx: rr, rzF: rr, rzB: rr, c: sleeve ? top : skin, pat: sleeve ? topPat : 0,
+      const warmC = shawl ? (y > 1.1 ? shawl : top) : jacket; return { y, cx: ax(y) + (y > 1.36 ? sx * 0.008 : 0), cz: 0, rx: rr, rzF: rr, rzB: rr, c: sleeve ? (warmC || top) : skin, pat: sleeve && !(warmC && warmC !== top) ? topPat : 0,
         b: b === -1 ? [[sh, 0.5], [el, 0.5]] : b === -2 ? [[el, 0.4], [ha, 0.6]] : [[b, 1]] }; }), 12, true, true);
     // mão: palma, dedos juntos e polegar
     const hx = ax(0.86), hand = [new THREE.SphereGeometry(1, 10, 8).scale(0.022, 0.048, 0.042).translate(hx, 0.815, 0.004), new THREE.SphereGeometry(1, 10, 8).scale(0.017, 0.042, 0.037).translate(hx, 0.75, 0.008),

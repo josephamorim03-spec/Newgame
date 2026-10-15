@@ -177,6 +177,29 @@ export function buildProps(scene, { mobile = false } = {}) {
         posts.push(paint(new THREE.CylinderGeometry(0.05, 0.08, 3.2, 8).translate(px, py + 1.6, pz), col(0x2a2a2e)), paint(new THREE.CylinderGeometry(0.16, 0.1, 0.3, 6).translate(px, py + 3.3, pz), col(0x2a2a2e)));
         halos.push({ g: scene, p: new THREE.Vector3(px, py + 3.15, pz) }); } }
     const bm = new THREE.Mesh(merge([...bench, ...posts].map(p => { if (!p.attributes.uv) p.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(p.attributes.position.count * 2), 2)); return p; })), woodMat); bm.castShadow = true; scene.add(bm); }
+  // ---------- forno de barro (cúpula de adobe sobre base de pedra, boca em arco, chaminezinha) com o tabuleiro de pão ao lado;
+  // a boca brilha em brasa e solta fumaça de manhã cedo
+  { const O = LAYOUT.oven, g = new THREE.Group(), clay = col(0xc8865a), parts = [];
+    parts.push(paint(new THREE.CylinderGeometry(1.15, 1.25, 0.7, 14).translate(0, 0.35, 0), col(0x9a948a)));
+    const dome = new THREE.SphereGeometry(1.0, 18, 12, 0, Math.PI * 2, 0, Math.PI / 2); const dp = dome.attributes.position; for (let i = 0; i < dp.count; i++) { const k = 1 + (Math.sin(dp.getX(i) * 9) * Math.cos(dp.getZ(i) * 7)) * 0.03; dp.setXYZ(i, dp.getX(i) * k, dp.getY(i) * 0.85 * k, dp.getZ(i) * k); }
+    dome.translate(0, 0.7, 0); parts.push(paint(dome, clay));
+    parts.push(paint(new THREE.CylinderGeometry(0.42, 0.42, 0.35, 12, 1, false, -Math.PI / 2, Math.PI).rotateX(Math.PI / 2).translate(0, 0.9, 0.86), clay.clone().multiplyScalar(0.9)));
+    parts.push(paint(new THREE.CylinderGeometry(0.1, 0.13, 0.4, 8).translate(-0.35, 1.6, -0.3), clay.clone().multiplyScalar(0.85)));
+    const tb = [paint(box(1.2, 0.06, 0.6, 1.7, 0.85, 0.6, 1), col(0x8a6a4a))]; for (const [x, z] of [[1.2, 0.35], [2.2, 0.35], [1.2, 0.85], [2.2, 0.85]]) tb.push(paint(box(0.06, 0.85, 0.06, x, 0.42, z, 1), col(0x7a5a3e)));
+    for (let k = 0; k < 6; k++) tb.push(paint(new THREE.SphereGeometry(1, 8, 6).scale(0.11, 0.06, 0.08).translate(1.3 + (k % 3) * 0.2, 0.92, 0.45 + Math.floor(k / 3) * 0.25), col(0xc8904a)));
+    g.add(new THREE.Mesh(merge(parts.map(p => { if (!p.attributes.uv) p.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(p.attributes.position.count * 2), 2)); return p; })), woodMat), new THREE.Mesh(merge(tb), woodMat));
+    const mouth = new THREE.Mesh(new THREE.CircleGeometry(0.32, 14, 0, Math.PI).translate(0, 0, 0).rotateY(0), mat({ color: 0x1a120c, emissive: 0xff7a2a, emissiveIntensity: 0.6 })); mouth.position.set(0, 0.72, 1.035); g.add(mouth);
+    g.traverse(o => { if (o.isMesh) o.castShadow = o.receiveShadow = true; }); g.position.set(O.p[0], heightAt(O.p[0], O.p[1]) - 0.05, O.p[1]); g.rotation.y = O.rot; scene.add(g); tag(g, 'forno de barro (com o tabuleiro)');
+    smokeSrc.push({ g, local: V3(-0.35, 1.85, -0.3), on: true });
+    updaters.push((dt, ctx) => { const h = ctx.hour ?? 15; mouth.material.emissiveIntensity = (h > 4.5 && h < 9 ? 1.6 : 0.25) * (0.8 + 0.2 * Math.sin(performance.now() * 0.009)); }); }
+  // ---------- cavalete do carpinteiro na praça: dois cavaletes, uma tábua sendo serrada, pilha de tábuas e o serrote
+  { const Cv = LAYOUT.cavalete, g = new THREE.Group(), w = [], wd = col(0x9a7a52);
+    for (const x of [-0.6, 0.6]) { for (const sz of [-1, 1]) { const l = box(0.06, 0.85, 0.06, 0, 0, 0, 1); l.rotateX(sz * 0.25).translate(x, 0.4, sz * 0.12); w.push(paint(l, wd.clone().multiplyScalar(0.85))); } w.push(paint(box(0.1, 0.08, 0.1, x, 0.8, 0, 1), wd)); }
+    w.push(paint(box(2.2, 0.04, 0.28, 0.2, 0.86, 0, 0.8), col(0xc8a070)));
+    for (let k = 0; k < 6; k++) w.push(paint(box(2.4, 0.04, 0.26, 0, 0.03 + k * 0.045, 1.1 + (k % 2) * 0.04, 0.8), col(0xb89060).multiplyScalar(0.9 + (k % 3) * 0.06)));
+    w.push(paint(box(0.5, 0.1, 0.006, 0, 0, 0, 1).rotateZ(-0.35).translate(-0.7, 0.98, 0.05), col(0x9aa0a6)));
+    g.add(new THREE.Mesh(merge(w), woodMat)); g.traverse(o => { if (o.isMesh) o.castShadow = o.receiveShadow = true; });
+    g.position.set(Cv.p[0], heightAt(Cv.p[0], Cv.p[1]) - 0.03, Cv.p[1]); g.rotation.y = Cv.rot; scene.add(g); tag(g, 'cavalete de carpinteiro'); }
   // ---------- celeiro: tábuas pintadas de vermelho, portão grande, janela do feno no oitão e telhado de telha
   { const Ce = LAYOUT.celeiro, w = Ce.w, d = Ce.d, H = 3.6, pitch = 0.5, rh = d / 2 * Math.tan(pitch), ov = 0.5, g = new THREE.Group(), wood = [], roof = [], red = col(0xa8402e);
     for (let x = -w / 2; x < w / 2 - 0.01; x += 0.3) for (const sz of [1, -1]) wood.push(paint(box(0.29, H + 0.6, 0.06, x + 0.15, (H + 0.6) / 2 - 0.6, sz * d / 2, 0.8), red.clone().multiplyScalar(0.88 + rnd() * 0.2)));

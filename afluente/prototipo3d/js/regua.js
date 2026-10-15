@@ -65,6 +65,8 @@ export const TABELA = {
   'lobeira': { h: [2.5, 5] },
   'pinheiro-bravo': { h: [8, 18] },
   'taboa': { h: [1.2, 2.6] },
+  'forno de barro (com o tabuleiro)': { h: [1.5, 2.2], l: [2.0, 4.0] },
+  'cavalete de carpinteiro': { h: [0.8, 1.2] },
   'garça-moura': { h: [0.95, 1.3] },
 };
 export const tag = (o, name, scale) => { o.userData.regua = name; if (scale) o.userData.reguaScale = scale; return o; };
