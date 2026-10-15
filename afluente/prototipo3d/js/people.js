@@ -80,12 +80,12 @@ export function buildPeople(scene, { mobile = false } = {}) {
   const camisa = () => rnd() < 0.5 ? { mat: pick(MAT.xadrez), color: 0xffffff } : { mat: MAT.trama, color: pick([0xf0ebe0, 0x8ab6d8, 0x4a78b0, 0xe0b040, 0x6a9a5a, 0xd88a6a]) };
   const calca = () => ({ mat: MAT.trama, color: pick([0x3a5a8a, 0x2e4a72, 0xa08a62, 0x6a4a34, 0x4a4844]) });
   const vestido = () => ({ mat: pick(MAT.chita), color: 0xffffff });
-  const homem = (o = {}) => ({ sex: 'm', h: 1.64 + rnd() * 0.2, build: 0.95 + rnd() * 0.2, skin: sk(), hair: pick(['curto', 'curto', 'careca', 'crespo']), hairColor: hc(o.old), top: camisa(), bottom: calca(),
+  const homem = (o = {}) => ({ sex: 'm', h: 1.64 + rnd() * 0.2, build: 0.95 + rnd() * 0.2, skin: sk(), hair: o.old ? pick(['careca', 'curto', 'careca']) : pick(['curto', 'curto', 'crespo']), hairColor: hc(o.old), top: camisa(), bottom: calca(),
     sleeves: pick(['longa', 'arregaçada', 'curta']), hat: pick(['palha', 'palha', 'bone', null]), hatColor: pick([0x2f6aa0, 0xc83a2a, 0x3a3a3a]), belt: true, shoes: pick([0x3a2a20, 0x5a3a24]), ...o });
   const mulher = (o = {}) => { const dress = rnd() < 0.6; return { sex: 'f', h: 1.52 + rnd() * 0.16, build: 0.92 + rnd() * 0.22, skin: sk(), hair: pick(['coque', 'longo', 'tranca', 'crespo']), hairColor: hc(o.old),
     top: dress ? vestido() : { mat: MAT.trama, color: pick([0xf4efe6, 0xf2c8c0, 0xc8e0e8, 0xf0e0a0]) }, bottom: dress ? vestido() : { mat: pick(MAT.chita), color: 0xffffff }, dress, skirt: pick([0.55, 0.62, 0.85]),
     sleeves: pick(['curta', 'curta', 'longa']), hat: pick(['lenco', null, null, 'palha']), lenco: Math.floor(rnd() * 5), apron: rnd() < 0.5, shoes: pick([0x3a2a20, 0x7a4a2a]), ...o }; };
-  const crianca = (o = {}) => { const girl = rnd() < 0.5; return { sex: 'c', h: 1.05 + rnd() * 0.3, build: 0.9, skin: sk(), hair: girl ? pick(['tranca', 'longo']) : pick(['curto', 'crespo']), hairColor: pick(HAIR),
+  const crianca = (o = {}) => { const girl = rnd() < 0.5; return { sex: 'c', h: 1.05 + rnd() * 0.3, build: 0.9, skin: sk(), hair: girl ? pick(['tranca', 'chiquinha', 'longo']) : pick(['curto', 'curto', 'crespo']), hairColor: pick(HAIR),
     top: girl ? vestido() : { mat: MAT.trama, color: pick([0xe0b040, 0xc83a2a, 0x4a78b0, 0xf0ebe0]) }, bottom: girl ? vestido() : { mat: MAT.trama, color: pick([0x3a5a8a, 0xa08a62]) }, dress: girl, skirt: girl ? 0.32 : 0,
     sleeves: 'curta', hat: null, shoes: pick([0x2a2a2a, 0xc83a2a]), ...o }; };
 
@@ -133,7 +133,7 @@ export function buildPeople(scene, { mobile = false } = {}) {
   // ---------- poses (ângulos em radianos; + na coluna inclina para a frente, − no ombro levanta o braço para a frente)
   const set = (p, o) => { const k = o.k ?? 1, lerp = (obj, key, v) => { obj[key] += (v - obj[key]) * k; };
     lerp(p.pelvis.position, 'y', o.py ?? 0.95); lerp(p.spine.rotation, 'x', o.sp ?? 0); lerp(p.spine.rotation, 'y', o.sy ?? 0); lerp(p.head.rotation, 'x', o.hx ?? 0); lerp(p.head.rotation, 'y', o.hy ?? 0);
-    p.arms.forEach((a, i) => { lerp(a.sh.rotation, 'x', (o.sh || [0, 0])[i]); lerp(a.el.rotation, 'x', (o.el || [-0.15, -0.15])[i]); lerp(a.sh.rotation, 'z', (o.shz || [0.06, -0.06])[i]); });
+    p.arms.forEach((a, i) => { lerp(a.sh.rotation, 'x', (o.sh || [0, 0])[i]); lerp(a.el.rotation, 'x', (o.el || [-0.32, -0.32])[i]); lerp(a.sh.rotation, 'z', (o.shz || [0.1, -0.1])[i]); lerp(a.sh.rotation, 'y', (o.shy || [-0.15, 0.15])[i]); /* de pé, braço relaxado: cotovelo um pouco dobrado, mão perto da coxa */ });
     p.legs.forEach((l, i) => { lerp(l.hp.rotation, 'x', (o.hp || [0, 0])[i]); lerp(l.kn.rotation, 'x', (o.kn || [0, 0])[i]); }); };
   const walkPose = (p, sp, run) => { const a = Math.sin(p.ph), b = Math.sin(p.ph + Math.PI), amp = run ? 0.75 : 0.45;
     return { py: 0.95 - Math.abs(Math.cos(p.ph)) * 0.02, sp: run ? 0.15 : 0.03, sh: [a * amp * 0.8 + (run ? -0.3 : 0), b * amp * 0.8 + (run ? -0.3 : 0)], el: [run ? -1.2 : -0.25, run ? -1.2 : -0.25],
