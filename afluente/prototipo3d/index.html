@@ -24,6 +24,10 @@
   .chips{display:flex;gap:6px;flex-wrap:wrap}
   .chips button{border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:999px;padding:7px 12px;font:700 13.5px Nunito,system-ui;min-height:36px}
   .chips button[aria-pressed=true]{background:var(--ink);color:#fff;border-color:var(--ink)}
+  #giro{position:fixed;right:max(12px,env(safe-area-inset-right));bottom:calc(max(12px,env(safe-area-inset-bottom)) + 26px);display:flex;gap:8px}
+  #giro button{width:48px;height:48px;border:0;border-radius:50%;background:var(--paper);color:var(--ink);font:800 24px/1 system-ui;box-shadow:0 2px 10px rgba(0,0,0,.14);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+  #giro button:active{transform:scale(.94)}
+  #giro[hidden]{display:none}
   input[type=range]{flex:1;accent-color:var(--ink);height:36px}
 </style>
 </head>
@@ -34,12 +38,14 @@
   <button id="painelBtn" aria-expanded="false" aria-controls="painel">Clima</button>
 </div>
 <div id="painel" hidden>
+  <div class="linha"><span>Câmera</span><div class="chips" id="cCam"><button data-v="jogo" aria-pressed="true">Jogo</button><button data-v="livre" aria-pressed="false">Livre</button></div></div>
   <div class="linha"><span>Hora</span><input id="hora" type="range" min="5" max="20.5" step="0.1" value="15" aria-label="Hora do dia"></div>
   <div class="linha"><span>Estação</span><div class="chips" id="cEst"><button data-v="aguas" aria-pressed="true">Águas</button><button data-v="seca" aria-pressed="false">Seca</button></div></div>
   <div class="linha"><span>Chuva</span><div class="chips" id="cChuva"><button data-v="auto" aria-pressed="true">Do céu</button><button data-v="sem" aria-pressed="false">Sem</button><button data-v="garoa" aria-pressed="false">Garoa</button><button data-v="forte" aria-pressed="false">Forte</button></div></div>
   <div class="linha"><span>Vento</span><div class="chips" id="cVento"><button data-v="auto" aria-pressed="true">Do céu</button><button data-v="calmo" aria-pressed="false">Calmo</button><button data-v="brisa" aria-pressed="false">Brisa</button><button data-v="forte" aria-pressed="false">Forte</button></div></div>
   <div class="linha"><span>Tempo</span><div class="chips" id="cTempo"><button data-v="stop" aria-pressed="true">Parado</button><button data-v="run" aria-pressed="false">Correndo</button></div></div>
 </div>
+<div id="giro"><button id="rotL" aria-label="Girar o mapa para a esquerda">⟲</button><button id="rotR" aria-label="Girar o mapa para a direita">⟳</button></div>
 <div id="info"></div>
 <script src="js/atmos.js"></script>
 <script type="importmap">{"imports":{"three":"./js/three.module.min.js"}}</script>

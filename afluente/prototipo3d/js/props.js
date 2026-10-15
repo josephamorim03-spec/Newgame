@@ -6,7 +6,7 @@ import { mergeGeometries } from './addons/BufferGeometryUtils.js';
 import { NOISE, WIND } from './glsl.js';
 import { U, HEAD, LIGHT_END, shared, toon } from './mat.js';
 import { LAYOUT, heightAt, hexEdgeDist, blocked, inHex } from './world.js';
-import { plasterTexture, roofTexture, plankTexture, stoneTexture } from './textures.js';
+import { plasterTexture, roofTexture, plankTexture, stoneTexture, chitaTexture } from './textures.js';
 
 const rnd = (() => { let a = 98765; return () => { a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; })();
 const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
@@ -39,32 +39,74 @@ export function buildProps(scene, { mobile = false } = {}) {
   const smokeSrc = [], updaters = [];
   const groundY = (p, w, d, rot) => { let m = 1e9; for (const [u, v] of [[-1, -1], [1, -1], [1, 1], [-1, 1], [0, 0]]) { const c = Math.cos(rot), s = Math.sin(rot), x = u * w / 2, z = v * d / 2;
     m = Math.min(m, heightAt(p[0] + x * c + z * s, p[1] - x * s + z * c)); } return m - 0.04; };
-  const wallMat = (wall, band) => mat({ map: plaster, color: wall }, { uni: { uBand: { value: col(band) } }, fdecl: 'uniform vec3 uBand;',
-    frag: `float lum=dot(diffuseColor.rgb,vec3(0.33));
-      if(vLp.y<0.62){diffuseColor.rgb=uBand*(0.8+0.25*texture2D(map,vMapUv).r);}
-      else if(vLp.y<0.7){diffuseColor.rgb*=0.82;}
-      diffuseColor.rgb*=mix(0.86,1.0,smoothstep(0.62,1.6,vLp.y))*mix(1.0,0.8,uWet);` });
+  const chita = ['#c8382a', '#2f6aa0', '#e0a020', '#3a8a4a'].map((b, i) => chitaTexture(43 + i, b));
+  const curtainMats = chita.map(t => mat({ map: t, emissiveMap: t, emissive: 0xffc890, emissiveIntensity: 0, side: THREE.DoubleSide }));
+  // vidro: de dia escuro, refletindo um pouco do céu; à noite a luz amarela de lamparina (nem toda janela acende)
+  const glassDark = mat({ color: 0x1c232b }, { frag: 'diffuseColor.rgb=mix(diffuseColor.rgb,uSkyHor*0.5,0.4);' });
+  const groundAt = (g, lx, lz) => { const v = new THREE.Vector3(lx, 0, lz).applyMatrix4(g.matrixWorld); return heightAt(v.x, v.z) - g.position.y; };
+  const spillMat = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, uniforms: { uDay: U.uDay },
+    vertexShader: 'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',
+    fragmentShader: 'uniform float uDay;varying vec2 vUv;void main(){vec2 d=(vUv-vec2(0.5,1.0))*vec2(2.0,1.0);float r=length(d);float a=(1.0-smoothstep(0.0,1.0,r))*pow(1.0-uDay,1.5);gl_FragColor=vec4(vec3(1.0,0.62,0.28)*a*0.5,1.0);}' });
+  const haloTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d'), gr = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+    gr.addColorStop(0, 'rgba(255,220,150,1)'); gr.addColorStop(0.25, 'rgba(255,170,80,0.5)'); gr.addColorStop(1, 'rgba(255,140,60,0)'); g.fillStyle = gr; g.fillRect(0, 0, 64, 64); return new THREE.CanvasTexture(c); })();
+  const halos = [];
+
+  // parede caiada: barrado colorido com respingo de terra, cunhais e faixa sob o beiral na cor do barrado, sombra junto do
+  // chão e sob o beiral (oclusão), escorridos e pedaços sem reboco vindos da textura
+  const wallMat = (wall, band, H = 99, w = 999, d = 999) => mat({ map: plaster, color: col(wall).multiplyScalar(0.92) }, {
+    uni: { uBand: { value: col(band) }, uH: { value: H }, uWD: { value: new THREE.Vector2(w / 2, d / 2) } }, fdecl: 'uniform vec3 uBand;uniform float uH;uniform vec2 uWD;',
+    frag: `{vec3 tx=texture2D(map,vMapUv).rgb;float y=vLp.y;float cx=uWD.x-abs(vLp.x),cz=uWD.y-abs(vLp.z);float onLong=step(cz,0.03)*step(-0.03,cz),onGab=step(cx,0.03)*step(-0.03,cx);
+      if(y<0.62){diffuseColor.rgb=uBand*(0.72+0.32*tx.r);diffuseColor.rgb=mix(diffuseColor.rgb,toLin(vec3(0.55,0.38,0.26)),(1.0-smoothstep(-0.2,0.3,y))*0.55*vnoise(vLp.xz*9.0+y*20.0));}
+      else if(y<0.67)diffuseColor.rgb*=0.78;
+      float corner=max(onLong*step(cx,0.2),onGab*step(cz,0.2))*step(0.62,y)*step(y,uH);
+      diffuseColor.rgb=mix(diffuseColor.rgb,uBand*(0.8+0.25*tx.r),corner);
+      diffuseColor.rgb=mix(diffuseColor.rgb,uBand*(0.85+0.2*tx.r),step(uH-0.16,y)*step(y,uH)*0.9);
+      diffuseColor.rgb*=(1.0-0.3*smoothstep(uH-1.0,uH,y)*step(y,uH-0.16))*(1.0-0.2*(1.0-smoothstep(0.62,1.4,y)));
+      diffuseColor.rgb*=mix(1.0,0.8,uWet);}` });
 
   // ---------- casa: paredes (descem 0,8 m para dentro do chão no lado alto), oitões, duas águas de telha, cumeeira,
-  // porta, janelas com folhas abertas, chaminé e, em algumas, varanda
+  // porta de tábuas com batente e soleira, janelas com moldura, peitoril, folhas abertas, vidro em cruz e cortina de chita,
+  // lampião na porta, chaminé e, em algumas, varanda. À noite a luz das janelas cai no chão em frente.
   function house(h, { H = 2.8, pitch = 0.42, ov = 0.55, chapel = false } = {}) {
-    const g = new THREE.Group(), w = h.w, d = h.d, rh = d / 2 * Math.tan(pitch), trim = col(h.trim), wood = [], glow = [], roof = [], walls = [];
-    walls.push(box(w, H + 0.8, d, 0, (H + 0.8) / 2 - 0.8, 0, 2.5));
+    const g = new THREE.Group(), w = h.w, d = h.d, rh = d / 2 * Math.tan(pitch), trim = col(h.trim), cream = col(0xf1ebde), wood = [], glassL = [], glassD = [], roof = [], walls = [], curt = [], spills = [];
+    const ci = Math.floor(rnd() * 4);
+    walls.push(box(w, H + 0.8, d, 0, (H + 0.8) / 2 - 0.8, 0, 5));
     const gab = new THREE.BufferGeometry(), gp = [], gu = [];
-    for (const sx of [1, -1]) { const x = sx * w / 2, tri = [[x, H, -d / 2], [x, H, d / 2], [x, H + rh, 0]]; if (sx < 0) tri.reverse(); for (const v of tri) { gp.push(...v); gu.push(v[2] / 2.5, v[1] / 2.5); } }
+    for (const sx of [1, -1]) { const x = sx * w / 2, tri = [[x, H, -d / 2], [x, H, d / 2], [x, H + rh, 0]]; if (sx < 0) tri.reverse(); for (const v of tri) { gp.push(...v); gu.push(v[2] / 5, v[1] / 5); } }
     gab.setAttribute('position', new THREE.Float32BufferAttribute(gp, 3)); gab.setAttribute('uv', new THREE.Float32BufferAttribute(gu, 2)); gab.computeVertexNormals(); walls.push(gab);
     const L = (d / 2 + ov) / Math.cos(pitch), rc = col(h.roof);
     for (const side of [0, 1]) { const sl = box(w + 2 * ov, 0.1, L, 0, 0, 0, 1); const uv = sl.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * 1 / 1.6, uv.getY(i) / 2.1);
       sl.rotateX(pitch).translate(0, H + rh - L / 2 * Math.sin(pitch) + 0.08, L / 2 * Math.cos(pitch)); if (side) sl.rotateY(Math.PI); roof.push(paint(sl, rc)); }
     roof.push(paint(new THREE.CylinderGeometry(0.14, 0.14, w + 2 * ov, 8).rotateZ(Math.PI / 2).translate(0, H + rh + 0.1, 0), rc.clone().multiplyScalar(0.8)));
-    // fachada: porta e janelas (a fachada é +z na casa, +x na capela)
-    const front = chapel ? [] : [[-w * 0.22, 'door'], [w * 0.12, 'win'], [w * 0.34, 'win']];
-    for (const [x, kind] of front) {
-      if (kind === 'door') { wood.push(paint(box(0.95, 2.1, 0.08, x, 1.05, d / 2 + 0.03, 1), trim)); wood.push(paint(box(1.15, 0.12, 0.1, x, 2.16, d / 2 + 0.04, 1), col(0xf4f0e8))); }
-      else { glow.push(box(0.8, 0.9, 0.04, x, 1.6, d / 2 + 0.01)); wood.push(paint(box(1.0, 0.1, 0.1, x, 2.1, d / 2 + 0.04, 1), col(0xf4f0e8)), paint(box(1.0, 0.08, 0.14, x, 1.12, d / 2 + 0.06, 1), col(0xf4f0e8)));
-        for (const sgn of [-1, 1]) { const sh = box(0.42, 0.92, 0.05, 0, 0, 0, 1); sh.translate(sgn * 0.21, 0, 0).rotateY(sgn * -1.75).translate(x + sgn * 0.42, 1.6, d / 2 + 0.05); wood.push(paint(sh, trim)); } } }
-    for (const [x, z, ry] of [[w / 2 + 0.01, 0, Math.PI / 2], [-w / 2 - 0.01, 0, -Math.PI / 2], [0, -d / 2 - 0.01, Math.PI]]) { if (chapel && x > 0) continue;
-      const gw = box(0.7, 0.8, 0.04, 0, 1.6, 0).rotateY(ry).translate(x, 0, z); glow.push(gw); wood.push(paint(box(0.86, 0.96, 0.03, 0, 1.6, 0, 1).rotateY(ry).translate(x * 0.999, 0, z * 0.999), trim)); }
+    // peças de fachada montadas num plano local (parede em z=0, para fora +z) e levadas para a parede certa
+    const place = (geo, x, y, ry, wx, wz) => geo.translate(x, y, 0).rotateY(ry).translate(wx, 0, wz);
+    function windowAt(x, y, ry, wx, wz, ww = 0.8, wh = 0.9) {
+      const P = (gg, c, arr = wood) => arr.push(c ? paint(place(gg, x, y, ry, wx, wz), c) : place(gg, x, y, ry, wx, wz));
+      const lit = rnd() < 0.75;
+      P(box(ww, wh, 0.02, 0, 0, 0.03), null, lit ? glassL : glassD);
+      P(box(ww + 0.04, 0.03, 0.03, 0, 0, 0.055, 1), cream); P(box(0.03, wh, 0.03, 0, 0, 0.055, 1), cream);             // vidro em cruz
+      for (const s of [-1, 1]) { P(box(0.08, wh + 0.16, 0.13, s * (ww / 2 + 0.04), 0, 0.065, 1), cream); P(box(0.06, wh, 0.1, s * (ww / 2 - 0.03), 0, 0.05, 1), col(0x3a3430)); }   // batente e fundo
+      P(box(ww + 0.16, 0.09, 0.13, 0, wh / 2 + 0.04, 0.065, 1), cream); P(box(ww + 0.3, 0.07, 0.2, 0, -wh / 2 - 0.04, 0.1, 1), cream);                   // verga e peitoril
+      for (const s of [-1, 1]) { const c = box(ww * 0.36, wh * 0.92, 0.01, s * (ww / 2 - ww * 0.18), 0, 0.042, 1); curt.push(place(c, x, y, ry, wx, wz)); }
+      for (const s of [-1, 1]) { const sh = box(ww / 2, wh, 0.05, 0, 0, 0, 1); sh.translate(s * ww / 4, 0, 0).rotateY(s * -1.85).translate(s * (ww / 2 + 0.08), 0, 0.12); P(sh, trim);
+        for (let k = -1; k <= 1; k += 2) { const ri = box(ww / 2 - 0.08, 0.04, 0.02, 0, 0, 0, 1); ri.translate(s * ww / 4, k * wh * 0.3, 0.03).rotateY(s * -1.85).translate(s * (ww / 2 + 0.08), 0, 0.12); P(ri, trim.clone().multiplyScalar(0.8)); } }
+      if (lit) spills.push([x, ry, wx, wz, 1.6]);
+    }
+    function doorAt(x, ry, wx, wz, dw = 0.95, dh = 2.1) {
+      const P = (gg, c) => wood.push(paint(place(gg, x, 0, ry, wx, wz), c));
+      for (let k = 0; k < 4; k++) P(box(dw / 4 - 0.01, dh, 0.06, -dw / 2 + dw / 8 + k * dw / 4, dh / 2, 0.04, 0.6), trim.clone().multiplyScalar(0.9 + 0.12 * ((k * 7) % 3) / 2));
+      P(box(dw * 0.8, 0.06, 0.03, 0, dh * 0.3, 0.08, 1), trim.clone().multiplyScalar(0.75)); P(box(dw * 0.8, 0.06, 0.03, 0, dh * 0.75, 0.08, 1), trim.clone().multiplyScalar(0.75));
+      P(box(0.05, 0.05, 0.05, dw * 0.35, dh * 0.48, 0.1, 1), col(0x2a2622));
+      for (const s of [-1, 1]) P(box(0.1, dh + 0.12, 0.14, s * (dw / 2 + 0.05), dh / 2, 0.07, 1), cream);
+      P(box(dw + 0.3, 0.12, 0.15, 0, dh + 0.06, 0.07, 1), cream); P(box(dw + 0.4, 0.14, 0.45, 0, 0.0, 0.2, 1), col(0x9a9488));
+      spills.push([x, ry, wx, wz, 2.0]);
+      if (!chapel) { const lp = new THREE.Vector3(x + dw / 2 + 0.35, dh + 0.15, 0.22).applyAxisAngle(new THREE.Vector3(0, 1, 0), ry).add(new THREE.Vector3(wx, 0, wz));   // lampião
+        P(box(0.04, 0.04, 0.25, dw / 2 + 0.35, dh + 0.35, 0.12, 1), col(0x2a2622)); glassL.push(place(box(0.13, 0.2, 0.13, dw / 2 + 0.35, dh + 0.15, 0.22), x, 0, ry, wx, wz));
+        halos.push({ g, p: lp }); }
+    }
+    if (!chapel) { doorAt(-w * 0.22, 0, 0, d / 2); windowAt(w * 0.12, 1.55, 0, 0, d / 2); windowAt(w * 0.34, 1.55, 0, 0, d / 2);
+      windowAt(0, 1.55, Math.PI / 2, w / 2, 0); windowAt(0, 1.55, -Math.PI / 2, -w / 2, 0); windowAt(-w * 0.2, 1.55, Math.PI, 0, -d / 2); windowAt(w * 0.2, 1.55, Math.PI, 0, -d / 2); }
+    else { doorAt(0, Math.PI / 2, w / 2, 0, 1.4, 2.9); for (const zs of [1, -1]) for (const xx of [-w * 0.25, w * 0.15]) windowAt(xx * zs, 2.1, zs > 0 ? 0 : Math.PI, 0, zs * d / 2, 0.7, 1.5); windowAt(0, 2.1, -Math.PI / 2, -w / 2, 0, 0.7, 1.5); }
     if (!chapel) { walls.push(box(0.55, rh + 1.4, 0.55, w / 2 - 0.9, H + (rh + 1.4) / 2 - 0.2, -d / 4, 2.5)); wood.push(paint(box(0.7, 0.12, 0.7, w / 2 - 0.9, H + rh + 1.25, -d / 4, 1), col(0x5a4a40)));
       smokeSrc.push({ g, local: V3(w / 2 - 0.9, H + rh + 1.35, -d / 4), on: h.smoke !== false }); }
     if (h.porch) { const pw = w * 0.62, pz = d / 2 + 2.0;
@@ -72,19 +114,26 @@ export function buildProps(scene, { mobile = false } = {}) {
       roof.push(paint(pr.rotateX(0.24).translate(-w * 0.1, H - 0.32, d / 2 + 1.1), rc));
       for (const px of [-pw / 2, 0, pw / 2]) wood.push(paint(new THREE.CylinderGeometry(0.07, 0.08, H - 0.55, 8).translate(px - w * 0.1, (H - 0.55) / 2, pz), col(0x7a5a3e)));
       wood.push(paint(box(pw + 0.3, 0.18, 2.3, -w * 0.1, 0.06, d / 2 + 1.1, 1), col(0xa8503a))); }
-    if (chapel) {   // capela: porta alta e óculo no oitão da frente (+x), torre do sino ao lado com telhado em pirâmide e cruz
-      const fx = w / 2 + 0.03; wood.push(paint(box(0.08, 2.9, 1.4, fx, 1.45, 0, 1), trim), paint(box(0.1, 0.16, 1.7, fx + 0.01, 3.0, 0, 1), col(0xf4d24a)));
-      glow.push(new THREE.CylinderGeometry(0.35, 0.35, 0.05, 16).rotateZ(Math.PI / 2).translate(fx, H + rh * 0.45, 0));
-      const tx = w / 2 - 1.2, tz = -(d / 2 + 1.15), th = 9.2; walls.push(box(2.3, th + 0.8, 2.3, tx, (th + 0.8) / 2 - 0.8, tz, 2.5));
+    if (chapel) {   // capela: óculo no oitão da frente (+x), torre do sino ao lado com telhado em pirâmide e cruz
+      glassL.push(new THREE.CylinderGeometry(0.35, 0.35, 0.05, 16).rotateZ(Math.PI / 2).translate(w / 2 + 0.03, H + rh * 0.45, 0));
+      const tx = w / 2 - 1.2, tz = -(d / 2 + 1.15), th = 9.2; walls.push(box(2.3, th + 0.8, 2.3, tx, (th + 0.8) / 2 - 0.8, tz, 5));
       for (const [ox, oz, ry] of [[1.16, 0, Math.PI / 2], [-1.16, 0, -Math.PI / 2], [0, 1.16, 0], [0, -1.16, Math.PI]]) wood.push(paint(box(0.8, 1.3, 0.05, 0, 0, 0, 1).rotateY(ry).translate(tx + ox, th - 1.3, tz + oz), col(0x2a2622)));
       roof.push(paint(new THREE.ConeGeometry(1.85, 2.3, 4, 1).rotateY(Math.PI / 4).translate(tx, th + 1.15, tz), rc));
       wood.push(paint(box(0.1, 1.1, 0.1, tx, th + 2.8, tz, 1), col(0xe8d070)), paint(box(0.1, 0.1, 0.6, tx, th + 3.0, tz, 1), col(0xe8d070))); }
-    const wm = wallMat(h.wall, h.band), add = (gs, m, k) => { if (!gs.length) return; const geo = merge(gs, k); geo.computeVertexNormals(); const me = new THREE.Mesh(geo, m); me.castShadow = me.receiveShadow = true; g.add(me); };
-    add(walls, wm, ['position', 'uv']); add(roof, roofMat, ['position', 'uv', 'color']); add(wood, woodMat, ['position', 'uv', 'color']); add(glow, glowMat, ['position']);
-    g.position.set(h.p[0], groundY(h.p, w, d, h.rot), h.p[1]); g.rotation.y = h.rot; scene.add(g); return g;
+    const wm = wallMat(h.wall, h.band, H, w, d), add = (gs, m, k) => { if (!gs.length) return; const geo = merge(gs, k); geo.computeVertexNormals(); const me = new THREE.Mesh(geo, m); me.castShadow = me.receiveShadow = true; g.add(me); };
+    add(walls, wm, ['position', 'uv']); add(roof, roofMat, ['position', 'uv', 'color']); add(wood, woodMat, ['position', 'uv', 'color']); add(glassL, glowMat, ['position']); add(glassD, glassDark, ['position']);
+    add(curt, curtainMats[ci], ['position', 'uv']);
+    g.position.set(h.p[0], groundY(h.p, w, d, h.rot), h.p[1]); g.rotation.y = h.rot; scene.add(g); g.updateMatrixWorld(true);
+    for (const [x, ry, wx, wz, s] of spills) { const c = new THREE.Vector3(x, 0, 0.15 + s * 0.45).applyAxisAngle(new THREE.Vector3(0, 1, 0), ry).add(new THREE.Vector3(wx, 0, wz));
+      const pl = new THREE.Mesh(new THREE.PlaneGeometry(s, s * 0.9).rotateX(-Math.PI / 2).rotateY(ry), spillMat); pl.position.set(c.x, groundAt(g, c.x, c.z) + 0.04, c.z); pl.renderOrder = 4; g.add(pl); }
+    return g;
   }
   for (const h of LAYOUT.houses) house(h);
   const C = LAYOUT.chapel; house({ p: C.p, rot: C.rot, w: 8.5, d: 5.4, wall: 0xf6f2ea, band: 0x2f5fa8, trim: 0x2f5fa8, roof: 0xb0553a }, { H: 4.2, pitch: 0.5, chapel: true });
+  // halo dos lampiões (aceso ao entardecer)
+  const haloMat = new THREE.SpriteMaterial({ map: haloTex, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, opacity: 0 });
+  for (const hl of halos) { const sp = new THREE.Sprite(haloMat); sp.scale.setScalar(1.3); sp.position.copy(hl.p); hl.g.add(sp); }
+  updaters.push(() => { const n = Math.pow(1 - U.uDay.value, 1.5); haloMat.opacity = n * 0.9; for (const m of curtainMats) m.emissiveIntensity = n * 0.55; });
 
   // ---------- poço: anel de pedra, água escura lá no fundo, dois esteios, sarilho e telhadinho
   { const W = LAYOUT.well, g = new THREE.Group();
@@ -172,7 +221,7 @@ export function buildProps(scene, { mobile = false } = {}) {
 
   // ---------- moinho: torre caiada, chapéu que gira para encarar o vento e quatro pás de lona; a velocidade segue o vento
   { const Mp = LAYOUT.mill.p, g = new THREE.Group(), y0 = heightAt(Mp[0], Mp[1]) - 0.1, Ht = 7.2;
-    const tower = new THREE.Mesh(new THREE.CylinderGeometry(1.45, 2.05, Ht + 0.8, 16, 1, true).translate(0, (Ht + 0.8) / 2 - 0.8, 0), wallMat(0xf2ede4, 0x8a6a52));
+    const tower = new THREE.Mesh(new THREE.CylinderGeometry(1.45, 2.05, Ht + 0.8, 16, 1, true).translate(0, (Ht + 0.8) / 2 - 0.8, 0), wallMat(0xf2ede4, 0x8a6a52, 99, 999, 999));
     { const uv = tower.geometry.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * 4, uv.getY(i) * 3); }
     const tw = merge([paint(box(0.9, 1.9, 0.1, 0, 0.95, 1.98, 1).rotateX(-0.08), col(0x7a4a2a)), paint(box(0.5, 0.6, 0.1, 0, 4.6, 1.66, 1).rotateX(-0.08), col(0x2f6aa0))]);
     g.add(tower, new THREE.Mesh(tw, woodMat));

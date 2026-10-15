@@ -88,13 +88,34 @@ export function stoneTexture(seed = 23) {
   return tex(c, true);
 }
 
-// reboco caiado: quase branco, com manchas suaves de umidade e de cal mais grossa (a cor vem do material)
+// reboco caiado sobre adobe (cobre 5 m de parede): várias demãos de cal com manchas, grão fino, fissuras finas e,
+// aqui e ali, um pedaço onde o reboco caiu e aparecem os tijolos de adobe vermelhos com a argamassa
 export function plasterTexture(seed = 31) {
-  const S = 256, c = document.createElement('canvas'); c.width = c.height = S; const g = c.getContext('2d'), R = rng(seed);
-  g.fillStyle = 'rgb(236,234,230)'; g.fillRect(0, 0, S, S);
-  for (let i = 0; i < 70; i++) { const x = R() * S, y = R() * S, r = 10 + R() * 40, l = 214 + R() * 40; g.fillStyle = `rgba(${l},${l},${l * 0.98},0.35)`; g.beginPath(); g.ellipse(x, y, r, r * 0.6, R() * 3, 0, 7); g.fill(); }
-  for (let i = 0; i < 2500; i++) { const l = 200 + R() * 55; g.fillStyle = `rgba(${l},${l},${l},0.35)`; g.fillRect(R() * S, R() * S, 1.5, 1.5); }
-  g.strokeStyle = 'rgba(150,145,140,0.25)'; g.lineWidth = 1; for (let i = 0; i < 6; i++) { let x = R() * S, y = R() * S; g.beginPath(); g.moveTo(x, y); for (let k = 0; k < 5; k++) { x += (R() - 0.5) * 22; y += R() * 14; g.lineTo(x, y); } g.stroke(); }
+  const S = 512, c = document.createElement('canvas'); c.width = c.height = S; const g = c.getContext('2d'), R = rng(seed);
+  g.fillStyle = 'rgb(238,233,224)'; g.fillRect(0, 0, S, S);
+  for (let i = 0; i < 140; i++) { const x = R() * S, y = R() * S, r = 14 + R() * 70, l = 212 + R() * 40, w = R() < 0.3 ? 0.92 : 1;
+    g.fillStyle = `rgba(${l},${l * 0.985},${l * 0.95 * w},0.28)`; g.beginPath(); g.ellipse(x, y, r, r * (0.4 + R() * 0.5), R() * 3, 0, 7); g.fill(); }
+  for (let i = 0; i < 9000; i++) { const l = 190 + R() * 65; g.fillStyle = `rgba(${l},${l * 0.98},${l * 0.95},0.28)`; g.fillRect(R() * S, R() * S, 1.6, 1.6); }
+  // escorridos de chuva: faixas verticais acinzentadas descendo do alto
+  for (let i = 0; i < 26; i++) { const x = R() * S, w = 3 + R() * 10, h = 60 + R() * 200, y0 = R() * S * 0.3;
+    const gr = g.createLinearGradient(0, y0, 0, y0 + h); gr.addColorStop(0, 'rgba(120,112,100,0.16)'); gr.addColorStop(1, 'rgba(120,112,100,0)'); g.fillStyle = gr; g.fillRect(x, y0, w, h); }
+  // pedaços sem reboco: adobe
+  for (let i = 0; i < 2; i++) { const cx = 40 + R() * (S - 80), cy = 60 + R() * (S - 160), rx = 14 + R() * 16, ry = 9 + R() * 9, pts = [];
+    for (let k = 0; k < 14; k++) { const a = k / 14 * 6.283, rr = 0.7 + R() * 0.5; pts.push([cx + Math.cos(a) * rx * rr, cy + Math.sin(a) * ry * rr]); }
+    const path = () => { g.beginPath(); g.moveTo(...pts[0]); for (const p of pts) g.lineTo(...p); g.closePath(); };
+    g.save(); path(); g.fillStyle = 'rgb(150,130,112)'; g.fill(); g.clip();
+    for (let y = cy - ry * 1.3; y < cy + ry * 1.3; y += 11) for (let x = cx - rx * 1.4 + ((y / 11) % 2) * 12; x < cx + rx * 1.4; x += 24) {
+      const l = 0.85 + R() * 0.3; g.fillStyle = `rgb(${178 * l},${98 * l},${70 * l})`; g.fillRect(x + 1.5, y + 1.5, 21, 8); }
+    g.restore(); path(); g.strokeStyle = 'rgba(90,80,70,0.55)'; g.lineWidth = 2.5; g.stroke(); g.strokeStyle = 'rgba(255,255,250,0.6)'; g.lineWidth = 1; g.stroke(); }
+  g.strokeStyle = 'rgba(120,112,104,0.35)'; g.lineWidth = 1; for (let i = 0; i < 10; i++) { let x = R() * S, y = R() * S; g.beginPath(); g.moveTo(x, y); for (let k = 0; k < 6; k++) { x += (R() - 0.5) * 30; y += R() * 22; g.lineTo(x, y); } g.stroke(); }
+  return tex(c, true);
+}
+// cortina de chita (florzinhas sobre fundo colorido), para as janelas
+export function chitaTexture(seed = 43, base = '#c8382a') {
+  const S = 64, c = document.createElement('canvas'); c.width = c.height = S; const g = c.getContext('2d'), R = rng(seed);
+  g.fillStyle = base; g.fillRect(0, 0, S, S);
+  for (let i = 0; i < 40; i++) { const x = R() * S, y = R() * S; g.fillStyle = R() < 0.5 ? '#f4e8c8' : '#2a6a3a'; for (let k = 0; k < 5; k++) { const a = k * 1.256; g.beginPath(); g.arc(x + Math.cos(a) * 2.2, y + Math.sin(a) * 2.2, 1.5, 0, 7); g.fill(); } g.fillStyle = '#f2c21a'; g.beginPath(); g.arc(x, y, 1.2, 0, 7); g.fill(); }
+  for (let x = 0; x < S; x += 8) { g.fillStyle = 'rgba(0,0,0,0.12)'; g.fillRect(x, 0, 3, S); }   // pregas
   return tex(c, true);
 }
 // telha colonial (capa e canal): fileiras de telhas curvas, cada uma com seu tom, sombra embaixo e brilho em cima

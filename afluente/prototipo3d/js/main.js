@@ -11,6 +11,7 @@ import { R, TILES, CENTER, RIVER, riverHalfWidth, heightAt, riverInfo, waterDist
 import { buildProps } from './props.js';
 import { buildFauna } from './fauna.js';
 import { buildClouds } from './clouds.js';
+import { createGameCamera } from './camera.js';
 import { leafTexture, fanTexture, barkTexture, earthTexture, stoneTexture } from './textures.js';
 
 const ATM = window.ATM;
@@ -167,16 +168,19 @@ const fieldTex = (() => { const N = FIELD.res, d = new Float32Array(N * N * 4), 
     d[k + 3] = b[2] > 0.5 ? 1 : b[1] > 0.5 ? 0.5 : 0; }
   const t = new THREE.DataTexture(d, N, N, THREE.RGBAFormat, THREE.FloatType); t.minFilter = t.magFilter = THREE.LinearFilter; t.needsUpdate = true; return t; })();
 const BLADES = mobile ? 70000 : 140000;
-const bladeGeo = (() => { const g = new THREE.InstancedBufferGeometry(), seg = 4, pos = [], uv = [], nor = [], idx = [];
+const bladeBase = (() => { const g = new THREE.InstancedBufferGeometry(), seg = 4, pos = [], uv = [], nor = [], idx = [];
   for (let i = 0; i <= seg; i++) { const v = i / seg, w = 1 - v * 0.92; pos.push(-0.5 * w, v, 0, 0.5 * w, v, 0); uv.push(0, v, 1, v); nor.push(0, 0, 1, 0, 0, 1); }
   for (let i = 0; i < seg; i++) { const a = i * 2; idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); }
-  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3)); g.setIndex(idx);
-  // cada lâmina tem lugar fixo dentro das peças, sorteado conforme a densidade do capim ali (nada se perde na água ou na mata fechada)
-  const sd = new Float32Array(BLADES * 4), bp = new Float32Array(BLADES * 2), F = fieldTex.image.data, N = FIELD.res;
-  for (let i = 0, guard = 0; i < BLADES && guard < BLADES * 60; guard++) { const t = TILES[Math.floor(rnd() * TILES.length)], x = t.c[0] + (rnd() - 0.5) * 2 * R, z = t.c[1] + (rnd() - 0.5) * 2 * R;
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3)); g.setIndex(idx); return g; })();
+// cada lâmina tem lugar fixo dentro das peças, sorteado conforme a densidade do capim ali (nada se perde na água ou na mata fechada);
+// cada peça vira um pedaço separado, com sua esfera de limite, para a câmera descartar o que não vê
+const bladeGeos = (() => { const per = TILES.map(() => ({ sd: [], bp: [] })), F = fieldTex.image.data, N = FIELD.res;
+  for (let i = 0, guard = 0; i < BLADES && guard < BLADES * 60; guard++) { const ti = Math.floor(rnd() * TILES.length), t = TILES[ti], x = t.c[0] + (rnd() - 0.5) * 2 * R, z = t.c[1] + (rnd() - 0.5) * 2 * R;
     if (!inHex(x, z, t.c, 0.995)) continue; const fi = Math.min(N - 1, Math.floor((x - CENTER[0] + FIELD.size / 2) / FIELD.size * N)), fj = Math.min(N - 1, Math.floor((z - CENTER[1] + FIELD.size / 2) / FIELD.size * N));
-    if (rnd() > F[(fj * N + fi) * 4 + 1]) continue; bp[i * 2] = x; bp[i * 2 + 1] = z; sd.set([rnd(), rnd(), rnd(), rnd()], i * 4); i++; }
-  g.setAttribute('seed', new THREE.InstancedBufferAttribute(sd, 4)); g.setAttribute('bpos', new THREE.InstancedBufferAttribute(bp, 2)); g.instanceCount = BLADES; return g; })();
+    if (rnd() > F[(fj * N + fi) * 4 + 1]) continue; per[ti].bp.push(x, z); per[ti].sd.push(rnd(), rnd(), rnd(), rnd()); i++; }
+  return per.map((q, ti) => { const g = new THREE.InstancedBufferGeometry(); g.index = bladeBase.index; for (const k of ['position', 'uv', 'normal']) g.setAttribute(k, bladeBase.attributes[k]);
+    g.setAttribute('seed', new THREE.InstancedBufferAttribute(new Float32Array(q.sd), 4)); g.setAttribute('bpos', new THREE.InstancedBufferAttribute(new Float32Array(q.bp), 2));
+    g.instanceCount = q.bp.length / 2; g.userData.full = g.instanceCount; g.userData.c = TILES[ti].c; g.boundingSphere = new THREE.Sphere(new THREE.Vector3(TILES[ti].c[0], 0, TILES[ti].c[1]), R + 2); return g; }); })();
 const grassU = { uField: { value: fieldTex }, uFieldO: { value: new THREE.Vector2(CENTER[0] - FIELD.size / 2, CENTER[1] - FIELD.size / 2) }, uFieldS: { value: FIELD.size },
  };
 const grassMat = toon({ side: THREE.DoubleSide });
@@ -207,7 +211,7 @@ grassMat.onBeforeCompile = sh => { shared(sh); Object.assign(sh.uniforms, grassU
       col+=vec3(0.16,0.15,0.06)*vGust*vGy*vGy;col*=mix(1.0,0.78,uWet);diffuseColor.rgb=toLin(col);`)
     .replace('#include <lights_fragment_end>', LIGHT_END(0) + `\n{float back=pow(max(dot(normalize(vWp-cameraPosition),uSunW),0.0),2.5);totalEmissiveRadiance+=diffuseColor.rgb*uSunC*back*0.55*vGy*cloudShadow(vWp.xz);}`);
 };
-const grass = new THREE.Mesh(bladeGeo, grassMat); grass.frustumCulled = false; grass.receiveShadow = true; scene.add(grass);
+const grass = new THREE.Group(); for (const g of bladeGeos) { const m = new THREE.Mesh(g, grassMat); m.receiveShadow = true; grass.add(m); } scene.add(grass);
 
 // ---------- árvores: copas em ramos de folhas (volume macio, luz em faixas e contorno claro), troncos tortos do cerrado,
 // mata de galeria alta, buritis em leque e ipês (amarelos na seca)
@@ -444,7 +448,7 @@ let water;
 const mirrorCam = new THREE.PerspectiveCamera(), reflClip = [new THREE.Plane(new THREE.Vector3(0, 1, 0), 0)];
 const BIAS = new THREE.Matrix4().set(0.5, 0, 0, 0.5, 0, 0.5, 0, 0.5, 0, 0, 0.5, 0.5, 0, 0, 0, 1);
 function renderReflection() {
-  const wy = WATER_Y - U.uWaterDrop.value, cp = camera.position, tg = controls.target;
+  const wy = WATER_Y - U.uWaterDrop.value, cp = camera.position, fw = camera.getWorldDirection(new THREE.Vector3()), tg = cp.clone().add(fw);
   mirrorCam.copy(camera); mirrorCam.position.set(cp.x, 2 * wy - cp.y, cp.z); mirrorCam.up.set(0, 1, 0); mirrorCam.lookAt(tg.x, 2 * wy - tg.y, tg.z); mirrorCam.updateMatrixWorld();
   mirrorCam.projectionMatrix.copy(camera.projectionMatrix); mirrorCam.projectionMatrixInverse.copy(camera.projectionMatrixInverse);
   waterMat.uniforms.uReflMat.value.multiplyMatrices(BIAS, mirrorCam.projectionMatrix).multiply(mirrorCam.matrixWorldInverse);
@@ -468,7 +472,7 @@ const rain = new THREE.LineSegments(rainGeo, rainMat); rain.frustumCulled = fals
 
 // ---------- clima: o motor do jogo + o que a pessoa escolhe nos controles
 const atm = ATM.Sky('previa-3d');
-const ST = { hour: 15, seca: false, rain: 'auto', wind: 'auto', run: false, tf: 9, wet: 0.1, secaV: 0 };
+const ST = { cam: 'jogo', hour: 15, seca: false, rain: 'auto', wind: 'auto', run: false, tf: 9, wet: 0.1, secaV: 0 };
 const hourToTf = h => h >= 6 && h <= 18 ? h - 6 : h > 18 && h <= 21 ? 12 + (h - 18) / 3 : h > 21 ? 13 + (h - 21) / 3 : h < 3 ? 14 + h / 3 : 15 + (h - 3) / 3;
 const WIND_SET = { calmo: 1.2, brisa: 3.8, forte: 9.5 }, RAIN_SET = { sem: 0, garoa: 2.5, forte: 28 };
 const C = (r, g, b) => new THREE.Color().setRGB(r, g, b, THREE.SRGBColorSpace), lerpC = (a, b, t) => a.clone().lerp(b, Math.max(0, Math.min(1, t)));
@@ -510,16 +514,43 @@ function climate(dt) {
 // ---------- controles
 function chips(id, key, vals) { const box = $(id); box.addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; ST[key] = vals ? vals(b.dataset.v) : b.dataset.v;
   for (const x of box.querySelectorAll('button')) x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); }); }
+chips('cCam', 'cam');
 chips('cEst', 'seca', v => v === 'seca'); chips('cChuva', 'rain'); chips('cVento', 'wind'); chips('cTempo', 'run', v => v === 'run');
 $('hora').addEventListener('input', e => { ST.hour = +e.target.value; ST.run = false; for (const x of $('cTempo').querySelectorAll('button')) x.setAttribute('aria-pressed', x.dataset.v === 'stop' ? 'true' : 'false'); });
 $('painelBtn').addEventListener('click', () => { const p = $('painel'); p.hidden = !p.hidden; $('painelBtn').setAttribute('aria-expanded', String(!p.hidden)); });
 
 // ---------- laço: tempo, clima, desenho; se o celular sofrer, baixa a resolução
+// ---------- câmera do jogo (de cima, girando de 60 em 60°) e a câmera livre (para inspecionar os detalhes)
+const gameCam = createGameCamera(camera, renderer.domElement, { center: CENTER, radius: 72, groundY: (x, z) => Math.max(WATER_Y, heightAt(x, z)) });
+let camMode = 'jogo'; controls.enabled = false;
+if (innerWidth < innerHeight) gameCam.state.dist = gameCam.state.distT = 150;   // celular em pé: um pouco mais longe para caber o vale
+$('rotL').addEventListener('click', () => gameCam.rotate(-1)); $('rotR').addEventListener('click', () => gameCam.rotate(1));
+// a sombra do sol cobre só o pedaço de chão que aparece na tela: mais nítida de perto e sem desperdício de longe
+const _v = new THREE.Vector3(), _c = new THREE.Vector3(), _pts = [], shCam = sun.shadow.camera;
+function fitShadow() {
+  const cp = camera.position, focus = camMode === 'jogo' ? gameCam.focus : controls.target; _pts.length = 0; _c.set(0, 0, 0);
+  for (const [x, y] of [[-1, -1], [1, -1], [1, 1], [-1, 1], [0, 0]]) { _v.set(x, y, 0.5).unproject(camera).sub(cp).normalize(); if (_v.y > -0.08) _v.y = -0.08;
+    const t = (cp.y - focus.y) / -_v.y, p = cp.clone().addScaledVector(_v, t), d = Math.hypot(p.x - focus.x, p.z - focus.z); if (d > 110) { p.x = focus.x + (p.x - focus.x) * 110 / d; p.z = focus.z + (p.z - focus.z) * 110 / d; }
+    p.y = focus.y; _pts.push(p); _c.add(p); }
+  _c.multiplyScalar(1 / _pts.length); sun.target.position.copy(_c); sun.position.copy(_c).addScaledVector(U.uSunW.value, 250); sun.target.updateMatrixWorld(); sun.updateMatrixWorld();
+  shCam.position.copy(sun.position); shCam.lookAt(_c); shCam.updateMatrixWorld();
+  let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9; for (const p of _pts) for (const h of [-2, 20]) { _v.set(p.x, p.y + h, p.z).applyMatrix4(shCam.matrixWorldInverse); x0 = Math.min(x0, _v.x); x1 = Math.max(x1, _v.x); y0 = Math.min(y0, _v.y); y1 = Math.max(y1, _v.y); }
+  const size = Math.ceil((Math.max(x1 - x0, y1 - y0) + 12) / 8) * 8, texel = size / sun.shadow.mapSize.x, cx = Math.round((x0 + x1) / 2 / texel) * texel, cy = Math.round((y0 + y1) / 2 / texel) * texel;
+  Object.assign(shCam, { left: cx - size / 2, right: cx + size / 2, bottom: cy - size / 2, top: cy + size / 2, near: 1, far: 520 }); shCam.updateProjectionMatrix();
+}
+// capim: de longe, cada peça desenha menos lâminas (as que ficam já são mais largas na distância)
+function grassLod() { for (const m of grass.children) { const g = m.geometry, d = Math.hypot(camera.position.x - g.userData.c[0], camera.position.y, camera.position.z - g.userData.c[1]);
+  g.instanceCount = Math.round(g.userData.full * Math.max(0.3, Math.min(1, 1.3 - d / 190))); } }
+
 const clock = new THREE.Clock(); let fpsT = 0, fpsN = 0, slow = 0;
 const fmtH = h => `${String(Math.floor(h) % 24).padStart(2, '0')}:${String(Math.round((h % 1) * 60) % 60).padStart(2, '0')}`;
 function frame() {
   const dt = Math.min(0.1, clock.getDelta()); U.uTime.value += dt; U.uFlowClk.value += dt * (0.55 + U.uRain.value * 0.5);
-  const c = climate(dt); controls.update();
+  const c = climate(dt);
+  if (ST.cam !== camMode) { camMode = ST.cam; const game = camMode === 'jogo'; gameCam.state.enabled = game; controls.enabled = !game; $('giro').hidden = !game;
+    if (game) { gameCam.state.fx = controls.target.x; gameCam.state.fz = controls.target.z; } else { controls.target.copy(gameCam.focus); } }
+  if (camMode === 'jogo') gameCam.update(dt); else controls.update();
+  fitShadow(); grassLod();
   const ctx = { pxPerUnit: renderer.domElement.height / (2 * Math.tan(camera.fov * Math.PI / 360)) }; props.update(dt, ctx); fauna.update(dt, ctx); clouds.update(dt, camera);
   renderReflection();
   renderer.render(scene, camera);
@@ -528,4 +559,4 @@ function frame() {
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
-window.__previa = { ST, U, renderer, scene, camera, controls, fauna, clouds };
+window.__previa = { gameCam,  ST, U, renderer, scene, camera, controls, fauna, clouds };
