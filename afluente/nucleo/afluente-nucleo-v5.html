@@ -41,7 +41,7 @@ button:focus-visible { outline: 3px solid var(--water); outline-offset: 2px; }
 .dots.seca i.on { background: var(--warn); }
 .topo .dir { margin-left: auto; display: flex; gap: 8px; }
 .redondo { width: 38px; height: 38px; border-radius: 50%; border: 0; background: var(--card); box-shadow: var(--shadow); font-weight: 800; font-size: 16px; }
-.mao { position: fixed; left: 0; right: 0; bottom: 0; display: flex; justify-content: center; pointer-events: none;
+.mao { position: fixed; left: 0; right: 0; bottom: 0; display: flex; flex-direction: column; align-items: center; gap: 8px; pointer-events: none;
   padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px)); padding-left: max(12px, env(safe-area-inset-left, 0px)); padding-right: max(12px, env(safe-area-inset-right, 0px)); }
 .painel { pointer-events: auto; background: var(--card); border-radius: 22px; box-shadow: var(--shadow); padding: 10px 12px; display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; width: min(520px, 100%); align-items: center; }
 .pecas { display: flex; flex-direction: column; align-items: center; gap: 4px; }
@@ -73,6 +73,12 @@ button:focus-visible { outline: 3px solid var(--water); outline-offset: 2px; }
 .pacote canvas { width: 46px; height: 46px; }
 .grande { border: 0; border-radius: 14px; background: var(--ink); color: var(--card); min-height: 46px; font: 800 17px var(--f-title); }
 .num { font: 800 44px/1 var(--f-title); }
+button.chip { border: 0; }
+.chip.ativo { outline: 3px solid var(--warn); background: var(--bg-seca); }
+.dica-card { pointer-events: auto; background: var(--ink); color: var(--card); border-radius: 16px; padding: 10px 12px; width: min(520px, 100%); display: flex; gap: 10px; align-items: center; box-shadow: var(--shadow); }
+.dica-card p { margin: 0; flex: 1; min-width: 0; font-size: 14px; line-height: 1.4; }
+.dica-card button { border: 0; border-radius: 10px; background: var(--card); color: var(--ink); font-weight: 800; min-height: 38px; padding: 0 12px; }
+.botaoTexto { border: 0; background: transparent; color: var(--muted); font-weight: 700; text-decoration: underline; min-height: 36px; }
 @media (max-width: 520px) { .marca { display: none; } .topo { gap: 6px; padding-block: 8px; } .chip { padding: 5px 9px; font-size: 13px; } .chip small { font-size: 11px; } .redondo { width: 34px; height: 34px; }
   .dots i { width: 5px; height: 5px; } #cMao { width: 72px; height: 72px; } #msg { font-size: 13px; } }
 </style>
@@ -85,11 +91,11 @@ button:focus-visible { outline: 3px solid var(--water); outline-offset: 2px; }
   <span class="chip" title="Gente no vale (pontos)">👥 <b id="tGente">0</b></span>
   <span class="chip" title="Peças na pilha">🂠 <b id="tPilha">22</b></span>
   <span class="chip" id="tEst" title="Estação"></span>
-  <span class="chip agua" id="tAgua" title="Água: usada / vazão"></span>
+  <button class="chip agua" id="tAgua" title="Água usada / vazão. Toque para ver o vale na seca"></button>
   <span class="dir"><button class="redondo" id="bDesfazer" aria-label="Desfazer a última peça">↶</button><button class="redondo" id="bAjuda" aria-label="Como se joga">?</button></span>
 </div>
 <div class="toast" id="toast" aria-live="polite"></div>
-<div class="mao"><div class="painel" id="painel">
+<div class="mao"><div class="dica-card" id="dica" role="status" hidden><p id="dicaTxt"></p><button id="bDica">Entendi</button></div><div class="painel" id="painel">
   <div class="pecas"><canvas id="cMao" width="168" height="168" aria-label="Peça na mão (toque para girar)"></canvas>
     <div class="prox">depois <canvas id="cProx" width="52" height="52"></canvas></div></div>
   <div class="lado"><div id="msg"></div>
@@ -99,13 +105,14 @@ button:focus-visible { outline: 3px solid var(--water); outline-offset: 2px; }
   <h2 id="hAjuda">O rio é o orçamento</h2>
   <ol class="regras">
     <li><b>Encaixe</b> a peça numa casa vazia. Água só encosta em água.</li>
-    <li>A <b>nascente</b> dá <b style="color:var(--water)">💧</b>. Leve o rio até um <b>olho-d'água</b> (as gotas no mapa) e a vazão aumenta.</li>
+    <li>A <b>nascente</b> (o círculo azul com número) dá essa quantidade de <b style="color:var(--water)">💧</b>. As <b>gotas azuis</b> no mapa são <b>olhos-d'água</b>: ponha uma peça com rio em cima da gota, ligada ao seu rio, e ele ganha essa água. Os tracinhos azuis mostram por onde o rio pode seguir.</li>
     <li><b>Lavoura e vila gastam água</b>: cada peça delas encostada no rio usa 1 💧. A água chega primeiro em quem está perto da nascente; quando acaba, o resto fica <b>seco</b>. O rio afina à medida que é usado.</li>
     <li>Cada <b>vila pede</b> uma coisa na plaquinha. Atendeu: a vila cresce (gente), ganha <b>+2 peças</b> e você escolhe o próximo pacote de peças.</li>
-    <li>A cada 8 jogadas vem a <b>seca</b> (4 jogadas): as nascentes dão menos, e o quanto você vê antes. Na chegada da seca, a colheita: 1 peça a cada 2 lavouras que continuam com água.</li>
+    <li>A cada 8 jogadas vem a <b>seca</b> (4 jogadas): <b>cada nascente dá metade</b> (4 vira 2). Toque no 💧 do topo para ver como o vale fica na seca. Quando ela chega, a colheita: +1 peça a cada 2 lavouras que continuam com água. Depois as chuvas devolvem a água toda.</li>
   </ol>
   <p>A pilha é a vida: quando acaba, o jogo acaba. Toque numa casa para ver o que a peça faria, toque de novo (ou ⟳) para girar e confirme com <b>Colocar</b>.</p>
   <button class="grande" id="bFechaAjuda">Jogar</button>
+  <button class="botaoTexto" id="bDicasDeNovo">Mostrar as dicas de novo</button>
 </div></div>
 <div class="capa" id="cPacote" hidden><div class="cartao" role="dialog" aria-labelledby="hPacote">
   <h2 id="hPacote">A vila cresceu! O que vem agora?</h2>
@@ -130,7 +137,7 @@ button:focus-visible { outline: 3px solid var(--water); outline-offset: 2px; }
 //     está mais perto da nascente; quando a vazão acaba, o resto fica seco.
 //  4. Cada vila pede uma coisa por vez (plaquinha). Atendeu: a vila cresce (gente = pontos), ganha 1 peça e você
 //     escolhe entre dois pacotes de peças.
-//  5. A seca: a cada 8 jogadas de Águas vêm 4 de Seca, e as nascentes dão menos (o quanto, você vê antes). Na chegada da
+//  5. A seca: a cada 8 jogadas de Águas vêm 4 de Seca, e cada nascente dá metade (a tela mostra antes como fica). Na chegada da
 //     seca, a colheita: 1 peça a cada 2 lavouras que continuam com água. A pilha é a vida: acabou, acabou.
 //  (+ peça perfeita, com os 6 lados combinando, devolve 1 peça.)
 
@@ -142,6 +149,8 @@ const nbk = (k, d) => K(KQ(k) + DIRS[d][0], KR(k) + DIRS[d][1]);
 const rot = (e, r) => e.map((_, i) => e[(i - r + 6) % 6]);
 const hexDist = (q, r) => (Math.abs(q) + Math.abs(r) + Math.abs(q + r)) / 2;
 const LAND = ['B', 'C', 'V', 'G'];
+// na seca cada nascente dá metade (arredondando para cima): 4 → 2, 3 → 2, 2 → 1
+const vazao = (src, dry) => dry ? Math.ceil(src / 2) : src;
 const NOME = { A: 'rio', B: 'mata', C: 'lavoura', V: 'vila', G: 'campo' };
 
 function rngOf(str) { let h = 1779033703 ^ str.length; for (let i = 0; i < str.length; i++) { h = Math.imul(h ^ str.charCodeAt(i), 3432918353); h = h << 13 | h >>> 19; }
@@ -179,7 +188,7 @@ function Game({ seed = 'vale', pilha = 22, nascente = 4, aguas = 8, seca = 4 } =
   put(0, 0, ['A', 'G', 'G', 'A', 'G', 'G'], { src: nascente, fixed: true, nasc: true });   // a nascente: o rio sai para leste e para oeste
   put(0, 1, ['V', 'V', 'V', 'V', 'V', 'V'], { fixed: true });                          // a primeira vila, encostada no rio
   const isSeca = () => S.season % 2 === 0;
-  const flowOf = (src, dry) => dry ? Math.max(1, Math.round(src * 0.6)) : src;
+  const flowOf = vazao;
 
   // ---------- olhos-d'água: aparecem a 2–3 casas da beira do vale; sempre há 3 à vista
   function frontier() { const out = new Set(); for (const k of board.keys()) for (let d = 0; d < 6; d++) { const n = nbk(k, d); if (!board.has(n)) out.add(n); } return out; }
@@ -259,7 +268,8 @@ function Game({ seed = 'vale', pilha = 22, nascente = 4, aguas = 8, seca = 4 } =
     const R = regions(B2, 'V'), M = regions(B2, 'B'), vil = [];
     for (const v of S.vilas.values()) { const g = R.out[R.id.get(v.id)]; if (!g) continue; const before = progress(board, W0, v.tiles, v.req), after = progress(B2, W1, g, v.req, M); vil.push({ id: v.id, req: v.req, before, after, done: after >= v.req.n }); }
     const lost = [...W0.wet].filter(x => !W1.wet.has(x)), gained = [...W1.wet].filter(x => !W0.wet.has(x) && x !== k);
-    return { k, e, legal: legal(board, k, e), marks, perfect, spring: t.src || 0, buried: S.springs.has(k) && !t.src ? S.springs.get(k) : 0, wetSelf: W1.wet.has(k), drySelf: W1.dry.has(k), lost, gained, vil, W: W1 }; }
+    const nid = W1.net.get(k), join = t.src ? [...W1.net].some(([kk, n]) => n === nid && kk !== k && B2.get(kk).src) : false;
+    return { k, e, legal: legal(board, k, e), marks, perfect, spring: t.src || 0, springJoin: join, buried: S.springs.has(k) && !t.src ? S.springs.get(k) : 0, wetSelf: W1.wet.has(k), drySelf: W1.dry.has(k), lost, gained, vil, W: W1 }; }
   function options(k) { const base = hand().e, seen = new Set(), out = []; for (let r = 0; r < 6; r++) { const e = rot(base, r), sig = e.join(''); if (seen.has(sig) || !legal(board, k, e)) continue; seen.add(sig); out.push({ r, ...simulate(k, e) }); } return out; }
 
   // ---------- jogar
@@ -277,7 +287,7 @@ function Game({ seed = 'vale', pilha = 22, nascente = 4, aguas = 8, seca = 4 } =
     S.clock++; const len = isSeca() ? S.seca : S.aguas;
     if (S.clock >= len) { S.clock = 0; S.season++;
       if (isSeca()) { W = water(board, true); const lav = [...W.wet].filter(x => board.get(x).e.includes('C')).length, h = Math.floor(lav / 2); S.left += h;
-        ev.push({ t: 'seca', txt: `Começa a seca: as nascentes dão menos. Colheita: ${lav} lavoura${lav === 1 ? '' : 's'} com água, +${h} peça${h === 1 ? '' : 's'}` }); }
+        ev.push({ t: 'seca', txt: `Começa a seca: cada nascente dá metade. Colheita: ${lav} lavoura${lav === 1 ? '' : 's'} com água, +${h} peça${h === 1 ? '' : 's'}` }); }
       else { S.ano++; ev.push({ t: 'chuva', txt: 'As chuvas voltaram: as nascentes enchem de novo' }); } }
     spawnSprings();
     if (S.left <= 0 && !S.escolha.length) S.over = true;
@@ -306,7 +316,7 @@ let W = 0, H = 0, dpr = 1;
 function resize() { dpr = Math.min(2, devicePixelRatio || 1); W = innerWidth; H = innerHeight; cv.width = W * dpr; cv.height = H * dpr; fit(true); draw(); }
 const hexXY = (q, r) => [SQ3 * (q + r / 2), 1.5 * r];
 // o centro da vista fica no meio do espaço livre entre a faixa de cima e a mão
-const topY = () => ($('topo')?.getBoundingClientRect().bottom || 64) + 6, botY = () => ($('painel')?.getBoundingClientRect().top || H - 150) - 6;
+const topY = () => ($('topo')?.getBoundingClientRect().bottom || 64) + 6, botY = () => (($('dica') && !$('dica').hidden ? $('dica') : $('painel'))?.getBoundingClientRect().top || H - 150) - 6;
 const midY = () => (topY() + botY()) / 2;
 const toScr = (x, y) => [W / 2 + (x - cam.x) * cam.z, midY() + (y - cam.y) * cam.z];
 // enquadra o vale (peças, casas vazias e olhos-d'água); suave depois de cada peça
@@ -373,7 +383,7 @@ function toast(list) { const box = $('toast'); box.style.top = topY() + 'px'; bo
 const reqTxt = r => `${PEDIDOS[r.t].icone} ${PEDIDOS[r.t].txt(r.n)}`;
 function previewMsg(o) { const out = [], t = G.hand().e, cons = t.includes('C') || t.includes('V');
   for (const x of o.vil) { if (x.done) out.push(`<span class="ok">Atende a vila (${reqTxt(x.req)}): cresce, +2 peças</span>`); else if (Math.min(x.after, x.req.n) > Math.min(x.before, x.req.n)) out.push(`<span class="ok">Vila: ${PEDIDOS[x.req.t].icone} ${x.before} → ${x.after} de ${x.req.n}</span>`); }
-  if (o.spring) out.push(`<span class="agua">Liga o olho-d'água: +${o.spring} 💧</span>`);
+  if (o.spring) out.push(o.springJoin ? `<span class="agua">Liga o olho-d'água ao rio: +${o.spring} 💧</span>` : `<span class="agua">Vira uma nascente nova (+${o.spring} 💧), separada do seu rio: ligue os dois para somar a água</span>`);
   if (o.buried) out.push(`<span class="ruim">Enterra o olho-d'água (a peça não tem rio)</span>`);
   if (cons && o.wetSelf) out.push(`<span class="agua">Recebe água (usa 1 💧)</span>`);
   if (cons && o.drySelf) out.push(`<span class="ruim">Fica seca: a água acaba antes de chegar aqui</span>`);
@@ -399,9 +409,30 @@ function refresh() { const S = G.S, Wt = G.water();
   else if (!sel) $('msg').innerHTML = `<span class="dica">Toque numa casa vazia para ver o que a peça faria ali.${G.S.vilas.size ? ' As plaquinhas mostram o que cada vila pede.' : ''}</span>`;
   else if (!sel.opts.length) $('msg').innerHTML = '<span class="ruim">Não encaixa aqui: água só encosta em água.</span>';
   else $('msg').innerHTML = previewMsg(sel.opts[sel.i]);
+  $('tAgua').classList.toggle('ativo', verSeca);
+  if (verSeca && !G.isSeca()) { const su = sec.nets.reduce((s, n) => s + n.used, 0); $('tAgua').innerHTML = `☀️ 💧 <b>${su}/${fs}</b> <small>na seca · toque para voltar</small>`; }
+  if (verSeca && !G.isSeca()) $('msg').innerHTML = `<span class="ruim">Vendo a seca:</span> <span class="dica">cada nascente dá metade (💧 ${fs}). Gota riscada = fica sem água. Toque no 💧 de novo para voltar.</span>`;
   if (S.escolha.length) showPacks(); else $('cPacote').hidden = true;
   if (S.over) fim();
+  dica();
   draw(); }
+// ---------- dicas da primeira partida: cada uma aparece uma vez, na hora em que a coisa acontece
+const nasc = () => [...G.board.values()].find(t => t.nasc);
+const DICAS = [
+  ['nascente', () => true, () => `A nascente (o círculo azul com ${nasc().src}) dá ${nasc().src} 💧. Cada lavoura ou vila encostada no rio usa 1. Quando a água acaba, as próximas ficam secas. O 💧 no topo mostra usada / total.`],
+  ['olho', () => acts.length >= 1 && G.S.springs.size > 0, () => `As gotas azuis (+2, +3) são olhos-d'água. Ponha uma peça com rio em cima de uma gota, ligada ao seu rio, e ele ganha essa água. Os tracinhos azuis mostram por onde o rio pode seguir.`],
+  ['seco', () => G.water().dry.size > 0, () => `Uma peça ficou seca (gota riscada): a água acabou antes de chegar nela. Quem está mais perto da nascente bebe primeiro. Ligue um olho-d'água para ter mais 💧.`],
+  ['secaVem', () => !G.isSeca() && G.seasonLen() - G.S.clock <= 3, () => `A seca chega em ${G.seasonLen() - G.S.clock} jogada${G.seasonLen() - G.S.clock > 1 ? 's' : ''}: cada nascente vai dar metade. As peças com contorno laranja vão ficar secas. Toque no 💧 do topo para ver o vale na seca.`],
+  ['seca', () => G.isSeca(), () => `Começou a seca (4 jogadas): as nascentes dão metade. Na chegada dela veio a colheita: cada 2 lavouras que continuaram com água valeram +1 peça. Depois as chuvas devolvem a água toda.`],
+  ['chuva', () => G.S.ano >= 2 && !G.isSeca(), () => `As chuvas voltaram: as nascentes dão toda a água de novo. Daqui a 8 jogadas vem outra seca.`],
+];
+let vistas = new Set(), dicaAtual = null; try { vistas = new Set(JSON.parse(localStorage.getItem('afluente-v5-dicas') || '[]')); } catch (e) {}
+function dica() { if (dicaAtual || !G || G.S.over) return; const d = DICAS.find(([id, ok]) => !vistas.has(id) && ok()); if (!d) { $('dica').hidden = true; return; }
+  dicaAtual = d[0]; $('dicaTxt').textContent = d[2](); $('dica').hidden = false; }
+$('bDica').onclick = () => { vistas.add(dicaAtual); try { localStorage.setItem('afluente-v5-dicas', JSON.stringify([...vistas])); } catch (e) {} dicaAtual = null; $('dica').hidden = true; dica(); };
+$('bDicasDeNovo').onclick = () => { vistas = new Set(); dicaAtual = null; try { localStorage.removeItem('afluente-v5-dicas'); } catch (e) {} $('cAjuda').hidden = true; dica(); };
+let verSeca = false;
+$('tAgua').onclick = () => { verSeca = !verSeca; refresh(); };
 function showPacks() { const ch = G.S.escolha[0], box = $('pacotes'); box.innerHTML = '';
   ch.forEach((p, i) => { const b = document.createElement('button'); b.className = 'pacote'; b.innerHTML = `<b>${TEMAS[p.tema].icone} ${TEMAS[p.tema].nome}</b><span class="tres"></span><small>mais ${TEMAS[p.tema].desc}</small>`;
     for (const t of p.tiles) { const c = document.createElement('canvas'); c.width = c.height = 92; thumb(c, t.e, { green: true }); b.querySelector('.tres').appendChild(c); }
@@ -413,17 +444,22 @@ function fim() { const peds = acts.length; $('fGente').textContent = G.S.gente; 
 // ---------- desenho do vale
 function draw() { if (!G) return; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, H);
   const Wt = G.water(), R = cam.z * 0.995, secaSoon = !G.isSeca() && G.seasonLen() - G.S.clock <= 3, sec = secaSoon ? G.secaPreview() : null;
-  const pv = sel && sel.opts.length ? sel.opts[sel.i] : null, Wv = pv ? pv.W : Wt;
+  const dryView = verSeca || G.isSeca(), Wb = verSeca ? G.water(true) : Wt, pv = sel && sel.opts.length ? sel.opts[sel.i] : null, Wv = pv && !verSeca ? pv.W : Wb;
   // casas vazias
   for (const k of G.slots()) { const [x, y] = toScr(...hexXY(KQ(k), KR(k))); hexPath(ctx, x, y, R * 0.92); ctx.fillStyle = 'rgba(255,255,255,.18)'; ctx.fill(); ctx.setLineDash([4, 4]); ctx.strokeStyle = 'rgba(29,59,58,.25)'; ctx.lineWidth = 1; ctx.stroke(); ctx.setLineDash([]); }
   // olhos-d'água
   for (const [k, f] of G.S.springs) { const [x, y] = toScr(...hexXY(KQ(k), KR(k))), s = R * 0.22, pul = 1 + 0.06 * Math.sin(performance.now() / 300);
     ctx.beginPath(); ctx.arc(x, y + s * 0.4, s * pul, 0, Math.PI); ctx.lineTo(x, y - s * 1.4 * pul); ctx.closePath(); ctx.fillStyle = COR.rio; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = '#fff'; ctx.stroke();
-    ctx.fillStyle = COR.ink; ctx.font = `800 ${Math.round(R * 0.26)}px "Baloo 2", system-ui`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(`+${f}`, x, y + s * 2.1); }
+    ctx.fillStyle = COR.ink; ctx.font = `800 ${Math.round(R * 0.26)}px "Baloo 2", system-ui`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(`+${f} 💧`, x, y + s * 2.1); }
   // peças (com a prévia aplicada na água, para ver o que seca e o que molha)
   for (const [k, t] of G.board) { const [x, y] = toScr(...hexXY(t.q, t.r)); const v = [...G.S.vilas.values()].find(v => v.tiles.has(k));
-    drawTile(ctx, x, y, R, t.e, { wet: Wv.wet.has(k), dry: Wv.dry.has(k), green: Wv.green.has(k), remain: Wv.remain.get(k), src: t.src, lvl: v ? v.lvl : 1 });
-    if (sec && sec.dry.has(k) && !Wt.dry.has(k)) { hexPath(ctx, x, y, R * 0.9); ctx.setLineDash([6, 4]); ctx.lineWidth = 3; ctx.strokeStyle = '#c8742c'; ctx.stroke(); ctx.setLineDash([]); } }
+    drawTile(ctx, x, y, R, t.e, { wet: Wv.wet.has(k), dry: Wv.dry.has(k), green: Wv.green.has(k), remain: Wv.remain.get(k), src: t.src ? vazao(t.src, dryView) : 0, lvl: v ? v.lvl : 1 });
+    if (!verSeca && sec && sec.dry.has(k) && !Wt.dry.has(k)) { hexPath(ctx, x, y, R * 0.9); ctx.setLineDash([6, 4]); ctx.lineWidth = 3; ctx.strokeStyle = '#c8742c'; ctx.stroke(); ctx.setLineDash([]); } }
+  // por onde o rio pode seguir: tracinhos azuis entrando nas casas vazias
+  ctx.setLineDash([R * 0.1, R * 0.08]); ctx.lineCap = 'round';
+  for (const [k, t] of G.board) for (let d = 0; d < 6; d++) { if (t.e[d] !== 'A' || G.board.has(nbk(k, d))) continue; const [x, y] = toScr(...hexXY(t.q, t.r)), am = -60 * d * Math.PI / 180;
+    ctx.beginPath(); ctx.moveTo(x + Math.cos(am) * R * 0.92, y + Math.sin(am) * R * 0.92); ctx.lineTo(x + Math.cos(am) * R * 1.35, y + Math.sin(am) * R * 1.35); ctx.strokeStyle = 'rgba(56,168,204,.75)'; ctx.lineWidth = R * 0.09; ctx.stroke(); }
+  ctx.setLineDash([]);
   // fantasma da peça escolhida
   if (sel) { const [x, y] = toScr(...hexXY(KQ(sel.k), KR(sel.k)));
     if (pv) { ctx.globalAlpha = 0.92; drawTile(ctx, x, y, R, pv.e, { wet: pv.wetSelf, dry: pv.drySelf, green: pv.W.green.has(sel.k), remain: pv.W.remain.get(sel.k), src: pv.spring || 0 }); ctx.globalAlpha = 1;
@@ -431,12 +467,17 @@ function draw() { if (!G) return; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.cl
     hexPath(ctx, x, y, R); ctx.lineWidth = 3; ctx.strokeStyle = pv ? COR.ink : '#b2452f'; ctx.stroke(); }
   // plaquinhas das vilas
   for (const v of G.S.vilas.values()) { let sx = 0, sy = 0; for (const k of v.tiles) { const [x, y] = hexXY(KQ(k), KR(k)); sx += x; sy += y; } sx /= v.tiles.size; sy /= v.tiles.size;
-    const [x, y] = toScr(sx, sy - 0.55); let cur = G.progress(v); const pvv = pv && pv.vil.find(z => z.id === v.id), aft = pvv ? pvv.after : null;
+    const [x, y] = toScr(sx, sy + 0.1); let cur = G.progress(v); const pvv = pv && pv.vil.find(z => z.id === v.id), aft = pvv ? pvv.after : null;
     const txt = `${PEDIDOS[v.req.t].icone} ${Math.min(cur, v.req.n)}${aft !== null && aft !== cur ? `→${Math.min(aft, v.req.n)}` : ''}/${v.req.n}`, sub = PEDIDOS[v.req.t].txt(v.req.n);
     ctx.font = '800 14px Nunito, system-ui'; const w1 = ctx.measureText(txt).width; ctx.font = '700 11px Nunito, system-ui'; const w2 = ctx.measureText(sub).width, bw = Math.max(w1 + 30, w2) + 16;
     const done = aft !== null && aft >= v.req.n; ctx.fillStyle = done ? '#3f9a4a' : '#fffdf7'; ctx.strokeStyle = 'rgba(29,59,58,.3)'; ctx.lineWidth = 1;
     ctx.beginPath(); ctx.roundRect(x - bw / 2, y - 22, bw, 38, 10); ctx.fill(); ctx.stroke();
     ctx.fillStyle = done ? '#fff' : COR.ink; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = '800 14px Nunito, system-ui'; ctx.fillText(txt + `  ·  nv ${v.lvl}`, x, y - 10); ctx.font = '700 11px Nunito, system-ui'; ctx.fillStyle = done ? '#eaffea' : '#5d716b'; ctx.fillText(sub, x, y + 6); }
+  // quanto sobra em cada rio (acima da nascente maior, por cima das plaquinhas)
+  for (const n of Wv.nets) { if (!n.flow) continue; let best = null; for (const k of n.tiles) { const t = G.board.get(k); if (t && t.src && (!best || t.src > best.src)) best = t; } if (!best) continue;
+    const [x, y] = toScr(...hexXY(best.q, best.r)), left = n.flow - n.used, txt = left > 0 ? `sobra ${left} 💧` : 'água toda usada';
+    ctx.font = '800 12px Nunito, system-ui'; const bw = ctx.measureText(txt).width + 14; ctx.fillStyle = left > 0 ? '#2f9fbf' : '#c8742c';
+    ctx.beginPath(); ctx.roundRect(x - bw / 2, y - R * 0.32 - 22, bw, 20, 10); ctx.fill(); ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(txt, x, y - R * 0.32 - 11.5); }
   // animações: anel na peça nova e "+gente" subindo
   for (const a of anim) { const [x, y] = toScr(a.x, a.y);
     if (a.kind === 'anel') { ctx.beginPath(); ctx.arc(x, y, R * (0.6 + a.t * 2), 0, 7); ctx.strokeStyle = `rgba(255,242,192,${Math.max(0, 0.9 - a.t)})`; ctx.lineWidth = 4; ctx.stroke(); }

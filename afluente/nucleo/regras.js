@@ -7,7 +7,7 @@
 //     está mais perto da nascente; quando a vazão acaba, o resto fica seco.
 //  4. Cada vila pede uma coisa por vez (plaquinha). Atendeu: a vila cresce (gente = pontos), ganha 1 peça e você
 //     escolhe entre dois pacotes de peças.
-//  5. A seca: a cada 8 jogadas de Águas vêm 4 de Seca, e as nascentes dão menos (o quanto, você vê antes). Na chegada da
+//  5. A seca: a cada 8 jogadas de Águas vêm 4 de Seca, e cada nascente dá metade (a tela mostra antes como fica). Na chegada da
 //     seca, a colheita: 1 peça a cada 2 lavouras que continuam com água. A pilha é a vida: acabou, acabou.
 //  (+ peça perfeita, com os 6 lados combinando, devolve 1 peça.)
 
@@ -19,6 +19,8 @@ export const nbk = (k, d) => K(KQ(k) + DIRS[d][0], KR(k) + DIRS[d][1]);
 export const rot = (e, r) => e.map((_, i) => e[(i - r + 6) % 6]);
 export const hexDist = (q, r) => (Math.abs(q) + Math.abs(r) + Math.abs(q + r)) / 2;
 export const LAND = ['B', 'C', 'V', 'G'];
+// na seca cada nascente dá metade (arredondando para cima): 4 → 2, 3 → 2, 2 → 1
+export const vazao = (src, dry) => dry ? Math.ceil(src / 2) : src;
 export const NOME = { A: 'rio', B: 'mata', C: 'lavoura', V: 'vila', G: 'campo' };
 
 export function rngOf(str) { let h = 1779033703 ^ str.length; for (let i = 0; i < str.length; i++) { h = Math.imul(h ^ str.charCodeAt(i), 3432918353); h = h << 13 | h >>> 19; }
@@ -56,7 +58,7 @@ export function Game({ seed = 'vale', pilha = 22, nascente = 4, aguas = 8, seca 
   put(0, 0, ['A', 'G', 'G', 'A', 'G', 'G'], { src: nascente, fixed: true, nasc: true });   // a nascente: o rio sai para leste e para oeste
   put(0, 1, ['V', 'V', 'V', 'V', 'V', 'V'], { fixed: true });                          // a primeira vila, encostada no rio
   const isSeca = () => S.season % 2 === 0;
-  const flowOf = (src, dry) => dry ? Math.max(1, Math.round(src * 0.6)) : src;
+  const flowOf = vazao;
 
   // ---------- olhos-d'água: aparecem a 2–3 casas da beira do vale; sempre há 3 à vista
   function frontier() { const out = new Set(); for (const k of board.keys()) for (let d = 0; d < 6; d++) { const n = nbk(k, d); if (!board.has(n)) out.add(n); } return out; }
@@ -136,7 +138,8 @@ export function Game({ seed = 'vale', pilha = 22, nascente = 4, aguas = 8, seca 
     const R = regions(B2, 'V'), M = regions(B2, 'B'), vil = [];
     for (const v of S.vilas.values()) { const g = R.out[R.id.get(v.id)]; if (!g) continue; const before = progress(board, W0, v.tiles, v.req), after = progress(B2, W1, g, v.req, M); vil.push({ id: v.id, req: v.req, before, after, done: after >= v.req.n }); }
     const lost = [...W0.wet].filter(x => !W1.wet.has(x)), gained = [...W1.wet].filter(x => !W0.wet.has(x) && x !== k);
-    return { k, e, legal: legal(board, k, e), marks, perfect, spring: t.src || 0, buried: S.springs.has(k) && !t.src ? S.springs.get(k) : 0, wetSelf: W1.wet.has(k), drySelf: W1.dry.has(k), lost, gained, vil, W: W1 }; }
+    const nid = W1.net.get(k), join = t.src ? [...W1.net].some(([kk, n]) => n === nid && kk !== k && B2.get(kk).src) : false;
+    return { k, e, legal: legal(board, k, e), marks, perfect, spring: t.src || 0, springJoin: join, buried: S.springs.has(k) && !t.src ? S.springs.get(k) : 0, wetSelf: W1.wet.has(k), drySelf: W1.dry.has(k), lost, gained, vil, W: W1 }; }
   function options(k) { const base = hand().e, seen = new Set(), out = []; for (let r = 0; r < 6; r++) { const e = rot(base, r), sig = e.join(''); if (seen.has(sig) || !legal(board, k, e)) continue; seen.add(sig); out.push({ r, ...simulate(k, e) }); } return out; }
 
   // ---------- jogar
@@ -154,7 +157,7 @@ export function Game({ seed = 'vale', pilha = 22, nascente = 4, aguas = 8, seca 
     S.clock++; const len = isSeca() ? S.seca : S.aguas;
     if (S.clock >= len) { S.clock = 0; S.season++;
       if (isSeca()) { W = water(board, true); const lav = [...W.wet].filter(x => board.get(x).e.includes('C')).length, h = Math.floor(lav / 2); S.left += h;
-        ev.push({ t: 'seca', txt: `Começa a seca: as nascentes dão menos. Colheita: ${lav} lavoura${lav === 1 ? '' : 's'} com água, +${h} peça${h === 1 ? '' : 's'}` }); }
+        ev.push({ t: 'seca', txt: `Começa a seca: cada nascente dá metade. Colheita: ${lav} lavoura${lav === 1 ? '' : 's'} com água, +${h} peça${h === 1 ? '' : 's'}` }); }
       else { S.ano++; ev.push({ t: 'chuva', txt: 'As chuvas voltaram: as nascentes enchem de novo' }); } }
     spawnSprings();
     if (S.left <= 0 && !S.escolha.length) S.over = true;

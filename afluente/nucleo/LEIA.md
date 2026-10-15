@@ -12,7 +12,8 @@ Protótipo jogável para testar se a regra nova diverte, antes de levá-la ao va
 - **Do `../DIVERSAO_v4.md` ficam:**
   - as vilas que pedem uma coisa por vez e crescem;
   - a escolha entre dois pacotes de peças.
-- **A seca:** as nascentes dão menos, e a tela mostra antes quanto e quem vai secar.
+- **A seca:** cada nascente dá metade (4 vira 2), e a tela mostra antes quanto e quem vai secar. O botão 💧 do topo mostra o vale na seca.
+- **Primeira partida:** dicas curtas aparecem na hora em que cada coisa acontece (nascente, olho-d'água, peça seca, seca chegando, seca, chuva). `python3 montar.py` gera `afluente-nucleo-v5.html`, um arquivo só que abre direto no navegador.
 
 **Arquivos:**
 - `regras.js`: o motor, sem desenho.
