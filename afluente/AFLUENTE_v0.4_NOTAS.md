@@ -974,6 +974,8 @@ Os girassóis 3D passam a ser as flores de verdade.
 - **Peixe:** na escala do vale, salta ao longo do canal e não cai mais na margem.
 - **Árvores:** cada uma verga sobre a própria base com a rajada que passa por ela, na própria frequência. Antes a peça inteira entortava junta, de um lado para o outro.
 
+**Pinheiro sem "bolas" (v2.3).** O pinheiro da mata era feito de três cones lisos empilhados e parecia uma pilha de bolas, sem folhas, ao lado das outras árvores, que têm copa de folhas. Agora é um pinheiro-bravo (*Podocarpus*), a conífera nativa das matas de galeria do Cerrado: andares de ramos com folhas estreitas, no mesmo estilo das outras copas.
+
 ## A água no centro (v2.4)
 
 **O pedido:** juntar os estudos (`REVISAO_MECANICAS_v2.3.md`, `REVISAO_RETENCAO_v2.4.md`, `AGUA_E_PREVIA_v2.5.md`) e ajustar o jogo; ver se as missões fazem sentido; manter só uma peça seguinte visível; e aplicar o que os estudos mostraram que melhora, respeitando o clima, o terreno e a interface.

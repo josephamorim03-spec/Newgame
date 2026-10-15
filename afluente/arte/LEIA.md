@@ -145,3 +145,9 @@ O tamanho no jogo não depende do render. O jogo mede a largura do corpo no atla
   python3 caixas.py
   ```
   Depois gere o `atlas.webp` e rode `embutir.py`. `caixas.py` precisa rodar sempre que o atlas mudar: a geometria do motor de disposição vem dele.
+
+## v2.3: pinheiro-bravo com folhagem
+
+- O `pine` era feito de três cones lisos empilhados e no jogo parecia uma pilha de bolas, diferente das outras árvores, que têm copa de folhas em cartões.
+- Agora é um **pinheiro-bravo** (*Podocarpus*), a conífera nativa das matas de galeria do Cerrado. São sete andares de ramos com folhas estreitas em cartões (`needle_tier()`, mesmo material das copas), sobre um miolo escuro e um pouco de tronco à mostra.
+- Para refazer: `SOMENTE=pine venv/bin/python afluente_sprites.py <pasta>`, depois `atualizar_atlas.py <pasta> atlas.png atlas.json`, o WebP, `caixas.py` e `embutir.py`.

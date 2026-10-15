@@ -290,17 +290,66 @@ def tree_round(var=0):
             blob(r, (x, y, z), m, sz, seed=i + 21, amount=0.18)
 
 
+def needle_tier(z0, h, r, pal, seed, cx=0.0, cy=0.0, dens=1.0, leaf=0.026):
+    """um andar de galhos de conífera (v2.3): folhas estreitas em cartões sobre um cone (base em z0, ponta em z0+h),
+    apontando para fora e um pouco para baixo, como os ramos do pinheiro-bravo; mais claras em cima e na ponta dos
+    ramos, e algumas escuras por baixo da saia. Mesmo material das copas (cor por folha e translucência)."""
+    dark, light = pal
+    D, L = hexcol(dark), hexcol(light)
+    rnd = random.Random(seed * 7919 + 5)
+    n = int(dens * 3100 * math.pi * r * math.hypot(r, h))
+    verts, faces, cols = [], [], []
+    for i in range(n):
+        under = rnd.random() < 0.04
+        t = 0.0 if under else 1 - math.sqrt(rnd.random())
+        th = rnd.uniform(0, math.tau)
+        rr = r * (rnd.uniform(0.25, 0.95) if under else (1 - t) * (0.84 + 0.3 * rnd.random()))
+        z = z0 + h * t + rnd.uniform(-0.012, 0.01) - (0.01 * (rr / r) ** 2 if not under else -0.012)
+        P = Vector((cx + rr * math.cos(th), cy + rr * math.sin(th), z))
+        nv = Vector((0, 0, -1)) if under else Vector((math.cos(th) * h, math.sin(th) * h, r)).normalized()
+        b = Vector((math.cos(th), math.sin(th), -0.2)).normalized()
+        tg = nv.cross(b)
+        if tg.length < 1e-3:
+            tg = Vector((1, 0, 0))
+        tg.normalize()
+        d1 = (b + tg * rnd.uniform(-0.7, 0.7) + nv * rnd.uniform(-0.3, 0.3)).normalized()
+        d2 = nv.cross(d1)
+        if d2.length < 1e-3:
+            d2 = tg
+        d2.normalize()
+        Ls = leaf * rnd.uniform(0.7, 1.3)
+        Wd = Ls * 0.32
+        b0 = len(verts)
+        verts += [tuple(P - d1 * Ls * 0.5), tuple(P + d2 * Wd * 0.5), tuple(P + d1 * Ls * 0.5), tuple(P - d2 * Wd * 0.5)]
+        faces.append((b0, b0 + 1, b0 + 2, b0 + 3))
+        k = 0.05 if under else max(0.0, min(1.0, 0.18 + 0.45 * t + 0.3 * (rr / max(r, 1e-6)) + rnd.uniform(-0.2, 0.2)))
+        cols.append(_lerp(D, L, k))
+    me = bpy.data.meshes.new('ramos')
+    me.from_pydata(verts, [], faces)
+    me.update()
+    attr = me.color_attributes.new('Col', 'FLOAT_COLOR', 'CORNER')
+    for fi, c in enumerate(cols):
+        for li in range(4):
+            attr.data[fi * 4 + li].color = c
+    o = link(bpy.data.objects.new('andar', me))
+    o.data.materials.append(leaf_mat())
+    return o
+
+
 def pine():
-    m = foliage('pinho', '#1f5a32', '#4f9a52')
-    trunk(0.1, 0.025)
-    for i, (z, r, h) in enumerate([(0.17, 0.15, 0.2), (0.28, 0.12, 0.18), (0.38, 0.085, 0.16)]):
-        o = cyl(r, h, (0, 0, z), m, 14, 0.0, smooth=True)
-        tex = bpy.data.textures.new(f'pinho{i}', 'CLOUDS')
-        tex.noise_scale = 0.08
-        mod = o.modifiers.new('deforma', 'DISPLACE')
-        mod.texture = tex
-        mod.strength = 0.018
-        mod.texture_coords = 'GLOBAL'
+    """pinheiro-bravo (Podocarpus, v2.3): a conífera nativa das matas de galeria do Cerrado. Copa cônica e irregular,
+    em andares de ramos com folhas estreitas verde-escuras. Antes eram três cones lisos empilhados ("bolas")."""
+    pal = ('#1b4a2a', '#5f9a4c')
+    core = bpy.data.materials.get('nucleo_pinho') or bpy.data.materials.new('nucleo_pinho')
+    core.use_nodes = True
+    core.node_tree.nodes['Principled BSDF'].inputs['Base Color'].default_value = hexcol('#10301c')
+    core.node_tree.nodes['Principled BSDF'].inputs['Roughness'].default_value = 0.9
+    trunk(0.2, 0.022)
+    cyl(0.118, 0.34, (0, 0, 0.15 + 0.17), core, 16, 0.012, smooth=True)
+    rnd = random.Random(77)
+    tiers = [(0.13, 0.14, 0.15), (0.19, 0.14, 0.135), (0.25, 0.13, 0.115), (0.31, 0.12, 0.095), (0.36, 0.11, 0.074), (0.41, 0.10, 0.052), (0.46, 0.07, 0.03)]
+    for i, (z0, h, r) in enumerate(tiers):
+        needle_tier(z0, h, r * rnd.uniform(0.84, 0.98), pal, i + 1, cx=rnd.uniform(-0.009, 0.009), cy=rnd.uniform(-0.009, 0.009), dens=1.35)
 
 
 def ipe(petal, petal_light, name):
