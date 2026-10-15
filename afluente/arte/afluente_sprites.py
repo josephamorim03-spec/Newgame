@@ -743,6 +743,16 @@ def church():
     cube((0.042, 0.009, 0.009), (tx, ty, th + 0.18), gold)
 
 
+def windmill_torre():
+    """v2.0: só a torre e o capelo do moinho; as velas são desenhadas no jogo, viradas para o vento e girando
+    (cubo a 0,3 u de altura e 0,125 u à frente do eixo da torre, velas de 0,22 u de raio, como em windmill())"""
+    body = mat('moinho', '#f4ead6', 0.8)
+    rf = mat('telhado_moinho', '#7a4b2f', 0.75)
+    cyl(0.1, 0.32, (0, 0, 0.16), body, 16, 0.07, smooth=True)
+    cyl(0.088, 0.1, (0, 0, 0.37), rf, 16, 0.0, smooth=True)
+    cube((0.04, 0.006, 0.065), (0, -0.097, 0.033), mat('porta', '#7a4a2a', 0.8))
+
+
 def windmill():
     body = mat('moinho', '#f4ead6', 0.8)
     rf = mat('telhado_moinho', '#7a4b2f', 0.75)
@@ -1610,7 +1620,7 @@ OBJECTS = {
     'house_b_red': lambda: house(1, '#c9503a'), 'house_b_blue': lambda: house(1, '#5a86a0', '#c9503a'),
     'house_b_terra': lambda: house(1, '#a85a35', '#3f8a5a'),
     'house_c_red': lambda: house(2, '#d65a3a'), 'house_c_blue': lambda: house(2, '#4a7896', '#d9a73a'),
-    'church': church, 'windmill': windmill, 'barn': barn,
+    'church': church, 'windmill': windmill, 'windmill_torre': windmill_torre, 'barn': barn,
     'wheat': wheat, 'haybale': haybale, 'tuft': tuft, 'flowers': flowers,
     'rock': rock, 'reeds': reeds, 'cow': cow, 'termite': termite_mound,
     # v1.2

@@ -145,3 +145,23 @@ O vale tem **tempo próprio**. O jogador não controla nada disso, mas sente:
 
 - Floração **por espécie** nos bosques durante a seca: as copas de ipê trocam de folha para flor, com sprite novo no Blender.
 - **Lobo-guará** ou seriema raros andando no pasto: um momento especial para contemplar.
+
+## 11. O céu com física (v2.0)
+
+O céu deixou de ser enfeite sorteado e passou a contar o que acontece no vale. Detalhes e fontes em `CLIMA.md`.
+
+- **Horizonte como um atlas de nuvens:**
+  - a câmera olha para o norte, e cada nuvem tem o tamanho angular de verdade;
+  - os cúmulos de base reta no mesmo nível, as bigornas ao longe, os cirros penteados e os véus que anunciam a chuva contínua dizem a hora e a estação sem texto.
+- **Sombras grandes e lentas:** na escala métrica, um cúmulo de bom tempo é maior que várias peças. A sombra dele atravessa o vale como uma mancha macia, não como uma bolinha.
+- **A chuva tem borda:** a cortina da pancada entra por um lado do vale, o chão escurece por onde ela passa e depois seca.
+- **Luz do sol do lado certo:** o sol nasce à direita (leste) e se põe à esquerda (oeste). Na Seca, ele brilha na frente de quem olha.
+- **Momentos raros para contemplar:**
+  - o arco-íris parcial na borda do céu (manhã ou fim de tarde das Águas);
+  - o halo de 22°;
+  - a neblina do rio de madrugada;
+  - a virga do fim da Seca;
+  - o moinho recolhendo as velas na rajada.
+- **Cuidado com a legibilidade:**
+  - o véu da tempestade foi limitado para o vale continuar jogável;
+  - o clarão do raio é suave (no máximo um por pulso, nunca mais de 3 por segundo) e desliga com "reduzir movimento".

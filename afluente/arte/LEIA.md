@@ -126,6 +126,13 @@ O tamanho no jogo não depende do render. O jogo mede a largura do corpo no atla
 - `nuvens.py <pasta>`: 4 cúmulos inteiros com volume (Cycles, 12 rebatimentos no volume), na câmera e no sol dos sprites.
 - `TUFO=1 nuvens.py <pasta>`: 3 tufos com volume. Monte a faixa (3 × 256) em `tufos.webp`; o jogo usa esses tufos para desenhar as nuvens que se formam (v1.10).
 
+## v2.0: moinho sem velas
+
+- `windmill_torre`: só a torre, o capelo e a porta do moinho. As velas são desenhadas no jogo (`drawMill`), viradas para o vento e girando com ele, com a mesma projeção da câmera (ortográfica, 52°).
+- A geometria do rotor segue `windmill()`: cubo a 0,3 u de altura e 0,125 u à frente do eixo; braços de 0,22 u; lona de 0,03 a 0,19 u do cubo, com 0,045 u de largura.
+- Para refazer: `SOMENTE=windmill_torre venv/bin/python afluente_sprites.py saida_v20/`, depois `venv/bin/python atualizar_atlas.py saida_v20 atlas.png atlas.json`, o WebP e `python3 embutir.py`.
+- O sprite `windmill`, com as velas, continua no atlas para o mapa de colisão (a pegada é a mesma).
+
 ## v2.1: casca, pedra e buriti
 
 - `casca(nome, escuro, claro, tipo)` é um material de tronco com relevo. Tipos: `fissurada` (cortiça do Cerrado), `aneis` (palmeiras) e `lisa`. Use `tronco_mat()` nas árvores comuns.

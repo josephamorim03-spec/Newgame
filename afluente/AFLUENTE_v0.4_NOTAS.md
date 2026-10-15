@@ -736,7 +736,65 @@ As 2 invasões que restam são especiais (igreja e moinho) numa vila de um triâ
 | Sobreposição entre peças | 3 | 0 |
 | Bichos sobre água ou objetos | 0 | 0 |
 
+## O céu do vale: clima com física (v2.0)
+
+Pedido: estudar ventos, monções, moinhos, umidade, chuva, formação e precipitação de nuvens, e tamanhos e tipos de nuvens, e aplicar isso ao jogo junto com a tabela métrica e a física da v1.9. O estudo completo, com fontes, está em `CLIMA.md`.
+
+- **Motor novo `function Atmos()`**, no mesmo padrão do `Engine`: puro, sem DOM, determinístico pela semente do vale e testado em node (`sim/atmos_teste.js`).
+  - Temperatura, ponto de orvalho e umidade relativa (fórmula de Magnus).
+  - Base dos cúmulos pelo nível de condensação (125 m por °C).
+  - Vento da monção: noroeste nas Águas, leste na Seca, com mistura de dia, calmaria à noite, rajadas e frente de rajada.
+  - Os 10 gêneros de nuvem da OMM, com altura e largura reais.
+  - Pancadas com cortina de chuva em mm/h, ZCAS, veranico e friagem.
+  - Sol pela posição astronômica (15,8° S).
+- **O mapa muda o céu:**
+  - água viva e mata põem umidade no ar (a evapotranspiração do Cerrado);
+  - a mata refresca a tarde e a vila esquenta;
+  - no teste, o vale úmido tem 62% de umidade à tarde contra 50% do vale árido, e mais cúmulos e pancadas.
+- **Estações:**
+  - "As chuvas voltaram!" traz a frente com pancada, rajada e raios;
+  - na Seca não chove no chão, só há virga no fim dela;
+  - a fumaça do fim da Seca apaga as serras.
+- **Céu do horizonte** (a câmera olha para o norte, grande-angular de 100°):
+  - cada nuvem aparece com o tamanho angular de verdade;
+  - os cúmulos têm a base reta no mesmo nível, que sobe ao longo da tarde;
+  - há bigornas com cortina de chuva ao longe, relâmpago mudo, véus de altostrato, nimbostrato e cirrostrato, e halo de 22°.
+- **Sombras no vale na escala métrica:** um cúmulo de 400 m cobre 20 unidades. A pancada faz uma sombra escura, e a borda da chuva atravessa o vale.
+- **Os tufos da v1.10 obedecem à física:**
+  - nascem pela cobertura de cúmulos e placas;
+  - passam mais alto quando o ar está seco (nível de condensação);
+  - crescem em torre na tarde instável;
+  - andam com o vento da altura das nuvens;
+  - escurecem com a pancada.
+- **Chuva física:**
+  - gotas de Marshall-Palmer na velocidade terminal (garoa fina e deitada, temporal grosso e em pé);
+  - o chão de cada peça molha no time-lapse da pancada e seca pela evaporação no relógio do jogo;
+  - o trovão chega depois do clarão, na velocidade do som (343 m/s);
+  - o clarão nunca pisca mais de 3 vezes por segundo, e com "reduzir movimento" não há clarão.
+- **Neblina:** na madrugada calma e clara, sobre o rio. Ela levanta como estrato de manhã.
+- **Arco-íris de verdade:** só com o sol a menos de 42° e às costas, e chuva do lado oposto. Tem o primário, o secundário (51°) e a faixa de Alexandre, e aparece em parte, na borda do céu.
+- **Moinho que gira com o vento:**
+  - a torre foi re-renderizada no Blender sem as velas (`windmill_torre`);
+  - as velas são desenhadas em 3D, projetadas pela mesma câmera de 52°;
+  - o capelo vira para o vento devagar;
+  - o rotor gira com ω = 2·v/R pelo vento no cubo (perfil logarítmico pela rugosidade da peça e abrigo de mata a barlavento);
+  - para abaixo de 2,2 m/s e recolhe as velas acima de 11 m/s;
+  - a peça com moinho passou a ser desenhada a cada quadro, na ordem de profundidade: com vento do norte, as velas ficam atrás da torre.
+- **Caderno do Céu:** 18 nuvens e fenômenos para ver (arco-íris, halo, virga, frente de rajada...). Não dão pontos.
+- **Boletim no Contemplar:** hora, temperatura, umidade, vento (m/s e Beaufort), o nome da nuvem com a altura da base e as voltas do moinho.
+- **Som** (junto com o som do vale de `SOM.md`):
+  - a chuva, o vento e a noite que o som ouve agora são os calculados;
+  - as cigarras só cantam no calor (acima de 21 °C);
+  - cada raio tem o seu trovão (`CALL.trovao`), vindo do lado do raio e atrasado pela distância; perto, estala antes de roncar.
+- **Números (10 anos de jogo):**
+  - Águas: tarde a 25 °C e 57% de umidade, base dos cúmulos a 1.170 m, pancadas entre 13 h e 15 h;
+  - Seca: tarde a 26 °C e 34%, base a 2.270 m, sem chuva no chão.
+- **O que não muda:** as regras e os pontos. O clima é o mundo respondendo ao mapa, como a fauna. Mudar regra pelo clima fica para um teste próprio (ver `CLIMA.md`, seção 5).
+- **Desempenho:** o quadro custa o mesmo que antes (no teste sem tela, 4,9 ms contra 4,8 ms; zoom de perto 64 ms contra 63 ms). Os sprites do céu são gerados em meia resolução, e as nuvens do horizonte somem no zoom de perto: somadas às peças em cache (~48 MB), elas estouravam o cache de imagens.
+
 ## Natureza crível: buriti, casca, pedras, capim, vento e chuva (v2.1)
+
+> Junto com o céu com física (v2.0): as rajadas abaixo vêm das rajadas do motor da atmosfera e da frente de rajada das pancadas. O chão encharca e as poças aparecem peça por peça, pela lâmina de água de cada uma, só onde a cortina da chuva passou (ver `CLIMA.md`).
 
 **Buriti refeito.** O topo marrom era uma esfera ("coco") no meio de 9 triângulos verdes. Agora o buriti é uma palmeira de verdade:
 - **Estipe:** de 14 lados, mais grosso na base, com anéis de cicatriz das folhas em relevo.
@@ -827,3 +885,5 @@ Cada espécie tem o horário de atividade que a voz já usava (`VOZ`, dia e noit
 - no fim de tarde, os bois voltam a pastar.
 
 O medidor de sobreposições continua sem nenhuma.
+
+**Com o céu com física (v2.0 do céu):** hora, sol, chuva, vento e nuvens agora vêm do simulador do céu (`G.sky`). O comportamento só lê os campos do ambiente (`ENV.rain`, `ENV.night`, `ENV.golden`, `ENV.dawn`, `ENV.hour`, `ENV.cloud`, `ENV.wind.s`), então segue o céu novo sem mudanças. O teste `clima2.js` força hora, sol e chuva interceptando `G.sky.step`.
