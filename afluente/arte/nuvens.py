@@ -46,7 +46,7 @@ def scene():
     return sc
 
 
-def cloud_mat(seed):
+def cloud_mat(seed, scale=3.2, lo=0.3, hi=0.5):
     m = bpy.data.materials.new(f'nuvem{seed}'); m.use_nodes = True
     nt = m.node_tree; nt.nodes.clear()
     out = nt.nodes.new('ShaderNodeOutputMaterial')
@@ -54,13 +54,13 @@ def cloud_mat(seed):
     vol.inputs['Color'].default_value = hexcol('#ffffff')
     vol.inputs['Anisotropy'].default_value = 0.2
     tc = nt.nodes.new('ShaderNodeTexCoord')
-    nz = nt.nodes.new('ShaderNodeTexNoise'); nz.inputs['Scale'].default_value = 3.2; nz.inputs['Detail'].default_value = 8.0
+    nz = nt.nodes.new('ShaderNodeTexNoise'); nz.inputs['Scale'].default_value = scale; nz.inputs['Detail'].default_value = 8.0
     nz.inputs['Roughness'].default_value = 0.62
     nz.noise_dimensions = '4D'; nz.inputs['W'].default_value = seed * 1.7
     nt.links.new(tc.outputs['Object'], nz.inputs['Vector'])
     ramp = nt.nodes.new('ShaderNodeValToRGB')
-    ramp.color_ramp.elements[0].position = 0.3; ramp.color_ramp.elements[0].color = (0, 0, 0, 1)
-    ramp.color_ramp.elements[1].position = 0.5; ramp.color_ramp.elements[1].color = (1, 1, 1, 1)
+    ramp.color_ramp.elements[0].position = lo; ramp.color_ramp.elements[0].color = (0, 0, 0, 1)
+    ramp.color_ramp.elements[1].position = hi; ramp.color_ramp.elements[1].color = (1, 1, 1, 1)
     nt.links.new(nz.outputs['Fac'], ramp.inputs['Fac'])
     mul = nt.nodes.new('ShaderNodeMath'); mul.operation = 'MULTIPLY'; mul.inputs[1].default_value = 16.0
     nt.links.new(ramp.outputs['Color'], mul.inputs[0])
@@ -91,9 +91,32 @@ def cumulus(seed):
     return me
 
 
-for v in range(4):
-    sc = scene()
-    cumulus(100 + v * 31)
-    sc.render.filepath = os.path.join(OUT, f'nuvem_{v}.png')
-    bpy.ops.render.render(write_still=True)
-    print('ok nuvem', v, flush=True)
+def tufo(seed):
+    """um tufo só (para as nuvens montadas tufo a tufo do jogo): 3 a 5 esferas juntas, com o mesmo volume"""
+    rnd = random.Random(seed)
+    mb = bpy.data.metaballs.new('tufo'); mb.resolution = 0.03; mb.render_resolution = 0.02
+    ob = bpy.data.objects.new('tufo', mb); bpy.context.scene.collection.objects.link(ob)
+    for i in range(3 + rnd.randint(0, 2)):
+        a = rnd.random() * math.tau; q = 0.0 if i == 0 else rnd.uniform(0.25, 0.45)
+        el = mb.elements.new(); el.co = (math.cos(a) * q, math.sin(a) * q * 0.7, 0.3 + rnd.uniform(-0.05, 0.12)); el.radius = 0.42 if i == 0 else rnd.uniform(0.26, 0.34); el.stiffness = 2.2
+    bpy.context.view_layer.objects.active = ob; ob.select_set(True)
+    bpy.ops.object.convert(target='MESH')
+    me = bpy.context.active_object; me.data.materials.append(cloud_mat(seed, 9.0, 0.4, 0.58))
+    return me
+
+
+if os.environ.get('TUFO'):
+    for v in range(3):
+        sc = scene(); sc.render.resolution_x = sc.render.resolution_y = 256; sc.camera.data.ortho_scale = 1.7; sc.camera.data.shift_y = 0.0
+        sc.camera.location.z -= 0.0
+        tufo(500 + v * 17)
+        sc.render.filepath = os.path.join(OUT, f'tufo_{v}.png')
+        bpy.ops.render.render(write_still=True)
+        print('ok tufo', v, flush=True)
+else:
+    for v in range(4):
+        sc = scene()
+        cumulus(100 + v * 31)
+        sc.render.filepath = os.path.join(OUT, f'nuvem_{v}.png')
+        bpy.ops.render.render(write_still=True)
+        print('ok nuvem', v, flush=True)

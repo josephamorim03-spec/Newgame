@@ -110,7 +110,18 @@ venv/bin/python montar_fauna.py fauna_saida/ fauna.webp fauna.json && python3 em
 
 O tamanho no jogo não depende do render. O jogo mede a largura do corpo no atlas e aplica a tabela `FLEN` do protótipo. No joão-de-barro e nos bichos de poleiro, essa largura inclui o ninho ou o poleiro: se eles mudarem de tamanho, ajuste `FLEN`.
 
+## v1.10: pedras facetadas e seixos
+
+- `pedra()` em `afluente_sprites.py`: esfera subdividida com os vértices sacudidos ao acaso, base reta e chanfro leve nas quinas. Com `smooth=True` e `rough` baixo, vira seixo rolado.
+- Sprites novos: `pebbles`, `pebbles_b` e `pebbles_c` (grupos de seixos de leito). `rock` e `rock_b` foram refeitos.
+- Para refazer só esses sprites:
+  ```sh
+  SOMENTE=rock,rock_b,pebbles,pebbles_b,pebbles_c venv/bin/python afluente_sprites.py /tmp/rk
+  venv/bin/python atualizar_atlas.py /tmp/rk atlas.png atlas.json
+  ```
+  Depois gere o `atlas.webp` e rode `embutir.py`.
 ## v2.0: geometria exata e nuvens
 
 - `caixas.py` lê `atlas.png` e `atlas.json` e grava `caixas.json`, com o corpo de cada sprite (sem a sombra) e a faixa que toca o chão, relativos à âncora. `embutir.py` embute esse arquivo como `const BOX`. Rode os dois sempre que o atlas mudar.
-- `nuvens.py <pasta>`: 4 cúmulos com volume (Cycles, 12 rebatimentos no volume), na câmera e no sol dos sprites. Depois, monte a faixa: 4 × 384×288 → `nuvens.webp`.
+- `nuvens.py <pasta>`: 4 cúmulos inteiros com volume (Cycles, 12 rebatimentos no volume), na câmera e no sol dos sprites.
+- `TUFO=1 nuvens.py <pasta>`: 3 tufos com volume. Monte a faixa (3 × 256) em `tufos.webp`; o jogo usa esses tufos para desenhar as nuvens que se formam (v1.10).
