@@ -324,7 +324,7 @@ export function buildProps(scene, { mobile = false } = {}) {
     frag: `{float l=dot(diffuseColor.rgb,vec3(0.3,0.5,0.2));diffuseColor.rgb=mix(diffuseColor.rgb,toLin(vec3(0.78,0.66,0.42))*(l*2.2+0.25),uSeca*${dry.toFixed(2)});}` });
   // milho: colmo, folhas compridas em arco alternadas, pendão no alto e uma espiga
   function cornGeo() { const H = 2.1, parts = [paint(new THREE.CylinderGeometry(0.016, 0.028, H, 5, 3).translate(0, H / 2, 0), col(0x7fae46))];
-    for (let i = 0; i < 7; i++) { const y = 0.35 + i * 0.22, L = 0.85 - Math.abs(i - 2.5) * 0.07, a = i * Math.PI * 0.95 + (rnd() - 0.5) * 0.5, seg = 5, pos = [], cl = [], idx = [];
+    for (let i = 0; i < 7; i++) { const y = 0.35 + i * 0.22, L = 0.85 - Math.abs(i - 2.5) * 0.07, a = i * Math.PI * 0.95 + (rnd() - 0.5) * 0.5, seg = 3, pos = [], cl = [], idx = [];
       for (let k = 0; k <= seg; k++) { const t = k / seg, x = t * L, yy = 0.38 * L * t - 0.55 * L * t * t, w = 0.045 * (1 - t * 0.9) + 0.008;
         pos.push(x, yy, -w, x, yy + 0.01, w); const c = col(0x4f8a2e).lerp(col(0x9cc85a), t * 0.8); cl.push(c.r, c.g, c.b, c.r, c.g, c.b); }
       for (let k = 0; k < seg; k++) idx.push(k * 2, k * 2 + 2, k * 2 + 1, k * 2 + 1, k * 2 + 2, k * 2 + 3);
@@ -348,28 +348,29 @@ export function buildProps(scene, { mobile = false } = {}) {
       if (lx < F.cornMaxX) corn.push([x + (rnd() - 0.5) * 0.08, zz]); else if (lx > F.sunMinX && lx < F.sunMaxX && Math.round(z / 0.5) % 2 === 0) sun.push([x, zz]); }
     if (mobile) for (let i = corn.length - 1; i > 0; i -= 3) corn.splice(i, 1);
     const M = new THREE.Matrix4(), q = new THREE.Quaternion();
-    const inst = (geo, m, list, yaw, sc) => { const im = new THREE.InstancedMesh(geo, m, list.length);
+    const inst = (geo, m, list, yaw, sc, opts2 = {}) => { const im = new THREE.InstancedMesh(geo, m, list.length);
       list.forEach(([x, z], i) => { q.setFromEuler(new THREE.Euler((rnd() - 0.5) * 0.08, yaw(), (rnd() - 0.5) * 0.08)); const s = sc(); M.compose(V3(x, heightAt(x, z) - 0.05, z), q, V3(s, s, s)); im.setMatrixAt(i, M); });
-      im.castShadow = !mobile; im.receiveShadow = true; scene.add(im); return im; };
+      im.castShadow = !mobile && !opts2.noShadow; im.receiveShadow = true; scene.add(im); return im; };
     // trigo: touceiras de 6 a 8 colmos com espiga; mandioca: hastes com folhas em mão; feijão: moitinhas baixas
     { const Wt = LAYOUT.wheat, Rc = LAYOUT.roca, tt = Wt.tile, wheat = [], mand = [], feij = [];
-      for (let x = tt.c[0] - 19; x < tt.c[0] + 19; x += 0.42) for (let z = tt.c[1] - 20; z < tt.c[1] + 20; z += 0.42) { const lx = x - tt.c[0], xx = x + (rnd() - 0.5) * 0.2, zz = z + (rnd() - 0.5) * 0.2;
+      for (let x = tt.c[0] - 19; x < tt.c[0] + 19; x += 0.5) for (let z = tt.c[1] - 20; z < tt.c[1] + 20; z += 0.5) { const lx = x - tt.c[0], xx = x + (rnd() - 0.5) * 0.2, zz = z + (rnd() - 0.5) * 0.2;
         if (hexEdgeDist(xx, zz, tt.c) < 1.0 || blocked(xx, zz, 0.6)) continue;
         if (lx < Wt.maxX) wheat.push([xx, zz]); else if (lx > Rc.minX && Math.round(x / 0.42) % 3 === 0) { if (lx < 9.5) { if (Math.round(z / 0.42) % 3 === 0) mand.push([x, z]); } else if (Math.round(z / 0.42) % 2 === 0) feij.push([x, z]); } }
       if (mobile) for (let i = wheat.length - 1; i > 0; i -= 2) wheat.splice(i, 1);
+      // trigo barato: cada colmo é uma fita (2 triângulos) e a espiga um losango (8), ~80 triângulos por touceira
       const wheatGeo = (() => { const parts = []; for (let k = 0; k < 7; k++) { const a = k / 7 * 6.28, r = 0.04 + rnd() * 0.05, lean = (rnd() - 0.5) * 0.25, h = 0.85 + rnd() * 0.2, x = Math.cos(a) * r, z = Math.sin(a) * r;
-          parts.push(paint(new THREE.CylinderGeometry(0.004, 0.006, h, 4).translate(x, h / 2, z).rotateZ(lean), col(0xb8a44a)), paint(new THREE.SphereGeometry(1, 6, 5).scale(0.012, 0.06, 0.012).translate(x, h + 0.04, z).rotateZ(lean), col(0xd9b45a)));
-          parts.push(paint(new THREE.PlaneGeometry(0.012, 0.3).translate(0, 0.15, 0).rotateZ(0.6).rotateY(a).translate(x, 0.25, z), col(0x9aaa4a))); }
+          parts.push(paint(new THREE.PlaneGeometry(0.012, h).translate(0, h / 2, 0).rotateY(a).translate(x, 0, z).rotateZ(lean), col(0xb8a44a)), paint(new THREE.OctahedronGeometry(1, 0).scale(0.016, 0.06, 0.016).translate(x, h + 0.04, z).rotateZ(lean), col(0xd9b45a)));
+          if (k % 2 === 0) parts.push(paint(new THREE.PlaneGeometry(0.014, 0.3).translate(0, 0.15, 0).rotateZ(0.6).rotateY(a).translate(x, 0.25, z), col(0x9aaa4a))); }
         return merge(parts.map(p => { if (!p.attributes.uv) p.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(p.attributes.position.count * 2), 2)); p.computeVertexNormals(); return p; })); })();
       const mandGeo = (() => { const parts = []; for (let k = 0; k < 3; k++) { const a = k * 2.1, l = (rnd() - 0.5) * 0.25; parts.push(paint(new THREE.CylinderGeometry(0.012, 0.018, 1.5, 5).translate(0, 0.75, 0).rotateZ(l).rotateY(a), col(0x8a6a50)));
           for (let j = 0; j < 4; j++) { const hy = 0.8 + j * 0.2, ry = j * 1.7 + a; for (let f = 0; f < 6; f++) parts.push(paint(new THREE.PlaneGeometry(0.035, 0.2).translate(0, 0.1, 0).rotateZ(0.9 + (f - 2.5) * 0.25).rotateY(ry + f * 0.4).translate(Math.sin(l) * -hy, hy, 0).rotateY(a), col(0x4f8a3a).lerp(col(0x7aaa4a), f / 6))); } }
         return merge(parts.map(p => { if (!p.attributes.uv) p.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(p.attributes.position.count * 2), 2)); p.computeVertexNormals(); return p; })); })();
       const feijGeo = (() => { const parts = []; for (let k = 0; k < 14; k++) { const a = rnd() * 6.28, r = rnd() * 0.18, y = 0.15 + rnd() * 0.3; parts.push(paint(new THREE.SphereGeometry(1, 6, 4).scale(0.06, 0.02, 0.05).rotateY(a).translate(Math.cos(a) * r, y, Math.sin(a) * r), col(0x5f9a3a).multiplyScalar(0.85 + rnd() * 0.3))); }
         parts.push(paint(new THREE.CylinderGeometry(0.008, 0.012, 0.4, 4).translate(0, 0.2, 0), col(0x6a8a3a))); return merge(parts.map(p => { if (!p.attributes.uv) p.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(p.attributes.position.count * 2), 2)); p.computeVertexNormals(); return p; })); })();
-      tag(inst(wheatGeo, plantMat(1.0, 0.6), wheat, () => rnd() * 6.28, () => 0.9 + rnd() * 0.2), 'trigo', 1.1);
+      tag(inst(wheatGeo, plantMat(1.0, 0.6), wheat, () => rnd() * 6.28, () => 0.9 + rnd() * 0.2, { noShadow: true }), 'trigo', 1.1);
       tag(inst(mandGeo, plantMat(1.6, 0.4), mand, () => rnd() * 6.28, () => 0.85 + rnd() * 0.3), 'mandioca', 1.15);
-      tag(inst(feijGeo, plantMat(0.5, 0.8), feij, () => rnd() * 6.28, () => 0.9 + rnd() * 0.2), 'feijão', 1.1); }
-    tag(inst(cornGeo(), plantMat(2.1, 0.95), corn, () => rnd() * 6.28, () => 0.85 + rnd() * 0.3), 'milho', 1);
+      tag(inst(feijGeo, plantMat(0.5, 0.8), feij, () => rnd() * 6.28, () => 0.9 + rnd() * 0.2, { noShadow: true }), 'feijão', 1.1); }
+    window.__crops = window.__crops || []; tag(inst(cornGeo(), plantMat(2.1, 0.95), corn, () => rnd() * 6.28, () => 0.85 + rnd() * 0.3), 'milho', 1);
     tag(inst(sunGeo(), plantMat(1.75, 0.8), sun, () => (rnd() - 0.5) * 0.5, () => 0.85 + rnd() * 0.3), 'girassol', 1); }
 
   // ---------- moinho: torre caiada, chapéu que gira para encarar o vento e quatro pás de lona; a velocidade segue o vento

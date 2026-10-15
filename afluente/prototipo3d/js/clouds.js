@@ -20,7 +20,7 @@ export function buildClouds(scene, center, { mobile = false } = {}) {
       c.list.push({ dx: p.dx + Math.cos(a) * p.r * 0.55, dz: p.dz + Math.sin(a) * p.r * 0.45, r: rr, up: p.up + p.r * (0.45 + rnd() * 0.3) }); puffs.push([i, c.list.length - 1]); }
     clouds.push(c);
   }
-  const geo = new THREE.IcosahedronGeometry(1, mobile ? 2 : 3), n = puffs.length;
+  const geo = new THREE.IcosahedronGeometry(1, mobile ? 1 : 2), n = puffs.length;
   const im = new THREE.InstancedMesh(geo, null, n);
   const aBase = new Float32Array(n); im.geometry.setAttribute('aBase', new THREE.InstancedBufferAttribute(aBase, 1));
   im.material = new THREE.ShaderMaterial({ transparent: true, depthWrite: true, uniforms: {},

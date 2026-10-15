@@ -43,7 +43,7 @@ controls.enableDamping = true; controls.dampingFactor = 0.08;
 controls.minDistance = 2; controls.maxDistance = 220;   // câmera livre chega bem perto para inspecionar controls.minPolarAngle = 0.3; controls.maxPolarAngle = 1.42;
 controls.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN };
 const reflRT = new THREE.WebGLRenderTarget(2, 2, { colorSpace: THREE.SRGBColorSpace });   // reflexo da água (ver mais abaixo)
-function resize() { const w = innerWidth, h = innerHeight; renderer.setSize(w, h, false); reflRT.setSize(Math.ceil(w * dpr * (mobile ? 0.35 : 0.5)), Math.ceil(h * dpr * (mobile ? 0.35 : 0.5))); camera.aspect = w / h; camera.fov = w < h ? 50 : 38; camera.updateProjectionMatrix(); }
+function resize() { const w = innerWidth, h = innerHeight; renderer.setSize(w, h, false); { const rk = [0.5, 0.35, 0.18][window.__Qv || 0]; reflRT.setSize(Math.max(2, Math.ceil(w * dpr * rk)), Math.max(2, Math.ceil(h * dpr * rk))); } camera.aspect = w / h; camera.fov = w < h ? 50 : 38; camera.updateProjectionMatrix(); }
 addEventListener('resize', resize); resize();
 
 const HEXF = `float hexEdge(vec2 p){float R=${R.toFixed(1)};float q=(0.57735*p.x-0.33333*p.y)/R,r=0.66667*p.y/R;float s=-q-r;
@@ -198,7 +198,7 @@ const fieldTex = (() => { const N = FIELD.res, d = new Float32Array(N * N * 4), 
     d[k + 2] = (b[2] > 0.5 ? 0.6 + 0.4 * vnoise(x * 0.15, z * 0.15) : b[1] > 0.5 ? 0.24 : 0.26 + 0.24 * vnoise(x * 0.2 + 7, z * 0.2)) * (wd < 2.5 && wd > 0.35 ? 1.5 : 1);
     d[k + 3] = b[2] > 0.5 ? 1 : b[1] > 0.5 ? 0.5 : 0; }
   const t = new THREE.DataTexture(d, N, N, THREE.RGBAFormat, THREE.FloatType); t.minFilter = t.magFilter = THREE.LinearFilter; t.needsUpdate = true; return t; })();
-const BLADES = mobile ? 70000 : 140000;
+const BLADES = mobile ? 50000 : 140000;
 const bladeBase = (() => { const g = new THREE.InstancedBufferGeometry(), seg = 4, pos = [], uv = [], nor = [], idx = [];
   for (let i = 0; i <= seg; i++) { const v = i / seg, w = 1 - v * 0.92; pos.push(-0.5 * w, v, 0, 0.5 * w, v, 0); uv.push(0, v, 1, v); nor.push(0, 0, 1, 0, 0, 1); }
   for (let i = 0; i < seg; i++) { const a = i * 2; idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); }
@@ -260,9 +260,9 @@ function treeMaterials(kind) {
   const dry = { cerrado: 0.5, mata: 0.05, ipe: 1, ipeRosa: 1, ipeBranco: 1, buriti: 0.1, sombra: 0.2, pequi: 0.15, lobeira: 0.3, pinheiro: 0 }[kind];
   const bloom = new THREE.Color({ ipeRosa: 0xf27aaa, ipeBranco: 0xf8f4ec }[kind] || 0xffd12a);   // ipê amarelo, rosa ou branco, florindo na seca
   const sway = (sh, isLeaf, depth) => { shared(sh); sh.uniforms.uDry = { value: dry }; sh.uniforms.uBloom = { value: bloom };
-    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute float flex;attribute float lr;attribute float ao;attribute float tint;varying float vLr;varying vec3 vWp;varying float vAo;varying float vTint;\n' + NOISE + WIND)
+    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute float flex;attribute float lr;attribute float ao;attribute float tint;attribute vec3 torg;varying float vLr;varying vec3 vWp;varying float vAo;varying float vTint;\n' + NOISE + WIND)
       .replace('#include <begin_vertex>', /* glsl */`#include <begin_vertex>
-        vec3 tp=(modelMatrix*vec4(0.0,0.0,0.0,1.0)).xyz;float hs=hash21(tp.xz);
+        vec3 tp=torg;float hs=hash21(tp.xz);
         float q=windQ(windAt(tp.xz)),f=flex*flex,w=1.6+1.4*hs;
         float sw=(0.06*q+0.022*q*sin(uTime*w+hs*40.0)+0.004*sin(uTime*0.9+hs*9.0))*f;
         vec3 dw=vec3(uWindDir.x,0.0,uWindDir.y)*sw*8.0;
@@ -630,7 +630,7 @@ const mirrorCam = new THREE.PerspectiveCamera(), reflClip = [new THREE.Plane(new
 const BIAS = new THREE.Matrix4().set(0.5, 0, 0, 0.5, 0, 0.5, 0, 0.5, 0, 0, 0.5, 0.5, 0, 0, 0, 1);
 function renderReflection() {
   const wy = WATER_Y - U.uWaterDrop.value, cp = camera.position, fw = camera.getWorldDirection(new THREE.Vector3()), tg = cp.clone().add(fw);
-  mirrorCam.copy(camera); mirrorCam.position.set(cp.x, 2 * wy - cp.y, cp.z); mirrorCam.up.set(0, 1, 0); mirrorCam.lookAt(tg.x, 2 * wy - tg.y, tg.z); mirrorCam.updateMatrixWorld();
+  mirrorCam.copy(camera); mirrorCam.layers.set(1); mirrorCam.position.set(cp.x, 2 * wy - cp.y, cp.z); mirrorCam.up.set(0, 1, 0); mirrorCam.lookAt(tg.x, 2 * wy - tg.y, tg.z); mirrorCam.updateMatrixWorld();
   mirrorCam.projectionMatrix.copy(camera.projectionMatrix); mirrorCam.projectionMatrixInverse.copy(camera.projectionMatrixInverse);
   waterMat.uniforms.uReflMat.value.multiplyMatrices(BIAS, mirrorCam.projectionMatrix).multiply(mirrorCam.matrixWorldInverse);
   reflClip[0].constant = -wy; water.visible = grass.visible = rain.visible = skyfx.bowMesh.visible = false; skyDome.position.copy(mirrorCam.position);
@@ -720,8 +720,17 @@ function fitShadow() {
   Object.assign(shCam, { left: cx - size / 2, right: cx + size / 2, bottom: cy - size / 2, top: cy + size / 2, near: 1, far: 520 }); shCam.updateProjectionMatrix();
 }
 // capim: de longe, cada peça desenha menos lâminas (as que ficam já são mais largas na distância)
-function grassLod() { for (const m of grass.children) { const g = m.geometry, d = Math.hypot(camera.position.x - g.userData.c[0], camera.position.y, camera.position.z - g.userData.c[1]);
-  g.instanceCount = Math.round(g.userData.full * Math.max(0.3, Math.min(1, 1.3 - d / 190))); } }
+function grassLod() { const qk = [1, 0.65, 0.4][Q]; for (const m of grass.children) { const g = m.geometry, d = Math.hypot(camera.position.x - g.userData.c[0], camera.position.y, camera.position.z - g.userData.c[1]);
+  g.instanceCount = Math.round(g.userData.full * qk * Math.max(0.25, Math.min(1, 1.3 - d / 170))); } }
+// ---------- qualidade automática: o aparelho que sofre (menos de ~24 quadros por segundo por uns segundos) desce um degrau;
+// o que sobra folga (mais de ~50) sobe. 0 = cheia, 1 = média (capim 65%, sombra 1024, reflexo menor, pano só perto),
+// 2 = leve (capim 40%, sombra 768, reflexo do céu só, bichos pequenos a cada 2 quadros, pano só bem perto)
+let Q = mobile ? 1 : 0, qSlow = 0, qFast = 0;
+window.__Q = () => Q;
+function applyQuality() { window.__Qv = Q;
+  scene.traverse(o => { if (o.isInstancedMesh && ['milho', 'girassol', 'mandioca'].includes(o.userData.regua)) o.castShadow = Q === 0 && !mobile; });   // lavoura sem sombra nos degraus mais leves const sz = [mobile ? 1536 : 2048, 1024, 768][Q]; if (sun.shadow.mapSize.x !== sz) { sun.shadow.mapSize.set(sz, sz); if (sun.shadow.map) { sun.shadow.map.dispose(); sun.shadow.map = null; } }
+  resize(); }
+applyQuality();
 
 // ---------- régua: bonecos de 1,70 m pelo vale e a tabela do que foi medido, para conferir as proporções
 let people = null;
@@ -736,6 +745,22 @@ function showRegua(on) {
 chips('cRegua', 'regua', v => v === 'sim'); let reguaOn = false;
 window.__regua = () => audit(scene);
 
+// ---------- todas as árvores de cada espécie viram uma malha só (de ~300 desenhos para ~25): cada vértice guarda a origem da
+// sua árvore (torg), e o balanço do vento continua árvore por árvore. Os grupos originais ficam (invisíveis) para a régua e
+// para quem procura árvore pelo tipo.
+{ const buckets = new Map();
+  scene.updateMatrixWorld(true);
+  for (const t of scene.children) { if (!t.isGroup || !(t.userData.kind || t.userData.regua === 'buriti' || t.userData.regua === 'pinheiro-bravo')) continue;
+    const o = t.getWorldPosition(new THREE.Vector3());
+    for (const m of t.children) { if (!m.isMesh || m.userData.noRegua || !m.customDepthMaterial) continue;
+      const g = m.geometry.clone().applyMatrix4(m.matrixWorld), n = g.attributes.position.count, a = new Float32Array(n * 3); for (let i = 0; i < n; i++) a.set([o.x, o.y, o.z], i * 3);
+      g.setAttribute('torg', new THREE.BufferAttribute(a, 3)); const key = m.material.uuid; if (!buckets.has(key)) buckets.set(key, { mat: m.material, depth: m.customDepthMaterial, gs: [] });
+      buckets.get(key).gs.push(g); m.visible = false; m.userData.merged = true; } }
+  for (const b of buckets.values()) { const geo = mergeGeometries(b.gs); const mm = new THREE.Mesh(geo, b.mat); mm.customDepthMaterial = b.depth; mm.castShadow = mm.receiveShadow = true; mm.frustumCulled = false; mm.userData.noRegua = true; scene.add(mm); } }
+// o que aparece no reflexo da água (camada 1): céu, chão, chapadas, árvores, construções grandes, nuvens
+{ const big = ['casa', 'capela (com a torre)', 'venda', 'sobrado', 'coreto', 'moinho (com as pás)', 'celeiro', 'paiol'];
+  scene.traverse(o => { if (o === skyDome || (o.isMesh && (o.material === groundMat || o.material.type === 'MeshToonMaterial' && o.geometry.attributes.position.count > 30000) && !o.isSkinnedMesh)) o.layers.enable(1); });
+  for (const o of scene.children) { if (big.includes(o.userData.regua) || (o.isMesh && o.userData.noRegua && o.customDepthMaterial) || o.isInstancedMesh && o.renderOrder === -5) o.traverse(c => c.layers.enable(1)); } }
 let lastStrikes = 0;
 const clock = new THREE.Clock(); let fpsT = 0, fpsT0 = 0, fpsN = 0, slow = 0;
 const fmtH = h => `${String(Math.floor(h) % 24).padStart(2, '0')}:${String(Math.round((h % 1) * 60) % 60).padStart(2, '0')}`;
@@ -756,8 +781,12 @@ function frame() {
   renderer.render(scene, camera);
   // quadros por segundo medidos no relógio de verdade (o dt do jogo é limitado a 0,1 s e enganava quando o aparelho sofria)
   const now = performance.now(); fpsN++; fpsT = (now - (fpsT0 || now)) / 1000; if (!fpsT0) fpsT0 = now; if (fpsT > 1) { const fps = fpsN / fpsT; fpsT0 = now; $('info').textContent = `${fmtH(ST.hour)} · ${ST.seca ? 'Seca' : 'Águas'} · vento ${c.base.toFixed(1)} m/s · ${c.Rr > 0.2 ? `chuva ${c.Rr.toFixed(0)} mm/h` : 'sem chuva'} · ${fps.toFixed(0)} qps`;
-    $('hora').value = ST.hour; if (fps < 26 && dpr > 1) { if (++slow >= 2) { dpr = Math.max(1, dpr - 0.3); renderer.setPixelRatio(dpr); resize(); slow = 0; } } else slow = 0; fpsN = 0; fpsT = 0; }
+    $('hora').value = ST.hour;
+    if (fps < 24) { qFast = 0; if (++qSlow >= 3) { qSlow = 0; if (Q < 2) { Q++; applyQuality(); } else if (dpr > 1) { dpr = Math.max(1, dpr - 0.25); renderer.setPixelRatio(dpr); resize(); } } }
+    else if (fps > 50) { qSlow = 0; if (++qFast >= 6) { qFast = 0; if (dpr < Math.min(devicePixelRatio || 1, mobile ? 1.6 : 2)) { dpr = Math.min(devicePixelRatio || 1, dpr + 0.25); renderer.setPixelRatio(dpr); resize(); } else if (Q > 0) { Q--; applyQuality(); } } }
+    else { qSlow = 0; qFast = 0; }
+    fpsN = 0; fpsT = 0; }
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
-window.__tiles = TILES; window.__fall = FALL; window.__previa = { gente, skyfx, gameCam,  ST, U, renderer, scene, camera, controls, fauna, clouds };
+window.__cam = camera; window.__tiles = TILES; window.__fall = FALL; window.__previa = { gente, skyfx, gameCam,  ST, U, renderer, scene, camera, controls, fauna, clouds };

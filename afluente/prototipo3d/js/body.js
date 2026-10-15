@@ -158,7 +158,7 @@ export function buildBody(s) {
 // Cada penteado soma o seu volume (afro com cachos, coque, rabo, tranças, cabelo comprido sobre os ombros) e os fios
 // aparecem no desenho (mais escuros entre as mechas, brilho por cima).
 const SKULL = { rx: 0.086, ry: 0.118, rz: 0.1, cy: 0.115, cz: 0.012 };
-function hairShell({ t = 0.012, front = 0.42, side = 0.22, back = -0.6, top = 2, curl = 0, crown = 0.006, seg = 40, noTop = false } = {}) {
+function hairShell({ t = 0.012, front = 0.42, side = 0.22, back = -0.6, top = 2, curl = 0, crown = 0.006, seg = 30, noTop = false } = {}) {
   const g = new THREE.SphereGeometry(1, seg, Math.round(seg * 0.75)), p = g.attributes.position;
   for (let i = 0; i < p.count; i++) { const x = p.getX(i), y = p.getY(i), z = p.getZ(i);
     const f = Math.abs(Math.atan2(x, z)) / Math.PI;   // 0 = frente, 1 = nuca
@@ -179,7 +179,7 @@ function hair(bd, s, hb) {
   const hc = C(s.hairColor), H = (g, c = hc) => bd.rigid(g, c, hb, 2), h = s.hair, kid = s.sex === 'c';
   if (h === 'curto') H(hairShell({ t: kid ? 0.016 : 0.013, front: kid ? 0.36 : 0.42, side: 0.24, back: -0.62, crown: 0.01 }));
   if (h === 'careca') H(hairShell({ t: 0.008, front: 0.5, side: 0.2, back: -0.55, noTop: true }));
-  if (h === 'crespo') H(hairShell({ t: kid ? 0.03 : 0.04, front: 0.36, side: 0.15, back: -0.62, curl: 0.014, crown: 0.02, seg: 48 }));
+  if (h === 'crespo') H(hairShell({ t: kid ? 0.03 : 0.04, front: 0.36, side: 0.15, back: -0.62, curl: 0.014, crown: 0.02, seg: 36 }));
   if (h === 'coque' || h === 'tranca' || h === 'longo' || h === 'chiquinha') H(hairShell({ t: 0.011, front: 0.4, side: 0.18, back: -0.66, crown: 0.004 }));
   const back = (y, z) => [0, SKULL.cy + y, SKULL.cz + z];
   if (h === 'coque') { const b = new THREE.SphereGeometry(1, 16, 12); const p = b.attributes.position; for (let i = 0; i < p.count; i++) { const k = 1 + (vn3(p.getX(i) * 4, p.getY(i) * 4, p.getZ(i) * 4) - 0.5) * 0.25; p.setXYZ(i, p.getX(i) * 0.05 * k, p.getY(i) * 0.045 * k, p.getZ(i) * 0.05 * k); }

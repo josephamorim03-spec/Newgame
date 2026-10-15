@@ -6,6 +6,7 @@ import * as THREE from 'three';
 import { U } from './mat.js';
 import { mat, paint, merge, col, V3 } from './props.js';
 import { tag, READ3 } from './regua.js';
+import { mergeGeometries } from './addons/BufferGeometryUtils.js';
 import { LAYOUT, TILES, heightAt, waterDist, inHex, inBoxAt, blocked, inAnyTile, WATER_Y, SPRING, POOL_R, RIVER, LAKE, lakeDist } from './world.js';
 
 const rnd = (() => { let a = 424242; return () => { a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; })();
@@ -37,6 +38,7 @@ export function buildFauna(scene, opts = {}) {
     const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(colA, 3)); g.setIndex(idx);
     g.computeVertexNormals(); return g.toNonIndexed ? (() => { const n = g; n.computeVertexNormals(); return n; })() : g;
   }
+  const mergeGeos = gs => { const out = mergeGeometries(gs.map(x => { const y = x.index ? x.toNonIndexed() : x; for (const n of Object.keys(y.attributes)) if (!['position', 'normal', 'color'].includes(n)) y.deleteAttribute(n); if (!y.attributes.normal) y.computeVertexNormals(); return y; })); return out; };
   const CM = mat({ vertexColors: true }, { rim: '2.4', frag: 'diffuseColor.rgb*=0.95+0.1*vnoise(vWp.xz*14.0+vWp.y*9.0);diffuseColor.rgb*=mix(1.0,0.82,uWet);' });
   const cmesh = (geo, parent) => { const m = new THREE.Mesh(geo, CM); m.castShadow = true; m.receiveShadow = true; parent.add(m); return m; };
   function cow(tone) {   // nelore: branco a cinza-claro, cupim alto sobre a cernelha, barbela que pende do pescoço ao peito, garupa caída,
@@ -58,8 +60,8 @@ export function buildFauna(scene, opts = {}) {
     const leg = (x, z, front, ph) => { const hip = pivot(g, x, front ? 0.86 : 0.92, z), knee = pivot(hip, 0, front ? -0.42 : -0.453, front ? 0.0 : -0.08);
       const up = front ? [[0.04, 0.1], [-0.16, 0.088], [-0.3, 0.062], [-0.43, 0.05]] : [[0.04, 0.12], [-0.2, 0.095], [-0.36, 0.06], [-0.465, 0.05]];
       cmesh(loft(up.map(([y, r]) => ({ z: -y, y: 0, rx: r * 0.78, rt: r, rb: r, e: 2, c: w }))).rotateX(Math.PI / 2).rotateX(front ? 0 : 0.175), hip);
-      const lowL = front ? 0.4 : 0.38; cmesh(loft([[0.03, 0.05], [-0.06, 0.042], [-0.2, 0.034], [-lowL + 0.08, 0.035], [-lowL + 0.05, 0.043]].map(([y, r]) => ({ z: -y, y: 0, rx: r, rt: r, rb: r, e: 2, c: w })), 10).rotateX(Math.PI / 2), knee);
-      const hoof = new THREE.CylinderGeometry(0.035, 0.05, 0.07, 10).translate(0, -lowL + 0.035, 0.01); paint(hoof, dark); hoof.deleteAttribute('uv'); cmesh(hoof, knee);
+      const lowL = front ? 0.4 : 0.38; const lowG = (loft([[0.03, 0.05], [-0.06, 0.042], [-0.2, 0.034], [-lowL + 0.08, 0.035], [-lowL + 0.05, 0.043]].map(([y, r]) => ({ z: -y, y: 0, rx: r, rt: r, rb: r, e: 2, c: w })), 10).rotateX(Math.PI / 2));
+      const hoof = new THREE.CylinderGeometry(0.035, 0.05, 0.07, 10).translate(0, -lowL + 0.035, 0.01); paint(hoof, dark); hoof.deleteAttribute('uv'); cmesh(mergeGeos([lowG, hoof]), knee);
       hip.userData.ph = ph; hip.userData.low = knee; hip.userData.front = front; return hip; };
     // loft() usa anéis em z; para as pernas montamos anéis em y (o eixo da perna): reescreve com x/y/z certos
     const legs = [leg(0.115, 0.46, true, 0), leg(-0.115, 0.46, true, Math.PI), leg(0.13, -0.6, false, Math.PI), leg(-0.13, -0.6, false, 0)];
@@ -67,14 +69,15 @@ export function buildFauna(scene, opts = {}) {
     const head = pivot(g, 0, 1.33, 0.95);
     const hd = [[0, 0.085, 0.09, 0.1], [0.08, 0.1, 0.1, 0.11], [0.18, 0.092, 0.085, 0.1], [0.3, 0.075, 0.07, 0.085], [0.42, 0.068, 0.065, 0.075], [0.49, 0.07, 0.06, 0.07], [0.53, 0.05, 0.045, 0.05]];
     const hgeo = loft(hd.map(([t, rx, rt, rb]) => ({ z: t, y: 0, rx, rt, rb, e: 2.4, c: t > 0.44 ? dark : t < 0.12 ? grey : w })), 16);
-    hgeo.rotateX(0.95).translate(0, 0.02, 0.02); cmesh(hgeo, head);
-    const hp = (geo, c) => { paint(geo, c); geo.deleteAttribute('uv'); cmesh(geo, head); };
+    hgeo.rotateX(0.95).translate(0, 0.02, 0.02); const headParts = [hgeo];
+    const hp = (geo, c) => { paint(geo, c); geo.deleteAttribute('uv'); headParts.push(geo); };
     for (const sx of [-1, 1]) {
       hp(new THREE.SphereGeometry(1, 10, 8).scale(0.035, 0.11, 0.022).rotateZ(sx * 1.2).rotateY(sx * 0.3).translate(sx * 0.15, 0.0, -0.02), grey);   // orelha média, para o lado e um pouco caída
       hp(new THREE.ConeGeometry(0.03, bull ? 0.12 : 0.1, 8).rotateZ(sx * -0.5).rotateX(-0.3).translate(sx * 0.085, 0.09, -0.03), col(0x5a5048));       // chifre curto e grosso
       hp(new THREE.SphereGeometry(1, 8, 6).scale(0.02, 0.016, 0.022).translate(sx * 0.088, -0.035, 0.1), col(0x141210));                            // olho
       hp(new THREE.SphereGeometry(1, 6, 5).scale(0.012, 0.01, 0.01).translate(sx * 0.03, -0.39, 0.33), col(0x0a0a0a));                               // narina
     }
+    cmesh(mergeGeos(headParts), head);
     const K2 = 1.08; for (const c of [...g.children]) { c.position.multiplyScalar(K2); c.scale.multiplyScalar(K2); }   // tamanho de um nelore adulto (a escala fica no corpo, o grupo segue livre)
     return { g, head, legs, tail, headY: 1.33 * K2, cowLegs: true };
   }
@@ -156,7 +159,7 @@ export function buildFauna(scene, opts = {}) {
   // ---------- comportamento: pastar, andar até um ponto, ficar parado olhando; separação; não sair da área; abrigo na chuva
   function spawn(make, n, o) { for (let i = 0; i < n; i++) { const a = { ...make(), ...o, st: 'idle', t: rnd() * 3, ph: rnd() * 6, sp: 0, h: rnd() * 6.28, tgt: null, look: rnd() * 6 };
     let x, z, k = 0; do { [x, z] = o.pick(null); k++; } while (k < 50 && all.some(b => Math.hypot(b.x - x, b.z - z) < (o.sep || 1.5)));
-    a.x = x; a.z = z; a.g.scale.setScalar(o.scale || 1); scene.add(a.g); if (o.name) tag(a.g, o.name); a.g.traverse(m => { if (m.isMesh) m.castShadow = !mobile || o.big; }); all.push(a); } }
+    a.x = x; a.z = z; a.g.scale.setScalar(o.scale || 1); scene.add(a.g); if (o.name) tag(a.g, o.name); a.g.traverse(m => { if (m.isMesh) m.castShadow = o.big || (!mobile && ['ema', 'anta', 'lobo-guará', 'onça-pintada', 'tamanduá-bandeira', 'garça-moura', 'garça-branca'].includes(o.name)); });   /* bicho pequeno não projeta sombra: metade dos desenhos da sombra */ all.push(a); } }
   const pickIn = (test, around, R) => () => { for (let k = 0; k < 200; k++) { const x = around[0] + (rnd() - 0.5) * 2 * R, z = around[1] + (rnd() - 0.5) * 2 * R; if (test(x, z)) return [x, z]; } return [...around]; };
   const near = (a, R, test) => { for (let k = 0; k < 60; k++) { const x = a.x + (rnd() - 0.5) * 2 * R, z = a.z + (rnd() - 0.5) * 2 * R; if (test(x, z)) return [x, z]; } return null; };
   // ---------- medo: cada bicho tem uma distância de fuga e uma velocidade de corrida; foge de gente (mais de criança correndo)

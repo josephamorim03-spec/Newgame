@@ -77,7 +77,7 @@ function measure(o) {
   const undo = o.userData.reguaRest ? o.userData.reguaRest() : null;   // gente sentada ou agachada é medida em pé
   const ry = o.rotation.y; o.rotation.y = 0; o.updateMatrixWorld(true);
   const b = new THREE.Box3(), cb = new THREE.Box3();
-  o.traverse(c => { if ((c.isMesh || c.isLineSegments) && !c.isSprite && !c.userData.noRegua && c.visible !== false) { if (c.isSkinnedMesh) { c.computeBoundingBox(); cb.copy(c.boundingBox).applyMatrix4(c.matrixWorld); } else { c.geometry.computeBoundingBox(); cb.copy(c.geometry.boundingBox).applyMatrix4(c.matrixWorld); } b.union(cb); } });
+  o.traverse(c => { if ((c.isMesh || c.isLineSegments) && !c.isSprite && !c.userData.noRegua && (c.visible !== false || c.userData.merged)) { if (c.isSkinnedMesh) { c.computeBoundingBox(); cb.copy(c.boundingBox).applyMatrix4(c.matrixWorld); } else { c.geometry.computeBoundingBox(); cb.copy(c.geometry.boundingBox).applyMatrix4(c.matrixWorld); } b.union(cb); } });
   o.rotation.y = ry; if (undo) undo(); o.updateMatrixWorld(true);
   return { h: b.max.y - o.getWorldPosition(new THREE.Vector3()).y, l: Math.max(b.max.x - b.min.x, b.max.z - b.min.z) };
 }
