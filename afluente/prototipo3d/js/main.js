@@ -220,27 +220,27 @@ const grass = new THREE.Mesh(bladeGeo, grassMat); grass.frustumCulled = false; g
 const barkTex = barkTexture(5);
 const TEX = { cerrado: leafTexture(7, { n: 110, size: 26, round: 0.62, spread: 0.4 }), mata: leafTexture(9, { n: 170, size: 22, round: 0.5, spread: 0.42 }),
   ipe: leafTexture(13, { n: 140, size: 18, round: 0.65, spread: 0.4 }), buriti: fanTexture(11) };
-const LEAFC = { cerrado: 0x9fbf3e, mata: 0x5f9a33, ipe: 0x8fb33c, buriti: 0x8cc04a };
+const LEAFC = { cerrado: 0x9fbf3e, mata: 0x5f9a33, ipe: 0x8fb33c, buriti: 0x8cc04a, sombra: 0x86b23c };
 function treeMaterials(kind) {
   const wood = toon({ map: barkTex, color: kind === 'buriti' ? 0xb8a98a : kind === 'mata' ? 0xa08a6c : 0x8f7356 });
   const leaf = toon({ map: TEX[kind], alphaTest: 0.5, side: THREE.DoubleSide, color: LEAFC[kind] });
-  const dry = { cerrado: 0.5, mata: 0.05, ipe: 1, buriti: 0.1 }[kind];
+  const dry = { cerrado: 0.5, mata: 0.05, ipe: 1, buriti: 0.1, sombra: 0.2 }[kind];
   const sway = (sh, isLeaf, depth) => { shared(sh); sh.uniforms.uDry = { value: dry };
-    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute float flex;attribute float lr;varying float vLr;varying vec3 vWp;\n' + NOISE + WIND)
+    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute float flex;attribute float lr;attribute float ao;attribute float tint;varying float vLr;varying vec3 vWp;varying float vAo;varying float vTint;\n' + NOISE + WIND)
       .replace('#include <begin_vertex>', /* glsl */`#include <begin_vertex>
         vec3 tp=(modelMatrix*vec4(0.0,0.0,0.0,1.0)).xyz;float hs=hash21(tp.xz);
         float q=windQ(windAt(tp.xz)),f=flex*flex,w=1.6+1.4*hs;
         float sw=(0.06*q+0.022*q*sin(uTime*w+hs*40.0)+0.004*sin(uTime*0.9+hs*9.0))*f;
         vec3 dw=vec3(uWindDir.x,0.0,uWindDir.y)*sw*8.0;
         ${isLeaf ? 'dw+=vec3(sin(uTime*11.0+position.x*3.1+lr*20.0),sin(uTime*13.0+position.z*2.3)*0.5,cos(uTime*10.0+position.y*2.7))*0.05*(0.25+q)*flex;' : ''}
-        transformed+=inverse(mat3(modelMatrix))*dw;vLr=lr;vWp=(modelMatrix*vec4(transformed,1.0)).xyz;`);
-    if (depth) { sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying float vLr;varying vec3 vWp;\n'); return; }
-    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying float vLr;varying vec3 vWp;uniform float uDry;\n' + HEAD)
+        transformed+=inverse(mat3(modelMatrix))*dw;vLr=lr;vAo=ao;vTint=tint;vWp=(modelMatrix*vec4(transformed,1.0)).xyz;`);
+    if (depth) { sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying float vLr;varying vec3 vWp;varying float vAo;varying float vTint;\n'); return; }
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying float vLr;varying vec3 vWp;varying float vAo;varying float vTint;uniform float uDry;\n' + HEAD)
       .replace('#include <map_fragment>', isLeaf ? /* glsl */`#include <map_fragment>
         if(vLr<uSeca*uDry*0.5)discard;
         vec3 ochre=vec3(0.86,0.58,0.24)*dot(diffuseColor.rgb,vec3(0.45)),yel=vec3(1.0,0.82,0.16)*(0.7+0.5*dot(diffuseColor.rgb,vec3(0.33)));
         diffuseColor.rgb=uDry>0.9?mix(diffuseColor.rgb,yel,uSeca):mix(diffuseColor.rgb,ochre,uSeca*uDry*step(0.5,fract(vLr*7.3)));
-        diffuseColor.rgb*=0.92+0.16*fract(vLr*13.7);` : '#include <map_fragment>\ndiffuseColor.rgb*=mix(1.0,0.72,uWet);')
+        diffuseColor.rgb*=(0.92+0.16*fract(vLr*13.7))*mix(0.42,1.12,vAo)*mix(vec3(1.06,1.0,0.82),vec3(0.9,1.02,1.06),vTint);` : '#include <map_fragment>\ndiffuseColor.rgb*=mix(1.0,0.72,uWet);')
       .replace('#include <lights_fragment_end>', LIGHT_END(isLeaf ? '2.2' : 0)); };
   wood.onBeforeCompile = sh => sway(sh, false, false); leaf.onBeforeCompile = sh => sway(sh, true, false);
   const leafDepth = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking, map: TEX[kind], alphaTest: 0.5 }); leafDepth.onBeforeCompile = sh => sway(sh, true, true);
@@ -248,32 +248,43 @@ function treeMaterials(kind) {
   return { wood, leaf, leafDepth, woodDepth };
 }
 const MATS = { cerrado: treeMaterials('cerrado'), mata: treeMaterials('mata'), ipe: treeMaterials('ipe'), buriti: treeMaterials('buriti') };
-function limb(out, p0, dir, len, r0, r1, depth, P) {
-  let p = p0.clone(), d = dir.clone(); const segs = 3;
+TEX.sombra = TEX.cerrado; MATS.sombra = treeMaterials('sombra'); MATS.moita = MATS.cerrado;
+function limb(out, p0, dir, len, r0, r1, depth, P, v0 = 0) {
+  let p = p0.clone(), d = dir.clone(), v = v0; const segs = 3;
   for (let s = 0; s < segs; s++) { const L = len / segs, ra = r0 + (r1 - r0) * s / segs, rb = r0 + (r1 - r0) * (s + 1) / segs;
     d.add(new THREE.Vector3((rnd() - 0.5) * P.crook, (rnd() - 0.5) * P.crook * 0.5, (rnd() - 0.5) * P.crook)).normalize(); if (d.y < 0.05) { d.y = 0.05; d.normalize(); }
-    const g = new THREE.CylinderGeometry(rb, ra, L, 7, 1, true); g.translate(0, L / 2, 0); g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), d)); g.translate(p.x, p.y, p.z);
+    const g = new THREE.CylinderGeometry(rb, ra, L, 7, 1, true), uvA = g.attributes.uv;
+    for (let k = 0; k < uvA.count; k++) uvA.setXY(k, uvA.getX(k) * 2, (v + uvA.getY(k) * L) / 1.4); v += L;   // a casca segue sem emenda
+    g.translate(0, L / 2, 0); g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), d)); g.translate(p.x, p.y, p.z);
     out.wood.push(g); p = p.clone().addScaledVector(d, L); }
   if (depth < P.levels) { const n = depth === 0 ? P.branches : 2 + (rnd() < 0.5 ? 1 : 0);
     for (let i = 0; i < n; i++) { const a = rnd() * Math.PI * 2, tilt = P.spread * (0.7 + rnd() * 0.5), nd = new THREE.Vector3(Math.cos(a) * Math.sin(tilt), Math.cos(tilt), Math.sin(a) * Math.sin(tilt)).lerp(d, 0.3).normalize();
-      limb(out, p, nd, len * P.decay * (0.8 + rnd() * 0.4), r1, r1 * 0.55, depth + 1, P); } }
+      limb(out, p, nd, len * P.decay * (0.8 + rnd() * 0.4), r1, r1 * 0.55, depth + 1, P, v); } }
   else out.tips.push(p);
 }
 function leafCards(out, tips, center, P) {
+  let rad = 0.5; for (const tp of tips) rad = Math.max(rad, Math.hypot(tp.x - center.x, tp.z - center.z)); rad += P.cluster * 0.5;
+  const low = Math.min(...tips.map(t => t.y)) - P.cluster * 0.5, high = Math.max(...tips.map(t => t.y)) + P.cluster * 0.6;
   for (const tp of tips) for (let i = 0; i < P.cards; i++) {
     const s = P.card * (0.75 + rnd() * 0.5), g = new THREE.PlaneGeometry(s, s); g.applyQuaternion(new THREE.Quaternion().setFromEuler(new THREE.Euler(rnd() * 6.28, rnd() * 6.28, rnd() * 6.28)));
     const c = tp.clone().add(new THREE.Vector3((rnd() - 0.5) * P.cluster, (rnd() - 0.35) * P.cluster * 0.7, (rnd() - 0.5) * P.cluster)); g.translate(c.x, c.y, c.z);
     const n = c.clone().sub(center).add(new THREE.Vector3(0, P.cluster * 0.8, 0)).normalize(), nor = g.attributes.normal;
     for (let k = 0; k < nor.count; k++) nor.setXYZ(k, n.x, n.y, n.z);     // normais "da copa": a copa inteira recebe luz como um volume macio
-    const r = rnd(); g.setAttribute('lr', new THREE.Float32BufferAttribute(new Array(4).fill(r), 1)); out.leaf.push(g); }
+    const r = rnd(), out_ = Math.min(1, Math.hypot(c.x - center.x, c.z - center.z) / rad), up = Math.max(0, Math.min(1, (c.y - low) / (high - low)));
+    const ao = Math.max(0, Math.min(1, 0.15 + 0.5 * up + 0.45 * out_ * out_));
+    g.setAttribute('lr', new THREE.Float32BufferAttribute(new Array(4).fill(r), 1)); g.setAttribute('ao', new THREE.Float32BufferAttribute(new Array(4).fill(ao), 1)); out.leaf.push(g); }
 }
 function finish(geos, H, withLr) { const g = mergeGeometries(geos);
   const p = g.attributes.position, flex = new Float32Array(p.count); for (let i = 0; i < p.count; i++) flex[i] = Math.max(0, Math.min(1, p.getY(i) / H));
-  g.setAttribute('flex', new THREE.BufferAttribute(flex, 1)); if (!withLr) g.setAttribute('lr', new THREE.BufferAttribute(new Float32Array(p.count), 1)); return g; }
+  g.setAttribute('flex', new THREE.BufferAttribute(flex, 1)); if (!withLr) g.setAttribute('lr', new THREE.BufferAttribute(new Float32Array(p.count), 1));
+  if (!g.attributes.ao) g.setAttribute('ao', new THREE.BufferAttribute(new Float32Array(p.count).fill(1), 1));
+  g.setAttribute('tint', new THREE.BufferAttribute(new Float32Array(p.count).fill(rnd()), 1)); return g; }
 const SPECIES = {
-  cerrado: { trunk: [2.2, 3.4], r: 0.24, crook: 0.55, lean: 0.25, branches: 3, levels: 2, spread: 0.95, decay: 0.72, cards: 16, card: 2.6, cluster: 1.7 },
-  ipe: { trunk: [4, 5.5], r: 0.27, crook: 0.4, lean: 0.12, branches: 3, levels: 2, spread: 0.8, decay: 0.75, cards: 14, card: 2.5, cluster: 1.7 },
-  mata: { trunk: [5.2, 7.2], r: 0.38, crook: 0.2, lean: 0.06, branches: 4, levels: 3, spread: 0.7, decay: 0.66, cards: 16, card: 3.4, cluster: 2.3 },
+  cerrado: { trunk: [2.2, 3.4], r: 0.24, crook: 0.55, lean: 0.25, branches: 3, levels: 2, spread: 0.95, decay: 0.72, cards: 22, card: 2.4, cluster: 2.0 },
+  ipe: { trunk: [4, 5.5], r: 0.27, crook: 0.4, lean: 0.12, branches: 3, levels: 2, spread: 0.8, decay: 0.75, cards: 20, card: 2.4, cluster: 2.0 },
+  mata: { trunk: [3.6, 5.2], r: 0.36, crook: 0.22, lean: 0.06, branches: 4, levels: 3, spread: 0.85, decay: 0.74, cards: 15, card: 3.2, cluster: 2.6 },
+  sombra: { trunk: [2.6, 3.4], r: 0.5, crook: 0.3, lean: 0.08, branches: 5, levels: 3, spread: 1.0, decay: 0.72, cards: 13, card: 3.4, cluster: 2.8 },
+  moita: { trunk: [0.3, 0.5], r: 0.05, crook: 0.6, lean: 0.3, branches: 4, levels: 1, spread: 1.1, decay: 1.1, cards: 9, card: 1.3, cluster: 0.9 },
 };
 function treeMesh(out, H, M) { const g = new THREE.Group();
   const w = new THREE.Mesh(finish(out.wood, H, false), M.wood); w.castShadow = w.receiveShadow = true; w.customDepthMaterial = M.woodDepth;
@@ -281,6 +292,8 @@ function treeMesh(out, H, M) { const g = new THREE.Group();
 function makeTree(kind, scale = 1) {
   const out = { wood: [], leaf: [], tips: [] }, P = SPECIES[kind], th = (P.trunk[0] + rnd() * (P.trunk[1] - P.trunk[0])) * scale;
   limb(out, new THREE.Vector3(0, -0.3, 0), new THREE.Vector3((rnd() - 0.5) * P.lean, 1, (rnd() - 0.5) * P.lean).normalize(), th, P.r * scale * 1.3, P.r * scale * 0.85, 0, P);
+  if (P.r > 0.1) { const rr = P.r * scale * 1.3, fl = new THREE.CylinderGeometry(rr, rr * 1.9, 0.7, 7, 1, true), uvA = fl.attributes.uv;
+    for (let k = 0; k < uvA.count; k++) uvA.setXY(k, uvA.getX(k) * 2, uvA.getY(k) * 0.5); fl.translate(0, 0.05, 0); out.wood.push(fl); }
   let H = 0; for (const t of out.tips) H = Math.max(H, t.y); const center = out.tips.reduce((a, t) => a.add(t), new THREE.Vector3()).multiplyScalar(1 / out.tips.length);
   leafCards(out, out.tips, center, { ...P, card: P.card * scale, cluster: P.cluster * scale }); return treeMesh(out, H + P.cluster * scale, MATS[kind]);
 }
@@ -352,11 +365,16 @@ scatter(tA, 4, makeBuriti, (x, z) => { const w = waterDist(x, z); return w > 0.8
 scatter(tA, 2, () => makeTree('cerrado'), (x, z) => waterDist(x, z) > 8, 7);
 scatter(tB, 16, () => makeTree('mata', 0.85 + rnd() * 0.3), (x, z) => { const w = waterDist(x, z); return w > 1.8 && w < 13; }, 4.6);
 scatter(tB, 3, makeBuriti, (x, z) => { const w = waterDist(x, z); return w > 0.8 && w < 3; }, 4);
-scatter(tC, 3, () => makeTree('cerrado', 1.1), () => true, 9);
+scatter(tC, 1, () => makeTree('sombra', 1.15), (x, z) => Math.hypot(x - tC.c[0], z - tC.c[1]) < 9, 10);   // a árvore de sombra do pasto, onde o gado descansa
+scatter(tC, 2, () => makeTree('cerrado', 1.05), () => true, 9);
 scatter(tC, 4, makeTermite, () => true, 4);
 scatter(tD, 9, () => makeTree('cerrado', 0.8 + rnd() * 0.4), () => true, 5.5);
 scatter(tD, 2, () => makeTree('ipe'), () => true, 7);
 scatter(tD, 5, makeTermite, () => true, 3);
+// moitas: o sub-bosque da mata e os arbustos do cerrado, que fecham o vão entre o capim e as copas
+scatter(tB, 16, () => makeTree('moita', 0.9 + rnd() * 0.6), (x, z) => { const w = waterDist(x, z); return w > 1.2 && w < 14; }, 2.2);
+scatter(tD, 6, () => makeTree('moita', 0.8 + rnd() * 0.5), () => true, 2.5);
+scatter(tA, 4, () => makeTree('moita', 0.8 + rnd() * 0.4), (x, z) => { const w = waterDist(x, z); return w > 1.5 && w < 6; }, 2.5);
 { let tries = 0; while (ROCKS_IN_WATER.length < 6 && tries++ < 400) { const i = 4 + Math.floor(rnd() * 220), [x0, z0] = RIVER[i], ri = riverInfo(x0, z0), w = riverHalfWidth(ri.s);
     if (!inAnyTile(x0, z0, 0.85) || Math.hypot(x0 - SPRING[0], z0 - SPRING[1]) < POOL_R + 2 || ROCKS_IN_WATER.some(r => Math.hypot(r[0] - x0, r[1] - z0) < 5)) continue;
     const side = rnd() < 0.5 ? -1 : 1, off = side * w * (0.45 + rnd() * 0.45), x = x0 - ri.tz * off, z = z0 + ri.tx * off, size = 0.4 + rnd() * 0.35, flat = 0.75;
