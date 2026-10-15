@@ -5,7 +5,7 @@
 //  2. O rio tem vazão: cada nascente dá água (💧). Ligar o rio a um olho-d'água do mapa soma a vazão dele.
 //  3. Lavoura e vila gastam água: cada peça com lavoura ou vila encostada no rio usa 1 💧. A água chega primeiro em quem
 //     está mais perto da nascente; quando a vazão acaba, o resto fica seco.
-//  4. Cada vila pede uma coisa por vez (plaquinha). Atendeu: a vila cresce (gente = pontos), ganha 1 peça e você
+//  4. Cada vila pede uma coisa por vez (plaquinha). Atendeu: a vila cresce (pessoas = pontos), ganha 1 peça e você
 //     escolhe entre dois pacotes de peças.
 //  5. A seca: a cada 8 jogadas de Águas vêm 4 de Seca, e cada nascente dá metade (a tela mostra antes como fica). Na chegada da
 //     seca, a colheita: 1 peça a cada 2 lavouras que continuam com água. A pilha é a vida: acabou, acabou.
@@ -155,7 +155,7 @@ export function Game({ seed = 'vale', pilha = 22, nascente = 4, aguas = 8, seca 
     let W = water(); syncVilas(W);
     // pedidos atendidos: a vila cresce, ganha gente e 1 peça, e abre a escolha de pacote
     for (const v of S.vilas.values()) { if (progress(board, W, v.tiles, v.req) < v.req.n) continue; v.lvl++; const g = 2 * v.lvl; S.gente += g; S.left += 2;
-      ev.push({ t: 'pedido', txt: `Vila atendida (${PEDIDOS[v.req.t].txt(v.req.n)}): +${g} gente, +2 peças`, k: v.id, lvl: v.lvl });
+      ev.push({ t: 'pedido', txt: `Vila atendida (${PEDIDOS[v.req.t].txt(v.req.n)}): +${g} pessoas, +2 peças`, k: v.id, lvl: v.lvl });
       v.req = newReq(v, v.tiles, W, v.req.t); S.escolha.push(packs()); }
     // estações
     S.clock++; const len = isSeca() ? S.seca : S.aguas;

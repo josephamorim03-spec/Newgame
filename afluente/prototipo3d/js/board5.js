@@ -4,9 +4,11 @@
 //  - as plaquinhas das vilas, com o pedido de cada uma e o que a peça escolhida muda;
 //  - os olhos-d'água no chão, com quanto somam;
 //  - "A vila cresceu!": a escolha entre dois pacotes, e a vila ganha casa nova no vale;
-//  - o aviso da seca antes de ela chegar.
+//  - o aviso da seca antes de ela chegar;
+//  - a história do começo (o vale da nascente), as peças da mão em 3D, a maquete da peça que cai no lugar e levanta poeira.
 import * as THREE from 'three';
 import { Game, rot, KQ, KR, K, PEDIDOS } from '../../nucleo/regras.js';
+import { toon } from './mat.js';
 
 const COL = { A: '#3f8fc0', B: '#2f6a2a', C: '#d9b04a', V: '#c0583a', G: '#8cbf4a' };
 const TEMA = { roca: '🌾 Roça', mata: '🌳 Mata', rio: '💧 Rio', vila: '🏠 Vila' };
@@ -27,6 +29,23 @@ export function buildBoard5(api) {
     <div class="acao"><button id="colocar" disabled>Escolha uma casa marcada</button></div>
     <div id="aviso" aria-live="polite"></div>`;
   document.body.appendChild(box);
+  // ---------- a história do começo: o porquê da água e das vilas, em quatro páginas curtas (aparece na primeira vez)
+  const HIST = [
+    ['🌱', 'O vale da nascente', 'No meio do Cerrado, uma nascente teima em correr. Em volta dela, umas poucas famílias fizeram casa, roça e curral.'],
+    ['💧', 'A água é pouca', 'Cada roça e cada casa encostada no rio bebe um pouco dela, e a água chega primeiro a quem está mais perto da nascente. Quando ela acaba, o resto seca.'],
+    ['🏠', 'As vilas pedem', 'As vilas vão pedindo o que falta: água, lavoura, mata, campo para o gado. Atender um pedido traz mais pessoas para o vale e, com elas, novas peças para construir.'],
+    ['🌧️', 'Olhos-d\'água e seca', 'Escondidos no Cerrado há olhos-d\'água. Leve o rio até eles para ter mais água. E se prepare: na seca, as nascentes dão a metade.'],
+  ];
+  const hs = document.createElement('div'); hs.id = 'historia'; hs.setAttribute('role', 'dialog'); hs.setAttribute('aria-modal', 'true'); hs.setAttribute('aria-labelledby', 'hsT');
+  hs.innerHTML = '<div class="folha"><div class="ic" id="hsI"></div><h2 id="hsT"></h2><p id="hsP"></p><div class="pts" id="hsD"></div><div class="bt"><button type="button" class="pular" id="hsPular">Pular</button><button type="button" class="ir" id="hsIr">Continuar</button></div></div>';
+  document.body.appendChild(hs);
+  const hb = document.createElement('button'); hb.type = 'button'; hb.id = 'hsAbre'; hb.textContent = '📖 História'; hb.setAttribute('aria-label', 'Ler a história do vale'); document.body.appendChild(hb);
+  let hsI = 0; const KEY = 'afluente:v5:historia';
+  function hsShow(i) { hsI = i; const [ic, t, x] = HIST[i]; $('hsI').textContent = ic; $('hsT').textContent = t; $('hsP').textContent = x;
+    $('hsD').innerHTML = HIST.map((_, j) => `<i class="${j === i ? 'on' : ''}"></i>`).join(''); $('hsIr').textContent = i < HIST.length - 1 ? 'Continuar' : 'Começar'; hs.hidden = false; }
+  function hsClose() { hs.hidden = true; try { localStorage.setItem(KEY, '1'); } catch (e) {} }
+  let seen = false; try { seen = localStorage.getItem(KEY) === '1'; } catch (e) {}
+  hs.hidden = true;
   const pk = document.createElement('div'); pk.id = 'pacote5'; pk.hidden = true; pk.setAttribute('role', 'dialog'); pk.setAttribute('aria-modal', 'true');
   pk.innerHTML = '<div class="folha"><h2 id="pkT">A vila cresceu!</h2><p id="pkS"></p><div class="pks" id="pkO"></div></div>'; document.body.appendChild(pk);
   const css = document.createElement('style'); css.textContent = `
@@ -42,6 +61,15 @@ export function buildBoard5(api) {
     #colocar{border:0;border-radius:999px;background:var(--ink);color:#fff;font:800 15px "Baloo 2",system-ui;padding:10px 18px;min-height:44px;box-shadow:0 3px 12px rgba(0,0,0,.18);max-width:min(340px,calc(100vw - 24px))}
     #colocar:disabled{background:var(--paper);color:var(--ink);opacity:.9;font-weight:700}
     #aviso{font:700 13px Nunito,system-ui;color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.6);max-width:min(320px,calc(100vw - 24px));min-height:18px}
+    #historia{position:fixed;inset:0;display:flex;align-items:flex-end;justify-content:center;padding:16px;background:linear-gradient(to top,rgba(15,35,35,.55),rgba(15,35,35,.05) 60%);z-index:30}
+    #historia[hidden]{display:none}
+    #historia .folha{width:100%;max-width:440px;background:var(--paper);border-radius:24px;padding:18px 18px 14px;box-shadow:0 10px 34px rgba(0,0,0,.3);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+    #historia .ic{font-size:34px;line-height:1}#historia h2{margin:6px 0 4px;font:800 24px "Baloo 2",system-ui}#historia p{margin:0;font:600 16px/1.45 Nunito,system-ui}
+    #historia .pts{display:flex;gap:6px;margin:12px 0 10px}#historia .pts i{width:8px;height:8px;border-radius:50%;background:var(--line)}#historia .pts i.on{background:var(--ink)}
+    #historia .bt{display:flex;justify-content:space-between;align-items:center;gap:10px}
+    #historia .pular{border:0;background:none;color:var(--ink);opacity:.75;font:700 15px Nunito,system-ui;min-height:44px;padding:0 6px}
+    #historia .ir{border:0;border-radius:999px;background:var(--ink);color:#fff;font:800 16px "Baloo 2",system-ui;padding:10px 22px;min-height:44px}
+    #hsAbre{position:fixed;left:max(14px,env(safe-area-inset-left));top:calc(max(12px,env(safe-area-inset-top)) + 54px);border:0;border-radius:999px;background:var(--paper);color:var(--ink);font:700 13px Nunito,system-ui;padding:6px 12px;min-height:32px;box-shadow:0 2px 10px rgba(0,0,0,.12);z-index:6}
     #pacote5{position:fixed;inset:0;display:flex;align-items:flex-end;justify-content:center;background:rgba(20,40,40,.35);z-index:20;padding:12px}
     #pacote5[hidden]{display:none}
     #pacote5 .folha{width:100%;max-width:460px;background:var(--paper);border-radius:22px;padding:16px;box-shadow:0 8px 30px rgba(0,0,0,.25);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
@@ -53,13 +81,35 @@ export function buildBoard5(api) {
   document.head.appendChild(css);
   const $ = id => document.getElementById(id);
 
-  function drawThumb(cv, e) { const g = cv.getContext('2d'), W = cv.width, c = W / 2, r = W * 0.46; g.clearRect(0, 0, W, W);
-    const P = i => { const a = (-60 * i + 30) * Math.PI / 180; return [c + r * Math.cos(a), c + r * Math.sin(a)]; };
-    for (let d = 0; d < 6; d++) { const a = P(d), b = P(d + 1); g.beginPath(); g.moveTo(c, c); g.lineTo(...a); g.lineTo(...b); g.closePath(); g.fillStyle = e[d] === 'A' ? COL.G : COL[e[d]]; g.fill(); }
-    g.lineWidth = W * 0.11; g.lineCap = 'round'; g.strokeStyle = COL.A;
-    const A = e.map((x, d) => x === 'A' ? d : -1).filter(d => d >= 0), mid = d => { const a = -60 * d * Math.PI / 180; return [c + r * 0.87 * Math.cos(a), c + r * 0.87 * Math.sin(a)]; };
-    for (const d of A) { g.beginPath(); g.moveTo(...mid(d)); g.lineTo(A.length === 1 ? c + (mid(d)[0] - c) * 0.3 : c, A.length === 1 ? c + (mid(d)[1] - c) * 0.3 : c); g.stroke(); }
-    g.beginPath(); for (let i = 0; i <= 6; i++) { const p = P(i); i ? g.lineTo(...p) : g.moveTo(...p); } g.lineWidth = 2; g.strokeStyle = 'rgba(255,255,255,.9)'; g.stroke(); }
+  // a peça desenhada como maquete em 3D: o topo inclinado com os seis setores, a lateral de terra, o rio e o que cresce
+  // em cima (árvores na mata, telhado na vila, fileiras na lavoura, capim no campo), com luz vinda do alto à esquerda
+  function shadeHex(h, k) { const n = parseInt(h.slice(1), 16), f = v => Math.max(0, Math.min(255, Math.round(v * k))); return `rgb(${f(n >> 16)},${f(n >> 8 & 255)},${f(n & 255)})`; }
+  function drawThumb(cv, e) { const g = cv.getContext('2d'), W = cv.width, H = cv.height, c = W / 2, r = W * 0.43, sq = 0.64, cy = H * 0.43, dep = W * 0.13; g.clearRect(0, 0, W, H);
+    const P = (i, yo = 0) => { const a = (-60 * i + 30) * Math.PI / 180; return [c + r * Math.cos(a), cy + r * Math.sin(a) * sq + yo]; };
+    const M = (d, k) => { const a = -60 * d * Math.PI / 180; return [c + r * k * Math.cos(a), cy + r * k * Math.sin(a) * sq]; };
+    // sombra no chão e lateral (as faces viradas para baixo na tela)
+    g.fillStyle = 'rgba(0,0,0,.18)'; g.beginPath(); g.ellipse(c, cy + dep + r * sq * 0.9, r * 0.95, r * sq * 0.35, 0, 0, 7); g.fill();
+    for (let d = 0; d < 6; d++) { const am = -60 * d * Math.PI / 180; if (Math.sin(am) < 0.2) continue; const a = P(d), b = P(d + 1);
+      g.beginPath(); g.moveTo(...a); g.lineTo(...b); g.lineTo(b[0], b[1] + dep); g.lineTo(a[0], a[1] + dep); g.closePath();
+      const lg = g.createLinearGradient(0, Math.min(a[1], b[1]), 0, Math.max(a[1], b[1]) + dep); lg.addColorStop(0, Math.cos(am) > 0 ? '#8a6440' : '#a57a4e'); lg.addColorStop(1, '#5a4030'); g.fillStyle = lg; g.fill();
+      g.beginPath(); g.moveTo(...a); g.lineTo(...b); g.lineTo(b[0], b[1] + dep * 0.18); g.lineTo(a[0], a[1] + dep * 0.18); g.closePath(); g.fillStyle = shadeHex(e[d] === 'A' ? COL.G : COL[e[d]], 0.8); g.fill(); }
+    // topo: setores com a luz do alto à esquerda
+    for (let d = 0; d < 6; d++) { const a = P(d), b = P(d + 1), am = -60 * d * Math.PI / 180, k = 1 + 0.12 * Math.cos(am - 2.4);
+      g.beginPath(); g.moveTo(c, cy); g.lineTo(...a); g.lineTo(...b); g.closePath(); g.fillStyle = shadeHex(e[d] === 'A' ? COL.G : COL[e[d]], k); g.fill(); }
+    // rio
+    const A = e.map((x, d) => x === 'A' ? d : -1).filter(d => d >= 0); g.lineCap = 'round';
+    for (const [lw, cl] of [[W * 0.13, '#2d6f96'], [W * 0.09, COL.A], [W * 0.03, '#a9dcf3']]) { g.lineWidth = lw; g.strokeStyle = cl;
+      for (const d of A) { const m = M(d, 0.9), t = A.length === 1 ? M(d, 0.3) : [c, cy]; g.beginPath(); g.moveTo(...m); g.lineTo(...t); g.stroke(); } }
+    // o que cresce em cada setor (de trás para frente)
+    const ord = [0, 1, 2, 3, 4, 5].sort((a, b) => M(a, 0.55)[1] - M(b, 0.55)[1]), u = W / 132;
+    for (const d of ord) { const [x, y] = M(d, 0.58), t = e[d];
+      if (t === 'B') for (const [ox, oy, s] of [[-7, -2, 1], [6, 2, 0.85], [0, 5, 0.9]]) { const X = x + ox * u, Y = y + oy * u, R = 7 * u * s;
+        g.fillStyle = '#5a4030'; g.fillRect(X - u, Y - R * 0.3, 2 * u, R * 0.8); g.fillStyle = '#2f6a2a'; g.beginPath(); g.arc(X, Y - R, R, 0, 7); g.fill(); g.fillStyle = '#5f9a3a'; g.beginPath(); g.arc(X - R * 0.3, Y - R * 1.3, R * 0.55, 0, 7); g.fill(); }
+      if (t === 'V') { const X = x, Y = y + 2 * u, w = 13 * u, h = 8 * u; g.fillStyle = '#f2ece0'; g.fillRect(X - w / 2, Y - h, w, h); g.fillStyle = '#3f78b0'; g.fillRect(X - w / 2, Y - 2.4 * u, w, 2.4 * u);
+        g.fillStyle = '#b4563a'; g.beginPath(); g.moveTo(X - w / 2 - 2 * u, Y - h); g.lineTo(X, Y - h - 7 * u); g.lineTo(X + w / 2 + 2 * u, Y - h); g.closePath(); g.fill(); g.fillStyle = '#5a3a28'; g.fillRect(X - 1.6 * u, Y - 4.5 * u, 3.2 * u, 4.5 * u); }
+      if (t === 'C') { g.strokeStyle = '#8c6a1c'; g.lineWidth = 1.6 * u; for (let j = -2; j <= 2; j++) { g.beginPath(); g.moveTo(x - 8 * u, y + j * 3.2 * u - 2 * u); g.lineTo(x + 8 * u, y + j * 3.2 * u + 2 * u); g.stroke(); } }
+      if (t === 'G') { g.strokeStyle = '#4f8a2a'; g.lineWidth = 1.3 * u; for (const [ox, oy] of [[-6, 0], [0, 3], [6, -1]]) for (const k of [-1, 0, 1]) { g.beginPath(); g.moveTo(x + ox * u, y + oy * u); g.lineTo(x + ox * u + k * 2 * u, y + oy * u - 5 * u); g.stroke(); } } }
+    g.beginPath(); for (let i = 0; i <= 6; i++) { const p = P(i); i ? g.lineTo(...p) : g.moveTo(...p); } g.lineWidth = Math.max(1.5, W * 0.015); g.strokeStyle = 'rgba(255,255,255,.85)'; g.stroke(); }
 
   // ---------- etiquetas no mundo (sprites de texto): plaquinhas das vilas, olhos-d'água, "sem água"
   const tags = new THREE.Group(); scene.add(tags);
@@ -104,16 +154,47 @@ export function buildBoard5(api) {
       slotsG.add(new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(pts), lineMat));
       const ctr = new THREE.Vector3(c[0], groundY(c[0], c[1]) + 0.2, c[1]), fg = new THREE.BufferGeometry(), fp = []; for (let i = 0; i < 6; i++) fp.push(...ctr.toArray(), ...pts[(i + 1) % 6].toArray(), ...pts[i].toArray());
       fg.setAttribute('position', new THREE.Float32BufferAttribute(fp, 3)); const fm = new THREE.Mesh(fg, hot.has(k) ? hotMat : fillMat); fm.userData.slot = { k, q, r }; slotsG.add(fm); } }
+  // a maquete da peça escolhida: uma laje de terra com os seis setores em cima, o rio, árvores, casa e fileiras, flutuando
+  // sobre a casa marcada (balança devagar); as marcas verdes/laranja dizem que lado encaixa
   const ghost = new THREE.Group(); scene.add(ghost);
-  function drawGhost() { ghost.clear(); if (!sel) return; const c = hexCenter(sel.q, sel.r), o = sel.opts[sel.i], e = o.e, m = o.marks, y = groundY(c[0], c[1]) + 0.6;
-    for (let d = 0; d < 6; d++) { const a1 = (-60 * d + 30) * Math.PI / 180, a2 = (-60 * (d + 1) + 30) * Math.PI / 180, g = new THREE.BufferGeometry();
-      g.setAttribute('position', new THREE.Float32BufferAttribute([c[0], y, c[1], c[0] + R * 0.95 * Math.cos(a2), y, c[1] + R * 0.95 * Math.sin(a2), c[0] + R * 0.95 * Math.cos(a1), y, c[1] + R * 0.95 * Math.sin(a1)], 3));
-      ghost.add(new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color: e[d] === 'A' ? COL.G : COL[e[d]], transparent: true, opacity: 0.62, depthWrite: false, side: THREE.DoubleSide })));
-      if (e[d] === 'A') { const [mx, mz] = edgeMid(c, d, 0.82), band = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.08, Math.hypot(mx - c[0], mz - c[1])), new THREE.MeshBasicMaterial({ color: COL.A, transparent: true, opacity: 0.9 }));
-        band.position.set((mx + c[0]) / 2, y + 0.05, (mz + c[1]) / 2); band.rotation.y = Math.atan2(mx - c[0], mz - c[1]); ghost.add(band); }
-      if (m[d] !== null) { const [bx, bz] = edgeMid(c, d, 0.9), mk = new THREE.Mesh(new THREE.BoxGeometry(5.5, 0.35, 0.6), new THREE.MeshBasicMaterial({ color: m[d] ? 0x5fd86a : 0xf0a040 }));
-        mk.position.set(bx, y + 0.15, bz); mk.rotation.y = Math.atan2(Math.cos(-d * Math.PI / 3), -Math.sin(-d * Math.PI / 3)) + Math.PI / 2; ghost.add(mk); } } }
-
+  const MM = {}; const mm = h => MM[h] || (MM[h] = toon({ color: new THREE.Color(h) }));
+  const MT = {}; const mmTop = h => MT[h] || (MT[h] = toon({ color: new THREE.Color(h), side: THREE.DoubleSide }));
+  const GH = 2.2;   // espessura da laje (m)
+  const atY = (o, x, y, z) => { o.position.set(x, y, z); return o; };
+  function maquete(e) { const m = new THREE.Group();
+    for (let d = 0; d < 6; d++) { const a1 = (-60 * d + 30) * Math.PI / 180, a2 = (-60 * (d + 1) + 30) * Math.PI / 180, k = R * 0.95;
+      const top = new THREE.BufferGeometry(); top.setAttribute('position', new THREE.Float32BufferAttribute([0, 0, 0, k * Math.cos(a2), 0, k * Math.sin(a2), k * Math.cos(a1), 0, k * Math.sin(a1)], 3));
+      top.setAttribute('normal', new THREE.Float32BufferAttribute([0, 1, 0, 0, 1, 0, 0, 1, 0], 3));   // o topo é plano: a normal aponta para cima
+      m.add(new THREE.Mesh(top, mmTop(e[d] === 'A' ? COL.G : COL[e[d]])));
+      const side = new THREE.BufferGeometry(), x1 = k * Math.cos(a1), z1 = k * Math.sin(a1), x2 = k * Math.cos(a2), z2 = k * Math.sin(a2);
+      side.setAttribute('position', new THREE.Float32BufferAttribute([x1, 0, z1, x2, 0, z2, x2, -GH, z2, x1, 0, z1, x2, -GH, z2, x1, -GH, z1], 3)); side.computeVertexNormals();
+      m.add(new THREE.Mesh(side, new THREE.MeshToonMaterial({ color: 0x8a6440, side: THREE.DoubleSide }))); }
+    const A = e.map((x, d) => x === 'A' ? d : -1).filter(d => d >= 0);
+    for (const d of A) { const [mx, mz] = edgeMid([0, 0], d, A.length === 1 ? 0.9 : 0.92), L = Math.hypot(mx, mz) * (A.length === 1 ? 0.7 : 1), b = new THREE.Mesh(new THREE.BoxGeometry(4.2, 0.5, L), mm('#3f8fc0'));
+      const ux = mx / Math.hypot(mx, mz), uz = mz / Math.hypot(mx, mz); b.position.set(mx - ux * L / 2, 0.2, mz - uz * L / 2); b.rotation.y = Math.atan2(mx, mz); m.add(b); }
+    for (let d = 0; d < 6; d++) { const a = -d * Math.PI / 3, at = (k, da = 0) => [Math.cos(a + da) * R * k, Math.sin(a + da) * R * k];
+      if (e[d] === 'B') for (const [k, da, s2] of [[0.55, -0.18, 1], [0.7, 0.16, 0.85], [0.42, 0.2, 0.9]]) { const [x, z] = at(k, da), tr = new THREE.Group();
+        tr.add(atY(new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.55, 3, 6), mm('#6b4a32')), 0, 1.5, 0));
+        tr.add(atY(new THREE.Mesh(new THREE.IcosahedronGeometry(2.8, 0), mm('#3f7f35')), 0, 4.6, 0));
+        tr.position.set(x, 0, z); tr.scale.setScalar(s2); m.add(tr); }
+      if (e[d] === 'V') { const [x, z] = at(0.58), h = new THREE.Group(); h.add(atY(new THREE.Mesh(new THREE.BoxGeometry(6, 3.2, 4.6), mm('#f2ece0')), 0, 1.6, 0));
+        const roof = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 3.9, 2.4, 4, 1).rotateY(Math.PI / 4).scale(1.1, 1, 0.85), mm('#b4563a')); roof.position.y = 4.4; h.add(roof);
+        h.position.set(x, 0, z); h.rotation.y = Math.atan2(-x, -z); m.add(h); }
+      if (e[d] === 'C') for (let j = -2; j <= 2; j++) { const [x, z] = at(0.58), row = new THREE.Mesh(new THREE.BoxGeometry(9, 0.9, 0.7), mm('#d9b04a')); row.position.set(x + Math.sin(a) * j * 1.6, 0.45, z - Math.cos(a) * j * 1.6); row.rotation.y = -a; m.add(row); }
+      if (e[d] === 'G') for (const da of [-0.25, 0, 0.25]) { const [x, z] = at(0.6, da), tf = new THREE.Mesh(new THREE.ConeGeometry(0.9, 1.6, 5), mm('#6aa03a')); tf.position.set(x, 0.8, z); m.add(tf); } }
+    m.traverse(o => { if (o.isMesh) o.castShadow = true; }); return m; }
+  let gKey = '', gBob = 0;
+  function drawGhost() { if (!sel) { ghost.clear(); gKey = ''; return; } const c = hexCenter(sel.q, sel.r), o = sel.opts[sel.i], e = o.e, m = o.marks, key = sel.k + ':' + e.join('');
+    if (key !== gKey) { ghost.clear(); gKey = key; const mq = maquete(e); ghost.add(mq); ghost.userData.mq = mq;
+      for (let d = 0; d < 6; d++) if (m[d] !== null) { const [bx, bz] = edgeMid([0, 0], d, 0.97), mk = new THREE.Mesh(new THREE.BoxGeometry(5.5, 0.7, 0.8), new THREE.MeshBasicMaterial({ color: m[d] ? 0x5fd86a : 0xf0a040 }));
+        mk.position.set(bx, 0.2, bz); mk.rotation.y = Math.atan2(Math.cos(-d * Math.PI / 3), -Math.sin(-d * Math.PI / 3)) + Math.PI / 2; mq.add(mk); }
+      ghost.position.set(c[0], groundY(c[0], c[1]) + 7, c[1]); ghost.userData.base = groundY(c[0], c[1]) + 7; ghost.scale.setScalar(0.92); } }
+  // a maquete que cai: gravidade até o chão, achata no baque, levanta poeira, e só então a peça brota no vale
+  const drops = [], dusts = [];
+  const dustTex = (() => { const cv = document.createElement('canvas'); cv.width = cv.height = 64; const g = cv.getContext('2d'), rg = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+    rg.addColorStop(0, 'rgba(226,205,165,.9)'); rg.addColorStop(1, 'rgba(226,205,165,0)'); g.fillStyle = rg; g.fillRect(0, 0, 64, 64); return new THREE.CanvasTexture(cv); })();
+  function dust(c) { const y = groundY(c[0], c[1]); for (let i = 0; i < 14; i++) { const a = i / 14 * 6.283 + rnd() * 0.4, sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: dustTex, transparent: true, depthWrite: false, opacity: 0.8 }));
+    sp.position.set(c[0] + Math.cos(a) * R * 0.9, y + 1, c[1] + Math.sin(a) * R * 0.9); sp.scale.setScalar(4 + rnd() * 3); scene.add(sp); dusts.push({ sp, vx: Math.cos(a) * (5 + rnd() * 4), vz: Math.sin(a) * (5 + rnd() * 4), vy: 2 + rnd() * 2, t: 0 }); } }
   // ---------- escolher, girar, colocar
   let sel = null;
   // o giro sugerido: o que atende ou avança um pedido, liga um olho-d'água, recebe água e encaixa mais lados
@@ -125,9 +206,9 @@ export function buildBoard5(api) {
   function refresh() { const e = sel ? sel.opts[sel.i].e : game.hand().e; drawThumb($('mao'), e);
     if (S.left > 1) { drawThumb($('prox'), game.next().e); $('prox').parentElement.style.visibility = 'visible'; } else $('prox').parentElement.style.visibility = 'hidden';
     const [u, f] = flow(), sec = game.isSeca();
-    $('placar').innerHTML = `<b>${S.gente}</b> gente · <span class="ag">💧 ${u}/${f}</span><br>${S.left} peça${S.left === 1 ? '' : 's'} · ${sec ? 'Seca' : 'Águas'} ${S.clock + 1}/${game.seasonLen()}`;
+    $('placar').innerHTML = `<b>${S.gente}</b> pessoas · <span class="ag">💧 ${u}/${f}</span><br>${S.left} peça${S.left === 1 ? '' : 's'} · ${sec ? 'Seca' : 'Águas'} ${S.clock + 1}/${game.seasonLen()}`;
     const b = $('colocar');
-    if (S.over) { b.disabled = false; b.textContent = `Fim: ${S.gente} gente · jogar de novo`; }
+    if (S.over) { b.disabled = false; b.textContent = `Fim: ${S.gente} pessoas no vale · jogar de novo`; }
     else if (sel) { const o = sel.opts[sel.i], x = []; if (o.vil.some(v => v.done)) x.push('a vila cresce!'); if (o.spring) x.push(`olho-d'água +${o.spring}💧`); if (o.drySelf) x.push('fica sem água'); if (o.lost.length) x.push(`${o.lost.length} perde${o.lost.length > 1 ? 'm' : ''} a água`);
       b.disabled = false; b.textContent = 'Colocar' + (x.length ? ' · ' + x.join(' · ') : ''); }
     else { b.disabled = true; b.textContent = 'Escolha uma casa marcada'; }
@@ -137,9 +218,12 @@ export function buildBoard5(api) {
   addEventListener('keydown', e => { if (e.key === 'r' || e.key === 'R') turn(1); if (e.key === 'Enter' && sel) commit(); });
   $('colocar').onclick = () => { if (S.over) { location.reload(); return; } commit(); };
   function commit() { if (!sel || S.over) return; const { k, q, r } = sel, o = sel.opts[sel.i]; const res = game.place(k, o.e); if (!res) return; sel = null;
-    grow(q, r, o.e); follow(hexCenter(q, r));
+    const mq = ghost.userData.mq, c0 = hexCenter(q, r); follow(c0);
+    const land = () => { grow(q, r, o.e); dust(c0); for (const x of res.ev) if (x.t === 'pedido') { growVillage(x.k); floatText(KQ(x.k), KR(x.k), `nível ${x.lvl}!`); } };
+    if (mq) { ghost.remove(mq); mq.position.copy(ghost.position); mq.scale.copy(ghost.scale); scene.add(mq); drops.push({ mq, v: 0, y: mq.position.y, floor: groundY(c0[0], c0[1]) + 0.3, land, t: 0 }); }
+    else land();
+    ghost.clear(); gKey = '';
     const txt = res.ev.map(x => x.txt); say(txt.length ? txt.join(' · ') : 'Peça no vale');
-    for (const x of res.ev) if (x.t === 'pedido') { growVillage(x.k); floatText(KQ(x.k), KR(x.k), `nível ${x.lvl}!`); }
     if (!S.over && !S.escolha.length && !game.fits()) { game.skip(); say('Essa peça não cabia em lugar nenhum: passou a vez.'); }
     drawSlots(); refresh(); if (S.escolha.length) setTimeout(openPack, 900); }
 
@@ -198,6 +282,7 @@ export function buildBoard5(api) {
     const cropM = api.props.addCrop(crop, pts);
     const merged = api.mergeTrees(trees);
     api.buildNear();
+    if (gm) gm.userData.soft = true; if (gr) gr.userData.soft = true;
     const items = [gm, ...merged, cropM, gr, ...scene.children.filter(o => !before.has(o) && o.isGroup && ['casa'].includes(o.userData.regua))].filter(Boolean);
     for (const o of items) { o.userData.sy = o.scale.y; o.scale.y = 0.02; } if (wm) wm.visible = false;
     growing.push({ items, wm, t: 0, c });
@@ -213,10 +298,23 @@ export function buildBoard5(api) {
     g.font = '800 64px "Baloo 2", system-ui'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineWidth = 10; g.strokeStyle = 'rgba(20,40,30,.7)'; g.strokeText(txt, 160, 50); g.fillStyle = '#fff6c8'; g.fillText(txt, 160, 50);
     const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cv), transparent: true, depthTest: false })); sp.scale.set(15, 4.5, 1); sp.position.set(c[0], 10, c[1]); sp.renderOrder = 999; scene.add(sp); floats.push({ sp, t: 0 }); }
 
+  $('hsIr').onclick = () => { if (hsI < HIST.length - 1) hsShow(hsI + 1); else hsClose(); }; $('hsPular').onclick = hsClose; hb.onclick = () => hsShow(0);
+  addEventListener('keydown', e => { if (!hs.hidden && e.key === 'Escape') hsClose(); });
+  { const mp = document.querySelector('.marca p'); if (mp) mp.textContent = 'O vale da nascente'; }
   drawSlots(); refresh(); say("Leve o rio às lavouras e às vilas: cada uma gasta 1 💧 da nascente. Ligue olhos-d'água para ter mais. As vilas pedem; atendidas, crescem.");
+  if (!seen) hsShow(0);
   return { game, select, turn, commit, sel: () => sel, update(dt) {
-    for (let i = growing.length - 1; i >= 0; i--) { const g = growing[i]; g.t += dt; const k = Math.min(1, g.t / 1.4), e = 1 - Math.pow(1 - k, 3);
-      for (const o of g.items) o.scale.y = Math.max(0.02, o.userData.sy * e); if (g.wm && k > 0.45) g.wm.visible = true; if (k >= 1) growing.splice(i, 1); }
+    for (let i = growing.length - 1; i >= 0; i--) { const g = growing[i]; g.t += dt; const k = Math.min(1, g.t / 1.4), e = 1 - Math.pow(1 - k, 3), sp = 1 - Math.exp(-6 * g.t) * Math.cos(11 * g.t);
+      for (const o of g.items) o.scale.y = Math.max(0.02, o.userData.sy * (o.userData.soft || k >= 1 ? e : sp)); if (g.wm && k > 0.45) g.wm.visible = true; if (k >= 1) growing.splice(i, 1); }
+    // a maquete caindo (g = 9,8 m/s², um pouco exagerada para ler no mapa) e o baque
+    for (let i = drops.length - 1; i >= 0; i--) { const d = drops[i]; if (!d.hit) { d.v += 32 * dt; d.y -= d.v * dt; d.mq.position.y = d.y;
+        if (d.y <= d.floor) { d.hit = true; d.mq.position.y = d.floor; d.land(); } }
+      else { d.t += dt; const q = Math.min(1, d.t / 0.35); d.mq.scale.set(d.mq.scale.x, Math.max(0.02, 0.92 * (1 - q) * (1 - 0.35 * Math.sin(q * Math.PI))), d.mq.scale.z); d.mq.position.y = d.floor - q * GH;
+        if (q >= 1) { scene.remove(d.mq); d.mq.traverse(o => { if (o.geometry) o.geometry.dispose(); }); drops.splice(i, 1); } } }
+    for (let i = dusts.length - 1; i >= 0; i--) { const p = dusts[i]; p.t += dt; p.sp.position.x += p.vx * dt; p.sp.position.z += p.vz * dt; p.sp.position.y += p.vy * dt; p.vx *= 0.94; p.vz *= 0.94; p.vy *= 0.96;
+      p.sp.scale.multiplyScalar(1 + dt * 1.4); p.sp.material.opacity = Math.max(0, 0.8 * (1 - p.t / 1.1)); if (p.t > 1.1) { scene.remove(p.sp); p.sp.material.dispose(); dusts.splice(i, 1); } }
+    // a maquete flutua devagar sobre a casa escolhida
+    if (ghost.children.length && ghost.userData.base != null) { gBob += dt; ghost.position.y = ghost.userData.base + Math.sin(gBob * 2.2) * 0.5; ghost.rotation.y = Math.sin(gBob * 0.9) * 0.03; }
     for (let i = rings.length - 1; i >= 0; i--) { const r = rings[i]; r.t += dt; const s = 1 + r.t * 26; r.m.scale.set(s, 1, s); r.m.material.opacity = Math.max(0, 0.8 * (1 - r.t / 0.9)); if (r.t > 0.9) { scene.remove(r.m); rings.splice(i, 1); } }
     for (let i = floats.length - 1; i >= 0; i--) { const f = floats[i]; f.t += dt; f.sp.position.y = 10 + f.t * 3; f.sp.material.opacity = Math.max(0, 1 - f.t / 2.2); if (f.t > 2.2) { scene.remove(f.sp); floats.splice(i, 1); } }
     if (camGo) { const f = camGo.gc.state, k = 1 - Math.exp(-dt * 4); f.fx += (camGo.x - f.fx) * k; f.fz += (camGo.z - f.fz) * k; camGo.t += dt; if (camGo.t > 1.4) camGo = null; }
