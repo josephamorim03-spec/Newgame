@@ -113,7 +113,7 @@ function Atmos(){
     // episódios de cada estação, em jogadas desde o começo dela: ZCAS e veranico nas Águas, friagem na Seca
     function eplan(season,ph,len){const key='e'+season+':'+ph;let p=S.plans.get(key);if(p)return p;const r=mulberry32(hashStr(sk+':'+key));
       p={zcas:null,veranico:null,fria:null};
-      if(!ph){if(r()<0.25)p.zcas={start:1+r()*(len-3.5),dur:2+r()*1.5};if(r()<0.3)p.veranico={start:r()*(len-3),dur:2+r()*2};}
+      if(!ph){if(r()<0.25){const st=1+r()*(len-4.5);p.zcas={start:st,dur:Math.min(2+r()*1.5,len-1.6-st)};}if(r()<0.3)p.veranico={start:r()*(len-3),dur:2+r()*2};}
       else if(r()<0.35)p.fria={start:r()*Math.max(0.5,len-2.5),dur:1.5+r()};
       S.plans.set(key,p);return p;}
     // episódio em andamento: rampa de entrada e de saída (em jogadas)
@@ -157,7 +157,7 @@ function Atmos(){
         g:virga?0:c01(1-(th.lcl-1600)/1200)*0.6+0.4,flash:R0>18?(forced?5:9+r()*10):0,nextF:forced?1.5:2+r()*4,seed:r()*1e6|0,top:9000+r()*4000,forced:!!forced};}
     const prog=c=>Math.max(c.age/c.life,c.gh/c.lifeH),act=c=>{const u=prog(c);return sst(0.12,0.3,u)*(1-sst(0.72,1,u));};
     function rainAt(x,y){let R=0;if(S.phase===1)return 0;for(const c of S.cells){const a=act(c);if(a<=0||c.virga)continue;const q=Math.hypot(x-c.x,y-c.y)/c.r;if(q>=1)continue;
-        R+=c.R0*c.g*a*(1-0.35*q*q)*(1-sst(0.78,1,q));}
+        R+=c.R0*c.g*a*(1-0.35*q*q)*(1-sst(0.78,1,q))*(S.taper??1);}
       return R+(S.out?S.out.nsR:0);}
     function outflowAt(x,y){let ux=0,uy=0,cool=0;for(const c of S.cells){const a=act(c);if(a<0.25)continue;
         const dx=x-c.x,dy=y-c.y,d=Math.hypot(dx,dy)||1,u=prog(c),rf=c.r*(1+1.2*sst(0.25,0.8,u)),G=(2.5+c.R0/9)*a;
@@ -166,13 +166,15 @@ function Atmos(){
     // inp: {tf, phase, sp, map:{m,veg,vila}, lesson, focus:[x,y] em m}; dt em segundos de verdade
     function step(dt,inp){
       dt=Math.min(0.25,Math.max(0,dt));S.t+=dt;const tf=inp.tf,h=inp.lesson?10:hourOf(tf);
-      const phase=inp.lesson?0:inp.phase,sp=inp.lesson?0.4:c01(inp.sp),map=inp.map||{m:0.5,veg:0.3,vila:0.1};
+      const phase=inp.phase?1:0,sp=inp.lesson?0.4:c01(inp.sp),map=inp.map||{m:0.5,veg:0.3,vila:0.1};
       const slen=inp.slen||(phase?4:8),rg=regimeAt(phase,sp,inp.lesson?10:tf,inp.season||0,slen),R=rg.R,p=inp.lesson?{...rg.p,zc:0,pre:0,ci:false,ac:false,cc:false,cs:false,veranico:true}:rg.p;
       if(inp.lesson)R.fria=0;
       // as estações mudam devagar (a monção vira em cerca de uma jogada)
       if(!S.Rs||inp.jump)S.Rs={...R};else{const k=Math.min(1,dt*0.25);for(const q of['tmin','tmax','td','wind','cape','vis','ci'])S.Rs[q]+=(R[q]-S.Rs[q])*k;
         S.Rs.phase=R.phase;S.Rs.sp=R.sp;S.Rs.doy=R.doy;S.Rs.fria=R.fria;}
       const Rs=S.Rs;
+      // quanto falta para a seca (em jogadas): nas últimas jogadas das Águas a chuva rareia e para
+      const left=Math.min((1-sp)*slen,inp.left??99),taper=phase||inp.lesson?1:sst(1,2.4,left);S.taper=taper; // inp.left: jogadas que faltam no jogo (sem o atraso suave do relógio)
       // vento sinótico (de onde vem): NO nas Águas, L/SE na Seca; serpenteia devagar; friagem traz vento do sul
       let from=R.fria?lerp(R.from,180,R.fria):R.from;from+=25*noise1(sk+'wa',S.t/90)+10*noise1(sk+'wb',S.t/23);
       if(S.windA==null||inp.jump)S.windA=from;else{let d=((from-S.windA+540)%360)-180;S.windA=(S.windA+d*Math.min(1,dt*0.08)+360)%360;}
@@ -184,20 +186,22 @@ function Atmos(){
       const steer=toVec(S.windA+15,Rs.wind*1.6+1.8); // vento na altura das nuvens: mais forte e um pouco girado
       // eventos de jogada: pancadas (determinísticas pela semente e pela jogada)
       const prevPhase=S.phase;S.phase=phase;
+      const maxSeason0=S.maxSeason;S.maxSeason=Math.max(S.maxSeason||0,inp.season||0);
       if(S.tf==null||inp.jump||Math.abs(tf-S.tf)>3)S.tf=tf;
       const z0=Math.floor(S.tf),z1=Math.floor(tf);
       if(!inp.lesson){
-        if(prevPhase===1&&phase===0)S.cells.push(spawnCell('chuva'+z1,R,th0,1,steer,true)); // as chuvas voltam: a frente chega
+        if(prevPhase===1&&phase===0&&(inp.season||0)>(maxSeason0||0))S.cells.push(spawnCell('chuva'+z1,R,th0,1,steer,true)); // as chuvas voltam: a frente chega
         for(let n=z0+1;n<=z1&&n<=z0+2;n++){const hn=hourOf(n+0.5),thn=thermo(Rs,hn,map,0,0,0),CIn=convection(Rs,p,hn-2,thn.lcl,map.m,p.zc);
-          let P=phase?(sp>0.75?0.3*c01(CIn*3):0):clamp(0.55*CIn*CIn,0,0.5);
-          if(!phase&&(hn>=21||hn<5))P+=0.06*Rs.cape*(p.veranico?0.3:1); // chuva de madrugada (sistemas que vêm de longe)
+          let P=phase?(sp>0.75?0.3*c01(CIn*3):0):clamp(0.55*CIn*CIn,0,0.5)*taper;
+          if(!phase&&(hn>=21||hn<5))P+=0.06*Rs.cape*(p.veranico?0.3:1)*taper; // chuva de madrugada (sistemas que vêm de longe)
           if(S.cells.length<3&&mulberry32(hashStr(sk+':p'+n))()<P)S.cells.push(spawnCell(n,R,thn,CIn,steer,false));}
       }
       S.tf=tf;
       S.flashes.length=0;
       const dH=hoursBetween(S.tf0==null?tf:S.tf0,tf);S.tf0=tf;
-      for(let i=S.cells.length-1;i>=0;i--){const c=S.cells[i];c.age+=dt*(phase===1&&!c.virga?5:1);c.gh+=dH;c.x+=c.vx*dt;c.y+=c.vy*dt;if(prog(c)>=1){S.cells.splice(i,1);continue;}
-        const a=act(c);c.act=a;c.u=prog(c);if(c.flash&&a>0.45){c.nextF-=dt;if(c.nextF<=0){const r=mulberry32(c.seed+(c.age*1000|0));c.nextF=c.flash*(0.4+1.2*r());
+      for(let i=S.cells.length-1;i>=0;i--){const c=S.cells[i];if(phase===1&&!c.virga){c.virga=true;c.flash=0;c.R0=0;} // v2.2: na seca a pancada vira nuvem seca
+        c.age+=dt*(phase===1?5:1);c.gh+=dH;c.x+=c.vx*dt;c.y+=c.vy*dt;if(prog(c)>=1){S.cells.splice(i,1);continue;}
+        const a=act(c);c.act=a;c.u=prog(c);c.R0e=c.virga?0:c.R0*(S.taper??1);if(c.flash&&a>0.45&&c.R0e>12){c.nextF-=dt;if(c.nextF<=0){const r=mulberry32(c.seed+(c.age*1000|0));c.nextF=c.flash*(0.4+1.2*r());
           const fx=c.x+(r()-0.5)*c.r*1.6,fy=c.y+(r()-0.5)*c.r*1.6,fd=Math.hypot(fx,fy);S.flashes.push({x:fx,y:fy,dist:fd,delay:fd/343,power:0.5+0.5*r(),cell:c.id});}}}
       S.anvil=Math.max(S.anvil*Math.exp(-dt/240),...S.cells.map(c=>c.virga?0:act(c)));
       const fo=inp.focus||[0,0],[ox,oy,cool]=outflowAt(fo[0],fo[1]);
@@ -206,7 +210,7 @@ function Atmos(){
       const oc0=S.out?S.out.oc:0,th=thermo(Rs,h,map,oc0,cool,c01(S.rainHist));
       const CI=convection(Rs,p,h,th.lcl,map.m,p.zc);
       const cv=covers(Rs,p,h,th,CI,map,S.anvil,S.rainHist);
-      const nsR=cv.zc*(1.2+2.5*c01(0.5+0.5*noise1(sk+'ns',S.t/50)));
+      const nsR=cv.zc*taper*(1.2+2.5*c01(0.5+0.5*noise1(sk+'ns',S.t/50)));
       // vento final: o sinótico com rajadas mais a frente de rajada das pancadas
       const[wx0,wy0]=toVec(S.windA,vg),wx=wx0+ox,wy=wy0+oy,wv=Math.hypot(wx,wy),wfrom=((Math.atan2(-wx,wy)/RAD)+360)%360;
       const sunp=sun(Rs.doy,h),fog=inp.lesson?0:fogOf(th,v,h,cv.oc,false),fogW=inp.lesson?0:fogOf(th,v,h,cv.oc,true);
