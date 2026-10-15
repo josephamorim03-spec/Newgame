@@ -318,6 +318,7 @@ body.calm .app{max-width:none;padding:0}
     <button class="btn" id="menuRestart">Recomeçar este vale</button>
     <div class="toggles">
       <label class="tg"><input type="checkbox" id="optSound"><span>Som</span></label>
+      <label class="tg"><input type="checkbox" id="optMusic"><span>Música</span></label>
       <label class="tg"><input type="checkbox" id="optAmb"><span>Sons do vale</span></label>
       <label class="tg"><input type="checkbox" id="optVib"><span>Vibração</span></label>
       <label class="tg"><input type="checkbox" id="optCalm"><span>Menos movimento</span></label>
@@ -924,121 +925,424 @@ function sprV(g,name,x,y,s,k,flip,ti){
 }
 function spr(g,name,x,y,s,k=1){let m=ATLAS[name];if(!m&&name.endsWith('~d'))m=ATLAS[name.slice(0,-2)];if(!m||!atlasReady)return;const f=s*k/m[6];blit(g,m,f,x-m[4]*f,y-m[5]*f,m[2]*f,m[3]*f);}
 
-// ---------- som (sintetizado, sem arquivos)
+// ---------- som (v2.0): tudo sintetizado, sem arquivos. Três camadas, cada uma no seu barramento:
+// música (generativa, calma, muda com a hora, a seca e a chuva), sons do vale (espaciais: seguem a câmera e o zoom)
+// e efeitos do jogo. Um reverb gerado dá o "ar" do vale; um compressor suave no fim segura os picos.
+// Todas as notas (música e efeitos) saem da mesma escala de Dó maior, então nada desafina entre si.
 const SND={ctx:null,on:true};
 function audio(){
   if(!SND.on)return null;
-  if(!SND.ctx){try{SND.ctx=new(window.AudioContext||window.webkitAudioContext)();}catch(e){SND.on=false;return null;}}
+  if(!SND.ctx){try{SND.ctx=new(window.AudioContext||window.webkitAudioContext)();}catch(e){SND.on=false;return null;}
+    try{mixInit(SND.ctx);}catch(e){const a=SND.ctx,g=()=>{const n=a.createGain();n.gain.value=0;n.connect(a.destination);return n;};SND.fx=g();SND.fx.gain.value=0.85;SND.mus=g();SND.amb=g();SND.ambWet=g();SND.verb=SND.ambWet;}}
   if(SND.ctx.state==='suspended')SND.ctx.resume();
   return SND.ctx;
 }
+const mtof=m=>440*Math.pow(2,(m-69)/12);
+function mixInit(a){
+  const out=a.createGain();out.gain.value=1.5;
+  const warm=a.createBiquadFilter();warm.type='lowpass';warm.frequency.value=10500;warm.Q.value=0.4; // tira a aspereza do agudo
+  const comp=a.createDynamicsCompressor();comp.threshold.value=-18;comp.knee.value=12;comp.ratio.value=3;comp.attack.value=0.01;comp.release.value=0.3;
+  out.connect(warm);warm.connect(comp);comp.connect(a.destination);
+  const verb=a.createConvolver();verb.buffer=valeIR(a,2.6);const wet=a.createGain();wet.gain.value=0.55;verb.connect(wet);wet.connect(out);
+  const bus=(v,send)=>{const g=a.createGain();g.gain.value=v;g.connect(out);const s=a.createGain();s.gain.value=send;g.connect(s);s.connect(verb);return g;};
+  SND.out=out;SND.verb=verb;SND.mus=bus(0,0.45);SND.amb=bus(0,0.06);SND.fx=bus(0.85,0.2);
+  // eco dos sons do vale que estão longe (cada voz manda mais para cá quanto mais longe está); passa pelo mesmo liga/desliga
+  SND.ambWet=a.createGain();SND.ambWet.gain.value=0;SND.ambWet.connect(verb);
+}
+// resposta do "vale": ruído que decai e escurece (campo aberto, não sala); energia normalizada
+function valeIR(a,sec){
+  const sr=a.sampleRate,n=Math.floor(sr*sec),b=a.createBuffer(2,n,sr);
+  for(let c=0;c<2;c++){const d=b.getChannelData(c);let lp=0,e=0;
+    for(let i=0;i<n;i++){const u=i/n,al=0.8-0.74*u;lp+=(Math.random()*2-1-lp)*al;d[i]=lp*Math.pow(1-u,2.6)*Math.min(1,i/(sr*0.015));e+=d[i]*d[i];}
+    const k=1/Math.sqrt(e||1);for(let i=0;i<n;i++)d[i]*=k;}
+  return b;
+}
+// ruído em laço sem emenda audível (o fim é misturado com o começo): branco ou marrom (grave, para água e vento)
+function noiseBuf(a,kind){
+  const key='nb_'+kind;if(SND[key])return SND[key];
+  const sr=a.sampleRate,n=Math.floor(sr*4),M=Math.floor(sr*0.25),b=a.createBuffer(2,n,sr);
+  for(let c=0;c<2;c++){const raw=new Float32Array(n+M);let l=0;
+    for(let i=0;i<n+M;i++){const w=Math.random()*2-1;if(kind==='brown'){l=(l+0.02*w)/1.02;raw[i]=l*3.5;}else raw[i]=w*0.7;}
+    const d=b.getChannelData(c);for(let i=0;i<n;i++)d[i]=i<M?raw[i]*(i/M)+raw[n+i]*(1-i/M):raw[i];}
+  return SND[key]=b;
+}
+const fxOut=()=>SND.fx||SND.ctx.destination;
 function tone(f,t0,dur,type,vol,slide){
   const a=audio();if(!a)return;const t=a.currentTime+t0,o=a.createOscillator(),g=a.createGain();
   o.type=type||'triangle';o.frequency.setValueAtTime(f,t);if(slide)o.frequency.exponentialRampToValueAtTime(slide,t+dur);
   g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(vol||0.1,t+0.012);g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
-  o.connect(g).connect(a.destination);o.start(t);o.stop(t+dur+0.05);
+  o.connect(g).connect(fxOut());o.start(t);o.stop(t+dur+0.05);
 }
 function noise(t0,dur,freq,vol,q){
-  const a=audio();if(!a)return;const t=a.currentTime+t0,n=Math.floor(a.sampleRate*dur),buf=a.createBuffer(1,n,a.sampleRate),d=buf.getChannelData(0);
-  for(let i=0;i<n;i++)d[i]=Math.random()*2-1;
-  const src=a.createBufferSource(),f=a.createBiquadFilter(),g=a.createGain();src.buffer=buf;f.type='bandpass';f.frequency.value=freq;f.Q.value=q||1;
+  const a=audio();if(!a)return;const t=a.currentTime+t0;
+  const src=a.createBufferSource(),f=a.createBiquadFilter(),g=a.createGain();src.buffer=noiseBuf(a,'white');f.type='bandpass';f.frequency.value=freq;f.Q.value=q||1;
   g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(vol,t+dur*0.3);g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
-  src.connect(f).connect(g).connect(a.destination);src.start(t);
+  src.connect(f).connect(g).connect(fxOut());src.start(t,Math.random()*3);src.stop(t+dur+0.05);
 }
 const PENT=[523.25,587.33,659.25,783.99,880,1046.5,1174.66];
 // marimba: fundamental curta e um parcial agudo que some rápido (som de tecla de madeira)
 function marimba(f,t0,v){tone(f,t0,0.42,'sine',v);tone(f*3.98,t0,0.07,'sine',v*0.32);tone(f*2,t0,0.16,'sine',v*0.18);}
 const NOTES=[523.25,587.33,659.25,783.99,880,1046.5,1174.66];
 const sfx={
-  place(m){noise(0,0.03,2600,0.08,2.5);tone(196,0,0.1,'triangle',0.12,130);tone(98,0,0.16,'sine',0.2,70);
-    for(let i=0;i<Math.min(m,6);i++)marimba(PENT[i],0.065*i,0.06);},
-  select(){tone(620,0,0.06,'sine',0.05);},
-  rotate(){noise(0,0.02,3200,0.04,3);tone(1320,0,0.035,'triangle',0.025,1100);},
-  perfect(){[0,2,4,5].forEach((n,i)=>tone(NOTES[n],i*0.08,0.45,'triangle',0.08));},
-  quest(){[523.25,659.25,783.99,1046.5].forEach((f,i)=>tone(f,i*0.1,0.5,'square',0.035));tone(1567.98,0.42,0.7,'triangle',0.05);},
-  fail(){tone(392,0,0.25,'triangle',0.08,330);tone(311,0.2,0.45,'triangle',0.07,247);},
-  season(){[0,2,4,5,6].forEach((n,i)=>tone(NOTES[n],i*0.09,0.55,'triangle',0.07));tone(1567.98,0.5,0.9,'sine',0.05);},
-  dry(){noise(0,1.8,380,0.08,0.5);tone(330,0.1,1.1,'sine',0.05,220);tone(262,0.45,1.2,'sine',0.04,196);},
-  rain(){noise(0,2.4,2600,0.05,0.35);noise(0.2,2,900,0.035,0.5);for(let i=0;i<10;i++)tone(900+Math.random()*900,0.15+i*0.17,0.06,'sine',0.03,1600);},
-  // v1.3: um bicho apareceu (dois pios e uma nota); um marco do vale (gotas que sobem); fim: a última cheia
-  fauna(){tone(2300,0,0.09,'sine',0.045,3100);tone(2500,0.13,0.11,'sine',0.045,3400);marimba(NOTES[4],0.3,0.05);},
-  marco(i){[0,2,4].slice(0,i+1).forEach((n,j)=>marimba(NOTES[n+j],j*0.11,0.07));tone(1567.98,0.12*(i+1),0.6,'sine',0.035);},
-  drop(i){marimba(NOTES[[0,2,4][i]]*(i===2?2:1),0,0.08);tone(NOTES[[0,2,4][i]]*2,0.02,0.25,'sine',0.03);},
-  tick(){tone(1800+Math.random()*200,0,0.025,'sine',0.018);},
-  water(){noise(0,1.0,650,0.07,0.6);for(let i=0;i<6;i++)tone(650+Math.random()*600,0.1+i*0.12,0.08,'sine',0.045,1300);},
+  // a peça assenta: um baque macio de terra, o "sabor" do terreno (folhas, água, madeira) e a marimba que sobe com o encaixe
+  place(m,e,wx,wy){noise(0,0.05,900,0.05,1.2);tone(147,0,0.16,'sine',0.16,98);tone(294,0,0.06,'triangle',0.04,220);
+    for(let i=0;i<Math.min(m,6);i++)marimba(PENT[i],0.065*i,0.05);
+    if(e&&wx!=null)placeFlavor(e,wx,wy);},
+  select(){tone(660,0,0.07,'sine',0.04);tone(1320,0,0.03,'sine',0.012);},
+  rotate(){noise(0,0.03,2400,0.025,2);tone(1046.5,0,0.04,'sine',0.02,987.77);},
+  perfect(){[0,2,4,5].forEach((n,i)=>{tone(NOTES[n],i*0.08,0.6,'sine',0.06);tone(NOTES[n]*2,i*0.08,0.15,'sine',0.015);});},
+  quest(){[523.25,659.25,783.99,1046.5].forEach((f,i)=>marimba(f,i*0.1,0.06));tone(1567.98,0.42,0.9,'sine',0.04);},
+  fail(){tone(392,0,0.3,'sine',0.06,349.23);tone(329.63,0.22,0.5,'sine',0.05,293.66);},
+  season(){[0,2,4,5,6].forEach((n,i)=>tone(NOTES[n],i*0.09,0.6,'sine',0.06));tone(1567.98,0.5,1,'sine',0.04);},
+  dry(){noise(0,2.2,380,0.06,0.5);tone(329.63,0.1,1.3,'sine',0.045,293.66);tone(261.63,0.5,1.4,'sine',0.035,220);},
+  rain(){noise(0,2.6,2600,0.04,0.35);noise(0.2,2.2,900,0.03,0.5);for(let i=0;i<10;i++)tone([1046.5,1174.66,1318.5,1568][i%4]*(1+Math.random()*0.01),0.15+i*0.17,0.09,'sine',0.025);},
+  // v1.3: um bicho apareceu (dois pios e uma nota); v2.0: e o próprio bicho canta de onde ele está
+  fauna(id){tone(2300,0,0.09,'sine',0.035,3100);tone(2500,0.13,0.11,'sine',0.035,3400);marimba(NOTES[4],0.3,0.045);
+    const sp=id&&G.fspot&&G.fspot[id];if(sp&&CALL[id])spot(sp.x,sp.y,1.6,CALL[id],{delay:0.5,reach:2.2,force:true});},
+  marco(i){[0,2,4].slice(0,i+1).forEach((n,j)=>marimba(NOTES[n+j],j*0.11,0.06));tone(1567.98,0.12*(i+1),0.7,'sine',0.03);},
+  drop(i){marimba(NOTES[[0,2,4][i]]*(i===2?2:1),0,0.07);tone(NOTES[[0,2,4][i]]*2,0.02,0.3,'sine',0.025);},
+  tick(){tone(1800+Math.random()*200,0,0.025,'sine',0.014);},
+  water(){noise(0,1.0,650,0.05,0.6);for(let i=0;i<6;i++)tone(650+Math.random()*600,0.1+i*0.12,0.08,'sine',0.035,1300);},
 };
 
-// ---------- som do vale: o ambiente segue a câmera. O que está no centro da tela soa mais; o zoom aproxima.
-// Riacho = ruído filtrado (corpo) + bolhas sintetizadas uma a uma (o "borbulhar" que aparece de perto);
-// cachoeira = ronco grave; bosques = pássaros; capim = vento; seca = cigarras.
-const AMB={n:null,lvl:{}};
+// ================= MÚSICA (v2.0) =================
+// Generativa: um acorde por compasso (pad macio), um baixo discreto, um dedilhado em 3+3+2 (balanço de baião,
+// bem de leve) e uma melodia que respira (frases de dois compassos e silêncio). O clima escolhe o "humor":
+// manhã/dia, fim de tarde, noite (kalimba, mais lenta), seca (viola, modo dórico) e chuva (só pad e gotas).
+// Quanto mais zoom, mais a música recua e deixa o vale falar.
+const CH={I:[48,[55,62,64,67]],vi:[45,[57,60,64,67]],IV:[41,[57,60,64,69]],V:[43,[55,59,62,64]],ii:[38,[53,57,60,64]],iii:[40,[52,55,59,62]]};
+const MOODS={
+  dia:{bpm:76,prog:['I','vi','IV','V'],mel:[60,62,64,67,69,72,74,76],dens:0.36,inst:'pluck',arp:0.55,pad:0.016,lvl:1},
+  tarde:{bpm:68,prog:['IV','iii','ii','I'],mel:[60,62,64,67,69,72,74,76],dens:0.3,inst:'pluck',arp:0.45,pad:0.018,lvl:1},
+  noite:{bpm:58,prog:['vi','IV','I','iii'],mel:[57,60,62,64,67,69,72],dens:0.22,inst:'kal',arp:0,pad:0.017,lvl:0.85},
+  seca:{bpm:64,prog:['ii','I','ii','vi'],mel:[62,64,65,67,69,71,74],dens:0.28,inst:'pluck',arp:0.4,pad:0.012,lvl:0.9},
+  chuva:{bpm:60,prog:['IV','vi','IV','I'],mel:[60,62,64,67,69,72],dens:0.18,inst:'kal',arp:0,pad:0.02,lvl:0.85},
+};
+const MUS={t:0,step:0,bar:0,mood:'dia',idx:3,phrase:true,padF:null};
+function musMood(){
+  const s=G.s;if(s&&s.seca)return'seca';if(ENV.rain>0.45)return'chuva';
+  if(ENV.night>0.5)return'noite';if(ENV.golden>0.3||ENV.hour>=16.5)return'tarde';return'dia';
+}
+// violão de nylon por Karplus-Strong: um sopro de ruído suave preso numa corda que vai perdendo o brilho
+const KS={};
+function ksBuf(a,m){
+  if(KS[m])return KS[m];const sr=a.sampleRate,f=mtof(m),N=Math.max(2,Math.floor(sr/f-0.5)),len=Math.floor(sr*2.2),b=a.createBuffer(1,len,sr),d=b.getChannelData(0);
+  const ring=new Float32Array(N);let lp=0,pk=1e-6;for(let i=0;i<N;i++){lp+=(Math.random()*2-1-lp)*0.45;ring[i]=lp;pk=Math.max(pk,Math.abs(lp));}
+  const T60=Math.max(0.9,2.3-(m-48)*0.04),dec=Math.exp(-6.9/(f*T60));let p=0;
+  for(let i=0;i<len;i++){const q=(p+1)%N,y=ring[p];d[i]=y/pk*0.8*(i>len-2000?(len-i)/2000:1);ring[p]=(y+ring[q])*0.5*dec;p=q;}
+  KS[m]={b,rate:f/(sr/(N+0.5))};return KS[m];
+}
+function pluck(a,t,m,v,pan){
+  const k=ksBuf(a,m),src=a.createBufferSource(),g=a.createGain(),f=a.createBiquadFilter();src.buffer=k.b;src.playbackRate.value=k.rate;
+  f.type='lowpass';f.frequency.value=2600;g.gain.value=v;src.connect(f);f.connect(g);
+  const pn=a.createStereoPanner?a.createStereoPanner():null;if(pn){pn.pan.value=pan||0;g.connect(pn);pn.connect(SND.mus);}else g.connect(SND.mus);
+  src.start(t);src.stop(t+2.2);
+}
+// kalimba: lâmina de metal macia (fundamental longa e um parcial alto, inarmônico, que some logo)
+function kal(a,t,m,v,pan){
+  const f=mtof(m),pn=a.createStereoPanner?a.createStereoPanner():null;if(pn){pn.pan.value=pan||0;pn.connect(SND.mus);}
+  for(const[mul,d,vv]of[[1,1.8,1],[5.4,0.12,0.18],[2,0.4,0.12]]){const o=a.createOscillator(),g=a.createGain();o.type='sine';o.frequency.value=f*mul;
+    g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(v*vv,t+0.006);g.gain.exponentialRampToValueAtTime(0.0001,t+d);
+    o.connect(g);g.connect(pn||SND.mus);o.start(t);o.stop(t+d+0.05);}
+}
+function padChord(a,t,ch,dur,v){
+  if(!MUS.padF){MUS.padF=a.createBiquadFilter();MUS.padF.type='lowpass';MUS.padF.frequency.value=1100;MUS.padF.Q.value=0.5;MUS.padF.connect(SND.mus);}
+  const[bass,notes]=CH[ch];
+  for(const m of notes)for(const dt of[-6,5]){const o=a.createOscillator(),g=a.createGain();o.type='triangle';o.frequency.value=mtof(m);o.detune.value=dt;
+    g.gain.setValueAtTime(0.0001,t);g.gain.linearRampToValueAtTime(v,t+1.6);g.gain.setValueAtTime(v,t+dur);g.gain.linearRampToValueAtTime(0.0001,t+dur+2.4);
+    o.connect(g);g.connect(MUS.padF);o.start(t);o.stop(t+dur+2.5);}
+  const o=a.createOscillator(),g=a.createGain();o.type='sine';o.frequency.value=mtof(bass+12);
+  g.gain.setValueAtTime(0.0001,t);g.gain.linearRampToValueAtTime(v*2.2,t+0.25);g.gain.exponentialRampToValueAtTime(0.0001,t+dur+0.8);
+  o.connect(g);g.connect(SND.mus);o.start(t);o.stop(t+dur+0.9);
+}
+function musicTick(a,on){
+  const now=a.currentTime;
+  if(!on){MUS.t=0;return;}
+  if(MUS.t<now-0.2)MUS.t=now+0.1; // voltando do silêncio (ou do app em segundo plano): recomeça sem despejar notas atrasadas
+  while(MUS.t<now+0.4){
+    const M=MOODS[MUS.mood],t=MUS.t,st=MUS.step,e8=30/M.bpm;
+    if(st===0){
+      if(MUS.bar%4===0)MUS.mood=musMood(); // o humor só muda no começo de uma frase
+      const M2=MOODS[MUS.mood],ch=M2.prog[MUS.bar%M2.prog.length];MUS.ch=ch;
+      padChord(a,t,ch,8*30/M2.bpm,M2.pad*M2.lvl);
+      MUS.phrase=(MUS.bar%4)<2?Math.random()<0.9:Math.random()<0.2;
+    }
+    const M2=MOODS[MUS.mood],[,notes]=CH[MUS.ch||'I'];
+    // dedilhado 3+3+2: notas do acorde, graves e baixinhas
+    if(M2.arp&&(st===0||st===3||st===6)&&Math.random()<M2.arp+(st===0?0.3:0))pluck(a,t,notes[(st/3+MUS.bar)%notes.length]-12,0.05*M2.lvl,-0.2);
+    // melodia: passeia pela escala; nos tempos fortes, cai numa nota do acorde
+    if(MUS.phrase&&Math.random()<M2.dens*(st%2?0.55:1.25)){
+      const sc=M2.mel;MUS.idx=Math.max(0,Math.min(sc.length-1,MUS.idx+[-2,-1,-1,0,1,1,2][Math.floor(Math.random()*7)]));
+      let m=sc[MUS.idx];if(st%4===0){let best=m,bd=99;for(const c of notes)for(const o of[0,12,24]){const d=Math.abs(c+o-m);if(d<bd&&sc.includes(c+o)){bd=d;best=c+o;}}m=best;MUS.idx=Math.max(0,sc.indexOf(m));}
+      const v=(0.6+Math.random()*0.4)*M2.lvl,pan=(Math.random()-0.5)*0.4;
+      if(M2.inst==='kal')kal(a,t,m,0.05*v,pan);else pluck(a,t,m,0.085*v,pan);
+    }
+    MUS.t+=e8;MUS.step=(st+1)%8;if(MUS.step===0)MUS.bar++;
+  }
+}
+
+// ================= SONS DO VALE (v2.0) =================
+// O "ouvido" fica no centro da tela, a uma altura que cai com o zoom: de longe, ouve-se o vale inteiro, abafado,
+// com mais vento; de perto, o que está no centro fica alto, nítido e com pouco eco, e o resto recua.
+// Camadas contínuas (riacho, cachoeira, vento, folhas, capim, chuva, cigarras) somam as peças por perto;
+// vozes pontuais (bichos, gotas, peixes, sinos) nascem num lugar do mundo e soam de lá.
+const AMB={n:null,voices:0,ear:null,next:{},lastHour:-1,rainOn:false,afterRain:0,arara:new WeakSet()};
+function ear(){const s=cam.s||30,w=W.w||390,h=W.h||700;return{x:(w/2-cam.x)/s,y:(h/2-cam.y)/s,h:0.55*Math.min(w,h)/s,hw:Math.max(1.5,0.5*w/s),hh:Math.max(1.5,0.5*h/s),z:clamp01((s-24)/56)};}
+// quanto um ponto do mundo é ouvido: 1 = no centro, na distância padrão; até ~4 com zoom máximo.
+// O que sai da tela recua depressa: com muito zoom, ouve-se o lugar (e os bichos) que você está olhando.
+function hearAt(x,y,reach){
+  const e=AMB.ear||(AMB.ear=ear()),dx=x-e.x,dy=y-e.y,eff=Math.hypot(dx*1.15,dy*1.3,e.h),r=1.6*(reach||1);
+  const q=Math.hypot(dx/e.hw,dy/e.hh)/Math.sqrt(reach||1),foc=q<0.6?1:Math.exp(-(q-0.6)*(q-0.6)*1.3);
+  const g=Math.min(4.5,Math.pow((r+7)/(r+eff),1.6))*foc,far=clamp01((eff-2)/12+(1-foc)*0.5);
+  return{g,eff,far,pan:Math.max(-0.85,Math.min(0.85,dx/e.hw*0.85)),lp:700+9500*Math.pow(1-far,2)};
+}
 function ambStart(){
   const a=audio();if(!a||AMB.n)return;
-  const buf=(sec,brown)=>{const n=Math.floor(a.sampleRate*sec),b=a.createBuffer(2,n,a.sampleRate);
-    for(let c=0;c<2;c++){const d=b.getChannelData(c);let last=0;for(let i=0;i<n;i++){const w=Math.random()*2-1;last=(last+0.02*w)/1.02;d[i]=brown?last*3.5:w;}}return b;};
-  const master=a.createGain();master.gain.value=0;master.connect(a.destination);
-  const layer=(type,freq,q,brown)=>{const src=a.createBufferSource();src.buffer=buf(4,brown);src.loop=true;
+  const bus=a.createGain();bus.gain.value=1;bus.connect(SND.amb);
+  const layer=(kind,type,freq,q)=>{const src=a.createBufferSource();src.buffer=noiseBuf(a,kind);src.loop=true;
     const f=a.createBiquadFilter();f.type=type;f.frequency.value=freq;f.Q.value=q;const g=a.createGain();g.gain.value=0;
-    const pn=a.createStereoPanner?a.createStereoPanner():null;src.connect(f);f.connect(g);if(pn){g.connect(pn);pn.connect(master);}else g.connect(master);
-    src.start();return{f,g,pn};};
-  const river=layer('bandpass',650,0.7,false),falls=layer('lowpass',700,0.6,true),wind=layer('lowpass',420,0.5,true),cic=layer('bandpass',5400,9,false),rain=layer('highpass',1600,0.5,false);
+    const pn=a.createStereoPanner?a.createStereoPanner():null;src.connect(f);f.connect(g);if(pn){g.connect(pn);pn.connect(bus);}else g.connect(bus);
+    src.start(0,Math.random()*3.5);return{f,g,pn};};
+  const river=layer('white','bandpass',700,0.6),riverLo=layer('brown','lowpass',380,0.5),falls=layer('brown','lowpass',650,0.6),fallsHi=layer('white','bandpass',1700,0.5),
+    wind=layer('brown','lowpass',420,0.6),leaves=layer('white','bandpass',3200,0.7),grass=layer('white','bandpass',4200,0.6),
+    rain=layer('white','highpass',1800,0.4),rainLo=layer('brown','lowpass',900,0.4),cic=layer('white','bandpass',5400,8);
   // cigarras: o chiado pulsa rápido
   const am=a.createGain();am.gain.value=0.5;cic.f.disconnect();cic.f.connect(am);am.connect(cic.g);
   const lfo=a.createOscillator();lfo.frequency.value=24;const lg=a.createGain();lg.gain.value=0.5;lfo.connect(lg);lg.connect(am.gain);lfo.start();
-  // o vento sobe e desce devagar
-  const wl=a.createOscillator();wl.frequency.value=0.09;const wg=a.createGain();wg.gain.value=180;wl.connect(wg);wg.connect(wind.f.frequency);wl.start();
-  const bus=a.createGain();bus.gain.value=1;const bp=a.createStereoPanner?a.createStereoPanner():null;if(bp){bus.connect(bp);bp.connect(master);}else bus.connect(master);
-  AMB.n={master,river,falls,wind,cic,bus,bp,rain};
+  // o vento e o riacho respiram devagar (sem repetir: duas ondas de períodos que não batem)
+  for(const[p,fq,dp]of[[wind.f.frequency,0.09,160],[wind.f.frequency,0.031,90],[river.f.frequency,0.05,120]]){const o=a.createOscillator(),g=a.createGain();o.frequency.value=fq;g.gain.value=dp;o.connect(g);g.connect(p);o.start();}
+  AMB.n={bus,river,riverLo,falls,fallsHi,wind,leaves,grass,rain,rainLo,cic};
 }
-function bubble(t,pan,vol,near){
-  const a=SND.ctx,o=a.createOscillator(),g=a.createGain(),f0=(near?500:350)+Math.random()*(near?1500:700),dur=0.025+Math.random()*0.06;
-  o.type='sine';o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(f0*(1.4+Math.random()*0.6),t+dur);
-  g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(vol,t+0.004);g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
-  const pn=a.createStereoPanner?a.createStereoPanner():null;o.connect(g);if(pn){pn.pan.value=pan;g.connect(pn);pn.connect(AMB.n.master);}else g.connect(AMB.n.master);
-  o.start(t);o.stop(t+dur+0.02);
+const tgt=(p,v,tc)=>p.setTargetAtTime(v,SND.ctx.currentTime,tc||0.5);
+// uma voz num lugar do vale: volume, filtro (o ar abafa o longe), lado e eco dependem de onde ela está
+function spot(x,y,vol,fn,o){
+  o=o||{};const a=SND.ctx;if(!AMB.n||!a||a.state!=='running'||db.amb===false)return;
+  const h=hearAt(x,y,o.reach),v=vol*h.g;if(v<0.05&&!o.force)return;if(AMB.voices>32)return;vol*=VK[fn.name]||1;
+  const t=a.currentTime+(o.delay||0)+0.02,g=a.createGain();g.gain.value=0.06*v;
+  const lp=a.createBiquadFilter();lp.type='lowpass';lp.frequency.value=h.lp;lp.Q.value=0.3;g.connect(lp);
+  const pn=a.createStereoPanner?a.createStereoPanner():null;let last=lp;if(pn){pn.pan.value=h.pan;lp.connect(pn);last=pn;}
+  last.connect(AMB.n.bus);const s=a.createGain();s.gain.value=0.1+0.9*h.far;last.connect(s);s.connect(SND.ambWet);
+  AMB.voices++;let dur=1;try{dur=fn(a,t,g)||1;}catch(e){}
+  setTimeout(()=>{AMB.voices--;try{g.disconnect();lp.disconnect();if(pn)pn.disconnect();s.disconnect();}catch(e){}},((o.delay||0)+dur)*1000+300);
 }
-// grilo: pulso curto e agudo
-function bubble2(t,f,pan,vol){const a=SND.ctx,o=a.createOscillator(),g=a.createGain(),pn=a.createStereoPanner?a.createStereoPanner():null;
-  o.type='sine';o.frequency.value=f;g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(vol,t+0.005);g.gain.exponentialRampToValueAtTime(0.0001,t+0.04);
-  o.connect(g);if(pn){pn.pan.value=pan;g.connect(pn);pn.connect(AMB.n.master);}else g.connect(AMB.n.master);o.start(t);o.stop(t+0.06);}
-function chirp(t,pan,vol){
-  const a=SND.ctx,n=2+Math.floor(Math.random()*4),base=2400+Math.random()*1800,pn=a.createStereoPanner?a.createStereoPanner():null;
-  if(pn){pn.pan.value=pan;pn.connect(AMB.n.master);}
-  for(let i=0;i<n;i++){const o=a.createOscillator(),g=a.createGain(),st=t+i*(0.07+Math.random()*0.05),d=0.05+Math.random()*0.05,f=base*(0.85+Math.random()*0.35);
-    o.type='sine';o.frequency.setValueAtTime(f,st);o.frequency.exponentialRampToValueAtTime(f*(Math.random()<0.5?1.35:0.75),st+d);
-    g.gain.setValueAtTime(0.0001,st);g.gain.exponentialRampToValueAtTime(vol,st+0.01);g.gain.exponentialRampToValueAtTime(0.0001,st+d);
-    o.connect(g);g.connect(pn||AMB.n.master);o.start(st);o.stop(st+d+0.02);}
+// ---- peças de síntese para as vozes
+function osc(a,t,out,f,dur,v,o){
+  o=o||{};const os=a.createOscillator(),g=a.createGain();os.type=o.type||'sine';os.frequency.setValueAtTime(f,t);
+  if(o.f2)os.frequency.exponentialRampToValueAtTime(o.f2,t+(o.glide||dur));
+  if(o.vib){const m=a.createOscillator(),mg=a.createGain();m.frequency.value=o.vib;mg.gain.value=o.vd||f*0.03;m.connect(mg);mg.connect(os.frequency);m.start(t);m.stop(t+dur+0.05);}
+  const at=o.att||0.008;g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(v,t+at);g.gain.setValueAtTime(v,t+Math.max(at,dur*(o.hold||0)));g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+  let last=g;if(o.bp){const f2=a.createBiquadFilter();f2.type=o.bpt||'bandpass';f2.frequency.value=o.bp;f2.Q.value=o.q||1;g.connect(f2);last=f2;}
+  os.connect(g);last.connect(out);os.start(t);os.stop(t+dur+0.05);return os;
 }
+function burst(a,t,out,dur,v,f,o){
+  o=o||{};const src=a.createBufferSource(),fl=a.createBiquadFilter(),g=a.createGain();src.buffer=noiseBuf(a,o.kind||'white');
+  fl.type=o.type||'bandpass';fl.frequency.setValueAtTime(f,t);if(o.f2)fl.frequency.exponentialRampToValueAtTime(o.f2,t+dur);fl.Q.value=o.q||1;
+  const at=o.att||0.004;g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(v,t+at);g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+  src.connect(fl);fl.connect(g);g.connect(out);src.start(t,Math.random()*3);src.stop(t+dur+0.05);
+}
+// som rouco: serra com modulação de amplitude rápida (o "grrr" do tucano, da onça, do lobo)
+function rasp(a,t,out,f,dur,v,o){
+  o=o||{};const os=a.createOscillator(),am=a.createGain(),lfo=a.createOscillator(),lg=a.createGain(),g=a.createGain(),fl=a.createBiquadFilter();
+  os.type='sawtooth';os.frequency.setValueAtTime(f,t);if(o.f2)os.frequency.exponentialRampToValueAtTime(o.f2,t+dur);
+  lfo.type='square';lfo.frequency.value=o.am||30;lg.gain.value=0.5;am.gain.value=0.5;lfo.connect(lg);lg.connect(am.gain);
+  fl.type='bandpass';fl.frequency.value=o.bp||900;fl.Q.value=o.q||1.2;
+  g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(v,t+(o.att||0.02));g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+  os.connect(am);am.connect(fl);fl.connect(g);g.connect(out);os.start(t);lfo.start(t);os.stop(t+dur+0.05);lfo.stop(t+dur+0.05);
+}
+const rnd=(a,b)=>a+Math.random()*(b-a);
+// equilíbrio de volume entre as vozes (medido: pico de cada uma, sozinha, no centro da tela)
+const VK={seriema:1.6,tucano:1.4,capivara:1.5,martim:1.4,chickens:2,galo:1.8,telha:2,asas:3,sino:0.8,grilo:1.2};
+// ---- os bichos (as vozes são caricaturas suaves dos cantos de verdade, sem nada estridente)
+const CALL={
+  // seriema: gritos em série que aceleram ("quiá-quiá-quiá..."), ouvidos de longe
+  seriema(a,t,o){const n=7+Math.floor(Math.random()*4);let u=0;
+    for(let i=0;i<n;i++){const f=rnd(1150,1300)*(1-i*0.012),v=0.5+0.5*Math.sin(Math.PI*(i+1)/(n+1));osc(a,t+u,o,f,0.11,0.5*v,{type:'triangle',f2:f*0.72,bp:1400,q:0.8});u+=0.24-i*0.012;}return u+0.2;},
+  // tucano-toco: coaxar grave e rouco, três ou quatro vezes
+  tucano(a,t,o){const n=3+Math.floor(Math.random()*2);for(let i=0;i<n;i++)rasp(a,t+i*0.32,o,rnd(240,270),0.17,0.6,{f2:210,am:38,bp:800});return n*0.32+0.2;},
+  // joão-de-barro: dueto, trinados rápidos que aceleram (dois pássaros em tons diferentes)
+  joao(a,t,o){for(const[f0,off,n]of[[2300,0,12],[1950,0.07,10]]){let u=off;for(let i=0;i<n;i++){osc(a,t+u,o,f0*(1-i*0.008),0.05,0.35,{f2:f0*0.85});u+=0.1-i*0.0045;}}return 1.3;},
+  // garça: um "grac" grave e áspero
+  garca(a,t,o){rasp(a,t,o,320,0.32,0.6,{f2:230,am:55,bp:700,q:0.9});return 0.5;},
+  // capivara: estalinhos e um assobio curto, baixinho
+  capivara(a,t,o){for(let i=0;i<3;i++)burst(a,t+i*0.09,o,0.03,0.3,2600,{q:3});osc(a,t+0.35,o,1900,0.14,0.25,{f2:2300});osc(a,t+0.55,o,1950,0.12,0.2,{f2:2200});return 0.8;},
+  // ema: o "bum" grave do macho, duas vezes
+  ema(a,t,o){osc(a,t,o,92,0.6,0.9,{f2:78,att:0.08,type:'triangle'});osc(a,t+0.75,o,88,0.8,0.8,{f2:72,att:0.1,type:'triangle'});return 1.7;},
+  // martim-pescador: matraca seca e rápida
+  martim(a,t,o){const n=10+Math.floor(Math.random()*5);for(let i=0;i<n;i++){burst(a,t+i*0.045,o,0.025,0.4,3300,{q:4});osc(a,t+i*0.045,o,2900,0.02,0.15);}return n*0.045+0.2;},
+  // anta: assobio fino e longo (antas assobiam mesmo)
+  anta(a,t,o){osc(a,t,o,2900,0.7,0.35,{f2:2500,glide:0.7,vib:9,vd:60,att:0.06,hold:0.3});return 0.9;},
+  // lobo-guará: o "uóóh" rouco, ao longe, duas ou três vezes
+  lobo(a,t,o){const n=2+Math.floor(Math.random()*2);for(let i=0;i<n;i++){rasp(a,t+i*1.3,o,185,0.5,0.5,{f2:150,am:22,bp:520,q:1.1,att:0.06});burst(a,t+i*1.3,o,0.45,0.15,500,{q:1.5,att:0.05});}return n*1.3+0.3;},
+  // tamanduá: fungadas curtas, só se ouve de perto
+  tamandua(a,t,o){for(let i=0;i<4;i++)burst(a,t+i*rnd(0.18,0.3),o,0.09,0.5,1100,{q:2,f2:700});return 1.4;},
+  // onça: o "esturro" grave em serrote, cada vez mais baixo (de longe e raro: misterioso, não assustador)
+  onca(a,t,o){const n=5+Math.floor(Math.random()*3);for(let i=0;i<n;i++){const v=0.8*(1-i/(n+1));rasp(a,t+i*0.42,o,i%2?100:115,0.26,v,{f2:85,am:26,bp:380,q:1,att:0.04});}return n*0.42+0.3;},
+  // gado: o "muuu" (serra com o filtro abrindo e fechando, como a boca)
+  cow(a,t,o){const f=rnd(105,130),os=a.createOscillator(),g=a.createGain(),fl=a.createBiquadFilter(),d=rnd(1.1,1.6);
+    os.type='sawtooth';os.frequency.setValueAtTime(f*0.9,t);os.frequency.linearRampToValueAtTime(f*1.15,t+0.3);os.frequency.linearRampToValueAtTime(f,t+d);
+    fl.type='lowpass';fl.Q.value=4;fl.frequency.setValueAtTime(320,t);fl.frequency.linearRampToValueAtTime(950,t+0.35);fl.frequency.linearRampToValueAtTime(420,t+d);
+    g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(0.35,t+0.15);g.gain.setValueAtTime(0.35,t+d*0.7);g.gain.exponentialRampToValueAtTime(0.0001,t+d);
+    os.connect(fl);fl.connect(g);g.connect(o);os.start(t);os.stop(t+d+0.05);return d+0.2;},
+  // ovelha: "méééé" com o tremido da voz
+  sheep(a,t,o){const f=rnd(330,420);osc(a,t,o,f,rnd(0.55,0.8),0.4,{type:'sawtooth',vib:rnd(6,8),vd:f*0.06,bp:1100,q:1.6,att:0.04,hold:0.5});return 0.9;},
+  // galinhas: "có-có-có" e um "cocóó" que sobe
+  chickens(a,t,o){const n=3+Math.floor(Math.random()*3);for(let i=0;i<n;i++)osc(a,t+i*rnd(0.13,0.2),o,rnd(440,520),0.07,0.4,{type:'triangle',f2:360,bp:900});
+    if(Math.random()<0.5)osc(a,t+n*0.18,o,480,0.3,0.35,{type:'triangle',f2:640,bp:900});return n*0.2+0.4;},
+  // galo: "có-co-ri-cóóó" ao amanhecer
+  galo(a,t,o){[[560,0.14],[660,0.11],[740,0.16],[700,0.6]].reduce((u,[f,d],i)=>{osc(a,t+u,o,f,d,0.4,{type:'sawtooth',f2:i===3?480:f*1.05,bp:1000,q:1.4,vib:i===3?7:0,vd:12});return u+d+0.04;},0);return 1.4;},
+  // passarinho: dois a cinco piados
+  pio(a,t,o){const n=2+Math.floor(Math.random()*4),base=rnd(2400,4200);for(let i=0;i<n;i++){const st=i*rnd(0.07,0.12),f=base*rnd(0.85,1.2);osc(a,t+st,o,f,rnd(0.05,0.1),0.3,{f2:f*(Math.random()<0.5?1.35:0.75)});}return n*0.12+0.1;},
+  // bem-te-vi: "bem-te-vi!" (a última sílaba cai)
+  bemtevi(a,t,o){osc(a,t,o,1750,0.1,0.35,{f2:2150});osc(a,t+0.17,o,2700,0.07,0.32);osc(a,t+0.3,o,2500,0.28,0.38,{f2:1700,hold:0.3});return 0.7;},
+  // sabiá-laranjeira: frase melodiosa, como flauta, nas notas da música
+  sabia(a,t,o){const sc=[72,74,76,79,81,84,86,88],n=4+Math.floor(Math.random()*4);let i=Math.floor(Math.random()*4),u=0;
+    for(let j=0;j<n;j++){i=Math.max(0,Math.min(sc.length-1,i+[-2,-1,1,2][Math.floor(Math.random()*4)]));const f=mtof(sc[i]+12),d=rnd(0.09,0.22);
+      osc(a,t+u,o,f,d,0.3,{vib:rnd(18,26),vd:f*0.015,att:0.02,hold:0.4});u+=d+rnd(0.03,0.09);}return u+0.2;},
+  // corujinha: "hu... hu-hu" macio
+  coruja(a,t,o){osc(a,t,o,430,0.3,0.4,{att:0.05,f2:400,hold:0.3});osc(a,t+0.55,o,440,0.18,0.3,{att:0.04,f2:410});osc(a,t+0.8,o,440,0.22,0.3,{att:0.04,f2:400});return 1.2;},
+  // sapo-ferreiro ("tóin" metálico) e rã (coaxar curto)
+  ferreiro(a,t,o){const f=rnd(1400,1900);osc(a,t,o,f,0.18,0.4,{f2:f*0.97});osc(a,t,o,f*2.76,0.06,0.12);return 0.3;},
+  ra(a,t,o){const n=2+Math.floor(Math.random()*2);for(let i=0;i<n;i++)rasp(a,t+i*0.16,o,rnd(170,220),0.1,0.5,{am:60,bp:600,q:1.5});return n*0.16+0.1;},
+  // grilo: três pulsos agudos
+  grilo(a,t,o){const f=rnd(4300,5200);for(let j=0;j<3;j++)osc(a,t+j*0.07,o,f,0.035,0.2,{att:0.004});return 0.3;},
+  // arara: grito rouco que passa voando
+  arara(a,t,o){for(let i=0;i<2;i++)rasp(a,t+i*0.35,o,rnd(820,950),0.24,0.5,{f2:650,am:70,bp:1500,q:1});return 0.9;},
+  // asas: o bando que levanta de uma árvore
+  asas(a,t,o){const src=a.createBufferSource(),fl=a.createBiquadFilter(),am=a.createGain(),lfo=a.createOscillator(),lg=a.createGain(),g=a.createGain();
+    src.buffer=noiseBuf(a,'white');fl.type='bandpass';fl.frequency.value=1300;fl.Q.value=0.8;lfo.frequency.value=17;lg.gain.value=0.5;am.gain.value=0.5;lfo.connect(lg);lg.connect(am.gain);
+    g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(0.5,t+0.05);g.gain.exponentialRampToValueAtTime(0.0001,t+0.7);
+    src.connect(fl);fl.connect(am);am.connect(g);g.connect(o);src.start(t,Math.random()*3);lfo.start(t);src.stop(t+0.75);lfo.stop(t+0.75);return 0.8;},
+  // peixe: o "tchibum" pequeno e a gota que volta
+  peixe(a,t,o){burst(a,t,o,0.22,0.5,2600,{type:'lowpass',f2:500,q:0.7});osc(a,t+0.05,o,900,0.06,0.25,{f2:1500});osc(a,t+0.62,o,1100,0.05,0.18,{f2:1700});return 0.8;},
+  // gota de chuva: no chão (um tique), na água (um "plic") ou no telhado (um toque de madeira)
+  gota(a,t,o){burst(a,t,o,0.02,0.25,rnd(3000,6000),{type:'highpass',q:0.5});return 0.1;},
+  plic(a,t,o){const f=rnd(900,1600);osc(a,t,o,f,0.07,0.3,{f2:f*1.6});return 0.15;},
+  telha(a,t,o){osc(a,t,o,rnd(700,950),0.05,0.3,{type:'triangle'});burst(a,t,o,0.03,0.15,2500,{q:2});return 0.1;},
+  // borbulhar da água que acabou de chegar
+  borbulha(a,t,o){for(let i=0;i<5;i++){const f=rnd(450,1100);osc(a,t+i*rnd(0.05,0.11),o,f,rnd(0.04,0.08),0.3,{f2:f*rnd(1.4,2)});}return 0.6;},
+  // sino da igreja (meio-dia e Ave-Maria): parciais de sino, longe e com muito eco
+  sino(a,t,o){for(let k=0;k<3;k++)for(const[m,d,v]of[[1,4,0.4],[2,2.6,0.2],[2.4,2,0.16],[3,1.6,0.1],[4.2,1,0.06],[0.5,5,0.2]])osc(a,t+k*2.2,o,392*m,d,v,{att:0.004});return 7.5;},
+  // trovão distante, baixinho, quando a chuva começa
+  trovao(a,t,o){burst(a,t,o,3.2,0.7,140,{type:'lowpass',kind:'brown',att:0.6,q:0.5});burst(a,t+0.3,o,2.2,0.3,300,{type:'lowpass',kind:'brown',att:0.2,q:0.5});return 3.5;},
+};
+// quando cada bicho fala: hora do dia em que é ativo, intervalo médio (s), volume e alcance
+const VOZ={
+  seriema:{dia:1,noite:0,iv:28,v:1.1,reach:2.2},tucano:{dia:1,noite:0,iv:32,v:1,reach:1.5},joao:{dia:1,noite:0,iv:24,v:0.9,reach:1.3},
+  garca:{dia:0.8,noite:0.3,iv:50,v:0.9,reach:1.3},capivara:{dia:0.8,noite:0.6,iv:30,v:0.9,reach:1},ema:{dia:1,noite:0.2,iv:40,v:1.2,reach:2},
+  martim:{dia:1,noite:0,iv:26,v:0.9,reach:1.3},anta:{dia:0.4,noite:1,iv:45,v:0.8,reach:1.5},lobo:{dia:0.1,noite:1,iv:38,v:1,reach:2},
+  tamandua:{dia:0.8,noite:0.6,iv:30,v:0.9,reach:0.8},onca:{dia:0.05,noite:1,iv:75,v:0.9,reach:2.2},
+  cow:{dia:1,noite:0.3,iv:90,v:0.9,reach:1.5},sheep:{dia:1,noite:0.2,iv:70,v:0.8,reach:1.2},
+};
+function act(p){return p.dia*(1-ENV.night)+p.noite*ENV.night+0.4*(ENV.golden+ENV.dawn)*Math.max(p.dia,p.noite);}
+// sorteia um ponto (peça) pelo quanto ele é ouvido: de perto, os sons vêm do que está na tela
+function pickNear(list){let tot=0;for(const p of list)tot+=p[2];let r=Math.random()*tot;for(const p of list)if((r-=p[2])<0)return p;return list[list.length-1];}
+const jit=(p,r)=>[p[0]+(Math.random()-0.5)*r,p[1]+(Math.random()-0.5)*r];
+function chance(perSec,dt){return Math.random()<1-Math.exp(-perSec*dt);}
 function ambUpdate(){
-  if(!AMB.n||!SND.ctx||!G.s)return;
-  const N=AMB.n,s=G.s,a=SND.ctx,on=SND.on&&db.amb!==false&&!document.hidden&&a.state==='running';
-  N.master.gain.setTargetAtTime(on?(!$('home').hidden||!$('result').hidden?0.45:1):0,a.currentTime,0.6);
+  const a=SND.ctx;if(!a)return;
+  const run=SND.on&&!document.hidden&&a.state==='running',menu=!$('home').hidden||!$('result').hidden;
+  const z=(AMB.ear=ear()).z;
+  // música: recua com o zoom (o vale fica em primeiro plano) e quando a tela está escondida
+  if(SND.mus){tgt(SND.mus.gain,run&&db.music!==false?(menu?0.75:0.6*(1-0.6*z))*(G.calm?1.25:1):0,0.8);musicTick(a,run&&db.music!==false);}
+  if(!AMB.n||!G.s)return;
+  const N=AMB.n,s=G.s,on=run&&db.amb!==false;
+  tgt(SND.amb.gain,on?(menu?0.45:0.8+0.35*z):0,0.6);tgt(SND.ambWet.gain,on?1:0,0.6);
   if(!on)return;
-  const cx=W.w/2,cy=W.h/2,R=Math.max(160,Math.min(W.w,W.h)*0.55);
-  let wat=0,wx=0,fal=0,fx=0,grass=0,forest=0;const woods=[],waters=[];
-  for(const[k,t]of s.board){const[x,y]=scr(k),d=Math.hypot(x-cx,y-cy)/R;if(d>1.6)continue;const w=Math.exp(-d*d*1.6),px=Math.max(-1,Math.min(1,(x-cx)/R));
-    if(s.alive.has(k)&&t.e.includes('A')){wat+=w;wx+=w*px;waters.push([px,w]);if(t.sp==='falls'){fal+=w;fx+=w*px;}}
-    if(t.e.includes('G')||t.e.includes('C'))grass+=w;
-    if(t.e.includes('B')){forest+=w;woods.push([px,w]);}}
-  const zoom=Math.max(0,Math.min(1,(cam.s-20)/45));
-  const wp=wat?Math.max(-0.8,Math.min(0.8,wx/wat)):0;
-  N.river.g.gain.setTargetAtTime(Math.min(0.11,0.028*Math.sqrt(wat))*(0.6+0.6*zoom),a.currentTime,0.5);
-  N.river.f.frequency.setTargetAtTime(480+520*zoom,a.currentTime,0.5);
-  if(N.river.pn)N.river.pn.pan.setTargetAtTime(wp,a.currentTime,0.5);
-  N.falls.g.gain.setTargetAtTime(Math.min(0.16,0.08*Math.sqrt(fal))*(0.6+0.7*zoom),a.currentTime,0.5);
-  if(N.falls.pn)N.falls.pn.pan.setTargetAtTime(fal?Math.max(-0.8,Math.min(0.8,fx/fal)):0,a.currentTime,0.5);
-  N.wind.g.gain.setTargetAtTime((0.012+0.055*ENV.wind.s)+Math.min(0.03,0.006*Math.sqrt(grass)),a.currentTime,1.2);
-  N.rain.g.gain.setTargetAtTime(ENV.rain*0.07,a.currentTime,1);
-  if(ENV.night>0.5&&Math.random()<0.18){const pn=(Math.random()-0.5)*1.6,f0=4300+Math.random()*900,t0=a.currentTime+Math.random()*0.1;for(let j=0;j<3;j++)bubble2(t0+j*0.07,f0,pn,0.006);}
-  N.cic.g.gain.setTargetAtTime(s.seca&&ENV.night<0.5?0.014+0.01*Math.min(1,grass/6):0,a.currentTime,1.5);
-  // bolhas do riacho: mais e mais nítidas quanto mais perto e mais água no centro da tela
-  const rate=Math.min(16,wat*(1.5+10*zoom*zoom)),now=a.currentTime;
-  const ex=rate*0.12,nb=Math.floor(ex)+(Math.random()<ex-Math.floor(ex)?1:0);
-  for(let i=0;i<nb&&waters.length;i++){const[px]=waters[Math.floor(Math.random()*waters.length)];bubble(now+Math.random()*0.12,px*0.8,(0.006+0.016*zoom)*(0.6+Math.random()*0.8),zoom>0.4);}
-  // pássaros nos bosques (menos na seca)
-  if(woods.length&&Math.random()<Math.min(0.12,0.025*forest)*(s.seca?0.35:1)*(1-ENV.night)*(1-ENV.rain*0.7)){const[px]=woods[Math.floor(Math.random()*woods.length)];chirp(now+Math.random()*0.1,px*0.9,0.012+0.012*zoom);}
+  const dt=0.12,now=a.currentTime;
+  // escuta o tabuleiro: cada peça pesa pelo quanto está perto do ouvido
+  const acc=()=>({S:0,M:0,P:0,pts:[]});const L={wat:acc(),fal:acc(),grass:acc(),forest:acc(),vil:acc(),land:acc()};
+  const add=(l,x,y,h,fr)=>{const w=h.g*fr;l.S+=w;l.M=Math.max(l.M,h.g*Math.sqrt(fr));l.P+=w*h.pan;l.pts.push([x,y,w]);};
+  for(const[k,t]of s.board){const[x,y]=wpos(k),h=hearAt(x,y);if(h.g<0.12)continue;
+    let nA=0,nG=0,nB=0,nV=0;for(const c of t.e){if(c==='A')nA++;else if(c==='G'||c==='C')nG++;else if(c==='B')nB++;else if(c==='V')nV++;}
+    if(nA&&s.alive.has(k)){add(L.wat,x,y,h,Math.max(0.5,nA/6));if(t.sp==='falls')add(L.fal,x,y,h,1);}
+    if(nG)add(L.grass,x,y,h,nG/6);if(nB)add(L.forest,x,y,h,nB/6);if(nV)add(L.vil,x,y,h,nV/6);if(nA<6)add(L.land,x,y,h,1-nA/6);}
+  const lvl=l=>0.25*Math.sqrt(l.S)+Math.pow(l.M,1.25),pan=l=>l.S?Math.max(-0.8,Math.min(0.8,l.P/l.S)):0;
+  const ws=ENV.wind.s,day=1-ENV.night,rain=ENV.rain,seca=!!s.seca;
+  // riacho: corpo de ruído + grave; de perto fica mais claro e borbulhante
+  const rv=lvl(L.wat),rn=clamp01((L.wat.M-0.6)/3);
+  tgt(N.river.g.gain,Math.min(0.1,0.025*rv)*(seca?0.75:1));tgt(N.river.f.frequency,550+1500*rn);tgt(N.riverLo.g.gain,Math.min(0.12,0.03*rv));
+  if(N.river.pn){tgt(N.river.pn.pan,pan(L.wat));tgt(N.riverLo.pn.pan,pan(L.wat)*0.6);}
+  const fv=lvl(L.fal);tgt(N.falls.g.gain,Math.min(0.16,0.03*fv));tgt(N.fallsHi.g.gain,Math.min(0.08,0.012*fv*(0.4+rn)));
+  if(N.falls.pn){tgt(N.falls.pn.pan,pan(L.fal));tgt(N.fallsHi.pn.pan,pan(L.fal));}
+  // vento: mais forte lá do alto (pouco zoom); de perto, vira folhas e capim se mexendo
+  tgt(N.wind.g.gain,(0.008+0.045*ws)*(0.45+0.9*(1-z))*(seca?1.2:1),1.2);if(N.wind.pn)tgt(N.wind.pn.pan,Math.cos(ENV.wind.a)*0.35,2);
+  tgt(N.leaves.g.gain,Math.min(0.035,0.012*lvl(L.forest)*ws*(0.5+ws)*(seca?0.6:1)),0.8);if(N.leaves.pn)tgt(N.leaves.pn.pan,pan(L.forest));
+  tgt(N.grass.g.gain,Math.min(0.025,0.006*lvl(L.grass)*ws),0.8);if(N.grass.pn)tgt(N.grass.pn.pan,pan(L.grass));
+  // chuva: um chiado largo (mais forte de longe) + gotas uma a uma (de perto)
+  tgt(N.rain.g.gain,rain*(0.035+0.03*(1-z)),1);tgt(N.rainLo.g.gain,rain*0.08,1.5);
+  // cigarras na seca, de dia, no capim e na mata
+  tgt(N.cic.g.gain,seca&&ENV.night<0.5?Math.min(0.02,0.004*(lvl(L.grass)+lvl(L.forest))):0,1.5);
+  if(N.cic.pn)tgt(N.cic.pn.pan,pan(L.forest));
+
+  // ---- reações ao tempo: a chuva começa (trovão longe), para (os pássaros voltam todos), muda a hora (galo, sino)
+  if(!AMB.rainOn&&rain>0.3){AMB.rainOn=true;if(Math.random()<0.6){const e=AMB.ear;spot(e.x+rnd(-6,6),e.y-5,1.4,CALL.trovao,{reach:3,force:true});}}
+  if(AMB.rainOn&&rain<0.15){AMB.rainOn=false;AMB.afterRain=now+35;}
+  const hr=Math.floor(ENV.hour);
+  if(hr!==AMB.lastHour){const prev=AMB.lastHour;AMB.lastHour=hr;
+    const vp=prev>=0&&!G.lesson&&(hr===6||hr===12||hr===18)?villageCenter(s):null;
+    if(vp){
+      if(hr===6)spot(vp[0],vp[1],1.3,CALL.galo,{reach:2,force:true,delay:0.5});
+      else spot(vp[0],vp[1],1.2,CALL.sino,{reach:3,force:true,delay:0.8});}}
+
+  // ---- vozes pontuais
+  const quiet=(1-rain*0.85)*(seca?0.5:1),after=now<AMB.afterRain?2.5:1;
+  // bolhas do riacho: mais e mais nítidas quanto mais perto
+  if(L.wat.pts.length){const rate=Math.min(14,1.2*L.wat.S+3*L.wat.M*L.wat.M);let nb=Math.floor(rate*dt);if(Math.random()<rate*dt-nb)nb++;
+    for(let i=0;i<nb;i++){const p=jit(pickNear(L.wat.pts),0.9);spot(p[0],p[1],0.35+0.4*Math.random(),(a,t,o)=>{const f=rnd(380,700)*(1+rn);osc(a,t,o,f,rnd(0.025,0.08),0.4,{f2:f*rnd(1.4,2)});return 0.15;});}}
+  // pássaros nas matas (de dia; muitos logo depois da chuva; alguns sabiás e bem-te-vis)
+  if(L.forest.pts.length&&chance(Math.min(0.8,0.12*L.forest.S)*day*quiet*after*(1+ENV.dawn*1.5),dt)){
+    const p=jit(pickNear(L.forest.pts),1),r=Math.random();spot(p[0],p[1],0.9,r<0.6?CALL.pio:r<0.8?CALL.sabia:CALL.bemtevi);}
+  if(L.grass.pts.length&&chance(0.04*Math.min(4,L.grass.S)*day*quiet,dt)){const p=jit(pickNear(L.grass.pts),1);spot(p[0],p[1],0.7,Math.random()<0.7?CALL.pio:CALL.bemtevi);}
+  // noite: grilos na terra, coruja na mata
+  if(ENV.night>0.4&&L.land.pts.length&&chance(1.4*ENV.night*(1-rain*0.6),dt)){const p=jit(pickNear(L.land.pts),1.2);spot(p[0],p[1],0.5,CALL.grilo);}
+  if(ENV.night>0.6&&L.forest.pts.length&&chance(0.03,dt)){const p=jit(pickNear(L.forest.pts),0.8);spot(p[0],p[1],0.9,CALL.coruja,{reach:1.5});}
+  // sapos perto da água: à noite e na chuva (e nunca na seca)
+  const frog=!seca?Math.max(ENV.night,rain*0.8,now<AMB.afterRain?0.5:0):0;
+  if(frog>0.2&&L.wat.pts.length&&chance(Math.min(1,0.15*L.wat.S)*frog,dt)){const p=jit(pickNear(L.wat.pts),0.8);spot(p[0],p[1],0.7,Math.random()<0.6?CALL.ferreiro:CALL.ra);}
+  // galinhas nas vilas, de dia
+  if(L.vil.pts.length&&chance(0.05*Math.min(3,L.vil.S)*day*(1-rain*0.7),dt)){const p=jit(pickNear(L.vil.pts),0.7);spot(p[0],p[1],0.7,CALL.chickens);}
+  // gotas de chuva de perto: no chão, na água e nos telhados
+  if(rain>0.2&&z>0.15){const rr=rain*z*18*dt;let nd=Math.floor(rr);if(Math.random()<rr-nd)nd++;
+    for(let i=0;i<nd;i++){const e=AMB.ear,x=e.x+rnd(-1,1)*e.hw,y=e.y+rnd(-1,1)*e.hw*1.4,k=cellAt(x*cam.s+cam.x,y*cam.s+cam.y),t=s.board.get(k);
+      const fn=!t?CALL.gota:t.e.includes('V')&&Math.random()<0.5?CALL.telha:s.alive.has(k)&&t.e.includes('A')&&Math.random()<0.6?CALL.plic:CALL.gota;
+      spot(x,y,0.35+0.3*Math.random(),fn,{delay:Math.random()*0.12});}}
+  // depois da chuva: pingos caindo das árvores
+  if(now<AMB.afterRain&&L.forest.pts.length&&chance(1.5*z,dt)){const p=jit(pickNear(L.forest.pts),1);spot(p[0],p[1],0.4,CALL.plic);}
+  // os bichos da fauna, cada um de onde está e no seu horário
+  for(const id in (s.fauna||{})){const ag=G.fa&&G.fa[id],p=VOZ[id];if(!ag||!p)continue;
+    const r=act(p)*(1-rain*0.7)*(seca&&id!=='onca'?0.7:1);if(chance(r/p.iv,dt))spot(ag.x,ag.y,p.v,CALL[id],{reach:p.reach});}
+  // gado e ovelhas (cada um conta; poucos falam ao mesmo tempo)
+  // (num rebanho grande cada um fala menos, para não virar coro)
+  const herd=[];for(const[key,an]of DYNST){if(an.dead||an.w!==G.world)continue;const nm=key.endsWith(':cow')?'cow':key.endsWith(':sheep')?'sheep':null;if(nm)herd.push([nm,an]);}
+  const hk=Math.sqrt(Math.max(1,herd.length/3));
+  for(const[nm,an]of herd){const p=VOZ[nm];if(chance(act(p)*(1-rain*0.5)/(p.iv*hk),dt))spot(an.x,an.y,p.v,CALL[nm],{reach:p.reach});}
+  // araras que passam voando gritam quando estão por perto
+  for(const b of BIRDS){if(!b.arara||AMB.arara.has(b))continue;const u=performance.now()-b.t0;if(u<0)continue;
+    const wx=b.sx+b.dir*b.sp*u/1000,wy=b.gy+b.drift*u/1000,h=hearAt(wx,wy);if(h.g>0.6&&Math.abs(wx-AMB.ear.x)<AMB.ear.hw){AMB.arara.add(b);spot(wx,wy,1,CALL.arara,{reach:1.6});}}
 }
 setInterval(ambUpdate,120);
+function villageCenter(s){let x=0,y=0,n=0;for(const[k,t]of s.board)if(t.e.includes('V')){const p=wpos(k);x+=p[0];y+=p[1];n++;}return n?[x/n,y/n]:null;}
+// v2.0: o vale reage à peça colocada. Bichos por perto se assustam e chamam; pássaros levantam voo da mata;
+// o gado muge; a água que chega borbulha peça a peça e, à noite ou na chuva, os sapos respondem.
+function placeFlavor(e,wx,wy){
+  if(e.includes('B'))spot(wx,wy,0.8,(a,t,o)=>{burst(a,t,o,0.35,0.4,2800,{q:0.8,att:0.03});return 0.4;},{force:true});
+  if(e.includes('A'))spot(wx,wy,0.7,(a,t,o)=>{burst(a,t,o,0.25,0.35,1200,{type:'lowpass',f2:400});return 0.3;},{force:true});
+  if(e.includes('V'))spot(wx,wy,0.7,(a,t,o)=>{osc(a,t+0.05,o,520,0.06,0.3,{type:'triangle'});osc(a,t+0.16,o,620,0.05,0.25,{type:'triangle'});return 0.3;},{force:true});
+}
+function ambReact(k,rep){
+  const s=G.s;if(!AMB.n||!s)return;const[wx,wy]=wpos(k);
+  for(const id in (s.fauna||{})){const ag=G.fa&&G.fa[id];if(!ag||!CALL[id])continue;
+    if(Math.hypot(ag.x-wx,ag.y-wy)<2.6&&Math.random()<0.6)spot(ag.x,ag.y,VOZ[id]?VOZ[id].v:1,CALL[id],{delay:rnd(0.4,1.2),reach:VOZ[id]&&VOZ[id].reach});}
+  let flew=false;for(let d=-1;d<6&&!flew;d++){const kk=d<0?k:E.nb(k,d),t=s.board.get(kk);if(!t||!t.e.includes('B'))continue;
+    const[x,y]=wpos(kk);flew=true;spot(x,y,1,CALL.asas,{delay:0.25});spot(x,y,0.8,CALL.pio,{delay:0.45});}
+  let mu=0;for(const[key,an]of DYNST){if(mu>=1||an.dead||an.w!==G.world)continue;const nm=key.endsWith(':cow')?'cow':key.endsWith(':sheep')?'sheep':null;
+    if(nm&&Math.hypot(an.x-wx,an.y-wy)<2&&Math.random()<0.35){mu++;spot(an.x,an.y,0.9,CALL[nm],{delay:rnd(0.6,1.4)});}}
+  if(rep&&rep.newlyAlive&&rep.newlyAlive.length){const ord=G.flow&&G.flow.order||rep.newlyAlive;
+    ord.slice(0,8).forEach((c,i)=>{const[x,y]=wpos(c);spot(x,y,0.9,CALL.borbulha,{delay:0.15+i*0.12,force:true});});
+    if(!s.seca&&(ENV.night>0.5||ENV.rain>0.3)){const[x,y]=wpos(ord[ord.length-1]);spot(x,y,0.8,CALL.ferreiro,{delay:1.6});}}
+}
+// peixe que pula (chamado em waterLife)
+function fishSplash(x,y){spot(x,y,0.8,CALL.peixe,{delay:0.05});}
 
 // ---------- partículas (sprites do Blender), em coordenadas do mundo
 const PARTS=[];
@@ -1860,9 +2164,7 @@ function cloudBodies(g,sz,t){
   const cx0=W.w/2,cy0=W.h*0.45,q=Math.min(1,40/sz)*0.75,sel=G.sel?0.25:1; // escolhendo onde pôr a peça: quase transparentes
   G.cloudA=(G.cloudA??sel)+(sel-(G.cloudA??sel))*0.08;
   g.save();
-  const bb=G.bb||[-3,3,-3,3],bcx=(bb[0]+bb[1])/2,bcy=(bb[2]+bb[3])/2,bR=Math.max(1,Math.max(bb[1]-bb[0],bb[3]-bb[2])/2);
-  for(const c of ENV.clouds){const e=cloudEnv(c),dcl=Math.hypot(c.x-bcx,(c.y-c.alt*0.9-bcy)/0.8)/bR;
-    const a=(0.86+0.1*c.dark)*e*zf*G.cloudA;if(a<0.01)continue;
+  for(const c of ENV.clouds){const e=cloudEnv(c),a=(0.86+0.1*c.dark)*e*zf*G.cloudA;if(a<0.01)continue;
     const proj=p=>{const k=1+0.12*(c.alt+p.z),wx=(c.x+p.x)*sz+cam.x,wy=(c.y+p.y-(c.alt+p.z)*0.9)*sz+cam.y;return[cx0+(wx-cx0)*k,cy0+(wy-cy0)*k,sz*k];};
     const R=cloudRender(c,'body',proj,q,t,sz);if(!R)continue;
     g.globalAlpha=a;g.drawImage(R[0],0,0,R[1],R[2],R[3],R[4],R[5],R[6]);}
@@ -2105,7 +2407,7 @@ function waterLife(g,s,sz,t){
   const dt=Math.min(100,t-(G.lastWL||t));G.lastWL=t;
   // peixe: um salto em arco de vez em quando, com respingos na saída e na entrada
   if(Math.random()<dt/(s.seca?14000:7000)){const k=alive[Math.floor(Math.random()*alive.length)],[wx,wy]=wpos(k),a=Math.random()*6.28;
-    FISH.push({x:wx+Math.cos(a)*0.15,y:wy+Math.sin(a)*0.1,dx:Math.cos(a)*0.45,t0:t});emit('ring',wx+Math.cos(a)*0.15,wy+Math.sin(a)*0.1,1,{v:0,life:900,size:0.04,grow:5,alpha:0.7,color:'#ffffff'});}
+    FISH.push({x:wx+Math.cos(a)*0.15,y:wy+Math.sin(a)*0.1,dx:Math.cos(a)*0.45,t0:t});emit('ring',wx+Math.cos(a)*0.15,wy+Math.sin(a)*0.1,1,{v:0,life:900,size:0.04,grow:5,alpha:0.7,color:'#ffffff'});fishSplash(wx+Math.cos(a)*0.15,wy+Math.sin(a)*0.1);}
   for(let i=FISH.length-1;i>=0;i--){const f=FISH[i],u=(t-f.t0)/650;if(u>1){emit('ring',f.x+f.dx,f.y,1,{v:0,life:900,size:0.04,grow:5,alpha:0.7,color:'#ffffff'});
       emit('dot',f.x+f.dx,f.y-0.02,6,{ang:-Math.PI/2,spread:1.6,v:0.9,g:5,life:450,size:0.012,color:'#eefaff'});FISH.splice(i,1);continue;}
     const px=(f.x+f.dx*u)*sz+cam.x,py=(f.y-Math.sin(u*Math.PI)*0.32)*sz+cam.y,rot=Math.atan2(-Math.cos(u*Math.PI)*0.32*Math.PI,f.dx)*0.8;
@@ -2364,7 +2666,7 @@ function commit(){
          emit('ring',mx,my,3,{v:0,life:1500,size:0.04,grow:4.5,alpha:0.5,delay:DROP_MS*IMPACT+40,jx:0.25,jy:0.18,color:'#ffffff'});}}}}
   emit('~#d6c39a',wx,wy+0.55,12,{ang:0,spread:Math.PI*2,v:0.45,g:-0.2,life:950,size:0.42,grow:1.3,alpha:0.45,jx:1.5,jy:0.25});
   if(te.includes('B'))emit('leaf',wx,wy-0.25,7,{ang:-Math.PI/2,spread:1.8,v:1.3,g:1.6,life:1500,size:0.13,vr:3,flutter:true,vx:0.15});
-  setTimeout(()=>{sfx.place(rep.match);try{if(db.vib!==false&&navigator.vibrate)navigator.vibrate(rep.perfect.length?[12,40,18]:12);}catch(_){}},RM?0:DROP_MS*IMPACT);
+  setTimeout(()=>{sfx.place(rep.match,te,wx,wy);ambReact(k,rep);try{if(db.vib!==false&&navigator.vibrate)navigator.vibrate(rep.perfect.length?[12,40,18]:12);}catch(_){}},RM?0:DROP_MS*IMPACT);
   if(rep.newlyAlive.length){
     setTimeout(sfx.water,150);
     G.flow.order.slice().sort((a,b)=>hd(a,E.SRC)-hd(b,E.SRC)).forEach((c,i)=>{const[ax,ay]=wpos(c),dl=150+i*FILL_STEP+FILL_DUR*0.6;emit('dot',ax,ay-0.05,12,{ang:-Math.PI/2,spread:1.9,v:1.3,g:6.5,life:560,size:0.022,color:'#eefaff',delay:dl,jx:0.3,jy:0.2});emit('ring',ax,ay,4,{v:0,life:1300,size:0.05,grow:5,alpha:0.65,delay:dl+50,jx:0.5,jy:0.4,color:'#ffffff'});});
@@ -2392,7 +2694,7 @@ function faunaEvents(prev,state,now){
     if(!FCOUNT.has(key)){FCOUNT.add(key);db.fauna[f.id]={n:(ever?ever.n:0)+1,first:ever?ever.first:(daily?G.seedKey.slice(4):today())};}
     G.fnew=G.fnew||new Set();if(!ever)G.fnew.add(f.id);
     G.fpop[f.id]=now+700;G.fspot[f.id]=faunaHome(f.id,state);
-    queueBanner(ever?`${f.name} apareceu no vale`:`Novo no caderno: ${f.name}!`,'good');setTimeout(sfx.fauna,700);
+    queueBanner(ever?`${f.name} apareceu no vale`:`Novo no caderno: ${f.name}!`,'good');setTimeout(()=>sfx.fauna(f.id),700);
     const sp=G.fspot[f.id];if(sp)emit('~#fff3c4',sp.x,sp.y-0.3,6,{v:0.8,life:900,size:0.25,alpha:0.8,add:true,delay:700});
   }
   trackFauna(state);save(db);
@@ -2515,7 +2817,7 @@ function endCeremony(){
     const now=performance.now();G.pulse={order:ord,t0:now};if(ord.length)sfx.water();
     ord.forEach((c,i)=>{const[ax,ay]=wpos(c);emit('ring',ax,ay,2,{v:0,life:1200,size:0.05,grow:5,alpha:0.55,delay:i*70,jx:0.4,jy:0.3,color:'#ffffff'});});
     G.hop={};Object.keys(G.s.fauna||{}).forEach((id,i)=>{G.hop[id]=now+300+i*160;});
-    if(Object.keys(G.s.fauna||{}).length)setTimeout(sfx.fauna,400);
+    if(Object.keys(G.s.fauna||{}).length)setTimeout(()=>sfx.fauna(),400);
   },650);
   setTimeout(showResult,650+Math.min(2200,700+ord.length*70));
 }
@@ -3434,7 +3736,7 @@ function openMenu(){
   const daily=G.seedKey.startsWith('dia-');
   $('menuWhere').textContent=G.lesson?`Lição ${G.lesson.n} de ${LES.length} · ${G.lesson.title}`:daily?`Vale do dia #${valeNumber(G.seedKey.slice(4))} · ${G.s.score} pontos · ${Math.max(0,G.s.left)} peças na pilha`:`Vale de treino · ${G.s.score} pontos`;
   $('menuRestart').textContent=G.lesson?'Recomeçar esta lição':'Recomeçar este vale';
-  $('optSound').checked=SND.on;$('optAmb').checked=db.amb!==false;$('optVib').checked=db.vib!==false;$('optCalm').checked=RM;
+  $('optSound').checked=SND.on;$('optMusic').checked=db.music!==false;$('optAmb').checked=db.amb!==false;$('optVib').checked=db.vib!==false;$('optCalm').checked=RM;
   $('menu').hidden=false;$('menuResume').focus();
 }
 $('menuResume').addEventListener('click',()=>{$('menu').hidden=true;});
@@ -3444,6 +3746,7 @@ $('menuHome').addEventListener('click',showHome);
 $('menuHelp').addEventListener('click',()=>{$('menu').hidden=true;$('intro').hidden=false;$('introOk').focus();});
 $('menuRestart').addEventListener('click',()=>{$('menu').hidden=true;G.resumedDone=false;startGame(G.seedKey,[]);});
 $('optSound').addEventListener('change',e=>{SND.on=e.target.checked;db.mute=!SND.on;save(db);paintMute();if(SND.on){unlockAudio();sfx.select();}else if(SND.el)SND.el.pause();});
+$('optMusic').addEventListener('change',e=>{db.music=e.target.checked;save(db);});
 $('optAmb').addEventListener('change',e=>{db.amb=e.target.checked;save(db);});
 $('optVib').addEventListener('change',e=>{db.vib=e.target.checked;save(db);if(db.vib)try{navigator.vibrate&&navigator.vibrate(12);}catch(_){}});
 $('optCalm').addEventListener('change',e=>{db.calm=e.target.checked;save(db);RM=e.target.checked||matchMedia('(prefers-reduced-motion: reduce)').matches;PARTS.length=0;});
