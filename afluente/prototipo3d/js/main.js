@@ -428,7 +428,8 @@ const props = buildProps(scene, { mobile });
 const shadeTree = scene.children.find(o => o.userData.kind === 'sombra' && inHex(o.position.x, o.position.z, tC.c, 1));
 const clouds = buildClouds(scene, CENTER, { mobile });
 const skyfx = buildSkyFx(scene, camera, { mobile, focus: () => camMode === 'jogo' ? gameCam.focus : controls.target });
-const fauna = buildFauna(scene, { mobile, shade: shadeTree ? [shadeTree.position.x, shadeTree.position.z] : null, termites: scene.children.filter(o => o.userData.regua === 'cupinzeiro').map(o => [o.position.x, o.position.z]) });
+const fauna = buildFauna(scene, { mobile, shade: shadeTree ? [shadeTree.position.x, shadeTree.position.z] : null, termites: scene.children.filter(o => o.userData.regua === 'cupinzeiro').map(o => [o.position.x, o.position.z]),
+  treeTops: scene.children.filter(o => ['cerrado', 'mata', 'sombra'].includes(o.userData.kind)).map(o => { const bb = new THREE.Box3().setFromObject(o); return [o.position.x, bb.max.y - 0.6, o.position.z]; }) });
 // moitas: o sub-bosque da mata e os arbustos do cerrado, que fecham o vão entre o capim e as copas
 scatter(tB, 16, () => makeTree('moita', 0.9 + rnd() * 0.35), (x, z) => { const w = waterDist(x, z); return w > 1.2 && w < 14; }, 2.2);
 scatter(tD, 6, () => makeTree('moita', 0.8 + rnd() * 0.5), () => true, 2.5);
@@ -580,14 +581,14 @@ $('rotL').addEventListener('click', () => gameCam.rotate(-1)); $('rotR').addEven
 // a sombra do sol cobre só o pedaço de chão que aparece na tela: mais nítida de perto e sem desperdício de longe
 const _v = new THREE.Vector3(), _c = new THREE.Vector3(), _pts = [], shCam = sun.shadow.camera;
 function fitShadow() {
-  const cp = camera.position, focus = camMode === 'jogo' ? gameCam.focus : controls.target; _pts.length = 0; _c.set(0, 0, 0);
+  camera.updateMatrixWorld(); const cp = camera.position, focus = camMode === 'jogo' ? gameCam.focus : controls.target; _pts.length = 0; _c.set(0, 0, 0);
   for (const [x, y] of [[-1, -1], [1, -1], [1, 1], [-1, 1], [0, 0]]) { _v.set(x, y, 0.5).unproject(camera).sub(cp).normalize(); if (_v.y > -0.08) _v.y = -0.08;
     const t = (cp.y - focus.y) / -_v.y, p = cp.clone().addScaledVector(_v, t), d = Math.hypot(p.x - focus.x, p.z - focus.z); if (d > 110) { p.x = focus.x + (p.x - focus.x) * 110 / d; p.z = focus.z + (p.z - focus.z) * 110 / d; }
     p.y = focus.y; _pts.push(p); _c.add(p); }
   _c.multiplyScalar(1 / _pts.length); sun.target.position.copy(_c); sun.position.copy(_c).addScaledVector(U.uSunW.value, 250); sun.target.updateMatrixWorld(); sun.updateMatrixWorld();
   shCam.position.copy(sun.position); shCam.lookAt(_c); shCam.updateMatrixWorld();
   let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9; for (const p of _pts) for (const h of [-2, 20]) { _v.set(p.x, p.y + h, p.z).applyMatrix4(shCam.matrixWorldInverse); x0 = Math.min(x0, _v.x); x1 = Math.max(x1, _v.x); y0 = Math.min(y0, _v.y); y1 = Math.max(y1, _v.y); }
-  const size = Math.ceil((Math.max(x1 - x0, y1 - y0) + 12) / 8) * 8, texel = size / sun.shadow.mapSize.x, cx = Math.round((x0 + x1) / 2 / texel) * texel, cy = Math.round((y0 + y1) / 2 / texel) * texel;
+  const size = Math.ceil((Math.max(x1 - x0, y1 - y0) + 20) / 8) * 8, texel = size / sun.shadow.mapSize.x, cx = Math.round((x0 + x1) / 2 / texel) * texel, cy = Math.round((y0 + y1) / 2 / texel) * texel;
   Object.assign(shCam, { left: cx - size / 2, right: cx + size / 2, bottom: cy - size / 2, top: cy + size / 2, near: 1, far: 520 }); shCam.updateProjectionMatrix();
 }
 // capim: de longe, cada peça desenha menos lâminas (as que ficam já são mais largas na distância)

@@ -183,6 +183,53 @@ export function buildFauna(scene, opts = {}) {
   const bordaMata = (x, z) => inHex(x, z, tile('mata').c, 0.98) && !inHex(x, z, tile('mata').c, 0.55) && !blocked(x, z);
   spawn(onca, 1, { name: 'onça-pintada', area: bordaMata, pick: pickIn(bordaMata, tile('mata').c, 18), pg: 0.1, pw: 0.75, vw: 0.9, vg: 0.05, turn: 1.4, stride: 0.95, sep: 2, roam: 12, gp: 0.3, dropNeck: 0.05,
     when: () => U.uDay.value < 0.55 });
+  // ovelhas no aprisco: lã fofa em cachos, cara e pernas escuras
+  function ovelha() { const g = new THREE.Group(), wl = col(0xeee6d4), dk = col(0x3a3230), puffs = [];
+    for (let i = 0; i < 9; i++) { const a = i / 9 * 6.28; puffs.push(ell(0.2, 0.2, 0.2, Math.cos(a) * 0.14, 0.68 + Math.sin(a * 2) * 0.05, Math.sin(a) * 0.32, wl, 8)); }
+    puffs.push(ell(0.27, 0.27, 0.48, 0, 0.66, 0, wl, 10)); mesh(puffs, g);
+    const head = pivot(g, 0, 0.78, 0.5); mesh([ell(0.09, 0.1, 0.15, 0, -0.02, 0.08, dk), ell(0.06, 0.03, 0.02, 0.1, 0.02, 0.0, dk, 6), ell(0.06, 0.03, 0.02, -0.1, 0.02, 0.0, dk, 6), ell(0.11, 0.08, 0.08, 0, 0.06, 0.0, wl, 8)], head);
+    const legs = legSet(g, [[0.12, 0.48, 0.28, 0], [-0.12, 0.48, 0.28, Math.PI], [0.12, 0.48, -0.28, Math.PI], [-0.12, 0.48, -0.28, 0]], 0.035, 0.028, 0.48, dk);
+    return { g, head, legs, headY: 0.78 }; }
+  const Sp = LAYOUT.sheepPen, inPen = (x, z) => inBoxAt(x, z, Sp.p, Sp.w - 1.0, Sp.d - 1.0, Sp.rot);
+  spawn(ovelha, 5, { name: 'ovelha', area: inPen, pick: pickIn(inPen, Sp.p, Sp.w / 2), pg: 0.6, pw: 0.3, vw: 0.5, vg: 0.04, turn: 1.6, stride: 0.6, sep: 0.9, roam: 3, gp: 0.9, dropNeck: 0.12 });
+  // joão-de-barro: passarinho cor de barro andando aos pulinhos no chão perto do ninho (no mourão do curral)
+  const nest = LAYOUT.nest || [Cr.p[0], Cr.p[1], 0], perto = (x, z) => Math.hypot(x - nest[0], z - nest[1]) < 9 && !inCorral(x, z) && !blocked(x, z);
+  const jb = () => bird({ body: [0.045, 0.045, 0.075], bodyC: col(0xb07a4a), neck: [[0.03, 0.02, 0.022]], headC: col(0xa06a40), beak: [0.022, 0.025], beakC: col(0x5a4a3a), legL: 0.04, legC: col(0x8a6a5a), tail: [0.025, 0.07, -0.25, col(0x9a6a40)], s: 0.35 });
+  spawn(jb, 2, { name: 'joão-de-barro (na régua)', scale: READ3(0.2) / 0.2, area: perto, pick: pickIn(perto, [nest[0], nest[1]], 6), pg: 0.5, pw: 0.45, vw: 0.9, vg: 0.0, turn: 5, stride: 0.12, sep: 0.4, roam: 3, gp: 0.8, peck: true });
+
+  const M3 = mat({ vertexColors: true, side: THREE.DoubleSide });
+  // ---------- tucano: voa de copa em copa (voo ondulado, bate e plana), pousa um pouco e segue
+  { const trees = (opts.treeTops || []).filter(t => t[1] > 5); if (trees.length > 2) {
+    const g = new THREE.Group(), k = col(0x141414), ora = col(0xf28a1a), wh = col(0xf4efe0);
+    mesh([ell(0.07, 0.08, 0.17, 0, 0, 0, k), ell(0.06, 0.06, 0.07, 0, 0.04, 0.15, k), ell(0.05, 0.045, 0.03, 0, 0.0, 0.2, wh), paint(new THREE.ConeGeometry(0.045, 0.19, 8).rotateX(Math.PI / 2).scale(0.8, 1.3, 1).translate(0, 0.03, 0.31), ora),
+      ell(0.015, 0.015, 0.015, 0.035, 0.06, 0.2, col(0x3a7aff), 6), ell(0.015, 0.015, 0.015, -0.035, 0.06, 0.2, col(0x3a7aff), 6), paint(new THREE.PlaneGeometry(0.08, 0.17).rotateX(-Math.PI / 2).translate(0, 0, -0.22), k)], g, false);
+    const wings = [1, -1].map(s => { const p = pivot(g, 0.05 * s, 0.02, 0.02); p.add(new THREE.Mesh(paint(new THREE.PlaneGeometry(0.22, 0.12).translate(0.11 * s, 0, 0).rotateX(-Math.PI / 2), k), M3)); p.userData.s = s; return p; });
+    g.scale.setScalar(0.85); scene.add(g); tag(g, 'tucano');
+    let from = trees[0], to = trees[1], t = 0, rest = 3; const P = new THREE.Vector3();
+    updaters.push((dt, time) => { if (rest > 0) { rest -= dt; g.position.set(from[0], from[1] + 0.15, from[2]); for (const w of wings) w.rotation.z = w.userData.s * 0.05; if (rest <= 0) { to = trees[Math.floor(rnd() * trees.length)]; t = 0; } return; }
+      const d = Math.hypot(to[0] - from[0], to[2] - from[2]) + 1, dur = d / 7; t += dt / dur; const k2 = Math.min(1, t);
+      P.set(from[0] + (to[0] - from[0]) * k2, from[1] + (to[1] - from[1]) * k2 + Math.sin(k2 * Math.PI) * Math.min(6, d * 0.15) + Math.sin(time * 6) * 0.25, from[2] + (to[2] - from[2]) * k2);
+      g.lookAt(P.x + (to[0] - from[0]), P.y, P.z + (to[2] - from[2])); g.position.copy(P);
+      const flap = Math.sin(time * 4) > 0 ? Math.sin(time * 20) * 0.8 : 0.1; for (const w of wings) w.rotation.z = w.userData.s * flap;
+      if (t >= 1) { from = to; rest = 3 + rnd() * 6; } }); } }
+
+  // ---------- martim-pescador: voa baixo sobre o córrego, para no ar batendo asa, mergulha e volta com o anel na água
+  { const g = new THREE.Group(), blu = col(0x4a7aa8), ruf = col(0xb8582a), wh = col(0xf2ede4);
+    mesh([ell(0.055, 0.06, 0.13, 0, 0, 0, blu), ell(0.05, 0.05, 0.1, 0, -0.03, 0.03, ruf), ell(0.05, 0.055, 0.06, 0, 0.04, 0.12, blu), ell(0.04, 0.02, 0.04, 0, 0.0, 0.14, wh),
+      paint(new THREE.ConeGeometry(0.018, 0.1, 6).rotateX(Math.PI / 2).translate(0, 0.03, 0.22), col(0x2a2a2a)), paint(new THREE.PlaneGeometry(0.06, 0.1).rotateX(-Math.PI / 2).translate(0, 0, -0.17), blu)], g, false);
+    const wings = [1, -1].map(s => { const p = pivot(g, 0.04 * s, 0.02, 0.0); p.add(new THREE.Mesh(paint(new THREE.PlaneGeometry(0.2, 0.09).translate(0.1 * s, 0, 0).rotateX(-Math.PI / 2), blu), M3)); p.userData.s = s; return p; });
+    g.scale.setScalar(0.8); scene.add(g); tag(g, 'martim-pescador');
+    const ring = new THREE.Mesh(new THREE.RingGeometry(0.8, 1, 24).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0, depthWrite: false })); ring.renderOrder = 3; scene.add(ring);
+    let st = 'voa', t = 0, i0 = 30, i1 = 90, hov = 0, splash = -1; const P = new THREE.Vector3();
+    updaters.push((dt, time) => { const wy = WATER_Y - U.uWaterDrop.value;
+      if (st === 'voa') { t += dt / 6; const i = Math.floor(i0 + (i1 - i0) * Math.min(1, t)), r = RIVER[i]; P.set(r[0], wy + 3.2 + Math.sin(time * 1.5) * 0.4, r[1]);
+        const n = RIVER[Math.min(RIVER.length - 1, i + 2)]; g.lookAt(n[0], P.y, n[1]); if (t >= 1) { st = 'para'; hov = 1.5 + rnd() * 1.5; } }
+      else if (st === 'para') { hov -= dt; if (hov <= 0) { st = 'mergulha'; t = 0; } }
+      else if (st === 'mergulha') { t += dt / 0.5; P.y = wy + 3.2 * (1 - t * t) + 0.05; if (t >= 1) { st = 'sobe'; t = 0; splash = 0; ring.position.set(P.x, wy + 0.02, P.z); } }
+      else if (st === 'sobe') { t += dt / 1.2; P.y = wy + 3.2 * t; if (t >= 1) { st = 'voa'; t = 0; i0 = i1; i1 = 20 + Math.floor(rnd() * 180); } }
+      g.position.copy(P); g.rotation.x = st === 'mergulha' ? 1.2 : st === 'sobe' ? -0.5 : 0;
+      const flap = st === 'para' ? Math.sin(time * 40) * 0.9 : st === 'mergulha' ? 0.9 : Math.sin(time * 18) * 0.7; for (const w of wings) w.rotation.z = w.userData.s * flap;
+      if (splash >= 0) { splash += dt; ring.scale.setScalar(0.1 + splash * 0.6); ring.material.opacity = Math.max(0, 0.7 * (1 - splash / 1.4)); if (splash > 1.4) splash = -1; } }); }
   updaters.push((dt, time) => { for (const a of all) { brain(a, dt); pose(a, dt, time); } });
 
   // ---------- araras: um casal dando voltas largas sobre o vale, batendo asa e planando

@@ -110,6 +110,11 @@ export const LAYOUT = {
   garden: { p: off(tV, -11.5, 3), rot: 0.25, w: 5, d: 4 },
   corral: { p: off(tP, 4, 6), rot: 0.35, w: 12, d: 8 },
   mill: { p: off(tL, 11, -9) },
+  paiol: { p: off(tL, -8, 12.5), rot: 0.15, w: 4, d: 3 },
+  bales: { p: off(tL, -4.3, 13.6), rot: 0.15 },
+  scarecrow: { p: off(tL, -1.5, 1.0) },
+  cart: { p: off(tL, -1.2, 16.0), rot: 1.2 },
+  sheepPen: { p: off(tV, 10.5, -10.5), rot: -0.35, w: 6.5, d: 4.5 },
   field: { tile: tL, rowGap: 0.9, cornMaxX: 5.2, sunMinX: 7.6, sunMaxX: 12.5 },
 };
 const PATHS = [[off(tV, -6.5, -6), off(tV, 0.5, 0.5)], [off(tV, 6.5, -6.5), off(tV, 0.5, 0.5)], [off(tV, -3, 7.5), off(tV, 0.5, 0.5)], [off(tV, 8, 6.5), off(tV, 0.5, 0.5)],
@@ -131,5 +136,6 @@ export function inBoxAt(x, z, o, w, d, rot) { const dx = x - o[0], dz = z - o[1]
 export function blocked(x, z, pad = 0) {
   const L = LAYOUT, inBox = (o, w, d, rot) => { const dx = x - o[0], dz = z - o[1], c = Math.cos(rot), s = Math.sin(rot), u = dx * c - dz * s, v = dx * s + dz * c; return Math.abs(u) < w / 2 + pad && Math.abs(v) < d / 2 + pad; };
   return L.houses.some(h => inBox(h.p, h.w + 3, h.d + 3, h.rot)) || inBox(L.chapel.p, 8, 12, L.chapel.rot) || Math.hypot(x - L.well.p[0], z - L.well.p[1]) < 2.2 + pad
-    || inBox(L.garden.p, L.garden.w + 1, L.garden.d + 1, L.garden.rot) || inBox(L.corral.p, L.corral.w + 1, L.corral.d + 1, L.corral.rot) || Math.hypot(x - L.mill.p[0], z - L.mill.p[1]) < 3.5 + pad;
+    || inBox(L.garden.p, L.garden.w + 1, L.garden.d + 1, L.garden.rot) || inBox(L.paiol.p, L.paiol.w + 2.5, L.paiol.d + 2.5, L.paiol.rot) || inBox(L.bales.p, 3.4, 2.4, L.bales.rot)
+    || Math.hypot(x - L.scarecrow.p[0], z - L.scarecrow.p[1]) < 1.0 + pad || inBox(L.cart.p, 5, 2.6, L.cart.rot) || inBox(L.sheepPen.p, L.sheepPen.w + 1, L.sheepPen.d + 1, L.sheepPen.rot) || inBox(L.corral.p, L.corral.w + 1, L.corral.d + 1, L.corral.rot) || Math.hypot(x - L.mill.p[0], z - L.mill.p[1]) < 3.5 + pad;
 }

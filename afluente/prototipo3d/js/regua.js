@@ -41,6 +41,16 @@ export const TABELA = {
   'anta': { h: [0.9, 1.25], l: [1.8, 2.3] },
   'onça-pintada': { h: [0.65, 0.95], l: [1.6, 2.4] },
   'canela-de-ema': { h: [0.8, 2.0] },
+  'paiol': { h: [3.6, 5.5], l: [3.5, 5.5] },
+  'fardo de feno (pilha)': { h: [0.9, 1.6] },
+  'espantalho': { h: [1.6, 2.1] },
+  'carroça de boi': { h: [1.2, 1.8], l: [3.5, 5.5] },
+  'cerca do aprisco': { h: [0.8, 1.3] },
+  'ovelha': { h: [0.65, 1.0], l: [1.0, 1.45] },
+  'tucano': { l: [0.45, 0.68] },
+  'joão-de-barro (na régua)': { l: [0.19, 0.28] },
+  'ninho de joão-de-barro': { l: [0.22, 0.4] },
+  'martim-pescador': { l: [0.3, 0.45] },
 };
 export const tag = (o, name, scale) => { o.userData.regua = name; if (scale) o.userData.reguaScale = scale; return o; };
 

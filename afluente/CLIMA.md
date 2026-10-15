@@ -448,6 +448,14 @@ Cada coisa do vale tem uma etiqueta e é **medida em metros** a cada abertura (`
 | Anta | ~1,1 m · ~2,1 m | 0,9–1,25 m · 1,8–2,3 m |
 | Onça-pintada | ~0,8 m · ~2,0 m | 0,65–0,95 m · 1,6–2,4 m |
 | Canela-de-ema | 0,8–1,6 m | 0,8–2,0 m |
+| Paiol (sobre esteios) | ~4,4 m de altura | 3,6–5,5 m |
+| Fardos de feno (pilha de 3) | ~1,4 m | 0,9–1,6 m |
+| Espantalho | ~1,95 m | 1,6–2,1 m |
+| Carroça de boi (roda de 1,4 m) | ~1,6 m · ~4,8 m com o cambão | 1,2–1,8 m · 3,5–5,5 m |
+| Ovelha | ~0,9 m · ~1,3 m | 0,65–1,0 m · 1,0–1,45 m |
+| Tucano (com o bico) | ~0,6 m | 0,45–0,68 m |
+| João-de-barro (na régua) · ninho | ~0,24 m · ~0,35 m | 0,19–0,28 m · 0,22–0,4 m |
+| Martim-pescador | ~0,39 m | 0,3–0,45 m |
 
 **O que a régua pegou e foi corrigido:** árvore do cerrado alta demais (até 9,7 m → até 7 m, tronco mais baixo e copa mais larga, como as tortas do cerrado), moitas de 3,2 m, capivara de 79 cm de altura e 1,5 m, garça de 1,2 m, seriema de 1,1 m, passarinhos do bando com 54 cm de envergadura, borboleta de 32 cm e libélula de 26 cm.
 

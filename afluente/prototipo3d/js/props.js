@@ -191,6 +191,54 @@ export function buildProps(scene, { mobile = false } = {}) {
       inst.setColorAt(i, col([0x5f9a3a, 0x9ccb52, 0x4f8a5a][b]).multiplyScalar(0.85 + rnd() * 0.3)); });
     inst.castShadow = inst.receiveShadow = true; const g = new THREE.Group(); g.add(bm, inst); g.position.set(Gd.p[0], y0, Gd.p[1]); g.rotation.y = Gd.rot; scene.add(g); }
 
+  // ---------- roça: paiol de milho sobre esteios, fardos de feno, espantalho no milharal, carroça de boi e o aprisco das ovelhas
+  const placeG = (g, P, rot, name, dy = 0) => { g.traverse(o => { if (o.isMesh) o.castShadow = o.receiveShadow = true; }); g.position.set(P[0], heightAt(P[0], P[1]) + dy, P[1]); g.rotation.y = rot || 0; scene.add(g); return tag(g, name); };
+  { const Pa = LAYOUT.paiol, w = Pa.w, d = Pa.d, H0 = 0.7, H = H0 + 2.3, pitch = 0.45, ov = 0.45, rh = d / 2 * Math.tan(pitch), g = new THREE.Group(), wood = [], roof = [], fill = [];
+    for (const x of [-w / 2 + 0.15, 0, w / 2 - 0.15]) for (const z of [-d / 2 + 0.15, d / 2 - 0.15]) wood.push(paint(new THREE.CylinderGeometry(0.11, 0.13, H0 + 0.5, 8).translate(x, (H0 - 0.5) / 2, z), col(0x8a8478)));   // esteios de pedra/aroeira
+    wood.push(paint(box(w + 0.2, 0.12, d + 0.2, 0, H0 + 0.06, 0, 1), col(0x7a5a3e)));
+    for (let y = H0 + 0.2; y < H - 0.05; y += 0.2) { for (const sz of [1, -1]) wood.push(paint(box(w, 0.12, 0.05, 0, y, sz * d / 2, 0.8), col(0x9a7a56).multiplyScalar(0.85 + rnd() * 0.25)));
+      for (const sx of [1, -1]) wood.push(paint(box(0.05, 0.12, d, sx * w / 2, y, 0, 0.8), col(0x9a7a56).multiplyScalar(0.85 + rnd() * 0.25))); }   // ripas com fresta: o milho aparece lá dentro
+    fill.push(paint(box(w - 0.1, H - H0 - 0.5, d - 0.1, 0, H0 + 0.2 + (H - H0 - 0.5) / 2, 0, 1), col(0xe0a83a)));
+    wood.push(paint(box(0.9, 1.7, 0.06, w * 0.15, H0 + 0.95, d / 2 + 0.04, 0.8), col(0x6a4a34)));
+    const gab = new THREE.BufferGeometry(), gp = []; for (const sx of [1, -1]) { const x = sx * w / 2, tri = [[x, H, -d / 2], [x, H, d / 2], [x, H + rh, 0]]; if (sx < 0) tri.reverse(); for (const v of tri) gp.push(...v); }
+    gab.setAttribute('position', new THREE.Float32BufferAttribute(gp, 3)); gab.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(gp.length / 3 * 2), 2)); gab.computeVertexNormals(); wood.push(paint(gab, col(0x8a6a4a)));
+    const L = (d / 2 + ov) / Math.cos(pitch), rows = Math.round(L / 0.36), rl = L / rows, rc = col(0xa84e34);
+    for (const side of [0, 1]) for (let r = 0; r < rows; r++) { const sl = box(w + 2 * ov, 0.07, rl * 1.18, 0, 0, 0, 1), uv = sl.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * (w + 2 * ov) / 1.6 + r * 0.37, uv.getY(i) * rl / 1.8);
+      const s0 = (r + 0.5) * rl; sl.rotateX(pitch + 0.05).translate(0, H + rh - s0 * Math.sin(pitch) + 0.1, s0 * Math.cos(pitch)); if (side) sl.rotateY(Math.PI); roof.push(paint(sl, rc.clone().multiplyScalar(0.88 + rnd() * 0.2))); }
+    for (const [list, m] of [[wood, woodMat], [roof, roofMat], [fill, mat({ vertexColors: true })]]) { const geo = merge(list); geo.computeVertexNormals(); g.add(new THREE.Mesh(geo, m)); }
+    placeG(g, Pa.p, Pa.rot, 'paiol', -0.1); }
+  // fardos de feno empilhados (0,9 x 0,45 x 0,45 m): palha dourada com as fibras e os dois barbantes
+  { const B = LAYOUT.bales, g = new THREE.Group(), bales = [], hayMat = mat({ vertexColors: true }, { frag: '{float f=vnoise(vec2(vLp.x*40.0,(vLp.y+vLp.z)*6.0));diffuseColor.rgb*=0.82+0.3*f;diffuseColor.rgb=mix(diffuseColor.rgb,diffuseColor.rgb*vec3(0.85,0.8,0.7),uWet);}' });
+    for (let row = 0; row < 3; row++) for (let k = 0; k < 3 - row; k++) for (const z of [-0.25, 0.25]) { const x = (k - (2 - row) / 2) * 0.95; bales.push(paint(box(0.9, 0.45, 0.47, x + (rnd() - 0.5) * 0.06, 0.23 + row * 0.46, z, 1).rotateY((rnd() - 0.5) * 0.06), col(0xd9b45a).multiplyScalar(0.9 + rnd() * 0.15)));
+      for (const bx of [-0.22, 0.22]) bales.push(paint(box(0.02, 0.46, 0.48, x + bx, 0.23 + row * 0.46, z, 1), col(0x8a7040))); }
+    g.add(new THREE.Mesh(merge(bales), hayMat)); placeG(g, B.p, B.rot, 'fardo de feno (pilha)', -0.05); }
+  // espantalho: cruz de vara, camisa xadrez, calça remendada, saco de estopa com chapéu de palha
+  { const S = LAYOUT.scarecrow, g = new THREE.Group(), parts = [];
+    parts.push(paint(box(0.07, 2.0, 0.07, 0, 0.9, 0, 1), col(0x7a5a3e)), paint(box(1.35, 0.06, 0.06, 0, 1.45, 0, 1), col(0x7a5a3e)));
+    parts.push(paint(box(0.46, 0.55, 0.22, 0, 1.3, 0, 1), col(0xb83a2a)), paint(box(1.2, 0.16, 0.16, 0, 1.45, 0, 1), col(0xa8322a)), paint(box(0.3, 0.2, 0.18, 0.08, 1.2, 0.02, 1), col(0x3a6aa0)));
+    for (const sx of [-0.11, 0.11]) parts.push(paint(box(0.15, 0.6, 0.15, sx, 0.75, 0, 1), col(0x3a5a8a)));
+    parts.push(paint(new THREE.SphereGeometry(0.15, 10, 8).translate(0, 1.72, 0), col(0xc8aa78)), paint(new THREE.CylinderGeometry(0.3, 0.3, 0.025, 14).translate(0, 1.84, 0), col(0xe2cf8a)), paint(new THREE.CylinderGeometry(0.12, 0.15, 0.13, 12).translate(0, 1.91, 0), col(0xe2cf8a)));
+    for (const sx of [-0.62, 0.62]) parts.push(paint(new THREE.ConeGeometry(0.06, 0.18, 6).rotateZ(sx > 0 ? -Math.PI / 2 : Math.PI / 2).translate(sx + Math.sign(sx) * 0.09, 1.45, 0), col(0xe2cf8a)));
+    g.add(new THREE.Mesh(merge(parts.map(p => { if (!p.attributes.uv) p.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(p.attributes.position.count * 2), 2)); return p; })), woodMat));
+    placeG(g, S.p, 0.6, 'espantalho', -0.1); }
+  // carroça de boi: duas rodas maciças de 1,4 m, eixo, mesa com taipais e o cambão apoiado no chão
+  { const Ct = LAYOUT.cart, g = new THREE.Group(), parts = [], wc = col(0x8a6a4a);
+    for (const sz of [-0.75, 0.75]) { parts.push(paint(new THREE.CylinderGeometry(0.7, 0.7, 0.12, 20).rotateX(Math.PI / 2).translate(0, 0.7, sz), wc.clone().multiplyScalar(0.85)), paint(new THREE.TorusGeometry(0.68, 0.035, 6, 24).translate(0, 0.7, sz + Math.sign(sz) * 0.06), col(0x3a3430)));
+      for (let k = 0; k < 3; k++) parts.push(paint(box(1.3, 0.05, 0.02, 0, 0.7, sz + Math.sign(sz) * 0.065, 1).rotateZ(0).translate(0, 0, 0), wc.clone().multiplyScalar(0.7)).applyMatrix4(new THREE.Matrix4().makeTranslation(0, -0.7, 0)).applyMatrix4(new THREE.Matrix4().makeRotationZ(k * Math.PI / 3)).applyMatrix4(new THREE.Matrix4().makeTranslation(0, 0.7, 0))); }
+    parts.push(paint(new THREE.CylinderGeometry(0.06, 0.06, 1.75, 8).rotateX(Math.PI / 2).translate(0, 0.7, 0), col(0x5a4030)), paint(box(2.4, 0.08, 1.3, 0.1, 0.98, 0, 1), wc));
+    for (const sz of [-0.62, 0.62]) parts.push(paint(box(2.4, 0.35, 0.05, 0.1, 1.2, sz, 1), wc.clone().multiplyScalar(0.92)));
+    parts.push(paint(box(0.05, 0.35, 1.2, -1.08, 1.2, 0, 1), wc.clone().multiplyScalar(0.92)));
+    const pole = box(2.6, 0.1, 0.1, 0, 0, 0, 1); pole.rotateZ(0.32).translate(2.35, 0.55, 0); parts.push(paint(pole, col(0x6a4a34)));
+    g.add(new THREE.Mesh(merge(parts), woodMat)); placeG(g, Ct.p, Ct.rot, 'carroça de boi', -0.05); }
+  // aprisco: cerca baixa de varas e um cocho; as ovelhas ficam com a fauna
+  { const Sp = LAYOUT.sheepPen; fence(rectPts(Sp.p, Sp.w, Sp.d, Sp.rot), { name: 'cerca do aprisco', gate: 3, rails: [0.35, 0.7, 0.95], posts: 1.05, step: 1.6, color: 0xa08a6a }); }
+  // ninho de joão-de-barro: forninho de barro em cima de um mourão do curral
+  { const Cr = LAYOUT.corral, [px, pz] = rectPts(Cr.p, Cr.w, Cr.d, Cr.rot)[2], g = new THREE.Group();
+    const nest = new THREE.SphereGeometry(0.17, 14, 10, 0, Math.PI * 2, 0, Math.PI * 0.6).scale(1.15, 1, 0.9); paint(nest, col(0xa8724a));
+    const hole = new THREE.CircleGeometry(0.05, 10).translate(0, 0.07, 0.155); paint(hole, col(0x2a1a12));
+    const m = new THREE.Mesh(merge([nest, hole], ['position', 'normal', 'color']), mat({ vertexColors: true })); m.castShadow = true; g.add(m);
+    g.position.set(px, heightAt(px, pz) + 1.55, pz); g.rotation.y = Cr.rot + 0.8; scene.add(g); tag(g, 'ninho de joão-de-barro'); LAYOUT.nest = [px, pz, heightAt(px, pz) + 1.55]; }
+
   // ---------- plantas da lavoura (instanciadas): balançam com a rajada do lugar, secam na seca
   const plantMat = (H, dry) => mat({ vertexColors: true, side: THREE.DoubleSide }, { vdecl: NOISE + WIND + `uniform float uSeca;`, uni: { uPlantH: { value: H } },
     vert: `{vec3 ip=(modelMatrix*instanceMatrix*vec4(0.0,0.0,0.0,1.0)).xyz;float gg=gustAt(ip.xz);float q=windQ(max(0.0,uWindBase*(1.0+uWindIu*gg)));
