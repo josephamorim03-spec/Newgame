@@ -949,6 +949,13 @@ Vêm de uma revisão de código e dos testes:
 
 O desempenho é o mesmo da versão anterior.
 
+**Girassol sem "bolotas" (v2.3).** O chão do campo de girassol tinha discos amarelos chapados de cerca de 2 m, em grade perfeita e maiores que os próprios girassóis 3D. De perto parecia papel de parede, e de noite brilhava. Agora a textura é a lavoura vista de cima, na escala da tabela métrica:
+- terra entre as fileiras, na direção das plantas 3D;
+- folhas largas;
+- cabeças de 20 a 40 cm espalhadas, algumas em botão.
+
+Os girassóis 3D passam a ser as flores de verdade.
+
 ## A água no centro (v2.4)
 
 **O pedido:** juntar os estudos (`REVISAO_MECANICAS_v2.3.md`, `REVISAO_RETENCAO_v2.4.md`, `AGUA_E_PREVIA_v2.5.md`) e ajustar o jogo; ver se as missões fazem sentido; manter só uma peça seguinte visível; e aplicar o que os estudos mostraram que melhora, respeitando o clima, o terreno e a interface.

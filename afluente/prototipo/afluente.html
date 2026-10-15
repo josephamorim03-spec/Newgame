@@ -1896,7 +1896,19 @@ function buildTex(key){
     else if(v===2){const cols=['#d9b84c','#b3cc58','#e6d07a','#c8c060'];for(let i=0;i<4;i++)for(let j=0;j<4;j++){g.fillStyle=cols[(i+2*j+(i*j)%3)%4];g.fillRect(i*32,j*32,32,32);
         g.strokeStyle='rgba(110,90,30,.35)';g.lineWidth=1.6;for(let k=4;k<32;k+=6){g.beginPath();if((i+j)%2){g.moveTo(i*32+k,j*32);g.lineTo(i*32+k,j*32+32);}else{g.moveTo(i*32,j*32+k);g.lineTo(i*32+32,j*32+k);}g.stroke();}}
       g.strokeStyle='rgba(90,120,40,.55)';g.lineWidth=2;for(let k=0;k<=TEXPX;k+=32){g.beginPath();g.moveTo(k,0);g.lineTo(k,TEXPX);g.moveTo(0,k);g.lineTo(TEXPX,k);g.stroke();}}
-    else{fill('#9cc24f');diag(g,16,5,'#86ad42',-1);for(let y=4;y<TEXPX;y+=11)for(let x=((y/11)|0)%2*6+3;x<TEXPX;x+=12){g.fillStyle='#f4c624';g.beginPath();g.arc(x,y,3.2,0,7);g.fill();g.fillStyle='#6b4a1e';g.beginPath();g.arc(x,y,1.3,0,7);g.fill();}}
+    else{ // v2.3: girassol visto de cima, na escala da tabela métrica (1 px de textura ≈ 0,3 m). Antes eram discos
+      // de ~2 m em grade perfeita, maiores que as próprias plantas 3D. Agora: terra entre as fileiras (na direção das
+      // plantas 3D), touceiras de folhas largas e cabeças de 20–40 cm espalhadas, algumas viradas ou ainda em botão.
+      fill('#7f9f45');const wrap=(fn)=>{for(const dx of[-TEXPX,0,TEXPX])for(const dy of[-TEXPX,0,TEXPX])fn(dx,dy);};
+      for(let y=0;y<TEXPX;y+=8){g.fillStyle='rgba(120,98,58,.35)';g.fillRect(0,y+5.2,TEXPX,1.6);}           // terra entre as fileiras
+      for(let y=0;y<TEXPX;y+=8)for(let x=0;x<TEXPX;x+=1.5){const jx=x+(R()-0.5)*1.4,jy=y+2.6+(R()-0.5)*2.4,r=0.8+R()*0.8;
+        const c=['#4f7a2a','#5c8a30','#6a9a38','#76a640'][Math.floor(R()*4)];g.fillStyle=c;                  // folhas largas
+        wrap((dx,dy)=>{const X=jx+dx,Y=jy+dy;if(X<-3||X>TEXPX+3||Y<-3||Y>TEXPX+3)return;g.beginPath();g.ellipse(X,Y,r*1.4,r*0.7,R()*3,0,7);g.fill();});}
+      for(let y=0;y<TEXPX;y+=8)for(let x=1;x<TEXPX;x+=3.1){if(R()<0.35)continue;const jx=x+(R()-0.5)*1.4,jy=y+2.2+(R()-0.5)*1.6,r=0.55+R()*0.45,bud=R()<0.15,a=R()*3;
+        wrap((dx,dy)=>{const X=jx+dx,Y=jy+dy;if(X<-2||X>TEXPX+2||Y<-2||Y>TEXPX+2)return;
+          if(bud){g.fillStyle='#8fb04a';g.beginPath();g.arc(X,Y,r*0.6,0,7);g.fill();return;}                  // botão fechado
+          g.fillStyle='#e9b923';g.beginPath();g.ellipse(X,Y,r,r*0.82,a,0,7);g.fill();                           // pétalas
+          g.fillStyle='#5b3d18';g.beginPath();g.ellipse(X+0.08,Y+0.05,r*0.42,r*0.36,a,0,7);g.fill();});}}       // miolo
   }else if(b==='G'){
     if(v===0){fill('#a8cc62');speck(g,R,90,['#98be58','#b8d872'],1.5,4);bladeTex(g,R,1700,[['#6e9c3e','#7aa846'],['#94c055','#a2cb5e','#8bb84e'],['#c4e07e','#d2e88e']],1.6,3.2,0.55);}
     else if(v===1){fill('#a4cf66');speck(g,R,80,['#94c158','#b6d978'],1.5,4);bladeTex(g,R,1500,[['#6a9a3c'],['#90c056','#9fca60'],['#c0de7c']],1.6,3,0.55);speck(g,R,110,['#ffffff','#ffe066','#f6a3c0','#c9a0e8'],0.9,1.6);}
@@ -2107,7 +2119,11 @@ function drawAnimals(g,x,y,s,k,dyn,t,live){
           if(!crowd&&wbody(px,py,a)&&wbodySeg(a.x,a.y,px,py,a)){a.tx=px;a.ty=py;a.mode='anda';a.flip=px<a.x;break;}}
         if(a.mode==='para')a.until=t+2000+Math.random()*3000;}
       if(a.mode==='anda'){const dx=a.tx-a.x,dy=a.ty-a.y,d=Math.hypot(dx,dy),st=(DYNSP[nm]||0.05)*(a.boost&&t<a.boost?3:Math.max(0.4,Math.min(1.2,ac)))*dt/1000;
-        if(d<=st){a.x=a.tx;a.y=a.ty;a.mode='para';a.until=t+(nm==='cow'?5000:3000)+Math.random()*6000;}else{a.x+=dx/d*st;a.y+=dy/d*st;}}}
+        // v2.3: cada passo é conferido no mapa de hoje (o caminho foi checado na escolha, mas o mapa pode ter mudado e a amostragem tem frestas).
+        // Se o passo põe o corpo na água ou na cerca, o bicho para onde está; se já estava num lugar ruim, deixa andar para sair.
+        const bw=a.rule==='gado'&&WRULE.abrigo?{...a,rule:'abrigo'}:a,nx=d<=st?a.tx:a.x+dx/d*st,ny=d<=st?a.ty:a.y+dy/d*st;
+        if(a.w===G.world&&!wbody(nx,ny,bw)&&wbody(a.x,a.y,bw)){a.tx=a.x;a.ty=a.y;a.mode='para';a.until=t+1500+Math.random()*2000;}
+        else if(d<=st){a.x=a.tx;a.y=a.ty;a.mode='para';a.until=t+(nm==='cow'?5000:3000)+Math.random()*6000;}else{a.x=nx;a.y=ny;}}}
     const moving=a.mode==='anda',bob=moving?-Math.abs(Math.sin(t/95+i))*s*0.012:0;
     let name=nm;if(nm==='sheep')name=moving?'sheep_a':(WX.night>0.6||Math.sin(t/900+i*2)>-0.4?'sheep_b':'sheep_a');
     Q.push([a.y-wy,1,[name,(a.x-wx),(a.y-wy),sc*(DYNSC[nm]??0.8)*(a.rule==='cercado'?0.85:1),a.flip,bob]]);}
