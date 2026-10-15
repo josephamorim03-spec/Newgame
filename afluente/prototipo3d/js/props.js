@@ -39,7 +39,7 @@ export function buildProps(scene, { mobile = false } = {}) {
   const woodMat = mat({ map: plank, vertexColors: true }, { frag: 'diffuseColor.rgb*=mix(1.0,0.75,uWet);' });
   const glowMat = mat({ color: 0x2b2622, emissive: 0xffb45a, emissiveIntensity: 0 });
   const stoneMat = mat({ map: stoneT, color: 0xbab4a8 });
-  const smokeSrc = [], updaters = [];
+  const smokeSrc = [], updaters = [], cropKit = {};
   const groundY = (p, w, d, rot) => { let m = 1e9; for (const [u, v] of [[-1, -1], [1, -1], [1, 1], [-1, 1], [0, 0]]) { const c = Math.cos(rot), s = Math.sin(rot), x = u * w / 2, z = v * d / 2;
     m = Math.min(m, heightAt(p[0] + x * c + z * s, p[1] - x * s + z * c)); } return m - 0.04; };
   const chita = ['#c8382a', '#2f6aa0', '#e0a020', '#3a8a4a'].map((b, i) => chitaTexture(43 + i, b));
@@ -367,11 +367,12 @@ export function buildProps(scene, { mobile = false } = {}) {
         return merge(parts.map(p => { if (!p.attributes.uv) p.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(p.attributes.position.count * 2), 2)); p.computeVertexNormals(); return p; })); })();
       const feijGeo = (() => { const parts = []; for (let k = 0; k < 14; k++) { const a = rnd() * 6.28, r = rnd() * 0.18, y = 0.15 + rnd() * 0.3; parts.push(paint(new THREE.SphereGeometry(1, 6, 4).scale(0.06, 0.02, 0.05).rotateY(a).translate(Math.cos(a) * r, y, Math.sin(a) * r), col(0x5f9a3a).multiplyScalar(0.85 + rnd() * 0.3))); }
         parts.push(paint(new THREE.CylinderGeometry(0.008, 0.012, 0.4, 4).translate(0, 0.2, 0), col(0x6a8a3a))); return merge(parts.map(p => { if (!p.attributes.uv) p.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(p.attributes.position.count * 2), 2)); p.computeVertexNormals(); return p; })); })();
-      tag(inst(wheatGeo, plantMat(1.0, 0.6), wheat, () => rnd() * 6.28, () => 0.9 + rnd() * 0.2, { noShadow: true }), 'trigo', 1.1);
+      const WM = plantMat(1.0, 0.6); cropKit.trigo = [wheatGeo, WM, () => 0.9 + rnd() * 0.2, () => rnd() * 6.28, true]; tag(inst(wheatGeo, WM, wheat, () => rnd() * 6.28, () => 0.9 + rnd() * 0.2, { noShadow: true }), 'trigo', 1.1);
       tag(inst(mandGeo, plantMat(1.6, 0.4), mand, () => rnd() * 6.28, () => 0.85 + rnd() * 0.3), 'mandioca', 1.15);
       tag(inst(feijGeo, plantMat(0.5, 0.8), feij, () => rnd() * 6.28, () => 0.9 + rnd() * 0.2, { noShadow: true }), 'feijão', 1.1); }
-    window.__crops = window.__crops || []; tag(inst(cornGeo(), plantMat(2.1, 0.95), corn, () => rnd() * 6.28, () => 0.85 + rnd() * 0.3), 'milho', 1);
-    tag(inst(sunGeo(), plantMat(1.75, 0.8), sun, () => (rnd() - 0.5) * 0.5, () => 0.85 + rnd() * 0.3), 'girassol', 1); }
+    const CG = cornGeo(), CMt = plantMat(2.1, 0.95), SG = sunGeo(), SMt = plantMat(1.75, 0.8); cropKit.milho = [CG, CMt, () => 0.85 + rnd() * 0.3, () => rnd() * 6.28]; cropKit.girassol = [SG, SMt, () => 0.85 + rnd() * 0.3, () => (rnd() - 0.5) * 0.5]; cropKit.inst = inst;
+    tag(inst(CG, CMt, corn, () => rnd() * 6.28, () => 0.85 + rnd() * 0.3), 'milho', 1);
+    tag(inst(SG, SMt, sun, () => (rnd() - 0.5) * 0.5, () => 0.85 + rnd() * 0.3), 'girassol', 1); }
 
   // ---------- moinho: torre caiada, chapéu que gira para encarar o vento e quatro pás de lona; a velocidade segue o vento
   { const Mp = LAYOUT.mill.p, g = new THREE.Group(), y0 = heightAt(Mp[0], Mp[1]) - 0.1, Ht = 7.2;
@@ -411,7 +412,10 @@ export function buildProps(scene, { mobile = false } = {}) {
     updaters.push((dt, ctx) => { sm.uniforms.uPx.value = ctx.pxPerUnit; const h = ctx.hour ?? 15, b = (c, w) => Math.exp(-(((h - c) / w) ** 2));
       sm.uniforms.uSmoke.value = (0.22 + 0.78 * Math.max(b(6.8, 1.1), b(11.4, 0.7), b(18.2, 1.2), h > 19.5 || h < 5.5 ? 0.35 : 0)) * (1 - 0.4 * U.uRain.value); }); }   // café da manhã, almoço e janta no fogão a lenha
 
-  return { update(dt, ctx) { glowMat.emissiveIntensity = Math.pow(1 - U.uDay.value, 1.5) * 1.8 + U.uRain.value * 0.2 * (1 - U.uDay.value); for (const f of updaters) f(dt, ctx); },
+  // para as peças que o jogador encaixa: casa nova (entra na lista do vale, para terra batida e para não nascer nada em cima) e plantio
+  function addHouse(h) { LAYOUT.houses.push(h); return house(h); }
+  function addCrop(kind, pts) { const k = cropKit[kind]; if (!k || !pts.length) return null; const im = cropKit.inst(k[0], k[1], pts, k[3], k[2], { noShadow: !!k[4] }); return tag(im, kind, 1); }
+  return { addHouse, addCrop, update(dt, ctx) { glowMat.emissiveIntensity = Math.pow(1 - U.uDay.value, 1.5) * 1.8 + U.uRain.value * 0.2 * (1 - U.uDay.value); for (const f of updaters) f(dt, ctx); },
     smokeOK: smokeSrc.length };
 }
 

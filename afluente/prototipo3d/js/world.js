@@ -36,23 +36,37 @@ export function fbm(x, y, o = 4) { let s = 0, a = 0.5; for (let i = 0; i < o; i+
 // ---------- o rio: nasce numa vereda (olho-d'água) em A, passa para B e sai pela borda leste de B
 const A = TILES[0].c, B = TILES[1].c;
 export const SPRING = [A[0] - 8, A[1] + 3];
+const CA = hexCenter(2, 0);
 const PTS = [[SPRING[0], SPRING[1]], [A[0] - 2.5, A[1] - 0.5], [A[0] + 6, A[1] + 2.5], [A[0] + R * 0.866, A[1] - 0.5],
   [B[0] - 9, B[1] - 4], [B[0] - 1, B[1] + 1.5], [B[0] + 8, B[1] - 2.5], [B[0] + R * 0.866 + 2, B[1] - 1],
   // além do vale o córrego segue, fazendo curvas, até sumir na névoa
-  [B[0] + 32, B[1] + 6], [B[0] + 50, B[1] + 2], [B[0] + 72, B[1] + 12], [B[0] + 100, B[1] + 6], [B[0] + 135, B[1] + 18], [B[0] + 180, B[1] + 10], [B[0] + 240, B[1] + 24], [B[0] + 330, B[1] + 14]];
+  [CA[0] - 6, CA[1] + 1.5], [CA[0] + 5, CA[1] - 1], [CA[0] + R * 0.866, CA[1]], [CA[0] + R * 0.866 + 0.4, CA[1]]];
 const curve = new THREE.CatmullRomCurve3(PTS.map(p => new THREE.Vector3(p[0], 0, p[1])), false, 'centripetal');
 export const RIVER = curve.getSpacedPoints(900).map(v => [v.x, v.z]);
 const RLEN = curve.getLength();
 export const WATER_Y = -0.62;
 const W0 = 2.9;      // meia-largura da água (m): córrego de ~6 m
-export const riverHalfWidth = s => W0 * (0.85 + 0.3 * vnoise(s * 0.08, 3.7)) * (s < 6 ? 0.6 + 0.4 * s / 6 : 1);
+export const riverHalfWidth = s => s >= 1e4 ? XRIV[Math.floor((s - 1e4) / 1000)].w * (0.9 + 0.2 * vnoise(s * 0.3, 1.7)) : W0 * (0.85 + 0.3 * vnoise(s * 0.08, 3.7)) * (s < 6 ? 0.6 + 0.4 * s / 6 : 1);
 // distância à linha do rio, posição ao longo dele (m) e direção da correnteza
 // trechos do rio por célula de 8 m (a busca olha só os trechos perto do ponto)
 const CELL = 8, BUCK = new Map(), key = (i, j) => i * 100003 + j;
 for (let i = 0; i + 1 < RIVER.length; i++) { const [ax, az] = RIVER[i], [bx, bz] = RIVER[i + 1];
   for (let ci = Math.floor((Math.min(ax, bx) - 16) / CELL); ci <= Math.floor((Math.max(ax, bx) + 16) / CELL); ci++)
     for (let cj = Math.floor((Math.min(az, bz) - 16) / CELL); cj <= Math.floor((Math.max(az, bz) + 16) / CELL); cj++) { const k = key(ci, cj); if (!BUCK.has(k)) BUCK.set(k, []); BUCK.get(k).push(i); } }
-export function riverInfo(x, z) {
+// trechos de rio das peças que o jogador encaixa: cada um é uma polilinha com sua largura e nível (pode descer junto com a escarpa)
+export const XRIV = [], XBUCK = new Map();
+export function addRiver(pts, w = 2.6) { const id = XRIV.length; XRIV.push({ pts, w });
+  for (let i = 0; i + 1 < pts.length; i++) { const [ax, az] = pts[i], [bx, bz] = pts[i + 1];
+    for (let ci = Math.floor((Math.min(ax, bx) - 16) / CELL); ci <= Math.floor((Math.max(ax, bx) + 16) / CELL); ci++)
+      for (let cj = Math.floor((Math.min(az, bz) - 16) / CELL); cj <= Math.floor((Math.max(az, bz) + 16) / CELL); cj++) { const k = key(ci, cj); if (!XBUCK.has(k)) XBUCK.set(k, []); XBUCK.get(k).push([id, i]); } }
+  return id; }
+function xriverInfo(x, z) { const list = XBUCK.get(key(Math.floor(x / CELL), Math.floor(z / CELL))); if (!list) return null; let best = 1e9, out = null;
+  for (const [id, i] of list) { const P = XRIV[id].pts, [ax, az] = P[i], [bx, bz] = P[i + 1], vx = bx - ax, vz = bz - az, l2 = vx * vx + vz * vz || 1e-6;
+    const t = Math.max(0, Math.min(1, ((x - ax) * vx + (z - az) * vz) / l2)), dx = x - ax - vx * t, dz = z - az - vz * t, d = dx * dx + dz * dz;
+    if (d < best) { best = d; const l = Math.sqrt(l2); out = { d: Math.sqrt(d), s: 1e4 + id * 1000 + i + t, tx: vx / l, tz: vz / l, w: XRIV[id].w, extra: true }; } }
+  return out; }
+export function riverInfo(x, z) { const a = riverInfo0(x, z), b = xriverInfo(x, z); return b && b.d < a.d ? b : a; }
+function riverInfo0(x, z) {
   let best = 1e9, bs = 0, tx = 1, tz = 0;
   const list = BUCK.get(key(Math.floor(x / CELL), Math.floor(z / CELL))); if (!list) return { d: 99, s: 0, tx: 1, tz: 0 };
   for (const i of list) { const [ax, az] = RIVER[i], [bx, bz] = RIVER[i + 1], vx = bx - ax, vz = bz - az, l2 = vx * vx + vz * vz;
@@ -70,12 +84,13 @@ const cliffX = z => CLIFF_X + (vnoise(z * 0.12, 3.3) - 0.5) * 2.2;
 export function cliffDrop(x, z) { return DROP * smooth(cliffX(z) - 0.5, cliffX(z) + 1.1, x); }
 let S_FALL = 0; for (let i = 0; i < RIVER.length; i++) if (RIVER[i][0] > cliffX(RIVER[i][1])) { S_FALL = i / (RIVER.length - 1) * RLEN; break; }
 export const FALL = (() => { const i = Math.round(S_FALL / RLEN * (RIVER.length - 1)); const t = [RIVER[i + 4][0] - RIVER[i][0], RIVER[i + 4][1] - RIVER[i][1]], l = Math.hypot(...t); return { s: S_FALL, p: RIVER[i], t: [t[0] / l, t[1] / l], pool: [RIVER[i][0] + t[0] / l * 2.8, RIVER[i][1] + t[1] / l * 2.8] }; })();
-export const riverLevel = s => WATER_Y - DROP * smooth(S_FALL - 0.3, S_FALL + 0.9, s);
+export const riverLevel = s => s >= 1e4 ? WATER_Y : WATER_Y - DROP * smooth(S_FALL - 0.3, S_FALL + 0.9, s);
+const levelOf = (ri, x, z) => ri.extra ? WATER_Y - cliffDrop(x, z) : riverLevel(ri.s);
 // a lagoa: bacia de borda irregular, com o mesmo nível d'água do vale de cima
 const TLG = TILES.find(t => t.kind === 'lagoa');
 export const LAKE = { c: [TLG.c[0] - 1, TLG.c[1] + 1], r: 10.5, level: WATER_Y };
 export const lakeDist = (x, z) => Math.hypot(x - LAKE.c[0], z - LAKE.c[1]) - LAKE.r * (0.86 + 0.28 * vnoise(Math.atan2(z - LAKE.c[1], x - LAKE.c[0]) * 1.6 + 7, 2.1));
-export function waterLevelAt(x, z) { if (lakeDist(x, z) < 6) return LAKE.level; return riverLevel(riverInfo(x, z).s); }
+export function waterLevelAt(x, z) { if (lakeDist(x, z) < 6) return LAKE.level; return levelOf(riverInfo(x, z), x, z); }
 
 // ---------- relevo (m). O vale é suave; o rio escava o canal e as margens descem até a água
 export function heightAt(x, z) {
@@ -84,10 +99,10 @@ export function heightAt(x, z) {
   if (t && t.kind === 'cerrado') h += 0.35 * smooth(0, 1, 1 - Math.hypot(x - t.c[0], z - t.c[1]) / R);   // o cerrado num pequeno alto
   if (t && t.kind === 'cerradao') h += 0.25 * smooth(0, 1, 1 - Math.hypot(x - t.c[0], z - t.c[1]) / R);
   h -= cliffDrop(x, z);
-  const ri = riverInfo(x, z), w = riverHalfWidth(ri.s), dp = Math.hypot(x - SPRING[0], z - SPRING[1]), wl = riverLevel(ri.s);
+  const ri = riverInfo(x, z), w = riverHalfWidth(ri.s), dp = Math.hypot(x - SPRING[0], z - SPRING[1]), wl = levelOf(ri, x, z);
   const bankW = 4.5, near = Math.min(ri.d - w, dp - POOL_R);
   // perto do salto o rio corre num cânion de pedra (sem a margem baixa)
-  const nearFall = smooth(6, 2, Math.abs(ri.s - S_FALL));
+  const nearFall = ri.extra ? 0 : smooth(6, 2, Math.abs(ri.s - S_FALL));
   if (near < bankW) { const k = smooth(bankW, 0, near) * (1 - nearFall * 0.6); h = h * (1 - k) + (wl + 0.18) * k; }
   if (ri.d < w) { const u = ri.d / w; h = Math.min(h, wl - 0.15 - 0.95 * (1 - u * u)); }
   if (dp < POOL_R) { const u = dp / POOL_R; h = Math.min(h, WATER_Y - 0.1 - 0.7 * (1 - u * u)); }
@@ -110,7 +125,7 @@ const BIO = { rio: [1, 0, 0, 0], mata: [0.15, 0.85, 0, 0], pasto: [1, 0, 0, 0], 
 export function biomeAt(x, z) {
   const out = [0, 0, 0, 0]; let tot = 0;
   for (const t of TILES) { const d = Math.hypot(x - t.c[0], z - t.c[1]) + (fbm(x * 0.07 + t.q * 9, z * 0.07 + t.r * 5, 2) - 0.5) * 9;
-    const w = Math.exp(-d * d / 60); tot += w; for (let i = 0; i < 4; i++) out[i] += w * BIO[t.kind][i]; }
+    const w = Math.exp(-d * d / 60); if (w < 1e-6) continue; tot += w; const bv = t.e ? sectorBio(t, x, z) : BIO[t.kind]; for (let i = 0; i < 4; i++) out[i] += w * bv[i]; }
   // longe das peças: campo de cerrado e pasto (sem isso o peso some e o chão distante fica preto)
   const bg = 2e-4, mix = fbm(x * 0.012 + 3, z * 0.012 - 7, 2); tot += bg; out[0] += bg * (1 - mix); out[2] += bg * mix;
   for (let i = 0; i < 4; i++) out[i] /= tot;
@@ -121,6 +136,20 @@ export function biomeAt(x, z) {
 
 // lajedos do cerrado: manchas de chão pedregoso onde o capim é ralo e crescem a canela-de-ema e as pedras
 export function rockyAt(x, z) { const t = TILES.find(u => u.kind === 'cerrado'); if (!t || !inHex(x, z, t.c, 0.95)) return 0; return smooth(0.5, 0.62, fbm(x * 0.09 + 31, z * 0.09 - 17, 3)); }
+// ---------- peças encaixadas pelo jogador: bordas no padrão do jogo 2D (A água, B mata, C lavoura, V vila, G campo),
+// na ordem de direções [L, NE, NO, O, SO, SE] (0 = leste, girando para o norte, que no 3D é z negativo)
+export const DIRS = [[1, 0], [1, -1], [0, -1], [-1, 0], [-1, 1], [0, 1]];
+export const edgeAng = d => -d * Math.PI / 3;                                                 // ângulo do meio da borda d (atan2 em z, x)
+export const edgeMid = (c, d, k = 0.866) => [c[0] + Math.cos(edgeAng(d)) * R * k, c[1] + Math.sin(edgeAng(d)) * R * k];
+export function sectorOf(t, x, z) { let a = Math.atan2(z - t.c[1], x - t.c[0]); let d = Math.round(-a / (Math.PI / 3)); return ((d % 6) + 6) % 6; }
+const LANDBIO = { B: [0.15, 0.85, 0, 0], C: [1, 0, 0, 0], V: [1, 0, 0, 0], G: null };
+function landOf(t) { const c = {}; for (const e of t.e) if (e !== 'A') c[e] = (c[e] || 0) + 1; let best = 'G', n = -1; for (const k in c) if (c[k] > n) { n = c[k]; best = k; } return best; }
+export function sectorType(t, x, z) { const d = sectorOf(t, x, z), e = t.e[d]; return e === 'A' ? landOf(t) : e; }
+function sectorBio(t, x, z) { const e = sectorType(t, x, z); if (e === 'G') return t.cerrado ? [0, 0, 1, 0] : [1, 0, 0, 0]; return LANDBIO[e]; }
+// fração de lavoura e de vila num ponto de peça encaixada (com uma margem macia entre setores e na borda)
+export function sectorWeight(x, z, type) { for (const t of TILES) { if (!t.e || !inHex(x, z, t.c, 1.0001)) continue; if (sectorType(t, x, z) !== type) return 0;
+    const a = Math.atan2(z - t.c[1], x - t.c[0]), d = sectorOf(t, x, z), da = Math.abs(Math.atan2(Math.sin(a - edgeAng(d)), Math.cos(a - edgeAng(d)))), rr = Math.hypot(x - t.c[0], z - t.c[1]);
+    return smooth(0.3, 1.6, hexEdgeDist(x, z, t.c)) * smooth(Math.PI / 6, Math.PI / 6 - 0.12, da) * smooth(1.5, 3.5, rr); } return 0; }
 // distância (m) de um ponto à borda do hexágono de centro c (positiva dentro)
 export function hexEdgeDist(x, z, c) { const dx = Math.abs(x - c[0]), dz = Math.abs(z - c[1]); return R * 0.866 - Math.max(dx, dx * 0.5 + dz * 0.866); }
 export const inAnyTile = (x, z, k = 1) => TILES.some(t => inHex(x, z, t.c, k));
@@ -155,7 +184,7 @@ export const LAYOUT = {
   praca: { c: off(tPr, 0, 0), r: 8.5 },
   field: { tile: tL, rowGap: 0.9, cornMaxX: 5.2, sunMinX: 7.6, sunMaxX: 12.5 },
 };
-const PATHS = [[off(tV, -6.5, -6), off(tV, 0.5, 0.5)], [off(tV, 6.5, -6.5), off(tV, 0.5, 0.5)], [off(tV, -3, 7.5), off(tV, 0.5, 0.5)], [off(tV, 8, 6.5), off(tV, 0.5, 0.5)],
+export const PATHS = [[off(tV, -6.5, -6), off(tV, 0.5, 0.5)], [off(tV, 6.5, -6.5), off(tV, 0.5, 0.5)], [off(tV, -3, 7.5), off(tV, 0.5, 0.5)], [off(tV, 8, 6.5), off(tV, 0.5, 0.5)],
   [off(tV, 0.5, 0.5), off(tV, -17, 2)], [off(tL, 6.4, -19), off(tL, 6.4, 19)],
   [off(tPr, 0, 0), off(tPr, 0, -19)], [off(tPr, 0, 0), off(tPr, -9, -7)], [off(tPr, 0, 0), off(tPr, 9, -6.5)], [off(tRo, 9.5, 8), off(tRo, 1.5, 19)]];
 function segDist(x, z, a, b) { const vx = b[0] - a[0], vz = b[1] - a[1], t = Math.max(0, Math.min(1, ((x - a[0]) * vx + (z - a[1]) * vz) / (vx * vx + vz * vz))); return Math.hypot(x - a[0] - vx * t, z - a[1] - vz * t); }
@@ -170,7 +199,7 @@ export function dirtAt(x, z) {
   return k;
 }
 // peso da lavoura (1 dentro da peça, caindo a zero na borda) e o lugar das fileiras
-export function fieldAt(x, z) { let k = 0; for (const t of [LAYOUT.field.tile, LAYOUT.wheat.tile]) k = Math.max(k, smooth(0.3, 1.6, hexEdgeDist(x, z, t.c))); return k; }
+export function fieldAt(x, z) { let k = 0; for (const t of [LAYOUT.field.tile, LAYOUT.wheat.tile]) k = Math.max(k, smooth(0.3, 1.6, hexEdgeDist(x, z, t.c))); return Math.max(k, sectorWeight(x, z, 'C') * (waterDist(x, z) > 1.5 ? 1 : 0)); }
 export function inBoxAt(x, z, o, w, d, rot) { const dx = x - o[0], dz = z - o[1], c = Math.cos(rot), s = Math.sin(rot), u = dx * c - dz * s, v = dx * s + dz * c; return Math.abs(u) < w / 2 && Math.abs(v) < d / 2; }
 // lugares onde nada cresce nem se planta por cima (casas, capela, curral, horta, moinho)
 export function blocked(x, z, pad = 0) {

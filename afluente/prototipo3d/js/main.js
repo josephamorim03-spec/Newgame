@@ -11,6 +11,8 @@ import { hexEdgeDist } from './world.js';
 import { fbm } from './world.js';
 import { R, TILES, CENTER, RIVER, riverHalfWidth, heightAt, riverInfo, waterDist, biomeAt, SPRING, POOL_R, WATER_Y, vnoise, inHex, inAnyTile, dirtAt, fieldAt, blocked, LAYOUT, rockyAt, waterLevelAt, riverLevel, FALL, CLIFF_X, DROP, LAKE, lakeDist } from './world.js';
 import { buildProps } from './props.js';
+import { hexCenter, edgeMid, DIRS, sectorType, PATHS, addRiver } from './world.js';
+import { buildBoard } from './board3d.js';
 import { buildFauna } from './fauna.js';
 import { buildPeople } from './people.js';
 import { buildClouds } from './clouds.js';
@@ -40,7 +42,7 @@ camera.position.set(CENTER[0] + 14, 31, CENTER[1] + 110);
 // celular em pé: a câmera sobe e se afasta para as 4 peças caberem na largura estreita
 if (innerWidth < innerHeight) { controls.target.set(CENTER[0] - 8, 4, CENTER[1] - 4); camera.position.set(CENTER[0] + 16, 62, CENTER[1] + 92); }
 controls.enableDamping = true; controls.dampingFactor = 0.08;
-controls.minDistance = 2; controls.maxDistance = 220;   // câmera livre chega bem perto para inspecionar controls.minPolarAngle = 0.3; controls.maxPolarAngle = 1.42;
+controls.minDistance = 2; controls.maxDistance = 220;   /* câmera livre chega bem perto para inspecionar */ controls.minPolarAngle = 0.3; controls.maxPolarAngle = 1.42;
 controls.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN };
 const reflRT = new THREE.WebGLRenderTarget(2, 2, { colorSpace: THREE.SRGBColorSpace });   // reflexo da água (ver mais abaixo)
 function resize() { const w = innerWidth, h = innerHeight; renderer.setSize(w, h, false); { const rk = [0.5, 0.35, 0.18][window.__Qv || 0]; reflRT.setSize(Math.max(2, Math.ceil(w * dpr * rk)), Math.max(2, Math.ceil(h * dpr * rk))); } camera.aspect = w / h; camera.fov = w < h ? 50 : 38; camera.updateProjectionMatrix(); }
@@ -150,14 +152,21 @@ groundMat.onBeforeCompile = sh => { shared(sh); sh.uniforms.uCenter = { value: n
     .replace('#include <lights_fragment_end>', LIGHT_END(0))
     .replace('#include <fog_fragment>', '#include <fog_fragment>\ngl_FragColor.rgb=mix(gl_FragColor.rgb,fogColor,vHaze);');
 };
-for (const t of TILES) { const { pos, idx } = sectorGrid(t.c, mobile ? 26 : 32); const m = new THREE.Mesh(finishGround(pos, idx, 0, 0), groundMat); m.receiveShadow = true; scene.add(m); }
+// o chão de cada peça (refeito quando um rio novo encosta na borda dela)
+function groundFor(t) { if (t.gm) { scene.remove(t.gm); t.gm.geometry.dispose(); }
+  const { pos, idx } = sectorGrid(t.c, mobile ? 26 : 32); const m = new THREE.Mesh(finishGround(pos, idx, 0, 0), groundMat); m.receiveShadow = true; m.layers.enable(1); scene.add(m); t.gm = m; return m; }
+for (const t of TILES) groundFor(t);
 const outside = P => P.some(([x, z]) => !inAnyTile(x, z, 0.999));
-{ const near = latticeGeometry(0, 150, mobile ? 1.6 : 1.25, outside); const m = new THREE.Mesh(finishGround(near.pos, near.idx, 1, 0.1), groundMat); m.receiveShadow = true; scene.add(m);
-   }
+let nearGround = null;
+function buildNear() { if (nearGround) { scene.remove(nearGround); nearGround.geometry.dispose(); }
+  const near = latticeGeometry(0, 150, mobile ? 1.6 : 1.25, outside); nearGround = new THREE.Mesh(finishGround(near.pos, near.idx, 1, 0.1), groundMat); nearGround.receiveShadow = true; nearGround.layers.enable(1); scene.add(nearGround); }
+// depois do capim, até onde a câmera do jogo alcança, um chão mais ralo (malha de 3 m) emenda com as chapadas
+{ const mid = latticeGeometry(146, 238, 3, () => true); const m = new THREE.Mesh(finishGround(mid.pos, mid.idx, 1, 0.16), groundMat); m.receiveShadow = true; m.layers.enable(1); scene.add(m); }
+buildNear();
 const ringFog = { value: 0.002 }, ringFogC = { value: new THREE.Color() };
 // chapadas ao longe: um anel de relevo (700 a 2600 m) com mesas de topo plano, paredão de arenito em camadas, talude de
 // mata e o cerrado em volta; a névoa azul vai apagando com a distância (perspectiva aérea, como as montanhas de Hyrule)
-{ const NR = mobile ? 80 : 120, NA = mobile ? 220 : 340, r0 = 150, r1 = 2700, pos = [], idx = [];
+{ const NR = mobile ? 80 : 120, NA = mobile ? 220 : 340, r0 = 232, r1 = 2700, pos = [], idx = [];
   const mesaH = (x, z) => { const m = fbm(x * 0.0011 + 5, z * 0.0011 - 3, 3), m2 = fbm(x * 0.004, z * 0.004, 2);
     const plateau = THREE.MathUtils.smoothstep(m + (m2 - 0.5) * 0.06, 0.53, 0.56);          // borda nítida: o paredão
     const talus = THREE.MathUtils.smoothstep(m, 0.42, 0.535) * 0.35;                            // encosta que desce até a planície
@@ -176,28 +185,33 @@ const ringFog = { value: 0.002 }, ringFogC = { value: new THREE.Color() };
         vec3 mata=mix(vec3(0.24,0.40,0.16),vec3(0.32,0.48,0.2),vnoise(p*0.02));
         float strata=fract(vWp.y*0.11+vnoise(p*0.01)*0.6);vec3 rock=mix(vec3(0.72,0.44,0.30),vec3(0.86,0.62,0.44),smoothstep(0.3,0.7,strata))*(0.85+0.2*vnoise(vec2(p.x+p.y,vWp.y)*0.08));
         float lowSlope=smoothstep(0.85,0.6,vNy)*(1.0-smoothstep(25.0,55.0,vWp.y));
-        float dc=length(p-uC);cer=mix(mix(vec3(0.42,0.58,0.16),vec3(0.55,0.68,0.22),vnoise(p*0.03)),cer,smoothstep(200.0,700.0,dc));
+        float dc=length(p-uC);cer=mix(mix(vec3(0.45,0.53,0.27),vec3(0.53,0.59,0.31),vnoise(p*0.03)),cer,smoothstep(260.0,700.0,dc));
         vec3 col=mix(cer,mata,lowSlope*0.8+smoothstep(0.62,0.7,vnoise(p*0.006))*0.4*(1.0-steep));col=mix(col,rock,steep*smoothstep(15.0,30.0,vWp.y));
         diffuseColor.rgb=toLin(col);`)
       .replace('#include <lights_fragment_end>', LIGHT_END(0))
       .replace('#include <fog_fragment>', `{float d=length(vWp.xz-uC);float k=smoothstep(600.0,3200.0,d)*0.6+0.06;vec3 haze=mix(uSkyHor,uSkyZen,0.18+0.15*smoothstep(0.0,120.0,vWp.y));
         gl_FragColor.rgb=mix(gl_FragColor.rgb,haze,k);
-        float fd=uFogD*length(vWp-cameraPosition),f=(1.0-exp(-fd*fd))*(1.0-smoothstep(160.0,420.0,d));gl_FragColor.rgb=mix(gl_FragColor.rgb,uFogC,f);}`); };   // perto, a mesma névoa do vale
+        float fd=uFogD*length(vWp-cameraPosition),f=(1.0-exp(-fd*fd))*(1.0-smoothstep(240.0,480.0,d));gl_FragColor.rgb=mix(gl_FragColor.rgb,uFogC,f);}`); };   // perto, a mesma névoa do vale
   const m = new THREE.Mesh(g, mat); m.receiveShadow = false; scene.add(m); }
 
 // ---------- capim: lâminas na placa de vídeo, presas ao chão num retalho em volta do ponto que a câmera olha. Cada lâmina
 // lê do mapa do vale a altura do chão, a densidade, o tamanho e o tipo; curva com o vento do lugar e com a chuva; e a
 // rajada que passa clareia as pontas (as "ondas" de vento no capim, como em Hyrule)
-const FIELD = { size: 240, res: 320 };
-const fieldTex = (() => { const N = FIELD.res, d = new Float32Array(N * N * 4), x0 = CENTER[0] - FIELD.size / 2, z0 = CENTER[1] - FIELD.size / 2;
-  for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) { const x = x0 + (i + 0.5) / N * FIELD.size, z = z0 + (j + 0.5) / N * FIELD.size, k = (j * N + i) * 4;
-    const inT = inAnyTile(x, z, 0.995); d[k] = heightAt(x, z) - (inT ? 0 : 0.1); if (!inT) continue;
+// mapa do capim (altura do chão, densidade, tamanho, tipo) cobrindo o vale e o tabuleiro em volta; quando o jogador encaixa
+// uma peça, só o pedaço dela é recalculado
+const FIELD = { size: 520, res: mobile ? 560 : 720 };
+const fieldTex = (() => { const N = FIELD.res, d = new Float32Array(N * N * 4); const t = new THREE.DataTexture(d, N, N, THREE.RGBAFormat, THREE.FloatType); t.minFilter = t.magFilter = THREE.LinearFilter; return t; })();
+function fillField(xa = -1e9, za = -1e9, xb = 1e9, zb = 1e9) { const N = FIELD.res, d = fieldTex.image.data, x0 = CENTER[0] - FIELD.size / 2, z0 = CENTER[1] - FIELD.size / 2;
+  const i0 = Math.max(0, Math.floor((xa - x0) / FIELD.size * N)), i1 = Math.min(N - 1, Math.ceil((xb - x0) / FIELD.size * N)), j0 = Math.max(0, Math.floor((za - z0) / FIELD.size * N)), j1 = Math.min(N - 1, Math.ceil((zb - z0) / FIELD.size * N));
+  for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) { const x = x0 + (i + 0.5) / N * FIELD.size, z = z0 + (j + 0.5) / N * FIELD.size, k = (j * N + i) * 4;
+    const inT = inAnyTile(x, z, 0.995); if (!inT) { d[k] = 0; d[k + 1] = 0; continue; } d[k] = heightAt(x, z);
     const b = biomeAt(x, z), wd = waterDist(x, z);
     d[k + 1] = wd < 0.35 ? 0 : Math.min(1, b[0] * 1.0 + b[2] * 0.92 + b[1] * 0.2) * (0.85 + 0.3 * (vnoise(x * 0.3, z * 0.3) - 0.5));
     d[k + 1] *= blocked(x, z, -0.5) ? 0 : (1 - Math.min(1, dirtAt(x, z) * 1.4)) * (1 - 0.9 * fieldAt(x, z)) * (1 - 0.8 * rockyAt(x, z));
     d[k + 2] = (b[2] > 0.5 ? 0.6 + 0.4 * vnoise(x * 0.15, z * 0.15) : b[1] > 0.5 ? 0.24 : 0.26 + 0.24 * vnoise(x * 0.2 + 7, z * 0.2)) * (wd < 2.5 && wd > 0.35 ? 1.5 : 1);
     d[k + 3] = b[2] > 0.5 ? 1 : b[1] > 0.5 ? 0.5 : 0; }
-  const t = new THREE.DataTexture(d, N, N, THREE.RGBAFormat, THREE.FloatType); t.minFilter = t.magFilter = THREE.LinearFilter; t.needsUpdate = true; return t; })();
+  fieldTex.needsUpdate = true; }
+fillField();
 const BLADES = mobile ? 50000 : 140000;
 const bladeBase = (() => { const g = new THREE.InstancedBufferGeometry(), seg = 4, pos = [], uv = [], nor = [], idx = [];
   for (let i = 0; i <= seg; i++) { const v = i / seg, w = 1 - v * 0.92; pos.push(-0.5 * w, v, 0, 0.5 * w, v, 0); uv.push(0, v, 1, v); nor.push(0, 0, 1, 0, 0, 1); }
@@ -243,6 +257,14 @@ grassMat.onBeforeCompile = sh => { shared(sh); Object.assign(sh.uniforms, grassU
     .replace('#include <lights_fragment_end>', LIGHT_END(0) + `\n{float back=pow(max(dot(normalize(vWp-cameraPosition),uSunW),0.0),2.5);totalEmissiveRadiance+=diffuseColor.rgb*uSunC*back*0.55*vGy*cloudShadow(vWp.xz);}`);
 };
 const grass = new THREE.Group(); for (const g of bladeGeos) { const m = new THREE.Mesh(g, grassMat); m.receiveShadow = true; grass.add(m); } scene.add(grass);
+function grassFor(t, n = mobile ? 4500 : 12000) { const F = fieldTex.image.data, N = FIELD.res, sd = [], bp = [];
+  for (let i = 0, guard = 0; i < n && guard < n * 40; guard++) { const x = t.c[0] + (rnd() - 0.5) * 2 * R, z = t.c[1] + (rnd() - 0.5) * 2 * R; if (!inHex(x, z, t.c, 0.995)) continue;
+    const fi = Math.min(N - 1, Math.floor((x - CENTER[0] + FIELD.size / 2) / FIELD.size * N)), fj = Math.min(N - 1, Math.floor((z - CENTER[1] + FIELD.size / 2) / FIELD.size * N));
+    if (rnd() > F[(fj * N + fi) * 4 + 1]) continue; bp.push(x, z); sd.push(rnd(), rnd(), rnd(), rnd()); i++; }
+  const g = new THREE.InstancedBufferGeometry(); g.index = bladeBase.index; for (const k of ['position', 'uv', 'normal']) g.setAttribute(k, bladeBase.attributes[k]);
+  g.setAttribute('seed', new THREE.InstancedBufferAttribute(new Float32Array(sd), 4)); g.setAttribute('bpos', new THREE.InstancedBufferAttribute(new Float32Array(bp), 2));
+  g.instanceCount = bp.length / 2; g.userData.full = g.instanceCount; g.userData.c = t.c; g.boundingSphere = new THREE.Sphere(new THREE.Vector3(t.c[0], 0, t.c[1]), R + 2);
+  const m = new THREE.Mesh(g, grassMat); m.receiveShadow = true; grass.add(m); return m; }
 
 // ---------- árvores: copas em ramos de folhas (volume macio, luz em faixas e contorno claro), troncos tortos do cerrado,
 // mata de galeria alta, buritis em leque e ipês (amarelos na seca)
@@ -613,18 +635,20 @@ void main(){float edge=1.0-smoothstep(0.75,1.0,abs(vUv.x));
     pi.setColorAt(i, new THREE.Color(0x4f8a3a).multiplyScalar(0.8 + rnd() * 0.4)); if (rnd() < 0.25) fl.push([x + 0.15 * s2, z]); });
   pi.renderOrder = 3; pi.receiveShadow = true; scene.add(pi);
   const fg = new THREE.ConeGeometry(0.09, 0.08, 8).rotateX(Math.PI), fi = new THREE.InstancedMesh(fg, toon({ color: 0xf8f4ec }), fl.length); fl.forEach(([x, z], i) => { M.makeTranslation(x, LAKE.level + 0.07, z); fi.setMatrixAt(i, M); }); scene.add(fi); }
-let water;
-{ const pos = [], flow = [], depA = [], idx = [];
-  for (const t of TILES.filter(t => ['rio', 'mata', 'cachoeira', 'lagoa'].includes(t.kind))) { const { pos: P, idx: I } = sectorGrid(t.c, mobile ? 44 : 60), base = pos.length / 3, keep = [];
+const water = new THREE.Group(); scene.add(water);
+function waterMeshFor(tiles, withOutside) { const pos = [], flow = [], depA = [], idx = [];
+  for (const t of tiles) { const { pos: P, idx: I } = sectorGrid(t.c, mobile ? 44 : 60), base = pos.length / 3, keep = [];
     for (let i = 0; i < P.length / 3; i++) { const x = P[i * 3], z = P[i * 3 + 2], ri = riverInfo(x, z), lv = waterLevelAt(x, z), dep = lv - heightAt(x, z); keep.push(dep > -0.2 && waterDist(x, z) < 1.3);   // só onde é rio, poço ou lagoa de verdade
       const still = Math.hypot(x - SPRING[0], z - SPRING[1]) < POOL_R + 1 || lakeDist(x, z) < 3, sp = still ? 0.12 : Math.min(1, 0.4 + 0.6 * (1 - ri.d / (riverHalfWidth(ri.s) + 0.5)));
       pos.push(x, lv, z); flow.push(ri.tx * sp, ri.tz * sp); depA.push(dep); }
     for (let i = 0; i < I.length; i += 3) if (keep[I[i]] || keep[I[i + 1]] || keep[I[i + 2]]) idx.push(base + I[i], base + I[i + 1], base + I[i + 2]); }
-  const L = latticeGeometry(0, 150, 0.9, P => outside(P) && P.some(([x, z]) => waterDist(x, z) < 1.4)), base = pos.length / 3;
-  for (let i = 0; i < L.pos.length / 3; i++) { const x = L.pos[i * 3], z = L.pos[i * 3 + 2], ri = riverInfo(x, z), lv = waterLevelAt(x, z); pos.push(x, lv - 0.06, z); flow.push(ri.tx, ri.tz); depA.push(lv + 0.04 - heightAt(x, z)); }
-  for (const v of L.idx) idx.push(base + v);
+  if (withOutside) { const L = latticeGeometry(0, 150, 0.9, P => outside(P) && P.some(([x, z]) => waterDist(x, z) < 1.4)), base = pos.length / 3;
+    for (let i = 0; i < L.pos.length / 3; i++) { const x = L.pos[i * 3], z = L.pos[i * 3 + 2], ri = riverInfo(x, z), lv = waterLevelAt(x, z); pos.push(x, lv - 0.06, z); flow.push(ri.tx, ri.tz); depA.push(lv + 0.04 - heightAt(x, z)); }
+    for (const v of L.idx) idx.push(base + v); }
+  if (!idx.length) return null;
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('flow', new THREE.Float32BufferAttribute(flow, 2));
-  g.setAttribute('dep', new THREE.Float32BufferAttribute(depA, 1)); g.setIndex(idx); water = new THREE.Mesh(g, waterMat); water.renderOrder = 2; scene.add(water); }
+  g.setAttribute('dep', new THREE.Float32BufferAttribute(depA, 1)); g.setIndex(idx); const m = new THREE.Mesh(g, waterMat); m.renderOrder = 2; water.add(m); return m; }
+waterMeshFor(TILES.filter(t => ['rio', 'mata', 'cachoeira', 'lagoa'].includes(t.kind)), true);
 // o reflexo: a câmera espelhada no plano da água desenha o que fica acima dela (sem capim e sem chuva, para sair barato)
 const mirrorCam = new THREE.PerspectiveCamera(), reflClip = [new THREE.Plane(new THREE.Vector3(0, 1, 0), 0)];
 const BIAS = new THREE.Matrix4().set(0.5, 0, 0, 0.5, 0, 0.5, 0, 0.5, 0, 0, 0.5, 0.5, 0, 0, 0, 1);
@@ -702,7 +726,7 @@ $('painelBtn').addEventListener('click', () => { const p = $('painel'); p.hidden
 
 // ---------- laço: tempo, clima, desenho; se o celular sofrer, baixa a resolução
 // ---------- câmera do jogo (de cima, girando de 60 em 60°) e a câmera livre (para inspecionar os detalhes)
-const gameCam = createGameCamera(camera, renderer.domElement, { center: CENTER, radius: 100, groundY: (x, z) => Math.max(WATER_Y, heightAt(x, z)) });
+const gameCam = createGameCamera(camera, renderer.domElement, { center: CENTER, radius: 130, groundY: (x, z) => Math.max(WATER_Y, heightAt(x, z)) });
 let camMode = 'jogo'; controls.enabled = false;
 if (innerWidth < innerHeight) gameCam.state.dist = gameCam.state.distT = 150;   // celular em pé: um pouco mais longe para caber o vale
 $('rotL').addEventListener('click', () => gameCam.rotate(-1)); $('rotR').addEventListener('click', () => gameCam.rotate(1));
@@ -728,7 +752,7 @@ function grassLod() { const qk = [1, 0.65, 0.4][Q]; for (const m of grass.childr
 let Q = mobile ? 1 : 0, qSlow = 0, qFast = 0;
 window.__Q = () => Q;
 function applyQuality() { window.__Qv = Q;
-  scene.traverse(o => { if (o.isInstancedMesh && ['milho', 'girassol', 'mandioca'].includes(o.userData.regua)) o.castShadow = Q === 0 && !mobile; });   // lavoura sem sombra nos degraus mais leves const sz = [mobile ? 1536 : 2048, 1024, 768][Q]; if (sun.shadow.mapSize.x !== sz) { sun.shadow.mapSize.set(sz, sz); if (sun.shadow.map) { sun.shadow.map.dispose(); sun.shadow.map = null; } }
+  scene.traverse(o => { if (o.isInstancedMesh && ['milho', 'girassol', 'mandioca'].includes(o.userData.regua)) o.castShadow = Q === 0 && !mobile; });   /* lavoura sem sombra nos degraus mais leves */ const sz = [mobile ? 1536 : 2048, 1024, 768][Q]; if (sun.shadow.mapSize.x !== sz) { sun.shadow.mapSize.set(sz, sz); if (sun.shadow.map) { sun.shadow.map.dispose(); sun.shadow.map = null; } }
   resize(); }
 applyQuality();
 
@@ -748,33 +772,39 @@ window.__regua = () => audit(scene);
 // ---------- todas as árvores de cada espécie viram uma malha só (de ~300 desenhos para ~25): cada vértice guarda a origem da
 // sua árvore (torg), e o balanço do vento continua árvore por árvore. Os grupos originais ficam (invisíveis) para a régua e
 // para quem procura árvore pelo tipo.
-{ const buckets = new Map();
+function mergeTrees(groups) { const buckets = new Map(), out = [];
   scene.updateMatrixWorld(true);
-  for (const t of scene.children) { if (!t.isGroup || !(t.userData.kind || t.userData.regua === 'buriti' || t.userData.regua === 'pinheiro-bravo')) continue;
+  for (const t of groups) { if (!t.isGroup || !(t.userData.kind || t.userData.regua === 'buriti' || t.userData.regua === 'pinheiro-bravo')) continue;
     const o = t.getWorldPosition(new THREE.Vector3());
     for (const m of t.children) { if (!m.isMesh || m.userData.noRegua || !m.customDepthMaterial) continue;
       const g = m.geometry.clone().applyMatrix4(m.matrixWorld), n = g.attributes.position.count, a = new Float32Array(n * 3); for (let i = 0; i < n; i++) a.set([o.x, o.y, o.z], i * 3);
       g.setAttribute('torg', new THREE.BufferAttribute(a, 3)); const key = m.material.uuid; if (!buckets.has(key)) buckets.set(key, { mat: m.material, depth: m.customDepthMaterial, gs: [] });
       buckets.get(key).gs.push(g); m.visible = false; m.userData.merged = true; } }
-  for (const b of buckets.values()) { const geo = mergeGeometries(b.gs); const mm = new THREE.Mesh(geo, b.mat); mm.customDepthMaterial = b.depth; mm.castShadow = mm.receiveShadow = true; mm.frustumCulled = false; mm.userData.noRegua = true; scene.add(mm); } }
+  for (const b of buckets.values()) { const geo = mergeGeometries(b.gs); const mm = new THREE.Mesh(geo, b.mat); mm.customDepthMaterial = b.depth; mm.castShadow = mm.receiveShadow = true; mm.frustumCulled = false; mm.userData.noRegua = true; mm.layers.enable(1); scene.add(mm); out.push(mm); } return out; }
+mergeTrees(scene.children.slice());
 // o que aparece no reflexo da água (camada 1): céu, chão, chapadas, árvores, construções grandes, nuvens
 { const big = ['casa', 'capela (com a torre)', 'venda', 'sobrado', 'coreto', 'moinho (com as pás)', 'celeiro', 'paiol'];
   scene.traverse(o => { if (o === skyDome || (o.isMesh && (o.material === groundMat || o.material.type === 'MeshToonMaterial' && o.geometry.attributes.position.count > 30000) && !o.isSkinnedMesh)) o.layers.enable(1); });
   for (const o of scene.children) { if (big.includes(o.userData.regua) || (o.isMesh && o.userData.noRegua && o.customDepthMaterial) || o.isInstancedMesh && o.renderOrder === -5) o.traverse(c => c.layers.enable(1)); } }
+// ---------- o jogo: as peças do vale entram no tabuleiro com as bordas do jogo 2D (A água, B mata, C lavoura, V vila, G campo),
+// na ordem [L, NE, NO, O, SO, SE]; o rio entra pela nascente e sai pela borda leste da cachoeira
+const EDGES0 = { rio: 'AGGGGG', mata: 'ABBABB', cachoeira: 'ABBAGG', pasto: 'GGGGGG', cerrado: 'GGGGGG', lagoa: 'GGGGGG', vila: 'VVVVVV', praca: 'VVVVVV', lavoura: 'CCCCCC', roca: 'CCCCCC', cerradao: 'BBBBBB' };
+const board = buildBoard({ scene, camera, dom: renderer.domElement, R, TILES, hexCenter, heightAt, waterDist, inHex, edgeMid, DIRS, sectorType, PATHS, addRiver, ST, CENTER,
+  edgesOf: t => EDGES0[t.kind].split(''), props, groundFor, waterFor: t => waterMeshFor([t], false), fillField, grassFor, place, makeTree, makeTermite, makeBuriti, fieldAt, blocked, mobile, mergeTrees, buildNear });
 let lastStrikes = 0;
 const clock = new THREE.Clock(); let fpsT = 0, fpsT0 = 0, fpsN = 0, slow = 0;
 const fmtH = h => `${String(Math.floor(h) % 24).padStart(2, '0')}:${String(Math.round((h % 1) * 60) % 60).padStart(2, '0')}`;
 function frame() {
-  const dt = Math.min(window.__dtMax || 0.1, clock.getDelta());   // __dtMax: só para os testes num computador sem placa de vídeo U.uTime.value += dt; U.uFlowClk.value += dt * (0.55 + U.uRain.value * 0.5);
+  const dt = Math.min(window.__dtMax || 0.1, clock.getDelta());   /* __dtMax: só para os testes num computador sem placa de vídeo */ U.uTime.value += dt; U.uFlowClk.value += dt * (0.55 + U.uRain.value * 0.5);
   const c = climate(dt);
   if (ST.cam !== camMode) { camMode = ST.cam; const game = camMode === 'jogo'; gameCam.state.enabled = game; controls.enabled = !game; $('giro').hidden = !game;
     if (game) { gameCam.state.fx = controls.target.x; gameCam.state.fz = controls.target.z; } else { controls.target.copy(gameCam.focus); } }
   if (camMode === 'jogo') gameCam.update(dt); else controls.update();
   if (!!ST.regua !== reguaOn) { reguaOn = !!ST.regua; showRegua(reguaOn); }
   if (people && reguaOn) for (const p of people.children) p.rotation.y = Math.atan2(camera.position.x - p.position.x, camera.position.z - p.position.z);
-  if (camMode === 'jogo') U.uFocus.value.copy(gameCam.focus); else U.uFocus.value.copy(camera.position).add(camera.getWorldDirection(_v).multiplyScalar(0.01));   // câmera livre: só some o que encosta na lente fitShadow(); grassLod();
-  const ctx = { pxPerUnit: renderer.domElement.height / (2 * Math.tan(camera.fov * Math.PI / 360)), hour: ST.hour }; if (window.__petalPx) window.__petalPx.value = ctx.pxPerUnit; if (window.__mistPx) window.__mistPx.value = ctx.pxPerUnit; window.__hour = ST.hour; ctx.people = gente.people; props.update(dt, ctx); fauna.update(dt, ctx); gente.update(dt);
-  if ((skyfx.fx.strikes || 0) !== lastStrikes) { lastStrikes = skyfx.fx.strikes || 0; setTimeout(() => { fauna.startle(); gente.startle(); }, 250); }   // o trovão logo depois do clarão assusta gente e bicho clouds.update(dt, camera); ctx.Rr = c.Rr; ctx.hour = ST.hour; skyfx.update(dt, ctx);
+  if (camMode === 'jogo') U.uFocus.value.copy(gameCam.focus); else U.uFocus.value.copy(camera.position).add(camera.getWorldDirection(_v).multiplyScalar(0.01));   /* câmera livre: só some o que encosta na lente */ fitShadow(); grassLod();
+  const ctx = { pxPerUnit: renderer.domElement.height / (2 * Math.tan(camera.fov * Math.PI / 360)), hour: ST.hour }; if (window.__petalPx) window.__petalPx.value = ctx.pxPerUnit; if (window.__mistPx) window.__mistPx.value = ctx.pxPerUnit; window.__hour = ST.hour; ctx.people = gente.people; props.update(dt, ctx); fauna.update(dt, ctx); gente.update(dt); board.update(dt);
+  if ((skyfx.fx.strikes || 0) !== lastStrikes) { lastStrikes = skyfx.fx.strikes || 0; setTimeout(() => { fauna.startle(); gente.startle(); }, 250); }   /* o trovão logo depois do clarão assusta gente e bicho */ clouds.update(dt, camera); ctx.Rr = c.Rr; ctx.hour = ST.hour; skyfx.update(dt, ctx);
   { const f = skyfx.fx.flash; if (f > 0) { skyLight.intensity += f * 3; U.uSkyZen.value.lerp(new THREE.Color(0.85, 0.88, 1), f * 0.5); U.uSkyHor.value.lerp(new THREE.Color(0.9, 0.92, 1), f * 0.45); } }   // clarão do raio
   ringFog.value = scene.fog.density; ringFogC.value.copy(scene.fog.color);
   renderReflection();
@@ -789,4 +819,4 @@ function frame() {
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
-window.__cam = camera; window.__tiles = TILES; window.__fall = FALL; window.__previa = { gente, skyfx, gameCam,  ST, U, renderer, scene, camera, controls, fauna, clouds };
+window.__cam = camera; window.__tiles = TILES; window.__fall = FALL; window.__previa = { gente, skyfx, gameCam,  ST, U, renderer, scene, camera, controls, fauna, clouds, board };

@@ -1,0 +1,482 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta charset="utf-8">
+<title>Afluente · núcleo v5</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Nunito:wght@600;700;800&display=swap">
+<style>
+/* Layout: o vale ocupa a tela; uma faixa fina em cima (gente, pilha, estação, água) e a mão embaixo, como num jogo de mesa. */
+:root {
+  --bg: #dfe8cc; --bg-seca: #eadcb6; --card: #fffdf7; --ink: #1d3b3a; --muted: #5d716b; --line: rgba(29,59,58,.16);
+  --water: #2f9fbf; --ok: #3f9a4a; --warn: #c8742c; --bad: #b2452f; --shadow: 0 4px 18px rgba(29,59,58,.16);
+  --f-title: "Baloo 2", "Trebuchet MS", system-ui, sans-serif; --f-body: Nunito, "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #1b2a24; --bg-seca: #2c261b; --card: #22322d; --ink: #e9f0e2; --muted: #a6b8ae; --line: rgba(233,240,226,.16);
+  --water: #5cc3df; --ok: #6cc477; --warn: #e39a50; --bad: #e07a62; --shadow: 0 4px 18px rgba(0,0,0,.4); color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #1b2a24; --bg-seca: #2c261b; --card: #22322d; --ink: #e9f0e2; --muted: #a6b8ae; --line: rgba(233,240,226,.16);
+  --water: #5cc3df; --ok: #6cc477; --warn: #e39a50; --bad: #e07a62; --shadow: 0 4px 18px rgba(0,0,0,.4); color-scheme: dark }
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); overflow: hidden; transition: background .8s; touch-action: none; }
+body.seca { background: var(--bg-seca); }
+#vale { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible { outline: 3px solid var(--water); outline-offset: 2px; }
+.topo { position: fixed; top: env(safe-area-inset-top, 0px); left: 0; right: 0; display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+  padding-block: 10px; padding-left: max(12px, env(safe-area-inset-left, 0px)); padding-right: max(12px, env(safe-area-inset-right, 0px)); pointer-events: none; }
+.topo > * { pointer-events: auto; }
+.marca { font: 800 22px/1 var(--f-title); margin-right: 4px; }
+.chip { background: var(--card); border-radius: 999px; padding: 6px 12px; box-shadow: var(--shadow); font-weight: 800; font-size: 14px; display: flex; gap: 6px; align-items: center; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.chip small { font-weight: 700; color: var(--muted); font-size: 12px; }
+.chip.agua b { color: var(--water); }
+.chip.alerta { outline: 2px solid var(--warn); }
+.dots { display: inline-flex; gap: 3px; }
+.dots i { width: 7px; height: 7px; border-radius: 50%; background: var(--line); }
+.dots i.on { background: var(--ink); }
+.dots.seca i.on { background: var(--warn); }
+.topo .dir { margin-left: auto; display: flex; gap: 8px; }
+.redondo { width: 38px; height: 38px; border-radius: 50%; border: 0; background: var(--card); box-shadow: var(--shadow); font-weight: 800; font-size: 16px; }
+.mao { position: fixed; left: 0; right: 0; bottom: 0; display: flex; justify-content: center; pointer-events: none;
+  padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px)); padding-left: max(12px, env(safe-area-inset-left, 0px)); padding-right: max(12px, env(safe-area-inset-right, 0px)); }
+.painel { pointer-events: auto; background: var(--card); border-radius: 22px; box-shadow: var(--shadow); padding: 10px 12px; display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; width: min(520px, 100%); align-items: center; }
+.pecas { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+#cMao { width: 84px; height: 84px; touch-action: manipulation; cursor: pointer; }
+.prox { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--muted); font-weight: 700; }
+#cProx { width: 26px; height: 26px; }
+.lado { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+#msg { font-size: 14px; line-height: 1.35; min-height: 38px; }
+#msg .ok { color: var(--ok); font-weight: 800; } #msg .ruim { color: var(--bad); font-weight: 800; } #msg .agua { color: var(--water); font-weight: 800; } #msg .dica { color: var(--muted); }
+.botoes { display: flex; gap: 6px; flex-wrap: wrap; }
+.botoes button { border: 1px solid var(--line); background: transparent; border-radius: 12px; min-height: 40px; padding: 0 12px; font-weight: 800; }
+#bColocar { background: var(--ink); color: var(--card); border-color: transparent; flex: 1; min-width: 120px; font-family: var(--f-title); font-size: 16px; }
+#bColocar:disabled { opacity: .35; cursor: default; }
+.toast { position: fixed; left: 50%; transform: translateX(-50%); top: calc(60px + env(safe-area-inset-top, 0px)); display: flex; flex-direction: column; gap: 6px; align-items: center; pointer-events: none; width: min(460px, calc(100% - 32px)); }
+.toast div { background: var(--ink); color: var(--card); border-radius: 14px; padding: 8px 14px; font-weight: 700; font-size: 14px; box-shadow: var(--shadow); text-align: center; animation: entra .35s ease-out; }
+@keyframes entra { from { transform: translateY(-8px); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .toast div { animation: none; } body { transition: none; } }
+.capa { position: fixed; inset: 0; background: rgba(20,35,30,.45); display: flex; align-items: center; justify-content: center; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 16px; z-index: 5; }
+.cartao { background: var(--card); border-radius: 22px; box-shadow: var(--shadow); padding: 18px; width: min(460px, 100%); max-height: 100%; overflow: auto; display: flex; flex-direction: column; gap: 12px; }
+.cartao h2 { font: 800 24px/1.1 var(--f-title); margin: 0; text-wrap: balance; }
+.cartao p { margin: 0; line-height: 1.45; }
+.regras { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px; line-height: 1.4; }
+.pacotes { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.pacote { border: 2px solid var(--line); border-radius: 16px; background: transparent; padding: 10px; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.pacote:hover, .pacote:focus-visible { border-color: var(--ink); }
+.pacote b { font: 800 18px/1 var(--f-title); }
+.pacote small { color: var(--muted); font-weight: 700; text-align: center; }
+.pacote .tres { display: flex; gap: 2px; }
+.pacote canvas { width: 46px; height: 46px; }
+.grande { border: 0; border-radius: 14px; background: var(--ink); color: var(--card); min-height: 46px; font: 800 17px var(--f-title); }
+.num { font: 800 44px/1 var(--f-title); }
+@media (max-width: 520px) { .marca { display: none; } .topo { gap: 6px; padding-block: 8px; } .chip { padding: 5px 9px; font-size: 13px; } .chip small { font-size: 11px; } .redondo { width: 34px; height: 34px; }
+  .dots i { width: 5px; height: 5px; } #cMao { width: 72px; height: 72px; } #msg { font-size: 13px; } }
+</style>
+</head>
+<body>
+
+<canvas id="vale" aria-label="O vale: toque numa casa vazia para colocar a peça"></canvas>
+<div class="topo" id="topo">
+  <span class="marca">Afluente</span>
+  <span class="chip" title="Gente no vale (pontos)">👥 <b id="tGente">0</b></span>
+  <span class="chip" title="Peças na pilha">🂠 <b id="tPilha">22</b></span>
+  <span class="chip" id="tEst" title="Estação"></span>
+  <span class="chip agua" id="tAgua" title="Água: usada / vazão"></span>
+  <span class="dir"><button class="redondo" id="bDesfazer" aria-label="Desfazer a última peça">↶</button><button class="redondo" id="bAjuda" aria-label="Como se joga">?</button></span>
+</div>
+<div class="toast" id="toast" aria-live="polite"></div>
+<div class="mao"><div class="painel" id="painel">
+  <div class="pecas"><canvas id="cMao" width="168" height="168" aria-label="Peça na mão (toque para girar)"></canvas>
+    <div class="prox">depois <canvas id="cProx" width="52" height="52"></canvas></div></div>
+  <div class="lado"><div id="msg"></div>
+    <div class="botoes"><button id="bGirar" aria-label="Girar a peça">⟳ Girar</button><button id="bColocar" disabled>Colocar</button><button id="bPassar" hidden>Passar a peça</button></div></div>
+</div></div>
+<div class="capa" id="cAjuda" hidden><div class="cartao" role="dialog" aria-labelledby="hAjuda">
+  <h2 id="hAjuda">O rio é o orçamento</h2>
+  <ol class="regras">
+    <li><b>Encaixe</b> a peça numa casa vazia. Água só encosta em água.</li>
+    <li>A <b>nascente</b> dá <b style="color:var(--water)">💧</b>. Leve o rio até um <b>olho-d'água</b> (as gotas no mapa) e a vazão aumenta.</li>
+    <li><b>Lavoura e vila gastam água</b>: cada peça delas encostada no rio usa 1 💧. A água chega primeiro em quem está perto da nascente; quando acaba, o resto fica <b>seco</b>. O rio afina à medida que é usado.</li>
+    <li>Cada <b>vila pede</b> uma coisa na plaquinha. Atendeu: a vila cresce (gente), ganha <b>+2 peças</b> e você escolhe o próximo pacote de peças.</li>
+    <li>A cada 8 jogadas vem a <b>seca</b> (4 jogadas): as nascentes dão menos, e o quanto você vê antes. Na chegada da seca, a colheita: 1 peça a cada 2 lavouras que continuam com água.</li>
+  </ol>
+  <p>A pilha é a vida: quando acaba, o jogo acaba. Toque numa casa para ver o que a peça faria, toque de novo (ou ⟳) para girar e confirme com <b>Colocar</b>.</p>
+  <button class="grande" id="bFechaAjuda">Jogar</button>
+</div></div>
+<div class="capa" id="cPacote" hidden><div class="cartao" role="dialog" aria-labelledby="hPacote">
+  <h2 id="hPacote">A vila cresceu! O que vem agora?</h2>
+  <p>As 3 peças do pacote escolhido são as próximas da pilha.</p>
+  <div class="pacotes" id="pacotes"></div>
+</div></div>
+<div class="capa" id="cFim" hidden><div class="cartao" role="dialog" aria-labelledby="hFim">
+  <h2 id="hFim">A pilha acabou</h2>
+  <p><span class="num" id="fGente">0</span> pessoas vivem no vale.</p>
+  <p id="fResumo"></p>
+  <button class="grande" id="bDeNovo">Jogar outro vale</button>
+</div></div>
+
+<script>
+(() => {
+// Afluente, núcleo v5: "o rio é o orçamento". Só a lógica (sem desenho), para o protótipo e para o simulador.
+//
+// As regras, em cinco frases:
+//  1. Encaixar: cada peça tem 6 lados (A água, B mata, C lavoura, V vila, G campo). Água só encosta em água.
+//  2. O rio tem vazão: cada nascente dá água (💧). Ligar o rio a um olho-d'água do mapa soma a vazão dele.
+//  3. Lavoura e vila gastam água: cada peça com lavoura ou vila encostada no rio usa 1 💧. A água chega primeiro em quem
+//     está mais perto da nascente; quando a vazão acaba, o resto fica seco.
+//  4. Cada vila pede uma coisa por vez (plaquinha). Atendeu: a vila cresce (gente = pontos), ganha 1 peça e você
+//     escolhe entre dois pacotes de peças.
+//  5. A seca: a cada 8 jogadas de Águas vêm 4 de Seca, e as nascentes dão menos (o quanto, você vê antes). Na chegada da
+//     seca, a colheita: 1 peça a cada 2 lavouras que continuam com água. A pilha é a vida: acabou, acabou.
+//  (+ peça perfeita, com os 6 lados combinando, devolve 1 peça.)
+
+const DIRS = [[1, 0], [1, -1], [0, -1], [-1, 0], [-1, 1], [0, 1]];   // L, NE, NO, O, SO, SE
+const opp = d => (d + 3) % 6;
+const K = (q, r) => (q + 512) * 1024 + (r + 512);
+const KQ = k => Math.floor(k / 1024) - 512, KR = k => (k % 1024) - 512;
+const nbk = (k, d) => K(KQ(k) + DIRS[d][0], KR(k) + DIRS[d][1]);
+const rot = (e, r) => e.map((_, i) => e[(i - r + 6) % 6]);
+const hexDist = (q, r) => (Math.abs(q) + Math.abs(r) + Math.abs(q + r)) / 2;
+const LAND = ['B', 'C', 'V', 'G'];
+const NOME = { A: 'rio', B: 'mata', C: 'lavoura', V: 'vila', G: 'campo' };
+
+function rngOf(str) { let h = 1779033703 ^ str.length; for (let i = 0; i < str.length; i++) { h = Math.imul(h ^ str.charCodeAt(i), 3432918353); h = h << 13 | h >>> 19; }
+  let a = h >>> 0; return () => { a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const pickW = (rng, list) => { const tot = list.reduce((s, x) => s + x[1], 0); let r = rng() * tot; for (const [v, w] of list) if ((r -= w) < 0) return v; return list[list.length - 1][0]; };
+
+// ---------- peças: temas (a pilha comum e os pacotes)
+const TEMAS = {
+  comum: { nome: 'Vale', land: [['B', 30], ['C', 27], ['V', 15], ['G', 28]], rio: 0.3 },
+  roca: { nome: 'Roça', icone: '🌾', land: [['C', 70], ['G', 20], ['V', 10]], rio: 0.25, desc: 'lavouras' },
+  mata: { nome: 'Mata', icone: '🌳', land: [['B', 75], ['G', 25]], rio: 0.2, desc: 'bosques' },
+  rio: { nome: 'Rio', icone: '💧', land: [['G', 45], ['B', 30], ['C', 25]], rio: 1, desc: 'trechos de rio' },
+  vila: { nome: 'Vila', icone: '🏠', land: [['V', 70], ['C', 15], ['G', 15]], rio: 0.15, desc: 'casas' },
+};
+const SHAPES = [[[0, 3], 3], [[0, 2], 4], [[0, 1], 1], [[0, 2, 4], 1.2], [[0], 0.6]];   // reto, curva, curva fechada, forquilha, fim
+function genTile(rng, tema = 'comum') { const T = TEMAS[tema], a = pickW(rng, T.land); let e;
+  if (rng() < T.rio) { const sh = pickW(rng, SHAPES), b = rng() < 0.6 ? a : pickW(rng, T.land); e = [0, 1, 2, 3, 4, 5].map(i => sh.includes(i) ? 'A' : i < 3 ? a : b); }
+  else if (rng() < 0.3) e = Array(6).fill(a);
+  else { const b = pickW(rng, T.land), n = 1 + Math.floor(rng() * 3); e = [0, 1, 2, 3, 4, 5].map(i => i < n ? b : a); }
+  return { e: rot(e, Math.floor(rng() * 6)), tema }; }
+
+// ---------- pedidos das vilas
+const PEDIDOS = {
+  agua: { icone: '💧', txt: () => 'água na vila' },
+  lavoura: { icone: '🌾', txt: n => `${n} lavoura${n > 1 ? 's' : ''} com água perto` },
+  mata: { icone: '🌳', txt: n => `mata de ${n} peças encostada` },
+  crescer: { icone: '🏠', txt: n => `vila com ${n} peças` },
+  pasto: { icone: '🐄', txt: n => `${n} campo${n > 1 ? 's' : ''} com água perto` },
+};
+
+function Game({ seed = 'vale', pilha = 22, nascente = 4, aguas = 8, seca = 4 } = {}) {
+  const rng = rngOf('v5:' + seed), board = new Map();
+  const S = { left: pilha, gente: 0, season: 1, clock: 0, order: 0, queue: [], vilas: new Map(), springs: new Map(), escolha: [], log: [], over: false, aguas, seca, ano: 1 };
+  const put = (q, r, e, extra = {}) => board.set(K(q, r), { q, r, e: e.slice(), order: S.order++, ...extra });
+  put(0, 0, ['A', 'G', 'G', 'A', 'G', 'G'], { src: nascente, fixed: true, nasc: true });   // a nascente: o rio sai para leste e para oeste
+  put(0, 1, ['V', 'V', 'V', 'V', 'V', 'V'], { fixed: true });                          // a primeira vila, encostada no rio
+  const isSeca = () => S.season % 2 === 0;
+  const flowOf = (src, dry) => dry ? Math.max(1, Math.round(src * 0.6)) : src;
+
+  // ---------- olhos-d'água: aparecem a 2–3 casas da beira do vale; sempre há 3 à vista
+  function frontier() { const out = new Set(); for (const k of board.keys()) for (let d = 0; d < 6; d++) { const n = nbk(k, d); if (!board.has(n)) out.add(n); } return out; }
+  function spawnSprings() { let guard = 0; while (S.springs.size < 3 && guard++ < 400) {
+      const fr = [...frontier()], f = fr[Math.floor(rng() * fr.length)], d = Math.floor(rng() * 6), k = nbk(nbk(f, d), Math.floor(rng() * 6));
+      if (board.has(k) || S.springs.has(k)) continue; let near = false; for (let i = 0; i < 6; i++) if (board.has(nbk(k, i))) near = true; if (near) continue;
+      let close = false; for (const s of S.springs.keys()) if (hexDist(KQ(s) - KQ(k), KR(s) - KR(k)) < 3) close = true; if (close) continue;
+      S.springs.set(k, rng() < 0.3 ? 3 : 2); } }
+  spawnSprings();
+
+  // ---------- a pilha: a peça na mão e a próxima são sempre conhecidas; os pacotes entram na frente
+  const ensure = () => { while (S.queue.length < 2) S.queue.push(genTile(rng)); };
+  const hand = () => { ensure(); return S.queue[0]; }, next = () => { ensure(); return S.queue[1]; };
+
+  // ---------- encaixe
+  function legal(B, k, e) { for (let d = 0; d < 6; d++) { const n = B.get(nbk(k, d)); if (!n) continue; const a = e[d] === 'A', b = n.e[opp(d)] === 'A'; if (a !== b) return false; } return true; }
+  function slots() { const out = []; for (const k of frontier()) out.push(k); return out; }
+
+  // ---------- a água: redes de rio (lados A encostados), vazão das nascentes, quem gasta e quem fica seco
+  function water(B = board, dry = isSeca()) {
+    const river = [...B.entries()].filter(([, t]) => t.e.includes('A')), net = new Map(); let nid = 0;
+    for (const [k] of river) { if (net.has(k)) continue; const st = [k]; net.set(k, nid);
+      while (st.length) { const c = st.pop(), t = B.get(c); for (let d = 0; d < 6; d++) { if (t.e[d] !== 'A') continue; const n = nbk(c, d), u = B.get(n); if (!u || net.has(n) || u.e[opp(d)] !== 'A') continue; net.set(n, nid); st.push(n); } } nid++; }
+    const nets = Array.from({ length: nid }, () => ({ flow: 0, used: 0, tiles: [], dryUsed: 0 }));
+    for (const [k, t] of river) { const n = nets[net.get(k)]; n.tiles.push(k); if (t.src) n.flow += flowOf(t.src, dry); }
+    // distância (em peças de rio) até a nascente mais próxima da rede
+    const dist = new Map(), q = []; for (const [k, t] of river) if (t.src) { dist.set(k, 0); q.push(k); }
+    while (q.length) { const c = q.shift(), t = B.get(c); for (let d = 0; d < 6; d++) { if (t.e[d] !== 'A') continue; const n = nbk(c, d), u = B.get(n); if (!u || dist.has(n) || u.e[opp(d)] !== 'A') continue; dist.set(n, dist.get(c) + 1); q.push(n); } }
+    // quem gasta: peça com lavoura ou vila que é rio ou encosta numa peça de rio (pega da rede onde a água chega antes)
+    const cons = [];
+    for (const [k, t] of B) { if (!t.e.includes('C') && !t.e.includes('V')) continue; let best = null;
+      const consider = (rk, add) => { if (!net.has(rk) || !dist.has(rk)) return; const d = dist.get(rk) + add; if (!best || d < best.d) best = { d, n: net.get(rk) }; };
+      if (net.has(k)) consider(k, 0); for (let d = 0; d < 6; d++) consider(nbk(k, d), 1);
+      if (best) cons.push({ k, ...best, order: t.order }); }
+    cons.sort((a, b) => a.d - b.d || a.order - b.order);
+    const wet = new Set(), dryC = new Set();
+    for (const c of cons) { const n = nets[c.n]; if (n.used < n.flow) { n.used++; wet.add(c.k); } else dryC.add(c.k); }
+    // o que sobra de água em cada trecho (para desenhar o rio mais grosso ou mais fino)
+    const remain = new Map(); for (const [k] of river) { if (!dist.has(k)) { remain.set(k, 0); continue; } const n = nets[net.get(k)], d = dist.get(k);
+      let u = 0; for (const c of cons) if (c.n === net.get(k) && wet.has(c.k) && c.d <= d) u++; remain.set(k, Math.max(0, n.flow - u)); }
+    // campo verde: peça com campo encostada em rio com água
+    const green = new Set(); for (const [k, t] of B) { if (!t.e.includes('G')) continue; const ok = rk => net.has(rk) && remain.get(rk) > 0; if (ok(k)) { green.add(k); continue; } for (let d = 0; d < 6; d++) if (ok(nbk(k, d))) { green.add(k); break; } }
+    return { net, nets, dist, wet, dry: dryC, remain, green, cons }; }
+
+  // ---------- regiões (lados iguais encostados): vilas e matas
+  function regions(B, type) { const id = new Map(), out = []; for (const [k, t] of B) { if (!t.e.includes(type) || id.has(k)) continue; const g = new Set([k]), st = [k]; id.set(k, out.length);
+      while (st.length) { const c = st.pop(), u = B.get(c); for (let d = 0; d < 6; d++) { if (u.e[d] !== type) continue; const n = nbk(c, d), v = B.get(n); if (!v || id.has(n) || v.e[opp(d)] !== type) continue; id.set(n, out.length); g.add(n); st.push(n); } } out.push(g); }
+    return { id, out }; }
+  const ringOf = (B, tiles) => { const r = new Set(); for (const k of tiles) for (let d = 0; d < 6; d++) { const n = nbk(k, d); if (B.has(n) && !tiles.has(n)) r.add(n); } return r; };
+  function progress(B, W, vtiles, req, M = regions(B, 'B')) { const ring = ringOf(B, vtiles), around = new Set([...vtiles, ...ring]);
+    if (req.t === 'agua') return [...vtiles].some(k => W.wet.has(k)) ? 1 : 0;
+    if (req.t === 'lavoura') return [...around].filter(k => B.get(k).e.includes('C') && W.wet.has(k)).length;
+    if (req.t === 'pasto') return [...around].filter(k => B.get(k).e.includes('G') && W.green.has(k)).length;
+    if (req.t === 'crescer') return vtiles.size;
+    if (req.t === 'mata') { let m = 0; for (const g of M.out) { let touch = false; for (const k of g) if (around.has(k)) { touch = true; break; } if (touch) m = Math.max(m, g.size); } return m; }
+    return 0; }
+  function newReq(v, vt, W, prevT) { const L = v.lvl, opts = [];
+    if (![...vt].some(k => W.wet.has(k))) opts.push({ t: 'agua', n: 1, w: 4 });
+    opts.push({ t: 'lavoura', n: Math.min(4, L + 1), w: 3 }, { t: 'mata', n: Math.min(6, L + 2), w: 2 }, { t: 'crescer', n: vt.size + 1 + (L > 2 ? 1 : 0), w: 2 }, { t: 'pasto', n: Math.min(3, 1 + (L >> 1)), w: 1.5 });
+    const M = regions(board, 'B'), ok = opts.filter(o => o.t !== prevT && progress(board, W, vt, o, M) < o.n); const o = pickW(rng, (ok.length ? ok : opts).map(o => [o, o.w])); return { t: o.t, n: o.n }; }
+  // vilas com nome fixo: a de peça mais antiga dá o nome quando duas se juntam (fica o nível maior)
+  function syncVilas(W) { const R = regions(board, 'V'), seen = new Set();
+    for (const g of R.out) { const keys = [...g].sort((a, b) => board.get(a).order - board.get(b).order), id = keys[0]; seen.add(id);
+      if (!S.vilas.has(id)) { let lvl = 1, req = null; for (const k of keys.slice(1)) if (S.vilas.has(k)) { const o = S.vilas.get(k); if (o.lvl >= lvl) { lvl = o.lvl; req = o.req; } S.vilas.delete(k); }
+        const v = { id, lvl, req, tiles: g }; if (!v.req) v.req = newReq(v, g, W); S.vilas.set(id, v); }
+      else { const v = S.vilas.get(id); v.tiles = g; for (const k of keys.slice(1)) if (S.vilas.has(k) && k !== id) { const o = S.vilas.get(k); v.lvl = Math.max(v.lvl, o.lvl); S.vilas.delete(k); } } }
+    for (const id of [...S.vilas.keys()]) if (!seen.has(id)) S.vilas.delete(id); }
+  syncVilas(water());
+
+  // ---------- prévia de uma jogada (sem mudar nada)
+  function simulate(k, e) { const B2 = new Map(board), t = { q: KQ(k), r: KR(k), e: e.slice(), order: S.order };
+    if (S.springs.has(k) && e.includes('A')) t.src = S.springs.get(k); B2.set(k, t);
+    const W0 = water(), W1 = water(B2); let match = 0, nbs = 0; const marks = [];
+    for (let d = 0; d < 6; d++) { const n = board.get(nbk(k, d)); if (!n) { marks.push(null); continue; } nbs++; const ok = n.e[opp(d)] === e[d]; marks.push(ok); if (ok) match++; }
+    const perfect = nbs === 6 && match === 6;
+    // o que muda para cada vila (pelas regiões novas)
+    const R = regions(B2, 'V'), M = regions(B2, 'B'), vil = [];
+    for (const v of S.vilas.values()) { const g = R.out[R.id.get(v.id)]; if (!g) continue; const before = progress(board, W0, v.tiles, v.req), after = progress(B2, W1, g, v.req, M); vil.push({ id: v.id, req: v.req, before, after, done: after >= v.req.n }); }
+    const lost = [...W0.wet].filter(x => !W1.wet.has(x)), gained = [...W1.wet].filter(x => !W0.wet.has(x) && x !== k);
+    return { k, e, legal: legal(board, k, e), marks, perfect, spring: t.src || 0, buried: S.springs.has(k) && !t.src ? S.springs.get(k) : 0, wetSelf: W1.wet.has(k), drySelf: W1.dry.has(k), lost, gained, vil, W: W1 }; }
+  function options(k) { const base = hand().e, seen = new Set(), out = []; for (let r = 0; r < 6; r++) { const e = rot(base, r), sig = e.join(''); if (seen.has(sig) || !legal(board, k, e)) continue; seen.add(sig); out.push({ r, ...simulate(k, e) }); } return out; }
+
+  // ---------- jogar
+  function place(k, e) { if (S.over || S.escolha.length) return null; const pv = simulate(k, e); if (!pv.legal) return null; const ev = [];
+    const t = { q: KQ(k), r: KR(k), e: e.slice(), order: S.order++ }; if (pv.spring) { t.src = pv.spring; ev.push({ t: 'nascente', txt: `Olho-d'água ligado: +${pv.spring} 💧`, k }); }
+    if (pv.buried) ev.push({ t: 'soterrou', txt: 'O olho-d\'água ficou debaixo da terra', k });
+    S.springs.delete(k); board.set(k, t); S.queue.shift(); S.left--;
+    if (pv.perfect) { S.left++; ev.push({ t: 'perfeita', txt: 'Peça perfeita: +1 peça', k }); }
+    let W = water(); syncVilas(W);
+    // pedidos atendidos: a vila cresce, ganha gente e 1 peça, e abre a escolha de pacote
+    for (const v of S.vilas.values()) { if (progress(board, W, v.tiles, v.req) < v.req.n) continue; v.lvl++; const g = 2 * v.lvl; S.gente += g; S.left += 2;
+      ev.push({ t: 'pedido', txt: `Vila atendida (${PEDIDOS[v.req.t].txt(v.req.n)}): +${g} gente, +2 peças`, k: v.id, lvl: v.lvl });
+      v.req = newReq(v, v.tiles, W, v.req.t); S.escolha.push(packs()); }
+    // estações
+    S.clock++; const len = isSeca() ? S.seca : S.aguas;
+    if (S.clock >= len) { S.clock = 0; S.season++;
+      if (isSeca()) { W = water(board, true); const lav = [...W.wet].filter(x => board.get(x).e.includes('C')).length, h = Math.floor(lav / 2); S.left += h;
+        ev.push({ t: 'seca', txt: `Começa a seca: as nascentes dão menos. Colheita: ${lav} lavoura${lav === 1 ? '' : 's'} com água, +${h} peça${h === 1 ? '' : 's'}` }); }
+      else { S.ano++; ev.push({ t: 'chuva', txt: 'As chuvas voltaram: as nascentes enchem de novo' }); } }
+    spawnSprings();
+    if (S.left <= 0 && !S.escolha.length) S.over = true;
+    S.log.push({ k, e, ev }); return { ev, pv }; }
+  // pacotes: dois temas diferentes, 3 peças cada; o escolhido entra na frente da pilha (depois da peça na mão)
+  function packs() { const temas = ['roca', 'mata', 'rio', 'vila'], a = temas.splice(Math.floor(rng() * 4), 1)[0], b = temas[Math.floor(rng() * 3)];
+    return [a, b].map(tm => ({ tema: tm, tiles: [0, 1, 2].map(() => genTile(rng, tm)) })); }
+  function choose(i) { const ch = S.escolha.shift(); if (!ch) return; const p = ch[i]; ensure();   /* o pacote não aumenta a pilha: decide o que vem */ S.queue.splice(1, 0, ...p.tiles); if (S.left <= 0 && !S.escolha.length) S.over = true; }
+  function skip() { if (S.over) return; S.queue.shift(); S.left--; S.clock++; if (S.left <= 0) S.over = true; }
+  const fits = () => slots().some(k => options(k).length > 0);
+  // o que a seca vai fazer com a água de hoje (para avisar antes)
+  function secaPreview() { const W = water(board, true); return { nets: W.nets, dry: W.dry, wet: W.wet }; }
+
+  return { S, board, hand, next, slots, options, simulate, place, choose, skip, fits, water: (dry) => water(board, dry), secaPreview, isSeca, regions: t => regions(board, t), progress: (v) => progress(board, water(), v.tiles, v.req), seasonLen: () => isSeca() ? S.seca : S.aguas };
+}
+
+
+// ---------- estado da partida (desfazer = refazer tudo desde o começo, sem a última peça)
+let seed = 'vale-' + Math.floor(Math.random() * 1e6), acts = [], G = null;
+function rebuild(list) { G = Game({ seed }); for (const a of list) { if (a.t === 'p') G.place(a.k, a.e); else if (a.t === 'c') G.choose(a.i); else G.skip(); } acts = list.slice(); }
+const $ = id => document.getElementById(id);
+const cv = $('vale'), ctx = cv.getContext('2d');
+const SQ3 = Math.sqrt(3);
+const cam = { x: 0, y: 0.6, z: 46 };
+let W = 0, H = 0, dpr = 1;
+function resize() { dpr = Math.min(2, devicePixelRatio || 1); W = innerWidth; H = innerHeight; cv.width = W * dpr; cv.height = H * dpr; fit(true); draw(); }
+const hexXY = (q, r) => [SQ3 * (q + r / 2), 1.5 * r];
+// o centro da vista fica no meio do espaço livre entre a faixa de cima e a mão
+const topY = () => ($('topo')?.getBoundingClientRect().bottom || 64) + 6, botY = () => ($('painel')?.getBoundingClientRect().top || H - 150) - 6;
+const midY = () => (topY() + botY()) / 2;
+const toScr = (x, y) => [W / 2 + (x - cam.x) * cam.z, midY() + (y - cam.y) * cam.z];
+// enquadra o vale (peças, casas vazias e olhos-d'água); suave depois de cada peça
+let camT = null;
+function fit(now) { if (!G) return; let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9; const add = k => { const [x, y] = hexXY(KQ(k), KR(k)); x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); };
+  for (const k of G.board.keys()) add(k); for (const k of G.slots()) add(k); for (const k of G.S.springs.keys()) add(k);
+  const z = Math.max(18, Math.min(72, Math.min((W - 24) / (x1 - x0 + 2), (botY() - topY()) / (y1 - y0 + 2.2))));
+  camT = { x: (x0 + x1) / 2, y: (y0 + y1) / 2, z }; if (now) { Object.assign(cam, camT); camT = null; } else loop(); }
+function pick(px, py) { const x = (px - W / 2) / cam.z + cam.x, y = (py - midY()) / cam.z + cam.y; const r = y / 1.5, q = x / SQ3 - r / 2;
+  let rx = Math.round(q), rz = Math.round(r), ry = Math.round(-q - r); const dx = Math.abs(rx - q), dz = Math.abs(rz - r), dy = Math.abs(ry + q + r);
+  if (dx > dy && dx > dz) rx = -ry - rz; else if (dy <= dz) rz = -rx - ry; return K(rx, rz); }
+
+// ---------- cores do vale (as peças mantêm as cores nos dois temas, como num tabuleiro de verdade)
+const COR = { B: '#3d7a3a', Cw: '#e2b448', Cd: '#b89c68', V: '#d0704a', Vd: '#a08779', Gw: '#8fc257', Gd: '#d3bd7d', rio: '#38a8cc', leito: '#a98e66', ink: '#1d3b3a' };
+const landOf = e => { const c = {}; for (const x of e) if (x !== 'A') c[x] = (c[x] || 0) + 1; let b = 'G', n = -1; for (const k in c) if (c[k] > n) { n = c[k]; b = k; } return b; };
+const corner = (cx, cy, R, i) => { const a = (-60 * i + 30) * Math.PI / 180; return [cx + R * Math.cos(a), cy + R * Math.sin(a)]; };
+function hexPath(g, cx, cy, R) { g.beginPath(); for (let i = 0; i < 6; i++) { const [x, y] = corner(cx, cy, R, i); i ? g.lineTo(x, y) : g.moveTo(x, y); } g.closePath(); }
+// st: { wet, dry, green, remain (número ou null), src, lvl, ghost }
+function drawTile(g, cx, cy, R, e, st = {}) { const land = landOf(e);
+  for (let d = 0; d < 6; d++) { const ty = e[d] === 'A' ? land : e[d], [ax, ay] = corner(cx, cy, R, d), [bx, by] = corner(cx, cy, R, d + 1);
+    let c = ty === 'B' ? COR.B : ty === 'C' ? (st.dry ? COR.Cd : COR.Cw) : ty === 'V' ? (st.dry ? COR.Vd : COR.V) : (st.green ? COR.Gw : COR.Gd);
+    g.beginPath(); g.moveTo(cx, cy); g.lineTo(ax, ay); g.lineTo(bx, by); g.closePath(); g.fillStyle = c; g.fill(); g.strokeStyle = c; g.lineWidth = 0.6; g.stroke();
+    if (R < 14) continue;
+    // um detalhe por setor: árvores, fileiras, casinhas, capim
+    const am = -60 * d * Math.PI / 180, px = cx + Math.cos(am) * R * 0.55, py = cy + Math.sin(am) * R * 0.55, s = R * 0.11;
+    if (e[d] === 'A') continue;
+    if (ty === 'B') { for (const [ox, oy] of [[-1, 0.4], [1, 0.5], [0, -0.7]]) { g.beginPath(); g.arc(px + ox * s * 1.3, py + oy * s * 1.3, s, 0, 7); g.fillStyle = '#2b5a2a'; g.fill(); g.beginPath(); g.arc(px + ox * s * 1.3 - s * 0.3, py + oy * s * 1.3 - s * 0.3, s * 0.45, 0, 7); g.fillStyle = '#5a9a4c'; g.fill(); } }
+    else if (ty === 'C') { g.strokeStyle = st.dry ? '#8e7748' : '#a87f22'; g.lineWidth = Math.max(1, s * 0.35); g.beginPath(); for (let i = -1; i <= 1; i++) { const ox = -Math.sin(am) * i * s * 1.2, oy = Math.cos(am) * i * s * 1.2; g.moveTo(px + ox - Math.cos(am) * s * 1.4, py + oy - Math.sin(am) * s * 1.4); g.lineTo(px + ox + Math.cos(am) * s * 1.4, py + oy + Math.sin(am) * s * 1.4); } g.stroke(); }
+    else if (ty === 'V') { const n = Math.min(3, Math.max(1, (st.lvl || 1))); for (let i = 0; i < n; i++) { const hx = px + (i - (n - 1) / 2) * s * 2.1, hy = py; g.fillStyle = '#f4ede0'; g.fillRect(hx - s * 0.8, hy - s * 0.5, s * 1.6, s * 1.3); g.beginPath(); g.moveTo(hx - s, hy - s * 0.4); g.lineTo(hx, hy - s * 1.3); g.lineTo(hx + s, hy - s * 0.4); g.closePath(); g.fillStyle = '#9c4a30'; g.fill(); } }
+    else { g.strokeStyle = st.green ? '#5f9a3a' : '#b49a5a'; g.lineWidth = Math.max(1, s * 0.3); g.beginPath(); for (const [ox, oy] of [[-1, 0.3], [0.8, 0.6], [0.1, -0.8]]) { const x = px + ox * s * 1.4, y = py + oy * s * 1.4; g.moveTo(x - s * 0.4, y); g.lineTo(x - s * 0.1, y - s * 0.8); g.moveTo(x + s * 0.3, y); g.lineTo(x + s * 0.1, y - s * 0.9); } g.stroke(); }
+  }
+  // o rio: mais grosso onde sobra mais água; leito seco onde a água acabou (ou não chega)
+  const A = e.map((x, d) => x === 'A' ? d : -1).filter(d => d >= 0);
+  if (A.length) { const rem = st.remain, live = rem === undefined ? true : rem > 0, w = R * (live ? 0.1 + 0.035 * Math.min(8, rem ?? 3) : 0.07);
+    g.strokeStyle = live ? COR.rio : COR.leito; g.lineWidth = w; g.lineCap = 'round'; g.setLineDash(live ? [] : [w * 1.2, w * 1.1]);
+    const end = A.length === 1 ? 0.35 : 0; g.beginPath();
+    for (const d of A) { const am = -60 * d * Math.PI / 180, mx = cx + Math.cos(am) * R * 0.88, my = cy + Math.sin(am) * R * 0.88; g.moveTo(mx, my); g.lineTo(cx + Math.cos(am) * R * 0.88 * end, cy + Math.sin(am) * R * 0.88 * end); }
+    g.stroke(); g.setLineDash([]);
+    if (live && R > 14) { g.strokeStyle = 'rgba(255,255,255,.45)'; g.lineWidth = Math.max(1, w * 0.18); g.beginPath(); for (const d of A) { const am = -60 * d * Math.PI / 180; g.moveTo(cx + Math.cos(am) * R * 0.7, cy + Math.sin(am) * R * 0.7 - w * 0.15); g.lineTo(cx + Math.cos(am) * R * 0.45, cy + Math.sin(am) * R * 0.45 - w * 0.15); } g.stroke(); } }
+  if (st.src) { g.beginPath(); g.arc(cx, cy, R * 0.26, 0, 7); g.fillStyle = '#bfeaf5'; g.fill(); g.lineWidth = R * 0.06; g.strokeStyle = COR.rio; g.stroke();
+    g.fillStyle = COR.ink; g.font = `800 ${Math.round(R * 0.28)}px "Baloo 2", system-ui`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(st.src, cx, cy + R * 0.02); }
+  hexPath(g, cx, cy, R); g.lineWidth = 1; g.strokeStyle = 'rgba(29,59,58,.25)'; g.stroke();
+  if (st.dry && R > 12) { // seco: gota riscada
+    const x = cx, y = cy, s = R * 0.17; g.beginPath(); g.arc(x, y + s * 0.3, s, 0, Math.PI); g.lineTo(x, y - s * 1.3); g.closePath(); g.fillStyle = '#fff8e8'; g.fill(); g.lineWidth = 2; g.strokeStyle = '#b2452f'; g.stroke();
+    g.beginPath(); g.moveTo(x - s * 1.2, y + s * 1.2); g.lineTo(x + s * 1.2, y - s * 1.2); g.stroke(); }
+}
+
+// ---------- seleção e prévia
+let sel = null, ghostI = 0, toastT = 0, anim = [];
+const valorDe = o => { let v = 0; for (const x of o.vil) { if (x.done) v += 12; else v += 3 * Math.max(0, Math.min(x.after, x.req.n) - Math.min(x.before, x.req.n)); }
+  return v + 4 * o.spring - 4 * o.buried + (o.perfect ? 4 : 0) + 0.6 * (o.gained.length - o.lost.length) + (o.wetSelf ? 1 : 0) - (o.drySelf ? 1 : 0) + 0.2 * o.marks.filter(Boolean).length; };
+function select(k) { const opts = G.options(k); if (!opts.length) { sel = { k, opts: [], i: 0 }; refresh(); return; }
+  let bi = 0; opts.forEach((o, i) => { if (valorDe(o) > valorDe(opts[bi])) bi = i; }); sel = { k, opts, i: bi }; refresh(); }
+function girar() { if (!sel || !sel.opts.length) { ghostI = (ghostI + 1) % 6; refresh(); return; } sel.i = (sel.i + 1) % sel.opts.length; refresh(); }
+function colocar() { if (!sel || !sel.opts.length) return; const o = sel.opts[sel.i]; const res = G.place(o.k, o.e); if (!res) return; acts.push({ t: 'p', k: o.k, e: o.e });
+  const [x, y] = hexXY(KQ(o.k), KR(o.k)); anim.push({ x, y, t: 0, kind: 'anel' });
+  for (const ev of res.ev) if (ev.t === 'pedido') { const [vx, vy] = hexXY(KQ(ev.k), KR(ev.k)); anim.push({ x: vx, y: vy, t: 0, kind: 'txt', txt: ev.txt.match(/\+\d+ gente/)[0] }); }
+  sel = null; ghostI = 0; toast(res.ev.map(e => e.txt)); refresh(); fit(false); }
+function passar() { G.skip(); acts.push({ t: 's' }); sel = null; toast(['A peça não cabia em lugar nenhum: passou a vez']); refresh(); }
+function desfazer() { if (!acts.length) return; let a = acts.slice(); while (a.length && a[a.length - 1].t === 'c') a.pop(); a.pop(); rebuild(a); sel = null; toast(['Desfeito']); refresh(); }
+function toast(list) { const box = $('toast'); box.style.top = topY() + 'px'; box.innerHTML = ''; for (const t of list) { const d = document.createElement('div'); d.textContent = t; box.appendChild(d); } toastT = list.length ? 4.5 : 0; }
+
+// ---------- texto da prévia (o que essa peça faz aqui)
+const reqTxt = r => `${PEDIDOS[r.t].icone} ${PEDIDOS[r.t].txt(r.n)}`;
+function previewMsg(o) { const out = [], t = G.hand().e, cons = t.includes('C') || t.includes('V');
+  for (const x of o.vil) { if (x.done) out.push(`<span class="ok">Atende a vila (${reqTxt(x.req)}): cresce, +2 peças</span>`); else if (Math.min(x.after, x.req.n) > Math.min(x.before, x.req.n)) out.push(`<span class="ok">Vila: ${PEDIDOS[x.req.t].icone} ${x.before} → ${x.after} de ${x.req.n}</span>`); }
+  if (o.spring) out.push(`<span class="agua">Liga o olho-d'água: +${o.spring} 💧</span>`);
+  if (o.buried) out.push(`<span class="ruim">Enterra o olho-d'água (a peça não tem rio)</span>`);
+  if (cons && o.wetSelf) out.push(`<span class="agua">Recebe água (usa 1 💧)</span>`);
+  if (cons && o.drySelf) out.push(`<span class="ruim">Fica seca: a água acaba antes de chegar aqui</span>`);
+  if (o.lost.length) out.push(`<span class="ruim">Tira a água de ${o.lost.length} peça${o.lost.length > 1 ? 's' : ''} mais longe da nascente</span>`);
+  if (o.perfect) out.push('<span class="ok">Peça perfeita: +1 peça</span>');
+  if (!out.length) { const m = o.marks.filter(Boolean).length; out.push(`<span class="dica">${cons ? 'Longe do rio: não usa água. ' : ''}${m ? `${m} lado${m > 1 ? 's' : ''} combinando.` : 'Nada muda por aqui.'}</span>`); }
+  return out.join('<br>'); }
+
+// ---------- painel
+function thumb(c, e, st = {}) { const g = c.getContext('2d'); g.clearRect(0, 0, c.width, c.height); drawTile(g, c.width / 2, c.height / 2, c.width * 0.47, e, st); }
+function refresh() { const S = G.S, Wt = G.water();
+  document.body.classList.toggle('seca', G.isSeca());
+  $('tGente').textContent = S.gente; $('tPilha').textContent = S.left;
+  const len = G.seasonLen(); $('tEst').innerHTML = `${G.isSeca() ? '☀️ Seca' : '🌧️ Águas'} <span class="dots${G.isSeca() ? ' seca' : ''}">${Array.from({ length: len }, (_, i) => `<i class="${i < S.clock ? 'on' : ''}"></i>`).join('')}</span>`;
+  const flow = Wt.nets.reduce((s, n) => s + n.flow, 0), used = Wt.nets.reduce((s, n) => s + n.used, 0), sec = G.secaPreview(), fs = sec.nets.reduce((s, n) => s + n.flow, 0);
+  const near = !G.isSeca() && len - S.clock <= 3, secos = [...sec.dry].filter(k => !Wt.dry.has(k)).length;
+  $('tAgua').innerHTML = `💧 <b>${used}/${flow}</b>${near ? ` <small>seca em ${len - S.clock}: ${fs} 💧${secos ? ` · ${secos} vão secar` : ''}</small>` : G.isSeca() ? ' <small>seca</small>' : ''}`;
+  $('tAgua').classList.toggle('alerta', near && secos > 0);
+  const e = sel && sel.opts.length ? sel.opts[sel.i].e : rot(G.hand().e, ghostI); thumb($('cMao'), e); thumb($('cProx'), G.next().e);
+  const fits = G.fits(); $('bPassar').hidden = fits || S.over; $('bColocar').disabled = !(sel && sel.opts.length);
+  if (S.over) $('msg').innerHTML = '<span class="dica">A pilha acabou.</span>';
+  else if (!fits) $('msg').innerHTML = '<span class="ruim">Essa peça não cabe em nenhuma casa (água só encosta em água).</span>';
+  else if (!sel) $('msg').innerHTML = `<span class="dica">Toque numa casa vazia para ver o que a peça faria ali.${G.S.vilas.size ? ' As plaquinhas mostram o que cada vila pede.' : ''}</span>`;
+  else if (!sel.opts.length) $('msg').innerHTML = '<span class="ruim">Não encaixa aqui: água só encosta em água.</span>';
+  else $('msg').innerHTML = previewMsg(sel.opts[sel.i]);
+  if (S.escolha.length) showPacks(); else $('cPacote').hidden = true;
+  if (S.over) fim();
+  draw(); }
+function showPacks() { const ch = G.S.escolha[0], box = $('pacotes'); box.innerHTML = '';
+  ch.forEach((p, i) => { const b = document.createElement('button'); b.className = 'pacote'; b.innerHTML = `<b>${TEMAS[p.tema].icone} ${TEMAS[p.tema].nome}</b><span class="tres"></span><small>mais ${TEMAS[p.tema].desc}</small>`;
+    for (const t of p.tiles) { const c = document.createElement('canvas'); c.width = c.height = 92; thumb(c, t.e, { green: true }); b.querySelector('.tres').appendChild(c); }
+    b.onclick = () => { G.choose(i); acts.push({ t: 'c', i }); refresh(); }; box.appendChild(b); });
+  $('cPacote').hidden = false; }
+function fim() { const peds = acts.length; $('fGente').textContent = G.S.gente; let n = 0, mx = 0; for (const v of G.S.vilas.values()) { n++; mx = Math.max(mx, v.lvl); }
+  $('fResumo').textContent = `${n} vila${n === 1 ? '' : 's'}, a maior no nível ${mx}. ${G.board.size} peças no vale.`; $('cFim').hidden = false; }
+
+// ---------- desenho do vale
+function draw() { if (!G) return; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, H);
+  const Wt = G.water(), R = cam.z * 0.995, secaSoon = !G.isSeca() && G.seasonLen() - G.S.clock <= 3, sec = secaSoon ? G.secaPreview() : null;
+  const pv = sel && sel.opts.length ? sel.opts[sel.i] : null, Wv = pv ? pv.W : Wt;
+  // casas vazias
+  for (const k of G.slots()) { const [x, y] = toScr(...hexXY(KQ(k), KR(k))); hexPath(ctx, x, y, R * 0.92); ctx.fillStyle = 'rgba(255,255,255,.18)'; ctx.fill(); ctx.setLineDash([4, 4]); ctx.strokeStyle = 'rgba(29,59,58,.25)'; ctx.lineWidth = 1; ctx.stroke(); ctx.setLineDash([]); }
+  // olhos-d'água
+  for (const [k, f] of G.S.springs) { const [x, y] = toScr(...hexXY(KQ(k), KR(k))), s = R * 0.22, pul = 1 + 0.06 * Math.sin(performance.now() / 300);
+    ctx.beginPath(); ctx.arc(x, y + s * 0.4, s * pul, 0, Math.PI); ctx.lineTo(x, y - s * 1.4 * pul); ctx.closePath(); ctx.fillStyle = COR.rio; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = '#fff'; ctx.stroke();
+    ctx.fillStyle = COR.ink; ctx.font = `800 ${Math.round(R * 0.26)}px "Baloo 2", system-ui`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(`+${f}`, x, y + s * 2.1); }
+  // peças (com a prévia aplicada na água, para ver o que seca e o que molha)
+  for (const [k, t] of G.board) { const [x, y] = toScr(...hexXY(t.q, t.r)); const v = [...G.S.vilas.values()].find(v => v.tiles.has(k));
+    drawTile(ctx, x, y, R, t.e, { wet: Wv.wet.has(k), dry: Wv.dry.has(k), green: Wv.green.has(k), remain: Wv.remain.get(k), src: t.src, lvl: v ? v.lvl : 1 });
+    if (sec && sec.dry.has(k) && !Wt.dry.has(k)) { hexPath(ctx, x, y, R * 0.9); ctx.setLineDash([6, 4]); ctx.lineWidth = 3; ctx.strokeStyle = '#c8742c'; ctx.stroke(); ctx.setLineDash([]); } }
+  // fantasma da peça escolhida
+  if (sel) { const [x, y] = toScr(...hexXY(KQ(sel.k), KR(sel.k)));
+    if (pv) { ctx.globalAlpha = 0.92; drawTile(ctx, x, y, R, pv.e, { wet: pv.wetSelf, dry: pv.drySelf, green: pv.W.green.has(sel.k), remain: pv.W.remain.get(sel.k), src: pv.spring || 0 }); ctx.globalAlpha = 1;
+      for (let d = 0; d < 6; d++) { if (pv.marks[d] === null) continue; const am = -60 * d * Math.PI / 180; ctx.beginPath(); ctx.arc(x + Math.cos(am) * R * 0.8, y + Math.sin(am) * R * 0.8, R * 0.09, 0, 7); ctx.fillStyle = pv.marks[d] ? '#3f9a4a' : '#ffffff'; ctx.fill(); ctx.lineWidth = 1.5; ctx.strokeStyle = COR.ink; ctx.stroke(); } }
+    hexPath(ctx, x, y, R); ctx.lineWidth = 3; ctx.strokeStyle = pv ? COR.ink : '#b2452f'; ctx.stroke(); }
+  // plaquinhas das vilas
+  for (const v of G.S.vilas.values()) { let sx = 0, sy = 0; for (const k of v.tiles) { const [x, y] = hexXY(KQ(k), KR(k)); sx += x; sy += y; } sx /= v.tiles.size; sy /= v.tiles.size;
+    const [x, y] = toScr(sx, sy - 0.55); let cur = G.progress(v); const pvv = pv && pv.vil.find(z => z.id === v.id), aft = pvv ? pvv.after : null;
+    const txt = `${PEDIDOS[v.req.t].icone} ${Math.min(cur, v.req.n)}${aft !== null && aft !== cur ? `→${Math.min(aft, v.req.n)}` : ''}/${v.req.n}`, sub = PEDIDOS[v.req.t].txt(v.req.n);
+    ctx.font = '800 14px Nunito, system-ui'; const w1 = ctx.measureText(txt).width; ctx.font = '700 11px Nunito, system-ui'; const w2 = ctx.measureText(sub).width, bw = Math.max(w1 + 30, w2) + 16;
+    const done = aft !== null && aft >= v.req.n; ctx.fillStyle = done ? '#3f9a4a' : '#fffdf7'; ctx.strokeStyle = 'rgba(29,59,58,.3)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.roundRect(x - bw / 2, y - 22, bw, 38, 10); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = done ? '#fff' : COR.ink; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = '800 14px Nunito, system-ui'; ctx.fillText(txt + `  ·  nv ${v.lvl}`, x, y - 10); ctx.font = '700 11px Nunito, system-ui'; ctx.fillStyle = done ? '#eaffea' : '#5d716b'; ctx.fillText(sub, x, y + 6); }
+  // animações: anel na peça nova e "+gente" subindo
+  for (const a of anim) { const [x, y] = toScr(a.x, a.y);
+    if (a.kind === 'anel') { ctx.beginPath(); ctx.arc(x, y, R * (0.6 + a.t * 2), 0, 7); ctx.strokeStyle = `rgba(255,242,192,${Math.max(0, 0.9 - a.t)})`; ctx.lineWidth = 4; ctx.stroke(); }
+    else { ctx.globalAlpha = Math.max(0, 1 - a.t / 2); ctx.font = '800 22px "Baloo 2", system-ui'; ctx.textAlign = 'center'; ctx.lineWidth = 5; ctx.strokeStyle = '#1d3b3a'; ctx.strokeText(a.txt, x, y - 30 - a.t * 24); ctx.fillStyle = '#fff2c0'; ctx.fillText(a.txt, x, y - 30 - a.t * 24); ctx.globalAlpha = 1; } }
+}
+let lastT = 0, running = false;
+function loop() { if (running) return; running = true; lastT = performance.now(); requestAnimationFrame(step); }
+function step(now) { const dt = Math.min(0.1, (now - lastT) / 1000); lastT = now;
+  if (camT) { const k = Math.min(1, dt * 4); cam.x += (camT.x - cam.x) * k; cam.y += (camT.y - cam.y) * k; cam.z += (camT.z - cam.z) * k; if (Math.abs(camT.z - cam.z) < 0.05 && Math.abs(camT.x - cam.x) < 0.005) camT = null; } for (const a of anim) a.t += dt; anim = anim.filter(a => a.t < 2.2);
+  if (toastT > 0) { toastT -= dt; if (toastT <= 0) $('toast').innerHTML = ''; }
+  draw(); if (camT || anim.length || toastT > 0 || G.S.springs.size) requestAnimationFrame(step); else running = false; }
+
+// ---------- toque: arrastar move o vale, pinça e roda dão zoom, toque curto escolhe a casa
+const P = new Map(); let downAt = null, pinch0 = null;
+cv.addEventListener('pointerdown', e => { cv.setPointerCapture(e.pointerId); P.set(e.pointerId, { x: e.clientX, y: e.clientY }); if (P.size === 1) downAt = { x: e.clientX, y: e.clientY, t: e.timeStamp, moved: 0 };
+  if (P.size === 2) { const [a, b] = [...P.values()]; pinch0 = { d: Math.hypot(a.x - b.x, a.y - b.y), z: cam.z }; downAt = null; } });
+cv.addEventListener('pointermove', e => { const p = P.get(e.pointerId); if (!p) return; const dx = e.clientX - p.x, dy = e.clientY - p.y; p.x = e.clientX; p.y = e.clientY;
+  camT = null; if (P.size === 1) { cam.x -= dx / cam.z; cam.y -= dy / cam.z; if (downAt) downAt.moved += Math.abs(dx) + Math.abs(dy); draw(); }
+  else if (P.size === 2 && pinch0) { const [a, b] = [...P.values()]; cam.z = Math.max(18, Math.min(110, pinch0.z * Math.hypot(a.x - b.x, a.y - b.y) / pinch0.d)); draw(); } });
+const up = e => { P.delete(e.pointerId); if (P.size < 2) pinch0 = null;
+  if (downAt && P.size === 0 && downAt.moved < 10 && e.timeStamp - downAt.t < 500) { const k = pick(e.clientX, e.clientY);
+    if (G.S.over || G.S.escolha.length) return; if (sel && sel.k === k) girar(); else if (G.slots().includes(k)) select(k); else { sel = null; refresh(); } }
+  downAt = null; };
+cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', e => { P.delete(e.pointerId); downAt = null; pinch0 = null; });
+cv.addEventListener('wheel', e => { e.preventDefault(); camT = null; cam.z = Math.max(18, Math.min(110, cam.z * Math.exp(-e.deltaY * 0.0015))); draw(); }, { passive: false });
+addEventListener('keydown', e => { if (e.key === 'r' || e.key === 'R') girar(); else if (e.key === 'Enter') colocar(); else if (e.key === 'z' || e.key === 'Z') desfazer(); else if (e.key === 'Escape') { sel = null; refresh(); } });
+$('bGirar').onclick = girar; $('cMao').onclick = girar; $('bColocar').onclick = colocar; $('bPassar').onclick = passar; $('bDesfazer').onclick = desfazer;
+$('bAjuda').onclick = () => { $('cAjuda').hidden = false; }; $('bFechaAjuda').onclick = () => { $('cAjuda').hidden = true; };
+$('bDeNovo').onclick = () => { seed = 'vale-' + Math.floor(Math.random() * 1e6); rebuild([]); $('cFim').hidden = true; sel = null; fit(true); refresh(); };
+addEventListener('resize', resize);
+
+// ---------- começo (o visualizador pode trazer a partida de volta depois de uma atualização da página)
+function start(data) { if (data && data.seed) { seed = data.seed; rebuild(data.acts || []); } else rebuild([]);
+  let seen = false; try { seen = localStorage.getItem('afluente-v5-ajuda') === '1'; localStorage.setItem('afluente-v5-ajuda', '1'); } catch (e) {}
+  if (!seen && !(data && data.seed)) $('cAjuda').hidden = false;
+  resize(); fit(true); refresh(); loop(); }
+window.claude?.hot?.snapshot?.(() => ({ seed, acts }));
+window.__nucleo = { get G() { return G; }, select, colocar, girar, cam, draw };
+window.claude?.hot?.ready ? window.claude.hot.ready(start) : start(window.claude?.hot?.data ?? {});
+})();
+</script>
+</body>
+</html>
