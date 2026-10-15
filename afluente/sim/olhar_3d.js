@@ -15,6 +15,8 @@ const SIT={
   nascente:`startGame(SEED,BOT.slice(0,6));const[a,b]=wpos(E.SRC);cam.user=true;cam.s=cam.ts=120;cam.x=cam.tx=W.w/2-a*120;cam.y=cam.ty=W.h/2-b*120`,
   meio2d:`db.v3d=false;startGame(SEED,BOT.slice(0,20))`,
   corte:`const A=[{t:'mata',v:false},...E.botPlay(SEED,'cuidadoso',{protect:false}).act];let n=2,st;for(;n<A.length;n++){st=E.replay(SEED,A.slice(0,n));if(st.seca&&st.cut&&st.cut.size)break;}startGame(SEED,A.slice(0,n));const ck=[...G.s.cut][0];if(ck!=null){const[a,b]=wpos(ck);cam.user=true;cam.s=cam.ts=130;cam.x=cam.tx=W.w/2-a*130;cam.y=cam.ty=W.h/2-b*130;}`,
+  v4vila:`const A=E.botPlay('v4-q0','cuidadoso').act;startGame('v4-q0',A.slice(0,60));$('v4i').hidden=true;$('pacote').hidden=true;const v=G.s.vilas.slice().sort((a,b)=>b.lvl-a.lvl)[0];if(v){const[a,b]=wpos(v.home);cam.user=true;cam.s=cam.ts=110;cam.x=cam.tx=W.w/2-a*110;cam.y=cam.ty=W.h/2-b*110;}`,
+  v4:`const A=E.botPlay('v4-q0','cuidadoso').act;startGame('v4-q0',A.slice(0,40));$('v4i').hidden=true;$('pacote').hidden=true`,
   noite:`startGame(SEED,BOT.slice(0,30));ENV.tf=ENV.tf;window.__noite=1`,
 };
 (async()=>{fs.mkdirSync(out,{recursive:true});
