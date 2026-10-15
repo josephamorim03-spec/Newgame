@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#9fb7bf">
+<title>Afluente · prévia 3D</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Nunito:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--ink:#1d3b3a;--paper:rgba(252,250,244,.86);--line:rgba(29,59,58,.14);--good:#2f7a4a}
+  html,body{margin:0;height:100%;background:#9fb7bf;overflow:hidden;font-family:Nunito,system-ui,sans-serif;color:var(--ink);-webkit-tap-highlight-color:transparent}
+  canvas#cena{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none}
+  .topo{position:fixed;left:max(14px,env(safe-area-inset-left));top:max(12px,env(safe-area-inset-top));right:14px;display:flex;align-items:flex-start;justify-content:space-between;gap:10px;pointer-events:none}
+  .marca{pointer-events:none}
+  .marca h1{font:800 26px/1 "Baloo 2",system-ui;margin:0;color:#fff;text-shadow:0 1px 8px rgba(0,0,0,.25)}
+  .marca p{margin:2px 0 0;font-size:13px;font-weight:700;color:#fff;opacity:.92;text-shadow:0 1px 6px rgba(0,0,0,.3)}
+  #info{position:fixed;left:50%;transform:translateX(-50%);bottom:max(12px,env(safe-area-inset-bottom));font-size:12.5px;font-weight:700;color:#fff;text-shadow:0 1px 5px rgba(0,0,0,.45);white-space:nowrap;pointer-events:none}
+  #painelBtn{pointer-events:auto;border:0;border-radius:999px;background:var(--paper);color:var(--ink);font:800 15px "Baloo 2",system-ui;padding:9px 16px;box-shadow:0 2px 10px rgba(0,0,0,.12);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);min-height:44px}
+  #painel{position:fixed;left:12px;right:12px;bottom:calc(max(12px,env(safe-area-inset-bottom)) + 26px);max-width:520px;margin:0 auto;background:var(--paper);border-radius:20px;padding:12px 14px 14px;box-shadow:0 6px 24px rgba(0,0,0,.16);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+  #painel[hidden]{display:none}
+  .linha{display:flex;align-items:center;gap:10px;margin:6px 0}
+  .linha>span{width:64px;flex:none;font-size:13.5px;font-weight:700;opacity:.8}
+  .chips{display:flex;gap:6px;flex-wrap:wrap}
+  .chips button{border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:999px;padding:7px 12px;font:700 13.5px Nunito,system-ui;min-height:36px}
+  .chips button[aria-pressed=true]{background:var(--ink);color:#fff;border-color:var(--ink)}
+  input[type=range]{flex:1;accent-color:var(--ink);height:36px}
+</style>
+</head>
+<body>
+<canvas id="cena" aria-label="O vale em 3D"></canvas>
+<div class="topo">
+  <div class="marca"><h1>Afluente</h1><p>prévia do novo visual · 4 peças</p></div>
+  <button id="painelBtn" aria-expanded="false" aria-controls="painel">Clima</button>
+</div>
+<div id="painel" hidden>
+  <div class="linha"><span>Hora</span><input id="hora" type="range" min="5" max="20.5" step="0.1" value="15" aria-label="Hora do dia"></div>
+  <div class="linha"><span>Estação</span><div class="chips" id="cEst"><button data-v="aguas" aria-pressed="true">Águas</button><button data-v="seca" aria-pressed="false">Seca</button></div></div>
+  <div class="linha"><span>Chuva</span><div class="chips" id="cChuva"><button data-v="auto" aria-pressed="true">Do céu</button><button data-v="sem" aria-pressed="false">Sem</button><button data-v="garoa" aria-pressed="false">Garoa</button><button data-v="forte" aria-pressed="false">Forte</button></div></div>
+  <div class="linha"><span>Vento</span><div class="chips" id="cVento"><button data-v="auto" aria-pressed="true">Do céu</button><button data-v="calmo" aria-pressed="false">Calmo</button><button data-v="brisa" aria-pressed="false">Brisa</button><button data-v="forte" aria-pressed="false">Forte</button></div></div>
+  <div class="linha"><span>Tempo</span><div class="chips" id="cTempo"><button data-v="stop" aria-pressed="true">Parado</button><button data-v="run" aria-pressed="false">Correndo</button></div></div>
+</div>
+<div id="info"></div>
+<script src="js/atmos.js"></script>
+<script type="importmap">{"imports":{"three":"./js/three.module.min.js"}}</script>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
