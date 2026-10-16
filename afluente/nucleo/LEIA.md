@@ -44,7 +44,13 @@ Protótipo jogável para testar se a regra nova diverte, antes de levá-la ao va
 - os olhos-d'água como poços claros no chão;
 - "sem água" sobre quem ficou seco, e "seca na seca" nas últimas jogadas antes da seca;
 - as casas douradas onde a peça na mão ajuda um pedido;
-- a escolha de pacote. A vila atendida ganha uma casa nova no vale.
+- a escolha de pacote. A vila atendida ganha uma casa nova no vale, e gente nova chega a pé de fora do vale para morar nela (`arrive` em `../prototipo3d/js/people.js`). Essas pessoas passam o dia entre a casa, a roça, a beira do rio e a vizinhança: almoçam na porta, proseiam no fim da tarde e entram em casa de noite e na chuva.
+
+**Som** (`../prototipo3d/js/som.js`): é todo sintetizado, sem arquivos.
+- Ele destrava no primeiro toque em qualquer lugar da página.
+- No iPhone ele toca mesmo com a chave de silencioso: pede a sessão de reprodução e, nos iOS antigos, usa um `<audio>` mudo em laço.
+- Ao fundo fica o murmúrio do rio, que diminui quando a água acaba. De dia cantam passarinhos e o bem-te-vi, na seca a cigarra, de noite o grilo, e na chuva entra o chiado dela.
+- `__som.teste('thud')` no console mede o volume de um efeito.
 
 O vale começa com as 11 peças montadas à mão da prévia. Para isso, `Game` aceita `start`, e sem `start` continua igual. Mesma semente: `?vale=nome`.
 

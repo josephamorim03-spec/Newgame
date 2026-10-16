@@ -82,7 +82,7 @@ export function buildBody(s) {
   const shawl = s.warm && f ? C(s.warmColor || 0x8a4a3a) : null, jacket = s.warm && !f ? C(s.warmColor || 0x5a4a3a) : null;
   const torso = tor.map(([y, rx, rzF, rzB]) => { const shirt = y >= shirtBottom && y < 1.44, pants = y < shirtBottom;
     let c = y >= 1.44 ? skin : shirt ? top : (dressTop ? top : bot); if (shawl && y >= 1.16 && y < 1.44) c = shawl; if (jacket && y >= 0.9 && y < 1.44) c = jacket;
-    return { y, cx: 0, cz: 0, rx: rx * bw, rzF: rzF * bw, rzB: rzB * bw, e: y > 1.18 && y < 1.34 ? 2.5 : 2.1, c, pat: (shirt || dressTop) && y < 1.44 && !(shawl && y >= 1.16) && !(jacket && y >= 0.9) ? topPat : 0, b: W(y, 0.98, 1.2), perim: 3 }; });
+    return { y, cx: 0, cz: 0, rx: rx * bw, rzF: rzF * bw, rzB: rzB * bw, e: y > 1.18 && y < 1.34 ? 2.25 : 2.1, c, pat: (shirt || dressTop) && y < 1.44 && !(shawl && y >= 1.16) && !(jacket && y >= 0.9) ? topPat : 0, b: W(y, 0.98, 1.2), perim: 3 }; });
   // pescoço até a cabeça
   torso.push({ y: 1.5, cx: 0, cz: 0.005, rx: 0.052, rzF: 0.05, rzB: 0.05, c: skin, b: [[B.spine, 0.5], [B.head, 0.5]] }, { y: 1.55, cx: 0, cz: 0.01, rx: 0.05, rzF: 0.05, rzB: 0.05, c: skin, b: [[B.head, 1]] });
   bd.tube(torso, 18, true, true);
@@ -131,8 +131,8 @@ export function buildBody(s) {
     hd.rigid(new THREE.ConeGeometry(0.017, 0.045, 4).rotateX(Math.PI * 0.62).rotateY(Math.PI / 4).translate(0, 0.098, 0.12), skin.clone().multiplyScalar(0.96), B.head);   // nariz
     hd.rigid(new THREE.SphereGeometry(1, 8, 6).scale(0.022, 0.009, 0.01).translate(0, 0.058, 0.103), skin.clone().lerp(C(0xa0402e), 0.45), B.head);   // lábios
     for (const sx of [-1, 1]) {
-      hd.rigid(new THREE.SphereGeometry(1, 8, 6).scale(0.014, 0.01, 0.006).translate(sx * 0.033, 0.122, 0.107), C(0xf2eee6), B.head);
-      hd.rigid(new THREE.SphereGeometry(1, 8, 6).scale(0.0075, 0.0085, 0.004).translate(sx * 0.033, 0.122, 0.112), C(0x2a1a10), B.head);
+      hd.rigid(new THREE.SphereGeometry(1, 8, 6).scale(0.016, 0.012, 0.006).translate(sx * 0.033, 0.122, 0.107), C(0xf2eee6), B.head);
+      hd.rigid(new THREE.SphereGeometry(1, 8, 6).scale(0.009, 0.0105, 0.004).translate(sx * 0.033, 0.121, 0.112), C(0x2a1a10), B.head);
       hd.rigid(new THREE.BoxGeometry(0.034, 0.008, 0.012).rotateZ(sx * -0.1).translate(sx * 0.035, 0.142, 0.108), C(s.hairColor).multiplyScalar(0.9), B.head);
       hd.rigid(new THREE.SphereGeometry(1, 8, 6).scale(0.012, 0.026, 0.017).translate(sx * 0.087, 0.112, -0.004), skin.clone().multiplyScalar(0.95), B.head);
     }
@@ -149,7 +149,8 @@ export function buildBody(s) {
   const bones = [hips, spine, head, arms[0].sh, arms[0].el, arms[0].ha, arms[1].sh, arms[1].el, arms[1].ha, legs[0].hp, legs[0].kn, legs[0].ft, legs[1].hp, legs[1].kn, legs[1].ft];
   const mesh = new THREE.SkinnedMesh(geo, bodyMaterial(s.top.tex || null)); mesh.add(hips); mesh.updateMatrixWorld(true);
   mesh.bind(new THREE.Skeleton(bones)); mesh.castShadow = mesh.receiveShadow = true; mesh.frustumCulled = false;
-  if (kid) head.scale.setScalar(1.18);
+  // a cabeça um tico maior que a anatomia (8% no adulto, 22% na criança): de longe, na câmera do jogo, o rosto e o chapéu leem
+  head.scale.setScalar(kid ? 1.22 : 1.08);
   return { mesh, hips, spine, head, arms, legs, waistY: s.dress ? 1.0 : 0.97, bw };
 }
 

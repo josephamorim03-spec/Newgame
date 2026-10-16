@@ -10,7 +10,8 @@
 //    a maquete que gira com mola, o placar que conta e pulsa, e a tela do fim.
 import * as THREE from 'three';
 import { Game, rot, KQ, KR, K, PEDIDOS, vazao } from '../../nucleo/regras.js';
-import { toon } from './mat.js';
+import { toon, U } from './mat.js';
+import { createSom } from './som.js';
 
 const COL = { A: '#3f8fc0', B: '#2f6a2a', C: '#d9b04a', V: '#c0583a', G: '#8cbf4a' };
 const TEMA = { roca: '🌾 Roça', mata: '🌳 Mata', rio: '💧 Rio', vila: '🏠 Vila' };
@@ -24,28 +25,7 @@ export function buildBoard5(api) {
   const S = game.S, groundY = (x, z) => Math.max(heightAt(x, z), -0.4);
 
   // ---------- juice: som sintetizado na hora (marimba, água, baque), vibração do celular, tremor da câmera e confete
-  const AU = { ctx: null, on: true }; try { AU.on = localStorage.getItem('afluente:som') !== '0'; } catch (e) {}
-  function ac() { if (!AU.on) return null; try { if (!AU.ctx) { const C = window.AudioContext || window.webkitAudioContext; if (!C) return null; AU.ctx = new C(); AU.out = AU.ctx.createGain(); AU.out.gain.value = 0.45;
-        const comp = AU.ctx.createDynamicsCompressor(); AU.out.connect(comp); comp.connect(AU.ctx.destination); }
-      if (AU.ctx.state === 'suspended') AU.ctx.resume(); return AU.ctx; } catch (e) { return null; } }
-  function tone(f, t0, dur, type = 'sine', vol = 0.15, slide = 0) { const c = ac(); if (!c) return; const t = c.currentTime + t0, o = c.createOscillator(), g = c.createGain();
-    o.type = type; o.frequency.setValueAtTime(f, t); if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(30, f * slide), t + dur);
-    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + dur); o.connect(g); g.connect(AU.out); o.start(t); o.stop(t + dur + 0.05); }
-  function hiss(t0, dur, freq, vol) { const c = ac(); if (!c) return; const t = c.currentTime + t0, n = Math.ceil(c.sampleRate * dur), buf = c.createBuffer(1, n, c.sampleRate), d = buf.getChannelData(0);
-    for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n);
-    const src = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain(); src.buffer = buf; f.type = 'bandpass'; f.frequency.value = freq; f.Q.value = 0.8; g.gain.value = vol; src.connect(f); f.connect(g); g.connect(AU.out); src.start(t); }
-  const marimba = (f, t0, v = 0.12) => { tone(f, t0, 0.45, 'sine', v); tone(f * 4, t0, 0.08, 'sine', v * 0.25); };
-  const SFX = {
-    sel: () => marimba(660, 0, 0.07), no: () => tone(220, 0, 0.12, 'square', 0.035, 0.8),
-    rot: () => { tone(900, 0, 0.04, 'triangle', 0.05); hiss(0, 0.05, 3000, 0.05); },
-    thud: () => { tone(120, 0, 0.25, 'sine', 0.32, 0.45); hiss(0, 0.22, 500, 0.2); },
-    water: () => { tone(420, 0, 0.16, 'sine', 0.12, 2.2); tone(640, 0.09, 0.16, 'sine', 0.1, 2.0); tone(900, 0.18, 0.2, 'sine', 0.07, 1.6); },
-    grow: () => [523.3, 659.3, 784, 1046.5, 1318.5].forEach((f, i) => marimba(f, i * 0.085, 0.11)),
-    perfect: () => [784, 1174.7, 1568].forEach((f, i) => marimba(f, i * 0.06, 0.08)),
-    open: () => hiss(0, 0.3, 1400, 0.07), pack: () => { marimba(784, 0, 0.09); marimba(1174.7, 0.08, 0.08); },
-    dry: () => tone(330, 0, 0.5, 'triangle', 0.06, 0.7), rain: () => { hiss(0, 0.8, 2500, 0.05); marimba(587.3, 0.1, 0.06); marimba(880, 0.25, 0.06); },
-    page: () => marimba(880, 0, 0.05), end: () => [392, 523.3, 659.3, 784, 1046.5, 1318.5, 1568].forEach((f, i) => marimba(f, i * 0.11, 0.12)),
-  };
+  const som = createSom(), SFX = som.sfx;
   const buzz = p => { try { if (navigator.vibrate) navigator.vibrate(p); } catch (e) {} };
   let shakeT = 0, shakeD = 0.3, shakeA = 0; const shake = (a, d = 0.3) => { shakeA = a; shakeD = d; shakeT = d; };
   // confete (flores e folhas na vila que cresce, gotas no olho-d'água): sobe, cai devagar balançando e some
@@ -76,8 +56,8 @@ export function buildBoard5(api) {
   hs.innerHTML = '<div class="folha"><div class="ic" id="hsI"></div><h2 id="hsT"></h2><p id="hsP"></p><div class="pts" id="hsD"></div><div class="bt"><button type="button" class="pular" id="hsPular">Pular</button><button type="button" class="ir" id="hsIr">Continuar</button></div></div>';
   document.body.appendChild(hs);
   const hb = document.createElement('button'); hb.type = 'button'; hb.id = 'hsAbre'; hb.textContent = '📖 História'; hb.setAttribute('aria-label', 'Ler a história do vale'); document.body.appendChild(hb);
-  const sb = document.createElement('button'); sb.type = 'button'; sb.id = 'somBtn'; const somTxt = () => { sb.textContent = AU.on ? '🔊' : '🔇'; sb.setAttribute('aria-label', AU.on ? 'Desligar o som' : 'Ligar o som'); }; somTxt();
-  sb.onclick = () => { AU.on = !AU.on; try { localStorage.setItem('afluente:som', AU.on ? '1' : '0'); } catch (e) {} somTxt(); if (AU.on) SFX.sel(); }; document.body.appendChild(sb);
+  const sb = document.createElement('button'); sb.type = 'button'; sb.id = 'somBtn'; const somTxt = () => { sb.textContent = som.on ? '🔊' : '🔇'; sb.setAttribute('aria-label', som.on ? 'Desligar o som' : 'Ligar o som'); }; somTxt();
+  sb.onclick = () => { som.setOn(!som.on); somTxt(); if (som.on) setTimeout(SFX.sel, 60); }; document.body.appendChild(sb);
   const fm = document.createElement('div'); fm.id = 'fim5'; fm.hidden = true; fm.setAttribute('role', 'dialog'); fm.setAttribute('aria-modal', 'true');
   fm.innerHTML = '<div class="folha"><div class="ic">🌅</div><h2>O vale acolheu</h2><div class="num" id="fimN">0</div><p>pessoas</p><p id="fimS"></p><button type="button" id="fimJ">Jogar outro vale</button></div>'; document.body.appendChild(fm);
   let hsI = 0; const KEY = 'afluente:v5:historia';
@@ -255,11 +235,12 @@ export function buildBoard5(api) {
   function turn(dir) { if (!sel) { if (!S.over) { SFX.no(); say('Escolha primeiro uma casa marcada: a peça gira lá.'); } return; } SFX.rot(); buzz(4); sel.i = (sel.i + (dir > 0 ? 1 : sel.opts.length - 1)) % sel.opts.length; refresh(); }
   let shownP = 0, pAnim = 0;
   function countP() { if (pAnim) return; const step = () => { if (shownP >= S.gente) { pAnim = 0; return; } shownP++; const el = $('pP'); if (el) { el.textContent = shownP; el.classList.remove('pulsa'); void el.offsetWidth; el.classList.add('pulsa'); }
-      marimba(1046.5 + (shownP % 5) * 90, 0, 0.035); pAnim = setTimeout(step, 90); }; pAnim = setTimeout(step, 450); }
+      SFX.count(shownP); pAnim = setTimeout(step, 90); }; pAnim = setTimeout(step, 450); }
+  let ambW = 1;
   function flow() { const W = game.water(); let f = 0, u = 0; for (const n of W.nets) { f += n.flow; u += n.used; } return [u, f]; }
   function refresh() { const e = sel ? sel.opts[sel.i].e : game.hand().e; drawThumb($('mao'), e);
     if (S.left > 1) { drawThumb($('prox'), game.next().e); $('prox').parentElement.style.visibility = 'visible'; } else $('prox').parentElement.style.visibility = 'hidden';
-    const [u, f] = flow(), sec = game.isSeca();
+    const [u, f] = flow(), sec = game.isSeca(); ambW = f ? 0.35 + 0.65 * Math.max(0, 1 - u / f) : 0.35;
     $('placar').innerHTML = `<b id="pP">${shownP}</b> pessoas · <span class="ag">💧 ${u}/${f}</span><br>${S.left} peça${S.left === 1 ? '' : 's'} · ${sec ? 'Seca' : 'Águas'} ${S.clock + 1}/${game.seasonLen()}`;
     const b = $('colocar');
     if (S.over) { b.disabled = false; b.textContent = `Fim: ${S.gente} pessoas no vale · jogar de novo`; }
@@ -276,7 +257,7 @@ export function buildBoard5(api) {
     const mq = ghost.userData.mq, c0 = hexCenter(q, r); follow(c0);
     const land = () => { grow(q, r, o.e); dust(c0); SFX.thud(); buzz(18); shake(0.9, 0.28);
       let dl = 0.25; for (const x of res.ev) { const kc = x.k != null ? hexCenter(KQ(x.k), KR(x.k)) : c0;
-        if (x.t === 'pedido') { growVillage(x.k); const m = x.txt.match(/\+\d+ pessoas/); floatText(KQ(x.k), KR(x.k), m ? m[0] : `nível ${x.lvl}!`, '#d9ffcf');
+        if (x.t === 'pedido') { chegam(x.k, growVillage(x.k), x.lvl >= 2 ? 2 : 1); const m = x.txt.match(/\+\d+ pessoas/); floatText(KQ(x.k), KR(x.k), m ? m[0] : `nível ${x.lvl}!`, '#d9ffcf');
           setTimeout(() => { SFX.grow(); buzz([20, 40, 30]); burst(kc, FLORES, 36, 16, 22, 10); shake(0.5, 0.25); }, dl * 1000); dl += 0.35; }
         if (x.t === 'nascente') setTimeout(() => { SFX.water(); burst(kc, GOTAS, 22, 9, 16, 2); floatText(KQ(x.k), KR(x.k), x.txt.match(/\+\d+ 💧/) ? x.txt.match(/\+\d+ 💧/)[0] : '+💧', '#cdefff'); }, dl * 1000);
         if (x.t === 'perfeita') setTimeout(() => { SFX.perfect(); burst(kc, OURO, 18, 8, 14, 3); }, dl * 1000);
@@ -291,7 +272,7 @@ export function buildBoard5(api) {
 
   // nenhuma casa serve para a peça na mão: ela passa (o relógio das estações anda junto); repete se a próxima também não servir
   function passIfStuck() { let n = 0; const msgs = [];
-    while (!S.over && !S.escolha.length && !game.fits() && n++ < 30) { const r = game.skip(); msgs.push('a peça não cabia em lugar nenhum e passou'); if (r) for (const x of r.ev) { msgs.push(x.txt); if (x.t === 'pedido') { growVillage(x.k); SFX.grow(); } } }
+    while (!S.over && !S.escolha.length && !game.fits() && n++ < 30) { const r = game.skip(); msgs.push('a peça não cabia em lugar nenhum e passou'); if (r) for (const x of r.ev) { msgs.push(x.txt); if (x.t === 'pedido') { chegam(x.k, growVillage(x.k), x.lvl >= 2 ? 2 : 1); SFX.grow(); } } }
     if (msgs.length) { say(msgs.join(' · ')); SFX.no(); }
     if (S.escolha.length && n) setTimeout(openPack, 600); if (S.over && n) setTimeout(showEnd, 900); }
   // ---------- "A vila cresceu!": dois pacotes; o escolhido entra logo depois da peça na mão
@@ -314,10 +295,25 @@ export function buildBoard5(api) {
   const WALL = [0xf2ece0, 0xf0d9a8, 0xf4efe6, 0xf3d58a, 0xe8e0f0], BAND = [0x3f78b0, 0x9a4a32, 0x4f8a4a, 0x2f5a9a, 0xa8402e], ROOF = [0xb4563a, 0xa94d34, 0xbd6440];
   function addHouseAt(c, p) { const rotY = Math.atan2(c[0] - p[0], c[1] - p[1]) + (rnd() - 0.5) * 0.4, bi = Math.floor(rnd() * BAND.length);
     const h = { p, rot: rotY, w: 6 + rnd() * 1.4, d: 5 + rnd() * 0.6, wall: WALL[Math.floor(rnd() * WALL.length)], band: BAND[bi], trim: BAND[(bi + 2) % BAND.length], roof: ROOF[Math.floor(rnd() * ROOF.length)], porch: rnd() < 0.3 };
-    const o = api.props.addHouse(h); o.traverse(x => x.layers.enable(1)); PATHS.push([[p[0] + Math.sin(rotY) * (h.d / 2 + 1), p[1] + Math.cos(rotY) * (h.d / 2 + 1)], c]); return o; }
+    const o = api.props.addHouse(h); o.userData.house = h; o.traverse(x => x.layers.enable(1)); PATHS.push([[p[0] + Math.sin(rotY) * (h.d / 2 + 1), p[1] + Math.cos(rotY) * (h.d / 2 + 1)], c]); return o; }
   function growVillage(id) { const v = S.vilas.get(id) || [...S.vilas.values()].find(x => x.tiles.has(id)); if (!v) return; const ks = [...v.tiles];
     for (let n = 0; n < 40; n++) { const k = ks[Math.floor(rnd() * ks.length)], c = hexCenter(KQ(k), KR(k)), a = rnd() * 6.283, d = R * (0.25 + rnd() * 0.5), p = [c[0] + Math.cos(a) * d, c[1] + Math.sin(a) * d];
-      if (waterDist(p[0], p[1]) < 6 || api.blocked(p[0], p[1], 1.5)) continue; const o = addHouseAt(c, p); o.userData.sy = o.scale.y; o.scale.y = 0.02; growing.push({ items: [o], wm: null, t: 0, c }); ring(c); return; } }
+      if (waterDist(p[0], p[1]) < 6 || api.blocked(p[0], p[1], 1.5)) continue; const o = addHouseAt(c, p); o.userData.sy = o.scale.y; o.scale.y = 0.02; growing.push({ items: [o], wm: null, t: 0, c }); ring(c); return o.userData.house; } return null; }
+
+  // ---------- gente nova chega a pé à vila que cresceu: vem de fora do vale (do lado oposto ao centro) até a casa nova e
+  // fica morando, com uma rotina entre a casa e os lugares de trabalho em volta (roça, beira do rio, campo, mata, vizinhança)
+  const towardW = (x, z) => { const e = 0.6, gx = waterDist(x + e, z) - waterDist(x - e, z), gz = waterDist(x, z + e) - waterDist(x, z - e); return Math.atan2(-gx, -gz); };
+  function vilaSpots(v) { const out = [], keys = new Set(v.tiles);
+    for (const k of v.tiles) for (let d = 0; d < 6; d++) keys.add(K(KQ(k) + DIRS[d][0], KR(k) + DIRS[d][1]));
+    for (const t of TILES) { if (!keys.has(K(t.q, t.r))) continue; const e = t.e || api.edgesOf(t);
+      for (let d = 0; d < 6; d++) { const ty = e[d], a = -d * Math.PI / 3, at = r => [t.c[0] + Math.cos(a) * R * r, t.c[1] + Math.sin(a) * R * r];
+        if (ty === 'A') { for (let r = 0.2; r < 0.95; r += 0.05) { const [x, z] = at(r), w = waterDist(x, z); if (w > 0.7 && w < 1.5) { out.push({ x, z, t: 'A', face: towardW(x, z) }); break; } } }
+        else if ('CGBV'.includes(ty)) for (const r of [0.5, 0.4, 0.62, 0.3]) { const [x, z] = at(r); if (waterDist(x, z) > 1.5 && !api.blocked(x, z, 0.7)) { out.push({ x, z, t: ty }); break; } } } }
+    return out; }
+  function chegam(id, house, n) { const g = api.gente; if (!g || !g.arrive) return; const v = S.vilas.get(id) || [...S.vilas.values()].find(x => x.tiles.has(id)); if (!v) return;
+    const c = hexCenter(KQ(v.id), KR(v.id)), C0 = api.CENTER || [0, 0]; let dx = c[0] - C0[0], dz = c[1] - C0[1]; const L = Math.hypot(dx, dz) || 1; dx /= L; dz /= L;
+    const spots = vilaSpots(v), door = house ? null : [c[0] + 2, c[1] + 2];
+    for (let i = 0; i < n; i++) setTimeout(() => { const j = (i - (n - 1) / 2) * 2.2, from = [c[0] + dx * R * 2.4 - dz * j, c[1] + dz * R * 2.4 + dx * j]; g.arrive({ from, house, door, spots }); }, 1200 + i * 1400); }
 
   // ---------- a peça brota no vale (o mesmo do board3d.js)
   const growing = [];
@@ -378,6 +374,7 @@ export function buildBoard5(api) {
   $('fimJ').onclick = novoVale;
   if (!seen) hsShow(0);
   return { game, select, turn, commit, sel: () => sel, update(dt) {
+    som.ambient(dt, { day: U.uDay.value, rain: U.uRain.value, seca: game.isSeca(), water: ambW });
     for (let i = growing.length - 1; i >= 0; i--) { const g = growing[i]; g.t += dt; const k = Math.min(1, g.t / 1.4), e = 1 - Math.pow(1 - k, 3), sp = 1 - Math.exp(-6 * g.t) * Math.cos(11 * g.t);
       for (const o of g.items) o.scale.y = Math.max(0.02, o.userData.sy * (o.userData.soft || k >= 1 ? e : sp)); if (g.wm && k > 0.45) g.wm.visible = true; if (k >= 1) growing.splice(i, 1); }
     // a maquete caindo (g = 9,8 m/s², um pouco exagerada para ler no mapa) e o baque
