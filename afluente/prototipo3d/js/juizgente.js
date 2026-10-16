@@ -116,9 +116,14 @@ export function createJuizGente({ gente, spot = [0, 0] }) {
     // silhueta do tronco por altura (meia largura e meia profundidade a cada 1 cm)
     const bins = new Map(); for (let i = 0; i < n; i++) { if (PC.of(i) !== 'tronco') continue; const k = Math.round(S[i * 3 + 1] * 100); const b = bins.get(k) || [0, 0]; b[0] = Math.max(b[0], Math.abs(S[i * 3])); b[1] = Math.max(b[1], Math.abs(S[i * 3 + 2])); bins.set(k, b); }
     const torso = y => bins.get(Math.round(y * 100)) || null;
-    // a tampa do braço acima do ombro: vértice do braço acima do ombro e fora do tronco
-    const yS = boneAt(p, p.arms[1].sh).y; let tampa = 0;
-    for (let i = 0; i < n; i++) { if (PC.of(i) !== 'braço') continue; const y = S[i * 3 + 1]; if (y < yS - 0.005) continue; const t = torso(y); if (!t) { tampa = Math.max(tampa, 0.02); continue; } tampa = Math.max(tampa, Math.abs(S[i * 3]) - t[0]); }
+    // a tampa do braço acima da linha do ombro: o contorno do alto do tronco (de frente: a altura máxima do tronco a cada 5 mm
+    // para o lado, do pescoço ao acrômio, e depois do acrômio descendo) e o braço que passa acima dele. O deltoide por fora do
+    // acrômio, abaixo dessa linha, é o ombro de verdade; acima dela é ombreira
+    const yS = boneAt(p, p.arms[1].sh).y; let tampa = 0; const topo = new Map(); let xMax = 0;
+    for (let i = 0; i < n; i++) { if (PC.of(i) !== 'tronco') continue; const y = S[i * 3 + 1]; if (y < yS - 0.06) continue; const k = Math.floor(Math.abs(S[i * 3]) / 0.005); topo.set(k, Math.max(topo.get(k) ?? -9, y)); xMax = Math.max(xMax, Math.abs(S[i * 3])); }
+    const kMax = Math.floor(xMax / 0.005), env = k => { let m = -9; for (let j = k - 3; j <= k + 3; j++) if (topo.has(j)) m = Math.max(m, topo.get(j)); return m; };   // envoltória (os anéis deixam faixas vazias)
+    const linha = x => { const k = Math.floor(x / 0.005); return k <= kMax ? env(k) : env(kMax) - (x - xMax) * 0.6; };
+    for (let i = 0; i < n; i++) { if (PC.of(i) !== 'braço') continue; const y = S[i * 3 + 1]; if (y < yS - 0.03) continue; tampa = Math.max(tampa, y - linha(Math.abs(S[i * 3]))); }
     M.tampaOmbro = r1(tampa * 1000); if (tampa > 0.004) out.push({ f: 'integração', pen: Math.min(18, tampa * 1500), msg: `o braço aparece acima da linha do ombro: ${r1(tampa * 1000)} mm para fora do tronco (ombreira)` });
     // mão, pé e cabeça presos: a menor distância entre os vértices da peça e os da parte vizinha
     // vão entre duas peças: a menor distância de um vértice da peça A até um triângulo da peça B (do lado direito do corpo)

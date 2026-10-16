@@ -302,7 +302,7 @@ export function buildPeople(scene, { mobile = false, fx = null, afx = null, col:
   // ---------- poses (ângulos em radianos; + na coluna inclina para a frente, − no ombro levanta o braço para a frente)
   const set = (p, o) => { const k = o.k ?? 1, lerp = (obj, key, v) => { obj[key] += (v - obj[key]) * k; };
     lerp(p.pelvis.position, 'y', o.py ?? 0.95); lerp(p.spine.rotation, 'x', o.sp ?? 0); lerp(p.spine.rotation, 'y', o.sy ?? 0); lerp(p.head.rotation, 'x', o.hx ?? 0); lerp(p.head.rotation, 'y', o.hy ?? 0); lerp(p, 'pitch', o.pitch ?? 0);
-    p.arms.forEach((a, i) => { lerp(a.sh.rotation, 'x', (o.sh || [0, 0])[i]); lerp(a.el.rotation, 'x', (o.el || [-0.32, -0.32])[i]); lerp(a.sh.rotation, 'z', (o.shz || [0.1, -0.1])[i]); lerp(a.sh.rotation, 'y', (o.shy || [-0.15, 0.15])[i]); });
+    p.arms.forEach((a, i) => { lerp(a.sh.rotation, 'x', (o.sh || [-0.05, -0.05])[i]); lerp(a.el.rotation, 'x', (o.el || [-0.36, -0.36])[i]); lerp(a.sh.rotation, 'z', (o.shz || [0.15, -0.15])[i]);   /* repouso: braço um pouco aberto e à frente, cotovelo levemente dobrado */ lerp(a.sh.rotation, 'y', (o.shy || [-0.15, 0.15])[i]); });
     p.legs.forEach((l, i) => { lerp(l.hp.rotation, 'x', (o.hp || [0, 0])[i]); lerp(l.kn.rotation, 'x', (o.kn || [0, 0])[i]); lerp(l.ft.rotation, 'x', (o.ft || [0, 0])[i]); lerp(l.hp.rotation, 'z', (o.hpz || [0, 0])[i]); });
     lerp(p.pelvis.rotation, 'y', o.pry ?? 0); if (o.prz != null) lerp(p.pelvis.rotation, 'z', o.prz); if (o.maos) p.maos = o.maos; };
   // a passada (anatomia.js): marcha ou corrida com o pé de apoio parado no chão; o passo e a cadência vêm da altura e da velocidade

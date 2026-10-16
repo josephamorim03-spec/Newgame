@@ -42,18 +42,25 @@ const FRENTE = Math.PI / 2, COSTAS = -Math.PI / 2;
 // material da pele e da roupa: cor por vértice; 'pat' diz o que é cada parte:
 // 0 pele, 1 roupa estampada (chita/xadrez, usa a textura), 2 cabelo, 3 roupa lisa, 4 palha, 5 couro/sola
 const patMats = new Map();
+// a cor média de uma estampa (linear): o pano estampado leva essa cor no vértice e o shader divide a textura por ela, então na
+// emenda com a pele o triângulo mistura pele com a cor do pano (e não com branco, que fazia um fio claro no decote e na manga)
+export function mediaEstampa(tex) { if (!tex) return null; if (tex.userData.media) return tex.userData.media; let m = new THREE.Color(0.6, 0.6, 0.6);
+  try { const im = tex.image, cv = document.createElement('canvas'); cv.width = cv.height = 16; const x = cv.getContext('2d'); x.drawImage(im, 0, 0, 16, 16); const d = x.getImageData(0, 0, 16, 16).data;
+    let r = 0, g = 0, b = 0; const lin = v => { v /= 255; return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
+    for (let i = 0; i < d.length; i += 4) { r += lin(d[i]); g += lin(d[i + 1]); b += lin(d[i + 2]); } const n = d.length / 4; m = new THREE.Color(Math.max(0.02, r / n), Math.max(0.02, g / n), Math.max(0.02, b / n)); } catch (e) {}
+  tex.userData.media = m; return m; }
 export function bodyMaterial(patTex) {
   const key = patTex ? patTex.uuid : 'liso'; if (patMats.has(key)) return patMats.get(key);
-  const m = toon({ vertexColors: true, map: patTex || null });
-  m.onBeforeCompile = sh => { shared(sh);
+  const m = toon({ vertexColors: true, map: patTex || null }), med = mediaEstampa(patTex) || new THREE.Color(1, 1, 1);
+  m.onBeforeCompile = sh => { shared(sh); sh.uniforms.uMedia = { value: med };
     sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute float pat;varying float vPat;varying vec3 vWp;varying vec2 vU;')
       .replace('#include <skinning_vertex>', '#include <skinning_vertex>\nvPat=pat;vU=uv;vWp=(modelMatrix*vec4(transformed,1.0)).xyz;');
-    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying float vPat;varying vec3 vWp;varying vec2 vU;\n' + HEAD)
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying float vPat;varying vec3 vWp;varying vec2 vU;uniform vec3 uMedia;\n' + HEAD)
       .replace('#include <map_fragment>', `
         float printed=step(0.5,vPat)*step(vPat,1.5),isHair=step(1.5,vPat)*step(vPat,2.5),plain=step(2.5,vPat)*step(vPat,3.5),straw=step(3.5,vPat)*step(vPat,4.5),leather=step(4.5,vPat);
         float cloth=printed+plain,skin=1.0-cloth-isHair-straw-leather;
         #ifdef USE_MAP
-        vec4 tx=texture2D(map,vMapUv);diffuseColor.rgb=mix(diffuseColor.rgb,diffuseColor.rgb*tx.rgb,printed);
+        vec4 tx=texture2D(map,vMapUv);diffuseColor.rgb=mix(diffuseColor.rgb,diffuseColor.rgb*tx.rgb/uMedia,printed);
         #endif
         // pele: poros e manchinhas bem leves
         diffuseColor.rgb*=1.0+(vnoise(vU*vec2(90.0,140.0))-0.5)*0.06*skin;
@@ -71,7 +78,7 @@ export function bodyMaterial(patTex) {
         {float hl=pow(max(0.0,1.0-abs(normal.y-0.55)*2.2),3.0)*isHair;totalEmissiveRadiance+=diffuseColor.rgb*hl*0.35*uSunC;}
         // pele: a luz que atravessa (orelha, nariz, bochecha) esquenta a sombra, em vez de cinza
         {float skn=1.0-step(0.5,vPat);totalEmissiveRadiance+=diffuseColor.rgb*vec3(0.16,0.05,0.03)*skn*(0.4+0.6*uDay);}`); };
-  m.customProgramCacheKey = () => 'corpo2' + (patTex ? 1 : 0);
+  m.customProgramCacheKey = () => 'corpo3' + (patTex ? 1 : 0);
   patMats.set(key, m); return m;
 }
 
@@ -165,13 +172,13 @@ const TOR = {
   m: [[0.795, 0.088, 0.06, 0.066, -0.004, 2.0], [0.82, 0.15, 0.088, 0.1, -0.01, 2.1], [0.86, 0.158, 0.093, 0.108, -0.014, 2.1], [0.90, 0.161, 0.095, 0.11, -0.014, 2.15],
     [0.95, 0.163, 0.097, 0.103, -0.01, 2.15], [1.00, 0.156, 0.098, 0.094, -0.004, 2.2], [1.05, 0.148, 0.098, 0.088, 0.002, 2.25], [1.10, 0.151, 0.101, 0.088, 0.006, 2.25],
     [1.16, 0.16, 0.107, 0.093, 0.008, 2.3], [1.22, 0.16, 0.112, 0.099, 0.01, 2.35], [1.28, 0.165, 0.113, 0.104, 0.01, 2.35], [1.33, 0.167, 0.107, 0.106, 0.006, 2.3],
-    [1.355, 0.19, 0.103, 0.104, 0.004, 2.6], [1.375, 0.205, 0.095, 0.099, 0.001, 2.9], [1.392, 0.203, 0.087, 0.092, -0.003, 2.9], [1.408, 0.18, 0.079, 0.084, -0.006, 2.6],
-    [1.428, 0.118, 0.068, 0.072, -0.008, 2.2], [1.445, 0.072, 0.06, 0.062, -0.006, 2.0]],
+    [1.355, 0.178, 0.103, 0.104, 0.004, 2.45], [1.375, 0.186, 0.095, 0.099, 0.001, 2.55], [1.392, 0.185, 0.087, 0.092, -0.003, 2.55], [1.408, 0.168, 0.079, 0.084, -0.006, 2.4],
+    [1.428, 0.122, 0.068, 0.074, -0.008, 2.2], [1.445, 0.074, 0.06, 0.064, -0.006, 2.0]],
   f: [[0.79, 0.092, 0.06, 0.068, -0.004, 2.0], [0.815, 0.167, 0.088, 0.104, -0.012, 2.1], [0.85, 0.176, 0.093, 0.114, -0.018, 2.1], [0.885, 0.181, 0.094, 0.116, -0.02, 2.15],
     [0.93, 0.18, 0.094, 0.107, -0.016, 2.15], [0.98, 0.162, 0.093, 0.096, -0.008, 2.2], [1.03, 0.14, 0.09, 0.086, 0.0, 2.2], [1.065, 0.131, 0.088, 0.083, 0.004, 2.2],
     [1.11, 0.135, 0.091, 0.083, 0.008, 2.25], [1.16, 0.143, 0.096, 0.087, 0.012, 2.3], [1.21, 0.149, 0.1, 0.091, 0.012, 2.3], [1.27, 0.155, 0.1, 0.094, 0.01, 2.3],
-    [1.32, 0.152, 0.097, 0.095, 0.006, 2.25], [1.345, 0.172, 0.091, 0.092, 0.003, 2.55], [1.365, 0.186, 0.083, 0.087, 0.0, 2.8], [1.382, 0.184, 0.077, 0.082, -0.004, 2.8],
-    [1.398, 0.162, 0.071, 0.076, -0.006, 2.5], [1.422, 0.104, 0.063, 0.067, -0.007, 2.1], [1.44, 0.064, 0.054, 0.056, -0.005, 2.0]],
+    [1.32, 0.152, 0.097, 0.095, 0.006, 2.25], [1.345, 0.162, 0.091, 0.092, 0.003, 2.4], [1.365, 0.168, 0.083, 0.087, 0.0, 2.5], [1.382, 0.167, 0.077, 0.082, -0.004, 2.5],
+    [1.398, 0.151, 0.071, 0.076, -0.006, 2.35], [1.422, 0.106, 0.063, 0.068, -0.007, 2.1], [1.44, 0.066, 0.054, 0.057, -0.005, 2.0]],
 };
 function anelBase(T, y) { let i = 1; while (i < T.length - 1 && y > T[i][0]) i++; const a = T[i - 1], b = T[i], t = cl((y - a[0]) / (b[0] - a[0]), 0, 1); return a.map((v, j) => v + (b[j] - v) * t); }
 const superR = (a, W, Fr, Bk, e) => { const c = Math.abs(Math.cos(a)), s = Math.abs(Math.sin(a)), Dd = Math.sin(a) >= 0 ? Fr : Bk; return 1 / Math.pow(Math.pow(c / W, e) + Math.pow(s / Dd, e), 1 / e); };
@@ -213,7 +220,7 @@ function relevo(P, y, a) {
 // ossos: índices fixos de cada parte (dedos e polegar entram depois)
 export function buildBody(s) {
   const P = s.perfil || (s.perfil = fazPerfil(s)), kid = P.kid, f = P.f, L = P.L, med = P.med;
-  const skin = C(s.skin), top = C(s.top.color || 0xffffff), bot = C(s.bottom.color || 0xffffff), shoe = C(s.shoes || 0x3a2a20), hairC = C(s.hairColor);
+  const skin = C(s.skin), top = C(s.top.color || 0xffffff).multiply(mediaEstampa(s.top.tex) || new THREE.Color(1, 1, 1)), bot = C(s.bottom.color || 0xffffff).multiply((s.bottom.tex && mediaEstampa(s.top.tex)) || new THREE.Color(1, 1, 1)),   /* o corpo usa a estampa de cima */ shoe = C(s.shoes || 0x3a2a20), hairC = C(s.hairColor);
   const topPat = s.top.tex ? 1 : 3, botPat = s.bottom.tex ? 1 : 3, dressTop = !!s.dress;
   const [, yAnk, yKnee, yCrotch, yHipJ, , yWaist, , yShJ, yNeck, yChin] = L;
   const deTab = P.deTab, paraTab = P.paraTab;
@@ -250,7 +257,7 @@ export function buildBody(s) {
   // ---------- roupa: o que veste cada pedaço
   const shawl = s.warm && f ? C(s.warmColor || 0x8a4a3a) : null, jacket = s.warm && !f ? C(s.warmColor || 0x5a4a3a) : null;
   const tucked = !f && !kid && !dressTop;                  // camisa dentro da calça, com cinto
-  const belly = P.barriga, pants = !s.skirt;
+  const nu = !!s.nu, belly = P.barriga, pants = !s.skirt && !nu;   // nu: só o corpo, sem roupa (bancada de testes)
   // altura do cinto (cós da calça) em cada direção: passa por baixo da barriga na frente
   const beltY0 = deTab(f ? 1.0 : 0.985), beltDrop = 0.03 * belly + (P.m ? 0.004 : 0);
   const beltY = a => beltY0 - beltDrop * Math.max(0, Math.sin(a)) ** 2;
@@ -261,7 +268,7 @@ export function buildBody(s) {
     if (camisa) return yNeck - 0.008 - vD * Math.max(0, 1 - Math.abs(dA(a, FRENTE)) / vA) ** 1.15;
     return yNeck - 0.008 - fr * (dressTop ? 0.07 : f ? 0.05 : s.shirt === 'camiseta' || kid ? 0.014 : 0.035); };
   // o que veste o ponto (y, a) do tronco: 'pele', 'cima' (camisa, blusa, vestido) ou 'baixo' (calça)
-  const veste = (y, a) => { if (y >= decote(a)) return 'pele'; if (jacket && y >= deTab(0.9)) return 'agasalho'; if (shawl && y >= deTab(1.16)) return 'xale';
+  const veste = (y, a) => { if (nu || y >= decote(a)) return 'pele'; if (jacket && y >= deTab(0.9)) return 'agasalho'; if (shawl && y >= deTab(1.16)) return 'xale';
     if (dressTop) return 'cima'; if (pants && y < beltY(a)) return (!tucked && topBottom > 0 && y >= topBottom) ? 'cima' : 'baixo';
     if (!pants && y < deTab(1.0)) return 'cima'; return 'cima'; };
   const folga = { cima: s.shirt === 'camiseta' || kid ? 0.005 : f ? 0.006 : 0.008, baixo: 0.006, agasalho: 0.014, xale: 0.012 };
@@ -293,7 +300,7 @@ export function buildBody(s) {
     wh -= ww[0] + ww[1]; out.push([I(legs[0].hp), ww[0] * (1)], [I(legs[1].hp), ww[1]]);
     // ombro: alto e lado de fora vão com a clavícula (e um pouco com o úmero); a axila abre com o braço
     const ax = Math.abs(R * Math.cos(a)), side = Math.cos(a) > 0 ? 1 : 0, A = arms[side];
-    const wc = 0.55 * sm01((y - (yShJ - 0.08)) / 0.1) * sm01((ax - 0.08) / 0.08), wsh = 0.34 * sm01((y - (yShJ - 0.15)) / 0.1) * sm01((ax - 0.12) / 0.06);
+    const wc = (0.55 + 0.35 * sm01((ax - 0.13) / 0.04)) * sm01((y - (yShJ - 0.08)) / 0.1) * sm01((ax - 0.08) / 0.08),   /* em cima do acrômio a pele vai inteira com a escápula */ wsh = 0.34 * sm01((y - (yShJ - 0.15)) / 0.1) * sm01((ax - 0.12) / 0.06);
     const wTop = Math.min(wch, wc + wsh); wch -= wTop; if (wTop > 0) { const k = wTop / ((wc + wsh) || 1); out.push([I(A.clav), wc * k], [I(A.sh), wsh * k]); }
     out.push([I(hips), Math.max(0, wh)], [I(spine), wsp], [I(chest), wch]); return out; };
   const corDe = (g, y) => { const ao = y < yCrotch + 0.04 ? 0.82 + 0.18 * sm01((y - yCrotch) / 0.04) : 1;
@@ -313,8 +320,8 @@ export function buildBody(s) {
   let pescoco = null;
   // ---------- pescoço: sobe inclinado para a frente, com esternocleidomastoideo, pomo de adão, nuca e papada
   { const rn = med.pescoco, cr = P.cranio, NS = 20, hgt = yChin + 0.06 - (yNeck - 0.012), ys = [0, 0.15, 0.32, 0.5, 0.68, 0.85, 1].map(t => yNeck - 0.012 + t * hgt);
-    const rings = ys.map((y, i) => { const t = i / (ys.length - 1), R = new Float32Array(NS), cz = -0.012 + 0.024 * t;
-      for (let k = 0; k < NS; k++) { const a = k / NS * Math.PI * 2; let r = rn * (1 + 0.12 * (1 - t) * G(dA(a, COSTAS), 1.1)) * (Math.sin(a) > 0 ? 0.98 : 1.04);
+    const rings = ys.map((y, i) => { const t = i / (ys.length - 1), R = new Float32Array(NS), cz = -0.006 - 0.004 * t;   // a garganta recua embaixo do queixo
+      for (let k = 0; k < NS; k++) { const a = k / NS * Math.PI * 2; let r = rn * (1 + 0.12 * (1 - t) * G(dA(a, COSTAS), 1.1)) * (Math.sin(a) > 0 ? 0.98 - 0.12 * t * Math.sin(a) : 1.04);
         const sa = 0.35 + 1.0 * t; for (const s2 of [-1, 1]) r += (0.0025 + 0.002 * P.M) * G(dA(a, FRENTE + s2 * sa), 0.42) * (1 - 0.6 * Math.abs(t - 0.45));
         r += cr.pomo * G(dA(a, FRENTE), 0.25) * G(y - (yChin + 0.012), 0.012); r += cr.papada * 1.4 * G(dA(a, FRENTE), 0.8) * sm01((t - 0.55) / 0.4);
         if (t > 0.85) r += 0.01 * G(dA(a, COSTAS), 0.9); R[k] = r; }
@@ -324,24 +331,27 @@ export function buildBody(s) {
     bd.setPart('tronco'); bd.tube(rings, NS, true, false); pescoco = { rings: rings.map(r => ({ y: r.c.y, cz: r.c.z, R: r.R })), NS, wN: y => { const t = (y - ys[0]) / hgt, i = t < 0.15 ? t / 0.15 : 1 + (t - 0.15) / 0.17; return cl(i * 0.5, 0, 1); } }; }
 
   // ---------- braços
-  const sleeveEnd = s.warm ? 0.97 : { longa: 0.97, 'arregaçada': 0.58, curta: 0.2, nenhuma: -1 }[s.sleeves] ?? 0.2;   // até onde vai a manga (0 = ombro, 1 = punho)
+  const sleeveEnd = nu ? -1 : s.warm ? 0.97 : { longa: 0.97, 'arregaçada': 0.58, curta: 0.2, nenhuma: -1 }[s.sleeves] ?? 0.2;   // até onde vai a manga (0 = ombro, 1 = punho)
   const sleeveC = jacket || (shawl ? null : top), sleevePat = jacket ? 3 : topPat;
   for (const A of arms) { const sx = A.sx, S = W['sh' + A.tag], E = W['el' + A.tag], Wr = W['ha' + A.tag], aL = sx > 0 ? 0 : Math.PI, aM = aL + Math.PI;
     const M = P.M, Fp = Math.max(0, P.F), ff = f ? 0.9 : kid ? 0.82 : 1, fat = 0.003 * P.F + (f ? 0.004 * Fp : 0);
-    const rUp = t => tab([[-0.04, 0.026], [0, 0.036], [0.05, 0.041], [0.08, 0.044], [0.18, 0.044], [0.3, 0.043], [0.45, 0.044], [0.6, 0.043], [0.75, 0.041], [0.88, 0.038], [0.97, 0.036], [1.05, 0.036]], t) * ff;
+    const rUp = t => tab([[-0.09, 0.02], [-0.05, 0.034], [-0.01, 0.042], [0.04, 0.0465], [0.1, 0.047], [0.18, 0.045], [0.3, 0.043], [0.45, 0.044], [0.6, 0.043], [0.75, 0.041], [0.88, 0.038], [0.97, 0.036], [1.05, 0.036]], t) * ff;
     const rLo = t => tab([[0, 0.038], [0.1, 0.041], [0.25, 0.04], [0.45, 0.035], [0.65, 0.03], [0.82, 0.026], [0.95, 0.024], [1.0, 0.0235]], t) * ff;
     const NA = 16, rings = [], pos01 = [];   // pos01: posição ao longo do braço (0 ombro, 0,53 cotovelo, 1 punho) para a manga
     const frame = (a0, a1) => { const ax = a1.clone().sub(a0).normalize(), w = V(0, 0, 1).addScaledVector(ax, -ax.z).normalize(), u = new THREE.Vector3().crossVectors(w, ax).normalize(); return { ax, u, w }; };
     const fu = frame(S, E), fl = frame(E, Wr), su = Lu / (Lu + Lf);
-    for (const t of [-0.04, 0, 0.08, 0.18, 0.3, 0.42, 0.55, 0.68, 0.8, 0.9, 0.97]) { const c = S.clone().lerp(E, t); if (t < 0.08) c.x -= sx * 0.014 * (1 - sm01((t + 0.04) / 0.12));   // o alto do braço fica dentro do ombro do tronco
+    // dois anéis colados na barra da manga: a troca do pano para a pele fica num vão de 2 cm (embaixo da bainha), não num de 6
+    const barra = (lst, t0) => { if (!(t0 > 0.05 && t0 < 0.96) || !(sleeveEnd > 0)) return lst; const nv = [t0 - 0.012, t0 + 0.012]; return [...lst.filter(t => nv.every(u => Math.abs(t - u) > 0.015)), ...nv].sort((a, b) => a - b); };
+    // o alto do braço é o deltoide: uma capa redonda que nasce por baixo do acrômio (o tronco vai só até ele) e desce pelo braço
+    for (const t of barra([-0.09, -0.05, -0.01, 0.04, 0.1, 0.18, 0.3, 0.42, 0.55, 0.68, 0.8, 0.9, 0.97], sleeveEnd / su)) { const c = S.clone().lerp(E, t); if (t < 0.1) c.x -= sx * 0.02 * (1 - sm01((t + 0.09) / 0.17));
       const R = new Float32Array(NA); for (let k = 0; k < NA; k++) { const a = k / NA * Math.PI * 2; let r = rUp(t) + fat * sm01((t + 0.05) / 0.2);
-        r += (0.003 + 0.006 * M) * (kid ? 0.5 : 1) * G(dA(a, aL), 0.8) * G(t - 0.17, 0.1);                          // deltoide
+        r += (0.002 + 0.006 * M) * (kid ? 0.5 : 1) * G(dA(a, aL), 0.9) * G(t - 0.07, 0.09);                          // deltoide (feixe do meio)
         r += (0.003 + 0.008 * M) * (kid ? 0.4 : 1) * G(dA(a, FRENTE), 0.55) * G(t - 0.6, 0.18);                       // bíceps
         r += (0.004 + 0.006 * M + 0.006 * Fp * (f ? 1.5 : 0.6)) * G(dA(a, COSTAS), 0.6) * G(t - 0.45, 0.22);          // tríceps (e o braço da mulher)
         R[k] = r; }
       const wsh = sm01((t + 0.06) / 0.14), we = t > 0.85 ? 0.5 * sm01((t - 0.85) / 0.15) : 0;
       rings.push({ c, u: fu.u, w: fu.w, R, b: [[I(A.clav), 1 - wsh], [I(A.sh), wsh - we], [I(A.el), we]] }); pos01.push(Math.max(0, t) * su); }
-    for (const t of [0.04, 0.12, 0.25, 0.4, 0.55, 0.7, 0.82, 0.92, 0.985]) { const c = E.clone().lerp(Wr, t), R = new Float32Array(NA), fl01 = sm01((t - 0.7) / 0.28);
+    for (const t of barra([0.04, 0.12, 0.25, 0.4, 0.55, 0.7, 0.82, 0.92, 0.985], (sleeveEnd - su) / (1 - su))) { const c = E.clone().lerp(Wr, t), R = new Float32Array(NA), fl01 = sm01((t - 0.7) / 0.28);
       for (let k = 0; k < NA; k++) { const a = k / NA * Math.PI * 2; let r = rLo(t) + fat * 0.6 * (1 - t);
         r += 0.006 * G(dA(a, COSTAS), 0.5) * G(t - 0.02, 0.05) + 0.004 * G(dA(a, aM), 0.4) * G(t - 0.02, 0.05);      // olécrano, epicôndilo
         r += (0.004 + 0.006 * M) * (kid ? 0.4 : 1) * G(dA(a, (FRENTE + aL) / 2 + (sx > 0 ? 0 : Math.PI / 2)), 0.6) * G(t - 0.22, 0.14);   // braquiorradial
@@ -370,7 +380,7 @@ export function buildBody(s) {
   }
 
   // ---------- pernas
-  const legEnd = s.skirt ? -1 : s.pants === 'bermuda' ? 0.42 : 0.96;   // calça: 0 virilha .. 1 tornozelo
+  const legEnd = s.skirt || nu ? -1 : s.pants === 'bermuda' ? 0.42 : 0.96;   // calça: 0 virilha .. 1 tornozelo
   const gluteA = f ? 0.022 + 0.014 * Math.max(0, P.F + 0.3) : 0.01 + 0.007 * P.M;
   for (const Lg of legs) { const sx = Lg.sx, Hj = W['hp' + Lg.tag], K = W['kn' + Lg.tag], Ak = W['ft' + Lg.tag], aL = sx > 0 ? 0 : Math.PI, aM = aL + Math.PI;
     const M = P.M, Fp = Math.max(0, P.F), ff = kid ? 0.85 : 1;
@@ -449,7 +459,7 @@ export function buildBody(s) {
   const wAt = p => pesoTronco(Math.min(p.y, yTop), angOf(p), Math.hypot(p.x, p.z - czTop));   // o pano vai com a pele de baixo
   const wGola = p => { const wn = pescoco ? pescoco.wN(p.y) : 0; return [[I(chest), 1 - 0.4 * wn], [I(neck), 0.4 * wn]]; };   // o pé da gola vai com o peito e um pouco com o pescoço
   const mixW = (A, B, t) => { const m = new Map(); for (const [i, w] of A) m.set(i, (m.get(i) || 0) + w * (1 - t)); for (const [i, w] of B) m.set(i, (m.get(i) || 0) + w * t); return [...m]; };
-  if (camisa && pescoco) {
+  if (camisa && pescoco && !nu) {
     // o pé da gola: uma tira em pé em volta do pescoço, aberta na frente (o primeiro botão solto), que nasce de dentro da camisa
     const dS = vA * 0.9, aS = u => FRENTE + dS + u * (Math.PI * 2 - 2 * dS), ySb = a => yNeck - 0.014 - 0.006 * front(a), ySt = a => yNeck + (f ? 0.024 : 0.028) - 0.008 * front(a);
     const stand = (u, v) => { const a = aS(u), yt = ySt(a), p = surf(yt, a, 0.0035 + 0.0012 * (1 - v)); p.y = ySb(a) + (yt - ySb(a)) * v; return p; };
@@ -475,8 +485,8 @@ export function buildBody(s) {
     if (!f) { const yP = deTab(1.29), aP = FRENTE - 0.55, pk = (y0, y1, off, w = 0.031) => (u, v) => { const y = y0 + (y1 - y0) * v, R = Rang(anelEm(y, 'cima').R, aP, SEG); return surf(y, aP + (u * 2 - 1) * w / R, off); };
       bd.rigid(shell(pk(yP - 0.04, yP + 0.03, 0.0022), 4, 4, 0.0018, tint(0.93), tint(0.8), tint(0.74), radial), C(0xffffff), wAt, topPat);   /* bolso */
       bd.rigid(shell(pk(yP + 0.015, yP + 0.033, 0.0042, 0.033), 4, 1, 0.0018, tint(0.86), tint(0.76), tint(0.66), radial), C(0xffffff), wAt, topPat); } }   /* aba do bolso */
-  else if (!jacket && !shawl && pescoco) {   // camiseta, vestido, blusa de criança: ribana em volta do decote, cobrindo a emenda da pele com o pano
-    const rib = (u, v) => { const a = FRENTE + u * Math.PI * 2, y = decote(a) - 0.011 + 0.013 * v; return surf(y, a, 0.0024 + 0.0008 * Math.sin(Math.PI * v)); };
+  else if (!jacket && !shawl && pescoco && !nu) {   // camiseta, vestido, blusa de criança: ribana em volta do decote, cobrindo a emenda da pele com o pano
+    const rib = (u, v) => { const a = FRENTE + u * Math.PI * 2, y = decote(a) - 0.009 + 0.017 * v; return surf(y, a, 0.0024 + 0.0008 * Math.sin(Math.PI * v)); };
     bd.setPart('gola'); bd.rigid(shell(rib, 36, 2, 0.0018, tint(0.86), tint(0.7), tint(0.66), radial), C(0xffffff), wAt, topPat); }
   bd.setPart('roupa');
   if (pants && !kid) {   // passadores do cinto (o pano da calça por cima do couro)
@@ -581,17 +591,21 @@ function campoCabeca(cr) {
     const qx = fc[0] + (x - fc[0]) / fs, qy = fc[1] + (y - fc[1]) / fs, qz = fc[2] + (z - fc[2]) / fs;
     if (qz < -0.055 || qy > 0.19 || qy < -0.045 || Math.abs(qx) > 0.115) return semOrbita ? d : orbita(d, x, y, z);   // longe do rosto: só o crânio
     let e = sEll(qx, qy, qz, 0, 0.085, 0.052, 0.04, 0.042, 0.046);
-    e = smin(e, sEll(qx, qy, qz, 0, 0.064, 0.074, 0.03, 0.02, 0.026), 0.012);
+    e = smin(e, sEll(qx, qy, qz, 0, 0.064, 0.074, 0.03, 0.02, 0.026), 0.02);
     for (const s of [-1, 1]) {
       e = smin(e, sEll(qx, qy, qz, s * (cr.zig - 0.019), 0.108, 0.062, 0.021, 0.015, 0.028), 0.014);
       e = smin(e, sCap(qx, qy, qz, s * (cr.zig - 0.004), 0.104, 0.045, s * 0.068, 0.1, -0.005, 0.008), 0.012);
-      e = smin(e, sCap(qx, qy, qz, s * 0.06, 0.1, -0.012, s * cr.gonio, cr.gonY, -0.004, m ? 0.011 : 0.0095), 0.012);
-      e = smin(e, sCap(qx, qy, qz, s * cr.gonio, cr.gonY, -0.004, s * cr.queixo, 0.012, cr.queixoZ - 0.012, m ? 0.0105 : 0.009), 0.014);
-      e = smin(e, sEll(qx, qy, qz, s * 0.043, 0.068, 0.056, 0.021 + cr.bochecha, 0.024, 0.026), 0.016);
+      e = smin(e, sCap(qx, qy, qz, s * 0.06, 0.1, -0.012, s * cr.gonio, cr.gonY, -0.004, m ? 0.011 : 0.0095), 0.016);
+      // masseter: enche o lado do rosto entre a maçã e o ângulo da mandíbula (sem sulco entre a bochecha e o osso)
+      e = smin(e, sEll(qx, qy, qz, s * (cr.gonio - 0.011), (cr.gonY + 0.095) / 2, 0.008, 0.011, (0.095 - cr.gonY) / 2 + 0.006, 0.022), 0.018);
+      e = smin(e, sCap(qx, qy, qz, s * cr.gonio, cr.gonY, -0.004, s * cr.queixo, 0.012, cr.queixoZ - 0.012, m ? 0.0105 : 0.009), 0.018);
+      e = smin(e, sEll(qx, qy, qz, s * 0.043, 0.064, 0.054, 0.021 + cr.bochecha, 0.03, 0.026), 0.024);
+      e = smin(e, sEll(qx, qy, qz, s * (cr.gonio * 0.66), 0.042, 0.034, 0.017, 0.03, 0.034), 0.022);   // o lado de baixo do rosto, entre o canto da boca e o ângulo
       e = smin(e, sCap(qx, qy, qz, s * 0.012, 0.143, 0.086, s * 0.046, 0.141, 0.08, 0.006 + cr.arco), 0.012); }
-    e = smin(e, sEll(qx, qy, qz, 0, 0.008, cr.queixoZ - 0.01, cr.queixo + 0.008, 0.016, 0.013), 0.012);
+    e = smin(e, sEll(qx, qy, qz, 0, 0.011, cr.queixoZ - 0.013, cr.queixo + 0.008, 0.019, 0.015), 0.016);   // queixo redondo
+    e = smin(e, sEll(qx, qy, qz, 0, 0.036, cr.queixoZ - 0.006, 0.024, 0.022, 0.016), 0.02);   // entre o lábio de baixo e o queixo (sem o degrau)
     e = smin(e, sEll(qx, qy, qz, 0, 0.022, 0.03, 0.035, 0.012 + cr.papada, 0.035), 0.02);
-    d = smin(d, e * fs, 0.02);
+    d = smin(d, e * fs, 0.03);   // a emenda do crânio com o rosto, larga: sem aresta da têmpora ao ângulo da mandíbula
     return semOrbita ? d : orbita(d, x, y, z); };
   const orbita = (d, x, y, z) => { for (const p of eyes) d = smax(d, -(Math.hypot(x - p[0], y - p[1], z - p[2]) - 0.0185 * fs), 0.007); return d; };
   // raio da superfície em cada direção (grade de 48 × 36 direções, tirada uma vez por cabeça)
