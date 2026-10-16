@@ -104,8 +104,8 @@ export function buildPeople(scene, { mobile = false, fx = null, afx = null, col:
     const cl = [];
     if (s.skirt) { const len = s.sex === 'c' ? 0.36 : s.skirt <= 0.56 ? 0.5 : s.skirt <= 0.7 ? 0.62 : 0.82, bw = body.bw;
       const t = texOf(s.dress ? s.top.mat : s.bottom.mat), tex = t ? Object.assign(t.clone(), { needsUpdate: true }) : null; if (tex) { tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.repeat.set(1, 1); }
-      cl.push(Cloth({ strips: mobile ? 16 : 22, rows: 8, len, r0x: 0.14 * bw, r0z: 0.105 * bw, flare: 0.13 + len * 0.08, tex, color: tex ? 0xffffff : (s.dress ? s.top.color : s.bottom.color) })); }
-    if (s.apron) cl.push(Cloth({ strips: 8, rows: 6, len: (s.skirt ? 0.5 : 0.55), r0x: 0.155 * body.bw, r0z: 0.125 * body.bw, flare: 0.08, arc: [Math.PI / 2 - 0.8, Math.PI / 2 + 0.8], color: 0xf2ede2, margin: 0.055, drop: -0.02, minK: 0.92 }));
+      cl.push(Cloth({ strips: mobile ? 16 : 22, rows: 8, len, r0x: 0.158 * bw, r0z: 0.108 * bw, flare: 0.13 + len * 0.08, tex, color: tex ? 0xffffff : (s.dress ? s.top.color : s.bottom.color), hip: body.hipProf })); }
+    if (s.apron) cl.push(Cloth({ strips: 8, rows: 6, len: (s.skirt ? 0.5 : 0.55), r0x: 0.155 * body.bw, r0z: 0.125 * body.bw, flare: 0.08, arc: [Math.PI / 2 - 0.8, Math.PI / 2 + 0.8], color: 0xf2ede2, margin: 0.055, drop: -0.02, minK: 0.92, hip: body.hipProf }));
     for (const c of cl) { scene.add(c.mesh); clothes.push(c); }
     g.scale.setScalar(s.h / 1.70);
     const P = { g, body: body.mesh, warmGeo, coolGeo, warm: false, pelvis, spine, head, arms, legs, tool, two, lids: body.lids, swing: body.swing, blinkT: 2 + rnd() * 4, extra, lata, s, cloth: cl, waistY: body.waistY, bw: body.bw, x: 0, z: 0, h: 0, ph: rnd() * 6, t: 0, st: 'post', sit: 0, pitch: 0 };
