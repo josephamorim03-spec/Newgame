@@ -72,37 +72,44 @@ export function especies({ M, MJ, rnd }) {
       return [x, y]; };
     const neckPts = [[0, 1.01, 0.42], [0, 1.1, 0.64], [0, 1.22, 0.81], [0, 1.31, 0.95]], nc = a => shade(0.75)(a);
     const neck = { pts: neckPts, prof: [{ rx: 0.232, rt: 0.34, rb: 0.4, e: 2.2, c: nc }, { rx: 0.175, rt: 0.18, rb: 0.29, c: nc }, { rx: 0.14, rt: 0.145, rb: 0.22, c: nc }, { rx: 0.11, rt: 0.11, rb: 0.13, c: nc }],
-      shape: (x, v, a, r, i) => { if (v < 0) { const bot = Math.pow(Math.max(0, -Math.sin(a)), 4); x *= 1 - 0.62 * bot * (i < 3 ? 1 : 0.3); } return [x, v]; } };
-    // cabeça de zebu: testa larga e chata entre os chifres, bochecha (masseter) cheia embaixo, chanfro que afina e o focinho
-    // que alarga de novo, com a almofada escura do nariz, as narinas dos lados e o queixo; olhos grandes de lado
+      shape: (x, v, a, r, i) => { if (v < 0) { const bot = Math.pow(Math.max(0, -Math.sin(a)), 4), k = i < 3 ? 1 : 0.55; x *= 1 - 0.72 * bot * k; v *= 1 + 0.32 * bot * k; } return [x, v]; } };   // barbela (papo) pendendo do pescoço
+    // cabeça (como na referência): testa larga, chata e quadrada, mais larga na altura dos olhos; mandíbula funda embaixo
+    // deles; a face afina no meio e o focinho alarga de novo, largo e arredondado, com narinas grandes; olhos grandes de lado
+    // sob o arco da sobrancelha; orelhas grandes e ovais, quase na horizontal, viradas um pouco para a frente; papada sob o queixo
     const th = 1.0, S = (t, x, y) => [x, y * Math.cos(th) - t * Math.sin(th), y * Math.sin(th) + t * Math.cos(th)];
     const muzzle = S(0.55, 0, -0.01), pinkNose = coat.w === 0xf0ebe2 || (coat.k < 0.35 && rnd() < 0.3), nose = col(pinkNose ? 0x9a6a5e : 0x2a2422);
-    const gir = !!coat.spot && coat.w !== 0xf0ebe2, earL = gir ? 0.19 : 0.135;
+    const gir = !!coat.spot && coat.w !== 0xf0ebe2, earL = gir ? 0.2 : 0.18;
     const head = H => {
-      const hc = (t, a) => { const up = Math.sin(a); if (t > 0.505) return nose; if (t > 0.44) return mix(w, nose, 0.35 + 0.3 * (t - 0.44) / 0.065); return t < 0.1 ? grey : mix(w, grey, 0.15 + 0.25 * Math.max(0, up) + (t > 0.3 ? 0.1 : 0)); };
-      const rings = [[0, 0.085, 0.07, 0.09], [0.04, 0.11, 0.09, 0.12], [0.1, 0.122, 0.09, 0.135], [0.16, 0.12, 0.085, 0.135], [0.22, 0.104, 0.075, 0.12], [0.29, 0.086, 0.066, 0.096], [0.36, 0.078, 0.06, 0.085],
-        [0.42, 0.082, 0.06, 0.083], [0.47, 0.09, 0.06, 0.08], [0.51, 0.088, 0.055, 0.072], [0.535, 0.07, 0.043, 0.055], [0.55, 0.04, 0.025, 0.03]];
-      const cheek = (x, y, a, r) => { const t = r.z, b = Math.exp(-(((t - 0.19) / 0.07) ** 2)), sa = Math.sin(a); if (sa < 0.1) x *= 1 + 0.13 * b * Math.sqrt(Math.max(0, 0.1 - sa)); if (sa > 0.6) y *= 1 - 0.12 * (sa - 0.6); return [x, y]; };
-      H.add(skull(rings.map(([t, rx, rt, rb]) => [t, rx, rt, rb, a => hc(t, a), 2.6]), th, 30, cheek, false));
+      const hc = (t, a) => { const up = Math.sin(a); if (t > 0.5) return nose; if (t > 0.45) return mix(w, nose, 0.3 + 0.4 * (t - 0.45) / 0.05); return t < 0.08 ? grey : mix(w, grey, 0.12 + 0.22 * Math.max(0, up) + (t > 0.3 ? 0.08 : 0)); };
+      const rings = [[0, 0.1, 0.06, 0.1, 2.8], [0.04, 0.124, 0.075, 0.128, 3.0], [0.1, 0.13, 0.08, 0.148, 3.0], [0.17, 0.126, 0.072, 0.146, 3.0], [0.24, 0.106, 0.062, 0.122, 2.8], [0.31, 0.088, 0.056, 0.1, 2.6],
+        [0.37, 0.08, 0.052, 0.088, 2.5], [0.42, 0.088, 0.054, 0.084, 2.5], [0.47, 0.104, 0.062, 0.084, 2.6], [0.51, 0.106, 0.06, 0.078, 2.6], [0.535, 0.094, 0.05, 0.064, 2.4], [0.552, 0.056, 0.032, 0.038, 2.2]];
+      // bochecha (masseter) cheia embaixo, testa reta em cima
+      const cheek = (x, y, a, r) => { const t = r.z, b = Math.exp(-(((t - 0.17) / 0.08) ** 2)), sa = Math.sin(a); if (sa < 0.1) x *= 1 + 0.1 * b * Math.sqrt(Math.max(0, 0.1 - sa)); if (sa > 0.55 && t < 0.4) y *= 1 - 0.14 * (sa - 0.55); return [x, y]; };
+      H.add(skull(rings.map(([t, rx, rt, rb, e]) => [t, rx, rt, rb, a => hc(t, a), e]), th, 32, cheek, false));
       // queixo e beiço de baixo
-      H.add(loft([[0.3, 0.05, 0.02, 0.028], [0.42, 0.058, 0.024, 0.034], [0.5, 0.055, 0.022, 0.03], [0.535, 0.035, 0.014, 0.02]].map(([t, rx, rt, rb]) => ({ z: t, y: -0.072, rx, rt, rb, e: 2.3, c: t > 0.49 ? nose : mix(w, grey, 0.2) })), 14).rotateX(th));
+      H.add(loft([[0.3, 0.055, 0.022, 0.03], [0.42, 0.064, 0.026, 0.036], [0.5, 0.062, 0.024, 0.032], [0.535, 0.04, 0.015, 0.02]].map(([t, rx, rt, rb]) => ({ z: t, y: -0.074, rx, rt, rb, e: 2.3, c: t > 0.49 ? nose : mix(w, grey, 0.2) })), 16).rotateX(th));
+      // papada: a pele solta que pende sob a mandíbula, do queixo à garganta (emenda com a barbela do pescoço)
+      H.add(loft([[-0.04, 0.04, 0.02, 0.04], [0.03, 0.05, 0.03, 0.075], [0.11, 0.052, 0.03, 0.085], [0.19, 0.046, 0.03, 0.07], [0.26, 0.035, 0.025, 0.045], [0.31, 0.02, 0.015, 0.02]]
+        .map(([t, rx, rt, rb]) => ({ z: t, y: -0.115, rx, rt, rb, e: 2.2, c: mix(w, grey, 0.18) })), 18).rotateX(th));
       for (const sx of [-1, 1]) {
-        const e = S(0.15, sx * 0.112, 0.035), side = sx > 0 ? 'earL' : 'earR';
-        if (coat.k >= 0.4 && !coat.spot) H.add(sph(0.012, 0.034, 0.03, e[0] - sx * 0.004, e[1], e[2], grey.clone().multiplyScalar(0.7), 10));   // contorno escuro do olho (nelore)
-        H.add(sph(0.012, 0.024, 0.024, e[0] + sx * 0.003, e[1], e[2], 0x1c140e, 12));   // olho
-        H.add(sph(0.004, 0.006, 0.006, e[0] + sx * 0.014, e[1] + 0.008, e[2] + 0.006, 0xfaf6ee, 6));   // brilho
-        H.add(paintG(new THREE.SphereGeometry(1, 12, 6, 0, Math.PI * 2, 0, Math.PI * 0.42).scale(0.016, 0.03, 0.03).rotateZ(-sx * 0.2).translate(e[0] + sx * 0.002, e[1] + 0.004, e[2]), grey));   // pálpebra
-        const n = S(0.548, sx * 0.03, 0.004); H.add(sph(0.007, 0.012, 0.009, n[0], n[1], n[2], 0x0a0807, 6));   // narina
+        const e = S(0.15, sx * 0.123, 0.036), side = sx > 0 ? 'earL' : 'earR';
+        H.add(sph(0.012, 0.016, 0.034, e[0] - sx * 0.008, e[1] + 0.02, e[2] + 0.002, mix(w, grey, 0.25), 10));   // arco da sobrancelha
+        if (coat.k >= 0.4 && !coat.spot) H.add(sph(0.013, 0.036, 0.032, e[0] - sx * 0.004, e[1], e[2], grey.clone().multiplyScalar(0.7), 10));   // contorno escuro do olho
+        H.add(sph(0.013, 0.027, 0.027, e[0] + sx * 0.004, e[1], e[2], 0x1c140e, 14));   // olho grande
+        H.add(sph(0.004, 0.007, 0.007, e[0] + sx * 0.016, e[1] + 0.01, e[2] + 0.007, 0xfaf6ee, 6));   // brilho
+        H.add(paintG(new THREE.SphereGeometry(1, 14, 6, 0, Math.PI * 2, 0, Math.PI * 0.42).scale(0.017, 0.033, 0.033).rotateZ(-sx * 0.2).translate(e[0] + sx * 0.003, e[1] + 0.005, e[2]), grey));   // pálpebra
+        const n = S(0.546, sx * 0.04, 0.008); H.add(sph(0.01, 0.017, 0.013, n[0], n[1], n[2], 0x0a0807, 8));   // narina grande
+        H.add(paintG(new THREE.TorusGeometry(0.016, 0.005, 5, 12).scale(0.8, 1, 0.6).rotateX(th).translate(n[0], n[1], n[2]), nose.clone().multiplyScalar(1.25)));   // aba da narina
         // chifre: grosso na base, curvando para fora e para cima, a ponta escura
-        if (!calf) { const b0 = S(0.03, sx * 0.075, 0.07), L = bull ? 0.16 : 0.12, curve = new THREE.QuadraticBezierCurve3(new THREE.Vector3(...b0), new THREE.Vector3(b0[0] + sx * (0.05 + L * 0.3), b0[1] + 0.03 + L * 0.2, b0[2] - 0.02), new THREE.Vector3(b0[0] + sx * (0.05 + L * 0.45), b0[1] + 0.05 + L * 0.75, b0[2] + L * 0.15));
+        if (!calf) { const b0 = S(0.03, sx * 0.085, 0.066), L = bull ? 0.16 : 0.11, curve = new THREE.QuadraticBezierCurve3(new THREE.Vector3(...b0), new THREE.Vector3(b0[0] + sx * (0.05 + L * 0.3), b0[1] + 0.03 + L * 0.2, b0[2] - 0.02), new THREE.Vector3(b0[0] + sx * (0.05 + L * 0.45), b0[1] + 0.05 + L * 0.75, b0[2] + L * 0.15));
           const hg = new THREE.TubeGeometry(curve, 10, 1, 10, false), p = hg.attributes.position, cc = new Float32Array(p.count * 3);
-          for (let i = 0; i < p.count; i++) { const u = Math.floor(i / 11) / 10, r = (bull ? 0.034 : 0.028) * (1 - u * 0.8); const c0 = curve.getPoint(u); p.setXYZ(i, c0.x + (p.getX(i) - c0.x) * r, c0.y + (p.getY(i) - c0.y) * r, c0.z + (p.getZ(i) - c0.z) * r); const k = mix(0xcab89c, 0x2a221c, Math.pow(u, 1.5)); cc.set([k.r, k.g, k.b], i * 3); }
+          for (let i = 0; i < p.count; i++) { const u = Math.floor(i / 11) / 10, r = (bull ? 0.034 : 0.026) * (1 - u * 0.8); const c0 = curve.getPoint(u); p.setXYZ(i, c0.x + (p.getX(i) - c0.x) * r, c0.y + (p.getY(i) - c0.y) * r, c0.z + (p.getZ(i) - c0.z) * r); const k = mix(0xcab89c, 0x2a221c, Math.pow(u, 1.5)); cc.set([k.r, k.g, k.b], i * 3); }
           hg.setAttribute('color', new THREE.BufferAttribute(cc, 3)); hg.deleteAttribute('uv'); hg.computeVertexNormals(); H.add(hg); }
-        // orelha em folha, caída para o lado (maior no gir), com o lado de dentro claro
-        const ep = S(0.07, sx * 0.11, 0.025), droop = gir ? 0.95 : 0.45;
-        const leaf = (sc, c, dz) => paintG(new THREE.SphereGeometry(1, 14, 8).scale(earL * 0.5 * sc, 0.014, 0.05 * sc).translate(sx * earL * 0.5, 0, dz).rotateZ(-sx * droop).rotateY(-sx * 0.3).translate(...ep), c);
-        H.add(leaf(1, grey, 0), side); H.add(leaf(0.8, 0xd8a08e, 0.008).translate(0, -0.004, 0), side); }
-      const tp = S(0.02, 0, 0.09); H.add(sph(0.05, 0.022, 0.04, tp[0], tp[1], tp[2], grey, 10));   // topete entre os chifres
+        // orelha grande e oval, quase na horizontal, a concha virada para a frente; por dentro clara, com a borda grossa
+        const ep = S(0.05, sx * 0.12, 0.018), droop = gir ? 0.95 : 0.12;
+        const leaf = (sc, c, dz, dy) => paintG(new THREE.SphereGeometry(1, 16, 10).scale(earL * 0.5 * sc, 0.016 * sc, 0.066 * sc).translate(sx * earL * 0.5, dy, dz).rotateZ(-sx * droop).rotateY(-sx * 0.55).translate(...ep), c);
+        H.add(leaf(1, grey, 0, 0), side); H.add(leaf(0.82, 0xd8a08e, 0.004, 0.006), side); }
+      const tp = S(0.015, 0, 0.068); H.add(sph(0.065, 0.026, 0.05, tp[0], tp[1], tp[2], grey.clone().multiplyScalar(0.92), 12));   // topete na nuca
     };
     const legC = z => { const top = shade(z)(-Math.PI / 2); return (t) => top.clone().lerp(grey, Math.max(0, Math.min(1, (t - 0.3) / 0.5)) * Math.min(0.6, coat.k * 1.1)).multiplyScalar(1 - 0.08 * Math.max(0, (t - 0.6) / 0.4)); };
     const fl = [0.42, 0.275, 0.14], hl = [0.53, 0.33, 0.14];
@@ -120,7 +127,7 @@ export function especies({ M, MJ, rnd }) {
     const gw = [grey.r, grey.g, grey.b], ww = [w.r, w.g, w.b], d2 = ww.map((v, i) => v - gw[i]), dd = d2.reduce((a, v) => a + v * v, 0) || 1e-6;
     const pat = spotC ? (r0, g0, b0) => { const c = [r0, g0, b0], t = Math.max(0, Math.min(1, c.reduce((a, v, i) => a + (v - gw[i]) * d2[i], 0) / dd)), pp = gw.map((v, i) => v + d2[i] * t);
       const e = Math.hypot(c[0] - pp[0], c[1] - pp[1], c[2] - pp[2]) / (pp[0] * 0.3 + pp[1] * 0.5 + pp[2] * 0.2 + 0.04); return e < 0.3 ? 1 : 0; } : null;
-    const eL = S(0.07, 0.11, 0.025), r = quad({ K, M: Mv, pat, seg: 44, body: { rings, shape }, neck, head, ears: [eL, [-eL[0], eL[1], eL[2]]], muzzle,
+    const eL = S(0.05, 0.12, 0.018), r = quad({ K, M: Mv, pat, seg: 44, body: { rings, shape }, neck, head, ears: [eL, [-eL[0], eL[1], eL[2]]], muzzle,
       legs: [leg(0.13, 0.44, 0.84, fl, fprof), leg(-0.13, 0.44, 0.84, fl, fprof), leg(0.14, -0.62, 0.92, hl, hprof), leg(-0.14, -0.62, 0.92, hl, hprof)],
       tail: { pts: tailPts, prof: tailPts.map((p, i) => ({ rx: i === 5 ? 0.048 : i === 6 ? 0.02 : 0.034 - i * 0.003, rt: i === 5 ? 0.048 : i === 6 ? 0.02 : 0.034 - i * 0.003, rb: i === 5 ? 0.048 : i === 6 ? 0.02 : 0.034 - i * 0.003, c: tc(i) })), n: 5, rest: [0.1, 0.02] },
       extra });
