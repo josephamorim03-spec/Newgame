@@ -21,6 +21,10 @@
 // nem entre os seios) e cai do ponto mais saliente para baixo (a camisa desce reta da barriga e do busto, a calça cai da
 // nádega para a coxa), a camisa entra na calça no cinto (que passa por baixo da barriga de quem tem), manga com bainha,
 // punho dobrado ou arregaçada, calça com barra virada. Saia e avental são pano simulado (pano.js).
+// Por cima da camada vão peças de pano com espessura medidas na superfície dela (shell): gola com pé em volta do pescoço e
+// abas que assentam no ombro, decote em V com o avesso do pano dobrado, carcela com botões, bolso, passadores do cinto,
+// ribana no decote da camiseta e do vestido; franzidos da camisa em cima do cinto, vincos na dobra do cotovelo, vinco
+// passado e costura na calça, pano que embola na barra.
 import * as THREE from 'three';
 import { HEAD, LIGHT_END, shared, toon } from './mat.js';
 import { perfil as fazPerfil } from './anatomia.js';
@@ -108,8 +112,8 @@ function Builder() {
   // peça rígida (geometria pronta) presa a um osso (ou a vários, com pesos); se a geometria tiver cor por vértice, ela vale
   function rigid(geo, c, bone, pt = 0) { if (!geo.attributes.normal || geo.userData.renorm !== false) geo.computeVertexNormals();
     const p = geo.attributes.position, n = geo.attributes.normal, u = geo.attributes.uv, cc = geo.attributes.color;
-    const base = pos.length / 3, c0 = C(c), tc = new THREE.Color(), bb = Array.isArray(bone) ? bone : [[bone, 1]];
-    for (let i = 0; i < p.count; i++) vert(V(p.getX(i), p.getY(i), p.getZ(i)), V(n.getX(i), n.getY(i), n.getZ(i)), cc ? tc.setRGB(cc.getX(i), cc.getY(i), cc.getZ(i)) : c0, u ? u.getX(i) : 0, u ? u.getY(i) : 0, bb, pt);
+    const base = pos.length / 3, c0 = C(c), tc = new THREE.Color(), fb = typeof bone === 'function', bb = fb ? null : Array.isArray(bone) ? bone : [[bone, 1]];   // bone(p): ossos de cada ponto
+    for (let i = 0; i < p.count; i++) { const q = V(p.getX(i), p.getY(i), p.getZ(i)); vert(q, V(n.getX(i), n.getY(i), n.getZ(i)), cc ? tc.setRGB(cc.getX(i), cc.getY(i), cc.getZ(i)) : c0, u ? u.getX(i) : 0, u ? u.getY(i) : 0, fb ? bone(q) : bb, pt); }
     const n3 = geo.index ? geo.index.count : p.count, at = i => geo.index ? geo.index.getX(i) : i;
     for (let t = 0; t + 2 < n3; t += 3) { const a = at(t), b = at(t + 1), c = at(t + 2), ux = p.getX(b) - p.getX(a), uy = p.getY(b) - p.getY(a), uz = p.getZ(b) - p.getZ(a), vx = p.getX(c) - p.getX(a), vy = p.getY(c) - p.getY(a), vz = p.getZ(c) - p.getZ(a);
       const cx = uy * vz - uz * vy, cy = uz * vx - ux * vz, cz = ux * vy - uy * vx; if (cx * cx + cy * cy + cz * cz < 1e-20) continue;   // sem os triângulos de área zero (pontas das cápsulas)
@@ -125,6 +129,24 @@ function Builder() {
 function capsAB(a, b, r, rs = 6, cs = 3) { const d = new THREE.Vector3().subVectors(b, a), L = d.length(), g = new THREE.CapsuleGeometry(r, Math.max(1e-4, L), cs, rs);
   g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(V(0, 1, 0), d.normalize())); g.translate((a.x + b.x) / 2, (a.y + b.y) / 2, (a.z + b.z) / 2); return g; }
 // a casca convexa de um anel (fecha as concavidades: entre as nádegas, entre os seios, o sulco da coluna)
+// pano com espessura: F(u, v) dá o meio do pano; sai a face de fora (cor cO), a de dentro (cI) e a borda (cR, o corte do pano).
+// fora(p) diz para onde é "fora" naquele ponto. As cores podem ser função do ponto.
+function shell(F, nu, nv, th, cO, cI, cR, fora) { const P = [], N = [], out = [], nr = [], uvs = [], cs = [], at = (i, j) => i * (nv + 1) + j;
+  for (let i = 0; i <= nu; i++) for (let j = 0; j <= nv; j++) P.push(F(i / nu, j / nv));
+  for (let i = 0; i <= nu; i++) for (let j = 0; j <= nv; j++) { const du = P[at(Math.min(nu, i + 1), j)].clone().sub(P[at(Math.max(0, i - 1), j)]), dv = P[at(i, Math.min(nv, j + 1))].clone().sub(P[at(i, Math.max(0, j - 1))]);
+    const n = V(0, 0, 0).crossVectors(du, dv); if (n.lengthSq() < 1e-14) n.copy(fora(P[at(i, j)])); n.normalize(); if (n.dot(fora(P[at(i, j)])) < 0) n.negate(); N.push(n); }
+  const tri = (A, B, Cc, col) => { const e1 = B[0].clone().sub(A[0]), e2 = Cc[0].clone().sub(A[0]), s3 = A[1].clone().add(B[1]).add(Cc[1]);
+    if (V(0, 0, 0).crossVectors(e1, e2).dot(s3) < 0) [B, Cc] = [Cc, B];
+    for (const [q, n] of [A, B, Cc]) { out.push(q.x, q.y, q.z); nr.push(n.x, n.y, n.z); uvs.push((q.x + q.z) * 4.5, q.y * 4.5); const c = typeof col === 'function' ? col(q) : col; cs.push(c.r, c.g, c.b); } };
+  const side = (k, sg) => [P[k].clone().addScaledVector(N[k], sg * th / 2), sg > 0 ? N[k] : N[k].clone().negate()];
+  for (let i = 0; i < nu; i++) for (let j = 0; j < nv; j++) { const q = [at(i, j), at(i + 1, j), at(i + 1, j + 1), at(i, j + 1)];
+    for (const [sg, col] of [[1, cO], [-1, cI]]) { const [a, b, c, d] = q.map(k => side(k, sg)); tri(a, b, c, col); tri(a, c, d, col); } }
+  const rim = []; for (let i = 0; i < nu; i++) rim.push([at(i, 0), at(i + 1, 0), at(i, 1)]); for (let j = 0; j < nv; j++) rim.push([at(nu, j), at(nu, j + 1), at(nu - 1, j)]);
+  for (let i = nu; i > 0; i--) rim.push([at(i, nv), at(i - 1, nv), at(i, nv - 1)]); for (let j = nv; j > 0; j--) rim.push([at(0, j), at(0, j - 1), at(1, j)]);
+  for (const [a, b, inn] of rim) { const e = P[b].clone().sub(P[a]), n = V(0, 0, 0).crossVectors(e, N[a]); if (n.lengthSq() < 1e-14) continue; n.normalize(); if (n.dot(P[a].clone().sub(P[inn])) < 0) n.negate();
+    const A1 = side(a, 1)[0], A2 = side(a, -1)[0], B1 = side(b, 1)[0], B2 = side(b, -1)[0]; tri([A1, n], [B1, n], [B2, n], cR); tri([A1, n], [B2, n], [A2, n], cR); }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(out, 3)); g.setAttribute('normal', new THREE.Float32BufferAttribute(nr, 3));
+  g.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2)); g.setAttribute('color', new THREE.Float32BufferAttribute(cs, 3)); g.userData.renorm = false; return g; }
 function casca(R) { const n = R.length, X = new Float64Array(n), Z = new Float64Array(n);
   for (let k = 0; k < n; k++) { const a = k / n * Math.PI * 2; X[k] = R[k] * Math.cos(a); Z[k] = R[k] * Math.sin(a); }
   // o anel é estrelado em volta do centro: a casca é a subsequência dos pontos que não fazem curva para dentro (varredura de Graham)
@@ -233,7 +255,10 @@ export function buildBody(s) {
   const beltY0 = deTab(f ? 1.0 : 0.985), beltDrop = 0.03 * belly + (P.m ? 0.004 : 0);
   const beltY = a => beltY0 - beltDrop * Math.max(0, Math.sin(a)) ** 2;
   const topBottom = s.skirt ? deTab(f ? 0.92 : 0.95) : tucked ? -1 : deTab(f ? 0.93 : 0.94);   // até onde desce a blusa por cima
+  const camisa = !dressTop && !kid && s.sleeves !== 'nenhuma' && s.shirt !== 'camiseta' && !jacket && !shawl;   // camisa de botão, com gola
+  const vD = f ? 0.036 : 0.042, vA = f ? 0.4 : 0.36;                                       // o V da camisa aberta: fundo e meia abertura (rad)
   const decote = a => { const fr = Math.max(0, Math.sin(a)) ** 2; if (jacket || shawl) return yNeck - 0.01 - 0.02 * fr;
+    if (camisa) return yNeck - 0.008 - vD * Math.max(0, 1 - Math.abs(dA(a, FRENTE)) / vA) ** 1.15;
     return yNeck - 0.008 - fr * (dressTop ? 0.07 : f ? 0.05 : s.shirt === 'camiseta' || kid ? 0.014 : 0.035); };
   // o que veste o ponto (y, a) do tronco: 'pele', 'cima' (camisa, blusa, vestido) ou 'baixo' (calça)
   const veste = (y, a) => { if (y >= decote(a)) return 'pele'; if (jacket && y >= deTab(0.9)) return 'agasalho'; if (shawl && y >= deTab(1.16)) return 'xale';
@@ -275,11 +300,17 @@ export function buildBody(s) {
     const c = g === 'pele' ? skin : g === 'baixo' ? bot : g === 'agasalho' ? jacket : g === 'xale' ? shawl : top; return c.clone().multiplyScalar(ao); };
   const patDe = g => g === 'pele' ? 0 : g === 'baixo' ? botPat : g === 'cima' ? topPat : 3;
   bd.setPart('tronco');
-  bd.tube(torso.map(r => { const R = new Float32Array(SEG), gs = []; for (let k = 0; k < SEG; k++) { const a = k / SEG * Math.PI * 2, g = veste(r.y, a); gs.push(g); R[k] = g === 'pele' ? r.R[k] : r.Rc[g][k]; }
-    return { c: V(0, r.y, r.cz), u: V(1, 0, 0), w: V(0, 0, 1), R, col: k => corDe(gs[k], r.y), pat: k => patDe(gs[k]), b: k => pesoTronco(r.y, k / SEG * Math.PI * 2, R[k]), v: r.y / 0.22 }; }), SEG, false, true, 3);
+  // a camisa enfiada na calça sobra em cima do cinto: franzidos que sobem do cós (raio e sombra mudam com o ângulo)
+  const franze = (y, a) => { if (!tucked || jacket) return 0; const h = y - beltY(a); return h < 0.004 ? 0 : (1 - sm01((h - 0.035) / 0.06)); };
+  const fw = (y, a) => 0.5 + 0.5 * Math.sin(9 * a + 1.3 * Math.sin(3 * a) + y * 30);
+  bd.tube(torso.map(r => { const R = new Float32Array(SEG), gs = [], dk = new Float32Array(SEG);
+    for (let k = 0; k < SEG; k++) { const a = k / SEG * Math.PI * 2, g = veste(r.y, a); gs.push(g); R[k] = g === 'pele' ? r.R[k] : r.Rc[g][k];
+      const fz = g === 'cima' ? franze(r.y, a) : 0; if (fz > 0) { const q = fw(r.y, a); R[k] += fz * (0.002 + 0.0035 * q) * (0.35 + 0.65 * Math.abs(Math.sin(a))); dk[k] = 0.14 * fz * (1 - q);   /* mais na frente e atrás; do lado o pano está esticado */ } }
+    return { c: V(0, r.y, r.cz), u: V(1, 0, 0), w: V(0, 0, 1), R, col: k => corDe(gs[k], r.y).multiplyScalar(1 - dk[k]), pat: k => patDe(gs[k]), b: k => pesoTronco(r.y, k / SEG * Math.PI * 2, R[k]), v: r.y / 0.22 }; }), SEG, false, true, 3);
   const anelEm = (y, g) => { let i = 0; while (i < torso.length - 2 && torso[i + 1].y < y) i++; const A = torso[i], B = torso[i + 1], t = cl((y - A.y) / (B.y - A.y), 0, 1), R = new Float32Array(SEG);
     for (let k = 0; k < SEG; k++) R[k] = (g ? A.Rc[g][k] : A.R[k]) * (1 - t) + (g ? B.Rc[g][k] : B.R[k]) * t; return { R, cz: A.cz * (1 - t) + B.cz * t }; };
 
+  let pescoco = null;
   // ---------- pescoço: sobe inclinado para a frente, com esternocleidomastoideo, pomo de adão, nuca e papada
   { const rn = med.pescoco, cr = P.cranio, NS = 20, hgt = yChin + 0.06 - (yNeck - 0.012), ys = [0, 0.15, 0.32, 0.5, 0.68, 0.85, 1].map(t => yNeck - 0.012 + t * hgt);
     const rings = ys.map((y, i) => { const t = i / (ys.length - 1), R = new Float32Array(NS), cz = -0.012 + 0.024 * t;
@@ -290,7 +321,7 @@ export function buildBody(s) {
       const wN = i < 2 ? [[I(chest), 1 - i * 0.5], [I(neck), i * 0.5]] : i < 5 ? [[I(neck), 1]] : [[I(neck), i === 5 ? 0.5 : 0.1], [I(head), i === 5 ? 0.5 : 0.9]];
       const col = k => { const a = k / NS * Math.PI * 2; return (veste(Math.min(y, yNeck - 0.0001), a) !== 'pele' && y < decote(a) + 0.004 ? top : skin).clone().multiplyScalar(0.94 + 0.06 * t); };
       return { c: V(0, y, cz), u: V(1, 0, 0), w: V(0, 0, 1), R, b: wN, col, pat: 0 }; });
-    bd.setPart('tronco'); bd.tube(rings, NS, true, false); }
+    bd.setPart('tronco'); bd.tube(rings, NS, true, false); pescoco = { rings: rings.map(r => ({ y: r.c.y, cz: r.c.z, R: r.R })), NS, wN: y => { const t = (y - ys[0]) / hgt, i = t < 0.15 ? t / 0.15 : 1 + (t - 0.15) / 0.17; return cl(i * 0.5, 0, 1); } }; }
 
   // ---------- braços
   const sleeveEnd = s.warm ? 0.97 : { longa: 0.97, 'arregaçada': 0.58, curta: 0.2, nenhuma: -1 }[s.sleeves] ?? 0.2;   // até onde vai a manga (0 = ombro, 1 = punho)
@@ -323,7 +354,11 @@ export function buildBody(s) {
     const sl = sleeveEnd, loose = s.sleeves === 'curta' ? 0.006 : jacket ? 0.011 : 0.005;
     rings.forEach((r, i) => { const inS = pos01[i] <= sl && sl > 0 && (sleeveC || (shawl && pos01[i] < 0.35)); r.inS = inS;
       if (inS) { const H = casca(r.R); const ease = loose * sm01((pos01[i] + 0.02) / 0.08) * (pos01[i] < 0.5 ? 1 : 0.7); for (let k = 0; k < NA; k++) r.R[k] = Math.max(H[k] + ease, r.R[k] + 0.0015); }
-      const cc = inS ? (shawl && pos01[i] < 0.35 ? shawl : sleeveC) : skin; r.col = cc; r.pat = inS ? (cc === top ? topPat : 3) : 0; });
+      const cc = inS ? (shawl && pos01[i] < 0.35 ? shawl : sleeveC) : skin; r.col = cc; r.pat = inS ? (cc === top ? topPat : 3) : 0;
+      // manga: vincos na dobra do cotovelo (do lado de dentro) e o pano que junta perto da barra
+      const p0 = pos01[i], fk = !inS ? 0 : Math.abs(p0 - su) < 0.09 ? 1 : p0 > sl - 0.08 ? 0.6 : 0.25;
+      if (fk) { const fv = a => Math.max(0, Math.sin(a) * 0.8 + 0.2) * (0.5 + 0.5 * Math.sin(5 * a + p0 * 40)), dk = new Float32Array(NA);
+        for (let k = 0; k < NA; k++) { const a = k / NA * Math.PI * 2, q = fv(a); r.R[k] *= 1 + 0.06 * fk * q; dk[k] = 1 - 0.16 * fk * (1 - q); } r.col = k => cc.clone().multiplyScalar(dk[k]); } });
     bd.setPart('braço'); bd.tube(rings, NA, true, false); bd.setPart('manga');
     // a ponta da manga
     if (sl > 0 && sl < 0.99 && sleeveC) { let i = pos01.findIndex(p => p > sl); if (i < 1) i = 1; const r0 = rings[i - 1], th = s.sleeves === 'arregaçada' ? 0.009 : 0.003, wid = s.sleeves === 'arregaçada' ? 0.03 : 0.012;
@@ -372,8 +407,14 @@ export function buildBody(s) {
       for (let k = 0; k < NL; k++) { const a = k / NL * Math.PI * 2; r.R[k] = Math.max(H[k] + 0.008 + back * G(dA(a, COSTAS), 0.75), r.R[k] + 0.002); }
       if (Math.abs(pos01[i] - 0.5) < 0.04) kneeCloth = Math.max(kneeCloth, Math.max(...r.R));
       if (pos01[i] > 0.52 && kneeCloth) for (let k = 0; k < NL; k++) r.R[k] = Math.max(r.R[k], kneeCloth * (0.97 - 0.06 * (pos01[i] - 0.5))); });
-    rings.forEach((r, i) => { const p = inP(i), y = r.c.y; r.col = p ? bot.clone().multiplyScalar(y < 0.2 ? 0.88 : Math.abs(pos01[i] - 0.5) < 0.05 ? 1.05 : 1) : (s.skirt && s.stockings ? C(s.stockings) : skin);
-      if (y < yCrotch + 0.03) r.col = r.col.clone().multiplyScalar(0.9 + 0.1 * sm01((y - yCrotch + 0.06) / 0.09)); r.pat = p ? botPat : 0; });
+    rings.forEach((r, i) => { const p = inP(i), y = r.c.y, p0 = pos01[i]; r.col = p ? bot.clone().multiplyScalar(y < 0.2 ? 0.88 : Math.abs(p0 - 0.5) < 0.05 ? 1.05 : 1) : (s.skirt && s.stockings ? C(s.stockings) : skin);
+      if (y < yCrotch + 0.03) r.col = r.col.clone().multiplyScalar(0.9 + 0.1 * sm01((y - yCrotch + 0.06) / 0.09)); r.pat = p ? botPat : 0;
+      // calça: vinco passado na frente, costura do lado, pano que enruga atrás do joelho e embola em cima da botina
+      if (p) { const base = r.col, low = p0 > legEnd - 0.1 && legEnd > 0.9, pk = low ? 1 : Math.abs(p0 - 0.53) < 0.08 ? 0.7 : 0, dk = new Float32Array(NL);
+        for (let k = 0; k < NL; k++) { const a = k / NL * Math.PI * 2, pw = 0.5 + 0.5 * Math.sin(6 * a + p0 * 60), back = low ? 1 : Math.max(0, -Math.sin(a));
+          dk[k] = (1 + 0.07 * Math.max(0, Math.sin(a)) ** 12 - 0.1 * Math.abs(Math.cos(a)) ** 14) * (1 - 0.14 * pk * back * (1 - pw));
+          if (low) r.R[k] *= 1 + 0.05 * pw; }   /* atrás do joelho o vinco é só de cor: volume ali estica quando ajoelha */
+        r.col = k => base.clone().multiplyScalar(dk[k]); } });
     bd.setPart('perna'); bd.tube(rings, NL, false, true); bd.setPart('roupa');
     // barra da calça virada para fora (como na roça) ou a bainha da bermuda
     if (legEnd > 0) { let i = pos01.findIndex(p => p > legEnd); if (i < 1) i = rings.length - 1; const r0 = rings[i - 1], th = legEnd > 0.9 ? 0.011 : 0.006, wd = legEnd > 0.9 ? 0.035 : 0.014;
@@ -389,21 +430,58 @@ export function buildBody(s) {
     bd.tube([mkB(-0.018), mkB(0.018)], n, false, false);
     const fr0 = anelEm(beltY(FRENTE), 'baixo'), zb = fr0.cz + fr0.R[n / 4] + 0.008;
     bd.rigid(new THREE.BoxGeometry(0.05, 0.04, 0.008).translate(0, beltY(FRENTE), zb), C(0xc8b070), I(hips)); bd.rigid(new THREE.BoxGeometry(0.03, 0.022, 0.01).translate(0, beltY(FRENTE), zb + 0.001), C(0x3a2418), I(hips)); }
-  const camisa = !dressTop && !kid && s.sleeves !== 'nenhuma' && s.shirt !== 'camiseta' && !jacket && !shawl;
-  if (camisa) { const zAt = y => { const r = anelEm(y, 'cima'); return r.cz + r.R[SEG / 4]; };
-    // gola: faixa em volta da base do pescoço e as duas pontas viradas
-    const band = new THREE.CylinderGeometry(f ? 0.058 : med.pescoco + 0.012, f ? 0.064 : med.pescoco + 0.018, 0.035, 16, 1, true, Math.PI * 0.62, Math.PI * 0.76).translate(0, yNeck + 0.008, -0.01);
-    bd.rigid(band, top.clone().multiplyScalar(0.97), I(chest), topPat);
-    for (const sx of [-1, 1]) { const flap = new THREE.BufferGeometry(), x0 = sx * 0.012, x1 = sx * (f ? 0.06 : 0.068), zf = zAt(yNeck - 0.03) - 0.002, yb = yNeck - 0.03;
-      flap.setAttribute('position', new THREE.Float32BufferAttribute([x0, yb, zf + 0.012, x1, yb + 0.047, zf - 0.016, x1 * 0.5, yb + 0.025, zf + 0.012, x0, yb, zf + 0.012, x1 * 1.02, yb + 0.013, zf - 0.002, x1, yb + 0.047, zf - 0.016], 3));
-      flap.setAttribute('uv', new THREE.Float32BufferAttribute(new Array(12).fill(0), 2)); if (sx < 0) { const a = flap.attributes.position; for (const [i, j] of [[1, 2], [4, 5]]) { const t = [a.getX(i), a.getY(i), a.getZ(i)]; a.setXYZ(i, a.getX(j), a.getY(j), a.getZ(j)); a.setXYZ(j, ...t); } }
-      bd.rigid(flap, top.clone().multiplyScalar(0.97), I(chest), topPat); }
-    const btn = f ? C(0xf4efe6) : C(0xe8e0d0), yEnd = tucked ? beltY(FRENTE) + 0.03 : topBottom + 0.02;
-    for (let y = yNeck - 0.045; y > yEnd; y -= 0.068) bd.rigid(new THREE.SphereGeometry(0.0055, 6, 4).scale(1, 1, 0.5).translate(0, y, zAt(y) + 0.002), btn, pesoTronco(y, FRENTE, 0.1));
-    if (!f) { const y = deTab(1.29), r = anelEm(y, 'cima'), k = Math.round(SEG * (FRENTE - 0.5) / (Math.PI * 2)), a = k / SEG * Math.PI * 2, R = r.R[k];
-      const px = R * Math.cos(a), pz = r.cz + R * Math.sin(a) + 0.002;
-      bd.rigid(new THREE.BoxGeometry(0.062, 0.07, 0.004).rotateY(0.5 - FRENTE + Math.PI / 2).translate(px, y - 0.008, pz), top.clone().multiplyScalar(0.9), I(chest), topPat);
-      bd.rigid(new THREE.BoxGeometry(0.064, 0.016, 0.006).rotateY(0.5 - FRENTE + Math.PI / 2).translate(px, y + 0.024, pz + 0.001), top.clone().multiplyScalar(0.85), I(chest), topPat); } }
+  // A roupa vestida em cima do corpo: cada peça de pano é medida na superfície da camada de roupa do tronco (e do pescoço, para
+  // a gola) e afastada dela pela espessura do pano: assenta no ombro e no peito sem atravessar e sem flutuar.
+  const Rang = (R, a, n) => { const q = ((a / (Math.PI * 2)) % 1 + 1) % 1 * n, k = Math.floor(q), t = q - k; return R[k % n] * (1 - t) + R[(k + 1) % n] * t; };
+  const yTop = torso[torso.length - 1].y, czTop = torso[torso.length - 1].cz;
+  const neckAt = y => { const L = pescoco.rings; let i = 0; while (i < L.length - 2 && L[i + 1].y < y) i++; const A = L[i], B = L[i + 1], t = cl((y - A.y) / (B.y - A.y), 0, 1); return { A, B, t }; };
+  const surfP = (y, a, g = 'cima') => { let best = null, bd2 = -1;
+    if (y <= yTop + 1e-4) { const r = anelEm(Math.min(y, yTop), g), R = Rang(r.R, a, SEG), p = V(R * Math.cos(a), y, r.cz + R * Math.sin(a)); best = p; bd2 = Math.hypot(p.x, p.z - czTop); }
+    if (pescoco && y >= pescoco.rings[0].y) { const { A, B, t } = neckAt(y), R = Rang(A.R, a, pescoco.NS) * (1 - t) + Rang(B.R, a, pescoco.NS) * t, cz = A.cz * (1 - t) + B.cz * t, p = V(R * Math.cos(a), y, cz + R * Math.sin(a));
+      if (Math.hypot(p.x, p.z - czTop) > bd2) best = p; }
+    return best; };
+  const surfN = (y, a, g) => { const du = surfP(y, a + 0.01, g).sub(surfP(y, a - 0.01, g)), dv = surfP(y + 0.004, a, g).sub(surfP(y - 0.004, a, g)), n = V(0, 0, 0).crossVectors(dv, du).normalize();
+    return n.x * Math.cos(a) + n.z * Math.sin(a) < 0 ? n.negate() : n; };
+  const surf = (y, a, off = 0, g = 'cima') => surfP(y, a, g).addScaledVector(surfN(y, a, g), off);
+  const radial = p => V(p.x, 0, p.z - czTop).normalize(), frenteN = () => V(0, 0, 1);
+  const tint = (k, c = top) => c.clone().multiplyScalar(k), front = a => Math.max(0, Math.sin(a));
+  const angOf = p => Math.atan2(p.z - anelEm(Math.min(p.y, yTop), 'cima').cz, p.x);
+  const wAt = p => pesoTronco(Math.min(p.y, yTop), angOf(p), Math.hypot(p.x, p.z - czTop));   // o pano vai com a pele de baixo
+  const wGola = p => { const wn = pescoco ? pescoco.wN(p.y) : 0; return [[I(chest), 1 - 0.4 * wn], [I(neck), 0.4 * wn]]; };   // o pé da gola vai com o peito e um pouco com o pescoço
+  const mixW = (A, B, t) => { const m = new Map(); for (const [i, w] of A) m.set(i, (m.get(i) || 0) + w * (1 - t)); for (const [i, w] of B) m.set(i, (m.get(i) || 0) + w * t); return [...m]; };
+  if (camisa && pescoco) {
+    // o pé da gola: uma tira em pé em volta do pescoço, aberta na frente (o primeiro botão solto), que nasce de dentro da camisa
+    const dS = vA * 0.9, aS = u => FRENTE + dS + u * (Math.PI * 2 - 2 * dS), ySb = a => yNeck - 0.014 - 0.006 * front(a), ySt = a => yNeck + (f ? 0.024 : 0.028) - 0.008 * front(a);
+    const stand = (u, v) => { const a = aS(u), yt = ySt(a), p = surf(yt, a, 0.0035 + 0.0012 * (1 - v)); p.y = ySb(a) + (yt - ySb(a)) * v; return p; };
+    bd.setPart('gola'); bd.rigid(shell(stand, 26, 2, 0.0025, tint(0.9), tint(0.72), tint(0.7), radial), C(0xffffff), wGola, topPat);
+    bd.setPart('carcela');
+    // a frente da camisa dobrada para trás nas bordas do V (o avesso do pano aparece) e a carcela com os botões
+    const yV = yNeck - 0.008 - vD, aV = y => vA * (1 - cl((yNeck - 0.008 - y) / vD, 0, 1) ** (1 / 1.15));   // meia abertura do V na altura y
+    for (const sx of [-1, 1]) { const edge = (u, v) => { const y = yV + (yNeck - 0.006 - yV) * u, a = FRENTE - sx * (aV(y) + 0.004 + v * 0.13 * (0.4 + 0.6 * u)); return surf(y, a, 0.0026 - 0.001 * v); };
+      bd.rigid(shell(edge, 6, 2, 0.0022, q => tint(0.86 + 0.08 * Math.min(1, Math.abs(q.x) / 0.04)), tint(0.7), tint(0.66), frenteN), C(0xffffff), wAt, topPat); }
+    const yEnd = tucked ? beltY(FRENTE) + 0.012 : topBottom + 0.01, aw = y => 0.013 / Math.max(0.05, Rang(anelEm(y, 'cima').R, FRENTE, SEG));
+    const plk = (y0, y1) => (u, v) => { const y = y0 + (y1 - y0) * v; return surf(y, FRENTE + (u * 2 - 1) * aw(y), 0.0018); };
+    for (let y = yEnd; y < yV + 0.004; y += 0.06) { const y1 = Math.min(yV + 0.006, y + 0.06);
+      bd.rigid(shell(plk(y, y1), 2, 3, 0.0016, q => tint(Math.abs(q.x) > 0.011 ? 0.84 : 0.96), tint(0.8), tint(0.7), frenteN), C(0xffffff), wAt, topPat); }
+    // as abas da gola: dobram por cima do pé, caem sobre o ombro e terminam em ponta no peito
+    const dF = dS * 0.85, dE = dS * 0.62, aF = u => FRENTE + dF + u * (Math.PI * 2 - 2 * dF), aE = u => FRENTE + dE + u * (Math.PI * 2 - 2 * dE);
+    const yE = u => { const a = aE(u); return yNeck - 0.004 - 0.006 * Math.max(0, -Math.sin(a)) - (f ? 0.03 : 0.038) * front(a) ** 6; };
+    const leaf = (u, v) => { const a0 = aF(u), T = surf(ySt(a0) + 0.003, a0, 0.0075), a1 = aE(u), E = surf(yE(u), a1, 0.0042);
+      const p = T.clone().lerp(E, v).addScaledVector(radial(T), 0.006 * Math.sin(Math.PI * v) * (1 - 0.6 * front(a0) ** 4)), S = surf(p.y, a0 + (a1 - a0) * v, 0.0042);
+      return Math.hypot(p.x, p.z - czTop) < Math.hypot(S.x, S.z - czTop) ? S : p; };
+    bd.setPart('gola'); bd.rigid(shell(leaf, 40, 5, 0.003, tint(0.97), tint(0.72), tint(0.68), p => radial(p).add(V(0, 0.6, 0)).normalize()), C(0xffffff), p => mixW(wAt(p), wGola(p), 0.5 * sm01((p.y - (yNeck - 0.004)) / 0.03)), topPat);
+    bd.setPart('roupa'); const btn = f ? C(0xf4efe6) : C(0xe8e0d0);
+    for (let y = yV - 0.006; y > yEnd + 0.02; y -= 0.068) bd.rigid(new THREE.SphereGeometry(0.0055, 8, 5).scale(1, 1, 0.45).translate(...surf(y, FRENTE, 0.0042).toArray()), btn, wAt);
+    if (!f) { const yP = deTab(1.29), aP = FRENTE - 0.55, pk = (y0, y1, off, w = 0.031) => (u, v) => { const y = y0 + (y1 - y0) * v, R = Rang(anelEm(y, 'cima').R, aP, SEG); return surf(y, aP + (u * 2 - 1) * w / R, off); };
+      bd.rigid(shell(pk(yP - 0.04, yP + 0.03, 0.0022), 4, 4, 0.0018, tint(0.93), tint(0.8), tint(0.74), radial), C(0xffffff), wAt, topPat);   /* bolso */
+      bd.rigid(shell(pk(yP + 0.015, yP + 0.033, 0.0042, 0.033), 4, 1, 0.0018, tint(0.86), tint(0.76), tint(0.66), radial), C(0xffffff), wAt, topPat); } }   /* aba do bolso */
+  else if (!jacket && !shawl && pescoco) {   // camiseta, vestido, blusa de criança: ribana em volta do decote, cobrindo a emenda da pele com o pano
+    const rib = (u, v) => { const a = FRENTE + u * Math.PI * 2, y = decote(a) - 0.011 + 0.013 * v; return surf(y, a, 0.0024 + 0.0008 * Math.sin(Math.PI * v)); };
+    bd.setPart('gola'); bd.rigid(shell(rib, 36, 2, 0.0018, tint(0.86), tint(0.7), tint(0.66), radial), C(0xffffff), wAt, topPat); }
+  bd.setPart('roupa');
+  if (pants && !kid) {   // passadores do cinto (o pano da calça por cima do couro)
+    for (const a of [0.35, 1.0, 1.95, 2.6, 2.1 + Math.PI, 1.0 + Math.PI * 1.5]) { const pl = (u, v) => { const y = beltY(a) - 0.024 + 0.048 * v; return surf(y, a + (u - 0.5) * 0.05, 0.0058, 'baixo'); };
+      bd.setPart('passador'); bd.rigid(shell(pl, 1, 2, 0.0015, tint(0.8, bot), tint(0.6, bot), tint(0.6, bot), radial), C(0xffffff), wAt, botPat); } }
   // cós da saia: anel da casca na cintura (a saia de pano sai dali)
   let saia = null;
   if (s.skirt) { const ys = deTab(f ? 1.0 : 0.97), rr = anelEm(ys, 'cima'), Rk = rr.R.map(x => x + 0.004);

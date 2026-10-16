@@ -60,6 +60,10 @@ export function buildFauna(scene, opts = {}) {
     a.rad = RAD[o.name] || 0; a.len = LEN[o.name] || 0;
     if (opts.col && a.rad) { const base = a.area, C = opts.col, end = (x, z, k) => C.free(x + Math.sin(a.h) * a.len * k, z + Math.cos(a.h) * a.len * k, a.rad * 0.6);
       a.area = (x, z) => base(x, z) && C.free(x, z, a.rad) && (!a.len || (end(x, z, 1) && end(x, z, -1))); }
+    // chão íngreme demais (barranco, escarpa) não é lugar de bicho andar: o desnível debaixo do corpo todo (não só no centro) decide
+    { const base = a.area, rr = Math.max(0.5, (a.rad || 0.4) * 1.3), steep = (x, z) => { const h0 = heightAt(x, z); let lo = h0, hi = h0;
+        for (let k = 0; k < 6; k++) { const h = heightAt(x + Math.cos(k * 1.047) * rr, z + Math.sin(k * 1.047) * rr); lo = Math.min(lo, h); hi = Math.max(hi, h); } return hi - lo > rr * 0.6; };
+      a.area = (x, z) => base(x, z) && (a.allowWater || !steep(x, z)); }
     { const p0 = a.pick; a.pick = q => { let r = p0(q); for (let k = 0; k < 40 && !a.area(r[0], r[1]); k++) r = p0(q); return r; }; }
     a.x = x; a.z = z; if (opts.col && a.rad && !opts.col.free(x, z, a.rad)) { const q = opts.col.push(x, z, a.rad); a.x = q[0]; a.z = q[1]; } a.g.scale.setScalar(o.scale || 1); scene.add(a.g); if (o.name) tag(a.g, o.name);
     if (a.rig) a.g.userData.reguaRest = () => { const R = a.rig, sv = [R.neck.rotation.x, R.head.rotation.x]; R.neck.rotation.x = 0; R.head.rotation.x = 0; return () => { R.neck.rotation.x = sv[0]; R.head.rotation.x = sv[1]; }; };

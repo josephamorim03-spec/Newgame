@@ -51,6 +51,28 @@ function pelagem(spotHex, baseC, freq, thr, seed) {
     frag: `{vec3 q=vLp*uSp.x+uSp.z;float n=vnoise(q.zy)*0.5+vnoise(q.xz*1.17+7.1)*0.3+vnoise(q.xy*1.9+3.7)*0.2;n+=(vnoise(q.zy*6.0+q.x*3.0)-0.5)*0.07;
       float m=smoothstep(uSp.y-0.01,uSp.y+0.01,n)*smoothstep(0.5,0.9,vPat);diffuseColor.rgb*=mix(vec3(1.0),uSpot/max(uBase,vec3(0.02)),m);}
       diffuseColor.rgb*=0.955+0.09*vnoise(vec2(vLp.z*9.0+vLp.x*4.0,vLp.y*90.0))+0.03*(vnoise(vLp.zy*26.0)-0.5);diffuseColor.rgb*=mix(1.0,0.82,uWet);` }); }
+// pelagem da onça: rosetas desenhadas no pixel por células (Voronoi 3D na posição de descanso da malha, andam com o
+// bicho): anel preto partido com o miolo um pouco mais escuro; nas pernas, na cabeça e na barriga, pintas cheias menores.
+// A cor de base (dourado, creme na barriga e no focinho, nariz escuro) vem do vértice; só pelo claro recebe mancha
+function rosetas() {
+  return mat({ vertexColors: true }, { rim: '2.6', vdecl: 'attribute float pat;varying float vPat;', vert: 'vPat=pat;', fdecl: 'varying float vPat;',
+    frag: `{vec3 q=vLp*9.0;vec3 ic=floor(q),fc=fract(q);float d1=9.0;vec3 pc=vec3(0.0);
+      for(int i=-1;i<=1;i++)for(int j=-1;j<=1;j++)for(int k=-1;k<=1;k++){vec3 g=vec3(float(i),float(j),float(k));vec3 h=ic+g;
+        vec3 o=fract(sin(vec3(dot(h,vec3(127.1,311.7,74.7)),dot(h,vec3(269.5,183.3,246.1)),dot(h,vec3(113.5,271.9,124.6))))*43758.5453);
+        vec3 r=g+o*0.8+0.1-fc;float dd=dot(r,r);if(dd<d1){d1=dd;pc=o;}}
+      d1=sqrt(d1);float br=step(0.35,vnoise(vec2(atan(q.y,q.x)*3.0+pc.x*20.0,pc.y*9.0)));
+      float big=smoothstep(0.55,0.75,vPat),ring=(smoothstep(0.24,0.29,d1)-smoothstep(0.37,0.43,d1))*br,dot1=1.0-smoothstep(0.2,0.26,d1),mid=1.0-smoothstep(0.23,0.27,d1);
+      float m=mix(dot1*step(0.45,pc.z),ring,big);float f=step(0.3,vPat);
+      diffuseColor.rgb*=mix(1.0,0.86,mid*big*f);diffuseColor.rgb=mix(diffuseColor.rgb,vec3(0.06,0.045,0.035),m*f);}
+      diffuseColor.rgb*=0.96+0.08*vnoise(vec2(vLp.z*9.0+vLp.x*4.0,vLp.y*90.0));diffuseColor.rgb*=mix(1.0,0.82,uWet);` }); }
+// a faixa do tamanduá-bandeira, desenhada no pixel (em vértice ela saía em blocos): uma faixa preta debruada de branco
+// que sobe do peito, por trás do ombro, até o meio das costas; só no tronco e no pescoço (atributo pat)
+function faixa(cy) {
+  return mat({ vertexColors: true }, { rim: '2.4', vdecl: 'attribute float pat;varying float vPat;', vert: 'vPat=pat;', fdecl: 'varying float vPat;',
+    frag: `{float s=clamp((vLp.y-${cy.toFixed(3)})/0.26,-1.0,1.0),side=clamp(abs(vLp.x)/0.2,0.0,1.0);float line=0.22-0.26*s+0.03*(vnoise(vLp.zy*14.0)-0.5),d=abs(vLp.z-line);
+      float blk=1.0-smoothstep(0.062,0.072,d),wht=(1.0-smoothstep(0.112,0.124,d))*(1.0-blk);float f=step(0.5,vPat);
+      diffuseColor.rgb=mix(diffuseColor.rgb,vec3(0.97,0.95,0.9),wht*f*(0.8+0.2*smoothstep(-0.9,0.2,s)));diffuseColor.rgb=mix(diffuseColor.rgb,vec3(0.07,0.06,0.055),blk*f);}
+      diffuseColor.rgb*=0.955+0.09*vnoise(vec2(vLp.z*9.0+vLp.x*4.0,vLp.y*90.0));diffuseColor.rgb*=mix(1.0,0.82,uWet);` }); }
 export function especies({ M, MJ, rnd }) {
   // ---------- gado zebu do Cerrado
   function vaca(coat, size = 1) {
@@ -188,27 +210,43 @@ export function especies({ M, MJ, rnd }) {
     r.graze = grazeOf(neckPts, muzzle); return r; }
 
   // ---------- onça-pintada: rosetas (a textura), cabeça larga, patas grossas, rabo comprido
-  function onca() { const G = col(0xffffff), cr = col(0xf4ead8);
-    const rings = [[-0.5, 0.53, 0.08, 0.08, 0.08], [-0.45, 0.53, 0.16, 0.16, 0.17], [-0.3, 0.52, 0.2, 0.2, 0.21], [0, 0.5, 0.21, 0.2, 0.22], [0.25, 0.52, 0.2, 0.2, 0.21], [0.4, 0.55, 0.17, 0.17, 0.17], [0.48, 0.58, 0.11, 0.11, 0.11]].map(([z, y, rx, rt, rb]) => ({ z, y, rx, rt, rb, e: 2.1, c: a => Math.sin(a) < -0.6 ? cr : G }));
-    const neckPts = [[0, 0.58, 0.4], [0, 0.62, 0.51], [0, 0.63, 0.56]], muzzle = [0, -0.07, 0.24];
-    const head = H => { H.add(skull([[0, 0.12, 0.12, 0.12], [0.07, 0.14, 0.13, 0.13], [0.15, 0.12, 0.11, 0.11], [0.22, 0.08, 0.07, 0.08], [0.27, 0.05, 0.05, 0.055]].map(([t, rx, rt, rb]) => [t, rx, rt, rb, t > 0.2 ? cr : G, 2.2]), 0.2, 30));
-      for (const sx of [-1, 1]) { H.add(sph(0.04, 0.045, 0.018, sx * 0.09, 0.12, 0.0, 0xb8782a, 8), sx > 0 ? 'earL' : 'earR'); H.add(sph(0.01, 0.016, 0.016, sx * 0.058, 0.04, 0.13, 0xd8b030, 8)); olho(H, sx * 0.064, 0.04, 0.132, 0.008, sx, 0x0a0806); }
-      H.add(sph(0.024, 0.018, 0.016, 0, -0.03, 0.26, 0x3a2a24, 6)); };
-    const lp = [[0, 0.1, 0.1, 0.1], [0.2, 0.088, 0.09, 0.085], [0.35, 0.07, 0.07, 0.068], [0.46, 0.06, 0.062, 0.06], [0.55, 0.055, 0.055, 0.055], [0.78, 0.05, 0.05, 0.05], [0.83, 0.05, 0.05, 0.05]];
-    const leg = (x, z, top, L) => ({ x, z, top, L, prof: lp, c: G, foot: pata(x, z, top - L[0] - L[1], L[2], 0.046, cr, cr, 4) });
+  function onca() { const G = col(0xd9a243), Gd = col(0xc28a34), cr = col(0xf2e6cc), nose = col(0xa06a5c);
+    const gc = a => { const sa = Math.sin(a); return sa < -0.55 ? mix(G, cr, Math.min(1, (-sa - 0.55) * 3)) : mix(G, Gd, Math.max(0, sa) * 0.5); };
+    const rings = [[-0.52, 0.55, 0.08, 0.08, 0.08], [-0.46, 0.56, 0.17, 0.17, 0.18], [-0.3, 0.55, 0.21, 0.21, 0.22], [-0.05, 0.52, 0.21, 0.2, 0.23], [0.2, 0.53, 0.21, 0.21, 0.23], [0.36, 0.56, 0.19, 0.2, 0.2], [0.46, 0.6, 0.13, 0.13, 0.13]]
+      .map(([z, y, rx, rt, rb]) => ({ z, y, rx, rt, rb, e: 2.05, c: gc }));
+    const neckPts = [[0, 0.6, 0.38], [0, 0.65, 0.5], [0, 0.67, 0.56]], th = 0.25, S = (t, x, y) => [x, y * Math.cos(th) - t * Math.sin(th), y * Math.sin(th) + t * Math.cos(th)], muzzle = S(0.25, 0, -0.06);
+    // cabeça de onça: larga e redonda, bochechas cheias, focinho curto e largo, queixo forte, orelhas pequenas e redondas
+    const head = H => { const hc = (t, a) => { const sa = Math.sin(a); if (t > 0.262 && sa > 0.35) return nose; return (t > 0.16 && sa < 0.1) || sa < -0.5 ? cr : gc(a); };
+      H.add(skull([[0, 0.12, 0.11, 0.12], [0.05, 0.15, 0.13, 0.14], [0.11, 0.155, 0.125, 0.14], [0.17, 0.125, 0.1, 0.12], [0.22, 0.095, 0.08, 0.1], [0.255, 0.07, 0.06, 0.075], [0.27, 0.04, 0.035, 0.045]].map(([t, rx, rt, rb]) => [t, rx, rt, rb, a => hc(t, a), 2.3]), th, 32));
+      for (const sx of [-1, 1]) { const ep = S(0.02, sx * 0.1, 0.12), e = S(0.15, sx * 0.065, 0.06), wp = S(0.235, sx * 0.04, -0.02);
+        H.add(sph(0.042, 0.042, 0.016, ep[0], ep[1], ep[2], Gd.clone().multiplyScalar(0.55), 12), sx > 0 ? 'earL' : 'earR'); H.add(sph(0.03, 0.03, 0.01, ep[0], ep[1], ep[2] + 0.008, cr, 10), sx > 0 ? 'earL' : 'earR');
+        H.add(sph(0.012, 0.017, 0.017, e[0], e[1], e[2], 0xd8b030, 10)); olho(H, e[0] + sx * 0.004, e[1], e[2] + 0.004, 0.009, sx, 0x0a0806);
+        H.add(sph(0.034, 0.026, 0.026, wp[0], wp[1], wp[2], cr, 10)); }   // almofadas dos bigodes
+      const np = S(0.258, 0, 0.03); H.add(sph(0.02, 0.011, 0.012, np[0], np[1], np[2], 0xa06a5c, 10)); };
+    const lp = [[0, 0.11, 0.11, 0.11], [0.2, 0.095, 0.097, 0.09], [0.35, 0.075, 0.075, 0.072], [0.46, 0.064, 0.066, 0.064], [0.55, 0.058, 0.058, 0.058], [0.78, 0.054, 0.054, 0.054], [0.83, 0.054, 0.054, 0.054]];
+    const leg = (x, z, top, L) => ({ x, z, top, L, prof: lp, c: (t, a) => gc(a), foot: pata(x, z, top - L[0] - L[1], L[2], 0.05, G, cr, 4) });
     const tp = [[0, 0.6, -0.5], [0, 0.52, -0.72], [0, 0.42, -0.92], [0, 0.34, -1.06], [0, 0.31, -1.14]];
-    const r = quad({ K: 1, M: MJ, seg: 36, body: { rings }, neck: { pts: neckPts, prof: [{ rx: 0.14, rt: 0.14, rb: 0.15, c: G }, { rx: 0.13, rt: 0.13, rb: 0.14, c: G }, { rx: 0.11, rt: 0.11, rb: 0.12, c: G }] }, head, ears: [[0.09, 0.12, 0], [-0.09, 0.12, 0]], muzzle,
+    // pat: 1 = pelo do corpo (rosetas), 0,4 = pernas/cabeça/barriga (pintas cheias), 0 = nariz e olho
+    const pat = (r0, g0, b0) => { const l = r0 * 0.3 + g0 * 0.5 + b0 * 0.2; if (l < 0.3) return 0; return 1; };
+    const r = quad({ K: 1, M: rosetas(), pat, seg: 40, body: { rings }, neck: { pts: neckPts, prof: [{ rx: 0.16, rt: 0.17, rb: 0.18, c: gc }, { rx: 0.15, rt: 0.15, rb: 0.17, c: gc }, { rx: 0.13, rt: 0.13, rb: 0.15, c: gc }] }, head,
+      ears: [S(0.02, 0.1, 0.12), S(0.02, -0.1, 0.12)], muzzle,
       legs: [leg(0.12, 0.32, 0.42, [0.19, 0.15, 0.08]), leg(-0.12, 0.32, 0.42, [0.19, 0.15, 0.08]), leg(0.12, -0.34, 0.46, [0.26, 0.17, 0.08]), leg(-0.12, -0.34, 0.46, [0.26, 0.17, 0.08])],
-      tail: { pts: tp, prof: tp.map((p, i) => ({ rx: 0.045 - i * 0.004, rt: 0.045 - i * 0.004, rb: 0.045 - i * 0.004, c: G })), n: 5, rest: [-0.25, 0.1] } });
+      tail: { pts: tp, prof: tp.map((p, i) => ({ rx: 0.045 - i * 0.004, rt: 0.045 - i * 0.004, rb: 0.045 - i * 0.004, c: i === 4 ? col(0x1e1610) : G })), n: 5, rest: [-0.25, 0.1] } });
+    // as partes que não são o tronco (pernas, cabeça) levam pintas cheias: marca no atributo pat (0,45)
+    { const g = r.mesh.geometry, pa = g.attributes.pat, part = g.userData.part, names = g.userData.partNames, iC = names.indexOf('corpo'), iN = names.indexOf('pescoco'), y0 = r.root.position.y / r.K, p = g.attributes.position;
+      for (let i = 0; i < pa.count; i++) { if (pa.getX(i) === 0) continue; const tronco = part[i] === iC || part[i] === iN; const belly = p.getY(i) / r.K < 0.42; if (!tronco || belly) pa.setX(i, 0.45); } pa.needsUpdate = true; }
     r.graze = grazeOf(neckPts, muzzle); return r; }
 
   // ---------- anta: corpo pesado, tromba curta que mexe, crina baixa, orelhas de borda clara
-  function anta() { const c = col(0x4a3e38), d = col(0x3a302c), pc = col(0x5a4c44);
-    const rings = [[-0.62, 0.75, 0.12, 0.12, 0.12], [-0.56, 0.76, 0.27, 0.28, 0.3], [-0.36, 0.74, 0.33, 0.34, 0.36], [0, 0.72, 0.34, 0.36, 0.37], [0.3, 0.72, 0.32, 0.33, 0.35], [0.48, 0.76, 0.25, 0.26, 0.27], [0.58, 0.8, 0.16, 0.17, 0.17]].map(([z, y, rx, rt, rb]) => ({ z, y, rx, rt, rb, e: 2.2, c: a => mix(c, d, Math.max(0, Math.sin(a)) * 0.5) }));
+  function anta() { const c = col(0x6e5646), d = col(0x523e30), pc = col(0x7a6250);
+    const rings = [[-0.64, 0.8, 0.1, 0.1, 0.1], [-0.58, 0.82, 0.26, 0.28, 0.28], [-0.42, 0.8, 0.33, 0.36, 0.35], [-0.15, 0.75, 0.34, 0.36, 0.38], [0.15, 0.72, 0.33, 0.33, 0.37], [0.38, 0.72, 0.28, 0.28, 0.31], [0.52, 0.75, 0.21, 0.22, 0.23], [0.6, 0.78, 0.14, 0.15, 0.15]]
+      .map(([z, y, rx, rt, rb]) => ({ z, y, rx, rt, rb, e: 2.0, c: a => { const sa = Math.sin(a); return sa < -0.5 ? mix(c, 0x7a685c, (-sa - 0.5)) : mix(c, d, Math.max(0, sa) * 0.45); } }));
     const neckPts = [[0, 0.78, 0.46], [0, 0.85, 0.66], [0, 0.85, 0.8]], muzzle = [0, -0.25, 0.32];
     const head = H => { H.add(skull([[0, 0.13, 0.15, 0.16], [0.1, 0.14, 0.16, 0.17], [0.22, 0.11, 0.12, 0.13], [0.32, 0.08, 0.08, 0.08], [0.38, 0.055, 0.055, 0.055]].map(([t, rx, rt, rb]) => [t, rx, rt, rb, pc, 2.3]), 0.55, 30));
       H.add(tube([[0, -0.2, 0.3], [0, -0.26, 0.37], [0, -0.34, 0.39]], [{ rx: 0.05, rt: 0.05, rb: 0.05, c: d }, { rx: 0.04, rt: 0.04, rb: 0.04, c: d }, { rx: 0.03, rt: 0.03, rb: 0.03, c: col(0x2a2420) }], 10, true), 'snout');
-      for (const sx of [-1, 1]) { H.add(sph(0.055, 0.075, 0.022, sx * 0.1, 0.14, 0.0, c, 8), sx > 0 ? 'earL' : 'earR'); H.add(paintG(new THREE.TorusGeometry(0.06, 0.008, 4, 14).scale(0.9, 1.25, 1).rotateY(sx * 0.3).translate(sx * 0.1, 0.14, 0.012), 0xc8bcae), sx > 0 ? 'earL' : 'earR');
+      for (const sx of [-1, 1]) { { const eg = new THREE.SphereGeometry(1, 16, 12).scale(0.06, 0.08, 0.02), ep = eg.attributes.position, ec = new Float32Array(ep.count * 3), rim = col(0xd8ccbc);
+          for (let q = 0; q < ep.count; q++) { const rr = Math.hypot(ep.getX(q) / 0.06, ep.getY(q) / 0.08), k3 = rr > 0.82 ? rim : c; ec.set([k3.r, k3.g, k3.b], q * 3); } eg.setAttribute('color', new THREE.BufferAttribute(ec, 3));
+          eg.rotateY(sx * 0.35).translate(sx * 0.1, 0.14, 0.0); H.add(eg, sx > 0 ? 'earL' : 'earR'); }
         olho(H, sx * 0.1, 0.0, 0.17, 0.015, sx); } };
     const lp = [[0, 0.12, 0.12, 0.12], [0.2, 0.1, 0.102, 0.098], [0.4, 0.085, 0.085, 0.085], [0.46, 0.075, 0.078, 0.075], [0.6, 0.065, 0.065, 0.065], [0.77, 0.06, 0.06, 0.06], [0.81, 0.062, 0.062, 0.062]];
     const foot = (x, z, y) => mergeG([sph(0.07, 0.04, 0.08, x, y + 0.035, z + 0.02, 0x2a2420, 8), ...[-1, 0, 1].map(k => sph(0.025, 0.03, 0.03, x + k * 0.04, y + 0.03, z + 0.08, 0x1e1a18, 6))]);
@@ -218,8 +256,8 @@ export function especies({ M, MJ, rnd }) {
     r.graze = grazeOf(neckPts, muzzle); return r; }
 
   // ---------- tamanduá-bandeira: faixa preta e branca no ombro, focinho comprido de tubo, garras da frente dobradas, rabo de bandeira
-  function tamandua() { const c = col(0x6e655c), k = col(0x1e1a18), w = col(0xe8e2d4);
-    const stripe = z => a => { const s = Math.sin(a), line = 0.3 - 0.36 * (1 - s); const d = Math.abs(z - line); return d < 0.05 ? k : d < 0.08 && s > -0.6 ? w : c; };
+  function tamandua() { const c = col(0x8a8076), k = col(0x1e1a18), w = col(0xf0eade);
+    const stripe = z => a => mix(c, 0x6a6058, Math.max(0, Math.sin(a)) * 0.35);   // a faixa preta e branca vem do shader (faixa)   // a faixa sobe do peito para trás até o meio das costas
     const rings = [[-0.55, 0.56, 0.08, 0.08, 0.08], [-0.5, 0.56, 0.15, 0.2, 0.17], [-0.3, 0.55, 0.19, 0.26, 0.21], [0, 0.53, 0.2, 0.27, 0.22], [0.25, 0.53, 0.19, 0.25, 0.21], [0.4, 0.55, 0.15, 0.2, 0.16], [0.5, 0.58, 0.1, 0.12, 0.1]].map(([z, y, rx, rt, rb]) => ({ z, y, rx, rt, rb, e: 2.2, c: stripe(z) }));
     const neckPts = [[0, 0.58, 0.44], [0, 0.6, 0.57], [0, 0.6, 0.64]], muzzle = [0, -0.18, 0.4];
     const head = H => { H.add(tube([[0, 0, -0.02], [0, -0.02, 0.06], [0, -0.07, 0.18], [0, -0.13, 0.3], [0, -0.18, 0.41]], [0.075, 0.07, 0.05, 0.035, 0.024].map(r => ({ rx: r, rt: r, rb: r, c })), 12, true));
@@ -229,10 +267,12 @@ export function especies({ M, MJ, rnd }) {
     const fFoot = (x, z) => mergeG([tube([[x, 0.1, z], [x, 0.05, z + 0.01]], [{ rx: 0.058, rt: 0.058, rb: 0.058, c: w }, { rx: 0.06, rt: 0.062, rb: 0.06, c: w }], 10, false), sph(0.065, 0.045, 0.07, x, 0.045, z + 0.01, w, 10), ...[-1, 1].map(sd => cone(0.016, 0.09, 0x2a2420, 6).rotateX(-2.3).translate(x + sd * 0.022, 0.03, z + 0.06))]);
     const hFoot = (x, z) => pata(x, z, 0.09, 0.09, 0.05, k, 0x141210, 5, 0x2a2420);
     const tp = [[0, 0.6, -0.55], [0, 0.62, -0.75], [0, 0.6, -0.95], [0, 0.55, -1.1], [0, 0.48, -1.2]];
-    const r = quad({ K: 1, M, seg: 36, body: { rings }, neck: { pts: neckPts, prof: [{ rx: 0.13, rt: 0.17, rb: 0.14, c }, { rx: 0.1, rt: 0.12, rb: 0.1, c }, { rx: 0.08, rt: 0.085, rb: 0.08, c }] }, head, ears: [[0.055, 0.06, -0.01], [-0.055, 0.06, -0.01]], muzzle,
+    const r = quad({ K: 1, M: faixa(0.54), pat: () => 1, seg: 36, body: { rings }, neck: { pts: neckPts, prof: [{ rx: 0.13, rt: 0.17, rb: 0.14, c }, { rx: 0.1, rt: 0.12, rb: 0.1, c }, { rx: 0.08, rt: 0.085, rb: 0.08, c }] }, head, ears: [[0.055, 0.06, -0.01], [-0.055, 0.06, -0.01]], muzzle,
       legs: [{ x: 0.13, z: 0.35, top: 0.45, L: [0.19, 0.165, 0.09], prof: lpF, c: fcol, foot: fFoot(0.13, 0.35) }, { x: -0.13, z: 0.35, top: 0.45, L: [0.19, 0.165, 0.09], prof: lpF, c: fcol, foot: fFoot(-0.13, 0.35) },
         { x: 0.13, z: -0.38, top: 0.46, L: [0.2, 0.17, 0.09], prof: lpF, c: hcol, foot: hFoot(0.13, -0.38) }, { x: -0.13, z: -0.38, top: 0.46, L: [0.2, 0.17, 0.09], prof: lpF, c: hcol, foot: hFoot(-0.13, -0.38) }],
       tail: { pts: tp, prof: tp.map((p, i) => ({ rx: 0.06, rt: [0.12, 0.2, 0.24, 0.2, 0.1][i], rb: [0.12, 0.25, 0.28, 0.22, 0.1][i], c: col(0x5a524a) })), n: 4, rest: [0.15, -0.05] } });
+    { const g = r.mesh.geometry, pa = g.attributes.pat, part = g.userData.part, names = g.userData.partNames, ok = [names.indexOf('corpo'), names.indexOf('pescoco')];
+      for (let q = 0; q < pa.count; q++) pa.setX(q, ok.includes(part[q]) ? 1 : 0); pa.needsUpdate = true; }
     r.graze = grazeOf(neckPts, muzzle); return r; }
 
   // ---------- aves
