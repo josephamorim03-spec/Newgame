@@ -45,7 +45,9 @@ export function bodyMaterial(patTex) {
         float wv=abs(sin(vU.x*70.0+sin(vU.y*70.0)*0.6))*abs(sin(vU.y*70.0));diffuseColor.rgb*=mix(1.0,0.78+0.3*wv,straw);
         diffuseColor.rgb*=mix(1.0,0.82,uWet*(0.3+0.7*cloth));`)
       .replace('#include <lights_fragment_end>', LIGHT_END('2.4') + `
-        {float hl=pow(max(0.0,1.0-abs(normal.y-0.55)*2.2),3.0)*isHair;totalEmissiveRadiance+=diffuseColor.rgb*hl*0.35*uSunC;}`); };
+        {float hl=pow(max(0.0,1.0-abs(normal.y-0.55)*2.2),3.0)*isHair;totalEmissiveRadiance+=diffuseColor.rgb*hl*0.35*uSunC;}
+        // pele: a luz que atravessa (orelha, nariz, bochecha) esquenta a sombra, em vez de cinza
+        {float skn=1.0-step(0.5,vPat);totalEmissiveRadiance+=diffuseColor.rgb*vec3(0.16,0.05,0.03)*skn*(0.4+0.6*uDay);}`); };
   m.customProgramCacheKey = () => 'corpo2' + (patTex ? 1 : 0);
   patMats.set(key, m); return m;
 }

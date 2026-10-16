@@ -511,6 +511,11 @@ export function buildPeople(scene, { mobile = false, fx = null, afx = null, col:
         const hot = U.uSeca.value > 0.6 && hour > 11 && hour < 15.5 && day > 0.6 && rain < 0.05;
         if (hot && p.st === 'post' && ['enxada', 'colher', 'varrer', 'vaqueiro'].includes(p.job)) { const c = (time * 0.12 + p.ph) % 1; if (c < 0.08) { p.arms[0].sh.rotation.x = -2.5; p.arms[0].el.rotation.x = -2.0; p.arms[0].sh.rotation.z = 0.45; p.head.rotation.x = -0.15; } }
         if (scare > 1.4) { p.spine.rotation.x += 0.15; p.head.rotation.x = 0.35; for (const a of p.arms) { a.sh.rotation.z = (a === p.arms[0] ? 0.35 : -0.35); } }
+        // em pé parado: o peso troca de perna de tempos em tempos (um joelho cede, o quadril desce daquele lado, o ombro compensa)
+        if (p.st === 'post' && !p.moving && ['conversa', 'vaqueiro', 'olha'].includes(p.job === 'morador' ? (p.alvo && p.alvo.act) : p.job) && !(p.job === 'vaqueiro' && p.cyc === 0)) {
+          const w = Math.sin(time * 0.21 + p.ph * 3), side = w > 0 ? 0 : 1, a = Math.min(1, Math.abs(w) * 3);
+          p.legs[side].kn.rotation.x += 0.14 * a; p.legs[side].hp.rotation.x -= 0.05 * a; p.pelvis.rotation.z = (side ? -1 : 1) * 0.045 * a; p.spine.rotation.z += (side ? 1 : -1) * 0.03 * a; p.pelvis.position.y -= 0.012 * a; }
+        else p.pelvis.rotation.z *= 0.9;
         p.waveCd = Math.max(0, (p.waveCd || 0) - dt);
         if (p.wave > 0) { p.wave -= dt; waveArm(p, time); if (p.waveAt) turnTo(p, p.waveAt.x, p.waveAt.z, dt * (p.moving ? 0 : 1)); }
         else if (!p.waveCd && p.st === 'post' && !p.running && !KIDS.has(p.job) && p.job !== 'lagoa' && !['rezar', 'aluno', 'licao', 'lavar', 'agua', 'machado'].includes(p.job) && !(p.job === 'morador' && p.kid)) { for (const o of people) { if (o === p || !o.g.visible || !o.moving || KIDS.has(o.job) || o.running || o.kid) continue;
