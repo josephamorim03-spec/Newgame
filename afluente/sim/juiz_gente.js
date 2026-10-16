@@ -17,7 +17,7 @@ if (!alvo) { console.error('uso: node sim/juiz_gente.js <index.html|url> [saida.
   await b.close();
   const E = Object.entries(R.tipos), media = Math.round(E.reduce((s, [, r]) => s + r.nota, 0) / E.length);
   const L = [`# O juiz de gente`, '', `Relatório de \`sim/juiz_gente.js\` (o motor fica em \`prototipo3d/js/juizgente.js\`). Nota média: **${media}**.`, '',
-    'Cada tipo de morador é montado, medido parado, posto nas poses do jogo e (o andar) seguido por 4 s.', '',
+    'Cada tipo de morador é montado, medido parado, posto nas poses do jogo e (o andar) seguido por 4 s. Na saia, mede-se também a folga do pano até o corpo (saiaFolga, em mm: os 10% mais afastados entre a cintura e o quadril).', '',
     '| Tipo | Nota | Forma | Integração | Pose | Movimento | Triângulos |', '|---|---|---|---|---|---|---|',
     ...E.map(([n, r]) => `| ${n} | **${r.nota}** | ${r.notas.forma} | ${r.notas['integração']} | ${r.notas.pose} | ${r.notas.movimento} | ${r.medidas.triangulos} |`), ''];
   for (const [n, r] of E) { L.push(`## ${n} (${r.nota})`, '');

@@ -78,7 +78,7 @@ vec4 rvor(vec3 q,out vec3 pc,out vec3 rc){vec3 ic=floor(q),fc=fract(q);float d1=
 float rspot(vec3 q,float fill,float sz){vec3 pc,rc;vec4 v=rvor(rwarp(q,0.9),pc,rc);float e=max(0.03,fwidth(v.x)*1.2),r=sz*(0.55+0.6*pc.z)+0.12*(rn3(q*3.1)-0.5);
   return (1.0-smoothstep(r-e,r+e,v.x))*step(1.0-fill,pc.x);}
 `;
-const ROS_FRAG = `{float k=vPat,dk=0.0,inner=0.0;vec3 q=vLp*10.5;
+const ROS_FRAG = `{float k=vPat,dk=0.0,inner=0.0;vec3 q=vLp*14.5;
   if(k>0.72){vec3 pc,rc;vec4 v=rvor(rwarp(q,1.1),pc,rc);float e=max(0.035,fwidth(v.z)*1.3),nb=rn3(q*3.6+pc*13.0),nt=rn3(q*4.3+pc*7.0);
     float r0=0.56+0.1*pc.y+0.1*(nt-0.5),r1=0.82+0.05*(nb-0.5);
     float ring=smoothstep(r0-e,r0+e,v.z)*(1.0-smoothstep(r1-e,r1+e,v.z))*smoothstep(0.3,0.38,nb+0.1*pc.z);
@@ -86,8 +86,8 @@ const ROS_FRAG = `{float k=vPat,dk=0.0,inner=0.0;vec3 q=vLp*10.5;
     float de=max(0.03,fwidth(length(rc))*1.2),dots=(1.0-smoothstep(0.07+0.05*pc.y-de,0.07+0.05*pc.y+de,length(rc+(pc.zxy-0.5)*0.22)))*step(0.4,pc.z);
     float wr=smoothstep(0.72,0.9,k);dk=max(dk,wr*max(mix(ring,solid,step(0.9,pc.x)),dots*step(pc.x,0.9)*(1.0-smoothstep(r0-0.08,r0,v.z))));
     inner=wr*(1.0-smoothstep(r0-e,r0+e,v.z))*step(pc.x,0.9);}
-  if(k>0.42&&k<0.92){float w=smoothstep(0.42,0.55,k)*(1.0-smoothstep(0.72,0.9,k));dk=max(dk,w*rspot(vLp*13.0,0.9,0.25));}
-  if(k>0.12&&k<0.55){float w=smoothstep(0.12,0.22,k)*(1.0-smoothstep(0.42,0.55,k));dk=max(dk,w*rspot(vLp*24.0,0.75,0.2));}
+  if(k>0.42&&k<0.92){float w=smoothstep(0.42,0.55,k)*(1.0-smoothstep(0.72,0.9,k));dk=max(dk,w*rspot(vLp*18.0,0.9,0.25));}
+  if(k>0.12&&k<0.55){float w=smoothstep(0.12,0.22,k)*(1.0-smoothstep(0.42,0.55,k));dk=max(dk,w*rspot(vLp*30.0,0.8,0.2));}
   diffuseColor.rgb*=mix(vec3(1.0),vec3(0.8,0.7,0.6),inner*0.85);diffuseColor.rgb=mix(diffuseColor.rgb,vec3(0.055,0.04,0.03),dk);}
   diffuseColor.rgb*=0.955+0.09*vnoise(vec2(vLp.z*9.0+vLp.x*4.0,vLp.y*90.0))+0.03*(vnoise(vLp.zy*26.0)-0.5);diffuseColor.rgb*=mix(1.0,0.82,uWet);`;
 function rosetas() {
@@ -262,38 +262,38 @@ export function especies({ M, MJ, rnd }) {
   // rabo mais curto que o de outros gatos. A pelagem (rosetas, pintas) vem do shader rosetas()
   function onca() { const G = col(0xd99c42), Gt = col(0xc8862e), Gs = col(0xe2ad58), cr = col(0xf3ead6), k = col(0x16100c), nose = col(0x9a6050);
     const gc = a => { const sa = Math.sin(a); return sa < -0.6 ? mix(Gs, cr, Math.min(1, (-sa - 0.6) * 3.5)) : sa > 0.3 ? mix(G, Gt, (sa - 0.3) * 0.8) : mix(Gs, G, (sa + 0.35) / 0.65); };
-    const rings = [[-0.57, 0.575, 0.05, 0.05, 0.05], [-0.535, 0.58, 0.13, 0.12, 0.14], [-0.46, 0.575, 0.18, 0.155, 0.2], [-0.34, 0.56, 0.19, 0.16, 0.225], [-0.2, 0.55, 0.178, 0.158, 0.215],
-      [-0.06, 0.548, 0.172, 0.162, 0.2], [0.08, 0.55, 0.185, 0.172, 0.222], [0.2, 0.556, 0.196, 0.18, 0.238], [0.31, 0.57, 0.192, 0.186, 0.24], [0.4, 0.592, 0.165, 0.172, 0.208], [0.47, 0.618, 0.122, 0.135, 0.158], [0.52, 0.635, 0.06, 0.07, 0.08]]
+    const rings = [[-0.58, 0.565, 0.05, 0.05, 0.05], [-0.54, 0.57, 0.125, 0.11, 0.13], [-0.47, 0.57, 0.17, 0.15, 0.185], [-0.36, 0.56, 0.182, 0.16, 0.21], [-0.22, 0.55, 0.17, 0.155, 0.205],
+      [-0.08, 0.545, 0.163, 0.158, 0.19], [0.06, 0.545, 0.178, 0.168, 0.225], [0.19, 0.55, 0.19, 0.178, 0.243], [0.3, 0.565, 0.19, 0.185, 0.247], [0.39, 0.585, 0.168, 0.175, 0.225], [0.46, 0.605, 0.13, 0.14, 0.17], [0.51, 0.615, 0.07, 0.08, 0.09]]
       .map(([z, y, rx, rt, rb]) => ({ z, y, rx, rt, rb, e: 2.15, c: gc }));
     const g1 = (v, m, s) => Math.exp(-(((v - m) / s) ** 2));
     const shape = (x, y, a, r) => { const z = r.z, s = Math.sin(a), c = Math.cos(a), ax = Math.abs(x);
-      if (s > 0.2) y += 0.028 * g1(z, 0.33, 0.07) * g1(ax, 0.07, 0.05) * s;   // as escápulas sobem no lombo
+      if (s > 0.2) y += 0.03 * g1(z, 0.32, 0.07) * g1(ax, 0.07, 0.05) * s - 0.012 * g1(z, 0.14, 0.08) * s;   // as escápulas sobem no lombo e logo atrás o lombo afunda
       if (s > 0.5) y += 0.012 * g1(z, -0.4, 0.1) * s;   // a garupa
       if (s < -0.2) { const pouch = g1(z, -0.24, 0.12) * Math.pow(-s, 3); y -= 0.035 * pouch; x *= 1 - 0.25 * pouch; }   // a pele solta da barriga
       if (s < -0.3) x *= 1 - 0.22 * g1(z, 0.24, 0.1) * Math.pow(-s, 2);   // o peito em quilha, estreito embaixo
       if (s < 0.5) { const sd = Math.pow(Math.abs(c), 1.4); x *= 1 + sd * (0.1 * g1(z, 0.33, 0.09) + 0.13 * g1(z, -0.38, 0.11)) - sd * 0.06 * g1(z, -0.08, 0.1); }   // paleta, coxa e cintura
-      for (const [lz, lx, dr] of [[0.32, 0.12, 0.05], [-0.36, 0.12, 0.06]]) if (s < -0.1) { const d = g1(ax, lx, 0.06) * g1(z, lz, 0.075) * Math.pow(-s, 0.7); y -= dr * d; }   // braço e coxa descem para dentro da perna
-      return [x, y]; };
-    const neckPts = [[0, 0.6, 0.38], [0, 0.635, 0.49], [0, 0.655, 0.57]], th = 0.1, S = (t, x, y) => [x, y * Math.cos(th) - t * Math.sin(th), y * Math.sin(th) + t * Math.cos(th)], muzzle = S(0.24, 0, -0.08);
-    const head = H => {
+      return sleeve(x, y, a, r); }, sleeve = manga([[0.12, 0.31, 0.06, 0.065, 0.08], [0.12, -0.37, 0.07, 0.075, 0.1]]);   // braço e coxa descem para dentro da perna
+    const neckPts = [[0, 0.575, 0.37], [0, 0.585, 0.49], [0, 0.575, 0.61]], th = 0.18, S = (t, x, y) => [x, y * Math.cos(th) - t * Math.sin(th), y * Math.sin(th) + t * Math.cos(th)], muzzle = S(0.262, 0, -0.09);
+    const HS = 0.88, head = H0 => { const H = { add: (g, who) => H0.add(g.scale(HS, HS, HS), who) };   // a cabeça da onça é grande, mas não maior que um quinto do corpo
       // [t, centro y, meia-largura, alto, baixo, quadratura]: nuca, crânio redondo e largo (as bochechas com o arco
       // zigomático são o mais largo), testa caindo reta até o focinho curto, alto e quadrado, que termina chato no nariz
-      const HR = [[-0.08, -0.005, 0.12, 0.1, 0.13, 2.2], [-0.045, 0.002, 0.126, 0.106, 0.124, 2.2], [0.0, 0.012, 0.132, 0.112, 0.116, 2.3], [0.04, 0.02, 0.14, 0.12, 0.118, 2.4], [0.08, 0.018, 0.15, 0.118, 0.126, 2.5], [0.12, 0.01, 0.144, 0.104, 0.132, 2.6],
-        [0.15, 0.0, 0.126, 0.088, 0.13, 2.7], [0.175, -0.012, 0.104, 0.068, 0.12, 2.8], [0.198, -0.02, 0.092, 0.054, 0.108, 3.0], [0.218, -0.024, 0.086, 0.048, 0.1, 3.0], [0.234, -0.026, 0.074, 0.044, 0.09, 2.9], [0.246, -0.027, 0.05, 0.032, 0.064, 2.6], [0.252, -0.027, 0.014, 0.012, 0.018, 2.2]];
+      const HR = [[-0.08, -0.005, 0.115, 0.1, 0.125, 2.2], [-0.045, 0.002, 0.12, 0.106, 0.12, 2.2], [0.0, 0.012, 0.125, 0.115, 0.115, 2.3], [0.04, 0.02, 0.13, 0.124, 0.115, 2.4], [0.08, 0.018, 0.136, 0.124, 0.122, 2.5],
+        [0.12, 0.01, 0.13, 0.112, 0.128, 2.6], [0.15, 0.0, 0.114, 0.096, 0.126, 2.7], [0.18, -0.012, 0.094, 0.074, 0.118, 2.8], [0.21, -0.022, 0.084, 0.058, 0.108, 3.0], [0.235, -0.028, 0.08, 0.05, 0.1, 3.0], [0.255, -0.03, 0.072, 0.045, 0.09, 2.9],
+        [0.268, -0.031, 0.05, 0.033, 0.064, 2.6], [0.274, -0.031, 0.014, 0.012, 0.018, 2.2]];
       // dourado em cima; o lábio de cima (as almofadas dos bigodes) e a garganta claros
-      const hc = (t, a) => { const sa = Math.sin(a); if (t > 0.2 && sa < -0.3) return mix(Gs, cr, Math.min(1, (-sa - 0.3) * 4)); if (sa < -0.7) return mix(Gs, cr, (-sa - 0.7) * 3.3); return t < 0.02 ? G : mix(Gs, G, Math.max(0, sa)); };
+      const hc = (t, a) => { const sa = Math.sin(a); if (t > 0.22 && sa < -0.3) return mix(Gs, cr, Math.min(1, (-sa - 0.3) * 4)); if (sa < -0.7) return mix(Gs, cr, (-sa - 0.7) * 3.3); return t < 0.02 ? G : mix(Gs, G, Math.max(0, sa)); };
       const pads = (x, y, a, r) => { const t = r.z, sa = Math.sin(a), ca = Math.cos(a);
-        if (t > 0.18) { const w = g1(t, 0.215, 0.03) * g1(sa, -0.1, 0.45); x *= 1 + 0.12 * w; if (Math.abs(ca) < 0.3 && sa < 0) y *= 1 - 0.1 * g1(t, 0.235, 0.015); }   // almofadas dos bigodes e a fenda do meio
+        if (t > 0.2) { const w = g1(t, 0.237, 0.03) * g1(sa, -0.1, 0.45); x *= 1 + 0.12 * w; if (Math.abs(ca) < 0.3 && sa < 0) y *= 1 - 0.1 * g1(t, 0.257, 0.015); }   // almofadas dos bigodes e a fenda do meio
         if (t < 0.15 && sa < 0.2) x *= 1 + 0.05 * g1(t, 0.07, 0.05) * Math.sqrt(Math.max(0, 0.2 - sa));   // bochechas cheias
         if (t > 0.1 && t < 0.2 && sa > 0.6) y *= 1 - 0.06 * g1(t, 0.16, 0.03);   // o vale entre as sobrancelhas
         return [x, y]; };
-      H.add(loft(HR.map(([t, y, rx, rt, rb, e]) => ({ z: t, y, rx: rx * 1.06, rt, rb, e, c: a => hc(t, a) })), 36, pads).rotateX(th));
+      H.add(loft(HR.map(([t, y, rx, rt, rb, e]) => ({ z: t, y, rx: rx * 1.02, rt, rb, e, c: a => hc(t, a) })), 36, pads).rotateX(th));
       // queixo forte e o beiço de baixo, claros
-      H.add(loft([[0.12, 0.06, 0.02, 0.03], [0.16, 0.07, 0.026, 0.038], [0.2, 0.064, 0.024, 0.034], [0.222, 0.046, 0.018, 0.026], [0.232, 0.02, 0.008, 0.012]].map(([t, rx, rt, rb]) => ({ z: t, y: -0.118, rx, rt, rb, e: 2.3, c: a => Math.sin(a) > 0.55 ? mix(cr, k, 0.6) : cr })), 16).rotateX(th));
-      const np = S(0.244, 0, 0.004); H.add(sph(0.025, 0.012, 0.008, 0, 0, 0, nose, 12).rotateX(th - 0.45).translate(np[0], np[1], np[2]));   // o nariz largo
+      H.add(loft([[0.14, 0.058, 0.02, 0.03], [0.18, 0.066, 0.026, 0.038], [0.22, 0.06, 0.024, 0.034], [0.244, 0.044, 0.018, 0.026], [0.254, 0.02, 0.008, 0.012]].map(([t, rx, rt, rb]) => ({ z: t, y: -0.12, rx, rt, rb, e: 2.3, c: a => Math.sin(a) > 0.55 ? mix(cr, k, 0.6) : cr })), 16).rotateX(th));
+      const np = S(0.266, 0, 0.006); H.add(sph(0.028, 0.014, 0.009, 0, 0, 0, nose, 12).rotateX(th - 0.45).translate(np[0], np[1], np[2]));   // o nariz largo
       for (const sx of [-1, 1]) { const side = sx > 0 ? 'earL' : 'earR';
         // olho de gato, de frente: íris âmbar, pupila redonda, a borda preta e o claro em volta
-        const e = S(0.192, sx * 0.062, 0.03), rotE = g => g.rotateY(sx * 0.5).rotateX(-0.12 + th);
+        const e = S(0.202, sx * 0.06, 0.032), rotE = g => g.rotateY(sx * 0.5).rotateX(-0.12 + th);
         H.add(rotE(sph(0.028, 0.025, 0.008, 0, 0, 0, mix(cr, Gs, 0.4), 12)).translate(e[0] - sx * 0.001, e[1] - 0.003, e[2] - 0.004));
         H.add(rotE(sph(0.024, 0.021, 0.007, 0, 0, 0, k, 12)).translate(e[0], e[1], e[2]));
         H.add(rotE(sph(0.02, 0.018, 0.007, 0, 0, 0.002, 0xc89a2a, 12)).translate(e[0], e[1], e[2]));
@@ -302,27 +302,29 @@ export function especies({ M, MJ, rnd }) {
         // orelha pequena e redonda: a concha de pelo claro na frente, atrás preta com a pinta clara no meio
         const ep = S(0.045, sx * 0.11, 0.118), ear = (rx, ry, rz, c, dz) => sph(rx, ry, rz, 0, 0, dz, c, 14).rotateZ(-sx * 0.55).rotateY(sx * 0.4).translate(...ep);
         H.add(ear(0.028, 0.026, 0.012, k, 0), side); H.add(ear(0.024, 0.022, 0.006, Gs, 0.006), side); H.add(ear(0.016, 0.015, 0.005, mix(cr, 0xd8b090, 0.3), 0.009), side); H.add(ear(0.01, 0.009, 0.004, cr, -0.01), side);
-        const n = S(0.247, sx * 0.012, 0.01); H.add(sph(0.004, 0.003, 0.003, n[0], n[1], n[2], 0x2a1a16, 6)); } };   // narinas
-    const lpF = [[0, 0.1, 0.1, 0.11], [0.2, 0.09, 0.095, 0.1], [0.38, 0.068, 0.07, 0.078], [0.44, 0.064, 0.062, 0.08], [0.5, 0.06, 0.07, 0.06], [0.62, 0.056, 0.064, 0.054], [0.76, 0.046, 0.05, 0.046], [0.82, 0.05, 0.05, 0.05]];
-    const lpH = [[0, 0.12, 0.12, 0.13], [0.2, 0.108, 0.115, 0.12], [0.36, 0.08, 0.08, 0.09], [0.48, 0.058, 0.058, 0.06], [0.58, 0.05, 0.048, 0.062], [0.72, 0.042, 0.04, 0.05], [0.82, 0.04, 0.038, 0.05], [0.85, 0.042, 0.042, 0.046]];
+        const n = S(0.269, sx * 0.013, 0.012); H.add(sph(0.004, 0.003, 0.003, n[0], n[1], n[2], 0x2a1a16, 6)); } };   // narinas
+    const lpF = [[-0.25, 0.07, 0.075, 0.08], [-0.1, 0.1, 0.105, 0.11], [0, 0.105, 0.11, 0.115], [0.16, 0.095, 0.1, 0.105], [0.28, 0.08, 0.082, 0.095], [0.34, 0.072, 0.07, 0.09], [0.4, 0.068, 0.078, 0.064],
+      [0.55, 0.062, 0.072, 0.056], [0.68, 0.052, 0.058, 0.048], [0.76, 0.046, 0.048, 0.044], [0.8, 0.05, 0.05, 0.05], [0.86, 0.05, 0.05, 0.05]];
+    const lpH = [[-0.25, 0.08, 0.08, 0.09], [-0.1, 0.12, 0.12, 0.13], [0, 0.125, 0.125, 0.135], [0.18, 0.11, 0.115, 0.12], [0.33, 0.085, 0.085, 0.095], [0.43, 0.06, 0.062, 0.066], [0.52, 0.052, 0.05, 0.064],
+      [0.64, 0.044, 0.042, 0.056], [0.74, 0.038, 0.038, 0.048], [0.77, 0.04, 0.038, 0.05], [0.83, 0.036, 0.036, 0.04], [0.9, 0.036, 0.036, 0.038]];
     // a perna: dourada por fora, creme por dentro e atrás embaixo (o lado de dentro de cada perna depende do lado do bicho)
     const legC = sx => (t, a) => { const ca = Math.cos(a) * sx, sa = Math.sin(a); const inn = Math.max(0, -ca) * Math.min(1, t * 1.6) + (sa < -0.5 ? 0.4 * t : 0); return mix(gc(0), cr, inn * 0.55); };
     const leg = (x, z, top, L, prof, pr) => ({ x, z, top, L, prof, c: legC(Math.sign(x)), foot: pata(x, z, top - L[0] - L[1], L[2], pr, Gs, cr, 4) });
-    const tp = [[0, 0.6, -0.52], [0, 0.57, -0.6], [0, 0.52, -0.69], [0, 0.46, -0.78], [0, 0.4, -0.87], [0, 0.35, -0.95], [0, 0.32, -1.02], [0, 0.31, -1.08], [0, 0.315, -1.12]];
-    const r = quad({ K: 1, M: rosetas(), pat: () => 1, seg: 44, body: { rings, shape },
-      neck: { pts: neckPts, prof: [{ rx: 0.165, rt: 0.17, rb: 0.2, c: gc }, { rx: 0.15, rt: 0.135, rb: 0.175, c: gc }, { rx: 0.135, rt: 0.115, rb: 0.15, c: gc }] }, head,
-      ears: [S(0.045, 0.11, 0.118), S(0.045, -0.11, 0.118)], muzzle,
-      legs: [leg(0.12, 0.32, 0.42, [0.19, 0.15, 0.08], lpF, 0.056), leg(-0.12, 0.32, 0.42, [0.19, 0.15, 0.08], lpF, 0.056), leg(0.12, -0.36, 0.46, [0.26, 0.17, 0.08], lpH, 0.05), leg(-0.12, -0.36, 0.46, [0.26, 0.17, 0.08], lpH, 0.05)],
-      tail: { pts: tp, prof: tp.map((p, i) => { const rr = [0.052, 0.046, 0.042, 0.039, 0.036, 0.034, 0.032, 0.03, 0.018][i]; return { rx: rr, rt: rr, rb: rr, c: i >= 7 ? k : Gs }; }), n: 5, rest: [-0.25, 0.1] } });
+    const tp = [[0, 0.59, -0.53], [0, 0.55, -0.62], [0, 0.47, -0.7], [0, 0.38, -0.76], [0, 0.29, -0.81], [0, 0.22, -0.87], [0, 0.18, -0.94], [0, 0.18, -1.01], [0, 0.21, -1.07], [0, 0.26, -1.1]];   // o rabo pende e a ponta sobe (em J)
+    const r = quad({ K: 1, M: rosetas(), pat: () => 1, seg: 44, legSleeve: true, body: { rings, shape },
+      neck: { pts: neckPts, prof: [{ rx: 0.165, rt: 0.17, rb: 0.2, c: gc }, { rx: 0.145, rt: 0.13, rb: 0.17, c: gc }, { rx: 0.12, rt: 0.105, rb: 0.135, c: gc }] }, head, runShift: 1.8,
+      ears: [S(0.045, 0.11, 0.118).map(v => v * HS), S(0.045, -0.11, 0.118).map(v => v * HS)], muzzle: muzzle.map(v => v * HS),
+      legs: [leg(0.12, 0.31, 0.48, [0.165, 0.21, 0.105], lpF, 0.058), leg(-0.12, 0.31, 0.48, [0.165, 0.21, 0.105], lpF, 0.058), leg(0.12, -0.37, 0.45, [0.21, 0.165, 0.115], lpH, 0.05), leg(-0.12, -0.37, 0.45, [0.21, 0.165, 0.115], lpH, 0.05)],
+      tail: { pts: tp, prof: tp.map((p, i) => { const rr = [0.052, 0.046, 0.042, 0.039, 0.036, 0.034, 0.032, 0.03, 0.026, 0.014][i]; return { rx: rr, rt: rr, rb: rr, c: i >= 8 ? k : i === 6 ? mix(Gs, k, 0.55) : Gs }; }), n: 6, rest: [0, 0.03] } });
     // qual pinta vai onde (atributo pat, ver rosetas): rosetas no tronco e no alto das coxas; pintas no pescoço, na barriga,
     // nas pernas e no rabo; pintinhas na cabeça e nas patas; nada no que é escuro (nariz, olho, a borda da orelha)
     { const g = r.mesh.geometry, pa = g.attributes.pat, part = g.userData.part, names = g.userData.partNames, p = g.attributes.position, cc = g.attributes.color, nm = i => names[part[i]] || '';
       for (let i = 0; i < pa.count; i++) { const n = nm(i), y = p.getY(i), l = cc.getX(i) * 0.3 + cc.getY(i) * 0.5 + cc.getZ(i) * 0.2; let v;
-        if (n === 'corpo') { const bb = r.bodyRings, z = p.getZ(i); let j = 0; while (j < bb.length - 2 && bb[j + 1].z < z) j++; const cy = bb[j].y; v = y < cy - 0.12 ? 0.6 : y < cy - 0.06 ? 0.6 + 0.4 * (y - cy + 0.12) / 0.06 : 1; }
-        else if (n === 'pescoco') v = 0.6; else if (n === 'cabeca') v = 0.3; else if (n.startsWith('perna')) v = y > 0.36 ? 1 : y > 0.26 ? 0.6 + 0.4 * (y - 0.26) / 0.1 : y > 0.12 ? 0.6 : 0.3;
+        if (n === 'corpo') { const bb = r.bodyRings, z = p.getZ(i); let j = 0; while (j < bb.length - 2 && bb[j + 1].z < z) j++; const cy = bb[j].y; v = y < cy - 0.12 ? 0.6 : y < cy - 0.06 ? 0.6 + 0.4 * (y - cy + 0.12) / 0.06 : 1; if (y > cy + 0.13 && Math.abs(p.getX(i)) < 0.05) v = 0.6; }
+        else if (n === 'pescoco') v = 0.6; else if (n === 'cabeca') v = 0.3; else if (n.startsWith('perna')) v = y > 0.38 ? 1 : y > 0.28 ? 0.6 + 0.4 * (y - 0.28) / 0.1 : y > 0.13 ? 0.6 : 0.3;
         else if (n.startsWith('pe')) v = 0.3; else if (n === 'rabo') v = 0.6; else v = 0;
         if (l < 0.12 || (n === 'cabeca' && cc.getX(i) < cc.getY(i) * 1.05)) v = 0; pa.setX(i, v); } pa.needsUpdate = true; }
-    r.graze = grazeOf(neckPts, muzzle); return r; }
+    r.graze = grazeOf(neckPts, muzzle.map(v => v * HS)); return r; }
 
   // ---------- anta: corpo pesado, tromba curta que mexe, crina baixa, orelhas de borda clara
   function anta() { const c = col(0x6e5646), d = col(0x523e30), pc = col(0x7a6250);
