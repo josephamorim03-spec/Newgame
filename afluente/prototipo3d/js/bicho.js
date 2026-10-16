@@ -128,10 +128,12 @@ export function quad(S) {
   const legs = S.legs.map((L, li) => { const [L1, L2, L3] = L.L, Lt = L1 + L2 + L3, x = L.x, z = L.z, top = L.top;
     const hip = hips[li]; hip.rotation.order = 'ZYX';   // balança no plano da perna (x) e depois abre o plano para o lado (z)
     const knee = B.bone(hip, [x, top - L1, z]), ank = B.bone(knee, [x, top - L1 - L2, z]);
+    // (legSleeve: perto da barriga a perna sai com a largura toda, como o braço e a coxa que descem do corpo, sem
+    // estrangular na emenda; a barriga desce em volta dela pela escultura do corpo, ver manga() em especies.js)
     // o alto da perna fica por dentro do tronco (não sai pela lateral do flanco como uma coluna): a largura de cada anel é
     // limitada pela meia-largura do corpo naquela altura
     const pts = L.prof.map(p => [x, top - p[0] * Lt, z + (p[4] || 0)]), prof = L.prof.map((p, j) => { const py = top - p[0] * Lt, hw = bodyHW(z, py);
-      const rx = hw > 0 ? Math.min(p[1], Math.max(hw - Math.abs(x) - 0.012, bodyF(z, py) > 0.7 ? p[1] * 0.6 : 0.015)) : p[1]; return { rx, rt: p[2] ?? p[1], rb: p[3] ?? p[1], e: 2, c: a => cfun(L.c)(p[0], a) }; });
+      const bf = bodyF(z, py), full = S.legSleeve ? sstep(0.72, 0.97, bf) : 0, rx = hw > 0 ? Math.min(p[1], Math.max(hw - Math.abs(x) - 0.012, bf > 0.7 ? p[1] * (0.6 + 0.4 * full) : 0.015)) : p[1]; return { rx, rt: p[2] ?? p[1], rb: p[3] ?? p[1], e: 2, c: a => cfun(L.c)(p[0], a) }; });
     const t1 = L1 / Lt, t2 = (L1 + L2) / Lt;
     sk.tag('perna' + li); sk.add(tube(pts, prof, Math.round((S.legSeg || 16) * DET), false), (px, py) => { const t = (top - py) / Lt; return t < (t1 + t2) / 2 ? blend(t, t1, 0.03, hip.userData.i, knee.userData.i) : blend(t, t2, 0.025, knee.userData.i, ank.userData.i); }, legNormal);
     sk.tag('pe' + li); if (L.foot) sk.add(L.foot, ank.userData.i);
