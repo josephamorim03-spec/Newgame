@@ -41,10 +41,26 @@ export function buildFauna(scene, opts = {}) {
   const mergeGeos = gs => { const out = mergeGeometries(gs.map(x => { const y = x.index ? x.toNonIndexed() : x; for (const n of Object.keys(y.attributes)) if (!['position', 'normal', 'color'].includes(n)) y.deleteAttribute(n); if (!y.attributes.normal) y.computeVertexNormals(); return y; })); return out; };
   const CM = mat({ vertexColors: true }, { rim: '2.4', frag: 'diffuseColor.rgb*=0.95+0.1*vnoise(vWp.xz*14.0+vWp.y*9.0);diffuseColor.rgb*=mix(1.0,0.82,uWet);' });
   const cmesh = (geo, parent) => { const m = new THREE.Mesh(geo, CM); m.castShadow = true; m.receiveShadow = true; parent.add(m); return m; };
-  function cow(tone) {   // nelore: branco a cinza-claro, cupim alto sobre a cernelha, barbela que pende do pescoço ao peito, garupa caída,
-    // cabeça longa e estreita de perfil reto, focinho e cascos pretos, orelhas médias, chifres curtos e grossos, vassoura do rabo preta
-    const g = new THREE.Group(), w = col(tone), grey = w.clone().lerp(col(0x8a8680), 0.45), dark = col(0x2a2624), bull = rnd() < 0.35;
-    const shade = z => a => { const top = Math.max(0, Math.sin(a)); const k = Math.max(0, Math.min(1, (z - 0.2) / 0.6)) * (bull ? 0.8 : 0.45); return w.clone().lerp(grey, k * (0.4 + 0.6 * top)).multiplyScalar(0.96 + 0.04 * top); };
+  // pelagens do gado do Cerrado: o nelore branco é minoria; a maioria é de boi de cor, como no pasto de verdade
+  const COATS = [
+    { w: 0xe6e1d6, g: 0x8a8680, k: 0.45, p: 3 },                              // nelore: branco a cinza-claro
+    { w: 0x9a5632, g: 0x5a2e1a, k: 0.5, p: 5 },                               // curraleiro pé-duro: vermelho
+    { w: 0xc48a4c, g: 0x8a5a2c, k: 0.45, p: 4 },                              // caracu: amarelo-ouro
+    { w: 0x6a4228, g: 0x3a2214, k: 0.4, p: 4 },                               // castanho escuro
+    { w: 0x2f2824, g: 0x1a1512, k: 0.3, p: 2 },                               // preto
+    { w: 0x8c4426, g: 0x5a2a16, k: 0.4, spot: 0xefe6d6, sp: 0.35, p: 2 },     // gir vermelho chitado de branco
+    { w: 0xf0ebe2, g: 0xb8afa4, k: 0.3, spot: 0x6a3c22, sp: 0.42, p: 2 },     // malhado: branco com manchas castanhas
+  ];
+  const pickCoat = () => { let r = rnd() * COATS.reduce((s, c) => s + c.p, 0); for (const c of COATS) if ((r -= c.p) < 0) return c; return COATS[0]; };
+  function cow(coat, size = 1) {   // corpo de zebuíno: cupim alto sobre a cernelha, barbela que pende do pescoço ao peito, garupa caída,
+    // cabeça longa e estreita de perfil reto, focinho e cascos escuros, orelhas médias, chifres curtos e grossos, vassoura do rabo escura
+    if (typeof coat === 'number') coat = { w: coat, g: 0x8a8680, k: 0.45 };
+    const g = new THREE.Group(), w = col(coat.w).multiplyScalar(0.94 + rnd() * 0.12), grey = w.clone().lerp(col(coat.g), coat.k), dark = col(0x2a2624), bull = size > 0.8 && rnd() < 0.35;
+    // manchas (gir, malhado): um padrão suave que depende do lugar no corpo, diferente em cada boi
+    const sd = rnd() * 50, spotC = coat.spot ? col(coat.spot) : null, thr = 1 - (coat.sp || 0) * 1.6;
+    const spotAt = (z, a) => spotC && Math.sin(z * 7.3 + sd) * Math.sin(a * 2.1 + sd * 1.7) + 0.6 * Math.sin(z * 3.1 - a * 1.4 + sd * 0.7) > thr;
+    const shade = z => a => { const top = Math.max(0, Math.sin(a)); const k = Math.max(0, Math.min(1, (z - 0.2) / 0.6)) * (bull ? 0.8 : 0.45), sp = spotAt(z, a);
+      const b = sp ? spotC : w; return b.clone().lerp(sp ? b : grey, k * (0.4 + 0.6 * top)).multiplyScalar(0.96 + 0.04 * top); };
     const R = (z, y, rx, rt, rb, e = 2.2) => ({ z, y, rx, rt, rb, e, c: shade(z) });
     const body = [R(-0.9, 1.16, 0.06, 0.05, 0.07), R(-0.84, 1.15, 0.15, 0.1, 0.2), R(-0.72, 1.1, 0.23, 0.17, 0.3), R(-0.52, 1.03, 0.265, 0.27, 0.38), R(-0.25, 0.99, 0.275, 0.33, 0.4),
       R(0.05, 0.98, 0.27, 0.35, 0.4), R(0.3, 0.99, 0.25, 0.36, 0.39), R(0.48, 1.02, 0.21, 0.34, 0.41), R(0.62, 1.08, 0.165, 0.27, 0.38), R(0.76, 1.17, 0.125, 0.19, 0.3), R(0.88, 1.25, 0.105, 0.13, 0.2), R(0.94, 1.29, 0.085, 0.1, 0.13)];
@@ -78,7 +94,7 @@ export function buildFauna(scene, opts = {}) {
       hp(new THREE.SphereGeometry(1, 6, 5).scale(0.012, 0.01, 0.01).translate(sx * 0.03, -0.39, 0.33), col(0x0a0a0a));                               // narina
     }
     cmesh(mergeGeos(headParts), head);
-    const K2 = 1.08; for (const c of [...g.children]) { c.position.multiplyScalar(K2); c.scale.multiplyScalar(K2); }   // tamanho de um nelore adulto (a escala fica no corpo, o grupo segue livre)
+    const K2 = 1.08 * size * (bull ? 1.05 : 1); for (const c of [...g.children]) { c.position.multiplyScalar(K2); c.scale.multiplyScalar(K2); }   // tamanho de um nelore adulto (a escala fica no corpo, o grupo segue livre)
     return { g, head, legs, tail, headY: 1.33 * K2, cowLegs: true };
   }
 
@@ -167,7 +183,7 @@ export function buildFauna(scene, opts = {}) {
   // e da onça; o raio assusta todo mundo; na chuva as galinhas vão para a varanda e as ovelhas se juntam; no calor da seca o
   // gado procura sombra; à noite o gado e as ovelhas deitam
   const FEAR = { 'galinha': [2.2, 2.6], 'capivara': [5, 2.4], 'seriema': [7, 3.6], 'ema': [8, 4.5], 'garça-branca': [5, 1.4], 'garça-moura': [6, 1.4], 'ovelha': [2.6, 1.8],
-    'boi nelore': [1.8, 1.3], 'lobo-guará': [12, 3.2], 'anta': [7, 2.2], 'tamanduá-bandeira': [4, 1.0], 'joão-de-barro (na régua)': [1.6, 1.8], 'onça-pintada': [11, 2.6] };
+    'boi': [1.8, 1.3], 'bezerro': [1.8, 1.3], 'lobo-guará': [12, 3.2], 'anta': [7, 2.2], 'tamanduá-bandeira': [4, 1.0], 'joão-de-barro (na régua)': [1.6, 1.8], 'onça-pintada': [11, 2.6] };
   let threats = [];
   const porches = LAYOUT.houses.map(h => [h.p[0] + (-h.w * 0.1) * Math.cos(h.rot) + (h.d / 2 + 1.1) * Math.sin(h.rot), h.p[1] - (-h.w * 0.1) * Math.sin(h.rot) + (h.d / 2 + 1.1) * Math.cos(h.rot)]);
   function brain(a, dt) {
@@ -187,7 +203,7 @@ export function buildFauna(scene, opts = {}) {
         if (a.area(nx, nz)) { a.x = nx; a.z = nz; } else a.h += (rnd() < 0.5 ? 1 : -1) * Math.PI * 0.5 * dt * 4;
         a.ph += a.sp * dt / a.stride * Math.PI * 2; return; } }
     // noite: gado e ovelha deitam; de dia levantam
-    if ((name === 'boi nelore' || name === 'ovelha') && !(a.st === 'flee')) { if (day < 0.22 && a.st !== 'lie' && rnd() < dt * 0.2) { a.st = 'lie'; a.sp = 0; } if (a.st === 'lie') { if (day > 0.3) { a.st = 'idle'; a.t = 2; } else return; } }
+    if ((name === 'boi' || name === 'bezerro' || name === 'ovelha') && !(a.st === 'flee')) { if (day < 0.22 && a.st !== 'lie' && rnd() < dt * 0.2) { a.st = 'lie'; a.sp = 0; } if (a.st === 'lie') { if (day > 0.3) { a.st = 'idle'; a.t = 2; } else return; } }
     if (a.t <= 0 && rain > 0.35 && name === 'galinha') { let bp = porches[0], bd = 1e9; for (const p of porches) { const d = Math.hypot(p[0] - a.x, p[1] - a.z); if (d < bd) { bd = d; bp = p; } }
       a.st = 'walk'; a.tgt = [bp[0] + (rnd() - 0.5) * 1.6, bp[1] + (rnd() - 0.5) * 1.0]; a.t = 12; }
     if (a.t <= 0 && rain > 0.35 && name === 'ovelha') { const P = LAYOUT.sheepPen.p; a.st = 'walk'; a.tgt = [P[0] + (rnd() - 0.5) * 1.5, P[1] + (rnd() - 0.5) * 1.5]; a.t = 10; }
@@ -236,8 +252,10 @@ export function buildFauna(scene, opts = {}) {
   const inCorral = (x, z) => inBoxAt(x, z, Cr.p, Cr.w - 1.6, Cr.d - 1.6, Cr.rot);
   const inPasto = (x, z) => inHex(x, z, tP.c, 0.86) && !inBoxAt(x, z, Cr.p, Cr.w + 2, Cr.d + 2, Cr.rot);
   const cowO = (area, pick) => ({ area, pick, pg: 0.55, pw: 0.3, vw: 0.75, vg: 0.06, turn: 0.8, stride: 1.6, sep: 2.2, roam: 7, gp: 1.05, dropNeck: 0.32, big: true });
-  spawn(() => cow([0xeeeae2, 0xe2ddd2, 0xd6d0c6][Math.floor(rnd() * 3)]), 3, { ...cowO(inCorral, pickIn(inCorral, Cr.p, Cr.w / 2)), name: 'boi nelore' });
-  spawn(() => cow([0xeeeae2, 0xe2ddd2, 0xcfc8bd][Math.floor(rnd() * 3)]), 5, { ...cowO(inPasto, pickIn(inPasto, tP.c, 17)), shade, name: 'boi nelore' });
+  // pelagens variadas (mais bois de cor que brancos), tamanhos de vaca e de touro, e bezerros junto do rebanho
+  spawn(() => cow(pickCoat(), 0.9 + rnd() * 0.14), 3, { ...cowO(inCorral, pickIn(inCorral, Cr.p, Cr.w / 2)), name: 'boi' });
+  spawn(() => cow(pickCoat(), 0.9 + rnd() * 0.16), 5, { ...cowO(inPasto, pickIn(inPasto, tP.c, 17)), shade, name: 'boi' });
+  spawn(() => cow(pickCoat(), 0.58 + rnd() * 0.08), 2, { ...cowO(inPasto, pickIn(inPasto, tP.c, 17)), shade, sep: 1.4, name: 'bezerro' });
   // capivaras na beira do rio (peça do rio e da mata)
   const bank = (x, z) => { const w = waterDist(x, z); return w > 0.4 && w < 4.5 && inAnyTile(x, z, 0.9) && !blocked(x, z) && (inHex(x, z, TILES[0].c, 0.92) || inHex(x, z, TILES[1].c, 0.92)); };
   spawn(capybara, 4, { name: 'capivara', scale: 0.85, area: bank, pick: pickIn(bank, [TILES[0].c[0] + 10, TILES[0].c[1]], 9), pg: 0.6, pw: 0.25, vw: 0.5, vg: 0.04, turn: 1.2, stride: 0.7, sep: 1.0, roam: 4, gp: 0.6, dropNeck: 0.05 });

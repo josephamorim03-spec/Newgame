@@ -82,7 +82,7 @@ button.chip { border: 0; }
 <canvas id="vale" aria-label="O vale: toque numa casa vazia para colocar a peça"></canvas>
 <div class="topo" id="topo">
   <span class="marca">Afluente</span>
-  <span class="chip" title="Gente no vale (pontos)">👥 <b id="tGente">0</b></span>
+  <span class="chip" title="Pessoas no vale (pontos)">👥 <b id="tGente">0</b></span>
   <span class="chip" title="Peças na pilha">🂠 <b id="tPilha">22</b></span>
   <span class="chip" id="tEst" title="Estação"></span>
   <button class="chip agua" id="tAgua" title="Água usada / vazão. Toque para ver o vale na seca"></button>
@@ -101,7 +101,7 @@ button.chip { border: 0; }
     <li><b>Encaixe</b> a peça numa casa vazia. Água só encosta em água.</li>
     <li>A <b>nascente</b> (o círculo azul com número) dá essa quantidade de <b style="color:var(--water)">💧</b>. As <b>gotas azuis</b> no mapa são <b>olhos-d'água</b>: ponha uma peça com rio em cima da gota, ligada ao seu rio, e ele ganha essa água. Os tracinhos azuis mostram por onde o rio pode seguir.</li>
     <li><b>Lavoura e vila gastam água</b>: cada peça delas encostada no rio usa 1 💧. A água chega primeiro em quem está perto da nascente; quando acaba, o resto fica <b>seco</b>. O rio afina à medida que é usado.</li>
-    <li>Cada <b>vila pede</b> uma coisa na plaquinha. Atendeu: a vila cresce (gente), ganha <b>+2 peças</b> e você escolhe o próximo pacote de peças.</li>
+    <li>Cada <b>vila pede</b> uma coisa na plaquinha. Atendeu: a vila cresce (mais pessoas), ganha <b>+2 peças</b> e você escolhe o próximo pacote de peças.</li>
     <li>A cada 8 jogadas vem a <b>seca</b> (4 jogadas): <b>cada nascente dá metade</b> (4 vira 2). Toque no 💧 do topo para ver como o vale fica na seca. Quando ela chega, a colheita: +1 peça a cada 2 lavouras que continuam com água. Depois as chuvas devolvem a água toda.</li>
   </ol>
   <p>A pilha é a vida: quando acaba, o jogo acaba. Toque numa casa para ver o que a peça faria, toque de novo (ou ⟳) para girar e confirme com <b>Colocar</b>.</p>
@@ -191,7 +191,7 @@ function select(k) { const opts = G.options(k); if (!opts.length) { sel = { k, o
 function girar() { if (!sel || !sel.opts.length) { ghostI = (ghostI + 1) % 6; refresh(); return; } sel.i = (sel.i + 1) % sel.opts.length; refresh(); }
 function colocar() { if (!sel || !sel.opts.length) return; const o = sel.opts[sel.i]; const res = G.place(o.k, o.e); if (!res) return; acts.push({ t: 'p', k: o.k, e: o.e });
   const [x, y] = hexXY(KQ(o.k), KR(o.k)); anim.push({ x, y, t: 0, kind: 'anel' });
-  for (const ev of res.ev) if (ev.t === 'pedido') { const [vx, vy] = hexXY(KQ(ev.k), KR(ev.k)); anim.push({ x: vx, y: vy, t: 0, kind: 'txt', txt: ev.txt.match(/\+\d+ gente/)[0] }); }
+  for (const ev of res.ev) if (ev.t === 'pedido') { const [vx, vy] = hexXY(KQ(ev.k), KR(ev.k)); anim.push({ x: vx, y: vy, t: 0, kind: 'txt', txt: ev.txt.match(/\+\d+ pessoas/)[0] }); }
   sel = null; ghostI = 0; toast(res.ev.map(e => e.txt)); refresh(); fit(false); }
 function passar() { G.skip(); acts.push({ t: 's' }); sel = null; toast(['A peça não cabia em lugar nenhum: passou a vez']); refresh(); }
 function desfazer() { if (!acts.length) return; let a = acts.slice(); while (a.length && a[a.length - 1].t === 'c') a.pop(); a.pop(); rebuild(a); sel = null; toast(['Desfeito']); refresh(); }

@@ -13,6 +13,7 @@ import { R, TILES, CENTER, RIVER, riverHalfWidth, heightAt, riverInfo, waterDist
 import { buildProps } from './props.js';
 import { hexCenter, edgeMid, DIRS, sectorType, PATHS, addRiver } from './world.js';
 import { buildBoard } from './board3d.js';
+import { buildBoard5 } from './board5.js';
 import { buildFauna } from './fauna.js';
 import { buildPeople } from './people.js';
 import { buildFx } from './fx.js';
@@ -20,6 +21,7 @@ import { buildClouds } from './clouds.js';
 import { buildSkyFx } from './skyfx.js';
 import { tag, audit, person } from './regua.js';
 import { createGameCamera } from './camera.js';
+import { createGrade } from './grade.js';
 import { leafTexture, fanTexture, barkTexture, earthTexture, stoneTexture } from './textures.js';
 
 const ATM = window.ATM;
@@ -46,7 +48,8 @@ controls.enableDamping = true; controls.dampingFactor = 0.08;
 controls.minDistance = 2; controls.maxDistance = 220;   /* câmera livre chega bem perto para inspecionar */ controls.minPolarAngle = 0.3; controls.maxPolarAngle = 1.42;
 controls.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN };
 const reflRT = new THREE.WebGLRenderTarget(2, 2, { colorSpace: THREE.SRGBColorSpace });   // reflexo da água (ver mais abaixo)
-function resize() { const w = innerWidth, h = innerHeight; renderer.setSize(w, h, false); { const rk = [0.5, 0.35, 0.18][window.__Qv || 0]; reflRT.setSize(Math.max(2, Math.ceil(w * dpr * rk)), Math.max(2, Math.ceil(h * dpr * rk))); } camera.aspect = w / h; camera.fov = w < h ? 50 : 38; camera.updateProjectionMatrix(); }
+const grade = createGrade(renderer); window.__grade = grade.uniforms;   // a demão final de cor (grade.js)
+function resize() { const w = innerWidth, h = innerHeight; renderer.setSize(w, h, false); grade.setSize(w * dpr, h * dpr); { const rk = [0.5, 0.35, 0.18][window.__Qv || 0]; reflRT.setSize(Math.max(2, Math.ceil(w * dpr * rk)), Math.max(2, Math.ceil(h * dpr * rk))); } camera.aspect = w / h; camera.fov = w < h ? 50 : 38; camera.updateProjectionMatrix(); }
 addEventListener('resize', resize); resize();
 
 const HEXF = `float hexEdge(vec2 p){float R=${R.toFixed(1)};float q=(0.57735*p.x-0.33333*p.y)/R,r=0.66667*p.y/R;float s=-q-r;
@@ -115,6 +118,7 @@ groundMat.onBeforeCompile = sh => { shared(sh); sh.uniforms.uCenter = { value: n
       vec2 p=vWp.xz;float n1=fbm(p*0.05),n2=fbm(p*0.4+3.1),n3=vnoise(p*2.4);
       // pasto: verde-amarelado vivo, com manchas mais escuras e mais claras (como pinceladas)
       vec3 grass=mix(vec3(0.34,0.56,0.13),vec3(0.56,0.73,0.22),n1);grass=mix(grass,vec3(0.26,0.46,0.10),smoothstep(0.55,0.75,fbm(p*0.18+5.0))*0.55);
+      {float sw=smoothstep(0.32,0.68,fbm(p*0.011+7.0));grass=mix(grass*vec3(1.08,1.03,0.76)+vec3(0.035,0.03,0.0),grass*vec3(0.80,1.0,1.06),sw);}
       grass=mix(grass,mix(vec3(0.62,0.52,0.24),vec3(0.75,0.62,0.30),n1),uSeca*0.88);
       vec3 litter=mix(vec3(0.25,0.20,0.10),vec3(0.38,0.30,0.14),n2);
       vec3 cerr=mix(mix(vec3(0.55,0.56,0.18),vec3(0.70,0.62,0.22),n1),mix(vec3(0.74,0.58,0.28),vec3(0.84,0.68,0.34),n1),uSeca);
@@ -252,6 +256,7 @@ grassMat.onBeforeCompile = sh => { shared(sh); Object.assign(sh.uniforms, grassU
       vec3 gold=mix(vec3(0.34,0.38,0.10),vec3(0.86,0.80,0.36),vGy)*(0.9+0.2*vTone);
       vec3 forest=mix(vec3(0.12,0.22,0.05),vec3(0.36,0.52,0.14),vGy);
       vec3 straw=mix(vec3(0.42,0.32,0.14),vec3(0.92,0.78,0.42),vGy);
+      {float sw=smoothstep(0.32,0.68,fbm(vWp.xz*0.011+7.0));green=mix(green*vec3(1.08,1.03,0.76)+vec3(0.035,0.03,0.0)*vGy,green*vec3(0.80,1.0,1.06),sw);}
       vec3 col=vType>0.75?gold:vType>0.25?forest:green;
       col=mix(col,straw,uSeca*(vType>0.25&&vType<0.75?0.3:0.9));
       col+=vec3(0.16,0.15,0.06)*vGust*vGy*vGy;col*=mix(1.0,0.78,uWet);diffuseColor.rgb=toLin(col);`)
@@ -290,7 +295,10 @@ function treeMaterials(kind) {
         float sw=(0.06*q+0.022*q*sin(uTime*w+hs*40.0)+0.004*sin(uTime*0.9+hs*9.0))*f;
         vec3 dw=vec3(uWindDir.x,0.0,uWindDir.y)*sw*8.0;
         ${isLeaf ? 'dw+=vec3(sin(uTime*11.0+position.x*3.1+lr*20.0),sin(uTime*13.0+position.z*2.3)*0.5,cos(uTime*10.0+position.y*2.7))*0.05*(0.25+q)*flex;' : ''}
-        transformed+=inverse(mat3(modelMatrix))*dw;vLr=lr;vAo=ao;vTint=tint;vWp=(modelMatrix*vec4(transformed,1.0)).xyz;`);
+        transformed+=inverse(mat3(modelMatrix))*dw;vLr=lr;vAo=ao;vTint=tint;vWp=(modelMatrix*vec4(transformed,1.0)).xyz;`)
+      // copa como volume (o truque dos jogos pintados): a normal de cada folha se inclina para fora do eixo da árvore, a partir
+      // de um ponto abaixo dela, e a luz lê a copa como uma massa macia, com lado de sol, lado de sombra e o contorno claro
+    if (isLeaf) sh.vertexShader = sh.vertexShader.replace('#include <beginnormal_vertex>', '#include <beginnormal_vertex>\n{vec3 wp0=(modelMatrix*vec4(position,1.0)).xyz;vec3 rel=wp0-torg;vec3 nw=normalize(vec3(rel.x,rel.y*0.45+0.6,rel.z));objectNormal=normalize(mix(objectNormal,inverse(mat3(modelMatrix))*nw,0.72));}');
     if (depth) { sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying float vLr;varying vec3 vWp;varying float vAo;varying float vTint;\n'); return; }
     sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying float vLr;varying vec3 vWp;varying float vAo;varying float vTint;uniform float uDry;uniform vec3 uBloom;\n' + HEAD)
       .replace('#include <map_fragment>', NEAR_FADE + (isLeaf ? /* glsl */`#include <map_fragment>
@@ -791,7 +799,8 @@ mergeTrees(scene.children.slice());
 // ---------- o jogo: as peças do vale entram no tabuleiro com as bordas do jogo 2D (A água, B mata, C lavoura, V vila, G campo),
 // na ordem [L, NE, NO, O, SO, SE]; o rio entra pela nascente e sai pela borda leste da cachoeira
 const EDGES0 = { rio: 'AGGGGG', mata: 'ABBABB', cachoeira: 'ABBAGG', pasto: 'GGGGGG', cerrado: 'GGGGGG', lagoa: 'GGGGGG', vila: 'VVVVVV', praca: 'VVVVVV', lavoura: 'CCCCCC', roca: 'CCCCCC', cerradao: 'BBBBBB' };
-const board = buildBoard({ scene, camera, dom: renderer.domElement, R, TILES, hexCenter, heightAt, waterDist, inHex, edgeMid, DIRS, sectorType, PATHS, addRiver, ST, CENTER,
+// o jogo: núcleo v5 (o rio é o orçamento, ../../nucleo/regras.js); ?jogo=v3 volta às regras antigas (game3d.js)
+const board = (new URLSearchParams(location.search).get('jogo') === 'v3' ? buildBoard : buildBoard5)({ scene, camera, dom: renderer.domElement, R, TILES, hexCenter, heightAt, waterDist, inHex, edgeMid, DIRS, sectorType, PATHS, addRiver, ST, CENTER, gente,
   edgesOf: t => EDGES0[t.kind].split(''), props, groundFor, waterFor: t => waterMeshFor([t], false), fillField, grassFor, place, makeTree, makeTermite, makeBuriti, fieldAt, blocked, mobile, mergeTrees, buildNear });
 let lastStrikes = 0;
 const clock = new THREE.Clock(); let fpsT = 0, fpsT0 = 0, fpsN = 0, slow = 0;
@@ -810,7 +819,7 @@ function frame() {
   { const f = skyfx.fx.flash; if (f > 0) { skyLight.intensity += f * 3; U.uSkyZen.value.lerp(new THREE.Color(0.85, 0.88, 1), f * 0.5); U.uSkyHor.value.lerp(new THREE.Color(0.9, 0.92, 1), f * 0.45); } }   // clarão do raio
   ringFog.value = scene.fog.density; ringFogC.value.copy(scene.fog.color);
   renderReflection();
-  renderer.render(scene, camera);
+  grade.render(scene, camera, Q);
   // quadros por segundo medidos no relógio de verdade (o dt do jogo é limitado a 0,1 s e enganava quando o aparelho sofria)
   const now = performance.now(); fpsN++; fpsT = (now - (fpsT0 || now)) / 1000; if (!fpsT0) fpsT0 = now; if (fpsT > 1) { const fps = fpsN / fpsT; fpsT0 = now; $('info').textContent = `${fmtH(ST.hour)} · ${ST.seca ? 'Seca' : 'Águas'} · vento ${c.base.toFixed(1)} m/s · ${c.Rr > 0.2 ? `chuva ${c.Rr.toFixed(0)} mm/h` : 'sem chuva'} · ${fps.toFixed(0)} qps`;
     $('hora').value = ST.hour;

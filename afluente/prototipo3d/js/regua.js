@@ -28,7 +28,8 @@ export const TABELA = {
   'milho': { h: [1.8, 2.8] },
   'girassol': { h: [1.5, 3.0] },
   'moinho (com as pás)': { h: [10, 16] },
-  'boi nelore': { h: [1.35, 1.75], l: [2.3, 3.0] },
+  'boi': { h: [1.25, 1.8], l: [2.1, 3.1] },   // vaca, boi e touro, das raças do Cerrado (nelore, curraleiro, caracu, gir)
+  'bezerro': { h: [0.75, 1.15], l: [1.2, 1.9] },
   'capivara': { h: [0.45, 0.7], l: [1.0, 1.4] },
   'garça-branca': { h: [0.85, 1.05] },
   'seriema': { h: [0.7, 0.95] },
