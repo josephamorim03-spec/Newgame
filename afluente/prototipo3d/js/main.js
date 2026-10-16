@@ -16,6 +16,7 @@ import { buildBoard } from './board3d.js';
 import { buildBoard5 } from './board5.js';
 import { buildFauna } from './fauna.js';
 import { buildPeople } from './people.js';
+import { createFx } from './aguafx.js';
 import { buildClouds } from './clouds.js';
 import { buildSkyFx } from './skyfx.js';
 import { tag, audit, person } from './regua.js';
@@ -530,9 +531,10 @@ scatter(tPr, 6, () => makeTree('moita', 0.8 + rnd() * 0.4), (x, z) => Math.hypot
 const props = buildProps(scene, { mobile });
 const shadeTree = scene.children.find(o => o.userData.kind === 'sombra' && inHex(o.position.x, o.position.z, tC.c, 1));
 const clouds = buildClouds(scene, CENTER, { mobile });
-const gente = buildPeople(scene, { mobile });
+const fx = createFx(scene, { mobile });   // anéis, respingos e poeira (aguafx.js)
+const gente = buildPeople(scene, { mobile, fx });
 const skyfx = buildSkyFx(scene, camera, { mobile, focus: () => camMode === 'jogo' ? gameCam.focus : controls.target });
-const fauna = buildFauna(scene, { mobile, shade: shadeTree ? [shadeTree.position.x, shadeTree.position.z] : null, termites: scene.children.filter(o => o.userData.regua === 'cupinzeiro').map(o => [o.position.x, o.position.z]),
+const fauna = buildFauna(scene, { mobile, fx, shade: shadeTree ? [shadeTree.position.x, shadeTree.position.z] : null, termites: scene.children.filter(o => o.userData.regua === 'cupinzeiro').map(o => [o.position.x, o.position.z]),
   treeTops: scene.children.filter(o => ['cerrado', 'mata', 'sombra'].includes(o.userData.kind)).map(o => { const bb = new THREE.Box3().setFromObject(o); return [o.position.x, bb.max.y - 0.6, o.position.z]; }) });
 // moitas: o sub-bosque da mata e os arbustos do cerrado, que fecham o vão entre o capim e as copas
 scatter(tB, 16, () => makeTree('moita', 0.9 + rnd() * 0.35), (x, z) => { const w = waterDist(x, z); return w > 1.2 && w < 14; }, 2.2);
@@ -667,7 +669,7 @@ function renderReflection() {
   waterMat.uniforms.uReflMat.value.multiplyMatrices(BIAS, mirrorCam.projectionMatrix).multiply(mirrorCam.matrixWorldInverse);
   reflClip[0].constant = -wy; water.visible = grass.visible = rain.visible = skyfx.bowMesh.visible = false; skyDome.position.copy(mirrorCam.position);
   renderer.shadowMap.autoUpdate = false; renderer.clippingPlanes = reflClip; renderer.setRenderTarget(reflRT); renderer.render(scene, mirrorCam);
-  renderer.setRenderTarget(null); renderer.clippingPlanes = []; renderer.shadowMap.autoUpdate = true;
+  renderer.setRenderTarget(null); renderer.clippingPlanes = [];
   water.visible = grass.visible = rain.visible = true; skyfx.bowMesh.visible = skyfx.fx.bow > 0.005; skyDome.position.copy(cp);
 }
 
@@ -736,6 +738,10 @@ $('painelBtn').addEventListener('click', () => { const p = $('painel'); p.hidden
 // ---------- câmera do jogo (de cima, girando de 60 em 60°) e a câmera livre (para inspecionar os detalhes)
 const gameCam = createGameCamera(camera, renderer.domElement, { center: CENTER, radius: 130, groundY: (x, z) => Math.max(WATER_Y, heightAt(x, z)) });
 let camMode = 'jogo'; controls.enabled = false;
+// tela limpa: o painel de clima, os botões de girar e a linha de hora/vento/quadros só aparecem com ?debug
+// (girar continua nos dois dedos, no botão direito e nas teclas Q/E)
+const DEBUG = new URLSearchParams(location.search).has('debug');
+if (!DEBUG) { $('painelBtn').style.display = 'none'; $('info').style.display = 'none'; $('giro').hidden = true; }
 if (innerWidth < innerHeight) gameCam.state.dist = gameCam.state.distT = 150;   // celular em pé: um pouco mais longe para caber o vale
 $('rotL').addEventListener('click', () => gameCam.rotate(-1)); $('rotR').addEventListener('click', () => gameCam.rotate(1));
 // a sombra do sol cobre só o pedaço de chão que aparece na tela: mais nítida de perto e sem desperdício de longe
@@ -763,6 +769,8 @@ function applyQuality() { window.__Qv = Q;
   scene.traverse(o => { if (o.isInstancedMesh && ['milho', 'girassol', 'mandioca'].includes(o.userData.regua)) o.castShadow = Q === 0 && !mobile; });   /* lavoura sem sombra nos degraus mais leves */ const sz = [mobile ? 1536 : 2048, 1024, 768][Q]; if (sun.shadow.mapSize.x !== sz) { sun.shadow.mapSize.set(sz, sz); if (sun.shadow.map) { sun.shadow.map.dispose(); sun.shadow.map = null; } }
   resize(); }
 applyQuality();
+// texturas nítidas de longe (folhas, chita, xadrez, pelagem da onça): filtragem anisotrópica, uma vez, no que já existe
+{ const an = Math.min(8, renderer.capabilities.getMaxAnisotropy()); scene.traverse(o => { const m = o.material; if (!m) return; for (const mm of Array.isArray(m) ? m : [m]) for (const k of ['map', 'alphaMap']) { const t = mm[k]; if (t && t.anisotropy !== an) { t.anisotropy = an; t.needsUpdate = true; } } }); }
 
 // ---------- régua: bonecos de 1,70 m pelo vale e a tabela do que foi medido, para conferir as proporções
 let people = null;
@@ -801,22 +809,25 @@ const EDGES0 = { rio: 'AGGGGG', mata: 'ABBABB', cachoeira: 'ABBAGG', pasto: 'GGG
 const board = (new URLSearchParams(location.search).get('jogo') === 'v3' ? buildBoard : buildBoard5)({ scene, camera, dom: renderer.domElement, R, TILES, hexCenter, heightAt, waterDist, inHex, edgeMid, DIRS, sectorType, PATHS, addRiver, ST, CENTER, gente,
   edgesOf: t => EDGES0[t.kind].split(''), props, groundFor, waterFor: t => waterMeshFor([t], false), fillField, grassFor, place, makeTree, makeTermite, makeBuriti, fieldAt, blocked, mobile, mergeTrees, buildNear });
 let lastStrikes = 0;
-const clock = new THREE.Clock(); let fpsT = 0, fpsT0 = 0, fpsN = 0, slow = 0;
+let frameN = 0; const clock = new THREE.Clock(); let fpsT = 0, fpsT0 = 0, fpsN = 0, slow = 0;
 const fmtH = h => `${String(Math.floor(h) % 24).padStart(2, '0')}:${String(Math.round((h % 1) * 60) % 60).padStart(2, '0')}`;
 function frame() {
   const dt = Math.min(window.__dtMax || 0.1, clock.getDelta());   /* __dtMax: só para os testes num computador sem placa de vídeo */ U.uTime.value += dt; U.uFlowClk.value += dt * (0.55 + U.uRain.value * 0.5);
   const c = climate(dt);
-  if (ST.cam !== camMode) { camMode = ST.cam; const game = camMode === 'jogo'; gameCam.state.enabled = game; controls.enabled = !game; $('giro').hidden = !game;
+  if (ST.cam !== camMode) { camMode = ST.cam; const game = camMode === 'jogo'; gameCam.state.enabled = game; controls.enabled = !game; $('giro').hidden = !game || !DEBUG;
     if (game) { gameCam.state.fx = controls.target.x; gameCam.state.fz = controls.target.z; } else { controls.target.copy(gameCam.focus); } }
   if (camMode === 'jogo') gameCam.update(dt); else controls.update();
   if (!!ST.regua !== reguaOn) { reguaOn = !!ST.regua; showRegua(reguaOn); }
   if (people && reguaOn) for (const p of people.children) p.rotation.y = Math.atan2(camera.position.x - p.position.x, camera.position.z - p.position.z);
   if (camMode === 'jogo') U.uFocus.value.copy(gameCam.focus); else U.uFocus.value.copy(camera.position).add(camera.getWorldDirection(_v).multiplyScalar(0.01));   /* câmera livre: só some o que encosta na lente */ fitShadow(); grassLod();
-  const ctx = { pxPerUnit: renderer.domElement.height / (2 * Math.tan(camera.fov * Math.PI / 360)), hour: ST.hour }; if (window.__petalPx) window.__petalPx.value = ctx.pxPerUnit; if (window.__mistPx) window.__mistPx.value = ctx.pxPerUnit; window.__hour = ST.hour; ctx.people = gente.people; props.update(dt, ctx); fauna.update(dt, ctx); gente.update(dt); board.update(dt);
+  const ctx = { pxPerUnit: renderer.domElement.height / (2 * Math.tan(camera.fov * Math.PI / 360)), hour: ST.hour }; if (window.__petalPx) window.__petalPx.value = ctx.pxPerUnit; if (window.__mistPx) window.__mistPx.value = ctx.pxPerUnit; window.__hour = ST.hour; ctx.people = gente.people; props.update(dt, ctx); fauna.update(dt, ctx); fx.update(dt, ctx); gente.update(dt); board.update(dt);
   if ((skyfx.fx.strikes || 0) !== lastStrikes) { lastStrikes = skyfx.fx.strikes || 0; setTimeout(() => { fauna.startle(); gente.startle(); }, 250); }   /* o trovão logo depois do clarão assusta gente e bicho */ clouds.update(dt, camera); ctx.Rr = c.Rr; ctx.hour = ST.hour; skyfx.update(dt, ctx);
   { const f = skyfx.fx.flash; if (f > 0) { skyLight.intensity += f * 3; U.uSkyZen.value.lerp(new THREE.Color(0.85, 0.88, 1), f * 0.5); U.uSkyHor.value.lerp(new THREE.Color(0.9, 0.92, 1), f * 0.45); } }   // clarão do raio
   ringFog.value = scene.fog.density; ringFogC.value.copy(scene.fog.color);
-  renderReflection();
+  // economia sem perder a cena: no degrau cheio tudo a cada quadro; nos mais leves o reflexo da água e o mapa de sombras
+  // são refeitos a cada 2 ou 3 quadros (a câmera e o sol andam devagar, a diferença não se vê)
+  frameN++; if (Q === 0 || frameN % (Q + 1) === 0) renderReflection();
+  renderer.shadowMap.autoUpdate = false; renderer.shadowMap.needsUpdate = Q === 0 || frameN % 2 === 0 || frameN < 4;
   grade.render(scene, camera, Q);
   // quadros por segundo medidos no relógio de verdade (o dt do jogo é limitado a 0,1 s e enganava quando o aparelho sofria)
   const now = performance.now(); fpsN++; fpsT = (now - (fpsT0 || now)) / 1000; if (!fpsT0) fpsT0 = now; if (fpsT > 1) { const fps = fpsN / fpsT; fpsT0 = now; $('info').textContent = `${fmtH(ST.hour)} · ${ST.seca ? 'Seca' : 'Águas'} · vento ${c.base.toFixed(1)} m/s · ${c.Rr > 0.2 ? `chuva ${c.Rr.toFixed(0)} mm/h` : 'sem chuva'} · ${fps.toFixed(0)} qps`;

@@ -76,12 +76,21 @@ function riverInfo0(x, z) {
 }
 // vereda: um poço raso em volta do olho-d'água, com buritis
 export const POOL_R = 5.5;
-// a escarpa: na peça da cachoeira o chão cai DROP metros numa parede de pedra (que segue para norte e sul, fora das peças);
-// o rio despenca ali e continua mais embaixo
+// a escarpa: na cachoeira o chão cai DROP metros num paredão de pedra; longe dela o degrau vira encosta (cada vez mais
+// larga e suave, com o contorno irregular e ressaltos de pedra no meio), em vez de uma parede reta cortando o mapa todo
 const TC = TILES.find(t => t.kind === 'cachoeira');
 export const CLIFF_X = TC.c[0] + 2.5, DROP = 6;
 const cliffX = z => CLIFF_X + (vnoise(z * 0.12, 3.3) - 0.5) * 2.2;
-export function cliffDrop(x, z) { return DROP * smooth(cliffX(z) - 0.5, cliffX(z) + 1.1, x); }
+let Z_FALL = TC.c[1]; for (let i = 0; i < RIVER.length; i++) if (RIVER[i][0] > cliffX(RIVER[i][1])) { Z_FALL = RIVER[i][1]; break; }
+// largura da descida: 1,6 m no paredão da cachoeira (6 m para cada lado), abrindo até ~20 m de encosta longe dela
+const cliffW = z => { const dz = Math.abs(z - Z_FALL); return 1.6 + Math.min(18, Math.max(0, dz - 6) * 0.6) * (0.8 + 0.4 * vnoise(z * 0.05, 5.7)); };
+export function cliffDrop(x, z) { const w = cliffW(z), x0 = cliffX(z) - 0.5 + (vnoise(z * 0.06, 9.1) - 0.5) * w * 0.5;
+  const u = Math.max(0, Math.min(1, (x - x0) / (w + 0.0001))); if (u <= 0) return 0; if (u >= 1) return DROP;
+  // perfil: ombro arredondado em cima, pé que espalha embaixo, e um ressalto de pedra no meio da encosta (onde é larga)
+  const ledge = w > 5 ? 0.08 * Math.sin(u * Math.PI * 2) * vnoise(z * 0.11, 2.3) : 0;
+  return DROP * Math.max(0, Math.min(1, u * u * (3 - 2 * u) + ledge)); }
+// o quanto a escarpa inclina ali (m por m): casa, roça e árvore não nascem no barranco íngreme
+export const cliffSlope = (x, z) => Math.abs(cliffDrop(x + 0.6, z) - cliffDrop(x - 0.6, z)) / 1.2;
 let S_FALL = 0; for (let i = 0; i < RIVER.length; i++) if (RIVER[i][0] > cliffX(RIVER[i][1])) { S_FALL = i / (RIVER.length - 1) * RLEN; break; }
 export const FALL = (() => { const i = Math.round(S_FALL / RLEN * (RIVER.length - 1)); const t = [RIVER[i + 4][0] - RIVER[i][0], RIVER[i + 4][1] - RIVER[i][1]], l = Math.hypot(...t); return { s: S_FALL, p: RIVER[i], t: [t[0] / l, t[1] / l], pool: [RIVER[i][0] + t[0] / l * 2.8, RIVER[i][1] + t[1] / l * 2.8] }; })();
 export const riverLevel = s => s >= 1e4 ? WATER_Y : WATER_Y - DROP * smooth(S_FALL - 0.3, S_FALL + 0.9, s);
@@ -203,6 +212,7 @@ export function fieldAt(x, z) { let k = 0; for (const t of [LAYOUT.field.tile, L
 export function inBoxAt(x, z, o, w, d, rot) { const dx = x - o[0], dz = z - o[1], c = Math.cos(rot), s = Math.sin(rot), u = dx * c - dz * s, v = dx * s + dz * c; return Math.abs(u) < w / 2 && Math.abs(v) < d / 2; }
 // lugares onde nada cresce nem se planta por cima (casas, capela, curral, horta, moinho)
 export function blocked(x, z, pad = 0) {
+  if (cliffSlope(x, z) > 0.7) return true;
   const L = LAYOUT, inBox = (o, w, d, rot) => { const dx = x - o[0], dz = z - o[1], c = Math.cos(rot), s = Math.sin(rot), u = dx * c - dz * s, v = dx * s + dz * c; return Math.abs(u) < w / 2 + pad && Math.abs(v) < d / 2 + pad; };
   return L.houses.some(h => inBox(h.p, h.w + 3, h.d + 3, h.rot)) || inBox(L.chapel.p, 8, 12, L.chapel.rot) || Math.hypot(x - L.well.p[0], z - L.well.p[1]) < 2.2 + pad
     || inBox(L.garden.p, L.garden.w + 1, L.garden.d + 1, L.garden.rot) || inBox(L.paiol.p, L.paiol.w + 2.5, L.paiol.d + 2.5, L.paiol.rot) || inBox(L.bales.p, 3.4, 2.4, L.bales.rot)

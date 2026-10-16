@@ -7,7 +7,9 @@ import { U } from './mat.js';
 import { mat, paint, merge, col, V3 } from './props.js';
 import { tag, READ3 } from './regua.js';
 import { mergeGeometries } from './addons/BufferGeometryUtils.js';
-import { LAYOUT, TILES, heightAt, waterDist, inHex, inBoxAt, blocked, inAnyTile, WATER_Y, SPRING, POOL_R, RIVER, LAKE, lakeDist } from './world.js';
+import { especies } from './especies.js';
+import { animate, muzzleWorld } from './bicho.js';
+import { LAYOUT, TILES, heightAt, waterDist, inHex, inBoxAt, blocked, inAnyTile, WATER_Y, SPRING, POOL_R, RIVER, LAKE, lakeDist, waterLevelAt } from './world.js';
 
 const rnd = (() => { let a = 424242; return () => { a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; })();
 const ell = (rx, ry, rz, x, y, z, c, s = 12) => paint(new THREE.SphereGeometry(1, s, Math.max(6, Math.round(s * 0.7))).scale(rx, ry, rz).translate(x, y, z), c);
@@ -17,30 +19,13 @@ const K = ['position', 'normal', 'color'];
 const tile = k => TILES.find(t => t.kind === k);
 
 export function buildFauna(scene, opts = {}) {
-  const { mobile = false, shade = null } = opts;
+  const { mobile = false, shade = null, fx = null } = opts;
   const M = mat({ vertexColors: true }, { rim: '2.6' });
   const mesh = (gs, parent, castShadow = true) => { const m = new THREE.Mesh(merge(gs, K), M); m.castShadow = castShadow; m.receiveShadow = true; parent.add(m); return m; };
   const pivot = (parent, x, y, z) => { const g = new THREE.Group(); g.position.set(x, y, z); parent.add(g); return g; };
   const all = [], updaters = [];
 
-  // ---------- quadrúpedes
-  // corpo de bicho em anéis ao longo de um eixo (loft): cada anel tem centro, meia-largura, altura de cima e de baixo e cor;
-  // 'shape(a, ring)' deixa mexer no raio por ângulo (cupim, barbela). Faz uma malha contínua, sem emendas.
-  function loft(rings, seg = 20, shape = null, closeEnds = true) {
-    const pos = [], colA = [], idx = [], per = seg + 1;
-    rings.forEach((r, i) => { for (let k = 0; k <= seg; k++) { const a = k / seg * Math.PI * 2, ca = Math.cos(a), sa = Math.sin(a), e = r.e || 2.2;
-      const sx = Math.sign(ca) * Math.pow(Math.abs(ca), 2 / e), sy = Math.sign(sa) * Math.pow(Math.abs(sa), 2 / e); let rx = r.rx, ry = sa > 0 ? r.rt : r.rb;
-      let x = sx * rx, y = sy * ry; if (shape) [x, y] = shape(x, y, a, r, i);
-      const c = typeof r.c === 'function' ? r.c(a) : r.c; pos.push(r.x || 0, r.y, r.z); pos[pos.length - 3] += x; pos[pos.length - 2] += y; colA.push(c.r, c.g, c.b); } });
-    for (let i = 0; i + 1 < rings.length; i++) for (let k = 0; k < seg; k++) { const a = i * per + k, b = a + per; idx.push(a, b, a + 1, a + 1, b, b + 1); }
-    if (closeEnds) for (const [ri, flip] of [[0, true], [rings.length - 1, false]]) { const r = rings[ri], c0 = pos.length / 3, c = typeof r.c === 'function' ? r.c(-Math.PI / 2) : r.c;
-      pos.push(r.x || 0, r.y, r.z); colA.push(c.r, c.g, c.b); for (let k = 0; k < seg; k++) { const a = ri * per + k; if (flip) idx.push(c0, a + 1, a); else idx.push(c0, a, a + 1); } }
-    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(colA, 3)); g.setIndex(idx);
-    g.computeVertexNormals(); return g.toNonIndexed ? (() => { const n = g; n.computeVertexNormals(); return n; })() : g;
-  }
-  const mergeGeos = gs => { const out = mergeGeometries(gs.map(x => { const y = x.index ? x.toNonIndexed() : x; for (const n of Object.keys(y.attributes)) if (!['position', 'normal', 'color'].includes(n)) y.deleteAttribute(n); if (!y.attributes.normal) y.computeVertexNormals(); return y; })); return out; };
   const CM = mat({ vertexColors: true }, { rim: '2.4', frag: 'diffuseColor.rgb*=0.95+0.1*vnoise(vWp.xz*14.0+vWp.y*9.0);diffuseColor.rgb*=mix(1.0,0.82,uWet);' });
-  const cmesh = (geo, parent) => { const m = new THREE.Mesh(geo, CM); m.castShadow = true; m.receiveShadow = true; parent.add(m); return m; };
   // pelagens do gado do Cerrado: o nelore branco é minoria; a maioria é de boi de cor, como no pasto de verdade
   const COATS = [
     { w: 0xe6e1d6, g: 0x8a8680, k: 0.45, p: 3 },                              // nelore: branco a cinza-claro
@@ -52,131 +37,28 @@ export function buildFauna(scene, opts = {}) {
     { w: 0xf0ebe2, g: 0xb8afa4, k: 0.3, spot: 0x6a3c22, sp: 0.42, p: 2 },     // malhado: branco com manchas castanhas
   ];
   const pickCoat = () => { let r = rnd() * COATS.reduce((s, c) => s + c.p, 0); for (const c of COATS) if ((r -= c.p) < 0) return c; return COATS[0]; };
-  function cow(coat, size = 1) {   // corpo de zebuíno: cupim alto sobre a cernelha, barbela que pende do pescoço ao peito, garupa caída,
-    // cabeça longa e estreita de perfil reto, focinho e cascos escuros, orelhas médias, chifres curtos e grossos, vassoura do rabo escura
-    if (typeof coat === 'number') coat = { w: coat, g: 0x8a8680, k: 0.45 };
-    const g = new THREE.Group(), w = col(coat.w).multiplyScalar(0.94 + rnd() * 0.12), grey = w.clone().lerp(col(coat.g), coat.k), dark = col(0x2a2624), bull = size > 0.8 && rnd() < 0.35;
-    // manchas (gir, malhado): um padrão suave que depende do lugar no corpo, diferente em cada boi
-    const sd = rnd() * 50, spotC = coat.spot ? col(coat.spot) : null, thr = 1 - (coat.sp || 0) * 1.6;
-    const spotAt = (z, a) => spotC && Math.sin(z * 7.3 + sd) * Math.sin(a * 2.1 + sd * 1.7) + 0.6 * Math.sin(z * 3.1 - a * 1.4 + sd * 0.7) > thr;
-    const shade = z => a => { const top = Math.max(0, Math.sin(a)); const k = Math.max(0, Math.min(1, (z - 0.2) / 0.6)) * (bull ? 0.8 : 0.45), sp = spotAt(z, a);
-      const b = sp ? spotC : w; return b.clone().lerp(sp ? b : grey, k * (0.4 + 0.6 * top)).multiplyScalar(0.96 + 0.04 * top); };
-    const R = (z, y, rx, rt, rb, e = 2.2) => ({ z, y, rx, rt, rb, e, c: shade(z) });
-    const body = [R(-0.9, 1.16, 0.06, 0.05, 0.07), R(-0.84, 1.15, 0.15, 0.1, 0.2), R(-0.72, 1.1, 0.23, 0.17, 0.3), R(-0.52, 1.03, 0.265, 0.27, 0.38), R(-0.25, 0.99, 0.275, 0.33, 0.4),
-      R(0.05, 0.98, 0.27, 0.35, 0.4), R(0.3, 0.99, 0.25, 0.36, 0.39), R(0.48, 1.02, 0.21, 0.34, 0.41), R(0.62, 1.08, 0.165, 0.27, 0.38), R(0.76, 1.17, 0.125, 0.19, 0.3), R(0.88, 1.25, 0.105, 0.13, 0.2), R(0.94, 1.29, 0.085, 0.1, 0.13)];
-    const hump = (bull ? 0.2 : 0.13), shape = (x, y, a, r) => { const z = r.z, s = Math.sin(a);
-      const hz = Math.exp(-(((z - 0.44) / 0.13) ** 2)); if (s > 0) { const top = Math.pow(s, 6); y += hump * hz * top; x *= 1 - 0.35 * hz * top; }   // cupim
-      const dz = Math.max(0, Math.min(1, (z - 0.45) / 0.25)) * Math.max(0, Math.min(1, (0.95 - z) / 0.2)); if (s < 0) { const bot = Math.pow(-s, 5); y -= 0.12 * dz * bot; x *= 1 - 0.7 * dz * bot; }   // barbela
-      if (z < -0.5 && s < 0) x *= 1 - 0.25 * Math.pow(-s, 3);   // coxas
-      return [x, y]; };
-    cmesh(loft(body, 22, shape), g);
-    // rabo: sai do alto da garupa e cai até o jarrete, com a vassoura preta
-    const tail = pivot(g, 0, 1.18, -0.88); cmesh(loft([[0, 0.032, w], [0.25, 0.018, w], [0.62, 0.014, w], [0.7, 0.042, dark], [0.86, 0.012, dark]].map(([d, r, c]) => ({ z: d, y: 0, rx: r, rt: r, rb: r, e: 2, c })), 8).rotateX(Math.PI / 2 - 0.08), tail);
-    // pernas: braço/coxa, canela fina, quartela e casco; a de trás dobra no jarrete para trás
-    const leg = (x, z, front, ph) => { const hip = pivot(g, x, front ? 0.86 : 0.92, z), knee = pivot(hip, 0, front ? -0.42 : -0.453, front ? 0.0 : -0.08);
-      const up = front ? [[0.04, 0.1], [-0.16, 0.088], [-0.3, 0.062], [-0.43, 0.05]] : [[0.04, 0.12], [-0.2, 0.095], [-0.36, 0.06], [-0.465, 0.05]];
-      cmesh(loft(up.map(([y, r]) => ({ z: -y, y: 0, rx: r * 0.78, rt: r, rb: r, e: 2, c: w }))).rotateX(Math.PI / 2).rotateX(front ? 0 : 0.175), hip);
-      const lowL = front ? 0.4 : 0.38; const lowG = (loft([[0.03, 0.05], [-0.06, 0.042], [-0.2, 0.034], [-lowL + 0.08, 0.035], [-lowL + 0.05, 0.043]].map(([y, r]) => ({ z: -y, y: 0, rx: r, rt: r, rb: r, e: 2, c: w })), 10).rotateX(Math.PI / 2));
-      const hoof = new THREE.CylinderGeometry(0.035, 0.05, 0.07, 10).translate(0, -lowL + 0.035, 0.01); paint(hoof, dark); hoof.deleteAttribute('uv'); cmesh(mergeGeos([lowG, hoof]), knee);
-      hip.userData.ph = ph; hip.userData.low = knee; hip.userData.front = front; return hip; };
-    // loft() usa anéis em z; para as pernas montamos anéis em y (o eixo da perna): reescreve com x/y/z certos
-    const legs = [leg(0.115, 0.46, true, 0), leg(-0.115, 0.46, true, Math.PI), leg(0.13, -0.6, false, Math.PI), leg(-0.13, -0.6, false, 0)];
-    // cabeça: pivô na nuca, aponta para a frente e para baixo
-    const head = pivot(g, 0, 1.33, 0.95);
-    const hd = [[0, 0.085, 0.09, 0.1], [0.08, 0.1, 0.1, 0.11], [0.18, 0.092, 0.085, 0.1], [0.3, 0.075, 0.07, 0.085], [0.42, 0.068, 0.065, 0.075], [0.49, 0.07, 0.06, 0.07], [0.53, 0.05, 0.045, 0.05]];
-    const hgeo = loft(hd.map(([t, rx, rt, rb]) => ({ z: t, y: 0, rx, rt, rb, e: 2.4, c: t > 0.44 ? dark : t < 0.12 ? grey : w })), 16);
-    hgeo.rotateX(0.95).translate(0, 0.02, 0.02); const headParts = [hgeo];
-    const hp = (geo, c) => { paint(geo, c); geo.deleteAttribute('uv'); headParts.push(geo); };
-    for (const sx of [-1, 1]) {
-      hp(new THREE.SphereGeometry(1, 10, 8).scale(0.035, 0.11, 0.022).rotateZ(sx * 1.2).rotateY(sx * 0.3).translate(sx * 0.15, 0.0, -0.02), grey);   // orelha média, para o lado e um pouco caída
-      hp(new THREE.ConeGeometry(0.03, bull ? 0.12 : 0.1, 8).rotateZ(sx * -0.5).rotateX(-0.3).translate(sx * 0.085, 0.09, -0.03), col(0x5a5048));       // chifre curto e grosso
-      hp(new THREE.SphereGeometry(1, 8, 6).scale(0.02, 0.016, 0.022).translate(sx * 0.088, -0.035, 0.1), col(0x141210));                            // olho
-      hp(new THREE.SphereGeometry(1, 6, 5).scale(0.012, 0.01, 0.01).translate(sx * 0.03, -0.39, 0.33), col(0x0a0a0a));                               // narina
-    }
-    cmesh(mergeGeos(headParts), head);
-    const K2 = 1.08 * size * (bull ? 1.05 : 1); for (const c of [...g.children]) { c.position.multiplyScalar(K2); c.scale.multiplyScalar(K2); }   // tamanho de um nelore adulto (a escala fica no corpo, o grupo segue livre)
-    return { g, head, legs, tail, headY: 1.33 * K2, cowLegs: true };
-  }
-
-  function capybara() {   // capivara: barril marrom-avermelhado, cabeça quadrada, quase sem pescoço, pernas curtas
-    const g = new THREE.Group(), b = col(0x8d5a37), d = col(0x5a3824);
-    mesh([ell(0.27, 0.26, 0.52, 0, 0.5, 0, b), ell(0.25, 0.22, 0.3, 0, 0.5, -0.32, b)], g);
-    const head = pivot(g, 0, 0.6, 0.45); mesh([ell(0.14, 0.16, 0.24, 0, 0, 0.14, b), ell(0.12, 0.12, 0.08, 0, -0.03, 0.33, d), ell(0.04, 0.035, 0.02, 0.09, 0.15, 0.04, d, 6), ell(0.04, 0.035, 0.02, -0.09, 0.15, 0.04, d, 6),
-      ell(0.02, 0.02, 0.02, 0.1, 0.06, 0.22, col(0x111111), 6), ell(0.02, 0.02, 0.02, -0.1, 0.06, 0.22, col(0x111111), 6)], head);
-    const legs = [[0.15, 0.36, 0.3, 0], [-0.15, 0.36, 0.3, Math.PI], [0.15, 0.36, -0.32, Math.PI], [-0.15, 0.36, -0.32, 0]].map(([x, y, z, ph]) => { const p = pivot(g, x, y, z); mesh([cyl(0.055, 0.045, 0.36, d)], p); p.userData.ph = ph; return p; });
-    return { g, head, legs, headY: 0.6 };
-  }
-  // ---------- aves que andam
-  function bird({ body, bodyC, neck, headC, beak, beakC, legL, legC, crest = null, tail = null, s = 1 }) {
-    const g = new THREE.Group(), [bx, by, bz] = body, hy = legL + by * 0.9;
-    const parts = [ell(bx, by, bz, 0, hy, 0, bodyC)];
-    if (tail) parts.push(paint(new THREE.ConeGeometry(tail[0], tail[1], 6).rotateX(-Math.PI / 2 - tail[2]).translate(0, hy + 0.02, -bz - tail[1] * 0.35), tail[3]));
-    mesh(parts, g);
-    const head = pivot(g, 0, hy + by * 0.5, bz * 0.6), hp = [];
-    let px = 0, py = 0, pz = 0; for (let i = 0; i < neck.length; i++) { const [dy, dz, r] = neck[i]; hp.push(ell(r, r * 1.3, r, px + 0, py + dy / 2, pz + dz / 2, headC, 8)); py += dy; pz += dz; }
-    hp.push(ell(beak[0] * 0.55, beak[0] * 0.6, beak[0] * 0.8, 0, py, pz, headC, 10), cone(beak[0] * 0.28, beak[1], beakC, 6).rotateX(Math.PI / 2).translate(0, py - 0.005, pz + beak[0] * 0.6 + beak[1] / 2),
-      ell(0.012, 0.012, 0.012, beak[0] * 0.45, py + beak[0] * 0.15, pz + beak[0] * 0.3, col(0x111111), 5), ell(0.012, 0.012, 0.012, -beak[0] * 0.45, py + beak[0] * 0.15, pz + beak[0] * 0.3, col(0x111111), 5));
-    if (crest) hp.push(paint(new THREE.PlaneGeometry(crest[0], crest[1]).rotateY(Math.PI / 2).rotateX(-0.5).translate(0, py + beak[0] * 0.5 + crest[1] * 0.4, pz - beak[0] * 0.2), crest[2]));
-    mesh(hp, head);
-    const legs = [[0.05 * s, 0], [-0.05 * s, Math.PI]].map(([x, ph]) => { const p = pivot(g, x, legL + 0.02, 0); mesh([cyl(0.012 * s + 0.004, 0.01 * s + 0.003, legL, legC, 5), ell(0.03 * s, 0.01, 0.05 * s, 0, -legL, 0.02, legC, 6)], p, false); p.userData.ph = ph; return p; });
-    return { g, head, legs, headY: hy, biped: true };
-  }
-  const garca = () => bird({ body: [0.11, 0.13, 0.26], bodyC: col(0xf6f6f2), neck: [[0.1, 0.06, 0.045], [0.14, -0.03, 0.035], [0.12, 0.05, 0.032]], headC: col(0xf6f6f2), beak: [0.05, 0.13], beakC: col(0xf2c21a), legL: 0.62, legC: col(0x1e1e1e), tail: [0.09, 0.18, 0.2, col(0xf0f0ea)] });
-  const seriema = () => bird({ body: [0.13, 0.15, 0.27], bodyC: col(0xa58e6e), neck: [[0.12, 0.05, 0.05], [0.12, 0.03, 0.04]], headC: col(0xb8a684), beak: [0.05, 0.06], beakC: col(0xc8402a), legL: 0.5, legC: col(0xd0603a), crest: [0.09, 0.12, col(0x6a5a46)], tail: [0.1, 0.3, 0.05, col(0x7a6a52)] });
-  const galinha = c => bird({ body: [0.12, 0.12, 0.16], bodyC: col(c), neck: [[0.08, 0.04, 0.045]], headC: col(c), beak: [0.045, 0.03], beakC: col(0xe8b02a), legL: 0.13, legC: col(0xe8b02a), crest: [0.07, 0.06, col(0xd8282a)], tail: [0.08, 0.16, -0.7, col(c).multiplyScalar(0.7)], s: 0.8 });
-  // ---------- bichos do cerrado que faltavam (tamanhos reais; ver regua.js)
-  const legSet = (g, pts, r0, r1, L, c, foot) => pts.map(([x, y, z, ph]) => { const p = pivot(g, x, y, z); mesh([cyl(r0, r1, L, c), ...(foot ? [ell(r1 * 1.2, 0.04, r1 * 1.5, 0, -L, 0.02, foot, 6)] : [])], p); p.userData.ph = ph; return p; });
-  const caps = (r, L, c, x, y, z, rx = Math.PI / 2) => paint(new THREE.CapsuleGeometry(r, L, 5, 12).rotateX(rx).translate(x, y, z), c);
-  function lobo() {   // lobo-guará: pernas longas de meia preta, pelo laranja-avermelhado, crina preta, orelhas grandes, cauda com ponta branca
-    const g = new THREE.Group(), o = col(0xc8622a), k = col(0x1e1a18), w = col(0xf2ece0);
-    mesh([caps(0.16, 0.5, o, 0, 0.82, 0), ell(0.06, 0.12, 0.3, 0, 1.0, 0.18, k)], g);
-    const tail = pivot(g, 0, 0.86, -0.42); mesh([ell(0.09, 0.09, 0.24, 0, -0.08, -0.18, o).rotateX(0.5), ell(0.06, 0.06, 0.08, 0, -0.2, -0.36, w)], tail);
-    const head = pivot(g, 0, 0.95, 0.4); mesh([ell(0.1, 0.1, 0.13, 0, 0.04, 0.06, o), cone(0.05, 0.2, o).rotateX(Math.PI / 2).translate(0, 0.0, 0.24), ell(0.022, 0.02, 0.02, 0, 0.0, 0.34, k, 6),
-      cone(0.055, 0.17, o).translate(0.065, 0.2, 0.0), cone(0.055, 0.17, o).translate(-0.065, 0.2, 0.0), ell(0.06, 0.05, 0.05, 0, -0.04, 0.1, w)], head);
-    const legs = legSet(g, [[0.09, 0.72, 0.28, 0], [-0.09, 0.72, 0.28, Math.PI], [0.09, 0.74, -0.28, Math.PI], [-0.09, 0.74, -0.28, 0]], 0.045, 0.028, 0.72, k);
-    return { g, head, legs, tail, headY: 0.95 };
-  }
-  function tamandua() {   // tamanduá-bandeira: corpo cinza com a faixa preta e branca no ombro, focinho comprido, cauda de bandeira
-    const g = new THREE.Group(), c = col(0x6e655c), k = col(0x1e1a18), w = col(0xe8e2d4);
-    mesh([ell(0.2, 0.27, 0.55, 0, 0.5, 0, c), paint(new THREE.TorusGeometry(0.24, 0.05, 6, 16, Math.PI).rotateY(Math.PI / 2).rotateZ(0).translate(0, 0.52, 0.12).scale(1, 1.1, 1), k),
-      ell(0.21, 0.06, 0.05, 0, 0.66, 0.2, w)], g);
-    const tail = pivot(g, 0, 0.6, -0.5); mesh([ell(0.07, 0.2, 0.45, 0, -0.04, -0.36, col(0x5a524a)).rotateX(0.2)], tail);
-    const head = pivot(g, 0, 0.62, 0.48); mesh([ell(0.08, 0.09, 0.12, 0, 0, 0.04, c), paint(new THREE.CylinderGeometry(0.025, 0.06, 0.42, 8).rotateX(Math.PI / 2).translate(0, -0.03, 0.3), c),
-      ell(0.03, 0.04, 0.02, 0.06, 0.06, 0.0, c, 6), ell(0.03, 0.04, 0.02, -0.06, 0.06, 0.0, c, 6)], head); head.rotation.x = 0.4;
-    const legs = legSet(g, [[0.12, 0.4, 0.35, 0], [-0.12, 0.4, 0.35, Math.PI], [0.12, 0.42, -0.35, Math.PI], [-0.12, 0.42, -0.35, 0]], 0.07, 0.05, 0.4, w, k);
-    return { g, head, legs, tail, headY: 0.62 };
-  }
-  function anta() {   // anta: corpo pesado marrom-escuro, tromba curta, crina baixa, orelhas de borda clara, pernas curtas e grossas
-    const g = new THREE.Group(), c = col(0x4a3e38), d = col(0x3a302c);
-    mesh([caps(0.33, 0.95, c, 0, 0.72, 0), ell(0.05, 0.1, 0.35, 0, 1.02, 0.35, d)], g);
-    const head = pivot(g, 0, 0.82, 0.72); mesh([ell(0.14, 0.17, 0.26, 0, -0.05, 0.12, c), cone(0.07, 0.2, d).rotateX(Math.PI / 2 + 0.6).translate(0, -0.16, 0.36),
-      ell(0.05, 0.07, 0.02, 0.1, 0.13, 0.0, col(0xc8bcae), 6), ell(0.05, 0.07, 0.02, -0.1, 0.13, 0.0, col(0xc8bcae), 6), ell(0.02, 0.02, 0.02, 0.1, 0.0, 0.18, col(0x111111), 5), ell(0.02, 0.02, 0.02, -0.1, 0.0, 0.18, col(0x111111), 5)], head);
-    const legs = legSet(g, [[0.17, 0.5, 0.42, 0], [-0.17, 0.5, 0.42, Math.PI], [0.17, 0.5, -0.45, Math.PI], [-0.17, 0.5, -0.45, 0]], 0.085, 0.07, 0.5, d, col(0x2a2420));
-    return { g, head, legs, headY: 0.82 };
-  }
   const rosette = (() => { const c = document.createElement('canvas'); c.width = c.height = 128; const x = c.getContext('2d'); x.fillStyle = '#dca546'; x.fillRect(0, 0, 128, 128);
     for (let i = 0; i < 26; i++) { const px = rnd() * 128, py = rnd() * 128, r = 5 + rnd() * 4; x.fillStyle = '#b8782a'; x.beginPath(); x.arc(px, py, r * 0.7, 0, 7); x.fill();
       x.strokeStyle = '#1e1610'; x.lineWidth = 2.6; for (let k = 0; k < 4; k++) { const a = k * 1.57 + rnd(); x.beginPath(); x.arc(px, py, r, a, a + 1.1); x.stroke(); } }
     for (let i = 0; i < 40; i++) { x.fillStyle = '#1e1610'; x.beginPath(); x.arc(rnd() * 128, rnd() * 128, 1.5 + rnd() * 1.5, 0, 7); x.fill(); }
     const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(2, 2); return t; })();
   const MJ = mat({ map: rosette }, { rim: '2.6' });
-  function onca() {   // onça-pintada: dourada de rosetas, cabeça larga, cauda comprida; anda na beira da mata ao entardecer e à noite
-    const g = new THREE.Group(), body = new THREE.Mesh(merge([only2(new THREE.CapsuleGeometry(0.2, 0.85, 5, 14).rotateX(Math.PI / 2).translate(0, 0.52, 0))], ['position', 'normal', 'uv']), MJ);
-    body.castShadow = true; g.add(body);
-    const tail = pivot(g, 0, 0.6, -0.55); { const t = new THREE.Mesh(merge([only2(new THREE.CylinderGeometry(0.035, 0.05, 0.7, 8).translate(0, -0.35, 0).rotateX(1.15))], ['position', 'normal', 'uv']), MJ); tail.add(t); }
-    const head = pivot(g, 0, 0.62, 0.55); { const h = new THREE.Mesh(merge([only2(new THREE.SphereGeometry(0.15, 14, 10).scale(1, 0.9, 1.05).translate(0, 0, 0.06))], ['position', 'normal', 'uv']), MJ); head.add(h);
-      mesh([ell(0.08, 0.06, 0.06, 0, -0.04, 0.18, col(0xe8d8b8)), ell(0.025, 0.02, 0.02, 0, -0.01, 0.23, col(0x3a2a24), 6), cone(0.04, 0.06, col(0xb8782a)).translate(0.09, 0.13, 0.0), cone(0.04, 0.06, col(0xb8782a)).translate(-0.09, 0.13, 0.0)], head); }
-    const legs = legSet(g, [[0.11, 0.42, 0.32, 0], [-0.11, 0.42, 0.32, Math.PI], [0.11, 0.44, -0.34, Math.PI], [-0.11, 0.44, -0.34, 0]], 0.065, 0.055, 0.42, col(0xd09a40), col(0xe8d8b8));
-    return { g, head, legs, tail, headY: 0.62 };
-  }
-  const only2 = g => { g.setAttribute('color', new THREE.BufferAttribute(new Float32Array(g.attributes.position.count * 3).fill(1), 3)); return g; };
-  const ema = () => bird({ body: [0.24, 0.27, 0.4], bodyC: col(0x8c8174), neck: [[0.2, 0.06, 0.065], [0.22, 0.04, 0.05], [0.2, 0.03, 0.045]], headC: col(0xa59a8c), beak: [0.06, 0.07], beakC: col(0x6a625a), legL: 0.6, legC: col(0x8a8478), tail: null, s: 1.4 });
+  // ---------- os corpos: esqueleto com pele (bicho.js) e as espécies (especies.js)
+  const E = especies({ M: CM, MJ, rnd }), RIG = r => ({ g: r.g, head: r.head, legs: [], rig: r, headY: r.headY });
+  const cow = (coat, size) => RIG(E.vaca(coat, size)), capybara = () => RIG(E.capivara()), garca = () => RIG(E.garca()), moura = () => RIG(E.moura()), seriema = () => RIG(E.seriema());
+  const galinha = c => RIG(E.galinha(c)), ema = () => RIG(E.ema()), lobo = () => RIG(E.lobo()), tamandua = () => RIG(E.tamandua()), anta = () => RIG(E.anta()), onca = () => RIG(E.onca());
+  const ovelha = () => RIG(E.ovelha()), jb = () => RIG(E.joao());
 
   // ---------- comportamento: pastar, andar até um ponto, ficar parado olhando; separação; não sair da área; abrigo na chuva
   function spawn(make, n, o) { for (let i = 0; i < n; i++) { const a = { ...make(), ...o, st: 'idle', t: rnd() * 3, ph: rnd() * 6, sp: 0, h: rnd() * 6.28, tgt: null, look: rnd() * 6 };
     let x, z, k = 0; do { [x, z] = o.pick(null); k++; } while (k < 50 && all.some(b => Math.hypot(b.x - x, b.z - z) < (o.sep || 1.5)));
     a.x = x; a.z = z; a.g.scale.setScalar(o.scale || 1); scene.add(a.g); if (o.name) tag(a.g, o.name);
-    if (a.head) a.g.userData.reguaRest = () => { const h = a.head, rx = h.rotation.x, py = h.position.y; h.rotation.x = 0; if (h.userData.y0 !== undefined) h.position.y = h.userData.y0; return () => { h.rotation.x = rx; h.position.y = py; }; };   /* quem pasta é medido de cabeça erguida */ a.g.traverse(m => { if (m.isMesh) m.castShadow = o.big || (!mobile && ['ema', 'anta', 'lobo-guará', 'onça-pintada', 'tamanduá-bandeira', 'garça-moura', 'garça-branca'].includes(o.name)); });   /* bicho pequeno não projeta sombra: metade dos desenhos da sombra */ all.push(a); } }
+    if (a.rig) a.g.userData.reguaRest = () => { const R = a.rig, sv = [R.neck.rotation.x, R.head.rotation.x]; R.neck.rotation.x = 0; R.head.rotation.x = 0; return () => { R.neck.rotation.x = sv[0]; R.head.rotation.x = sv[1]; }; };
+    else if (a.head) a.g.userData.reguaRest = () => { const h = a.head, rx = h.rotation.x, py = h.position.y; h.rotation.x = 0; if (h.userData.y0 !== undefined) h.position.y = h.userData.y0; return () => { h.rotation.x = rx; h.position.y = py; }; };   /* quem pasta é medido de cabeça erguida */ a.g.traverse(m => { if (m.isMesh) m.castShadow = o.big || (!mobile && ['ema', 'anta', 'lobo-guará', 'onça-pintada', 'tamanduá-bandeira', 'garça-moura', 'garça-branca'].includes(o.name)); });   /* bicho pequeno não projeta sombra: metade dos desenhos da sombra */ all.push(a); } }
+  const tw = (x, z) => { const e = 0.5, gx = waterDist(x + e, z) - waterDist(x - e, z), gz = waterDist(x, z + e) - waterDist(x, z - e); return Math.atan2(-gx, -gz); };
+  function drinkSpots(pick, n = 6) { const out = []; for (let k = 0; k < 500 && out.length < n; k++) { const [x, z] = pick(); const w = waterDist(x, z); if (w > 0.25 && w < 1.3) out.push([x, z, tw(x, z)]); } return out; }
+  function swimSpots(around, R, n = 6) { const out = []; for (let k = 0; k < 800 && out.length < n; k++) { const x = around[0] + (rnd() - 0.5) * 2 * R, z = around[1] + (rnd() - 0.5) * 2 * R;
+    if (waterDist(x, z) < -0.9 && waterLevelAt(x, z) - heightAt(x, z) > 0.55) out.push([x, z]); } return out; }
   const pickIn = (test, around, R) => () => { for (let k = 0; k < 200; k++) { const x = around[0] + (rnd() - 0.5) * 2 * R, z = around[1] + (rnd() - 0.5) * 2 * R; if (test(x, z)) return [x, z]; } return [...around]; };
   const near = (a, R, test) => { for (let k = 0; k < 60; k++) { const x = a.x + (rnd() - 0.5) * 2 * R, z = a.z + (rnd() - 0.5) * 2 * R; if (test(x, z)) return [x, z]; } return null; };
   // ---------- medo: cada bicho tem uma distância de fuga e uma velocidade de corrida; foge de gente (mais de criança correndo)
@@ -200,29 +82,58 @@ export function buildFauna(scene, opts = {}) {
       else { let dx = a.x - a.from[0], dz = a.z - a.from[1]; const d = Math.hypot(dx, dz) || 1; dx /= d; dz /= d;
         let e = Math.atan2(dx, dz) + Math.sin(a.ph * 0.3) * 0.3 - a.h; e = Math.atan2(Math.sin(e), Math.cos(e)); a.h += Math.max(-a.turn * 2.5 * dt, Math.min(a.turn * 2.5 * dt, e));
         a.sp += (fear[1] - a.sp) * Math.min(1, dt * 4); const nx = a.x + Math.sin(a.h) * a.sp * dt, nz = a.z + Math.cos(a.h) * a.sp * dt;
-        if (a.area(nx, nz)) { a.x = nx; a.z = nz; } else a.h += (rnd() < 0.5 ? 1 : -1) * Math.PI * 0.5 * dt * 4;
+        if (a.area(nx, nz) || (a.allowWater && waterDist(nx, nz) < 0.9)) { a.x = nx; a.z = nz; } else a.h += (rnd() < 0.5 ? 1 : -1) * Math.PI * 0.5 * dt * 4;
         a.ph += a.sp * dt / a.stride * Math.PI * 2; return; } }
     // noite: gado e ovelha deitam; de dia levantam
     if ((name === 'boi' || name === 'bezerro' || name === 'ovelha') && !(a.st === 'flee')) { if (day < 0.22 && a.st !== 'lie' && rnd() < dt * 0.2) { a.st = 'lie'; a.sp = 0; } if (a.st === 'lie') { if (day > 0.3) { a.st = 'idle'; a.t = 2; } else return; } }
     if (a.t <= 0 && rain > 0.35 && name === 'galinha') { let bp = porches[0], bd = 1e9; for (const p of porches) { const d = Math.hypot(p[0] - a.x, p[1] - a.z); if (d < bd) { bd = d; bp = p; } }
       a.st = 'walk'; a.tgt = [bp[0] + (rnd() - 0.5) * 1.6, bp[1] + (rnd() - 0.5) * 1.0]; a.t = 12; }
     if (a.t <= 0 && rain > 0.35 && name === 'ovelha') { const P = LAYOUT.sheepPen.p; a.st = 'walk'; a.tgt = [P[0] + (rnd() - 0.5) * 1.5, P[1] + (rnd() - 0.5) * 1.5]; a.t = 10; }
+    if (a.t <= 0 && !shelter && a.st !== 'drink' && a.drinks && a.drinks.length && rnd() < (a.thirst || 0.1)) { const d = a.drinks[Math.floor(rnd() * a.drinks.length)]; a.st = 'walk'; a.tgt = [d[0], d[1]]; a.face = d[2]; a.goal = 'drink'; a.t = 30; }
+    else if (a.t <= 0 && !shelter && a.swims && a.swims.length && rnd() < 0.16) { const d = a.swims[Math.floor(rnd() * a.swims.length)]; a.st = 'walk'; a.tgt = d; a.goal = 'swim'; a.swimLeft = 1 + Math.floor(rnd() * 3); a.allowWater = true; a.t = 40; }
     if (a.t <= 0) {
       if (shelter) { a.st = 'walk'; a.tgt = near({ x: a.shade[0], z: a.shade[1] }, 3.2, a.area) || a.shade; a.t = 10; }
       else { const r = rnd(); if (r < a.pg) { a.st = 'graze'; a.t = 4 + rnd() * 9; } else if (r < a.pg + a.pw) { a.st = 'walk'; a.tgt = a.follow ? near(a.follow, 2.5, a.area) : a.targets && a.targets.length ? (([x, z]) => [x + 0.9, z + 0.6])(a.targets[Math.floor(rnd() * a.targets.length)]) : near(a, a.roam, a.area); a.t = 25; if (!a.tgt) { a.st = 'idle'; a.t = 2; } } else { a.st = 'idle'; a.t = 2 + rnd() * 5; } } }
     let want = 0, dh = null;
     if (a.st === 'walk' && a.tgt) { const dx = a.tgt[0] - a.x, dz = a.tgt[1] - a.z, d = Math.hypot(dx, dz);
-      if (d < 0.35) { a.st = shelter ? 'idle' : (rnd() < 0.7 ? 'graze' : 'idle'); a.t = 3 + rnd() * 6; } else { want = a.vw * Math.min(1, d / 1.5 + 0.3); dh = Math.atan2(dx, dz); } }
+      if (d < 0.35) { if (a.goal === 'drink') { a.st = 'drink'; a.t = 6 + rnd() * 8; a.goal = null; }
+        else if (a.goal === 'swim') { if (--a.swimLeft > 0) { a.tgt = a.swims[Math.floor(rnd() * a.swims.length)]; a.t = 40; } else { a.goal = 'land'; a.tgt = a.pick(null); a.t = 40; } }
+        else { if (a.goal === 'land') a.goal = null; a.st = shelter ? 'idle' : (rnd() < 0.7 ? 'graze' : 'idle'); a.t = 3 + rnd() * 6; } } else { want = a.vw * Math.min(1, d / 1.5 + 0.3); dh = Math.atan2(dx, dz); } }
     else if (a.st === 'graze') { want = a.vg; if (rnd() < dt * 0.3) a.h += (rnd() - 0.5) * 0.8; }
+    else if (a.st === 'drink' && a.face != null) { dh = a.face; }
+    if (a.swim) want *= 0.6;
     if (dh !== null) { let e = dh - a.h; e = Math.atan2(Math.sin(e), Math.cos(e)); a.h += Math.max(-a.turn * dt, Math.min(a.turn * dt, e)); }
     for (const b of all) if (b !== a && Math.abs(b.x - a.x) < 3 && Math.abs(b.z - a.z) < 3) { const dx = a.x - b.x, dz = a.z - b.z, d = Math.hypot(dx, dz), s = (a.sep + (b.sep || 1)) * 0.5;
       if (d < s && d > 1e-3) { const k = (s - d) * dt * 1.5; if (a.area(a.x + dx / d * k, a.z + dz / d * k)) { a.x += dx / d * k; a.z += dz / d * k; } } }
     a.sp += (want - a.sp) * Math.min(1, dt * 2.5);
     const nx = a.x + Math.sin(a.h) * a.sp * dt, nz = a.z + Math.cos(a.h) * a.sp * dt;
-    if (a.area(nx, nz)) { a.x = nx; a.z = nz; } else { a.h += Math.PI * (0.5 + rnd() * 0.5); a.st = 'idle'; a.t = 1 + rnd() * 2; }
+    if (a.area(nx, nz) || (a.allowWater && waterDist(nx, nz) < 0.9)) { a.x = nx; a.z = nz; } else { a.h += Math.PI * (0.5 + rnd() * 0.5); a.st = 'idle'; a.t = 1 + rnd() * 2; a.goal = null; }
+    if (a.allowWater && !a.goal && !a.swim && a.area(a.x, a.z)) a.allowWater = false;
     a.ph += a.sp * dt / a.stride * Math.PI * 2;
   }
-  function pose(a, dt, time) {
+  // bicho de esqueleto: o comportamento diz para onde o pescoço e a cabeça vão; bicho.js faz o resto (patas, chão, rabo)
+  const _m = new THREE.Vector3();
+  function poseRig(a, dt, time) { const R = a.rig, bird = R.kind === 'bird', cam = window.__cam;
+    const dist = cam ? Math.hypot(cam.position.x - a.x, cam.position.z - a.z) : 0, nearD = mobile ? 55 : 95, near = dist < nearD;
+    let neck = 0, head = 0, yaw = 0, strike = 0, fast = false, tilt = 0;
+    if (a.st === 'graze' || a.st === 'drink') { if (bird) { neck = a.peck ? (Math.sin(time * 7 + a.look) > 0.1 ? 1.7 : 0.7) : 1.3; head = 0.5; fast = !!a.peck; }
+      else if (a.st === 'drink' && a.cocho) { neck = 0.62 + Math.sin(time * 2 + a.look) * 0.04; head = 0.25; }
+      else { neck = R.graze[0] + Math.sin(time * 1.3 + a.look) * 0.04; head = R.graze[1]; } }
+    else if (a.st === 'idle' || a.st === 'lie') { yaw = Math.sin(time * 0.4 + a.look) * 0.5; neck = a.st === 'lie' ? -0.15 : bird ? 0 : -0.05; tilt = Math.sin(time * 0.23 + a.look * 2) > 0.9 ? 0.25 : 0;
+      let bt = null, bd = 7; for (const t of threats) { if (t.who === a) continue; const d = Math.hypot(t.x - a.x, t.z - a.z); if (d < bd) { bd = d; bt = t; } }
+      if (bt) { let e = Math.atan2(bt.x - a.x, bt.z - a.z) - a.h; e = Math.atan2(Math.sin(e), Math.cos(e)); yaw = Math.max(-1.1, Math.min(1.1, e)); } }
+    else if (a.st === 'flee') neck = -0.25;
+    else if (a.st === 'walk' && !bird) neck = 0.15;
+    // garça: fica imóvel olhando a água e dá o bote; no fim do bote, o respingo
+    if (a.strike && a.st === 'idle') { a.sk = (a.sk ?? 3 + rnd() * 5) - dt; if (a.sk < 0) { const u = -a.sk / 0.45; strike = Math.sin(Math.min(1, u) * Math.PI); neck = 0.9 * strike; fast = true;
+        if (u > 0.5 && !a.splashed) { a.splashed = true; muzzleWorld(a, _m); if (fx) fx.splash(_m.x, waterLevelAt(_m.x, _m.z) - U.uWaterDrop.value, _m.z, 0.35); }
+        if (u >= 1) { a.sk = 5 + rnd() * 7; a.splashed = false; } } else neck = 0.35; }
+    animate(a, dt, { neck, head, yaw, strike, fast, tilt }, { fx, near, time });
+    // beber: anel na água a cada gole; nadar: a esteira
+    if (fx && near && a.st === 'drink' && !a.cocho && time - (a.rip || 0) > 1.4) { a.rip = time; muzzleWorld(a, _m); fx.ripple(_m.x, waterLevelAt(_m.x, _m.z) - U.uWaterDrop.value, _m.z, 0.3 * a.g.scale.x); }
+    if (fx && near && a.swim && time - (a.rip || 0) > 0.55) { a.rip = time; const wl = waterLevelAt(a.x, a.z) - U.uWaterDrop.value; fx.ripple(a.x + Math.sin(a.h) * 0.4, wl, a.z + Math.cos(a.h) * 0.4, 0.5 + a.sp * 0.6); }
+  }
+  function pose(a, dt, time) { if (a.rig) return poseRig(a, dt, time);
     const gy = a.water ? Math.max(heightAt(a.x, a.z), heightAt(a.x, a.z)) : heightAt(a.x, a.z), mv = Math.min(1, a.sp / Math.max(0.05, a.vw));
     if (a.when) a.g.visible = a.when();
     a.lie = (a.lie || 0) + (((a.st === 'lie') ? 1 : 0) - (a.lie || 0)) * Math.min(1, dt * 1.2);
@@ -253,12 +164,16 @@ export function buildFauna(scene, opts = {}) {
   const inPasto = (x, z) => inHex(x, z, tP.c, 0.86) && !inBoxAt(x, z, Cr.p, Cr.w + 2, Cr.d + 2, Cr.rot);
   const cowO = (area, pick) => ({ area, pick, pg: 0.55, pw: 0.3, vw: 0.75, vg: 0.06, turn: 0.8, stride: 1.6, sep: 2.2, roam: 7, gp: 1.05, dropNeck: 0.32, big: true });
   // pelagens variadas (mais bois de cor que brancos), tamanhos de vaca e de touro, e bezerros junto do rebanho
-  spawn(() => cow(pickCoat(), 0.9 + rnd() * 0.14), 3, { ...cowO(inCorral, pickIn(inCorral, Cr.p, Cr.w / 2)), name: 'boi' });
-  spawn(() => cow(pickCoat(), 0.9 + rnd() * 0.16), 5, { ...cowO(inPasto, pickIn(inPasto, tP.c, 17)), shade, name: 'boi' });
-  spawn(() => cow(pickCoat(), 0.58 + rnd() * 0.08), 2, { ...cowO(inPasto, pickIn(inPasto, tP.c, 17)), shade, sep: 1.4, name: 'bezerro' });
+  // o cocho do curral (o mesmo lugar de props.js): as vacas do curral bebem e comem nele, lado a lado
+  const cocho = (() => { const c = Math.cos(Cr.rot), s = Math.sin(Cr.rot), at = (lx, lz) => [Cr.p[0] + lx * c + lz * s, Cr.p[1] - lx * s + lz * c], lz = -Cr.d * 0.3 + 1.2;
+    return [-0.8, 0, 0.8].map(dx => [...at(-Cr.w * 0.28 + dx, lz), Cr.rot + Math.PI]); })();
+  spawn(() => cow(pickCoat(), 0.9 + rnd() * 0.14), 3, { ...cowO(inCorral, pickIn(inCorral, Cr.p, Cr.w / 2)), name: 'boi', drinks: cocho, cocho: true, thirst: 0.14 });
+  const bebePasto = drinkSpots(pickIn(inPasto, tP.c, 17));
+  spawn(() => cow(pickCoat(), 0.9 + rnd() * 0.16), 5, { ...cowO(inPasto, pickIn(inPasto, tP.c, 17)), shade, name: 'boi', drinks: bebePasto });
+  spawn(() => cow(pickCoat(), 0.58 + rnd() * 0.08), 2, { ...cowO(inPasto, pickIn(inPasto, tP.c, 17)), shade, sep: 1.4, name: 'bezerro', drinks: bebePasto });
   // capivaras na beira do rio (peça do rio e da mata)
   const bank = (x, z) => { const w = waterDist(x, z); return w > 0.4 && w < 4.5 && inAnyTile(x, z, 0.9) && !blocked(x, z) && (inHex(x, z, TILES[0].c, 0.92) || inHex(x, z, TILES[1].c, 0.92)); };
-  spawn(capybara, 4, { name: 'capivara', scale: 0.85, area: bank, pick: pickIn(bank, [TILES[0].c[0] + 10, TILES[0].c[1]], 9), pg: 0.6, pw: 0.25, vw: 0.5, vg: 0.04, turn: 1.2, stride: 0.7, sep: 1.0, roam: 4, gp: 0.6, dropNeck: 0.05 });
+  spawn(capybara, 4, { name: 'capivara', scale: 0.85, area: bank, pick: pickIn(bank, [TILES[0].c[0] + 10, TILES[0].c[1]], 9), drinks: drinkSpots(pickIn(bank, [TILES[0].c[0] + 10, TILES[0].c[1]], 9)), swims: swimSpots([TILES[0].c[0] + 10, TILES[0].c[1]], 12), swimmer: true, floatD: 0.36, pg: 0.6, pw: 0.25, vw: 0.5, vg: 0.04, turn: 1.2, stride: 0.7, sep: 1.0, roam: 4, gp: 0.6, dropNeck: 0.05 });
   // a garça no raso da vereda e do córrego
   const shallow = (x, z) => { const d = WATER_Y - heightAt(x, z); return d > 0.05 && d < 0.32 && inAnyTile(x, z, 0.95); };
   spawn(garca, 1, { name: 'garça-branca', scale: 0.85, area: shallow, pick: pickIn(shallow, SPRING, 9), pg: 0.0, pw: 0.35, vw: 0.25, vg: 0, turn: 1.2, stride: 0.5, sep: 1, roam: 3, gp: 0, strike: true, water: true });
@@ -266,12 +181,10 @@ export function buildFauna(scene, opts = {}) {
   const cerr = (x, z) => inHex(x, z, tD.c, 0.9) && !blocked(x, z);
   spawn(seriema, 2, { name: 'seriema', scale: 0.8, area: cerr, pick: pickIn(cerr, tD.c, 16), pg: 0.25, pw: 0.6, vw: 1.4, vg: 0.1, turn: 2.5, stride: 0.55, sep: 2, roam: 9, gp: 0.8, peck: true, dropNeck: 0.1 });
   // garça-moura na beira da lagoa (cinza, pescoço comprido, bem maior que a garça-branca); capivaras também na lagoa
-  const moura = () => bird({ body: [0.14, 0.16, 0.32], bodyC: col(0x8e96a0), neck: [[0.12, 0.07, 0.05], [0.16, -0.03, 0.04], [0.14, 0.06, 0.036]], headC: col(0xe8e8e4), beak: [0.055, 0.15], beakC: col(0xe0b030), legL: 0.66, legC: col(0x2a2a2a),
-    crest: [0.1, 0.1, col(0x1a1a1e)], tail: [0.1, 0.2, 0.25, col(0x6e7680)] });
   const lagoaRaso = (x, z) => { const d = lakeDist(x, z); return d > -1.4 && d < 0.2; };
   spawn(moura, 1, { name: 'garça-moura', scale: 0.88, area: lagoaRaso, pick: pickIn(lagoaRaso, LAKE.c, LAKE.r + 2), pg: 0, pw: 0.3, vw: 0.3, vg: 0, turn: 1, stride: 0.6, sep: 1, roam: 4, gp: 0, strike: true, water: true });
   const lagoaBeira = (x, z) => { const d = lakeDist(x, z); return d > 0.4 && d < 5 && !blocked(x, z); };
-  spawn(capybara, 3, { name: 'capivara', scale: 0.85, area: lagoaBeira, pick: pickIn(lagoaBeira, LAKE.c, LAKE.r + 4), pg: 0.6, pw: 0.25, vw: 0.5, vg: 0.04, turn: 1.2, stride: 0.7, sep: 1.0, roam: 4, gp: 0.6, dropNeck: 0.05 });
+  spawn(capybara, 3, { name: 'capivara', scale: 0.85, area: lagoaBeira, pick: pickIn(lagoaBeira, LAKE.c, LAKE.r + 4), drinks: drinkSpots(pickIn(lagoaBeira, LAKE.c, LAKE.r + 4)), swims: swimSpots(LAKE.c, LAKE.r * 0.7), swimmer: true, floatD: 0.36, pg: 0.6, pw: 0.25, vw: 0.5, vg: 0.04, turn: 1.2, stride: 0.7, sep: 1.0, roam: 4, gp: 0.6, dropNeck: 0.05 });
   // bando de seriemas no cerradão: a primeira escolhe o rumo e as outras vão atrás
   const tCd = tile('cerradao'), cerrd = (x, z) => inHex(x, z, tCd.c, 0.9) && !blocked(x, z);
   const lead = all.length; spawn(seriema, 4, { name: 'seriema', scale: 0.8, area: cerrd, pick: pickIn(cerrd, tCd.c, 14), pg: 0.25, pw: 0.6, vw: 1.4, vg: 0.1, turn: 2.5, stride: 0.55, sep: 1.4, roam: 9, gp: 0.8, peck: true, dropNeck: 0.1 });
@@ -283,27 +196,20 @@ export function buildFauna(scene, opts = {}) {
   // onça na borda da mata, só ao entardecer e à noite (de dia ela descansa escondida)
   const campo = (x, z) => (inHex(x, z, tD.c, 0.9) || inPasto(x, z)) && !blocked(x, z);
   spawn(ema, 3, { name: 'ema', area: campo, pick: pickIn(campo, tD.c, 16), pg: 0.45, pw: 0.45, vw: 1.2, vg: 0.08, turn: 1.6, stride: 0.9, sep: 1.6, roam: 10, gp: 1.0, peck: true, dropNeck: 0.25 });
-  spawn(lobo, 1, { name: 'lobo-guará', area: campo, pick: pickIn(campo, tD.c, 14), pg: 0.15, pw: 0.7, vw: 1.5, vg: 0.1, turn: 1.8, stride: 1.1, sep: 2, roam: 14, gp: 0.7, dropNeck: 0.15 });
+  spawn(lobo, 1, { name: 'lobo-guará', area: campo, pick: pickIn(campo, tD.c, 14), drinks: drinkSpots(pickIn(campo, tD.c, 14), 4), thirst: 0.06, pg: 0.15, pw: 0.7, vw: 1.5, vg: 0.1, turn: 1.8, stride: 1.1, sep: 2, roam: 14, gp: 0.7, dropNeck: 0.15 });
   const termites = (opts.termites || []).filter(([x, z]) => campo(x, z) || inHex(x, z, tP.c, 0.95));
   spawn(tamandua, 1, { name: 'tamanduá-bandeira', area: (x, z) => campo(x, z) || inHex(x, z, tP.c, 0.9), pick: pickIn(campo, tD.c, 12), pg: 0.5, pw: 0.45, vw: 0.45, vg: 0.03, turn: 1.0, stride: 0.6, sep: 1.6, roam: 12, gp: 0.5, dropNeck: 0.1,
     targets: termites });
   const mataBeira = (x, z) => { const w = waterDist(x, z); return w > 0.6 && w < 6 && inHex(x, z, tile('mata').c, 0.9) && !blocked(x, z); };
-  spawn(anta, 1, { name: 'anta', area: mataBeira, pick: pickIn(mataBeira, tile('mata').c, 14), pg: 0.5, pw: 0.35, vw: 0.6, vg: 0.05, turn: 0.9, stride: 0.9, sep: 2, roam: 6, gp: 0.7, dropNeck: 0.1 });
+  spawn(anta, 1, { name: 'anta', area: mataBeira, pick: pickIn(mataBeira, tile('mata').c, 14), drinks: drinkSpots(pickIn((x, z) => mataBeira(x, z) || (waterDist(x, z) > 0.25 && waterDist(x, z) < 0.6 && inHex(x, z, tile('mata').c, 0.9)), tile('mata').c, 14)), swims: swimSpots(tile('mata').c, 16), swimmer: true, floatD: 0.55, pg: 0.5, pw: 0.35, vw: 0.6, vg: 0.05, turn: 0.9, stride: 0.9, sep: 2, roam: 6, gp: 0.7, dropNeck: 0.1 });
   const bordaMata = (x, z) => inHex(x, z, tile('mata').c, 0.98) && !inHex(x, z, tile('mata').c, 0.55) && !blocked(x, z);
   spawn(onca, 1, { name: 'onça-pintada', area: bordaMata, pick: pickIn(bordaMata, tile('mata').c, 18), pg: 0.1, pw: 0.75, vw: 0.9, vg: 0.05, turn: 1.4, stride: 0.95, sep: 2, roam: 12, gp: 0.3, dropNeck: 0.05,
     when: () => U.uDay.value < 0.55 });
   // ovelhas no aprisco: lã fofa em cachos, cara e pernas escuras
-  function ovelha() { const g = new THREE.Group(), wl = col(0xeee6d4), dk = col(0x3a3230), puffs = [];
-    for (let i = 0; i < 9; i++) { const a = i / 9 * 6.28; puffs.push(ell(0.2, 0.2, 0.2, Math.cos(a) * 0.14, 0.68 + Math.sin(a * 2) * 0.05, Math.sin(a) * 0.32, wl, 8)); }
-    puffs.push(ell(0.27, 0.27, 0.48, 0, 0.66, 0, wl, 10)); mesh(puffs, g);
-    const head = pivot(g, 0, 0.78, 0.5); mesh([ell(0.09, 0.1, 0.15, 0, -0.02, 0.08, dk), ell(0.06, 0.03, 0.02, 0.1, 0.02, 0.0, dk, 6), ell(0.06, 0.03, 0.02, -0.1, 0.02, 0.0, dk, 6), ell(0.11, 0.08, 0.08, 0, 0.06, 0.0, wl, 8)], head);
-    const legs = legSet(g, [[0.12, 0.48, 0.28, 0], [-0.12, 0.48, 0.28, Math.PI], [0.12, 0.48, -0.28, Math.PI], [-0.12, 0.48, -0.28, 0]], 0.035, 0.028, 0.48, dk);
-    return { g, head, legs, headY: 0.78 }; }
   const Sp = LAYOUT.sheepPen, inPen = (x, z) => inBoxAt(x, z, Sp.p, Sp.w - 1.0, Sp.d - 1.0, Sp.rot);
   spawn(ovelha, 5, { name: 'ovelha', area: inPen, pick: pickIn(inPen, Sp.p, Sp.w / 2), pg: 0.6, pw: 0.3, vw: 0.5, vg: 0.04, turn: 1.6, stride: 0.6, sep: 0.9, roam: 3, gp: 0.9, dropNeck: 0.12 });
   // joão-de-barro: passarinho cor de barro andando aos pulinhos no chão perto do ninho (no mourão do curral)
   const nest = LAYOUT.nest || [Cr.p[0], Cr.p[1], 0], perto = (x, z) => Math.hypot(x - nest[0], z - nest[1]) < 9 && !inCorral(x, z) && !blocked(x, z);
-  const jb = () => bird({ body: [0.045, 0.045, 0.075], bodyC: col(0xb07a4a), neck: [[0.03, 0.02, 0.022]], headC: col(0xa06a40), beak: [0.022, 0.025], beakC: col(0x5a4a3a), legL: 0.04, legC: col(0x8a6a5a), tail: [0.025, 0.07, -0.25, col(0x9a6a40)], s: 0.35 });
   spawn(jb, 2, { name: 'joão-de-barro (na régua)', scale: READ3(0.2) / 0.2, area: perto, pick: pickIn(perto, [nest[0], nest[1]], 6), pg: 0.5, pw: 0.45, vw: 0.9, vg: 0.0, turn: 5, stride: 0.12, sep: 0.4, roam: 3, gp: 0.8, peck: true });
 
   const M3 = mat({ vertexColors: true, side: THREE.DoubleSide });
