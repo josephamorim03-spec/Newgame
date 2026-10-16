@@ -509,13 +509,20 @@ export function buildBody(s) {
   for (const sw of swing) { sw.pivot.position.sub(headPiv); head.add(sw.pivot); sw.pivot.traverse(o => { o.userData.noRegua = true; }); }
   // a cabeça um tico maior que a anatomia (5% no adulto, 20% na criança): de longe, na câmera do jogo, o rosto e o chapéu leem
   head.scale.setScalar(kid ? 1.2 : 1.05);
+  // o corpo que a saia veste, anel a anel: a superfície desenhada ali (a casca da blusa ou do vestido, não a pele, que fica
+  // por baixo), caindo do mais saliente para baixo como pano (não entra na dobra embaixo da nádega) e, como o pano é reto
+  // entre duas fileiras (~7 cm), cada anel já passa pela saliência logo abaixo dele: a nádega não fura a saia entre fileiras
+  const perfilSaia = (() => { const rs = torso.filter(r => r.y < deTab(f ? 1.02 : 0.99)).map(r => ({ y: r.y, cz: r.cz, R: Array.from({ length: SEG }, (_, k) => { const g = veste(r.y, k / SEG * Math.PI * 2); return (g === 'pele' ? r.R[k] : r.Rc[g][k]) + 0.004; }) }));
+    for (let i = rs.length - 2; i >= 0; i--) { const up = rs[i + 1], r = rs[i], dy = up.y - r.y; for (let k = 0; k < SEG; k++) r.R[k] = Math.max(r.R[k], up.R[k] - 0.35 * dy); }
+    const pre = rs.map(r => r.R.slice()); for (let i = 0; i < rs.length; i++) for (let j = 0; j < i; j++) if (rs[i].y - rs[j].y < 0.07) for (let k = 0; k < SEG; k++) rs[i].R[k] = Math.max(rs[i].R[k], pre[j][k]);
+    return rs.map(r => ({ y: r.y - W.hips.y, cz: r.cz, R: r.R })); })();
   // medidas para o pano (saia, avental) e para quem segura as coisas
   const cint = anelEm(deTab(f ? 1.0 : 0.97), 'cima'), quad = anelEm(yHipJ - 0.01);
   const medidas = { saia, cintura: { y: deTab(f ? 1.0 : 0.97) - W.hips.y, rx: cint.R[0], rzF: cint.R[SEG / 4], rzB: cint.R[3 * SEG / 4], cz: cint.cz },
     quadril: { y: yHipJ - 0.01 - W.hips.y, rx: Math.max(quad.R[0], quad.R[SEG / 2]), rzB: quad.R[3 * SEG / 4] }, coxa: tab([[0, 0.09], [1, 0.096]], f ? 1 : 0) * (kid ? 0.85 : 1), canela: 0.058 * (kid ? 0.85 : 1),
     barriga: P.barriga,
     // o corpo debaixo da saia (pele + a roupa de baixo), anel a anel, da cintura para baixo: a saia não atravessa o quadril
-    perfil: torso.filter(r => r.y < deTab(f ? 1.02 : 0.99)).map(r => ({ y: r.y - W.hips.y, cz: r.cz, R: Array.from(r.R, x => x + 0.004) })),
+    perfil: perfilSaia,
     // o tronco por fora da roupa (para o braço não atravessar): y no corpo em pé, meia largura, frente, costas, centro
     tronco: torso.map(r => { const R = r.R; return [r.y, Math.max(R[0], R[SEG / 2]) + 0.01, R[SEG / 4] + 0.01, R[3 * SEG / 4] + 0.01, r.cz]; }), ossoW: W };   // o corpo + ~1 cm de roupa
   return { mesh, hips, spine, chest, neck, head, arms, legs, lids, swing, waistY: yWaist, bw: P.fr, P, medidas, headPiv, topoCabeca: 0.228 - headPiv.y, chestY: W.chest.y };

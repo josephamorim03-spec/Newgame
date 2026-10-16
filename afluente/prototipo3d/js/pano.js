@@ -163,8 +163,10 @@ export function Saia({ cint, len = 0.6, flare = 0.12, arco = null, tex = null, c
   const corpo = (y, a) => { if (!perfil || y < perfil[0].y || y > perfil[perfil.length - 1].y) return 0; let j = 0; while (j < perfil.length - 2 && perfil[j + 1].y < y) j++;
     const A = perfil[j], B = perfil[j + 1], t = (y - A.y) / ((B.y - A.y) || 1), n = A.R.length, f = ((a / (Math.PI * 2)) % 1 + 1) % 1 * n, k = Math.floor(f) % n, k2 = (k + 1) % n, u = f - Math.floor(f);
     return (A.R[k] * (1 - u) + A.R[k2] * u) * (1 - t) + (B.R[k] * (1 - u) + B.R[k2] * u) * t; };
-  let teto = 0; const loc = (i, j) => { const a = ang(i), y = cint.y - cair - len * j / rows * 0.98; let r = raio(a) + folga + flare * j / rows;
-    if (perfil) { for (let q = 0; q <= j; q++) r = Math.max(r, corpo(cint.y - cair - len * q / rows * 0.98, a) + folga + 0.006 + flare * (j - q) / rows * 0.6); }   // cai do mais largo do quadril para baixo
+  // a roda abre devagar no quadril e mais embaixo (curva, não reta desde o cós): a saia veste o quadril e só depois evasê
+  const abre = j => flare * Math.pow(j / rows, 1.7);
+  let teto = 0; const loc = (i, j) => { const a = ang(i), y = cint.y - cair - len * j / rows * 0.98; let r = raio(a) + folga + abre(j);
+    if (perfil) { for (let q = 0; q <= j; q++) r = Math.max(r, corpo(cint.y - cair - len * q / rows * 0.98, a) + folga + 0.006 + 0.6 * abre(j - q)); }   // cai do mais largo do quadril para baixo
     return new THREE.Vector3(r * Math.cos(a), y, cint.cz + r * Math.sin(a)); };
   const pano = Pano({ nx: strips, ny: rows, fechado, tecido, tex, color, posIni: loc });
   let ok = false, temUlt = false; const ult = new THREE.Matrix4(), tops = [];

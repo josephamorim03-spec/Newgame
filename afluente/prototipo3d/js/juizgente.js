@@ -160,13 +160,23 @@ export function createJuizGente({ gente, spot = [0, 0] }) {
       const zz = V.z - L(4), rz = zz > 0 ? L(2) : L(3), e = Math.sqrt((V.x / L(1)) ** 2 + (zz / rz) ** 2); if (e < 1) worst = Math.max(worst, (1 - e) * L(1)); } }
     return worst; }
 
-  // saia estufada: a folga entre o pano e o corpo (tronco e alto da coxa) da cintura até o meio do quadril. Uma saia
-  // de verdade é justa no cós e veste o quadril com 1–3 cm de folga; mais de 4,5 cm (nos 10% mais afastados) é saia de barril (o pano preso longe do corpo)
-  function panoFolga(p) { if (!p.s || !p.s.skirt || !p.cloth || !p.cloth.length) return 0; const prof = p.body.userData.hipProf; if (!prof) return 0;
-    p.g.updateMatrixWorld(true); const Mi = new THREE.Matrix4().copy(p.pelvis.matrixWorld).invert(), pos = p.cloth[0].mesh.geometry.attributes.position; const gaps = [];
-    for (let i = 0; i < pos.count; i++) { V.fromBufferAttribute(pos, i).applyMatrix4(Mi); const y = V.y + 0.95; if (y < 0.86 || y > p.waistY + 0.005 || y > prof[prof.length - 1][0]) continue;
-      let j = 0; while (j < prof.length - 2 && prof[j + 1][0] < y) j++; const a = prof[j], b = prof[j + 1], u = (y - a[0]) / (b[0] - a[0] || 1), L = k => a[k] + (b[k] - a[k]) * u;
-      const zz = V.z - L(4), ang = Math.atan2(zz, V.x), rB = 1 / Math.hypot(Math.cos(ang) / L(1), Math.sin(ang) / (zz > 0 ? L(2) : L(3))); gaps.push(Math.hypot(V.x, zz) - rB); }
+  // saia estufada: a folga, dos lados, entre o pano e o corpo (o pano caindo a prumo do mais saliente) da cintura até o meio do quadril. Uma saia
+  // de verdade é justa no cós e veste o quadril com 1–3 cm de folga; mais de 5,5 cm (nos 10% mais afastados) é saia de barril (a cápsula de quadril antiga dava ~7 cm) (o pano preso longe do corpo)
+  function panoFolga(p) { if (!p.s || !p.s.skirt || p.s.sex === 'c' || !p.cloth || !p.cloth.length) return 0;   /* a saia de menina é curta e rodada de propósito */ const md = p.med;
+    p.g.updateMatrixWorld(true); const Mi = new THREE.Matrix4().copy(p.pelvis.matrixWorld).invert(), pos = p.cloth[0].mesh.geometry.attributes.position, gaps = [];
+    if (md && md.perfil && md.saia) {   // o corpo novo: o perfil que a saia veste (a camada desenhada), y a partir do osso do quadril
+      // o pano cai a prumo do mais saliente (na frente ele desce reto da barriga, não entra na virilha): a referência em cada
+      // anel é o maior raio do corpo dali para cima, até o cós; o que passa disso é pano estufado
+      const n = md.perfil[0].R.length, top = md.saia.y, pr = md.perfil.map(r => ({ ...r, R: Float32Array.from(r.R) })).sort((x, y) => x.y - y.y);
+      for (let i = pr.length - 2; i >= 0; i--) if (pr[i + 1].y <= top + 0.01) for (let k = 0; k < n; k++) pr[i].R[k] = Math.max(pr[i].R[k], pr[i + 1].R[k]);
+      for (let i = 0; i < pos.count; i++) { V.fromBufferAttribute(pos, i).applyMatrix4(Mi); if (V.y > top + 0.005 || V.y < top - 0.16 || V.y < pr[0].y || V.y > pr[pr.length - 1].y) continue;
+        let j = 0; while (j < pr.length - 2 && pr[j + 1].y < V.y) j++; const A = pr[j], Bq = pr[j + 1], t = (V.y - A.y) / ((Bq.y - A.y) || 1), cz = A.cz + (Bq.cz - A.cz) * t, zz = V.z - cz, a = Math.atan2(zz, V.x);
+        const f = ((a / (Math.PI * 2)) % 1 + 1) % 1 * n, k = Math.floor(f) % n, k2 = (k + 1) % n, u = f - Math.floor(f), R = (A.R[k] * (1 - u) + A.R[k2] * u) * (1 - t) + (Bq.R[k] * (1 - u) + Bq.R[k2] * u) * t;
+        if (Math.abs(Math.cos(a)) > 0.6) gaps.push(Math.hypot(V.x, zz) - R); } }   /* dos lados (de frente e de costas o pano faz ponte entre as coxas: é caimento, não barril) */
+    else { const prof = p.body.userData.hipProf; if (!prof) return 0;
+      for (let i = 0; i < pos.count; i++) { V.fromBufferAttribute(pos, i).applyMatrix4(Mi); const y = V.y + 0.95; if (y < 0.86 || y > p.waistY + 0.005 || y > prof[prof.length - 1][0]) continue;
+        let j = 0; while (j < prof.length - 2 && prof[j + 1][0] < y) j++; const a = prof[j], b = prof[j + 1], u = (y - a[0]) / (b[0] - a[0] || 1), L = k => a[k] + (b[k] - a[k]) * u;
+        const zz = V.z - L(4), ang = Math.atan2(zz, V.x), rB = 1 / Math.hypot(Math.cos(ang) / L(1), Math.sin(ang) / (zz > 0 ? L(2) : L(3))); if (Math.abs(Math.cos(ang)) > 0.6) gaps.push(Math.hypot(V.x, zz) - rB); } }
     gaps.sort((x, y) => x - y); return gaps.length ? gaps[Math.floor(gaps.length * 0.9)] : 0; }   /* os 10% mais afastados: onde estufa */
 
   // ---------- POSE
@@ -232,8 +242,10 @@ export function createJuizGente({ gente, spot = [0, 0] }) {
     pose(p, {}); const g = p.body.geometry, dom = dominante(g), S0 = skin(p);
     { const sp = p.spine; sp.updateMatrixWorld(true); const q = new THREE.Vector3(); sp.getWorldPosition(q); p.g.worldToLocal(q); p.__spine0.copy(q); }
     const F = forma(p, nome, S0, dom), I = integracao(p, S0, dom), Po = poses(p, S0, dom, I.torso);
+    const cam = window.__cam, cam0 = cam && cam.position.clone(); if (cam) cam.position.set(p.x, p.g.position.y + 1.5, p.z + 3);   /* o pano só é simulado perto da câmera */
     step(30); pose(p, {}); const pano = panoDentro(p); if (pano > 0.012) I.out.push({ f: 'integração', pen: Math.min(12, pano * 500), msg: `em pé, o quadril atravessa a saia (${r1(pano * 100)} cm)` });
-    const folga = panoFolga(p); if (folga) I.M.saiaFolga = r1(folga * 1000); if (folga > 0.045) I.out.push({ f: 'forma', pen: Math.min(15, (folga - 0.045) * 400), msg: `a saia estufa longe do corpo: ${r1(folga * 100)} cm de folga entre a cintura e o quadril (justa: 1–3 cm)` });
+    const folga = panoFolga(p); if (folga) I.M.saiaFolga = r1(folga * 1000); if (folga > 0.055) I.out.push({ f: 'forma', pen: Math.min(15, (folga - 0.055) * 400), msg: `a saia estufa dos lados: ${r1(folga * 100)} cm de folga entre a cintura e o quadril (justa: 1–3 cm)` });
+    if (cam0) cam.position.copy(cam0);
     p.g.visible = false; p.x += 300; if (p.cloth) for (const c of p.cloth) c.mesh.visible = false;
     return { medidas: { ...F.M, ...I.M }, poses: Po.M, achados: [...F.out, ...I.out, ...Po.out] }; }
   function julgar({ tipos = Object.keys(TIPOS), andarJunto = true } = {}) { const rel = {}; window.__pertoTodos = true;   /* o detalhe de perto (anatomia.js: mãos, chão, braço fora do tronco) ligado para todos */
