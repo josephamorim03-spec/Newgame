@@ -81,13 +81,14 @@ export function especies({ M, MJ, rnd }) {
     const gir = !!coat.spot && coat.w !== 0xf0ebe2, earL = gir ? 0.2 : 0.18;
     const head = H => {
       const hc = (t, a) => { const up = Math.sin(a); if (t > 0.5) return nose; if (t > 0.45) return mix(w, nose, 0.3 + 0.4 * (t - 0.45) / 0.05); return t < 0.08 ? grey : mix(w, grey, 0.12 + 0.22 * Math.max(0, up) + (t > 0.3 ? 0.08 : 0)); };
-      const rings = [[0, 0.1, 0.06, 0.1, 2.8], [0.04, 0.124, 0.075, 0.128, 3.0], [0.1, 0.13, 0.08, 0.148, 3.0], [0.17, 0.126, 0.072, 0.146, 3.0], [0.24, 0.106, 0.062, 0.122, 2.8], [0.31, 0.088, 0.056, 0.1, 2.6],
-        [0.37, 0.08, 0.052, 0.088, 2.5], [0.42, 0.088, 0.054, 0.084, 2.5], [0.47, 0.104, 0.062, 0.084, 2.6], [0.51, 0.106, 0.06, 0.078, 2.6], [0.535, 0.094, 0.05, 0.064, 2.4], [0.552, 0.056, 0.032, 0.038, 2.2]];
+      // de lado a cabeça de vaca é funda: a mandíbula desce bem abaixo do olho e o focinho também é alto (não é fino como o do cavalo)
+      const rings = [[0, 0.1, 0.07, 0.11, 2.8], [0.04, 0.124, 0.085, 0.14, 3.0], [0.1, 0.13, 0.092, 0.172, 3.0], [0.17, 0.126, 0.088, 0.178, 3.0], [0.24, 0.108, 0.08, 0.158, 2.8], [0.31, 0.093, 0.074, 0.134, 2.6],
+        [0.37, 0.086, 0.072, 0.12, 2.5], [0.42, 0.09, 0.072, 0.112, 2.5], [0.47, 0.104, 0.075, 0.106, 2.6], [0.51, 0.106, 0.071, 0.097, 2.6], [0.535, 0.094, 0.06, 0.08, 2.4], [0.552, 0.056, 0.036, 0.046, 2.2]];
       // bochecha (masseter) cheia embaixo, testa reta em cima
       const cheek = (x, y, a, r) => { const t = r.z, b = Math.exp(-(((t - 0.17) / 0.08) ** 2)), sa = Math.sin(a); if (sa < 0.1) x *= 1 + 0.1 * b * Math.sqrt(Math.max(0, 0.1 - sa)); if (sa > 0.55 && t < 0.4) y *= 1 - 0.14 * (sa - 0.55); return [x, y]; };
       H.add(skull(rings.map(([t, rx, rt, rb, e]) => [t, rx, rt, rb, a => hc(t, a), e]), th, 32, cheek, false));
       // queixo e beiço de baixo
-      H.add(loft([[0.3, 0.055, 0.022, 0.03], [0.42, 0.064, 0.026, 0.036], [0.5, 0.062, 0.024, 0.032], [0.535, 0.04, 0.015, 0.02]].map(([t, rx, rt, rb]) => ({ z: t, y: -0.074, rx, rt, rb, e: 2.3, c: t > 0.49 ? nose : mix(w, grey, 0.2) })), 16).rotateX(th));
+      H.add(loft([[0.3, 0.055, 0.022, 0.03], [0.42, 0.064, 0.026, 0.036], [0.5, 0.062, 0.024, 0.032], [0.535, 0.04, 0.015, 0.02]].map(([t, rx, rt, rb]) => ({ z: t, y: -0.092, rx, rt, rb, e: 2.3, c: t > 0.49 ? nose : mix(w, grey, 0.2) })), 16).rotateX(th));
       for (const sx of [-1, 1]) {
         const e = S(0.15, sx * 0.123, 0.036), side = sx > 0 ? 'earL' : 'earR';
         H.add(sph(0.012, 0.016, 0.034, e[0] - sx * 0.008, e[1] + 0.02, e[2] + 0.002, mix(w, grey, 0.25), 10));   // arco da sobrancelha
@@ -104,7 +105,7 @@ export function especies({ M, MJ, rnd }) {
           hg.setAttribute('color', new THREE.BufferAttribute(cc, 3)); hg.deleteAttribute('uv'); hg.computeVertexNormals(); H.add(hg); }
         // orelha grande e oval, quase na horizontal, a concha virada para a frente; por dentro clara, com a borda grossa
         const ep = S(0.05, sx * 0.12, 0.018), droop = gir ? 0.95 : 0.12;
-        const leaf = (sc, c, dz, dy) => paintG(new THREE.SphereGeometry(1, 16, 10).scale(earL * 0.5 * sc, 0.016 * sc, 0.066 * sc).translate(sx * earL * 0.5, dy, dz).rotateZ(-sx * droop).rotateY(-sx * 0.55).translate(...ep), c);
+        const leaf = (sc, c, dz, dy) => paintG(new THREE.SphereGeometry(1, 16, 10).scale(earL * 0.5 * sc, 0.016 * sc, 0.046 * sc).translate(sx * earL * 0.5, dy, dz).rotateZ(-sx * droop).rotateY(-sx * 0.55).translate(...ep), c);
         H.add(leaf(1, grey, 0, 0), side); H.add(leaf(0.82, 0xd8a08e, 0.004, 0.006), side); }
       const tp = S(0.015, 0, 0.068); H.add(sph(0.065, 0.026, 0.05, tp[0], tp[1], tp[2], grey.clone().multiplyScalar(0.92), 12));   // topete na nuca
     };
