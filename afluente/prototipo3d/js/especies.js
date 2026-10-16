@@ -108,7 +108,7 @@ export function especies({ M, MJ, rnd }) {
     const spotAt = (z, a) => spotC && Math.sin(z * 7.3 + sd) * Math.sin(a * 2.1 + sd * 1.7) + 0.6 * Math.sin(z * 3.1 - a * 1.4 + sd * 0.7) > thr;
     const shade = z => a => { const top = Math.max(0, Math.sin(a)), k = Math.max(0, Math.min(1, (z - 0.2) / 0.6)) * (bull ? 0.8 : 0.45), sp = false, b = w;
       return b.clone().lerp(sp ? b : grey, k * (0.4 + 0.6 * top)).multiplyScalar(0.94 + 0.06 * top); };
-    const R = (z, y, rx, rt, rb, e = 2.2) => ({ z, y, rx, rt, rb, e, c: shade(z) });
+    const R = (z, y, rx, rt, rb, e = 2.2) => ({ z: z > 0 ? z : z * 0.96, y, rx, rt, rb: rb * (1 - 0.06 * Math.exp(-(((z + 0.05) / 0.35) ** 2))), e, c: shade(z) });   // a barriga um pouco menos funda no meio e a garupa 4% mais curta
     const rings = [R(-0.93, 1.14, 0.05, 0.05, 0.06), R(-0.88, 1.15, 0.14, 0.1, 0.18), R(-0.79, 1.12, 0.21, 0.15, 0.27), R(-0.66, 1.07, 0.25, 0.22, 0.34), R(-0.5, 1.03, 0.268, 0.28, 0.385),
       R(-0.32, 1.0, 0.276, 0.32, 0.4), R(-0.12, 0.985, 0.278, 0.345, 0.41), R(0.08, 0.98, 0.274, 0.355, 0.41), R(0.26, 0.99, 0.262, 0.36, 0.395), R(0.42, 1.01, 0.235, 0.345, 0.405),
       R(0.55, 1.04, 0.195, 0.3, 0.385), R(0.66, 1.06, 0.145, 0.22, 0.32), R(0.73, 1.07, 0.08, 0.12, 0.2)];
@@ -166,19 +166,19 @@ export function especies({ M, MJ, rnd }) {
       [0.82, 0.036, 0.036, 0.038], [0.86, 0.044, 0.045, 0.05], [0.89, 0.042, 0.042, 0.046]];
     const hoofC = col(pinkNose ? 0x5a4a3e : 0x2e2622);
     const leg = (x, z, top, L, prof) => ({ x, z, top: top + 0.06, L: [L[0] + 0.06, L[1], L[2]], prof: [[0, prof[0][1], prof[0][2], prof[0][3]], ...prof.map(p => [p[0] * 0.92 + 0.08, p[1], p[2], p[3]])], c: legC(z), foot: casco(x, z, top - L[0] - L[1], L[2], 0.04, legC(z)(0.95), hoofC) });
-    const tailPts = [[0, 1.15, -0.9], [0, 1.06, -0.97], [0, 0.88, -1.0], [0, 0.68, -1.0], [0, 0.5, -0.99], [0, 0.4, -0.985], [0, 0.32, -0.98]], tc = i => i >= 5 ? dark : w;
+    const tailPts = [[0, 1.15, -0.865], [0, 1.06, -0.93], [0, 0.88, -0.96], [0, 0.68, -0.96], [0, 0.5, -0.95], [0, 0.4, -0.945], [0, 0.32, -0.94]], tc = i => i >= 5 ? dark : w;
     const extra = []; if (!bull && !calf) { // úbere: a bolsa pende abaixo da barriga entre as coxas (o alto entra um pouco no corpo, embaixo ela fica à vista),
       // com as quatro tetas para baixo, um pouco abertas, mais grossas na base
-      extra.push([sph(0.115, 0.085, 0.14, 0, 0.565, -0.42, 0xdca08c, 18), 'root']);
-      for (const [x, z] of [[0.05, -0.36], [-0.05, -0.36], [0.05, -0.48], [-0.05, -0.48]]) extra.push([cyl(0.009, 0.015, 0.07, 0xd08a78, 10).rotateZ(-Math.sign(x) * 0.12).rotateX(Math.sign(z + 0.42) * 0.1).translate(x, 0.485, z), 'root']); }
+      extra.push([sph(0.115, 0.085, 0.14, 0, 0.58, -0.405, 0xdca08c, 18), 'root']);
+      for (const [x, z] of [[0.05, -0.345], [-0.05, -0.345], [0.05, -0.465], [-0.05, -0.465]]) extra.push([cyl(0.009, 0.015, 0.07, 0xd08a78, 10).rotateZ(-Math.sign(x) * 0.12).rotateX(Math.sign(z + 0.405) * 0.1).translate(x, 0.5, z), 'root']); }
     const K = 1.08 * size * (bull ? 1.05 : 1);
     // manchas no pixel (ver pelagem); onde a cor do vértice é a do pelo (entre a cor de base e o cinza do lombo)
     const Mv = spotC ? pelagem(coat.spot, w, coat.w === 0xf0ebe2 ? 2.4 : 3.3, 0.6 - (coat.sp || 0) * 0.2, sd) : M;
     const gw = [grey.r, grey.g, grey.b], ww = [w.r, w.g, w.b], d2 = ww.map((v, i) => v - gw[i]), dd = d2.reduce((a, v) => a + v * v, 0) || 1e-6;
     const pat = spotC ? (r0, g0, b0) => { const c = [r0, g0, b0], t = Math.max(0, Math.min(1, c.reduce((a, v, i) => a + (v - gw[i]) * d2[i], 0) / dd)), pp = gw.map((v, i) => v + d2[i] * t);
       const e = Math.hypot(c[0] - pp[0], c[1] - pp[1], c[2] - pp[2]) / (pp[0] * 0.3 + pp[1] * 0.5 + pp[2] * 0.2 + 0.04); return e < 0.3 ? 1 : 0; } : null;
-    const eL = S(0.05, 0.12, 0.018), r = quad({ K, M: Mv, pat, seg: 44, body: { rings, shape }, neck, head, ears: [eL, [-eL[0], eL[1], eL[2]]], muzzle,
-      legs: [leg(0.13, 0.44, 0.84, fl, fprof), leg(-0.13, 0.44, 0.84, fl, fprof), leg(0.14, -0.62, 0.92, hl, hprof), leg(-0.14, -0.62, 0.92, hl, hprof)],
+    const eL = S(0.05, 0.12, 0.018), r = quad({ K, M: Mv, pat, seg: 44, shift: [0.52, 0.38], body: { rings, shape }, neck, head, ears: [eL, [-eL[0], eL[1], eL[2]]], muzzle,
+      legs: [leg(0.13, 0.44, 0.84, fl, fprof), leg(-0.13, 0.44, 0.84, fl, fprof), leg(0.14, -0.6, 0.92, hl, hprof), leg(-0.14, -0.6, 0.92, hl, hprof)],
       tail: { pts: tailPts, prof: tailPts.map((p, i) => ({ rx: i === 5 ? 0.048 : i === 6 ? 0.02 : 0.034 - i * 0.003, rt: i === 5 ? 0.048 : i === 6 ? 0.02 : 0.034 - i * 0.003, rb: i === 5 ? 0.048 : i === 6 ? 0.02 : 0.034 - i * 0.003, c: tc(i) })), n: 5, rest: [0.1, 0.02] },
       extra });
     r.graze = grazeOf(neckPts, muzzle); return r;
@@ -203,7 +203,7 @@ export function especies({ M, MJ, rnd }) {
 
   // ---------- ovelha: lã em cachos, cara e pernas escuras
   function ovelha() { const wl = col(0xeee6d4), dk = col(0x3a3230), wc = a => mix(wl, 0xd8cfbc, Math.max(0, -Math.sin(a)) * 0.6);
-    const rings = [[-0.5, 0.67, 0.1, 0.1, 0.1], [-0.45, 0.67, 0.2, 0.2, 0.22], [-0.3, 0.68, 0.27, 0.27, 0.29], [0, 0.68, 0.29, 0.29, 0.31], [0.25, 0.68, 0.27, 0.27, 0.29], [0.4, 0.7, 0.21, 0.22, 0.23], [0.48, 0.73, 0.12, 0.12, 0.12]].map(([z, y, rx, rt, rb]) => ({ z: z * 1.07, y: y - 0.02, rx, rt, rb, e: 2.1, c: wc }));   // corpo um pouco mais comprido e baixo (ovelha de verdade: 0,85-1,25 m, dorso até 0,82 m)
+    const rings = [[-0.5, 0.67, 0.1, 0.1, 0.1], [-0.45, 0.67, 0.2, 0.2, 0.22], [-0.3, 0.68, 0.27, 0.27, 0.29], [0, 0.68, 0.29, 0.29, 0.31], [0.25, 0.68, 0.27, 0.27, 0.29], [0.4, 0.7, 0.21, 0.22, 0.23], [0.48, 0.73, 0.12, 0.12, 0.12]].map(([z, y, rx, rt, rb]) => ({ z: z * 1.07, y: y - 0.02, rx, rt, rb: rb * 0.97, e: 2.1, c: wc }));   // corpo um pouco mais comprido e baixo (ovelha de verdade: 0,85-1,25 m, dorso até 0,82 m)
     const fleece = (x, y, a, r) => { const b = 1 + 0.07 * Math.sin(a * 7 + r.z * 9) * Math.sin(r.z * 23 + a * 3); return [x * b, y * b]; };
     const neckPts = [[0, 0.63, 0.36], [0, 0.77, 0.53], [0, 0.86, 0.65]], muzzle = [0, -0.21, 0.19];   // o pescoço nasce fundo no peito: a boca alcança o capim
     const head = H => { H.add(skull([[0, 0.075, 0.08, 0.085], [0.08, 0.08, 0.08, 0.085], [0.16, 0.066, 0.065, 0.07], [0.24, 0.05, 0.05, 0.055], [0.285, 0.035, 0.035, 0.035]].map(([t, rx, rt, rb]) => [t, rx, rt, rb, dk, 2.4]), 0.85, 30));
@@ -251,7 +251,7 @@ export function especies({ M, MJ, rnd }) {
     const leg = (x, z, top, L) => ({ x, z, top, L, prof: lp, c: lc, foot: pata(x, z, top - L[0] - L[1], L[2], 0.026, k, 0x141210, 4, 0x2a2622) });
     const tp = [[0, 0.86, -0.42], [0, 0.8, -0.52], [0, 0.66, -0.6], [0, 0.52, -0.64], [0, 0.4, -0.66]];
     const r = quad({ K: 1, M, seg: 36, body: { rings }, neck: { pts: neckPts, prof: [{ rx: 0.1, rt: 0.12, rb: 0.11, c: nkc }, { rx: 0.088, rt: 0.105, rb: 0.095, c: nkc }, { rx: 0.078, rt: 0.085, rb: 0.085, c: nkc }] }, head, ears: [S(0.0, 0.05, 0.072), S(0.0, -0.05, 0.072)], muzzle,
-      legs: [leg(0.09, 0.3, 0.75, [0.32, 0.27, 0.15]), leg(-0.09, 0.3, 0.75, [0.32, 0.27, 0.15]), leg(0.09, -0.3, 0.78, [0.35, 0.29, 0.15]), leg(-0.09, -0.3, 0.78, [0.35, 0.29, 0.15])],
+      legs: [leg(0.08, 0.3, 0.75, [0.32, 0.27, 0.15]), leg(-0.08, 0.3, 0.75, [0.32, 0.27, 0.15]), leg(0.08, -0.3, 0.78, [0.35, 0.29, 0.15]), leg(-0.08, -0.3, 0.78, [0.35, 0.29, 0.15])],   // as pernas finas bem embaixo do corpo estreito
       tail: { pts: tp, prof: tp.map((p, i) => ({ rx: [0.04, 0.07, 0.085, 0.075, 0.04][i], rt: [0.04, 0.07, 0.085, 0.075, 0.04][i], rb: [0.04, 0.07, 0.085, 0.075, 0.04][i], c: i >= 3 ? w : o })), n: 4, rest: [-0.6, 0.12] } });
     r.graze = grazeOf(neckPts, muzzle); return r; }
 
@@ -352,7 +352,7 @@ export function especies({ M, MJ, rnd }) {
   // ---------- tamanduá-bandeira: faixa preta e branca no ombro, focinho comprido de tubo, garras da frente dobradas, rabo de bandeira
   function tamandua() { const c = col(0x8a8076), k = col(0x1e1a18), w = col(0xf0eade);
     const stripe = z => a => mix(c, 0x6a6058, Math.max(0, Math.sin(a)) * 0.35 + Math.max(0, Math.min(1, (0.1 - z) / 0.6)) * 0.35);   // a faixa preta e branca vem do shader (faixa)   // a faixa sobe do peito para trás até o meio das costas
-    const rings = [[-0.55, 0.56, 0.08, 0.08, 0.08], [-0.5, 0.56, 0.15, 0.2, 0.17], [-0.3, 0.55, 0.19, 0.26, 0.21], [0, 0.53, 0.2, 0.27, 0.22], [0.25, 0.53, 0.19, 0.25, 0.21], [0.4, 0.55, 0.15, 0.2, 0.16], [0.5, 0.58, 0.1, 0.12, 0.1]].map(([z, y, rx, rt, rb]) => ({ z, y, rx, rt, rb, e: 2.2, c: stripe(z) }));
+    const rings = [[-0.55, 0.56, 0.08, 0.08, 0.08], [-0.5, 0.56, 0.15, 0.2, 0.17], [-0.3, 0.55, 0.19, 0.26, 0.21], [0, 0.53, 0.2, 0.27, 0.22], [0.25, 0.53, 0.19, 0.25, 0.21], [0.4, 0.55, 0.15, 0.2, 0.16], [0.5, 0.58, 0.1, 0.12, 0.1]].map(([z, y, rx, rt, rb]) => ({ z, y, rx, rt, rb: rb * 1.05, e: 2.2, c: stripe(z) }));
     const neckPts = [[0, 0.58, 0.44], [0, 0.6, 0.57], [0, 0.6, 0.64]], muzzle = [0, -0.18, 0.4];
     const hcl = mix(c, w, 0.22);   // a cabeça e o focinho são mais claros que o corpo
     const head = H => { H.add(tube([[0, 0, -0.02], [0, -0.02, 0.06], [0, -0.07, 0.18], [0, -0.13, 0.3], [0, -0.18, 0.41]], [0.075, 0.07, 0.05, 0.035, 0.024].map((r, i) => ({ rx: r, rt: r, rb: r, c: i === 4 ? mix(hcl, k, 0.5) : hcl })), 12, true));
@@ -371,10 +371,10 @@ export function especies({ M, MJ, rnd }) {
       ...[[-0.022, 0.07], [0.012, 0.085], [0.04, 0.06]].map(([dx, L]) => cone(0.013, L, ky, 6).rotateX(-2.5).rotateZ(sx * 0.35).translate(x - sx * 0.01 + dx * sx, 0.034, z + 0.05))]); };   // as garras dobradas para trás
     const hFoot = (x, z) => pata(x, z, 0.09, 0.09, 0.05, mix(c, k, 0.75), 0x141210, 5, 0x2a2420);
     const tp = [[0, 0.6, -0.55], [0, 0.615, -0.66], [0, 0.62, -0.77], [0, 0.615, -0.88], [0, 0.6, -0.98], [0, 0.575, -1.07], [0, 0.54, -1.15], [0, 0.5, -1.21], [0, 0.47, -1.24]];
-    const r = quad({ K: 1, M: faixa(0.54), pat: () => 1, seg: 36, legSleeve: true, body: { rings, shape: manga([[0.13, 0.35, 0.07, 0.07, 0.09], [0.13, -0.38, 0.065, 0.08, 0.11]]) },
+    const r = quad({ K: 1, M: faixa(0.54), pat: () => 1, seg: 36, legSleeve: true, body: { rings, shape: manga([[0.12, 0.35, 0.07, 0.07, 0.09], [0.12, -0.38, 0.065, 0.08, 0.11]]) },
       neck: { pts: neckPts, prof: [{ rx: 0.13, rt: 0.17, rb: 0.14, c }, { rx: 0.1, rt: 0.12, rb: 0.1, c }, { rx: 0.08, rt: 0.085, rb: 0.08, c: hcl }] }, head, ears: [[0.055, 0.06, -0.01], [-0.055, 0.06, -0.01]], muzzle,
-      legs: [{ x: 0.13, z: 0.35, top: 0.45, L: [0.19, 0.165, 0.09], prof: lpF, c: fcol, foot: fFoot(0.13, 0.35) }, { x: -0.13, z: 0.35, top: 0.45, L: [0.19, 0.165, 0.09], prof: lpF, c: fcol, foot: fFoot(-0.13, 0.35) },
-        { x: 0.13, z: -0.38, top: 0.46, L: [0.2, 0.17, 0.09], prof: lpH, c: hcol, foot: hFoot(0.13, -0.38) }, { x: -0.13, z: -0.38, top: 0.46, L: [0.2, 0.17, 0.09], prof: lpH, c: hcol, foot: hFoot(-0.13, -0.38) }],
+      legs: [{ x: 0.12, z: 0.35, top: 0.45, L: [0.19, 0.165, 0.09], prof: lpF, c: fcol, foot: fFoot(0.12, 0.35) }, { x: -0.12, z: 0.35, top: 0.45, L: [0.19, 0.165, 0.09], prof: lpF, c: fcol, foot: fFoot(-0.12, 0.35) },
+        { x: 0.12, z: -0.38, top: 0.46, L: [0.2, 0.17, 0.09], prof: lpH, c: hcol, foot: hFoot(0.12, -0.38) }, { x: -0.12, z: -0.38, top: 0.46, L: [0.2, 0.17, 0.09], prof: lpH, c: hcol, foot: hFoot(-0.12, -0.38) }],
       tail: { pts: tp, prof: tp.map((p, i) => ({ rx: [0.07, 0.065, 0.06, 0.058, 0.055, 0.05, 0.045, 0.035, 0.015][i], rt: [0.12, 0.16, 0.19, 0.21, 0.21, 0.19, 0.15, 0.1, 0.03][i], rb: [0.12, 0.19, 0.24, 0.27, 0.27, 0.24, 0.19, 0.12, 0.03][i], e: 1.6, c: a => mix(0x5a524a, 0x3a342e, Math.max(0, Math.sin(a)) * 0.4) })), n: 4, rest: [0.15, -0.05] } });   // a bandeira: pelo comprido dos dois lados, borda afinando
     { const g = r.mesh.geometry, pa = g.attributes.pat, part = g.userData.part, names = g.userData.partNames, ok = [names.indexOf('corpo'), names.indexOf('pescoco')];
       for (let q = 0; q < pa.count; q++) pa.setX(q, ok.includes(part[q]) ? 1 : 0); pa.needsUpdate = true; }

@@ -62,7 +62,7 @@ export function createJuiz({ fauna, people = () => [] }) {
       if (k === iC) { minZ = Math.min(minZ, z); maxZ = Math.max(maxZ, z); if (Math.abs(z - zm) < 0.12 * R.K && Math.abs(x) < 0.08 * R.K) cern = Math.max(cern, y); if (Math.abs(z - zg) < 0.12 * R.K && Math.abs(x) < 0.16 * R.K) { pMin = Math.min(pMin, y); pMax = Math.max(pMax, y); } }
       if (k === iC || k === iN || k === iH) { minZa = Math.min(minZa, z); maxZa = Math.max(maxZa, z); topY = Math.max(topY, y); }
       if (k === iH) { hMin = Math.min(hMin, z); hMax = Math.max(hMax, z); } }
-    const M = { cern: (R.kind === 'bird' ? topY : cern) * s, comp: ((ref && ref.cc) ? maxZa - minZa : maxZ - minZ) * s, peito: pMax > pMin ? (pMax - pMin) / (cern || 1) : null, cab: (hMax - hMin) * s };
+    const M = { cern: (R.kind === 'bird' ? topY : cern) * s, comp: ((ref && ref.cc) ? maxZa - minZa : maxZ - minZ) * s, peito: pMax > pMin ? (Math.min(pMax, cern || pMax) - pMin) / (cern || 1) : null,   /* o topo é a linha do dorso: o cupim do zebu não é peito */ cab: (hMax - hMin) * s };
     const chk = (k, nome, un = 'm') => { if (!ref || !ref[k]) return; const [lo, hi] = ref[k], v = M[k]; if (v == null) return; if (v < lo || v > hi) out.push({ f: 'forma', pen: Math.min(20, 6 + 40 * Math.max(lo - v, v - hi) / ((lo + hi) / 2)), msg: `${nome} ${r2(v)}${un} (o bicho de verdade: ${lo}–${hi}${un})` }); };
     chk('cern', R.kind === 'bird' ? 'altura' : 'altura do dorso'); chk('comp', ref && ref.cc ? 'comprimento cabeça+corpo' : 'comprimento do corpo'); if (R.kind !== 'bird' && M.peito != null) { chk('peito', 'peito/altura', ''); }
     // malha: faces do avesso (a ordem dos vértices contra a normal guardada) e degeneradas; faceta da silhueta do corpo
