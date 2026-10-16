@@ -409,7 +409,10 @@ export function buildBoard5(api) {
     sp.scale.set(0.1, 0.1, 1); sp.position.set(c[0], y0, c[1]); sp.renderOrder = 999; scene.add(sp); floats.push({ sp, t: 0, y0 }); }
   // o fim: quantas pessoas o vale acolheu (contando), as vilas, e um vale novo
   function showEnd() { if (!fm.hidden) return; const vs = [...S.vilas.values()], olhos = [...game.board.values()].filter(t => t.src && !t.nasc).length, mx = vs.reduce((a, v) => Math.max(a, v.lvl), 0);
-    $('fimS').textContent = `${vs.length} ${vs.length === 1 ? 'vila' : 'vilas'}, a maior no nível ${mx}${olhos ? ` · ${olhos} ${olhos === 1 ? "olho-d'água ligado" : "olhos-d'água ligados"}` : ''}.`;
+    const conta = t => S.log.reduce((n, l) => n + (l.ev || []).filter(x => x.t === t).length, 0), pl = (n, a, b) => `${n} ${n === 1 ? a : b}`;
+    const extra = [conta('pedido') && pl(conta('pedido'), 'pedido atendido', 'pedidos atendidos'), conta('perfeita') && pl(conta('perfeita'), 'encaixe perfeito', 'encaixes perfeitos'),
+      conta('fechou') && pl(conta('fechou'), 'região fechada', 'regiões fechadas'), olhos && pl(olhos, "olho-d'água ligado", "olhos-d'água ligados")].filter(Boolean);
+    $('fimS').textContent = `${pl(vs.length, 'vila', 'vilas')}, a maior no nível ${mx}.${extra.length ? ' ' + extra.join(' · ') + '.' : ''}`;
     { const r = Object.assign({ best: 0, partidas: 0, dia: {} }, ler(REC) || {}); if (!fimContado) { fimContado = true; const novo = S.gente > r.best; r.partidas++; r.best = Math.max(r.best, S.gente);
         if (seed === DIARIO) r.dia[seed] = Math.max(r.dia[seed] || 0, S.gente); gravar(REC, r); try { localStorage.removeItem(SAVE); } catch (e) {}
         $('fimR').textContent = novo && r.partidas > 1 ? '🏆 Novo recorde!' : `🏆 Recorde: ${r.best} pessoas`; } }
