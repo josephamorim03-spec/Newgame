@@ -38,12 +38,13 @@ export function buildBoard5(api) {
   const FLORES = ['#f2c12e', '#e889b5', '#fff3d6', '#7cc04a', '#e0663f'], GOTAS = ['#7fd4ff', '#bfeaff', '#3f9fd8'], OURO = ['#ffe08a', '#fff6c8', '#f2c12e'];
 
   // ---------- painel (HTML por cima do mapa)
+  // o mínimo à vista (o jogo é de olhar): uma pílula com os números, a peça na mão e, só com uma casa escolhida, "Colocar";
+  // explicação só quando se toca (na pílula, numa plaquinha do mapa, na peça)
   const box = document.createElement('div'); box.id = 'jogo'; box.innerHTML = `
-    <div class="mao"><canvas id="mao" width="132" height="132" aria-label="Peça na mão (toque para girar)"></canvas>
-      <div class="lado"><div id="placar"></div><div class="gira"><button id="pL" aria-label="Girar a peça para a esquerda">⟲</button><button id="pR" aria-label="Girar a peça para a direita">⟳</button></div>
-      <div class="prox"><span>próxima</span><canvas id="prox" width="44" height="44"></canvas></div></div></div>
-    <div class="acao"><button id="colocar" disabled>Escolha uma casa marcada</button></div>
-    <div id="aviso" aria-live="polite"></div>`;
+    <button type="button" id="placar" aria-label="Placar (toque para entender)"></button>
+    <div id="aviso" aria-live="polite"></div>
+    <div class="mao"><canvas id="mao" width="132" height="132" aria-label="Peça na mão (toque para girar)"></canvas><canvas id="prox" width="44" height="44" aria-label="Próxima peça"></canvas></div>
+    <button type="button" id="colocar" hidden>Colocar</button>`;
   document.body.appendChild(box);
   // ---------- a história do começo: o porquê da água e das vilas, em quatro páginas curtas (aparece na primeira vez)
   const HIST = [
@@ -55,8 +56,8 @@ export function buildBoard5(api) {
   const hs = document.createElement('div'); hs.id = 'historia'; hs.setAttribute('role', 'dialog'); hs.setAttribute('aria-modal', 'true'); hs.setAttribute('aria-labelledby', 'hsT');
   hs.innerHTML = '<div class="folha"><div class="ic" id="hsI"></div><h2 id="hsT"></h2><p id="hsP"></p><div class="pts" id="hsD"></div><div class="bt"><button type="button" class="pular" id="hsPular">Pular</button><button type="button" class="ir" id="hsIr">Continuar</button></div></div>';
   document.body.appendChild(hs);
-  const hb = document.createElement('button'); hb.type = 'button'; hb.id = 'hsAbre'; hb.textContent = '📖 História'; hb.setAttribute('aria-label', 'Ler a história do vale'); document.body.appendChild(hb);
-  const sb = document.createElement('button'); sb.type = 'button'; sb.id = 'somBtn'; const somTxt = () => { sb.textContent = som.on ? '🔊' : '🔇'; sb.setAttribute('aria-label', som.on ? 'Desligar o som' : 'Ligar o som'); }; somTxt();
+  const hb = document.createElement('button'); hb.type = 'button'; hb.id = 'hsAbre'; hb.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 5.5c3-1.5 6.5-1.5 10 1v13c-3.5-2.5-7-2.5-10-1z"/><path d="M22 5.5c-3-1.5-6.5-1.5-10 1v13c3.5-2.5 7-2.5 10-1z"/></svg>'; hb.setAttribute('aria-label', 'Ler a história do vale'); document.body.appendChild(hb);
+  const sb = document.createElement('button'); sb.type = 'button'; sb.id = 'somBtn'; const somTxt = () => { sb.innerHTML = som.on ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor"/><path d="M15.5 9a4 4 0 0 1 0 6"/><path d="M18.5 6.5a7.5 7.5 0 0 1 0 11"/></svg>' : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor"/><path d="M16 9.5l5 5"/><path d="M21 9.5l-5 5"/></svg>'; sb.setAttribute('aria-label', som.on ? 'Desligar o som' : 'Ligar o som'); }; somTxt();
   sb.onclick = () => { som.setOn(!som.on); somTxt(); if (som.on) setTimeout(SFX.sel, 60); }; document.body.appendChild(sb);
   const fm = document.createElement('div'); fm.id = 'fim5'; fm.hidden = true; fm.setAttribute('role', 'dialog'); fm.setAttribute('aria-modal', 'true');
   fm.innerHTML = '<div class="folha"><div class="ic">🌅</div><h2>O vale acolheu</h2><div class="num" id="fimN">0</div><p>pessoas</p><p id="fimS"></p><button type="button" id="fimJ">Jogar outro vale</button></div>'; document.body.appendChild(fm);
@@ -69,18 +70,20 @@ export function buildBoard5(api) {
   const pk = document.createElement('div'); pk.id = 'pacote5'; pk.hidden = true; pk.setAttribute('role', 'dialog'); pk.setAttribute('aria-modal', 'true');
   pk.innerHTML = '<div class="folha"><h2 id="pkT">A vila cresceu!</h2><p id="pkS"></p><div class="pks" id="pkO"></div></div>'; document.body.appendChild(pk);
   const css = document.createElement('style'); css.textContent = `
-    #jogo{position:fixed;left:max(12px,env(safe-area-inset-left));bottom:calc(max(12px,env(safe-area-inset-bottom)) + 26px);display:flex;flex-direction:column;gap:8px;pointer-events:none;z-index:5}
-    #jogo .mao{display:flex;gap:10px;align-items:center;background:var(--paper);border-radius:18px;padding:8px 10px;box-shadow:0 4px 16px rgba(0,0,0,.14);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);pointer-events:auto}
-    #jogo canvas#mao{width:96px;height:96px;cursor:pointer;touch-action:none}
-    #jogo .lado{display:flex;flex-direction:column;gap:6px;min-width:132px}
-    #placar{font:700 13px Nunito,system-ui;line-height:1.35}#placar b{font:800 18px "Baloo 2",system-ui}#placar .ag{color:#1f6f9a}
-    #jogo .gira{display:flex;gap:6px}
-    #jogo .gira button{width:44px;height:40px;border:1px solid var(--line);background:#fff;border-radius:12px;font:800 18px system-ui;color:var(--ink)}
-    #jogo .prox{display:flex;align-items:center;gap:6px;font-size:12px;opacity:.8}#jogo .prox canvas{width:32px;height:32px}
-    #jogo .acao{pointer-events:auto}
-    #colocar{border:0;border-radius:999px;background:var(--ink);color:#fff;font:800 15px "Baloo 2",system-ui;padding:10px 18px;min-height:44px;box-shadow:0 3px 12px rgba(0,0,0,.18);max-width:min(340px,calc(100vw - 24px))}
-    #colocar:disabled{background:var(--paper);color:var(--ink);opacity:.9;font-weight:700}
-    #aviso{font:700 13px Nunito,system-ui;color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.6);max-width:min(320px,calc(100vw - 24px));min-height:18px}
+    #jogo{pointer-events:none;z-index:5}
+    #placar{position:fixed;left:50%;transform:translateX(-50%);top:max(12px,env(safe-area-inset-top));pointer-events:auto;border:0;border-radius:999px;background:rgba(252,250,244,.72);color:var(--ink);
+      font:700 14px Nunito,system-ui;padding:6px 14px;min-height:36px;box-shadow:0 2px 12px rgba(0,0,0,.1);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);white-space:nowrap;display:flex;gap:12px;align-items:center}
+    #placar b{font:800 17px "Baloo 2",system-ui}#placar .ag{color:#1f6f9a}#placar span{display:inline-flex;gap:3px;align-items:baseline}
+    #aviso{position:fixed;left:50%;transform:translateX(-50%);top:calc(max(12px,env(safe-area-inset-top)) + 46px);max-width:min(360px,calc(100vw - 32px));font:700 13.5px/1.35 Nunito,system-ui;color:#fff;text-align:center;
+      background:rgba(20,40,38,.55);border-radius:14px;padding:7px 12px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);opacity:0;transition:opacity .4s ease;pointer-events:none}
+    #aviso.on{opacity:1}
+    #jogo .mao{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(max(14px,env(safe-area-inset-bottom)) + 58px);pointer-events:auto;width:96px;height:96px}
+    #jogo canvas#mao{width:96px;height:96px;cursor:pointer;touch-action:none;filter:drop-shadow(0 4px 8px rgba(0,0,0,.25))}
+    #jogo canvas#prox{position:absolute;left:calc(100% + 6px);bottom:6px;width:34px;height:34px;opacity:.9;filter:drop-shadow(0 2px 4px rgba(0,0,0,.25))}
+    #colocar{position:fixed;left:50%;transform:translateX(-50%);bottom:max(14px,env(safe-area-inset-bottom));pointer-events:auto;border:0;border-radius:999px;background:var(--ink);color:#fff;
+      font:800 16px "Baloo 2",system-ui;padding:8px 26px;min-height:44px;box-shadow:0 3px 14px rgba(0,0,0,.22);max-width:calc(100vw - 32px);white-space:nowrap;animation:sobeC .25s cubic-bezier(.2,1.4,.4,1)}
+    @keyframes sobeC{from{transform:translate(-50%,24px);opacity:0}to{transform:translate(-50%,0);opacity:1}}
+    #colocar[hidden]{display:none}
     #historia{position:fixed;inset:0;display:flex;align-items:flex-end;justify-content:center;padding:16px;background:linear-gradient(to top,rgba(15,35,35,.55),rgba(15,35,35,.05) 60%);z-index:30}
     #historia[hidden]{display:none}
     #historia .folha{width:100%;max-width:440px;background:var(--paper);border-radius:24px;padding:18px 18px 14px;box-shadow:0 10px 34px rgba(0,0,0,.3);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
@@ -89,11 +92,12 @@ export function buildBoard5(api) {
     #historia .bt{display:flex;justify-content:space-between;align-items:center;gap:10px}
     #historia .pular{border:0;background:none;color:var(--ink);opacity:.75;font:700 15px Nunito,system-ui;min-height:44px;padding:0 6px}
     #historia .ir{border:0;border-radius:999px;background:var(--ink);color:#fff;font:800 16px "Baloo 2",system-ui;padding:10px 22px;min-height:44px}
-    #hsAbre{position:fixed;left:max(14px,env(safe-area-inset-left));top:calc(max(12px,env(safe-area-inset-top)) + 54px);border:0;border-radius:999px;background:var(--paper);color:var(--ink);font:700 13px Nunito,system-ui;padding:6px 12px;min-height:32px;box-shadow:0 2px 10px rgba(0,0,0,.12);z-index:6}
+    #hsAbre,#somBtn{position:fixed;top:calc(max(12px,env(safe-area-inset-top)) + 4px);width:32px;height:32px;border:0;background:none;padding:4px;z-index:6;color:#fff;filter:drop-shadow(0 1px 3px rgba(0,0,0,.45));line-height:0;cursor:pointer}
+    #hsAbre svg,#somBtn svg{width:24px;height:24px;display:block}
+    #hsAbre{right:calc(max(12px,env(safe-area-inset-right)) + 38px)}#somBtn{right:max(10px,env(safe-area-inset-right))}
     #jogo button,#pacote5 button,#historia button,#hsAbre,#somBtn,#fim5 button{transition:transform .08s ease}#jogo button:active,#pacote5 button:active,#historia button:active,#hsAbre:active,#somBtn:active,#fim5 button:active{transform:scale(.93)}
     @keyframes sobe{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}@keyframes pulsa{0%{transform:scale(1)}35%{transform:scale(1.45)}100%{transform:scale(1)}}
     #pacote5 .folha,#historia .folha,#fim5 .folha{animation:sobe .32s cubic-bezier(.2,1.4,.4,1)}#pP{display:inline-block}#pP.pulsa{animation:pulsa .45s ease-out}
-    #somBtn{position:fixed;left:calc(max(14px,env(safe-area-inset-left)) + 112px);top:calc(max(12px,env(safe-area-inset-top)) + 54px);border:0;border-radius:999px;background:var(--paper);color:var(--ink);font:700 13px Nunito,system-ui;padding:6px 10px;min-height:32px;min-width:40px;box-shadow:0 2px 10px rgba(0,0,0,.12);z-index:6}
     #fim5{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(15,35,35,.35);z-index:25}#fim5[hidden]{display:none}
     #fim5 .folha{width:100%;max-width:380px;text-align:center;background:var(--paper);border-radius:26px;padding:22px 18px 18px;box-shadow:0 10px 34px rgba(0,0,0,.3);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
     #fim5 .ic{font-size:40px}#fim5 h2{margin:4px 0 0;font:800 22px "Baloo 2",system-ui}#fim5 .num{font:800 64px/1.05 "Baloo 2",system-ui}#fim5 p{margin:2px 0 8px;font:700 15px/1.4 Nunito,system-ui}
@@ -105,7 +109,8 @@ export function buildBoard5(api) {
     #pacote5 .pks{display:grid;grid-template-columns:1fr 1fr;gap:10px}
     #pacote5 button{display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 8px;border:2px solid var(--line);border-radius:18px;background:#fff;color:var(--ink);font:800 17px "Baloo 2",system-ui;min-height:44px;cursor:pointer}
     #pacote5 button .t{display:flex;gap:2px}#pacote5 canvas{width:40px;height:40px}
-    @media (max-width:520px){#jogo .mao{padding:6px 8px}#jogo canvas#mao{width:78px;height:78px}}`;
+    @media (max-width:520px){#jogo .mao,#jogo canvas#mao{width:84px;height:84px}
+      #placar{left:max(12px,env(safe-area-inset-left));transform:none;gap:9px;padding:6px 12px;font-size:13px}#placar b{font-size:16px}.marca{display:none}}`;
   document.head.appendChild(css);
   const $ = id => document.getElementById(id);
 
@@ -148,7 +153,7 @@ export function buildBoard5(api) {
     g.fillStyle = o.fg || '#5a3b12'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(txt, w / 2, cv.height / 2 + 2);
     const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace;
     // tamanho fixo na tela (como um rótulo de jogo), seja qual for a distância da câmera
-    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false, sizeAttenuation: false })); const hh = (o.k || 1) * 0.045;
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false, sizeAttenuation: false })); const hh = (o.k || 1) * 0.04; sp.userData.info = o.info || '';
     sp.scale.set(hh * w / cv.height, hh, 1); sp.position.set(x, y, z); sp.renderOrder = 998; tags.add(sp); return sp; }
   const springG = new THREE.Group(); scene.add(springG);
   const springMat = new THREE.MeshBasicMaterial({ color: 0x7fd4ff, transparent: true, opacity: 0.55, depthWrite: false });
@@ -158,15 +163,16 @@ export function buildBoard5(api) {
     const ch = new Map((pv ? pv.vil : []).map(v => [v.id, v]));
     for (const v of S.vilas.values()) { const P = PEDIDOS[v.req.t], c = hexCenter(KQ(v.id), KR(v.id)), cur = game.progress(v), x = ch.get(v.id);
       const txt = x && x.after !== x.before ? (x.done ? `${P.icone} ✓ a vila cresce!` : `${P.icone} ${x.before}→${x.after}/${v.req.n}`) : v.req.t === 'agua' ? `${P.icone} quer água` : `${P.icone} ${cur}/${v.req.n}`;
-      tag(txt, c[0], groundY(c[0], c[1]) + 16, c[1], x && x.done ? { bg: '#3f9a4a', fg: '#fff' } : { ring: '#e0663f' }); }
+      const info = `Vila (nível ${v.lvl}) pede ${P.txt(v.req.n)}${v.req.t === 'agua' ? '' : ` — tem ${cur} de ${v.req.n}`}. Atendida, ganha pessoas, uma casa e peças novas.`;
+      tag(txt, c[0], groundY(c[0], c[1]) + 16, c[1], x && x.done ? { bg: '#3f9a4a', fg: '#fff', info } : { ring: '#e0663f', info }); }
     // olhos-d'água: um poço claro no chão e quanto ele soma
     for (const [k, f] of S.springs) { const c = hexCenter(KQ(k), KR(k)), y = groundY(c[0], c[1]) + 0.3;
       const m = new THREE.Mesh(new THREE.CircleGeometry(4.5, 28).rotateX(-Math.PI / 2), springMat); m.position.set(c[0], y, c[1]); springG.add(m);
-      tag(`olho-d'água +${vazao(f, game.isSeca())}💧`, c[0], y + 6, c[1], { bg: 'rgba(225,245,255,.95)', fg: '#1f5f86', k: 0.8 }); }
+      tag(`+${vazao(f, game.isSeca())}💧`, c[0], y + 6, c[1], { bg: 'rgba(225,245,255,.92)', fg: '#1f5f86', k: 0.75, info: `Olho-d'água: leve o rio até ele e a nascente ganha +${vazao(f, game.isSeca())} 💧.` }); }
     // quem gasta água e ficou sem: lavoura e vila secas
-    for (const k of W.dry) { const c = hexCenter(KQ(k), KR(k)); tag('sem água', c[0], groundY(c[0], c[1]) + 9, c[1], { bg: '#e07a2e', fg: '#fff', k: 0.75 }); }
+    for (const k of W.dry) { const c = hexCenter(KQ(k), KR(k)); tag('🥀', c[0], groundY(c[0], c[1]) + 9, c[1], { bg: 'rgba(224,122,46,.92)', fg: '#fff', k: 0.7, info: 'Sem água: a água da nascente acabou antes de chegar aqui. Ligue um olho-d\'água ou tire gente do rio acima.' }); }
     // a seca chegando: quem vai secar
-    if (!game.isSeca() && game.seasonLen() - S.clock <= 3) { const sp = game.secaPreview(); for (const k of sp.dry) if (!W.dry.has(k)) { const c = hexCenter(KQ(k), KR(k)); tag('seca na seca', c[0], groundY(c[0], c[1]) + 9, c[1], { bg: 'rgba(255,228,204,.95)', fg: '#8a3a0c', k: 0.75 }); } }
+    if (!game.isSeca() && game.seasonLen() - S.clock <= 3) { const sp = game.secaPreview(); for (const k of sp.dry) if (!W.dry.has(k)) { const c = hexCenter(KQ(k), KR(k)); tag('☀️', c[0], groundY(c[0], c[1]) + 9, c[1], { bg: 'rgba(255,228,204,.92)', fg: '#8a3a0c', k: 0.7, info: 'Vai secar quando a seca chegar: na seca as nascentes dão a metade.' }); } }
   }
 
   // ---------- casas livres e o fantasma da peça escolhida
@@ -241,15 +247,17 @@ export function buildBoard5(api) {
   function refresh() { const e = sel ? sel.opts[sel.i].e : game.hand().e; drawThumb($('mao'), e);
     if (S.left > 1) { drawThumb($('prox'), game.next().e); $('prox').parentElement.style.visibility = 'visible'; } else $('prox').parentElement.style.visibility = 'hidden';
     const [u, f] = flow(), sec = game.isSeca(); ambW = f ? 0.35 + 0.65 * Math.max(0, 1 - u / f) : 0.35;
-    $('placar').innerHTML = `<b id="pP">${shownP}</b> pessoas · <span class="ag">💧 ${u}/${f}</span><br>${S.left} peça${S.left === 1 ? '' : 's'} · ${sec ? 'Seca' : 'Águas'} ${S.clock + 1}/${game.seasonLen()}`;
+    $('placar').innerHTML = `<span>👥 <b id="pP">${shownP}</b></span><span class="ag">💧 <b>${u}/${f}</b></span><span>🧩 <b>${S.left}</b></span><span>${sec ? '☀️' : '🌧️'} <b>${S.clock + 1}/${game.seasonLen()}</b></span>`;
+    placarInfo = `${shownP} pessoas no vale · 💧 ${u} de ${f} da água da nascente em uso · 🧩 ${S.left} peça${S.left === 1 ? '' : 's'} na pilha · ${sec ? `☀️ seca: dia ${S.clock + 1} de ${game.seasonLen()}, as nascentes dão a metade` : `🌧️ águas: dia ${S.clock + 1} de ${game.seasonLen()}, depois vem a seca`}`;
     const b = $('colocar');
-    if (S.over) { b.disabled = false; b.textContent = `Fim: ${S.gente} pessoas no vale · jogar de novo`; }
-    else if (sel) { const o = sel.opts[sel.i], x = []; if (o.vil.some(v => v.done)) x.push('a vila cresce!'); if (o.spring) x.push(`olho-d'água +${o.spring}💧`); if (o.drySelf) x.push('fica sem água'); if (o.lost.length) x.push(`${o.lost.length} perde${o.lost.length > 1 ? 'm' : ''} a água`);
-      b.disabled = false; b.textContent = 'Colocar' + (x.length ? ' · ' + x.join(' · ') : ''); }
-    else { b.disabled = true; b.textContent = 'Escolha uma casa marcada'; }
+    if (S.over) { b.hidden = false; b.textContent = 'Fim do vale'; }
+    else if (sel) { const o = sel.opts[sel.i], x = []; if (o.vil.some(v => v.done)) x.push('🏠✓'); if (o.spring) x.push(`+${o.spring}💧`); if (o.drySelf || o.lost.length) x.push('🥀');
+      b.hidden = false; b.textContent = 'Colocar' + (x.length ? '  ' + x.join(' ') : ''); }
+    else b.hidden = true;
     drawGhost(); drawTags(sel ? sel.opts[sel.i] : null); ST.seca = sec; if (S.gente > shownP) countP(); }
-  let sayT = 0; function say(t) { $('aviso').textContent = t; sayT = 6; }
-  $('pL').onclick = () => turn(-1); $('pR').onclick = () => turn(1); $('mao').onclick = () => turn(1);
+  let sayT = 0, placarInfo = ''; function say(t, sec = 4.5) { const el = $('aviso'); el.textContent = t; el.classList.add('on'); sayT = sec; }
+  $('placar').onclick = () => { SFX.page(); say(placarInfo, 6); };
+  $('mao').onclick = () => { if (sel) turn(1); else { SFX.page(); say('Esta é a peça na mão. Toque numa casa marcada no chão para ver onde ela cabe; toque de novo (ou na peça) para girar.'); } };
   addEventListener('keydown', e => { if (e.key === 'r' || e.key === 'R') turn(1); if (e.key === 'Enter' && sel) commit(); });
   const novoVale = () => { location.search = '?vale=' + Date.now().toString(36); };
   $('colocar').onclick = () => { if (S.over) { showEnd(); return; } commit(); };
@@ -266,7 +274,7 @@ export function buildBoard5(api) {
     if (mq) { ghost.remove(mq); mq.position.copy(ghost.position); mq.scale.copy(ghost.scale); scene.add(mq); drops.push({ mq, v: 0, y: mq.position.y, floor: groundY(c0[0], c0[1]) + 0.3, land, t: 0 }); }
     else land();
     ghost.clear(); gKey = '';
-    const txt = res.ev.map(x => x.txt); say(txt.length ? txt.join(' · ') : 'Peça no vale');
+    const txt = res.ev.map(x => x.txt); if (txt.length) say(txt.join(' · '), 5);
     passIfStuck();
     drawSlots(); refresh(); if (S.escolha.length) setTimeout(openPack, 1300); }
 
@@ -289,6 +297,7 @@ export function buildBoard5(api) {
   dom.addEventListener('pointerdown', e => { down = { x: e.clientX, y: e.clientY, t: e.timeStamp }; });
   dom.addEventListener('pointerup', e => { if (!down) return; const mv = Math.hypot(e.clientX - down.x, e.clientY - down.y), dt = e.timeStamp - down.t; down = null; if (mv > 8 || dt > 400) return;
     const rc = dom.getBoundingClientRect(); ndc.set((e.clientX - rc.left) / rc.width * 2 - 1, -(e.clientY - rc.top) / rc.height * 2 + 1); ray.setFromCamera(ndc, camera);
+    ray.camera = camera; const th = ray.intersectObjects(tags.children, false).find(h => h.object.userData.info); if (th) { SFX.page(); say(th.object.userData.info, 6); return; }
     const hit = ray.intersectObjects(slotsG.children.filter(o => o.isMesh), false)[0]; if (hit) { const s = hit.object.userData.slot; if (sel && sel.k === s.k) turn(1); else select(s.k); } });
 
   // ---------- a vila cresce: uma casa nova numa peça dela, num lugar livre longe da água
@@ -370,7 +379,9 @@ export function buildBoard5(api) {
   $('hsIr').onclick = () => { if (hsI < HIST.length - 1) hsShow(hsI + 1); else hsClose(); }; $('hsPular').onclick = hsClose; hb.onclick = () => hsShow(0);
   addEventListener('keydown', e => { if (!hs.hidden && e.key === 'Escape') hsClose(); });
   { const mp = document.querySelector('.marca p'); if (mp) mp.textContent = 'O vale da nascente'; }
-  drawSlots(); refresh(); say("Leve o rio às lavouras e às vilas: cada uma gasta 1 💧 da nascente. Ligue olhos-d'água para ter mais. As vilas pedem; atendidas, crescem.");
+  drawSlots(); refresh(); setTimeout(() => say('Toque numa casa marcada para pôr a peça.', 5), 1500);
+  // o título some depois de uns segundos (o vale fica sozinho na tela)
+  setTimeout(() => { const m = document.querySelector('.marca'); if (m) { m.style.transition = 'opacity 1.6s ease'; m.style.opacity = '0'; } }, 6000);
   $('fimJ').onclick = novoVale;
   if (!seen) hsShow(0);
   return { game, select, turn, commit, sel: () => sel, update(dt) {
@@ -396,5 +407,5 @@ export function buildBoard5(api) {
     for (let i = floats.length - 1; i >= 0; i--) { const f = floats[i]; f.t += dt; const sk = 1 - Math.exp(-8 * f.t) * Math.cos(12 * f.t); f.sp.scale.set(16 * sk, 4.3 * sk, 1); f.sp.position.y = f.y0 + f.t * 3; f.sp.material.opacity = Math.max(0, 1 - f.t / 2.2); if (f.t > 2.2) { scene.remove(f.sp); floats.splice(i, 1); } }
     if (camGo) { const f = camGo.gc.state, k = 1 - Math.exp(-dt * 4); f.fx += (camGo.x - f.fx) * k; f.fz += (camGo.z - f.fz) * k; camGo.t += dt; if (camGo.t > 1.4) camGo = null; }
     fillMat.opacity = 0.08 + 0.06 * Math.sin(performance.now() * 0.004); hotMat.opacity = 0.26 + 0.12 * Math.sin(performance.now() * 0.005);
-    if (sayT > 0) { sayT -= dt; if (sayT <= 0) $('aviso').textContent = ''; } } };
+    if (sayT > 0) { sayT -= dt; if (sayT <= 0) $('aviso').classList.remove('on'); } } };
 }

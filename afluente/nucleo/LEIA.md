@@ -46,6 +46,33 @@ Protótipo jogável para testar se a regra nova diverte, antes de levá-la ao va
 - as casas douradas onde a peça na mão ajuda um pedido;
 - a escolha de pacote. A vila atendida ganha uma casa nova no vale, e gente nova chega a pé de fora do vale para morar nela (`arrive` em `../prototipo3d/js/people.js`). Essas pessoas passam o dia entre a casa, a roça, a beira do rio e a vizinhança: almoçam na porta, proseiam no fim da tarde e entram em casa de noite e na chuva.
 
+**Tela limpa (jogo contemplativo):**
+- No alto, uma pílula com 👥 pessoas, 💧 água em uso/total, 🧩 peças e a estação. Tocando nela, aparece a explicação.
+- Embaixo fica só a peça na mão (toque para girar), com a próxima em miniatura. O botão "Colocar" aparece apenas com uma casa escolhida.
+- As plaquinhas do mapa são só ícone e número (🌾 0/2, +2💧, 🥀 sem água, ☀️ vai secar), e tocar nelas mostra o texto.
+- O painel de clima, os botões de girar e a linha de hora/vento/quadros só aparecem com `?debug`.
+
+**Escarpa da cachoeira:** é um paredão de pedra só perto da queda. Longe dela vira encosta, cada vez mais larga, com contorno irregular e ressalto de pedra. Casa, roça e árvore não nascem no barranco íngreme (`cliffSlope` em `world.js`).
+
+**Desempenho:** no degrau de qualidade cheio, tudo é refeito a cada quadro. Nos degraus mais leves (que o jogo escolhe sozinho pelos quadros por segundo), o reflexo da água e o mapa de sombras são refeitos a cada 2 ou 3 quadros. As texturas usam filtragem anisotrópica, e os bichos longe da câmera não consultam o chão.
+
+**Bichos:** o esqueleto e o movimento ficam em `../prototipo3d/js/bicho.js`, e as espécies em `especies.js`.
+- Cada bicho é uma malha só, com pele que dobra nas juntas.
+- As pernas têm três partes. Na pata da frente o joelho dobra para a frente, na de trás o jarrete dobra para trás, e a ave dobra o "calcanhar" para trás.
+- O casco pisa no chão do mapa e acompanha o terreno, e o corpo inclina com o morro.
+- O passo muda com a velocidade: anda, trota ou galopa.
+- O rabo se mexe em corrente e a orelha mexe.
+- Na água rasa cada pisada abre um anel (`aguafx.js`).
+- O gado bebe no cocho do curral ou na beira do rio, a capivara e a anta nadam, e a garça dá o bote com respingo.
+
+**Crianças na lagoa** (`people.js`, ofício `lagoa`):
+- Nadam cachorrinho de cabeça para fora.
+- Pulam da beira, de bomba ou de braços para cima.
+- Pescam com vara, linha e boia: a boia afunda quando o peixe belisca, e às vezes ele vem se debatendo na linha.
+- Também brincam na margem.
+- Nas horas quentes das águas preferem a água; de manhã, de tarde e no frio da seca, pescam ou brincam.
+- O pescador do olho-d'água também ganhou linha, boia e peixe.
+
 **Som** (`../prototipo3d/js/som.js`): é todo sintetizado, sem arquivos.
 - Ele destrava no primeiro toque em qualquer lugar da página.
 - No iPhone ele toca mesmo com a chave de silencioso: pede a sessão de reprodução e, nos iOS antigos, usa um `<audio>` mudo em laço.
