@@ -59,16 +59,20 @@ function Builder() {
     const b = bones.slice(0, 4); while (b.length < 4) b.push([0, 0]); const s = b.reduce((a, x) => a + x[1], 0) || 1;
     sk.push(...b.map(x => x[0])); sw.push(...b.map(x => x[1] / s)); pat.push(pt); return pos.length / 3 - 1; };
   // anel: centro (cx, y, cz), raios rx, rzF (frente), rzB (costas), expoente (2 = elipse, mais = mais quadrado);
-  // c pode ser uma cor ou uma função do ângulo (frente = π/2) para pintar só um lado
+  // c pode ser uma cor ou uma função do ângulo (frente = π/2) para pintar só um lado; b (ossos) também pode ser função do
+  // ângulo: assim a lateral do ombro do tronco segue em parte o osso do ombro e o ombro dobra junto com o braço.
+  // A normal sai da própria superfície (anéis de cima e de baixo): no ombro, que estreita rápido, a luz cai certa
   function tube(rings, seg = 16, capTop = false, capBot = false) {
-    const base = pos.length / 3, per = seg + 1;
-    rings.forEach(r => { const e = r.e || 2;
-      for (let k = 0; k <= seg; k++) { const a = k / seg * Math.PI * 2, ca = Math.cos(a), sa = Math.sin(a);
-        const sx = Math.sign(ca) * Math.pow(Math.abs(ca), 2 / e), sz = Math.sign(sa) * Math.pow(Math.abs(sa), 2 / e);
-        const rz = sa > 0 ? r.rzF : r.rzB, p = V(r.cx + r.rx * sx, r.y, r.cz + rz * sz), n = V(sx / r.rx, 0, sz / rz).normalize();
-        vert(p, n, typeof r.c === 'function' ? r.c(a) : C(r.c), k / seg * (r.perim || 1), r.y / 0.22, r.b, r.pat || 0); } });
+    const base = pos.length / 3, per = seg + 1, P = rings.map(r => { const e = r.e || 2, out = [];
+      for (let k = 0; k <= seg; k++) { const a = k / seg * Math.PI * 2, ca = Math.cos(a), sa = Math.sin(a), sx = Math.sign(ca) * Math.pow(Math.abs(ca), 2 / e), sz = Math.sign(sa) * Math.pow(Math.abs(sa), 2 / e);
+        out.push({ p: V(r.cx + r.rx * sx, r.y, r.cz + (sa > 0 ? r.rzF : r.rzB) * sz), h: V(sx / r.rx, 0, sz / (sa > 0 ? r.rzF : r.rzB)).normalize(), a, ca, sa }); } return out; });
+    const t1 = V(0, 0, 0), t2 = V(0, 0, 0);
+    rings.forEach((r, i) => { for (let k = 0; k <= seg; k++) { const q = P[i][k], up = P[Math.max(0, i - 1)][k].p, dn = P[Math.min(rings.length - 1, i + 1)][k].p;
+        t1.subVectors(P[i][(k + 1) % (seg + 1) || 1].p, P[i][(k + seg - 1) % seg].p); t2.subVectors(up, dn);
+        let n = V(0, 0, 0).crossVectors(t2, t1); if (n.lengthSq() < 1e-12 || !isFinite(n.x)) n = q.h.clone(); n.normalize(); if (n.dot(q.h) < 0) n.negate(); if (n.dot(q.h) < 0.2) n.lerp(q.h, 0.6).normalize();
+        vert(q.p, n, typeof r.c === 'function' ? r.c(q.a) : C(r.c), k / seg * (r.perim || 1), r.y / 0.22, typeof r.b === 'function' ? r.b(q.ca, q.sa) : r.b, r.pat || 0); } });
     for (let i = 0; i + 1 < rings.length; i++) for (let k = 0; k < seg; k++) { const a = base + i * per + k, b = a + per; idx.push(a, a + 1, b, a + 1, b + 1, b); }
-    const cap = (ri, down) => { const r = rings[ri], c = vert(V(r.cx, r.y, r.cz), V(0, down ? -1 : 1, 0), typeof r.c === 'function' ? r.c(0) : C(r.c), 0.5, 0.5, r.b, r.pat || 0);
+    const cap = (ri, down) => { const r = rings[ri], c = vert(V(r.cx, r.y, r.cz), V(0, down ? -1 : 1, 0), typeof r.c === 'function' ? r.c(0) : C(r.c), 0.5, 0.5, typeof r.b === 'function' ? r.b(0, 0) : r.b, r.pat || 0);
       for (let k = 0; k < seg; k++) { const a = base + ri * per + k; if (down) idx.push(c, a, a + 1); else idx.push(c, a + 1, a); } };
     if (capTop) cap(rings.length - 1, false); if (capBot) cap(0, true);
   }
@@ -102,18 +106,24 @@ export function buildBody(s) {
   const tor = f ? [
     [0.80, 0.11, 0.07, 0.08, 0], [0.85, 0.172, 0.1, 0.13, -0.012], [0.90, 0.185, 0.108, 0.14, -0.016], [0.95, 0.178, 0.105, 0.122, -0.012], [1.00, 0.152, 0.098, 0.1, -0.004],
     [1.05, 0.13, 0.088, 0.088, 0.002], [1.10, 0.132, 0.092, 0.088, 0.006], [1.16, 0.145, 0.11, 0.092, 0.01], [1.21, 0.152, 0.14, 0.095, 0.012], [1.26, 0.156, 0.146, 0.098, 0.012],
-    [1.31, 0.156, 0.118, 0.098, 0.008], [1.355, 0.163, 0.095, 0.092, 0.002], [1.39, 0.15, 0.082, 0.085, -0.004], [1.418, 0.118, 0.07, 0.072, -0.006], [1.44, 0.08, 0.056, 0.058, -0.003], [1.455, 0.056, 0.048, 0.05, 0]
+    [1.31, 0.156, 0.118, 0.098, 0.008, 2.2], [1.345, 0.168, 0.1, 0.094, 0.003, 2.3], [1.37, 0.176, 0.09, 0.09, 0, 2.45], [1.392, 0.172, 0.082, 0.085, -0.004, 2.45],
+    [1.41, 0.155, 0.074, 0.078, -0.006, 2.3], [1.425, 0.122, 0.066, 0.07, -0.005, 2.15], [1.44, 0.084, 0.057, 0.06, -0.003, 2.0], [1.455, 0.056, 0.048, 0.05, 0, 2.0]
   ] : [
     [0.80, 0.1, 0.07, 0.08, 0], [0.85, 0.158, 0.095, 0.12, -0.01], [0.90, 0.168, 0.1, 0.13, -0.014], [0.95, 0.165, 0.1, 0.118, -0.01], [1.00, 0.158, 0.098, 0.1, -0.004],
     [1.06, 0.152, 0.097, 0.09, 0.002], [1.12, 0.16, 0.103, 0.092, 0.006], [1.18, 0.172, 0.112, 0.098, 0.008], [1.24, 0.182, 0.12, 0.104, 0.01], [1.30, 0.188, 0.124, 0.106, 0.01],
-    [1.35, 0.192, 0.112, 0.106, 0.004], [1.385, 0.18, 0.094, 0.1, -0.004], [1.41, 0.15, 0.08, 0.088, -0.008], [1.432, 0.105, 0.068, 0.074, -0.006], [1.45, 0.07, 0.058, 0.06, -0.002], [1.462, 0.058, 0.052, 0.054, 0]
+    [1.34, 0.204, 0.116, 0.106, 0.006, 2.6], [1.37, 0.212, 0.104, 0.102, 0.002, 2.9], [1.395, 0.208, 0.092, 0.095, -0.004, 2.9], [1.415, 0.188, 0.082, 0.088, -0.007, 2.6],
+    [1.43, 0.15, 0.072, 0.078, -0.007, 2.3], [1.443, 0.105, 0.064, 0.068, -0.005, 2.1], [1.455, 0.07, 0.058, 0.06, -0.002, 2.0], [1.465, 0.058, 0.052, 0.054, 0, 2.0]
   ];
   const shawl = s.warm && f ? C(s.warmColor || 0x8a4a3a) : null, jacket = s.warm && !f ? C(s.warmColor || 0x5a4a3a) : null;
-  const torso = tor.map(([y, rx, rzF, rzB, cz]) => { const shirt = y >= shirtBottom && y < 1.44, neck = y >= 1.44;
+  // o ombro: a lateral do alto do tronco (deltoide e acrômio) vai em parte com o osso do ombro daquele lado
+  const neckY = f ? 1.447 : 1.452, shK = y => 0.55 * smooth01((y - 1.3) / 0.07) * (1 - 0.7 * smooth01((y - 1.415) / 0.03)) * (y < neckY ? 1 : 0);
+  const torsoB = y => { const base = W(y, 0.98, 1.2), k = shK(y); if (k <= 0) return base;
+    return (ca) => { const w = k * smooth01((Math.abs(ca) - 0.55) / 0.4); return w <= 0 ? base : [[B.spine, 1 - w], [ca < 0 ? B.shL : B.shR, w]]; }; };
+  const torso = tor.map(([y, rx, rzF, rzB, cz, ee]) => { const shirt = y >= shirtBottom && y < neckY, neck = y >= neckY;
     let c = neck ? skin : shirt ? top : (dressTop ? top : bot); if (shawl && y >= 1.16 && !neck) c = shawl; if (jacket && y >= 0.9 && !neck) c = jacket;
     const ao = y < 0.84 ? 0.82 : neck ? 0.93 : 1;   // sombra no gancho e embaixo do queixo
     const p = neck ? 0 : (shawl && y >= 1.16) || (jacket && y >= 0.9) ? 3 : (shirt || dressTop) ? topPat : botPat;
-    return { y, cx: 0, cz: cz * bw, rx: rx * bw, rzF: rzF * bw, rzB: rzB * bw, e: y > 1.18 && y < 1.34 ? 2.25 : 2.1, c: c.clone().multiplyScalar(ao), pat: p, b: W(y, 0.98, 1.2), perim: 3 }; });
+    return { y, cx: 0, cz: cz * bw, rx: rx * bw, rzF: rzF * bw, rzB: rzB * bw, e: ee || (y > 1.18 && y < 1.34 ? 2.25 : 2.1), c: c.clone().multiplyScalar(ao), pat: p, b: torsoB(y), perim: 3 }; });
   torso.push({ y: 1.5, cx: 0, cz: 0.005, rx: 0.052, rzF: 0.05, rzB: 0.05, c: skin, b: [[B.spine, 0.5], [B.head, 0.5]] }, { y: 1.55, cx: 0, cz: 0.01, rx: 0.05, rzF: 0.05, rzB: 0.05, c: skin, b: [[B.head, 1]] });
   bd.tube(torso, 22, true, true);
   const torsoAt = y => { let a = tor[0]; for (const r of tor) { if (r[0] <= y) a = r; } return { rzF: a[2] * bw, cz: a[4] * bw, rx: a[1] * bw }; };
@@ -121,8 +131,8 @@ export function buildBody(s) {
   const shX = (f ? 0.165 : 0.19) * bw;
   const sleeveEnd = s.warm ? 0.87 : s.sleeves === 'longa' ? 0.87 : s.sleeves === 'arregaçada' ? 1.06 : s.sleeves === 'curta' ? 1.27 : 1.42;
   for (const sx of [-1, 1]) { const sh = sx < 0 ? B.shL : B.shR, el = sx < 0 ? B.elL : B.elR, ha = sx < 0 ? B.haL : B.haR;
-    const ax = y => sx * (shX - 0.022 + (1.41 - y) * 0.07);
-    const arm = [[1.43, 0.03, sh], [1.415, 0.046, sh], [1.38, 0.052, sh], [1.33, 0.049, sh], [1.27, 0.046, sh], [1.2, 0.04, sh], [1.14, 0.036, -1], [1.1, 0.038, el], [1.04, 0.041, el], [0.98, 0.036, el], [0.92, 0.03, el], [0.88, 0.026, -2], [0.862, 0.027, ha]];
+    const ax = y => sx * (shX - 0.016 + (1.41 - y) * 0.06);
+    const arm = [[1.395, 0.022, sh], [1.38, 0.04, sh], [1.355, 0.05, sh], [1.32, 0.05, sh], [1.27, 0.046, sh], [1.2, 0.04, sh], [1.14, 0.036, -1], [1.1, 0.038, el], [1.04, 0.041, el], [0.98, 0.036, el], [0.92, 0.03, el], [0.88, 0.026, -2], [0.862, 0.027, ha]];
     const warmC = shawl ? null : jacket;
     bd.tube(arm.map(([y, r, b]) => { const sleeve = y >= sleeveEnd; const rr = (sleeve ? (y < 1.12 ? Math.max(r, 0.039) + 0.004 : r + (y > 1.36 ? 0.002 : 0.005)) : r) * (f ? 0.88 : 1) * (0.9 + 0.1 * bw);
       const cc = sleeve ? (shawl && y > 1.1 ? shawl : warmC || top) : skin;
@@ -183,7 +193,7 @@ export function buildBody(s) {
       bd.rigid(new THREE.BoxGeometry(0.064, 0.016, 0.008).translate(0.075 * bw, 1.322, t.cz + t.rzF * 0.94 + 0.002), top.clone().multiplyScalar(0.85), B.spine, topPat); } }
   if (!s.skirt && !kid) { const band = new THREE.CylinderGeometry(1, 1, 0.038, 22, 1, true).scale(0.165 * bw, 1, 0.105 * bw).translate(0, 0.965, -0.004); bd.rigid(band, C(0x3a2418), B.hips, 5);
     bd.rigid(new THREE.BoxGeometry(0.05, 0.04, 0.012).translate(0, 0.965, 0.103 * bw), C(0xc8b070), B.hips); bd.rigid(new THREE.BoxGeometry(0.03, 0.022, 0.014).translate(0, 0.965, 0.104 * bw), C(0x3a2418), B.hips); }
-  if (s.skirt) { const band = new THREE.CylinderGeometry(1, 1.02, 0.03, 22, 1, true).scale(0.14 * bw + 0.006, 1, 0.105 * bw + 0.006).translate(0, 1.0, 0.002); bd.rigid(band, (dressTop ? top : bot).clone().multiplyScalar(0.9), B.hips, dressTop ? topPat : botPat); }
+  if (s.skirt) { const band = new THREE.CylinderGeometry(1, 1.02, 0.03, 22, 1, true).scale(0.158 * bw + 0.004, 1, 0.108 * bw + 0.004).translate(0, 1.0, 0.002); bd.rigid(band, (dressTop ? top : bot).clone().multiplyScalar(0.9), B.hips, dressTop ? topPat : botPat); }
   // ---------- cabeça (as peças são feitas em volta do osso da cabeça e levadas para a altura dele na pose de descanso)
   const HY = 1.47, hd = { rigid: (g, c, b, pt) => bd.rigid(g.translate(0, HY, 0), c, b, pt) };
   const eyesAt = [-1, 1].map(sx => V(sx * 0.384, 0.06, 0.921).normalize());
@@ -251,7 +261,9 @@ export function buildBody(s) {
   for (const sw of swing) { head.add(sw.pivot); sw.pivot.traverse(o => { o.userData.noRegua = true; }); }
   // a cabeça um tico maior que a anatomia (8% no adulto, 22% na criança): de longe, na câmera do jogo, o rosto e o chapéu leem
   head.scale.setScalar(kid ? 1.22 : 1.08);
-  return { mesh, hips, spine, head, arms, legs, lids, swing, waistY: s.dress ? 1.0 : 0.97, bw };
+  // o perfil do quadril (para o pano da saia não entrar no corpo): [y, meia-largura, frente, costas, deslocamento]
+  const hipProf = tor.filter(r => r[0] >= 0.78 && r[0] <= 1.08).map(([y, rx, rzF, rzB, cz]) => [y, rx * bw, rzF * bw, rzB * bw, cz * bw]);
+  return { mesh, hips, spine, head, arms, legs, lids, swing, waistY: s.dress ? 1.0 : 0.97, bw, hipProf };
 }
 
 // ---------- cabelo: um volume que acompanha o crânio, com linha do cabelo de verdade (testa, entradas, acima da orelha,
@@ -322,14 +334,14 @@ function hair(bd, s, hb) {
     bd.rigid(new THREE.CylinderGeometry(0.075, 0.075, 0.01, 12, 1, false, -Math.PI / 2, Math.PI).scale(1, 1, 1.1).translate(0, 0.165, 0.085), C(s.hatColor || 0x2f6aa0), hb, 3); }
   if (hat === 'lenco') { const lc = C(s.lencoColor || 0xc83a2a), g = new THREE.SphereGeometry(1, 24, 12, 0, Math.PI * 2, 0, Math.PI * 0.6), p = g.attributes.position;
     for (let i = 0; i < p.count; i++) { const y = p.getY(i); p.setY(i, y + (vn3(p.getX(i) * 6, y * 6, p.getZ(i) * 6) - 0.5) * 0.04); }   // pano com dobras
-    g.scale(0.108, 0.138, 0.124).rotateX(-0.38).translate(0, SKULL.cy + 0.004, SKULL.cz - 0.006); bd.rigid(g, lc, hb, 3);
+    g.scale(0.108, 0.138, 0.124).rotateX(-0.75).translate(0, SKULL.cy + 0.004, SKULL.cz - 0.006); bd.rigid(g, lc, hb, 3);   // a borda da frente na linha do cabelo, atrás desce até a nuca
     bd.rigid(new THREE.SphereGeometry(1, 10, 8).scale(0.024, 0.02, 0.018).translate(0, SKULL.cy - 0.055, SKULL.cz - 0.112), lc.clone().multiplyScalar(0.9), hb, 3);   // nó
     for (const sx of [-1, 1]) bd.rigid(new THREE.SphereGeometry(1, 8, 6).scale(0.016, 0.045, 0.006).rotateZ(sx * 0.35).translate(sx * 0.016, SKULL.cy - 0.1, SKULL.cz - 0.118), lc.clone().multiplyScalar(0.95), hb, 3); }
   return swing;
 }
 
 // ---------- pano (saia, avental): cordas de pontos penduradas na cintura, com gravidade, vento, atrito e choque com as pernas
-export function Cloth({ strips = 22, rows = 8, len = 0.6, r0x = 0.17, r0z = 0.12, flare = 0.12, arc = [0, Math.PI * 2], drop = 0, tex = null, color = 0xffffff, margin = 0.012, minK = 0.55 }) {
+export function Cloth({ strips = 22, rows = 8, len = 0.6, r0x = 0.17, r0z = 0.12, flare = 0.12, arc = [0, Math.PI * 2], drop = 0, tex = null, color = 0xffffff, margin = 0.012, minK = 0.55, hip = null }) {
   const full = arc[1] - arc[0] >= Math.PI * 2 - 1e-3, ns = full ? strips : strips + 1, N = ns * (rows + 1);
   const P = new Float32Array(N * 3), O = new Float32Array(N * 3), rest = [], seg = len / rows;
   const geo = new THREE.BufferGeometry(), pos = new THREE.BufferAttribute(P, 3), uv = [], idx = [];
@@ -344,7 +356,11 @@ export function Cloth({ strips = 22, rows = 8, len = 0.6, r0x = 0.17, r0z = 0.12
   m.customProgramCacheKey = () => 'pano' + (tex ? 1 : 0);
   const mesh = new THREE.Mesh(geo, m); mesh.frustumCulled = false; mesh.castShadow = true; mesh.receiveShadow = true;
   const ringR = (r, a) => [(r0x + flare * r / rows) * Math.cos(a), (r0z + flare * 0.8 * r / rows) * Math.sin(a)];
-  const tmp = new THREE.Vector3(), M = new THREE.Matrix4();
+  const tmp = new THREE.Vector3(), M = new THREE.Matrix4(), HI = new THREE.Matrix4(), lp = new THREE.Vector3();
+  // o quadril é uma pilha de elipses (o perfil do tronco do corpo): o ponto do pano que entra é empurrado para fora, no
+  // espaço do quadril (vale com ela andando, sentando ou se abaixando)
+  const hipAt = y => { if (!hip || y < hip[0][0] || y > hip[hip.length - 1][0]) return null; let i = 0; while (i < hip.length - 2 && hip[i + 1][0] < y) i++; const a = hip[i], b = hip[i + 1], u = (y - a[0]) / (b[0] - a[0] || 1);
+    return [a[1] + (b[1] - a[1]) * u, a[2] + (b[2] - a[2]) * u, a[3] + (b[3] - a[3]) * u, a[4] + (b[4] - a[4]) * u]; };
   let ready = false, hasLast = false; const Md = new THREE.Matrix4(), Mi = new THREE.Matrix4(), lastM = new THREE.Matrix4();
   function anchor(hipsWorld, waistY, k, out) { const a = rest[k], [x, z] = ringR(0, a); out.set(x, waistY - 0.95 + drop, z).applyMatrix4(hipsWorld); return out; }
   function reset(hipsWorld, waistY) { for (let r = 0; r <= rows; r++) for (let k = 0; k < ns; k++) { const a = rest[k], [x, z] = ringR(r, a), i = at(r, k) * 3; tmp.set(x, waistY - 0.95 + drop - r * seg * 0.98, z).applyMatrix4(hipsWorld); P.set([tmp.x, tmp.y, tmp.z], i); O.set([tmp.x, tmp.y, tmp.z], i); } ready = true; }
@@ -363,6 +379,7 @@ export function Cloth({ strips = 22, rows = 8, len = 0.6, r0x = 0.17, r0z = 0.12
       const vx = (P[i] - O[i]) * damp, vy = (P[i + 1] - O[i + 1]) * damp, vz = (P[i + 2] - O[i + 2]) * damp; O[i] = P[i]; O[i + 1] = P[i + 1]; O[i + 2] = P[i + 2];
       const flut = 1 + 0.6 * Math.sin(t * 7 + k * 1.7 + r);   // o vento bate em rajadinhas
       P[i] += vx + wind.x * dt * dt * rr * flut; P[i + 1] += vy + g; P[i + 2] += vz + wind.z * dt * dt * rr * flut; }
+    if (hip) HI.copy(hipsWorld).invert();
     for (let it = 0; it < 4; it++) {
       for (let k = 0; k < ns; k++) { anchor(hipsWorld, waistY, k, tmp); const i = at(0, k) * 3; P[i] = tmp.x; P[i + 1] = tmp.y; P[i + 2] = tmp.z; }
       for (let r = 1; r <= rows; r++) for (let k = 0; k < ns; k++) {
@@ -378,6 +395,9 @@ export function Cloth({ strips = 22, rows = 8, len = 0.6, r0x = 0.17, r0z = 0.12
           let tt = ((P[i] - a.x) * abx + (P[i + 1] - a.y) * aby + (P[i + 2] - a.z) * abz) / l2; tt = Math.max(0, Math.min(1, tt));
           const cx = a.x + abx * tt, cy = a.y + aby * tt, cz = a.z + abz * tt; dx = P[i] - cx; dy = P[i + 1] - cy; dz = P[i + 2] - cz; d = Math.hypot(dx, dy, dz); const R = rad + margin * scale;
           if (d < R) { if (d < 1e-5) { dx = 0; dy = 0; dz = 1; d = 1; } const s2 = (R - d) / d; P[i] += dx * s2; P[i + 1] += dy * s2; P[i + 2] += dz * s2; } }
+        if (hip) { lp.set(P[i], P[i + 1], P[i + 2]).applyMatrix4(HI); const hr = hipAt(lp.y + 0.95);
+          if (hr) { const mg = margin * 0.8, rx = hr[0] + mg, rz = (lp.z - hr[3] > 0 ? hr[1] : hr[2]) + mg, zz = lp.z - hr[3], e2 = (lp.x / rx) ** 2 + (zz / rz) ** 2;
+            if (e2 < 1 && e2 > 1e-6) { const f2 = 1 / Math.sqrt(e2); lp.x *= f2; lp.z = hr[3] + zz * f2; lp.applyMatrix4(hipsWorld); P[i] = lp.x; P[i + 1] = lp.y; P[i + 2] = lp.z; } } }
         const gy = groundY(P[i], P[i + 2]) + 0.01; if (P[i + 1] < gy) P[i + 1] = gy;
       } }
     pos.needsUpdate = true; geo.computeVertexNormals(); geo.computeBoundingSphere();
