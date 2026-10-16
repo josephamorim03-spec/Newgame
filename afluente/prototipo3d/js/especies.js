@@ -24,6 +24,8 @@ const mergeG = gs => { const pos = [], colA = [], idx = []; let base = 0; for (c
   if (g.index) for (const k of g.index.array) idx.push(base + k); else for (let i = 0; i < p.count; i++) idx.push(base + i); base += p.count; }
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(colA, 3)); g.setIndex(idx); g.computeVertexNormals(); return g; };
 
+// olho de bicho: a bola escura e o pontinho de brilho (é o que dá vida ao rosto)
+const olho = (H, x, y, z, r, sx, c = 0x140e0a) => { H.add(sph(r * 0.6, r, r, x, y, z, c, 10)); H.add(sph(r * 0.2, r * 0.26, r * 0.26, x + sx * r * 0.5, y + r * 0.35, z + r * 0.3, 0xfaf6ee, 6)); };
 export function especies({ M, MJ, rnd }) {
   // ---------- gado zebu do Cerrado
   function vaca(coat, size = 1) {
@@ -44,23 +46,38 @@ export function especies({ M, MJ, rnd }) {
       if (z > -0.4 && z < 0.3 && s < -0.3) y -= 0.025 * Math.sin((z + 0.4) / 0.7 * Math.PI);   // barriga
       return [x, y]; };
     const neckPts = [[0, 1.0, 0.46], [0, 1.1, 0.64], [0, 1.22, 0.81], [0, 1.31, 0.95]], nc = a => shade(0.75)(a);
-    const neck = { pts: neckPts, prof: [{ rx: 0.19, rt: 0.2, rb: 0.28, c: nc }, { rx: 0.16, rt: 0.165, rb: 0.27, c: nc }, { rx: 0.12, rt: 0.125, rb: 0.2, c: nc }, { rx: 0.095, rt: 0.1, rb: 0.11, c: nc }],
+    const neck = { pts: neckPts, prof: [{ rx: 0.2, rt: 0.21, rb: 0.3, c: nc }, { rx: 0.175, rt: 0.18, rb: 0.29, c: nc }, { rx: 0.14, rt: 0.145, rb: 0.22, c: nc }, { rx: 0.11, rt: 0.11, rb: 0.13, c: nc }],
       shape: (x, v, a, r, i) => { if (v < 0) { const bot = Math.pow(Math.max(0, -Math.sin(a)), 4); x *= 1 - 0.62 * bot * (i < 3 ? 1 : 0.3); } return [x, v]; } };
-    const muzzle = [0, -0.45, 0.32];
+    // cabeça de zebu: testa larga e chata entre os chifres, bochecha (masseter) cheia embaixo, chanfro que afina e o focinho
+    // que alarga de novo, com a almofada escura do nariz, as narinas dos lados e o queixo; olhos grandes de lado
+    const th = 1.0, S = (t, x, y) => [x, y * Math.cos(th) - t * Math.sin(th), y * Math.sin(th) + t * Math.cos(th)];
+    const muzzle = S(0.55, 0, -0.01), pinkNose = coat.w === 0xf0ebe2 || (coat.k < 0.35 && rnd() < 0.3), nose = col(pinkNose ? 0x9a6a5e : 0x2a2422);
+    const gir = !!coat.spot && coat.w !== 0xf0ebe2, earL = gir ? 0.19 : 0.135;
     const head = H => {
-      const hc = (t, a) => t > 0.44 ? dark : t < 0.12 ? grey : mix(w, grey, 0.2 + 0.2 * Math.max(0, Math.sin(a)));
-      const sk = skull([[0, 0.085, 0.09, 0.1], [0.05, 0.1, 0.1, 0.11], [0.12, 0.104, 0.095, 0.104], [0.2, 0.09, 0.08, 0.095], [0.3, 0.075, 0.068, 0.085], [0.4, 0.067, 0.062, 0.076], [0.46, 0.069, 0.061, 0.072], [0.51, 0.066, 0.055, 0.066], [0.555, 0.045, 0.04, 0.045]]
-        .map(([t, rx, rt, rb]) => [t, rx, rt, rb, a => hc(t, a), 2.5]), 0.95, 24); H.add(sk.translate(0, 0.02, 0.02));
+      const hc = (t, a) => { const up = Math.sin(a); if (t > 0.505) return nose; if (t > 0.44) return mix(w, nose, 0.35 + 0.3 * (t - 0.44) / 0.065); return t < 0.1 ? grey : mix(w, grey, 0.15 + 0.25 * Math.max(0, up) + (t > 0.3 ? 0.1 : 0)); };
+      const rings = [[0, 0.085, 0.07, 0.09], [0.04, 0.11, 0.09, 0.12], [0.1, 0.122, 0.09, 0.135], [0.16, 0.12, 0.085, 0.135], [0.22, 0.104, 0.075, 0.12], [0.29, 0.086, 0.066, 0.096], [0.36, 0.078, 0.06, 0.085],
+        [0.42, 0.082, 0.06, 0.083], [0.47, 0.09, 0.06, 0.08], [0.51, 0.088, 0.055, 0.072], [0.535, 0.07, 0.043, 0.055], [0.55, 0.04, 0.025, 0.03]];
+      const cheek = (x, y, a, r) => { const t = r.z, b = Math.exp(-(((t - 0.19) / 0.07) ** 2)), sa = Math.sin(a); if (sa < 0.1) x *= 1 + 0.13 * b * Math.sqrt(Math.max(0, 0.1 - sa)); if (sa > 0.6) y *= 1 - 0.12 * (sa - 0.6); return [x, y]; };
+      H.add(skull(rings.map(([t, rx, rt, rb]) => [t, rx, rt, rb, a => hc(t, a), 2.6]), th, 26, cheek));
+      // queixo e beiço de baixo
+      H.add(loft([[0.3, 0.05, 0.02, 0.028], [0.42, 0.058, 0.024, 0.034], [0.5, 0.055, 0.022, 0.03], [0.535, 0.035, 0.014, 0.02]].map(([t, rx, rt, rb]) => ({ z: t, y: -0.072, rx, rt, rb, e: 2.3, c: t > 0.49 ? nose : mix(w, grey, 0.2) })), 14).rotateX(th));
       for (const sx of [-1, 1]) {
-        H.add(sph(0.021, 0.017, 0.016, sx * 0.09, -0.03, 0.1, 0xf4efe6, 8)); H.add(sph(0.014, 0.014, 0.01, sx * 0.095, -0.03, 0.112, 0x120e0c, 8));   // olho: branco e íris
-        H.add(paintG(new THREE.SphereGeometry(1, 10, 6, 0, Math.PI * 2, 0, Math.PI * 0.45).scale(0.024, 0.02, 0.02).translate(sx * 0.09, -0.026, 0.1), grey));   // pálpebra
-        H.add(sph(0.012, 0.009, 0.01, sx * 0.03, -0.405, 0.33, 0x0a0a0a, 6));   // narina
-        if (!calf) { const L = bull ? 0.15 : 0.12, curve = new THREE.QuadraticBezierCurve3(new THREE.Vector3(sx * 0.075, 0.085, -0.03), new THREE.Vector3(sx * (0.13 + L * 0.3), 0.12 + L * 0.2, -0.04), new THREE.Vector3(sx * (0.12 + L * 0.5), 0.13 + L * 0.7, 0.02 + L * 0.2));
-          const hg = new THREE.TubeGeometry(curve, 8, 1, 8, false), p = hg.attributes.position, cc = new Float32Array(p.count * 3);
-          for (let i = 0; i < p.count; i++) { const u = Math.floor(i / 9) / 8, r = 0.028 * (1 - u * 0.78); const c0 = curve.getPoint(u); p.setXYZ(i, c0.x + (p.getX(i) - c0.x) * r, c0.y + (p.getY(i) - c0.y) * r, c0.z + (p.getZ(i) - c0.z) * r); const k = mix(0xb8a890, 0x3a3028, u * 1.2); cc.set([k.r, k.g, k.b], i * 3); }
+        const e = S(0.15, sx * 0.112, 0.035), side = sx > 0 ? 'earL' : 'earR';
+        if (coat.k >= 0.4 && !coat.spot) H.add(sph(0.012, 0.034, 0.03, e[0] - sx * 0.004, e[1], e[2], grey.clone().multiplyScalar(0.7), 10));   // contorno escuro do olho (nelore)
+        H.add(sph(0.012, 0.024, 0.024, e[0] + sx * 0.003, e[1], e[2], 0x1c140e, 12));   // olho
+        H.add(sph(0.004, 0.006, 0.006, e[0] + sx * 0.014, e[1] + 0.008, e[2] + 0.006, 0xfaf6ee, 6));   // brilho
+        H.add(paintG(new THREE.SphereGeometry(1, 12, 6, 0, Math.PI * 2, 0, Math.PI * 0.42).scale(0.016, 0.03, 0.03).rotateZ(-sx * 0.2).translate(e[0] + sx * 0.002, e[1] + 0.004, e[2]), grey));   // pálpebra
+        const n = S(0.548, sx * 0.03, 0.004); H.add(sph(0.007, 0.012, 0.009, n[0], n[1], n[2], 0x0a0807, 6));   // narina
+        // chifre: grosso na base, curvando para fora e para cima, a ponta escura
+        if (!calf) { const b0 = S(0.03, sx * 0.075, 0.07), L = bull ? 0.16 : 0.12, curve = new THREE.QuadraticBezierCurve3(new THREE.Vector3(...b0), new THREE.Vector3(b0[0] + sx * (0.05 + L * 0.3), b0[1] + 0.03 + L * 0.2, b0[2] - 0.02), new THREE.Vector3(b0[0] + sx * (0.05 + L * 0.45), b0[1] + 0.05 + L * 0.75, b0[2] + L * 0.15));
+          const hg = new THREE.TubeGeometry(curve, 10, 1, 10, false), p = hg.attributes.position, cc = new Float32Array(p.count * 3);
+          for (let i = 0; i < p.count; i++) { const u = Math.floor(i / 11) / 10, r = (bull ? 0.034 : 0.028) * (1 - u * 0.8); const c0 = curve.getPoint(u); p.setXYZ(i, c0.x + (p.getX(i) - c0.x) * r, c0.y + (p.getY(i) - c0.y) * r, c0.z + (p.getZ(i) - c0.z) * r); const k = mix(0xcab89c, 0x2a221c, Math.pow(u, 1.5)); cc.set([k.r, k.g, k.b], i * 3); }
           hg.setAttribute('color', new THREE.BufferAttribute(cc, 3)); hg.deleteAttribute('uv'); hg.computeVertexNormals(); H.add(hg); }
-        const ear = new THREE.SphereGeometry(1, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.62).scale(0.045, 0.11, 0.022).rotateX(Math.PI / 2).rotateY(sx * 1.25).rotateZ(sx * 0.25);   // concha da orelha
-        H.add(paintG(ear, grey).translate(sx * 0.12, -0.005, -0.03), sx > 0 ? 'earL' : 'earR'); H.add(sph(0.03, 0.006, 0.08, sx * 0.13, -0.002, -0.03, 0xd8a090, 6).rotateY(0), sx > 0 ? 'earL' : 'earR'); }
+        // orelha em folha, caída para o lado (maior no gir), com o lado de dentro claro
+        const ep = S(0.07, sx * 0.11, 0.025), droop = gir ? 0.95 : 0.45;
+        const leaf = (sc, c, dz) => paintG(new THREE.SphereGeometry(1, 14, 8).scale(earL * 0.5 * sc, 0.014, 0.05 * sc).translate(sx * earL * 0.5, 0, dz).rotateZ(-sx * droop).rotateY(-sx * 0.3).translate(...ep), c);
+        H.add(leaf(1, grey, 0), side); H.add(leaf(0.8, 0xd8a08e, 0.008).translate(0, -0.004, 0), side); }
+      const tp = S(0.02, 0, 0.09); H.add(sph(0.05, 0.022, 0.04, tp[0], tp[1], tp[2], grey, 10));   // topete entre os chifres
     };
     const legC = (t, a) => mix(w, grey, 0.3 + t * 0.5 * coat.k * 2).multiplyScalar(t > 0.92 ? 0.85 : 1);
     const fl = [0.44, 0.27, 0.15], hl = [0.48, 0.3, 0.15];
@@ -70,7 +87,7 @@ export function especies({ M, MJ, rnd }) {
     const tailPts = [[0, 1.15, -0.9], [0, 1.06, -0.97], [0, 0.88, -1.0], [0, 0.68, -1.0], [0, 0.5, -0.99], [0, 0.4, -0.985], [0, 0.32, -0.98]], tc = i => i >= 5 ? dark : w;
     const extra = []; if (!bull && !calf) { extra.push([sph(0.11, 0.075, 0.13, 0, 0.6, -0.42, 0xdca08c, 12), 'root']); for (const [x, z] of [[0.04, -0.37], [-0.04, -0.37], [0.04, -0.47], [-0.04, -0.47]]) extra.push([cyl(0.012, 0.009, 0.05, 0xd08a78, 6).translate(x, 0.52, z), 'root']); }
     const K = 1.08 * size * (bull ? 1.05 : 1);
-    const r = quad({ K, M, body: { rings, shape }, neck, head, ears: [[0.12, 0, -0.03], [-0.12, 0, -0.03]], muzzle,
+    const eL = S(0.07, 0.11, 0.025), r = quad({ K, M, body: { rings, shape }, neck, head, ears: [eL, [-eL[0], eL[1], eL[2]]], muzzle,
       legs: [leg(0.13, 0.44, 0.84, fl, fprof), leg(-0.13, 0.44, 0.84, fl, fprof), leg(0.14, -0.62, 0.9, hl, hprof), leg(-0.14, -0.62, 0.9, hl, hprof)],
       tail: { pts: tailPts, prof: tailPts.map((p, i) => ({ rx: i === 5 ? 0.048 : i === 6 ? 0.02 : 0.034 - i * 0.003, rt: i === 5 ? 0.048 : i === 6 ? 0.02 : 0.034 - i * 0.003, rb: i === 5 ? 0.048 : i === 6 ? 0.02 : 0.034 - i * 0.003, c: tc(i) })), n: 5, rest: [0.1, 0.02] },
       extra });
@@ -78,14 +95,19 @@ export function especies({ M, MJ, rnd }) {
   }
 
   // ---------- capivara: barril marrom de pelo grosso, cabeça quadrada, narinas e olhos no alto (para nadar), quase sem pescoço
-  function capivara() { const b = col(0x8d5a37), d = col(0x5a3824), bl = a => mix(b, 0x6a4028, Math.max(0, Math.sin(a)) * 0.5);
-    const rings = [[-0.5, 0.5, 0.1, 0.1, 0.1], [-0.46, 0.5, 0.2, 0.2, 0.22], [-0.32, 0.5, 0.26, 0.26, 0.27], [-0.08, 0.5, 0.27, 0.27, 0.28], [0.18, 0.5, 0.26, 0.25, 0.27], [0.33, 0.52, 0.22, 0.22, 0.22], [0.43, 0.55, 0.15, 0.15, 0.15]].map(([z, y, rx, rt, rb]) => ({ z, y, rx, rt, rb, e: 2.4, c: bl }));
-    const neckPts = [[0, 0.55, 0.34], [0, 0.6, 0.45], [0, 0.62, 0.52]], muzzle = [0, -0.14, 0.38];
-    const head = H => { H.add(skull([[0, 0.12, 0.13, 0.13], [0.1, 0.13, 0.14, 0.14], [0.2, 0.12, 0.13, 0.135], [0.3, 0.11, 0.115, 0.125], [0.36, 0.1, 0.1, 0.1], [0.41, 0.075, 0.075, 0.08]].map(([t, rx, rt, rb]) => [t, rx, rt, rb, t > 0.33 ? d : bl, 3.2]), 0.35, 20));
-      for (const sx of [-1, 1]) { H.add(sph(0.045, 0.04, 0.022, sx * 0.09, 0.16, 0.03, d, 8), sx > 0 ? 'earL' : 'earR'); H.add(sph(0.02, 0.02, 0.018, sx * 0.105, 0.08, 0.18, 0x111111, 6)); H.add(sph(0.014, 0.008, 0.01, sx * 0.03, 0.0, 0.39, 0x111111, 6)); } };
+  function capivara() { const b = col(0x8d5a37), d = col(0x4a2c1a), bl = a => { const sa = Math.sin(a); return sa < -0.4 ? mix(b, 0xa8805a, (-sa - 0.4) * 0.8) : mix(b, 0x5e3a22, Math.max(0, sa) * 0.6); };
+    const rings = [[-0.52, 0.52, 0.1, 0.1, 0.1], [-0.47, 0.53, 0.2, 0.21, 0.22], [-0.33, 0.53, 0.26, 0.27, 0.27], [-0.08, 0.51, 0.27, 0.27, 0.28], [0.16, 0.5, 0.255, 0.25, 0.27], [0.31, 0.51, 0.22, 0.21, 0.22], [0.42, 0.54, 0.15, 0.15, 0.15]]
+      .map(([z, y, rx, rt, rb]) => ({ z, y, rx, rt, rb, e: 2.4, c: bl }));
+    const neckPts = [[0, 0.56, 0.32], [0, 0.6, 0.43], [0, 0.63, 0.5]], th = 0.45, S = (t, x, y) => [x, y * Math.cos(th) - t * Math.sin(th), y * Math.sin(th) + t * Math.cos(th)], muzzle = S(0.43, 0, -0.02);
+    const head = H => { const hc = (t, a) => t > 0.37 ? d : t > 0.3 ? mix(bl(a), d, (t - 0.3) / 0.07) : bl(a);
+      H.add(skull([[0, 0.12, 0.12, 0.14], [0.08, 0.13, 0.13, 0.15], [0.16, 0.125, 0.12, 0.15], [0.24, 0.115, 0.11, 0.14], [0.31, 0.105, 0.1, 0.125], [0.36, 0.1, 0.09, 0.11], [0.4, 0.085, 0.07, 0.09], [0.425, 0.05, 0.04, 0.05]]
+        .map(([t, rx, rt, rb]) => [t, rx, rt, rb, a => hc(t, a), 3.0]), th, 22));
+      for (const sx of [-1, 1]) { const e = S(0.15, sx * 0.108, 0.085), ep = S(0.04, sx * 0.08, 0.13), n = S(0.418, sx * 0.032, 0.045);
+        olho(H, e[0], e[1], e[2], 0.017, sx); H.add(sph(0.04, 0.036, 0.018, ep[0], ep[1], ep[2], d, 10), sx > 0 ? 'earL' : 'earR'); H.add(sph(0.007, 0.012, 0.009, n[0], n[1], n[2], 0x0a0807, 6)); } };
     const lc = (t) => t > 0.85 ? d : mix(b, d, t * 0.6), paw = (x, z, top, L) => { const y = top - L[0] - L[1] - L[2]; return mergeG([sph(0.05, 0.03, 0.07, x, y + 0.03, z + 0.02, d, 8), ...[-1, 0, 1].map(k => sph(0.015, 0.014, 0.025, x + k * 0.025, y + 0.015, z + 0.08, 0x2a1a10, 6))]); };
     const lp = [[0, 0.07, 0.07, 0.07], [0.45, 0.055, 0.055, 0.055], [0.5, 0.05, 0.05, 0.05], [0.8, 0.04, 0.04, 0.04], [1, 0.04, 0.045, 0.04]];
-    const r = quad({ K: 1, M, body: { rings }, neck: { pts: neckPts, prof: [{ rx: 0.17, rt: 0.17, rb: 0.17, c: bl }, { rx: 0.15, rt: 0.15, rb: 0.16, c: bl }, { rx: 0.13, rt: 0.13, rb: 0.14, c: bl }] }, head, ears: [[0.09, 0.16, 0.03], [-0.09, 0.16, 0.03]], muzzle,
+    const r = quad({ K: 1, M, body: { rings }, neck: { pts: neckPts, prof: [{ rx: 0.17, rt: 0.17, rb: 0.18, c: bl }, { rx: 0.15, rt: 0.15, rb: 0.17, c: bl }, { rx: 0.13, rt: 0.13, rb: 0.15, c: bl }] }, head,
+      ears: [S(0.04, 0.08, 0.13), S(0.04, -0.08, 0.13)], muzzle,
       legs: [[0.15, 0.3, 0.36, [0.17, 0.11, 0.08]], [-0.15, 0.3, 0.36, [0.17, 0.11, 0.08]], [0.16, -0.33, 0.39, [0.19, 0.12, 0.08]], [-0.16, -0.33, 0.39, [0.19, 0.12, 0.08]]].map(([x, z, top, L]) => ({ x, z, top, L, prof: lp, c: lc, foot: paw(x, z, top, L) })) });
     r.graze = grazeOf(neckPts, muzzle); return r; }
 
@@ -96,7 +118,7 @@ export function especies({ M, MJ, rnd }) {
     const neckPts = [[0, 0.72, 0.36], [0, 0.8, 0.49], [0, 0.85, 0.56]], muzzle = [0, -0.18, 0.2];
     const head = H => { H.add(skull([[0, 0.075, 0.08, 0.085], [0.08, 0.08, 0.08, 0.085], [0.16, 0.066, 0.065, 0.07], [0.24, 0.05, 0.05, 0.055], [0.285, 0.035, 0.035, 0.035]].map(([t, rx, rt, rb]) => [t, rx, rt, rb, dk, 2.4]), 0.85, 18));
       H.add(sph(0.1, 0.075, 0.09, 0, 0.06, -0.01, wl, 12));
-      for (const sx of [-1, 1]) { H.add(sph(0.065, 0.024, 0.03, sx * 0.1, 0.02, 0.0, dk, 8), sx > 0 ? 'earL' : 'earR'); H.add(sph(0.014, 0.014, 0.01, sx * 0.065, 0.0, 0.09, 0x0a0a0a, 6)); } };
+      for (const sx of [-1, 1]) { H.add(sph(0.065, 0.024, 0.03, sx * 0.1, 0.02, 0.0, dk, 8), sx > 0 ? 'earL' : 'earR'); olho(H, sx * 0.068, 0.0, 0.09, 0.014, sx); } };
     const lc = t => t < 0.28 ? wl : dk, lp = [[0, 0.11, 0.11, 0.11], [0.25, 0.09, 0.09, 0.09], [0.32, 0.032, 0.033, 0.032], [0.46, 0.03, 0.031, 0.03], [0.5, 0.034, 0.035, 0.034], [0.55, 0.027, 0.027, 0.027], [0.8, 0.026, 0.026, 0.026], [0.86, 0.03, 0.031, 0.031], [1, 0.03, 0.031, 0.031]];
     const leg = (x, z, top, L) => ({ x, z, top, L, prof: lp, c: lc, foot: mergeG(hoof(x, z, 0.03, 0.05, 0x1e1a18).map(g => g.translate(0, top - L[0] - L[1] - L[2], 0))) });
     const tp = [[0, 0.74, -0.48], [0, 0.66, -0.54], [0, 0.56, -0.56]];
@@ -113,7 +135,7 @@ export function especies({ M, MJ, rnd }) {
     const head = H => { const hc = (t, a) => t > 0.22 ? k : Math.sin(a) < -0.4 ? w : o;
       H.add(skull([[0, 0.075, 0.08, 0.075], [0.06, 0.082, 0.085, 0.08], [0.14, 0.06, 0.06, 0.06], [0.22, 0.036, 0.036, 0.04], [0.3, 0.022, 0.022, 0.025]].map(([t, rx, rt, rb]) => [t, rx, rt, rb, a => hc(t, a), 2.2]), 0.28, 18));
       for (const sx of [-1, 1]) { H.add(cone(0.05, 0.17, o, 8).translate(sx * 0.055, 0.17, -0.01), sx > 0 ? 'earL' : 'earR'); H.add(cone(0.032, 0.12, 0xf0e0d0, 6).translate(sx * 0.055, 0.15, 0.008), sx > 0 ? 'earL' : 'earR');
-        H.add(sph(0.014, 0.014, 0.01, sx * 0.055, 0.03, 0.09, 0x2a1a08, 6)); } H.add(sph(0.022, 0.018, 0.018, 0, -0.08, 0.3, k, 6)); };
+        olho(H, sx * 0.056, 0.03, 0.09, 0.014, sx, 0x2a1a08); } H.add(sph(0.022, 0.018, 0.018, 0, -0.08, 0.3, k, 6)); };
     const lc = t => t > 0.3 ? k : o, lp = [[0, 0.065, 0.065, 0.065], [0.3, 0.045, 0.045, 0.045], [0.42, 0.034, 0.034, 0.034], [0.46, 0.036, 0.038, 0.036], [0.52, 0.027, 0.027, 0.027], [0.84, 0.024, 0.024, 0.024], [0.88, 0.028, 0.03, 0.028], [1, 0.026, 0.028, 0.026]];
     const paw = (x, z, y) => mergeG([sph(0.035, 0.022, 0.05, x, y + 0.02, z + 0.02, k, 8)]);
     const leg = (x, z, top, L) => ({ x, z, top, L, prof: lp, c: lc, foot: paw(x, z, top - L[0] - L[1] - L[2]), footAngle: 0.35 });
@@ -128,7 +150,7 @@ export function especies({ M, MJ, rnd }) {
     const rings = [[-0.5, 0.53, 0.08, 0.08, 0.08], [-0.45, 0.53, 0.16, 0.16, 0.17], [-0.3, 0.52, 0.2, 0.2, 0.21], [0, 0.5, 0.21, 0.2, 0.22], [0.25, 0.52, 0.2, 0.2, 0.21], [0.4, 0.55, 0.17, 0.17, 0.17], [0.48, 0.58, 0.11, 0.11, 0.11]].map(([z, y, rx, rt, rb]) => ({ z, y, rx, rt, rb, e: 2.1, c: a => Math.sin(a) < -0.6 ? cr : G }));
     const neckPts = [[0, 0.58, 0.4], [0, 0.62, 0.51], [0, 0.63, 0.56]], muzzle = [0, -0.07, 0.24];
     const head = H => { H.add(skull([[0, 0.12, 0.12, 0.12], [0.07, 0.14, 0.13, 0.13], [0.15, 0.12, 0.11, 0.11], [0.22, 0.08, 0.07, 0.08], [0.27, 0.05, 0.05, 0.055]].map(([t, rx, rt, rb]) => [t, rx, rt, rb, t > 0.2 ? cr : G, 2.2]), 0.2, 20));
-      for (const sx of [-1, 1]) { H.add(sph(0.04, 0.045, 0.018, sx * 0.09, 0.12, 0.0, 0xb8782a, 8), sx > 0 ? 'earL' : 'earR'); H.add(sph(0.016, 0.014, 0.01, sx * 0.055, 0.04, 0.13, 0xd8b030, 6)); }
+      for (const sx of [-1, 1]) { H.add(sph(0.04, 0.045, 0.018, sx * 0.09, 0.12, 0.0, 0xb8782a, 8), sx > 0 ? 'earL' : 'earR'); H.add(sph(0.01, 0.016, 0.016, sx * 0.058, 0.04, 0.13, 0xd8b030, 8)); olho(H, sx * 0.064, 0.04, 0.132, 0.008, sx, 0x0a0806); }
       H.add(sph(0.024, 0.018, 0.016, 0, -0.03, 0.26, 0x3a2a24, 6)); };
     const lp = [[0, 0.09, 0.09, 0.09], [0.35, 0.07, 0.07, 0.07], [0.48, 0.06, 0.062, 0.06], [0.55, 0.055, 0.055, 0.055], [0.85, 0.05, 0.05, 0.05], [1, 0.05, 0.05, 0.05]];
     const paw = (x, z, y) => mergeG([sph(0.06, 0.035, 0.075, x, y + 0.03, z + 0.03, cr, 8)]);
@@ -146,7 +168,7 @@ export function especies({ M, MJ, rnd }) {
     const head = H => { H.add(skull([[0, 0.13, 0.15, 0.16], [0.1, 0.14, 0.16, 0.17], [0.22, 0.11, 0.12, 0.13], [0.32, 0.08, 0.08, 0.08], [0.38, 0.055, 0.055, 0.055]].map(([t, rx, rt, rb]) => [t, rx, rt, rb, pc, 2.3]), 0.55, 20));
       H.add(tube([[0, -0.2, 0.3], [0, -0.26, 0.37], [0, -0.34, 0.39]], [{ rx: 0.05, rt: 0.05, rb: 0.05, c: d }, { rx: 0.04, rt: 0.04, rb: 0.04, c: d }, { rx: 0.03, rt: 0.03, rb: 0.03, c: col(0x2a2420) }], 10, true), 'snout');
       for (const sx of [-1, 1]) { H.add(sph(0.055, 0.075, 0.022, sx * 0.1, 0.14, 0.0, c, 8), sx > 0 ? 'earL' : 'earR'); H.add(paintG(new THREE.TorusGeometry(0.06, 0.008, 4, 14).scale(0.9, 1.25, 1).rotateY(sx * 0.3).translate(sx * 0.1, 0.14, 0.012), 0xc8bcae), sx > 0 ? 'earL' : 'earR');
-        H.add(sph(0.016, 0.016, 0.012, sx * 0.1, 0.0, 0.17, 0x111111, 6)); } };
+        olho(H, sx * 0.1, 0.0, 0.17, 0.015, sx); } };
     const lp = [[0, 0.11, 0.11, 0.11], [0.4, 0.085, 0.085, 0.085], [0.5, 0.075, 0.078, 0.075], [0.6, 0.065, 0.065, 0.065], [0.85, 0.06, 0.06, 0.06], [1, 0.062, 0.065, 0.062]];
     const foot = (x, z, y) => mergeG([sph(0.07, 0.04, 0.08, x, y + 0.035, z + 0.02, 0x2a2420, 8), ...[-1, 0, 1].map(k => sph(0.025, 0.03, 0.03, x + k * 0.04, y + 0.03, z + 0.08, 0x1e1a18, 6))]);
     const leg = (x, z, top, L) => ({ x, z, top, L, prof: lp, c: d, foot: foot(x, z, top - L[0] - L[1] - L[2]) });
@@ -160,7 +182,7 @@ export function especies({ M, MJ, rnd }) {
     const rings = [[-0.55, 0.56, 0.08, 0.08, 0.08], [-0.5, 0.56, 0.15, 0.2, 0.17], [-0.3, 0.55, 0.19, 0.26, 0.21], [0, 0.53, 0.2, 0.27, 0.22], [0.25, 0.53, 0.19, 0.25, 0.21], [0.4, 0.55, 0.15, 0.2, 0.16], [0.5, 0.58, 0.1, 0.12, 0.1]].map(([z, y, rx, rt, rb]) => ({ z, y, rx, rt, rb, e: 2.2, c: stripe(z) }));
     const neckPts = [[0, 0.58, 0.44], [0, 0.6, 0.57], [0, 0.6, 0.64]], muzzle = [0, -0.18, 0.4];
     const head = H => { H.add(tube([[0, 0, -0.02], [0, -0.02, 0.06], [0, -0.07, 0.18], [0, -0.13, 0.3], [0, -0.18, 0.41]], [0.075, 0.07, 0.05, 0.035, 0.024].map(r => ({ rx: r, rt: r, rb: r, c })), 12, true));
-      for (const sx of [-1, 1]) { H.add(sph(0.03, 0.035, 0.015, sx * 0.055, 0.06, -0.01, c, 6), sx > 0 ? 'earL' : 'earR'); H.add(sph(0.01, 0.01, 0.008, sx * 0.05, 0.02, 0.07, 0x111111, 5)); } };
+      for (const sx of [-1, 1]) { H.add(sph(0.03, 0.035, 0.015, sx * 0.055, 0.06, -0.01, c, 6), sx > 0 ? 'earL' : 'earR'); olho(H, sx * 0.05, 0.02, 0.07, 0.01, sx); } };
     const lpF = [[0, 0.1, 0.1, 0.1], [0.4, 0.07, 0.07, 0.07], [0.5, 0.065, 0.065, 0.065], [0.7, 0.06, 0.06, 0.06], [1, 0.06, 0.06, 0.06]];
     const fcol = t => t > 0.62 && t < 0.72 ? k : w, hcol = () => c;
     const fFoot = (x, z, y) => mergeG([sph(0.06, 0.04, 0.06, x, y + 0.04, z, w, 8), ...[-1, 1].map(s => cone(0.014, 0.08, 0x2a2420, 6).rotateX(-2.2).translate(x + s * 0.02, y + 0.03, z + 0.05))]);

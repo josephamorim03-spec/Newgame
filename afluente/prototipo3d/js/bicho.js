@@ -64,7 +64,10 @@ function Skin() {
       const w = (typeof wf === 'number' ? [[wf, 1]] : wf(x, y, z)).filter(e => e[1] > 1e-4).sort((a, b) => b[1] - a[1]).slice(0, 4), s = w.reduce((a, e) => a + e[1], 0) || 1;
       for (let k = 0; k < 4; k++) { si.push(w[k] ? w[k][0] : 0); sw.push(w[k] ? w[k][1] / s : 0); } }
     if (g.index) for (const k of g.index.array) idx.push(base + k); else for (let i = 0; i < p.count; i++) idx.push(base + i); }
-  function build(K) { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos.map(v => v * K), 3)); g.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3));
+  // sombra embutida na pelagem: o que olha para baixo (barriga, queixo, dentro das pernas) escurece, o lombo clareia de leve;
+  // dá volume ao bicho mesmo na luz em faixas
+  function bakeAO() { for (let i = 0; i < colA.length / 3; i++) { const ny = nor[i * 3 + 1], f = 0.7 + 0.36 * sstep(-0.8, 0.8, ny); colA[i * 3] *= f; colA[i * 3 + 1] *= f; colA[i * 3 + 2] *= f * 0.98 + 0.02; } }
+  function build(K) { bakeAO(); const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos.map(v => v * K), 3)); g.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3));
     g.setAttribute('color', new THREE.Float32BufferAttribute(colA, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
     g.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(si, 4)); g.setAttribute('skinWeight', new THREE.Float32BufferAttribute(sw, 4)); g.setIndex(idx); return g; }
   return { add, build };

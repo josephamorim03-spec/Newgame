@@ -50,7 +50,7 @@ controls.minDistance = 2; controls.maxDistance = 220;   /* câmera livre chega b
 controls.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN };
 const reflRT = new THREE.WebGLRenderTarget(2, 2, { colorSpace: THREE.SRGBColorSpace });   // reflexo da água (ver mais abaixo)
 const grade = createGrade(renderer); window.__grade = grade.uniforms;   // a demão final de cor (grade.js)
-function resize() { const w = innerWidth, h = innerHeight; renderer.setSize(w, h, false); grade.setSize(w * dpr, h * dpr); { const rk = [0.5, 0.35, 0.18][window.__Qv || 0]; reflRT.setSize(Math.max(2, Math.ceil(w * dpr * rk)), Math.max(2, Math.ceil(h * dpr * rk))); } camera.aspect = w / h; camera.fov = w < h ? 50 : 38; camera.updateProjectionMatrix(); }
+function resize() { const w = innerWidth, h = innerHeight; renderer.setSize(w, h, false); grade.setSize(w * dpr, h * dpr); { const rk = [0.5, 0.36, 0.25][window.__Qv || 0]; reflRT.setSize(Math.max(2, Math.ceil(w * dpr * rk)), Math.max(2, Math.ceil(h * dpr * rk))); } camera.aspect = w / h; camera.fov = w < h ? 50 : 38; camera.updateProjectionMatrix(); }
 addEventListener('resize', resize); resize();
 
 const HEXF = `float hexEdge(vec2 p){float R=${R.toFixed(1)};float q=(0.57735*p.x-0.33333*p.y)/R,r=0.66667*p.y/R;float s=-q-r;
@@ -143,6 +143,7 @@ groundMat.onBeforeCompile = sh => { shared(sh); sh.uniforms.uCenter = { value: n
       vec3 bed=mix(vec3(0.62,0.57,0.44),vec3(0.80,0.74,0.58),n3);float peb=smoothstep(0.5,0.72,vnoise(p*6.0));
       bed=mix(bed,mix(vec3(0.50,0.48,0.45),vec3(0.80,0.77,0.70),vnoise(p*11.0+4.0)),peb*0.85);bed*=0.82+0.18*vnoise(p*23.0);
       col=mix(col,bed,under);col*=1.0-0.2*smoothstep(-0.15,0.0,dep)*(1.0-under);
+      col*=mix(vec3(1.0),exp(-vec3(1.25,0.55,0.5)*max(dep,0.0)*1.5),under);
       col*=0.9+0.2*n3;
       float wet=clamp(uWet*0.8+bank*0.35,0.0,1.0);col*=mix(1.0,0.68,wet);
       float puddle=smoothstep(0.6,0.68,fbm(p*0.09+11.0))*smoothstep(0.45,0.9,uWet)*(1.0-vBio.y)*(1.0-under)*(1.0-vOu);
@@ -565,7 +566,7 @@ const waterMat = new THREE.ShaderMaterial({ transparent: true, depthWrite: false
   fragmentShader: /* glsl */`varying vec2 vFlow;varying float vDep;varying vec3 vWp;uniform sampler2D uRefl;uniform mat4 uReflMat;uniform vec3 uRocks[8];
     ${HEAD}
     #include <fog_pars_fragment>
-    float hgt(vec2 q){return vnoise(q*vec2(0.55,1.1)-vec2(uFlowClk*0.55,0.0))*0.6+vnoise(q*vec2(1.6,2.4)-vec2(uFlowClk*1.3,0.0))*0.3+vnoise(q*vec2(4.0,5.5)-vec2(uFlowClk*2.2,0.0))*0.1;}
+    float hgt(vec2 q){return vnoise(q*vec2(0.55,1.1)-vec2(uFlowClk*0.55,0.0))*0.5+vnoise(q*vec2(1.6,2.4)-vec2(uFlowClk*1.3,0.0))*0.27+vnoise(q*vec2(4.0,5.5)-vec2(uFlowClk*2.2,0.0))*0.14+vnoise(q*vec2(9.0,12.0)-vec2(uFlowClk*3.1,0.0))*0.09;}
     void main(){float d=vDep;if(d<=0.0)discard;
       vec2 p=vWp.xz;vec2 f=length(vFlow)>0.01?normalize(vFlow):vec2(1.0,0.0);vec2 s=vec2(-f.y,f.x);vec2 q=vec2(dot(p,f),dot(p,s));float fl=clamp(length(vFlow),0.0,1.0);
       float e=0.1,h0=hgt(q),hx=hgt(q+vec2(e,0.0))-h0,hy=hgt(q+vec2(0.0,e))-h0;vec2 gq=vec2(hx,hy)/e*(0.05+0.07*fl+0.25*uRain);vec2 gw=f*gq.x+s*gq.y;
@@ -575,19 +576,20 @@ const waterMat = new THREE.ShaderMaterial({ transparent: true, depthWrite: false
       for(int i=0;i<8;i++){vec3 rk=uRocks[i];if(rk.z<=0.0)continue;vec2 dr=p-rk.xy;float al=dot(dr,f),ac=dot(dr,s),dist=length(dr);
         float ringF=1.0-smoothstep(rk.z*0.8,rk.z+0.25+0.3*vnoise(vec2(atan(dr.y,dr.x)*3.0,uFlowClk*2.0)),dist);
         float wake=exp(-ac*ac/(rk.z*rk.z*0.7))*smoothstep(0.0,0.5,al)*exp(-al/(2.0+rk.z*3.0));
-        foam+=ringF*0.9+wake*smoothstep(0.42,0.68,vnoise(vec2(al*2.2-uFlowClk*3.5,ac*4.0)));gw+=normalize(dr+1e-3)*(wake+ringF*0.4)*0.12;}
+        foam+=ringF*0.7+wake*0.7*smoothstep(0.45,0.7,vnoise(vec2(al*2.2-uFlowClk*3.5,ac*4.0)));gw+=normalize(dr+1e-3)*(wake+ringF*0.4)*0.12;}
       vec3 N=normalize(vec3(-gw.x,1.0,-gw.y));vec3 V=normalize(cameraPosition-vWp);float cv=max(dot(N,V),0.0);
       float F=(0.03+0.75*pow(1.0-cv,4.0))*smoothstep(0.0,0.05,d);float cs=cloudShadow(p);
-      vec4 rc=uReflMat*vec4(vWp,1.0);vec2 ruv=rc.xy/rc.w+N.xz*0.035;vec3 refl=texture2D(uRefl,clamp(ruv,0.002,0.998)).rgb;
+      vec4 rc=uReflMat*vec4(vWp,1.0);vec2 ruv=rc.xy/rc.w+N.xz*0.035;vec2 rb=vec2(0.0035,0.0045)*(1.0+2.0*fl);
+      vec3 refl=texture2D(uRefl,clamp(ruv,0.002,0.998)).rgb*0.36+(texture2D(uRefl,clamp(ruv+vec2(rb.x,0.0),0.002,0.998)).rgb+texture2D(uRefl,clamp(ruv-vec2(rb.x,0.0),0.002,0.998)).rgb+texture2D(uRefl,clamp(ruv+vec2(0.0,rb.y),0.002,0.998)).rgb+texture2D(uRefl,clamp(ruv-vec2(0.0,rb.y),0.002,0.998)).rgb)*0.16;
       refl=mix(refl,mix(uSkyHor,uSkyZen,0.35),smoothstep(0.6,1.5,abs(vWp.y-(${WATER_Y.toFixed(3)}-uWaterDrop))));
       float Tl=dot(exp(-vec3(1.6,0.6,0.5)*d*0.9),vec3(0.3,0.4,0.3));
-      vec3 scat=toLin(mix(vec3(0.26,0.78,0.74),vec3(0.06,0.42,0.46),smoothstep(0.3,1.3,d)))*(0.3+0.7*cs)*(0.04+0.96*uDay);
+      vec3 scat=toLin(mix(vec3(0.30,0.50,0.40),vec3(0.07,0.22,0.20),smoothstep(0.25,1.4,d)))*(0.3+0.7*cs)*(0.04+0.96*uDay);
       vec3 col=scat*(1.0-Tl)*(1.0-F)+refl*F;float A=1.0-Tl*(1.0-F);
-      vec3 Rf=reflect(-V,N);float glint=pow(max(dot(Rf,uSunW),0.0),500.0);col+=uSunC*step(0.5,glint+0.35*hash21(floor(p*7.0)))*glint*5.0*cs;A=min(1.0,A+glint*0.5);
-      foam+=(1.0-smoothstep(0.02,0.14,d))*smoothstep(0.35,0.62,vnoise(q*vec2(2.0,7.0)-vec2(uFlowClk*1.4,0.0)))*smoothstep(0.0,0.015,d);
-      foam+=0.5*fl*smoothstep(0.66,0.82,vnoise(q*vec2(0.9,3.6)-vec2(uFlowClk*1.7,0.0)))*smoothstep(0.3,0.8,d);
+      vec3 Rf=reflect(-V,N);float glint=pow(max(dot(Rf,uSunW),0.0),900.0);col+=uSunC*step(0.5,glint+0.35*hash21(floor(p*9.0)))*glint*2.2*cs;A=min(1.0,A+glint*0.4);
+      foam+=0.55*(1.0-smoothstep(0.012,0.07,d))*smoothstep(0.45,0.72,vnoise(q*vec2(3.2,9.0)-vec2(uFlowClk*1.4,0.0)))*smoothstep(0.0,0.01,d);
+      foam+=0.28*smoothstep(0.55,1.0,fl)*smoothstep(0.8,0.88,vnoise(q*vec2(1.4,10.0)-vec2(uFlowClk*1.9,0.0)))*smoothstep(0.3,0.8,d);
       foam=clamp(foam,0.0,1.0);vec3 fc=vec3(0.95,0.98,1.0)*(0.08+0.92*uDay)*(0.65+0.35*cs);
-      col=col/max(A,1e-3);col=mix(col,fc,foam*0.9);col+=ring*0.2*uDay;A=max(A,foam*0.9);
+      col=col/max(A,1e-3);col=mix(col,fc,foam*0.8);col+=ring*0.2*uDay;A=max(A,foam*0.8);
       gl_FragColor=vec4(col,A);
       #include <colorspace_fragment>
       #include <fog_fragment>
