@@ -65,6 +65,34 @@ Protótipo jogável para testar se a regra nova diverte, antes de levá-la ao va
 - Na água rasa cada pisada abre um anel (`aguafx.js`).
 - O gado bebe no cocho do curral ou na beira do rio, a capivara e a anta nadam, e a garça dá o bote com respingo.
 
+**O juiz dos bichos** (`../prototipo3d/js/juiz.js`, relatório em `../prototipo3d/JUIZ.md`): mede cada espécie e compara com o bicho de verdade.
+- **Forma:**
+  - proporções (altura do dorso, comprimento, peito, cabeça) contra fichas das espécies;
+  - faces do avesso, triângulos degenerados e quina da silhueta.
+- **Pose:**
+  - perna da frente reta parada e ângulo do jarrete (150–160°, pelos guias de conformação);
+  - perna que sai do tronco e pele que dobra demais nas juntas;
+  - focinho que alcança o capim.
+- **Movimento:**
+  - casco que patina, afunda ou flutua no apoio;
+  - ordem das pisadas (sequência lateral do andar) e fração de apoio;
+  - passada proporcional à altura, troca andar→trote perto de Froude 0,4–0,5 e corpo que balança demais.
+- **Comportamento:** quanto do tempo cada bicho pasta, anda, fica parado ou nada (contra a referência), e bicho travado.
+
+Para rodar: `sh prototipo3d/empacotar.sh` e depois `node sim/juiz_bichos.js prototipo3d/dist/index.html`. No console, `__juiz.julgar()`.
+
+O que ele achou e já foi corrigido:
+- faces do avesso no alto das pernas;
+- andar em sequência diagonal (o certo é a lateral);
+- casco escorregando (agora a pata fica cravada onde pisou, e ombro e quadril abrem para o lado);
+- altura do corpo que agora sai das pernas no chão: o corpo sobe e desce como no pêndulo invertido do andar;
+- ombro e quadril que deslizam com o passo;
+- trote decidido pelo número de Froude;
+- bicho preso que girava no lugar;
+- tamanhos das espécies.
+
+A malha ganhou 25% mais segmentos no computador (75% no celular). A nota média foi de 87 para 96.
+
 **Crianças na lagoa** (`people.js`, ofício `lagoa`):
 - Nadam cachorrinho de cabeça para fora.
 - Pulam da beira, de bomba ou de braços para cima.
