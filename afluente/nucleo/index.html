@@ -198,6 +198,7 @@ function desfazer() { if (!acts.length) return; let a = acts.slice(); while (a.l
 function toast(list) { const box = $('toast'); box.style.top = topY() + 'px'; box.innerHTML = ''; for (const t of list) { const d = document.createElement('div'); d.textContent = t; box.appendChild(d); } toastT = list.length ? 4.5 : 0; }
 
 // ---------- texto da prévia (o que essa peça faz aqui)
+const NOMEF = { B: 'uma mata', C: 'uma lavoura', G: 'um campo' };
 const reqTxt = r => `${PEDIDOS[r.t].icone} ${PEDIDOS[r.t].txt(r.n)}`;
 function previewMsg(o) { const out = [], t = G.hand().e, cons = t.includes('C') || t.includes('V');
   for (const x of o.vil) { if (x.done) { const v = G.S.vilas.get(x.id), pc = pecasDe((v ? v.lvl : 1) + 1); out.push(`<span class="ok">Atende a vila (${reqTxt(x.req)}): cresce${pc ? `, +${pc} peça${pc > 1 ? 's' : ''}` : ''}</span>`); } else if (Math.min(x.after, x.req.n) > Math.min(x.before, x.req.n)) out.push(`<span class="ok">Vila: ${PEDIDOS[x.req.t].icone} ${x.before} → ${x.after} de ${x.req.n}</span>`); }
@@ -206,7 +207,8 @@ function previewMsg(o) { const out = [], t = G.hand().e, cons = t.includes('C') 
   if (cons && o.wetSelf) out.push(`<span class="agua">Recebe água (usa 1 💧)</span>`);
   if (cons && o.drySelf) out.push(`<span class="ruim">Fica seca: a água acaba antes de chegar aqui</span>`);
   if (o.lost.length) out.push(`<span class="ruim">Tira a água de ${o.lost.length} peça${o.lost.length > 1 ? 's' : ''} mais longe da nascente</span>`);
-  if (o.perfect) out.push('<span class="ok">Peça perfeita: +1 peça</span>');
+  if (o.perfect) out.push('<span class="ok">Encaixe perfeito: +1 peça</span>');
+  for (const c of o.closes || []) out.push(`<span class="ok">Fecha ${NOMEF[c.type]} de ${c.size} peças: +1 peça</span>`);
   if (!out.length) { const m = o.marks.filter(Boolean).length; out.push(`<span class="dica">${cons ? 'Longe do rio: não usa água. ' : ''}${m ? `${m} lado${m > 1 ? 's' : ''} combinando.` : 'Nada muda por aqui.'}</span>`); }
   return out.join('<br>'); }
 

@@ -49,7 +49,7 @@ const REGRAS = [
   ['🫧', 'Olhos-d\'água', 'Espalhados no Cerrado. Leve o rio até um deles e a nascente ganha a água dele.'],
   ['🏠', 'As vilas pedem', 'A plaquinha de cada vila diz o que ela quer: água, lavoura, mata, campo ou crescer. Atendeu: chegam pessoas (os pontos), peças para a pilha (+2 na vila pequena, +1 na média, nenhuma na grande) e você escolhe o pacote das próximas. Faixa dourada: ali a peça ajuda um pedido. Nove jogadas sem avanço e a vila troca de pedido (⏳ avisa).'],
   ['☀️', 'A seca', 'A cada 8 jogadas de águas vêm 4 de seca, e as nascentes dão a metade (o vale avisa antes quem vai secar). Quando a seca chega, a colheita: 1 peça a cada 2 lavouras com água.'],
-  ['✨', 'A pilha é a vida', 'Cada jogada gasta uma peça (passar a peça também). Peça perfeita, com os 6 lados combinando, devolve uma. Acabou a pilha, acabou o vale: conte as pessoas.'],
+  ['✨', 'A pilha é a vida', 'Cada jogada gasta uma peça (passar a peça também). Devolvem uma: o encaixe perfeito (3 vizinhos ou mais, todos os lados iguais, ✨) e a região fechada (mata, lavoura ou campo de 3 peças ou mais sem lado livre, 🌳+1); o botão Colocar mostra antes. Acabou a pilha, acabou o vale: conte as pessoas.'],
 ];
 
 export function createMenu(ctx) {

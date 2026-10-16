@@ -32,6 +32,12 @@ Protótipo jogável para testar se a regra nova diverte, antes de levá-la ao va
 - **Paciência:** 9 jogadas sem nenhum avanço e a vila troca de pedido. A plaquinha mostra ⏳ quando faltam 3.
 - **Peças de um pedido atendido:** 2 até o nível 2, 1 nos níveis 3 e 4, nenhuma depois. Sem esse freio, com a paciência, a pilha virava bola de neve: em 10% dos vales a partida passava de 300 jogadas.
 
+**Recompensas pequenas (v5.2):** metade das jogadas ainda passava em branco. Agora duas coisas devolvem 1 peça à pilha, e o botão "Colocar" mostra antes, para dar para mirar:
+- **Encaixe perfeito (✨):** a peça tem 3 vizinhos ou mais e todos os lados são iguais aos deles. Antes eram 6 vizinhos, e no simulador não acontecia nunca.
+- **Região fechada (🌳+1, 🌾+1, 🌿+1):** uma mata, lavoura ou campo de 3 peças ou mais fica sem nenhum lado livre para crescer.
+
+Simulado no começo do vale 3D (40 vales): jogadas quietas caíram de 53% para 41%, a partida foi de 31 para 41 jogadas, as pessoas de 32 para 50; o encaixe perfeito acontece em 12% das jogadas e a região fechada em 2%. Com o limite de 2 para a região fechada, as jogadas quietas caíam a 34%, mas a partida ia a 54 jogadas.
+
 **Números do simulador** (bot guloso, 20 vales): só checam se as regras se sustentam, não se divertem.
 
 | Medida | Valor |

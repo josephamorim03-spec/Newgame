@@ -140,7 +140,8 @@ button.chip { border: 0; }
 //     também quando a estação vira; 9 jogadas sem nenhum avanço e a vila troca de pedido.
 //  5. A seca: a cada 8 jogadas de Águas vêm 4 de Seca, e cada nascente dá metade (a tela mostra antes como fica). Na chegada da
 //     seca, a colheita: 1 peça a cada 2 lavouras que continuam com água. A pilha é a vida: acabou, acabou.
-//  (+ peça perfeita, com os 6 lados combinando, devolve 1 peça.)
+//  (+ encaixe perfeito, com 3 vizinhos ou mais e todos os lados combinando, devolve 1 peça; mata, lavoura ou campo de 3
+//   peças ou mais que fica fechada, sem lado livre, também.)
 
 const DIRS = [[1, 0], [1, -1], [0, -1], [-1, 0], [-1, 1], [0, 1]];   // L, NE, NO, O, SO, SE
 const opp = d => (d + 3) % 6;
@@ -154,6 +155,10 @@ const LAND = ['B', 'C', 'V', 'G'];
 const vazao = (src, dry) => dry ? Math.ceil(src / 2) : src;
 const NOME = { A: 'rio', B: 'mata', C: 'lavoura', V: 'vila', G: 'campo' };
 const PACIENCIA = 9;
+// recompensas pequenas e frequentes (para menos jogadas passarem em branco): peça que encaixa com todos os vizinhos (pelo menos
+// PERFEITA_MIN deles) devolve 1; mata, lavoura ou campo de FECHA_MIN peças ou mais que fica sem nenhum lado livre (não tem mais
+// por onde crescer) devolve 1
+const PERFEITA_MIN = 3, FECHA_MIN = 3;   // simulado no vale 3D: 41% de jogadas quietas (eram 53%), partida de ~41 jogadas
 // peças que um pedido atendido devolve: a vila nova ajuda a pilha; a vila grande só traz gente (sem isso a pilha virava bola de
 // neve — cada vila crescendo devolvia 2 por 1 — e o vale não acabava)
 const pecasDe = lvl => lvl <= 2 ? 2 : lvl <= 4 ? 1 : 0;   // jogadas sem avanço até a vila trocar de pedido
@@ -189,7 +194,7 @@ const PEDIDOS = {
 // start (opcional): o vale inicial, [{q, r, e, src}], por exemplo o vale montado à mão da prévia 3D; sem ele, nascente e vila
 function Game({ seed = 'vale', pilha = 22, nascente = 4, aguas = 8, seca = 4, start = null } = {}) {
   const rng = rngOf('v5:' + seed), board = new Map();
-  const S = { left: pilha, gente: 0, season: 1, clock: 0, order: 0, queue: [], vilas: new Map(), springs: new Map(), escolha: [], log: [], over: false, aguas, seca, ano: 1 };
+  const S = { left: pilha, gente: 0, season: 1, clock: 0, order: 0, queue: [], vilas: new Map(), springs: new Map(), escolha: [], log: [], fechadas: new Set(), over: false, aguas, seca, ano: 1 };
   const put = (q, r, e, extra = {}) => board.set(K(q, r), { q, r, e: e.slice(), order: S.order++, ...extra });
   if (start) for (const t of start) put(t.q, t.r, t.e, t.src ? { src: nascente, fixed: true, nasc: true } : { fixed: true });
   else {
@@ -271,13 +276,22 @@ function Game({ seed = 'vale', pilha = 22, nascente = 4, aguas = 8, seca = 4, st
       else { const v = S.vilas.get(id); v.tiles = g; for (const k of keys.slice(1)) if (S.vilas.has(k) && k !== id) { const o = S.vilas.get(k); v.lvl = Math.max(v.lvl, o.lvl); S.vilas.delete(k); } } }
     for (const id of [...S.vilas.keys()]) if (!seen.has(id)) S.vilas.delete(id); }
   syncVilas(water());
+  for (const c of fechadas(board)) S.fechadas.add(c.id);   // o que já começa fechado não conta
 
+  // regiões de mata, lavoura ou campo que ficaram fechadas (nenhum lado daquele tipo dá para casa vazia) e ainda não contaram;
+  // a região fechada não cresce mais, então a menor casa dela serve de nome
+  function fechadas(B) { const out = [];
+    for (const type of ['B', 'C', 'G']) { const R = regions(B, type); for (const g of R.out) { if (g.size < FECHA_MIN) continue; const id = Math.min(...g); if (S.fechadas.has(id)) continue;
+        let open = false; for (const k of g) { const t = B.get(k); for (let d = 0; d < 6 && !open; d++) if (t.e[d] === type && !B.has(nbk(k, d))) open = true; if (open) break; }
+        if (!open) out.push({ id, type, size: g.size }); } }
+    return out; }
   // ---------- prévia de uma jogada (sem mudar nada)
   function simulate(k, e) { const B2 = new Map(board), t = { q: KQ(k), r: KR(k), e: e.slice(), order: S.order };
     if (S.springs.has(k) && e.includes('A')) t.src = S.springs.get(k); B2.set(k, t);
     const W0 = water(), W1 = water(B2); let match = 0, nbs = 0; const marks = [];
     for (let d = 0; d < 6; d++) { const n = board.get(nbk(k, d)); if (!n) { marks.push(null); continue; } nbs++; const ok = n.e[opp(d)] === e[d]; marks.push(ok); if (ok) match++; }
-    const perfect = nbs === 6 && match === 6;
+    const perfect = nbs >= PERFEITA_MIN && match === nbs;
+    const closes = fechadas(B2);
     // o que muda para cada vila (pelas regiões novas)
     const R = regions(B2, 'V'), M = regions(B2, 'B'), vil = [];
     for (const v of S.vilas.values()) { const g = R.out[R.id.get(v.id)]; if (!g) continue;
@@ -285,7 +299,7 @@ function Game({ seed = 'vale', pilha = 22, nascente = 4, aguas = 8, seca = 4, st
       const before = progress(board, W0, v.tiles, v.req), after = progress(B2, W1, g, v.req, M); vil.push({ id: v.id, req: v.req, before, after, done: after >= v.req.n }); }
     const lost = [...W0.wet].filter(x => !W1.wet.has(x)), gained = [...W1.wet].filter(x => !W0.wet.has(x) && x !== k);
     const nid = W1.net.get(k), join = t.src ? [...W1.net].some(([kk, n]) => n === nid && kk !== k && B2.get(kk).src) : false;
-    return { k, e, legal: legal(board, k, e), marks, perfect, spring: t.src || 0, springJoin: join, buried: S.springs.has(k) && !t.src ? S.springs.get(k) : 0, wetSelf: W1.wet.has(k), drySelf: W1.dry.has(k), lost, gained, vil, W: W1 }; }
+    return { k, e, legal: legal(board, k, e), marks, perfect, closes, spring: t.src || 0, springJoin: join, buried: S.springs.has(k) && !t.src ? S.springs.get(k) : 0, wetSelf: W1.wet.has(k), drySelf: W1.dry.has(k), lost, gained, vil, W: W1 }; }
   function options(k) { const base = hand().e, seen = new Set(), out = []; for (let r = 0; r < 6; r++) { const e = rot(base, r), sig = e.join(''); if (seen.has(sig) || !legal(board, k, e)) continue; seen.add(sig); out.push({ r, ...simulate(k, e) }); } return out; }
 
   // ---------- jogar
@@ -293,7 +307,8 @@ function Game({ seed = 'vale', pilha = 22, nascente = 4, aguas = 8, seca = 4, st
     const t = { q: KQ(k), r: KR(k), e: e.slice(), order: S.order++ }; if (pv.spring) { t.src = pv.spring; ev.push({ t: 'nascente', txt: pv.springJoin ? `Olho-d'água ligado ao rio: +${pv.spring} 💧` : `Olho-d'água aberto: +${pv.spring} 💧 para quem encostar nele`, k }); }
     if (pv.buried) ev.push({ t: 'soterrou', txt: 'O olho-d\'água ficou debaixo da terra', k });
     S.springs.delete(k); board.set(k, t); S.queue.shift(); S.left--;
-    if (pv.perfect) { S.left++; ev.push({ t: 'perfeita', txt: 'Peça perfeita: +1 peça', k }); }
+    if (pv.perfect) { S.left++; ev.push({ t: 'perfeita', txt: 'Encaixe perfeito: +1 peça', k }); }
+    for (const c of pv.closes) { S.fechadas.add(c.id); S.left++; ev.push({ t: 'fechou', txt: `${NOME[c.type][0].toUpperCase() + NOME[c.type].slice(1)} fechada (${c.size} peças): +1 peça`, k: c.id, type: c.type, size: c.size }); }
     syncVilas(water()); grant(ev); tick(ev); paciencia(ev);
     spawnSprings();
     if (S.left <= 0 && !S.escolha.length) S.over = true;
@@ -403,6 +418,7 @@ function desfazer() { if (!acts.length) return; let a = acts.slice(); while (a.l
 function toast(list) { const box = $('toast'); box.style.top = topY() + 'px'; box.innerHTML = ''; for (const t of list) { const d = document.createElement('div'); d.textContent = t; box.appendChild(d); } toastT = list.length ? 4.5 : 0; }
 
 // ---------- texto da prévia (o que essa peça faz aqui)
+const NOMEF = { B: 'uma mata', C: 'uma lavoura', G: 'um campo' };
 const reqTxt = r => `${PEDIDOS[r.t].icone} ${PEDIDOS[r.t].txt(r.n)}`;
 function previewMsg(o) { const out = [], t = G.hand().e, cons = t.includes('C') || t.includes('V');
   for (const x of o.vil) { if (x.done) { const v = G.S.vilas.get(x.id), pc = pecasDe((v ? v.lvl : 1) + 1); out.push(`<span class="ok">Atende a vila (${reqTxt(x.req)}): cresce${pc ? `, +${pc} peça${pc > 1 ? 's' : ''}` : ''}</span>`); } else if (Math.min(x.after, x.req.n) > Math.min(x.before, x.req.n)) out.push(`<span class="ok">Vila: ${PEDIDOS[x.req.t].icone} ${x.before} → ${x.after} de ${x.req.n}</span>`); }
@@ -411,7 +427,8 @@ function previewMsg(o) { const out = [], t = G.hand().e, cons = t.includes('C') 
   if (cons && o.wetSelf) out.push(`<span class="agua">Recebe água (usa 1 💧)</span>`);
   if (cons && o.drySelf) out.push(`<span class="ruim">Fica seca: a água acaba antes de chegar aqui</span>`);
   if (o.lost.length) out.push(`<span class="ruim">Tira a água de ${o.lost.length} peça${o.lost.length > 1 ? 's' : ''} mais longe da nascente</span>`);
-  if (o.perfect) out.push('<span class="ok">Peça perfeita: +1 peça</span>');
+  if (o.perfect) out.push('<span class="ok">Encaixe perfeito: +1 peça</span>');
+  for (const c of o.closes || []) out.push(`<span class="ok">Fecha ${NOMEF[c.type]} de ${c.size} peças: +1 peça</span>`);
   if (!out.length) { const m = o.marks.filter(Boolean).length; out.push(`<span class="dica">${cons ? 'Longe do rio: não usa água. ' : ''}${m ? `${m} lado${m > 1 ? 's' : ''} combinando.` : 'Nada muda por aqui.'}</span>`); }
   return out.join('<br>'); }
 

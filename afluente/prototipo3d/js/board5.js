@@ -253,7 +253,8 @@ export function buildBoard5(api) {
   // ---------- escolher, girar, colocar
   let sel = null;
   // o giro sugerido: o que atende ou avança um pedido, liga um olho-d'água, recebe água e encaixa mais lados
-  const value = o => o.vil.filter(v => v.done).length * 10 + o.vil.filter(v => v.after > v.before).length * 3 + (o.spring ? 4 : 0) + (o.wetSelf ? 1 : 0) - (o.drySelf ? 2 : 0) - o.lost.length * 2 + o.marks.filter(Boolean).length * 0.5;
+  const ICO = { B: '🌳', C: '🌾', G: '🌿' };
+  const value = o => (o.perfect ? 3 : 0) + (o.closes ? o.closes.length * 3 : 0) + o.vil.filter(v => v.done).length * 10 + o.vil.filter(v => v.after > v.before).length * 3 + (o.spring ? 4 : 0) + (o.wetSelf ? 1 : 0) - (o.drySelf ? 2 : 0) - o.lost.length * 2 + o.marks.filter(Boolean).length * 0.5;
   // os giros de uma casa onde a peça não cabe: cada lado com vizinho é igual (verde), terra diferente (laranja) ou rio contra terra (x)
   function tries(k) { const base = game.hand().e, seen = new Set(), out = []; for (let r = 0; r < 6; r++) { const e = rot(base, r), sig = e.join(''); if (seen.has(sig)) continue; seen.add(sig);
       const marks = [], bad = []; for (let d = 0; d < 6; d++) { const n = game.board.get(nbk(k, d)); if (!n) { marks.push(null); continue; } const ne = n.e[opp(d)], x = (e[d] === 'A') !== (ne === 'A');
@@ -283,7 +284,7 @@ export function buildBoard5(api) {
     const b = $('colocar');
     if (S.over) { b.hidden = false; b.textContent = 'Fim do vale'; }
     else if (sel && sel.bad) b.hidden = true;
-    else if (sel) { const o = sel.opts[sel.i], x = []; if (o.vil.some(v => v.done)) x.push('🏠✓'); if (o.spring) x.push(`+${o.spring}💧`); if (o.drySelf || o.lost.length) x.push('🥀');
+    else if (sel) { const o = sel.opts[sel.i], x = []; if (o.vil.some(v => v.done)) x.push('🏠✓'); if (o.spring) x.push(`+${o.spring}💧`); if (o.perfect) x.push('✨'); for (const c of o.closes || []) x.push(`${ICO[c.type]}+1`); if (o.drySelf || o.lost.length) x.push('🥀');
       b.hidden = false; b.textContent = 'Colocar' + (x.length ? '  ' + x.join(' ') : ''); }
     else b.hidden = true;
     drawGhost(); drawTags(sel && !sel.bad ? sel.opts[sel.i] : null); ST.seca = sec; if (S.gente > shownP) countP(); }
@@ -301,6 +302,8 @@ export function buildBoard5(api) {
           setTimeout(() => { SFX.grow(); buzz([20, 40, 30]); burst(kc, FLORES, 36, 16, 22, 10); shake(0.5, 0.25); }, dl * 1000); dl += 0.35; }
         if (x.t === 'nascente') setTimeout(() => { SFX.water(); burst(kc, GOTAS, 22, 9, 16, 2); floatText(KQ(x.k), KR(x.k), x.txt.match(/\+\d+ 💧/) ? x.txt.match(/\+\d+ 💧/)[0] : '+💧', '#cdefff'); }, dl * 1000);
         if (x.t === 'perfeita') setTimeout(() => { SFX.perfect(); burst(kc, OURO, 18, 8, 14, 3); }, dl * 1000);
+        if (x.t === 'fechou') setTimeout(() => { SFX.perfect(); burst(kc, x.type === 'B' ? ['#3f7f35', '#7cc04a', '#2f6a2a'] : x.type === 'C' ? ['#d9b04a', '#f2c12e', '#fff3d6'] : ['#8cbf4a', '#cfe8a0', '#6aa03a'], 22, 10, 16, 4); floatText(KQ(x.k), KR(x.k), `${ICO[x.type]} +1 🧩`, '#fff6c8'); }, dl * 1000);
+        if (x.t === 'perfeita') setTimeout(() => floatText(q, r, '✨ +1 🧩', '#fff6c8'), dl * 1000 + 200);
         if (x.t === 'mudou') setTimeout(() => { SFX.page(); floatText(KQ(x.k), KR(x.k), '🔄 pedido novo', '#ffe6c8'); }, dl * 1000);
         if (x.t === 'seca') setTimeout(SFX.dry, 300); if (x.t === 'chuva') setTimeout(SFX.rain, 300); }
       if (S.over && !S.escolha.length) setTimeout(showEnd, 1600); };
@@ -420,7 +423,9 @@ export function buildBoard5(api) {
   const DICAS = 'afluente:v5:dicas', vistas = new Set(ler(DICAS) || []);
   function dica(id, txt, atraso = 0) { if (vistas.has(id)) return; vistas.add(id); gravar(DICAS, [...vistas]); const f = () => say('💡 ' + txt, 8); atraso ? setTimeout(f, atraso) : f(); }
   function dicasDepois(res) { const W = game.water(), t = res.ev.map(x => x.t), espera = t.length ? 5200 : 0;
-    if (t.includes('pedido')) dica('pedido', 'A vila foi atendida: chegou gente (os pontos) e peças para a pilha. Agora ela pede outra coisa; veja a plaquinha. Vila grande traz mais gente, mas menos peças.', espera);
+    if (t.includes('fechou')) dica('fechou', 'Região fechada: uma mata, lavoura ou campo de 3 peças ou mais que não tem mais lado livre devolve 1 peça à pilha. O botão Colocar mostra antes (🌳+1).', espera);
+    else if (t.includes('perfeita')) dica('perfeita', 'Encaixe perfeito: com 3 vizinhos ou mais e todos os lados iguais, a peça devolve 1 à pilha. O botão Colocar mostra ✨ antes.', espera);
+    else if (t.includes('pedido')) dica('pedido', 'A vila foi atendida: chegou gente (os pontos) e peças para a pilha. Agora ela pede outra coisa; veja a plaquinha. Vila grande traz mais gente, mas menos peças.', espera);
     else if (t.includes('mudou')) dica('mudou', `Vila sem paciência: ${PACIENCIA} jogadas sem nenhum avanço e ela troca de pedido. O ⏳ na plaquinha avisa antes.`, espera);
     else if (W.dry.size) dica('seco', '🥀 ficou sem água: a vazão da nascente acabou antes de chegar ali. Ligue o rio a um olho-d\'água para ter mais, ou ponha a lavoura mais perto da nascente.', espera);
     else if (!game.isSeca() && game.seasonLen() - S.clock <= 3) dica('seca', `A seca chega em ${game.seasonLen() - S.clock} jogada${game.seasonLen() - S.clock === 1 ? '' : 's'}: as nascentes vão dar a metade, e o que tem ☀️ vai secar.`, espera);
