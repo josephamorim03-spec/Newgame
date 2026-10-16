@@ -1,7 +1,7 @@
 // Os bichos do vale, em formas simples e cor chapada (como nos jogos pintados), com tamanho real e cada um com seu jeito:
 // gado nelore no pasto e no curral (procura a sombra da árvore quando a chuva aperta), capivaras na beira do rio, a garça
 // no raso da vereda, a seriema no cerrado, galinhas ciscando na vila, um casal de araras e um bando de passarinhos no céu,
-// borboletas nas flores, libélulas sobre a água, peixe pulando e vaga-lumes à noite.
+// borboletas nas flores, libélulas sobre a água e vaga-lumes à noite.
 import * as THREE from 'three';
 import { U } from './mat.js';
 import { mat, paint, merge, col, V3 } from './props.js';
@@ -127,6 +127,12 @@ export function buildFauna(scene, opts = {}) {
     let neck = 0, head = 0, yaw = 0, strike = 0, fast = false, tilt = 0;
     if (a.st === 'graze' || a.st === 'drink') { if (bird) { neck = a.peck ? (Math.sin(time * 7 + a.look) > 0.1 ? 1.7 : 0.7) : 1.3; head = 0.5; fast = !!a.peck; }
       else if (a.st === 'drink' && a.cocho) { neck = 0.62 + Math.sin(time * 2 + a.look) * 0.04; head = 0.25; }
+      else if (a.st === 'drink') {   // beber: o pescoço desce até o focinho tocar a água (cada barranco é um), goles, e de vez em quando vigia
+        a.dn = a.dn ?? R.graze[0]; a.vig = (a.vig ?? 3 + rnd() * 4) - dt; const up = a.vig < 0;
+        if (a.vig < -(1.4 + (a.look % 1))) { a.vig = 3.5 + rnd() * 4; a.gulp = 0; }
+        if (up) { neck = -0.08; head = 0.1; yaw = Math.sin(a.look * 7) * 0.8; if (!a.wasUp) { a.wasUp = true; a.drips = 4 + Math.floor(rnd() * 3); } }
+        else { a.wasUp = false; const gl = Math.sin(time * 3.2 + a.look); neck = a.dn + Math.max(0, gl) * 0.05; head = R.graze[1];
+          if (gl > 0.95 && !a.gul) { a.gul = true; a.gulp = (a.gulp || 0) + 1; } else if (gl < 0) a.gul = false; } }
       else { neck = R.graze[0] + Math.sin(time * 1.3 + a.look) * 0.04; head = R.graze[1]; } }
     else if (a.st === 'idle' || a.st === 'lie') { yaw = Math.sin(time * 0.4 + a.look) * 0.5; neck = a.st === 'lie' ? -0.15 : bird ? 0 : -0.05; tilt = Math.sin(time * 0.23 + a.look * 2) > 0.9 ? 0.25 : 0;
       let bt = null, bd = 7; for (const t of threats) { if (t.who === a) continue; const d = Math.hypot(t.x - a.x, t.z - a.z); if (d < bd) { bd = d; bt = t; } }
@@ -152,7 +158,12 @@ export function buildFauna(scene, opts = {}) {
         if (u >= 1) { a.sk = 5 + rnd() * 7; a.splashed = false; } } else neck = 0.35; }
     animate(a, dt, { neck, head, yaw, strike, fast, tilt }, { fx, near, time });
     // beber: anel na água a cada gole; nadar: a esteira
-    if (fx && near && a.st === 'drink' && !a.cocho && time - (a.rip || 0) > 1.4) { a.rip = time; muzzleWorld(a, _m); fx.ripple(_m.x, waterLevelAt(_m.x, _m.z) - U.uWaterDrop.value, _m.z, 0.3 * a.g.scale.x); }
+    if (a.st === 'drink' && !a.cocho && !bird) { muzzleWorld(a, _m); const wlm = waterLevelAt(_m.x, _m.z) - U.uWaterDrop.value;
+      if (a.vig >= 0) { const err = _m.y - (wlm + 0.01); a.dn = Math.max(R.graze[0] - 0.4, Math.min(R.graze[0] + 0.9, a.dn + Math.max(-1, Math.min(1, err * 4)) * dt * 1.5));
+        // o pescoço não alcança: um passinho para a frente (se o chão deixa e não é fundo)
+        if (err > 0.05 && a.dn >= R.graze[0] + 0.88) { const nx = a.x + Math.sin(a.h) * 0.25 * dt, nz = a.z + Math.cos(a.h) * 0.25 * dt; if (waterLevelAt(nx, nz) - heightAt(nx, nz) < 0.2) { a.x = nx; a.z = nz; } }
+        if (fx && near && a.gulp !== a.gRip && Math.abs(err) < 0.06) { a.gRip = a.gulp; fx.ripple(_m.x, wlm, _m.z, 0.25 * a.g.scale.x); } }
+      else if (fx && near && a.drips > 0 && rnd() < dt * 6 && fx.drip) { a.drips--; fx.drip(_m.x, _m.y - 0.02, _m.z, wlm); } }
     if (fx && near && a.swim && time - (a.rip || 0) > 0.55) { a.rip = time; const wl = waterLevelAt(a.x, a.z) - U.uWaterDrop.value; fx.ripple(a.x + Math.sin(a.h) * 0.4, wl, a.z + Math.cos(a.h) * 0.4, 0.5 + a.sp * 0.6); }
   }
   function pose(a, dt, time) { if (a.rig) return poseRig(a, dt, time);
@@ -326,14 +337,7 @@ export function buildFauna(scene, opts = {}) {
       if (dist > 0.01) { d.p.x += dx / dist * sp * dt; d.p.z += dz / dist * sp * dt; d.g.rotation.y = Math.atan2(dx, dz); }
       d.p.y = WATER_Y - U.uWaterDrop.value + 0.45 + Math.sin(time * 2 + d.t) * 0.08; d.g.position.copy(d.p); d.w.rotation.z = Math.sin(time * 60) * 0.3; d.g.visible = U.uDay.value > 0.3 && U.uRain.value < 0.4; } }); }
 
-  // ---------- peixe pulando: um arco prateado de vez em quando, com o anel na água na saída e na volta
-  { const fish = new THREE.Mesh(merge([ell(0.035, 0.05, 0.16, 0, 0, 0, col(0xb8c8c8), 8), paint(new THREE.PlaneGeometry(0.09, 0.08).rotateY(Math.PI / 2).translate(0, 0, -0.18), col(0x8a9a9a))], K), M); fish.visible = false; scene.add(fish); tag(fish, 'peixe'); fish.userData.reguaGeo = true;
-    const ringM = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0, depthWrite: false }), rings = [0, 1].map(() => { const r = new THREE.Mesh(new THREE.RingGeometry(0.85, 1, 24).rotateX(-Math.PI / 2), ringM.clone()); r.renderOrder = 3; scene.add(r); return r; });
-    let t = 3, jump = null; updaters.push(dt => { const wy = WATER_Y - U.uWaterDrop.value + 0.02;
-      if (!jump) { t -= dt; if (t <= 0) { const i0 = 10 + Math.floor(rnd() * 160), [x, z] = RIVER[i0], [x2, z2] = RIVER[i0 + 2]; jump = { a: V3(x, wy, z), b: V3(x2 + (x2 - x) * 0.2, wy, z2 + (z2 - z) * 0.2), k: 0 }; } }
-      else { jump.k += dt / 0.7; const k = Math.min(1, jump.k), p = jump.a.clone().lerp(jump.b, k); p.y = wy + Math.sin(k * Math.PI) * 0.55; fish.position.copy(p); fish.visible = k < 1;
-        fish.lookAt(jump.b.x, wy + Math.cos(k * Math.PI) * 0.55, jump.b.z); if (jump.k > 2.2) { jump = null; t = 5 + rnd() * 10; } }
-      rings.forEach((r, i) => { const k = jump ? jump.k - i : 9; if (k > 0 && k < 1.6) { const s = 0.1 + k * 0.5; r.scale.setScalar(s); r.material.opacity = 0.7 * (1 - k / 1.6); const p = i ? jump.b : jump.a; r.position.set(p.x, wy, p.z); r.visible = true; } else r.visible = false; }); }); }
+  // (os peixes, e os pulos deles, ficam em peixes.js)
 
   // ---------- vaga-lumes: piscam baixinho na beira da mata e no pasto quando escurece
   { const N = mobile ? 70 : 140, P = [], S = []; const spots = [tile('mata'), tP, TILES[0]];

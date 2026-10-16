@@ -3,6 +3,7 @@
 //   ripple(x, y, z, tam)  anel na água (pata no raso, beiço bebendo, boia mexendo)
 //   splash(x, y, z, tam)  respingo: gotas + dois anéis (criança pulando na lagoa, garça dando o bote)
 //   dust(x, y, z, tam)    poeira (bicho correndo no seco)
+//   drip(x, y, z, yAgua)  pingo que cai do focinho/da boca e faz um anelzinho onde bate
 import * as THREE from 'three';
 
 export function createFx(scene, { mobile = false } = {}) {
@@ -23,8 +24,9 @@ export function createFx(scene, { mobile = false } = {}) {
     fragmentShader: 'varying float vA;varying vec3 vC;void main(){float d=length(gl_PointCoord-0.5);if(d>0.5||vA<0.01)discard;gl_FragColor=vec4(vC,vA*smoothstep(0.5,0.25,d));\n#include <colorspace_fragment>\n}' });
   const pts = new THREE.Points(geo, pm); pts.frustumCulled = false; pts.renderOrder = 4; scene.add(pts);
   let pi = 0; const DROP = new THREE.Color(0xe8f6ff), DUST = new THREE.Color(0xc8a87a);
-  function emit(k, x, y, z, vx, vy, vz, l, s, c) { const i = pi; pi = (pi + 1) % PN; P.set([x, y, z], i * 3); V.set([vx, vy, vz], i * 3); C.set([c.r, c.g, c.b], i * 3);
-    life[i] = l; age[i] = 0; floor[i] = y; kind[i] = k; Sz[i] = s; A[i] = 1; }
+  function emit(k, x, y, z, vx, vy, vz, l, s, c, fl = y) { const i = pi; pi = (pi + 1) % PN; P.set([x, y, z], i * 3); V.set([vx, vy, vz], i * 3); C.set([c.r, c.g, c.b], i * 3);
+    life[i] = l; age[i] = 0; floor[i] = fl; kind[i] = k; Sz[i] = s; A[i] = 1; }
+  function drip(x, y, z, yw) { emit(2, x, y, z, (Math.random() - 0.5) * 0.1, -0.2, (Math.random() - 0.5) * 0.1, 1.5, 0.035, DROP, yw); }
   function splash(x, y, z, size = 1) { const n = Math.round((mobile ? 10 : 18) * size);
     for (let i = 0; i < n; i++) { const a = Math.random() * 6.283, h = (0.6 + Math.random() * 1.4) * size, up = (2.4 + Math.random() * 2.6) * Math.sqrt(size);
       emit(0, x + Math.cos(a) * 0.15 * size, y + 0.05, z + Math.sin(a) * 0.15 * size, Math.cos(a) * h, up, Math.sin(a) * h, 1.4, 0.07 + Math.random() * 0.05, DROP); }
@@ -37,9 +39,9 @@ export function createFx(scene, { mobile = false } = {}) {
       r.m.visible = true; r.m.scale.setScalar(r.s0 + (r.s1 - r.s0) * (1 - (1 - k) * (1 - k))); r.m.material.opacity = r.a * (1 - k); }
     let any = false;
     for (let i = 0; i < PN; i++) { if (age[i] >= life[i]) { if (A[i] > 0) { A[i] = 0; any = true; } continue; } any = true; age[i] += dt; const j = i * 3;
-      if (kind[i] === 0) { V[j + 1] -= 9.8 * dt; P[j] += V[j] * dt; P[j + 1] += V[j + 1] * dt; P[j + 2] += V[j + 2] * dt;
-        if (V[j + 1] < 0 && P[j + 1] < floor[i]) { age[i] = life[i]; A[i] = 0; if (Math.random() < 0.15) ripple(P[j], floor[i], P[j + 2], 0.25); continue; } A[i] = 0.9; }
+      if (kind[i] !== 1) { V[j + 1] -= 9.8 * dt; P[j] += V[j] * dt; P[j + 1] += V[j + 1] * dt; P[j + 2] += V[j + 2] * dt;
+        if (V[j + 1] < 0 && P[j + 1] < floor[i]) { age[i] = life[i]; A[i] = 0; if (kind[i] === 2 || Math.random() < 0.15) ripple(P[j], floor[i], P[j + 2], kind[i] === 2 ? 0.12 : 0.25); continue; } A[i] = 0.9; }
       else { V[j] *= 1 - dt * 2; V[j + 2] *= 1 - dt * 2; V[j + 1] *= 1 - dt * 1.5; P[j] += V[j] * dt; P[j + 1] += V[j + 1] * dt; P[j + 2] += V[j + 2] * dt; Sz[i] += dt * 0.5; A[i] = 0.45 * (1 - age[i] / life[i]); } }
     if (any) { geo.attributes.position.needsUpdate = true; geo.attributes.alpha.needsUpdate = true; geo.attributes.size.needsUpdate = true; geo.attributes.color.needsUpdate = true; } }
-  return { ripple, splash, dust, update };
+  return { ripple, splash, dust, drip, update };
 }
