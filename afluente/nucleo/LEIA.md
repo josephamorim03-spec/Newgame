@@ -18,6 +18,13 @@ Protótipo jogável para testar se a regra nova diverte, antes de levá-la ao va
 **Arquivos:**
 - `regras.js`: o motor, sem desenho.
 - `index.html`: o tabuleiro 2D jogável, publicado como Artifact (abre com um servidor local, por exemplo `python3 -m http.server`).
+- `teste.mjs`: o teste de regras. Ele joga 200 vales, ao acaso e de forma gulosa, passando a vez às vezes de propósito, e confere:
+  - a pilha, que nunca fica negativa, e o fim, que vem só quando ela acaba;
+  - o relógio das estações, inclusive quando a vez passa;
+  - que um pedido novo nunca nasce cumprido;
+  - que a prévia da peça bate com o que acontece ao colocar ("a vila cresce", água na peça).
+
+  Uso: `node teste.mjs 200`.
 - `sim.mjs`: o simulador. Uso: `node sim.mjs 10 guloso`.
 
 **Números do simulador** (bot guloso, 10 vales): só checam se as regras se sustentam, não se divertem.

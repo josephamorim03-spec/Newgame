@@ -9,7 +9,7 @@
 //  - o "juice": som sintetizado (sem arquivos), vibração, tremor no baque, confete na vila que cresce, gotas no olho-d'água,
 //    a maquete que gira com mola, o placar que conta e pulsa, e a tela do fim.
 import * as THREE from 'three';
-import { Game, rot, KQ, KR, K, PEDIDOS } from '../../nucleo/regras.js';
+import { Game, rot, KQ, KR, K, PEDIDOS, vazao } from '../../nucleo/regras.js';
 import { toon } from './mat.js';
 
 const COL = { A: '#3f8fc0', B: '#2f6a2a', C: '#d9b04a', V: '#c0583a', G: '#8cbf4a' };
@@ -182,7 +182,7 @@ export function buildBoard5(api) {
     // olhos-d'água: um poço claro no chão e quanto ele soma
     for (const [k, f] of S.springs) { const c = hexCenter(KQ(k), KR(k)), y = groundY(c[0], c[1]) + 0.3;
       const m = new THREE.Mesh(new THREE.CircleGeometry(4.5, 28).rotateX(-Math.PI / 2), springMat); m.position.set(c[0], y, c[1]); springG.add(m);
-      tag(`olho-d'água +${f}💧`, c[0], y + 6, c[1], { bg: 'rgba(225,245,255,.95)', fg: '#1f5f86', k: 0.8 }); }
+      tag(`olho-d'água +${vazao(f, game.isSeca())}💧`, c[0], y + 6, c[1], { bg: 'rgba(225,245,255,.95)', fg: '#1f5f86', k: 0.8 }); }
     // quem gasta água e ficou sem: lavoura e vila secas
     for (const k of W.dry) { const c = hexCenter(KQ(k), KR(k)); tag('sem água', c[0], groundY(c[0], c[1]) + 9, c[1], { bg: '#e07a2e', fg: '#fff', k: 0.75 }); }
     // a seca chegando: quem vai secar
@@ -249,10 +249,10 @@ export function buildBoard5(api) {
   let sel = null;
   // o giro sugerido: o que atende ou avança um pedido, liga um olho-d'água, recebe água e encaixa mais lados
   const value = o => o.vil.filter(v => v.done).length * 10 + o.vil.filter(v => v.after > v.before).length * 3 + (o.spring ? 4 : 0) + (o.wetSelf ? 1 : 0) - (o.drySelf ? 2 : 0) - o.lost.length * 2 + o.marks.filter(Boolean).length * 0.5;
-  function select(k) { if (S.escolha.length) { openPack(); return; } const opts = game.options(k); if (!opts.length) { SFX.no(); say('Essa peça não encaixa aí: rio só encosta em rio.'); return; }
+  function select(k) { if (S.over) return; if (S.escolha.length) { openPack(); return; } const opts = game.options(k); if (!opts.length) { SFX.no(); say('Essa peça não encaixa aí: rio só encosta em rio.'); return; }
     SFX.sel(); buzz(6);
     let bi = 0; opts.forEach((o, i) => { if (value(o) > value(opts[bi])) bi = i; }); sel = { k, q: KQ(k), r: KR(k), opts, i: bi }; refresh(); }
-  function turn(dir) { if (!sel) return; SFX.rot(); buzz(4); sel.i = (sel.i + (dir > 0 ? 1 : sel.opts.length - 1)) % sel.opts.length; refresh(); }
+  function turn(dir) { if (!sel) { if (!S.over) { SFX.no(); say('Escolha primeiro uma casa marcada: a peça gira lá.'); } return; } SFX.rot(); buzz(4); sel.i = (sel.i + (dir > 0 ? 1 : sel.opts.length - 1)) % sel.opts.length; refresh(); }
   let shownP = 0, pAnim = 0;
   function countP() { if (pAnim) return; const step = () => { if (shownP >= S.gente) { pAnim = 0; return; } shownP++; const el = $('pP'); if (el) { el.textContent = shownP; el.classList.remove('pulsa'); void el.offsetWidth; el.classList.add('pulsa'); }
       marimba(1046.5 + (shownP % 5) * 90, 0, 0.035); pAnim = setTimeout(step, 90); }; pAnim = setTimeout(step, 450); }
@@ -286,15 +286,20 @@ export function buildBoard5(api) {
     else land();
     ghost.clear(); gKey = '';
     const txt = res.ev.map(x => x.txt); say(txt.length ? txt.join(' · ') : 'Peça no vale');
-    if (!S.over && !S.escolha.length && !game.fits()) { game.skip(); say('Essa peça não cabia em lugar nenhum: passou a vez.'); }
+    passIfStuck();
     drawSlots(); refresh(); if (S.escolha.length) setTimeout(openPack, 1300); }
 
+  // nenhuma casa serve para a peça na mão: ela passa (o relógio das estações anda junto); repete se a próxima também não servir
+  function passIfStuck() { let n = 0; const msgs = [];
+    while (!S.over && !S.escolha.length && !game.fits() && n++ < 30) { const r = game.skip(); msgs.push('a peça não cabia em lugar nenhum e passou'); if (r) for (const x of r.ev) { msgs.push(x.txt); if (x.t === 'pedido') { growVillage(x.k); SFX.grow(); } } }
+    if (msgs.length) { say(msgs.join(' · ')); SFX.no(); }
+    if (S.escolha.length && n) setTimeout(openPack, 600); if (S.over && n) setTimeout(showEnd, 900); }
   // ---------- "A vila cresceu!": dois pacotes; o escolhido entra logo depois da peça na mão
   function openPack() { const ch = S.escolha[0]; if (!ch) { pk.hidden = true; return; } $('pkS').textContent = 'O que chega na pilha? As 3 peças entram logo depois da peça na mão.';
     const box = $('pkO'); box.innerHTML = '';
     ch.forEach((p, i) => { const b = document.createElement('button'); b.type = 'button'; b.innerHTML = `<span>${TEMA[p.tema] || p.tema}</span><span class="t"></span>`;
       for (const t of p.tiles) { const c = document.createElement('canvas'); c.width = c.height = 80; drawThumb(c, t.e); b.querySelector('.t').appendChild(c); }
-      b.onclick = () => { game.choose(i); SFX.pack(); buzz(10); pk.hidden = true; if (S.over && !S.escolha.length) setTimeout(showEnd, 600); say(`${TEMA[p.tema] || p.tema}: 3 peças a caminho`); drawSlots(); refresh(); if (S.escolha.length) setTimeout(openPack, 300); };
+      b.onclick = () => { game.choose(i); SFX.pack(); buzz(10); pk.hidden = true; if (S.over && !S.escolha.length) setTimeout(showEnd, 600); say(`${TEMA[p.tema] || p.tema}: 3 peças a caminho`); passIfStuck(); drawSlots(); refresh(); if (S.escolha.length) setTimeout(openPack, 300); };
       box.appendChild(b); });
     pk.hidden = false; SFX.open(); }
 
