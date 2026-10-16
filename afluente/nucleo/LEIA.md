@@ -27,16 +27,24 @@ Protótipo jogável para testar se a regra nova diverte, antes de levá-la ao va
   Uso: `node teste.mjs 200`.
 - `sim.mjs`: o simulador. Uso: `node sim.mjs 10 guloso`.
 
-**Números do simulador** (bot guloso, 10 vales): só checam se as regras se sustentam, não se divertem.
+**Ajuste de ritmo (v5.1):** simulando o começo do vale 3D (as 11 peças da prévia), 63% das jogadas não faziam nada acontecer e o pedido de lavoura travava o jogo (136 abertos no fim de 60 vales, 24 atendidos), porque a nascente já começa quase toda gasta. Mudou:
+- **Pedido de lavoura:** pede 1 lavoura com água no nível 1, 2 no nível 2 e assim por diante (era o nível + 1). Fica menos provável quando o rio não tem água sobrando.
+- **Paciência:** 9 jogadas sem nenhum avanço e a vila troca de pedido. A plaquinha mostra ⏳ quando faltam 3.
+- **Peças de um pedido atendido:** 2 até o nível 2, 1 nos níveis 3 e 4, nenhuma depois. Sem esse freio, com a paciência, a pilha virava bola de neve: em 10% dos vales a partida passava de 300 jogadas.
+
+**Números do simulador** (bot guloso, 20 vales): só checam se as regras se sustentam, não se divertem.
 
 | Medida | Valor |
 |---|---|
-| Duração | mediana 35 jogadas |
-| Vazão no fim | 14, das quais 13 usadas: a água fica no limite |
-| Pedidos atendidos | 5 por partida |
-| Jogadas que ligam um olho-d'água | 13% |
-| Jogadas em que nada acontece | 38% (eram 44% no jogo de hoje) |
-| Bot ao acaso | não atende nenhum pedido e acaba em 20 jogadas: jogar bem faz diferença |
+| Duração | mediana 34 jogadas (90% até 38) |
+| Pessoas | mediana 36 (antes 20) |
+| Pedidos atendidos | 6 por partida (antes 4) |
+| Vazão no fim | 12, todas usadas: a água fica no limite |
+| Jogadas que ligam um olho-d'água | 11% |
+| Jogadas em que nada acontece | 37% (eram 42%) |
+| Vila que troca de pedido | 8% das jogadas |
+| No começo do vale 3D | 6 pedidos e 30 pessoas por partida (eram 3 e 14), o primeiro na jogada 3 (era a 7), e 50% de jogadas quietas (eram 63%) |
+| Bot ao acaso | quase não atende pedido e acaba em ~22 jogadas: jogar bem faz diferença |
 
 **No vale 3D:** o núcleo v5 roda também no tabuleiro 3D da prévia (`../prototipo3d/js/board5.js`), que agora o usa por padrão (`?jogo=v3` volta às regras antigas). Na tela aparecem:
 - a vazão no placar (💧 usada/total);

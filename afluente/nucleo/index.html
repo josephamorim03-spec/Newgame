@@ -101,7 +101,7 @@ button.chip { border: 0; }
     <li><b>Encaixe</b> a peça numa casa vazia. Água só encosta em água.</li>
     <li>A <b>nascente</b> (o círculo azul com número) dá essa quantidade de <b style="color:var(--water)">💧</b>. As <b>gotas azuis</b> no mapa são <b>olhos-d'água</b>: ponha uma peça com rio em cima da gota, ligada ao seu rio, e ele ganha essa água. Os tracinhos azuis mostram por onde o rio pode seguir.</li>
     <li><b>Lavoura e vila gastam água</b>: cada peça delas encostada no rio usa 1 💧. A água chega primeiro em quem está perto da nascente; quando acaba, o resto fica <b>seco</b>. O rio afina à medida que é usado.</li>
-    <li>Cada <b>vila pede</b> uma coisa na plaquinha. Atendeu: a vila cresce (mais pessoas), ganha <b>+2 peças</b> e você escolhe o próximo pacote de peças.</li>
+    <li>Cada <b>vila pede</b> uma coisa na plaquinha. Atendeu: a vila cresce (mais pessoas), ganha <b>peças</b> (+2 na vila pequena, +1 na média, nenhuma na grande) e você escolhe o próximo pacote de peças. Nove jogadas sem avanço e ela troca de pedido.</li>
     <li>A cada 8 jogadas vem a <b>seca</b> (4 jogadas): <b>cada nascente dá metade</b> (4 vira 2). Toque no 💧 do topo para ver como o vale fica na seca. Quando ela chega, a colheita: +1 peça a cada 2 lavouras que continuam com água. Depois as chuvas devolvem a água toda.</li>
   </ol>
   <p>A pilha é a vida: quando acaba, o jogo acaba. Toque numa casa para ver o que a peça faria, toque de novo (ou ⟳) para girar e confirme com <b>Colocar</b>.</p>
@@ -121,7 +121,7 @@ button.chip { border: 0; }
 </div></div>
 
 <script type="module">
-import { Game, K, KQ, KR, DIRS, nbk, rot, PEDIDOS, TEMAS, vazao } from './regras.js';
+import { Game, K, KQ, KR, DIRS, nbk, rot, PEDIDOS, TEMAS, vazao, pecasDe } from './regras.js';
 
 // ---------- estado da partida (desfazer = refazer tudo desde o começo, sem a última peça)
 let seed = 'vale-' + Math.floor(Math.random() * 1e6), acts = [], G = null;
@@ -200,7 +200,7 @@ function toast(list) { const box = $('toast'); box.style.top = topY() + 'px'; bo
 // ---------- texto da prévia (o que essa peça faz aqui)
 const reqTxt = r => `${PEDIDOS[r.t].icone} ${PEDIDOS[r.t].txt(r.n)}`;
 function previewMsg(o) { const out = [], t = G.hand().e, cons = t.includes('C') || t.includes('V');
-  for (const x of o.vil) { if (x.done) out.push(`<span class="ok">Atende a vila (${reqTxt(x.req)}): cresce, +2 peças</span>`); else if (Math.min(x.after, x.req.n) > Math.min(x.before, x.req.n)) out.push(`<span class="ok">Vila: ${PEDIDOS[x.req.t].icone} ${x.before} → ${x.after} de ${x.req.n}</span>`); }
+  for (const x of o.vil) { if (x.done) { const v = G.S.vilas.get(x.id), pc = pecasDe((v ? v.lvl : 1) + 1); out.push(`<span class="ok">Atende a vila (${reqTxt(x.req)}): cresce${pc ? `, +${pc} peça${pc > 1 ? 's' : ''}` : ''}</span>`); } else if (Math.min(x.after, x.req.n) > Math.min(x.before, x.req.n)) out.push(`<span class="ok">Vila: ${PEDIDOS[x.req.t].icone} ${x.before} → ${x.after} de ${x.req.n}</span>`); }
   if (o.spring) out.push(o.springJoin ? `<span class="agua">Liga o olho-d'água ao rio: +${o.spring} 💧</span>` : `<span class="agua">Vira uma nascente nova (+${o.spring} 💧), separada do seu rio: ligue os dois para somar a água</span>`);
   if (o.buried) out.push(`<span class="ruim">Enterra o olho-d'água (a peça não tem rio)</span>`);
   if (cons && o.wetSelf) out.push(`<span class="agua">Recebe água (usa 1 💧)</span>`);

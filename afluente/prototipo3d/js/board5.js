@@ -9,7 +9,7 @@
 //  - o "juice": som sintetizado (sem arquivos), vibração, tremor no baque, confete na vila que cresce, gotas no olho-d'água,
 //    a maquete que gira com mola, o placar que conta e pulsa, e a tela do fim.
 import * as THREE from 'three';
-import { Game, rot, KQ, KR, K, PEDIDOS, vazao, nbk, opp, NOME } from '../../nucleo/regras.js';
+import { Game, rot, KQ, KR, K, PEDIDOS, vazao, nbk, opp, NOME, PACIENCIA } from '../../nucleo/regras.js';
 import { toon, U } from './mat.js';
 import { createSom } from './som.js';
 import { createMenu } from './menu5.js';
@@ -171,8 +171,9 @@ export function buildBoard5(api) {
     // vilas: o pedido e, com a peça escolhida, o que ela muda
     const ch = new Map((pv ? pv.vil : []).map(v => [v.id, v]));
     for (const v of S.vilas.values()) { const P = PEDIDOS[v.req.t], c = hexCenter(KQ(v.id), KR(v.id)), cur = game.progress(v), x = ch.get(v.id);
-      const txt = x && x.after !== x.before ? (x.done ? `${P.icone} ✓ a vila cresce!` : `${P.icone} ${x.before}→${x.after}/${v.req.n}`) : v.req.t === 'agua' ? `${P.icone} quer água` : `${P.icone} ${cur}/${v.req.n}`;
-      const info = `Vila (nível ${v.lvl}) pede ${P.txt(v.req.n)}${v.req.t === 'agua' ? '' : ` — tem ${cur} de ${v.req.n}`}. Atendida, ganha pessoas, uma casa e peças novas.`;
+      const falta = PACIENCIA - (v.wait || 0);
+      const txt = x && x.after !== x.before ? (x.done ? `${P.icone} ✓ a vila cresce!` : `${P.icone} ${x.before}→${x.after}/${v.req.n}`) : (v.req.t === 'agua' ? `${P.icone} quer água` : `${P.icone} ${cur}/${v.req.n}`) + (falta <= 3 ? ` ⏳${falta}` : '');
+      const info = `Vila (nível ${v.lvl}) pede ${P.txt(v.req.n)}${v.req.t === 'agua' ? '' : ` — tem ${cur} de ${v.req.n}`}. Atendida, ganha pessoas, uma casa e peças novas.${falta <= 3 ? ` Está perdendo a paciência: em ${falta} jogada${falta === 1 ? '' : 's'} sem avanço ela troca de pedido.` : ''}`;
       tag(txt, c[0], groundY(c[0], c[1]) + 16, c[1], x && x.done ? { bg: '#3f9a4a', fg: '#fff', info } : { ring: '#e0663f', info }); }
     // olhos-d'água: um poço claro no chão e quanto ele soma
     for (const [k, f] of S.springs) { const c = hexCenter(KQ(k), KR(k)), y = groundY(c[0], c[1]) + 0.3;
@@ -262,7 +263,8 @@ export function buildBoard5(api) {
   function select(k) { if (S.over) return; if (S.escolha.length) { openPack(); return; } const opts = game.options(k);
     if (!opts.length) { const tr = tries(k); SFX.no(); buzz([8, 30, 8]); sel = { k, q: KQ(k), r: KR(k), opts: tr, i: 0, bad: true }; refresh(); badSay(); return; }
     SFX.sel(); buzz(6);
-    let bi = 0; opts.forEach((o, i) => { if (value(o) > value(opts[bi])) bi = i; }); sel = { k, q: KQ(k), r: KR(k), opts, i: bi }; refresh(); }
+    let bi = 0; opts.forEach((o, i) => { if (value(o) > value(opts[bi])) bi = i; }); sel = { k, q: KQ(k), r: KR(k), opts, i: bi }; refresh();
+    dica('marcas', 'Os traços na beira da peça: verde, o lado é igual ao do vizinho; laranja, terra diferente (pode). A plaquinha da vila mostra o que a peça muda. Toque de novo para girar.'); }
   function turn(dir) { if (!sel) { if (!S.over) { SFX.no(); say('Escolha primeiro uma casa marcada: a peça gira lá.'); } return; } SFX.rot(); buzz(4); sel.i = (sel.i + (dir > 0 ? 1 : sel.opts.length - 1)) % sel.opts.length; refresh(); if (sel.bad) badSay(); }
   function badSay() { const o = sel.opts[sel.i], uniq = [...new Set(o.bad)];
     say(`Não cabe aqui em nenhum giro: ${uniq.join('; ')} (lado vermelho). Rio só encosta em rio.${fitN ? ` Ela cabe em ${fitN} casa${fitN === 1 ? '' : 's'} de faixa branca.` : ''}`, 6); }
@@ -299,12 +301,14 @@ export function buildBoard5(api) {
           setTimeout(() => { SFX.grow(); buzz([20, 40, 30]); burst(kc, FLORES, 36, 16, 22, 10); shake(0.5, 0.25); }, dl * 1000); dl += 0.35; }
         if (x.t === 'nascente') setTimeout(() => { SFX.water(); burst(kc, GOTAS, 22, 9, 16, 2); floatText(KQ(x.k), KR(x.k), x.txt.match(/\+\d+ 💧/) ? x.txt.match(/\+\d+ 💧/)[0] : '+💧', '#cdefff'); }, dl * 1000);
         if (x.t === 'perfeita') setTimeout(() => { SFX.perfect(); burst(kc, OURO, 18, 8, 14, 3); }, dl * 1000);
+        if (x.t === 'mudou') setTimeout(() => { SFX.page(); floatText(KQ(x.k), KR(x.k), '🔄 pedido novo', '#ffe6c8'); }, dl * 1000);
         if (x.t === 'seca') setTimeout(SFX.dry, 300); if (x.t === 'chuva') setTimeout(SFX.rain, 300); }
       if (S.over && !S.escolha.length) setTimeout(showEnd, 1600); };
     if (mq) { ghost.remove(mq); mq.position.copy(ghost.position); mq.scale.copy(ghost.scale); scene.add(mq); drops.push({ mq, v: 0, y: mq.position.y, floor: groundY(c0[0], c0[1]) + 0.3, land, t: 0 }); }
     else land();
     ghost.clear(); gKey = '';
     const txt = res.ev.map(x => x.txt); if (txt.length) say(txt.join(' · '), 5);
+    dicasDepois(res);
     passIfStuck(); salvar();
     drawSlots(); refresh(); if (S.escolha.length) setTimeout(openPack, 1300); }
 
@@ -412,6 +416,16 @@ export function buildBoard5(api) {
   $('hsIr').onclick = () => { if (hsI < HIST.length - 1) hsShow(hsI + 1); else hsClose(); }; $('hsPular').onclick = hsClose; hb.onclick = () => hsShow(0); hb.hidden = true; hb.style.display = 'none';   // a história fica no menu
   addEventListener('keydown', e => { if (!hs.hidden && e.key === 'Escape') hsClose(); });
   { const mp = document.querySelector('.marca p'); if (mp) mp.textContent = 'O vale da nascente'; }
+  // ---------- dicas da primeira partida: cada uma aparece uma vez (no aparelho), na hora em que a coisa acontece
+  const DICAS = 'afluente:v5:dicas', vistas = new Set(ler(DICAS) || []);
+  function dica(id, txt, atraso = 0) { if (vistas.has(id)) return; vistas.add(id); gravar(DICAS, [...vistas]); const f = () => say('💡 ' + txt, 8); atraso ? setTimeout(f, atraso) : f(); }
+  function dicasDepois(res) { const W = game.water(), t = res.ev.map(x => x.t), espera = t.length ? 5200 : 0;
+    if (t.includes('pedido')) dica('pedido', 'A vila foi atendida: chegou gente (os pontos) e peças para a pilha. Agora ela pede outra coisa; veja a plaquinha. Vila grande traz mais gente, mas menos peças.', espera);
+    else if (t.includes('mudou')) dica('mudou', `Vila sem paciência: ${PACIENCIA} jogadas sem nenhum avanço e ela troca de pedido. O ⏳ na plaquinha avisa antes.`, espera);
+    else if (W.dry.size) dica('seco', '🥀 ficou sem água: a vazão da nascente acabou antes de chegar ali. Ligue o rio a um olho-d\'água para ter mais, ou ponha a lavoura mais perto da nascente.', espera);
+    else if (!game.isSeca() && game.seasonLen() - S.clock <= 3) dica('seca', `A seca chega em ${game.seasonLen() - S.clock} jogada${game.seasonLen() - S.clock === 1 ? '' : 's'}: as nascentes vão dar a metade, e o que tem ☀️ vai secar.`, espera);
+    else if (S.springs.size && acts.length >= 3) dica('olho', 'Os círculos azuis no chão são olhos-d\'água: leve um rio até encostar neles e a nascente ganha a água deles.', espera); }
+
   // ---------- salvar, reabrir, passar a peça, o menu
   function salvar() { if (S.over) return; gravar(SAVE, { v: 1, seed, acts, gente: S.gente, pilha: S.left, jogadas: acts.filter(a => a[0] !== 'c').length, over: S.over, t: Date.now() }); }
   // (a cada jogada a tela pede a peça na mão e a próxima, e é isso que sorteia a seguinte: aqui também, na mesma ordem)

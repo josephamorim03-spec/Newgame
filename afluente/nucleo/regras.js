@@ -5,8 +5,9 @@
 //  2. O rio tem vazão: cada nascente dá água (💧). Ligar o rio a um olho-d'água do mapa soma a vazão dele.
 //  3. Lavoura e vila gastam água: cada peça com lavoura ou vila encostada no rio usa 1 💧. A água chega primeiro em quem
 //     está mais perto da nascente; quando a vazão acaba, o resto fica seco.
-//  4. Cada vila pede uma coisa por vez (plaquinha). Atendeu: a vila cresce (pessoas = pontos), ganha 2 peças e você
-//     escolhe entre dois pacotes de peças. O pedido é conferido a cada jogada e também quando a estação vira.
+//  4. Cada vila pede uma coisa por vez (plaquinha). Atendeu: a vila cresce (pessoas = pontos), ganha peças (2 até o nível 2,
+//     1 nos níveis 3 e 4, nenhuma depois) e você escolhe entre dois pacotes de peças. O pedido é conferido a cada jogada e
+//     também quando a estação vira; 9 jogadas sem nenhum avanço e a vila troca de pedido.
 //  5. A seca: a cada 8 jogadas de Águas vêm 4 de Seca, e cada nascente dá metade (a tela mostra antes como fica). Na chegada da
 //     seca, a colheita: 1 peça a cada 2 lavouras que continuam com água. A pilha é a vida: acabou, acabou.
 //  (+ peça perfeita, com os 6 lados combinando, devolve 1 peça.)
@@ -22,6 +23,10 @@ export const LAND = ['B', 'C', 'V', 'G'];
 // na seca cada nascente dá metade (arredondando para cima): 4 → 2, 3 → 2, 2 → 1
 export const vazao = (src, dry) => dry ? Math.ceil(src / 2) : src;
 export const NOME = { A: 'rio', B: 'mata', C: 'lavoura', V: 'vila', G: 'campo' };
+export const PACIENCIA = 9;
+// peças que um pedido atendido devolve: a vila nova ajuda a pilha; a vila grande só traz gente (sem isso a pilha virava bola de
+// neve — cada vila crescendo devolvia 2 por 1 — e o vale não acabava)
+export const pecasDe = lvl => lvl <= 2 ? 2 : lvl <= 4 ? 1 : 0;   // jogadas sem avanço até a vila trocar de pedido
 
 export function rngOf(str) { let h = 1779033703 ^ str.length; for (let i = 0; i < str.length; i++) { h = Math.imul(h ^ str.charCodeAt(i), 3432918353); h = h << 13 | h >>> 19; }
   let a = h >>> 0; return () => { a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
@@ -121,7 +126,10 @@ export function Game({ seed = 'vale', pilha = 22, nascente = 4, aguas = 8, seca 
     return 0; }
   function newReq(v, vt, W, prevT) { const L = v.lvl, opts = [];
     if (![...vt].some(k => W.wet.has(k))) opts.push({ t: 'agua', n: 1, w: 4 });
-    opts.push({ t: 'lavoura', n: Math.min(4, L + 1), w: 3 }, { t: 'mata', n: Math.min(6, L + 2), w: 2 }, { t: 'crescer', n: vt.size + 1 + (L > 2 ? 1 : 0), w: 2 }, { t: 'pasto', n: Math.min(3, 1 + (L >> 1)), w: 1.5 });
+    // lavoura: 1 no nível 1, 2 no 2… (era o nível + 1, e com a água já quase toda gasta pelo vale o pedido emperrava); menos
+    // provável quando o rio não tem mais água sobrando
+    const livre = W.nets.reduce((a, n) => a + Math.max(0, n.flow - n.used), 0);
+    opts.push({ t: 'lavoura', n: Math.min(4, L), w: livre > 0 ? 3 : 1 }, { t: 'mata', n: Math.min(6, L + 2), w: 2 }, { t: 'crescer', n: vt.size + 1 + (L > 2 ? 1 : 0), w: 2 }, { t: 'pasto', n: Math.min(3, 1 + (L >> 1)), w: 1.5 });
     const M = regions(board, 'B'), ok = opts.filter(o => o.t !== prevT && progress(board, W, vt, o, M) < o.n);
     if (!ok.length) return { t: 'crescer', n: vt.size + 1 };   // tudo já atendido: a vila pede para crescer, que nunca está cumprido
     const o = pickW(rng, ok.map(o => [o, o.w])); return { t: o.t, n: o.n }; }
@@ -156,15 +164,21 @@ export function Game({ seed = 'vale', pilha = 22, nascente = 4, aguas = 8, seca 
     if (pv.buried) ev.push({ t: 'soterrou', txt: 'O olho-d\'água ficou debaixo da terra', k });
     S.springs.delete(k); board.set(k, t); S.queue.shift(); S.left--;
     if (pv.perfect) { S.left++; ev.push({ t: 'perfeita', txt: 'Peça perfeita: +1 peça', k }); }
-    syncVilas(water()); grant(ev); tick(ev);
+    syncVilas(water()); grant(ev); tick(ev); paciencia(ev);
     spawnSprings();
     if (S.left <= 0 && !S.escolha.length) S.over = true;
     S.log.push({ k, e, ev }); return { ev, pv }; }
   // pedidos atendidos: a vila cresce, ganha pessoas e 2 peças, e abre a escolha de pacote
   function grant(ev) { const W = water();
-    for (const v of S.vilas.values()) { if (progress(board, W, v.tiles, v.req) < v.req.n) continue; v.lvl++; const g = 2 * v.lvl; S.gente += g; S.left += 2;
-      ev.push({ t: 'pedido', txt: `Vila atendida (${PEDIDOS[v.req.t].txt(v.req.n)}): +${g} pessoas, +2 peças`, k: v.id, lvl: v.lvl });
-      v.req = newReq(v, v.tiles, W, v.req.t); S.escolha.push(packs()); } }
+    for (const v of S.vilas.values()) { if (progress(board, W, v.tiles, v.req) < v.req.n) continue; v.lvl++; const g = 2 * v.lvl, pc = pecasDe(v.lvl); S.gente += g; S.left += pc;
+      ev.push({ t: 'pedido', txt: `Vila atendida (${PEDIDOS[v.req.t].txt(v.req.n)}): +${g} pessoas${pc ? `, +${pc} peça${pc > 1 ? 's' : ''}` : ''}`, k: v.id, lvl: v.lvl, pecas: pc });
+      v.req = newReq(v, v.tiles, W, v.req.t); v.best = null; v.wait = 0; S.escolha.push(packs()); } }
+  // a paciência das vilas: pedido que passa PACIENCIA jogadas sem avançar nada a vila troca por outro (antes ficava parado até
+  // o fim do vale, mesmo quando já não tinha como atender)
+  function paciencia(ev) { const W = water(); for (const v of S.vilas.values()) { const p = progress(board, W, v.tiles, v.req);
+      if (v.best == null || p > v.best) { v.best = p; v.wait = 0; continue; } if (++v.wait < PACIENCIA) continue;
+      const old = v.req; v.req = newReq(v, v.tiles, W, old.t); v.best = progress(board, W, v.tiles, v.req); v.wait = 0;
+      if (v.req.t !== old.t || v.req.n !== old.n) ev.push({ t: 'mudou', txt: `A vila cansou de esperar ${PEDIDOS[old.t].txt(old.n)}: agora pede ${PEDIDOS[v.req.t].txt(v.req.n)}`, k: v.id }); } }
   // o relógio das estações (colocar e passar a vez contam igual); na virada, a colheita ou a chuva, e os pedidos de novo
   function tick(ev) { S.clock++; if (S.clock < (isSeca() ? S.seca : S.aguas)) return; S.clock = 0; S.season++;
     if (isSeca()) { const W = water(board, true), lav = [...W.wet].filter(x => board.get(x).e.includes('C')).length, h = Math.floor(lav / 2); S.left += h;
@@ -175,7 +189,7 @@ export function Game({ seed = 'vale', pilha = 22, nascente = 4, aguas = 8, seca 
   function packs() { const temas = ['roca', 'mata', 'rio', 'vila'], a = temas.splice(Math.floor(rng() * 4), 1)[0], b = temas[Math.floor(rng() * 3)];
     return [a, b].map(tm => ({ tema: tm, tiles: [0, 1, 2].map(() => genTile(rng, tm)) })); }
   function choose(i) { const ch = S.escolha.shift(); if (!ch) return; const p = ch[i]; ensure();   /* o pacote não aumenta a pilha: decide o que vem */ S.queue.splice(1, 0, ...p.tiles); if (S.left <= 0 && !S.escolha.length) S.over = true; }
-  function skip() { if (S.over || S.escolha.length) return null; const ev = []; S.queue.shift(); S.left--; tick(ev); spawnSprings(); if (S.left <= 0 && !S.escolha.length) S.over = true; S.log.push({ k: null, ev }); return { ev }; }
+  function skip() { if (S.over || S.escolha.length) return null; const ev = []; S.queue.shift(); S.left--; tick(ev); paciencia(ev); spawnSprings(); if (S.left <= 0 && !S.escolha.length) S.over = true; S.log.push({ k: null, ev }); return { ev }; }
   const fits = () => slots().some(k => options(k).length > 0);
   // o que a seca vai fazer com a água de hoje (para avisar antes)
   function secaPreview() { const W = water(board, true); return { nets: W.nets, dry: W.dry, wet: W.wet }; }
