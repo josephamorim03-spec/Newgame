@@ -89,7 +89,9 @@ export function quad(S) {
   // pescoço e cabeça: o pescoço nasce dentro do peito; perto da base a pele mistura corpo e pescoço, perto da ponta, pescoço e cabeça
   const np = S.neck.pts, neck = B.bone(root, np[0]), head = B.bone(neck, np[np.length - 1]);
   const nlen = []; let acc = 0; nlen.push(0); for (let i = 1; i < np.length; i++) { acc += Math.hypot(np[i][1] - np[i - 1][1], np[i][2] - np[i - 1][2]); nlen.push(acc); }
-  const ng = tube(np, S.neck.prof, seg - 6, false, S.neck.shape); const nAx = [np[0], np[np.length - 1]];
+  const npE = np.concat([(() => { const a2 = np[np.length - 2], b2 = np[np.length - 1], dy = b2[1] - a2[1], dz = b2[2] - a2[2], l = Math.hypot(dy, dz) || 1; return [b2[0], b2[1] + dy / l * 0.05, b2[2] + dz / l * 0.05]; })()]);
+  const lastP = S.neck.prof[S.neck.prof.length - 1], profE = S.neck.prof.concat([{ ...lastP, rx: lastP.rx * 0.88, rt: lastP.rt * 0.88, rb: lastP.rb * 0.88 }]);
+  const ng = tube(npE, profE, seg - 6, false, S.neck.shape); const nAx = [np[0], np[np.length - 1]];
   const along = (y, z) => { const dy = nAx[1][1] - nAx[0][1], dz = nAx[1][2] - nAx[0][2], l2 = dy * dy + dz * dz; return clamp(((y - nAx[0][1]) * dy + (z - nAx[0][2]) * dz) / l2, 0, 1); };
   sk.add(ng, (x, y, z) => { const t = along(y, z); return t < 0.5 ? blend(t, 0.22, 0.2, root.userData.i, neck.userData.i) : blend(t, 0.88, 0.1, neck.userData.i, head.userData.i); });
   const hp = np[np.length - 1], ears = (S.ears || []).map(e => B.bone(head, [hp[0] + e[0], hp[1] + e[1], hp[2] + e[2]]));
@@ -195,9 +197,10 @@ export function animate(a, dt, look, o) {
   else gy = g0;
   // a altura do corpo sai das pernas: o mais alto em que todas alcançam o chão debaixo delas, com a da frente quase reta e o
   // jarrete de trás na dobra natural (sem isso a perna sobra, dobra no ar e parece pendurada)
-  if (near && !a.swim) { let yb = Infinity; for (const L of R.legs) { const bk = L.back || 0; V.set(L.hip.position.x, 0, L.hip.position.z - bk); R.root.localToWorld(V);
+  if (near && !a.swim) { let yb = Infinity; for (const L of R.legs) { if (!L.front && (a.sitK || 0) > 0.3) continue; const bk = L.back || 0; V.set(L.hip.position.x, 0, L.hip.position.z - bk); R.root.localToWorld(V);
       const reach = L.bird ? (L.L1 + L.L2) * 0.93 : L.front ? (L.L1 + L.L2) * 0.999 : Math.sqrt(Math.max(0, ((L.L1 + L.L2) * 0.999) ** 2 - bk * bk));
-      yb = Math.min(yb, heightAt(V.x, V.z) + (L.L3 + reach) * s - (R.rest.rootY + L.hip.position.y) * s); }
+      const ps = 0.75 * (a.sitK || 0), hy = L.hip.position.y * Math.cos(ps) + L.hip.position.z * Math.sin(ps);
+      yb = Math.min(yb, heightAt(V.x, V.z) + (L.L3 + reach) * s - (R.rest.rootY + hy) * s); }
     if (isFinite(yb)) gy = yb + 0.01; }
   if (a.water && !a.swim) gy = Math.max(gy, g0);
   a.gy = lerpA(a.gy ?? gy, gy, Math.min(1, dt * 10)); a.pitch = lerpA(a.pitch ?? pitch, pitch, Math.min(1, dt * 6)); a.roll = lerpA(a.roll ?? roll, roll, Math.min(1, dt * 6));
@@ -208,6 +211,12 @@ export function animate(a, dt, look, o) {
   if (a.swim) { a.g.position.set(a.x, wl - (a.floatD || 0.4) * s, a.z); R.root.rotation.set(-0.05, 0, Math.sin(o.time * 2 + a.look) * 0.03); }
   else { a.g.position.set(a.x, a.gy - 0.01, a.z); R.root.rotation.set(-a.pitch + (run && !bird ? Math.sin(cyc * Math.PI * 2 + 1.2) * 0.07 : 0), 0, a.roll + (bird ? 0 : Math.sin(cyc * Math.PI * 2) * 0.018 * wk)); }
   a.g.rotation.y = a.h;
+  // sentar (capivara, lobo, onça): o quadril desce e o corpo empina; descansar uma perna de trás: o corpo pende para ela
+  a.sitK = lerpA(a.sitK || 0, a.sit ? 1 : 0, Math.min(1, dt * 1.6)); a.restK = lerpA(a.restK || 0, a.restLeg >= 0 ? 1 : 0, Math.min(1, dt * 2));
+  if (!a.swim && !bird) { R.root.rotation.x -= 0.75 * a.sitK; if (a.restLeg >= 0) R.root.rotation.z += (R.legs[a.restLeg].left ? -0.035 : 0.035) * a.restK; }
+  // respiração: o peito enche e esvazia (mais rápido e fundo depois de correr)
+  a.pant = Math.max(0, (a.pant || 0) + (a.sp > a.vw * 1.3 ? dt : -dt * 0.12)); const br = Math.sin(o.time * (1.3 + Math.min(3, a.pant) * 1.3) + a.look) * (1 + Math.min(2, a.pant) * 0.6);
+  R.root.scale.set(1 + br * 0.006, 1 + br * 0.01, 1);
   const lieDrop = lie * (R.lieDrop ?? 0.62) * R.K * (bird ? 0.4 : 1);
   R.root.position.y = R.rest.rootY + bob * R.K - lieDrop;
   a.g.updateMatrixWorld(true);
@@ -216,6 +225,7 @@ export function animate(a, dt, look, o) {
   R.legs.forEach((L, i) => { const c = frac(cyc + a.goff[i % a.goff.length]), stance = c < duty; let dz = 0, lift = 0, curl = 0;
     const half = a.stride * duty / 2 / s * Math.min(1, mv * 1.6) * wk;
     if (stance) { const u = c / duty; dz = half - u * 2 * half; } else { const u = (c - duty) / (1 - duty), e = (1 - Math.cos(u * Math.PI)) / 2; dz = -half + e * 2 * half; lift = Math.sin(u * Math.PI) * liftH * Math.min(1, mv + 0.3) * wk; curl = Math.sin(u * Math.PI) * wk; }
+    if (a.restLeg === i && a.restK > 0.01) { dz += 0.07 * R.K * a.restK; lift += 0.05 * a.restK; curl = Math.max(curl, 0.75 * a.restK); }
     let af, bf, footF = L.rf - curl * L.curl * (L.front || L.bird ? 1 : 0.7);
     if (a.swim) { const p = o.time * 5 + i * 1.6; af = Math.sin(p) * 0.6; bf = af + (L.front ? -1 : 1) * (0.6 + Math.cos(p) * 0.5); footF = bf - 0.5; }
     else if (near) { V.set(L.hip.position.x, 0, L.hip.position.z + dz - (L.back || 0)); hip0.localToWorld(V); const gyF = heightAt(V.x, V.z); W.set(V.x, gyF + L.L3 * s + lift * L.top * s, V.z); hip0.worldToLocal(W);
@@ -227,6 +237,7 @@ export function animate(a, dt, look, o) {
     if (!a.prevC) a.prevC = []; a.prevC[i] = c;
     let rh = -af, rk = -(bf - af), ra = -(footF - bf - (-R.root.rotation.x));
     if (lie > 0.01) { const fl = L.bird ? [-0.6, 1.4, -0.8] : L.front ? [-1.25, 2.2, 0.6] : [1.2, -2.3, -0.4]; rh = lerpA(rh, fl[0], lie); rk = lerpA(rk, fl[1], lie); ra = lerpA(ra, fl[2], lie); }
+    if (!L.front && !L.bird && a.sitK > 0.01) { const sk = a.sitK; rh = lerpA(rh, -1.15, sk); rk = lerpA(rk, -2.35, sk); ra = lerpA(ra, 2.3, sk); }
     L.hip.rotation.x = lerpA(L.hip.rotation.x, rh, k); L.knee.rotation.x = lerpA(L.knee.rotation.x, rk, k); L.ank.rotation.x = lerpA(L.ank.rotation.x, ra, k); });
   // pescoço e cabeça: o que o comportamento pede (pastar, beber, olhar), mais o aceno da cabeça no passo
   const nod = bird ? 0 : Math.sin(cyc * Math.PI * 4) * 0.05 * wk * (run ? 0.4 : 1), kk = Math.min(1, dt * (look.fast ? 12 : 3));
@@ -239,7 +250,7 @@ export function animate(a, dt, look, o) {
   else { R.neck.rotation.x = lerpA(R.neck.rotation.x, (look.neck || 0) + nod, kk); R.neck.rotation.y = lerpA(R.neck.rotation.y, (look.yaw || 0) * 0.55, Math.min(1, dt * 2));
     R.head.rotation.x = lerpA(R.head.rotation.x, (look.head || 0), kk); R.head.rotation.y = lerpA(R.head.rotation.y, (look.yaw || 0) * 0.45, Math.min(1, dt * 2)); R.head.rotation.z = lerpA(R.head.rotation.z, look.tilt || 0, Math.min(1, dt * 2));
     // orelhas: mexem de vez em quando (mosca), e deitam para trás na fuga
-    R.ears.forEach((e, i) => { const tw = Math.sin(o.time * 0.9 + a.look * 5 + i * 2.1) > 0.94 ? Math.sin(o.time * 30) * 0.35 : 0; e.rotation.x = lerpA(e.rotation.x, (a.st === 'flee' ? -0.6 : 0) + tw, Math.min(1, dt * 10)); });
+    R.ears.forEach((e, i) => { a.earFlap = Math.max(0, (a.earFlap || 0) - dt * 1.5); const tw = (Math.sin(o.time * 0.9 + a.look * 5 + i * 2.1) > 0.94 ? Math.sin(o.time * 30) * 0.35 : 0) + Math.sin(o.time * 34 + i) * 0.5 * a.earFlap; e.rotation.x = lerpA(e.rotation.x, (a.st === 'flee' ? -0.6 : 0) + tw, Math.min(1, dt * 10)); });
     if (R.snout) R.snout.rotation.x = Math.sin(o.time * 1.3 + a.look) * 0.25;
     // rabo: a corrente acompanha a base com atraso (balanço) e espanta mosca de vez em quando; correndo, o rabo levanta
     if (R.tail.length) { const fly = Math.sin(o.time * 0.37 + a.look * 3) > 0.72 ? 1 : 0; a.fly = lerpA(a.fly || 0, fly, Math.min(1, dt * 3)); const [r0, r1] = R.tailRest;
