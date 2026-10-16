@@ -181,14 +181,16 @@ export const LAYOUT = {
   ],
   chapel: { p: off(tV, 8, 6.5), rot: -0.15 + Math.PI },
   well: { p: off(tV, 0.5, 0.5) },
-  garden: { p: off(tV, -11.5, 3), rot: 0.25, w: 5, d: 4 },
-  corral: { p: off(tP, 4, 6), rot: 0.35, w: 12, d: 8 },
+  garden: { p: off(tV, -11.5, 3), rot: 0.25, w: 5, d: 4, gate: { side: 0, t: 0.5, w: 1.0 } },
+  // cercados: a porteira fica no lado virado para a vila (side = lado do retângulo, t = onde no lado, w = vão);
+  // no curral, o cocho fica no fundo, longe da porteira, e o rancho da ração do lado de fora, perto dela (coordenadas locais)
+  corral: { p: off(tP, 4, 6), rot: 0.35, w: 12, d: 8, gate: { side: 1, t: 0.5, w: 2.6 }, cocho: [-3.4, -2.6], rancho: [8.7, -3.4] },
   mill: { p: off(tL, 11, -9) },
   paiol: { p: off(tL, -8, 12.5), rot: 0.15, w: 4, d: 3 },
   bales: { p: off(tL, -4.3, 13.6), rot: 0.15 },
   scarecrow: { p: off(tL, -1.5, 1.0) },
   cart: { p: off(tL, -1.2, 16.0), rot: 1.2 },
-  sheepPen: { p: off(tV, 10.5, -10.5), rot: -0.35, w: 6.5, d: 4.5 },
+  sheepPen: { p: off(tV, 10.5, -10.5), rot: -0.35, w: 6.5, d: 4.5, gate: { side: 3, t: 0.5, w: 1.3 } },   // o lado de trás encosta na casa; a porteira dá para o terreiro
   celeiro: { p: off(tRo, 9.5, 8), rot: -0.5, w: 8, d: 6 },
   wheat: { tile: tRo, maxX: 0.5 }, roca: { tile: tRo, minX: 2.5 },
   coreto: { p: off(tPr, 0, 0) },
@@ -213,7 +215,12 @@ LAYOUT.chapelDoor = rot2w(LAYOUT.chapel.p, LAYOUT.chapel.rot, 4.25 + 0.9, 0);
 LAYOUT.licao = { p: off(tV, -9, 9), rot: Math.PI / 2 };                                          // a mãe ensina as crianças à sombra
 LAYOUT.toco = { p: off(tV, -6.2, 13), rot: 0.4 };                                                // o pai racha lenha no toco
 LAYOUT.lenha = { p: off(tV, -4.4, 13.8), rot: 0.4 };                                             // a pilha de lenha que o lenhador traz da mata
-LAYOUT.spots = [[LAYOUT.cruzeiro.p, 1.6], [LAYOUT.licao.p, 3.2], [LAYOUT.toco.p, 2.2], [LAYOUT.lenha.p, 1.6], ...(LAYOUT.varal ? [[LAYOUT.varal.c, 2.4]] : []), ...(LAYOUT.lav ? [[LAYOUT.lav, 1.4]] : [])];
+// ponto do mundo a partir das coordenadas locais de um cercado (mesma convenção dos objetos girados)
+export const localTo = (o, lx, lz) => [o.p[0] + lx * Math.cos(o.rot) + lz * Math.sin(o.rot), o.p[1] - lx * Math.sin(o.rot) + lz * Math.cos(o.rot)];
+LAYOUT.corral.ranchoP = localTo(LAYOUT.corral, ...LAYOUT.corral.rancho);
+LAYOUT.corral.cochoP = localTo(LAYOUT.corral, ...LAYOUT.corral.cocho);
+LAYOUT.corral.feed = { level: 0.55 };   // ração no cocho, 0 a 1: as vacas comem, o vaqueiro enche
+LAYOUT.spots = [[LAYOUT.corral.ranchoP, 1.9], [LAYOUT.cruzeiro.p, 1.6], [LAYOUT.licao.p, 3.2], [LAYOUT.toco.p, 2.2], [LAYOUT.lenha.p, 1.6], ...(LAYOUT.varal ? [[LAYOUT.varal.c, 2.4]] : []), ...(LAYOUT.lav ? [[LAYOUT.lav, 1.4]] : [])];
 function segDist(x, z, a, b) { const vx = b[0] - a[0], vz = b[1] - a[1], t = Math.max(0, Math.min(1, ((x - a[0]) * vx + (z - a[1]) * vz) / (vx * vx + vz * vz))); return Math.hypot(x - a[0] - vx * t, z - a[1] - vz * t); }
 // chão de terra batida: em volta das casas, da capela e do poço, e nos caminhos (gasto no meio, com capim nas bordas)
 export function dirtAt(x, z) {

@@ -41,9 +41,12 @@ export function buildPeople(scene, { mobile = false, fx = null, afx = null, col:
   // ---------- sons curtos do lugar (machado no toco, sino da capela, bola), só depois do primeiro toque na tela
   function som(kind, x, z, vol = 1) { const S = window.__som, ac = S ? S.ctx : window.__audioCtx, dest = S && S.out ? S.out : ac && ac.destination, cam = window.__cam; if (!ac || !cam) return; const d = Math.hypot(cam.position.x - x, cam.position.y, cam.position.z - z), g0 = vol * Math.min(1, 40 / (d + 10)) * 0.5; if (g0 < 0.01) return;
     const t0 = ac.currentTime, out = ac.createGain(); out.connect(dest);
+    if (kind === 'rangido') { const o = ac.createOscillator(), bp = ac.createBiquadFilter(), gg = ac.createGain(); o.type = 'sawtooth'; o.frequency.setValueAtTime(210, t0); o.frequency.linearRampToValueAtTime(130, t0 + 0.55);
+      bp.type = 'bandpass'; bp.frequency.value = 1100; bp.Q.value = 5; gg.gain.setValueAtTime(0, t0); for (let i = 0; i < 9; i++) { gg.gain.linearRampToValueAtTime(g0 * 0.35 * (0.5 + Math.random() * 0.5), t0 + i * 0.06 + 0.02); gg.gain.linearRampToValueAtTime(g0 * 0.05, t0 + i * 0.06 + 0.05); }
+      gg.gain.linearRampToValueAtTime(0, t0 + 0.6); o.connect(bp); bp.connect(gg); gg.connect(out); o.start(t0); o.stop(t0 + 0.62); return; }
     if (kind === 'sino') { for (const [f, a, dec] of [[392, 0.5, 3.5], [784, 0.25, 2.2], [940, 0.18, 1.6], [1176, 0.1, 1.0], [196, 0.2, 4]]) { const o = ac.createOscillator(), gg = ac.createGain(); o.frequency.value = f; gg.gain.setValueAtTime(g0 * a, t0); gg.gain.exponentialRampToValueAtTime(0.0001, t0 + dec); o.connect(gg); gg.connect(out); o.start(t0); o.stop(t0 + dec); } return; }
     const n = ac.createBuffer(1, ac.sampleRate * 0.25, ac.sampleRate), d0 = n.getChannelData(0); for (let i = 0; i < d0.length; i++) d0[i] = (Math.random() * 2 - 1) * Math.exp(-i / (ac.sampleRate * (kind === 'toc' ? 0.03 : 0.015)));
-    const src = ac.createBufferSource(), f = ac.createBiquadFilter(); src.buffer = n; f.type = 'lowpass'; f.frequency.value = kind === 'toc' ? 900 : 600; out.gain.value = g0 * (kind === 'toc' ? 1.4 : 0.8); src.connect(f); f.connect(out); src.start(t0); }
+    const src = ac.createBufferSource(), f = ac.createBiquadFilter(); src.buffer = n; f.type = 'lowpass'; f.frequency.value = kind === 'toc' ? 900 : kind === 'trinco' ? 2600 : 600; out.gain.value = g0 * (kind === 'toc' ? 1.4 : kind === 'trinco' ? 1.1 : 0.8); src.connect(f); f.connect(out); src.start(t0); }
 
   // ---------- montar uma pessoa: corpo de malha única com esqueleto (body.js), saia e avental de pano, cabelo, chapéu e ferramenta
   const clothes = [];
@@ -286,7 +289,8 @@ export function buildPeople(scene, { mobile = false, fx = null, afx = null, col:
     for (const o of people) { if (o === p || !o.g.visible || o.st === 'casa') continue; const ox = p.x - o.x, oz = p.z - o.z, od = Math.hypot(ox, oz), r2 = rad + (o.s.sex === 'c' ? 0.2 : 0.26);   // gente não atravessa gente
       if (od < r2 && od > 1e-4) { p.x += ox / od * (r2 - od) * 0.6; p.z += oz / od * (r2 - od) * 0.6; } }
     const nd = Math.hypot(x - p.x, z - p.z); p.stk = d - nd < st * 0.25 ? (p.stk || 0) + dt : Math.max(0, (p.stk || 0) - dt);
-    if (p.stk > 2.5 && nd < 2.5) { p.stk = 0; return true; }   // não dá para chegar mais perto (tronco, parede): fica onde está p.ph += st / (speed > 2 ? 0.55 : 0.38) * Math.PI;
+    if (p.stk > 2.5 && nd < 2.5) { p.stk = 0; return true; }   /* não dá para chegar mais perto (tronco, parede): fica onde está */
+    p.ph += st / (speed > 2 ? 0.55 : 0.38) * Math.PI;
     const w = walkPose(p, speed, speed > 2); if (keepArms) { delete w.sh; delete w.el; w.sh = [p.arms[0].sh.rotation.x, p.arms[1].sh.rotation.x]; w.el = [p.arms[0].el.rotation.x, p.arms[1].el.rotation.x]; }
     set(p, { ...w, k: Math.min(1, dt * 12) });
     if (speed > 2 && Math.floor(ph0 / Math.PI) !== Math.floor(p.ph / Math.PI) && rnd() < 0.5 && U.uRain.value < 0.2) emit('poeira', p.x, heightAt(p.x, p.z) + 0.05, p.z, 1, { spread: 0.4, speed: 0.6 });
@@ -300,7 +304,7 @@ export function buildPeople(scene, { mobile = false, fx = null, afx = null, col:
   const waveArm = (p, t) => { const i = p.s.tool ? 0 : 1, sg = i ? 1 : -1, w = Math.sin(t * 11); p.arms[i].sh.rotation.x = -2.55; p.arms[i].sh.rotation.z = sg * (0.25 + w * 0.25); p.arms[i].el.rotation.x = -0.35; };
   // de vez em quando quem trabalha para um pouco: se espreguiça com a mão nas costas, bebe água da cabaça, enxuga a testa ou olha em volta
   const PAUSA = new Set(['enxada', 'colher', 'varrer', 'serrar', 'forno', 'vaqueiro']);
-  function pausa(p, dt, k) { if (!PAUSA.has(p.job)) return false; p.pz = (p.pz ?? 12 + rnd() * 30) - dt; if (p.pz > 0) return false;
+  function pausa(p, dt, k) { if (!PAUSA.has(p.job) || p.tr != null) return false; p.pz = (p.pz ?? 12 + rnd() * 30) - dt; if (p.pz > 0) return false;
     if (p.pt == null) p.pt = Math.floor(rnd() * 4); const q = -p.pz;
     if (p.pt === 0) set(p, { sp: -0.22, sh: [0.55, 0.55], el: [-1.5, -1.5], shz: [-0.25, 0.25], hx: -0.35, k });
     else if (p.pt === 1 && p.two) set(p, { sh: [-2.0, 0], el: [-2.1, -0.3], shz: [-0.15, -0.1], hx: -0.3 - Math.min(1, q) * 0.15, k });
@@ -493,7 +497,7 @@ export function buildPeople(scene, { mobile = false, fx = null, afx = null, col:
             else { p.w8 -= dt; faz(p, p.alvo.act, t, dt, k); if (p.w8 < 0) { p.cyc = 'anda'; p.alvo = null; } }
             break; }
           case 'bola': bola(p, dt, t, k); break;
-          case 'vaqueiro': { p.cyc = p.cyc ?? 0; const dx = Math.cos(p.dirRot), dz = -Math.sin(p.dirRot);
+          case 'vaqueiro': { if (tratar(p, dt, t, k)) break; p.cyc = p.cyc ?? 0; const dx = Math.cos(p.dirRot), dz = -Math.sin(p.dirRot);
             if (p.cyc === 0) { if (goTo(p, p.x0 + dx * p.span * (p.side ? 1 : 0), p.z0 + dz * p.span * (p.side ? 1 : 0), dt, 0.9)) { p.cyc = 1; p.w8 = 6 + rnd() * 6; } }
             else { p.w8 -= dt; p.h += (p.face - p.h) * k; set(p, { sp: 0.18, sh: [-1.3, -1.25], el: [-0.9, -0.8], hy: Math.sin(t * 0.5) * 0.4, k }); if (p.w8 < 0) { p.cyc = 0; p.side = !p.side; } } break; }
           case 'lavar': lavar(p, dt, t, k); break;
@@ -527,13 +531,13 @@ export function buildPeople(scene, { mobile = false, fx = null, afx = null, col:
         if (hot && p.st === 'post' && ['enxada', 'colher', 'varrer', 'vaqueiro'].includes(p.job)) { const c = (time * 0.12 + p.ph) % 1; if (c < 0.08) { p.grip2 = false; p.arms[0].sh.rotation.x = -2.5; p.arms[0].el.rotation.x = -2.0; p.arms[0].sh.rotation.z = 0.45; p.head.rotation.x = -0.15; } }
         if (scare > 1.4) { p.spine.rotation.x += 0.15; p.head.rotation.x = 0.35; for (const a of p.arms) { a.sh.rotation.z = (a === p.arms[0] ? 0.35 : -0.35); } }
         // em pé parado: o peso troca de perna de tempos em tempos (um joelho cede, o quadril desce daquele lado, o ombro compensa)
-        if (p.st === 'post' && !p.moving && ['conversa', 'vaqueiro', 'olha'].includes(p.job === 'morador' ? (p.alvo && p.alvo.act) : p.job) && !(p.job === 'vaqueiro' && p.cyc === 0)) {
+        if (p.st === 'post' && !p.moving && ['conversa', 'vaqueiro', 'olha'].includes(p.job === 'morador' ? (p.alvo && p.alvo.act) : p.job) && !(p.job === 'vaqueiro' && (p.cyc === 0 || p.tr != null))) {
           const w = Math.sin(time * 0.21 + p.ph * 3), side = w > 0 ? 0 : 1, a = Math.min(1, Math.abs(w) * 3);
           p.legs[side].kn.rotation.x += 0.14 * a; p.legs[side].hp.rotation.x -= 0.05 * a; p.pelvis.rotation.z = (side ? -1 : 1) * 0.045 * a; p.spine.rotation.z += (side ? 1 : -1) * 0.03 * a; p.pelvis.position.y -= 0.012 * a; }
         else p.pelvis.rotation.z *= 0.9;
         p.waveCd = Math.max(0, (p.waveCd || 0) - dt);
         if (p.wave > 0) { p.wave -= dt; waveArm(p, time); if (p.waveAt) turnTo(p, p.waveAt.x, p.waveAt.z, dt * (p.moving ? 0 : 1)); }
-        else if (!p.waveCd && p.st === 'post' && !p.running && !KIDS.has(p.job) && p.job !== 'lagoa' && !['rezar', 'aluno', 'licao', 'lavar', 'agua', 'machado'].includes(p.job) && !(p.job === 'morador' && p.kid)) { for (const o of people) { if (o === p || !o.g.visible || !o.moving || KIDS.has(o.job) || o.running || o.kid) continue;
+        else if (!p.waveCd && p.st === 'post' && !p.running && !KIDS.has(p.job) && p.job !== 'lagoa' && !['rezar', 'aluno', 'licao', 'lavar', 'agua', 'machado'].includes(p.job) && !(p.job === 'morador' && p.kid) && p.tr == null) { for (const o of people) { if (o === p || !o.g.visible || !o.moving || KIDS.has(o.job) || o.running || o.kid) continue;
             if (Math.hypot(o.x - p.x, o.z - p.z) < 4) { p.wave = 1.4; p.waveCd = 30 + rnd() * 25; p.waveAt = o; if (!o.waveCd) { o.wave = 1.2; o.waveCd = 30 + rnd() * 25; o.waveAt = p; } break; } } }
         if (p.st === 'post' && !KIDS.has(p.job) && p.job !== 'rezar') { let tx = null, tz = null;
           if (alert && alert.who !== p && Math.hypot(alert.x - p.x, alert.z - p.z) < 16) { tx = alert.x; tz = alert.z; }
@@ -631,6 +635,44 @@ export function buildPeople(scene, { mobile = false, fx = null, afx = null, col:
       set(p, { sp: 0.05, sh: [wipe ? -2.5 : -0.55, -0.55], el: [wipe ? -2.0 : -0.75, -0.75], shy: [wipe ? -0.1 : 0.35, -0.35], shz: [wipe ? -0.45 : 0.1, -0.1], hy: e, hx: wipe ? -0.15 : 0.05, k: Math.min(1, dt * 4) });
       p.tool.rotation.x = -1.2; if (p.w8 > (L.lenha.n === 0 ? 14 : 8)) { p.cyc = 0; p.w8 = 0; p.tool.rotation.x = 0; } }
     if (p.cyc !== 5) p.tool.rotation.x = 0; }
+
+  // ---------- o vaqueiro trata o gado: quando a ração do cocho está acabando, contorna o curral por fora, pega um saco no
+  // rancho, abre a porteira (ela fecha atrás dele), despeja a ração no cocho com o gado em volta, sai, devolve o saco vazio
+  // e volta para a cerca. De manhã cedo o rancho amanhece com os sacos repostos.
+  const Cr = L.corral, crLoc = (lx, lz) => rot2(Cr.p, Cr.rot, lx, lz), cs = Math.cos(Cr.rot), sn = Math.sin(Cr.rot);
+  const TR = { canto: crLoc(Cr.w / 2 + 1.5, Cr.d / 2 + 1.5), rancho: crLoc(Cr.rancho[0], Cr.rancho[1] + 1.3), cocho: crLoc(Cr.cocho[0] + 1.8, Cr.cocho[1]), hCocho: Math.atan2(-cs, sn), hRancho: Math.atan2(-sn, -cs) };
+  for (const G of L.gates || []) G.sound = kind => som(kind === 'abre' ? 'rangido' : 'trinco', G.c[0], G.c[1], 0.8);
+  function tratar(p, dt, t, k) { const F = Cr.feed, G = Cr.gateObj, R3 = Cr.rancho3d; if (!G || !R3) return false;
+    const hr = window.__hour ?? 12; if (hr < 6.5) R3.sacos.forEach(m => { m.visible = true; });   // reposto de madrugada
+    if (p.tr == null) { if (F.level > 0.3 || hr < 6.5 || hr > 18 || !R3.sacos.some(m => m.visible)) return false; p.tr = 0; p.w8 = 0; }
+    if (!p.saco) { p.saco = new THREE.Mesh(R3.sacoGeo(), R3.sacoMat); p.saco.castShadow = true; p.saco.visible = false; p.g.add(p.saco); }
+    const S = p.saco, a1 = p.arms[1], a0 = p.arms[0], wait = (to, nxt) => { if (G.open > 0.85) { if (goTo(p, ...to, dt, 0.95)) { p.tr = nxt; p.w8 = 0; } } else { faceTo(p, Math.atan2(G.c[0] - p.x, G.c[1] - p.z), dt); set(p, { sh: [-1.1, 0], el: [-0.4, -0.3], k }); } };
+    if ((p.tr >= 2 && p.tr <= 3) || (p.tr >= 5 && p.tr <= 6)) { if (Math.hypot(p.x - G.c[0], p.z - G.c[1]) < 3.4) G.ask(); }
+    p.w8 += dt;
+    if (p.tr === 0) { if (goTo(p, ...TR.canto, dt, 1.05)) p.tr = 1; }                                  // por fora da cerca
+    else if (p.tr === 1) { if (goTo(p, ...TR.rancho, dt, 1.0)) { p.tr = 1.5; p.w8 = 0; } }
+    else if (p.tr === 1.5) { faceTo(p, TR.hRancho, dt); const down = p.w8 < 1.1;                      // agacha e põe o saco no ombro
+      set(p, down ? { sp: 0.95, sh: [-1.35, -1.35], el: [-0.3, -0.3], hp: [-0.45, -0.3], kn: [0.6, 0.5], hx: 0.3, k: Math.min(1, dt * 5) } : { k });
+      if (p.w8 > 0.9 && !S.visible) { const top = [...R3.sacos].reverse().find(m => m.visible); if (top) top.visible = false; S.visible = true; S.scale.set(1, 1, 1); }
+      if (p.w8 > 1.8) { p.tr = 2; p.w8 = 0; } }
+    else if (p.tr === 2) { if (goTo(p, ...G.outside, dt, 1.0)) { p.tr = 2.5; p.w8 = 0; } }
+    else if (p.tr === 2.5) wait(G.inside, 4);                                                         // abre a porteira e entra
+    else if (p.tr === 4) { if (goTo(p, ...TR.cocho, dt, 1.0)) { p.tr = 4.5; p.w8 = 0; } }
+    else if (p.tr === 4.5) { faceTo(p, TR.hCocho, dt); set(p, { sp: 0.35, sh: [-1.15, -1.0], el: [-0.55, -0.7], shz: [0.2, -0.2], hx: 0.35, k: Math.min(1, dt * 4) });   // despeja ao longo do cocho
+      if (p.w8 > 0.6) { F.level = Math.min(1, F.level + dt * 0.3); const fx0 = Math.sin(p.h), fz0 = Math.cos(p.h), sh = Math.sin(t * 2) * 0.5;
+        if (rnd() < dt * 18) emit('lasca', p.x + fx0 * (0.75 + sh) , heightAt(p.x, p.z) + 0.95, p.z + fz0 * (0.75 + sh), 2, { spread: 0.12, speed: 0.25, color: [0.86, 0.74, 0.36] });
+        S.scale.y = Math.max(0.35, 1 - (p.w8 - 0.6) * 0.18); }
+      if (F.level >= 1 && p.w8 > 3) { p.tr = 5; p.w8 = 0; } }
+    else if (p.tr === 5) { if (goTo(p, ...G.inside, dt, 1.0)) { p.tr = 5.5; p.w8 = 0; } }
+    else if (p.tr === 5.5) wait(G.outside, 7);                                                        // sai; a porteira fecha atrás
+    else if (p.tr === 7) { if (goTo(p, ...TR.rancho, dt, 1.0)) { S.visible = false; p.tr = 8; } }      // larga o saco vazio no rancho
+    else if (p.tr === 8) { if (goTo(p, ...TR.canto, dt, 1.05)) p.tr = 9; }
+    else if (p.tr === 9) { if (goTo(p, p.x0, p.z0, dt, 1.05)) { p.tr = null; p.cyc = 1; p.w8 = 4; } }
+    // o saco: no ombro andando, na frente das mãos despejando
+    if (S.visible) { if (p.tr === 4.5) { S.position.set(0, 1.12, 0.42); S.rotation.set(0.95, 0, Math.PI / 2); }
+      else if (p.tr !== 1.5) { S.position.set(0.17, 1.56, -0.03); S.rotation.set(0, Math.PI / 2, 0.15); a1.sh.rotation.x = -2.7; a1.el.rotation.x = -1.6; a1.sh.rotation.z = 0.1; }
+      else { S.position.set(0, 1.3, 0.25); S.rotation.set(0, Math.PI / 2, 0); } }
+    return true; }
 
   // ---------- o lenhador: vai à mata, junta gravetos e galhos caídos (o feixe cresce no ombro), volta e empilha
   function lenha(p, dt, t, k) { p.cyc = p.cyc ?? 0; p.w8 = (p.w8 ?? 0) + dt; const fx = p.extra;

@@ -531,7 +531,9 @@ const colisao = buildColisao();
   colisao.box(L.cruzeiro.p[0], L.cruzeiro.p[1], 1.6, 1.6, L.chapel.rot + Math.PI / 2, 'cruzeiro'); colisao.circle(L.toco.p[0], L.toco.p[1], 0.36, 'toco'); colisao.box(L.lenha.p[0], L.lenha.p[1], 1.0, 1.0, L.lenha.rot, 'lenha');
   colisao.box(L.bales.p[0], L.bales.p[1], 2.6, 1.5, L.bales.rot, 'fardos'); colisao.box(L.cart.p[0], L.cart.p[1], 3.6, 1.7, L.cart.rot, 'carroça'); colisao.circle(L.scarecrow.p[0], L.scarecrow.p[1], 0.25, 'espantalho');
   if (L.varal) for (const k of [-1, 1]) colisao.circle(L.varal.c[0] + L.varal.dir[0] * L.varal.len / 2 * k, L.varal.c[1] + L.varal.dir[1] * L.varal.len / 2 * k, 0.08, 'varal');
-  for (const f of L.fences || []) { const n = f.closed ? f.pts.length : f.pts.length - 1; for (let i = 0; i < n; i++) { if (i === f.gate) continue; const a = f.pts[i], b = f.pts[(i + 1) % f.pts.length]; colisao.seg(a[0], a[1], b[0], b[1], 0.09, 'cerca'); } }
+  for (const f of L.fences || []) { for (const [ax, az, bx, bz] of f.segs) colisao.seg(ax, az, bx, bz, 0.09, 'cerca');
+    if (f.gate) { const G = f.gate; for (const q of [G.ga, G.gb]) colisao.circle(q[0], q[1], 0.12, 'mourão'); colisao.dyn(G.ga[0], G.ga[1], G.w + 0.2, G.seg, 'porteira'); } }   /* a folha da porteira barra fechada e sai do vão aberta */
+  colisao.box(L.corral.cochoP[0], L.corral.cochoP[1], 2.7, 0.8, L.corral.rot, 'cocho'); colisao.box(L.corral.ranchoP[0], L.corral.ranchoP[1], 2.3, 1.7, L.corral.rot, 'rancho');
   // troncos (a copa não atrapalha), cupinzeiros e pedras grandes
   for (const o of scene.children) { const u = o.userData, s = (o.scale.x || 1) * Math.min(1, u.esc ?? 1);
     if (u.kind && u.kind !== 'moita') colisao.circle(o.position.x, o.position.z, (u.kind === 'sombra' ? 0.38 : u.kind === 'mata' ? 0.3 : 0.22) * s, 'tronco');
@@ -896,4 +898,6 @@ function frame() {
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
+/* testes: avança a vida do vale (gente, bichos, porteiras) s segundos sem desenhar, para conferir rotinas longas num computador lento */
+window.__ff = s => { const ctx = { pxPerUnit: 600, hour: ST.hour, people: gente.people }; window.__hour = ST.hour; for (let t = 0; t < s; t += 0.05) { U.uTime.value += 0.05; props.update(0.05, ctx); fauna.update(0.05, ctx); gente.update(0.05); } };
 window.__cam = camera; window.__heightAt = heightAt; window.__tiles = TILES; window.__fall = FALL; window.__previa = { gente, skyfx, gameCam,  ST, U, renderer, scene, camera, controls, fauna, clouds, board, fx, col: colisao, L: LAYOUT, heightAt };
