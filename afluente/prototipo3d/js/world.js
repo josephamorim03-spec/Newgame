@@ -81,11 +81,17 @@ export const POOL_R = 5.5;
 const TC = TILES.find(t => t.kind === 'cachoeira');
 export const CLIFF_X = TC.c[0] + 2.5, DROP = 6;
 const cliffX = z => CLIFF_X + (vnoise(z * 0.12, 3.3) - 0.5) * 2.2;
-export function cliffDrop(x, z) { return DROP * smooth(cliffX(z) - 0.5, cliffX(z) + 1.1, x); }
+// a escarpa: arenito em camadas. O perfil desce em degraus (três patamares de ~2 m com borda viva), a linha do paredão
+// avança e recua ao longo do vale (contrafortes e reentrâncias) e cada camada tem seu próprio recuo, como rocha que se
+// desgasta em lajes. A água (os níveis do rio) usa o perfil liso; só o chão é que tem os degraus.
+const cliffSmooth = (x, z) => smooth(cliffX(z) - 0.5, cliffX(z) + 1.1, x);
+export function cliffDrop(x, z) { const cx = cliffX(z) + (vnoise(z * 0.55, 7.1) - 0.5) * 0.9, f = smooth(cx - 0.6, cx + 2.3, x), t = f * 3, k = Math.floor(Math.min(t, 2.999));
+  const lip = (vnoise(z * 0.9 + k * 3.1, 11.3 + k) - 0.5) * 0.18, ft = (k + smooth(0.28 + lip, 0.62 + lip, t - k)) / 3; return DROP * (0.25 * f + 0.75 * ft); }
+const cliffDropW = (x, z) => DROP * cliffSmooth(x, z);
 let S_FALL = 0; for (let i = 0; i < RIVER.length; i++) if (RIVER[i][0] > cliffX(RIVER[i][1])) { S_FALL = i / (RIVER.length - 1) * RLEN; break; }
 export const FALL = (() => { const i = Math.round(S_FALL / RLEN * (RIVER.length - 1)); const t = [RIVER[i + 4][0] - RIVER[i][0], RIVER[i + 4][1] - RIVER[i][1]], l = Math.hypot(...t); return { s: S_FALL, p: RIVER[i], t: [t[0] / l, t[1] / l], pool: [RIVER[i][0] + t[0] / l * 2.8, RIVER[i][1] + t[1] / l * 2.8] }; })();
 export const riverLevel = s => s >= 1e4 ? WATER_Y : WATER_Y - DROP * smooth(S_FALL - 0.3, S_FALL + 0.9, s);
-const levelOf = (ri, x, z) => ri.extra ? WATER_Y - cliffDrop(x, z) : riverLevel(ri.s);
+const levelOf = (ri, x, z) => ri.extra ? WATER_Y - cliffDropW(x, z) : riverLevel(ri.s);
 // a lagoa: bacia de borda irregular, com o mesmo nível d'água do vale de cima
 const TLG = TILES.find(t => t.kind === 'lagoa');
 export const LAKE = { c: [TLG.c[0] - 1, TLG.c[1] + 1], r: 10.5, level: WATER_Y };
@@ -193,7 +199,7 @@ const rot2w = (p, rot, lx, lz) => [p[0] + lx * Math.cos(rot) + lz * Math.sin(rot
 LAYOUT.lav = (() => { const tA = TILES[0]; for (let i = 20; i < 200; i += 3) { const [rx, rz] = RIVER[i]; for (const o of [3.2, -3.2, 3.8, -3.8]) { const x = rx, z = rz + o, w = waterDist(x, z); if (w > 0.4 && w < 1.2 && inHex(x, z, tA.c, 0.85)) return [x, z]; } } return null; })();
 if (LAYOUT.lav) { const [x, z] = LAYOUT.lav, e = 0.6, gx = waterDist(x + e, z) - waterDist(x - e, z), gz = waterDist(x, z + e) - waterDist(x, z - e), n = Math.hypot(gx, gz) || 1, ax = gx / n, az = gz / n;
   LAYOUT.varal = { c: [x + ax * 3.4, z + az * 3.4], dir: [-az, ax], len: 3.4 }; }
-LAYOUT.cruzeiro = { p: rot2w(LAYOUT.chapel.p, LAYOUT.chapel.rot, 6.5, 2.2) };                    // cruz de madeira em frente à capela
+LAYOUT.cruzeiro = { p: rot2w(LAYOUT.chapel.p, LAYOUT.chapel.rot, 7.4, 0.5) };                    // cruz de madeira em frente à capela
 LAYOUT.chapelDoor = rot2w(LAYOUT.chapel.p, LAYOUT.chapel.rot, 4.25 + 0.9, 0);
 LAYOUT.licao = { p: off(tV, -9, 9), rot: Math.PI / 2 };                                          // a mãe ensina as crianças à sombra
 LAYOUT.toco = { p: off(tV, -6.2, 13), rot: 0.4 };                                                // o pai racha lenha no toco

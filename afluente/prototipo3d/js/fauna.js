@@ -175,7 +175,9 @@ export function buildFauna(scene, opts = {}) {
   // ---------- comportamento: pastar, andar até um ponto, ficar parado olhando; separação; não sair da área; abrigo na chuva
   function spawn(make, n, o) { for (let i = 0; i < n; i++) { const a = { ...make(), ...o, st: 'idle', t: rnd() * 3, ph: rnd() * 6, sp: 0, h: rnd() * 6.28, tgt: null, look: rnd() * 6 };
     let x, z, k = 0; do { [x, z] = o.pick(null); k++; } while (k < 50 && all.some(b => Math.hypot(b.x - x, b.z - z) < (o.sep || 1.5)));
-    a.x = x; a.z = z; a.g.scale.setScalar(o.scale || 1); scene.add(a.g); if (o.name) tag(a.g, o.name);
+    const RAD = { 'boi nelore': 0.85, 'ovelha': 0.42, 'capivara': 0.42, 'anta': 0.7, 'tamanduá-bandeira': 0.5, 'onça-pintada': 0.5, 'lobo-guará': 0.42, 'ema': 0.32, 'seriema': 0.2 };
+    a.rad = RAD[o.name] || 0; if (opts.col && a.rad) { const base = a.area; a.area = (x, z) => base(x, z) && opts.col.free(x, z, a.rad); }
+    a.x = x; a.z = z; if (opts.col && a.rad && !opts.col.free(x, z, a.rad)) { const q = opts.col.push(x, z, a.rad); a.x = q[0]; a.z = q[1]; } a.g.scale.setScalar(o.scale || 1); scene.add(a.g); if (o.name) tag(a.g, o.name);
     if (a.head) a.g.userData.reguaRest = () => { const h = a.head, rx = h.rotation.x, py = h.position.y; h.rotation.x = 0; if (h.userData.y0 !== undefined) h.position.y = h.userData.y0; return () => { h.rotation.x = rx; h.position.y = py; }; };   /* quem pasta é medido de cabeça erguida */ a.g.traverse(m => { if (m.isMesh) m.castShadow = o.big || (!mobile && ['ema', 'anta', 'lobo-guará', 'onça-pintada', 'tamanduá-bandeira', 'garça-moura', 'garça-branca'].includes(o.name)); });   /* bicho pequeno não projeta sombra: metade dos desenhos da sombra */ all.push(a); } }
   const pickIn = (test, around, R) => () => { for (let k = 0; k < 200; k++) { const x = around[0] + (rnd() - 0.5) * 2 * R, z = around[1] + (rnd() - 0.5) * 2 * R; if (test(x, z)) return [x, z]; } return [...around]; };
   const near = (a, R, test) => { for (let k = 0; k < 60; k++) { const x = a.x + (rnd() - 0.5) * 2 * R, z = a.z + (rnd() - 0.5) * 2 * R; if (test(x, z)) return [x, z]; } return null; };
@@ -217,6 +219,8 @@ export function buildFauna(scene, opts = {}) {
     if (dh !== null) { let e = dh - a.h; e = Math.atan2(Math.sin(e), Math.cos(e)); a.h += Math.max(-a.turn * dt, Math.min(a.turn * dt, e)); }
     for (const b of all) if (b !== a && Math.abs(b.x - a.x) < 3 && Math.abs(b.z - a.z) < 3) { const dx = a.x - b.x, dz = a.z - b.z, d = Math.hypot(dx, dz), s = (a.sep + (b.sep || 1)) * 0.5;
       if (d < s && d > 1e-3) { const k = (s - d) * dt * 1.5; if (a.area(a.x + dx / d * k, a.z + dz / d * k)) { a.x += dx / d * k; a.z += dz / d * k; } } }
+    if (a.rad) for (const t of threats) { if (!t.person) continue; const dx = a.x - t.x, dz = a.z - t.z, d = Math.hypot(dx, dz), s = a.rad + 0.3;
+      if (d < s && d > 1e-3) { const k = (s - d) * Math.min(1, dt * 8); if (a.area(a.x + dx / d * k, a.z + dz / d * k)) { a.x += dx / d * k; a.z += dz / d * k; } } }
     a.sp += (want - a.sp) * Math.min(1, dt * 2.5);
     const nx = a.x + Math.sin(a.h) * a.sp * dt, nz = a.z + Math.cos(a.h) * a.sp * dt;
     if (a.area(nx, nz)) { a.x = nx; a.z = nz; } else { a.h += Math.PI * (0.5 + rnd() * 0.5); a.st = 'idle'; a.t = 1 + rnd() * 2; }
@@ -340,7 +344,7 @@ export function buildFauna(scene, opts = {}) {
       const flap = st === 'para' ? Math.sin(time * 40) * 0.9 : st === 'mergulha' ? 0.9 : Math.sin(time * 18) * 0.7; for (const w of wings) w.rotation.z = w.userData.s * flap;
       if (splash >= 0) { splash += dt; ring.scale.setScalar(0.1 + splash * 0.6); ring.material.opacity = Math.max(0, 0.7 * (1 - splash / 1.4)); if (splash > 1.4) splash = -1; } }); }
   updaters.push((dt, time, ctx) => {
-    threats = []; for (const p of (ctx && ctx.people) || []) if (p.g.visible) threats.push({ x: p.x, z: p.z, person: true, fast: p.job === 'brincar' || p.running });
+    threats = []; for (const p of (ctx && ctx.people) || []) if (p.g.visible) threats.push({ x: p.x, z: p.z, person: true, fast: p.job === 'brincar' || p.job === 'pega' || p.job === 'bola' || p.running });
     for (const a of all) if (a.g.userData.regua === 'onça-pintada' && a.g.visible) threats.push({ x: a.x, z: a.z, onca: true, who: a });
     for (const a of all) { brain(a, dt); pose(a, dt, time); } });
 
