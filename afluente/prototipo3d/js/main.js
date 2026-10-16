@@ -216,12 +216,20 @@ const fieldTex = (() => { const N = FIELD.res, d = new Float32Array(N * N * 4); 
 function fillField(xa = -1e9, za = -1e9, xb = 1e9, zb = 1e9) { const N = FIELD.res, d = fieldTex.image.data, x0 = CENTER[0] - FIELD.size / 2, z0 = CENTER[1] - FIELD.size / 2;
   const i0 = Math.max(0, Math.floor((xa - x0) / FIELD.size * N)), i1 = Math.min(N - 1, Math.ceil((xb - x0) / FIELD.size * N)), j0 = Math.max(0, Math.floor((za - z0) / FIELD.size * N)), j1 = Math.min(N - 1, Math.ceil((zb - z0) / FIELD.size * N));
   for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) { const x = x0 + (i + 0.5) / N * FIELD.size, z = z0 + (j + 0.5) / N * FIELD.size, k = (j * N + i) * 4;
-    const inT = inAnyTile(x, z, 0.995); if (!inT) { d[k] = 0; d[k + 1] = 0; continue; } d[k] = heightAt(x, z);
+    // a altura do chão vai um pouco além da peça: a lâmina da beirada lê a média de dois texels e, com 0 do lado de fora, flutuava ou afundava
+    const inT = inAnyTile(x, z, 0.995); if (!inT) { d[k] = inAnyTile(x, z, 1.08) ? heightAt(x, z) : 0; d[k + 1] = 0; continue; } d[k] = heightAt(x, z);
     const b = biomeAt(x, z), wd = waterDist(x, z);
     d[k + 1] = wd < 0.35 ? 0 : Math.min(1, b[0] * 1.0 + b[2] * 0.92 + b[1] * 0.2) * (0.85 + 0.3 * (vnoise(x * 0.3, z * 0.3) - 0.5));
     d[k + 1] *= blocked(x, z, -0.5) ? 0 : (1 - Math.min(1, dirtAt(x, z) * 1.4)) * (1 - 0.9 * fieldAt(x, z)) * (1 - 0.8 * rockyAt(x, z));
-    d[k + 2] = (b[2] > 0.5 ? 0.6 + 0.4 * vnoise(x * 0.15, z * 0.15) : b[1] > 0.5 ? 0.24 : 0.26 + 0.24 * vnoise(x * 0.2 + 7, z * 0.2)) * (wd < 2.5 && wd > 0.35 ? 1.5 : 1);
-    d[k + 3] = b[2] > 0.5 ? 1 : b[1] > 0.5 ? 0.5 : 0; }
+    // tipo e tamanho como pesos contínuos (cerrado, mata, pasto): na divisa as lâminas se misturam em vez de trocar numa linha
+    const cw = smooth(0.3, 0.7, b[2]), fw = smooth(0.35, 0.65, b[1]) * (1 - cw);
+    const hP = 0.26 + 0.24 * vnoise(x * 0.2 + 7, z * 0.2), hC = 0.6 + 0.4 * vnoise(x * 0.15, z * 0.15);
+    const bank = 1 + 0.5 * smooth(0.35, 0.9, wd) * (1 - smooth(1.8, 3.4, wd));   // capim mais alto na beira d'água, crescendo e diminuindo aos poucos
+    d[k + 2] = (hP * (1 - cw - fw) + hC * cw + 0.24 * fw) * bank;
+    // na borda da peça que dá para o tabuleiro vazio o capim vai ficando ralo e baixo (não acaba num muro reto)
+    { const t = TILES.find(u => inHex(x, z, u.c, 0.995)), e = t ? hexEdgeDist(x, z, t.c) : 9;
+      if (e < 1.8) { const dx = x - t.c[0], dz = z - t.c[1], l = Math.hypot(dx, dz) || 1; if (!inAnyTile(x + dx / l * 2.5, z + dz / l * 2.5, 1)) { const f = smooth(0, 1.8, e); d[k + 1] *= 0.35 + 0.65 * f; d[k + 2] *= 0.5 + 0.5 * f; } } }
+    d[k + 3] = cw - fw; }
   fieldTex.needsUpdate = true; }
 fillField();
 const BLADES = mobile ? 50000 : 140000;
@@ -248,8 +256,8 @@ grassMat.onBeforeCompile = sh => { shared(sh); Object.assign(sh.uniforms, grassU
       vec2 bp=bpos;vec2 fuv=(bp-uFieldO)/uFieldS;vec4 F=texture2D(uField,fuv);
       float cd=distance(cameraPosition,vec3(bp.x,F.r,bp.y));
       float alive=step(0.001,F.g);
-      float H=F.b*(0.6+0.8*seed.w)*alive;vType=F.a;vTone=seed.z;
-      float yaw=seed.w*6.2832,cy=cos(yaw),sy=sin(yaw);float wdt=mix(0.05,0.085,seed.x)*(1.0+F.a*0.3)*(1.0+cd/30.0);
+      float H=F.b*(0.6+0.8*seed.w)*alive;float rT=fract(seed.x*13.7+seed.y*7.1),cwT=max(F.a,0.0),fwT=max(-F.a,0.0);vType=rT<fwT?0.5:(rT<cwT?1.0:0.0);vTone=seed.z;
+      float yaw=seed.w*6.2832,cy=cos(yaw),sy=sin(yaw);float wdt=mix(0.05,0.085,seed.x)*(1.0+cwT*0.3)*(1.0+cd/30.0);
       float g=gustAt(bp),q=windQ(max(0.0,uWindBase*(1.0+uWindIu*g))),v=uv.y;vGust=clamp(g*0.5*min(1.0,uWindBase/4.0),0.0,1.0);
       float lean=(0.18+0.35*seed.y)+(0.05+0.95*q)+0.12*q*sin(uTime*7.0+seed.x*40.0)+0.25*uRain;
       vec2 wd2=normalize(mix(vec2(cy,sy),uWindDir,clamp(q*1.4+0.25,0.0,1.0)));
@@ -287,11 +295,13 @@ function grassFor(t, n = mobile ? 4500 : 12000) { const F = fieldTex.image.data,
 const barkTex = barkTexture(5);
 const TEX = { cerrado: leafTexture(7, { n: 110, size: 26, round: 0.62, spread: 0.4 }), mata: leafTexture(9, { n: 170, size: 22, round: 0.5, spread: 0.42 }),
   ipe: leafTexture(13, { n: 140, size: 18, round: 0.65, spread: 0.4 }), buriti: fanTexture(11) };
-const LEAFC = { pequi: 0x4f7a2a, lobeira: 0x9aaa78, pinheiro: 0x3f6a34, ipeRosa: 0x8fb33c, ipeBranco: 0x8fb33c, cerrado: 0x9fbf3e, mata: 0x5f9a33, ipe: 0x8fb33c, buriti: 0x8cc04a, sombra: 0x86b23c };
+const LEAFC = { pequi: 0x4f7a2a, lobeira: 0x9aaa78, pinheiro: 0x3f6a34, ipeRosa: 0x8fb33c, ipeBranco: 0x8fb33c, cerrado: 0x8fac46, mata: 0x5f9a33, ipe: 0x8fb33c, buriti: 0x8cc04a, sombra: 0x86b23c };
 // o que chega perto demais da lente (copas altas quando a câmera desce no zoom) se desfaz em pontilhado, sem tapar o mapa
 const NEAR_FADE = `{vec3 ab=uFocus-cameraPosition;float t=clamp(dot(vWp-cameraPosition,ab)/dot(ab,ab),0.0,1.0),dl=length(vWp-cameraPosition-ab*t),rr=2.5+0.12*length(ab);
-  float fade=max((1.0-smoothstep(rr*0.6,rr,dl))*(1.0-smoothstep(0.7,0.9,t))*0.9,1.0-smoothstep(3.0,7.0,distance(vWp,cameraPosition)));
-  if(hash21(floor(gl_FragCoord.xy))<fade)discard;}\n`;   // entre a câmera e o ponto que se olha, as copas abrem uma janela pontilhada
+  float fade=max((1.0-smoothstep(rr*0.75,rr,dl))*(1.0-smoothstep(0.75,0.9,t)),1.0-smoothstep(3.5,5.5,distance(vWp,cameraPosition)));
+  vec2 bq=mod(floor(gl_FragCoord.xy),4.0),bh=floor(bq*0.5);float bay=fract(dot(bh,vec2(0.5,bh.y*0.75)))*0.25+fract(dot(bq,vec2(0.5,bq.y*0.75)))+0.03125;
+  if(fract(bay)<fade)discard;}\n`;   // entre a câmera e o ponto que se olha, as copas abrem uma janela: limpa no meio (antes sobravam 10% dos
+// pixels como chuvisco) e com a borda em trama ordenada 4x4, que lê como transparência e não como ruído
 function treeMaterials(kind) {
   const wood = toon({ map: barkTex, color: kind === 'buriti' ? 0xb8a98a : kind === 'mata' ? 0xa08a6c : 0x8f7356 });
   const leaf = toon({ map: TEX[kind], alphaTest: 0.5, side: THREE.DoubleSide, color: LEAFC[kind] });
@@ -327,7 +337,7 @@ TEX.sombra = TEX.cerrado; MATS.sombra = treeMaterials('sombra'); MATS.moita = MA
 TEX.ipeRosa = TEX.ipeBranco = TEX.ipe; MATS.ipeRosa = treeMaterials('ipeRosa'); MATS.ipeBranco = treeMaterials('ipeBranco');
 // cerradão e escarpa: pequizeiro (copa larga e redonda, verde-escuro), lobeira (folha grande e acinzentada) e pinheiro-bravo
 // (Podocarpus: tronco reto, copa em andares, folhinha estreita verde-escura)
-TEX.pequi = TEX.mata; TEX.lobeira = leafTexture(19, { n: 34, size: 46, round: 0.7, spread: 0.36 }); TEX.pinheiro = leafTexture(23, { n: 260, size: 12, round: 0.22, spread: 0.44 });
+TEX.pequi = TEX.mata; TEX.lobeira = leafTexture(19, { n: 34, size: 46, round: 0.7, spread: 0.36 }); TEX.pinheiro = leafTexture(23, { n: 170, size: 16, round: 0.26, spread: 0.44 });   // folhinha miúda demais virava pontinhos de longe
 MATS.pequi = treeMaterials('pequi'); MATS.lobeira = treeMaterials('lobeira'); MATS.pinheiro = treeMaterials('pinheiro');
 function limb(out, p0, dir, len, r0, r1, depth, P, v0 = 0) {
   let p = p0.clone(), d = dir.clone(), v = v0; const segs = 3;
@@ -347,7 +357,7 @@ function leafCards(out, tips, center, P) {
   const low = Math.min(...tips.map(t => t.y)) - P.cluster * 0.5, high = Math.max(...tips.map(t => t.y)) + P.cluster * 0.6;
   for (const tp of tips) for (let i = 0; i < P.cards; i++) {
     const s = P.card * (0.75 + rnd() * 0.5), g = new THREE.PlaneGeometry(s, s); g.applyQuaternion(new THREE.Quaternion().setFromEuler(new THREE.Euler(rnd() * 6.28, rnd() * 6.28, rnd() * 6.28)));
-    const c = tp.clone().add(new THREE.Vector3((rnd() - 0.5) * P.cluster, (rnd() - 0.35) * P.cluster * 0.7, (rnd() - 0.5) * P.cluster)); g.translate(c.x, c.y, c.z);
+    const c = tp.clone().add(new THREE.Vector3((rnd() - 0.5) * P.cluster, (rnd() - 0.35) * P.cluster * 0.7 * (P.flat || 1), (rnd() - 0.5) * P.cluster)); g.translate(c.x, c.y, c.z);   // flat < 1: copa achatada
     const n = c.clone().sub(center).add(new THREE.Vector3(0, P.cluster * 0.8, 0)).normalize(), nor = g.attributes.normal;
     for (let k = 0; k < nor.count; k++) nor.setXYZ(k, n.x, n.y, n.z);     // normais "da copa": a copa inteira recebe luz como um volume macio
     const r = rnd(), out_ = Math.min(1, Math.hypot(c.x - center.x, c.z - center.z) / rad), up = Math.max(0, Math.min(1, (c.y - low) / (high - low)));
@@ -360,11 +370,11 @@ function finish(geos, H, withLr) { const g = mergeGeometries(geos);
   if (!g.attributes.ao) g.setAttribute('ao', new THREE.BufferAttribute(new Float32Array(p.count).fill(1), 1));
   g.setAttribute('tint', new THREE.BufferAttribute(new Float32Array(p.count).fill(rnd()), 1)); return g; }
 const SPECIES = {
-  cerrado: { trunk: [1.5, 2.4], r: 0.22, crook: 0.6, lean: 0.25, branches: 3, levels: 2, spread: 1.05, decay: 0.7, cards: 22, card: 2.1, cluster: 1.7 },
+  cerrado: { trunk: [1.5, 2.4], r: 0.22, crook: 0.6, lean: 0.25, branches: 3, levels: 2, spread: 1.05, decay: 0.7, cards: 22, card: 2.1, cluster: 1.7, flat: 0.5 },   // copa rala e achatada sobre o tronco torto
   ipe: { trunk: [2.9, 4.0], r: 0.27, crook: 0.4, lean: 0.12, branches: 3, levels: 2, spread: 0.8, decay: 0.75, cards: 20, card: 2.4, cluster: 2.0 },
   mata: { trunk: [3.6, 5.2], r: 0.36, crook: 0.22, lean: 0.06, branches: 4, levels: 3, spread: 0.85, decay: 0.74, cards: 15, card: 3.2, cluster: 2.6 },
   sombra: { trunk: [2.6, 3.4], r: 0.5, crook: 0.3, lean: 0.08, branches: 5, levels: 3, spread: 1.0, decay: 0.72, cards: 13, card: 3.4, cluster: 2.8 },
-  pequi: { trunk: [2.4, 3.2], r: 0.3, crook: 0.4, lean: 0.12, branches: 4, levels: 3, spread: 1.0, decay: 0.7, cards: 14, card: 2.8, cluster: 2.3 },
+  pequi: { trunk: [2.4, 3.2], r: 0.3, crook: 0.4, lean: 0.12, branches: 4, levels: 3, spread: 1.0, decay: 0.7, cards: 14, card: 2.8, cluster: 2.3, flat: 0.7 },
   lobeira: { trunk: [0.8, 1.2], r: 0.12, crook: 0.6, lean: 0.3, branches: 3, levels: 2, spread: 1.05, decay: 0.68, cards: 9, card: 1.7, cluster: 1.0 },
   pinheiro: { trunk: [6.5, 8.5], r: 0.3, crook: 0.08, lean: 0.04, branches: 7, levels: 2, spread: 1.25, decay: 0.32, cards: 9, card: 2.0, cluster: 1.1 },
   moita: { trunk: [0.3, 0.5], r: 0.05, crook: 0.6, lean: 0.3, branches: 4, levels: 1, spread: 1.1, decay: 1.1, cards: 9, card: 1.3, cluster: 0.9 },
@@ -436,12 +446,27 @@ function makeStone(size, flat = 0.7) {
   g.computeVertexNormals();                // facetas planas: pedra talhada à moda dos jogos pintados
   const m = new THREE.Mesh(g, stoneMat); m.castShadow = m.receiveShadow = true; return tag(m, 'pedra'); }
 const ROCKS_IN_WATER = [];
-function putStone(x, z, size, flat, y) { const m = makeStone(size, flat); m.position.set(x, y ?? heightAt(x, z) - size * flat * 0.25, z); m.rotation.y = rnd() * 6.28; scene.add(m); placed.push([x, z, size * 1.4]); return m; }
+// o chão mais baixo num círculo de raio r: a pedra (ou o que for) assenta por ele e não fica com um lado no ar na encosta
+const lowAt = (x, z, r) => { let m = heightAt(x, z); for (let k = 0; k < 8; k++) { const a = k * Math.PI / 4; m = Math.min(m, heightAt(x + Math.cos(a) * r, z + Math.sin(a) * r)); } return m; };
+function putStone(x, z, size, flat, y) { const m = makeStone(size, flat); m.position.set(x, y ?? lowAt(x, z, size * 1.1) - size * flat * 0.25, z); m.rotation.y = rnd() * 6.28; scene.add(m); placed.push([x, z, size * 1.4, size * 1.2]); carveGrass(x, z, size * 1.1); return m; }
 
 const placed = [];
-const canPlace = (x, z, minD) => !(blocked(x, z, 1.2) || dirtAt(x, z) > 0.3 || fieldAt(x, z) > 0.05 || placed.some(p => Math.hypot(p[0] - x, p[1] - z) < Math.min(minD, p[2])));
+// a folga das construções cresce com a copa (minD): árvore grande não enfia a copa no telhado
+const canPlace = (x, z, minD) => !(blocked(x, z, Math.max(1.2, minD * 0.4)) || dirtAt(x, z) > 0.3 || fieldAt(x, z) > 0.05 || placed.some(p => Math.hypot(p[0] - x, p[1] - z) < Math.min(minD, p[2])));
+// o "corpo" de cada coisa plantada (o que é sólido no chão): pedra e cupinzeiro pelo tamanho de verdade, árvore pelo tronco.
+// O espaço de copa (minD) pode se cruzar, o corpo não: sem isso nascia cupinzeiro dentro de pedra
+function bodyOf(o) { const r = o.userData.regua;
+  if (r === 'pedra' || r === 'cupinzeiro') { o.updateMatrixWorld(true); const bb = new THREE.Box3().setFromObject(o); return Math.max(bb.max.x - bb.min.x, bb.max.z - bb.min.z) / 2; }
+  return r === 'moita' || r === 'canela-de-ema' ? 0.35 : 0.45; }
+// apaga o capim (densidade 0 no mapa) em volta de pedra, cupinzeiro e tronco: a lâmina não atravessa mais o que é sólido
+function carveGrass(x, z, r) { const N = FIELD.res, d = fieldTex.image.data, x0 = CENTER[0] - FIELD.size / 2, z0 = CENTER[1] - FIELD.size / 2, cs = FIELD.size / N, rr = r + cs * 0.75;
+  for (let j = Math.max(0, Math.floor((z - rr - z0) / cs)); j <= Math.min(N - 1, Math.ceil((z + rr - z0) / cs)); j++) for (let i = Math.max(0, Math.floor((x - rr - x0) / cs)); i <= Math.min(N - 1, Math.ceil((x + rr - x0) / cs)); i++) {
+    const px = x0 + (i + 0.5) * cs, pz = z0 + (j + 0.5) * cs; if (Math.hypot(px - x, pz - z) < rr) d[(j * N + i) * 4 + 1] = 0; }
+  fieldTex.needsUpdate = true; }
 function place(obj, x, z, minD) { if (!canPlace(x, z, minD)) return false;
-  obj.position.set(x, heightAt(x, z) - 0.1, z); obj.rotation.y = rnd() * Math.PI * 2; scene.add(obj); placed.push([x, z, minD]); return true; }
+  obj.position.set(x, heightAt(x, z) - 0.1, z); obj.rotation.y = rnd() * Math.PI * 2;
+  const body = bodyOf(obj); if (placed.some(p => p[3] && Math.hypot(p[0] - x, p[1] - z) < body + p[3])) return false;
+  scene.add(obj); placed.push([x, z, minD, body]); if (obj.userData.regua !== 'moita' && obj.userData.regua !== 'canela-de-ema') carveGrass(x, z, obj.userData.regua === 'pedra' || obj.userData.regua === 'cupinzeiro' ? body * 0.95 : 0.35); return true; }
 const [tA, tB, tC, tD] = TILES;
 // pétalas de ipê: na seca, com a árvore florida, caem devagar (~1 m/s), dançam e o vento leva; embaixo forma um tapete da cor da flor
 function ipePetals() { const ipes = scene.children.filter(o => /^ipe/.test(o.userData.kind || '')), N = mobile ? 60 : 110, base = [], seed = [], colA = [], rad = [], gyA = [];
@@ -511,7 +536,7 @@ const floraCtx = { R, rnd, inHex, placed, can: canPlace, setor: sectorType,
       spray: 1 - smooth(6, 10, Math.hypot(x - FALL.pool[0], z - FALL.pool[1])) }; },                                  // zona de respingo da queda
   make: (k, s) => (FLORA_MAKE[k] || (sc => makeTree(k, sc)))(s), place,
   made: (o, sp, F, esc) => { o.userData.esc = esc; if (F.frutos) addFruits(o, ...F.frutos);
-    if (sp === 'pedra') { o.position.y = heightAt(o.position.x, o.position.z) - o.userData.sz * o.userData.flat * 0.25; const p = placed[placed.length - 1]; p[2] = Math.max(p[2], o.userData.sz * 1.4); } } };
+    if (sp === 'pedra') { o.position.y = lowAt(o.position.x, o.position.z, o.userData.sz * 0.8) - o.userData.sz * o.userData.flat * 0.25; const p = placed[placed.length - 1]; p[2] = Math.max(p[2], o.userData.sz * 1.4); } } };
 { const t0 = performance.now(); for (const t of TILES) plantTile(t, floraCtx); window.__floraMs = performance.now() - t0; }
 window.__flora = TILES.map(t => ({ peca: t.name, ...t.flora }));
 ipePetals();
@@ -521,9 +546,8 @@ const clouds = buildClouds(scene, CENTER, { mobile });
 const fx = buildFx(scene, { max: mobile ? 500 : 900 });   // partículas (fx.js)
 const afx = createFx(scene, { mobile });   // anéis na água, respingos e poeira dos bichos e da lagoa (aguafx.js)
 // ---------- colisão: o que ocupa o chão (paredes, cercas, troncos, poço, coreto...) para gente e bicho desviarem
-const colisao = buildColisao();
+const colisao = buildColisao(), colN = { houses: 0, extra: 0 };
 { const L = LAYOUT, rot2 = (p, rot, lx, lz) => [p[0] + lx * Math.cos(rot) + lz * Math.sin(rot), p[1] - lx * Math.sin(rot) + lz * Math.cos(rot)];
-  for (const h of L.houses) colisao.box(h.p[0], h.p[1], h.w, h.d, h.rot, 'casa');
   colisao.box(L.chapel.p[0], L.chapel.p[1], 8.5, 5.4, L.chapel.rot, 'capela'); { const t = rot2(L.chapel.p, L.chapel.rot, 8.5 / 2 - 1.2, -(5.4 / 2 + 1.15)); colisao.box(t[0], t[1], 2.3, 2.3, L.chapel.rot, 'torre'); }
   for (const k of ['venda', 'sobrado', 'celeiro', 'paiol']) { const b = L[k]; if (b) colisao.box(b.p[0], b.p[1], b.w, b.d, b.rot || 0, k); }
   colisao.circle(L.well.p[0], L.well.p[1], 0.95, 'poço'); colisao.circle(L.coreto.p[0], L.coreto.p[1], 3.0, 'coreto'); colisao.circle(L.oven.p[0], L.oven.p[1], 1.1, 'forno'); colisao.circle(L.mill.p[0], L.mill.p[1], 1.6, 'moinho');
@@ -531,12 +555,20 @@ const colisao = buildColisao();
   colisao.box(L.bales.p[0], L.bales.p[1], 2.6, 1.5, L.bales.rot, 'fardos'); colisao.box(L.cart.p[0], L.cart.p[1], 3.6, 1.7, L.cart.rot, 'carroça'); colisao.circle(L.scarecrow.p[0], L.scarecrow.p[1], 0.25, 'espantalho');
   if (L.varal) for (const k of [-1, 1]) colisao.circle(L.varal.c[0] + L.varal.dir[0] * L.varal.len / 2 * k, L.varal.c[1] + L.varal.dir[1] * L.varal.len / 2 * k, 0.08, 'varal');
   for (const f of L.fences || []) { const n = f.closed ? f.pts.length : f.pts.length - 1; for (let i = 0; i < n; i++) { if (i === f.gate) continue; const a = f.pts[i], b = f.pts[(i + 1) % f.pts.length]; colisao.seg(a[0], a[1], b[0], b[1], 0.09, 'cerca'); } }
-  // troncos (a copa não atrapalha), cupinzeiros e pedras grandes
-  for (const o of scene.children) { const u = o.userData, s = (o.scale.x || 1) * Math.min(1, u.esc ?? 1);
+  // as casas, o que está em LAYOUT.extraCol (esteio de varanda, banco, poste, mesa do forno) e as plantas (troncos, cupinzeiros,
+  // pedras grandes; a copa não atrapalha) entram pelo syncCollision, que o tabuleiro chama de novo quando uma peça nova brota
+  syncCollision(); }
+function syncCollision() { const L = LAYOUT;
+  for (const h of L.houses.slice(colN.houses)) colisao.box(h.p[0], h.p[1], h.w, h.d, h.rot, 'casa'); colN.houses = L.houses.length;
+  for (const c of (L.extraCol || []).slice(colN.extra)) { if (c.t === 'c') colisao.circle(c.x, c.z, c.r, c.tag); else colisao.box(c.x, c.z, c.w, c.d, c.rot, c.tag); } colN.extra = (L.extraCol || []).length;
+  for (const o of scene.children) { const u = o.userData; if (u.colOk) continue; u.colOk = true; const s = (o.scale.x || 1) * Math.min(1, u.esc ?? 1);
     if (u.kind && u.kind !== 'moita') colisao.circle(o.position.x, o.position.z, (u.kind === 'sombra' ? 0.38 : u.kind === 'mata' ? 0.3 : 0.22) * s, 'tronco');
     else if (u.regua === 'buriti' || u.regua === 'pinheiro-bravo') colisao.circle(o.position.x, o.position.z, 0.28 * s, 'tronco');
-    else if (u.regua === 'cupinzeiro') colisao.circle(o.position.x, o.position.z, 0.5 * s, 'cupinzeiro');
-    else if (u.regua === 'pedra' && u.sz > 0.45) colisao.circle(o.position.x, o.position.z, u.sz * 0.75, 'pedra'); } }
+    else if (u.regua === 'cupinzeiro') colisao.circle(o.position.x, o.position.z, bodyOf(o) * 0.9, 'cupinzeiro');   // pelo tamanho medido do monte (o fixo de 0,5 m deixava o gado entrar nele)
+    else if (u.regua === 'pedra' && u.sz > 0.45) colisao.circle(o.position.x, o.position.z, bodyOf(o) * 0.85, 'pedra'); } }
+// lugar para uma casa nova (raio r): longe do corpo das plantas e de copa grande, fora da lavoura (antes a vila podia crescer
+// por cima de árvore, cupinzeiro, pedra ou milharal)
+const buildSpot = (x, z, r) => fieldAt(x, z) < 0.05 && !placed.some(q => Math.hypot(q[0] - x, q[1] - z) < r + Math.max(q[3] || 0.5, Math.min(q[2] * 0.6, 2.5)));
 const gente = buildPeople(scene, { mobile, fx, afx, col: colisao });
 const skyfx = buildSkyFx(scene, camera, { mobile, focus: () => camMode === 'jogo' ? gameCam.focus : controls.target });
 const fauna = buildFauna(scene, { mobile, fx: afx, col: colisao, shade: shadeTree ? [shadeTree.position.x, shadeTree.position.z] : null, termites: scene.children.filter(o => o.userData.regua === 'cupinzeiro').map(o => [o.position.x, o.position.z]),
@@ -634,16 +666,21 @@ void main(){float y=vUv.y,sp=sqrt(max(y,0.0));float edge=1.0-smoothstep(0.72-0.3
   const fios = new THREE.Mesh(sheet(NU, NV, w * 1.02, 0.07), mkMat(1)); fios.renderOrder = 4; scene.add(fios);
   // fios d'água escorrendo pela rocha dos dois lados (onde a escarpa é alta), colados no paredão
   const trickle = mkMat(2);
+  // altura da malha do chão que é desenhada (raio de cima para baixo): na parede quase vertical ela difere do heightAt e a tira
+  // ficava parte no ar, parte dentro da rocha, e aparecia como riscos brancos soltos
+  const ray = new THREE.Raycaster(), gms = TILES.map(t => t.gm).filter(Boolean), down = new THREE.Vector3(0, -1, 0);
+  const meshY = (x, z) => { ray.set(new THREE.Vector3(x, 300, z), down); const h = ray.intersectObjects(gms, false)[0]; return h ? h.point.y : heightAt(x, z); };
   for (const [off, wd] of [[w + 1.6, 0.16], [-(w + 2.4), 0.22], [w + 3.6, 0.12]]) { const pos = [], uv = [], idx = [], N = 22;
-    for (let j = 0; j <= N; j++) { const v = j / N, s = -1.0 + v * 4.2; for (const u of [-1, 1]) { const x = lip[0] + n[0] * (off + u * wd) + FALL.t[0] * s, z = lip[1] + n[1] * (off + u * wd) + FALL.t[1] * s; pos.push(x, heightAt(x, z) + 0.05, z); uv.push(u, v); } }
+    for (let j = 0; j <= N; j++) { const v = j / N, s = -1.0 + v * 4.2; for (const u of [-1, 1]) { const x = lip[0] + n[0] * (off + u * wd) + FALL.t[0] * s, z = lip[1] + n[1] * (off + u * wd) + FALL.t[1] * s; pos.push(x + FALL.t[0] * 0.06, meshY(x, z) + 0.04, z + FALL.t[1] * 0.06); uv.push(u, v); } }
     for (let j = 0; j < N; j++) { const a = j * 2; idx.push(a, a + 2, a + 1, a + 1, a + 2, a + 3); }
     const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx);
     const m = new THREE.Mesh(g, trickle); m.renderOrder = 3; scene.add(m); }
+  const stoneFree = (x, z, sz) => !placed.some(p => p[3] && Math.hypot(p[0] - x, p[1] - z) < (sz * 1.2 + p[3]) * 0.7);   // encostam, não se fundem
   // blocos caídos do paredão em volta do poço (rio abaixo e dos lados) e cascalho no pé da escarpa, ao longo do vale
   for (let k = 0; k < 11; k++) { const a = Math.atan2(FALL.t[1], FALL.t[0]) + (rnd() - 0.5) * 3.4, r = 4.4 + rnd() * 1.8, x = FALL.pool[0] + Math.cos(a) * r, z = FALL.pool[1] + Math.sin(a) * r;
-    if (waterDist(x, z) > 0.15 && !blocked(x, z, 0.3)) { const sz = 0.45 + rnd() * 0.75; putStone(x, z, sz, 0.6 + rnd() * 0.3); colisao.circle(x, z, sz * 0.6, 'pedra'); } }
+    if (waterDist(x, z) > 0.15 && !blocked(x, z, 0.3)) { const sz = 0.45 + rnd() * 0.75; if (stoneFree(x, z, sz)) { putStone(x, z, sz, 0.6 + rnd() * 0.3); colisao.circle(x, z, sz * 0.6, 'pedra'); } } }
   for (let zz = -26; zz <= 26; zz += 2.2) { const z = FALL.p[1] + zz + (rnd() - 0.5) * 1.5, hTop = heightAt(CLIFF_X - 3, z); if (Math.abs(zz) < w + 4) continue;
-    for (let x = CLIFF_X - 1; x < CLIFF_X + 7; x += 0.25) { if (heightAt(x, z) < hTop - DROP * 0.9 && Math.abs(heightAt(x + 0.4, z) - heightAt(x, z)) < 0.1) { const xx = x + rnd() * 1.2; if (waterDist(xx, z) > 0.5 && rnd() < 0.7) { const sz = 0.22 + rnd() * 0.45; putStone(xx, z, sz, 0.55 + rnd() * 0.3); colisao.circle(xx, z, sz * 0.55, 'pedra'); } break; } } }
+    for (let x = CLIFF_X - 1; x < CLIFF_X + 7; x += 0.25) { if (heightAt(x, z) < hTop - DROP * 0.9 && Math.abs(heightAt(x + 0.4, z) - heightAt(x, z)) < 0.1) { const xx = x + rnd() * 1.2; if (waterDist(xx, z) > 0.5 && rnd() < 0.7) { const sz = 0.22 + rnd() * 0.45; if (stoneFree(xx, z, sz)) { putStone(xx, z, sz, 0.55 + rnd() * 0.3); colisao.circle(xx, z, sz * 0.55, 'pedra'); } } break; } } }
   // onde a água bate no poço: respingos que saltam e borrifo que sobe e o vento leva (partículas, a cada quadro)
   let acc = 0; window.__fallFx = dt => { acc += dt; if (!fx || acc < 0.06) return; const k = Math.min(4, Math.floor(acc / 0.06)); acc = 0; if (U.uWaterDrop.value > 0.4) return;
     for (let i = 0; i < k; i++) { const u = (Math.random() * 2 - 1) * w, x = lip[0] + n[0] * u + FALL.t[0] * 2.25, z = lip[1] + n[1] * u + FALL.t[1] * 2.25;
@@ -852,7 +889,7 @@ mergeTrees(scene.children.slice());
 const EDGES0 = { rio: 'AGGGGG', mata: 'ABBABB', cachoeira: 'ABBAGG', pasto: 'GGGGGG', cerrado: 'GGGGGG', lagoa: 'GGGGGG', vila: 'VVVVVV', praca: 'VVVVVV', lavoura: 'CCCCCC', roca: 'CCCCCC', cerradao: 'BBBBBB' };
 // o jogo: núcleo v5 (o rio é o orçamento, ../../nucleo/regras.js); ?jogo=v3 volta às regras antigas (game3d.js)
 const board = (new URLSearchParams(location.search).get('jogo') === 'v3' ? buildBoard : buildBoard5)({ scene, camera, dom: renderer.domElement, R, TILES, hexCenter, heightAt, waterDist, inHex, edgeMid, DIRS, sectorType, PATHS, addRiver, ST, CENTER, gente,
-  edgesOf: t => EDGES0[t.kind].split(''), props, groundFor, waterFor: t => waterMeshFor([t], false), fillField, grassFor, place, makeTree, makeTermite, makeBuriti, plant: t => plantTile(t, floraCtx), fieldAt, blocked, mobile, mergeTrees, buildNear });
+  edgesOf: t => EDGES0[t.kind].split(''), props, groundFor, waterFor: t => waterMeshFor([t], false), fillField, grassFor, place, makeTree, makeTermite, makeBuriti, plant: t => plantTile(t, floraCtx), fieldAt, blocked, mobile, mergeTrees, buildNear, syncCollision, buildSpot });
 let lastStrikes = 0;
 let frameN = 0; const clock = new THREE.Clock(); let fpsT = 0, fpsT0 = 0, fpsN = 0, slow = 0;
 const fmtH = h => `${String(Math.floor(h) % 24).padStart(2, '0')}:${String(Math.round((h % 1) * 60) % 60).padStart(2, '0')}`;

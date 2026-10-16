@@ -307,7 +307,7 @@ export function buildBoard5(api) {
     const o = api.props.addHouse(h); o.userData.house = h; o.traverse(x => x.layers.enable(1)); PATHS.push([[p[0] + Math.sin(rotY) * (h.d / 2 + 1), p[1] + Math.cos(rotY) * (h.d / 2 + 1)], c]); return o; }
   function growVillage(id) { const v = S.vilas.get(id) || [...S.vilas.values()].find(x => x.tiles.has(id)); if (!v) return; const ks = [...v.tiles];
     for (let n = 0; n < 40; n++) { const k = ks[Math.floor(rnd() * ks.length)], c = hexCenter(KQ(k), KR(k)), a = rnd() * 6.283, d = R * (0.25 + rnd() * 0.5), p = [c[0] + Math.cos(a) * d, c[1] + Math.sin(a) * d];
-      if (waterDist(p[0], p[1]) < 6 || api.blocked(p[0], p[1], 1.5)) continue; const o = addHouseAt(c, p); o.userData.sy = o.scale.y; o.scale.y = 0.02; growing.push({ items: [o], wm: null, t: 0, c }); ring(c); return o.userData.house; } return null; }
+      if (waterDist(p[0], p[1]) < 6 || api.blocked(p[0], p[1], 1.5) || (api.buildSpot && !api.buildSpot(p[0], p[1], 4.2))) continue; const o = addHouseAt(c, p); if (api.syncCollision) api.syncCollision();   /* casa nova longe de árvore, pedra e roça, e já com colisão */ o.userData.sy = o.scale.y; o.scale.y = 0.02; growing.push({ items: [o], wm: null, t: 0, c }); ring(c); return o.userData.house; } return null; }
 
   // ---------- gente nova chega a pé à vila que cresceu: vem de fora do vale (do lado oposto ao centro) até a casa nova e
   // fica morando, com uma rotina entre a casa e os lugares de trabalho em volta (roça, beira do rio, campo, mata, vizinhança)
@@ -334,7 +334,7 @@ export function buildBoard5(api) {
     else if (A.length === 2) { const a = edgeMid(c, A[0], 0.9), b = edgeMid(c, A[1], 0.9); addRiver(curvePts(a, b, j), 2.6); }
     else for (const d of A) { const a = edgeMid(c, d, 0.9); addRiver(curvePts(a, j, [(a[0] + j[0]) / 2 + (rnd() - 0.5) * 3, (a[1] + j[1]) / 2 + (rnd() - 0.5) * 3]), 2.4); }
     for (let d = 0; d < 6; d++) if (e[d] === 'V') { const a = -d * Math.PI / 3 + (rnd() - 0.5) * 0.3, k = R * (0.5 + rnd() * 0.1), p = [c[0] + Math.cos(a) * k, c[1] + Math.sin(a) * k];
-      if (waterDist(p[0], p[1]) < 6) continue; addHouseAt(j, p); }
+      if (waterDist(p[0], p[1]) < 6 || api.blocked(p[0], p[1], 1.0) || (api.buildSpot && !api.buildSpot(p[0], p[1], 4.2))) continue; addHouseAt(j, p); }
     const gm = api.groundFor(t);
     for (const d of A) { const n = TILES.find(u => u.q === q + DIRS[d][0] && u.r === r + DIRS[d][1]); if (n && n.gm) api.groundFor(n); }
     const wm = A.length ? api.waterFor(t) : null; api.fillField(c[0] - R - 2, c[1] - R - 2, c[0] + R + 2, c[1] + R + 2); const gr = api.grassFor(t);
@@ -348,6 +348,7 @@ export function buildBoard5(api) {
     const cropM = api.props.addCrop(crop, pts);
     const merged = api.mergeTrees(trees);
     api.buildNear();
+    if (api.syncCollision) api.syncCollision();   // casas, varandas, troncos, cupinzeiros e pedras da peça nova entram na colisão
     if (gm) gm.userData.soft = true; if (gr) gr.userData.soft = true;
     const items = [gm, ...merged, cropM, gr, ...scene.children.filter(o => !before.has(o) && o.isGroup && ['casa'].includes(o.userData.regua))].filter(Boolean);
     for (const o of items) { o.userData.sy = o.scale.y; o.scale.y = 0.02; } if (wm) wm.visible = false;
