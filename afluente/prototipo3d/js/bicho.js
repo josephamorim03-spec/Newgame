@@ -85,7 +85,17 @@ let DET = 1; export const setDetail = v => { DET = v; };
 // S: { K, M, body: {rings, seg, shape}, neck: {pts, prof}, head: H => { H.add(geo, 'head'|'earL'|'earR'|'snout') }, ears, snout,
 //      legs: [{x, z, top, L:[L1,L2,L3], prof:[[t, rx, rf, rb]], c(t, a), foot: geo (no fim da perna, em coordenadas do modelo)}] na ordem
 //      [frente-esq, frente-dir, trás-esq, trás-dir] (x > 0 é o lado esquerdo do bicho), tail: {pts, prof, n} }
+// anéis do corpo mais densos (curva de Catmull-Rom entre os dados): a silhueta fica lisa no comprimento, sem quinas
+// entre um anel e outro; a cor e os outros dados de cada anel novo vêm do anel dado mais perto
+function densify(rings, n) { if (n <= 1) return rings; const out = [], F = ['z', 'y', 'x', 'rx', 'rt', 'rb', 'e'];
+  for (let i = 0; i + 1 < rings.length; i++) { const p0 = rings[Math.max(0, i - 1)], p1 = rings[i], p2 = rings[i + 1], p3 = rings[Math.min(rings.length - 1, i + 2)];
+    for (let k = 0; k < n; k++) { const t = k / n, t2 = t * t, t3 = t2 * t, r = { ...(t < 0.5 ? p1 : p2) };
+      for (const f of F) { if (p1[f] == null) continue; const A = p0[f] ?? p1[f], B = p1[f], C = p2[f] ?? p1[f], D = p3[f] ?? C;
+        r[f] = 0.5 * (2 * B + (-A + C) * t + (2 * A - 5 * B + 4 * C - D) * t2 + (-A + 3 * B - 3 * C + D) * t3); if (f !== 'z' && f !== 'y' && f !== 'x') r[f] = Math.max(r[f], 0.002); }
+      out.push(r); } }
+  out.push({ ...rings[rings.length - 1] }); return out; }
 export function quad(S) {
+  S = { ...S, body: { ...S.body, rings: densify(S.body.rings, Math.max(1, Math.round(3 * DET))) } };
   const K = S.K || 1, sk = Skin(), B = Bones(), seg = Math.round((S.seg || 26) * DET / 2) * 2;
   const bodyY = S.rootY ?? S.body.rings.reduce((a, r) => a + r.y, 0) / S.body.rings.length, root = B.bone(null, [0, bodyY, 0]);
   // os ossos do quadril e do ombro vêm antes do corpo: a pele do flanco, da coxa e da paleta segue a perna (peso que
@@ -118,10 +128,12 @@ export function quad(S) {
   const legs = S.legs.map((L, li) => { const [L1, L2, L3] = L.L, Lt = L1 + L2 + L3, x = L.x, z = L.z, top = L.top;
     const hip = hips[li]; hip.rotation.order = 'ZYX';   // balança no plano da perna (x) e depois abre o plano para o lado (z)
     const knee = B.bone(hip, [x, top - L1, z]), ank = B.bone(knee, [x, top - L1 - L2, z]);
+    // (legSleeve: perto da barriga a perna sai com a largura toda, como o braço e a coxa que descem do corpo, sem
+    // estrangular na emenda; a barriga desce em volta dela pela escultura do corpo, ver manga() em especies.js)
     // o alto da perna fica por dentro do tronco (não sai pela lateral do flanco como uma coluna): a largura de cada anel é
     // limitada pela meia-largura do corpo naquela altura
     const pts = L.prof.map(p => [x, top - p[0] * Lt, z + (p[4] || 0)]), prof = L.prof.map((p, j) => { const py = top - p[0] * Lt, hw = bodyHW(z, py);
-      const rx = hw > 0 ? Math.min(p[1], Math.max(hw - Math.abs(x) - 0.012, bodyF(z, py) > 0.7 ? p[1] * 0.6 : 0.015)) : p[1]; return { rx, rt: p[2] ?? p[1], rb: p[3] ?? p[1], e: 2, c: a => cfun(L.c)(p[0], a) }; });
+      const bf = bodyF(z, py), full = S.legSleeve ? sstep(0.72, 0.97, bf) : 0, rx = hw > 0 ? Math.min(p[1], Math.max(hw - Math.abs(x) - 0.012, bf > 0.7 ? p[1] * (0.6 + 0.4 * full) : 0.015)) : p[1]; return { rx, rt: p[2] ?? p[1], rb: p[3] ?? p[1], e: 2, c: a => cfun(L.c)(p[0], a) }; });
     const t1 = L1 / Lt, t2 = (L1 + L2) / Lt;
     sk.tag('perna' + li); sk.add(tube(pts, prof, Math.round((S.legSeg || 16) * DET), false), (px, py) => { const t = (top - py) / Lt; return t < (t1 + t2) / 2 ? blend(t, t1, 0.03, hip.userData.i, knee.userData.i) : blend(t, t2, 0.025, knee.userData.i, ank.userData.i); }, legNormal);
     sk.tag('pe' + li); if (L.foot) sk.add(L.foot, ank.userData.i);
@@ -224,12 +236,12 @@ export function animate(a, dt, look, o) {
   // fica no mais alto em que todas alcançam. Assim a perna da frente fica reta no apoio e o corpo sobe e desce sozinho.
   const halfW = a.stride * a.duty / 2 / s * Math.min(1, mv * 1.6) * a.walkK;
   if (near && !a.swim) { let yb = Infinity, ybH = Infinity, ybAll = Infinity; R.legs.forEach((L, i) => { if (!L.front && (a.sitK || 0) > 0.3) return; const bk = L.back || 0, c = frac(cyc + a.goff[i % a.goff.length]), st = c < a.duty;
-      const dz = st ? halfW - c / a.duty * 2 * halfW : 0, sh = (L.shift || 0) * dz, hz = (L.hz0 ?? L.hip.position.z) + sh; V.set(L.hip.position.x, 0, (L.hz0 ?? L.hip.position.z) - bk + dz); R.root.localToWorld(V);
-      let hor2 = (dz - sh - bk) * (dz - sh - bk); if (st && L.pl && !L.swung && Math.hypot(L.pl.x - V.x, L.pl.z - V.z) < a.stride * 0.45) { W.copy(L.pl); W.y = V.y; R.root.worldToLocal(W); const h2 = (W.z - hz) ** 2 + (W.x - L.hip.position.x) ** 2; hor2 = Math.min(h2, ((L.L1 + L.L2) * 0.8) ** 2); V.x = L.pl.x; V.z = L.pl.z; }
+      const fast = a.gait !== 'walk', dz = st && !fast ? halfW - c / a.duty * 2 * halfW : 0, sh = (L.shift || 0) * dz, hz = (L.hz0 ?? L.hip.position.z) + sh; V.set(L.hip.position.x, 0, (L.hz0 ?? L.hip.position.z) - bk + dz); R.root.localToWorld(V);
+      let hor2 = (dz - sh - bk) * (dz - sh - bk); if (st && L.pl && !L.swung && a.gait === 'walk' && Math.hypot(L.pl.x - V.x, L.pl.z - V.z) < a.stride * 0.45) { W.copy(L.pl); W.y = V.y; R.root.worldToLocal(W); const h2 = (W.z - hz) ** 2 + (W.x - L.hip.position.x) ** 2; if (h2 > ((L.L1 + L.L2) * 0.45) ** 2) L.swung = true; else { hor2 = h2; V.x = L.pl.x; V.z = L.pl.z; } }
       const Lf = (L.L1 + L.L2) * (L.bird ? 0.93 : 0.999) + L.L3 * 0.35 * Math.min(1, Math.abs(dz) / Math.max(halfW, 1e-3)), reach = Math.sqrt(Math.max(0, Lf * Lf - hor2));
       const ps = 0.75 * (a.sitK || 0), hy = L.hip.position.y * Math.cos(ps) + L.hip.position.z * Math.sin(ps), v = heightAt(V.x, V.z) + (L.L3 + reach) * s - (R.rest.rootY + hy) * s;
-      ybAll = Math.min(ybAll, v); if (st) { if (L.front || L.bird) yb = Math.min(yb, v); else if (c / a.duty < 0.6) ybH = Math.min(ybH, v); } });   // no fim do apoio a de trás levanta o calcanhar (não puxa o corpo)
-    const yy = Math.min(yb, ybH + 0.01 * s); if (isFinite(yy)) gy = yy + 0.01; else if (isFinite(ybAll)) gy = ybAll + 0.01; }
+      ybAll = Math.min(ybAll, v); if (st && a.gait === 'walk') { if (L.front || L.bird) yb = Math.min(yb, v); else if (c / a.duty < 0.6) ybH = Math.min(ybH, v); } });   // no fim do apoio a de trás levanta o calcanhar (não puxa o corpo)
+    const yy = Math.min(yb, ybH + 0.01 * s); if (a.gait === 'walk' && isFinite(yy)) gy = yy + 0.01; else if (isFinite(ybAll)) gy = ybAll + 0.01 - (a.gait === 'walk' ? 0 : (0.03 + 0.03 * Math.sin(cyc * Math.PI * 4)) * s); }
   if (a.water && !a.swim) gy = Math.max(gy, g0);
   a.gy = lerpA(a.gy ?? gy, gy, Math.min(1, dt * (near ? 30 : 10))); a.pitch = lerpA(a.pitch ?? pitch, pitch, Math.min(1, dt * 6)); a.roll = lerpA(a.roll ?? roll, roll, Math.min(1, dt * 6));
   a.lie = (a.lie || 0) + (((a.st === 'lie') ? 1 : 0) - (a.lie || 0)) * Math.min(1, dt * 1.2); const lie = a.lie;
@@ -259,7 +271,7 @@ export function animate(a, dt, look, o) {
     if (a.swim) { const p = o.time * 5 + i * 1.6; af = Math.sin(p) * 0.6; bf = af + (L.front ? -1 : 1) * (0.6 + Math.cos(p) * 0.5); footF = bf - 0.5; }
     else if (near) { V.set(L.hip.position.x, 0, (L.hz0 ?? L.hip.position.z) + dz - (L.back || 0)); hip0.localToWorld(V);
       // pata cravada: no apoio ela fica onde pisou (o corpo vira e anda por cima dela); só repisa se ficar longe demais
-      if (stance && wk > 0.05 && !L.bird) { if (!L.pl || L.swung || Math.hypot(L.pl.x - V.x, L.pl.z - V.z) > a.stride * 0.45) { L.pl = (L.pl || new THREE.Vector3()).set(V.x, 0, V.z); L.swung = false; } V.x = L.pl.x; V.z = L.pl.z; }
+      if (stance && wk > 0.05 && !L.bird && a.gait === 'walk') { if (!L.pl || L.swung || Math.hypot(L.pl.x - V.x, L.pl.z - V.z) > a.stride * 0.45) { L.pl = (L.pl || new THREE.Vector3()).set(V.x, 0, V.z); L.swung = false; } V.x = L.pl.x; V.z = L.pl.z; }
       else { L.swung = true; }
       const gyF = heightAt(V.x, V.z); W.set(V.x, gyF + L.L3 * s + lift * L.top * s, V.z); hip0.worldToLocal(W);
       const ddx = W.x - L.hip.position.x, ddy = W.y - L.hip.position.y, th = Math.atan2(ddx, -ddy); L.abd = clamp(th, -0.35, 0.35);
@@ -273,6 +285,7 @@ export function animate(a, dt, look, o) {
     if (!a.prevC) a.prevC = []; a.prevC[i] = c;
     let rh = -af, rk = -(bf - af), ra = -(footF - bf - (-R.root.rotation.x));
     if (lie > 0.01) { const fl = L.bird ? [-0.6, 1.4, -0.8] : L.front ? [-1.25, 2.2, 0.6] : [1.2, -2.3, -0.4]; rh = lerpA(rh, fl[0], lie); rk = lerpA(rk, fl[1], lie); ra = lerpA(ra, fl[2], lie); }
+    if (lie < 0.01 && a.sitK < 0.01) { rk = L.front && !L.bird ? clamp(rk, -0.2, 2.2) : clamp(rk, -2.2, 0.2); ra = clamp(ra, -1.5, 1.5); }   // a junta não dobra além do que o bicho dobra
     if (!L.front && !L.bird && a.sitK > 0.01) { const sk = a.sitK; rh = lerpA(rh, -1.15, sk); rk = lerpA(rk, -2.35, sk); ra = lerpA(ra, 2.3, sk); }
     L.hip.rotation.z = near && !a.swim && !L.bird && lie < 0.5 ? (L.abd || 0) : L.hip.rotation.z * 0.8;
     const kj = near && !a.swim ? 1 : k; L.hip.rotation.x = lerpA(L.hip.rotation.x, rh, kj); L.knee.rotation.x = lerpA(L.knee.rotation.x, rk, kj); L.ank.rotation.x = lerpA(L.ank.rotation.x, ra, kj); });
