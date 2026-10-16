@@ -104,7 +104,10 @@ const levelOf = (ri, x, z) => ri.extra ? WATER_Y - cliffDropW(x, z) : riverLevel
 // a lagoa: bacia de borda irregular, com o mesmo nível d'água do vale de cima
 const TLG = TILES.find(t => t.kind === 'lagoa');
 export const LAKE = { c: [TLG.c[0] - 1, TLG.c[1] + 1], r: 10.5, level: WATER_Y };
-export const lakeDist = (x, z) => Math.hypot(x - LAKE.c[0], z - LAKE.c[1]) - LAKE.r * (0.86 + 0.28 * vnoise(Math.atan2(z - LAKE.c[1], x - LAKE.c[0]) * 1.6 + 7, 2.1));
+// o contorno varia com o ângulo; perto de 180° o ruído do fim da volta se mistura com o do começo (sem isso a margem oeste
+// tinha um degrau de ~40 cm onde o atan2 salta de +180° para -180°)
+const lakeN = a => { const g = v => vnoise(v * 1.6 + 7, 2.1), k = smooth(Math.PI - 0.6, Math.PI, a); return g(a) * (1 - k) + g(a - 2 * Math.PI) * k; };
+export const lakeDist = (x, z) => Math.hypot(x - LAKE.c[0], z - LAKE.c[1]) - LAKE.r * (0.86 + 0.28 * lakeN(Math.atan2(z - LAKE.c[1], x - LAKE.c[0])));
 export function waterLevelAt(x, z) { if (lakeDist(x, z) < 6) return LAKE.level; return levelOf(riverInfo(x, z), x, z); }
 
 // ---------- relevo (m). O vale é suave; o rio escava o canal e as margens descem até a água
@@ -210,7 +213,7 @@ const rot2w = (p, rot, lx, lz) => [p[0] + lx * Math.cos(rot) + lz * Math.sin(rot
 LAYOUT.lav = (() => { const tA = TILES[0]; for (let i = 20; i < 200; i += 3) { const [rx, rz] = RIVER[i]; for (const o of [3.2, -3.2, 3.8, -3.8]) { const x = rx, z = rz + o, w = waterDist(x, z); if (w > 0.4 && w < 1.2 && inHex(x, z, tA.c, 0.85)) return [x, z]; } } return null; })();
 if (LAYOUT.lav) { const [x, z] = LAYOUT.lav, e = 0.6, gx = waterDist(x + e, z) - waterDist(x - e, z), gz = waterDist(x, z + e) - waterDist(x, z - e), n = Math.hypot(gx, gz) || 1, ax = gx / n, az = gz / n;
   LAYOUT.varal = { c: [x + ax * 3.4, z + az * 3.4], dir: [-az, ax], len: 3.4 }; }
-LAYOUT.cruzeiro = { p: rot2w(LAYOUT.chapel.p, LAYOUT.chapel.rot, 7.4, 0.5) };                    // cruz de madeira em frente à capela
+LAYOUT.cruzeiro = { p: rot2w(LAYOUT.chapel.p, LAYOUT.chapel.rot, 6.6, 1.0) };                    // cruz de madeira em frente à capela (o braço da cruz batia no beiral da casa ao lado)
 LAYOUT.chapelDoor = rot2w(LAYOUT.chapel.p, LAYOUT.chapel.rot, 4.25 + 0.9, 0);
 LAYOUT.licao = { p: off(tV, -9, 9), rot: Math.PI / 2 };                                          // a mãe ensina as crianças à sombra
 LAYOUT.toco = { p: off(tV, -6.2, 13), rot: 0.4 };                                                // o pai racha lenha no toco
@@ -231,6 +234,9 @@ export function dirtAt(x, z) {
   for (const [a, b] of PATHS) k = Math.max(k, smooth(1.1, 0.35, segDist(x, z, a, b) + (vnoise(x * 0.8, z * 0.8) - 0.5) * 0.4));
   k = Math.max(k, smooth(2.6, 1.0, Math.hypot(x - L.mill.p[0], z - L.mill.p[1])), smooth(L.praca.r + 1.5, L.praca.r - 1, Math.hypot(x - L.praca.c[0], z - L.praca.c[1])));
   for (const b of [L.venda, L.sobrado, L.celeiro]) k = Math.max(k, smooth(Math.max(b.w, b.d) * 0.5 + 2.4, Math.max(b.w, b.d) * 0.5 + 0.5, Math.hypot(x - b.p[0], z - b.p[1])));
+  // curral e aprisco: terra pisada pelo gado e pelas ovelhas, com a borda irregular passando um pouco da cerca
+  for (const b of [L.corral, L.sheepPen]) { const dx = x - b.p[0], dz = z - b.p[1], c = Math.cos(b.rot), s = Math.sin(b.rot), u = Math.abs(dx * c - dz * s) - b.w / 2, v = Math.abs(dx * s + dz * c) - b.d / 2;
+    const sd = Math.hypot(Math.max(u, 0), Math.max(v, 0)) + Math.min(Math.max(u, v), 0); k = Math.max(k, smooth(0.9, -1.2, sd + (vnoise(x * 0.7, z * 0.7) - 0.5) * 1.2) * 0.85); }
   return k;
 }
 // peso da lavoura (1 dentro da peça, caindo a zero na borda) e o lugar das fileiras

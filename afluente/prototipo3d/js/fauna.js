@@ -54,7 +54,12 @@ export function buildFauna(scene, opts = {}) {
   function spawn(make, n, o) { for (let i = 0; i < n; i++) { const a = { ...make(), ...o, st: 'idle', t: rnd() * 3, ph: rnd() * 6, sp: 0, h: rnd() * 6.28, tgt: null, look: rnd() * 6 };
     let x, z, k = 0; do { [x, z] = o.pick(null); k++; } while (k < 50 && all.some(b => Math.hypot(b.x - x, b.z - z) < (o.sep || 1.5)));
     const RAD = { 'boi': 0.85, 'bezerro': 0.5, 'boi nelore': 0.85, 'ovelha': 0.42, 'capivara': 0.42, 'anta': 0.7, 'tamanduá-bandeira': 0.5, 'onça-pintada': 0.5, 'lobo-guará': 0.42, 'ema': 0.32, 'seriema': 0.2 };
-    a.rad = RAD[o.name] || 0; if (opts.col && a.rad) { const base = a.area; a.area = (x, z) => base(x, z) && opts.col.free(x, z, a.rad); }
+    // corpo comprido (boi de 2 a 3 m): além do círculo do meio, cabeça e garupa também precisam de lugar livre (uma cápsula);
+    // só com o círculo de 0,85 m o focinho e o rabo entravam na cerca e na parede
+    const LEN = { 'boi': 0.75, 'boi nelore': 0.75, 'bezerro': 0.45, 'anta': 0.5, 'tamanduá-bandeira': 0.55, 'onça-pintada': 0.45, 'lobo-guará': 0.35, 'capivara': 0.3, 'ovelha': 0.3 };
+    a.rad = RAD[o.name] || 0; a.len = LEN[o.name] || 0;
+    if (opts.col && a.rad) { const base = a.area, C = opts.col, end = (x, z, k) => C.free(x + Math.sin(a.h) * a.len * k, z + Math.cos(a.h) * a.len * k, a.rad * 0.6);
+      a.area = (x, z) => base(x, z) && C.free(x, z, a.rad) && (!a.len || (end(x, z, 1) && end(x, z, -1))); }
     { const p0 = a.pick; a.pick = q => { let r = p0(q); for (let k = 0; k < 40 && !a.area(r[0], r[1]); k++) r = p0(q); return r; }; }
     a.x = x; a.z = z; if (opts.col && a.rad && !opts.col.free(x, z, a.rad)) { const q = opts.col.push(x, z, a.rad); a.x = q[0]; a.z = q[1]; } a.g.scale.setScalar(o.scale || 1); scene.add(a.g); if (o.name) tag(a.g, o.name);
     if (a.rig) a.g.userData.reguaRest = () => { const R = a.rig, sv = [R.neck.rotation.x, R.head.rotation.x]; R.neck.rotation.x = 0; R.head.rotation.x = 0; return () => { R.neck.rotation.x = sv[0]; R.head.rotation.x = sv[1]; }; };
