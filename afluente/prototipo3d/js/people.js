@@ -61,7 +61,7 @@ export function buildPeople(scene, { mobile = false, fx = null, afx = null, col:
     const body = buildBody(spec); g.add(body.mesh);
     const warmGeo = s.sex === 'c' ? null : buildBody({ ...spec, warm: true, warmColor: s.sex === 'f' ? pick([0x8a4a3a, 0x6a5a8a, 0x4a6a5a, 0xa8743a]) : pick([0x5a4a3a, 0x3a4a5a, 0x6a6458]) }).mesh.geometry;
     const coolGeo = body.mesh.geometry;
-    const { hips: pelvis, spine, head } = body, arms = body.arms.map(a => ({ sh: a.sh, el: a.el, ha: a.ha })), legs = body.legs.map(l => ({ hp: l.hp, kn: l.kn, ft: l.ft }));
+    const { hips: pelvis, spine, head } = body, arms = body.arms.map(a => ({ sh: a.sh, el: a.el, ha: a.ha, cl: a.cl, ec: a.ec })), legs = body.legs.map(l => ({ hp: l.hp, kn: l.kn, ft: l.ft, jc: l.jc }));
     const lisoT = (geo, c) => { const m = new THREE.Mesh(geo, MAT.liso); paint(geo, col(c)); m.castShadow = true; m.userData.noRegua = true; return m; };
     // ferramenta na mão da ferramenta (arms[1]) e o que vai na outra mão ou no ombro
     // ferramenta: as de cabo comprido (enxada, machado, vassoura, pá do forno) vão nas duas mãos — o cabo sai da mão de
@@ -104,7 +104,8 @@ export function buildPeople(scene, { mobile = false, fx = null, afx = null, col:
     const cl = [];
     if (s.skirt) { const len = s.sex === 'c' ? 0.36 : s.skirt <= 0.56 ? 0.5 : s.skirt <= 0.7 ? 0.62 : 0.82, bw = body.bw;
       const t = texOf(s.dress ? s.top.mat : s.bottom.mat), tex = t ? Object.assign(t.clone(), { needsUpdate: true }) : null; if (tex) { tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.repeat.set(1, 1); }
-      cl.push(Cloth({ strips: mobile ? 16 : 22, rows: 8, len, r0x: 0.158 * bw, r0z: 0.108 * bw, flare: 0.13 + len * 0.08, tex, color: tex ? 0xffffff : (s.dress ? s.top.color : s.bottom.color), hip: body.hipProf })); }
+      const hp = body.hipProf, wy = body.waistY, hi = hp.findIndex(r => r[0] >= wy), A = hp[Math.max(0, hi - 1)], Bq = hp[Math.max(0, hi)], u = Bq[0] > A[0] ? (wy - A[0]) / (Bq[0] - A[0]) : 0, at = k => A[k] + (Bq[k] - A[k]) * u;   /* a boca da saia na medida do corpo naquela altura */
+      cl.push(Cloth({ strips: mobile ? 16 : 22, rows: 8, len, r0x: Math.max(0.158 * bw, at(1) + 0.008), r0z: Math.max(0.108 * bw, Math.max(at(2), at(3)) + 0.008), flare: 0.13 + len * 0.08, tex, color: tex ? 0xffffff : (s.dress ? s.top.color : s.bottom.color), hip: body.hipProf })); }
     if (s.apron) cl.push(Cloth({ strips: 8, rows: 6, len: (s.skirt ? 0.5 : 0.55), r0x: 0.155 * body.bw, r0z: 0.125 * body.bw, flare: 0.08, arc: [Math.PI / 2 - 0.8, Math.PI / 2 + 0.8], color: 0xf2ede2, margin: 0.055, drop: -0.02, minK: 0.92, hip: body.hipProf }));
     for (const c of cl) { scene.add(c.mesh); clothes.push(c); }
     g.scale.setScalar(s.h / 1.70);
@@ -157,6 +158,11 @@ export function buildPeople(scene, { mobile = false, fx = null, afx = null, col:
     if (T.blade === 'tras') _rf.set(0, -0.3, -1); else if (T.blade === 'frente') _rf.set(0, 0.2, 1); else _rf.set(1, 0, 0);
     _bx.copy(_rf).addScaledVector(_ax, -_rf.dot(_ax)); if (_bx.lengthSq() < 1e-4) _bx.set(0, 1, 0).addScaledVector(_ax, -_ax.y); _bx.normalize(); _cz.crossVectors(_bx, _ax);
     _M.makeBasis(_bx, _ax, _cz); T.g.quaternion.setFromRotationMatrix(_M); T.g.position.copy(_g0).addScaledVector(_ax, T.off); }
+  // clavícula: gira 45% do que o braço gira (para cima, para a frente, para o lado); a pele do ombro, presa nela, acompanha
+  // o braço em parte e a deformação se reparte entre ombro e braço (sem a pele rasgar quando o braço vai lá em cima)
+  const CLAV = 0.45;
+  function clav(p) { for (const a of p.arms) { if (a.cl) a.cl.rotation.set(a.sh.rotation.x * CLAV, a.sh.rotation.y * CLAV, a.sh.rotation.z * CLAV); if (a.ec) a.ec.rotation.x = a.el.rotation.x * 0.5; }
+    for (const l of p.legs) if (l.jc) l.jc.rotation.x = l.kn.rotation.x * 0.5; }   /* cotovelo e joelho: o anel do meio vai com meio ângulo */
   // piscar (cada um no seu tempo) e o rabo de cavalo/trança que pende para baixo e balança com o passo
   const _q = new THREE.Quaternion(), _dn = new THREE.Vector3(), DOWN = new THREE.Vector3(0, -1, 0);
   function face(p, dt) { if (p.lids) { p.blinkT -= dt; if (p.blinkT < 0) { p.blinkT = 2.2 + rnd() * 4.5; p.blinkS = 0.15; }
@@ -278,9 +284,21 @@ export function buildPeople(scene, { mobile = false, fx = null, afx = null, col:
     p.arms.forEach((a, i) => { lerp(a.sh.rotation, 'x', (o.sh || [0, 0])[i]); lerp(a.el.rotation, 'x', (o.el || [-0.32, -0.32])[i]); lerp(a.sh.rotation, 'z', (o.shz || [0.1, -0.1])[i]); lerp(a.sh.rotation, 'y', (o.shy || [-0.15, 0.15])[i]); });
     p.legs.forEach((l, i) => { lerp(l.hp.rotation, 'x', (o.hp || [0, 0])[i]); lerp(l.kn.rotation, 'x', (o.kn || [0, 0])[i]); lerp(l.ft.rotation, 'x', (o.ft || [0, 0])[i]); });
     lerp(p.pelvis.rotation, 'y', o.pry ?? 0); };
-  const walkPose = (p, sp, run) => { const a = Math.sin(p.ph), b = Math.sin(p.ph + Math.PI), amp = (run ? 0.75 : 0.45) * (p.s.old ? 0.75 : 1);
-    return { py: 0.95 - Math.abs(Math.cos(p.ph)) * (run ? 0.05 : 0.025), sp: (run ? 0.15 : 0.03) + (p.s.old ? 0.14 : 0), pry: a * (run ? 0.05 : 0.08), sy: -a * 0.1, ft: [Math.max(-0.3, b * amp * 0.55), Math.max(-0.3, a * amp * 0.55)], sh: [a * amp * 0.8 + (run ? -0.3 : 0), b * amp * 0.8 + (run ? -0.3 : 0)], el: [run ? -1.2 : -0.25, run ? -1.2 : -0.25],
-      hp: [b * amp, a * amp], kn: [Math.max(0, Math.sin(p.ph + 1.6)) * amp * 1.3, Math.max(0, Math.sin(p.ph + Math.PI + 1.6)) * amp * 1.3] }; };
+  // o passo: ~0,41 da altura andando a ~1,25 m/s (mais curto devagar), ~0,68 correndo; o velho, mais curto
+  const stepLen = (p, sp) => (p.s.h || 1.7) * (sp > 2 ? 0.68 : 0.41 * Math.min(1.12, Math.max(0.65, Math.sqrt(sp / 1.25)))) * (p.s.old ? 0.82 : 1);
+  // a perna abre o ângulo que dá o passo (perna ~0,52 da altura); o quadril fica mais alto com a perna de apoio a prumo
+  // a passada: meio ciclo da fase é um passo. No apoio o pé recua em linha reta na mesma velocidade em que o corpo avança
+  // (fica plantado no chão: a coxa toma o ângulo que mantém o pé no lugar); no balanço o pé vai à frente com o joelho
+  // dobrando e a ponta do pé subindo. O quadril é mais alto com a perna de apoio a prumo; o braço vai com a perna do outro lado.
+  const LEG = 0.84;   /* do quadril ao tornozelo, no corpo de 1,70 m */
+  const walkPose = (p, sp, run) => { const a = Math.sin(p.ph), S = stepLen(p, sp) / (p.g.scale.x || 1), hp = [0, 0], kn = [0, 0], ft = [0, 0]; let hpS = 0;
+    for (let i = 0; i < 2; i++) { const th = ((p.ph + i * Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
+      if (th < Math.PI) { const u = th / Math.PI, f = S / 2 - u * S; hp[i] = -Math.asin(Math.max(-0.95, Math.min(0.95, f / LEG))); kn[i] = run ? 0.16 * Math.sin(Math.PI * u) : 0; hpS = hp[i];
+        ft[i] = -(hp[i] + kn[i]); }
+      else { const u = (th - Math.PI) / Math.PI, f = -S / 2 + S * (u - Math.sin(2 * Math.PI * u) / (2 * Math.PI)); hp[i] = -Math.asin(Math.max(-0.95, Math.min(0.95, f / LEG))) - 0.12 * Math.sin(Math.PI * u) * (run ? 2 : 1);
+        kn[i] = (run ? 1.7 : 1.05) * Math.sin(Math.PI * u); ft[i] = -(hp[i] + kn[i]) * 0.55 + 0.15 * Math.sin(Math.PI * u); } }
+    return { py: 0.95 - (1 - Math.cos(hpS)) * LEG * (run ? 0.45 : 0.5), sp: (run ? 0.15 : 0.03) + (p.s.old ? 0.14 : 0), pry: a * (run ? 0.05 : 0.08), sy: -a * 0.1, ft,
+      sh: [hp[1] * 0.85 + (run ? -0.3 : 0), hp[0] * 0.85 + (run ? -0.3 : 0)], el: [run ? -1.2 : -0.25, run ? -1.2 : -0.25], hp, kn }; };
   // andar até um ponto (com passada, poeira quando corre); devolve true ao chegar
   const goTo = (p, x, z, dt, speed = 1.2, keepArms = false) => { const dx = x - p.x, dz = z - p.z, d = Math.hypot(dx, dz); if (d < 0.15) return true; p.moving = true; if (p.s.old && speed < 2) speed *= 0.75;
     const rad = p.s.sex === 'c' ? 0.2 : 0.26; let want = Math.atan2(dx, dz);
@@ -292,9 +310,10 @@ export function buildPeople(scene, { mobile = false, fx = null, afx = null, col:
       if (od < r2 && od > 1e-4) { p.x += ox / od * (r2 - od) * 0.6; p.z += oz / od * (r2 - od) * 0.6; } }
     const nd = Math.hypot(x - p.x, z - p.z); p.stk = d - nd < st * 0.25 ? (p.stk || 0) + dt : Math.max(0, (p.stk || 0) - dt);
     if (p.stk > 2.5 && nd < 2.5) { p.stk = 0; return true; }   /* não dá para chegar mais perto (tronco, parede): fica onde está */
-    p.ph += st / (speed > 2 ? 0.55 : 0.38) * Math.PI;
+    p.ph += st / stepLen(p, speed) * Math.PI;   /* meio ciclo da fase = um passo de verdade: o pé de apoio não patina */
     const w = walkPose(p, speed, speed > 2); if (keepArms) { delete w.sh; delete w.el; w.sh = [p.arms[0].sh.rotation.x, p.arms[1].sh.rotation.x]; w.el = [p.arms[0].el.rotation.x, p.arms[1].el.rotation.x]; }
     set(p, { ...w, k: Math.min(1, dt * 12) });
+    p.legs.forEach((l, i) => { l.hp.rotation.x = w.hp[i]; l.kn.rotation.x = w.kn[i]; l.ft.rotation.x = w.ft[i]; }); p.pelvis.position.y = w.py;   /* as pernas seguem a passada sem atraso: o pé fica plantado */
     if (speed > 2 && Math.floor(ph0 / Math.PI) !== Math.floor(p.ph / Math.PI) && rnd() < 0.5 && U.uRain.value < 0.2) emit('poeira', p.x, heightAt(p.x, p.z) + 0.05, p.z, 1, { spread: 0.4, speed: 0.6 });
     return false; };
   const faceTo = (p, h, dt, rate = 4) => { p.h += Math.max(-rate * dt, Math.min(rate * dt, angTo(p.h, h))); };
@@ -617,7 +636,7 @@ export function buildPeople(scene, { mobile = false, fx = null, afx = null, col:
           if (alert && alert.who !== p && Math.hypot(alert.x - p.x, alert.z - p.z) < 16) { tx = alert.x; tz = alert.z; }
           else if (['conversa', 'varrer', 'agua', 'sentar', 'vaqueiro', 'pescar', 'licao'].includes(p.job)) { let bd = 6; for (const o of people) { if (o === p || !o.g.visible) continue; const d = Math.hypot(o.x - p.x, o.z - p.z); if (d < bd && (o.running || KIDS.has(o.job))) { bd = d; tx = o.x; tz = o.z; } } }
           if (tx !== null) { const e = angTo(p.h, Math.atan2(tx - p.x, tz - p.z)); p.head.rotation.y += (Math.max(-1.1, Math.min(1.1, e)) - p.head.rotation.y) * Math.min(1, dt * 3); } } }
-      p.g.position.set(p.x, p.yAbs != null ? p.yAbs : gy + yOff, p.z); p.g.rotation.y = p.h; p.g.rotation.x = p.pitch; if (p.g.visible) { alignTool(p); face(p, dt); } stepCloth(p, dt); } });
+      p.g.position.set(p.x, p.yAbs != null ? p.yAbs : gy + yOff, p.z); p.g.rotation.y = p.h; p.g.rotation.x = p.pitch; if (p.g.visible) { alignTool(p); face(p, dt); clav(p); } stepCloth(p, dt); } });
 
   // ---------- o poço: anda até a manivela, desce o balde, sobe girando o sarilho, despeja na lata, põe a lata na cabeça e leva
   function poco(p, dt, t, k) { const R = W.rig; p.cyc = p.cyc ?? 0; const crank = R ? R.crankAt() : null, home = doorOf(p);

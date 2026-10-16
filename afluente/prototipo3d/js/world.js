@@ -80,15 +80,24 @@ export const POOL_R = 5.5;
 // larga e suave, com o contorno irregular e ressaltos de pedra no meio), em vez de uma parede reta cortando o mapa todo
 const TC = TILES.find(t => t.kind === 'cachoeira');
 export const CLIFF_X = TC.c[0] + 2.5, DROP = 6;
-const cliffX = z => CLIFF_X + (vnoise(z * 0.12, 3.3) - 0.5) * 2.2;
+const cliffX0 = z => CLIFF_X + (vnoise(z * 0.12, 3.3) - 0.5) * 2.2;
+let Z_FALL0 = TC.c[1]; for (let i = 0; i < RIVER.length; i++) if (RIVER[i][0] > cliffX0(RIVER[i][1])) { Z_FALL0 = RIVER[i][1]; break; }
+// a borda do paredão: perto da queda, contrafortes e reentrâncias de rocha (blocos que caíram e os que ficaram), e na própria
+// queda um recuo em anfiteatro, que a água escavou para trás com o tempo (antes a borda era quase uma linha reta)
+const cliffX = z => { const dz = z - Z_FALL0, nr = smooth(16, 4, Math.abs(dz));
+  return cliffX0(z) + (vnoise(z * 0.45, 8.7) - 0.5) * 1.1 * nr + (vnoise(z * 1.3, 2.9) - 0.5) * 0.35 * nr - 1.4 * Math.exp(-dz * dz / 12); };
 let Z_FALL = TC.c[1]; for (let i = 0; i < RIVER.length; i++) if (RIVER[i][0] > cliffX(RIVER[i][1])) { Z_FALL = RIVER[i][1]; break; }
 // largura da descida: 1,6 m no paredão da cachoeira (6 m para cada lado), abrindo até ~20 m de encosta longe dela
-const cliffW = z => { const dz = Math.abs(z - Z_FALL); return 1.6 + Math.min(18, Math.max(0, dz - 6) * 0.6) * (0.8 + 0.4 * vnoise(z * 0.05, 5.7)); };
+// (o paredão vai virando encosta aos poucos; antes a largura começava a crescer de uma vez a 6 m da queda)
+const cliffW = z => { const dz = Math.abs(z - Z_FALL); return 1.6 + 18 * smooth(4, 34, dz) * (0.8 + 0.4 * vnoise(z * 0.05, 5.7)); };
 function cliffBase(x, z) { const w = cliffW(z), x0 = cliffX(z) - 0.5 + (vnoise(z * 0.06, 9.1) - 0.5) * w * 0.5;
-  const u = Math.max(0, Math.min(1, (x - x0) / (w + 0.0001))); if (u <= 0) return 0; if (u >= 1) return DROP;
+  const u = Math.max(0, Math.min(1, (x - x0) / (w + 0.0001))); if (u <= 0) return 0;
   // perfil: ombro arredondado em cima, pé que espalha embaixo, e um ressalto de pedra no meio da encosta (onde é larga)
-  const ledge = w > 5 ? 0.08 * Math.sin(u * Math.PI * 2) * vnoise(z * 0.11, 2.3) : 0;
-  return DROP * Math.max(0, Math.min(1, u * u * (3 - 2 * u) + ledge)); }
+  const ledge = w > 5 ? 0.08 * Math.sin(u * Math.PI * 2) * vnoise(z * 0.11, 2.3) : 0, b = u >= 1 ? DROP : DROP * Math.max(0, Math.min(1, u * u * (3 - 2 * u) + ledge));
+  // no pé do paredão alto, o talude de detritos: o chão sobe um pouco junto da rocha e vai baixando para longe (sem a quina
+  // seca de parede reta encontrando chão plano)
+  const x1 = x0 + w, ap = w < 7 ? 0.8 * (0.5 + 0.9 * vnoise(z * 0.35, 4.4)) * smooth(7, 2.5, w) * smooth(x1 - Math.min(1.2, w * 0.6), x1, x) * Math.exp(-Math.max(0, x - x1) / 1.7) : 0;
+  return b - ap; }
 // perto da queda o paredão é arenito em camadas: a descida vira três degraus de ~2 m com borda viva (cada laje com seu
 // recuo); longe dela fica a encosta suave. A água (os níveis do rio) usa o perfil liso; só o chão tem os degraus.
 export function cliffDrop(x, z) { const b = cliffBase(x, z), near = smooth(14, 6, Math.abs(z - Z_FALL)); if (near <= 0 || b <= 0 || b >= DROP) return b;
@@ -99,7 +108,13 @@ const cliffDropW = cliffBase;
 export const cliffSlope = (x, z) => Math.abs(cliffDrop(x + 0.6, z) - cliffDrop(x - 0.6, z)) / 1.2;
 let S_FALL = 0; for (let i = 0; i < RIVER.length; i++) if (RIVER[i][0] > cliffX(RIVER[i][1])) { S_FALL = i / (RIVER.length - 1) * RLEN; break; }
 export const FALL = (() => { const i = Math.round(S_FALL / RLEN * (RIVER.length - 1)); const t = [RIVER[i + 4][0] - RIVER[i][0], RIVER[i + 4][1] - RIVER[i][1]], l = Math.hypot(...t); return { s: S_FALL, p: RIVER[i], t: [t[0] / l, t[1] / l], pool: [RIVER[i][0] + t[0] / l * 2.8, RIVER[i][1] + t[1] / l * 2.8] }; })();
-export const riverLevel = s => s >= 1e4 ? WATER_Y : WATER_Y - DROP * smooth(S_FALL - 0.3, S_FALL + 0.9, s);
+// o entalhe na borda, ao lado da queda: o rio transborda por ele e desce num fio pela rocha (main.js desenha o fio). O fundo
+// fica abaixo do nível do rio, então a água entra no entalhe de verdade em vez de "nascer" no alto da laje
+export const SPILL = (() => { const t = FALL.t, nd = [-t[1], t[0]], w = riverHalfWidth(FALL.s) * 0.95, lip = [FALL.p[0] - t[0] * 0.6, FALL.p[1] - t[1] * 0.6], off = w + 0.9;
+  return { off, a: [lip[0] + nd[0] * w * 0.7 - t[0] * 0.5, lip[1] + nd[1] * w * 0.7 - t[1] * 0.5], b: [lip[0] + nd[0] * off + t[0] * 0.25, lip[1] + nd[1] * off + t[1] * 0.25], r: 0.42 }; })();
+// antes da queda o leito inclina (~30 cm nos últimos 10 m): a água acelera e vira corredeira até a borda
+export const RAPIDS = 0.3;
+export const riverLevel = s => s >= 1e4 ? WATER_Y : WATER_Y - RAPIDS * smooth(S_FALL - 10, S_FALL - 0.3, s) - (DROP - RAPIDS) * smooth(S_FALL - 0.3, S_FALL + 0.9, s);
 const levelOf = (ri, x, z) => ri.extra ? WATER_Y - cliffDropW(x, z) : riverLevel(ri.s);
 // a lagoa: bacia de borda irregular, com o mesmo nível d'água do vale de cima
 const TLG = TILES.find(t => t.kind === 'lagoa');
@@ -124,8 +139,11 @@ export function heightAt(x, z) {
   if (near < bankW) { const k = smooth(bankW, 0, near) * (1 - nearFall * 0.6); h = h * (1 - k) + (wl + 0.18) * k; }
   if (ri.d < w) { const u = ri.d / w; h = Math.min(h, wl - 0.15 - 0.95 * (1 - u * u)); }
   if (dp < POOL_R) { const u = dp / POOL_R; h = Math.min(h, WATER_Y - 0.1 - 0.7 * (1 - u * u)); }
+  // entalhe do transbordo, ao lado da queda (fundo um pouco abaixo da água do rio ali)
+  { const sd = segDist(x, z, SPILL.a, SPILL.b); if (sd < SPILL.r) { const u = sd / SPILL.r, wl2 = riverLevel(FALL.s - 1.2); h = Math.min(h, wl2 - 0.08 - 0.14 * (1 - u * u)); } }
   // poço embaixo da queda
-  const fp = Math.hypot(x - FALL.pool[0], z - FALL.pool[1]); if (fp < 4.2) { const u = fp / 4.2; h = Math.min(h, WATER_Y - DROP - 0.2 - 1.3 * (1 - u * u)); }
+  // (só rio abaixo da borda: o círculo de 4,2 m escavava também por baixo da laje e a água de cima ficava suspensa sobre o buraco)
+  const fp = Math.hypot(x - FALL.pool[0], z - FALL.pool[1]); if (fp < 4.2 && (x - FALL.p[0]) * FALL.t[0] + (z - FALL.p[1]) * FALL.t[1] > -0.35) { const u = fp / 4.2; h = Math.min(h, WATER_Y - DROP - 0.2 - 1.3 * (1 - u * u)); }
   // lagoa
   const ld = lakeDist(x, z); if (ld < 4.5) { const k = smooth(4.5, 0, ld); h = h * (1 - k) + (LAKE.level + 0.16) * k; }
   if (ld < 0) { const u = Math.min(1, -ld / 7); h = Math.min(h, LAKE.level - 0.12 - 1.6 * Math.sqrt(u)); }
