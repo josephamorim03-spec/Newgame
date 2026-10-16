@@ -86,7 +86,7 @@ const skyDome = new THREE.Mesh(new THREE.SphereGeometry(5000, 48, 24), skyMat); 
 const sun = new THREE.DirectionalLight(0xffffff, 3); sun.castShadow = true;
 sun.shadow.mapSize.set(mobile ? 1536 : 2048, mobile ? 1536 : 2048);
 Object.assign(sun.shadow.camera, { left: -58, right: 58, top: 58, bottom: -58, near: 1, far: 420 });
-sun.shadow.bias = -0.0005; sun.shadow.normalBias = 0.05; sun.shadow.radius = 4;
+sun.shadow.bias = -0.00012; sun.shadow.normalBias = 0.05; sun.shadow.radius = 4;
 sun.target.position.set(CENTER[0], 0, CENTER[1]); scene.add(sun, sun.target);
 const moon = new THREE.DirectionalLight(0x8fa8ff, 0); moon.position.set(CENTER[0] - 60, 120, CENTER[1] - 40); moon.target = sun.target; scene.add(moon);
 const skyLight = new THREE.HemisphereLight(0x8fbfff, 0x6b5a3a, 1.4); scene.add(skyLight);
@@ -996,14 +996,19 @@ $('rotL').addEventListener('click', () => gameCam.rotate(-1)); $('rotR').addEven
 const _v = new THREE.Vector3(), _c = new THREE.Vector3(), _pts = [], shCam = sun.shadow.camera;
 function fitShadow() {
   camera.updateMatrixWorld(); const cp = camera.position, focus = camMode === 'jogo' ? gameCam.focus : controls.target; _pts.length = 0; _c.set(0, 0, 0);
+  // o raio coberto acompanha o zoom: de perto (uma parede, uma janela) o mapa inteiro vai para poucos metros e a sombra fica nítida;
+  // antes, a borda de cima da tela (quase no horizonte) sempre esticava o mapa até 110 m, e de perto cada texel dava 10-13 cm
+  const RM = Math.max(14, Math.min(110, cp.distanceTo(focus) * 1.3)), HM = Math.min(20, 4 + RM * 0.25);
   for (const [x, y] of [[-1, -1], [1, -1], [1, 1], [-1, 1], [0, 0]]) { _v.set(x, y, 0.5).unproject(camera).sub(cp).normalize(); if (_v.y > -0.08) _v.y = -0.08;
-    const t = (cp.y - focus.y) / -_v.y, p = cp.clone().addScaledVector(_v, t), d = Math.hypot(p.x - focus.x, p.z - focus.z); if (d > 110) { p.x = focus.x + (p.x - focus.x) * 110 / d; p.z = focus.z + (p.z - focus.z) * 110 / d; }
+    const t = (cp.y - focus.y) / -_v.y, p = cp.clone().addScaledVector(_v, t), d = Math.hypot(p.x - focus.x, p.z - focus.z); if (d > RM) { p.x = focus.x + (p.x - focus.x) * RM / d; p.z = focus.z + (p.z - focus.z) * RM / d; }
     p.y = focus.y; _pts.push(p); _c.add(p); }
   _c.multiplyScalar(1 / _pts.length); sun.target.position.copy(_c); sun.position.copy(_c).addScaledVector(U.uSunW.value, 250); sun.target.updateMatrixWorld(); sun.updateMatrixWorld();
   shCam.position.copy(sun.position); shCam.lookAt(_c); shCam.updateMatrixWorld();
-  let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9; for (const p of _pts) for (const h of [-2, 20]) { _v.set(p.x, p.y + h, p.z).applyMatrix4(shCam.matrixWorldInverse); x0 = Math.min(x0, _v.x); x1 = Math.max(x1, _v.x); y0 = Math.min(y0, _v.y); y1 = Math.max(y1, _v.y); }
-  const size = Math.ceil((Math.max(x1 - x0, y1 - y0) + 20) / 8) * 8, texel = size / sun.shadow.mapSize.x, cx = Math.round((x0 + x1) / 2 / texel) * texel, cy = Math.round((y0 + y1) / 2 / texel) * texel;
+  let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9; for (const p of _pts) for (const h of [-2, HM]) { _v.set(p.x, p.y + h, p.z).applyMatrix4(shCam.matrixWorldInverse); x0 = Math.min(x0, _v.x); x1 = Math.max(x1, _v.x); y0 = Math.min(y0, _v.y); y1 = Math.max(y1, _v.y); }
+  const size = Math.ceil((Math.max(x1 - x0, y1 - y0) + 4 + RM * 0.12) / 2) * 2, texel = size / sun.shadow.mapSize.x, cx = Math.round((x0 + x1) / 2 / texel) * texel, cy = Math.round((y0 + y1) / 2 / texel) * texel;
   Object.assign(shCam, { left: cx - size / 2, right: cx + size / 2, bottom: cy - size / 2, top: cy + size / 2, near: 1, far: 520 }); shCam.updateProjectionMatrix();
+  // o desvio acompanha o tamanho do texel: pouco desvio (sem sombra descolada do pé das coisas) e sem as listras de acne na parede de lado para o sol
+  sun.shadow.normalBias = texel * 3 + 0.01; sun.shadow.bias = -0.00012; window.__shTexel = texel;
 }
 // capim: de longe, cada peça desenha menos lâminas (as que ficam já são mais largas na distância)
 function grassLod() { const qk = [1, 0.65, 0.4][Q]; for (const m of grass.children) { const g = m.geometry, d = Math.hypot(camera.position.x - g.userData.c[0], camera.position.y, camera.position.z - g.userData.c[1]);

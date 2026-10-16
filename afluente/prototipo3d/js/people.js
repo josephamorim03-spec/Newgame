@@ -150,8 +150,8 @@ export function buildPeople(scene, { mobile = false, fx = null, afx = null, col:
   // ocupadas (p.toolDown), deitada no chão ao lado; parado (conversando, olhando, descansando), em pé com a lâmina no
   // chão e a mão da ferramenta no alto do cabo, o resto do corpo livre para gesticular.
   // antes do solucionador: o braço da ferramenta no ombro (andando) ou no alto do cabo (parado)
-  function modoFerr(p) { const T = p.two; if (!T) return null;
-    const carry = p.moving && !p.running && p.job !== 'lab', mode = carry ? 'ombro' : p.grip2 ? 'maos' : p.toolDown ? 'chao' : 'pe';
+  function modoFerr(p) { const T = p.two; if (!T || T.stored) return null;
+    const carry = p.moving && p.job !== 'lab', mode = carry ? 'ombro' : p.grip2 ? 'maos' : p.toolDown ? 'chao' : 'pe';
     const a1 = p.arms[1];
     if (mode === 'ombro') { a1.sh.rotation.x = -2.25; a1.el.rotation.x = -2.1; a1.sh.rotation.z = -0.15; a1.sh.rotation.y = 0.35; }
     else if (mode === 'pe') { a1.sh.rotation.x = -0.28; a1.sh.rotation.z = 0.24; a1.sh.rotation.y = 0.25; a1.el.rotation.x = -1.0; }
@@ -163,7 +163,8 @@ export function buildPeople(scene, { mobile = false, fx = null, afx = null, col:
     p.g.updateMatrixWorld(true); palm(a1, _g0, _e0); palm(p.arms[0], _g1, _e1); p.g.worldToLocal(_g0); p.g.worldToLocal(_g1);
     if (mode === 'chao') {   // deitada na grama, do lado da mão da ferramenta, a lâmina de chapa
       _ax.set(0.12, 0, 1).normalize(); _rf.set(1, 0, 0); _bx.copy(_rf).addScaledVector(_ax, -_rf.dot(_ax)).normalize(); _cz.crossVectors(_bx, _ax);
-      _M.makeBasis(_bx, _ax, _cz); T.g.quaternion.setFromRotationMatrix(_M); T.g.position.set(0.48, 0.03, -T.len * 0.45); return; }
+      _M.makeBasis(_bx, _ax, _cz); T.g.quaternion.setFromRotationMatrix(_M); T.g.position.set(0.48, 0, -T.len * 0.45);
+      const w = p.g.localToWorld(_e0.copy(T.g.position)); T.g.position.y = (heightAt(w.x, w.z) - w.y) / p.g.scale.x + 0.03; return; }   // deitada no chão de verdade, mesmo na encosta
     if (mode === 'pe') {     // em pé: o cabo desce da mão até a lâmina no chão, o alto um pouco inclinado para o corpo
       _ax.set(0.06, -1, 0.1).normalize(); const tp = Math.max(0, T.len - _g0.y / -_ax.y);
       if (T.blade === 'tras') _rf.set(0, 0, 1); else if (T.blade === 'frente') _rf.set(0, 0, 1); else _rf.set(1, 0, 0);
@@ -204,6 +205,37 @@ export function buildPeople(scene, { mobile = false, fx = null, afx = null, col:
   const L = LAYOUT, rot2 = (p, rot, lx, lz) => [p[0] + lx * Math.cos(rot) + lz * Math.sin(rot), p[1] - lx * Math.sin(rot) + lz * Math.cos(rot)];
   const doorOfHouse = h => rot2(h.p, h.rot, -h.w * 0.22, h.d / 2 + 0.9);
   const doors = L.houses.map(h => ({ at: doorOfHouse(h), face: h.rot })), doorOf = p => p.door || doors[p.home].at;
+  // ---------- onde a ferramenta dorme: encostada na parede da frente, ao lado da porta, debaixo do beiral (não pega chuva).
+  // Cabo comprido: a lâmina (ou a cabeça) no chão, um palmo afastada da parede, e o alto do cabo apoiado no reboco; a vara de
+  // pescar, de pé com o pé no chão e a ponta na parede. Quem tem ferramenta passa ali de manhã para pegar e de tarde para guardar.
+  const slotN = L.houses.map(() => 0), _st0 = new THREE.Vector3(), _st1 = new THREE.Vector3(), _stM = new THREE.Matrix4();
+  const guardaDe = p => { if (p.gdS !== undefined) return p.gdS; p.gdS = null;
+    if (p.door || p.home == null || !L.houses[p.home] || p.kid || !(p.two || (p.s.tool === 'vara' && p.tool.userData.rod))) return null;
+    const h = L.houses[p.home], i = slotN[p.home]++, lx = -h.w * 0.22 + 0.85 + i * 0.38, c = Math.cos(h.rot), sn = Math.sin(h.rot);
+    const at = (x, z) => [h.p[0] + x * c + z * sn, h.p[1] - x * sn + z * c], n = [sn, c], t = [c, -sn], base = at(lx, h.d / 2 + 0.035);
+    return (p.gdS = { base, n, t, stand: at(lx, h.d / 2 + 0.9), face: Math.atan2(-n[0], -n[1]) }); };
+  function encosta(obj, G, len, sc, headDown) {   // pousa obj (eixo +y ao longo do cabo, origem numa ponta) apoiado entre o chão e a parede
+    const a = Math.min(0.45, len * sc * 0.22), sinT = a / (len * sc), cosT = Math.sqrt(1 - sinT * sinT), fx = G.base[0] + G.n[0] * a, fz = G.base[1] + G.n[1] * a, fy = heightAt(fx, fz) + 0.01;
+    // headDown: a origem (a mão) fica no alto, na parede, e +y desce até o chão; senão a origem (o pé da vara) fica no chão e +y sobe
+    const dir = _st0.set(G.n[0] * sinT, -cosT, G.n[1] * sinT); if (!headDown) dir.negate();
+    const xa = _st1.set(G.t[0], 0, G.t[1]), za = new THREE.Vector3().crossVectors(xa, dir).normalize(); xa.crossVectors(dir, za).normalize();
+    _stM.makeBasis(xa, dir, za); obj.quaternion.setFromRotationMatrix(_stM); obj.scale.setScalar(sc);
+    if (headDown) obj.position.set(fx - dir.x * len * sc, fy - dir.y * len * sc, fz - dir.z * len * sc); else obj.position.set(fx, fy, fz); }
+  function guarda(p) { const G = guardaDe(p); if (!G || p.gd === 'guardada') return; const sc = p.g.scale.x;
+    if (p.two) { const T = p.two; T.stored = true; scene.add(T.g); encosta(T.g, G, T.len, sc, true); }
+    else { const R = p.tool.userData.rod; bendRod(p, 0); scene.add(R); encosta(R, G, ROD_L, sc, false); }
+    p.gd = 'guardada'; }
+  function pega(p) { if (p.gd !== 'guardada') return;
+    if (p.two) { const T = p.two; p.g.add(T.g); T.g.scale.set(1, 1, 1); T.stored = false; }
+    else { const R = p.tool.userData.rod; p.tool.add(R); R.position.set(0, 0, 0); R.rotation.set(ROD_A, 0, 0); R.scale.set(1, 1, 1); }
+    p.gd = 'mao'; }
+  // a passada pela parede: chega em frente, vira para ela, abaixa um pouco e estende o braço (guarda ou pega no meio do gesto)
+  function passaNaParede(p, dt, guardar, speed) { const G = guardaDe(p); if (!G) return true; if ((p.gd === 'guardada') === guardar && p.gdT == null) return true;
+    if (p.gdT == null) { if (!goTo(p, G.stand[0], G.stand[1], dt, speed)) return false; p.gdT = 0; }
+    p.gdT += dt; faceTo(p, G.face, dt); const r = sm(0, 0.45, p.gdT) * (1 - sm(0.75, 1.1, p.gdT));
+    set(p, { sp: 0.25 * r, sh: [-0.2, -0.9 * r], el: [-0.3, -0.35], hp: [-0.15 * r, -0.2 * r], kn: [0.2 * r, 0.25 * r], hx: 0.2 * r, k: Math.min(1, dt * 8) });
+    if (p.gdT > 0.5) { if (guardar) guarda(p); else pega(p); }
+    if (p.gdT > 1.1) { p.gdT = null; return true; } return false; }
   const tL = TILES.find(t => t.kind === 'lavoura'), tB = TILES.find(t => t.kind === 'mata'), tV = TILES.find(t => t.kind === 'vila');
   const towardWater = (x, z) => { const e = 0.6, gx = waterDist(x + e, z) - waterDist(x - e, z), gz = waterDist(x, z + e) - waterDist(x, z - e); return Math.atan2(-gx, -gz); };
   const lav = L.lav, lavFace = lav ? towardWater(...lav) : 0;
@@ -574,7 +606,7 @@ export function buildPeople(scene, { mobile = false, fx = null, afx = null, col:
     if (p.job === 'rezar' && p.cyc === 2) return ['postas', 'postas'];
     if (p.wave > 0) m[p.s.tool ? 0 : 1] = m[p.s.tool ? 0 : 1] || 'aberta';
     if (mode === 'maos') { m[0] = m[0] || 'segura'; m[1] = m[1] || 'segura'; } else if (mode === 'ombro' || mode === 'pe') m[1] = m[1] || 'segura';
-    if (UMA.has(p.s.tool) && p.tool.visible) m[1] = m[1] || 'segura';
+    if (UMA.has(p.s.tool) && p.tool.visible && p.gd !== 'guardada') m[1] = m[1] || 'segura';
     if (p.panoMao && p.panoMao.mesh.visible) { m[0] = m[0] || 'segura'; m[1] = m[1] || 'segura'; }
     if (p.s.extra === 'lousa') m[0] = m[0] || 'segura';
     if ((p.saco && p.saco.visible) || (p.extra && p.s.extra === 'feixe' && p.extra.visible)) m[1] = m[1] || 'segura';
@@ -597,10 +629,11 @@ export function buildPeople(scene, { mobile = false, fx = null, afx = null, col:
       else if (p.st === 'igreja') { p.g.visible = true; p.x = chapelDoor[0]; p.z = chapelDoor[1]; p.st = 'voltando'; }
       else if ((away || kidScared) && !stay) { if (p.job === 'lagoa') { p.lk = null; kitOff(p); p.tool.visible = false; } if (p.job === 'pescar') kitOff(p); if (p.st !== 'casa') { const d = doorOf(p), run = rain > 0.3 || kidScared; p.running = run; p.pitch = 0;
           if (p.lata) p.lata.visible = false; if (p.lataChao) p.lataChao.visible = false; if (W.rig) W.rig.hand = null; if (p.extra && p.s.extra === 'feixe') p.extra.visible = false;
-          if (goTo(p, d[0], d[1], dt, run ? 2.8 : 1.3)) { p.st = 'casa'; p.g.visible = false; p.cyc = 0; }
-          else if (rain > 0.3) { p.arms[1].sh.rotation.x = -2.75; p.arms[1].el.rotation.x = -1.7; p.arms[1].sh.rotation.z = -0.35; p.head.rotation.x = 0.25; } } }
+          if (!passaNaParede(p, dt, true, run ? 2.8 : 1.3)) { /* guardando a ferramenta na parede */ }
+          else if (goTo(p, d[0], d[1], dt, run ? 2.8 : 1.3)) { p.st = 'casa'; p.g.visible = false; p.cyc = 0; }
+          else if (rain > 0.3) { const a = p.two && !p.two.stored ? p.arms[0] : p.arms[1], sg = a === p.arms[0] ? -1 : 1; a.sh.rotation.x = -2.75; a.el.rotation.x = -1.7; a.sh.rotation.z = -0.35 * sg; p.head.rotation.x = 0.25; } } }   // a mão livre protege a cabeça
       else if (p.st === 'casa' || p.st === 'voltando') { p.g.visible = true; if (p.st === 'casa') { const d = doorOf(p); p.x = d[0]; p.z = d[1]; p.st = 'voltando'; }
-        const [bx, bz] = kidPost(p); if (goTo(p, bx, bz, dt, KIDS.has(p.job) ? 2.6 : 1.2)) { p.st = 'post'; p.h = p.face ?? p.h; } }
+        const [bx, bz] = kidPost(p); if (passaNaParede(p, dt, false, 1.2) && goTo(p, bx, bz, dt, KIDS.has(p.job) ? 2.6 : 1.2)) { p.st = 'post'; p.h = p.face ?? p.h; } }
       else { // no posto, fazendo o ofício
         const t = time + p.ph;
         if (!pausa(p, dt, k)) switch (p.job) {
