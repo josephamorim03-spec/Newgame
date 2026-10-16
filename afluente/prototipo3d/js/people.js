@@ -4,7 +4,12 @@
 // na vereda, lida com o gado, traz lenha da mata, racha lenha no toco, ensina as letras às crianças na esteira, reza no
 // cruzeiro e entra na capela; na Ave-Maria o sino toca e o povo vai à capela. As crianças brincam de pega-pega e de bola,
 // tropeçam, caem, choram um pouco e levantam; quem está perto olha.
-// Ao escurecer e na chuva forte vão para casa (fica o da varanda, com o lampião aceso; a roupa sai do varal).
+// O dia segue a hora e o tempo: cada um tem hora de dormir e de acordar (os velhos cedo, as crianças tarde); ao escurecer as
+// crianças entram e os grandes ficam na porta, debaixo do beiral, até a hora de deitar (e de madrugada, antes de clarear); a casa
+// apaga quando todos dormem. Na garoa quem está parado vai para o beiral e as crianças tomam banho de chuva; com trovão ninguém
+// fica na água, no pasto aberto nem embaixo de árvore; na chuva forte todos correm para casa. Quando a chuva ameaça (ou no fim
+// da tarde) a lavadeira tira a roupa da corda, com pressa se já pinga, e estende de novo quando o tempo abre; no sol do
+// meio-dia quem trabalha na roça almoça e descansa na sombra.
 // No meio do ofício param um pouco (espreguiçam com a mão nas costas, bebem água, enxugam a testa, olham em volta), acenam
 // para quem passa andando perto. Os velhos andam mais devagar e curvados; o passo tem quadril que gira, ombro que responde e
 // pé que rola. No jogo v5, cada vila atendida recebe gente nova (arrive): chega a pé de fora do vale até a casa nova e vive
@@ -315,7 +320,7 @@ export function buildPeople(scene, { mobile = false, fx = null, afx = null, col:
   // ---------- poses (ângulos em radianos; + na coluna inclina para a frente, − no ombro levanta o braço para a frente)
   const set = (p, o) => { const k = o.k ?? 1, lerp = (obj, key, v) => { obj[key] += (v - obj[key]) * k; };
     lerp(p.pelvis.position, 'y', o.py ?? 0.95); lerp(p.spine.rotation, 'x', o.sp ?? 0); lerp(p.spine.rotation, 'y', o.sy ?? 0); lerp(p.head.rotation, 'x', o.hx ?? 0); lerp(p.head.rotation, 'y', o.hy ?? 0); lerp(p, 'pitch', o.pitch ?? 0);
-    p.arms.forEach((a, i) => { lerp(a.sh.rotation, 'x', (o.sh || [0, 0])[i]); lerp(a.el.rotation, 'x', (o.el || [-0.32, -0.32])[i]); lerp(a.sh.rotation, 'z', (o.shz || [0.1, -0.1])[i]); lerp(a.sh.rotation, 'y', (o.shy || [-0.15, 0.15])[i]); });
+    p.arms.forEach((a, i) => { lerp(a.sh.rotation, 'x', (o.sh || [-0.05, -0.05])[i]); lerp(a.el.rotation, 'x', (o.el || [-0.36, -0.36])[i]); lerp(a.sh.rotation, 'z', (o.shz || [0.15, -0.15])[i]);   /* repouso: braço um pouco aberto e à frente, cotovelo levemente dobrado */ lerp(a.sh.rotation, 'y', (o.shy || [-0.15, 0.15])[i]); });
     p.legs.forEach((l, i) => { lerp(l.hp.rotation, 'x', (o.hp || [0, 0])[i]); lerp(l.kn.rotation, 'x', (o.kn || [0, 0])[i]); lerp(l.ft.rotation, 'x', (o.ft || [0, 0])[i]); lerp(l.hp.rotation, 'z', (o.hpz || [0, 0])[i]); });
     lerp(p.pelvis.rotation, 'y', o.pry ?? 0); if (o.prz != null) lerp(p.pelvis.rotation, 'z', o.prz); if (o.maos) p.maos = o.maos; };
   // a passada (anatomia.js): marcha ou corrida com o pé de apoio parado no chão; o passo e a cadência vêm da altura e da velocidade
@@ -327,7 +332,7 @@ export function buildPeople(scene, { mobile = false, fx = null, afx = null, col:
     const e = angTo(p.h, want), h0 = p.h; p.h += Math.max(-4 * dt, Math.min(4 * dt, e));
     if (p.peO && p.h !== h0) { const [ox, oz] = p.peO, c0 = Math.cos(h0), s0 = Math.sin(h0), c1 = Math.cos(p.h), s1 = Math.sin(p.h);   // vira em cima do pé de apoio, não do centro do corpo
       p.x += (ox * c0 + oz * s0) - (ox * c1 + oz * s1); p.z += (-ox * s0 + oz * c0) - (-ox * s1 + oz * c1); }
-    const st = Math.min(d, speed * dt); p.x += Math.sin(p.h) * st; p.z += Math.cos(p.h) * st; const ph0 = p.ph;
+    const ea = Math.abs(angTo(p.h, want)), st = Math.min(d, Math.min(speed, 0.35 + d * 1.8) * dt * Math.max(0.15, Math.cos(Math.min(1.5, ea)))); p.x += Math.sin(p.h) * st; p.z += Math.cos(p.h) * st; const ph0 = p.ph;   // freia perto do alvo e vira antes de andar (sem rodar em volta dele)
     if (colisao) { const q = colisao.push(p.x, p.z, rad); p.x = q[0]; p.z = q[1]; }
     for (const o of people) { if (o === p || !o.g.visible || o.st === 'casa') continue; const ox = p.x - o.x, oz = p.z - o.z, od = Math.hypot(ox, oz), r2 = rad + (o.s.sex === 'c' ? 0.2 : 0.26);   // gente não atravessa gente
       if (od < r2 && od > 1e-4) { p.x += ox / od * (r2 - od) * 0.6; p.z += oz / od * (r2 - od) * 0.6; } }
@@ -395,6 +400,14 @@ export function buildPeople(scene, { mobile = false, fx = null, afx = null, col:
     golpe: { sh: [-1.25, -0.7], shz: [0.45, -0.3], el: [-0.1, -0.2], sp: 0.55, hp: [-0.2, 0.28], kn: [0.3, 0.4], hx: 0.35 },
     puxa: { sh: [-0.55, -0.95], shz: [0.45, -0.25], el: [-0.15, -1.25], sp: 0.4, hp: [-0.2, 0.28], kn: [0.3, 0.4], hx: 0.3 } };
   const ENXADA = [[0, ENX.segura], [0.38, ENX.ergue], [0.5, ENX.golpe], [0.78, ENX.puxa], [0.9, ENX.segura]];
+  // torrões que a enxada vira e puxa: ficam no chão uns vinte segundos (a terra fresca, mais escura) e vão se desfazendo
+  const TOR = (() => { const N = 120, geo = paint(new THREE.IcosahedronGeometry(0.035, 0), col(0x5e3e2a)), m = new THREE.InstancedMesh(geo, MAT.liso, N), d = new THREE.Object3D(), life = new Float32Array(N), pos = new Float32Array(N * 3), sc = new Float32Array(N);
+    let k = 0; d.scale.setScalar(0); d.updateMatrix(); for (let i = 0; i < N; i++) m.setMatrixAt(i, d.matrix); m.receiveShadow = true; m.frustumCulled = false; m.userData.noRegua = true; scene.add(m);
+    const put = (i, s, dy) => { d.position.set(pos[i * 3], pos[i * 3 + 1] - dy, pos[i * 3 + 2]); d.rotation.set(i * 1.7, i * 2.3, i * 0.9); d.scale.set(s, s * 0.65, s * 1.2); d.updateMatrix(); m.setMatrixAt(i, d.matrix); };
+    return { add(x, z) { const i = k++ % N; life[i] = 16 + rnd() * 10; sc[i] = 0.5 + rnd() * 1.0; pos.set([x, heightAt(x, z) + 0.012, z], i * 3); put(i, sc[i], 0); m.instanceMatrix.needsUpdate = true; },
+      step(dt) { let ch = false; for (let i = 0; i < N; i++) if (life[i] > 0) { life[i] -= dt; if (life[i] < 4) { put(i, Math.max(0, life[i] / 4) * sc[i], (1 - Math.max(0, life[i]) / 4) * 0.025); ch = true; } } if (ch) m.instanceMatrix.needsUpdate = true; } }; })();
+  updaters.push(dt => TOR.step(Math.min(dt, 0.1)));
+  const bladeAt = p => { const b = p.two ? p.two.g.localToWorld(_bl.set(0, 1.38, 0)) : _bl.set(p.x + Math.sin(p.h) * 1.15, 0, p.z + Math.cos(p.h) * 1.15); return b; }, _bl = new THREE.Vector3();
 
   // ---------- o tombo: tropeça, cai de peito com as mãos na frente (poeira), fica um instante, senta e chora um pouco,
   // levanta e bate a poeira da roupa
@@ -581,28 +594,105 @@ export function buildPeople(scene, { mobile = false, fx = null, afx = null, col:
     if (p.panoMao && p.panoMao.mesh.visible) { m[0] = m[0] || 'segura'; m[1] = m[1] || 'segura'; }
     if (p.s.extra === 'lousa') m[0] = m[0] || 'segura';
     if ((p.saco && p.saco.visible) || (p.extra && p.s.extra === 'feixe' && p.extra.visible)) m[1] = m[1] || 'segura';
-    if (p.lata && p.lata.visible && p.cyc === 5) m[0] = m[0] || 'apoio';
+    if (p.lata && p.lata.visible && (p.cyc === 5 || p.cyc === 0)) m[0] = m[0] || 'apoio';
     return m; }
+
+  // ---------- o dia de cada um conforme a hora e o tempo. Cada um tem hora de dormir e de acordar (os velhos cedo, as crianças
+  // tarde); no começo da noite (e de madrugada, antes de clarear) os grandes ficam na porta de casa, debaixo do beiral, com o
+  // lampião; a casa apaga quando todos dormem. Na garoa quem está parado procura o beiral e as crianças tomam banho de chuva
+  // (se não está frio nem trovejando); com trovão ninguém fica na água, no pasto aberto nem embaixo de árvore; na chuva forte
+  // todos correm para casa. Quando a chuva ameaça (nuvem pesada, primeiros pingos, ventania) ou no fim da tarde, a lavadeira
+  // recolhe a roupa do varal: com pressa se já está pingando; a roupa molhada volta para a corda quando o tempo abre. No sol
+  // do meio-dia quem trabalha na roça almoça e descansa na sombra de uma árvore.
+  let trovaoT = -99; const FORTE = 0.55;   // uRain: a garoa do céu é ~0,3; chuva forte, ~1
+  const ARV = scene.children.filter(o => o.userData && o.userData.kind && o.userData.kind !== 'moita').map(o => [o.position.x, o.position.z]);
+  const casaDe = p => p.casa || L.houses[p.home] || L.houses[0];
+  const beiral = p => { const h = casaDe(p), sl = p.slot ?? 0; return rot2(h.p, h.rot, -h.w * 0.4 + (sl % 6) * h.w * 0.16, h.d / 2 + 0.32); };
+  const sombraDe = p => { let best = null, bd = 32; for (const [x, z] of ARV) { const d = Math.hypot(x - p.x, z - p.z); if (d < bd) { bd = d; best = [x, z]; } } if (!best) return null;
+    const s = U.uSunW.value, l = Math.hypot(s.x, s.z) || 1, k = 0.9 + Math.min(2.2, 3 * l / Math.max(0.25, s.y)), a = p.ph * 2.1;   // a sombra cai do lado contrário ao sol
+    return [best[0] - s.x / l * k + Math.cos(a) * 0.6, best[1] - s.z / l * k + Math.sin(a) * 0.6]; };
+  const CAMPO = new Set(['enxada', 'colher', 'lenha', 'machado', 'serrar', 'vaqueiro', 'varrer']), PARADO = new Set(['sentar', 'conversa', 'fiar', 'licao', 'aluno', 'rezar', 'forno', 'lavar']);
+  function agenda(p) { if (p.dorme != null) return; const kid = p.s.sex === 'c', old = !!p.s.old;
+    p.dorme = p.night ? 22.2 + rnd() * 0.5 : kid ? 19.6 + rnd() * 0.9 : old ? 19.8 + rnd() * 0.8 : 20.6 + rnd() * 1.6;
+    p.acorda = kid ? 6.3 + rnd() * 0.7 : old ? 4.7 + rnd() * 0.6 : 5.1 + rnd() * 1.0;
+    p.varanda = !kid && rnd() < 0.65; p.sesta = rnd() < 0.85;
+    const h = casaDe(p); h.moradores = h.moradores || []; if (!h.moradores.includes(p)) h.moradores.push(p); p.slot = h.moradores.indexOf(p); }
+  function clima(hour, day, rain, time) { const V = L.varal, cov = U.uCloudCov.value, wb = U.uWindBase.value * (1 + U.uWindIu.value * 0.5);
+    const frio = (U.uSeca.value > 0.5 && (hour < 8.5 || hour > 17.5)) || hour > 19.5 || hour < 6, trovao = time - trovaoT < 45;
+    return { hour, day, rain, noite: day < 0.3, trovao, frio, ventania: wb > 9, ameaca: (cov > 0.82 && day > 0.3) || rain > 0.015 || trovao,
+      banho: !frio && !trovao && rain < 0.75 && day > 0.4, sesta: hour > 11.2 && hour < (U.uSeca.value > 0.5 ? 14 : 13.2) && day > 0.6 && rain < 0.04,
+      roupaFora: !!(V && V.items && V.items.some(i => i.visible)) }; }
+  // o que a pessoa faz agora por causa da hora e do tempo (null: o ofício de sempre)
+  function modoDe(p, C) { if (p.job === 'lab') return null; agenda(p);
+    const kid = p.s.sex === 'c', h = C.hour, manha = h < 12, deita = h >= p.dorme || (manha && h < p.acorda), lav = p.job === 'lavar';
+    if (lav && C.roupaFora && !deita && (C.ameaca || C.ventania || h > 16.3 || C.noite)) return 'recolhe';
+    if (lav && p.trouxa && p.trouxa.length && !deita && (h > 16.3 || C.noite) && !C.rain) return 'guarda';
+    if (deita) return 'casa';
+    if (C.noite) { if (p.night && !manha && C.rain < FORTE) return null; return !kid && (p.varanda || manha) && C.rain < FORTE ? 'varanda' : 'casa'; }
+    if (lav && p.trouxa && p.trouxa.length && !C.ameaca && !C.ventania && h > 8 && h < 15.5) return 'reestende';
+    if (C.rain > FORTE && !(kid && C.banho && KIDS.has(p.job))) return 'casa';
+    if (C.trovao && (C.rain > 0.02 || p.job === 'lagoa' || p.job === 'pescar')) return kid ? 'casa' : 'abrigo';   // longe da água, do pasto aberto e das árvores
+    if (C.rain > 0.04) { if (p.job === 'lagoa') return 'casa';
+      if (kid && (KIDS.has(p.job) || p.job === 'morador')) return C.banho ? null : 'abrigo';
+      if (PARADO.has(p.job) || p.job === 'morador') return 'abrigo'; return null; }   // na garoa a roça continua
+    if (C.sesta && p.sesta && CAMPO.has(p.job) && p.s.sex !== 'c') return 'sombra';
+    return null; }
+  // a trouxa de roupa nos braços (cresce a cada peça tirada da corda)
+  function trouxaDe(p) { if (p.trouxaMesh) return p.trouxaMesh; const g = new THREE.Group(), cs = [0xf4f0e8, 0x3a5a8a, 0xc8382a, 0xe0a020];
+    for (let i = 0; i < 4; i++) { const m = new THREE.Mesh(new THREE.SphereGeometry(1, 9, 6).scale(0.13, 0.07, 0.1), new THREE.MeshLambertMaterial({ color: cs[i] })); m.position.set((i % 2 - 0.5) * 0.08, Math.floor(i / 2) * 0.05, (i % 3) * 0.02); m.rotation.y = i * 0.7; m.castShadow = true; g.add(m); }
+    p.corpo.chest.add(g); g.position.set(0, 1.16 - p.corpo.chestY, 0.2); g.visible = false; p.trouxaMesh = g; return g; }
+  const _vr = new THREE.Vector3();
+  function pontoNaCorda(it) { const V = L.varal, at = it.meio(), nrm = [V.dir[1], -V.dir[0]], side = ((lav[0] - V.c[0]) * nrm[0] + (lav[1] - V.c[1]) * nrm[1]) > 0 ? 1 : -1;
+    return [at.x + nrm[0] * 0.42 * side, at.z + nrm[1] * 0.42 * side, at]; }
+  function fazModo(p, md, C, dt, t, k) { const V = L.varal, pressa = C.rain > 0.015 || C.trovao;
+    const abraca = () => { for (const [i, a] of p.arms.entries()) { a.sh.rotation.x = -0.75; a.el.rotation.x = -1.55; a.sh.rotation.z = i ? -0.28 : 0.28; } p.maos = ['segura', 'segura']; };
+    const cobre = () => { if (C.rain > 0.04 && !p.s.hat) { p.arms[1].sh.rotation.x = -2.75; p.arms[1].el.rotation.x = -1.7; p.arms[1].sh.rotation.z = -0.35; p.head.rotation.x = 0.25; } };   // a mão na cabeça embaixo da chuva
+    if (md === 'varanda' || md === 'abrigo') { const [bx, bz] = beiral(p), corre = md === 'abrigo' && (C.rain > 0.04 || C.trovao);
+      if (goTo(p, bx, bz, dt, corre ? 2.6 : 1.1)) { const hc = casaDe(p); faceTo(p, hc.rot + Math.sin(p.ph) * 0.4, dt, 2); p.toolDown = true;
+        const o = nearest(p, 2.6); if (o && o.modo === md) { turnTo(p, o.x, o.z, dt * 0.3); const g2 = Math.max(0, Math.sin(t * 1.3 + p.ph)); set(p, { sh: [-0.3 - g2 * 0.4, 0.15], shz: [0.1, -0.4], el: [-1.1 - g2 * 0.3, -1.6], hy: Math.sin(t * 0.4) * 0.3, k }); }
+        else if (md === 'abrigo' && C.rain > 0.02 && Math.sin(t * 0.21 + p.ph * 5) > 0.85) set(p, { sh: [-0.1, -1.25], el: [-0.3, -0.25], shy: [0, 0.6], hx: -0.1, k });   // estica a mão para sentir a chuva
+        else if (Math.sin(t * 0.13 + p.ph * 3) > 0) set(p, { sh: [0.2, 0.2], shz: [-0.5, 0.5], el: [-1.6, -1.6], hy: Math.sin(t * 0.3 + p.ph) * 0.6, hx: md === 'abrigo' ? -0.08 : 0, k });   // mãos na cintura, olhando o tempo
+        else set(p, { hy: Math.sin(t * 0.3 + p.ph) * 0.6, hx: md === 'abrigo' ? -0.08 : 0, k }); }
+      else if (corre) cobre(); }
+    else if (md === 'sombra') { if (!p.sombraAt) p.sombraAt = sombraDe(p) || beiral(p);
+      if (goTo(p, p.sombraAt[0], p.sombraAt[1], dt, 1.0)) { const s = U.uSunW.value; faceTo(p, Math.atan2(-s.x, -s.z) + Math.sin(p.ph) * 0.8, dt, 2); p.toolDown = true;
+        const c = (t * 0.05 + p.ph) % 1; set(p, { py: 0.18, hp: [-1.5, -1.4], kn: [0.35, 0.3], sp: -0.15, ...(c < 0.12 ? { sh: [0.35, -1.9], el: [-0.2, -2.0], shz: [0, -0.2], hx: -0.25 } : c < 0.3 && p.s.hat ? { sh: [0.35, -1.4 + Math.sin(t * 6) * 0.25], el: [-0.2, -1.2], hx: -0.1 } : { sh: [0.35, 0.35], el: [-0.2, -0.2] }), hy: Math.sin(t * 0.3) * 0.5, k }); } }   // senta na sombra, bebe água, abana com o chapéu
+    else if (md === 'recolhe' || md === 'reestende') { p.trouxa = p.trouxa || []; const tr = trouxaDe(p); if (p.panoMao) { p.panoMao.mesh.visible = false; p.panoMao = null; } if (p.panoItem) p.panoItem = null;
+      let it = p.rcItem;
+      if (!it) { const cand = md === 'recolhe' ? V.items.filter(i => i.visible) : p.trouxa.slice(); let bd = 1e9;
+        for (const c of cand) { const [x, z] = pontoNaCorda(c), d = Math.hypot(x - p.x, z - p.z); if (d < bd) { bd = d; it = c; } } p.rcItem = it; p.rcT = 0; }
+      tr.visible = p.trouxa.length > 0; if (tr.visible) tr.scale.setScalar(0.6 + 0.12 * p.trouxa.length);
+      if (!it) return; const [sx, sz, at] = pontoNaCorda(it);
+      if (goTo(p, sx, sz, dt, md === 'recolhe' && pressa ? 2.7 : 1.1)) { faceTo(p, Math.atan2(at.x - p.x, at.z - p.z), dt, 8); p.rcT += dt;
+        set(p, { sh: [-2.75, -2.75], el: [-0.35, -0.35], shy: [0.1, -0.1], hx: -0.35, k: Math.min(1, dt * (pressa ? 14 : 6)) });
+        if (p.rcT > (pressa ? 0.45 : 1.0)) { if (md === 'recolhe') { it.visible = false; p.trouxa.push(it); } else { it.estende(); p.trouxa.splice(p.trouxa.indexOf(it), 1); } p.rcItem = null; V.n = V.items.filter(i => i.visible).length; } }
+      else { if (p.trouxa.length) abraca(); if (pressa) cobre(); } }
+    else if (md === 'guarda') { const tr = trouxaDe(p), d = doorOf(p); tr.visible = true; if (goTo(p, d[0], d[1], dt, 1.1)) { p.trouxa = []; tr.visible = false; } else abraca(); } }
   let time = 0, scare = 0, kidsHome = 0, frameN = 0; const _pa0 = new THREE.Vector3(), _pb0 = new THREE.Vector3();
   updaters.push(dt => { time += dt; scare = Math.max(0, scare - dt); kidsHome = Math.max(0, kidsHome - dt); if (alert && (alert.t -= dt) < 0) alert = null;
-    const day = U.uDay.value, rain = U.uRain.value, away = day < 0.3 || rain > 0.3, hour = window.__hour ?? 15;
+    const day = U.uDay.value, rain = U.uRain.value, hour = window.__hour ?? 15, C = clima(hour, day, rain, time);
+    // a luz de cada casa: acesa enquanto alguém de casa está acordado lá dentro ou na porta (de dia não faz diferença)
+    for (const h of L.houses) if (h.luz && h.moradores && h.moradores.length) h.luz.alvo = h.moradores.some(q => (q.st === 'casa' && !(hour >= q.dorme || hour < q.acorda)) || q.modo === 'varanda' || (q.night && q.st === 'post')) ? 1 : 0;
     stepBell(dt, hour); stepBall(dt);
-    // roupa no varal: some de manhã cedo (dia novo) e quando a chuva manda a lavadeira para casa
-    if (L.varal && (hour < 6.5 || rain > 0.3) && L.varal.n) { L.varal.n = 0; for (const it of L.varal.items) it.visible = false; }
+    // roupa esquecida na corda de um dia para o outro: some na madrugada (a lavadeira recolhe no fim da tarde e antes da chuva)
+    if (L.varal && hour < 4.5 && L.varal.n) { L.varal.n = 0; for (const it of L.varal.items) it.visible = false; }
     frameN++; const cam = window.__cam; let agasalhoFeito = frameN < 30;
     for (const p of people) { p.rig.restore();   // a rotina trabalha sobre o que ela mesma pediu no quadro anterior (o solucionador é por cima)
       const k = Math.min(1, dt * 6); let yOff = 0; if (!p.moving) p.walkT = 0; p.moving = false; p.grip2 = false; p.toolDown = false; p.maos = null; if (p.job === 'lagoa') p.yAbs = null;
-      const stay = p.night && day < 0.3 && rain < 0.3;
       const kidScared = KIDS.has(p.job) && kidsHome > 0; p.running = false; p.lastSpeed = 0;
+      const md = kidScared ? 'casa' : modoDe(p, C); p.modo = md;
       if (p.fallT != null && p.st === 'post') { stepFall(p, dt); p.running = false; }
       // Ave-Maria: quem é devoto vai à capela quando o sino toca e sai depois da reza
-      else if (p.devoto && churchHour(hour) && !away) { if (p.st !== 'igreja') { if (goTo(p, chapelDoor[0] + (p.ph - 3) * 0.15, chapelDoor[1], dt, 1.2)) { p.st = 'igreja'; p.g.visible = false; } } }
+      else if (p.devoto && churchHour(hour) && !md) { if (p.st !== 'igreja') { if (goTo(p, chapelDoor[0] + (p.ph - 3) * 0.15, chapelDoor[1], dt, 1.2)) { p.st = 'igreja'; p.g.visible = false; } } }
       else if (p.st === 'igreja') { p.g.visible = true; p.x = chapelDoor[0]; p.z = chapelDoor[1]; p.st = 'voltando'; }
-      else if ((away || kidScared) && !stay) { if (p.job === 'lagoa') { p.lk = null; kitOff(p); p.tool.visible = false; } if (p.job === 'pescar') kitOff(p); if (p.st !== 'casa') { const d = doorOf(p), run = rain > 0.3 || kidScared; p.running = run; p.pitch = 0;
-          if (p.lata) p.lata.visible = false; if (p.extra && p.s.extra === 'feixe') p.extra.visible = false;
-          if (goTo(p, d[0], d[1], dt, run ? 2.8 : 1.3)) { p.st = 'casa'; p.g.visible = false; p.cyc = 0; }
+      else if (md === 'casa') { if (p.job === 'lagoa') { p.lk = null; kitOff(p); p.tool.visible = false; } if (p.job === 'pescar') kitOff(p); if (p.st !== 'casa') { const d = doorOf(p), run = rain > 0.3 || kidScared || C.trovao; p.running = run; p.pitch = 0;
+          if (p.lata) p.lata.visible = false; if (p.lataChao) p.lataChao.visible = false; if (W.rig) W.rig.hand = null; if (p.extra && p.s.extra === 'feixe') p.extra.visible = false;
+          if (goTo(p, d[0], d[1], dt, run ? 2.8 : 1.3)) { p.st = 'casa'; p.g.visible = false; p.cyc = 0; if (p.trouxaMesh) p.trouxaMesh.visible = false; }
           else if (rain > 0.3) { p.arms[1].sh.rotation.x = -2.75; p.arms[1].el.rotation.x = -1.7; p.arms[1].sh.rotation.z = -0.35; p.head.rotation.x = 0.25; } } }
-      else if (p.st === 'casa' || p.st === 'voltando') { p.g.visible = true; if (p.st === 'casa') { const d = doorOf(p); p.x = d[0]; p.z = d[1]; p.st = 'voltando'; }
+      else if (md) { if (p.st === 'casa') { const d = doorOf(p); p.x = d[0]; p.z = d[1]; p.g.visible = true; }
+        if (p.st !== 'fora') { if (p.job === 'lagoa') { p.lk = null; kitOff(p); p.tool.visible = false; } if (p.job === 'pescar') kitOff(p); if (p.lata) p.lata.visible = false; if (p.lataChao) p.lataChao.visible = false; if (W.rig && p.job === 'agua') W.rig.hand = null; if (p.extra && p.s.extra === 'feixe') p.extra.visible = false; p.sombraAt = null; }
+        p.st = 'fora'; fazModo(p, md, C, dt, time + p.ph, Math.min(1, dt * 6)); }
+      else if (p.st === 'casa' || p.st === 'voltando' || p.st === 'fora') { p.g.visible = true; if (p.st === 'casa') { const d = doorOf(p); p.x = d[0]; p.z = d[1]; } if (p.st !== 'voltando') { p.st = 'voltando'; p.sombraAt = null; p.rcItem = null; if (p.trouxaMesh && !(p.trouxa && p.trouxa.length)) p.trouxaMesh.visible = false; if (p.job === 'lavar') { p.cyc = 0; p.w8 = 0; } }
         const [bx, bz] = kidPost(p); if (goTo(p, bx, bz, dt, KIDS.has(p.job) ? 2.6 : 1.2)) { p.st = 'post'; p.h = p.face ?? p.h; } }
       else { // no posto, fazendo o ofício
         const t = time + p.ph;
@@ -610,7 +700,9 @@ export function buildPeople(scene, { mobile = false, fx = null, afx = null, col:
           case 'enxada': { const c = (t * 0.62) % 1; p.grip2 = true;
             set(p, { ...keys(ENXADA, c), k: 1 });
             if (c > 0.97) { p.z += p.dir * 0.012; if (Math.abs(p.z - p.z0) > p.span / 2) p.dir *= -1; }
-            if (c > 0.47 && c < 0.55 && !p.hit) { p.hit = true; const fx = Math.sin(p.h), fz = Math.cos(p.h); emit('poeira', p.x + fx * 1.15, heightAt(p.x, p.z) + 0.03, p.z + fz * 1.15, 4, { spread: 0.6, speed: 0.6 }); emit('lasca', p.x + fx * 1.15, heightAt(p.x, p.z) + 0.05, p.z + fz * 1.15, 3, { spread: 0.5, speed: 0.5, color: [0.5, 0.36, 0.24] }); }
+            if (c > 0.47 && c < 0.55 && !p.hit) { p.hit = true; const b = bladeAt(p), y = heightAt(b.x, b.z), dry = U.uRain.value < 0.2 && U.uWet.value < 0.4;   // onde a lâmina bate de verdade
+              if (dry) emit('poeira', b.x, y + 0.03, b.z, 4, { spread: 0.35, speed: 0.5 }); emit('lasca', b.x, y + 0.05, b.z, 3, { spread: 0.25, speed: 0.4, color: [0.42, 0.28, 0.18] }); }
+            if (c > 0.6 && c < 0.76 && rnd() < dt * 9) { const b = bladeAt(p); TOR.add(b.x + (rnd() - 0.5) * 0.18, b.z + (rnd() - 0.5) * 0.18); }   // a terra puxada fica em torrões atrás da lâmina
             if (c < 0.4) p.hit = false; p.h = p.dir > 0 ? 0 : Math.PI; break; }
           case 'colher': { const c = (t * 0.25) % 1; if (c < 0.5) { if (goTo(p, p.x0, p.z0 + Math.sin(t * 0.06) * p.span / 2, dt * 0.5, 0.6)) set(p, { k }); }
             else set(p, { sh: [-2.6, -0.3], el: [-0.4, -0.2], hy: 0.3, hx: -0.3, k }); break; }
@@ -684,25 +776,48 @@ export function buildPeople(scene, { mobile = false, fx = null, afx = null, col:
           p.peO = [dx * c - dz * sn, dx * sn + dz * c]; } else p.peO = null; }
       stepCloth(p, dt); } });
 
-  // ---------- o poço: anda até a manivela, desce o balde, sobe girando o sarilho, despeja na lata, põe a lata na cabeça e leva
+  // ---------- o poço: chega com a lata vazia na cabeça e a põe no chão; solta o balde (o sarilho dispara, ela só segura o freio), espera encher,
+  // sobe girando a manivela (cada volta, um tranco), puxa o balde para fora pela alça, despeja na lata (a água sobe dentro dela), agacha,
+  // pega a lata e a leva à cabeça; em casa despeja no pote e volta
+  const LATA_L = [0.92, 0.88], _lv = new THREE.Vector3(), _lq = new THREE.Quaternion(), _lh = new THREE.Vector3(), _ls = new THREE.Vector3(), _w0 = new THREE.Vector3(), _w1 = new THREE.Vector3();
+  function lataChao(p) { if (p.lataChao) return p.lataChao; const c = p.lata.clone(); c.children[1].visible = false; scene.add(c); c.visible = false; return (p.lataChao = c); }   // sem a rodilha
+  function lataAgua(l, f) { const w = l.children[3]; w.visible = f > 0.03; w.position.y = -0.3 * (1 - f); }
   function poco(p, dt, t, k) { const R = W.rig; p.cyc = p.cyc ?? 0; const crank = R ? R.crankAt() : null, home = doorOf(p);
-    if (p.lata && p.cyc < 5) p.lata.visible = false;
-    if (p.cyc === 0) { if (goTo(p, p.x0, p.z0, dt)) { p.cyc = 1; p.w8 = 0; } }
-    else if (p.cyc === 1 || p.cyc === 2) { // 1: desce depressa (manivela solta para trás); 2: sobe devagar (força na manivela)
+    const LC = p.lata && R ? lataChao(p) : null, spot = R ? R.g.localToWorld(_lv.set(LATA_L[0], 0, LATA_L[1])) : null; if (spot) spot.y = heightAt(spot.x, spot.z);
+    const onHead = p.cyc === 0 || p.cyc === 5, apoio = () => { p.arms[0].sh.rotation.x = -2.9; p.arms[0].el.rotation.x = -0.5; p.arms[0].sh.rotation.z = 0.2; p.spine.rotation.x = -0.02; };
+    if (p.lata) p.lata.visible = onHead; if (LC) { LC.visible = !onHead && p.cyc !== 6; if (p.cyc >= 1 && p.cyc <= 3) { LC.position.copy(spot); LC.quaternion.setFromAxisAngle(_lh.set(0, 1, 0), 0.4); p.lata.getWorldScale(_ls); LC.scale.copy(_ls); } }
+    // a lata vai da cabeça ao chão (u = 0) ou do chão à cabeça (u = 1) acompanhando as mãos
+    const lataEntre = u => { if (!LC) return; p.lata.getWorldPosition(_lh); p.lata.getWorldQuaternion(_lq); p.lata.getWorldScale(_ls); const e = u * u * (3 - 2 * u);
+      LC.position.copy(spot).lerp(_lh, e); LC.position.y += Math.sin(e * Math.PI) * 0.12; LC.quaternion.setFromAxisAngle(_lv.set(0, 1, 0), 0.4).slerp(_lq, e); LC.scale.copy(_ls); };
+    const crouch = (u, w) => set(p, { py: 0.95 - 0.4 * (1 - u), sp: 0.55 * (1 - u), hp: [-1.05 * (1 - u), -1.05 * (1 - u)], kn: [1.35 * (1 - u), 1.35 * (1 - u)], sh: [-0.7 - 2.2 * u, -0.7 - 2.2 * u], el: [-0.35 - 0.25 * u, -0.35 - 0.25 * u], hx: 0.3 * (1 - u), k: Math.min(1, dt * w) });
+    if (p.cyc === 0) { if (R) { R.hand = null; } if (LC) lataAgua(p.lata, 0); if (goTo(p, p.x0, p.z0, dt)) { p.cyc = 7; p.w8 = 0; } else if (p.lata) apoio(); }
+    else if (p.cyc === 7) { p.w8 += dt; if (spot) faceTo(p, Math.atan2(spot.x - p.x, spot.z - p.z), dt); const u = 1 - sm(0.2, 1.3, p.w8);   // põe a lata vazia no chão
+      crouch(p.w8 < 1.3 ? u : sm(1.3, 1.9, p.w8), 7); if (LC) { LC.visible = true; lataEntre(u); } if (p.lata) p.lata.visible = false; if (p.w8 > 1.9) { p.cyc = 1; p.w8 = 0; } }
+    else if (p.cyc === 1 || p.cyc === 2) { // 1: solta o balde — o sarilho dispara e ela freia com a mão no tambor; 2: espera encher e sobe devagar, volta a volta
       if (crank) faceTo(p, Math.atan2(crank.x - p.x, crank.z - p.z) + 0.5, dt); p.w8 += dt;
-      const down = p.cyc === 1, sp = down ? -5 : 3.2; if (R) { R.axle.rotation.x += sp * dt; R.set(Math.max(0, Math.min(1, R.level + (down ? -dt / 1.8 : dt / 5)))); }
-      const th = R ? R.axle.rotation.x : t * 3; set(p, { sp: 0.18 + (down ? 0 : 0.08 * Math.sin(th)), sh: [-0.95, -1.3 + 0.38 * Math.sin(th)], el: [-0.45, -0.55 - 0.4 * Math.cos(th)], shy: [-0.15, 0.35], hp: [-0.1, 0.15], kn: [0.15, 0.2], hx: 0.15, k: Math.min(1, dt * 14) });
-      if (down && R && R.level <= 0.001) { p.cyc = 2; emit('respingo', W.p[0], heightAt(...W.p) - 0.3, W.p[1], 4, { spread: 0.3, speed: 0.5 }); }
+      const down = p.cyc === 1; let lv = R ? R.level : 0;
+      if (R) { if (down) { const v = 0.2 + 0.8 * sm(0, 0.8, p.w8) * (0.35 + 0.65 * sm(0, 0.25, lv)); lv = Math.max(0, lv - v * dt / 2.2); }   // freia perto da água
+        else if (p.w8 > 1.4) lv = Math.min(1, lv + dt / 10 * (0.75 + 0.25 * Math.sin(R.axle.rotation.x)));   // cada volta tem o ponto de força
+        R.set(lv); }
+      const th = R ? R.axle.rotation.x : t * 3, pull = down ? 0 : sm(1.0, 1.6, p.w8);
+      if (down) set(p, { sp: 0.3, sh: [-1.05, -1.35], el: [-0.5, -0.75], shy: [-0.1, 0.3], hp: [-0.15, 0.2], kn: [0.2, 0.25], hx: 0.35, k: Math.min(1, dt * 10) });   // olha o balde descer
+      else set(p, { sp: 0.18 + pull * 0.08 * Math.sin(th), sh: [-0.95, -1.3 + pull * 0.38 * Math.sin(th)], el: [-0.45, -0.55 - pull * 0.4 * Math.cos(th)], shy: [-0.15, 0.35], hp: [-0.1, 0.15 + pull * 0.05 * Math.sin(th)], kn: [0.15, 0.2], hx: 0.15, k: Math.min(1, dt * 14) });
+      if (down && R && R.level <= 0.001) { p.cyc = 2; p.w8 = 0; emit('respingo', W.p[0], R.g.position.y + R.waterY + 0.05, W.p[1], 6, { spread: 0.25, speed: 0.6 }); }
+      if (!down && R && R.level > 0.85 && rnd() < dt * 12) { const b = R.bucketAt(_w0); emit('gota', b.x + (rnd() - 0.5) * 0.2, b.y - 0.33, b.z + (rnd() - 0.5) * 0.2, 1, { spread: 0.05 }); }   // escorre do balde que sai
       if (!down && R && R.level >= 0.999) { p.cyc = 3; p.w8 = 0; } }
-    else if (p.cyc === 3) { p.w8 += dt; faceTo(p, Math.atan2(W.p[0] - p.x, W.p[1] - p.z), dt); const tilt = sm(0.5, 1.4, p.w8);   // pega o balde e despeja
-      set(p, { sp: 0.35 + tilt * 0.15, sh: [-1.45 - tilt * 0.3, -1.45 - tilt * 0.3], el: [-0.35, -0.35], shy: [0.2, -0.2], hx: 0.35, k: Math.min(1, dt * 6) });
-      if (p.w8 > 0.8 && rnd() < dt * 20) emit('gota', p.x + Math.sin(p.h) * 0.45, heightAt(p.x, p.z) + 0.6, p.z + Math.cos(p.h) * 0.45, 1, { spread: 0.2 });
-      if (p.w8 > 2.2) { p.cyc = 4; p.w8 = 0; } }
-    else if (p.cyc === 4) { p.w8 += dt; const up = sm(0.9, 1.7, p.w8);   // agacha, pega a lata no chão e sobe com ela à cabeça
-      set(p, { py: 0.95 - 0.38 * (1 - up) * sm(0, 0.6, p.w8), sp: 0.5 * (1 - up), hp: [-1.0 * (1 - up), -1.0 * (1 - up)], kn: [1.3 * (1 - up), 1.3 * (1 - up)], sh: [-0.6 - 2.3 * up, -0.6 - 2.3 * up], el: [-0.4 - 0.3 * up, -0.4 - 0.3 * up], k: Math.min(1, dt * 8) });
-      if (up > 0.95 && p.lata) p.lata.visible = true; if (p.w8 > 2.0) p.cyc = 5; }
-    else if (p.cyc === 5) { if (p.lata) p.lata.visible = true; if (goTo(p, ...home, dt, 0.95)) { p.cyc = 6; p.w8 = 4; } else { p.arms[0].sh.rotation.x = -2.9; p.arms[0].el.rotation.x = -0.5; p.arms[0].sh.rotation.z = 0.2; p.spine.rotation.x = -0.02; } }
-    else { p.w8 -= dt; set(p, { k }); if (p.w8 < 0) { p.cyc = 0; if (p.lata) p.lata.visible = false; } } }
+    else if (p.cyc === 3) { p.w8 += dt; const tw = p.w8; if (spot) faceTo(p, Math.atan2(spot.x - p.x, spot.z - p.z) - 0.35, dt);   // puxa o balde pela alça, despeja e devolve ao gancho
+      const reach = sm(0, 0.8, tw) * (1 - sm(3.4, 4.2, tw)), tilt = sm(0.9, 1.7, tw) * (1 - sm(2.9, 3.5, tw));
+      set(p, { sp: 0.3 + tilt * 0.25, sh: [-1.25 - tilt * 0.2, -1.05 - tilt * 0.45], el: [-0.3, -0.6 + tilt * 0.2], shy: [0.25, -0.15], hx: 0.45, hp: [-0.15, -0.15], kn: [0.15, 0.15], k: Math.min(1, dt * 6) });
+      if (R && LC) { const hang = _w0.set(0.1, 1.2, 0), over = R.g.worldToLocal(_w1.copy(spot)); const dx = over.x - 0.1, dz = over.z, dl = Math.hypot(dx, dz) || 1;
+        over.set(over.x - dx / dl * 0.12, 0.98 + 0.08 * (1 - tilt), over.z - dz / dl * 0.12);   // a boca do balde em cima da lata
+        if (reach > 0.001) { R.hand = (R.hand || new THREE.Vector3()).copy(hang).lerp(over, reach); R.tiltAxis = (R.tiltAxis || new THREE.Vector3()).set(dz / dl, 0, -dx / dl); R.tilt = tilt * 1.75; } else R.hand = null;
+        if (tilt > 0.55 && R.full) { const lip = R.lipAt(_w1); emit('gota', lip.x, lip.y - 0.02, lip.z, 1, { spread: 0.02 }); p.fill = Math.min(1, (p.fill ?? 0) + dt * 0.7); }
+        if (tw > 3.0) R.full = false; R.set(1); lataAgua(LC, p.fill ?? 0); }
+      if (tw > 4.4) { p.cyc = 4; p.w8 = 0; if (R) R.hand = null; } }
+    else if (p.cyc === 4) { p.w8 += dt; const up = sm(0.9, 1.8, p.w8);   // agacha, pega a lata no chão e sobe com ela à cabeça
+      crouch(Math.min(up + (1 - sm(0, 0.6, p.w8)), 1), 8); lataEntre(up); if (LC) lataAgua(LC, 1); if (p.w8 > 2.1) { p.cyc = 5; if (p.lata) lataAgua(p.lata, 1); } }
+    else if (p.cyc === 5) { if (goTo(p, ...home, dt, 0.95)) { p.cyc = 6; p.w8 = 4; } else apoio(); }
+    else { p.w8 -= dt; set(p, { k }); if (p.w8 < 0) { p.cyc = 0; p.fill = 0; } } }
 
   // ---------- a lavadeira: esfrega na pedra (espuma), bate a roupa (respingo), enxágua, torce (pinga) e estende no varal
   function lavar(p, dt, t, k) { const V = L.varal; p.cyc = p.cyc ?? 0; p.w8 = (p.w8 ?? 0) + dt; if (p.cyc >= 1 && !p.panoMao) pegaPano(p); const stone = [lav[0] + Math.sin(lavFace) * 0.62, lav[1] + Math.cos(lavFace) * 0.62], wl = waterLevelAt(...lav) + 0.14;
@@ -801,14 +916,21 @@ export function buildPeople(scene, { mobile = false, fx = null, afx = null, col:
   // rancho, abre a porteira (ela fecha atrás dele), despeja a ração no cocho com o gado em volta, sai, devolve o saco vazio
   // e volta para a cerca. De manhã cedo o rancho amanhece com os sacos repostos.
   const Cr = L.corral, crLoc = (lx, lz) => rot2(Cr.p, Cr.rot, lx, lz), cs = Math.cos(Cr.rot), sn = Math.sin(Cr.rot);
-  const TR = { canto: crLoc(Cr.w / 2 + 1.5, Cr.d / 2 + 1.5), rancho: crLoc(Cr.rancho[0], Cr.rancho[1] + 1.3), cocho: crLoc(Cr.cocho[0] + 1.8, Cr.cocho[1]), hCocho: Math.atan2(-cs, sn), hRancho: Math.atan2(-sn, -cs) };
+  const TR = { canto: crLoc(Cr.w / 2 + 1.5, Cr.d / 2 + 1.5), rancho: crLoc(Cr.rancho[0], Cr.rancho[1] + 1.3), cocho: crLoc(Cr.cocho[0] + 1.8, Cr.cocho[1]), hCocho: Math.atan2(-cs, sn), hRancho: Math.atan2(-sn, -cs), hFace: Math.atan2(-sn, -cs) };
+  const cochoSt = i => crLoc(Cr.cocho[0] + 0.85 - i * 0.57, Cr.cocho[1] + 0.82);   // as paradas do lado de dentro do cocho
   for (const G of L.gates || []) G.sound = kind => som(kind === 'abre' ? 'rangido' : 'trinco', G.c[0], G.c[1], 0.8);
   function tratar(p, dt, t, k) { const F = Cr.feed, G = Cr.gateObj, R3 = Cr.rancho3d; if (!G || !R3) return false;
     const hr = window.__hour ?? 12; if (hr < 6.5) R3.sacos.forEach(m => { m.visible = true; });   // reposto de madrugada
     if (p.tr == null) { if (F.level > 0.3 || hr < 6.5 || hr > 18 || !R3.sacos.some(m => m.visible)) return false; p.tr = 0; p.w8 = 0; }
     if (!p.saco) { p.saco = new THREE.Mesh(R3.sacoGeo(), R3.sacoMat); p.saco.castShadow = true; p.saco.visible = false; p.g.add(p.saco); }
-    const S = p.saco, a1 = p.arms[1], a0 = p.arms[0], wait = (to, nxt) => { if (G.open > 0.85) { if (goTo(p, ...to, dt, 0.95)) { p.tr = nxt; p.w8 = 0; } } else { faceTo(p, Math.atan2(G.c[0] - p.x, G.c[1] - p.z), dt); set(p, { sh: [-1.1, 0], el: [-0.4, -0.3], k }); } };
-    if ((p.tr >= 2 && p.tr <= 3) || (p.tr >= 5 && p.tr <= 6)) { if (Math.hypot(p.x - G.c[0], p.z - G.c[1]) < 3.4) G.ask(); }
+    const S = p.saco, a1 = p.arms[1], a0 = p.arms[0], wait = (to, nxt, side) => {   // vai ao trinco, levanta a tramela, empurra a folha e passa; do outro lado a folha volta sozinha e bate
+      if (p.gw == null) { if (goTo(p, ...G.spot(side), dt, 0.9)) p.gw = 0; return; }
+      const lp = G.latchAt(); p.gw += dt; if (p.gw > 0.25) G.raise(); if (p.gw > 0.6) G.ask();
+      if (G.open > 0.8 && p.gw > 1.2) { if (goTo(p, ...to, dt, 0.95)) { p.tr = nxt; p.w8 = 0; p.gw = null; } return; }
+      const push = sm(0.6, 1.4, p.gw); faceTo(p, Math.atan2(lp.x - p.x, lp.z - p.z) + push * 0.5 * side, dt);
+      set(p, { sp: 0.15 + push * 0.2, sh: [-1.2 - 0.25 * (1 - push), -0.2], el: [-0.25 - 0.3 * push, -0.3], shz: [0.25, -0.1], hx: 0.15, hp: [-0.1 - push * 0.25, 0.1], kn: [0.15 + push * 0.2, 0.15], k: Math.min(1, dt * 6) }); };
+    if (p.gw != null && p.gw > 0.6 && (p.tr === 2.5 || p.tr === 5.5)) G.ask();
+    if ((p.tr === 4 || p.tr === 7) && Math.hypot(p.x - G.c[0], p.z - G.c[1]) < 1.6) G.ask();   // segura aberta até passar
     p.w8 += dt;
     if (p.tr === 0) { if (goTo(p, ...TR.canto, dt, 1.05)) p.tr = 1; }                                  // por fora da cerca
     else if (p.tr === 1) { if (goTo(p, ...TR.rancho, dt, 1.0)) { p.tr = 1.5; p.w8 = 0; } }
@@ -816,21 +938,25 @@ export function buildPeople(scene, { mobile = false, fx = null, afx = null, col:
       set(p, down ? { sp: 0.95, sh: [-1.35, -1.35], el: [-0.3, -0.3], hp: [-0.45, -0.3], kn: [0.6, 0.5], hx: 0.3, k: Math.min(1, dt * 5) } : { k });
       if (p.w8 > 0.9 && !S.visible) { const top = [...R3.sacos].reverse().find(m => m.visible); if (top) top.visible = false; S.visible = true; S.scale.set(1, 1, 1); }
       if (p.w8 > 1.8) { p.tr = 2; p.w8 = 0; } }
-    else if (p.tr === 2) { if (goTo(p, ...G.outside, dt, 1.0)) { p.tr = 2.5; p.w8 = 0; } }
-    else if (p.tr === 2.5) wait(G.inside, 4);                                                         // abre a porteira e entra
-    else if (p.tr === 4) { if (goTo(p, ...TR.cocho, dt, 1.0)) { p.tr = 4.5; p.w8 = 0; } }
-    else if (p.tr === 4.5) { faceTo(p, TR.hCocho, dt); set(p, { sp: 0.35, sh: [-1.15, -1.0], el: [-0.55, -0.7], shz: [0.2, -0.2], hx: 0.35, k: Math.min(1, dt * 4) });   // despeja ao longo do cocho
-      if (p.w8 > 0.6) { F.level = Math.min(1, F.level + dt * 0.3); const fx0 = Math.sin(p.h), fz0 = Math.cos(p.h), sh = Math.sin(t * 2) * 0.5;
-        if (rnd() < dt * 18) emit('lasca', p.x + fx0 * (0.75 + sh) , heightAt(p.x, p.z) + 0.95, p.z + fz0 * (0.75 + sh), 2, { spread: 0.12, speed: 0.25, color: [0.86, 0.74, 0.36] });
-        S.scale.y = Math.max(0.35, 1 - (p.w8 - 0.6) * 0.18); }
-      if (F.level >= 1 && p.w8 > 3) { p.tr = 5; p.w8 = 0; } }
-    else if (p.tr === 5) { if (goTo(p, ...G.inside, dt, 1.0)) { p.tr = 5.5; p.w8 = 0; } }
-    else if (p.tr === 5.5) wait(G.outside, 7);                                                        // sai; a porteira fecha atrás
+    else if (p.tr === 2) { if (goTo(p, ...G.outside, dt, 1.0)) { p.tr = 2.5; p.w8 = 0; p.gw = null; } }
+    else if (p.tr === 2.5) wait(G.inside, 4, -1);                                                         // abre a porteira e entra
+    else if (p.tr === 4) { if (goTo(p, ...cochoSt(0), dt, 1.0)) { p.tr = 4.5; p.w8 = 0; p.st4 = 0; } }
+    else if (p.tr === 4.5) { // ao longo do cocho, em quatro paradas: inclina o saco, a ração escorre da boca dele e faz um morrinho; anda um passo de lado e repete
+      const st = cochoSt(p.st4); if (Math.hypot(p.x - st[0], p.z - st[1]) > 0.2) { goTo(p, ...st, dt, 0.55); p.w8 = 0; }
+      else { faceTo(p, TR.hFace, dt); const tip = sm(0.15, 0.6, p.w8) * (1 - sm(1.75, 2.1, p.w8));
+        set(p, { sp: 0.3 + tip * 0.2, sh: [-1.0 - tip * 0.3, -0.8 - tip * 0.45], el: [-0.6 + tip * 0.15, -0.9 + tip * 0.3], shz: [0.25, -0.25], hx: 0.45, hp: [-0.15, -0.1], kn: [0.15, 0.1], k: Math.min(1, dt * 5) });
+        if (tip > 0.6 && S.visible) { S.updateMatrixWorld(); const m = S.localToWorld(_w0.set(-0.3, 0, 0)), lc = F.cocho.worldToLocal(_w1.copy(m));
+          if (rnd() < dt * 26) emit('lasca', m.x + (rnd() - 0.5) * 0.06, m.y - 0.03, m.z + (rnd() - 0.5) * 0.06, 2, { spread: 0.04, speed: 0.05, color: [0.86, 0.74, 0.36] });
+          F.pour(Math.max(-1.1, Math.min(1.1, lc.x)), dt * 0.33); S.scale.y = Math.max(0.35, S.scale.y - dt * 0.05); }
+        if (p.w8 > 2.3) { p.w8 = 0; if (++p.st4 > 3) { p.tr = 5; p.w8 = 0; } } }
+      p.saco.userData.tip = p.st4 <= 3 && Math.hypot(p.x - st[0], p.z - st[1]) <= 0.2 ? sm(0.15, 0.6, p.w8) * (1 - sm(1.75, 2.1, p.w8)) : 0; }
+    else if (p.tr === 5) { if (goTo(p, ...G.inside, dt, 1.0)) { p.tr = 5.5; p.w8 = 0; p.gw = null; } }
+    else if (p.tr === 5.5) wait(G.outside, 7, 1);                                                        // sai; a porteira fecha atrás
     else if (p.tr === 7) { if (goTo(p, ...TR.rancho, dt, 1.0)) { S.visible = false; p.tr = 8; } }      // larga o saco vazio no rancho
     else if (p.tr === 8) { if (goTo(p, ...TR.canto, dt, 1.05)) p.tr = 9; }
     else if (p.tr === 9) { if (goTo(p, p.x0, p.z0, dt, 1.05)) { p.tr = null; p.cyc = 1; p.w8 = 4; } }
     // o saco: no ombro andando, na frente das mãos despejando
-    if (S.visible) { if (p.tr === 4.5) { S.position.set(0, 1.12, 0.42); S.rotation.set(0.95, 0, Math.PI / 2); }
+    if (S.visible) { if (p.tr === 4.5) { const tp = S.userData.tip || 0; S.position.set(0.05, 1.08 + tp * 0.05, 0.4 + tp * 0.08); S.quaternion.setFromUnitVectors(_w0.set(-1, 0, 0), _w1.set(0, -0.15 - tp * 0.75, 1).normalize()); }
       else if (p.tr !== 1.5) { S.position.set(0.17, 1.56, -0.03); S.rotation.set(0, Math.PI / 2, 0.15); a1.sh.rotation.x = -2.7; a1.el.rotation.x = -1.6; a1.sh.rotation.z = 0.1; }
       else { S.position.set(0, 1.3, 0.25); S.rotation.set(0, Math.PI / 2, 0); } }
     return true; }
@@ -877,5 +1003,5 @@ export function buildPeople(scene, { mobile = false, fx = null, afx = null, col:
   // bancada de testes: põe no vale uma pessoa feita sob medida (sexo m/f/c e o que mais quiser na ficha), parada na pose de window.__lab
   function lab(o = {}, at = [0, 0], face = 0) { const s = o.sex === 'f' ? mulher(o) : o.sex === 'c' ? crianca(o) : homem(o), p = person(s);
     Object.assign(p, { job: o.job || 'lab', st: 'post', x: at[0], z: at[1], x0: at[0], z0: at[1], h: face, face, home: 0, door: at, spots: [] }); people.push(p); return p; }
-  return { update(dt) { for (const f of updaters) f(dt); }, people, ball, arrive, lab, anatomia: { passada, comprimentoPasso }, startle() { scare = 2.2; kidsHome = 15; } };
+  return { update(dt) { for (const f of updaters) f(dt); }, people, ball, arrive, lab, anatomia: { passada, comprimentoPasso }, startle() { scare = 2.2; kidsHome = 15; trovaoT = time; } };
 }

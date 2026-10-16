@@ -117,6 +117,12 @@ export function perfil(s, rnd = Math.random) {
   };
   // o rosto de cada um (proporções do crânio por sexo, com variação pessoal)
   const v = () => 1 + (rnd() - 0.5) * 0.08;
+  // a mandíbula de cada um: classe I (perfil reto, a maioria), II (retrognata: queixo e lábio de baixo para trás) ou III
+  // (prognata: a mandíbula inteira para a frente, o lábio de baixo na frente do de cima); e o mento (o botão do queixo),
+  // à parte, mais para dentro ou mais projetado. s.mandibula ('normal' | 'retro' | 'prog') e s.mento (m) fixam na bancada
+  const rc = rnd(), classe = s.mandibula ? { normal: 0, retro: -1, prog: 1 }[s.mandibula] : rc < (kid ? 0.66 : 0.6) ? 0 : rc < (kid ? 0.93 : 0.9) ? -1 : 1;
+  const mand = classe === 0 ? (rnd() - 0.5) * 0.004 : classe < 0 ? -(0.007 + rnd() * 0.005) : 0.006 + rnd() * 0.005;
+  const mento = s.mento ?? cl((rnd() + rnd() - 1) * 0.007, -0.006, 0.006);
   const cranio = {
     rx: (kid ? 0.076 : f ? 0.0745 : 0.0775) * (1 + (rnd() - 0.5) * 0.05), ry: (kid ? 0.09 : f ? 0.085 : 0.087), rz: (kid ? 0.094 : f ? 0.093 : 0.098) * (1 + (rnd() - 0.5) * 0.04),
     face: kid ? 0.84 : 1,                                       // na criança o rosto é pequeno perto do crânio
@@ -126,7 +132,7 @@ export function perfil(s, rnd = Math.random) {
     gonio: (kid ? 0.04 : f ? 0.046 : 0.0515) * v(),             // ângulo da mandíbula (meia largura bigoníaca)
     gonY: kid ? 0.05 : f ? 0.046 : 0.038,                        // altura do ângulo da mandíbula (mais baixo e marcado no homem)
     queixo: (kid ? 0.013 : f ? 0.0145 : 0.021) * v(),           // meia largura do queixo (quadrado no homem, fino na mulher)
-    queixoZ: (kid ? 0.066 : f ? 0.072 : 0.076) * (1 + (rnd() - 0.5) * 0.05),
+    queixoZ: (kid ? 0.083 : f ? 0.09 : 0.093) * (1 + (rnd() - 0.5) * 0.03) + mand * (kid ? 0.7 : 1), mento, classe,   // onde fica o queixo (para a frente)
     nariz: (kid ? 0.8 : f ? 0.9 : 1.04) * v(), boca: (f ? 0.94 : 1) * v(), olho: kid ? 1.12 : 1,
     bochecha: (kid ? 0.007 : 0.003) + Math.max(0, F) * 0.0035 + (old ? 0.001 : 0), papada: Math.max(0, F - 0.3) * 0.006 + (old ? 0.003 : 0) + (m ? barriga * 0.004 : 0),
     pomo: m ? 0.0055 : 0,                                       // pomo de adão
