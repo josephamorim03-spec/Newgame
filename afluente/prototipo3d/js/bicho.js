@@ -67,7 +67,7 @@ function Skin() {
   // sombra embutida na pelagem: o que olha para baixo (barriga, queixo, dentro das pernas) escurece, o lombo clareia de leve;
   // dá volume ao bicho mesmo na luz em faixas
   function bakeAO() { for (let i = 0; i < colA.length / 3; i++) { const ny = nor[i * 3 + 1], f = 0.7 + 0.36 * sstep(-0.8, 0.8, ny); colA[i * 3] *= f; colA[i * 3 + 1] *= f; colA[i * 3 + 2] *= f * 0.98 + 0.02; } }
-  function build(K) { bakeAO(); const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos.map(v => v * K), 3)); g.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3));
+  function build(K, patFn) { const pat = patFn ? Array.from({ length: colA.length / 3 }, (_, i) => patFn(colA[i * 3], colA[i * 3 + 1], colA[i * 3 + 2])) : null; bakeAO(); const g = new THREE.BufferGeometry(); if (pat) g.setAttribute('pat', new THREE.Float32BufferAttribute(pat, 1)); g.setAttribute('position', new THREE.Float32BufferAttribute(pos.map(v => v * K), 3)); g.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3));
     g.setAttribute('color', new THREE.Float32BufferAttribute(colA, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
     g.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(si, 4)); g.setAttribute('skinWeight', new THREE.Float32BufferAttribute(sw, 4)); g.setIndex(idx); return g; }
   return { add, build };
@@ -116,7 +116,7 @@ export function quad(S) {
     if (S.tail.extra) for (const [geo, i] of S.tail.extra) sk.add(geo, tail[Math.min(n - 1, i)].userData.i); }
   if (S.extra) for (const [geo, who] of S.extra) sk.add(geo, (who === 'neck' ? neck : root).userData.i);
   for (const b of B.list) b.position.multiplyScalar(K);
-  const mesh = new THREE.SkinnedMesh(sk.build(K), S.M); mesh.add(root); mesh.updateMatrixWorld(true); mesh.bind(new THREE.Skeleton(B.list));
+  const mesh = new THREE.SkinnedMesh(sk.build(K, S.pat), S.M); mesh.add(root); mesh.updateMatrixWorld(true); mesh.bind(new THREE.Skeleton(B.list));
   mesh.castShadow = true; mesh.receiveShadow = true; mesh.computeBoundingSphere(); mesh.boundingSphere.radius *= 1.6;
   const g = new THREE.Group(); g.add(mesh);
   const rest = { neck: neck.rotation.x, rootY: root.position.y };

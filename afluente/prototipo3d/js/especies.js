@@ -4,6 +4,7 @@
 // e o rabo. A pose de pastar sai da conta (a boca encosta no chão), não de número chutado.
 import * as THREE from 'three';
 import { quad, ave, loft, tube, paintG, sph } from './bicho.js';
+import { mat } from './props.js';
 
 const col = c => (c && c.isColor) ? c.clone() : new THREE.Color(c);
 const mix = (a, b, t) => col(a).lerp(col(b), Math.max(0, Math.min(1, t)));
@@ -38,21 +39,31 @@ const mergeG = gs => { const pos = [], colA = [], idx = []; let base = 0; for (c
 
 // olho de bicho: a bola escura e o pontinho de brilho (é o que dá vida ao rosto)
 const olho = (H, x, y, z, r, sx, c = 0x140e0a) => { H.add(sph(r * 0.6, r, r, x, y, z, c, 10)); H.add(sph(r * 0.2, r * 0.26, r * 0.26, x + sx * r * 0.5, y + r * 0.35, z + r * 0.3, 0xfaf6ee, 6)); };
+// pelagem com manchas (gir chitado, malhado): as manchas são desenhadas no pixel, por um ruído preso ao corpo (posição de
+// descanso da malha, então andam com o bicho), com borda nítida e recortada; só onde a malha diz que é pelo (atributo pat)
+// e mantendo a sombra da pelagem (a mancha multiplica a cor do vértice pela razão cor da mancha / cor de base)
+function pelagem(spotHex, baseC, freq, thr, seed) {
+  return mat({ vertexColors: true }, { rim: '2.4', vdecl: 'attribute float pat;varying float vPat;', vert: 'vPat=pat;',
+    fdecl: 'varying float vPat;uniform vec3 uSpot,uBase;uniform vec3 uSp;',
+    uni: { uSpot: { value: col(spotHex) }, uBase: { value: col(baseC) }, uSp: { value: new THREE.Vector3(freq, thr, seed) } },
+    frag: `{vec3 q=vLp*uSp.x+uSp.z;float n=vnoise(q.zy)*0.5+vnoise(q.xz*1.17+7.1)*0.3+vnoise(q.xy*1.9+3.7)*0.2;n+=(vnoise(q.zy*6.0+q.x*3.0)-0.5)*0.07;
+      float m=smoothstep(uSp.y-0.01,uSp.y+0.01,n)*smoothstep(0.5,0.9,vPat);diffuseColor.rgb*=mix(vec3(1.0),uSpot/max(uBase,vec3(0.02)),m);}
+      diffuseColor.rgb*=0.95+0.1*vnoise(vWp.xz*14.0+vWp.y*9.0);diffuseColor.rgb*=mix(1.0,0.82,uWet);` }); }
 export function especies({ M, MJ, rnd }) {
   // ---------- gado zebu do Cerrado
   function vaca(coat, size = 1) {
     const w = col(coat.w).multiplyScalar(0.94 + rnd() * 0.12), grey = w.clone().lerp(col(coat.g), coat.k), dark = col(0x2a2624), bull = size > 0.8 && rnd() < 0.35, calf = size < 0.75;
     const sd = rnd() * 50, spotC = coat.spot ? col(coat.spot) : null, thr = 1 - (coat.sp || 0) * 1.6;
     const spotAt = (z, a) => spotC && Math.sin(z * 7.3 + sd) * Math.sin(a * 2.1 + sd * 1.7) + 0.6 * Math.sin(z * 3.1 - a * 1.4 + sd * 0.7) > thr;
-    const shade = z => a => { const top = Math.max(0, Math.sin(a)), k = Math.max(0, Math.min(1, (z - 0.2) / 0.6)) * (bull ? 0.8 : 0.45), sp = spotAt(z, a), b = sp ? spotC : w;
+    const shade = z => a => { const top = Math.max(0, Math.sin(a)), k = Math.max(0, Math.min(1, (z - 0.2) / 0.6)) * (bull ? 0.8 : 0.45), sp = false, b = w;
       return b.clone().lerp(sp ? b : grey, k * (0.4 + 0.6 * top)).multiplyScalar(0.94 + 0.06 * top); };
     const R = (z, y, rx, rt, rb, e = 2.2) => ({ z, y, rx, rt, rb, e, c: shade(z) });
     const rings = [R(-0.93, 1.14, 0.05, 0.05, 0.06), R(-0.88, 1.15, 0.14, 0.1, 0.18), R(-0.79, 1.12, 0.21, 0.15, 0.27), R(-0.66, 1.07, 0.25, 0.22, 0.34), R(-0.5, 1.03, 0.268, 0.28, 0.385),
       R(-0.32, 1.0, 0.276, 0.32, 0.4), R(-0.12, 0.985, 0.278, 0.345, 0.41), R(0.08, 0.98, 0.274, 0.355, 0.41), R(0.26, 0.99, 0.262, 0.36, 0.395), R(0.42, 1.01, 0.235, 0.345, 0.405),
       R(0.55, 1.04, 0.195, 0.3, 0.385), R(0.66, 1.06, 0.145, 0.22, 0.32), R(0.73, 1.07, 0.08, 0.12, 0.2)];
     const hump = calf ? 0.04 : bull ? 0.21 : 0.13;
-    const shape = (x, y, a, r) => { const z = r.z, s = Math.sin(a), hz = Math.exp(-(((z - 0.42) / 0.13) ** 2));
-      if (s > 0) { const top = Math.pow(s, 6); y += hump * hz * top; x *= 1 - 0.35 * hz * top; }   // cupim
+    const shape = (x, y, a, r) => { const z = r.z, s = Math.sin(a), hz = Math.exp(-(((z - 0.42) / 0.16) ** 2));
+      if (s > 0) { const top = Math.pow(s, 3); y += hump * hz * top; x *= 1 - 0.18 * hz * top; }   // cupim (redondo, não em bico)
       const dz = Math.max(0, Math.min(1, (z - 0.42) / 0.2)); if (s < 0) { const bot = Math.pow(-s, 5); y -= 0.1 * dz * bot; x *= 1 - 0.6 * dz * bot; }   // barbela no peito
       if (z < -0.45 && s < 0.2) x *= 1 + 0.05 * Math.cos(a * 2);   // coxa
       if (z > -0.4 && z < 0.3 && s < -0.3) y -= 0.025 * Math.sin((z + 0.4) / 0.7 * Math.PI);   // barriga
@@ -102,7 +113,12 @@ export function especies({ M, MJ, rnd }) {
     const tailPts = [[0, 1.15, -0.9], [0, 1.06, -0.97], [0, 0.88, -1.0], [0, 0.68, -1.0], [0, 0.5, -0.99], [0, 0.4, -0.985], [0, 0.32, -0.98]], tc = i => i >= 5 ? dark : w;
     const extra = []; if (!bull && !calf) { extra.push([sph(0.11, 0.075, 0.13, 0, 0.6, -0.42, 0xdca08c, 12), 'root']); for (const [x, z] of [[0.04, -0.37], [-0.04, -0.37], [0.04, -0.47], [-0.04, -0.47]]) extra.push([cyl(0.012, 0.009, 0.05, 0xd08a78, 6).translate(x, 0.52, z), 'root']); }
     const K = 1.08 * size * (bull ? 1.05 : 1);
-    const eL = S(0.07, 0.11, 0.025), r = quad({ K, M, body: { rings, shape }, neck, head, ears: [eL, [-eL[0], eL[1], eL[2]]], muzzle,
+    // manchas no pixel (ver pelagem); onde a cor do vértice é a do pelo (entre a cor de base e o cinza do lombo)
+    const Mv = spotC ? pelagem(coat.spot, w, coat.w === 0xf0ebe2 ? 2.4 : 3.3, 0.6 - (coat.sp || 0) * 0.2, sd) : M;
+    const gw = [grey.r, grey.g, grey.b], ww = [w.r, w.g, w.b], d2 = ww.map((v, i) => v - gw[i]), dd = d2.reduce((a, v) => a + v * v, 0) || 1e-6;
+    const pat = spotC ? (r0, g0, b0) => { const c = [r0, g0, b0], t = Math.max(0, Math.min(1, c.reduce((a, v, i) => a + (v - gw[i]) * d2[i], 0) / dd)), pp = gw.map((v, i) => v + d2[i] * t);
+      const e = Math.hypot(c[0] - pp[0], c[1] - pp[1], c[2] - pp[2]) / (pp[0] * 0.3 + pp[1] * 0.5 + pp[2] * 0.2 + 0.04); return e < 0.3 ? 1 : 0; } : null;
+    const eL = S(0.07, 0.11, 0.025), r = quad({ K, M: Mv, pat, seg: 36, body: { rings, shape }, neck, head, ears: [eL, [-eL[0], eL[1], eL[2]]], muzzle,
       legs: [leg(0.13, 0.44, 0.84, fl, fprof), leg(-0.13, 0.44, 0.84, fl, fprof), leg(0.14, -0.62, 0.92, hl, hprof), leg(-0.14, -0.62, 0.92, hl, hprof)],
       tail: { pts: tailPts, prof: tailPts.map((p, i) => ({ rx: i === 5 ? 0.048 : i === 6 ? 0.02 : 0.034 - i * 0.003, rt: i === 5 ? 0.048 : i === 6 ? 0.02 : 0.034 - i * 0.003, rb: i === 5 ? 0.048 : i === 6 ? 0.02 : 0.034 - i * 0.003, c: tc(i) })), n: 5, rest: [0.1, 0.02] },
       extra });
