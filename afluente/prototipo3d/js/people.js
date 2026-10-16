@@ -27,10 +27,11 @@ const pick = a => a[Math.floor(rnd() * a.length)];
 const SKIN = [0xf0c8a4, 0xdba57c, 0xc18456, 0x9a623e, 0x6e4430, 0x4e3022];
 const HAIR = [0x16120e, 0x2a1c12, 0x4a2e1a, 0x6a4a2a];
 const K = ['position', 'normal', 'uv', 'color'];
+const ROD_L = 2.6, ROD_A = 0.75;   // vara de pesca: comprimento e o ângulo em que sai da mão
 const sm = (a, b, x) => { const t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
 const angTo = (a, b) => Math.atan2(Math.sin(b - a), Math.cos(b - a));
 
-export function buildPeople(scene, { mobile = false, fx = null, afx = null, col: colisao = null } = {}) {
+export function buildPeople(scene, { mobile = false, fx = null, afx = null, col: colisao = null, peixes = null } = {}) {
   const T = tex => { const t = tex.clone(); t.needsUpdate = true; t.repeat.set(3, 2); return mat({ map: t, vertexColors: true }, { rim: '2.2', frag: 'diffuseColor.rgb*=mix(1.0,0.8,uWet);' }); };
   const MAT = { liso: mat({ vertexColors: true }, { rim: '2.2' }), trama: T(tramaTexture(53)),
     chita: ['#c8382a', '#2f6aa0', '#e0a020', '#3a8a4a', '#7a3a8a'].map((b, i) => T(chitaTexture(60 + i, b))),
@@ -41,9 +42,12 @@ export function buildPeople(scene, { mobile = false, fx = null, afx = null, col:
   // ---------- sons curtos do lugar (machado no toco, sino da capela, bola), só depois do primeiro toque na tela
   function som(kind, x, z, vol = 1) { const S = window.__som, ac = S ? S.ctx : window.__audioCtx, dest = S && S.out ? S.out : ac && ac.destination, cam = window.__cam; if (!ac || !cam) return; const d = Math.hypot(cam.position.x - x, cam.position.y, cam.position.z - z), g0 = vol * Math.min(1, 40 / (d + 10)) * 0.5; if (g0 < 0.01) return;
     const t0 = ac.currentTime, out = ac.createGain(); out.connect(dest);
+    if (kind === 'rangido') { const o = ac.createOscillator(), bp = ac.createBiquadFilter(), gg = ac.createGain(); o.type = 'sawtooth'; o.frequency.setValueAtTime(210, t0); o.frequency.linearRampToValueAtTime(130, t0 + 0.55);
+      bp.type = 'bandpass'; bp.frequency.value = 1100; bp.Q.value = 5; gg.gain.setValueAtTime(0, t0); for (let i = 0; i < 9; i++) { gg.gain.linearRampToValueAtTime(g0 * 0.35 * (0.5 + Math.random() * 0.5), t0 + i * 0.06 + 0.02); gg.gain.linearRampToValueAtTime(g0 * 0.05, t0 + i * 0.06 + 0.05); }
+      gg.gain.linearRampToValueAtTime(0, t0 + 0.6); o.connect(bp); bp.connect(gg); gg.connect(out); o.start(t0); o.stop(t0 + 0.62); return; }
     if (kind === 'sino') { for (const [f, a, dec] of [[392, 0.5, 3.5], [784, 0.25, 2.2], [940, 0.18, 1.6], [1176, 0.1, 1.0], [196, 0.2, 4]]) { const o = ac.createOscillator(), gg = ac.createGain(); o.frequency.value = f; gg.gain.setValueAtTime(g0 * a, t0); gg.gain.exponentialRampToValueAtTime(0.0001, t0 + dec); o.connect(gg); gg.connect(out); o.start(t0); o.stop(t0 + dec); } return; }
     const n = ac.createBuffer(1, ac.sampleRate * 0.25, ac.sampleRate), d0 = n.getChannelData(0); for (let i = 0; i < d0.length; i++) d0[i] = (Math.random() * 2 - 1) * Math.exp(-i / (ac.sampleRate * (kind === 'toc' ? 0.03 : 0.015)));
-    const src = ac.createBufferSource(), f = ac.createBiquadFilter(); src.buffer = n; f.type = 'lowpass'; f.frequency.value = kind === 'toc' ? 900 : 600; out.gain.value = g0 * (kind === 'toc' ? 1.4 : 0.8); src.connect(f); f.connect(out); src.start(t0); }
+    const src = ac.createBufferSource(), f = ac.createBiquadFilter(); src.buffer = n; f.type = 'lowpass'; f.frequency.value = kind === 'toc' ? 900 : kind === 'trinco' ? 2600 : 600; out.gain.value = g0 * (kind === 'toc' ? 1.4 : kind === 'trinco' ? 1.1 : 0.8); src.connect(f); f.connect(out); src.start(t0); }
 
   // ---------- montar uma pessoa: corpo de malha única com esqueleto (body.js), saia e avental de pano, cabelo, chapéu e ferramenta
   const clothes = [];
@@ -85,7 +89,8 @@ export function buildPeople(scene, { mobile = false, fx = null, afx = null, col:
       T2(new THREE.CylinderGeometry(0.016, 0.016, 1.45, 6).translate(0, 0.72, 0), 0xb89068, tg); const bl = new THREE.CylinderGeometry(0.17, 0.17, 0.012, 16).scale(1, 1, 1.15).rotateX(Math.PI / 2).rotateY(Math.PI / 2); T2(bl.translate(0, 1.6, 0), 0xc8a070, tg); }
     if (s.tool === 'serrote') { T2(new THREE.BoxGeometry(0.03, 0.11, 0.09).translate(0, -0.03, 0.04), 0x8a5a3a); const bl = new THREE.BoxGeometry(0.004, 0.1, 0.5), q = bl.attributes.position; for (let k = 0; k < q.count; k++) if (q.getY(k) > 0) q.setY(k, q.getY(k) - (q.getZ(k) + 0.25) * 0.08);
       T2(bl.translate(0, -0.06, 0.33), 0xb8bcc0); }
-    if (s.tool === 'vara') T2(new THREE.CylinderGeometry(0.007, 0.015, 2.6, 5).translate(0, 1.3, 0).rotateX(0.75), 0x8a7a4a);
+    if (s.tool === 'vara') { const rg = new THREE.CylinderGeometry(0.007, 0.015, ROD_L, 5, 14).translate(0, ROD_L / 2, 0), rod = lisoT(rg, 0x8a7a4a);   // vara de bambu: enverga (pesca)
+      rod.rotation.x = ROD_A; rod.userData.rest = Float32Array.from(rod.geometry.attributes.position.array); tool.add(rod); tool.userData.rod = rod; }
     if (s.tool === 'balaio') { const b = new THREE.CylinderGeometry(0.2, 0.15, 0.25, 16, 3, true), q = b.attributes.position; for (let k = 0; k < q.count; k++) { const a = Math.atan2(q.getX(k), q.getZ(k)); const w = 1 + 0.03 * Math.sin(a * 16) * Math.sin(q.getY(k) * 60); q.setX(k, q.getX(k) * w); q.setZ(k, q.getZ(k) * w); }
       T2(b.translate(0.18, -0.08, 0), 0xb08a52); T2(new THREE.CircleGeometry(0.15, 14).rotateX(Math.PI / 2).translate(0.18, -0.2, 0), 0x9a7442); T2(new THREE.TorusGeometry(0.2, 0.012, 5, 18).rotateX(Math.PI / 2).translate(0.18, 0.045, 0), 0x8a6a3a); }
     if (s.tool === 'pano') { const c = pick([0xf4f0e8, 0xc8382a, 0x2f6aa0, 0xe0a020]); const pg = new THREE.PlaneGeometry(0.2, 0.34, 3, 6), q = pg.attributes.position; for (let k = 0; k < q.count; k++) q.setZ(k, Math.sin(q.getY(k) * 18) * 0.012 + Math.sin(q.getX(k) * 20) * 0.006);
@@ -286,7 +291,8 @@ export function buildPeople(scene, { mobile = false, fx = null, afx = null, col:
     for (const o of people) { if (o === p || !o.g.visible || o.st === 'casa') continue; const ox = p.x - o.x, oz = p.z - o.z, od = Math.hypot(ox, oz), r2 = rad + (o.s.sex === 'c' ? 0.2 : 0.26);   // gente não atravessa gente
       if (od < r2 && od > 1e-4) { p.x += ox / od * (r2 - od) * 0.6; p.z += oz / od * (r2 - od) * 0.6; } }
     const nd = Math.hypot(x - p.x, z - p.z); p.stk = d - nd < st * 0.25 ? (p.stk || 0) + dt : Math.max(0, (p.stk || 0) - dt);
-    if (p.stk > 2.5 && nd < 2.5) { p.stk = 0; return true; }   // não dá para chegar mais perto (tronco, parede): fica onde está p.ph += st / (speed > 2 ? 0.55 : 0.38) * Math.PI;
+    if (p.stk > 2.5 && nd < 2.5) { p.stk = 0; return true; }   /* não dá para chegar mais perto (tronco, parede): fica onde está */
+    p.ph += st / (speed > 2 ? 0.55 : 0.38) * Math.PI;
     const w = walkPose(p, speed, speed > 2); if (keepArms) { delete w.sh; delete w.el; w.sh = [p.arms[0].sh.rotation.x, p.arms[1].sh.rotation.x]; w.el = [p.arms[0].el.rotation.x, p.arms[1].el.rotation.x]; }
     set(p, { ...w, k: Math.min(1, dt * 12) });
     if (speed > 2 && Math.floor(ph0 / Math.PI) !== Math.floor(p.ph / Math.PI) && rnd() < 0.5 && U.uRain.value < 0.2) emit('poeira', p.x, heightAt(p.x, p.z) + 0.05, p.z, 1, { spread: 0.4, speed: 0.6 });
@@ -300,7 +306,7 @@ export function buildPeople(scene, { mobile = false, fx = null, afx = null, col:
   const waveArm = (p, t) => { const i = p.s.tool ? 0 : 1, sg = i ? 1 : -1, w = Math.sin(t * 11); p.arms[i].sh.rotation.x = -2.55; p.arms[i].sh.rotation.z = sg * (0.25 + w * 0.25); p.arms[i].el.rotation.x = -0.35; };
   // de vez em quando quem trabalha para um pouco: se espreguiça com a mão nas costas, bebe água da cabaça, enxuga a testa ou olha em volta
   const PAUSA = new Set(['enxada', 'colher', 'varrer', 'serrar', 'forno', 'vaqueiro']);
-  function pausa(p, dt, k) { if (!PAUSA.has(p.job)) return false; p.pz = (p.pz ?? 12 + rnd() * 30) - dt; if (p.pz > 0) return false;
+  function pausa(p, dt, k) { if (!PAUSA.has(p.job) || p.tr != null) return false; p.pz = (p.pz ?? 12 + rnd() * 30) - dt; if (p.pz > 0) return false;
     if (p.pt == null) p.pt = Math.floor(rnd() * 4); const q = -p.pz;
     if (p.pt === 0) set(p, { sp: -0.22, sh: [0.55, 0.55], el: [-1.5, -1.5], shz: [-0.25, 0.25], hx: -0.35, k });
     else if (p.pt === 1 && p.two) set(p, { sh: [-2.0, 0], el: [-2.1, -0.3], shz: [-0.15, -0.1], hx: -0.3 - Math.min(1, q) * 0.15, k });
@@ -396,28 +402,100 @@ export function buildPeople(scene, { mobile = false, fx = null, afx = null, col:
       set(p, { pitch: 0.85, hx: -0.8, sh: [-1.7 + s2 * 0.5, -1.7 - s2 * 0.5], shz: [0.3, -0.3], el: [-0.5, -0.5], hp: [s2 * 0.45, -s2 * 0.45], kn: [0.3 + s2 * 0.2, 0.3 - s2 * 0.2], k: 1 });
       if (afx && t - (p.rip || 0) > 0.7) { p.rip = t; afx.ripple(p.x, wl, p.z, 0.55); } }
     else if (dep > 0.04 && afx && p.moving && t - (p.rip || 0) > 0.45) { p.rip = t; afx.ripple(p.x, wl, p.z, 0.35); } }
-  // ---------- pesca: linha da ponta da vara até a boia; a boia mexe, afunda quando belisca, e às vezes vem um peixe se debatendo
-  const _tip = new THREE.Vector3(), TIP = new THREE.Vector3(0, 1.9, 1.77);
-  function kitOf(p) { if (p.kit) return p.kit; const lg = new THREE.BufferGeometry(); lg.setAttribute('position', new THREE.BufferAttribute(new Float32Array(6), 3));
-    const line = new THREE.Line(lg, new THREE.LineBasicMaterial({ color: 0xf4f4f0, transparent: true, opacity: 0.75 })); line.frustumCulled = false;
-    const boia = new THREE.Mesh(merge([paint(new THREE.SphereGeometry(0.04, 10, 8).translate(0, 0.015, 0), col(0xe8402a)), paint(new THREE.SphereGeometry(0.034, 10, 6, 0, Math.PI * 2, 0, Math.PI * 0.5).translate(0, 0.035, 0), col(0xf4f0e8))], K), MAT.liso);
-    const peixe = new THREE.Mesh(merge([paint(new THREE.SphereGeometry(1, 10, 8).scale(0.035, 0.055, 0.14), col(0xc8d4cc)), paint(new THREE.ConeGeometry(0.055, 0.09, 4).rotateX(Math.PI / 2).translate(0, 0, -0.17), col(0x8a9a92)),
-      paint(new THREE.SphereGeometry(1, 6, 4).scale(0.012, 0.012, 0.01).translate(0.026, 0.015, 0.09), col(0x111111)), paint(new THREE.SphereGeometry(1, 6, 4).scale(0.012, 0.012, 0.01).translate(-0.026, 0.015, 0.09), col(0x111111))], K), MAT.liso);
-    peixe.visible = false; line.visible = boia.visible = false; scene.add(line, boia, peixe); return (p.kit = { line, boia, peixe, bite: 4 + rnd() * 8, st: 'espera', u: 0 }); }
-  const kitOff = p => { if (p.kit) p.kit.line.visible = p.kit.boia.visible = p.kit.peixe.visible = false; };
-  function pesca(p, dt, t, fpt) { const F = kitOf(p), wl = wlAt(fpt[0], fpt[1]); F.line.visible = F.boia.visible = true; p.tool.visible = true;
-    p.g.updateMatrixWorld(true); _tip.copy(TIP); p.tool.localToWorld(_tip);
-    let ex = fpt[0], ey = wl + 0.01 + Math.sin(t * 2.2 + p.ph) * 0.012, ez = fpt[1], jerk = 0; F.bite -= dt;
-    if (F.st === 'espera') { if (F.bite < 0) { F.st = 'belisca'; F.u = 0; } }
-    else if (F.st === 'belisca') { F.u += dt; if (Math.sin(F.u * 16) > 0.3) ey -= 0.07; if (afx && Math.floor(F.u / 0.35) !== Math.floor((F.u - dt) / 0.35)) afx.ripple(ex, wl, ez, 0.22);
-      if (F.u > 1.3) { F.st = rnd() < 0.5 ? 'fisgou' : 'escapou'; F.u = 0; if (afx) afx.splash(ex, wl, ez, 0.3); } }
-    else if (F.st === 'fisgou') { F.u += dt; jerk = 1; const u = Math.min(1, F.u / 0.9), e = u * u * (3 - 2 * u); F.peixe.visible = true;
-      ex = fpt[0] + (_tip.x - fpt[0]) * e * 0.85; ez = fpt[1] + (_tip.z - fpt[1]) * e * 0.85; ey = wl + (_tip.y - 0.7 - wl) * e + Math.sin(e * Math.PI) * 0.5;
-      F.peixe.position.set(ex, ey - 0.16, ez); F.peixe.rotation.set(-Math.PI / 2 + Math.sin(t * 22) * 0.25, t * 2, Math.sin(t * 28) * 0.5);
-      if (F.u > 2.8) { F.peixe.visible = false; F.st = 'espera'; F.bite = 6 + rnd() * 12; } }
-    else { F.u += dt; jerk = Math.max(0, 1 - F.u); if (F.u > 1.2) { F.st = 'espera'; F.bite = 5 + rnd() * 10; } }
-    F.boia.position.set(ex, ey, ez); const a = F.line.geometry.attributes.position; a.setXYZ(0, _tip.x, _tip.y, _tip.z); a.setXYZ(1, ex, ey + 0.05, ez); a.needsUpdate = true;
-    return jerk; }
+  // ---------- pesca. A isca no anzol, o arremesso (vara para trás, chicotada, a boia voa em arco e cai com um anel), a
+  // espera (a boia boia: empuxo puxando para a linha d'água, amortecido, balançando na marola), as beliscadas (um peixe de
+  // verdade de peixes.js vem, belisca e a boia afunda um pouco), a boia que some (o peixe levou a isca), a fisgada (às
+  // vezes erra), a briga (o peixe puxa para os lados e espirra na superfície, a vara enverga com a tensão, quem pesca vai
+  // recolhendo a linha) e o peixe tirado da água, se debatendo na ponta da linha, até o samburá. A linha é uma corda
+  // (pontos com gravidade e comprimento fixo entre eles): faz barriga na espera, estica na briga, deita na água.
+  const _tip = new THREE.Vector3(), _pa = new THREE.Vector3(), _pb = new THREE.Vector3(), NL = 14;
+  function bendRod(p, b) { const R = p.tool.userData.rod; if (!R) return; b = Math.max(0, Math.min(0.9, b)); if (Math.abs(b - (R.userData.b ?? -1)) < 0.003) return; R.userData.b = b;
+    const pos = R.geometry.attributes.position, r0 = R.userData.rest; for (let i = 0; i < pos.count; i++) { const y = r0[i * 3 + 1], u = y / ROD_L; pos.setXYZ(i, r0[i * 3], y - b * ROD_L * 0.2 * u * u * u, r0[i * 3 + 2] + b * ROD_L * 0.55 * u * u); }
+    pos.needsUpdate = true; }
+  function tipOf(p, out) { const R = p.tool.userData.rod, b = R ? R.userData.b || 0 : 0; out.set(0, ROD_L - b * ROD_L * 0.2, b * ROD_L * 0.55); if (R) { p.g.updateMatrixWorld(true); R.localToWorld(out); } return out; }
+  const lisoK = (g, c) => { const m = new THREE.Mesh(g, MAT.liso); paint(g, col(c)); m.castShadow = true; m.userData.noRegua = true; return m; };
+  function kitOf(p) { if (p.kit) return p.kit;
+    const lg = new THREE.BufferGeometry(); lg.setAttribute('position', new THREE.BufferAttribute(new Float32Array(NL * 3), 3));
+    const line = new THREE.Line(lg, new THREE.LineBasicMaterial({ color: 0xf4f4f0, transparent: true, opacity: 0.7 })); line.frustumCulled = false;
+    const boia = new THREE.Mesh(merge([paint(new THREE.SphereGeometry(0.04, 10, 8).translate(0, 0.015, 0), col(0xe8402a)), paint(new THREE.SphereGeometry(0.034, 10, 6, 0, Math.PI * 2, 0, Math.PI * 0.5).translate(0, 0.035, 0), col(0xf4f0e8)),
+      paint(new THREE.CylinderGeometry(0.004, 0.004, 0.07, 4).translate(0, 0.08, 0), col(0xe8402a))], K), MAT.liso);
+    // samburá: cesto de taquara trançada, boca estreita, onde vão os peixes (as caudas aparecem na boca)
+    const sb = new THREE.LatheGeometry([[0.0, 0], [0.13, 0.01], [0.17, 0.08], [0.16, 0.2], [0.1, 0.28], [0.09, 0.31]].map(([r, y]) => new THREE.Vector2(r, y)), 16), q = sb.attributes.position;
+    for (let k = 0; k < q.count; k++) { const a = Math.atan2(q.getX(k), q.getZ(k)), y = q.getY(k), w = 1 + 0.04 * Math.sin(a * 18) * Math.sin(y * 70); q.setX(k, q.getX(k) * w); q.setZ(k, q.getZ(k) * w); }
+    const samb = new THREE.Group(); samb.add(lisoK(sb, 0xb08a52)); samb.add(lisoK(new THREE.TorusGeometry(0.095, 0.01, 5, 14).rotateX(Math.PI / 2).translate(0, 0.31, 0), 0x8a6a3a));
+    const tails = []; for (let k = 0; k < 3; k++) { const t2 = new THREE.Mesh(merge([paint(new THREE.SphereGeometry(1, 8, 6).scale(0.02, 0.06, 0.012), col(0xc8d0c8)), paint(new THREE.ConeGeometry(0.03, 0.05, 4).translate(0, 0.07, 0), col(0xd8442e))], K), MAT.liso);
+      t2.position.set((k - 1) * 0.04, 0.32, (k % 2) * 0.02); t2.rotation.z = (k - 1) * 0.35; t2.visible = false; samb.add(t2); tails.push(t2); }
+    samb.traverse(o => { if (o.isMesh) o.castShadow = true; });
+    line.visible = boia.visible = samb.visible = false; scene.add(line, boia, samb);
+    const P = new Float32Array(NL * 3), O = new Float32Array(NL * 3);
+    return (p.kit = { line, boia, samb, tails, P, O, ri: false, bait: peixes ? peixes.bait() : null, st: 'isca', u: 0, bx: 0, by: 0, bz: 0, vx: 0, vy: 0, vz: 0, fish: null, n: 0, Ll: 3, wait: 0, react: 0, stam: 1, seat: null }); }
+  const kitOff = p => { const F = p.kit; if (!F) return; F.line.visible = F.boia.visible = F.samb.visible = false; if (F.bait) F.bait.on = false; if (F.fish && peixes) peixes.release(F.fish); F.fish = null; F.st = 'isca'; F.u = 0; F.seat = null; bendRod(p, 0); };
+  // a corda da linha: Verlet com gravidade, presa nas duas pontas; deita na água onde encosta nela
+  function rope(F, a, b, slack, dt) { const P = F.P, O = F.O, n = NL, L = Math.max(0.05, a.distanceTo(b)) * slack / (n - 1);
+    if (!F.ri) { for (let i = 0; i < n; i++) { const u = i / (n - 1); P[i * 3] = O[i * 3] = a.x + (b.x - a.x) * u; P[i * 3 + 1] = O[i * 3 + 1] = a.y + (b.y - a.y) * u; P[i * 3 + 2] = O[i * 3 + 2] = a.z + (b.z - a.z) * u; } F.ri = true; }
+    const g = 9.8 * dt * dt;
+    for (let i = 1; i < n - 1; i++) { const j = i * 3; for (let c = 0; c < 3; c++) { const v = (P[j + c] - O[j + c]) * 0.94; O[j + c] = P[j + c]; P[j + c] += v; } P[j + 1] -= g;
+      const w = wlAt(P[j], P[j + 2]); if (P[j + 1] < w && w - heightAt(P[j], P[j + 2]) > 0.02) { P[j + 1] = w + 0.003; O[j] = P[j] - (P[j] - O[j]) * 0.5; O[j + 2] = P[j + 2] - (P[j + 2] - O[j + 2]) * 0.5; O[j + 1] = P[j + 1]; } }
+    P.set([a.x, a.y, a.z], 0); P.set([b.x, b.y, b.z], (n - 1) * 3);
+    for (let it = 0; it < 8; it++) for (let i = 0; i < n - 1; i++) { const j = i * 3, k = j + 3, dx = P[k] - P[j], dy = P[k + 1] - P[j + 1], dz = P[k + 2] - P[j + 2], d = Math.hypot(dx, dy, dz) || 1e-6, e = (d - L) / d * 0.5;
+      const wi = i === 0 ? 0 : 1, wk = i + 1 === n - 1 ? 0 : 1, sw = wi + wk || 1; P[j] += dx * e * 2 * wi / sw; P[j + 1] += dy * e * 2 * wi / sw; P[j + 2] += dz * e * 2 * wi / sw; P[k] -= dx * e * 2 * wk / sw; P[k + 1] -= dy * e * 2 * wk / sw; P[k + 2] -= dz * e * 2 * wk / sw; }
+    F.line.geometry.attributes.position.array.set(P); F.line.geometry.attributes.position.needsUpdate = true; }
+  // devolve o quanto a vara sobe (0 = parada na frente; 1,4 = lá atrás/em cima) para a pose de quem pesca
+  function pesca(p, dt, t, fpt, kid = false) { const F = kitOf(p), B = F.bait; F.line.visible = F.samb.visible = true; p.tool.visible = true; F.u += dt;
+    if (!F.seat || Math.hypot(F.seat[0] - p.x, F.seat[1] - p.z) > 0.6) { F.seat = [p.x, p.z]; const sx = Math.cos(p.h), sz = -Math.sin(p.h), x = p.x + sx * 0.55 + Math.sin(p.h) * 0.1, z = p.z + sz * 0.55 + Math.cos(p.h) * 0.1; F.samb.position.set(x, heightAt(x, z) - 0.01, z); F.ri = false; }
+    tipOf(p, _tip); let j = 0, bend = 0.04, end = null, slack = 1.04;
+    const wl0 = wlAt(fpt[0], fpt[1]), boiaAt = () => { _pb.set(F.bx, F.by + 0.07, F.bz); return _pb; };
+    switch (F.st) {
+      case 'isca': { j = 0.25; F.boia.visible = true; _pa.set(_tip.x, _tip.y - 0.9, _tip.z); F.bx = _pa.x; F.by = _pa.y; F.bz = _pa.z; end = boiaAt(); slack = 1.0;   // põe a minhoca no anzol
+        if (B) B.on = false; if (F.u > (kid ? 2.2 : 1.6)) { F.st = 'prepara'; F.u = 0; if (B) B.gone = false; } break; }
+      case 'prepara': { j = Math.min(1.45, F.u / 0.55 * 1.45); F.bx = _tip.x; F.by = _tip.y - 0.4; F.bz = _tip.z; end = boiaAt(); if (F.u > 0.6) { F.st = 'chicote'; F.u = 0; } break; }
+      case 'chicote': { j = 1.45 - Math.min(1.55, F.u / 0.22 * 1.55); bend = 0.25; end = boiaAt(); F.bx = _tip.x; F.by = _tip.y - 0.2; F.bz = _tip.z;
+        if (F.u > 0.22) { const tx = fpt[0] + (rnd() - 0.5) * 0.8, tz = fpt[1] + (rnd() - 0.5) * 0.8, T = 0.85; F.vx = (tx - _tip.x) / T; F.vz = (tz - _tip.z) / T; F.vy = (wlAt(tx, tz) - _tip.y + 0.5 * 9.8 * T * T) / T;
+          F.bx = _tip.x; F.by = _tip.y; F.bz = _tip.z; F.st = 'voo'; F.u = 0; } break; }
+      case 'voo': { j = -0.05; F.vy -= 9.8 * dt; F.bx += F.vx * dt; F.by += F.vy * dt; F.bz += F.vz * dt; end = boiaAt(); slack = 1.12;
+        const w = wlAt(F.bx, F.bz); if (F.vy < 0 && F.by < w) { F.by = w; F.vy = -0.4; F.vx = F.vz = 0; F.st = 'espera'; F.u = 0; F.wait = 0; if (afx) { afx.ripple(F.bx, w, F.bz, 0.4); afx.ripple(F.bx, w, F.bz, 0.7, 0.2); } if (fx) emit('respingo', F.bx, w + 0.02, F.bz, 4, { spread: 0.3, speed: 0.4 });
+          if (peixes) peixes.disturb(F.bx, F.bz, 0.9); if (B) { B.on = true; B.x = F.bx; B.z = F.bz; B.t = 2 + rnd() * 3; } } break; }
+      case 'espera': case 'falhou': { F.wait += dt; const w = wlAt(F.bx, F.bz);
+        // a boia: empuxo (mola para a linha d'água), amortecimento da água, a marolinha, a beliscada e o peixe que leva a isca
+        let tgt = w + 0.004 + Math.sin(t * 2.1 + p.ph) * 0.006;
+        if (B && B.nib > 0) { F.vy -= 0.45; B.nib = 0; if (afx) afx.ripple(F.bx, w, F.bz, 0.22); }
+        if (B && B.bite && B.fish) { tgt = w - 0.13; F.bx += (B.fish.x - F.bx) * Math.min(1, dt * 2); F.bz += (B.fish.z - F.bz) * Math.min(1, dt * 2); F.react += dt;
+          if (F.st === 'espera' && F.react > (kid ? 0.75 : 0.45)) { const f = peixes.hook(B, kid ? 0.55 : 0.72); F.react = 0; F.u = 0; j = 1.2;
+            if (f) { F.fish = f; F.st = 'briga'; F.stam = 1; F.Ll = Math.hypot(f.x - p.x, f.z - p.z) + 0.5; if (afx) afx.splash(f.x, w, f.z, 0.35); }
+            else { F.st = 'falhou'; F.vy = 0.8; } } }
+        else F.react = 0;
+        F.vy += ((tgt - F.by) * 70 - F.vy * 9) * dt; F.by += F.vy * dt;
+        if (F.st === 'falhou') { j = Math.max(0, 1.2 - F.u * 2); if (F.u > 1.0) { F.st = B && B.gone ? 'recolhe' : 'espera'; F.u = 0; } }
+        if (F.st === 'espera' && F.wait > 45 + p.ph * 3) { F.st = 'recolhe'; F.u = 0; }
+        if (B) { B.x = F.bx; B.z = F.bz; } end = boiaAt(); slack = 1.06; break; }
+      case 'recolhe': { j = Math.min(0.9, F.u * 1.5); if (B) B.on = false; F.bx += (_tip.x - F.bx) * Math.min(1, dt * 2.5); F.bz += (_tip.z - F.bz) * Math.min(1, dt * 2.5); F.by += (_tip.y - 0.6 - F.by) * Math.min(1, dt * 2.5); end = boiaAt(); slack = 1.0;
+        if (F.u > 1.1) { F.st = B && B.gone ? 'isca' : 'prepara'; F.u = 0; } break; }
+      case 'briga': { const f = F.fish, w = wlAt(f.x, f.z);
+        // o peixe puxa para um lado e para o outro; cansa; quem pesca recolhe a linha devagar; ele espirra quando sobe
+        if (!f.tug || (f.tug -= dt) < 0) { f.tug = 0.5 + rnd() * 0.7; f.pull = Math.atan2(f.x - p.x, f.z - p.z) + (rnd() - 0.5) * 2.4; }
+        const sp = (0.5 + 1.0 * F.stam) * f.S.L / 0.2; let nx = f.x + Math.sin(f.pull) * sp * dt, nz = f.z + Math.cos(f.pull) * sp * dt;
+        const dx = nx - p.x, dz = nz - p.z, d = Math.hypot(dx, dz), ten = Math.min(1, d / F.Ll); if (d > F.Ll) { nx = p.x + dx / d * F.Ll; nz = p.z + dz / d * F.Ll; }
+        if (peixes.depthAt(nx, nz) > 0.08) { f.x = nx; f.z = nz; } f.h = f.pull;
+        F.Ll = Math.max(0.6, F.Ll - dt * (0.25 + 0.35 * (1 - F.stam))); F.stam = Math.max(0, F.stam - dt * (kid ? 0.14 : 0.11));
+        const surf = Math.sin(F.u * 4.3) > 0.75; f.y = surf ? w - 0.02 : w - 0.15; f.pitch = surf ? 0.3 : -0.1; f.roll = Math.sin(t * 18) * 0.6;
+        if (surf && afx && (!F.spl || F.u - F.spl > 0.5)) { F.spl = F.u; afx.splash(f.x, w, f.z, 0.22 + f.S.L); }
+        bend = 0.25 + 0.45 * ten + Math.sin(t * 13) * 0.05; j = 0.95 + Math.sin(t * 5) * 0.15 + ten * 0.2; _pb.set(f.x, f.y + 0.02, f.z); end = _pb; slack = 1.0;
+        F.boia.visible = false;
+        if (rnd() < dt * (kid ? 0.07 : 0.035)) { peixes.release(f); F.fish = null; F.st = 'recolhe'; F.u = 0; if (afx) afx.splash(f.x, w, f.z, 0.3); if (B) B.gone = rnd() < 0.6; F.boia.visible = true; F.bx = f.x; F.by = w; F.bz = f.z; break; }   // escapou
+        if (Math.hypot(f.x - p.x, f.z - p.z) < 1.25 || (F.stam < 0.02 && F.Ll < 1.6)) { F.st = 'tira'; F.u = 0; F.from = [f.x, f.y, f.z]; if (afx) afx.splash(f.x, w, f.z, 0.3); } break; }
+      case 'tira': case 'segura': case 'guarda': { const f = F.fish, sw = Math.sin(t * 3.1) * 0.12;
+        // fora d'água: o peixe pendurado na linha, de cabeça para cima, se debatendo; depois vai para o samburá
+        const hang = [_tip.x + sw, _tip.y - 0.75, _tip.z], sbo = [F.samb.position.x, F.samb.position.y + 0.42, F.samb.position.z];
+        if (F.st === 'tira') { const u = Math.min(1, F.u / 0.9), e = u * u * (3 - 2 * u); f.x = F.from[0] + (hang[0] - F.from[0]) * e; f.z = F.from[2] + (hang[2] - F.from[2]) * e; f.y = F.from[1] + (hang[1] - F.from[1]) * e + Math.sin(e * Math.PI) * 0.6;
+          if (u >= 1) { F.st = 'segura'; F.u = 0; } j = 1.35; bend = 0.35; }
+        else if (F.st === 'segura') { f.x = hang[0]; f.y = hang[1]; f.z = hang[2]; j = 1.2 - Math.min(0.6, F.u); bend = 0.3; if (F.u > 1.1) { F.st = 'guarda'; F.u = 0; F.from = [f.x, f.y, f.z]; } }
+        else { const u = Math.min(1, F.u / 0.8); f.x = F.from[0] + (sbo[0] - F.from[0]) * u; f.z = F.from[2] + (sbo[2] - F.from[2]) * u; f.y = F.from[1] + (sbo[1] - F.from[1]) * u + Math.sin(u * Math.PI) * 0.25; j = 0.4; bend = 0.05;
+          if (u >= 1) { peixes.caught(f); F.fish = null; F.n++; F.tails.forEach((m, k) => { m.visible = k < F.n; }); F.st = 'isca'; F.u = 0; } }
+        if (F.fish) { f.pitch = 1.35 + Math.sin(t * 21) * 0.25; f.roll = Math.sin(t * 17) * 0.8; f.h += dt * 2; _pb.set(f.x, f.y + f.S.L * 0.45, f.z); end = _pb; } F.boia.visible = false; slack = 1.0; break; }
+    }
+    if (F.boia.visible) F.boia.position.set(F.bx, F.by, F.bz);
+    bendRod(p, bend); tipOf(p, _tip); if (end) rope(F, _tip, end, slack, Math.min(dt, 0.05));
+    return j; }
   // ---------- as crianças da lagoa: nadar, pular da beira, pescar, brincar na margem; o que fazem depende da hora
   function lagoa(p, dt, t, k) { const S = p.lk || (p.lk = { st: 'escolhe' }), sc = p.g.scale.x; p.tool.visible = false;
     switch (S.st) {
@@ -428,7 +506,7 @@ export function buildPeople(scene, { mobile = false, fx = null, afx = null, col:
       case 'vai': if (goTo(p, S.bank.x, S.bank.z, dt, 2.4)) { S.st = S.act; S.t = 0; S.f = 0; } break;
       case 'brincar': { S.t += dt; if (!S.alvo || goTo(p, S.alvo[0], S.alvo[1], dt, 3.2)) { const a = rnd() * 6.283, d = 1 + rnd() * 3; S.alvo = [S.bank.x + Math.cos(a) * d, S.bank.z + Math.sin(a) * d]; if (lakeDist(...S.alvo) < 0.6) S.alvo = [S.bank.x, S.bank.z]; }
         if (S.t > 14) S.st = 'escolhe'; break; }
-      case 'pescar': { S.t += dt; p.h = S.bank.face; const j = pesca(p, dt, t, S.bank.float);
+      case 'pescar': { S.t += dt; p.h = S.bank.face; const j = pesca(p, dt, t, S.bank.float, true);
         set(p, { py: 0.18, hp: [-1.5, -1.4], kn: [0.45, 0.4], sh: [-0.4, -0.95 - j * 1.1 + Math.sin(t * 0.7) * 0.05], el: [-0.6, -0.5 + j * 0.3], sp: -0.05 - j * 0.15, hx: 0.15, k: Math.min(1, dt * (j ? 14 : 5)) });
         if (S.t > 35 + p.ph * 4) { S.st = 'escolhe'; kitOff(p); } break; }
       case 'nadar': {
@@ -493,7 +571,7 @@ export function buildPeople(scene, { mobile = false, fx = null, afx = null, col:
             else { p.w8 -= dt; faz(p, p.alvo.act, t, dt, k); if (p.w8 < 0) { p.cyc = 'anda'; p.alvo = null; } }
             break; }
           case 'bola': bola(p, dt, t, k); break;
-          case 'vaqueiro': { p.cyc = p.cyc ?? 0; const dx = Math.cos(p.dirRot), dz = -Math.sin(p.dirRot);
+          case 'vaqueiro': { if (tratar(p, dt, t, k)) break; p.cyc = p.cyc ?? 0; const dx = Math.cos(p.dirRot), dz = -Math.sin(p.dirRot);
             if (p.cyc === 0) { if (goTo(p, p.x0 + dx * p.span * (p.side ? 1 : 0), p.z0 + dz * p.span * (p.side ? 1 : 0), dt, 0.9)) { p.cyc = 1; p.w8 = 6 + rnd() * 6; } }
             else { p.w8 -= dt; p.h += (p.face - p.h) * k; set(p, { sp: 0.18, sh: [-1.3, -1.25], el: [-0.9, -0.8], hy: Math.sin(t * 0.5) * 0.4, k }); if (p.w8 < 0) { p.cyc = 0; p.side = !p.side; } } break; }
           case 'lavar': lavar(p, dt, t, k); break;
@@ -527,13 +605,13 @@ export function buildPeople(scene, { mobile = false, fx = null, afx = null, col:
         if (hot && p.st === 'post' && ['enxada', 'colher', 'varrer', 'vaqueiro'].includes(p.job)) { const c = (time * 0.12 + p.ph) % 1; if (c < 0.08) { p.grip2 = false; p.arms[0].sh.rotation.x = -2.5; p.arms[0].el.rotation.x = -2.0; p.arms[0].sh.rotation.z = 0.45; p.head.rotation.x = -0.15; } }
         if (scare > 1.4) { p.spine.rotation.x += 0.15; p.head.rotation.x = 0.35; for (const a of p.arms) { a.sh.rotation.z = (a === p.arms[0] ? 0.35 : -0.35); } }
         // em pé parado: o peso troca de perna de tempos em tempos (um joelho cede, o quadril desce daquele lado, o ombro compensa)
-        if (p.st === 'post' && !p.moving && ['conversa', 'vaqueiro', 'olha'].includes(p.job === 'morador' ? (p.alvo && p.alvo.act) : p.job) && !(p.job === 'vaqueiro' && p.cyc === 0)) {
+        if (p.st === 'post' && !p.moving && ['conversa', 'vaqueiro', 'olha'].includes(p.job === 'morador' ? (p.alvo && p.alvo.act) : p.job) && !(p.job === 'vaqueiro' && (p.cyc === 0 || p.tr != null))) {
           const w = Math.sin(time * 0.21 + p.ph * 3), side = w > 0 ? 0 : 1, a = Math.min(1, Math.abs(w) * 3);
           p.legs[side].kn.rotation.x += 0.14 * a; p.legs[side].hp.rotation.x -= 0.05 * a; p.pelvis.rotation.z = (side ? -1 : 1) * 0.045 * a; p.spine.rotation.z += (side ? 1 : -1) * 0.03 * a; p.pelvis.position.y -= 0.012 * a; }
         else p.pelvis.rotation.z *= 0.9;
         p.waveCd = Math.max(0, (p.waveCd || 0) - dt);
         if (p.wave > 0) { p.wave -= dt; waveArm(p, time); if (p.waveAt) turnTo(p, p.waveAt.x, p.waveAt.z, dt * (p.moving ? 0 : 1)); }
-        else if (!p.waveCd && p.st === 'post' && !p.running && !KIDS.has(p.job) && p.job !== 'lagoa' && !['rezar', 'aluno', 'licao', 'lavar', 'agua', 'machado'].includes(p.job) && !(p.job === 'morador' && p.kid)) { for (const o of people) { if (o === p || !o.g.visible || !o.moving || KIDS.has(o.job) || o.running || o.kid) continue;
+        else if (!p.waveCd && p.st === 'post' && !p.running && !KIDS.has(p.job) && p.job !== 'lagoa' && !['rezar', 'aluno', 'licao', 'lavar', 'agua', 'machado'].includes(p.job) && !(p.job === 'morador' && p.kid) && p.tr == null) { for (const o of people) { if (o === p || !o.g.visible || !o.moving || KIDS.has(o.job) || o.running || o.kid) continue;
             if (Math.hypot(o.x - p.x, o.z - p.z) < 4) { p.wave = 1.4; p.waveCd = 30 + rnd() * 25; p.waveAt = o; if (!o.waveCd) { o.wave = 1.2; o.waveCd = 30 + rnd() * 25; o.waveAt = p; } break; } } }
         if (p.st === 'post' && !KIDS.has(p.job) && p.job !== 'rezar') { let tx = null, tz = null;
           if (alert && alert.who !== p && Math.hypot(alert.x - p.x, alert.z - p.z) < 16) { tx = alert.x; tz = alert.z; }
@@ -631,6 +709,44 @@ export function buildPeople(scene, { mobile = false, fx = null, afx = null, col:
       set(p, { sp: 0.05, sh: [wipe ? -2.5 : -0.55, -0.55], el: [wipe ? -2.0 : -0.75, -0.75], shy: [wipe ? -0.1 : 0.35, -0.35], shz: [wipe ? -0.45 : 0.1, -0.1], hy: e, hx: wipe ? -0.15 : 0.05, k: Math.min(1, dt * 4) });
       p.tool.rotation.x = -1.2; if (p.w8 > (L.lenha.n === 0 ? 14 : 8)) { p.cyc = 0; p.w8 = 0; p.tool.rotation.x = 0; } }
     if (p.cyc !== 5) p.tool.rotation.x = 0; }
+
+  // ---------- o vaqueiro trata o gado: quando a ração do cocho está acabando, contorna o curral por fora, pega um saco no
+  // rancho, abre a porteira (ela fecha atrás dele), despeja a ração no cocho com o gado em volta, sai, devolve o saco vazio
+  // e volta para a cerca. De manhã cedo o rancho amanhece com os sacos repostos.
+  const Cr = L.corral, crLoc = (lx, lz) => rot2(Cr.p, Cr.rot, lx, lz), cs = Math.cos(Cr.rot), sn = Math.sin(Cr.rot);
+  const TR = { canto: crLoc(Cr.w / 2 + 1.5, Cr.d / 2 + 1.5), rancho: crLoc(Cr.rancho[0], Cr.rancho[1] + 1.3), cocho: crLoc(Cr.cocho[0] + 1.8, Cr.cocho[1]), hCocho: Math.atan2(-cs, sn), hRancho: Math.atan2(-sn, -cs) };
+  for (const G of L.gates || []) G.sound = kind => som(kind === 'abre' ? 'rangido' : 'trinco', G.c[0], G.c[1], 0.8);
+  function tratar(p, dt, t, k) { const F = Cr.feed, G = Cr.gateObj, R3 = Cr.rancho3d; if (!G || !R3) return false;
+    const hr = window.__hour ?? 12; if (hr < 6.5) R3.sacos.forEach(m => { m.visible = true; });   // reposto de madrugada
+    if (p.tr == null) { if (F.level > 0.3 || hr < 6.5 || hr > 18 || !R3.sacos.some(m => m.visible)) return false; p.tr = 0; p.w8 = 0; }
+    if (!p.saco) { p.saco = new THREE.Mesh(R3.sacoGeo(), R3.sacoMat); p.saco.castShadow = true; p.saco.visible = false; p.g.add(p.saco); }
+    const S = p.saco, a1 = p.arms[1], a0 = p.arms[0], wait = (to, nxt) => { if (G.open > 0.85) { if (goTo(p, ...to, dt, 0.95)) { p.tr = nxt; p.w8 = 0; } } else { faceTo(p, Math.atan2(G.c[0] - p.x, G.c[1] - p.z), dt); set(p, { sh: [-1.1, 0], el: [-0.4, -0.3], k }); } };
+    if ((p.tr >= 2 && p.tr <= 3) || (p.tr >= 5 && p.tr <= 6)) { if (Math.hypot(p.x - G.c[0], p.z - G.c[1]) < 3.4) G.ask(); }
+    p.w8 += dt;
+    if (p.tr === 0) { if (goTo(p, ...TR.canto, dt, 1.05)) p.tr = 1; }                                  // por fora da cerca
+    else if (p.tr === 1) { if (goTo(p, ...TR.rancho, dt, 1.0)) { p.tr = 1.5; p.w8 = 0; } }
+    else if (p.tr === 1.5) { faceTo(p, TR.hRancho, dt); const down = p.w8 < 1.1;                      // agacha e põe o saco no ombro
+      set(p, down ? { sp: 0.95, sh: [-1.35, -1.35], el: [-0.3, -0.3], hp: [-0.45, -0.3], kn: [0.6, 0.5], hx: 0.3, k: Math.min(1, dt * 5) } : { k });
+      if (p.w8 > 0.9 && !S.visible) { const top = [...R3.sacos].reverse().find(m => m.visible); if (top) top.visible = false; S.visible = true; S.scale.set(1, 1, 1); }
+      if (p.w8 > 1.8) { p.tr = 2; p.w8 = 0; } }
+    else if (p.tr === 2) { if (goTo(p, ...G.outside, dt, 1.0)) { p.tr = 2.5; p.w8 = 0; } }
+    else if (p.tr === 2.5) wait(G.inside, 4);                                                         // abre a porteira e entra
+    else if (p.tr === 4) { if (goTo(p, ...TR.cocho, dt, 1.0)) { p.tr = 4.5; p.w8 = 0; } }
+    else if (p.tr === 4.5) { faceTo(p, TR.hCocho, dt); set(p, { sp: 0.35, sh: [-1.15, -1.0], el: [-0.55, -0.7], shz: [0.2, -0.2], hx: 0.35, k: Math.min(1, dt * 4) });   // despeja ao longo do cocho
+      if (p.w8 > 0.6) { F.level = Math.min(1, F.level + dt * 0.3); const fx0 = Math.sin(p.h), fz0 = Math.cos(p.h), sh = Math.sin(t * 2) * 0.5;
+        if (rnd() < dt * 18) emit('lasca', p.x + fx0 * (0.75 + sh) , heightAt(p.x, p.z) + 0.95, p.z + fz0 * (0.75 + sh), 2, { spread: 0.12, speed: 0.25, color: [0.86, 0.74, 0.36] });
+        S.scale.y = Math.max(0.35, 1 - (p.w8 - 0.6) * 0.18); }
+      if (F.level >= 1 && p.w8 > 3) { p.tr = 5; p.w8 = 0; } }
+    else if (p.tr === 5) { if (goTo(p, ...G.inside, dt, 1.0)) { p.tr = 5.5; p.w8 = 0; } }
+    else if (p.tr === 5.5) wait(G.outside, 7);                                                        // sai; a porteira fecha atrás
+    else if (p.tr === 7) { if (goTo(p, ...TR.rancho, dt, 1.0)) { S.visible = false; p.tr = 8; } }      // larga o saco vazio no rancho
+    else if (p.tr === 8) { if (goTo(p, ...TR.canto, dt, 1.05)) p.tr = 9; }
+    else if (p.tr === 9) { if (goTo(p, p.x0, p.z0, dt, 1.05)) { p.tr = null; p.cyc = 1; p.w8 = 4; } }
+    // o saco: no ombro andando, na frente das mãos despejando
+    if (S.visible) { if (p.tr === 4.5) { S.position.set(0, 1.12, 0.42); S.rotation.set(0.95, 0, Math.PI / 2); }
+      else if (p.tr !== 1.5) { S.position.set(0.17, 1.56, -0.03); S.rotation.set(0, Math.PI / 2, 0.15); a1.sh.rotation.x = -2.7; a1.el.rotation.x = -1.6; a1.sh.rotation.z = 0.1; }
+      else { S.position.set(0, 1.3, 0.25); S.rotation.set(0, Math.PI / 2, 0); } }
+    return true; }
 
   // ---------- o lenhador: vai à mata, junta gravetos e galhos caídos (o feixe cresce no ombro), volta e empilha
   function lenha(p, dt, t, k) { p.cyc = p.cyc ?? 0; p.w8 = (p.w8 ?? 0) + dt; const fx = p.extra;

@@ -1,0 +1,609 @@
+{
+ "especies": {
+  "boi": {
+   "medidas": {
+    "cern": 1.4231992959976196,
+    "comp": 1.7763220071792603,
+    "peito": 0.6069829774042499,
+    "cab": 0.43051761388778687,
+    "jF": 176.3,
+    "jH": 149.4,
+    "fora": 0.4,
+    "focinho": 0.06,
+    "vincoPastar": 16,
+    "vel": 0.3,
+    "deslize": 0.8,
+    "afunda": 0.1,
+    "apoio": 0.64,
+    "passo": 1.05,
+    "balanco": 16.9,
+    "joelhoAndando": 171.9,
+    "flutua": 9.3,
+    "ordem": 1,
+    "froude": 0.42
+   },
+   "tris": 8304,
+   "achados": [
+    {
+     "f": "movimento",
+     "pen": 18,
+     "msg": "casco patina no apoio: 0.8 m/s (pisada firme: < 0,1 m/s)"
+    },
+    {
+     "f": "movimento",
+     "pen": 12,
+     "msg": "no apoio o casco fica 9.3 cm acima do chão"
+    },
+    {
+     "f": "forma",
+     "pen": 6.668495420425657,
+     "msg": "comprimento do corpo 1.78m (o bicho de verdade: 1.4–1.75m)"
+    },
+    {
+     "f": "forma",
+     "pen": 6.517257585499993,
+     "msg": "peito/altura 0.61 (o bicho de verdade: 0.48–0.6)"
+    },
+    {
+     "f": "pose",
+     "pen": 6.4,
+     "msg": "pastando, a pele dobra/estica demais em 16 triângulos (pescoco 16)"
+    },
+    {
+     "f": "movimento",
+     "pen": 5,
+     "msg": "corpo sobe e desce 16.9 cm a cada passo (demais)"
+    }
+   ],
+   "tempo": {
+    "graze": 0.61,
+    "idle": 0.15,
+    "walk": 0.24,
+    "drink": 0,
+    "swim": 0,
+    "flee": 0,
+    "lie": 0
+   },
+   "notas": {
+    "forma": 87,
+    "pose": 94,
+    "movimento": 65,
+    "comportamento": 100
+   },
+   "nota": 86
+  },
+  "bezerro": {
+   "medidas": {
+    "cern": 0.8451242446899414,
+    "comp": 1.0548164248466492,
+    "peito": 0.5820894485526029,
+    "cab": 0.2556501626968384,
+    "jF": 176.3,
+    "jH": 152.4,
+    "fora": 0.3,
+    "vel": 0.85,
+    "deslize": 0.16,
+    "afunda": 0.1,
+    "apoio": 0.64,
+    "passo": 1.22,
+    "balanco": 5.7,
+    "joelhoAndando": 174.9,
+    "flutua": 5.1,
+    "ordem": 1,
+    "froude": 0.41
+   },
+   "tris": 7640,
+   "achados": [
+    {
+     "f": "movimento",
+     "pen": 9.6,
+     "msg": "casco patina no apoio: 0.16 m/s (pisada firme: < 0,1 m/s)"
+    },
+    {
+     "f": "movimento",
+     "pen": 7.602582907907281,
+     "msg": "no apoio o casco fica 5.1 cm acima do chão"
+    },
+    {
+     "f": "forma",
+     "pen": 6.167155884208237,
+     "msg": "peito/altura 0.58 (o bicho de verdade: 0.42–0.58)"
+    }
+   ],
+   "tempo": {
+    "graze": 0.53,
+    "idle": 0.17,
+    "walk": 0.3,
+    "drink": 0,
+    "swim": 0,
+    "flee": 0,
+    "lie": 0
+   },
+   "notas": {
+    "forma": 94,
+    "pose": 100,
+    "movimento": 83,
+    "comportamento": 100
+   },
+   "nota": 94
+  },
+  "capivara": {
+   "medidas": {
+    "cern": 0.6391698205471038,
+    "comp": 1.1674787497520447,
+    "peito": 0.6658190865833165,
+    "cab": 0.435775146484375,
+    "jF": 168.2,
+    "jH": 144.9,
+    "fora": 0,
+    "focinho": 0.02,
+    "vincoPastar": 64,
+    "vel": 0.5,
+    "deslize": 0.12,
+    "afunda": 0.1,
+    "apoio": 0.65,
+    "passo": 1.23,
+    "balanco": 3.1,
+    "joelhoAndando": 173.2,
+    "flutua": 4,
+    "ordem": 1,
+    "froude": 0.41
+   },
+   "tris": 5128,
+   "achados": [
+    {
+     "f": "pose",
+     "pen": 12,
+     "msg": "pastando, a pele dobra/estica demais em 64 triângulos (pescoco 35, perna0 18)"
+    },
+    {
+     "f": "comportamento",
+     "pen": 4,
+     "msg": "parado 16% do tempo (o bicho de verdade: 20–60%)"
+    }
+   ],
+   "tempo": {
+    "graze": 0.51,
+    "idle": 0.16,
+    "walk": 0.18,
+    "drink": 0.03,
+    "swim": 0.07,
+    "flee": 0.03,
+    "lie": 0
+   },
+   "notas": {
+    "forma": 100,
+    "pose": 88,
+    "movimento": 100,
+    "comportamento": 96
+   },
+   "nota": 96
+  },
+  "garça-branca": {
+   "medidas": {
+    "cern": 0.9477500081062317,
+    "comp": 0.425,
+    "peito": 0.2583352194637987,
+    "cab": 0.1838321216404438
+   },
+   "tris": 3380,
+   "achados": [],
+   "tempo": {
+    "graze": 0.21,
+    "idle": 0.47,
+    "walk": 0.3,
+    "drink": 0,
+    "swim": 0,
+    "flee": 0.02,
+    "lie": 0
+   },
+   "notas": {
+    "forma": 100,
+    "pose": 100,
+    "movimento": 100,
+    "comportamento": 100
+   },
+   "nota": 100
+  },
+  "seriema": {
+   "medidas": {
+    "cern": 0.8315929412841797,
+    "comp": 0.41599998474121097,
+    "peito": 0.34383513545356686,
+    "cab": 0.11605119705200195
+   },
+   "tris": 3452,
+   "achados": [],
+   "tempo": {
+    "graze": 0.5,
+    "idle": 0.13,
+    "walk": 0.37,
+    "drink": 0,
+    "swim": 0,
+    "flee": 0,
+    "lie": 0
+   },
+   "notas": {
+    "forma": 100,
+    "pose": 100,
+    "movimento": 100,
+    "comportamento": 100
+   },
+   "nota": 100
+  },
+  "garça-moura": {
+   "medidas": {
+    "cern": 1.1904373645782471,
+    "comp": 0.563199987411499,
+    "peito": 0.2920354082502844,
+    "cab": 0.3067247533798218
+   },
+   "tris": 3390,
+   "achados": [],
+   "tempo": {
+    "graze": 0.05,
+    "idle": 0.64,
+    "walk": 0.27,
+    "drink": 0,
+    "swim": 0,
+    "flee": 0.04,
+    "lie": 0
+   },
+   "notas": {
+    "forma": 100,
+    "pose": 100,
+    "movimento": 100,
+    "comportamento": 100
+   },
+   "nota": 100
+  },
+  "galinha": {
+   "medidas": {
+    "cern": 0.4596721768379211,
+    "comp": 0.2550000101327896,
+    "peito": 0.4477870804704421,
+    "cab": 0.08164637722074986
+   },
+   "tris": 3652,
+   "achados": [],
+   "tempo": {
+    "graze": 0.59,
+    "idle": 0.11,
+    "walk": 0.11,
+    "drink": 0,
+    "swim": 0,
+    "flee": 0.19,
+    "lie": 0
+   },
+   "notas": {
+    "forma": 100,
+    "pose": 100,
+    "movimento": 100,
+    "comportamento": 100
+   },
+   "nota": 100
+  },
+  "ema": {
+   "medidas": {
+    "cern": 1.469599962234497,
+    "comp": 0.7040000104904175,
+    "peito": 0.41694574663385825,
+    "cab": 0.17134038209915162
+   },
+   "tris": 3364,
+   "achados": [],
+   "tempo": {
+    "graze": 0.61,
+    "idle": 0.12,
+    "walk": 0.27,
+    "drink": 0,
+    "swim": 0,
+    "flee": 0,
+    "lie": 0
+   },
+   "notas": {
+    "forma": 100,
+    "pose": 100,
+    "movimento": 100,
+    "comportamento": 100
+   },
+   "nota": 100
+  },
+  "lobo-guará": {
+   "medidas": {
+    "cern": 0.9012731385231019,
+    "comp": 1.1183413469791412,
+    "peito": 0.3462939936094033,
+    "cab": 0.37853070855140686,
+    "jF": 165,
+    "jH": 151.1,
+    "fora": 0.6,
+    "vel": 1.27,
+    "deslize": 0.34,
+    "afunda": 0.1,
+    "apoio": 0.64,
+    "passo": 1.24,
+    "balanco": 8.2,
+    "joelhoAndando": 176,
+    "flutua": 6.3,
+    "ordem": 1,
+    "froude": 0.41
+   },
+   "tris": 5372,
+   "achados": [
+    {
+     "f": "movimento",
+     "pen": 18,
+     "msg": "casco patina no apoio: 0.34 m/s (pisada firme: < 0,1 m/s)"
+    },
+    {
+     "f": "movimento",
+     "pen": 9.50785387622771,
+     "msg": "no apoio o casco fica 6.3 cm acima do chão"
+    }
+   ],
+   "tempo": {
+    "graze": 0.29,
+    "idle": 0.2,
+    "walk": 0.5,
+    "drink": 0,
+    "swim": 0,
+    "flee": 0.01,
+    "lie": 0
+   },
+   "notas": {
+    "forma": 100,
+    "pose": 100,
+    "movimento": 72,
+    "comportamento": 100
+   },
+   "nota": 93
+  },
+  "tamanduá-bandeira": {
+   "medidas": {
+    "cern": 0.6875078630447388,
+    "comp": 1.3845409095287322,
+    "peito": 0.574192047343264,
+    "cab": 0.39398447155952454,
+    "jF": 158.8,
+    "jH": 150.8,
+    "fora": 2.3,
+    "vel": 0.45,
+    "deslize": 0.12,
+    "afunda": 0.1,
+    "apoio": 0.64,
+    "passo": 0.96,
+    "balanco": 3,
+    "joelhoAndando": 176.3,
+    "flutua": 3.8,
+    "ordem": 1,
+    "froude": 0.4
+   },
+   "tris": 4008,
+   "achados": [
+    {
+     "f": "pose",
+     "pen": 11.576312978141159,
+     "msg": "perna sai do tronco: 2.3 cm para fora da silhueta (parado)"
+    },
+    {
+     "f": "comportamento",
+     "pen": 8.75,
+     "msg": "andando 78% do tempo (o bicho de verdade: 15–55%)"
+    },
+    {
+     "f": "forma",
+     "pen": 7.42388704313026,
+     "msg": "peito/altura 0.57 (o bicho de verdade: 0.6–0.85)"
+    },
+    {
+     "f": "comportamento",
+     "pen": 4.25,
+     "msg": "parado 0% do tempo (o bicho de verdade: 5–40%)"
+    }
+   ],
+   "tempo": {
+    "graze": 0.22,
+    "idle": 0,
+    "walk": 0.78,
+    "drink": 0,
+    "swim": 0,
+    "flee": 0,
+    "lie": 0
+   },
+   "notas": {
+    "forma": 93,
+    "pose": 88,
+    "movimento": 100,
+    "comportamento": 87
+   },
+   "nota": 92
+  },
+  "anta": {
+   "medidas": {
+    "cern": 1.079354166984558,
+    "comp": 1.8376798629760742,
+    "peito": 0.6288761092959473,
+    "cab": 0.5624547600746155,
+    "jF": 153.7,
+    "jH": 141.7,
+    "fora": 0,
+    "focinho": 0.04,
+    "vincoPastar": 34,
+    "vel": 0.6,
+    "deslize": 0.01,
+    "afunda": 0.1,
+    "apoio": 0.64,
+    "passo": 0.98,
+    "balanco": 6.3,
+    "joelhoAndando": 156,
+    "flutua": 2.6,
+    "ordem": 1,
+    "froude": 0.42
+   },
+   "tris": 5020,
+   "achados": [
+    {
+     "f": "pose",
+     "pen": 12,
+     "msg": "pastando, a pele dobra/estica demais em 34 triângulos (perna1 20, perna0 14)"
+    },
+    {
+     "f": "pose",
+     "pen": 6.6400000000000095,
+     "msg": "perna da frente dobrada parado: carpo a 153.7° (reta: 162–180°)"
+    }
+   ],
+   "tempo": {
+    "graze": 0.39,
+    "idle": 0.07,
+    "walk": 0.38,
+    "drink": 0,
+    "swim": 0.16,
+    "flee": 0,
+    "lie": 0
+   },
+   "notas": {
+    "forma": 100,
+    "pose": 81,
+    "movimento": 100,
+    "comportamento": 100
+   },
+   "nota": 95
+  },
+  "onça-pintada": {
+   "medidas": {
+    "cern": 0.6995559334754944,
+    "comp": 1.3345019817352295,
+    "peito": 0.5847847686054932,
+    "cab": 0.3747311532497406,
+    "jF": 165,
+    "jH": 141.9,
+    "fora": 0,
+    "vel": 0.9,
+    "deslize": 0.16,
+    "afunda": 0.1,
+    "apoio": 0.64,
+    "passo": 1.38,
+    "balanco": 6.9,
+    "joelhoAndando": 170.9,
+    "flutua": 4.9,
+    "ordem": 1,
+    "froude": 0.42
+   },
+   "tris": 5156,
+   "achados": [
+    {
+     "f": "movimento",
+     "pen": 9.6,
+     "msg": "casco patina no apoio: 0.16 m/s (pisada firme: < 0,1 m/s)"
+    },
+    {
+     "f": "comportamento",
+     "pen": 8,
+     "msg": "parado 10% do tempo (o bicho de verdade: 30–80%)"
+    },
+    {
+     "f": "movimento",
+     "pen": 7.392252000281303,
+     "msg": "no apoio o casco fica 4.9 cm acima do chão"
+    },
+    {
+     "f": "comportamento",
+     "pen": 5,
+     "msg": "pastando/ciscando 38% do tempo (o bicho de verdade: 0–30%)"
+    }
+   ],
+   "tempo": {
+    "graze": 0.38,
+    "idle": 0.1,
+    "walk": 0.53,
+    "drink": 0,
+    "swim": 0,
+    "flee": 0,
+    "lie": 0
+   },
+   "notas": {
+    "forma": 100,
+    "pose": 100,
+    "movimento": 83,
+    "comportamento": 87
+   },
+   "nota": 93
+  },
+  "ovelha": {
+   "medidas": {
+    "cern": 0.8290497493743896,
+    "comp": 0.8231999909877776,
+    "peito": 0.5670375917926905,
+    "cab": 0.27346231698989865,
+    "jF": 164.9,
+    "jH": 155.8,
+    "fora": 0,
+    "focinho": 0.1,
+    "vincoPastar": 24,
+    "vel": 0.5,
+    "deslize": 0.13,
+    "afunda": 0.1,
+    "apoio": 0.64,
+    "passo": 0.85,
+    "balanco": 2.6,
+    "joelhoAndando": 174.5,
+    "flutua": 3.9,
+    "ordem": 1,
+    "froude": 0.43
+   },
+   "tris": 4464,
+   "achados": [
+    {
+     "f": "pose",
+     "pen": 9.600000000000001,
+     "msg": "pastando, a pele dobra/estica demais em 24 triângulos (perna2 14, perna0 10)"
+    },
+    {
+     "f": "movimento",
+     "pen": 7.800000000000001,
+     "msg": "casco patina no apoio: 0.13 m/s (pisada firme: < 0,1 m/s)"
+    },
+    {
+     "f": "forma",
+     "pen": 7.020952724275137,
+     "msg": "comprimento do corpo 0.82m (o bicho de verdade: 0.85–1.25m)"
+    },
+    {
+     "f": "forma",
+     "pen": 6.50984503517688,
+     "msg": "altura do dorso 0.83m (o bicho de verdade: 0.6–0.82m)"
+    },
+    {
+     "f": "pose",
+     "pen": 6.073636620157204,
+     "msg": "pastando, o focinho fica a 10 cm do capim"
+    },
+    {
+     "f": "pose",
+     "pen": 2.4799999999999955,
+     "msg": "perna da frente dobrada parado: carpo a 164.9° (reta: 168–180°)"
+    }
+   ],
+   "tempo": {
+    "graze": 0.66,
+    "idle": 0.16,
+    "walk": 0.18,
+    "drink": 0,
+    "swim": 0,
+    "flee": 0,
+    "lie": 0
+   },
+   "notas": {
+    "forma": 86,
+    "pose": 82,
+    "movimento": 92,
+    "comportamento": 100
+   },
+   "nota": 90
+  }
+ },
+ "triangulos": 224290,
+ "bichos": 45
+}
