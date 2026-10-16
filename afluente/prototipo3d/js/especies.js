@@ -72,7 +72,7 @@ export function especies({ M, MJ, rnd }) {
       return [x, y]; };
     const neckPts = [[0, 1.01, 0.42], [0, 1.1, 0.64], [0, 1.22, 0.81], [0, 1.31, 0.95]], nc = a => shade(0.75)(a);
     const neck = { pts: neckPts, prof: [{ rx: 0.232, rt: 0.34, rb: 0.4, e: 2.2, c: nc }, { rx: 0.175, rt: 0.18, rb: 0.29, c: nc }, { rx: 0.14, rt: 0.145, rb: 0.22, c: nc }, { rx: 0.11, rt: 0.11, rb: 0.13, c: nc }],
-      shape: (x, v, a, r, i) => { if (v < 0) { const bot = Math.pow(Math.max(0, -Math.sin(a)), 4), k = i < 3 ? 1 : 0.55; x *= 1 - 0.72 * bot * k; v *= 1 + 0.32 * bot * k; } return [x, v]; } };   // barbela (papo) pendendo do pescoço
+      shape: (x, v, a, r, i) => { if (v < 0) { const bot = Math.pow(Math.max(0, -Math.sin(a)), 3), k = [1, 1, 1, 0.85, 0.5][i] ?? 0.5, d = [0.3, 0.42, 0.5, 0.55, 0.35][i] ?? 0.35; x *= 1 - 0.55 * bot * k; v *= 1 + d * bot; } return [x, v]; } };   // barbela (papo): pele funda e fina da garganta ao peito, parte da pele do pescoço
     // cabeça (como na referência): testa larga, chata e quadrada, mais larga na altura dos olhos; mandíbula funda embaixo
     // deles; a face afina no meio e o focinho alarga de novo, largo e arredondado, com narinas grandes; olhos grandes de lado
     // sob o arco da sobrancelha; orelhas grandes e ovais, quase na horizontal, viradas um pouco para a frente; papada sob o queixo
@@ -88,9 +88,6 @@ export function especies({ M, MJ, rnd }) {
       H.add(skull(rings.map(([t, rx, rt, rb, e]) => [t, rx, rt, rb, a => hc(t, a), e]), th, 32, cheek, false));
       // queixo e beiço de baixo
       H.add(loft([[0.3, 0.055, 0.022, 0.03], [0.42, 0.064, 0.026, 0.036], [0.5, 0.062, 0.024, 0.032], [0.535, 0.04, 0.015, 0.02]].map(([t, rx, rt, rb]) => ({ z: t, y: -0.074, rx, rt, rb, e: 2.3, c: t > 0.49 ? nose : mix(w, grey, 0.2) })), 16).rotateX(th));
-      // papada: a pele solta que pende sob a mandíbula, do queixo à garganta (emenda com a barbela do pescoço)
-      H.add(loft([[-0.04, 0.04, 0.02, 0.04], [0.03, 0.05, 0.03, 0.075], [0.11, 0.052, 0.03, 0.085], [0.19, 0.046, 0.03, 0.07], [0.26, 0.035, 0.025, 0.045], [0.31, 0.02, 0.015, 0.02]]
-        .map(([t, rx, rt, rb]) => ({ z: t, y: -0.115, rx, rt, rb, e: 2.2, c: mix(w, grey, 0.18) })), 18).rotateX(th));
       for (const sx of [-1, 1]) {
         const e = S(0.15, sx * 0.123, 0.036), side = sx > 0 ? 'earL' : 'earR';
         H.add(sph(0.012, 0.016, 0.034, e[0] - sx * 0.008, e[1] + 0.02, e[2] + 0.002, mix(w, grey, 0.25), 10));   // arco da sobrancelha
