@@ -113,8 +113,9 @@ export function buildPeople(scene, { mobile = false, fx = null, afx = null, col:
     if (s.apron) { const c = md.saia || { y: md.cintura.y, cz: md.cintura.cz, R: Array.from({ length: 32 }, (_, k) => { const a = k / 32 * Math.PI * 2; return Math.hypot(md.cintura.rx * Math.cos(a), (Math.sin(a) > 0 ? md.cintura.rzF : md.cintura.rzB) * Math.sin(a)); }) };
       cl.push(Saia({ cint: c, len: s.skirt ? 0.5 : 0.55, flare: 0.05, arco: [Math.PI / 2 - 0.85, Math.PI / 2 + 0.85], strips: 8, rows: 7, tecido: 'algodao', color: 0xf2ede2, folga: md.saia ? 0.022 : 0.012, cair: 0.005, perfil: md.saia ? md.perfil.map(r => ({ ...r, R: r.R.map(x => x + 0.02) })) : md.perfil })); }
     for (const c of cl) { scene.add(c.mesh); clothes.push(c); }
+    if (body.fios) scene.add(body.fios.mesh);   // cabelo comprido com física (cabelo.js)
     g.scale.setScalar(s.h / 1.70);
-    const P = { g, body: body.mesh, warmGeo, warmSpec, coolGeo, warm: false, pelvis, spine, head, arms, legs, tool, two, lids: body.lids, swing: body.swing, blinkT: 2 + rnd() * 4, extra, lata, s, cloth: cl, waistY: body.waistY, bw: body.bw, x: 0, z: 0, h: 0, ph: rnd() * 6, t: 0, st: 'post', sit: 0, pitch: 0,
+    const P = { g, body: body.mesh, warmGeo, warmSpec, coolGeo, warm: false, pelvis, spine, head, arms, legs, tool, two, lids: body.lids, swing: body.swing, fios: body.fios, blinkT: 2 + rnd() * 4, extra, lata, s, cloth: cl, waistY: body.waistY, bw: body.bw, x: 0, z: 0, h: 0, ph: rnd() * 6, t: 0, st: 'post', sit: 0, pitch: 0,
       rig, perfil: spec.perfil, corpo: body, med: body.medidas };
     P.rest = () => { rig.restore(); const saved = [pelvis.position.y, spine.rotation.x, g.rotation.x, ...arms.flatMap(a => [a.sh.rotation.x, a.el.rotation.x]), ...legs.flatMap(l => [l.hp.rotation.x, l.kn.rotation.x])];
       pelvis.position.y = rig.restY; spine.rotation.x = 0; g.rotation.x = 0; for (const a of arms) a.sh.rotation.x = a.el.rotation.x = 0; for (const l of legs) l.hp.rotation.x = l.kn.rotation.x = 0;
@@ -128,6 +129,7 @@ export function buildPeople(scene, { mobile = false, fx = null, afx = null, col:
   const ventoAgora = (x, z, k = 1) => { const wv = U.uWindBase.value * (1 + U.uWindIu.value * 0.6), wd = U.uWindDir.value, t = time * 1.7 + x * 0.3 + z * 0.2, raj = 1 + 0.45 * Math.sin(t) * Math.sin(t * 2.3 + 1.1);
     return _vt.set(wd.x * wv * raj * k, 0.15 * Math.sin(t * 3.1) * wv * k, wd.y * wv * raj * k); };
   function stepCloth(p, dt) {
+    if (p.fios) stepFios(p, dt);
     if (!p.cloth.length && !p.panoMao) return;
     const cam = window.__cam, far = cam ? Math.hypot(cam.position.x - p.x, cam.position.y, cam.position.z - p.z) : 0, lim = [70, 45, 28][window.__Q ? window.__Q() : 0];
     if (far > lim) { p.clothSkip = (p.clothSkip || 0) + dt; if (p.clothSkip < 0.5) return; dt = Math.min(p.clothSkip, 1 / 30); p.clothSkip = 0; } const vis = p.g.visible; for (const c of p.cloth) c.mesh.visible = vis; if (p.panoMao) p.panoMao.mesh.visible = vis;
@@ -142,6 +144,15 @@ export function buildPeople(scene, { mobile = false, fx = null, afx = null, col:
     for (const c of p.cloth) c.passo(Math.min(dt, 1 / 30), p.pelvis.matrixWorld, env);
     if (p.panoMao) maoPano(p, Math.min(dt, 1 / 30));
   }
+  // o cabelo comprido: perto da câmera é simulado (cai, balança, bate nas costas); longe só acompanha a cabeça
+  function stepFios(p, dt) { const F = p.fios, vis = p.g.visible; F.mesh.visible = vis; if (!vis) { F.reset(); return; }
+    const cam = window.__cam, far = cam ? Math.hypot(cam.position.x - p.x, cam.position.y, cam.position.z - p.z) : 0, lim = [40, 26, 16][window.__Q ? window.__Q() : 0];
+    p.g.updateMatrixWorld(true); const chest = p.corpo.chest || p.spine;
+    if (far > lim) { F.leva(p.head.matrixWorld); return; }
+    const h = Math.min(dt, 1 / 30), n = h > 1 / 45 ? 2 : 1;   // passos curtos: o cabelo é leve e não pode atravessar o ombro num quadro lento
+    const sc = p.g.scale.x, caps = p.arms.map((a, i) => { const A = (_fc[i * 2] ||= new THREE.Vector3()), B = (_fc[i * 2 + 1] ||= new THREE.Vector3()); a.sh.getWorldPosition(A); a.el.getWorldPosition(B); return [A, B, 0.056 * sc]; });
+    for (let k = 0; k < n; k++) F.passo(h / n, p.head.matrixWorld, chest.matrixWorld, { vento: ventoAgora(p.x, p.z, 0.6), it: 4, caps }); }
+  const _fc = [];
   // ---------- ferramenta de cabo nas duas mãos: o cabo sai da palma de baixo e passa pela palma de cima; a lâmina vira para
   // o lado certo (a enxada para quem capina, o machado para a frente, a vassoura e a pá de lado). Andando, vai no ombro.
   const _e0 = new THREE.Vector3(), _e1 = new THREE.Vector3(), _g0 = new THREE.Vector3(), _g1 = new THREE.Vector3(), _ax = new THREE.Vector3(), _bx = new THREE.Vector3(), _cz = new THREE.Vector3(), _rf = new THREE.Vector3(), _M = new THREE.Matrix4();

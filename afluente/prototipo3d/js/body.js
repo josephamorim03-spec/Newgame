@@ -28,6 +28,7 @@
 import * as THREE from 'three';
 import { HEAD, LIGHT_END, shared, toon } from './mat.js';
 import { perfil as fazPerfil } from './anatomia.js';
+import { Mechas } from './cabelo.js';
 
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
 const C = c => (c && c.isColor) ? c.clone() : new THREE.Color(c);
@@ -525,7 +526,20 @@ export function buildBody(s) {
     perfil: perfilSaia,
     // o tronco por fora da roupa (para o braço não atravessar): y no corpo em pé, meia largura, frente, costas, centro
     tronco: torso.map(r => { const R = r.R; return [r.y, Math.max(R[0], R[SEG / 2]) + 0.01, R[SEG / 4] + 0.01, R[3 * SEG / 4] + 0.01, r.cz]; }), ossoW: W };   // o corpo + ~1 cm de roupa
-  return { mesh, hips, spine, chest, neck, head, arms, legs, lids, swing, waistY: yWaist, bw: P.fr, P, medidas, headPiv, topoCabeca: 0.228 - headPiv.y, chestY: W.chest.y };
+  // cabelo comprido com física (cabelo.js): raízes e crânio no espaço do osso da cabeça; o corpo (tronco e pescoço com a roupa)
+  // é o perfil de anéis do corpo em pé, consultado pelo osso do peito
+  let fios = null;
+  if (swing.fios) { const F = swing.fios, toHead = q => q.clone().sub(headPiv), NS = pescoco ? pescoco.NS : 0;
+    // o tronco como está desenhado (a casca da roupa, não a pele) e numa elipse que contém o anel inteiro (as quinas das costas
+    // e do ombro também): o cabelo assenta na blusa sem que ela fure as mechas
+    const elipse = (y, Rk, cz, n) => { const fr = Rk[n / 4], bk = Rk[3 * n / 4], rx = Math.max(Rk[0], Rk[n / 2]); let m = 1;
+      for (let k = 0; k < n; k++) { const a = k / n * Math.PI * 2, x = Rk[k] * Math.cos(a), z = Rk[k] * Math.sin(a); m = Math.max(m, (x / rx) ** 2 + (z / (z > 0 ? fr : bk)) ** 2); }
+      const f = Math.sqrt(m); return [y, rx * f + 0.004, fr * f + 0.004, bk * f + 0.004, cz]; };
+    const tronco = torso.map(r => elipse(r.y, Array.from({ length: SEG }, (_, k) => { const g = veste(r.y, k / SEG * Math.PI * 2); return g === 'pele' ? r.R[k] : r.Rc[g][k]; }), r.cz, SEG));
+    const corpo = [...tronco, ...(pescoco ? pescoco.rings.map(r => elipse(r.y, Array.from(r.R), r.cz, NS)) : [])].sort((a, b) => a[0] - b[0]);
+    fios = Mechas({ raizes: F.raizes.map(r => ({ p: toHead(r.p), d: r.d.clone() })), len: F.len, larg: F.larg, esp: F.esp, cor: F.cor, R: cab.R, C0: [C0[0] - headPiv.x, C0[1] - headPiv.y, C0[2] - headPiv.z],
+      vol: 0.014, corpo, cabecaRest: W.head.clone(), peitoRest: W.chest.clone(), mat: bodyMaterial(null) }); }
+  return { mesh, hips, spine, chest, neck, head, arms, legs, lids, swing, fios, waistY: yWaist, bw: P.fr, P, medidas, headPiv, topoCabeca: 0.228 - headPiv.y, chestY: W.chest.y };
 }
 
 // ---------- a mão: palma (com as eminências do polegar e do mínimo), nós dos dedos, quatro dedos de três falanges com unha, polegar
@@ -665,17 +679,20 @@ function cabeca(P, s, skin, hairC, f, kid) {
 // Cada penteado soma o seu volume (topete, risca do lado, franja, afro com cachos, coque, cabelo comprido sobre as costas,
 // mechas na frente das orelhas) e o rabo de cavalo e a trança são peças soltas que balançam com o andar.
 const SKULL = { cy: 0.115, cz: 0.012 };
-function hairShell(R, { t = 0.012, front = 0.42, side = 0.22, back = -0.6, curl = 0, crown = 0.006, seg = 32, noTop = false, quiff = 0, part = 0, fringe = 0 } = {}) {
+// até onde o cabelo (ou o lenço) desce em cada direção: a linha do cabelo na testa, acima da orelha e na nuca
+const limCabelo = (x, z, front, side, back) => { const f = Math.abs(Math.atan2(x, z)) / Math.PI;   // 0 = frente, 1 = nuca
+  return f < 0.12 ? front : f < 0.32 ? front + (side - front) * smooth01((f - 0.12) / 0.2) : f < 0.62 ? side : side + (back - side) * smooth01((f - 0.62) / 0.3); };
+function hairShell(R, { t = 0.012, front = 0.42, side = 0.22, back = -0.6, curl = 0, crown = 0.006, seg = 32, noTop = false, quiff = 0, part = 0, fringe = 0, bun = 0 } = {}) {
   const g = new THREE.SphereGeometry(1, seg, Math.round(seg * 0.75)), p = g.attributes.position;
   for (let i = 0; i < p.count; i++) { const x = p.getX(i), y = p.getY(i), z = p.getZ(i);
-    const f = Math.abs(Math.atan2(x, z)) / Math.PI;   // 0 = frente, 1 = nuca
-    let lim = f < 0.12 ? front : f < 0.32 ? front + (side - front) * smooth01((f - 0.12) / 0.2) : f < 0.62 ? side : side + (back - side) * smooth01((f - 0.62) / 0.3);
+    let lim = limCabelo(x, z, front, side, back);
     if (fringe && z > 0) lim -= fringe * G(x - 0.25, 0.35);
     let k = smooth01((y - lim) / 0.12);
     if (noTop) k *= 1 - smooth01((y - 0.55) / 0.12);
     const n = curl ? (vn3(x * 7, y * 7, z * 7) - 0.5) * curl * 2 + (vn3(x * 15 + 3, y * 15, z * 15) - 0.5) * curl : (vn3(x * 9, y * 3, z * 9) - 0.5) * 0.004;
     let vol = t + crown * Math.max(0, y) + n + quiff * G(y - 0.7, 0.28) * Math.max(0, z + 0.2);
     if (part) vol -= 0.005 * G(x - part, 0.05) * smooth01((y - 0.3) / 0.2) * (z > -0.3 ? 1 : 0);
+    if (bun) vol += bun * Math.exp(-(x * x + (y - 0.2) ** 2 + (z + 0.95) ** 2) / 0.16);   // o cabelo preso embaixo do lenço, na nuca
     vol = vol * k - 0.05 * (1 - k);   // fora da área do cabelo a casca afunda para dentro do crânio
     const r = R(x, y, z) + vol; p.setXYZ(i, C0[0] + x * r, C0[1] + y * r * (vol > 0 ? 1 - 0.1 * vol : 1), C0[2] + z * r); }
   g.computeVertexNormals(); return g;
@@ -691,22 +708,30 @@ function hair(bd, s, hb, cab) {
   const fit = g => { if (!crown) return g; const [y0, y1, r] = crown, p = g.attributes.position;
     for (let i = 0; i < p.count; i++) { let y = p.getY(i); if (y < y0 - 0.01) continue; y = Math.min(y, y1 - 0.008); const x = p.getX(i), z = p.getZ(i), d = Math.hypot(x, z), m = Math.max(0.005, r(y) - 0.006);
       p.setY(i, y); if (d > m) { p.setX(i, x * m / d); p.setZ(i, z * m / d); } } return g; };
-  const hc = C(s.hairColor), H = (g, c = hc) => bd.rigid(fit(g), c, hb, 2), h = s.hair, kid = s.sex === 'c', swing = [];
+  // o lenço: cobre o cabelo inteiro, medido sobre o volume dele (não é uma bola fixa). O cabelo comprido vai preso por baixo
+  // (vira um volume na nuca), o crespo fica apertado; e todo fio que passaria do pano é trazido para dentro dele
+  const h = s.hair, preso = scarf && ['longo', 'tranca', 'rabo', 'chiquinha', 'coque'].includes(h), LZ = { t: h === 'crespo' ? 0.017 : preso ? 0.014 : 0.012, front: 0.3, side: 0.04, back: -0.78, bun: preso ? 0.022 : 0 };
+  const dentroLenco = g => { if (!scarf) return g; const p = g.attributes.position, u = new THREE.Vector3();
+    for (let i = 0; i < p.count; i++) { u.set(p.getX(i) - C0[0], p.getY(i) - C0[1], p.getZ(i) - C0[2]); const r = u.length(); if (r < 1e-5) continue; u.multiplyScalar(1 / r);
+      if (u.y < limCabelo(u.x, u.z, LZ.front, LZ.side, LZ.back) + 0.08) continue;   // fora da área do lenço (rosto, orelha): nada a fazer
+      const m = R(u.x, u.y, u.z) + LZ.t + LZ.bun * Math.exp(-(u.x * u.x + (u.y - 0.2) ** 2 + (u.z + 0.95) ** 2) / 0.16) - 0.004;
+      if (r > m) p.setXYZ(i, C0[0] + u.x * m, C0[1] + u.y * m, C0[2] + u.z * m); } return g; };
+  const hc = C(s.hairColor), H = (g, c = hc) => bd.rigid(dentroLenco(fit(g)), c, hb, 2), kid = s.sex === 'c', swing = [];
   const pend = (at, geos) => { const b2 = Builder(); for (const [g, c, pt] of geos) b2.rigid(g, c, 0, pt); const m = new THREE.Mesh(b2.build(), bodyMaterial(null)); m.castShadow = true;
     const pivot = new THREE.Group(); pivot.position.copy(at); pivot.add(m); swing.push({ pivot, a: 0, v: 0, b: 0, vb: 0 }); };
   if (h === 'curto') H(hairShell(R, { t: capped ? 0.011 : kid ? 0.016 : 0.014, front: kid ? 0.32 : 0.4, side: 0.24, back: -0.62, crown: 0.012, quiff: kid ? 0.006 : 0.012, part: 0.32, fringe: kid ? 0.12 : 0 }));
   if (h === 'careca') H(hairShell(R, { t: 0.008, front: 0.5, side: 0.2, back: -0.55, noTop: true }));
-  if (h === 'crespo') H(hairShell(R, { t: capped || scarf ? 0.012 : kid ? 0.03 : 0.042, front: 0.34, side: 0.14, back: -0.64, curl: capped ? 0.006 : 0.015, crown: capped ? 0.004 : 0.022, seg: 38 }));
+  if (h === 'crespo') H(hairShell(R, { t: capped || scarf ? 0.012 : kid ? 0.03 : 0.042, front: 0.34, side: 0.14, back: -0.64, curl: capped || scarf ? 0.005 : 0.015, crown: capped || scarf ? 0.002 : 0.022, seg: 38 }));
   if (h === 'coque' || h === 'tranca' || h === 'longo' || h === 'chiquinha' || h === 'rabo') H(hairShell(R, { t: scarf ? 0.007 : 0.013, front: 0.38, side: 0.16, back: -0.68, crown: 0.006 }));
   const back = (y, z) => [0, SKULL.cy + y, SKULL.cz + z];
   if (h === 'coque' && !scarf) { const b = new THREE.SphereGeometry(1, 16, 12); const p = b.attributes.position; for (let i = 0; i < p.count; i++) { const k = 1 + (vn3(p.getX(i) * 4, p.getY(i) * 4, p.getZ(i) * 4) - 0.5) * 0.25; p.setXYZ(i, p.getX(i) * 0.05 * k, p.getY(i) * 0.044 * k, p.getZ(i) * 0.05 * k); }
     b.translate(...back(0.07, -0.105)); H(b); H(new THREE.TorusGeometry(0.038, 0.012, 6, 16).rotateX(0.9).translate(...back(0.062, -0.1))); }
-  if (h === 'longo') {
-    const sh = new THREE.CylinderGeometry(1, 1, 0.3, 26, 10, true, Math.PI * 0.5, Math.PI), p = sh.attributes.position;
-    for (let i = 0; i < p.count; i++) { const x = p.getX(i), y = p.getY(i), z = p.getZ(i), t = (0.15 - y) / 0.3, a = Math.atan2(x, z), fl = 1 + 0.28 * t, wav = Math.sin(a * 11) * 0.03 * t;
-      p.setXYZ(i, x * 0.095 * fl * (1 + wav), y - (t > 0.97 ? (vn3(a * 4, 1, 2) - 0.5) * 0.06 : 0), z * 0.105 * fl * (1 + wav)); }
-    sh.translate(0, SKULL.cy - 0.13, SKULL.cz - 0.004); sh.computeVertexNormals(); H(sh);
-    for (const sx of [-1, 1]) H(capsAB(V(sx * 0.084, SKULL.cy - 0.0, SKULL.cz + 0.025), V(sx * 0.096, SKULL.cy - 0.19, SKULL.cz + 0.01), 0.019)); }
+  // cabelo comprido: as mechas que passam da nuca são pano de verdade (cabelo.js); aqui só as raízes, em volta da cabeça
+  // (dos lados, um pouco acima da orelha; atrás, acima do occipital), cada uma com a direção em que desce pela cabeça
+  if (h === 'longo' && !scarf) { const S = kid ? 13 : 19, raizes = [];
+    for (let k = 0; k < S; k++) { const ph = (75 + 210 * k / (S - 1)) * Math.PI / 180, E = Math.max(0.06, 0.12 - 0.18 * Math.cos(ph)), u = V(Math.sin(ph) * Math.cos(E), Math.sin(E), Math.cos(ph) * Math.cos(E));
+      const p = V(...C0).addScaledVector(u, R(u.x, u.y, u.z) + 0.008), d = V(Math.sin(ph) * Math.sin(E), -Math.cos(E), Math.cos(ph) * Math.sin(E)).addScaledVector(u, 0.18).normalize(); raizes.push({ p, d, k: 0.84 + 0.16 * Math.max(0, -Math.cos(ph)) + 0.12 * (vn3(k * 1.7, 2.3, s.h || 1.6) - 0.5) }); }   /* mais comprido no meio das costas, mais curto dos lados, cada mecha um pouco diferente */
+    swing.fios = { raizes, len: kid ? 0.2 : 0.3 + 0.04 * (vn3(s.h || 1.6, 3, 7) - 0.5), larg: kid ? 0.042 : 0.052, esp: 0.012, cor: hc }; }
   if (h === 'rabo') { const lat = new THREE.LatheGeometry([[0.0, 0.0], [0.018, -0.005], [0.026, -0.05], [0.028, -0.1], [0.022, -0.17], [0.012, -0.23], [0.002, -0.26]].map(([r, y]) => new THREE.Vector2(r, y)), 12), p = lat.attributes.position;
     for (let i = 0; i < p.count; i++) { const y = p.getY(i); p.setZ(i, p.getZ(i) - 0.35 * y * y); }
     pend(V(0, SKULL.cy + 0.03, SKULL.cz - 0.105), [[lat, hc, 2], [new THREE.TorusGeometry(0.017, 0.006, 5, 10).rotateX(Math.PI / 2).translate(0, -0.004, 0), C(0xc83a2a), 0]]); }
@@ -724,9 +749,9 @@ function hair(bd, s, hb, cab) {
     bd.rigid(new THREE.TorusGeometry(0.1, 0.008, 4, 16).rotateX(Math.PI / 2).translate(0, 0.21, 0), C(0x3a2014), hb); }
   if (hat === 'bone') { bd.rigid(new THREE.SphereGeometry(0.1, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2).scale(1, 0.75, 1.05).translate(0, 0.16, 0.005), C(s.hatColor || 0x2f6aa0), hb, 3);
     bd.rigid(new THREE.CylinderGeometry(0.075, 0.075, 0.01, 12, 1, false, -Math.PI / 2, Math.PI).scale(1, 1, 1.1).translate(0, 0.165, 0.085), C(s.hatColor || 0x2f6aa0), hb, 3); }
-  if (hat === 'lenco') { const lc = C(s.lencoColor || 0xc83a2a), g = new THREE.SphereGeometry(1, 24, 12, 0, Math.PI * 2, 0, Math.PI * 0.6), p = g.attributes.position;
-    for (let i = 0; i < p.count; i++) { const y = p.getY(i); p.setY(i, y + (vn3(p.getX(i) * 6, y * 6, p.getZ(i) * 6) - 0.5) * 0.04); }
-    g.scale(0.1, 0.126, 0.116).rotateX(-0.58).translate(0, SKULL.cy + 0.022, SKULL.cz - 0.016); bd.rigid(g, lc, hb, 3);
+  if (hat === 'lenco') { const lc = C(s.lencoColor || 0xc83a2a);
+    // o pano sobre o cabelo: a mesma superfície da cabeça + o volume do cabelo preso + a espessura do pano, com dobrinhas
+    const g = hairShell(R, { t: LZ.t + 0.004, front: LZ.front, side: LZ.side, back: LZ.back, bun: LZ.bun, crown: 0.003, seg: 34, curl: 0.0025 }); bd.rigid(g, lc, hb, 3);
     bd.rigid(new THREE.SphereGeometry(1, 10, 8).scale(0.024, 0.02, 0.018).translate(0, SKULL.cy - 0.055, SKULL.cz - 0.112), lc.clone().multiplyScalar(0.9), hb, 3);
     for (const sx of [-1, 1]) bd.rigid(new THREE.SphereGeometry(1, 8, 6).scale(0.016, 0.045, 0.006).rotateZ(sx * 0.35).translate(sx * 0.016, SKULL.cy - 0.1, SKULL.cz - 0.118), lc.clone().multiplyScalar(0.95), hb, 3); }
   return swing;
