@@ -281,34 +281,81 @@ export function buildProps(scene, { mobile = false } = {}) {
     const est = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 1.3).rotateX(-Math.PI / 2), mat({ color: 0xd8c08a })); const ex = Li.p[0] + Math.sin(Li.rot) * 1.55, ez = Li.p[1] + Math.cos(Li.rot) * 1.55;
     est.position.set(ex, heightAt(ex, ez) + 0.03, ez); est.rotation.y = Li.rot; est.receiveShadow = true; scene.add(est); }
 
-  // ---------- cercas: esteios a cada ~2,2 m seguindo o chão, duas ou três réguas um pouco tortas; uma porteira aberta
-  function fence(pts, { name = '', closed = true, gate = -1, posts = 1.35, rails = [0.5, 0.95], step = 2.2, color = 0x9a8470 } = {}) {
-    const geos = [], P = [];
-    (LAYOUT.fences = LAYOUT.fences || []).push({ pts, closed, gate, name });   // para a colisão (cada lado é um segmento; a porteira fica aberta)
-    const segs = closed ? pts.length : pts.length - 1;
-    for (let i = 0; i < segs; i++) { const a = pts[i], b = pts[(i + 1) % pts.length], n = Math.max(1, Math.round(Math.hypot(b[0] - a[0], b[1] - a[1]) / step));
-      for (let k = 0; k < n; k++) P.push([a[0] + (b[0] - a[0]) * k / n, a[1] + (b[1] - a[1]) * k / n]); }
-    if (!closed) P.push(pts[pts.length - 1]);
-    const Y = P.map(([x, z]) => heightAt(x, z));
-    P.forEach(([x, z], i) => { const h = posts * (0.92 + rnd() * 0.16); geos.push(paint(box(0.13, h + 0.4, 0.13, x, Y[i] + (h - 0.4) / 2, z, 1).rotateY(0), col(color).multiplyScalar(0.85 + rnd() * 0.2))); });
-    const last = closed ? P.length : P.length - 1;
-    for (let i = 0; i < last; i++) { if (i === gate) continue; const [ax, az] = P[i], [bx, bz] = P[(i + 1) % P.length], ya = Y[i], yb = Y[(i + 1) % P.length], L = Math.hypot(bx - ax, bz - az), ang = Math.atan2(bz - az, bx - ax);
-      for (const r of rails) { const g = box(L + 0.2, 0.09, 0.05, 0, 0, 0, 1); g.rotateZ(Math.atan2(yb - ya, L) + (rnd() - 0.5) * 0.04).rotateY(-ang).translate((ax + bx) / 2, (ya + yb) / 2 + r + (rnd() - 0.5) * 0.05, (az + bz) / 2);
-        geos.push(paint(g, col(color).multiplyScalar(0.9 + rnd() * 0.2))); } }
+  // ---------- cercas: esteios a cada ~2,2 m seguindo o chão, duas ou três réguas um pouco tortas, e a porteira: dois mourões
+  // grossos e uma folha de tábuas com mão-francesa, presa por dobradiça num dos mourões. Ela abre para dentro quando alguém
+  // pede (ask) e fecha sozinha um pouco depois que a pessoa passou, com rangido e o trinco batendo.
+  function fence(pts, { name = '', closed = true, gate = null, posts = 1.35, rails = [0.5, 0.95], step = 2.2, color = 0x9a8470, leaf = 'curral' } = {}) {
+    const geos = [], segs = [], O = pts.reduce((a, q) => [a[0] + q[0] / pts.length, a[1] + q[1] / pts.length], [0, 0]);
+    const run = (A, B) => {   // um trecho reto de cerca, de A a B
+      const n = Math.max(1, Math.round(Math.hypot(B[0] - A[0], B[1] - A[1]) / step)), P = []; for (let k = 0; k <= n; k++) P.push([A[0] + (B[0] - A[0]) * k / n, A[1] + (B[1] - A[1]) * k / n]);
+      const Y = P.map(([x, z]) => heightAt(x, z)); segs.push([A[0], A[1], B[0], B[1]]);
+      P.forEach(([x, z], i) => { const h = posts * (0.92 + rnd() * 0.16); geos.push(paint(box(0.13, h + 0.4, 0.13, x, Y[i] + (h - 0.4) / 2, z, 1), col(color).multiplyScalar(0.85 + rnd() * 0.2))); });
+      for (let i = 0; i < n; i++) { const [ax, az] = P[i], [bx, bz] = P[i + 1], ya = Y[i], yb = Y[i + 1], L = Math.hypot(bx - ax, bz - az), ang = Math.atan2(bz - az, bx - ax);
+        for (const r of rails) { const g = box(L + 0.2, 0.09, 0.05, 0, 0, 0, 1); g.rotateZ(Math.atan2(yb - ya, L) + (rnd() - 0.5) * 0.04).rotateY(-ang).translate((ax + bx) / 2, (ya + yb) / 2 + r + (rnd() - 0.5) * 0.05, (az + bz) / 2);
+          geos.push(paint(g, col(color).multiplyScalar(0.9 + rnd() * 0.2))); } } };
+    let G = null;
+    const sides = closed ? pts.length : pts.length - 1;
+    for (let i = 0; i < sides; i++) { const a = pts[i], b = pts[(i + 1) % pts.length];
+      if (!gate || gate.side !== i) { run(a, b); continue; }
+      const L = Math.hypot(b[0] - a[0], b[1] - a[1]), u0 = (gate.t * L - gate.w / 2) / L, u1 = (gate.t * L + gate.w / 2) / L, lerp = u => [a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u];
+      const ga = lerp(u0), gb = lerp(u1); run(a, ga); run(gb, b);
+      for (const q of [ga, gb]) geos.push(paint(box(0.19, posts + 0.75, 0.19, q[0], heightAt(...q) + (posts + 0.75) / 2 - 0.42, q[1], 1), col(color).multiplyScalar(0.78)));   // mourões
+      G = { ga, gb, w: gate.w }; }
     const m = new THREE.Mesh(merge(geos), woodMat); m.castShadow = m.receiveShadow = true; scene.add(m);
-    if (name) { const base = Y.reduce((a, b) => a + b, 0) / Y.length, gr = new THREE.Group(); gr.position.y = base; scene.add(gr); scene.remove(m); m.position.y = -base; gr.add(m); tag(gr, name); }
-    return P;
+    if (name) { const base = pts.reduce((a, q) => a + heightAt(...q), 0) / pts.length, gr = new THREE.Group(); gr.position.y = base; scene.add(gr); scene.remove(m); m.position.y = -base; gr.add(m); tag(gr, name); }
+    if (G) G = porteira(G, O, { h: Math.min(1.45, posts * 0.95), leaf, color, name });
+    (LAYOUT.fences = LAYOUT.fences || []).push({ pts, closed, segs, name, gate: G });   // para a colisão (o vão da porteira fica de fora; a folha é peça móvel)
+    return G;
+  }
+  // a folha: tábuas pregadas em dois montantes, mão-francesa na diagonal (do pé da dobradiça ao alto do trinco)
+  function porteira({ ga, gb, w }, O, { h, leaf, color, name }) {
+    const geos = [], c = col(color).multiplyScalar(1.05), L = w - 0.14, nb = leaf === 'curral' ? 5 : 3, y0 = 0.14;
+    for (const x of [0.06, L - 0.02]) geos.push(paint(box(0.09, h, 0.07, x, y0 + h / 2, 0, 1), c.clone().multiplyScalar(0.9)));
+    for (let k = 0; k < nb; k++) { const y = y0 + 0.08 + k * (h - 0.16) / (nb - 1); geos.push(paint(box(L, leaf === 'curral' ? 0.13 : 0.08, 0.035, L / 2, y, 0.04, 1), c.clone().multiplyScalar(0.92 + rnd() * 0.16))); }
+    const d = Math.hypot(L - 0.1, h - 0.2), br = box(d, 0.11, 0.035, 0, 0, 0, 1); br.rotateZ(Math.atan2(h - 0.2, L - 0.1)).translate(L / 2, y0 + h / 2, -0.03); geos.push(paint(br, c.clone().multiplyScalar(0.85)));
+    for (const y of [y0 + 0.15, y0 + h - 0.15]) geos.push(paint(box(0.12, 0.05, 0.05, 0.0, y, 0, 1), col(0x3a3836)));   // dobradiças
+    geos.push(paint(box(0.16, 0.04, 0.04, L + 0.04, y0 + h * 0.62, 0.05, 1), col(0x3a3836)));                        // trinco
+    const leafM = new THREE.Mesh(merge(geos), woodMat); leafM.castShadow = leafM.receiveShadow = true;
+    const piv = new THREE.Group(); piv.add(leafM); piv.position.set(ga[0], heightAt(...ga), ga[1]);
+    const dx = gb[0] - ga[0], dz = gb[1] - ga[1], r0 = Math.atan2(-dz, dx);
+    // abre para dentro do cercado: o lado em que a folha, girada 90°, aponta para o centro
+    const inn = [O[0] - (ga[0] + gb[0]) / 2, O[1] - (ga[1] + gb[1]) / 2], sg = Math.cos(r0 + 1.57) * inn[0] - Math.sin(r0 + 1.57) * inn[1] > 0 ? 1 : -1;
+    piv.rotation.y = r0; scene.add(piv); tag(piv, 'porteira' + (name ? ' (' + name.replace('cerca d', '') + ')' : ''));
+    const nx = -dz / w, nz = dx / w, sIn = nx * inn[0] + nz * inn[1] > 0 ? 1 : -1, cx = (ga[0] + gb[0]) / 2, cz = (ga[1] + gb[1]) / 2;
+    const G = { ga, gb, w, c: [cx, cz], inside: [cx + nx * sIn * 1.4, cz + nz * sIn * 1.4], outside: [cx - nx * sIn * 1.4, cz - nz * sIn * 1.4], open: 0, hold: 0, sound: null, piv,
+      ask() { G.hold = 1.4; },
+      seg() { const a = r0 + sg * G.open * 1.75, ex = ga[0] + Math.cos(a) * w, ez = ga[1] - Math.sin(a) * w; return { ax: ga[0], az: ga[1], bx: ex, bz: ez, r: 0.06 }; } };
+    updaters.push(dt => { G.hold -= dt; const want = G.hold > 0 ? 1 : 0, was = G.open;
+      G.open += Math.sign(want - G.open) * Math.min(Math.abs(want - G.open), dt * (want ? 0.9 : 0.7));
+      if (was === 0 && G.open > 0 && G.sound) G.sound('abre'); if (was > 0 && G.open === 0 && G.sound) G.sound('fecha');
+      piv.rotation.y = r0 + sg * (G.open < 1 ? G.open * G.open * (3 - 2 * G.open) : 1) * 1.75; });
+    (LAYOUT.gates = LAYOUT.gates || []).push(G); return G;
   }
   const rectPts = (o, w, d, rot) => [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([u, v]) => { const x = u * w / 2, z = v * d / 2, c = Math.cos(rot), s = Math.sin(rot); return [o[0] + x * c + z * s, o[1] - x * s + z * c]; });
-  // curral no pasto, com cocho de madeira
-  { const Cr = LAYOUT.corral; fence(rectPts(Cr.p, Cr.w, Cr.d, Cr.rot), { name: 'cerca do curral', gate: 1, rails: [0.45, 0.85, 1.2], posts: 1.5 });
-    const c = Math.cos(Cr.rot), s = Math.sin(Cr.rot), lx = -Cr.w * 0.28, lz = -Cr.d * 0.3, x = Cr.p[0] + lx * c + lz * s, z = Cr.p[1] - lx * s + lz * c;
-    const cocho = new THREE.Group(); cocho.add(new THREE.Mesh(merge([paint(box(2.6, 0.12, 0.7, 0, 0.5, 0, 1), col(0x8a6a4a)), paint(box(2.6, 0.45, 0.08, 0, 0.72, 0.33, 1), col(0x8a6a4a)), paint(box(2.6, 0.45, 0.08, 0, 0.72, -0.33, 1), col(0x8a6a4a)),
-      paint(box(0.08, 0.45, 0.7, 1.28, 0.72, 0, 1), col(0x8a6a4a)), paint(box(0.08, 0.45, 0.7, -1.28, 0.72, 0, 1), col(0x8a6a4a)), paint(box(0.12, 0.5, 0.12, 1.1, 0.25, 0.25, 1), col(0x6a4a3a)), paint(box(0.12, 0.5, 0.12, -1.1, 0.25, -0.25, 1), col(0x6a4a3a))]), woodMat),
-      new THREE.Mesh(new THREE.PlaneGeometry(2.45, 0.55).rotateX(-Math.PI / 2).translate(0, 0.86, 0), mat({ color: 0xc9b25a })));
-    cocho.traverse(o => { if (o.isMesh) o.castShadow = o.receiveShadow = true; }); cocho.position.set(x, heightAt(x, z), z); cocho.rotation.y = Cr.rot; scene.add(cocho); }
+  // curral no pasto: porteira do lado da vila, cocho de madeira no fundo (longe da porteira) e o rancho da ração do lado de fora
+  { const Cr = LAYOUT.corral; Cr.gateObj = fence(rectPts(Cr.p, Cr.w, Cr.d, Cr.rot), { name: 'cerca do curral', gate: Cr.gate, rails: [0.45, 0.85, 1.2], posts: 1.5 });
+    const [x, z] = Cr.cochoP, wood = col(0x8a6a4a);
+    const cocho = new THREE.Group(); cocho.add(new THREE.Mesh(merge([paint(box(2.6, 0.12, 0.7, 0, 0.5, 0, 1), wood), paint(box(2.6, 0.45, 0.08, 0, 0.72, 0.33, 1), wood), paint(box(2.6, 0.45, 0.08, 0, 0.72, -0.33, 1), wood),
+      paint(box(0.08, 0.45, 0.7, 1.28, 0.72, 0, 1), wood), paint(box(0.08, 0.45, 0.7, -1.28, 0.72, 0, 1), wood), paint(box(0.12, 0.5, 0.12, 1.1, 0.25, 0.25, 1), col(0x6a4a3a)), paint(box(0.12, 0.5, 0.12, -1.1, 0.25, -0.25, 1), col(0x6a4a3a)),
+      paint(box(2.44, 0.02, 0.54, 0, 0.565, 0, 1), col(0x5a4632))]), woodMat));                                                       // fundo escuro, gasto
+    // a ração (milho quebrado com capim picado): uma camada que baixa conforme as vacas comem e some quando acaba
+    const racao = new THREE.Mesh(new THREE.BoxGeometry(2.42, 0.3, 0.52).translate(0, -0.15, 0), mat({ color: 0xc9b25a }, { frag: 'diffuseColor.rgb*=0.78+0.4*vnoise(vWp.xz*70.0)+0.12*vnoise(vWp.xz*9.0);' }));
+    racao.position.y = 0.86; cocho.add(racao);
+    cocho.traverse(o => { if (o.isMesh) o.castShadow = o.receiveShadow = true; }); cocho.position.set(x, heightAt(x, z), z); cocho.rotation.y = Cr.rot; scene.add(cocho); tag(cocho, 'cocho');
+    const F = Cr.feed; updaters.push(() => { const l = Math.max(0, Math.min(1, F.level)); racao.visible = l > 0.01; racao.scale.y = Math.max(0.02, l); racao.position.y = 0.58 + 0.28 * l; });
+    // rancho da ração: quatro esteios, telhado de uma água, sacos empilhados num estrado e o balde
+    const R = new THREE.Group(), parts = [], rw = 2.2, rd = 1.6, rh = 2.0;
+    for (const [px, pz, hh] of [[-rw / 2, -rd / 2, rh + 0.3], [rw / 2, -rd / 2, rh + 0.3], [-rw / 2, rd / 2, rh], [rw / 2, rd / 2, rh]]) parts.push(paint(box(0.12, hh, 0.12, px, hh / 2, pz, 1), col(0x7a5a3a)));
+    parts.push(paint(box(1.7, 0.1, 1.1, 0, 0.08, 0, 1), col(0x8a6a4a)));
+    const roof = box(rw + 0.5, 0.05, rd + 0.5, 0, 0, 0, 1); roof.rotateX(0.18).translate(0, rh + 0.17, 0);   // cai para a frente: os esteios de trás são mais altos parts.push(paint(roof, col(0x9aa0a4)));   // telha de zinco
+    R.add(new THREE.Mesh(merge(parts), woodMat));
+    const sacoGeo = () => { const g = new THREE.SphereGeometry(1, 12, 8); const q = g.attributes.position; for (let i = 0; i < q.count; i++) { const yy = q.getY(i); q.setY(i, Math.sign(yy) * Math.pow(Math.abs(yy), 0.5)); } g.computeVertexNormals(); return g.scale(0.32, 0.13, 0.22); };
+    const sacoMat = mat({ color: 0xcfc3a4 }, { frag: 'diffuseColor.rgb*=0.9+0.12*abs(sin(vLp.x*180.0))*abs(sin(vLp.z*180.0+vLp.y*120.0));' });   // ráfia trançada
+    const sacos = []; for (let k = 0; k < 5; k++) { const sm = new THREE.Mesh(sacoGeo(), sacoMat); sm.position.set(k < 3 ? (k - 1) * 0.5 : (k - 3.5) * 0.5, 0.26 + (k < 3 ? 0 : 0.24), (rnd() - 0.5) * 0.15); sm.rotation.y = (rnd() - 0.5) * 0.4; sm.castShadow = true; R.add(sm); sacos.push(sm); }
+    R.traverse(o => { if (o.isMesh) { o.castShadow = o.receiveShadow = true; } }); R.position.set(Cr.ranchoP[0], heightAt(...Cr.ranchoP), Cr.ranchoP[1]); R.rotation.y = Cr.rot; scene.add(R); tag(R, 'rancho da ração');
+    Cr.rancho3d = { sacos, sacoGeo, sacoMat }; }
   // horta cercada de varas, com canteiros de terra e couves, alfaces e cebolinhas
-  { const Gd = LAYOUT.garden; fence(rectPts(Gd.p, Gd.w, Gd.d, Gd.rot), { name: 'cerca da horta', gate: 2, rails: [0.3, 0.6, 0.85], posts: 1.0, step: 1.0, color: 0xa89474 });
+  { const Gd = LAYOUT.garden; fence(rectPts(Gd.p, Gd.w, Gd.d, Gd.rot), { name: 'cerca da horta', gate: Gd.gate, leaf: 'cancela', rails: [0.3, 0.6, 0.85], posts: 1.0, step: 1.0, color: 0xa89474 });
     const beds = [], plants = [], c = Math.cos(Gd.rot), s = Math.sin(Gd.rot), y0 = heightAt(Gd.p[0], Gd.p[1]);
     for (let b = 0; b < 3; b++) { const lx = -Gd.w / 2 + 0.95 + b * 1.55; beds.push(paint(box(1.0, 0.25, Gd.d - 1.0, lx, 0.05, 0, 1), col(0x6e4630)));
       for (let k = 0; k < 6; k++) plants.push([lx + (rnd() - 0.5) * 0.4, -Gd.d / 2 + 0.85 + k * (Gd.d - 1.7) / 5, b]); }
@@ -358,7 +405,7 @@ export function buildProps(scene, { mobile = false } = {}) {
     const pole = box(2.6, 0.1, 0.1, 0, 0, 0, 1); pole.rotateZ(0.32).translate(2.35, 0.55, 0); parts.push(paint(pole, col(0x6a4a34)));
     g.add(new THREE.Mesh(merge(parts), woodMat)); placeG(g, Ct.p, Ct.rot, 'carroça de boi', -0.05); }
   // aprisco: cerca baixa de varas e um cocho; as ovelhas ficam com a fauna
-  { const Sp = LAYOUT.sheepPen; fence(rectPts(Sp.p, Sp.w, Sp.d, Sp.rot), { name: 'cerca do aprisco', gate: 3, rails: [0.35, 0.7, 0.95], posts: 1.05, step: 1.6, color: 0xa08a6a }); }
+  { const Sp = LAYOUT.sheepPen; fence(rectPts(Sp.p, Sp.w, Sp.d, Sp.rot), { name: 'cerca do aprisco', gate: Sp.gate, leaf: 'cancela', rails: [0.35, 0.7, 0.95], posts: 1.05, step: 1.6, color: 0xa08a6a }); }
   // ninho de joão-de-barro: forninho de barro em cima de um mourão do curral
   { const Cr = LAYOUT.corral, [px, pz] = rectPts(Cr.p, Cr.w, Cr.d, Cr.rot)[2], g = new THREE.Group();
     const nest = new THREE.SphereGeometry(0.17, 14, 10, 0, Math.PI * 2, 0, Math.PI * 0.6).scale(1.15, 1, 0.9); paint(nest, col(0xa8724a));

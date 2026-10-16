@@ -91,23 +91,26 @@ export function buildFauna(scene, opts = {}) {
     if (a.t <= 0 && rain > 0.35 && name === 'galinha') { let bp = porches[0], bd = 1e9; for (const p of porches) { const d = Math.hypot(p[0] - a.x, p[1] - a.z); if (d < bd) { bd = d; bp = p; } }
       a.st = 'walk'; a.tgt = [bp[0] + (rnd() - 0.5) * 1.6, bp[1] + (rnd() - 0.5) * 1.0]; a.t = 12; }
     if (a.t <= 0 && rain > 0.35 && name === 'ovelha') { const P = LAYOUT.sheepPen.p; a.st = 'walk'; a.tgt = [P[0] + (rnd() - 0.5) * 1.5, P[1] + (rnd() - 0.5) * 1.5]; a.t = 10; }
-    if (a.t <= 0 && !shelter && a.st !== 'drink' && a.drinks && a.drinks.length && rnd() < (a.thirst || 0.1)) { const d = a.drinks[Math.floor(rnd() * a.drinks.length)]; a.st = 'walk'; a.tgt = [d[0], d[1]]; a.face = d[2]; a.goal = 'drink'; a.t = 30; }
+    const vazio = a.cocho && LAYOUT.corral.feed.level < 0.06;   // cocho vazio: o gado fica rondando e cheirando o cocho
+    if (a.t <= 0 && !shelter && a.st !== 'drink' && a.drinks && a.drinks.length && rnd() < (vazio ? 0.45 : a.thirst || 0.1)) { const d = a.drinks[Math.floor(rnd() * a.drinks.length)]; a.st = 'walk'; a.tgt = [d[0], d[1]]; a.face = d[2]; a.goal = 'drink'; a.t = 30; }
     else if (a.t <= 0 && !shelter && a.swims && a.swims.length && rnd() < 0.16) { const d = a.swims[Math.floor(rnd() * a.swims.length)]; a.st = 'walk'; a.tgt = d; a.goal = 'swim'; a.swimLeft = 1 + Math.floor(rnd() * 3); a.allowWater = true; a.t = 40; }
     if (a.t <= 0) {
       if (shelter) { a.st = 'walk'; a.tgt = near({ x: a.shade[0], z: a.shade[1] }, 3.2, a.area) || a.shade; a.t = 10; }
       else { const r = rnd(); if (r < a.pg) { a.st = 'graze'; a.t = 4 + rnd() * 9; } else if (r < a.pg + a.pw) { a.st = 'walk'; a.tgt = a.follow ? near(a.follow, 2.5, a.area) : a.targets && a.targets.length ? (([x, z]) => [x + 0.9, z + 0.6])(a.targets[Math.floor(rnd() * a.targets.length)]) : near(a, a.roam, a.area); a.t = 25; if (!a.tgt) { a.st = 'idle'; a.t = 2; } } else { a.st = 'idle'; a.t = 2 + rnd() * 5; } } }
     let want = 0, dh = null;
     if (a.st === 'walk' && a.tgt) { const dx = a.tgt[0] - a.x, dz = a.tgt[1] - a.z, d = Math.hypot(dx, dz);
-      if (d < 0.35) { if (a.goal === 'drink') { a.st = 'drink'; a.t = 6 + rnd() * 8; a.goal = null; }
+      if (d < 0.35) { if (a.goal === 'drink') { a.st = 'drink'; a.t = vazio ? 1.5 + rnd() * 2 : 6 + rnd() * 8; a.goal = null; }
         else if (a.goal === 'swim') { if (--a.swimLeft > 0) { a.tgt = a.swims[Math.floor(rnd() * a.swims.length)]; a.t = 40; } else { a.goal = 'land'; a.tgt = a.pick(null); a.t = 40; } }
         else { if (a.goal === 'land') a.goal = null; a.st = shelter ? 'idle' : (rnd() < 0.7 ? 'graze' : 'idle'); a.t = 3 + rnd() * 6; } } else { want = a.vw * Math.min(1, d / 1.5 + 0.3); dh = Math.atan2(dx, dz); } }
     else if (a.st === 'graze') { want = a.vg; if (rnd() < dt * 0.3) a.h += (rnd() - 0.5) * 0.8; }
-    else if (a.st === 'drink' && a.face != null) { dh = a.face; }
+    else if (a.st === 'drink' && a.face != null) { dh = a.face; if (a.cocho && !vazio) LAYOUT.corral.feed.level -= dt * 0.006; }   // cada vaca comendo leva ~3 min para esvaziar o cocho cheio
     if (a.swim) want *= 0.6;
     if (dh !== null) { let e = dh - a.h; e = Math.atan2(Math.sin(e), Math.cos(e)); a.h += Math.max(-a.turn * dt, Math.min(a.turn * dt, e)); }
     for (const b of all) if (b !== a && Math.abs(b.x - a.x) < 3 && Math.abs(b.z - a.z) < 3) { const dx = a.x - b.x, dz = a.z - b.z, d = Math.hypot(dx, dz), s = (a.sep + (b.sep || 1)) * 0.5;
       if (d < s && d > 1e-3) { const k = (s - d) * dt * 1.5; if (a.area(a.x + dx / d * k, a.z + dz / d * k)) { a.x += dx / d * k; a.z += dz / d * k; } } }
-    if (a.rad) for (const t of threats) { if (!t.person) continue; const dx = a.x - t.x, dz = a.z - t.z, d = Math.hypot(dx, dz), s = a.rad + 0.3;
+    // gente: o corpo comprido (boi, vaca) é uma cápsula do peito à anca, não um círculo no meio; ninguém atravessa o bicho
+    if (a.rad) for (const t of threats) { if (!t.person) continue; const hl = a.big ? 0.75 * a.g.scale.x : 0, fx = Math.sin(a.h), fz = Math.cos(a.h), u = Math.max(-hl, Math.min(hl, (t.x - a.x) * fx + (t.z - a.z) * fz));
+      const dx = a.x + fx * u - t.x, dz = a.z + fz * u - t.z, d = Math.hypot(dx, dz), s = a.rad + 0.3;
       if (d < s && d > 1e-3) { const k = (s - d) * Math.min(1, dt * 8); if (a.area(a.x + dx / d * k, a.z + dz / d * k)) { a.x += dx / d * k; a.z += dz / d * k; } } }
     a.sp += (want - a.sp) * Math.min(1, dt * 2.5);
     const nx = a.x + Math.sin(a.h) * a.sp * dt, nz = a.z + Math.cos(a.h) * a.sp * dt;
@@ -182,8 +185,8 @@ export function buildFauna(scene, opts = {}) {
   const cowO = (area, pick) => ({ area, pick, pg: 0.55, pw: 0.3, vw: 0.75, vg: 0.06, turn: 0.8, stride: 1.6, sep: 2.2, roam: 7, gp: 1.05, dropNeck: 0.32, big: true });
   // pelagens variadas (mais bois de cor que brancos), tamanhos de vaca e de touro, e bezerros junto do rebanho
   // o cocho do curral (o mesmo lugar de props.js): as vacas do curral bebem e comem nele, lado a lado
-  const cocho = (() => { const c = Math.cos(Cr.rot), s = Math.sin(Cr.rot), at = (lx, lz) => [Cr.p[0] + lx * c + lz * s, Cr.p[1] - lx * s + lz * c], lz = -Cr.d * 0.3 + 1.2;
-    return [-0.8, 0, 0.8].map(dx => [...at(-Cr.w * 0.28 + dx, lz), Cr.rot + Math.PI]); })();
+  const cocho = (() => { const c = Math.cos(Cr.rot), s = Math.sin(Cr.rot), at = (lx, lz) => [Cr.p[0] + lx * c + lz * s, Cr.p[1] - lx * s + lz * c], lz = Cr.cocho[1] + 1.2;
+    return [-0.8, 0, 0.8].map(dx => [...at(Cr.cocho[0] + dx, lz), Cr.rot + Math.PI]); })();
   spawn(() => cow(pickCoat(), 0.9 + rnd() * 0.14), 3, { ...cowO(inCorral, pickIn(inCorral, Cr.p, Cr.w / 2)), name: 'boi', drinks: cocho, cocho: true, thirst: 0.14 });
   const bebePasto = drinkSpots(pickIn(inPasto, tP.c, 17));
   spawn(() => cow(pickCoat(), 0.9 + rnd() * 0.16), 5, { ...cowO(inPasto, pickIn(inPasto, tP.c, 17)), shade, name: 'boi', drinks: bebePasto });
