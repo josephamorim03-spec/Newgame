@@ -684,16 +684,18 @@ const waterMat = new THREE.ShaderMaterial({ transparent: true, depthWrite: false
         gw+=dv/max(r,0.02)*sin(r*15.0-uTime*6.5)*env*Wd.z*0.4;foam+=(1.0-smoothstep(Wd.w*0.6,Wd.w*1.3,r))*0.45*Wd.z*smoothstep(0.35,0.7,vnoise(p*9.0+uTime*2.0));}
       vec3 N=normalize(vec3(-gw.x,1.0,-gw.y));vec3 V=normalize(cameraPosition-vWp);float cv=max(dot(N,V),0.0);
       float F=(0.03+0.75*pow(1.0-cv,4.0))*smoothstep(0.0,0.05,d);float cs=cloudShadow(p);
-      vec4 rc=uReflMat*vec4(vWp,1.0);vec2 ruv=rc.xy/rc.w+N.xz*(0.035+0.16*boil+0.05*rap);/* água revolta quebra o reflexo */vec2 rb=vec2(0.0035,0.0045)*(1.0+2.0*fl);
+      float plz=1.0-smoothstep(3.0,10.0,distance(p,uRocks[7].xy));   /* o poço da queda: água revolta, cheia de ar */
+      vec4 rc=uReflMat*vec4(vWp,1.0);vec2 ruv=rc.xy/rc.w+N.xz*(0.035+0.16*boil+0.05*rap+0.14*plz);/* água revolta quebra o reflexo */vec2 rb=vec2(0.0035,0.0045)*(1.0+2.0*fl);
       vec3 refl=texture2D(uRefl,clamp(ruv,0.002,0.998)).rgb*0.36+(texture2D(uRefl,clamp(ruv+vec2(rb.x,0.0),0.002,0.998)).rgb+texture2D(uRefl,clamp(ruv-vec2(rb.x,0.0),0.002,0.998)).rgb+texture2D(uRefl,clamp(ruv+vec2(0.0,rb.y),0.002,0.998)).rgb+texture2D(uRefl,clamp(ruv-vec2(0.0,rb.y),0.002,0.998)).rgb)*0.16;
       refl=mix(refl,mix(uSkyHor,uSkyZen,0.35),smoothstep(0.6,1.5,abs(vWp.y-(${WATER_Y.toFixed(3)}-uWaterDrop))));
       float Tl=dot(exp(-vec3(1.6,0.6,0.5)*d*0.9),vec3(0.3,0.4,0.3));
       vec3 scat=toLin(mix(vec3(0.30,0.50,0.40),vec3(0.07,0.22,0.20),smoothstep(0.25,1.4,d)))*(0.3+0.7*cs)*(0.04+0.96*uDay);
+      F*=1.0-0.55*plz;scat=mix(scat,toLin(vec3(0.62,0.76,0.76))*(0.3+0.7*cs)*(0.04+0.96*uDay),plz*0.45);   // reflexo fraco e quebrado, água leitosa
       vec3 col=scat*(1.0-Tl)*(1.0-F)+refl*F;float A=1.0-Tl*(1.0-F);
       vec3 Rf=reflect(-V,N);float glint=pow(max(dot(Rf,uSunW),0.0),900.0);col+=uSunC*glint*(1.2+1.6*vnoise(p*31.0))*cs;A=min(1.0,A+glint*0.4);
       // beira (um fio de espuma onde a água fica rasa), corredeira (manchas brancas que andam rápido) e o poço fervendo
       foam+=0.5*(1.0-smoothstep(0.015,0.08,d))*fT*smoothstep(0.0,0.01,d);
-      foam+=rap*smoothstep(0.3,0.75,vnoise(qa*vec2(0.35,0.6))*0.5+vnoise(qb*vec2(0.35,0.6)+1.0)*0.5)*(0.35+0.65*fT)*smoothstep(0.05,0.35,d);
+      foam+=rap*smoothstep(0.3,0.75,vnoise(qa*vec2(0.35,0.6))*0.5+vnoise(qb*vec2(0.35,0.6)+1.0)*0.5)*(0.35+0.65*fT)*smoothstep(0.05,0.35,d)*smoothstep(4.0,9.0,distance(p,uRocks[7].xy));   /* no poço da queda quem desenha a espuma é a faixa que sai do impacto */
       { vec2 bq=p*4.5+vec2(uTime*0.35,-uTime*0.3);float bub=smoothstep(0.5,0.8,vnoise(bq)*0.5+vnoise(bq*2.3+4.0)*0.3+vnoise(bq*5.1-uTime*0.9)*0.2);   // bolhas miúdas que fervem e se desmancham para fora
         foam+=boil*boil*0.55+boil*bub*0.7; }
       foam=clamp(foam,0.0,1.0);vec3 fc=vec3(0.95,0.98,1.0)*(0.08+0.92*uDay)*(0.65+0.35*cs);
@@ -837,31 +839,105 @@ void main(){float y=vUv.y,ph=vS-uTime;float thin=clamp(uQ,0.0,1.0);
   window.__fallFx = dt => { const q = Math.max(0, Math.min(1.5, 1 - U.uWaterDrop.value * 1.6 + U.uRain.value * 0.7)) || 0; FQ.q += (q - FQ.q) * Math.min(1, dt * 0.5); FQ.v0 = 0.35 + 1.6 * FQ.q;
     fallU.uQ.value = FQ.q; fallU.uV0.value = FQ.v0; window.__fallQ = FQ;
     const io = impactOut(), ix = lip[0] + FALL.t[0] * io, iz = lip[1] + FALL.t[1] * io, wl = waterLevelAt(ix, iz) - U.uWaterDrop.value, ww = w * (0.45 + 0.55 * Math.min(1.25, FQ.q)) * 1.16;
-    ROCKV[7].set(ix + FALL.t[0] * 0.6, iz + FALL.t[1] * 0.6, 1.2 + 1.6 * Math.min(1.3, FQ.q));
+    ROCKV[7].set(ix + FALL.t[0] * 0.6, iz + FALL.t[1] * 0.6, 0.8 + 0.9 * Math.min(1.3, FQ.q));
+    if (window.__impFx) window.__impFx(ix, wl, iz, ww, FQ.q);
     acc += dt; accB += dt; if (FQ.q < 0.08) return;
     const vImp = Math.hypot(FQ.v0, G * TF);   // ~11 m/s na água do poço
     if (fx && acc > 0.05) { const k = Math.min(5, Math.round(acc / 0.05 * (0.4 + FQ.q))); acc = 0;
       for (let i = 0; i < k; i++) { const u = (Math.random() * 2 - 1) * ww, x = ix + n[0] * u, z = iz + n[1] * u;
         fx.emit('respingo', x, wl + 0.05, z, 2, { dir: [FALL.t[0] * 0.12 * vImp, 0.16 * vImp, FALL.t[1] * 0.12 * vImp], spread: 1.2, speed: 0.6 + 0.4 * FQ.q });
-        if (Math.random() < 0.3 + 0.2 * FQ.q) fx.emit('nevoa', x, wl + 0.3, z, 1, { spread: 0.8 });
+        if (Math.random() < 0.12 + 0.1 * FQ.q) fx.emit('nevoa', x, wl + 0.3, z, 1, { spread: 0.8 });
         if (Math.random() < 0.5) fx.emit('espuma', x + FALL.t[0] * (0.5 + Math.random() * 2), wl, z + FALL.t[1] * (0.5 + Math.random() * 2), 1, { spread: 0.6 }); }
       // gotas que se soltam da borda do véu e caem livres (mesma balística do véu, um pouco mais devagar para fora)
       for (let i = 0; i < 2; i++) { const s0 = Math.random() * TF * 0.8, side = Math.random() < 0.5 ? -1 : 1, u = side * ww * (0.85 + Math.random() * 0.2), o = Math.max(0.12 + FQ.v0 * s0, wallAt(4.9 * s0 * s0) + 0.07);
         fx.emit('gota', lip[0] + n[0] * u + FALL.t[0] * o, top - 4.9 * s0 * s0, lip[1] + n[1] * u + FALL.t[1] * o, 1, { dir: [FALL.t[0] * FQ.v0 * 0.85 + n[0] * side * 0.3, -G * s0, FALL.t[1] * FQ.v0 * 0.85 + n[1] * side * 0.3], spread: 0.15, speed: 1 }); } }
     // fervedura: o ar que a queda enfia na água sobe e estoura em anéis, mais rio abaixo quanto mais forte a queda
-    if (afx && accB > 0.16 / (0.4 + FQ.q)) { accB = 0; const u = (Math.random() * 2 - 1) * ww, f = 0.3 + Math.random() * (1.2 + 1.6 * FQ.q);
-      afx.ripple(ix + n[0] * u + FALL.t[0] * f, wl, iz + n[1] * u + FALL.t[1] * f, 0.5 + Math.random() * 0.8 * FQ.q); } };
-  // borrifo: neblina que sobe do poço e o vento leva; com sol baixo faz um arquinho de cor
-  const NP = mobile ? 160 : 320, P = [], S = []; for (let i = 0; i < NP; i++) { P.push(FALL.pool[0] - FALL.t[0] * 1.0, bot, FALL.pool[1] - FALL.t[1] * 1.0); S.push(Math.random()); }
+    if (afx && accB > 0.45 / (0.4 + FQ.q)) { accB = 0; const u = (Math.random() * 2 - 1) * ww, f = 2.5 + Math.random() * (2 + 2 * FQ.q);   // as bolhas estouram mais adiante, já fora da espuma
+      afx.ripple(ix + n[0] * u + FALL.t[0] * f, wl, iz + n[1] * u + FALL.t[1] * f, 0.25 + Math.random() * 0.35); } };
+  // ---------- onde a água bate no poço (a linha de impacto, que anda com a vazão): três coisas saem dali, em toda a largura do véu.
+  // 1) a coroa: água branca revolta que espirra para cima e para a frente e cai de volta, em três lâminas de profundidade;
+  // 2) a espuma: nasce densa na linha, ferve e é levada rio abaixo se abrindo em fiapos até sumir;
+  // 3) o borrifo: a neblina fina que a queda levanta, sobe dois ou três metros e o vento leva (com sol baixo, um arquinho de cor)
+  const IMP = { uImp: { value: new THREE.Vector4(lip[0], bot, lip[1], w) }, uTd2: { value: new THREE.Vector2(...FALL.t) }, uNd2: { value: new THREE.Vector2(...n) }, uQ2: { value: 1 } };
+  const strip = (rows, build) => { const pos = [], uv = [], idx = [], NU = 48; for (const [o, h, sd] of rows) { const b0 = pos.length / 3;
+      for (let j = 0; j <= 6; j++) for (let i = 0; i <= NU; i++) { pos.push(o, h, sd); uv.push(i / NU * 2 - 1, j / 6); }
+      for (let j = 0; j < 6; j++) for (let i = 0; i < NU; i++) { const a = b0 + j * (NU + 1) + i, b = a + NU + 1; idx.push(a, b, a + 1, a + 1, b, b + 1); } }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx); return g; };
+  const IMP_V = `uniform vec4 uImp;uniform vec2 uTd2,uNd2;uniform float uQ2,uTime;varying vec2 vUv;varying vec3 vInfo;varying vec3 vWp;
+    #include <fog_pars_vertex>
+    ${NOISE}
+    void main(){vUv=uv;vInfo=position;`;
+  const crownMat = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, side: THREE.DoubleSide, fog: true, uniforms: THREE.UniformsUtils.merge([THREE.UniformsLib.fog, {}]),
+    // position = (afastamento da linha, altura máxima, semente); uv.x de -1 a 1 na largura, uv.y de 0 (n'água) a 1 (topo)
+    vertexShader: IMP_V + `float ww=uImp.w,h=position.y*(0.55+0.55*min(uQ2,1.3)),y=uv.y;float x=uv.x*ww*1.04;
+      vec3 n3=vec3(uNd2.x,0.0,uNd2.y),t3=vec3(uTd2.x,0.0,uTd2.y);vec3 b=vec3(uImp.x,uImp.y-0.05,uImp.z)+n3*x+t3*position.x;
+      // a lâmina gira em torno da linha de impacto para ficar de frente para quem olha: de frente sobe, de cima deita rio abaixo
+      vec3 V=normalize(cameraPosition-b);vec3 hd=normalize(cross(n3,V));if(hd.y<0.0)hd=-hd;hd=normalize(hd+t3*0.35*y);
+      vec3 p=b+hd*y*h*(0.75+0.5*vnoise(vec2(x*0.9+position.z*7.0,uTime*0.9)));vec4 w=vec4(p,1.0);vWp=w.xyz;vec4 mvPosition=viewMatrix*w;gl_Position=projectionMatrix*mvPosition;
+      #include <fog_vertex>
+    }`,
+    fragmentShader: `uniform float uQ2;uniform vec4 uImp;uniform vec2 uTd2;varying vec2 vUv;varying vec3 vInfo;varying vec3 vWp;
+      ${HEAD}
+      #include <fog_pars_fragment>
+      void main(){float y=vUv.y,x=vUv.x*uImp.w;float sd=vInfo.z*13.0;
+        // bolhas e jorros que sobem: o ruído corre para cima e espicha no alto
+        float n=fbm(vec2(x*1.5+sd,y*1.6-uTime*(2.4+0.8*sd*0.1)))*0.65+vnoise(vec2(x*5.0-sd,y*3.5-uTime*4.0))*0.35;
+        float jet=smoothstep(0.55,0.95,vnoise(vec2(x*0.7+sd*3.0,floor(uTime*1.3+sd))))*0.35;
+        float a=smoothstep(0.22+0.62*y-jet*y,0.52+0.55*y-jet*y,n)*(1.0-smoothstep(0.5,1.0,y));
+        a*=smoothstep(0.0,0.22,y-0.32*vnoise(vec2(x*1.9+sd*5.0,uTime*1.2+sd)));   /* o pé da lâmina se mistura na espuma: sem linha reta na água */
+        a*=1.0-smoothstep(0.85,1.0,abs(vUv.x));a*=0.6+0.4*min(uQ2,1.2);a=min(1.0,a*1.25);
+        if(a<0.01)discard;
+        vec3 c=mix(vec3(0.80,0.90,0.93),vec3(0.98,0.99,1.0),smoothstep(0.4,0.9,n))*(0.2+0.8*uDay);
+        gl_FragColor=vec4(c,a*0.92);
+        #include <colorspace_fragment>
+        #include <fog_fragment>
+      }` });
+  Object.assign(crownMat.uniforms, U, IMP);
+  const crown = new THREE.Mesh(strip([[-0.2, 0.9, 0.31], [0.05, 1.35, 0.11], [0.25, 0.4, 0.71], [0.45, 0.9, 0.53], [0.9, 0.5, 0.87], [1.3, 0.3, 0.17]]), crownMat); crown.frustumCulled = false; crown.renderOrder = 5; scene.add(crown);
+  // a espuma n'água: uma faixa que começa logo atrás da linha (debaixo do véu) e vai rio abaixo; a textura é levada pela corrente
+  // (duas fases que se revezam, como na água do rio) e se rasga em fiapos conforme a espuma afina
+  const FL = 7, foamG = (() => { const pos = [], uv = [], idx = [], NU = 40, NV = 24; for (let j = 0; j <= NV; j++) for (let i = 0; i <= NU; i++) { pos.push(0, 0, 0); uv.push(i / NU * 2 - 1, -0.08 + j / NV * 1.08); }
+    for (let j = 0; j < NV; j++) for (let i = 0; i < NU; i++) { const a = j * (NU + 1) + i, b = a + NU + 1; idx.push(a, b, a + 1, a + 1, b, b + 1); }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx); return g; })();
+  const foamMat = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, fog: true, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2, uniforms: THREE.UniformsUtils.merge([THREE.UniformsLib.fog, {}]),
+    vertexShader: IMP_V + `float ww=uImp.w,v=uv.y*${FL.toFixed(1)}*(0.6+0.4*min(uQ2,1.3));float x=uv.x*(ww+0.5+v*0.35);
+      vec3 p=vec3(uImp.x,uImp.y+0.025,uImp.z)+vec3(uNd2.x,0.0,uNd2.y)*x+vec3(uTd2.x,0.0,uTd2.y)*v;vInfo=vec3(x,v,0.0);vec4 w=vec4(p,1.0);vWp=w.xyz;vec4 mvPosition=viewMatrix*w;gl_Position=projectionMatrix*mvPosition;
+      #include <fog_vertex>
+    }`,
+    fragmentShader: `uniform float uQ2;uniform vec4 uImp;varying vec2 vUv;varying vec3 vInfo;varying vec3 vWp;
+      ${HEAD}
+      #include <fog_pars_fragment>
+      float fo(vec2 q){return fbm(q*vec2(1.3,0.45))*0.6+vnoise(q*vec2(4.6,1.6))*0.25+vnoise(q*11.0)*0.15;}   /* esticada no sentido da corrente: fiapos, não nuvens */
+      void main(){float x=vInfo.x,v=vInfo.y,ww=uImp.w,L=${FL.toFixed(1)}*(0.6+0.4*min(uQ2,1.3));
+        // a corrente sai rápida da linha e vai perdendo força; a espuma se espalha para os lados
+        float sp=1.6+1.2*min(uQ2,1.3),ph=uTime*0.35,f1=fract(ph),f2=fract(ph+0.5),wB=abs(f1*2.0-1.0);
+        vec2 q=vec2(x*(1.0-0.04*v),v);vec2 qa=q-vec2(0.0,f1*sp*2.86),qb=q-vec2(0.0,f2*sp*2.86)+vec2(3.7,1.9);
+        float t=mix(fo(qa),fo(qb),wB);
+        float near=exp(-max(v,0.0)/(0.8+0.6*min(uQ2,1.3))),dens=0.25+0.95*near;   // grossa na linha, rala adiante
+        float th=mix(0.62,0.30,dens)+0.1*smoothstep(0.6,1.0,v/L);
+        float a=smoothstep(th,th+0.16,t)*(1.0-smoothstep(L*0.55,L,v))*smoothstep(-0.55,0.0,v);
+        float lv=v-0.1-0.45*(vnoise(vec2(x*0.9,uTime*0.7))-0.5);a=max(a,smoothstep(0.45,0.0,abs(lv))*smoothstep(0.2,0.5,t+0.2));   /* a linha em si: branca, cheia de ar, ondulando */
+        a*=1.0-smoothstep(ww*0.85,ww+0.6+v*0.35,abs(x));a*=0.5+0.5*min(uQ2,1.2);if(a<0.01)discard;
+        vec3 c=mix(vec3(0.70,0.82,0.85),vec3(0.97,0.99,1.0),smoothstep(0.35,0.8,t)*0.7+near*0.3)*(0.18+0.82*uDay);
+        gl_FragColor=vec4(c,a*0.9);
+        #include <colorspace_fragment>
+        #include <fog_fragment>
+      }` });
+  Object.assign(foamMat.uniforms, U, IMP);
+  const foamM = new THREE.Mesh(foamG, foamMat); foamM.frustumCulled = false; foamM.renderOrder = 4; scene.add(foamM);
+  const NP = mobile ? 160 : 320, P = [], S = []; for (let i = 0; i < NP; i++) { P.push(0, 0, 0); S.push(Math.random()); }
   const pg = new THREE.BufferGeometry(); pg.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); pg.setAttribute('seed', new THREE.Float32BufferAttribute(S, 1));
   const pm = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, uniforms: { uPx: { value: 600 } },
-    vertexShader: `attribute float seed;uniform float uTime,uPx,uWindBase,uDay;uniform vec2 uWindDir;varying float vA;void main(){float k=fract(uTime*0.22+seed*7.0);float a=seed*62.8;
-      vec3 p=position+vec3(cos(a)*(0.6+k*2.8),k*4.5,sin(a)*(0.6+k*2.8));p.xz+=uWindDir*uWindBase*k*1.4;vec4 mv=viewMatrix*vec4(p,1.0);gl_Position=projectionMatrix*mv;
-      gl_PointSize=min(160.0,(0.4+k*1.6)*uPx/max(1.0,-mv.z));vA=(1.0-k)*smoothstep(0.0,0.1,k)*0.35*smoothstep(2.5,7.0,-mv.z);}   /* perto da lente o borrifo some (não vira um borrão) */`,
-    fragmentShader: `uniform float uDay;varying float vA;void main(){float d=length(gl_PointCoord-0.5);if(d>0.5)discard;gl_FragColor=vec4(vec3(0.94,0.97,1.0)*(0.25+0.75*uDay),vA*(1.0-d*2.0));
+    vertexShader: `attribute float seed;uniform float uTime,uPx,uWindBase,uDay,uQ2;uniform vec2 uWindDir,uTd2,uNd2;uniform vec4 uImp;varying float vA;void main(){float k=fract(uTime*0.2+seed*7.0);
+      float u=fract(seed*37.3)*2.0-1.0,up=k*(2.0+1.4*min(uQ2,1.3)),fw=0.3+k*(1.4+1.2*uQ2)+fract(seed*91.7)*0.6;
+      vec3 p=vec3(uImp.x,uImp.y,uImp.z)+vec3(uNd2.x,0.0,uNd2.y)*u*(uImp.w*(1.0+0.3*k))+vec3(uTd2.x,0.0,uTd2.y)*fw;p.y+=0.1+up;p.xz+=uWindDir*uWindBase*k*1.2;
+      vec4 mv=viewMatrix*vec4(p,1.0);gl_Position=projectionMatrix*mv;
+      gl_PointSize=min(90.0,(0.5+k*1.5)*uPx/max(1.0,-mv.z));vA=(1.0-k)*smoothstep(0.0,0.12,k)*0.2*(0.35+0.65*min(uQ2,1.2))*smoothstep(4.0,10.0,-mv.z);}   /* perto da lente o borrifo some (não vira um borrão) */`,
+    fragmentShader: `uniform float uDay;varying float vA;void main(){float d=length(gl_PointCoord-0.5);if(d>0.5)discard;gl_FragColor=vec4(vec3(0.94,0.97,1.0)*(0.25+0.75*uDay),vA*pow(1.0-d*2.0,1.5));
 #include <colorspace_fragment>
 }` });
-  Object.assign(pm.uniforms, U, { uPx: pm.uniforms.uPx }); const pts = new THREE.Points(pg, pm); pts.frustumCulled = false; pts.renderOrder = 6; scene.add(pts); window.__mistPx = pm.uniforms.uPx; }
+  Object.assign(pm.uniforms, U, IMP, { uPx: pm.uniforms.uPx }); const pts = new THREE.Points(pg, pm); pts.frustumCulled = false; pts.renderOrder = 6; scene.add(pts); window.__mistPx = pm.uniforms.uPx;
+  window.__imp = IMP.uImp.value; window.__impFx = (ix, wl, iz, ww, q) => { IMP.uImp.value.set(ix, wl, iz, ww); IMP.uQ2.value = q; crown.visible = foamM.visible = pts.visible = q > 0.05; }; }
 // ---------- lagoa: touceiras de taboa na beira e folhas redondas de ninféia boiando, com flor branca
 { const tb = [], lp = [], fl = [];
   for (let k = 0; k < 900 && tb.length < (mobile ? 40 : 70); k++) { const a = rnd() * 6.283, r = LAKE.r * (0.7 + rnd() * 0.5), x = LAKE.c[0] + Math.cos(a) * r, z = LAKE.c[1] + Math.sin(a) * r, d = lakeDist(x, z); if (d > -1.6 && d < 0.4) tb.push([x, z]); }
