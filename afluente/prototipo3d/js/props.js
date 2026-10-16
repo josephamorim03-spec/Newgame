@@ -54,7 +54,7 @@ export function buildProps(scene, { mobile = false } = {}) {
     fragmentShader: 'uniform float uDay;varying vec2 vUv;void main(){vec2 d=(vUv-vec2(0.5,1.0))*vec2(2.0,1.0);float r=length(d);float a=(1.0-smoothstep(0.0,1.0,r))*pow(1.0-uDay,1.5);gl_FragColor=vec4(vec3(1.0,0.62,0.28)*a*0.5,1.0);}' });
   const haloTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d'), gr = g.createRadialGradient(32, 32, 0, 32, 32, 32);
     gr.addColorStop(0, 'rgba(255,220,150,1)'); gr.addColorStop(0.25, 'rgba(255,170,80,0.5)'); gr.addColorStop(1, 'rgba(255,140,60,0)'); g.fillStyle = gr; g.fillRect(0, 0, 64, 64); return new THREE.CanvasTexture(c); })();
-  const halos = [];
+  const halos = [], luzes = [];
   // o que ocupa o chão além das paredes (esteio de varanda, banco, poste, mesa): main.js põe na colisão
   const extraCol = LAYOUT.extraCol = LAYOUT.extraCol || [];
 
@@ -78,6 +78,11 @@ export function buildProps(scene, { mobile = false } = {}) {
   function house(h, { H = 2.8, pitch = 0.42, ov = 0.55, chapel = false, floors = 1, venda = false, name = null } = {}) {
     const g = new THREE.Group(), w = h.w, d = h.d, rh = d / 2 * Math.tan(pitch), trim = col(h.trim), cream = col(0xf1ebde), wood = [], glassL = [], glassD = [], roof = [], walls = [], curt = [], spills = [];
     const ci = Math.floor(rnd() * 4), cols = [];   // cols: [x, z, w, d] locais (w = 0: círculo de raio d)
+    // a luz desta casa (janelas, cortina, lampião da porta e a luz no chão): acende ao escurecer e apaga quando todos de casa
+    // dormem (people.js diz h.luz.alvo = 1 ou 0); sem moradores conhecidos, apaga numa hora da noite própria de cada casa
+    const luz = { h, chapel, glow: mat({ color: 0x2b2622, emissive: 0xffb45a, emissiveIntensity: 0 }), curt: mat({ map: chita[ci], emissiveMap: chita[ci], emissive: 0xffc890, emissiveIntensity: 0, side: THREE.DoubleSide }),
+      spill: new THREE.ShaderMaterial({ transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, uniforms: { uDay: U.uDay, uLuz: { value: 1 } }, vertexShader: spillMat.vertexShader, fragmentShader: spillMat.fragmentShader.replace('uniform float uDay;', 'uniform float uDay,uLuz;').replace('*0.5,1.0)', '*0.5*uLuz,1.0)') }),
+      halo: null, v: 1, alvo: null, apaga: 21.6 + rnd() * 1.6 }; luzes.push(luz); h.luz = luz;
     walls.push(box(w, H + 0.8, d, 0, (H + 0.8) / 2 - 0.8, 0, 5));
     const gab = new THREE.BufferGeometry(), gp = [], gu = [];
     for (const sx of [1, -1]) { const x = sx * w / 2, tri = [[x, H, -d / 2], [x, H, d / 2], [x, H + rh, 0]]; if (sx > 0) tri.reverse();   /* face para fora (do avesso o oitão sumia e mostrava o forro) */ for (const v of tri) { gp.push(...v); gu.push(v[2] / 5, v[1] / 5); } }
@@ -115,7 +120,7 @@ export function buildProps(scene, { mobile = false } = {}) {
       spills.push([x, ry, wx, wz, 2.0]);
       if (!chapel) { const lp = new THREE.Vector3(x + dw / 2 + 0.35, dh + 0.15, 0.22).applyAxisAngle(new THREE.Vector3(0, 1, 0), ry).add(new THREE.Vector3(wx, 0, wz));   // lampião
         P(box(0.04, 0.04, 0.25, dw / 2 + 0.35, dh + 0.35, 0.12, 1), col(0x2a2622)); glassL.push(place(box(0.13, 0.2, 0.13, dw / 2 + 0.35, dh + 0.15, 0.22), x, 0, ry, wx, wz));
-        halos.push({ g, p: lp }); }
+        halos.push({ g, p: lp, luz }); }
     }
     if (!chapel) { if (venda) { doorAt(-w * 0.26, 0, 0, d / 2, 1.3, 2.35); doorAt(w * 0.1, 0, 0, d / 2, 1.3, 2.35); windowAt(w * 0.36, 1.55, 0, 0, d / 2); }
       else { doorAt(-w * 0.22, 0, 0, d / 2); windowAt(w * 0.12, 1.55, 0, 0, d / 2); windowAt(w * 0.34, 1.55, 0, 0, d / 2); }
@@ -152,11 +157,11 @@ export function buildProps(scene, { mobile = false } = {}) {
     { const hs = k => { const v = Math.sin(h.p[0] * 12.9898 + h.p[1] * 78.233 + k * 37.719) * 43758.5453; return v - Math.floor(v); }, ou = hs(1), ov = hs(2);
       for (const g of walls) { const uv = g.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) + ou, uv.getY(i) + ov); } }
     const wm = wallMat(h.wall, h.band, H, w, d), add = (gs, m, k) => { if (!gs.length) return; const geo = merge(gs, k); geo.computeVertexNormals(); const me = new THREE.Mesh(geo, m); me.castShadow = me.receiveShadow = true; g.add(me); };
-    add(walls, wm, ['position', 'uv']); add(roof, roofMat, ['position', 'uv', 'color']); add(wood, woodMat, ['position', 'uv', 'color']); add(glassL, glowMat, ['position']); add(glassD, glassDark, ['position']);
-    add(curt, curtainMats[ci], ['position', 'uv']);
+    add(walls, wm, ['position', 'uv']); add(roof, roofMat, ['position', 'uv', 'color']); add(wood, woodMat, ['position', 'uv', 'color']); add(glassL, luz.glow, ['position']); add(glassD, glassDark, ['position']);
+    add(curt, luz.curt, ['position', 'uv']);
     g.position.set(h.p[0], groundY(h.p, w, d, h.rot), h.p[1]); g.rotation.y = h.rot; scene.add(g); g.updateMatrixWorld(true);
     for (const [x, ry, wx, wz, s] of spills) { const c = new THREE.Vector3(x, 0, 0.15 + s * 0.45).applyAxisAngle(new THREE.Vector3(0, 1, 0), ry).add(new THREE.Vector3(wx, 0, wz));
-      const pl = new THREE.Mesh(new THREE.PlaneGeometry(s, s * 0.9).rotateX(-Math.PI / 2).rotateY(ry), spillMat); pl.position.set(c.x, groundAt(g, c.x, c.z) + 0.04, c.z); pl.renderOrder = 4; pl.userData.noRegua = true; g.add(pl); }
+      const pl = new THREE.Mesh(new THREE.PlaneGeometry(s, s * 0.9).rotateX(-Math.PI / 2).rotateY(ry), luz.spill); pl.position.set(c.x, groundAt(g, c.x, c.z) + 0.04, c.z); pl.renderOrder = 4; pl.userData.noRegua = true; g.add(pl); }
     for (const [lx, lz, cw, cd] of cols) { const v = g.localToWorld(new THREE.Vector3(lx, 0, lz)); extraCol.push(cw ? { t: 'b', x: v.x, z: v.z, w: cw, d: cd, rot: h.rot, tag: 'casa' } : { t: 'c', x: v.x, z: v.z, r: cd, tag: 'esteio' }); }
     tag(g, name || (chapel ? 'capela (com a torre)' : 'casa'));
     return g;
@@ -229,8 +234,10 @@ export function buildProps(scene, { mobile = false } = {}) {
   const C = LAYOUT.chapel; house({ p: C.p, rot: C.rot, w: 8.5, d: 5.4, wall: 0xf6f2ea, band: 0x2f5fa8, trim: 0x2f5fa8, roof: 0xb0553a }, { H: 4.2, pitch: 0.5, chapel: true });
   // halo dos lampiões (aceso ao entardecer)
   const haloMat = new THREE.SpriteMaterial({ map: haloTex, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, opacity: 0 });
-  for (const hl of halos) { const sp = new THREE.Sprite(haloMat); sp.scale.setScalar(1.3); sp.position.copy(hl.p); hl.g.add(sp); }
-  updaters.push(() => { const n = Math.pow(1 - U.uDay.value, 1.5); haloMat.opacity = n * 0.9; for (const m of curtainMats) m.emissiveIntensity = n * 0.55; });
+  for (const hl of halos) { if (hl.luz && !hl.luz.halo) hl.luz.halo = haloMat.clone(); const sp = new THREE.Sprite(hl.luz ? hl.luz.halo : haloMat); sp.scale.setScalar(1.3); sp.position.copy(hl.p); hl.g.add(sp); }
+  updaters.push(dt => { const n = Math.pow(1 - U.uDay.value, 1.5), hr = window.__hour ?? 15; haloMat.opacity = n * 0.9; for (const m of curtainMats) m.emissiveIntensity = n * 0.55;
+    for (const L of luzes) { const auto = L.chapel ? (hr > 5 && hr < 21.2 ? 1 : 0.15) : (hr > 4.8 && hr < L.apaga ? 1 : 0), a = L.alvo ?? auto; L.v += (a - L.v) * Math.min(1, (dt || 0.016) * 1.2);
+      L.glow.emissiveIntensity = (n * 1.8 + U.uRain.value * 0.2 * (1 - U.uDay.value)) * L.v; L.curt.emissiveIntensity = n * 0.55 * L.v; L.spill.uniforms.uLuz.value = L.v; if (L.halo) L.halo.opacity = n * 0.9 * L.v; } });
 
   // ---------- poço: anel de pedra, água escura lá no fundo, dois esteios, sarilho e telhadinho
   { const W = LAYOUT.well, g = new THREE.Group();
