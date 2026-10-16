@@ -900,4 +900,4 @@ function frame() {
 requestAnimationFrame(frame);
 /* testes: avança a vida do vale (gente, bichos, porteiras) s segundos sem desenhar, para conferir rotinas longas num computador lento */
 window.__ff = s => { const ctx = { pxPerUnit: 600, hour: ST.hour, people: gente.people }; window.__hour = ST.hour; for (let t = 0; t < s; t += 0.05) { U.uTime.value += 0.05; props.update(0.05, ctx); fauna.update(0.05, ctx); gente.update(0.05); } };
-window.__cam = camera; window.__heightAt = heightAt; window.__tiles = TILES; window.__fall = FALL; window.__previa = { gente, skyfx, gameCam,  ST, U, renderer, scene, camera, controls, fauna, clouds, board, fx, col: colisao, L: LAYOUT, heightAt };
+window.__cam = camera; window.__heightAt = heightAt; window.__tiles = TILES; window.__fall = FALL; window.__previa = { THREE, gente, skyfx, gameCam,  ST, U, renderer, scene, camera, controls, fauna, clouds, board, fx, col: colisao, L: LAYOUT, heightAt };

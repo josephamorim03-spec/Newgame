@@ -20,7 +20,9 @@ import { mat, paint, merge, col } from './props.js';
 import { tag } from './regua.js';
 import { LAYOUT, TILES, heightAt, waterDist, waterLevelAt, inHex, SPRING, POOL_R, blocked, LAKE, lakeDist } from './world.js';
 import { chitaTexture, xadrezTexture, tramaTexture } from './textures.js';
-import { buildBody, Cloth } from './body.js';
+import { buildBody } from './body.js';
+import { Saia, Pano, Varal } from './pano.js';
+import { perfil, criarRig, passada, comprimentoPasso } from './anatomia.js';
 
 const rnd = (() => { let a = 31337; return () => { a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; })();
 const pick = a => a[Math.floor(rnd() * a.length)];
@@ -57,10 +59,12 @@ export function buildPeople(scene, { mobile = false, fx = null, afx = null, col:
       shirt: s.shirt ?? (s.sex === 'm' && rnd() < 0.3 ? 'camiseta' : 'camisa'), eyes: pick([0x3a2214, 0x4a2a14, 0x2a1a10, 0x5a3a1a, 0x3a4a2a]), ...s, top: { color: s.top.color, tex: texOf(s.top.mat) }, bottom: { color: s.bottom.color, tex: texOf(s.bottom.mat) },
       pants: s.sex === 'c' && !s.dress ? 'bermuda' : 'longa', beard: s.sex === 'm' ? (s.beard ?? pick(['bigode', null, null, 'barba', 'bigode'])) : null,
       lencoColor: pick([0xc83a2a, 0x2f6aa0, 0xe0a020, 0xf4efe6, 0x7a3a8a]) };
+    spec.perfil = perfil(spec, rnd);   // o corpo de cada um (anatomia.js): peso, gordura, músculo, ossatura, postura
     const body = buildBody(spec); g.add(body.mesh);
-    const warmGeo = s.sex === 'c' ? null : buildBody({ ...spec, warm: true, warmColor: s.sex === 'f' ? pick([0x8a4a3a, 0x6a5a8a, 0x4a6a5a, 0xa8743a]) : pick([0x5a4a3a, 0x3a4a5a, 0x6a6458]) }).mesh.geometry;
+    // o corpo de agasalho (casaco ou xale) é montado depois, um por quadro, sem travar a abertura do vale
+    const warmSpec = s.sex === 'c' ? null : { ...spec, warm: true, warmColor: s.sex === 'f' ? pick([0x8a4a3a, 0x6a5a8a, 0x4a6a5a, 0xa8743a]) : pick([0x5a4a3a, 0x3a4a5a, 0x6a6458]) }, warmGeo = null;
     const coolGeo = body.mesh.geometry;
-    const { hips: pelvis, spine, head } = body, arms = body.arms.map(a => ({ sh: a.sh, el: a.el, ha: a.ha })), legs = body.legs.map(l => ({ hp: l.hp, kn: l.kn, ft: l.ft }));
+    const { hips: pelvis, spine, head } = body, arms = body.arms, legs = body.legs, rig = criarRig(body, spec.perfil);
     const lisoT = (geo, c) => { const m = new THREE.Mesh(geo, MAT.liso); paint(geo, col(c)); m.castShadow = true; m.userData.noRegua = true; return m; };
     // ferramenta na mão da ferramenta (arms[1]) e o que vai na outra mão ou no ombro
     // ferramenta: as de cabo comprido (enxada, machado, vassoura, pá do forno) vão nas duas mãos — o cabo sai da mão de
@@ -95,38 +99,45 @@ export function buildPeople(scene, { mobile = false, fx = null, afx = null, col:
       const m = lisoT(pg.translate(0, -0.17, 0.02), c); m.material = MAT.pano || (MAT.pano = mat({ vertexColors: true, side: THREE.DoubleSide }, { rim: '2.2' })); tool.add(m); }
     const extra = new THREE.Group(); extra.visible = !!s.extra;
     if (s.extra === 'lousa') { arms[0].ha.add(extra); extra.position.set(0, -0.08, 0.06); extra.add(lisoT(new THREE.BoxGeometry(0.34, 0.025, 0.25), 0x8a6a4a), lisoT(new THREE.BoxGeometry(0.3, 0.03, 0.21), 0x2a3430)); extra.rotation.x = -0.2; }
-    if (s.extra === 'feixe') { spine.add(extra); extra.position.set(0.14, 0.43, -0.05); for (let i = 0; i < 9; i++) extra.add(lisoT(new THREE.CylinderGeometry(0.02 + (i % 3) * 0.006, 0.022, 1.3 + (i % 4) * 0.12, 5).rotateX(Math.PI / 2).translate(((i % 3) - 1) * 0.045, Math.floor(i / 3) * 0.04, (i % 2) * 0.1), 0x8a6a4a)); extra.rotation.y = 0.25; extra.visible = false; }
+    if (s.extra === 'feixe') { body.chest.add(extra); extra.position.set(0.14, 1.43 - body.chestY, -0.005); for (let i = 0; i < 9; i++) extra.add(lisoT(new THREE.CylinderGeometry(0.02 + (i % 3) * 0.006, 0.022, 1.3 + (i % 4) * 0.12, 5).rotateX(Math.PI / 2).translate(((i % 3) - 1) * 0.045, Math.floor(i / 3) * 0.04, (i % 2) * 0.1), 0x8a6a4a)); extra.rotation.y = 0.25; extra.visible = false; }
     tool.traverse(o => { o.userData.noRegua = true; }); extra.traverse(o => { o.userData.noRegua = true; });
-    let lata = null; if (s.tool === 'lata') { lata = new THREE.Group(); head.add(lata); lata.position.set(0, 0.235, 0);   // lata de querosene reaproveitada, com alça de arame, sobre a rodilha de pano
+    let lata = null; if (s.tool === 'lata') { lata = new THREE.Group(); head.add(lata); lata.position.set(0, body.topoCabeca + 0.002, 0.005);   // lata de querosene reaproveitada, com alça de arame, sobre a rodilha de pano
       lata.add(lisoT(new THREE.BoxGeometry(0.24, 0.34, 0.24).translate(0, 0.19, 0), 0xb8bcc0), lisoT(new THREE.TorusGeometry(0.075, 0.03, 6, 14).rotateX(Math.PI / 2).translate(0, 0.012, 0), 0xe8d8c0), lisoT(new THREE.TorusGeometry(0.1, 0.004, 4, 12, Math.PI).translate(0, 0.36, 0), 0x6a6e72), lisoT(new THREE.CircleGeometry(0.11, 12).rotateX(-Math.PI / 2).translate(0, 0.33, 0), 0x6aa8c0)); }
-    const cl = [];
-    if (s.skirt) { const len = s.sex === 'c' ? 0.36 : s.skirt <= 0.56 ? 0.5 : s.skirt <= 0.7 ? 0.62 : 0.82, bw = body.bw;
+    // saia e avental: pano simulado (pano.js) preso na cintura medida do corpo (a casca da roupa naquele anel)
+    const cl = [], md = body.medidas;
+    if (s.skirt && md.saia) { const len = s.sex === 'c' ? 0.36 : s.skirt <= 0.56 ? 0.5 : s.skirt <= 0.7 ? 0.62 : 0.82;
       const t = texOf(s.dress ? s.top.mat : s.bottom.mat), tex = t ? Object.assign(t.clone(), { needsUpdate: true }) : null; if (tex) { tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.repeat.set(1, 1); }
-      cl.push(Cloth({ strips: mobile ? 16 : 22, rows: 8, len, r0x: 0.14 * bw, r0z: 0.105 * bw, flare: 0.13 + len * 0.08, tex, color: tex ? 0xffffff : (s.dress ? s.top.color : s.bottom.color) })); }
-    if (s.apron) cl.push(Cloth({ strips: 8, rows: 6, len: (s.skirt ? 0.5 : 0.55), r0x: 0.155 * body.bw, r0z: 0.125 * body.bw, flare: 0.08, arc: [Math.PI / 2 - 0.8, Math.PI / 2 + 0.8], color: 0xf2ede2, margin: 0.055, drop: -0.02, minK: 0.92 }));
+      cl.push(Saia({ cint: md.saia, len, flare: 0.1 + len * 0.1, strips: mobile ? 16 : 24, rows: mobile ? 8 : 10, tecido: 'chita', tex, color: tex ? 0xffffff : (s.dress ? s.top.color : s.bottom.color), folga: 0.006 })); }
+    if (s.apron) { const c = md.saia || { y: md.cintura.y, cz: md.cintura.cz, R: Array.from({ length: 32 }, (_, k) => { const a = k / 32 * Math.PI * 2; return Math.hypot(md.cintura.rx * Math.cos(a), (Math.sin(a) > 0 ? md.cintura.rzF : md.cintura.rzB) * Math.sin(a)); }) };
+      cl.push(Saia({ cint: c, len: s.skirt ? 0.5 : 0.55, flare: 0.05, arco: [Math.PI / 2 - 0.85, Math.PI / 2 + 0.85], strips: 8, rows: 7, tecido: 'algodao', color: 0xf2ede2, folga: md.saia ? 0.022 : 0.012, cair: 0.005 })); }
     for (const c of cl) { scene.add(c.mesh); clothes.push(c); }
     g.scale.setScalar(s.h / 1.70);
-    const P = { g, body: body.mesh, warmGeo, coolGeo, warm: false, pelvis, spine, head, arms, legs, tool, two, lids: body.lids, swing: body.swing, blinkT: 2 + rnd() * 4, extra, lata, s, cloth: cl, waistY: body.waistY, bw: body.bw, x: 0, z: 0, h: 0, ph: rnd() * 6, t: 0, st: 'post', sit: 0, pitch: 0 };
-    P.rest = () => { const saved = [pelvis.position.y, spine.rotation.x, g.rotation.x, ...arms.flatMap(a => [a.sh.rotation.x, a.el.rotation.x]), ...legs.flatMap(l => [l.hp.rotation.x, l.kn.rotation.x])];
-      pelvis.position.y = 0.95; spine.rotation.x = 0; g.rotation.x = 0; for (const a of arms) a.sh.rotation.x = a.el.rotation.x = 0; for (const l of legs) l.hp.rotation.x = l.kn.rotation.x = 0;
+    const P = { g, body: body.mesh, warmGeo, warmSpec, coolGeo, warm: false, pelvis, spine, head, arms, legs, tool, two, lids: body.lids, swing: body.swing, blinkT: 2 + rnd() * 4, extra, lata, s, cloth: cl, waistY: body.waistY, bw: body.bw, x: 0, z: 0, h: 0, ph: rnd() * 6, t: 0, st: 'post', sit: 0, pitch: 0,
+      rig, perfil: spec.perfil, corpo: body, med: body.medidas };
+    P.rest = () => { rig.restore(); const saved = [pelvis.position.y, spine.rotation.x, g.rotation.x, ...arms.flatMap(a => [a.sh.rotation.x, a.el.rotation.x]), ...legs.flatMap(l => [l.hp.rotation.x, l.kn.rotation.x])];
+      pelvis.position.y = rig.restY; spine.rotation.x = 0; g.rotation.x = 0; for (const a of arms) a.sh.rotation.x = a.el.rotation.x = 0; for (const l of legs) l.hp.rotation.x = l.kn.rotation.x = 0;
       return () => { let i = 0; pelvis.position.y = saved[i++]; spine.rotation.x = saved[i++]; g.rotation.x = saved[i++]; for (const a of arms) { a.sh.rotation.x = saved[i++]; a.el.rotation.x = saved[i++]; } for (const l of legs) { l.hp.rotation.x = saved[i++]; l.kn.rotation.x = saved[i++]; } }; };
     g.userData.reguaRest = P.rest; tag(g, s.sex === 'c' ? 'criança' : s.sex === 'f' ? 'mulher' : 'homem');
     scene.add(g); return P;
   }
-  // o pano anda junto: presa na cintura, bate nas pernas e no quadril, cai no chão, o vento sopra
-  const _a = new THREE.Vector3(), _b = new THREE.Vector3(), _c = new THREE.Vector3(), _d = new THREE.Vector3(), _e = new THREE.Vector3(), _f = new THREE.Vector3(), _h1 = new THREE.Vector3(), _h2 = new THREE.Vector3();
+  // o pano anda junto: preso na cintura, bate nas coxas, nas canelas e no quadril (cápsulas do tamanho do corpo de cada um),
+  // cai no chão, o vento sopra; e o pano que a lavadeira tem na mão
+  const _a = new THREE.Vector3(), _b = new THREE.Vector3(), _c = new THREE.Vector3(), _d = new THREE.Vector3(), _e = new THREE.Vector3(), _f = new THREE.Vector3(), _h1 = new THREE.Vector3(), _h2 = new THREE.Vector3(), _vt = new THREE.Vector3();
+  const ventoAgora = (x, z, k = 1) => { const wv = U.uWindBase.value * (1 + U.uWindIu.value * 0.6), wd = U.uWindDir.value, t = time * 1.7 + x * 0.3 + z * 0.2, raj = 1 + 0.45 * Math.sin(t) * Math.sin(t * 2.3 + 1.1);
+    return _vt.set(wd.x * wv * raj * k, 0.15 * Math.sin(t * 3.1) * wv * k, wd.y * wv * raj * k); };
   function stepCloth(p, dt) {
-    if (!p.cloth.length) return;
+    if (!p.cloth.length && !p.panoMao) return;
     const cam = window.__cam, far = cam ? Math.hypot(cam.position.x - p.x, cam.position.y, cam.position.z - p.z) : 0, lim = [70, 45, 28][window.__Q ? window.__Q() : 0];
-    if (far > lim) { p.clothSkip = (p.clothSkip || 0) + dt; if (p.clothSkip < 0.5) return; dt = Math.min(p.clothSkip, 1 / 30); p.clothSkip = 0; } const vis = p.g.visible; for (const c of p.cloth) c.mesh.visible = vis; if (!vis) { for (const c of p.cloth) c.reset(); return; }
-    p.g.updateMatrixWorld(true); const sc = p.g.scale.x, bw = p.bw;
+    if (far > lim) { p.clothSkip = (p.clothSkip || 0) + dt; if (p.clothSkip < 0.5) return; dt = Math.min(p.clothSkip, 1 / 30); p.clothSkip = 0; } const vis = p.g.visible; for (const c of p.cloth) c.mesh.visible = vis; if (p.panoMao) p.panoMao.mesh.visible = vis;
+    if (!vis) { for (const c of p.cloth) c.reset(); return; }
+    p.g.updateMatrixWorld(true); const sc = p.g.scale.x, md = p.med;
     p.legs[0].hp.getWorldPosition(_a); p.legs[0].kn.getWorldPosition(_b); p.legs[0].ft.getWorldPosition(_c); p.legs[1].hp.getWorldPosition(_d); p.legs[1].kn.getWorldPosition(_e); p.legs[1].ft.getWorldPosition(_f);
-    _h1.copy(_a).lerp(_d, -0.1); _h2.copy(_d).lerp(_a, -0.1); _h1.y += 0.03 * sc; _h2.y += 0.03 * sc;
-    const caps = [[_a, _b, 0.09 * bw * sc], [_b, _c, 0.062 * sc], [_d, _e, 0.09 * bw * sc], [_e, _f, 0.062 * sc], [_h1, _h2, 0.125 * bw * sc]];
-    const wv = U.uWindBase.value * (1 + U.uWindIu.value * 0.6), wd = U.uWindDir.value, wind = { x: wd.x * wv * wv * 0.028, z: wd.y * wv * wv * 0.028 };   // arrasto do vento no pano de algodão
-    for (const c of p.cloth) c.step(Math.min(dt, 1 / 30), p.pelvis.matrixWorld, p.waistY, caps, heightAt, sc, wind);
+    _h1.copy(_a).lerp(_d, -0.15); _h2.copy(_d).lerp(_a, -0.15); _h1.y += 0.03 * sc; _h2.y += 0.03 * sc;
+    const cap = [[_a, _b, md.coxa * sc], [_b, _c, md.canela * sc], [_d, _e, md.coxa * sc], [_e, _f, md.canela * sc], [_h1, _h2, md.quadril.rx * 0.72 * sc]];
+    const env = { cap, chao: heightAt, vento: ventoAgora(p.x, p.z, 1), it: 4 };
+    for (const c of p.cloth) c.passo(Math.min(dt, 1 / 30), p.pelvis.matrixWorld, env);
+    if (p.panoMao) maoPano(p, Math.min(dt, 1 / 30));
   }
-
   // ---------- ferramenta de cabo nas duas mãos: o cabo sai da palma de baixo e passa pela palma de cima; a lâmina vira para
   // o lado certo (a enxada para quem capina, o machado para a frente, a vassoura e a pá de lado). Andando, vai no ombro.
   const _e0 = new THREE.Vector3(), _e1 = new THREE.Vector3(), _g0 = new THREE.Vector3(), _g1 = new THREE.Vector3(), _ax = new THREE.Vector3(), _bx = new THREE.Vector3(), _cz = new THREE.Vector3(), _rf = new THREE.Vector3(), _M = new THREE.Matrix4();
@@ -134,11 +145,17 @@ export function buildPeople(scene, { mobile = false, fx = null, afx = null, col:
   // Só no trabalho (p.grip2) o cabo vai de uma mão à outra. Fora dele: andando, no ombro; agachado ou com as duas mãos
   // ocupadas (p.toolDown), deitada no chão ao lado; parado (conversando, olhando, descansando), em pé com a lâmina no
   // chão e a mão da ferramenta no alto do cabo, o resto do corpo livre para gesticular.
-  function alignTool(p) { const T = p.two; if (!T || !p.g.visible) return;
+  // antes do solucionador: o braço da ferramenta no ombro (andando) ou no alto do cabo (parado)
+  function modoFerr(p) { const T = p.two; if (!T) return null;
     const carry = p.moving && !p.running && p.job !== 'lab', mode = carry ? 'ombro' : p.grip2 ? 'maos' : p.toolDown ? 'chao' : 'pe';
     const a1 = p.arms[1];
     if (mode === 'ombro') { a1.sh.rotation.x = -2.25; a1.el.rotation.x = -2.1; a1.sh.rotation.z = -0.15; a1.sh.rotation.y = 0.35; }
     else if (mode === 'pe') { a1.sh.rotation.x = -0.28; a1.sh.rotation.z = 0.24; a1.sh.rotation.y = 0.25; a1.el.rotation.x = -1.0; }
+    return mode; }
+  // depois do solucionador: o cabo vai de uma palma à outra (ou ao ombro, ou ao chão) e as mãos fecham em volta dele
+  const _ew = new THREE.Vector3();
+  function alignTool(p, mode) { const T = p.two; if (!T || !p.g.visible || !mode) return;
+    const a1 = p.arms[1];
     p.g.updateMatrixWorld(true); palm(a1, _g0, _e0); palm(p.arms[0], _g1, _e1); p.g.worldToLocal(_g0); p.g.worldToLocal(_g1);
     if (mode === 'chao') {   // deitada na grama, do lado da mão da ferramenta, a lâmina de chapa
       _ax.set(0.12, 0, 1).normalize(); _rf.set(1, 0, 0); _bx.copy(_rf).addScaledVector(_ax, -_rf.dot(_ax)).normalize(); _cz.crossVectors(_bx, _ax);
@@ -147,14 +164,15 @@ export function buildPeople(scene, { mobile = false, fx = null, afx = null, col:
       _ax.set(0.06, -1, 0.1).normalize(); const tp = Math.max(0, T.len - _g0.y / -_ax.y);
       if (T.blade === 'tras') _rf.set(0, 0, 1); else if (T.blade === 'frente') _rf.set(0, 0, 1); else _rf.set(1, 0, 0);
       _bx.copy(_rf).addScaledVector(_ax, -_rf.dot(_ax)).normalize(); _cz.crossVectors(_bx, _ax);
-      _M.makeBasis(_bx, _ax, _cz); T.g.quaternion.setFromRotationMatrix(_M); T.g.position.copy(_g0).addScaledVector(_ax, -tp); return; }
+      _M.makeBasis(_bx, _ax, _cz); T.g.quaternion.setFromRotationMatrix(_M); T.g.position.copy(_g0).addScaledVector(_ax, -tp); _ew.copy(_ax).transformDirection(p.g.matrixWorld); p.rig.alinhaMao(1, _ew); return; }
     if (mode === 'ombro') _ax.set(-0.25, 0.45, -0.86).normalize();
     else { _ax.subVectors(_g1, _g0); const d = _ax.length(); p.arms[0].sh.getWorldPosition(_e0); a1.sh.getWorldPosition(_e1); p.g.worldToLocal(_e0); p.g.worldToLocal(_e1);
       const sm = _e0.add(_e1).multiplyScalar(0.5); _rf.copy(_g0).add(_g1).multiplyScalar(0.5).sub(sm).normalize();   // do meio dos ombros para as mãos
       if (d < 0.2) _ax.copy(_rf); else { _ax.divideScalar(d); if (d < 0.3) _ax.lerp(_rf, (0.3 - d) / 0.1).normalize(); } }   // mãos juntas (machado): o cabo segue os braços
     if (T.blade === 'tras') _rf.set(0, -0.3, -1); else if (T.blade === 'frente') _rf.set(0, 0.2, 1); else _rf.set(1, 0, 0);
     _bx.copy(_rf).addScaledVector(_ax, -_rf.dot(_ax)); if (_bx.lengthSq() < 1e-4) _bx.set(0, 1, 0).addScaledVector(_ax, -_ax.y); _bx.normalize(); _cz.crossVectors(_bx, _ax);
-    _M.makeBasis(_bx, _ax, _cz); T.g.quaternion.setFromRotationMatrix(_M); T.g.position.copy(_g0).addScaledVector(_ax, T.off); }
+    _M.makeBasis(_bx, _ax, _cz); T.g.quaternion.setFromRotationMatrix(_M); T.g.position.copy(_g0).addScaledVector(_ax, T.off);
+    _ew.copy(_ax).transformDirection(p.g.matrixWorld); p.rig.alinhaMao(1, _ew); if (mode === 'maos') p.rig.alinhaMao(0, _ew); }
   // piscar (cada um no seu tempo) e o rabo de cavalo/trança que pende para baixo e balança com o passo
   const _q = new THREE.Quaternion(), _dn = new THREE.Vector3(), DOWN = new THREE.Vector3(0, -1, 0);
   function face(p, dt) { if (p.lids) { p.blinkT -= dt; if (p.blinkT < 0) { p.blinkT = 2.2 + rnd() * 4.5; p.blinkS = 0.15; }
@@ -209,6 +227,15 @@ export function buildPeople(scene, { mobile = false, fx = null, afx = null, col:
     const sab = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.03, 0.05), mat({ color: 0xe8d890 })); sab.position.set(0.28, 0.16, 0); sab.rotation.y = 0.4; g.add(sab);
     const rx = Math.cos(lavFace), rz = -Math.sin(lavFace), bx = lav[0] + rx * 0.75 - Math.sin(lavFace) * 0.15, bz = lav[1] + rz * 0.75 - Math.cos(lavFace) * 0.15;
     g.position.set(bx, heightAt(bx, bz) - 0.01, bz); scene.add(g); tag(g, 'bacia de alumínio'); L.bacia = [bx, bz]; }
+  // ---------- o varal: corda que cede e as peças que a lavadeira estende (pano.js), cada uma com seu pano e sua forma
+  if (L.varal && L.varal.ends) { const V0 = L.varal, [e0, e1] = V0.ends, A = new THREE.Vector3(e0[0], V0.y0, e0[1]), B = new THREE.Vector3(e1[0], V0.y0, e1[1]);
+    const tx = m => { const t = m.map.clone(); t.needsUpdate = true; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(1, 1); return t; };
+    const pecas = [{ forma: 'camisa', tex: tx(MAT.xadrez[1]) }, { forma: 'calca', tex: tx(MAT.trama), cor: 0x3a5a8a }, { forma: 'lencol', tex: tx(MAT.trama), cor: 0xf4f0e8 },
+      { forma: 'vestido', tex: tx(MAT.chita[0]) }, { forma: 'toalha', tex: tx(MAT.trama), cor: 0xe0a020 }, { forma: 'camisa', tex: tx(MAT.trama), cor: 0xf0ebe0 }, { forma: 'pano', tex: tx(MAT.chita[1]) }];
+    const varal = Varal({ scene, a: A, b: B, pecas, fx: fx || null }), mid = A.clone().lerp(B, 0.5);
+    V0.items = varal.items; V0.at = varal.at; V0.n = 0;
+    updaters.push(dt => { const cam = window.__cam, d = cam ? cam.position.distanceTo(mid) : 0;
+      varal.update({ dt, vento: ventoAgora(mid.x, mid.z, 1).clone(), perto: d < 60, sol: U.uDay.value * (1 - 0.6 * U.uCloudCov.value), chuva: U.uRain.value, ventoV: U.uWindBase.value, chao: heightAt }); }); }
   // poço: a moça fica do lado da manivela; lição: banquinho da mãe e a esteira das crianças; toco do pai; mata do lenhador
   const W = L.well, wellAt = (lx, lz) => { const v = W.rig ? W.rig.g.localToWorld(new THREE.Vector3(lx, 0, lz)) : new THREE.Vector3(W.p[0] + lx, 0, W.p[1] + lz); return [v.x, v.z]; };
   const Li = L.licao, fw = [Math.sin(Li.rot), Math.cos(Li.rot)], sd = [Math.cos(Li.rot), -Math.sin(Li.rot)];
@@ -274,11 +301,10 @@ export function buildPeople(scene, { mobile = false, fx = null, afx = null, col:
   const set = (p, o) => { const k = o.k ?? 1, lerp = (obj, key, v) => { obj[key] += (v - obj[key]) * k; };
     lerp(p.pelvis.position, 'y', o.py ?? 0.95); lerp(p.spine.rotation, 'x', o.sp ?? 0); lerp(p.spine.rotation, 'y', o.sy ?? 0); lerp(p.head.rotation, 'x', o.hx ?? 0); lerp(p.head.rotation, 'y', o.hy ?? 0); lerp(p, 'pitch', o.pitch ?? 0);
     p.arms.forEach((a, i) => { lerp(a.sh.rotation, 'x', (o.sh || [0, 0])[i]); lerp(a.el.rotation, 'x', (o.el || [-0.32, -0.32])[i]); lerp(a.sh.rotation, 'z', (o.shz || [0.1, -0.1])[i]); lerp(a.sh.rotation, 'y', (o.shy || [-0.15, 0.15])[i]); });
-    p.legs.forEach((l, i) => { lerp(l.hp.rotation, 'x', (o.hp || [0, 0])[i]); lerp(l.kn.rotation, 'x', (o.kn || [0, 0])[i]); lerp(l.ft.rotation, 'x', (o.ft || [0, 0])[i]); });
-    lerp(p.pelvis.rotation, 'y', o.pry ?? 0); };
-  const walkPose = (p, sp, run) => { const a = Math.sin(p.ph), b = Math.sin(p.ph + Math.PI), amp = (run ? 0.75 : 0.45) * (p.s.old ? 0.75 : 1);
-    return { py: 0.95 - Math.abs(Math.cos(p.ph)) * (run ? 0.05 : 0.025), sp: (run ? 0.15 : 0.03) + (p.s.old ? 0.14 : 0), pry: a * (run ? 0.05 : 0.08), sy: -a * 0.1, ft: [Math.max(-0.3, b * amp * 0.55), Math.max(-0.3, a * amp * 0.55)], sh: [a * amp * 0.8 + (run ? -0.3 : 0), b * amp * 0.8 + (run ? -0.3 : 0)], el: [run ? -1.2 : -0.25, run ? -1.2 : -0.25],
-      hp: [b * amp, a * amp], kn: [Math.max(0, Math.sin(p.ph + 1.6)) * amp * 1.3, Math.max(0, Math.sin(p.ph + Math.PI + 1.6)) * amp * 1.3] }; };
+    p.legs.forEach((l, i) => { lerp(l.hp.rotation, 'x', (o.hp || [0, 0])[i]); lerp(l.kn.rotation, 'x', (o.kn || [0, 0])[i]); lerp(l.ft.rotation, 'x', (o.ft || [0, 0])[i]); lerp(l.hp.rotation, 'z', (o.hpz || [0, 0])[i]); });
+    lerp(p.pelvis.rotation, 'y', o.pry ?? 0); if (o.prz != null) lerp(p.pelvis.rotation, 'z', o.prz); if (o.maos) p.maos = o.maos; };
+  // a passada (anatomia.js): marcha ou corrida com o pé de apoio parado no chão; o passo e a cadência vêm da altura e da velocidade
+  const walkPose = (p, sp, run) => passada(p.rig, p.perfil, p.ph, sp, run, p.g.scale.x).pose;
   // andar até um ponto (com passada, poeira quando corre); devolve true ao chegar
   const goTo = (p, x, z, dt, speed = 1.2, keepArms = false) => { const dx = x - p.x, dz = z - p.z, d = Math.hypot(dx, dz); if (d < 0.15) return true; p.moving = true; if (p.s.old && speed < 2) speed *= 0.75;
     const rad = p.s.sex === 'c' ? 0.2 : 0.26; let want = Math.atan2(dx, dz);
@@ -290,9 +316,9 @@ export function buildPeople(scene, { mobile = false, fx = null, afx = null, col:
       if (od < r2 && od > 1e-4) { p.x += ox / od * (r2 - od) * 0.6; p.z += oz / od * (r2 - od) * 0.6; } }
     const nd = Math.hypot(x - p.x, z - p.z); p.stk = d - nd < st * 0.25 ? (p.stk || 0) + dt : Math.max(0, (p.stk || 0) - dt);
     if (p.stk > 2.5 && nd < 2.5) { p.stk = 0; return true; }   /* não dá para chegar mais perto (tronco, parede): fica onde está */
-    p.ph += st / (speed > 2 ? 0.55 : 0.38) * Math.PI;
+    p.ph += st / comprimentoPasso(p.perfil, speed, speed > 2, p.g.scale.x) * Math.PI;   // um passo (π) a cada comprimento de passo andado: o pé de apoio não escorrega
     const w = walkPose(p, speed, speed > 2); if (keepArms) { delete w.sh; delete w.el; w.sh = [p.arms[0].sh.rotation.x, p.arms[1].sh.rotation.x]; w.el = [p.arms[0].el.rotation.x, p.arms[1].el.rotation.x]; }
-    set(p, { ...w, k: Math.min(1, dt * 12) });
+    p.walkT = (p.walkT || 0) + dt; set(p, { ...w, k: p.walkT > 0.3 ? 1 : Math.min(1, dt * 12 + p.walkT * 2) });
     if (speed > 2 && Math.floor(ph0 / Math.PI) !== Math.floor(p.ph / Math.PI) && rnd() < 0.5 && U.uRain.value < 0.2) emit('poeira', p.x, heightAt(p.x, p.z) + 0.05, p.z, 1, { spread: 0.4, speed: 0.6 });
     return false; };
   const faceTo = (p, h, dt, rate = 4) => { p.h += Math.max(-rate * dt, Math.min(rate * dt, angTo(p.h, h))); };
@@ -341,7 +367,7 @@ export function buildPeople(scene, { mobile = false, fx = null, afx = null, col:
   }
 
   // ---------- quadros-chave: lista de [instante 0..1, pose]; entre dois, mistura suave (ease in-out)
-  const DEF = { py: 0.95, sp: 0, sy: 0, hx: 0, hy: 0, pitch: 0, sh: [0, 0], el: [-0.32, -0.32], shz: [0.1, -0.1], shy: [-0.15, 0.15], hp: [0, 0], kn: [0, 0], ft: [0, 0], pry: 0 };
+  const DEF = { py: 0.95, sp: 0, sy: 0, hx: 0, hy: 0, pitch: 0, sh: [0, 0], el: [-0.32, -0.32], shz: [0.1, -0.1], shy: [-0.15, 0.15], hp: [0, 0], kn: [0, 0], ft: [0, 0], pry: 0, hpz: [0, 0] };
   const lerpPose = (a, b, u) => { const o = {}; for (const k of new Set([...Object.keys(a), ...Object.keys(b)])) { const va = a[k] ?? DEF[k], vb = b[k] ?? DEF[k];
       o[k] = Array.isArray(va) ? va.map((x, i) => x + (vb[i] - x) * u) : va + (vb - va) * u; } return o; };
   function keys(K, c) { for (let i = 0; i < K.length; i++) { const [t0, a] = K[i], [t1, b] = K[(i + 1) % K.length], e = t1 > t0 ? t1 : t1 + 1, cc = c < t0 ? c + 1 : c;
@@ -455,13 +481,28 @@ export function buildPeople(scene, { mobile = false, fx = null, afx = null, col:
         break; }
     } }
 
-  let time = 0, scare = 0, kidsHome = 0;
+  // as mãos de cada um: segura o cabo, a alça, a lousa, o saco; abre para acenar e para aparar a queda; mãos postas na reza
+  const UMA = new Set(['serrote', 'vara', 'pano', 'balaio']);
+  function maosDe(p, mode) { const m = [p.maos && p.maos[0] || null, p.maos && p.maos[1] || null];
+    if (p.fallT != null && p.fallT < 1.8) return ['aberta', 'aberta'];
+    if (p.job === 'rezar' && p.cyc === 2) return ['postas', 'postas'];
+    if (p.wave > 0) m[p.s.tool ? 0 : 1] = m[p.s.tool ? 0 : 1] || 'aberta';
+    if (mode === 'maos') { m[0] = m[0] || 'segura'; m[1] = m[1] || 'segura'; } else if (mode === 'ombro' || mode === 'pe') m[1] = m[1] || 'segura';
+    if (UMA.has(p.s.tool) && p.tool.visible) m[1] = m[1] || 'segura';
+    if (p.panoMao && p.panoMao.mesh.visible) { m[0] = m[0] || 'segura'; m[1] = m[1] || 'segura'; }
+    if (p.s.extra === 'lousa') m[0] = m[0] || 'segura';
+    if ((p.saco && p.saco.visible) || (p.extra && p.s.extra === 'feixe' && p.extra.visible)) m[1] = m[1] || 'segura';
+    if (p.lata && p.lata.visible && p.cyc === 5) m[0] = m[0] || 'apoio';
+    return m; }
+  let time = 0, scare = 0, kidsHome = 0, frameN = 0;
   updaters.push(dt => { time += dt; scare = Math.max(0, scare - dt); kidsHome = Math.max(0, kidsHome - dt); if (alert && (alert.t -= dt) < 0) alert = null;
     const day = U.uDay.value, rain = U.uRain.value, away = day < 0.3 || rain > 0.3, hour = window.__hour ?? 15;
     stepBell(dt, hour); stepBall(dt);
     // roupa no varal: some de manhã cedo (dia novo) e quando a chuva manda a lavadeira para casa
     if (L.varal && (hour < 6.5 || rain > 0.3) && L.varal.n) { L.varal.n = 0; for (const it of L.varal.items) it.visible = false; }
-    for (const p of people) { const k = Math.min(1, dt * 6); let yOff = 0; p.moving = false; p.grip2 = false; p.toolDown = false; if (p.job === 'lagoa') p.yAbs = null;
+    frameN++; const cam = window.__cam; let agasalhoFeito = frameN < 30;
+    for (const p of people) { p.rig.restore();   // a rotina trabalha sobre o que ela mesma pediu no quadro anterior (o solucionador é por cima)
+      const k = Math.min(1, dt * 6); let yOff = 0; if (!p.moving) p.walkT = 0; p.moving = false; p.grip2 = false; p.toolDown = false; p.maos = null; if (p.job === 'lagoa') p.yAbs = null;
       const stay = p.night && day < 0.3 && rain < 0.3;
       const kidScared = KIDS.has(p.job) && kidsHome > 0; p.running = false; p.lastSpeed = 0;
       if (p.fallT != null && p.st === 'post') { stepFall(p, dt); p.running = false; }
@@ -521,6 +562,7 @@ export function buildPeople(scene, { mobile = false, fx = null, afx = null, col:
       // reações por cima do ofício: respira, vento (inclina e segura o chapéu), calor (enxuga a testa), trovão (se encolhe),
       // olha para quem passa correndo e para a criança que caiu; friagem põe o casaco ou o xale
       { const cold = (U.uSeca.value > 0.5 && (hour < 8.5 || hour > 17.5)) || (hour > 19.5 || hour < 6); if (p.warmGeo && cold !== p.warm) { p.warm = cold; p.body.geometry = cold ? p.warmGeo : p.coolGeo; } }
+      if (p.warmSpec && !agasalhoFeito) { p.warmGeo = buildBody(p.warmSpec).mesh.geometry; p.warmSpec = null; agasalhoFeito = true; }
       if (p.g.visible && p.st !== 'casa' && p.fallT == null) { const br = Math.sin(time * 1.6 + p.ph); p.spine.rotation.x += br * 0.012;
         const wb = U.uWindBase.value * (1 + U.uWindIu.value * 0.5), q = Math.max(0, Math.min(1, (wb - 5) / 6)), wd = U.uWindDir.value;
         if (q > 0) { const fx = Math.sin(p.h), fz = Math.cos(p.h), along = fx * wd.x + fz * wd.y, side = fz * wd.x - fx * wd.y;
@@ -543,7 +585,12 @@ export function buildPeople(scene, { mobile = false, fx = null, afx = null, col:
           if (alert && alert.who !== p && Math.hypot(alert.x - p.x, alert.z - p.z) < 16) { tx = alert.x; tz = alert.z; }
           else if (['conversa', 'varrer', 'agua', 'sentar', 'vaqueiro', 'pescar', 'licao'].includes(p.job)) { let bd = 6; for (const o of people) { if (o === p || !o.g.visible) continue; const d = Math.hypot(o.x - p.x, o.z - p.z); if (d < bd && (o.running || KIDS.has(o.job))) { bd = d; tx = o.x; tz = o.z; } } }
           if (tx !== null) { const e = angTo(p.h, Math.atan2(tx - p.x, tz - p.z)); p.head.rotation.y += (Math.max(-1.1, Math.min(1.1, e)) - p.head.rotation.y) * Math.min(1, dt * 3); } } }
-      p.g.position.set(p.x, p.yAbs != null ? p.yAbs : gy + yOff, p.z); p.g.rotation.y = p.h; p.g.rotation.x = p.pitch; if (p.g.visible) { alignTool(p); face(p, dt); } stepCloth(p, dt); } });
+      p.g.position.set(p.x, p.yAbs != null ? p.yAbs : gy + yOff, p.z); p.g.rotation.y = p.h; p.g.rotation.x = p.pitch;
+      if (p.g.visible) { const mode = modoFerr(p), d = cam ? Math.hypot(cam.position.x - p.x, cam.position.y - gy, cam.position.z - p.z) : 0, perto = d < 45 || !!window.__pertoTodos;   /* __pertoTodos: o juiz da gente liga o detalhe de todos */
+        // o solucionador (anatomia.js): limites das juntas, coluna, ombro com escápula, pescoço, chão e mãos
+        p.rig.solve({ dt, perto, contato: perto || d < 140 && (frameN + p.home) % 3 === 0, g: p.g, heightAt, andando: p.moving, livre: p.yAbs != null || Math.abs(p.pitch) > 0.05, maos: maosDe(p, mode) });
+        alignTool(p, mode); face(p, dt); }
+      stepCloth(p, dt); } });
 
   // ---------- o poço: anda até a manivela, desce o balde, sobe girando o sarilho, despeja na lata, põe a lata na cabeça e leva
   function poco(p, dt, t, k) { const R = W.rig; p.cyc = p.cyc ?? 0; const crank = R ? R.crankAt() : null, home = doorOf(p);
@@ -566,7 +613,7 @@ export function buildPeople(scene, { mobile = false, fx = null, afx = null, col:
     else { p.w8 -= dt; set(p, { k }); if (p.w8 < 0) { p.cyc = 0; if (p.lata) p.lata.visible = false; } } }
 
   // ---------- a lavadeira: esfrega na pedra (espuma), bate a roupa (respingo), enxágua, torce (pinga) e estende no varal
-  function lavar(p, dt, t, k) { const V = L.varal; p.cyc = p.cyc ?? 0; p.w8 = (p.w8 ?? 0) + dt; const stone = [lav[0] + Math.sin(lavFace) * 0.62, lav[1] + Math.cos(lavFace) * 0.62], wl = waterLevelAt(...lav) + 0.14;
+  function lavar(p, dt, t, k) { const V = L.varal; p.cyc = p.cyc ?? 0; p.w8 = (p.w8 ?? 0) + dt; if (p.cyc >= 1 && !p.panoMao) pegaPano(p); const stone = [lav[0] + Math.sin(lavFace) * 0.62, lav[1] + Math.cos(lavFace) * 0.62], wl = waterLevelAt(...lav) + 0.14;
     const kneel = { py: 0.52, hp: [0.05, 0.05], kn: [1.55, 1.55] }, next = (n, d) => { if (p.w8 > d) { p.cyc = n; p.w8 = 0; } };
     if (p.cyc === 0) { if (goTo(p, lav[0], lav[1], dt)) { p.cyc = 1; p.w8 = 0; } }
     else if (p.cyc === 1) { const s = Math.sin(t * 5); faceTo(p, lavFace, dt); set(p, { ...kneel, sp: 0.85, sh: [-1.0 + s * 0.25, -1.0 - s * 0.25], el: [-0.4, -0.4], hx: 0.2, k: Math.min(1, dt * 10) });
@@ -575,12 +622,34 @@ export function buildPeople(scene, { mobile = false, fx = null, afx = null, col:
       if (!up && !p.hit) { p.hit = true; emit('respingo', stone[0], wl, stone[1], 9, { spread: 0.9, speed: 1.1 }); } if (up) p.hit = false; next(3, 4.4); }
     else if (p.cyc === 3) { const s = Math.sin(t * 2.2); set(p, { ...kneel, sp: 1.05, sh: [-0.55 + s * 0.2, -0.55 + s * 0.2], el: [-0.15, -0.15], hx: 0.5, k }); if (rnd() < dt * 4) emit('espuma', stone[0] + Math.sin(lavFace) * 0.5, wl - 0.1, stone[1] + Math.cos(lavFace) * 0.5, 1); next(4, 3); }
     else if (p.cyc === 4) { const s = Math.sin(t * 7); set(p, { ...kneel, sp: 0.2, sh: [-1.05, -1.05], el: [-1.35 + s * 0.2, -1.35 - s * 0.2], shy: [0.35 + s * 0.15, -0.35 + s * 0.15], hx: 0.3, k: Math.min(1, dt * 10) });
-      if (rnd() < dt * 18) emit('gota', p.x + Math.sin(p.h) * 0.3, heightAt(p.x, p.z) + 0.75, p.z + Math.cos(p.h) * 0.3, 1, { spread: 0.15 }); if (p.w8 > 2.6) { p.cyc = V && V.n < V.items.length ? 5 : 1; p.w8 = 0; } }
-    else if (p.cyc === 5) { const at = V.at(V.n), dx = at.x - V.c[0], dz = at.z - V.c[1], nrm = [V.dir[1], -V.dir[0]], side = ((lav[0] - V.c[0]) * nrm[0] + (lav[1] - V.c[1]) * nrm[1]) > 0 ? 1 : -1;
+      if (rnd() < dt * 18) emit('gota', p.x + Math.sin(p.h) * 0.3, heightAt(p.x, p.z) + 0.75, p.z + Math.cos(p.h) * 0.3, 1, { spread: 0.15 }); if (p.w8 > 2.6) { p.cyc = p.panoItem ? 5 : 1; p.w8 = 0; } }
+    else if (p.cyc === 5) { const at = V.at(V.items.indexOf(p.panoItem)), dx = at.x - V.c[0], dz = at.z - V.c[1], nrm = [V.dir[1], -V.dir[0]], side = ((lav[0] - V.c[0]) * nrm[0] + (lav[1] - V.c[1]) * nrm[1]) > 0 ? 1 : -1;
       const sx = at.x + nrm[0] * 0.42 * side, sz = at.z + nrm[1] * 0.42 * side; if (goTo(p, sx, sz, dt, 1.0)) { p.cyc = 6; p.w8 = 0; p.hang = Math.atan2(at.x - sx, at.z - sz); } }
-    else if (p.cyc === 6) { faceTo(p, p.hang, dt); set(p, { sh: [-2.75, -2.75], el: [-0.35, -0.35], shy: [0.1, -0.1], hx: -0.35, k: Math.min(1, dt * 6) }); if (p.w8 > 1.2 && V.n < V.items.length && !p.hung) { V.items[V.n].visible = true; V.n++; p.hung = true; p.tool.visible = false; }
+    else if (p.cyc === 6) { faceTo(p, p.hang, dt); set(p, { sh: [-2.75, -2.75], el: [-0.35, -0.35], shy: [0.1, -0.1], hx: -0.35, k: Math.min(1, dt * 6) }); if (p.w8 > 1.2 && p.panoItem && !p.hung) { p.panoItem.estende(); V.n = V.items.filter(i => i.visible).length; p.panoMao = p.panoItem = null; p.hung = true; }
       if (p.w8 > 1.8) { p.cyc = 7; p.w8 = 0; p.hung = false; } }
-    else { if (goTo(p, lav[0], lav[1], dt, 1.0)) { p.cyc = 1; p.w8 = 0; p.tool.visible = true; } } }
+    else { if (goTo(p, lav[0], lav[1], dt, 1.0)) { p.cyc = 1; p.w8 = 0; } } }
+  // a peça que a lavadeira lava: a próxima roupa do cesto que ainda não está no varal (ou um pano de prato, se o varal encheu)
+  function pegaPano(p) { const V = L.varal, it = V && V.items ? V.items.find(i => !i.visible && !people.some(o => o.panoItem === i)) : null;
+    p.tool.visible = false; p.panoItem = it || null;
+    p.panoMao = it ? it.pano : (p.panoProprio || (p.panoProprio = (() => { const q = Pano({ nx: 6, ny: 7, tecido: 'algodao', color: 0xf4f0e8, posIni: (i, j) => new THREE.Vector3(p.x + i * 0.07, 0.5 - j * 0.07, p.z) }); scene.add(q.mesh); return q; })()));
+    const C = p.panoMao; C.solta(); C.enrola = 0; C.molhado = Math.max(C.molhado, 0.4); C.mesh.visible = true; p.g.updateMatrixWorld(true); palm(p.arms[1], _pm1, _e1b);
+    const dx = (it ? 0.6 : 0.42) / C.nx; C.reinicia((i, j) => new THREE.Vector3(_pm1.x + (i - C.nx / 2) * dx * 0.3, _pm1.y - j * dx * 0.5, _pm1.z + (i - C.nx / 2) * dx * 0.3)); }
+  // o pano nas mãos: cantos presos nas palmas conforme o que ela faz; deita na pedra, afunda e boia no córrego, enrola ao torcer
+  const _pm0 = new THREE.Vector3(), _pm1 = new THREE.Vector3(), _e0b = new THREE.Vector3(), _e1b = new THREE.Vector3(); let pedraCaixa = null;
+  const cantos = C => { const row = j => { let a = -1, b = -1; for (let i = 0; i <= C.nx; i++) if (C.ativo[C.at(i, j)]) { if (a < 0) a = i; b = i; } return [a, b]; }; return { top: row(0), mid: row(Math.round(C.ny / 2)), j: Math.round(C.ny / 2) }; };
+  function maoPano(p, dt) { const C = p.panoMao, cyc = p.cyc ?? 0; if (!C) return;
+    palm(p.arms[0], _pm0, _e0b); palm(p.arms[1], _pm1, _e1b); const q0 = _pm0.clone(), q1 = _pm1.clone(), K = C.cantos || (C.cantos = cantos(C));
+    C.solta(); const [l, r] = K.top;
+    if (cyc >= 1 && cyc <= 2) { C.pin(l, 0, () => q0); C.pin(r, 0, () => q1); }
+    else if (cyc === 3) C.pin(r, 0, () => q1);
+    else if (cyc === 4) { C.pin(K.mid[0], K.j, () => q0); C.pin(K.mid[1], K.j, () => q1); }
+    else { const q1b = q1.clone().add(new THREE.Vector3(0.03, 0, 0)); C.pin(l, 0, () => q1); C.pin(r, 0, () => q1b); }
+    C.enrola = cyc === 4 ? Math.min(1, C.enrola + dt * 0.9) : Math.max(0, C.enrola - dt * 0.6);
+    if (cyc >= 1 && cyc <= 3) C.molhado = Math.min(1, C.molhado + dt * 0.5);
+    if (!pedraCaixa && L.lavStone) pedraCaixa = new THREE.Box3().setFromObject(L.lavStone);
+    const nearLav = lav && Math.hypot(p.x - lav[0], p.z - lav[1]) < 3;
+    C.passo(dt, { vento: ventoAgora(p.x, p.z, 0.5), chao: heightAt, caixa: nearLav && pedraCaixa ? [pedraCaixa] : null, agua: nearLav ? (x, z) => waterLevelAt(x, z) - U.uWaterDrop.value : null, correnteza: nearLav ? new THREE.Vector3(Math.cos(lavFace) * 0.4, 0, -Math.sin(lavFace) * 0.4) : null, it: 5 });
+    if (cyc === 4 && C.molhado > 0.5 && rnd() < dt * 14) { const c = C.centro(); emit('gota', c.x, c.y - 0.03, c.z, 1, { spread: 0.1 }); } }
 
   // ---------- a beata: anda até o cruzeiro, faz o sinal da cruz, ajoelha e reza, levanta, entra na capela, sai e volta para casa
   function rezar(p, dt, t, k) { p.cyc = p.cyc ?? 0; p.w8 = (p.w8 ?? 0) + dt;
@@ -716,5 +785,5 @@ export function buildPeople(scene, { mobile = false, fx = null, afx = null, col:
   // bancada de testes: põe no vale uma pessoa feita sob medida (sexo m/f/c e o que mais quiser na ficha), parada na pose de window.__lab
   function lab(o = {}, at = [0, 0], face = 0) { const s = o.sex === 'f' ? mulher(o) : o.sex === 'c' ? crianca(o) : homem(o), p = person(s);
     Object.assign(p, { job: o.job || 'lab', st: 'post', x: at[0], z: at[1], x0: at[0], z0: at[1], h: face, face, home: 0, door: at, spots: [] }); people.push(p); return p; }
-  return { update(dt) { for (const f of updaters) f(dt); }, people, ball, arrive, lab, startle() { scare = 2.2; kidsHome = 15; } };
+  return { update(dt) { for (const f of updaters) f(dt); }, people, ball, arrive, lab, anatomia: { passada, comprimentoPasso }, startle() { scare = 2.2; kidsHome = 15; } };
 }
