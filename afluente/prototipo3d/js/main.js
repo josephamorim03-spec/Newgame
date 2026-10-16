@@ -21,6 +21,7 @@ import { buildFx } from './fx.js';
 import { buildColisao } from './colisao.js';
 import { createFx } from './aguafx.js';
 import { buildPeixes } from './peixes.js';
+import { createJuiz } from './juiz.js';
 import { buildClouds } from './clouds.js';
 import { buildSkyFx } from './skyfx.js';
 import { tag, audit, person } from './regua.js';
@@ -545,6 +546,7 @@ const gente = buildPeople(scene, { mobile, fx, afx, col: colisao, peixes });
 const skyfx = buildSkyFx(scene, camera, { mobile, focus: () => camMode === 'jogo' ? gameCam.focus : controls.target });
 const fauna = buildFauna(scene, { mobile, fx: afx, col: colisao, shade: shadeTree ? [shadeTree.position.x, shadeTree.position.z] : null, termites: scene.children.filter(o => o.userData.regua === 'cupinzeiro').map(o => [o.position.x, o.position.z]),
   treeTops: scene.children.filter(o => ['cerrado', 'mata', 'sombra'].includes(o.userData.kind)).map(o => { const bb = new THREE.Box3().setFromObject(o); return [o.position.x, bb.max.y - 0.6, o.position.z]; }) });
+window.__juiz = createJuiz({ fauna, people: () => gente.people });   // o juiz dos bichos (juiz.js; sim/juiz_bichos.js)
 { let tries = 0; while (ROCKS_IN_WATER.length < 6 && tries++ < 400) { const i = 4 + Math.floor(rnd() * 220), [x0, z0] = RIVER[i], ri = riverInfo(x0, z0), w = riverHalfWidth(ri.s); if (x0 > CLIFF_X - 6) continue;
     if (!inAnyTile(x0, z0, 0.85) || Math.hypot(x0 - SPRING[0], z0 - SPRING[1]) < POOL_R + 2 || ROCKS_IN_WATER.some(r => Math.hypot(r[0] - x0, r[1] - z0) < 5)) continue;
     const side = rnd() < 0.5 ? -1 : 1, off = side * w * (0.45 + rnd() * 0.45), x = x0 - ri.tz * off, z = z0 + ri.tx * off, size = 0.4 + rnd() * 0.35, flat = 0.75;
