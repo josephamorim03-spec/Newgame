@@ -113,13 +113,13 @@ export function quad(S) {
       const w = (1 - sstep(r0 * 0.4, r0 * 3.4, d)) * sstep(L.top + 0.3, L.top - 0.15, y) * 0.55; if (w > 0.01) { out.push([hips[i].userData.i, w]); sum += w; } });
     out.push([root.userData.i, Math.max(0.05, 1 - sum)]); return out; });
   // pescoço e cabeça: o pescoço nasce dentro do peito; perto da base a pele mistura corpo e pescoço, perto da ponta, pescoço e cabeça
-  const np = S.neck.pts, neck = B.bone(root, np[0]), head = B.bone(neck, np[np.length - 1]);
+  const np = S.neck.pts, neck = B.bone(root, np[0]), neck2 = null, head = B.bone(neck, np[np.length - 1]);
   const nlen = []; let acc = 0; nlen.push(0); for (let i = 1; i < np.length; i++) { acc += Math.hypot(np[i][1] - np[i - 1][1], np[i][2] - np[i - 1][2]); nlen.push(acc); }
   const npE = np.concat([(() => { const a2 = np[np.length - 2], b2 = np[np.length - 1], dy = b2[1] - a2[1], dz = b2[2] - a2[2], l = Math.hypot(dy, dz) || 1; return [b2[0], b2[1] + dy / l * 0.05, b2[2] + dz / l * 0.05]; })()]);
   const lastP = S.neck.prof[S.neck.prof.length - 1], profE = S.neck.prof.concat([{ ...lastP, rx: lastP.rx * 0.88, rt: lastP.rt * 0.88, rb: lastP.rb * 0.88 }]);
   const ng = tube(npE, profE, seg - 6, false, S.neck.shape); const nAx = [np[0], np[np.length - 1]];
   const along = (y, z) => { const dy = nAx[1][1] - nAx[0][1], dz = nAx[1][2] - nAx[0][2], l2 = dy * dy + dz * dz; return clamp(((y - nAx[0][1]) * dy + (z - nAx[0][2]) * dz) / l2, 0, 1); };
-  sk.tag('pescoco'); sk.add(ng, (x, y, z) => { const t = along(y, z); return t < 0.45 ? blend(t, 0.2, 0.2, root.userData.i, neck.userData.i) : blend(t, 0.8, 0.28, neck.userData.i, head.userData.i); });
+  sk.tag('pescoco'); sk.add(ng, (x, y, z) => { const t = along(y, z); return t < 0.5 ? blend(t, 0.22, 0.3, root.userData.i, neck.userData.i) : blend(t, 0.82, 0.28, neck.userData.i, head.userData.i); });
   const hp = np[np.length - 1], ears = (S.ears || []).map(e => B.bone(head, [hp[0] + e[0], hp[1] + e[1], hp[2] + e[2]]));
   const snout = S.snout ? B.bone(head, [hp[0] + S.snout[0], hp[1] + S.snout[1], hp[2] + S.snout[2]]) : null;
   const H = { add: (geo, who = 'head') => { geo.translate(hp[0], hp[1], hp[2]); const b = who === 'earL' ? ears[0] : who === 'earR' ? ears[1] : who === 'snout' ? snout : who === 'root' ? root : head; sk.add(geo, b.userData.i); } };
@@ -135,7 +135,7 @@ export function quad(S) {
     const pts = L.prof.map(p => [x, top - p[0] * Lt, z + (p[4] || 0)]), prof = L.prof.map((p, j) => { const py = top - p[0] * Lt, hw = bodyHW(z, py);
       const bf = bodyF(z, py), full = S.legSleeve ? sstep(0.72, 0.97, bf) : 0, rx = hw > 0 ? Math.min(p[1], Math.max(hw - Math.abs(x) - 0.012, bf > 0.7 ? p[1] * (0.6 + 0.3 * full) : 0.015)) : p[1]; return { rx, rt: p[2] ?? p[1], rb: p[3] ?? p[1], e: 2, c: a => cfun(L.c)(p[0], a) }; });
     const t1 = L1 / Lt, t2 = (L1 + L2) / Lt;
-    sk.tag('perna' + li); sk.add(tube(pts, prof, Math.round((S.legSeg || 16) * DET), false), (px, py) => { const t = (top - py) / Lt; return t < (t1 + t2) / 2 ? blend(t, t1, 0.05, hip.userData.i, knee.userData.i) : blend(t, t2, 0.04, knee.userData.i, ank.userData.i); }, legNormal);
+    sk.tag('perna' + li); sk.add(tube(pts, prof, Math.round((S.legSeg || 16) * DET), false), (px, py) => { const t = (top - py) / Lt; return t < (t1 + t2) / 2 ? blend(t, t1, 0.075, hip.userData.i, knee.userData.i) : blend(t, t2, 0.055, knee.userData.i, ank.userData.i); }, legNormal);
     sk.tag('pe' + li); if (L.foot) sk.add(L.foot, ank.userData.i);
     // a pata de trás pisa um pouco atrás do quadril: no ponto em que a canela (metatarso) fica de pé com o corpo na altura de
     // descanso; o jarrete fica com ~150-160° (vaca de perna boa), em vez de a canela inclinar para a frente
@@ -155,7 +155,7 @@ export function quad(S) {
   const g = new THREE.Group(); g.add(mesh);
   const rest = { neck: neck.rotation.x, rootY: root.position.y };
   const zf = (legs[0].z + legs[1].z) / 2, zb = (legs[2].z + legs[3].z) / 2;
-  return { g, mesh, root, neck, head, ears, snout, legs, tail, kind: 'quad', rest, zf, zb, headY: hp[1] * K, K, tailRest: S.tail ? S.tail.rest || [-1.2, 0.1] : null,
+  return { g, mesh, root, neck, neck2, head, ears, snout, legs, tail, kind: 'quad', rest, zf, zb, headY: hp[1] * K, K, tailRest: S.tail ? S.tail.rest || [-1.2, 0.1] : null,
     lieDrop: S.legs.reduce((s2, l) => s2 + l.top, 0) / 4 * 0.68, runShift: S.runShift || 1, bodyRings: S.body.rings, seg, beak: S.muzzle ? new THREE.Vector3(...S.muzzle).multiplyScalar(K) : null };
 }
 
@@ -329,7 +329,7 @@ export function animate(a, dt, look, o) {
     R.head.rotation.x = lerpA(R.head.rotation.x, look.head || 0, kk);
     for (const w of R.wings) { const open = a.st === 'flee' ? 1 : 0; w.userData.o = lerpA(w.userData.o || 0, open, Math.min(1, dt * 4)); w.rotation.z = w.userData.s * w.userData.o * (0.5 + Math.sin(o.time * 14) * 0.35 * (a.flap || 0)); w.rotation.y = -w.userData.s * w.userData.o * 0.3; }
     R.tailB.rotation.x = Math.sin(o.time * 1.7 + a.look) * 0.05 + (a.st === 'flee' ? -0.2 : 0); }
-  else { R.neck.rotation.x = lerpA(R.neck.rotation.x, (look.neck || 0) + nod, kk); R.neck.rotation.y = lerpA(R.neck.rotation.y, (look.yaw || 0) * 0.55, Math.min(1, dt * 2));
+  else { a.nkx = lerpA(a.nkx ?? R.neck.rotation.x, (look.neck || 0) + nod, kk); if (R.neck2) { R.neck.rotation.x = a.nkx * 0.55; R.neck2.rotation.x = a.nkx * 0.45; } else R.neck.rotation.x = a.nkx; R.neck.rotation.y = lerpA(R.neck.rotation.y, (look.yaw || 0) * 0.55, Math.min(1, dt * 2));
     R.head.rotation.x = lerpA(R.head.rotation.x, (look.head || 0), kk); R.head.rotation.y = lerpA(R.head.rotation.y, (look.yaw || 0) * 0.45, Math.min(1, dt * 2)); R.head.rotation.z = lerpA(R.head.rotation.z, look.tilt || 0, Math.min(1, dt * 2));
     // orelhas: mexem de vez em quando (mosca), e deitam para trás na fuga
     R.ears.forEach((e, i) => { a.earFlap = Math.max(0, (a.earFlap || 0) - dt * 1.5); const tw = (Math.sin(o.time * 0.9 + a.look * 5 + i * 2.1) > 0.94 ? Math.sin(o.time * 30) * 0.35 : 0) + Math.sin(o.time * 34 + i) * 0.5 * a.earFlap; e.rotation.x = lerpA(e.rotation.x, (a.st === 'flee' ? -0.6 : 0) + tw, Math.min(1, dt * 10)); });
