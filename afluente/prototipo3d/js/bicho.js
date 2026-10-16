@@ -133,14 +133,14 @@ export function quad(S) {
     // o alto da perna fica por dentro do tronco (não sai pela lateral do flanco como uma coluna): a largura de cada anel é
     // limitada pela meia-largura do corpo naquela altura
     const pts = L.prof.map(p => [x, top - p[0] * Lt, z + (p[4] || 0)]), prof = L.prof.map((p, j) => { const py = top - p[0] * Lt, hw = bodyHW(z, py);
-      const bf = bodyF(z, py), full = S.legSleeve ? sstep(0.72, 0.97, bf) : 0, rx = hw > 0 ? Math.min(p[1], Math.max(hw - Math.abs(x) - 0.012, bf > 0.7 ? p[1] * (0.6 + 0.4 * full) : 0.015)) : p[1]; return { rx, rt: p[2] ?? p[1], rb: p[3] ?? p[1], e: 2, c: a => cfun(L.c)(p[0], a) }; });
+      const bf = bodyF(z, py), full = S.legSleeve ? sstep(0.72, 0.97, bf) : 0, rx = hw > 0 ? Math.min(p[1], Math.max(hw - Math.abs(x) - 0.012, bf > 0.7 ? p[1] * (0.6 + 0.3 * full) : 0.015)) : p[1]; return { rx, rt: p[2] ?? p[1], rb: p[3] ?? p[1], e: 2, c: a => cfun(L.c)(p[0], a) }; });
     const t1 = L1 / Lt, t2 = (L1 + L2) / Lt;
-    sk.tag('perna' + li); sk.add(tube(pts, prof, Math.round((S.legSeg || 16) * DET), false), (px, py) => { const t = (top - py) / Lt; return t < (t1 + t2) / 2 ? blend(t, t1, 0.03, hip.userData.i, knee.userData.i) : blend(t, t2, 0.025, knee.userData.i, ank.userData.i); }, legNormal);
+    sk.tag('perna' + li); sk.add(tube(pts, prof, Math.round((S.legSeg || 16) * DET), false), (px, py) => { const t = (top - py) / Lt; return t < (t1 + t2) / 2 ? blend(t, t1, 0.05, hip.userData.i, knee.userData.i) : blend(t, t2, 0.04, knee.userData.i, ank.userData.i); }, legNormal);
     sk.tag('pe' + li); if (L.foot) sk.add(L.foot, ank.userData.i);
     // a pata de trás pisa um pouco atrás do quadril: no ponto em que a canela (metatarso) fica de pé com o corpo na altura de
     // descanso; o jarrete fica com ~150-160° (vaca de perna boa), em vez de a canela inclinar para a frente
     const hh = top - L3 - L2, back = li >= 2 && hh < L1 ? Math.sqrt(L1 * L1 - hh * hh) : 0;
-    return { hip, knee, ank, L1: L1 * K, L2: L2 * K, L3: L3 * K, x: x * K, z: z * K, top: top * K, front: li < 2, left: x > 0, rf: L.footAngle || 0, curl: L.curl ?? 0.9, back: back * K, hz0: z * K, shift: li < 2 ? 0.36 : 0.26 }; });
+    return { hip, knee, ank, L1: L1 * K, L2: L2 * K, L3: L3 * K, x: x * K, z: z * K, top: top * K, front: li < 2, left: x > 0, rf: L.footAngle || 0, curl: L.curl ?? 0.9, back: back * K, hz0: z * K, shift: (S.shift || [0.46, 0.34])[li < 2 ? 0 : 1] }; });
   // rabo em corrente
   let tail = []; if (S.tail) { const tp = S.tail.pts, n = S.tail.n || 4; const tl = [0]; let a2 = 0; for (let i = 1; i < tp.length; i++) { a2 += Math.hypot(tp[i][1] - tp[i - 1][1], tp[i][2] - tp[i - 1][2]); tl.push(a2); }
     const at = d => { for (let i = 1; i < tp.length; i++) if (tl[i] >= d) { const k = (d - tl[i - 1]) / (tl[i] - tl[i - 1] || 1); return [tp[i - 1][0], tp[i - 1][1] + (tp[i][1] - tp[i - 1][1]) * k, tp[i - 1][2] + (tp[i][2] - tp[i - 1][2]) * k]; } return tp[tp.length - 1]; };
@@ -238,17 +238,27 @@ export function animate(a, dt, look, o) {
   // passada: no galope ela fica bem mais comprida (runStride), com as patas esticando para a frente e para trás; muda aos poucos
   a.strd = lerpA(a.strd ?? a.stride, gk === 'gallop' && a.runStride ? a.runStride : a.stride, Math.min(1, dt * 3));
   const halfW = a.strd * a.duty / 2 / s * Math.min(1, mv * 1.6) * a.walkK;
-  if (near && !a.swim) { let yb = Infinity, ybH = Infinity, ybAll = Infinity; R.legs.forEach((L, i) => { if (!L.front && (a.sitK || 0) > 0.3) return; const bk = L.back || 0, c = frac(cyc + a.goff[i % a.goff.length]), st = c < a.duty;
+  // o quanto a inclinação do corpo (morro: frente/trás e de lado) sobe ou desce cada quadril; sem isso, no morro a perna
+  // de baixo não alcançava o chão (pata no ar) e a de cima dobrava
+  const tx = R.root.rotation.x + 0.75 * (a.sitK || 0), tzr = R.root.rotation.z, tiltY = L => -(L.hz0 ?? L.hip.position.z) * Math.sin(tx) + L.hip.position.x * Math.sin(tzr);
+  // o corpo já no lugar deste quadro (x, z, rumo) antes de medir as pernas: com a posição do quadro anterior a distância até a
+  // pata cravada saía curta (o bicho andou ~1,5 cm) e o corpo ficava alto demais para a perna de trás no fim do apoio
+  if (near && !a.swim) { a.g.position.x = a.x; a.g.position.z = a.z; a.g.rotation.y = a.h; a.g.updateMatrixWorld(true); }
+  if (near && !a.swim) { let yb = Infinity, ybH = Infinity, ybAll = Infinity; R.legs.forEach((L, i) => { if (!L.front && (a.sitK || 0) > 0.3) return; const bk = (L.back || 0) * (1 - 0.6 * (a.walkK || 0)), c = frac(cyc + a.goff[i % a.goff.length]), st = c < a.duty;   // andando, a pata de trás pisa mais embaixo do quadril (parada ela fica um pouco atrás, com o jarrete dobrado)
       const fast = a.gait !== 'walk', dz = st && !fast ? halfW - c / a.duty * 2 * halfW : 0, sh = (L.shift || 0) * dz, hz = (L.hz0 ?? L.hip.position.z) + sh; V.set(L.hip.position.x, 0, (L.hz0 ?? L.hip.position.z) - bk + dz); R.root.localToWorld(V);
-      let hor2 = (dz - sh - bk) * (dz - sh - bk); if (st && L.pl && !L.swung && a.gait === 'walk' && Math.hypot(L.pl.x - V.x, L.pl.z - V.z) < a.stride * 0.45) { W.copy(L.pl); W.y = V.y; R.root.worldToLocal(W); const h2 = (W.z - hz) ** 2 + (W.x - L.hip.position.x) ** 2; if (h2 > ((L.L1 + L.L2) * 0.45) ** 2) L.swung = true; else { hor2 = h2; V.x = L.pl.x; V.z = L.pl.z; } }
-      const Lf = (L.L1 + L.L2) * (L.bird ? 0.93 : 0.999) + L.L3 * 0.35 * Math.min(1, Math.abs(dz) / Math.max(halfW, 1e-3)), reach = Math.sqrt(Math.max(0, Lf * Lf - hor2));
-      const ps = 0.75 * (a.sitK || 0), hy = L.hip.position.y * Math.cos(ps) + L.hip.position.z * Math.sin(ps), v = heightAt(V.x, V.z) + (L.L3 + reach) * s - (R.rest.rootY + hy) * s;
-      ybAll = Math.min(ybAll, v); if (st && a.gait === 'walk') { if (L.front || L.bird) yb = Math.min(yb, v); else if (c / a.duty < 0.6) ybH = Math.min(ybH, v); } });   // no fim do apoio a de trás levanta o calcanhar (não puxa o corpo)
-    const yy = Math.min(yb, ybH + 0.01 * s); if (a.gait === 'walk' && isFinite(yy)) gy = yy + 0.01; else if (isFinite(ybAll)) gy = ybAll + 0.01 - (a.gait === 'walk' ? 0 : (0.03 + 0.03 * Math.sin(cyc * Math.PI * 4)) * s); }
+      let hor2 = (dz - sh - bk) * (dz - sh - bk); if (st && L.pl && !L.swung && a.gait === 'walk' && Math.hypot(L.pl.x - V.x, L.pl.z - V.z) < a.stride * 0.45) { W.copy(L.pl); W.y = V.y; R.root.worldToLocal(W); const h2 = (W.z - hz) ** 2 + (W.x - L.hip.position.x) ** 2; if (h2 > ((L.L1 + L.L2) * 0.62) ** 2) L.swung = true;   /* só larga a pata cravada se ela ficou longe de verdade (perna a ~40°); com 0,45 a de trás repisava no fim de todo passo */ else { hor2 = h2; V.x = L.pl.x; V.z = L.pl.z; } }
+      // quanto o quadril pode subir acima do chão com a perna esticada: com a pata chata (tornozelo em cima do apoio) ou, no fim
+      // do apoio, com a pata girando na ponta (o calcanhar levanta; é o mesmo alcance que a IK usa, então a pata não fica no ar)
+      const Df = (L.L1 + L.L2) * (L.bird ? 0.93 : 0.998), flat = L.L3 + Math.sqrt(Math.max(0, Df * Df - hor2)), tip = Math.sqrt(Math.max(0, (Df + L.L3) ** 2 - hor2));
+      const uu = st ? c / a.duty : 0.5, reachY = L.bird ? flat : flat + (Math.max(flat, tip) - flat) * Math.max(sstep(0.4, 0.65, uu), 1 - sstep(0.05, 0.25, uu));   // e no comecinho, quando a pata acabou de pousar lá na frente
+      const ps = 0.75 * (a.sitK || 0), hy = L.hip.position.y * Math.cos(ps) + L.hip.position.z * Math.sin(ps), v = heightAt(V.x, V.z) + reachY * s - (R.rest.rootY + hy + tiltY(L)) * s;
+      ybAll = Math.min(ybAll, v); if (st && a.gait === 'walk') { if (L.front || L.bird) yb = Math.min(yb, v); else ybH = Math.min(ybH, v); } });
+    const yy = Math.min(yb, ybH); if (a.gait === 'walk' && isFinite(yy)) gy = yy + 0.01; else if (isFinite(ybAll)) gy = ybAll + 0.01 - (a.gait === 'walk' ? 0 : (0.03 + 0.03 * Math.sin(cyc * Math.PI * 4)) * s); }
   if (a.water && !a.swim) gy = Math.max(gy, g0);
   // agachar (a onça na espreita): o corpo desce e as pernas, com as patas no chão, dobram sozinhas pela IK
   if (a.crouch && !a.swim) gy -= a.crouch * 0.12 * s * R.K;
-  a.gy = lerpA(a.gy ?? gy, gy, Math.min(1, dt * (near ? 30 : 10))); a.pitch = lerpA(a.pitch ?? pitch, pitch, Math.min(1, dt * 6)); a.roll = lerpA(a.roll ?? roll, roll, Math.min(1, dt * 6));
+  // no andar o corpo desce na hora em que a perna não alcança (senão a pata fica no ar um quadro)
+  a.gy = near && a.gait === 'walk' && gy < (a.gy ?? gy) ? gy : lerpA(a.gy ?? gy, gy, Math.min(1, dt * (near ? 30 : 10))); a.pitch = lerpA(a.pitch ?? pitch, pitch, Math.min(1, dt * 6)); a.roll = lerpA(a.roll ?? roll, roll, Math.min(1, dt * 6));
   a.lie = (a.lie || 0) + (((a.st === 'lie') ? 1 : 0) - (a.lie || 0)) * Math.min(1, dt * 1.2); const lie = a.lie;
   if (a.when) a.g.visible = a.when();
   // corpo: sobe e desce no passo (duas vezes por ciclo no andar), balança de lado, o galope embala
@@ -269,21 +279,37 @@ export function animate(a, dt, look, o) {
   const k = Math.min(1, dt * 18), hip0 = R.root, liftH = (run ? 0.22 : 0.11) * (bird ? 0.8 : 1);
   R.legs.forEach((L, i) => { const c = frac(cyc + a.goff[i % a.goff.length]), stance = c < duty; let dz = 0, lift = 0, curl = 0;
     const half = a.strd * duty / 2 / s * Math.min(1, mv * 1.6) * wk;
+    // a passada que as patas fazem de fato (fauna.js avança o ciclo por ela: devagar a passada encurta e a cadência acompanha, sem a pata cravada ficar para trás)
+    if (i === 0) a.strE = Math.max(0.3 * a.strd, a.strd * Math.min(1, mv * 1.6) * wk);
     if (stance) { const u = c / duty; dz = half - u * 2 * half; } else { const u = (c - duty) / (1 - duty), e = (1 - Math.cos(u * Math.PI)) / 2; dz = -half + e * 2 * half; lift = Math.sin(u * Math.PI) * liftH * Math.min(1, mv + 0.3) * wk; curl = Math.sin(u * Math.PI) * wk; }
     if (L.hz0 != null && !L.bird) L.hip.position.z = L.hz0 + (L.shift || 0) * dz * (a.swim ? 0 : 1) * (run ? R.runShift || 1 : 1);   // no galope do gato a coluna encolhe (patas juntas embaixo) e estica (abertas)
     if (a.restLeg === i && a.restK > 0.01) { dz += 0.07 * R.K * a.restK; lift += 0.05 * a.restK; curl = Math.max(curl, 0.75 * a.restK); }
     let af, bf, footF = L.rf - curl * L.curl * (L.front || L.bird ? 1 : 0.7);
     if (a.swim) { const p = o.time * 5 + i * 1.6; af = Math.sin(p) * 0.6; bf = af + (L.front ? -1 : 1) * (0.6 + Math.cos(p) * 0.5); footF = bf - 0.5; }
-    else if (near) { V.set(L.hip.position.x, 0, (L.hz0 ?? L.hip.position.z) + dz - (L.back || 0)); hip0.localToWorld(V);
+    else if (near) { V.set(L.hip.position.x, 0, (L.hz0 ?? L.hip.position.z) + dz - (L.back || 0) * (1 - 0.6 * wk)); hip0.localToWorld(V);
       // pata cravada: no apoio ela fica onde pisou (o corpo vira e anda por cima dela); só repisa se ficar longe demais
-      if (stance && wk > 0.05 && !L.bird && a.gait === 'walk') { if (!L.pl || L.swung || Math.hypot(L.pl.x - V.x, L.pl.z - V.z) > a.stride * 0.45) { L.pl = (L.pl || new THREE.Vector3()).set(V.x, 0, V.z); L.swung = false; } V.x = L.pl.x; V.z = L.pl.z; }
-      else { L.swung = true; }
+      // repisar no meio do apoio (o bicho virou, a pata ficou longe) não é pulo: é um passinho rápido, levantando a pata
+      if (stance && wk > 0.05 && !L.bird && a.gait === 'walk') { if (!L.pl || L.swung || Math.hypot(L.pl.x - V.x, L.pl.z - V.z) > a.stride * 0.45) {
+          if (L.pl && L.wasSt && !L.rs) L.rs = { from: L.pl.clone(), t: 0 }; L.pl = (L.pl || new THREE.Vector3()).set(V.x, 0, V.z); L.swung = false; }
+        V.x = L.pl.x; V.z = L.pl.z;
+        if (L.rs) { L.rs.t += dt; const k = Math.min(1, L.rs.t / 0.16), e = k * k * (3 - 2 * k); V.x = L.rs.from.x + (L.pl.x - L.rs.from.x) * e; V.z = L.rs.from.z + (L.pl.z - L.rs.from.z) * e; lift += Math.sin(k * Math.PI) * 0.1; if (k >= 1) L.rs = null; } }
+      else { L.swung = true; L.rs = null; }
+      L.wasSt = stance;
       const gyF = heightAt(V.x, V.z); W.set(V.x, gyF + L.L3 * s + lift * L.top * s, V.z); hip0.worldToLocal(W);
       const ddx = W.x - L.hip.position.x, ddy = W.y - L.hip.position.y, th = Math.atan2(ddx, -ddy); L.abd = clamp(th, -0.35, 0.35);
       // se a pata cravada ficou longe demais de lado (o bicho virou), ela dá um passo para o lado (repisa no lugar certo)
       // (medido em distância de lado, não em ângulo: agachado o quadril fica mais perto do chão e o ângulo crescia sem a pata sair do lugar)
       if (Math.abs(ddx) > 0.34 * (L.L1 + L.L2) && stance && L.pl) L.swung = true;
-      [af, bf] = ik2(W.z - L.hip.position.z, ddy / Math.cos(L.abd), L.L1, L.L2, L.front && !L.bird);
+      // a pata gira na ponta: se com o tornozelo em cima do ponto de apoio a perna não alcança (fim e começo do apoio, corpo
+      // no alto do passo), o tornozelo sobe num círculo em volta da ponta da pata, que fica no chão (o calcanhar levanta) em
+      // vez de a pata inteira subir do chão ou arrastar
+      let tz = W.z - L.hip.position.z, ty = ddy / Math.cos(L.abd), roll = null; const Dr = (L.L1 + L.L2) * 0.998;
+      if (!L.bird && stance && L.L3 > 0 && Math.hypot(tz, ty) > Dr) { const cz = tz, cy = ty - L.L3, d = Math.hypot(cz, cy);
+        if (d < Dr + L.L3 && d > Math.abs(Dr - L.L3)) { const aa = (Dr * Dr - L.L3 * L.L3 + d * d) / (2 * d), hh = Math.sqrt(Math.max(0, Dr * Dr - aa * aa)), ux = cz / d, uy = cy / d;
+          const y1 = aa * uy + hh * ux, y2 = aa * uy - hh * ux, A = y1 > y2 ? [aa * ux - hh * uy, y1] : [aa * ux + hh * uy, y2];
+          tz = A[0]; ty = A[1]; roll = Math.atan2(cz - A[0], -(cy - A[1])); } }
+      [af, bf] = ik2(tz, ty, L.L1, L.L2, L.front && !L.bird);
+      if (roll !== null) footF = roll - R.root.rotation.x;
       // pisada: anel na água rasa ou poeira no chão seco quando corre
       if (o.fx && a.prevC && a.prevC[i] !== undefined && a.prevC[i] >= duty && stance && c < 0.25) { const wlF = waterLevelAt(V.x, V.z) - U.uWaterDrop.value;
         if (wlF > gyF + 0.03) o.fx.ripple(V.x, wlF, V.z, (0.25 + 0.25 * mv) * s); else if (run && U.uSeca.value > 0.3 && !bird) o.fx.dust(V.x, gyF, V.z, s); } }

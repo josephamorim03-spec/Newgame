@@ -87,7 +87,10 @@ export function buildFauna(scene, opts = {}) {
     if (fear && a.st !== 'lie' && !a.__calmo) { let best = null, bd = 1e9;   // (__calmo: o juiz medindo o andar)
       for (const t of threats) { if (t.who === a) continue; if (name === 'onça-pintada' && !t.person) continue; const r = fear[0] * (t.onca ? 2.2 : t.fast ? 1.5 : 1);
         const d = Math.hypot(t.x - a.x, t.z - a.z); if (d < r && d < bd) { bd = d; best = t; } }
-      if (best) { a.st = 'flee'; a.t = 1.8 + rnd(); a.from = [best.x, best.z]; } }
+      // acostuma: gente que fica por perto sem chegar mais perto (as crianças brincando na lagoa) não espanta o tempo todo;
+      // foge quem vem chegando ou quem já está perto demais
+      const lastD = a.lastTd ?? 1e9; a.lastTd = best ? bd : 1e9;
+      if (best && (bd < fear[0] * 0.45 || bd < lastD - 0.25 * dt)) { if (a.st !== 'flee' || a.t < 0.5) a.t = 1.8 + rnd(); a.st = 'flee'; a.from = [best.x, best.z]; } }
     // a onça às vezes anda na espreita: agachada, devagar, cabeça baixa (some e volta sozinha; na fuga desfaz na hora)
     if (a.stalker) { a.stk = (a.stk ?? 6 + rnd() * 10) - dt; const on = a.st === 'walk' && a.stk < 0; if (a.stk < -(5 + (a.look % 1) * 5)) a.stk = 10 + rnd() * 16;
       a.stalk = (a.stalk || 0) + ((on ? 1 : 0) - (a.stalk || 0)) * Math.min(1, dt * (a.st === 'flee' ? 6 : 1.5)); a.crouch = a.stalk; }
@@ -98,7 +101,7 @@ export function buildFauna(scene, opts = {}) {
       else { let dx = a.x - a.from[0], dz = a.z - a.from[1]; const d = Math.hypot(dx, dz) || 1; dx /= d; dz /= d;
         let e = Math.atan2(dx, dz) + Math.sin(a.ph * 0.3) * 0.3 - a.h; e = Math.atan2(Math.sin(e), Math.cos(e)); a.h += Math.max(-a.turn * 2.5 * dt, Math.min(a.turn * 2.5 * dt, e));
         a.sp += (fear[1] - a.sp) * Math.min(1, dt * 4); const nx = a.x + Math.sin(a.h) * a.sp * dt, nz = a.z + Math.cos(a.h) * a.sp * dt;
-        if (a.area(nx, nz) || !a.area(a.x, a.z) || (a.allowWater && waterDist(nx, nz) < 0.9)) { a.x = nx; a.z = nz; a.ph += a.sp * dt / (a.strd || a.stride) * Math.PI * 2; } else { a.h += (rnd() < 0.5 ? 1 : -1) * Math.PI * 0.5 * dt * 4; a.sp *= 0.5; }
+        if (a.area(nx, nz) || !a.area(a.x, a.z) || (a.allowWater && waterDist(nx, nz) < 0.9)) { a.x = nx; a.z = nz; a.ph += a.sp * dt / (a.strE || a.strd || a.stride) * Math.PI * 2; } else { a.h += (rnd() < 0.5 ? 1 : -1) * Math.PI * 0.5 * dt * 4; a.sp *= 0.5; }
         return; } }
     // noite: gado e ovelha deitam; de dia levantam
     if ((name === 'boi' || name === 'bezerro' || name === 'ovelha') && !(a.st === 'flee')) { if (day < 0.22 && a.st !== 'lie' && rnd() < dt * 0.2) { a.st = 'lie'; a.sp = 0; } if (a.st === 'lie') { if (day > 0.3) { a.st = 'idle'; a.t = 2; } else return; } }
@@ -107,7 +110,7 @@ export function buildFauna(scene, opts = {}) {
     if (a.t <= 0 && rain > 0.35 && name === 'ovelha') { const P = LAYOUT.sheepPen.p; a.st = 'walk'; a.tgt = [P[0] + (rnd() - 0.5) * 1.5, P[1] + (rnd() - 0.5) * 1.5]; a.t = 10; }
     const vazio = a.cocho && LAYOUT.corral.feed.level < 0.06;   // cocho vazio: o gado fica rondando e cheirando o cocho
     if (a.t <= 0 && !shelter && a.st !== 'drink' && a.drinks && a.drinks.length && rnd() < (vazio ? 0.45 : a.thirst || 0.1)) { const d = a.drinks[Math.floor(rnd() * a.drinks.length)]; a.st = 'walk'; a.tgt = [d[0], d[1]]; a.face = d[2]; a.goal = 'drink'; a.t = 30; }
-    else if (a.t <= 0 && !shelter && a.swims && a.swims.length && rnd() < 0.06) { const d = a.swims[Math.floor(rnd() * a.swims.length)]; a.st = 'walk'; a.tgt = d; a.goal = 'swim'; a.swimLeft = 1 + Math.floor(rnd() * 2); a.allowWater = true; a.t = 40; }
+    else if (a.t <= 0 && !shelter && a.swims && a.swims.length && rnd() < (a.swimP ?? 0.06)) { const d = a.swims[Math.floor(rnd() * a.swims.length)]; a.st = 'walk'; a.tgt = d; a.goal = 'swim'; a.swimLeft = 1 + Math.floor(rnd() * 2); a.allowWater = true; a.t = 40; }
     if (a.t <= 0) {
       if (shelter) { a.st = 'walk'; a.tgt = near({ x: a.shade[0], z: a.shade[1] }, 3.2, a.area) || a.shade; a.t = 10; }
       else { const r = rnd(); if (r < a.pg) { a.st = 'graze'; a.t = 4 + rnd() * 9; } else if (r < a.pg + a.pw) { a.st = 'walk'; a.tgt = a.follow ? near(a.follow, 2.5, a.area) : a.targets && a.targets.length ? (([x, z]) => [x + 0.9, z + 0.6])(a.targets[Math.floor(rnd() * a.targets.length)]) : near(a, a.roam, a.area); a.t = 25; if (!a.tgt) { a.st = 'idle'; a.t = 2; } } else { a.st = 'idle'; a.t = (a.idleT || [2, 7])[0] + rnd() * ((a.idleT || [2, 7])[1] - (a.idleT || [2, 7])[0]); } } }
@@ -131,7 +134,7 @@ export function buildFauna(scene, opts = {}) {
     const ox = a.x, oz = a.z, nx = a.x + Math.sin(a.h) * a.sp * dt, nz = a.z + Math.cos(a.h) * a.sp * dt;
     if (a.area(nx, nz) || !a.area(a.x, a.z) || (a.allowWater && waterDist(nx, nz) < 0.9)) { a.x = nx; a.z = nz; } else { a.h += Math.PI * (0.5 + rnd() * 0.5); if (a.st === 'walk' && !a.goal && rnd() < 0.75) { a.tgt = a.pick(null); a.t = 20; } else { a.st = 'idle'; a.t = 1 + rnd() * 2; a.goal = null; } }
     if (a.allowWater && !a.goal && !a.swim && a.area(a.x, a.z)) a.allowWater = false;
-    const fwd = Math.max(0, (a.x - ox) * Math.sin(a.h) + (a.z - oz) * Math.cos(a.h)); a.ph += fwd / (a.strd || a.stride) * Math.PI * 2; if (fwd < a.sp * dt * 0.5) a.sp *= 0.5;
+    const fwd = Math.max(0, (a.x - ox) * Math.sin(a.h) + (a.z - oz) * Math.cos(a.h)); a.ph += fwd / (a.strE || a.strd || a.stride) * Math.PI * 2; if (fwd < a.sp * dt * 0.5) a.sp *= 0.5;
   }
   // bicho de esqueleto: o comportamento diz para onde o pescoço e a cabeça vão; bicho.js faz o resto (patas, chão, rabo)
   const _m = new THREE.Vector3();
@@ -146,7 +149,7 @@ export function buildFauna(scene, opts = {}) {
         if (up) { neck = -0.08; head = 0.1; yaw = Math.sin(a.look * 7) * 0.8; if (!a.wasUp) { a.wasUp = true; a.drips = 4 + Math.floor(rnd() * 3); } }
         else { a.wasUp = false; const gl = Math.sin(time * 3.2 + a.look); neck = a.dn + Math.max(0, gl) * 0.05; head = R.graze[1];
           if (gl > 0.95 && !a.gul) { a.gul = true; a.gulp = (a.gulp || 0) + 1; } else if (gl < 0) a.gul = false; } }
-      else { neck = R.graze[0] + Math.sin(time * 1.3 + a.look) * 0.04; head = R.graze[1]; } }
+      else { a.gn = a.gn ?? R.graze[0]; neck = a.gn + Math.sin(time * 1.3 + a.look) * 0.04; head = R.graze[1]; } }
     else if (a.st === 'idle' || a.st === 'lie') { yaw = Math.sin(time * 0.4 + a.look) * 0.5; neck = a.st === 'lie' ? -0.15 : bird ? 0 : -0.05; tilt = Math.sin(time * 0.23 + a.look * 2) > 0.9 ? 0.25 : 0;
       let bt = null, bd = 7; for (const t of threats) { if (t.who === a) continue; const d = Math.hypot(t.x - a.x, t.z - a.z); if (d < bd) { bd = d; bt = t; } }
       if (bt) { let e = Math.atan2(bt.x - a.x, bt.z - a.z) - a.h; e = Math.atan2(Math.sin(e), Math.cos(e)); yaw = Math.max(-1.1, Math.min(1.1, e)); } }
@@ -170,6 +173,11 @@ export function buildFauna(scene, opts = {}) {
         if (u > 0.5 && !a.splashed) { a.splashed = true; muzzleWorld(a, _m); if (fx) fx.splash(_m.x, waterLevelAt(_m.x, _m.z) - U.uWaterDrop.value, _m.z, 0.35); }
         if (u >= 1) { a.sk = 5 + rnd() * 7; a.splashed = false; } } else neck = 0.35; }
     animate(a, dt, { neck, head, yaw, strike, fast, tilt }, { fx, near, time });
+    // pastar: o pescoço se acerta aos poucos até a boca encostar no capim (o morro, a altura do corpo e a cabeça de cada um mudam a conta)
+    if (a.st === 'graze' && !bird && R.graze && near) { muzzleWorld(a, _m); const err = _m.y - (heightAt(_m.x, _m.z) + 0.025 * a.g.scale.x);
+      // (se baixar mais o pescoço já não desce a boca, a cabeça passou da vertical: para ali)
+      const up = err > 0 && a.gErr != null && err > a.gErr - 1e-4 && (a.gn ?? 0) > R.graze[0] + 0.05; a.gErr = err;
+      if (!up) a.gn = Math.max(R.graze[0] - 0.4, Math.min(R.graze[0] + 0.45, (a.gn ?? R.graze[0]) + Math.max(-1, Math.min(1, err * 5)) * dt * 1.2)); }
     // beber: anel na água a cada gole; nadar: a esteira
     if (a.st === 'drink' && !a.cocho && !bird) { muzzleWorld(a, _m); const wlm = waterLevelAt(_m.x, _m.z) - U.uWaterDrop.value;
       if (a.vig >= 0) { const err = _m.y - (wlm + 0.01); a.dn = Math.max(R.graze[0] - 0.4, Math.min(R.graze[0] + 0.9, a.dn + Math.max(-1, Math.min(1, err * 4)) * dt * 1.5));
@@ -219,7 +227,7 @@ export function buildFauna(scene, opts = {}) {
   spawn(() => cow(pickCoat(), 0.58 + rnd() * 0.08), 2, { ...cowO(inPasto, pickIn(inPasto, tP.c, 17)), shade, sep: 1.4, stride: 1.05, name: 'bezerro', drinks: bebePasto });
   // capivaras na beira do rio (peça do rio e da mata)
   const bank = (x, z) => { const w = waterDist(x, z); return w > 0.4 && w < 4.5 && inAnyTile(x, z, 0.9) && !blocked(x, z) && (inHex(x, z, TILES[0].c, 0.92) || inHex(x, z, TILES[1].c, 0.92)); };
-  spawn(capybara, 4, { name: 'capivara', scale: 0.82, area: bank, pick: pickIn(bank, [TILES[0].c[0] + 10, TILES[0].c[1]], 9), drinks: drinkSpots(pickIn(bank, [TILES[0].c[0] + 10, TILES[0].c[1]], 9)), swims: swimSpots([TILES[0].c[0] + 10, TILES[0].c[1]], 12), swimmer: true, floatD: 0.36, idleT: [8, 22], pg: 0.6, pw: 0.25, vw: 0.5, vg: 0.04, turn: 1.2, stride: 0.7, sep: 1.0, roam: 4, gp: 0.6, dropNeck: 0.05 });
+  spawn(capybara, 4, { name: 'capivara', scale: 0.82, area: bank, pick: pickIn(bank, [TILES[0].c[0] + 10, TILES[0].c[1]], 9), drinks: drinkSpots(pickIn(bank, [TILES[0].c[0] + 10, TILES[0].c[1]], 9)), swimP: 0.04, swims: swimSpots([TILES[0].c[0] + 10, TILES[0].c[1]], 12), swimmer: true, floatD: 0.36, idleT: [8, 22], pg: 0.6, pw: 0.25, vw: 0.5, vg: 0.04, turn: 1.2, stride: 0.7, sep: 1.0, roam: 4, gp: 0.6, dropNeck: 0.05 });
   // a garça no raso da vereda e do córrego
   const shallow = (x, z) => { const d = WATER_Y - heightAt(x, z); return d > 0.05 && d < 0.32 && inAnyTile(x, z, 0.95); };
   spawn(garca, 1, { name: 'garça-branca', scale: 0.85, area: shallow, pick: pickIn(shallow, SPRING, 9), pg: 0.0, pw: 0.35, vw: 0.25, vg: 0, turn: 1.2, stride: 0.5, sep: 1, roam: 3, gp: 0, strike: true, water: true });
@@ -230,7 +238,7 @@ export function buildFauna(scene, opts = {}) {
   const lagoaRaso = (x, z) => { const d = lakeDist(x, z); return d > -1.4 && d < 0.2; };
   spawn(moura, 1, { name: 'garça-moura', scale: 0.88, area: lagoaRaso, pick: pickIn(lagoaRaso, LAKE.c, LAKE.r + 2), pg: 0, pw: 0.3, vw: 0.3, vg: 0, turn: 1, stride: 0.6, sep: 1, roam: 4, gp: 0, strike: true, water: true });
   const lagoaBeira = (x, z) => { const d = lakeDist(x, z); return d > 0.4 && d < 5 && !blocked(x, z); };
-  spawn(capybara, 3, { name: 'capivara', scale: 0.82, area: lagoaBeira, pick: pickIn(lagoaBeira, LAKE.c, LAKE.r + 4), drinks: drinkSpots(pickIn(lagoaBeira, LAKE.c, LAKE.r + 4)), swims: swimSpots(LAKE.c, LAKE.r * 0.7), swimmer: true, floatD: 0.36, idleT: [8, 22], pg: 0.6, pw: 0.25, vw: 0.5, vg: 0.04, turn: 1.2, stride: 0.7, sep: 1.0, roam: 4, gp: 0.6, dropNeck: 0.05 });
+  spawn(capybara, 3, { name: 'capivara', scale: 0.82, area: lagoaBeira, pick: pickIn(lagoaBeira, LAKE.c, LAKE.r + 4), drinks: drinkSpots(pickIn(lagoaBeira, LAKE.c, LAKE.r + 4)), swimP: 0.04, swims: swimSpots(LAKE.c, LAKE.r * 0.7), swimmer: true, floatD: 0.36, idleT: [8, 22], pg: 0.6, pw: 0.25, vw: 0.5, vg: 0.04, turn: 1.2, stride: 0.7, sep: 1.0, roam: 4, gp: 0.6, dropNeck: 0.05 });
   // bando de seriemas no cerradão: a primeira escolhe o rumo e as outras vão atrás
   const tCd = tile('cerradao'), cerrd = (x, z) => inHex(x, z, tCd.c, 0.9) && !blocked(x, z);
   const lead = all.length; spawn(seriema, 4, { name: 'seriema', scale: 0.8, area: cerrd, pick: pickIn(cerrd, tCd.c, 14), pg: 0.25, pw: 0.6, vw: 1.4, vg: 0.1, turn: 2.5, stride: 0.55, sep: 1.4, roam: 9, gp: 0.8, peck: true, dropNeck: 0.1 });
@@ -247,13 +255,13 @@ export function buildFauna(scene, opts = {}) {
   spawn(tamandua, 1, { name: 'tamanduá-bandeira', scale: 0.86, idleT: [1.5, 4], area: (x, z) => campo(x, z) || inHex(x, z, tP.c, 0.9), pick: pickIn(campo, tD.c, 12), pg: 0.6, pw: 0.45, vw: 0.45, vg: 0.03, turn: 1.0, stride: 0.6, sep: 1.6, roam: 12, gp: 0.5, dropNeck: 0.1,
     targets: termites });
   const mataBeira = (x, z) => { const w = waterDist(x, z); return w > 0.6 && w < 6 && inHex(x, z, tile('mata').c, 0.9) && !blocked(x, z); };
-  spawn(anta, 1, { name: 'anta', idleT: [1.5, 4], area: mataBeira, pick: pickIn(mataBeira, tile('mata').c, 14), drinks: drinkSpots(pickIn((x, z) => mataBeira(x, z) || (waterDist(x, z) > 0.25 && waterDist(x, z) < 0.6 && inHex(x, z, tile('mata').c, 0.9)), tile('mata').c, 14)), swims: swimSpots(tile('mata').c, 16), swimmer: true, floatD: 0.55, pg: 0.62, pw: 0.35, vw: 0.6, vg: 0.05, turn: 0.9, stride: 0.9, sep: 2, roam: 6, gp: 0.7, dropNeck: 0.1 });
+  spawn(anta, 1, { name: 'anta', scale: 0.98, idleT: [1.5, 4], area: mataBeira, pick: pickIn(mataBeira, tile('mata').c, 14), drinks: drinkSpots(pickIn((x, z) => mataBeira(x, z) || (waterDist(x, z) > 0.25 && waterDist(x, z) < 0.6 && inHex(x, z, tile('mata').c, 0.9)), tile('mata').c, 14)), swims: swimSpots(tile('mata').c, 16), swimmer: true, swimP: 0.02, floatD: 0.55, pg: 0.62, pw: 0.28, vw: 0.6, vg: 0.05, turn: 0.9, stride: 0.9, sep: 2, roam: 6, gp: 0.7, dropNeck: 0.1 });
   const bordaMata = (x, z) => inHex(x, z, tile('mata').c, 0.98) && !inHex(x, z, tile('mata').c, 0.55) && !blocked(x, z);
-  spawn(onca, 1, { name: 'onça-pintada', stalker: true, walkNeck: 0.22, gallopFr: 1.0, runStride: 2.1, area: bordaMata, pick: pickIn(bordaMata, tile('mata').c, 18), pg: 0.1, pw: 0.75, vw: 0.9, vg: 0.05, turn: 1.4, stride: 0.95, sep: 2, roam: 12, gp: 0.3, dropNeck: 0.05,
+  spawn(onca, 1, { name: 'onça-pintada', stalker: true, walkNeck: 0.22, gallopFr: 1.0, runStride: 2.1, area: bordaMata, pick: pickIn(bordaMata, tile('mata').c, 18), idleT: [5, 14], pg: 0.1, pw: 0.5, vw: 0.9, vg: 0.05, turn: 1.4, stride: 0.95, sep: 2, roam: 12, gp: 0.3, dropNeck: 0.05,
     when: () => U.uDay.value < 0.55 });
   // ovelhas no aprisco: lã fofa em cachos, cara e pernas escuras
   const Sp = LAYOUT.sheepPen, inPen = (x, z) => inBoxAt(x, z, Sp.p, Sp.w - 1.0, Sp.d - 1.0, Sp.rot);
-  spawn(ovelha, 5, { name: 'ovelha', scale: 0.84, area: inPen, pick: pickIn(inPen, Sp.p, Sp.w / 2), pg: 0.6, pw: 0.3, vw: 0.5, vg: 0.04, turn: 1.6, stride: 0.6, sep: 0.9, roam: 3, gp: 0.9, dropNeck: 0.12 });
+  spawn(ovelha, 5, { name: 'ovelha', scale: 0.84, area: inPen, pick: pickIn(inPen, Sp.p, Sp.w / 2), pg: 0.52, pw: 0.3, vw: 0.5, vg: 0.04, turn: 1.6, stride: 0.6, sep: 0.9, roam: 3, gp: 0.9, dropNeck: 0.12 });
   // joão-de-barro: passarinho cor de barro andando aos pulinhos no chão perto do ninho (no mourão do curral)
   const nest = LAYOUT.nest || [Cr.p[0], Cr.p[1], 0], perto = (x, z) => Math.hypot(x - nest[0], z - nest[1]) < 9 && !inCorral(x, z) && !blocked(x, z);
   spawn(jb, 2, { name: 'joão-de-barro (na régua)', scale: READ3(0.2) / 0.2, area: perto, pick: pickIn(perto, [nest[0], nest[1]], 6), pg: 0.5, pw: 0.45, vw: 0.9, vg: 0.0, turn: 5, stride: 0.12, sep: 0.4, roam: 3, gp: 0.8, peck: true });
