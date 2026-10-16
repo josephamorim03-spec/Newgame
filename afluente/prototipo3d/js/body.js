@@ -73,9 +73,10 @@ export function bodyMaterial(patTex) {
 
 // ---------- montagem: tubos de anéis (cada direção com o seu raio) + peças rígidas (cabeça, mãos, pés)
 function Builder() {
-  const pos = [], nor = [], col = [], uv = [], sk = [], sw = [], pat = [], idx = [];
+  const pos = [], nor = [], col = [], uv = [], sk = [], sw = [], pat = [], idx = [], part = [], partNames = ['?']; let cur = 0;
+  const setPart = name => { let i = partNames.indexOf(name); if (i < 0) { partNames.push(name); i = partNames.length - 1; } cur = i; };   // cada vértice sabe de que peça é (o juiz de gente usa)
   const bi = [0, 0, 0, 0], bw = [0, 0, 0, 0];
-  const vert = (p, n, c, u, v, bones, pt) => { pos.push(p.x, p.y, p.z); nor.push(n.x, n.y, n.z); col.push(c.r, c.g, c.b); uv.push(u, v);
+  const vert = (p, n, c, u, v, bones, pt) => { part.push(cur); pos.push(p.x, p.y, p.z); nor.push(n.x, n.y, n.z); col.push(c.r, c.g, c.b); uv.push(u, v);
     let m = 0; bw[0] = bw[1] = bw[2] = bw[3] = 0; bi[0] = bi[1] = bi[2] = bi[3] = 0;
     for (let q = 0; q < bones.length; q++) { const w = bones[q][1]; if (!(w > 1e-4)) continue; let at = m < 4 ? m++ : -1;   // os quatro ossos de mais peso
       if (at < 0) { let lo = 0; for (let r = 1; r < 4; r++) if (bw[r] < bw[lo]) lo = r; if (bw[lo] >= w) continue; at = lo; } bi[at] = bones[q][0]; bw[at] = w; }
@@ -95,12 +96,13 @@ function Builder() {
         nn.crossVectors(ty, ta); rd.subVectors(P[i][kk], r.c); if (nn.dot(rd) < 0) nn.negate(); if (nn.lengthSq() < 1e-12) nn.copy(rd); nn.normalize();
         vert(P[i][k], nn, typeof r.col === 'function' ? r.col(kk) : r.col, k / seg * perim, r.v ?? r.c.y / 0.22, typeof r.b === 'function' ? r.b(kk) : r.b, typeof r.pat === 'function' ? r.pat(kk) : (r.pat || 0)); } }
     const tri = (a, b, c) => { const pa = P[Math.floor((a - base) / per)][(a - base) % per], pb = P[Math.floor((b - base) / per)][(b - base) % per], pc = P[Math.floor((c - base) / per)][(c - base) % per];
-      ta.subVectors(pb, pa); ty.subVectors(pc, pa); nn.crossVectors(ta, ty); const vi = a * 3; if (nn.x * nor[vi] + nn.y * nor[vi + 1] + nn.z * nor[vi + 2] < 0) idx.push(a, c, b); else idx.push(a, b, c); };
+      ta.subVectors(pb, pa); ty.subVectors(pc, pa); nn.crossVectors(ta, ty); if (nn.lengthSq() < 1e-20) return;
+      const sx = nor[a * 3] + nor[b * 3] + nor[c * 3], sy = nor[a * 3 + 1] + nor[b * 3 + 1] + nor[c * 3 + 1], sz = nor[a * 3 + 2] + nor[b * 3 + 2] + nor[c * 3 + 2]; if (nn.x * sx + nn.y * sy + nn.z * sz < 0) idx.push(a, c, b); else idx.push(a, b, c); };
     for (let i = 0; i + 1 < n; i++) for (let k = 0; k < seg; k++) { const a = base + i * per + k, b = a + per; tri(a, a + 1, b); tri(a + 1, b + 1, b); }
     const cap = (ri, top) => { const r = rings[ri], ctr = r.c.clone(), dir = r.ax.clone().multiplyScalar(top === (ri === n - 1) ? 1 : -1);
       if (n > 1) { const o = rings[ri === 0 ? 1 : n - 2].c; dir.subVectors(r.c, o).normalize(); }
       const c = vert(ctr, dir, typeof r.col === 'function' ? r.col(0) : r.col, 0.5, 0.5, typeof r.b === 'function' ? r.b(0) : r.b, typeof r.pat === 'function' ? r.pat(0) : (r.pat || 0));
-      for (let k = 0; k < seg; k++) { const a = base + ri * per + k; ta.subVectors(P[ri][k + 1], ctr); ty.subVectors(P[ri][k], ctr); nn.crossVectors(ta, ty); if (nn.dot(dir) < 0) idx.push(c, a + 1, a); else idx.push(c, a, a + 1); } };
+      for (let k = 0; k < seg; k++) { const a = base + ri * per + k; ta.subVectors(P[ri][k], ctr); ty.subVectors(P[ri][k + 1], ctr); nn.crossVectors(ta, ty); if (nn.dot(dir) < 0) idx.push(c, a + 1, a); else idx.push(c, a, a + 1); } };   // (c, a, a+1) tem normal (Pk−c)×(Pk+1−c)
     if (capTop) cap(n - 1, true); if (capBot) cap(0, false);
   }
   // peça rígida (geometria pronta) presa a um osso (ou a vários, com pesos); se a geometria tiver cor por vértice, ela vale
@@ -108,11 +110,16 @@ function Builder() {
     const p = geo.attributes.position, n = geo.attributes.normal, u = geo.attributes.uv, cc = geo.attributes.color;
     const base = pos.length / 3, c0 = C(c), tc = new THREE.Color(), bb = Array.isArray(bone) ? bone : [[bone, 1]];
     for (let i = 0; i < p.count; i++) vert(V(p.getX(i), p.getY(i), p.getZ(i)), V(n.getX(i), n.getY(i), n.getZ(i)), cc ? tc.setRGB(cc.getX(i), cc.getY(i), cc.getZ(i)) : c0, u ? u.getX(i) : 0, u ? u.getY(i) : 0, bb, pt);
-    if (geo.index) { const ix = geo.index; for (let i = 0; i < ix.count; i++) idx.push(base + ix.getX(i)); } else for (let i = 0; i < p.count; i++) idx.push(base + i); }
+    const n3 = geo.index ? geo.index.count : p.count, at = i => geo.index ? geo.index.getX(i) : i;
+    for (let t = 0; t + 2 < n3; t += 3) { const a = at(t), b = at(t + 1), c = at(t + 2), ux = p.getX(b) - p.getX(a), uy = p.getY(b) - p.getY(a), uz = p.getZ(b) - p.getZ(a), vx = p.getX(c) - p.getX(a), vy = p.getY(c) - p.getY(a), vz = p.getZ(c) - p.getZ(a);
+      const cx = uy * vz - uz * vy, cy = uz * vx - ux * vz, cz = ux * vy - uy * vx; if (cx * cx + cy * cy + cz * cz < 1e-20) continue;   // sem os triângulos de área zero (pontas das cápsulas)
+      const sx = n.getX(a) + n.getX(b) + n.getX(c), sy = n.getY(a) + n.getY(b) + n.getY(c), sz = n.getZ(a) + n.getZ(b) + n.getZ(c);
+      if (cx * sx + cy * sy + cz * sz < 0) idx.push(base + a, base + c, base + b); else idx.push(base + a, base + b, base + c); } }
   function build() { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3));
     g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setAttribute('pat', new THREE.Float32BufferAttribute(pat, 1));
-    g.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(sk, 4)); g.setAttribute('skinWeight', new THREE.Float32BufferAttribute(sw, 4)); g.setIndex(idx); return g; }
-  return { tube, rigid, build };
+    g.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(sk, 4)); g.setAttribute('skinWeight', new THREE.Float32BufferAttribute(sw, 4)); g.setIndex(idx);
+    g.userData.part = Uint8Array.from(part); g.userData.partNames = partNames.slice(); return g; }
+  return { tube, rigid, build, setPart };
 }
 // uma peça de geometria orientada: cápsula do ponto a até o ponto b (raio r)
 function capsAB(a, b, r, rs = 6, cs = 3) { const d = new THREE.Vector3().subVectors(b, a), L = d.length(), g = new THREE.CapsuleGeometry(r, Math.max(1e-4, L), cs, rs);
@@ -133,14 +140,16 @@ function casca(R) { const n = R.length, X = new Float64Array(n), Z = new Float64
 // ---------- o tronco: anéis base (meia-largura, frente, costas, deslocamento do centro, expoente da superelipse) nos marcos
 // do homem e da mulher (metros, corpo de 1,70)
 const TOR = {
-  m: [[0.795, 0.088, 0.06, 0.066, -0.004, 2.0], [0.82, 0.15, 0.088, 0.1, -0.01, 2.1], [0.86, 0.162, 0.093, 0.108, -0.014, 2.1], [0.90, 0.166, 0.095, 0.11, -0.014, 2.15],
+  m: [[0.795, 0.088, 0.06, 0.066, -0.004, 2.0], [0.82, 0.15, 0.088, 0.1, -0.01, 2.1], [0.86, 0.158, 0.093, 0.108, -0.014, 2.1], [0.90, 0.161, 0.095, 0.11, -0.014, 2.15],
     [0.95, 0.163, 0.097, 0.103, -0.01, 2.15], [1.00, 0.156, 0.098, 0.094, -0.004, 2.2], [1.05, 0.148, 0.098, 0.088, 0.002, 2.25], [1.10, 0.151, 0.101, 0.088, 0.006, 2.25],
     [1.16, 0.16, 0.107, 0.093, 0.008, 2.3], [1.22, 0.16, 0.112, 0.099, 0.01, 2.35], [1.28, 0.165, 0.113, 0.104, 0.01, 2.35], [1.33, 0.167, 0.107, 0.106, 0.006, 2.3],
-    [1.37, 0.162, 0.097, 0.101, 0.0, 2.2], [1.40, 0.143, 0.083, 0.09, -0.006, 2.1], [1.425, 0.118, 0.07, 0.075, -0.008, 2.0], [1.445, 0.072, 0.06, 0.062, -0.006, 2.0]],
-  f: [[0.79, 0.092, 0.06, 0.068, -0.004, 2.0], [0.815, 0.167, 0.088, 0.104, -0.012, 2.1], [0.85, 0.182, 0.093, 0.114, -0.018, 2.1], [0.885, 0.188, 0.094, 0.116, -0.02, 2.15],
+    [1.355, 0.19, 0.103, 0.104, 0.004, 2.6], [1.375, 0.205, 0.095, 0.099, 0.001, 2.9], [1.392, 0.203, 0.087, 0.092, -0.003, 2.9], [1.408, 0.18, 0.079, 0.084, -0.006, 2.6],
+    [1.428, 0.118, 0.068, 0.072, -0.008, 2.2], [1.445, 0.072, 0.06, 0.062, -0.006, 2.0]],
+  f: [[0.79, 0.092, 0.06, 0.068, -0.004, 2.0], [0.815, 0.167, 0.088, 0.104, -0.012, 2.1], [0.85, 0.176, 0.093, 0.114, -0.018, 2.1], [0.885, 0.181, 0.094, 0.116, -0.02, 2.15],
     [0.93, 0.18, 0.094, 0.107, -0.016, 2.15], [0.98, 0.162, 0.093, 0.096, -0.008, 2.2], [1.03, 0.14, 0.09, 0.086, 0.0, 2.2], [1.065, 0.131, 0.088, 0.083, 0.004, 2.2],
     [1.11, 0.135, 0.091, 0.083, 0.008, 2.25], [1.16, 0.143, 0.096, 0.087, 0.012, 2.3], [1.21, 0.149, 0.1, 0.091, 0.012, 2.3], [1.27, 0.155, 0.1, 0.094, 0.01, 2.3],
-    [1.32, 0.152, 0.097, 0.095, 0.006, 2.25], [1.36, 0.148, 0.088, 0.091, 0.0, 2.2], [1.39, 0.132, 0.077, 0.083, -0.005, 2.1], [1.418, 0.106, 0.065, 0.069, -0.007, 2.0], [1.44, 0.064, 0.054, 0.056, -0.005, 2.0]],
+    [1.32, 0.152, 0.097, 0.095, 0.006, 2.25], [1.345, 0.172, 0.091, 0.092, 0.003, 2.55], [1.365, 0.186, 0.083, 0.087, 0.0, 2.8], [1.382, 0.184, 0.077, 0.082, -0.004, 2.8],
+    [1.398, 0.162, 0.071, 0.076, -0.006, 2.5], [1.422, 0.104, 0.063, 0.067, -0.007, 2.1], [1.44, 0.064, 0.054, 0.056, -0.005, 2.0]],
 };
 function anelBase(T, y) { let i = 1; while (i < T.length - 1 && y > T[i][0]) i++; const a = T[i - 1], b = T[i], t = cl((y - a[0]) / (b[0] - a[0]), 0, 1); return a.map((v, j) => v + (b[j] - v) * t); }
 const superR = (a, W, Fr, Bk, e) => { const c = Math.abs(Math.cos(a)), s = Math.abs(Math.sin(a)), Dd = Math.sin(a) >= 0 ? Fr : Bk; return 1 / Math.pow(Math.pow(c / W, e) + Math.pow(s / Dd, e), 1 / e); };
@@ -194,7 +203,7 @@ export function buildBody(s) {
   const I = b => b.userData.i;
   const shX = med.ombroX, Lu = med.braco, Lf = med.antebraco;
   const arms = [-1, 1].map(sx => { const tag = sx < 0 ? 'D' : 'E';
-    const clav = mk('clav' + tag, chest, V(sx * 0.022, yShJ + 0.008, 0.055)), sh = mk('sh' + tag, clav, V(sx * shX, yShJ, -0.008));
+    const clav = mk('clav' + tag, chest, V(sx * 0.022, yShJ + 0.035, 0.055)), sh = mk('sh' + tag, clav, V(sx * shX, yShJ, -0.008));
     const el = mk('el' + tag, sh, W['sh' + tag].clone().add(V(sx * 0.02 * Lu / 0.29, -Lu, 0))), wr = W['el' + tag].clone().add(V(sx * 0.018 * Lf / 0.255, -Lf, 0));
     const tw = mk('tw' + tag, el, W['el' + tag].clone().lerp(wr, 0.5)), ha = mk('ha' + tag, tw, wr); ha.rotation.order = 'YXZ';
     return { sx, clav, sh, el, tw, ha, tag }; });
@@ -234,9 +243,9 @@ export function buildBody(s) {
 
   // ---------- tronco
   const SEG = 32, T = TOR[P.tk];
-  const ringsY = (P.tk === 'f' ? [0.79, 0.805, 0.825, 0.845, 0.865, 0.885, 0.905, 0.93, 0.955, 0.98, 1.005, 1.03, 1.055, 1.08, 1.11, 1.14, 1.17, 1.195, 1.22, 1.245, 1.27, 1.295, 1.32, 1.345, 1.365, 1.385, 1.4, 1.415, 1.428, 1.44]
-    : [0.795, 0.81, 0.83, 0.85, 0.87, 0.89, 0.91, 0.935, 0.96, 0.985, 1.01, 1.035, 1.06, 1.085, 1.11, 1.14, 1.17, 1.2, 1.225, 1.25, 1.275, 1.3, 1.325, 1.35, 1.37, 1.39, 1.405, 1.42, 1.432, 1.445]);
-  const kidW = yT => kid ? (yT > 1.15 ? 0.9 : yT > 0.95 ? 0.98 : 0.92) : 1, fr = P.fr;
+  const ringsY = (P.tk === 'f' ? [0.79, 0.805, 0.825, 0.845, 0.865, 0.885, 0.905, 0.93, 0.955, 0.98, 1.005, 1.03, 1.055, 1.08, 1.11, 1.14, 1.17, 1.195, 1.22, 1.245, 1.27, 1.295, 1.31, 1.32, 1.328, 1.336, 1.344, 1.352, 1.36, 1.368, 1.376, 1.384, 1.392, 1.4, 1.408, 1.416, 1.424, 1.432, 1.44]
+    : [0.795, 0.81, 0.83, 0.85, 0.87, 0.89, 0.91, 0.935, 0.96, 0.985, 1.01, 1.035, 1.06, 1.085, 1.11, 1.14, 1.17, 1.2, 1.225, 1.25, 1.275, 1.3, 1.315, 1.325, 1.333, 1.341, 1.349, 1.357, 1.365, 1.373, 1.381, 1.389, 1.397, 1.405, 1.413, 1.421, 1.429, 1.437, 1.445]);
+  const kidW = yT => kid ? (yT > 1.15 ? 0.95 : yT > 0.95 ? 0.98 : 0.92) : 1, fr = P.fr;
   const torso = ringsY.map(yT => { const [, Wd, Fr, Bk, cz, e] = anelBase(T, yT), y = deTab(yT), w = Wd * fr * kidW(yT), fd = Fr * (0.5 + 0.5 * fr), bk = Bk * (0.5 + 0.5 * fr);
     const R = new Float32Array(SEG); for (let k = 0; k < SEG; k++) { const a = k / SEG * Math.PI * 2; R[k] = superR(a, w, fd, bk, e) + relevo(P, yT, a); }
     return { yT, y, cz, R }; });
@@ -252,19 +261,20 @@ export function buildBody(s) {
   // ossos do tronco: bacia → lombar → torácica; nádega e virilha acompanham um pouco a coxa; o alto do ombro, a clavícula
   const ySp = W.spine.y, yCh = W.chest.y;
   const pesoTronco = (y, a, R) => { const out = []; let wh = 1, wsp = 0, wch = 0;
-    if (y > ySp - 0.05) { const t = sm01((y - (ySp - 0.05)) / 0.12); wh = 1 - t; wsp = t; }
-    if (y > yCh - 0.02) { const t = sm01((y - (yCh - 0.02)) / 0.1); wch = t * wsp; wsp -= wch; }
+    if (y > ySp - 0.1) { const t = sm01((y - (ySp - 0.1)) / 0.2); wh = 1 - t; wsp = t; }   // transições longas: a pele dobra aos poucos
+    if (y > yCh - 0.06) { const t = sm01((y - (yCh - 0.06)) / 0.18); wch = t * wsp; wsp -= wch; }
     // coxa: abaixo da junta do quadril a pele da nádega e da virilha vai com o fêmur
-    const wl = 0.45 * sm01((yHipJ + 0.03 - y) / 0.09), x = Math.cos(a), ww = [wl * sm01(0.5 - 2 * x), wl * sm01(0.5 + 2 * x)];
+    const wl = 0.18 * sm01((yHipJ + 0.02 - y) / 0.09), x = Math.cos(a), ww = [wl * sm01(0.5 - 2 * x), wl * sm01(0.5 + 2 * x)];
     wh -= ww[0] + ww[1]; out.push([I(legs[0].hp), ww[0] * (1)], [I(legs[1].hp), ww[1]]);
     // ombro: alto e lado de fora vão com a clavícula (e um pouco com o úmero); a axila abre com o braço
     const ax = Math.abs(R * Math.cos(a)), side = Math.cos(a) > 0 ? 1 : 0, A = arms[side];
-    const wc = 0.65 * sm01((y - (yShJ - 0.09)) / 0.06) * sm01((ax - 0.1) / 0.06), wsh = 0.22 * sm01((y - (yShJ - 0.16)) / 0.05) * sm01((ax - 0.135) / 0.04);
+    const wc = 0.55 * sm01((y - (yShJ - 0.08)) / 0.1) * sm01((ax - 0.08) / 0.08), wsh = 0.34 * sm01((y - (yShJ - 0.15)) / 0.1) * sm01((ax - 0.12) / 0.06);
     const wTop = Math.min(wch, wc + wsh); wch -= wTop; if (wTop > 0) { const k = wTop / ((wc + wsh) || 1); out.push([I(A.clav), wc * k], [I(A.sh), wsh * k]); }
     out.push([I(hips), Math.max(0, wh)], [I(spine), wsp], [I(chest), wch]); return out; };
   const corDe = (g, y) => { const ao = y < yCrotch + 0.04 ? 0.82 + 0.18 * sm01((y - yCrotch) / 0.04) : 1;
     const c = g === 'pele' ? skin : g === 'baixo' ? bot : g === 'agasalho' ? jacket : g === 'xale' ? shawl : top; return c.clone().multiplyScalar(ao); };
   const patDe = g => g === 'pele' ? 0 : g === 'baixo' ? botPat : g === 'cima' ? topPat : 3;
+  bd.setPart('tronco');
   bd.tube(torso.map(r => { const R = new Float32Array(SEG), gs = []; for (let k = 0; k < SEG; k++) { const a = k / SEG * Math.PI * 2, g = veste(r.y, a); gs.push(g); R[k] = g === 'pele' ? r.R[k] : r.Rc[g][k]; }
     return { c: V(0, r.y, r.cz), u: V(1, 0, 0), w: V(0, 0, 1), R, col: k => corDe(gs[k], r.y), pat: k => patDe(gs[k]), b: k => pesoTronco(r.y, k / SEG * Math.PI * 2, R[k]), v: r.y / 0.22 }; }), SEG, false, true, 3);
   const anelEm = (y, g) => { let i = 0; while (i < torso.length - 2 && torso[i + 1].y < y) i++; const A = torso[i], B = torso[i + 1], t = cl((y - A.y) / (B.y - A.y), 0, 1), R = new Float32Array(SEG);
@@ -280,25 +290,25 @@ export function buildBody(s) {
       const wN = i < 2 ? [[I(chest), 1 - i * 0.5], [I(neck), i * 0.5]] : i < 5 ? [[I(neck), 1]] : [[I(neck), i === 5 ? 0.5 : 0.1], [I(head), i === 5 ? 0.5 : 0.9]];
       const col = k => { const a = k / NS * Math.PI * 2; return (veste(Math.min(y, yNeck - 0.0001), a) !== 'pele' && y < decote(a) + 0.004 ? top : skin).clone().multiplyScalar(0.94 + 0.06 * t); };
       return { c: V(0, y, cz), u: V(1, 0, 0), w: V(0, 0, 1), R, b: wN, col, pat: 0 }; });
-    bd.tube(rings, NS, true, false); }
+    bd.setPart('tronco'); bd.tube(rings, NS, true, false); }
 
   // ---------- braços
   const sleeveEnd = s.warm ? 0.97 : { longa: 0.97, 'arregaçada': 0.58, curta: 0.2, nenhuma: -1 }[s.sleeves] ?? 0.2;   // até onde vai a manga (0 = ombro, 1 = punho)
   const sleeveC = jacket || (shawl ? null : top), sleevePat = jacket ? 3 : topPat;
   for (const A of arms) { const sx = A.sx, S = W['sh' + A.tag], E = W['el' + A.tag], Wr = W['ha' + A.tag], aL = sx > 0 ? 0 : Math.PI, aM = aL + Math.PI;
     const M = P.M, Fp = Math.max(0, P.F), ff = f ? 0.9 : kid ? 0.82 : 1, fat = 0.003 * P.F + (f ? 0.004 * Fp : 0);
-    const rUp = t => tab([[-0.07, 0.02], [-0.035, 0.032], [0, 0.041], [0.08, 0.044], [0.18, 0.044], [0.3, 0.043], [0.45, 0.044], [0.6, 0.043], [0.75, 0.041], [0.88, 0.038], [0.97, 0.036], [1.05, 0.036]], t) * ff;
+    const rUp = t => tab([[-0.04, 0.026], [0, 0.036], [0.05, 0.041], [0.08, 0.044], [0.18, 0.044], [0.3, 0.043], [0.45, 0.044], [0.6, 0.043], [0.75, 0.041], [0.88, 0.038], [0.97, 0.036], [1.05, 0.036]], t) * ff;
     const rLo = t => tab([[0, 0.038], [0.1, 0.041], [0.25, 0.04], [0.45, 0.035], [0.65, 0.03], [0.82, 0.026], [0.95, 0.024], [1.0, 0.0235]], t) * ff;
     const NA = 16, rings = [], pos01 = [];   // pos01: posição ao longo do braço (0 ombro, 0,53 cotovelo, 1 punho) para a manga
     const frame = (a0, a1) => { const ax = a1.clone().sub(a0).normalize(), w = V(0, 0, 1).addScaledVector(ax, -ax.z).normalize(), u = new THREE.Vector3().crossVectors(w, ax).normalize(); return { ax, u, w }; };
     const fu = frame(S, E), fl = frame(E, Wr), su = Lu / (Lu + Lf);
-    for (const t of [-0.07, -0.035, 0, 0.08, 0.18, 0.3, 0.42, 0.55, 0.68, 0.8, 0.9, 0.97]) { const c = S.clone().lerp(E, t); if (t < 0.05) c.x -= sx * 0.012 * (1 - sm01((t + 0.07) / 0.12));   // a ponta do ombro (acrômio) fica rente ao trapézio
+    for (const t of [-0.04, 0, 0.08, 0.18, 0.3, 0.42, 0.55, 0.68, 0.8, 0.9, 0.97]) { const c = S.clone().lerp(E, t); if (t < 0.08) c.x -= sx * 0.014 * (1 - sm01((t + 0.04) / 0.12));   // o alto do braço fica dentro do ombro do tronco
       const R = new Float32Array(NA); for (let k = 0; k < NA; k++) { const a = k / NA * Math.PI * 2; let r = rUp(t) + fat * sm01((t + 0.05) / 0.2);
-        r += (0.003 + 0.006 * M) * (kid ? 0.5 : 1) * G(dA(a, aL), 0.8) * G(t - 0.14, 0.12);                          // deltoide
+        r += (0.003 + 0.006 * M) * (kid ? 0.5 : 1) * G(dA(a, aL), 0.8) * G(t - 0.17, 0.1);                          // deltoide
         r += (0.003 + 0.008 * M) * (kid ? 0.4 : 1) * G(dA(a, FRENTE), 0.55) * G(t - 0.6, 0.18);                       // bíceps
         r += (0.004 + 0.006 * M + 0.006 * Fp * (f ? 1.5 : 0.6)) * G(dA(a, COSTAS), 0.6) * G(t - 0.45, 0.22);          // tríceps (e o braço da mulher)
         R[k] = r; }
-      const wsh = sm01((t + 0.08) / 0.18), we = t > 0.85 ? 0.5 * sm01((t - 0.85) / 0.15) : 0;
+      const wsh = sm01((t + 0.06) / 0.14), we = t > 0.85 ? 0.5 * sm01((t - 0.85) / 0.15) : 0;
       rings.push({ c, u: fu.u, w: fu.w, R, b: [[I(A.clav), 1 - wsh], [I(A.sh), wsh - we], [I(A.el), we]] }); pos01.push(Math.max(0, t) * su); }
     for (const t of [0.04, 0.12, 0.25, 0.4, 0.55, 0.7, 0.82, 0.92, 0.985]) { const c = E.clone().lerp(Wr, t), R = new Float32Array(NA), fl01 = sm01((t - 0.7) / 0.28);
       for (let k = 0; k < NA; k++) { const a = k / NA * Math.PI * 2; let r = rLo(t) + fat * 0.6 * (1 - t);
@@ -314,14 +324,14 @@ export function buildBody(s) {
     rings.forEach((r, i) => { const inS = pos01[i] <= sl && sl > 0 && (sleeveC || (shawl && pos01[i] < 0.35)); r.inS = inS;
       if (inS) { const H = casca(r.R); const ease = loose * sm01((pos01[i] + 0.02) / 0.08) * (pos01[i] < 0.5 ? 1 : 0.7); for (let k = 0; k < NA; k++) r.R[k] = Math.max(H[k] + ease, r.R[k] + 0.0015); }
       const cc = inS ? (shawl && pos01[i] < 0.35 ? shawl : sleeveC) : skin; r.col = cc; r.pat = inS ? (cc === top ? topPat : 3) : 0; });
-    bd.tube(rings, NA, true, false);
+    bd.setPart('braço'); bd.tube(rings, NA, true, false); bd.setPart('manga');
     // a ponta da manga
     if (sl > 0 && sl < 0.99 && sleeveC) { let i = pos01.findIndex(p => p > sl); if (i < 1) i = 1; const r0 = rings[i - 1], th = s.sleeves === 'arregaçada' ? 0.009 : 0.003, wid = s.sleeves === 'arregaçada' ? 0.03 : 0.012;
       const mk2 = (d, ex) => ({ c: r0.c.clone().addScaledVector(r0.u.clone().cross(r0.w), -d), u: r0.u, w: r0.w, R: r0.R.map(x => x + ex), b: r0.b, col: top.clone().multiplyScalar(0.9), pat: topPat });
       bd.tube([mk2(-wid * 0.5, th * 0.6), mk2(0, th), mk2(wid * 0.5, th * 0.6)], NA, false, false); }
     if (sl >= 0.99 && sleeveC) { const r0 = rings[rings.length - 2]; const mk2 = (d, ex) => ({ c: r0.c.clone().addScaledVector(r0.u.clone().cross(r0.w), -d), u: r0.u, w: r0.w, R: r0.R.map(x => x + ex), b: r0.b, col: top.clone().multiplyScalar(0.92), pat: topPat });
       bd.tube([mk2(-0.02, 0.0045), mk2(0.01, 0.0045)], NA, false, false); }
-    maoGeo(bd, A, Wr, hs, skin.clone().multiplyScalar(0.98), f, I);
+    bd.setPart('mão'); maoGeo(bd, A, Wr, hs, skin.clone().multiplyScalar(0.98), f, I);
   }
 
   // ---------- pernas
@@ -335,7 +345,7 @@ export function buildBody(s) {
     const NL = 18, rings = [], pos01 = [];
     const frame = (a0, a1) => { const ax = a1.clone().sub(a0).normalize(), w = V(0, 0, 1).addScaledVector(ax, -ax.z).normalize(), u = new THREE.Vector3().crossVectors(w, ax).normalize(); return { ax, u, w }; };
     const ft = frame(Hj, K), fs = frame(K, Ak), lt = Hj.distanceTo(K), ls = K.distanceTo(Ak);
-    for (const t of [-0.2, -0.1, 0, 0.1, 0.22, 0.36, 0.5, 0.64, 0.78, 0.88, 0.95]) { const c = Hj.clone().lerp(K, t), R = new Float32Array(NL);
+    for (const t of [-0.13, -0.06, 0, 0.1, 0.22, 0.36, 0.5, 0.64, 0.78, 0.88, 0.95]) { const c = Hj.clone().lerp(K, t), R = new Float32Array(NL);
       for (let k = 0; k < NL; k++) { const a = k / NL * Math.PI * 2; let r = thigh(t) + 0.004 * P.F * (f ? 2 : 1) * (1 - t);
         r += (0.004 + 0.006 * M) * G(dA(a, FRENTE), 0.7) * G(t - 0.5, 0.22);                                        // quadríceps
         r += (0.003 + 0.004 * M) * G(dA(a, (FRENTE + aM) / 2 + (sx > 0 ? Math.PI / 2 : 0)), 0.35) * G(t - 0.82, 0.08);   // vasto medial
@@ -343,7 +353,7 @@ export function buildBody(s) {
         r += (0.003 + (f ? 0.006 : 0.002) * Fp) * G(dA(a, aM), 0.5) * G(t - 0.15, 0.15);                             // adutores
         r += 0.008 * G(dA(a, FRENTE), 0.45) * G(t - 1.0, 0.05);                                                     // patela
         R[k] = r; }
-      const wk = t > 0.85 ? 0.5 * sm01((t - 0.85) / 0.15) : 0, wh = t < 0 ? 0.35 * sm01(-t / 0.2) : 0;
+      const wk = t > 0.85 ? 0.5 * sm01((t - 0.85) / 0.15) : 0, wh = 0;   /* o alto da coxa (dentro do quadril) gira inteiro com o fêmur */
       rings.push({ c, u: ft.u, w: ft.w, R, b: [[I(hips), wh], [I(Lg.hp), 1 - wh - wk], [I(Lg.kn), wk]] }); pos01.push(Math.max(0, t) * 0.5); }
     for (const t of [0.04, 0.12, 0.22, 0.32, 0.45, 0.6, 0.75, 0.86, 0.94, 1.0]) { const c = K.clone().lerp(Ak, t), R = new Float32Array(NL);
       for (let k = 0; k < NL; k++) { const a = k / NL * Math.PI * 2; let r = shank(t);
@@ -364,14 +374,15 @@ export function buildBody(s) {
       if (pos01[i] > 0.52 && kneeCloth) for (let k = 0; k < NL; k++) r.R[k] = Math.max(r.R[k], kneeCloth * (0.97 - 0.06 * (pos01[i] - 0.5))); });
     rings.forEach((r, i) => { const p = inP(i), y = r.c.y; r.col = p ? bot.clone().multiplyScalar(y < 0.2 ? 0.88 : Math.abs(pos01[i] - 0.5) < 0.05 ? 1.05 : 1) : (s.skirt && s.stockings ? C(s.stockings) : skin);
       if (y < yCrotch + 0.03) r.col = r.col.clone().multiplyScalar(0.9 + 0.1 * sm01((y - yCrotch + 0.06) / 0.09)); r.pat = p ? botPat : 0; });
-    bd.tube(rings, NL, false, true);
+    bd.setPart('perna'); bd.tube(rings, NL, false, true); bd.setPart('roupa');
     // barra da calça virada para fora (como na roça) ou a bainha da bermuda
     if (legEnd > 0) { let i = pos01.findIndex(p => p > legEnd); if (i < 1) i = rings.length - 1; const r0 = rings[i - 1], th = legEnd > 0.9 ? 0.011 : 0.006, wd = legEnd > 0.9 ? 0.035 : 0.014;
       const ax = r0.u.clone().cross(r0.w), mk2 = (d, ex) => ({ c: r0.c.clone().addScaledVector(ax, -d), u: r0.u, w: r0.w, R: r0.R.map(x => x + ex), b: r0.b, col: bot.clone().multiplyScalar(0.85), pat: botPat });
       bd.tube([mk2(-wd * 0.5, th * 0.5), mk2(0, th), mk2(wd * 0.5, th * 0.4)], NL, false, false); }
-    peGeo(bd, s, Lg, Ak, kid, f, skin, shoe, med, I);
+    bd.setPart('pé'); peGeo(bd, s, Lg, Ak, kid, f, skin, shoe, med, I);
   }
 
+  bd.setPart('roupa');
   // ---------- cinto (segue a forma da calça, por baixo da barriga), botões e gola da camisa, bolso, cós da saia
   if (pants && !kid) { const n = SEG, mkB = d => { const yb = beltY0 + d, rr = anelEm(yb, 'baixo'), dy = new Float32Array(n);
       for (let k = 0; k < n; k++) dy[k] = beltY(k / n * Math.PI * 2) - beltY0; return { c: V(0, yb, rr.cz), u: V(1, 0, 0), w: V(0, 0, 1), R: rr.R.map(x => x + 0.004), dy, b: k => pesoTronco(yb, k / n * Math.PI * 2, rr.R[k]), col: C(0x3a2418), pat: 5 }; };
@@ -397,31 +408,39 @@ export function buildBody(s) {
   let saia = null;
   if (s.skirt) { const ys = deTab(f ? 1.0 : 0.97), rr = anelEm(ys, 'cima'), Rk = rr.R.map(x => x + 0.004);
     bd.tube([{ c: V(0, ys - 0.015, rr.cz), u: V(1, 0, 0), w: V(0, 0, 1), R: Rk, b: [[I(hips), 1]], col: (dressTop ? top : bot).clone().multiplyScalar(0.9), pat: dressTop ? topPat : botPat },
-      { c: V(0, ys + 0.015, rr.cz), u: V(1, 0, 0), w: V(0, 0, 1), R: Rk, b: [[I(hips), 0.6], [I(spine), 0.4]], col: (dressTop ? top : bot).clone().multiplyScalar(0.9), pat: dressTop ? topPat : botPat }], SEG, false, false);
+      { c: V(0, ys + 0.015, rr.cz), u: V(1, 0, 0), w: V(0, 0, 1), R: Rk, b: [[I(hips), 1]], col: (dressTop ? top : bot).clone().multiplyScalar(0.9), pat: dressTop ? topPat : botPat }], SEG, false, false);
     saia = { y: ys - 0.012 - W.hips.y, cz: rr.cz, R: Array.from(Rk), seg: SEG }; }
 
   // ---------- cabeça
   const cab = cabeca(P, s, skin, hairC, f, kid);
-  const HO = V(0, yChin, 0), hd = { rigid: (g, c, b, pt) => bd.rigid(g.translate(HO.x, HO.y, HO.z), c, b, pt) }, iH = I(head);
-  cab.pecas.forEach(([g, c, pt]) => hd.rigid(g, c, iH, pt));
+  const HO = V(0, yChin, 0), hd = { rigid: (g, c, b, pt) => bd.rigid(g.translate(HO.x, HO.y, HO.z), c, b, pt), setPart: bd.setPart }, iH = I(head);
+  cab.pecas.forEach(([g, c, pt, nome]) => { bd.setPart(nome || 'cabeça'); hd.rigid(g, c, iH, pt); }); bd.setPart('cabelo');
   const swing = hair(hd, s, iH, cab);
   const geo = bd.build();
   const mesh = new THREE.SkinnedMesh(geo, bodyMaterial(s.top.tex || null)); mesh.add(hips); mesh.updateMatrixWorld(true);
   mesh.bind(new THREE.Skeleton(bones)); mesh.castShadow = mesh.receiveShadow = true; mesh.frustumCulled = false;
+  // para o juiz de gente: lados dos tubos e o perfil do quadril (y no osso do quadril + 0,95; meia largura, frente, costas, centro)
+  mesh.userData.segs = { tronco: SEG, braço: 16, coxa: 18 };
+  mesh.userData.ossosBraco = arms.flatMap(a => [a.el, a.tw, a.ha, ...a.dedos.flat(), ...a.polegar].map(I)); mesh.userData.ossosMao = arms.flatMap(a => [a.ha, ...a.dedos.flat(), ...a.polegar].map(I));
+  mesh.userData.hipProf = torso.filter(r => r.y < W.hips.y + 0.25).map(r => [r.y - W.hips.y + 0.95, Math.max(r.R[0], r.R[SEG / 2]), r.R[SEG / 4], r.R[3 * SEG / 4], r.cz]);
   // pálpebras de cima (piscam): meia casca da cor da pele com a linha dos cílios na borda, presas no osso da cabeça
   const lidMat = toon({ color: skin }), lashMat = toon({ color: 0x1a120c }), lids = [];
   for (const e of cab.olhos) { const g = new THREE.Group(); g.position.copy(e.c).sub(headPiv); head.add(g); const r = e.r + 0.001;
     const lid = new THREE.Mesh(new THREE.SphereGeometry(r, 12, 6, 0, Math.PI * 2, 0, Math.PI / 2), lidMat), lash = new THREE.Mesh(new THREE.TorusGeometry(r, 0.001, 3, 18, Math.PI).rotateX(Math.PI / 2), lashMat);
     g.add(lid, lash); lid.userData.noRegua = lash.userData.noRegua = true; g.userData.open = s.old ? -0.35 : -0.6; g.rotation.x = g.userData.open; lids.push(g); }
   for (const sw of swing) { sw.pivot.position.sub(headPiv); head.add(sw.pivot); sw.pivot.traverse(o => { o.userData.noRegua = true; }); }
-  // a cabeça um tico maior que a anatomia (8% no adulto, 22% na criança): de longe, na câmera do jogo, o rosto e o chapéu leem
-  head.scale.setScalar(kid ? 1.22 : 1.08);
+  // a cabeça um tico maior que a anatomia (5% no adulto, 20% na criança): de longe, na câmera do jogo, o rosto e o chapéu leem
+  head.scale.setScalar(kid ? 1.2 : 1.05);
   // medidas para o pano (saia, avental) e para quem segura as coisas
   const cint = anelEm(deTab(f ? 1.0 : 0.97), 'cima'), quad = anelEm(yHipJ - 0.01);
   const medidas = { saia, cintura: { y: deTab(f ? 1.0 : 0.97) - W.hips.y, rx: cint.R[0], rzF: cint.R[SEG / 4], rzB: cint.R[3 * SEG / 4], cz: cint.cz },
     quadril: { y: yHipJ - 0.01 - W.hips.y, rx: Math.max(quad.R[0], quad.R[SEG / 2]), rzB: quad.R[3 * SEG / 4] }, coxa: tab([[0, 0.09], [1, 0.096]], f ? 1 : 0) * (kid ? 0.85 : 1), canela: 0.058 * (kid ? 0.85 : 1),
-    barriga: P.barriga };
-  return { mesh, hips, spine, chest, neck, head, arms, legs, lids, swing, waistY: yWaist, bw: P.fr, P, medidas, headPiv, topoCabeca: 0.233 - headPiv.y, chestY: W.chest.y };
+    barriga: P.barriga,
+    // o corpo debaixo da saia (pele + a roupa de baixo), anel a anel, da cintura para baixo: a saia não atravessa o quadril
+    perfil: torso.filter(r => r.y < deTab(f ? 1.02 : 0.99)).map(r => ({ y: r.y - W.hips.y, cz: r.cz, R: Array.from(r.R, x => x + 0.004) })),
+    // o tronco por fora da roupa (para o braço não atravessar): y no corpo em pé, meia largura, frente, costas, centro
+    tronco: torso.map(r => { const R = r.R; return [r.y, Math.max(R[0], R[SEG / 2]) + 0.01, R[SEG / 4] + 0.01, R[3 * SEG / 4] + 0.01, r.cz]; }), ossoW: W };   // o corpo + ~1 cm de roupa
+  return { mesh, hips, spine, chest, neck, head, arms, legs, lids, swing, waistY: yWaist, bw: P.fr, P, medidas, headPiv, topoCabeca: 0.228 - headPiv.y, chestY: W.chest.y };
 }
 
 // ---------- a mão: palma (com as eminências do polegar e do mínimo), nós dos dedos, quatro dedos de três falanges com unha, polegar
@@ -510,7 +529,7 @@ function campoCabeca(cr) {
   return { sdf, R, surfZ, surfX, eyes, F: (x, y, z) => [fc[0] + (x - fc[0]) * fs, fc[1] + (y - fc[1]) * fs, fc[2] + (z - fc[2]) * fs] };
 }
 function cabeca(P, s, skin, hairC, f, kid) {
-  const cr = P.cranio, cache = P._cab || (P._cab = campoCabeca(cr)), K = cache, pecas = [], add = (g, c, pt = 0) => pecas.push([g, c, pt]);
+  const cr = P.cranio, cache = P._cab || (P._cab = campoCabeca(cr)), K = cache, pecas = []; let nome = 'cabeça'; const add = (g, c, pt = 0) => pecas.push([g, c, pt, nome]);
   { const hg = new THREE.SphereGeometry(1, 36, 26), p = hg.attributes.position, cols = new Float32Array(p.count * 3), red = C(0xc8524a), stub = hairC.clone().lerp(skin, 0.35);
     const blush = f || kid ? 0.2 : 0.12, stubble = P.m && !s.beard ? 0.22 : 0, u = new THREE.Vector3();
     for (let i = 0; i < p.count; i++) { u.set(p.getX(i), p.getY(i), p.getZ(i)).normalize(); const r = K.R(u.x, u.y, u.z);
@@ -522,33 +541,34 @@ function cabeca(P, s, skin, hairC, f, kid) {
       cols.set([c.r, c.g, c.b], i * 3); }
     hg.setAttribute('color', new THREE.BufferAttribute(cols, 3)); add(hg, skin); }
   // olhos: branco, íris, pupila e brilho, assentados na órbita
-  const iris = C(s.eyes || 0x4a2a14), er = 0.0112 * (kid ? 0.92 : 1), olhos = [];
+  nome = 'olho'; const iris = C(s.eyes || 0x4a2a14), er = 0.0112 * (kid ? 0.92 : 1), olhos = [];
   for (const [ex0, ey0] of K.eyes) { const sx = Math.sign(ex0), ez = K.surfZ(ex0, ey0, true) - er * 0.95, ex = ex0, ey = ey0;
     add(new THREE.SphereGeometry(er, 12, 10).scale(1, 0.92, 1).translate(ex, ey, ez), C(0xefe9e0));
     add(new THREE.SphereGeometry(er * 0.59, 12, 8).scale(1, 1, 0.4).translate(ex, ey - 0.0004, ez + er - 0.0006), iris);
     add(new THREE.SphereGeometry(er * 0.3, 8, 6).scale(1, 1, 0.35).translate(ex, ey - 0.0004, ez + er + 0.0002), C(0x0e0a08));
     add(new THREE.SphereGeometry(0.0012, 6, 4).translate(ex + 0.0022, ey + 0.0024, ez + er + 0.0006), C(0xffffff));
     olhos.push({ c: V(ex, ey, ez), r: er });
-    // sobrancelha arqueada na superfície da testa
+    nome = 'sobrancelha';   // sobrancelha arqueada na superfície da testa
     const bp = [[0.012, 0.139], [0.032, 0.1455], [0.052, 0.1405]].map(([x, y]) => { const [qx, qy] = K.F(sx * x, y, 0); return V(qx, qy, K.surfZ(qx, qy) + 0.0015); });
     add(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(bp), 6, f ? 0.0024 : 0.0034, 4, false), hairC.clone().multiplyScalar(0.85), 2);
-    // orelha com lóbulo e a dobra de dentro, na lateral do crânio
+    nome = 'orelha';   // orelha com lóbulo e a dobra de dentro, na lateral do crânio
     const [, oy] = K.F(0, 0.112, 0), xs = K.surfX(oy, -0.004) + 0.002;
     add(new THREE.SphereGeometry(1, 10, 8).scale(0.011, 0.026, 0.018).rotateY(sx * 0.35).translate(sx * xs, oy, -0.004), skin.clone().multiplyScalar(0.96));
     add(new THREE.SphereGeometry(0.0075, 8, 6).translate(sx * (xs + 0.001), oy - 0.024, 0.0), skin.clone().multiplyScalar(0.97));
-    add(new THREE.SphereGeometry(1, 8, 6).scale(0.004, 0.014, 0.009).translate(sx * (xs + 0.0085), oy + 0.002, -0.002), skin.clone().multiplyScalar(0.78)); }
+    add(new THREE.SphereGeometry(1, 8, 6).scale(0.004, 0.014, 0.009).translate(sx * (xs + 0.0085), oy + 0.002, -0.002), skin.clone().multiplyScalar(0.78)); nome = 'olho'; }
+  nome = 'nariz';
   // nariz: ponte, ponta e as duas asas, na linha do meio do rosto
   const nose = skin.clone().lerp(C(0xc86a5a), 0.08), nz = cr.nariz, [, yB] = K.F(0, 0.108, 0), [, yT] = K.F(0, 0.091, 0);
   const zB = K.surfZ(0, yB, true), zT = K.surfZ(0, yT, true);
   add(new THREE.SphereGeometry(1, 10, 8).scale(0.0085 * nz, 0.024 * nz, 0.011 * nz).rotateX(-0.28).translate(0, yB, zB + 0.002), nose);
   add(new THREE.SphereGeometry(1, 10, 8).scale(0.0125 * nz, 0.0105 * nz, 0.011 * nz).translate(0, yT, zT + 0.012 * nz), nose);
   for (const sx of [-1, 1]) add(new THREE.SphereGeometry(1, 8, 6).scale(0.0075 * nz, 0.0068 * nz, 0.0075 * nz).translate(sx * 0.0115 * nz, yT - 0.002, zT + 0.006 * nz), nose.clone().multiplyScalar(0.97));
-  // boca: lábio de cima, de baixo e a linha entre eles, rentes à arcada
+  nome = 'boca';   // boca: lábio de cima, de baixo e a linha entre eles, rentes à arcada
   const lip = skin.clone().lerp(C(0x9a3a32), f ? 0.5 : 0.32), b = cr.boca, [, yU] = K.F(0, 0.0682, 0), [, yL] = K.F(0, 0.0608, 0), zU = K.surfZ(0, yU, true), zL = K.surfZ(0, yL, true);
   add(new THREE.SphereGeometry(1, 12, 6).scale(0.019 * b, 0.0045, 0.005).translate(0, yU, zU - 0.0015), lip);
   add(new THREE.SphereGeometry(1, 12, 6).scale(0.016 * b, 0.0055, 0.0055).translate(0, yL, zL - 0.0015), lip.clone().multiplyScalar(1.05));
   add(new THREE.BoxGeometry(0.028 * b, 0.0014, 0.003).translate(0, (yU + yL) / 2, Math.max(zU, zL) + 0.0015), lip.clone().multiplyScalar(0.5));
-  const bigode = () => { for (const sx of [-1, 1]) add(new THREE.SphereGeometry(1, 10, 6).scale(0.019, 0.0065, 0.008).rotateZ(sx * -0.28).translate(sx * 0.013, yU + 0.0065, zU + 0.004), hairC, 2); };
+  nome = 'barba'; const bigode = () => { for (const sx of [-1, 1]) add(new THREE.SphereGeometry(1, 10, 6).scale(0.019, 0.0065, 0.008).rotateZ(sx * -0.28).translate(sx * 0.013, yU + 0.0065, zU + 0.004), hairC, 2); };
   if (s.beard === 'bigode') bigode();
   if (s.beard === 'barba') { const bg = new THREE.SphereGeometry(1, 18, 12, 0, Math.PI * 2, Math.PI * 0.55, Math.PI * 0.45), p = bg.attributes.position;
     for (let i = 0; i < p.count; i++) { const z = p.getZ(i); if (z < -0.2) p.setZ(i, z * 0.6); } bg.scale(0.08 * cr.gonio / 0.0515, 0.075, 0.08).translate(0, 0.088, 0.03); add(bg, hairC, 2); bigode(); }
@@ -610,7 +630,7 @@ function hair(bd, s, hb, cab) {
     pend(V(0, SKULL.cy - 0.03, SKULL.cz - 0.1), geos); }
   if (h === 'chiquinha') for (const sx of [-1, 1]) { const b = new THREE.SphereGeometry(1, 12, 10); b.scale(0.04, 0.05, 0.04).translate(sx * 0.09, SKULL.cy + 0.04, SKULL.cz - 0.06); H(b);
     H(new THREE.TorusGeometry(0.014, 0.005, 5, 10).rotateY(Math.PI / 2).translate(sx * 0.078, SKULL.cy + 0.05, SKULL.cz - 0.05), C(0xf2c21a)); }
-  const hat = s.hat;
+  const hat = s.hat; if (bd.setPart) bd.setPart(hat === 'lenco' ? 'lenço' : 'chapéu');
   if (hat === 'palha') { const br = new THREE.CylinderGeometry(0.205, 0.215, 0.012, 28); const p = br.attributes.position; for (let i = 0; i < p.count; i++) { const x = p.getX(i), z = p.getZ(i), r = Math.hypot(x, z); p.setY(i, p.getY(i) - Math.max(0, r - 0.12) * 0.22 + Math.max(0, Math.abs(x) / 0.21 - 0.6) * 0.03); }
     bd.rigid(br.translate(0, 0.2, 0), C(0xe2cf8a), hb, 4); const cr = new THREE.CylinderGeometry(0.08, 0.1, 0.105, 18), q = cr.attributes.position; for (let i = 0; i < q.count; i++) if (q.getY(i) > 0.04) q.setY(i, q.getY(i) - Math.max(0, 0.04 - Math.abs(q.getX(i))) * 0.4);
     bd.rigid(cr.translate(0, 0.252, 0), C(0xe6d494), hb, 4); bd.rigid(new THREE.CylinderGeometry(0.101, 0.101, 0.022, 18, 1, true).translate(0, 0.215, 0), C(0x8a3a2a), hb); }
@@ -621,7 +641,7 @@ function hair(bd, s, hb, cab) {
     bd.rigid(new THREE.CylinderGeometry(0.075, 0.075, 0.01, 12, 1, false, -Math.PI / 2, Math.PI).scale(1, 1, 1.1).translate(0, 0.165, 0.085), C(s.hatColor || 0x2f6aa0), hb, 3); }
   if (hat === 'lenco') { const lc = C(s.lencoColor || 0xc83a2a), g = new THREE.SphereGeometry(1, 24, 12, 0, Math.PI * 2, 0, Math.PI * 0.6), p = g.attributes.position;
     for (let i = 0; i < p.count; i++) { const y = p.getY(i); p.setY(i, y + (vn3(p.getX(i) * 6, y * 6, p.getZ(i) * 6) - 0.5) * 0.04); }
-    g.scale(0.104, 0.136, 0.122).rotateX(-0.38).translate(0, SKULL.cy + 0.008, SKULL.cz - 0.008); bd.rigid(g, lc, hb, 3);
+    g.scale(0.1, 0.126, 0.116).rotateX(-0.58).translate(0, SKULL.cy + 0.022, SKULL.cz - 0.016); bd.rigid(g, lc, hb, 3);
     bd.rigid(new THREE.SphereGeometry(1, 10, 8).scale(0.024, 0.02, 0.018).translate(0, SKULL.cy - 0.055, SKULL.cz - 0.112), lc.clone().multiplyScalar(0.9), hb, 3);
     for (const sx of [-1, 1]) bd.rigid(new THREE.SphereGeometry(1, 8, 6).scale(0.016, 0.045, 0.006).rotateZ(sx * 0.35).translate(sx * 0.016, SKULL.cy - 0.1, SKULL.cz - 0.118), lc.clone().multiplyScalar(0.95), hb, 3); }
   return swing;

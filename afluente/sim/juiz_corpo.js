@@ -27,7 +27,7 @@ const [, , url0, mins = '3'] = process.argv, url = url0 || 'http://localhost:876
     const calc = new THREE.Vector3(0, -0.06, -0.05), J = out.juntas, rom = (k, v) => { const o = J[k] || (J[k] = { min: 1e9, max: -1e9 }); o.min = Math.min(o.min, v); o.max = Math.max(o.max, v); };
     const ult = new Map(), slip = [], slipR = [], fundo = [], PTS = [new THREE.Vector3(0, -0.06, -0.05), new THREE.Vector3(0, -0.06, 0.1), new THREE.Vector3(0, -0.058, 0.125)]; let passosT = 0, faseT = 0;
     const dt = 0.05, N = Math.round(min * 60 / dt);
-    for (let n = 0; n < N; n++) { window.__ff(dt);
+    for (let n = 0; n < N; n++) { try { window.__ff(dt); } catch (e) { return { erro: e.stack }; }
       for (const q of pessoas) { if (!q.g.visible || q.st === 'casa') { q._h0 = q.h; continue; } q.g.updateMatrixWorld(true);
         q.legs.forEach((l, i) => { rom('joelho (flexão)', l.kn.rotation.x * D); rom('quadril (flexão)', -new THREE.Euler().setFromQuaternion(l.hp.quaternion, 'XYZ').x * D); rom('tornozelo (planti+)', l.ft.rotation.x * D); });
         q.arms.forEach(a => { rom('cotovelo (flexão)', -a.el.rotation.x * D); });
@@ -44,6 +44,7 @@ const [, , url0, mins = '3'] = process.argv, url = url0 || 'http://localhost:876
     // cadência e passo: de quem anda a 1,2 m/s na passada (fórmula do motor)
     return out; }, +mins);
   await b.close();
+  if (R.erro) { console.log('erro na rotina:', R.erro); process.exit(1); }
   const P = R.pessoas, ad = P.filter(x => x.sexo !== 'c'), over = ad.filter(x => x.imc >= 25), ob = P.filter(x => x.imc >= 30), bar = P.filter(x => x.barriga > 0.15);
   const L = ['# O juiz do corpo', '', `Relatório de \`sim/juiz_corpo.js\`: ${P.length} moradores, ${mins} min de rotina simulada (o motor fica em \`prototipo3d/js/anatomia.js\`).`, '',
     '## Peso', '', `- IMC dos adultos: ${Math.min(...ad.map(x => x.imc))}–${Math.max(...ad.map(x => x.imc))} (mediana ${ad.map(x => x.imc).sort((a, b) => a - b)[Math.floor(ad.length / 2)]})`,

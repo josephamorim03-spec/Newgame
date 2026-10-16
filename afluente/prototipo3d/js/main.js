@@ -20,7 +20,9 @@ import { buildPeople } from './people.js';
 import { buildFx } from './fx.js';
 import { buildColisao } from './colisao.js';
 import { createFx } from './aguafx.js';
+import { buildPeixes } from './peixes.js';
 import { createJuiz } from './juiz.js';
+import { createJuizGente } from './juizgente.js';
 import { buildClouds } from './clouds.js';
 import { buildSkyFx } from './skyfx.js';
 import { tag, audit, person } from './regua.js';
@@ -217,12 +219,20 @@ const fieldTex = (() => { const N = FIELD.res, d = new Float32Array(N * N * 4); 
 function fillField(xa = -1e9, za = -1e9, xb = 1e9, zb = 1e9) { const N = FIELD.res, d = fieldTex.image.data, x0 = CENTER[0] - FIELD.size / 2, z0 = CENTER[1] - FIELD.size / 2;
   const i0 = Math.max(0, Math.floor((xa - x0) / FIELD.size * N)), i1 = Math.min(N - 1, Math.ceil((xb - x0) / FIELD.size * N)), j0 = Math.max(0, Math.floor((za - z0) / FIELD.size * N)), j1 = Math.min(N - 1, Math.ceil((zb - z0) / FIELD.size * N));
   for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) { const x = x0 + (i + 0.5) / N * FIELD.size, z = z0 + (j + 0.5) / N * FIELD.size, k = (j * N + i) * 4;
-    const inT = inAnyTile(x, z, 0.995); if (!inT) { d[k] = 0; d[k + 1] = 0; continue; } d[k] = heightAt(x, z);
+    // a altura do chão vai um pouco além da peça: a lâmina da beirada lê a média de dois texels e, com 0 do lado de fora, flutuava ou afundava
+    const inT = inAnyTile(x, z, 0.995); if (!inT) { d[k] = inAnyTile(x, z, 1.08) ? heightAt(x, z) : 0; d[k + 1] = 0; continue; } d[k] = heightAt(x, z);
     const b = biomeAt(x, z), wd = waterDist(x, z);
     d[k + 1] = wd < 0.35 ? 0 : Math.min(1, b[0] * 1.0 + b[2] * 0.92 + b[1] * 0.2) * (0.85 + 0.3 * (vnoise(x * 0.3, z * 0.3) - 0.5));
     d[k + 1] *= blocked(x, z, -0.5) ? 0 : (1 - Math.min(1, dirtAt(x, z) * 1.4)) * (1 - 0.9 * fieldAt(x, z)) * (1 - 0.8 * rockyAt(x, z));
-    d[k + 2] = (b[2] > 0.5 ? 0.6 + 0.4 * vnoise(x * 0.15, z * 0.15) : b[1] > 0.5 ? 0.24 : 0.26 + 0.24 * vnoise(x * 0.2 + 7, z * 0.2)) * (wd < 2.5 && wd > 0.35 ? 1.5 : 1);
-    d[k + 3] = b[2] > 0.5 ? 1 : b[1] > 0.5 ? 0.5 : 0; }
+    // tipo e tamanho como pesos contínuos (cerrado, mata, pasto): na divisa as lâminas se misturam em vez de trocar numa linha
+    const cw = smooth(0.3, 0.7, b[2]), fw = smooth(0.35, 0.65, b[1]) * (1 - cw);
+    const hP = 0.26 + 0.24 * vnoise(x * 0.2 + 7, z * 0.2), hC = 0.6 + 0.4 * vnoise(x * 0.15, z * 0.15);
+    const bank = 1 + 0.5 * smooth(0.35, 0.9, wd) * (1 - smooth(1.8, 3.4, wd));   // capim mais alto na beira d'água, crescendo e diminuindo aos poucos
+    d[k + 2] = (hP * (1 - cw - fw) + hC * cw + 0.24 * fw) * bank;
+    // na borda da peça que dá para o tabuleiro vazio o capim vai ficando ralo e baixo (não acaba num muro reto)
+    { const t = TILES.find(u => inHex(x, z, u.c, 0.995)), e = t ? hexEdgeDist(x, z, t.c) : 9;
+      if (e < 1.8) { const dx = x - t.c[0], dz = z - t.c[1], l = Math.hypot(dx, dz) || 1; if (!inAnyTile(x + dx / l * 2.5, z + dz / l * 2.5, 1)) { const f = smooth(0, 1.8, e); d[k + 1] *= 0.35 + 0.65 * f; d[k + 2] *= 0.5 + 0.5 * f; } } }
+    d[k + 3] = cw - fw; }
   fieldTex.needsUpdate = true; }
 fillField();
 const BLADES = mobile ? 50000 : 140000;
@@ -249,8 +259,8 @@ grassMat.onBeforeCompile = sh => { shared(sh); Object.assign(sh.uniforms, grassU
       vec2 bp=bpos;vec2 fuv=(bp-uFieldO)/uFieldS;vec4 F=texture2D(uField,fuv);
       float cd=distance(cameraPosition,vec3(bp.x,F.r,bp.y));
       float alive=step(0.001,F.g);
-      float H=F.b*(0.6+0.8*seed.w)*alive;vType=F.a;vTone=seed.z;
-      float yaw=seed.w*6.2832,cy=cos(yaw),sy=sin(yaw);float wdt=mix(0.05,0.085,seed.x)*(1.0+F.a*0.3)*(1.0+cd/30.0);
+      float H=F.b*(0.6+0.8*seed.w)*alive;float rT=fract(seed.x*13.7+seed.y*7.1),cwT=max(F.a,0.0),fwT=max(-F.a,0.0);vType=rT<fwT?0.5:(rT<cwT?1.0:0.0);vTone=seed.z;
+      float yaw=seed.w*6.2832,cy=cos(yaw),sy=sin(yaw);float wdt=mix(0.05,0.085,seed.x)*(1.0+cwT*0.3)*(1.0+cd/30.0);
       float g=gustAt(bp),q=windQ(max(0.0,uWindBase*(1.0+uWindIu*g))),v=uv.y;vGust=clamp(g*0.5*min(1.0,uWindBase/4.0),0.0,1.0);
       float lean=(0.18+0.35*seed.y)+(0.05+0.95*q)+0.12*q*sin(uTime*7.0+seed.x*40.0)+0.25*uRain;
       vec2 wd2=normalize(mix(vec2(cy,sy),uWindDir,clamp(q*1.4+0.25,0.0,1.0)));
@@ -288,11 +298,13 @@ function grassFor(t, n = mobile ? 4500 : 12000) { const F = fieldTex.image.data,
 const barkTex = barkTexture(5);
 const TEX = { cerrado: leafTexture(7, { n: 110, size: 26, round: 0.62, spread: 0.4 }), mata: leafTexture(9, { n: 170, size: 22, round: 0.5, spread: 0.42 }),
   ipe: leafTexture(13, { n: 140, size: 18, round: 0.65, spread: 0.4 }), buriti: fanTexture(11) };
-const LEAFC = { pequi: 0x4f7a2a, lobeira: 0x9aaa78, pinheiro: 0x3f6a34, ipeRosa: 0x8fb33c, ipeBranco: 0x8fb33c, cerrado: 0x9fbf3e, mata: 0x5f9a33, ipe: 0x8fb33c, buriti: 0x8cc04a, sombra: 0x86b23c };
+const LEAFC = { pequi: 0x4f7a2a, lobeira: 0x9aaa78, pinheiro: 0x3f6a34, ipeRosa: 0x8fb33c, ipeBranco: 0x8fb33c, cerrado: 0x8fac46, mata: 0x5f9a33, ipe: 0x8fb33c, buriti: 0x8cc04a, sombra: 0x86b23c };
 // o que chega perto demais da lente (copas altas quando a câmera desce no zoom) se desfaz em pontilhado, sem tapar o mapa
 const NEAR_FADE = `{vec3 ab=uFocus-cameraPosition;float t=clamp(dot(vWp-cameraPosition,ab)/dot(ab,ab),0.0,1.0),dl=length(vWp-cameraPosition-ab*t),rr=2.5+0.12*length(ab);
-  float fade=max((1.0-smoothstep(rr*0.6,rr,dl))*(1.0-smoothstep(0.7,0.9,t))*0.9,1.0-smoothstep(3.0,7.0,distance(vWp,cameraPosition)));
-  if(hash21(floor(gl_FragCoord.xy))<fade)discard;}\n`;   // entre a câmera e o ponto que se olha, as copas abrem uma janela pontilhada
+  float fade=max((1.0-smoothstep(rr*0.75,rr,dl))*(1.0-smoothstep(0.75,0.9,t)),1.0-smoothstep(3.5,5.5,distance(vWp,cameraPosition)));
+  vec2 bq=mod(floor(gl_FragCoord.xy),4.0),bh=floor(bq*0.5);float bay=fract(dot(bh,vec2(0.5,bh.y*0.75)))*0.25+fract(dot(bq,vec2(0.5,bq.y*0.75)))+0.03125;
+  if(fract(bay)<fade)discard;}\n`;   // entre a câmera e o ponto que se olha, as copas abrem uma janela: limpa no meio (antes sobravam 10% dos
+// pixels como chuvisco) e com a borda em trama ordenada 4x4, que lê como transparência e não como ruído
 function treeMaterials(kind) {
   const wood = toon({ map: barkTex, color: kind === 'buriti' ? 0xb8a98a : kind === 'mata' ? 0xa08a6c : 0x8f7356 });
   const leaf = toon({ map: TEX[kind], alphaTest: 0.5, side: THREE.DoubleSide, color: LEAFC[kind] });
@@ -328,7 +340,7 @@ TEX.sombra = TEX.cerrado; MATS.sombra = treeMaterials('sombra'); MATS.moita = MA
 TEX.ipeRosa = TEX.ipeBranco = TEX.ipe; MATS.ipeRosa = treeMaterials('ipeRosa'); MATS.ipeBranco = treeMaterials('ipeBranco');
 // cerradão e escarpa: pequizeiro (copa larga e redonda, verde-escuro), lobeira (folha grande e acinzentada) e pinheiro-bravo
 // (Podocarpus: tronco reto, copa em andares, folhinha estreita verde-escura)
-TEX.pequi = TEX.mata; TEX.lobeira = leafTexture(19, { n: 34, size: 46, round: 0.7, spread: 0.36 }); TEX.pinheiro = leafTexture(23, { n: 260, size: 12, round: 0.22, spread: 0.44 });
+TEX.pequi = TEX.mata; TEX.lobeira = leafTexture(19, { n: 34, size: 46, round: 0.7, spread: 0.36 }); TEX.pinheiro = leafTexture(23, { n: 170, size: 16, round: 0.26, spread: 0.44 });   // folhinha miúda demais virava pontinhos de longe
 MATS.pequi = treeMaterials('pequi'); MATS.lobeira = treeMaterials('lobeira'); MATS.pinheiro = treeMaterials('pinheiro');
 function limb(out, p0, dir, len, r0, r1, depth, P, v0 = 0) {
   let p = p0.clone(), d = dir.clone(), v = v0; const segs = 3;
@@ -348,7 +360,7 @@ function leafCards(out, tips, center, P) {
   const low = Math.min(...tips.map(t => t.y)) - P.cluster * 0.5, high = Math.max(...tips.map(t => t.y)) + P.cluster * 0.6;
   for (const tp of tips) for (let i = 0; i < P.cards; i++) {
     const s = P.card * (0.75 + rnd() * 0.5), g = new THREE.PlaneGeometry(s, s); g.applyQuaternion(new THREE.Quaternion().setFromEuler(new THREE.Euler(rnd() * 6.28, rnd() * 6.28, rnd() * 6.28)));
-    const c = tp.clone().add(new THREE.Vector3((rnd() - 0.5) * P.cluster, (rnd() - 0.35) * P.cluster * 0.7, (rnd() - 0.5) * P.cluster)); g.translate(c.x, c.y, c.z);
+    const c = tp.clone().add(new THREE.Vector3((rnd() - 0.5) * P.cluster, (rnd() - 0.35) * P.cluster * 0.7 * (P.flat || 1), (rnd() - 0.5) * P.cluster)); g.translate(c.x, c.y, c.z);   // flat < 1: copa achatada
     const n = c.clone().sub(center).add(new THREE.Vector3(0, P.cluster * 0.8, 0)).normalize(), nor = g.attributes.normal;
     for (let k = 0; k < nor.count; k++) nor.setXYZ(k, n.x, n.y, n.z);     // normais "da copa": a copa inteira recebe luz como um volume macio
     const r = rnd(), out_ = Math.min(1, Math.hypot(c.x - center.x, c.z - center.z) / rad), up = Math.max(0, Math.min(1, (c.y - low) / (high - low)));
@@ -361,11 +373,11 @@ function finish(geos, H, withLr) { const g = mergeGeometries(geos);
   if (!g.attributes.ao) g.setAttribute('ao', new THREE.BufferAttribute(new Float32Array(p.count).fill(1), 1));
   g.setAttribute('tint', new THREE.BufferAttribute(new Float32Array(p.count).fill(rnd()), 1)); return g; }
 const SPECIES = {
-  cerrado: { trunk: [1.5, 2.4], r: 0.22, crook: 0.6, lean: 0.25, branches: 3, levels: 2, spread: 1.05, decay: 0.7, cards: 22, card: 2.1, cluster: 1.7 },
+  cerrado: { trunk: [1.5, 2.4], r: 0.22, crook: 0.6, lean: 0.25, branches: 3, levels: 2, spread: 1.05, decay: 0.7, cards: 22, card: 2.1, cluster: 1.7, flat: 0.5 },   // copa rala e achatada sobre o tronco torto
   ipe: { trunk: [2.9, 4.0], r: 0.27, crook: 0.4, lean: 0.12, branches: 3, levels: 2, spread: 0.8, decay: 0.75, cards: 20, card: 2.4, cluster: 2.0 },
   mata: { trunk: [3.6, 5.2], r: 0.36, crook: 0.22, lean: 0.06, branches: 4, levels: 3, spread: 0.85, decay: 0.74, cards: 15, card: 3.2, cluster: 2.6 },
   sombra: { trunk: [2.6, 3.4], r: 0.5, crook: 0.3, lean: 0.08, branches: 5, levels: 3, spread: 1.0, decay: 0.72, cards: 13, card: 3.4, cluster: 2.8 },
-  pequi: { trunk: [2.4, 3.2], r: 0.3, crook: 0.4, lean: 0.12, branches: 4, levels: 3, spread: 1.0, decay: 0.7, cards: 14, card: 2.8, cluster: 2.3 },
+  pequi: { trunk: [2.4, 3.2], r: 0.3, crook: 0.4, lean: 0.12, branches: 4, levels: 3, spread: 1.0, decay: 0.7, cards: 14, card: 2.8, cluster: 2.3, flat: 0.7 },
   lobeira: { trunk: [0.8, 1.2], r: 0.12, crook: 0.6, lean: 0.3, branches: 3, levels: 2, spread: 1.05, decay: 0.68, cards: 9, card: 1.7, cluster: 1.0 },
   pinheiro: { trunk: [6.5, 8.5], r: 0.3, crook: 0.08, lean: 0.04, branches: 7, levels: 2, spread: 1.25, decay: 0.32, cards: 9, card: 2.0, cluster: 1.1 },
   moita: { trunk: [0.3, 0.5], r: 0.05, crook: 0.6, lean: 0.3, branches: 4, levels: 1, spread: 1.1, decay: 1.1, cards: 9, card: 1.3, cluster: 0.9 },
@@ -437,12 +449,27 @@ function makeStone(size, flat = 0.7) {
   g.computeVertexNormals();                // facetas planas: pedra talhada à moda dos jogos pintados
   const m = new THREE.Mesh(g, stoneMat); m.castShadow = m.receiveShadow = true; return tag(m, 'pedra'); }
 const ROCKS_IN_WATER = [];
-function putStone(x, z, size, flat, y) { const m = makeStone(size, flat); m.position.set(x, y ?? heightAt(x, z) - size * flat * 0.25, z); m.rotation.y = rnd() * 6.28; scene.add(m); placed.push([x, z, size * 1.4]); return m; }
+// o chão mais baixo num círculo de raio r: a pedra (ou o que for) assenta por ele e não fica com um lado no ar na encosta
+const lowAt = (x, z, r) => { let m = heightAt(x, z); for (let k = 0; k < 8; k++) { const a = k * Math.PI / 4; m = Math.min(m, heightAt(x + Math.cos(a) * r, z + Math.sin(a) * r)); } return m; };
+function putStone(x, z, size, flat, y) { const m = makeStone(size, flat); m.position.set(x, y ?? lowAt(x, z, size * 1.1) - size * flat * 0.25, z); m.rotation.y = rnd() * 6.28; scene.add(m); placed.push([x, z, size * 1.4, size * 1.2]); carveGrass(x, z, size * 1.1); return m; }
 
 const placed = [];
-const canPlace = (x, z, minD) => !(blocked(x, z, 1.2) || dirtAt(x, z) > 0.3 || fieldAt(x, z) > 0.05 || placed.some(p => Math.hypot(p[0] - x, p[1] - z) < Math.min(minD, p[2])));
+// a folga das construções cresce com a copa (minD): árvore grande não enfia a copa no telhado
+const canPlace = (x, z, minD) => !(blocked(x, z, Math.max(1.2, minD * 0.4)) || dirtAt(x, z) > 0.3 || fieldAt(x, z) > 0.05 || placed.some(p => Math.hypot(p[0] - x, p[1] - z) < Math.min(minD, p[2])));
+// o "corpo" de cada coisa plantada (o que é sólido no chão): pedra e cupinzeiro pelo tamanho de verdade, árvore pelo tronco.
+// O espaço de copa (minD) pode se cruzar, o corpo não: sem isso nascia cupinzeiro dentro de pedra
+function bodyOf(o) { const r = o.userData.regua;
+  if (r === 'pedra' || r === 'cupinzeiro') { o.updateMatrixWorld(true); const bb = new THREE.Box3().setFromObject(o); return Math.max(bb.max.x - bb.min.x, bb.max.z - bb.min.z) / 2; }
+  return r === 'moita' || r === 'canela-de-ema' ? 0.35 : 0.45; }
+// apaga o capim (densidade 0 no mapa) em volta de pedra, cupinzeiro e tronco: a lâmina não atravessa mais o que é sólido
+function carveGrass(x, z, r) { const N = FIELD.res, d = fieldTex.image.data, x0 = CENTER[0] - FIELD.size / 2, z0 = CENTER[1] - FIELD.size / 2, cs = FIELD.size / N, rr = r + cs * 0.75;
+  for (let j = Math.max(0, Math.floor((z - rr - z0) / cs)); j <= Math.min(N - 1, Math.ceil((z + rr - z0) / cs)); j++) for (let i = Math.max(0, Math.floor((x - rr - x0) / cs)); i <= Math.min(N - 1, Math.ceil((x + rr - x0) / cs)); i++) {
+    const px = x0 + (i + 0.5) * cs, pz = z0 + (j + 0.5) * cs; if (Math.hypot(px - x, pz - z) < rr) d[(j * N + i) * 4 + 1] = 0; }
+  fieldTex.needsUpdate = true; }
 function place(obj, x, z, minD) { if (!canPlace(x, z, minD)) return false;
-  obj.position.set(x, heightAt(x, z) - 0.1, z); obj.rotation.y = rnd() * Math.PI * 2; scene.add(obj); placed.push([x, z, minD]); return true; }
+  obj.position.set(x, heightAt(x, z) - 0.1, z); obj.rotation.y = rnd() * Math.PI * 2;
+  const body = bodyOf(obj); if (placed.some(p => p[3] && Math.hypot(p[0] - x, p[1] - z) < body + p[3])) return false;
+  scene.add(obj); placed.push([x, z, minD, body]); if (obj.userData.regua !== 'moita' && obj.userData.regua !== 'canela-de-ema') carveGrass(x, z, obj.userData.regua === 'pedra' || obj.userData.regua === 'cupinzeiro' ? body * 0.95 : 0.35); return true; }
 const [tA, tB, tC, tD] = TILES;
 // pétalas de ipê: na seca, com a árvore florida, caem devagar (~1 m/s), dançam e o vento leva; embaixo forma um tapete da cor da flor
 function ipePetals() { const ipes = scene.children.filter(o => /^ipe/.test(o.userData.kind || '')), N = mobile ? 60 : 110, base = [], seed = [], colA = [], rad = [], gyA = [];
@@ -512,7 +539,7 @@ const floraCtx = { R, rnd, inHex, placed, can: canPlace, setor: sectorType,
       spray: 1 - smooth(6, 10, Math.hypot(x - FALL.pool[0], z - FALL.pool[1])) }; },                                  // zona de respingo da queda
   make: (k, s) => (FLORA_MAKE[k] || (sc => makeTree(k, sc)))(s), place,
   made: (o, sp, F, esc) => { o.userData.esc = esc; if (F.frutos) addFruits(o, ...F.frutos);
-    if (sp === 'pedra') { o.position.y = heightAt(o.position.x, o.position.z) - o.userData.sz * o.userData.flat * 0.25; const p = placed[placed.length - 1]; p[2] = Math.max(p[2], o.userData.sz * 1.4); } } };
+    if (sp === 'pedra') { o.position.y = lowAt(o.position.x, o.position.z, o.userData.sz * 0.8) - o.userData.sz * o.userData.flat * 0.25; const p = placed[placed.length - 1]; p[2] = Math.max(p[2], o.userData.sz * 1.4); } } };
 { const t0 = performance.now(); for (const t of TILES) plantTile(t, floraCtx); window.__floraMs = performance.now() - t0; }
 window.__flora = TILES.map(t => ({ peca: t.name, ...t.flora }));
 ipePetals();
@@ -522,9 +549,8 @@ const clouds = buildClouds(scene, CENTER, { mobile });
 const fx = buildFx(scene, { max: mobile ? 500 : 900 });   // partículas (fx.js)
 const afx = createFx(scene, { mobile });   // anéis na água, respingos e poeira dos bichos e da lagoa (aguafx.js)
 // ---------- colisão: o que ocupa o chão (paredes, cercas, troncos, poço, coreto...) para gente e bicho desviarem
-const colisao = buildColisao();
+const colisao = buildColisao(), colN = { houses: 0, extra: 0 };
 { const L = LAYOUT, rot2 = (p, rot, lx, lz) => [p[0] + lx * Math.cos(rot) + lz * Math.sin(rot), p[1] - lx * Math.sin(rot) + lz * Math.cos(rot)];
-  for (const h of L.houses) colisao.box(h.p[0], h.p[1], h.w, h.d, h.rot, 'casa');
   colisao.box(L.chapel.p[0], L.chapel.p[1], 8.5, 5.4, L.chapel.rot, 'capela'); { const t = rot2(L.chapel.p, L.chapel.rot, 8.5 / 2 - 1.2, -(5.4 / 2 + 1.15)); colisao.box(t[0], t[1], 2.3, 2.3, L.chapel.rot, 'torre'); }
   for (const k of ['venda', 'sobrado', 'celeiro', 'paiol']) { const b = L[k]; if (b) colisao.box(b.p[0], b.p[1], b.w, b.d, b.rot || 0, k); }
   colisao.circle(L.well.p[0], L.well.p[1], 0.95, 'poço'); colisao.circle(L.coreto.p[0], L.coreto.p[1], 3.0, 'coreto'); colisao.circle(L.oven.p[0], L.oven.p[1], 1.1, 'forno'); colisao.circle(L.mill.p[0], L.mill.p[1], 1.6, 'moinho');
@@ -534,17 +560,27 @@ const colisao = buildColisao();
   for (const f of L.fences || []) { for (const [ax, az, bx, bz] of f.segs) colisao.seg(ax, az, bx, bz, 0.09, 'cerca');
     if (f.gate) { const G = f.gate; for (const q of [G.ga, G.gb]) colisao.circle(q[0], q[1], 0.12, 'mourão'); colisao.dyn(G.ga[0], G.ga[1], G.w + 0.2, G.seg, 'porteira'); } }   /* a folha da porteira barra fechada e sai do vão aberta */
   colisao.box(L.corral.cochoP[0], L.corral.cochoP[1], 2.7, 0.8, L.corral.rot, 'cocho'); colisao.box(L.corral.ranchoP[0], L.corral.ranchoP[1], 2.3, 1.7, L.corral.rot, 'rancho');
-  // troncos (a copa não atrapalha), cupinzeiros e pedras grandes
-  for (const o of scene.children) { const u = o.userData, s = (o.scale.x || 1) * Math.min(1, u.esc ?? 1);
+  // as casas, o que está em LAYOUT.extraCol (esteio de varanda, banco, poste, mesa do forno) e as plantas (troncos, cupinzeiros,
+  // pedras grandes; a copa não atrapalha) entram pelo syncCollision, que o tabuleiro chama de novo quando uma peça nova brota
+  syncCollision(); }
+function syncCollision() { const L = LAYOUT;
+  for (const h of L.houses.slice(colN.houses)) colisao.box(h.p[0], h.p[1], h.w, h.d, h.rot, 'casa'); colN.houses = L.houses.length;
+  for (const c of (L.extraCol || []).slice(colN.extra)) { if (c.t === 'c') colisao.circle(c.x, c.z, c.r, c.tag); else colisao.box(c.x, c.z, c.w, c.d, c.rot, c.tag); } colN.extra = (L.extraCol || []).length;
+  for (const o of scene.children) { const u = o.userData; if (u.colOk) continue; u.colOk = true; const s = (o.scale.x || 1) * Math.min(1, u.esc ?? 1);
     if (u.kind && u.kind !== 'moita') colisao.circle(o.position.x, o.position.z, (u.kind === 'sombra' ? 0.38 : u.kind === 'mata' ? 0.3 : 0.22) * s, 'tronco');
     else if (u.regua === 'buriti' || u.regua === 'pinheiro-bravo') colisao.circle(o.position.x, o.position.z, 0.28 * s, 'tronco');
-    else if (u.regua === 'cupinzeiro') colisao.circle(o.position.x, o.position.z, 0.5 * s, 'cupinzeiro');
-    else if (u.regua === 'pedra' && u.sz > 0.45) colisao.circle(o.position.x, o.position.z, u.sz * 0.75, 'pedra'); } }
-const gente = buildPeople(scene, { mobile, fx, afx, col: colisao });
+    else if (u.regua === 'cupinzeiro') colisao.circle(o.position.x, o.position.z, bodyOf(o) * 0.9, 'cupinzeiro');   // pelo tamanho medido do monte (o fixo de 0,5 m deixava o gado entrar nele)
+    else if (u.regua === 'pedra' && u.sz > 0.45) colisao.circle(o.position.x, o.position.z, bodyOf(o) * 0.85, 'pedra'); } }
+// lugar para uma casa nova (raio r): longe do corpo das plantas e de copa grande, fora da lavoura (antes a vila podia crescer
+// por cima de árvore, cupinzeiro, pedra ou milharal)
+const buildSpot = (x, z, r) => fieldAt(x, z) < 0.05 && !placed.some(q => Math.hypot(q[0] - x, q[1] - z) < r + Math.max(q[3] || 0.5, Math.min(q[2] * 0.6, 2.5)));
+const peixes = buildPeixes(scene, { afx, fx, mobile });   // lambaris e piaus nos poços, na lagoa e nos remansos (peixes.js)
+const gente = buildPeople(scene, { mobile, fx, afx, col: colisao, peixes });
 const skyfx = buildSkyFx(scene, camera, { mobile, focus: () => camMode === 'jogo' ? gameCam.focus : controls.target });
 const fauna = buildFauna(scene, { mobile, fx: afx, col: colisao, shade: shadeTree ? [shadeTree.position.x, shadeTree.position.z] : null, termites: scene.children.filter(o => o.userData.regua === 'cupinzeiro').map(o => [o.position.x, o.position.z]),
   treeTops: scene.children.filter(o => ['cerrado', 'mata', 'sombra'].includes(o.userData.kind)).map(o => { const bb = new THREE.Box3().setFromObject(o); return [o.position.x, bb.max.y - 0.6, o.position.z]; }) });
 window.__juiz = createJuiz({ fauna, people: () => gente.people });   // o juiz dos bichos (juiz.js; sim/juiz_bichos.js)
+window.__juizGente = createJuizGente({ gente, spot: (() => { const t = TILES.find(t => t.kind === 'pasto'); return [t.c[0] - 6, t.c[1] - 8]; })() });   // o juiz de gente (juizgente.js; sim/juiz_gente.js)
 { let tries = 0; while (ROCKS_IN_WATER.length < 6 && tries++ < 400) { const i = 4 + Math.floor(rnd() * 220), [x0, z0] = RIVER[i], ri = riverInfo(x0, z0), w = riverHalfWidth(ri.s); if (x0 > CLIFF_X - 6) continue;
     if (!inAnyTile(x0, z0, 0.85) || Math.hypot(x0 - SPRING[0], z0 - SPRING[1]) < POOL_R + 2 || ROCKS_IN_WATER.some(r => Math.hypot(r[0] - x0, r[1] - z0) < 5)) continue;
     const side = rnd() < 0.5 ? -1 : 1, off = side * w * (0.45 + rnd() * 0.45), x = x0 - ri.tz * off, z = z0 + ri.tx * off, size = 0.4 + rnd() * 0.35, flat = 0.75;
@@ -569,7 +605,7 @@ const waterMat = new THREE.ShaderMaterial({ transparent: true, depthWrite: false
     #include <fog_pars_fragment>
     float hgt(vec2 q){return vnoise(q*vec2(0.55,1.1)-vec2(uFlowClk*0.55,0.0))*0.5+vnoise(q*vec2(1.6,2.4)-vec2(uFlowClk*1.3,0.0))*0.27+vnoise(q*vec2(4.0,5.5)-vec2(uFlowClk*2.2,0.0))*0.14+vnoise(q*vec2(9.0,12.0)-vec2(uFlowClk*3.1,0.0))*0.09;}
     void main(){float d=vDep;if(d<=0.0)discard;
-      vec2 p=vWp.xz;vec2 f=length(vFlow)>0.01?normalize(vFlow):vec2(1.0,0.0);vec2 s=vec2(-f.y,f.x);vec2 q=vec2(dot(p,f),dot(p,s));float fl=clamp(length(vFlow),0.0,1.0);
+      vec2 p=vWp.xz;vec2 f=length(vFlow)>0.01?normalize(vFlow):vec2(1.0,0.0);vec2 s=vec2(-f.y,f.x);vec2 q=vec2(dot(p,f),dot(p,s));float fl=clamp(length(vFlow),0.0,1.9);
       float e=0.1,h0=hgt(q),hx=hgt(q+vec2(e,0.0))-h0,hy=hgt(q+vec2(0.0,e))-h0;vec2 gq=vec2(hx,hy)/e*(0.05+0.07*fl+0.25*uRain);vec2 gw=f*gq.x+s*gq.y;
       float ring=0.0;if(uRain>0.01){vec2 c=floor(p*1.7),fp=fract(p*1.7)-0.5;float r=hash21(c);float t=fract(uTime*1.1+r*7.0);vec2 o=(vec2(hash21(c+3.1),hash21(c+7.7))-0.5)*0.5;
         vec2 dv=fp-o;float dd=length(dv);ring=(1.0-smoothstep(0.0,0.05,abs(dd-t*0.42)))*(1.0-t)*step(r,uRain*0.9+0.1);gw+=dv/max(dd,0.001)*ring*0.5;}
@@ -600,65 +636,108 @@ const waterMat = new THREE.ShaderMaterial({ transparent: true, depthWrite: false
     }`,
 });
 Object.assign(waterMat.uniforms, U); waterMat.uniforms.uWade = { value: Array.from({ length: 8 }, () => new THREE.Vector4()) }; waterMat.uniforms.uRefl = { value: reflRT.texture }; waterMat.uniforms.uRocks = { value: ROCKV };
-ROCKV[7].set(FALL.pool[0] - FALL.t[0] * 1.2, FALL.pool[1] - FALL.t[1] * 1.2, 2.6);   // a água que cai espuma no poço
+ROCKV[7].set(FALL.pool[0] - FALL.t[0] * 1.2, FALL.pool[1] - FALL.t[1] * 1.2, 2.6);   // a água que cai espuma no poço (o ponto exato segue o impacto, abaixo)
 // ---------- a queda: o véu d'água em duas camadas. Embaixo, o corpo verde-claro translúcido que incha na borda antes de
 // cair; por cima, os fios brancos que aceleram na descida (a textura corre mais rápido embaixo, como água em queda livre) e
 // se abrem em franjas e furos perto do poço, onde a água já vem cheia de ar. Dos lados, fios d'água escorrem pela rocha.
 { const n = [-FALL.t[1], FALL.t[0]], w = riverHalfWidth(FALL.s) * 0.95, top = riverLevel(FALL.s - 2), bot = top - DROP;
   const lip = [FALL.p[0] - FALL.t[0] * 0.6, FALL.p[1] - FALL.t[1] * 0.6];
-  const sheet = (NU, NV, width, extra) => { const pos = [], uv = [], idx = [];
-    for (let j = 0; j <= NV; j++) for (let i = 0; i <= NU; i++) { const u = i / NU * 2 - 1, v = j / NV, out = 0.25 + extra + 1.95 * Math.pow(v, 0.6), drop = DROP * v * v * 0.55 + DROP * v * 0.45;
-      const bulge = 0.06 * Math.max(0, 1 - v / 0.07) * (1 - u * u), ww = width * (1 + 0.16 * v * v) * (1 - 0.08 * Math.sin(v * 9 + u * 3) * v);
-      pos.push(lip[0] + n[0] * u * ww + FALL.t[0] * out, top - drop + 0.03 + bulge, lip[1] + n[1] * u * ww + FALL.t[1] * out); uv.push(u, v); }
+  // Física: a água sai da borda com a velocidade da correnteza (v0, para fora) e cai livre: d = g·s²/2, afastamento = v0·s,
+  // com s o tempo de voo (6 m de queda levam ~1,1 s). A vazão (Q) vem do tempo: cheia na chuva, mirrada na seca. Com pouca
+  // vazão v0 é pequeno e a água escorre colada na rocha (o véu não atravessa o paredão: o perfil da rocha vai num uniform),
+  // fica estreita e se parte em fios; na cheia o véu sai longe, largo e branco. A textura corre no tempo de voo, então os
+  // riscos se esticam sozinhos embaixo, onde a água já vem a ~11 m/s. O ponto de impacto, os respingos, as ferveduras no
+  // poço e a espuma seguem o mesmo cálculo, aqui no JS.
+  const G = 9.8, TF = Math.sqrt(2 * DROP / G), cd0 = cliffDrop(lip[0], lip[1]), WALL = [];
+  for (let k = 0; k < 16; k++) { const d = DROP * k / 15; let sx = 0; while (sx < 8 && cliffDrop(lip[0] + FALL.t[0] * sx, lip[1] + FALL.t[1] * sx) - cd0 < d - 0.01) sx += 0.02; WALL.push(sx); }
+  const FQ = { q: 1, v0: 2 }, wallAt = d => { const f = Math.max(0, Math.min(14.999, d / DROP * 15)), i0 = Math.floor(f); return WALL[i0] + (WALL[i0 + 1] - WALL[i0]) * (f - i0); };
+  const impactOut = () => Math.max(0.1 + FQ.v0 * TF, wallAt(DROP) + 0.06);
+  const fallU = { uLip: { value: new THREE.Vector3(lip[0], top, lip[1]) }, uTd: { value: new THREE.Vector2(...FALL.t) }, uNd: { value: new THREE.Vector2(...n) }, uW: { value: w },
+    uV0: { value: 2 }, uQ: { value: 1 }, uWall: { value: WALL }, uDrop: { value: DROP }, uTf: { value: TF } };
+  const sheet = (NU, NV) => { const pos = [], uv = [], idx = [];
+    for (let j = 0; j <= NV; j++) for (let i = 0; i <= NU; i++) { const u = i / NU * 2 - 1, v = Math.pow(j / NV, 0.8); pos.push(lip[0], top - v * DROP, lip[1]); uv.push(u, v); }
     for (let j = 0; j < NV; j++) for (let i = 0; i < NU; i++) { const a = j * (NU + 1) + i, b = a + NU + 1; idx.push(a, b, a + 1, a + 1, b, b + 1); }
     const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx); return g; };
-  const mkMat = layer => { const m = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, side: THREE.DoubleSide, fog: true, uniforms: THREE.UniformsUtils.merge([THREE.UniformsLib.fog, { uLayer: { value: layer } }]),
-    vertexShader: `varying vec2 vUv;varying vec3 vWp;
+  const FALL_V = `uniform vec3 uLip;uniform vec2 uTd,uNd;uniform float uW,uV0,uQ,uWall[16],uDrop,uTf,uOff;varying vec2 vUv;varying vec3 vWp;varying float vS,vWallK;
 #include <fog_pars_vertex>
-void main(){vUv=uv;vec4 w=modelMatrix*vec4(position,1.0);vWp=w.xyz;vec4 mvPosition=viewMatrix*w;gl_Position=projectionMatrix*mvPosition;
+float wallAt(float d){float f=clamp(d/uDrop*15.0,0.0,14.999);int i=int(f);return mix(uWall[i],uWall[i+1],fract(f));}
+void main(){float s=uv.y*uTf,d=min(uDrop,4.9*s*s);float bal=0.12+uOff+uV0*s,wl=wallAt(d)+0.07+uOff;float o=max(bal,wl);vWallK=smoothstep(0.0,0.25,wl-bal);
+  float ww=uW*(0.45+0.55*clamp(uQ,0.0,1.25))*(1.0+0.16*uv.y+0.1*vWallK)*(1.0-0.06*sin(uv.y*9.0+uv.x*3.0)*uv.y);
+  float bulge=0.05*(1.0-uv.x*uv.x)*max(0.0,1.0-uv.y/0.08)*clamp(uQ,0.3,1.3);
+  vec3 p=vec3(uLip.x+uNd.x*uv.x*ww+uTd.x*o,uLip.y-d+0.03+bulge,uLip.z+uNd.y*uv.x*ww+uTd.y*o);
+  vUv=uv;vS=s;vec4 w=modelMatrix*vec4(p,1.0);vWp=w.xyz;vec4 mvPosition=viewMatrix*w;gl_Position=projectionMatrix*mvPosition;
 #include <fog_vertex>
-}`,
-    fragmentShader: `varying vec2 vUv;varying vec3 vWp;uniform float uLayer;
+}`;
+  const mkMat = layer => { const m = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, side: THREE.DoubleSide, fog: true, uniforms: THREE.UniformsUtils.merge([THREE.UniformsLib.fog, { uLayer: { value: layer }, uOff: { value: layer === 1 ? 0.07 : 0 } }]),
+    vertexShader: layer === 2 ? `varying vec2 vUv;varying vec3 vWp;varying float vS,vWallK;
+#include <fog_pars_vertex>
+void main(){vUv=uv;vS=uv.y;vWallK=1.0;vec4 w=modelMatrix*vec4(position,1.0);vWp=w.xyz;vec4 mvPosition=viewMatrix*w;gl_Position=projectionMatrix*mvPosition;
+#include <fog_vertex>
+}` : FALL_V,
+    fragmentShader: `varying vec2 vUv;varying vec3 vWp;varying float vS,vWallK;uniform float uLayer,uQ;
 ${HEAD}
 #include <fog_pars_fragment>
-void main(){float y=vUv.y,sp=sqrt(max(y,0.0));float edge=1.0-smoothstep(0.72-0.3*y,1.0,abs(vUv.x));
-      float f1=vnoise(vec2(vUv.x*24.0,sp*5.0-uTime*3.2)),f2=vnoise(vec2(vUv.x*61.0+3.0,sp*11.0-uTime*5.6)),f3=vnoise(vec2(vUv.x*8.0,sp*2.2-uTime*1.7));
-      float st=f1*0.5+f2*0.33+f3*0.17,aer=smoothstep(0.1,0.95,y),light=(0.12+0.88*uDay)*(0.72+0.28*cloudShadow(vWp.xz));
+void main(){float y=vUv.y,ph=vS-uTime;float thin=clamp(uQ,0.0,1.0);
+      // a borda do véu: com pouca água ele se parte em fios separados
+      float edge=1.0-smoothstep(0.72-0.3*y-0.25*(1.0-thin),1.0,abs(vUv.x));float strands=smoothstep(0.35,0.6,vnoise(vec2(vUv.x*(9.0+10.0*(1.0-thin)),ph*0.8)));edge*=mix(strands,1.0,smoothstep(0.35,0.85,thin));
+      float f1=vnoise(vec2(vUv.x*24.0,ph*7.0)),f2=vnoise(vec2(vUv.x*61.0+3.0,ph*15.0)),f3=vnoise(vec2(vUv.x*8.0,ph*3.0));
+      float st=f1*0.5+f2*0.33+f3*0.17,aer=clamp(smoothstep(0.1,0.95,y)+vWallK*0.5,0.0,1.0),light=(0.12+0.88*uDay)*(0.72+0.28*cloudShadow(vWp.xz));
       vec3 body=toLin(vec3(0.40,0.76,0.72)),white=vec3(0.96,0.985,1.0);vec4 c;
       if(uLayer<0.5){float wh=smoothstep(0.42-0.22*aer,0.8-0.2*aer,st);c=vec4(mix(body*(0.85+0.3*f3),white,wh*0.55+aer*0.3),(0.42+0.38*wh+0.15*aer)*edge);}
-      else if(uLayer<1.5){float wh=smoothstep(0.5-0.18*aer,0.72-0.12*aer,st);float frs=smoothstep(0.25,0.55,vnoise(vec2(vUv.x*13.0,sp*3.5-uTime*2.6))+0.55-0.6*aer);
+      else if(uLayer<1.5){float wh=smoothstep(0.5-0.18*aer,0.72-0.12*aer,st);float frs=smoothstep(0.25,0.55,vnoise(vec2(vUv.x*13.0,ph*2.4))+0.55-0.6*aer);
         c=vec4(white,wh*edge*(0.35+0.55*aer)*mix(1.0,frs,aer));}
-      else{float wh=smoothstep(0.35,0.75,vnoise(vec2(vUv.x*6.0,y*14.0-uTime*4.0)));c=vec4(mix(body,white,0.5+0.5*wh),(0.35+0.45*wh)*(1.0-smoothstep(0.6,1.0,abs(vUv.x)))*smoothstep(0.0,0.05,y)*(1.0-smoothstep(0.9,1.0,y)));}
-      c.a*=(1.0-smoothstep(0.93,1.0,y)*0.6)*(1.0-uWaterDrop*1.5);gl_FragColor=vec4(c.rgb*light,c.a);
+      else{float wh=smoothstep(0.35,0.75,vnoise(vec2(vUv.x*6.0,y*14.0-uTime*4.0)));c=vec4(mix(body,white,0.4+0.4*wh),(0.18+0.3*wh)*smoothstep(0.1,0.6,uQ)*(1.0-smoothstep(0.6,1.0,abs(vUv.x)))*smoothstep(0.0,0.05,y)*(1.0-smoothstep(0.9,1.0,y)));}
+      c.a*=(1.0-smoothstep(0.93,1.0,y)*0.6)*smoothstep(0.05,0.3,uQ);gl_FragColor=vec4(c.rgb*light,c.a);
 #include <colorspace_fragment>
 #include <fog_fragment>
-}` }); Object.assign(m.uniforms, U); return m; };
-  const NU = mobile ? 14 : 22, NV = mobile ? 18 : 26;
-  const body = new THREE.Mesh(sheet(NU, NV, w, 0), mkMat(0)); body.renderOrder = 3; scene.add(body);
-  const fios = new THREE.Mesh(sheet(NU, NV, w * 1.02, 0.07), mkMat(1)); fios.renderOrder = 4; scene.add(fios);
+}` }); Object.assign(m.uniforms, U, fallU); return m; };
+  const NU = mobile ? 14 : 22, NV = mobile ? 20 : 30;
+  const body = new THREE.Mesh(sheet(NU, NV), mkMat(0)); body.renderOrder = 3; body.frustumCulled = false; scene.add(body);
+  const fios = new THREE.Mesh(sheet(NU, NV), mkMat(1)); fios.renderOrder = 4; fios.frustumCulled = false; scene.add(fios);
   // fios d'água escorrendo pela rocha dos dois lados (onde a escarpa é alta), colados no paredão
   const trickle = mkMat(2);
-  for (const [off, wd] of [[w + 1.6, 0.16], [-(w + 2.4), 0.22], [w + 3.6, 0.12]]) { const pos = [], uv = [], idx = [], N = 22;
-    for (let j = 0; j <= N; j++) { const v = j / N, s = -1.0 + v * 4.2; for (const u of [-1, 1]) { const x = lip[0] + n[0] * (off + u * wd) + FALL.t[0] * s, z = lip[1] + n[1] * (off + u * wd) + FALL.t[1] * s; pos.push(x, heightAt(x, z) + 0.05, z); uv.push(u, v); } }
+  // altura da malha do chão que é desenhada (raio de cima para baixo): na parede quase vertical ela difere do heightAt e a tira
+  // ficava parte no ar, parte dentro da rocha, e aparecia como riscos brancos soltos
+  const ray = new THREE.Raycaster(), gms = TILES.map(t => t.gm).filter(Boolean), down = new THREE.Vector3(0, -1, 0);
+  const meshY = (x, z) => { ray.set(new THREE.Vector3(x, 300, z), down); const h = ray.intersectObjects(gms, false)[0]; return h ? h.point.y : heightAt(x, z); };
+  for (const [off, wd] of [[w + 1.6, 0.1], [-(w + 2.4), 0.13], [w + 3.6, 0.07]]) { const pos = [], uv = [], idx = [], N = 22;
+    for (let j = 0; j <= N; j++) { const v = j / N, s = -1.0 + v * 4.2; for (const u of [-1, 1]) { const x = lip[0] + n[0] * (off + u * wd) + FALL.t[0] * s, z = lip[1] + n[1] * (off + u * wd) + FALL.t[1] * s; pos.push(x + FALL.t[0] * 0.06, meshY(x, z) + 0.04, z + FALL.t[1] * 0.06); uv.push(u, v); } }
     for (let j = 0; j < N; j++) { const a = j * 2; idx.push(a, a + 2, a + 1, a + 1, a + 2, a + 3); }
     const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx);
     const m = new THREE.Mesh(g, trickle); m.renderOrder = 3; scene.add(m); }
+  const stoneFree = (x, z, sz) => !placed.some(p => p[3] && Math.hypot(p[0] - x, p[1] - z) < (sz * 1.2 + p[3]) * 0.7);   // encostam, não se fundem
   // blocos caídos do paredão em volta do poço (rio abaixo e dos lados) e cascalho no pé da escarpa, ao longo do vale
   for (let k = 0; k < 11; k++) { const a = Math.atan2(FALL.t[1], FALL.t[0]) + (rnd() - 0.5) * 3.4, r = 4.4 + rnd() * 1.8, x = FALL.pool[0] + Math.cos(a) * r, z = FALL.pool[1] + Math.sin(a) * r;
-    if (waterDist(x, z) > 0.15 && !blocked(x, z, 0.3)) { const sz = 0.45 + rnd() * 0.75; putStone(x, z, sz, 0.6 + rnd() * 0.3); colisao.circle(x, z, sz * 0.6, 'pedra'); } }
+    if (waterDist(x, z) > 0.15 && !blocked(x, z, 0.3)) { const sz = 0.45 + rnd() * 0.75; if (stoneFree(x, z, sz)) { putStone(x, z, sz, 0.6 + rnd() * 0.3); colisao.circle(x, z, sz * 0.6, 'pedra'); } } }
   for (let zz = -26; zz <= 26; zz += 2.2) { const z = FALL.p[1] + zz + (rnd() - 0.5) * 1.5, hTop = heightAt(CLIFF_X - 3, z); if (Math.abs(zz) < w + 4) continue;
-    for (let x = CLIFF_X - 1; x < CLIFF_X + 7; x += 0.25) { if (heightAt(x, z) < hTop - DROP * 0.9 && Math.abs(heightAt(x + 0.4, z) - heightAt(x, z)) < 0.1) { const xx = x + rnd() * 1.2; if (waterDist(xx, z) > 0.5 && rnd() < 0.7) { const sz = 0.22 + rnd() * 0.45; putStone(xx, z, sz, 0.55 + rnd() * 0.3); colisao.circle(xx, z, sz * 0.55, 'pedra'); } break; } } }
-  // onde a água bate no poço: respingos que saltam e borrifo que sobe e o vento leva (partículas, a cada quadro)
-  let acc = 0; window.__fallFx = dt => { acc += dt; if (!fx || acc < 0.06) return; const k = Math.min(4, Math.floor(acc / 0.06)); acc = 0; if (U.uWaterDrop.value > 0.4) return;
-    for (let i = 0; i < k; i++) { const u = (Math.random() * 2 - 1) * w, x = lip[0] + n[0] * u + FALL.t[0] * 2.25, z = lip[1] + n[1] * u + FALL.t[1] * 2.25;
-      fx.emit('respingo', x, bot + 0.05, z, 2, { dir: [FALL.t[0] * 0.8, 1.8, FALL.t[1] * 0.8], spread: 1.3, speed: 1.2 }); if (Math.random() < 0.35) fx.emit('nevoa', x, bot + 0.3, z, 1, { spread: 0.8 }); } };
+    for (let x = CLIFF_X - 1; x < CLIFF_X + 7; x += 0.25) { if (heightAt(x, z) < hTop - DROP * 0.9 && Math.abs(heightAt(x + 0.4, z) - heightAt(x, z)) < 0.1) { const xx = x + rnd() * 1.2; if (waterDist(xx, z) > 0.5 && rnd() < 0.7) { const sz = 0.22 + rnd() * 0.45; if (stoneFree(xx, z, sz)) { putStone(xx, z, sz, 0.55 + rnd() * 0.3); colisao.circle(xx, z, sz * 0.55, 'pedra'); } } break; } } }
+  // a cada quadro: a vazão do tempo (suavizada), o impacto, respingos que saltam com a velocidade da queda, gotas que se
+  // soltam do véu e caem livres, ferveduras (anéis) no poço onde a água bate, e a espuma do poço acompanhando o impacto
+  let acc = 0, accB = 0;
+  window.__fallFx = dt => { const q = Math.max(0, Math.min(1.5, 1 - U.uWaterDrop.value * 1.6 + U.uRain.value * 0.7)) || 0; FQ.q += (q - FQ.q) * Math.min(1, dt * 0.5); FQ.v0 = 0.35 + 1.6 * FQ.q;
+    fallU.uQ.value = FQ.q; fallU.uV0.value = FQ.v0; window.__fallQ = FQ;
+    const io = impactOut(), ix = lip[0] + FALL.t[0] * io, iz = lip[1] + FALL.t[1] * io, wl = waterLevelAt(ix, iz) - U.uWaterDrop.value, ww = w * (0.45 + 0.55 * Math.min(1.25, FQ.q)) * 1.16;
+    ROCKV[7].set(ix + FALL.t[0] * 0.6, iz + FALL.t[1] * 0.6, 1.2 + 1.6 * Math.min(1.3, FQ.q));
+    acc += dt; accB += dt; if (FQ.q < 0.08) return;
+    const vImp = Math.hypot(FQ.v0, G * TF);   // ~11 m/s na água do poço
+    if (fx && acc > 0.05) { const k = Math.min(5, Math.round(acc / 0.05 * (0.4 + FQ.q))); acc = 0;
+      for (let i = 0; i < k; i++) { const u = (Math.random() * 2 - 1) * ww, x = ix + n[0] * u, z = iz + n[1] * u;
+        fx.emit('respingo', x, wl + 0.05, z, 2, { dir: [FALL.t[0] * 0.12 * vImp, 0.16 * vImp, FALL.t[1] * 0.12 * vImp], spread: 1.2, speed: 0.6 + 0.4 * FQ.q });
+        if (Math.random() < 0.3 + 0.2 * FQ.q) fx.emit('nevoa', x, wl + 0.3, z, 1, { spread: 0.8 });
+        if (Math.random() < 0.5) fx.emit('espuma', x + FALL.t[0] * (0.5 + Math.random() * 2), wl, z + FALL.t[1] * (0.5 + Math.random() * 2), 1, { spread: 0.6 }); }
+      // gotas que se soltam da borda do véu e caem livres (mesma balística do véu, um pouco mais devagar para fora)
+      for (let i = 0; i < 2; i++) { const s0 = Math.random() * TF * 0.8, side = Math.random() < 0.5 ? -1 : 1, u = side * ww * (0.85 + Math.random() * 0.2), o = Math.max(0.12 + FQ.v0 * s0, wallAt(4.9 * s0 * s0) + 0.07);
+        fx.emit('gota', lip[0] + n[0] * u + FALL.t[0] * o, top - 4.9 * s0 * s0, lip[1] + n[1] * u + FALL.t[1] * o, 1, { dir: [FALL.t[0] * FQ.v0 * 0.85 + n[0] * side * 0.3, -G * s0, FALL.t[1] * FQ.v0 * 0.85 + n[1] * side * 0.3], spread: 0.15, speed: 1 }); } }
+    // fervedura: o ar que a queda enfia na água sobe e estoura em anéis, mais rio abaixo quanto mais forte a queda
+    if (afx && accB > 0.16 / (0.4 + FQ.q)) { accB = 0; const u = (Math.random() * 2 - 1) * ww, f = 0.3 + Math.random() * (1.2 + 1.6 * FQ.q);
+      afx.ripple(ix + n[0] * u + FALL.t[0] * f, wl, iz + n[1] * u + FALL.t[1] * f, 0.5 + Math.random() * 0.8 * FQ.q); } };
   // borrifo: neblina que sobe do poço e o vento leva; com sol baixo faz um arquinho de cor
   const NP = mobile ? 160 : 320, P = [], S = []; for (let i = 0; i < NP; i++) { P.push(FALL.pool[0] - FALL.t[0] * 1.0, bot, FALL.pool[1] - FALL.t[1] * 1.0); S.push(Math.random()); }
   const pg = new THREE.BufferGeometry(); pg.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); pg.setAttribute('seed', new THREE.Float32BufferAttribute(S, 1));
   const pm = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, uniforms: { uPx: { value: 600 } },
     vertexShader: `attribute float seed;uniform float uTime,uPx,uWindBase,uDay;uniform vec2 uWindDir;varying float vA;void main(){float k=fract(uTime*0.22+seed*7.0);float a=seed*62.8;
       vec3 p=position+vec3(cos(a)*(0.6+k*2.8),k*4.5,sin(a)*(0.6+k*2.8));p.xz+=uWindDir*uWindBase*k*1.4;vec4 mv=viewMatrix*vec4(p,1.0);gl_Position=projectionMatrix*mv;
-      gl_PointSize=(0.4+k*1.6)*uPx/max(1.0,-mv.z);vA=(1.0-k)*smoothstep(0.0,0.1,k)*0.35;}`,
+      gl_PointSize=min(160.0,(0.4+k*1.6)*uPx/max(1.0,-mv.z));vA=(1.0-k)*smoothstep(0.0,0.1,k)*0.35*smoothstep(2.5,7.0,-mv.z);}   /* perto da lente o borrifo some (não vira um borrão) */`,
     fragmentShader: `uniform float uDay;varying float vA;void main(){float d=length(gl_PointCoord-0.5);if(d>0.5)discard;gl_FragColor=vec4(vec3(0.94,0.97,1.0)*(0.25+0.75*uDay),vA*(1.0-d*2.0));
 #include <colorspace_fragment>
 }` });
@@ -683,7 +762,7 @@ const water = new THREE.Group(); scene.add(water);
 function waterMeshFor(tiles, withOutside) { const pos = [], flow = [], depA = [], idx = [];
   for (const t of tiles) { const { pos: P, idx: I } = sectorGrid(t.c, mobile ? 44 : 60), base = pos.length / 3, keep = [];
     for (let i = 0; i < P.length / 3; i++) { const x = P[i * 3], z = P[i * 3 + 2], ri = riverInfo(x, z), lv = waterLevelAt(x, z), dep = lv - heightAt(x, z); keep.push(dep > -0.2 && waterDist(x, z) < 1.3);   // só onde é rio, poço ou lagoa de verdade
-      const still = Math.hypot(x - SPRING[0], z - SPRING[1]) < POOL_R + 1 || lakeDist(x, z) < 3, sp = still ? 0.12 : Math.min(1, 0.4 + 0.6 * (1 - ri.d / (riverHalfWidth(ri.s) + 0.5)));
+      const still = Math.hypot(x - SPRING[0], z - SPRING[1]) < POOL_R + 1 || lakeDist(x, z) < 3, sp = (still ? 0.12 : Math.min(1, 0.4 + 0.6 * (1 - ri.d / (riverHalfWidth(ri.s) + 0.5)))) * (ri.s < FALL.s ? 1 + 0.9 * smooth(FALL.s - 12, FALL.s, ri.s) : 1);   // a água acelera chegando na borda da queda
       pos.push(x, lv, z); flow.push(ri.tx * sp, ri.tz * sp); depA.push(dep); }
     for (let i = 0; i < I.length; i += 3) if (keep[I[i]] || keep[I[i + 1]] || keep[I[i + 2]]) idx.push(base + I[i], base + I[i + 1], base + I[i + 2]); }
   if (withOutside) { const L = latticeGeometry(0, 150, 0.9, P => outside(P) && P.some(([x, z]) => waterDist(x, z) < 1.4)), base = pos.length / 3;
@@ -856,7 +935,7 @@ mergeTrees(scene.children.slice());
 const EDGES0 = { rio: 'AGGGGG', mata: 'ABBABB', cachoeira: 'ABBAGG', pasto: 'GGGGGG', cerrado: 'GGGGGG', lagoa: 'GGGGGG', vila: 'VVVVVV', praca: 'VVVVVV', lavoura: 'CCCCCC', roca: 'CCCCCC', cerradao: 'BBBBBB' };
 // o jogo: núcleo v5 (o rio é o orçamento, ../../nucleo/regras.js); ?jogo=v3 volta às regras antigas (game3d.js)
 const board = (new URLSearchParams(location.search).get('jogo') === 'v3' ? buildBoard : buildBoard5)({ scene, camera, dom: renderer.domElement, R, TILES, hexCenter, heightAt, waterDist, inHex, edgeMid, DIRS, sectorType, PATHS, addRiver, ST, CENTER, gente,
-  edgesOf: t => EDGES0[t.kind].split(''), props, groundFor, waterFor: t => waterMeshFor([t], false), fillField, grassFor, place, makeTree, makeTermite, makeBuriti, plant: t => plantTile(t, floraCtx), fieldAt, blocked, mobile, mergeTrees, buildNear });
+  edgesOf: t => EDGES0[t.kind].split(''), props, groundFor, waterFor: t => waterMeshFor([t], false), fillField, grassFor, place, makeTree, makeTermite, makeBuriti, plant: t => plantTile(t, floraCtx), fieldAt, blocked, mobile, mergeTrees, buildNear, syncCollision, buildSpot });
 let lastStrikes = 0;
 let frameN = 0; const clock = new THREE.Clock(); let fpsT = 0, fpsT0 = 0, fpsN = 0, slow = 0;
 const fmtH = h => `${String(Math.floor(h) % 24).padStart(2, '0')}:${String(Math.round((h % 1) * 60) % 60).padStart(2, '0')}`;
@@ -869,7 +948,7 @@ function frame() {
   if (!!ST.regua !== reguaOn) { reguaOn = !!ST.regua; showRegua(reguaOn); }
   if (people && reguaOn) for (const p of people.children) p.rotation.y = Math.atan2(camera.position.x - p.position.x, camera.position.z - p.position.z);
   if (camMode === 'jogo') U.uFocus.value.copy(gameCam.focus); else U.uFocus.value.copy(camera.position).add(camera.getWorldDirection(_v).multiplyScalar(0.01));   /* câmera livre: só some o que encosta na lente */ fitShadow(); grassLod();
-  const ctx = { pxPerUnit: renderer.domElement.height / (2 * Math.tan(camera.fov * Math.PI / 360)), hour: ST.hour }; if (window.__petalPx) window.__petalPx.value = ctx.pxPerUnit; if (window.__mistPx) window.__mistPx.value = ctx.pxPerUnit; window.__hour = ST.hour; ctx.people = gente.people; props.update(dt, ctx); fauna.update(dt, ctx); gente.update(dt); fx.update(dt, ctx); afx.update(dt, ctx); board.update(dt);
+  const ctx = { pxPerUnit: renderer.domElement.height / (2 * Math.tan(camera.fov * Math.PI / 360)), hour: ST.hour }; if (window.__petalPx) window.__petalPx.value = ctx.pxPerUnit; if (window.__mistPx) window.__mistPx.value = ctx.pxPerUnit; window.__hour = ST.hour; ctx.people = gente.people; props.update(dt, ctx); fauna.update(dt, ctx); gente.update(dt); peixes.update(dt, { people: gente.people, animals: fauna.animals, hour: ST.hour }); fx.update(dt, ctx); afx.update(dt, ctx); board.update(dt);
   if ((skyfx.fx.strikes || 0) !== lastStrikes) { lastStrikes = skyfx.fx.strikes || 0; setTimeout(() => { fauna.startle(); gente.startle(); }, 250); }   /* o trovão logo depois do clarão assusta gente e bicho */ clouds.update(dt, camera); ctx.Rr = c.Rr; ctx.hour = ST.hour; skyfx.update(dt, ctx);
   { const f = skyfx.fx.flash; if (f > 0) { skyLight.intensity += f * 3; U.uSkyZen.value.lerp(new THREE.Color(0.85, 0.88, 1), f * 0.5); U.uSkyHor.value.lerp(new THREE.Color(0.9, 0.92, 1), f * 0.45); } }   // clarão do raio
   { const pu = grassU.uPush.value, f = U.uFocus.value, L = []; for (const q of gente.people) if (q.g.visible && q.st !== 'casa') L.push([q.x, q.z, q.s.sex === 'c' ? 0.45 : 0.55, 1]);
@@ -899,5 +978,5 @@ function frame() {
 }
 requestAnimationFrame(frame);
 /* testes: avança a vida do vale (gente, bichos, porteiras) s segundos sem desenhar, para conferir rotinas longas num computador lento */
-window.__ff = s => { const ctx = { pxPerUnit: 600, hour: ST.hour, people: gente.people }; window.__hour = ST.hour; for (let t = 0; t < s; t += 0.05) { U.uTime.value += 0.05; props.update(0.05, ctx); fauna.update(0.05, ctx); gente.update(0.05); } };
-window.__cam = camera; window.__heightAt = heightAt; window.__tiles = TILES; window.__fall = FALL; window.__previa = { THREE, gente, skyfx, gameCam,  ST, U, renderer, scene, camera, controls, fauna, clouds, board, fx, col: colisao, L: LAYOUT, heightAt };
+window.__ff = s => { const ctx = { pxPerUnit: 600, hour: ST.hour, people: gente.people }; window.__hour = ST.hour; for (let t = 0; t < s; t += 0.05) { U.uTime.value += 0.05; props.update(0.05, ctx); fauna.update(0.05, ctx); gente.update(0.05); peixes.update(0.05, { people: gente.people, animals: fauna.animals }); if (window.__fallFx) window.__fallFx(0.05); } };
+window.__cam = camera; window.__heightAt = heightAt; window.__tiles = TILES; window.__fall = FALL; window.__previa = { THREE, gente, skyfx, gameCam,  ST, U, renderer, scene, camera, controls, fauna, clouds, board, fx, col: colisao, L: LAYOUT, heightAt, peixes };

@@ -63,12 +63,13 @@ export const ROM = {
 };
 
 // ---------- marcos do corpo em pé (metros, num corpo construído com 1,70 m; a escala dá a altura de cada um)
-// sola, tornozelo, joelho, virilha, quadril (junta), crista ilíaca, cintura, peito, ombro (junta), base do pescoço, queixo
+// sola, tornozelo, joelho, virilha, quadril (junta), crista ilíaca, cintura, peito, ombro (junta glenoumeral, ~3 cm abaixo do
+// acrômio), base do pescoço, queixo
 export const MARCOS = ['sola', 'tornozelo', 'joelho', 'virilha', 'quadril', 'crista', 'cintura', 'peito', 'ombro', 'pescoco', 'queixo'];
 const REF = {
-  m: [0, 0.065, 0.485, 0.80, 0.90, 1.01, 1.055, 1.235, 1.405, 1.445, 1.47],
-  f: [0, 0.064, 0.478, 0.79, 0.885, 1.0, 1.06, 1.225, 1.395, 1.44, 1.468],
-  c: [0, 0.062, 0.473, 0.765, 0.864, 0.963, 1.01, 1.176, 1.343, 1.39, 1.415],   // ~7 anos: cabeça 1/6 da altura, perna ~0,5
+  m: [0, 0.065, 0.485, 0.80, 0.90, 1.01, 1.055, 1.235, 1.372, 1.445, 1.47],
+  f: [0, 0.064, 0.478, 0.79, 0.885, 1.0, 1.06, 1.225, 1.362, 1.44, 1.468],
+  c: [0, 0.062, 0.473, 0.765, 0.864, 0.963, 1.01, 1.176, 1.312, 1.39, 1.415],   // ~7 anos: cabeça 1/6 da altura, perna ~0,5
 };
 // liga duas listas de marcos: devolve y → y (linear por trechos, reto além das pontas)
 export function ponte(de, para) { return y => { const n = de.length;
@@ -107,17 +108,17 @@ export function perfil(s, rnd = Math.random) {
   const sexo = kid ? 'c' : f ? 'f' : 'm';
   // medidas lineares (metros, corpo de 1,70)
   const med = {
-    ombroX: (kid ? 0.148 : f ? 0.158 : 0.176) * fr,            // meia distância entre as juntas dos ombros
+    ombroX: (kid ? 0.152 : f ? 0.16 : 0.178) * fr,            // meia distância entre as juntas dos ombros
     quadrilX: (kid ? 0.074 : f ? 0.093 : 0.085) * fr,          // meia distância entre as cabeças do fêmur
     joelhoX: kid ? 0.066 : f ? 0.068 : 0.075, tornX: kid ? 0.064 : f ? 0.066 : 0.073,
-    braco: kid ? 0.25 : f ? 0.275 : 0.29, antebraco: kid ? 0.222 : f ? 0.24 : 0.255, mao: (kid ? 0.165 : f ? 0.176 : 0.19) * (0.97 + rnd() * 0.06),
-    pe: kid ? 0.235 : f ? 0.24 : 0.262,
+    braco: kid ? 0.285 : f ? 0.292 : 0.302, antebraco: kid ? 0.238 : f ? 0.245 : 0.262, mao: (kid ? 0.165 : f ? 0.176 : 0.19) * (0.97 + rnd() * 0.06),
+    pe: kid ? 0.262 : f ? 0.25 : 0.265,
     pescoco: (kid ? 0.047 : f ? 0.051 : 0.059) + Math.max(0, F) * 0.004 + (m ? M * 0.006 : 0),
   };
   // o rosto de cada um (proporções do crânio por sexo, com variação pessoal)
   const v = () => 1 + (rnd() - 0.5) * 0.08;
   const cranio = {
-    rx: (kid ? 0.076 : f ? 0.0745 : 0.0775) * (1 + (rnd() - 0.5) * 0.05), ry: (kid ? 0.092 : f ? 0.087 : 0.09), rz: (kid ? 0.094 : f ? 0.093 : 0.098) * (1 + (rnd() - 0.5) * 0.04),
+    rx: (kid ? 0.076 : f ? 0.0745 : 0.0775) * (1 + (rnd() - 0.5) * 0.05), ry: (kid ? 0.09 : f ? 0.085 : 0.087), rz: (kid ? 0.094 : f ? 0.093 : 0.098) * (1 + (rnd() - 0.5) * 0.04),
     face: kid ? 0.84 : 1,                                       // na criança o rosto é pequeno perto do crânio
     arco: kid ? 0 : f ? 0.0025 : 0.008 * v(),                   // arco da sobrancelha (supraorbital)
     testa: kid ? 0.9 : f ? 0.75 : 0.35,                         // testa reta (1) ou inclinada (0)
@@ -186,6 +187,12 @@ export function criarRig(body, P) {
   const hand = arms.map(() => { const st = {}; for (const k of HAND_KEYS) st[k] = k === 'solta' ? 1 : 0; return { w: st, want: 'solta' }; });
   const carry = ROM.cotovelo.carregamento[P.sexo] * D, hyperEl = ROM.cotovelo.hiperextensao[P.sexo] * D, hyperKn = ROM.joelho.hiperextensao[P.sexo] * D;
   const T = { modo: 'pe', ombro: [0, 0], phi: [0, 0], dy: 0 };
+  // o braço caído pende para fora do corpo: quanto mais largo o tronco e o quadril na altura do cotovelo e do punho
+  // (barriga, flancos, quadril), mais aberto (abdução de repouso, rad)
+  const abdRep = (() => { const TRr = body.medidas && body.medidas.tronco, OWr = body.medidas && body.medidas.ossoW; if (!TRr || !OWr) return 0; let a0 = 0;
+    const an = y => { let i = 1; while (i < TRr.length - 1 && TRr[i][0] < y) i++; const A = TRr[i - 1], B = TRr[i], t = cl((y - A[0]) / ((B[0] - A[0]) || 1), 0, 1); return A[1] + (B[1] - A[1]) * t; };
+    for (const nm of ['elD', 'twD', 'haD']) { const p = OWr[nm], sh = OWr.shD; if (!p || !sh || p.y < TRr[0][0]) continue; const need = an(p.y) + 0.042 - Math.abs(p.x), L = sh.y - p.y; if (need > 0 && L > 0.05) a0 = Math.max(a0, Math.atan2(need, L)); }
+    return Math.min(0.35, a0); })();
 
   function save() { eachInt((i, o, k) => { buf[i] = o[k]; }); saved = true; }
   function restore() { if (!saved) return; eachInt((i, o, k) => { o[k] = buf[i]; }); saved = false; }
@@ -213,7 +220,7 @@ export function criarRig(body, P) {
       l.hp.rotation.set(-th, l.hp.rotation.y, sx * abd); l.hp.quaternion.premultiply(qComp); l.kn.rotation.set(kn, 0, 0); l.ft.rotation.x = cl(l.ft.rotation.x, -0.62, 1.22); });
     // ombros: cone do úmero, rotação do manguito, escápula e clavícula
     arms.forEach((a, i) => { const sx = i ? 1 : -1;
-      _e.set(a.sh.rotation.x, a.sh.rotation.y, a.sh.rotation.z, 'XYZ'); _q.setFromEuler(_e);
+      _e.set(a.sh.rotation.x, a.sh.rotation.y, a.sh.rotation.z + sx * abdRep * (1 - sm01((-a.sh.rotation.x - 0.6) / 0.8)), 'XYZ'); _q.setFromEuler(_e);
       _v.copy(DOWN).applyQuaternion(_q); _v2.copy(_v);
       if (limitaUmero(_v2, sx)) { _q2.setFromUnitVectors(_v, _v2); _q.premultiply(_q2); }
       const phi = Math.acos(cl(-_v2.y, -1, 1)); T.phi[i] = phi;
@@ -270,6 +277,23 @@ export function criarRig(body, P) {
     l.hp.updateMatrixWorld(true); l.ft.getWorldPosition(_a).applyMatrix4(_mi);
     _v.subVectors(_a, _hl).normalize(); _v2.subVectors(_tg, _hl).normalize(); _q.setFromUnitVectors(_v, _v2); l.hp.quaternion.premultiply(_q); }
 
+  // ---------- o braço não atravessa o tronco: o cotovelo, o meio do antebraço, o punho e a palma são postos no tronco em pé
+  // (espaço do osso do peito ou da lombar); se algum entrou na casca da roupa, o ombro gira o tanto que tira o ponto de dentro
+  const TR = body.medidas && body.medidas.tronco, OW = body.medidas && body.medidas.ossoW, _pw = new THREE.Vector3(), _sw = new THREE.Vector3(), _dw = new THREE.Vector3(), _ax2 = new THREE.Vector3(), _qa = new THREE.Quaternion(), _qp = new THREE.Quaternion(), _mm = new THREE.Matrix4();
+  const anel = y => { let i = 1; while (i < TR.length - 1 && TR[i][0] < y) i++; const a = TR[i - 1], b = TR[i], t = cl((y - a[0]) / ((b[0] - a[0]) || 1), 0, 1); return a.map((v, k) => v + (b[k] - v) * t); };
+  function semAtravessar() { if (!TR) return;
+    arms.forEach((a, i) => { for (let it = 0; it < 3; it++) { a.sh.updateWorldMatrix(true, true); let pior = 0, pW = null, dW = null;
+        for (const [bn, off] of [[a.el, 0], [a.tw, 0], [a.ha, 0], [a.ha, -0.07]]) { _pw.set(0, off, 0); bn.localToWorld(_pw);
+          const ref = OW.chest && _pw.y > 0 ? chest : spine; ref.updateWorldMatrix(true, false); _mm.copy(ref.matrixWorld).invert(); const L = _pw.clone().applyMatrix4(_mm).add(OW[ref.name]);
+          if (L.y < TR[0][0] || L.y > TR[TR.length - 1][0] - 0.01) continue; const [, hw, fr, bk, cz] = anel(L.y), dz = L.z - cz, rz = dz > 0 ? fr : bk, m = 0.03;
+          const e = Math.hypot(L.x / (hw + m), dz / (rz + m)); if (e >= 1) continue; const depth = (1 - e) * Math.min(hw + m, rz + m);
+          if (depth > pior) { pior = depth; pW = _pw.clone(); const n = new THREE.Vector3(L.x / ((hw + m) ** 2), 0, dz / ((rz + m) ** 2)).normalize(); ref.getWorldQuaternion(_qa); dW = n.applyQuaternion(_qa); } }
+        if (!pW || pior < 0.004) break;
+        a.sh.getWorldPosition(_sw); const arm = pW.sub(_sw), dist = arm.length(); if (dist < 0.05) break;
+        _ax2.crossVectors(arm, dW); if (_ax2.lengthSq() < 1e-10) break; _ax2.normalize();
+        _qa.setFromAxisAngle(_ax2, Math.min(0.6, (pior + 0.004) / dist)); a.sh.getWorldQuaternion(_qp); _qp.premultiply(_qa);
+        a.sh.parent.getWorldQuaternion(_qa).invert(); a.sh.quaternion.copy(_qa.multiply(_qp)); } }); }
+
   // ---------- mãos: punho e antebraço (pronação) e os dedos
   function maos(ctx) {
     arms.forEach((a, i) => { const sx = i ? 1 : -1, H = hand[i], want = (ctx.maos && ctx.maos[i]) || 'solta';
@@ -300,7 +324,7 @@ export function criarRig(body, P) {
     solve(ctx) { save(); leve();
       if (ctx.contato) { const y0 = hips.position.y; contato(ctx); T.dy = T.modo === 'sentado' || T.modo === 'livre' ? 0 : hips.position.y - y0; }
       else if (T.dy && T.modo !== 'sentado' && T.modo !== 'livre') hips.position.y += T.dy;
-      if (ctx.perto) maos(ctx); },
+      if (ctx.perto) { semAtravessar(); maos(ctx); } },
     alinhaMao, maos,
   };
 }
@@ -344,7 +368,7 @@ export function passada(rig, P, ph, v, run, esc) {
   const F = S.map(foot), stance = S.map(s => s < beta);
   // altura do quadril: sobe e desce no passo (mais alto no meio do apoio), sem passar do alcance das pernas no chão
   let hy;
-  if (!run) hy = H0 - 0.014 + 0.012 * Math.cos(4 * Math.PI * (S[0] - 0.3)) - 0.008;
+  if (!run) hy = H0 - 0.034 + 0.008 * Math.cos(4 * Math.PI * (S[0] - 0.3));   // joelho ~15° no apoio: o centro do corpo sobe e desce ~5 cm
   else { const i = stance[0] ? 0 : stance[1] ? 1 : -1; hy = i >= 0 ? H0 - 0.045 - 0.05 * Math.sin(Math.PI * S[i] / beta) : H0 - 0.02 + 0.03 * Math.sin(Math.PI * (((S[0] - beta) % 0.5 + 0.5) % 0.5) / (0.5 - beta)); }
   for (let i = 0; i < 2; i++) if (stance[i] || F[i][1] < hA + 0.03) { const [z, y] = F[i]; hy = Math.min(hy, y + Math.sqrt(Math.max(0, L * L - z * z))); }
   hy = Math.max(hy, H0 - 0.16);

@@ -40,6 +40,8 @@ export function buildProps(scene, { mobile = false } = {}) {
   const glowMat = mat({ color: 0x2b2622, emissive: 0xffb45a, emissiveIntensity: 0 });
   const stoneMat = mat({ map: stoneT, color: 0xbab4a8 });
   const smokeSrc = [], updaters = [], cropKit = {};
+  // o chão mais baixo debaixo de um objeto redondo de raio r (para não ficar com um lado no ar na encosta)
+  const lowAt = (x, z, r) => { let m = heightAt(x, z); for (let k = 0; k < 8; k++) { const a = k * Math.PI / 4; m = Math.min(m, heightAt(x + Math.cos(a) * r, z + Math.sin(a) * r)); } return m; };
   const groundY = (p, w, d, rot) => { let m = 1e9; for (const [u, v] of [[-1, -1], [1, -1], [1, 1], [-1, 1], [0, 0]]) { const c = Math.cos(rot), s = Math.sin(rot), x = u * w / 2, z = v * d / 2;
     m = Math.min(m, heightAt(p[0] + x * c + z * s, p[1] - x * s + z * c)); } return m - 0.04; };
   const chita = ['#c8382a', '#2f6aa0', '#e0a020', '#3a8a4a'].map((b, i) => chitaTexture(43 + i, b));
@@ -53,6 +55,8 @@ export function buildProps(scene, { mobile = false } = {}) {
   const haloTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d'), gr = g.createRadialGradient(32, 32, 0, 32, 32, 32);
     gr.addColorStop(0, 'rgba(255,220,150,1)'); gr.addColorStop(0.25, 'rgba(255,170,80,0.5)'); gr.addColorStop(1, 'rgba(255,140,60,0)'); g.fillStyle = gr; g.fillRect(0, 0, 64, 64); return new THREE.CanvasTexture(c); })();
   const halos = [];
+  // o que ocupa o chão além das paredes (esteio de varanda, banco, poste, mesa): main.js põe na colisão
+  const extraCol = LAYOUT.extraCol = LAYOUT.extraCol || [];
 
   // parede caiada: barrado colorido com respingo de terra, cunhais e faixa sob o beiral na cor do barrado, sombra junto do
   // chão e sob o beiral (oclusão), escorridos e pedaços sem reboco vindos da textura
@@ -63,8 +67,9 @@ export function buildProps(scene, { mobile = false } = {}) {
       else if(y<0.67)diffuseColor.rgb*=0.78;
       float corner=max(onLong*step(cx,0.2),onGab*step(cz,0.2))*step(0.62,y)*step(y,uH);
       diffuseColor.rgb=mix(diffuseColor.rgb,uBand*(0.8+0.25*tx.r),corner);
-      diffuseColor.rgb=mix(diffuseColor.rgb,uBand*(0.85+0.2*tx.r),step(uH-0.16,y)*step(y,uH)*0.9);
-      diffuseColor.rgb*=(1.0-0.3*smoothstep(uH-1.0,uH,y)*step(y,uH-0.16))*(1.0-0.2*(1.0-smoothstep(0.62,1.4,y)));
+      float inH=step(abs(vLp.x),uWD.x+0.04)*step(abs(vLp.z),uWD.y+0.04);   // faixa e sombra do beiral só nas paredes da casa (não na torre da capela)
+      diffuseColor.rgb=mix(diffuseColor.rgb,uBand*(0.85+0.2*tx.r),step(uH-0.16,y)*step(y,uH)*0.9*inH);
+      diffuseColor.rgb*=(1.0-0.3*smoothstep(uH-1.0,uH,y)*step(y,uH-0.16)*inH)*(1.0-0.2*(1.0-smoothstep(0.62,1.4,y)));
       diffuseColor.rgb*=mix(1.0,0.8,uWet);}` });
 
   // ---------- casa: paredes (descem 0,8 m para dentro do chão no lado alto), oitões, duas águas de telha, cumeeira,
@@ -72,10 +77,10 @@ export function buildProps(scene, { mobile = false } = {}) {
   // lampião na porta, chaminé e, em algumas, varanda. À noite a luz das janelas cai no chão em frente.
   function house(h, { H = 2.8, pitch = 0.42, ov = 0.55, chapel = false, floors = 1, venda = false, name = null } = {}) {
     const g = new THREE.Group(), w = h.w, d = h.d, rh = d / 2 * Math.tan(pitch), trim = col(h.trim), cream = col(0xf1ebde), wood = [], glassL = [], glassD = [], roof = [], walls = [], curt = [], spills = [];
-    const ci = Math.floor(rnd() * 4);
+    const ci = Math.floor(rnd() * 4), cols = [];   // cols: [x, z, w, d] locais (w = 0: círculo de raio d)
     walls.push(box(w, H + 0.8, d, 0, (H + 0.8) / 2 - 0.8, 0, 5));
     const gab = new THREE.BufferGeometry(), gp = [], gu = [];
-    for (const sx of [1, -1]) { const x = sx * w / 2, tri = [[x, H, -d / 2], [x, H, d / 2], [x, H + rh, 0]]; if (sx < 0) tri.reverse(); for (const v of tri) { gp.push(...v); gu.push(v[2] / 5, v[1] / 5); } }
+    for (const sx of [1, -1]) { const x = sx * w / 2, tri = [[x, H, -d / 2], [x, H, d / 2], [x, H + rh, 0]]; if (sx > 0) tri.reverse();   /* face para fora (do avesso o oitão sumia e mostrava o forro) */ for (const v of tri) { gp.push(...v); gu.push(v[2] / 5, v[1] / 5); } }
     gab.setAttribute('position', new THREE.Float32BufferAttribute(gp, 3)); gab.setAttribute('uv', new THREE.Float32BufferAttribute(gu, 2)); gab.computeVertexNormals(); walls.push(gab);
     const L = (d / 2 + ov) / Math.cos(pitch), rc = col(h.roof);
     const rows = Math.max(4, Math.round(L / 0.36)), rl = L / rows;
@@ -84,7 +89,7 @@ export function buildProps(scene, { mobile = false } = {}) {
       const s0 = (r + 0.5) * rl; sl.rotateX(pitch + 0.05 + (rnd() - 0.5) * 0.02).rotateY((rnd() - 0.5) * 0.008).translate((rnd() - 0.5) * 0.04, H + rh - s0 * Math.sin(pitch) + 0.1, s0 * Math.cos(pitch));
       if (side) sl.rotateY(Math.PI); roof.push(paint(sl, rc.clone().multiplyScalar(0.9 + rnd() * 0.18))); }
     roof.push(paint(new THREE.CylinderGeometry(0.14, 0.14, w + 2 * ov, 8).rotateZ(Math.PI / 2).translate(0, H + rh + 0.12, 0), rc.clone().multiplyScalar(0.8)));
-    for (let x = -w / 2 - ov + 0.25; x < w / 2 + ov; x += 0.42) roof.push(paint(box(0.05, 0.29, 0.29, x, H + rh + 0.12, 0, 1), col(0xcfae94)));   // argamassa da cumeeira
+    for (let x = -w / 2 - ov + 0.25; x < w / 2 + ov; x += 0.42) roof.push(paint(new THREE.CylinderGeometry(0.152, 0.152, 0.05, 10).rotateZ(Math.PI / 2).translate(x, H + rh + 0.12, 0), col(0xcfae94)));   // argamassa da cumeeira: anel em volta da telha (a caixa quadrada saía pelos cantos como dentes)
     for (const sz of [1, -1]) for (let x = -w / 2 - ov + 0.3; x < w / 2 + ov - 0.1; x += 0.6) { const c = box(0.07, 0.09, ov + 0.25, 0, 0, 0, 1); c.rotateX(pitch * sz).translate(x, H - 0.02 - (ov / 2) * Math.tan(pitch), sz * (d / 2 + ov / 2 - 0.05)); wood.push(paint(c, col(0x6a4a34))); }   // caibros
     // peças de fachada montadas num plano local (parede em z=0, para fora +z) e levadas para a parede certa
     const place = (geo, x, y, ry, wx, wz) => geo.translate(x, y, 0).rotateY(ry).translate(wx, 0, wz);
@@ -123,9 +128,10 @@ export function buildProps(scene, { mobile = false } = {}) {
         wood.push(paint(box(1.6, 0.04, 0.04, 0, 4.45, d / 2 + 0.52, 1), col(0x2a2a2e))); }
       if (venda) { const c = document.createElement('canvas'); c.width = 256; c.height = 64; const x = c.getContext('2d'); x.fillStyle = '#f4ead2'; x.fillRect(0, 0, 256, 64); x.strokeStyle = '#2f5a9a'; x.lineWidth = 6; x.strokeRect(3, 3, 250, 58);
         x.fillStyle = '#2f5a9a'; x.font = 'bold 40px Georgia, serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText('VENDA', 128, 34); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
-        const sign = new THREE.Mesh(new THREE.PlaneGeometry(1.9, 0.48), mat({ map: t })); sign.position.set(-w * 0.08, 2.75, d / 2 + 0.06); g.add(sign);
+        const sign = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 0.36), mat({ map: t })); sign.position.set(-w * 0.08, H - 0.38, d / 2 + 0.06); g.add(sign);   // abaixo dos caibros e acima do braço do lampião
         // sacos de feijão e de farinha na porta, um banco comprido
-        for (let k = 0; k < 4; k++) wood.push(paint(new THREE.SphereGeometry(1, 10, 8).scale(0.22, 0.3, 0.2).translate(-w * 0.45 + k * 0.42, 0.28, d / 2 + 0.55), col(k % 2 ? 0xd8c9a0 : 0xc8b48a)));
+        for (let k = 0; k < 4; k++) wood.push(paint(new THREE.SphereGeometry(1, 10, 8).scale(0.22, 0.3, 0.2).translate(-w / 2 + 0.35 + (k % 2) * 0.46, 0.28, d / 2 + 0.4 + (k >> 1) * 0.46), col(k % 2 ? 0xd8c9a0 : 0xc8b48a)));   // no canto, sem tapar a porta
+        cols.push([w * 0.3, d / 2 + 0.6, 1.8, 0.4], [-w / 2 + 0.58, d / 2 + 0.63, 1.0, 0.95]);   // banco comprido e os sacos
         wood.push(paint(box(1.8, 0.07, 0.35, w * 0.3, 0.45, d / 2 + 0.6, 1), col(0x8a6a4a)), paint(box(0.07, 0.45, 0.3, w * 0.3 - 0.8, 0.22, d / 2 + 0.6, 1), col(0x7a5a3e)), paint(box(0.07, 0.45, 0.3, w * 0.3 + 0.8, 0.22, d / 2 + 0.6, 1), col(0x7a5a3e))); } }
     else { doorAt(0, Math.PI / 2, w / 2, 0, 1.4, 2.9); for (const zs of [1, -1]) for (const xx of [-w * 0.25, w * 0.15]) windowAt(xx * zs, 2.1, zs > 0 ? 0 : Math.PI, 0, zs * d / 2, 0.7, 1.5); windowAt(0, 2.1, -Math.PI / 2, -w / 2, 0, 0.7, 1.5); }
     if (!chapel) { walls.push(box(0.55, rh + 1.4, 0.55, w / 2 - 0.9, H + (rh + 1.4) / 2 - 0.2, -d / 4, 2.5)); wood.push(paint(box(0.7, 0.12, 0.7, w / 2 - 0.9, H + rh + 1.25, -d / 4, 1), col(0x5a4a40)));
@@ -133,6 +139,7 @@ export function buildProps(scene, { mobile = false } = {}) {
     if (h.porch) { const pw = w * 0.62, pz = d / 2 + 2.0;
       const pr = box(pw + 0.4, 0.09, 2.3, 0, 0, 0, 1); const uv = pr.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) / 1.6, uv.getY(i) / 2.1);
       roof.push(paint(pr.rotateX(0.24).translate(-w * 0.1, H - 0.32, d / 2 + 1.1), rc));
+      for (const px of [-pw / 2, 0, pw / 2]) cols.push([px - w * 0.1, pz, 0, 0.12]);
       for (const px of [-pw / 2, 0, pw / 2]) wood.push(paint(new THREE.CylinderGeometry(0.07, 0.08, H - 0.55, 8).translate(px - w * 0.1, (H - 0.55) / 2, pz), col(0x7a5a3e)));
       wood.push(paint(box(pw + 0.3, 0.18, 2.3, -w * 0.1, 0.06, d / 2 + 1.1, 1), col(0xa8503a))); }
     if (chapel) {   // capela: óculo no oitão da frente (+x), torre do sino ao lado com telhado em pirâmide e cruz
@@ -141,19 +148,23 @@ export function buildProps(scene, { mobile = false } = {}) {
       for (const [ox, oz, ry] of [[1.16, 0, Math.PI / 2], [-1.16, 0, -Math.PI / 2], [0, 1.16, 0], [0, -1.16, Math.PI]]) wood.push(paint(box(0.8, 1.3, 0.05, 0, 0, 0, 1).rotateY(ry).translate(tx + ox, th - 1.3, tz + oz), col(0x2a2622)));
       roof.push(paint(new THREE.ConeGeometry(1.85, 2.3, 4, 1).rotateY(Math.PI / 4).translate(tx, th + 1.15, tz), rc));
       wood.push(paint(box(0.1, 1.1, 0.1, tx, th + 2.8, tz, 1), col(0xe8d070)), paint(box(0.1, 0.1, 0.6, tx, th + 3.0, tz, 1), col(0xe8d070))); }
+    // cada casa lê o reboco num pedaço diferente da textura (sem isso todas tinham os mesmos remendos de adobe nos mesmos lugares)
+    { const hs = k => { const v = Math.sin(h.p[0] * 12.9898 + h.p[1] * 78.233 + k * 37.719) * 43758.5453; return v - Math.floor(v); }, ou = hs(1), ov = hs(2);
+      for (const g of walls) { const uv = g.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) + ou, uv.getY(i) + ov); } }
     const wm = wallMat(h.wall, h.band, H, w, d), add = (gs, m, k) => { if (!gs.length) return; const geo = merge(gs, k); geo.computeVertexNormals(); const me = new THREE.Mesh(geo, m); me.castShadow = me.receiveShadow = true; g.add(me); };
     add(walls, wm, ['position', 'uv']); add(roof, roofMat, ['position', 'uv', 'color']); add(wood, woodMat, ['position', 'uv', 'color']); add(glassL, glowMat, ['position']); add(glassD, glassDark, ['position']);
     add(curt, curtainMats[ci], ['position', 'uv']);
     g.position.set(h.p[0], groundY(h.p, w, d, h.rot), h.p[1]); g.rotation.y = h.rot; scene.add(g); g.updateMatrixWorld(true);
     for (const [x, ry, wx, wz, s] of spills) { const c = new THREE.Vector3(x, 0, 0.15 + s * 0.45).applyAxisAngle(new THREE.Vector3(0, 1, 0), ry).add(new THREE.Vector3(wx, 0, wz));
       const pl = new THREE.Mesh(new THREE.PlaneGeometry(s, s * 0.9).rotateX(-Math.PI / 2).rotateY(ry), spillMat); pl.position.set(c.x, groundAt(g, c.x, c.z) + 0.04, c.z); pl.renderOrder = 4; pl.userData.noRegua = true; g.add(pl); }
+    for (const [lx, lz, cw, cd] of cols) { const v = g.localToWorld(new THREE.Vector3(lx, 0, lz)); extraCol.push(cw ? { t: 'b', x: v.x, z: v.z, w: cw, d: cd, rot: h.rot, tag: 'casa' } : { t: 'c', x: v.x, z: v.z, r: cd, tag: 'esteio' }); }
     tag(g, name || (chapel ? 'capela (com a torre)' : 'casa'));
     return g;
   }
   for (const h of LAYOUT.houses) house(h);
   // ---------- praça: venda, sobrado de dois andares, coreto no meio, bancos e postes de lampião
   { const Vd = LAYOUT.venda, Sb = LAYOUT.sobrado;
-    house({ p: Vd.p, rot: Vd.rot, w: Vd.w, d: Vd.d, wall: 0xf3d58a, band: 0x2f5a9a, trim: 0x2f5a9a, roof: 0xb4563a, smoke: false }, { venda: true, name: 'venda' });
+    house({ p: Vd.p, rot: Vd.rot, w: Vd.w, d: Vd.d, wall: 0xf3d58a, band: 0x2f5a9a, trim: 0x2f5a9a, roof: 0xb4563a, smoke: false }, { H: 3.3, venda: true, name: 'venda' });   // casa de comércio, pé-direito mais alto: a placa cabe entre a porta e o beiral
     house({ p: Sb.p, rot: Sb.rot, w: Sb.w, d: Sb.d, wall: 0xf2ece0, band: 0x3a7a5a, trim: 0x3a7a5a, roof: 0xa94d34 }, { H: 5.8, floors: 2, name: 'sobrado' });
     const Co = LAYOUT.coreto, g = new THREE.Group(), parts = [], wh = col(0xf4f0e6), bl = col(0x2f6aa0), R8 = 3.0;
     parts.push(paint(new THREE.CylinderGeometry(R8, R8 + 0.15, 0.75, 8).translate(0, 0.37, 0), wh), paint(new THREE.CylinderGeometry(R8 + 0.05, R8 + 0.05, 0.08, 8).translate(0, 0.78, 0), bl));
@@ -167,13 +178,14 @@ export function buildProps(scene, { mobile = false } = {}) {
     const roof8 = new THREE.ConeGeometry(R8 + 0.5, 1.9, 8, 1).rotateY(Math.PI / 8).translate(0, 4.35, 0); parts.push(paint(roof8, col(0xb4563a)));
     parts.push(paint(new THREE.SphereGeometry(0.15, 10, 8).translate(0, 5.4, 0), col(0xe8d070)), paint(new THREE.ConeGeometry(0.06, 0.4, 6).translate(0, 5.7, 0), col(0xe8d070)));
     g.add(new THREE.Mesh(merge(parts.map(p => { if (!p.attributes.uv) p.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(p.attributes.position.count * 2), 2)); return p; })), woodMat));
-    g.traverse(o => { if (o.isMesh) o.castShadow = o.receiveShadow = true; }); g.position.set(Co.p[0], heightAt(Co.p[0], Co.p[1]) - 0.05, Co.p[1]); g.rotation.y = 0.2; scene.add(g); tag(g, 'coreto');
+    g.traverse(o => { if (o.isMesh) o.castShadow = o.receiveShadow = true; }); g.position.set(Co.p[0], lowAt(Co.p[0], Co.p[1], R8 + 0.15) - 0.05, Co.p[1]); g.rotation.y = 0.2; scene.add(g); tag(g, 'coreto');
     // bancos de madeira e postes com lampião em volta da praça
     const Pr = LAYOUT.praca, bench = [], posts = [];
     for (let k = 0; k < 6; k++) { const a = k / 6 * Math.PI * 2 + 0.5, x = Pr.c[0] + Math.cos(a) * (Pr.r - 1.2), z = Pr.c[1] + Math.sin(a) * (Pr.r - 1.2), y = heightAt(x, z), ry = -a + Math.PI / 2;
       const b = merge([paint(box(1.5, 0.06, 0.4, 0, 0.45, 0, 1), col(0x8a6a4a)), paint(box(1.5, 0.35, 0.05, 0, 0.7, -0.18, 1), col(0x8a6a4a)), paint(box(0.08, 0.45, 0.38, -0.65, 0.22, 0, 1), col(0x3a3430)), paint(box(0.08, 0.45, 0.38, 0.65, 0.22, 0, 1), col(0x3a3430))]);
-      b.rotateY(ry).translate(x, y, z); bench.push(b);
+      b.rotateY(ry).translate(x, y, z); bench.push(b); extraCol.push({ t: 'b', x, z, w: 1.5, d: 0.45, rot: ry, tag: 'banco' });
       if (k % 2 === 0) { const px = Pr.c[0] + Math.cos(a + 0.5) * (Pr.r + 0.3), pz = Pr.c[1] + Math.sin(a + 0.5) * (Pr.r + 0.3), py = heightAt(px, pz);
+        extraCol.push({ t: 'c', x: px, z: pz, r: 0.12, tag: 'poste' });
         posts.push(paint(new THREE.CylinderGeometry(0.05, 0.08, 3.2, 8).translate(px, py + 1.6, pz), col(0x2a2a2e)), paint(new THREE.CylinderGeometry(0.16, 0.1, 0.3, 6).translate(px, py + 3.3, pz), col(0x2a2a2e)));
         halos.push({ g: scene, p: new THREE.Vector3(px, py + 3.15, pz) }); } }
     const bm = new THREE.Mesh(merge([...bench, ...posts].map(p => { if (!p.attributes.uv) p.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(p.attributes.position.count * 2), 2)); return p; })), woodMat); bm.castShadow = true; scene.add(bm); }
@@ -189,7 +201,7 @@ export function buildProps(scene, { mobile = false } = {}) {
     for (let k = 0; k < 6; k++) tb.push(paint(new THREE.SphereGeometry(1, 8, 6).scale(0.11, 0.06, 0.08).translate(1.3 + (k % 3) * 0.2, 0.92, 0.45 + Math.floor(k / 3) * 0.25), col(0xc8904a)));
     g.add(new THREE.Mesh(merge(parts.map(p => { if (!p.attributes.uv) p.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(p.attributes.position.count * 2), 2)); return p; })), woodMat), new THREE.Mesh(merge(tb), woodMat));
     const mouth = new THREE.Mesh(new THREE.CircleGeometry(0.32, 14, 0, Math.PI).translate(0, 0, 0).rotateY(0), mat({ color: 0x1a120c, emissive: 0xff7a2a, emissiveIntensity: 0.6 })); mouth.position.set(0, 0.72, 1.035); g.add(mouth);
-    g.traverse(o => { if (o.isMesh) o.castShadow = o.receiveShadow = true; }); g.position.set(O.p[0], heightAt(O.p[0], O.p[1]) - 0.05, O.p[1]); g.rotation.y = O.rot; scene.add(g); tag(g, 'forno de barro (com o tabuleiro)');
+    g.traverse(o => { if (o.isMesh) o.castShadow = o.receiveShadow = true; }); g.position.set(O.p[0], heightAt(O.p[0], O.p[1]) - 0.05, O.p[1]); g.rotation.y = O.rot; scene.add(g); tag(g, 'forno de barro (com o tabuleiro)'); { const c = Math.cos(O.rot), sn = Math.sin(O.rot); extraCol.push({ t: 'b', x: O.p[0] + 1.7 * c + 0.6 * sn, z: O.p[1] - 1.7 * sn + 0.6 * c, w: 1.25, d: 0.65, rot: O.rot, tag: 'tabuleiro' }); }
     smokeSrc.push({ g, local: V3(-0.35, 1.85, -0.3), on: true });
     updaters.push((dt, ctx) => { const h = ctx.hour ?? 15; mouth.material.emissiveIntensity = (h > 4.5 && h < 9 ? 1.6 : 0.25) * (0.8 + 0.2 * Math.sin(performance.now() * 0.009)); }); }
   // ---------- cavalete do carpinteiro na praça: dois cavaletes, uma tábua sendo serrada, pilha de tábuas e o serrote
@@ -225,7 +237,7 @@ export function buildProps(scene, { mobile = false } = {}) {
     const ring = new THREE.Mesh(new THREE.CylinderGeometry(0.85, 0.9, 1.6, 18, 1, true).translate(0, 0.0, 0), stoneMat), inner = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.7, 1.5, 18, 1, true), stoneMat);
     ring.material = stoneMat; inner.geometry.scale(-1, 1, 1); const top = new THREE.Mesh(new THREE.RingGeometry(0.7, 0.9, 18).rotateX(-Math.PI / 2).translate(0, 0.8, 0), stoneMat);
     const water = new THREE.Mesh(new THREE.CircleGeometry(0.7, 18).rotateX(-Math.PI / 2).translate(0, -0.4, 0), new THREE.MeshBasicMaterial({ color: 0x0d2a2c }));
-    const wood = merge([paint(box(0.14, 2.0, 0.14, -0.95, 1.0, 0, 1), col(0x7a5a3e)), paint(box(0.14, 2.0, 0.14, 0.95, 1.0, 0, 1), col(0x7a5a3e)),
+    const wood = merge([paint(box(0.14, 2.2, 0.14, -0.95, 1.1, 0, 1), col(0x7a5a3e)), paint(box(0.14, 2.2, 0.14, 0.95, 1.1, 0, 1), col(0x7a5a3e)), paint(box(2.1, 0.1, 0.1, 0, 2.15, 0, 1), col(0x6a4a34)),   // esteios até a cumeeira e a travessa (o telhado ficava solto 25 cm acima)
       paint(box(0.05, 0.05, 0.3, 0.95, 1.55, 0, 1), col(0x6a5a4a))]);
     const rf = merge([paint(box(2.5, 0.07, 0.9, 0, 0, 0, 1).rotateX(0.55).translate(0, 2.05, 0.36), col(0xb4563a)), paint(box(2.5, 0.07, 0.9, 0, 0, 0, 1).rotateX(-0.55).translate(0, 2.05, -0.36), col(0xb4563a))]);
     g.add(ring, inner, top, water, new THREE.Mesh(wood, woodMat), new THREE.Mesh(rf, roofMat)); g.traverse(o => { if (o.isMesh) o.castShadow = o.receiveShadow = true; });
@@ -270,7 +282,7 @@ export function buildProps(scene, { mobile = false } = {}) {
     const Lp = LAYOUT.lenha, pg = new THREE.Group(), logGeo = paint(new THREE.CylinderGeometry(0.07, 0.075, 0.9, 7).rotateZ(Math.PI / 2), col(0x8a6648)), logs = [];
     for (let i = 0; i < 24; i++) { const layer = Math.floor(i / 4), k = i % 4, m = new THREE.Mesh(logGeo, woodMat); if (layer % 2) { m.rotation.y = Math.PI / 2; m.position.set(-0.24 + k * 0.16, 0.08 + layer * 0.14, 0); } else m.position.set(0, 0.08 + layer * 0.14, -0.24 + k * 0.16);
       m.castShadow = true; m.visible = i < 10; pg.add(m); logs.push(m); }
-    pg.position.set(Lp.p[0], heightAt(Lp.p[0], Lp.p[1]), Lp.p[1]); pg.rotation.y = Lp.rot; scene.add(pg); tag(pg, 'pilha de lenha'); Lp.logs = logs; Lp.n = 10; Lp.show = n => { Lp.n = Math.max(0, Math.min(24, n)); logs.forEach((m, i) => m.visible = i < Lp.n); };
+    pg.position.set(Lp.p[0], lowAt(Lp.p[0], Lp.p[1], 0.5), Lp.p[1]); pg.rotation.y = Lp.rot; scene.add(pg); tag(pg, 'pilha de lenha'); Lp.logs = logs; Lp.n = 10; Lp.show = n => { Lp.n = Math.max(0, Math.min(24, n)); logs.forEach((m, i) => m.visible = i < Lp.n); };
     const Li = LAYOUT.licao, st = new THREE.Mesh(merge([paint(box(0.42, 0.05, 0.32, 0, 0.42, 0, 1), col(0x8a6a4a)), ...[[-0.17, -0.12], [0.17, -0.12], [-0.17, 0.12], [0.17, 0.12]].map(([x, z]) => paint(box(0.04, 0.42, 0.04, x, 0.21, z, 1), col(0x7a5a3e)))]), woodMat);
     st.position.set(Li.p[0], heightAt(Li.p[0], Li.p[1]), Li.p[1]); st.rotation.y = Li.rot; st.castShadow = true; scene.add(st); tag(st, 'banquinho');
     const est = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 1.3).rotateX(-Math.PI / 2), mat({ color: 0xd8c08a })); const ex = Li.p[0] + Math.sin(Li.rot) * 1.55, ez = Li.p[1] + Math.cos(Li.rot) * 1.55;
@@ -369,7 +381,7 @@ export function buildProps(scene, { mobile = false } = {}) {
       for (const sx of [1, -1]) wood.push(paint(box(0.05, 0.12, d, sx * w / 2, y, 0, 0.8), col(0x9a7a56).multiplyScalar(0.85 + rnd() * 0.25))); }   // ripas com fresta: o milho aparece lá dentro
     fill.push(paint(box(w - 0.1, H - H0 - 0.5, d - 0.1, 0, H0 + 0.2 + (H - H0 - 0.5) / 2, 0, 1), col(0xe0a83a)));
     wood.push(paint(box(0.9, 1.7, 0.06, w * 0.15, H0 + 0.95, d / 2 + 0.04, 0.8), col(0x6a4a34)));
-    const gab = new THREE.BufferGeometry(), gp = []; for (const sx of [1, -1]) { const x = sx * w / 2, tri = [[x, H, -d / 2], [x, H, d / 2], [x, H + rh, 0]]; if (sx < 0) tri.reverse(); for (const v of tri) gp.push(...v); }
+    const gab = new THREE.BufferGeometry(), gp = []; for (const sx of [1, -1]) { const x = sx * w / 2, tri = [[x, H, -d / 2], [x, H, d / 2], [x, H + rh, 0]]; if (sx > 0) tri.reverse();   /* face para fora (do avesso o oitão sumia e mostrava o forro) */ for (const v of tri) gp.push(...v); }
     gab.setAttribute('position', new THREE.Float32BufferAttribute(gp, 3)); gab.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(gp.length / 3 * 2), 2)); gab.computeVertexNormals(); wood.push(paint(gab, col(0x8a6a4a)));
     const L = (d / 2 + ov) / Math.cos(pitch), rows = Math.round(L / 0.36), rl = L / rows, rc = col(0xa84e34);
     for (const side of [0, 1]) for (let r = 0; r < rows; r++) { const sl = box(w + 2 * ov, 0.07, rl * 1.18, 0, 0, 0, 1), uv = sl.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * (w + 2 * ov) / 1.6 + r * 0.37, uv.getY(i) * rl / 1.8);

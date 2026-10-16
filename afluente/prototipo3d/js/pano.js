@@ -93,7 +93,16 @@ function simula(S, dt, env) {
     const vmx = (P[a] - O[a] + P[b] - O[b] + P[c] - O[c]) / (3 * dt), vmy = (P[a + 1] - O[a + 1] + P[b + 1] - O[b + 1] + P[c + 1] - O[c + 1]) / (3 * dt), vmz = (P[a + 2] - O[a + 2] + P[b + 2] - O[b + 2] + P[c + 2] - O[c + 2]) / (3 * dt);
     const rx = w.x - vmx, ry = w.y - vmy, rz = w.z - vmz, vn = rx * nx + ry * ny + rz * nz, f = kAr * 0.5 * ar2 * vn * Math.abs(vn) / 3;
     for (const q of [a, b, c]) { F[q] += f * nx; F[q + 1] += f * ny; F[q + 2] += f * nz; } }
-  const damp = env.amortece ?? 0.985, dt2 = dt * dt, agua = env.agua;
+  // chão e água: um plano local ajustado a três amostras por passo (o pano tem poucos metros; o terreno é liso nessa escala)
+  let cx = 0, cz = 0, xa = 1e9, xb = -1e9, za = 1e9, zb = -1e9, na = 0;
+  for (let k = 0; k < N; k++) { if (!ativo[k]) continue; const x = P[k * 3], z = P[k * 3 + 2]; cx += x; cz += z; na++; if (x < xa) xa = x; if (x > xb) xb = x; if (z < za) za = z; if (z > zb) zb = z; }
+  if (na) { cx /= na; cz /= na; }
+  const local = na && xb - xa < 6 && zb - za < 6;
+  let chao = env.chao;
+  if (chao && local) { const g0 = chao(cx, cz), gx = chao(cx + 0.5, cz) - g0, gz = chao(cx, cz + 0.5) - g0; chao = (x, z) => g0 + 2 * (gx * (x - cx) + gz * (z - cz)); }
+  let agua = env.agua;
+  if (agua && local) { const w0 = agua(cx, cz); agua = () => w0; }
+  const damp = env.amortece ?? 0.985, dt2 = dt * dt;
   for (let k = 0; k < N; k++) { if (!ativo[k]) continue; const i = k * 3;
     let vx = (P[i] - O[i]) * damp, vy = (P[i + 1] - O[i + 1]) * damp, vz = (P[i + 2] - O[i + 2]) * damp; let ay = g;
     const sp = Math.hypot(vx, vy, vz), vmax = 9 * dt; if (sp > vmax) { const q = vmax / sp; vx *= q; vy *= q; vz *= q; }   // um puxão grande (mão que salta) não vira explosão
@@ -113,7 +122,8 @@ function simula(S, dt, env) {
       const wa = pa ? 0 : pb ? 2 : 1, wb = pb ? 0 : pa ? 2 : 1;
       P[a] += dx * e * wa; P[a + 1] += dy * e * wa; P[a + 2] += dz * e * wa; P[b] -= dx * e * wb; P[b + 1] -= dy * e * wb; P[b + 2] -= dz * e * wb; }
     // colisões: cápsulas do corpo, caixas, chão
-    if (env.cap || env.caixa || env.chao) for (let k = 0; k < N; k++) { if (!ativo[k] || pinos.has(k)) continue; const i = k * 3;
+    if (env.cap || env.caixa || chao || env.perfil) for (let k = 0; k < N; k++) { if (!ativo[k] || pinos.has(k)) continue; const i = k * 3;
+      if (env.perfil) colidePerfil(P, O, i, env.perfil);
       if (env.cap) for (const [A, B, r] of env.cap) { const abx = B.x - A.x, aby = B.y - A.y, abz = B.z - A.z, l2 = abx * abx + aby * aby + abz * abz || 1e-6;
         let t = ((P[i] - A.x) * abx + (P[i + 1] - A.y) * aby + (P[i + 2] - A.z) * abz) / l2; t = t < 0 ? 0 : t > 1 ? 1 : t;
         let dx = P[i] - (A.x + abx * t), dy = P[i + 1] - (A.y + aby * t), dz = P[i + 2] - (A.z + abz * t), d = Math.hypot(dx, dy, dz);
@@ -121,7 +131,7 @@ function simula(S, dt, env) {
           O[i] += (P[i] - O[i]) * 0.3; O[i + 2] += (P[i + 2] - O[i + 2]) * 0.3; } }   // atrito na pele
       if (env.caixa) for (const B of env.caixa) { const x = P[i], y = P[i + 1], z = P[i + 2];
         if (x > B.min.x && x < B.max.x && z > B.min.z && z < B.max.z && y < B.max.y + 0.006 && y > B.min.y) { P[i + 1] = B.max.y + 0.006; O[i] += (P[i] - O[i]) * 0.6; O[i + 2] += (P[i + 2] - O[i + 2]) * 0.6; } }
-      if (env.chao) { const gy = env.chao(P[i], P[i + 2]) + 0.008; if (P[i + 1] < gy) { P[i + 1] = gy; O[i] += (P[i] - O[i]) * 0.5; O[i + 2] += (P[i + 2] - O[i + 2]) * 0.5; } } }
+      if (chao) { const gy = chao(P[i], P[i + 2]) + 0.008; if (P[i + 1] < gy) { P[i + 1] = gy; O[i] += (P[i] - O[i]) * 0.5; O[i + 2] += (P[i + 2] - O[i + 2]) * 0.5; } } }
   }
   for (const [k, f] of pinos) { const t = f(); if (!t) continue; const i = k * 3; P[i] = t.x; P[i + 1] = t.y; P[i + 2] = t.z; }
   // se algum ponto se perdeu (número inválido), o pano volta inteiro para perto do primeiro ponto preso, parado
@@ -131,12 +141,31 @@ function simula(S, dt, env) {
   S.mesh.material.userData.uMol.value = mol;
 }
 
+// o corpo como pilha de anéis (y, centro z, raios por direção) no espaço do quadril: o ponto que entrou volta para fora
+function colidePerfil(P, O, i, pf) { const e = pf.Mi.elements, x = P[i], y = P[i + 1], z = P[i + 2];
+  let lx = e[0] * x + e[4] * y + e[8] * z + e[12], ly = e[1] * x + e[5] * y + e[9] * z + e[13], lz = e[2] * x + e[6] * y + e[10] * z + e[14]; const rows = pf.rows, m = pf.M.elements;
+  // a saia não sobe por dentro do corpo acima do cós
+  if (pf.teto != null && ly > pf.teto) { ly = pf.teto; P[i] = m[0] * lx + m[4] * ly + m[8] * lz + m[12]; P[i + 1] = m[1] * lx + m[5] * ly + m[9] * lz + m[13]; P[i + 2] = m[2] * lx + m[6] * ly + m[10] * lz + m[14]; }
+  if (ly > rows[rows.length - 1].y || ly < rows[0].y) return;
+  let j = 0; while (j < rows.length - 2 && rows[j + 1].y < ly) j++; const A = rows[j], B = rows[j + 1], t = (ly - A.y) / ((B.y - A.y) || 1), cz = A.cz + (B.cz - A.cz) * t;
+  const dz = lz - cz, a = Math.atan2(dz, lx), n = A.R.length, f = ((a / (Math.PI * 2)) % 1 + 1) % 1 * n, k0 = Math.floor(f) % n, k1 = (k0 + 1) % n, u = f - Math.floor(f);
+  const r = (A.R[k0] * (1 - u) + A.R[k1] * u) * (1 - t) + (B.R[k0] * (1 - u) + B.R[k1] * u) * t + pf.margem, d = Math.hypot(lx, dz);
+  if (d >= r || d < 1e-6) return; const q = r / d, nx = lx * q, nz = cz + dz * q;
+  P[i] = m[0] * nx + m[4] * ly + m[8] * nz + m[12]; P[i + 1] = m[1] * nx + m[5] * ly + m[9] * nz + m[13]; P[i + 2] = m[2] * nx + m[6] * ly + m[10] * nz + m[14];
+  O[i] += (P[i] - O[i]) * 0.3; O[i + 2] += (P[i + 2] - O[i + 2]) * 0.3; }
+
 // ---------- saia e avental: o pano preso na cintura, que anda com o quadril
 // cint: { y (no osso do quadril), cz, R: raios da cintura em seg direções }, len: comprimento, flare: quanto abre embaixo
-export function Saia({ cint, len = 0.6, flare = 0.12, arco = null, tex = null, color = 0xffffff, tecido = 'chita', strips = 22, rows = 9, folga = 0.012, cair = 0 }) {
+export function Saia({ cint, len = 0.6, flare = 0.12, arco = null, tex = null, color = 0xffffff, tecido = 'chita', strips = 22, rows = 9, folga = 0.012, cair = 0, perfil = null }) {
   const seg = cint.R.length, raio = a => { const f = ((a / (Math.PI * 2)) % 1 + 1) % 1 * seg, k = Math.floor(f), t = f - k; return cint.R[k % seg] * (1 - t) + cint.R[(k + 1) % seg] * t; };
   const fechado = !arco, ang = i => arco ? arco[0] + (arco[1] - arco[0]) * i / strips : i / strips * Math.PI * 2;
-  const loc = (i, j) => { const a = ang(i), r = raio(a) + folga + flare * j / rows; return new THREE.Vector3(r * Math.cos(a), cint.y - cair - len * j / rows * 0.98, cint.cz + r * Math.sin(a)); };
+  // o raio do corpo (perfil) naquela altura e direção: a saia já nasce vestindo o quadril e a nádega
+  const corpo = (y, a) => { if (!perfil || y < perfil[0].y || y > perfil[perfil.length - 1].y) return 0; let j = 0; while (j < perfil.length - 2 && perfil[j + 1].y < y) j++;
+    const A = perfil[j], B = perfil[j + 1], t = (y - A.y) / ((B.y - A.y) || 1), n = A.R.length, f = ((a / (Math.PI * 2)) % 1 + 1) % 1 * n, k = Math.floor(f) % n, k2 = (k + 1) % n, u = f - Math.floor(f);
+    return (A.R[k] * (1 - u) + A.R[k2] * u) * (1 - t) + (B.R[k] * (1 - u) + B.R[k2] * u) * t; };
+  let teto = 0; const loc = (i, j) => { const a = ang(i), y = cint.y - cair - len * j / rows * 0.98; let r = raio(a) + folga + flare * j / rows;
+    if (perfil) { for (let q = 0; q <= j; q++) r = Math.max(r, corpo(cint.y - cair - len * q / rows * 0.98, a) + folga + 0.006 + flare * (j - q) / rows * 0.6); }   // cai do mais largo do quadril para baixo
+    return new THREE.Vector3(r * Math.cos(a), y, cint.cz + r * Math.sin(a)); };
   const pano = Pano({ nx: strips, ny: rows, fechado, tecido, tex, color, posIni: loc });
   let ok = false, temUlt = false; const ult = new THREE.Matrix4(), tops = [];
   for (let i = 0; i < pano.cols; i++) tops.push(loc(i, 0));
@@ -147,6 +176,7 @@ export function Saia({ cint, len = 0.6, flare = 0.12, arco = null, tex = null, c
       if (!ok) { pano.reinicia((i, j) => loc(i, j).applyMatrix4(hipsW)); ok = true; }
       if (temUlt) { _m.copy(hipsW).multiply(_mi.copy(ult).invert()); pano.leva(_m); } ult.copy(hipsW); temUlt = true;
       for (let i = 0; i < pano.cols; i++) { const t = tops[i].clone().applyMatrix4(hipsW); pano.pin(i, 0, () => t); }
+      if (perfil) env = { ...env, perfil: { rows: perfil, M: hipsW, Mi: _mi.copy(hipsW).invert(), margem: 0.008, teto: cint.y - cair - 0.015 } };
       pano.passo(dt, env); } };
 }
 
