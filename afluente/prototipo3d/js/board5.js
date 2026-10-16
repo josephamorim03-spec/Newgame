@@ -9,7 +9,7 @@
 //  - o "juice": som sintetizado (sem arquivos), vibração, tremor no baque, confete na vila que cresce, gotas no olho-d'água,
 //    a maquete que gira com mola, o placar que conta e pulsa, e a tela do fim.
 import * as THREE from 'three';
-import { Game, rot, KQ, KR, K, PEDIDOS, vazao } from '../../nucleo/regras.js';
+import { Game, rot, KQ, KR, K, PEDIDOS, vazao, nbk, opp, NOME } from '../../nucleo/regras.js';
 import { toon, U } from './mat.js';
 import { createSom } from './som.js';
 
@@ -177,17 +177,26 @@ export function buildBoard5(api) {
 
   // ---------- casas livres e o fantasma da peça escolhida
   const slotsG = new THREE.Group(); scene.add(slotsG);
-  const lineMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.7 });
+  const ringMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.9, depthWrite: false, side: THREE.DoubleSide });
+  const hotRingMat = new THREE.MeshBasicMaterial({ color: 0xffcf5a, transparent: true, opacity: 0.95, depthWrite: false, side: THREE.DoubleSide });
+  const badRingMat = new THREE.MeshBasicMaterial({ color: 0x3a2a22, transparent: true, opacity: 0.32, depthWrite: false, side: THREE.DoubleSide });
   const fillMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.1, depthWrite: false, side: THREE.DoubleSide });
   const hotMat = new THREE.MeshBasicMaterial({ color: 0xffcf5a, transparent: true, opacity: 0.32, depthWrite: false, side: THREE.DoubleSide });
+  const badFillMat = new THREE.MeshBasicMaterial({ color: 0x3a2a22, transparent: true, opacity: 0.06, depthWrite: false, side: THREE.DoubleSide });
   const hexPts = (c, k = 0.97, lift = 0.25) => [0, 1, 2, 3, 4, 5].map(i => { const a = (-60 * i + 30) * Math.PI / 180, x = c[0] + R * k * Math.cos(a), z = c[1] + R * k * Math.sin(a); return new THREE.Vector3(x, groundY(x, z) + lift, z); });
+  // a borda da casa como uma faixa no chão (uma linha de 1 px sumia no celular, ainda mais sobre o chão seco)
+  const ringGeo = (c, w) => { const o = hexPts(c, 0.97, 0.3), i = hexPts(c, 0.97 - w / R, 0.3), p = []; for (let k = 0; k < 6; k++) { const k2 = (k + 1) % 6; p.push(...o[k].toArray(), ...o[k2].toArray(), ...i[k2].toArray(), ...o[k].toArray(), ...i[k2].toArray(), ...i[k].toArray()); }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(p, 3)); return g; };
   // casas onde a peça na mão ajuda o pedido de uma vila ficam douradas
   function hotSlots() { const hot = new Set(); for (const k of game.slots()) for (const o of game.options(k)) if (o.vil.some(v => v.after > v.before)) { hot.add(k); break; } return hot; }
-  function drawSlots() { slotsG.clear(); const hot = hotSlots();
-    for (const k of game.slots()) { if (!game.options(k).length) continue; const q = KQ(k), r = KR(k), c = hexCenter(q, r), pts = hexPts(c);
-      slotsG.add(new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(pts), lineMat));
+  // todas as casas da beira aparecem: onde a peça cabe, faixa branca (dourada se ajuda uma vila); onde não cabe em giro nenhum,
+  // faixa escura e fina — tocar nela mostra a peça ali com os lados que brigam em vermelho e diz por quê
+  let fitN = 0;
+  function drawSlots() { slotsG.clear(); const hot = hotSlots(); fitN = 0;
+    for (const k of game.slots()) { const ok = game.options(k).length > 0, q = KQ(k), r = KR(k), c = hexCenter(q, r), pts = hexPts(c); if (ok) fitN++;
+      slotsG.add(new THREE.Mesh(ringGeo(c, ok ? 1.1 : 0.55), ok ? (hot.has(k) ? hotRingMat : ringMat) : badRingMat));
       const ctr = new THREE.Vector3(c[0], groundY(c[0], c[1]) + 0.2, c[1]), fg = new THREE.BufferGeometry(), fp = []; for (let i = 0; i < 6; i++) fp.push(...ctr.toArray(), ...pts[(i + 1) % 6].toArray(), ...pts[i].toArray());
-      fg.setAttribute('position', new THREE.Float32BufferAttribute(fp, 3)); const fm = new THREE.Mesh(fg, hot.has(k) ? hotMat : fillMat); fm.userData.slot = { k, q, r }; slotsG.add(fm); } }
+      fg.setAttribute('position', new THREE.Float32BufferAttribute(fp, 3)); const fm = new THREE.Mesh(fg, ok ? (hot.has(k) ? hotMat : fillMat) : badFillMat); fm.userData.slot = { k, q, r, bad: !ok }; slotsG.add(fm); } }
   // a maquete da peça escolhida: uma laje de terra com os seis setores em cima, o rio, árvores, casa e fileiras, flutuando
   // sobre a casa marcada (balança devagar); as marcas verdes/laranja dizem que lado encaixa
   const ghost = new THREE.Group(); scene.add(ghost);
@@ -218,11 +227,11 @@ export function buildBoard5(api) {
       if (e[d] === 'G') for (const da of [-0.25, 0, 0.25]) { const [x, z] = at(0.6, da), tf = new THREE.Mesh(new THREE.ConeGeometry(0.9, 1.6, 5), mm('#6aa03a')); tf.position.set(x, 0.8, z); m.add(tf); } }
     m.traverse(o => { if (o.isMesh) o.castShadow = true; }); return m; }
   let gKey = '', gBob = 0, gPrev = null, gSpin = 0, gPop = 1;
-  function drawGhost() { if (!sel) { ghost.clear(); gKey = ''; gPrev = null; return; } const c = hexCenter(sel.q, sel.r), o = sel.opts[sel.i], e = o.e, m = o.marks, key = sel.k + ':' + e.join('');
+  function drawGhost() { if (!sel) { ghost.clear(); gKey = ''; gPrev = null; return; } const c = hexCenter(sel.q, sel.r), o = sel.opts[sel.i], e = o.e, m = o.marks, key = sel.k + ':' + e.join('') + (sel.bad ? ':x' : '');
     if (key !== gKey) { ghost.clear(); gKey = key; const mq = maquete(e); ghost.add(mq); ghost.userData.mq = mq;
       // girou na mesma casa: a maquete nova começa no giro antigo e vira até o novo; casa nova: ela salta para o lugar
       if (gPrev && gPrev.k === sel.k) { let dr = ((o.r - gPrev.r) % 6 + 6) % 6; if (dr > 3) dr -= 6; gSpin = -dr * Math.PI / 3; } else gPop = 0; gPrev = { k: sel.k, r: o.r };
-      for (let d = 0; d < 6; d++) if (m[d] !== null) { const [bx, bz] = edgeMid([0, 0], d, 0.97), mk = new THREE.Mesh(new THREE.BoxGeometry(5.5, 0.7, 0.8), new THREE.MeshBasicMaterial({ color: m[d] ? 0x5fd86a : 0xf0a040 }));
+      for (let d = 0; d < 6; d++) if (m[d] !== null) { const [bx, bz] = edgeMid([0, 0], d, 0.97), mk = new THREE.Mesh(new THREE.BoxGeometry(5.5, 0.7, 0.8), new THREE.MeshBasicMaterial({ color: m[d] === 'x' ? 0xe0402a : m[d] ? 0x5fd86a : 0xf0a040 }));   /* verde: igual; laranja: terra com terra diferente; vermelho: rio contra terra */
         mk.position.set(bx, 0.2, bz); mk.rotation.y = Math.atan2(Math.cos(-d * Math.PI / 3), -Math.sin(-d * Math.PI / 3)) + Math.PI / 2; mq.add(mk); }
       ghost.position.set(c[0], groundY(c[0], c[1]) + 7, c[1]); ghost.userData.base = groundY(c[0], c[1]) + 7; ghost.scale.setScalar(0.92); } }
   // a maquete que cai: gravidade até o chão, achata no baque, levanta poeira, e só então a peça brota no vale
@@ -235,33 +244,45 @@ export function buildBoard5(api) {
   let sel = null;
   // o giro sugerido: o que atende ou avança um pedido, liga um olho-d'água, recebe água e encaixa mais lados
   const value = o => o.vil.filter(v => v.done).length * 10 + o.vil.filter(v => v.after > v.before).length * 3 + (o.spring ? 4 : 0) + (o.wetSelf ? 1 : 0) - (o.drySelf ? 2 : 0) - o.lost.length * 2 + o.marks.filter(Boolean).length * 0.5;
-  function select(k) { if (S.over) return; if (S.escolha.length) { openPack(); return; } const opts = game.options(k); if (!opts.length) { SFX.no(); say('Essa peça não encaixa aí: rio só encosta em rio.'); return; }
+  // os giros de uma casa onde a peça não cabe: cada lado com vizinho é igual (verde), terra diferente (laranja) ou rio contra terra (x)
+  function tries(k) { const base = game.hand().e, seen = new Set(), out = []; for (let r = 0; r < 6; r++) { const e = rot(base, r), sig = e.join(''); if (seen.has(sig)) continue; seen.add(sig);
+      const marks = [], bad = []; for (let d = 0; d < 6; d++) { const n = game.board.get(nbk(k, d)); if (!n) { marks.push(null); continue; } const ne = n.e[opp(d)], x = (e[d] === 'A') !== (ne === 'A');
+        marks.push(x ? 'x' : ne === e[d]); if (x) bad.push(e[d] === 'A' ? `o rio da peça bateria em ${NOME[ne]}` : `a peça cortaria o rio do vizinho com ${NOME[e[d]]}`); }
+      out.push({ r, e, marks, bad, vil: [], lost: [] }); }
+    return out.sort((a, b) => a.bad.length - b.bad.length); }
+  function select(k) { if (S.over) return; if (S.escolha.length) { openPack(); return; } const opts = game.options(k);
+    if (!opts.length) { const tr = tries(k); SFX.no(); buzz([8, 30, 8]); sel = { k, q: KQ(k), r: KR(k), opts: tr, i: 0, bad: true }; refresh(); badSay(); return; }
     SFX.sel(); buzz(6);
     let bi = 0; opts.forEach((o, i) => { if (value(o) > value(opts[bi])) bi = i; }); sel = { k, q: KQ(k), r: KR(k), opts, i: bi }; refresh(); }
-  function turn(dir) { if (!sel) { if (!S.over) { SFX.no(); say('Escolha primeiro uma casa marcada: a peça gira lá.'); } return; } SFX.rot(); buzz(4); sel.i = (sel.i + (dir > 0 ? 1 : sel.opts.length - 1)) % sel.opts.length; refresh(); }
+  function turn(dir) { if (!sel) { if (!S.over) { SFX.no(); say('Escolha primeiro uma casa marcada: a peça gira lá.'); } return; } SFX.rot(); buzz(4); sel.i = (sel.i + (dir > 0 ? 1 : sel.opts.length - 1)) % sel.opts.length; refresh(); if (sel.bad) badSay(); }
+  function badSay() { const o = sel.opts[sel.i], uniq = [...new Set(o.bad)];
+    say(`Não cabe aqui em nenhum giro: ${uniq.join('; ')} (lado vermelho). Rio só encosta em rio.${fitN ? ` Ela cabe em ${fitN} casa${fitN === 1 ? '' : 's'} de faixa branca.` : ''}`, 6); }
   let shownP = 0, pAnim = 0;
   function countP() { if (pAnim) return; const step = () => { if (shownP >= S.gente) { pAnim = 0; return; } shownP++; const el = $('pP'); if (el) { el.textContent = shownP; el.classList.remove('pulsa'); void el.offsetWidth; el.classList.add('pulsa'); }
       SFX.count(shownP); pAnim = setTimeout(step, 90); }; pAnim = setTimeout(step, 450); }
   let ambW = 1;
   function flow() { const W = game.water(); let f = 0, u = 0; for (const n of W.nets) { f += n.flow; u += n.used; } return [u, f]; }
-  function refresh() { const e = sel ? sel.opts[sel.i].e : game.hand().e; drawThumb($('mao'), e);
-    if (S.left > 1) { drawThumb($('prox'), game.next().e); $('prox').parentElement.style.visibility = 'visible'; } else $('prox').parentElement.style.visibility = 'hidden';
+  // a miniatura da mão gira com o mapa: a câmera vira em passos de 60°, e a peça é desenhada como vai ficar na tela
+  const camK = () => { const gc = window.__previa && window.__previa.gameCam; return gc ? ((Math.round(gc.state.yawK) % 6) + 6) % 6 : 0; }, view = e => rot(e, (6 - camK()) % 6);
+  function refresh() { const e = sel ? sel.opts[sel.i].e : game.hand().e; drawThumb($('mao'), view(e));
+    if (S.left > 1) { drawThumb($('prox'), view(game.next().e)); $('prox').parentElement.style.visibility = 'visible'; } else $('prox').parentElement.style.visibility = 'hidden';
     const [u, f] = flow(), sec = game.isSeca(); ambW = f ? 0.35 + 0.65 * Math.max(0, 1 - u / f) : 0.35;
     $('placar').innerHTML = `<span>👥 <b id="pP">${shownP}</b></span><span class="ag">💧 <b>${u}/${f}</b></span><span>🧩 <b>${S.left}</b></span><span>${sec ? '☀️' : '🌧️'} <b>${S.clock + 1}/${game.seasonLen()}</b></span>`;
     placarInfo = `${shownP} pessoas no vale · 💧 ${u} de ${f} da água da nascente em uso · 🧩 ${S.left} peça${S.left === 1 ? '' : 's'} na pilha · ${sec ? `☀️ seca: dia ${S.clock + 1} de ${game.seasonLen()}, as nascentes dão a metade` : `🌧️ águas: dia ${S.clock + 1} de ${game.seasonLen()}, depois vem a seca`}`;
     const b = $('colocar');
     if (S.over) { b.hidden = false; b.textContent = 'Fim do vale'; }
+    else if (sel && sel.bad) b.hidden = true;
     else if (sel) { const o = sel.opts[sel.i], x = []; if (o.vil.some(v => v.done)) x.push('🏠✓'); if (o.spring) x.push(`+${o.spring}💧`); if (o.drySelf || o.lost.length) x.push('🥀');
       b.hidden = false; b.textContent = 'Colocar' + (x.length ? '  ' + x.join(' ') : ''); }
     else b.hidden = true;
-    drawGhost(); drawTags(sel ? sel.opts[sel.i] : null); ST.seca = sec; if (S.gente > shownP) countP(); }
+    drawGhost(); drawTags(sel && !sel.bad ? sel.opts[sel.i] : null); ST.seca = sec; if (S.gente > shownP) countP(); }
   let sayT = 0, placarInfo = ''; function say(t, sec = 4.5) { const el = $('aviso'); el.textContent = t; el.classList.add('on'); sayT = sec; }
   $('placar').onclick = () => { SFX.page(); say(placarInfo, 6); };
-  $('mao').onclick = () => { if (sel) turn(1); else { SFX.page(); say('Esta é a peça na mão. Toque numa casa marcada no chão para ver onde ela cabe; toque de novo (ou na peça) para girar.'); } };
+  $('mao').onclick = () => { if (sel) turn(1); else { SFX.page(); say(`Esta é a peça na mão, virada como vai ficar no mapa. Ela cabe em ${fitN} casa${fitN === 1 ? '' : 's'} com faixa branca (dourada: ajuda uma vila). Toque numa delas; toque de novo (ou na peça) para girar.`, 6); } };
   addEventListener('keydown', e => { if (e.key === 'r' || e.key === 'R') turn(1); if (e.key === 'Enter' && sel) commit(); });
   const novoVale = () => { location.search = '?vale=' + Date.now().toString(36); };
   $('colocar').onclick = () => { if (S.over) { showEnd(); return; } commit(); };
-  function commit() { if (!sel || S.over) return; const { k, q, r } = sel, o = sel.opts[sel.i]; const res = game.place(k, o.e); if (!res) return; sel = null;
+  function commit() { if (!sel || sel.bad || S.over) return; const { k, q, r } = sel, o = sel.opts[sel.i]; const res = game.place(k, o.e); if (!res) return; sel = null;
     const mq = ghost.userData.mq, c0 = hexCenter(q, r); follow(c0);
     const land = () => { grow(q, r, o.e); dust(c0); SFX.thud(); buzz(18); shake(0.9, 0.28);
       let dl = 0.25; for (const x of res.ev) { const kc = x.k != null ? hexCenter(KQ(x.k), KR(x.k)) : c0;
@@ -287,7 +308,7 @@ export function buildBoard5(api) {
   function openPack() { const ch = S.escolha[0]; if (!ch) { pk.hidden = true; return; } $('pkS').textContent = 'O que chega na pilha? As 3 peças entram logo depois da peça na mão.';
     const box = $('pkO'); box.innerHTML = '';
     ch.forEach((p, i) => { const b = document.createElement('button'); b.type = 'button'; b.innerHTML = `<span>${TEMA[p.tema] || p.tema}</span><span class="t"></span>`;
-      for (const t of p.tiles) { const c = document.createElement('canvas'); c.width = c.height = 80; drawThumb(c, t.e); b.querySelector('.t').appendChild(c); }
+      for (const t of p.tiles) { const c = document.createElement('canvas'); c.width = c.height = 80; drawThumb(c, view(t.e)); b.querySelector('.t').appendChild(c); }
       b.onclick = () => { game.choose(i); SFX.pack(); buzz(10); pk.hidden = true; if (S.over && !S.escolha.length) setTimeout(showEnd, 600); say(`${TEMA[p.tema] || p.tema}: 3 peças a caminho`); passIfStuck(); drawSlots(); refresh(); if (S.escolha.length) setTimeout(openPack, 300); };
       box.appendChild(b); });
     pk.hidden = false; SFX.open(); }
@@ -356,7 +377,7 @@ export function buildBoard5(api) {
     growing.push({ items, wm, t: 0, c });
     ring(c); }
   // a câmera desliza até perto da peça posta (60% do caminho, em ~1 s), para o que acontece ficar à vista
-  let camGo = null;
+  let camGo = null, lastCamK = 0;
   function follow(c) { const gc = window.__previa && window.__previa.gameCam; if (!gc) return; const f = gc.state; camGo = { gc, x: f.fx + (c[0] - f.fx) * 0.6, z: f.fz + (c[1] - f.fz) * 0.6, t: 0 }; }
   const rings = [];
   function ring(c) { const m = new THREE.Mesh(new THREE.RingGeometry(0.9, 1, 48).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0xfff2c0, transparent: true, opacity: 0.8, depthWrite: false }));
@@ -403,5 +424,6 @@ export function buildBoard5(api) {
     for (let i = floats.length - 1; i >= 0; i--) { const f = floats[i]; f.t += dt; const sk = 1 - Math.exp(-8 * f.t) * Math.cos(12 * f.t); f.sp.scale.set(16 * sk, 4.3 * sk, 1); f.sp.position.y = f.y0 + f.t * 3; f.sp.material.opacity = Math.max(0, 1 - f.t / 2.2); if (f.t > 2.2) { scene.remove(f.sp); floats.splice(i, 1); } }
     if (camGo) { const f = camGo.gc.state, k = 1 - Math.exp(-dt * 4); f.fx += (camGo.x - f.fx) * k; f.fz += (camGo.z - f.fz) * k; camGo.t += dt; if (camGo.t > 1.4) camGo = null; }
     fillMat.opacity = 0.08 + 0.06 * Math.sin(performance.now() * 0.004); hotMat.opacity = 0.26 + 0.12 * Math.sin(performance.now() * 0.005);
+    ringMat.opacity = 0.7 + 0.25 * Math.sin(performance.now() * 0.004); { const ck = camK(); if (ck !== lastCamK) { lastCamK = ck; refresh(); } }
     if (sayT > 0) { sayT -= dt; if (sayT <= 0) $('aviso').classList.remove('on'); } } };
 }
