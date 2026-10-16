@@ -12,7 +12,7 @@ import { fbm } from './world.js';
 import { R, TILES, CENTER, RIVER, SPILL, riverHalfWidth, heightAt, riverInfo, waterDist, biomeAt, SPRING, POOL_R, WATER_Y, vnoise, inHex, inAnyTile, dirtAt, fieldAt, blocked, LAYOUT, rockyAt, waterLevelAt, riverLevel, FALL, CLIFF_X, DROP, LAKE, lakeDist, cliffDrop, smooth } from './world.js';
 import { plantTile } from './flora.js';
 import { buildProps } from './props.js';
-import { hexCenter, edgeMid, DIRS, sectorType, PATHS, addRiver } from './world.js';
+import { hexCenter, edgeMid, DIRS, sectorType, PATHS, addRiver, connectPath } from './world.js';
 import { buildBoard } from './board3d.js';
 import { buildBoard5 } from './board5.js';
 import { buildFauna } from './fauna.js';
@@ -1136,7 +1136,10 @@ mergeTrees(scene.children.slice());
 const EDGES0 = { rio: 'AGGGGG', mata: 'ABBABB', cachoeira: 'ABBAGG', pasto: 'GGGGGG', cerrado: 'GGGGGG', lagoa: 'GGGGGG', vila: 'VVVVVV', praca: 'VVVVVV', lavoura: 'CCCCCC', roca: 'CCCCCC', cerradao: 'BBBBBB' };
 // o jogo: núcleo v5 (o rio é o orçamento, ../../nucleo/regras.js); ?jogo=v3 volta às regras antigas (game3d.js)
 const board = (new URLSearchParams(location.search).get('jogo') === 'v3' ? buildBoard : buildBoard5)({ scene, camera, dom: renderer.domElement, R, TILES, hexCenter, heightAt, waterDist, inHex, edgeMid, DIRS, sectorType, PATHS, addRiver, ST, CENTER, gente,
-  edgesOf: t => EDGES0[t.kind].split(''), props, groundFor, waterFor: t => waterMeshFor([t], false), fillField, grassFor, place, makeTree, makeTermite, makeBuriti, plant: t => plantTile(t, floraCtx), fieldAt, blocked, mobile, mergeTrees, buildNear, syncCollision, buildSpot });
+  edgesOf: t => EDGES0[t.kind].split(''), props, groundFor, waterFor: t => waterMeshFor([t], false), fillField, grassFor, place, makeTree, makeTermite, makeBuriti, plant: t => plantTile(t, floraCtx), fieldAt, blocked, mobile, mergeTrees, buildNear, syncCollision, buildSpot,
+  // uma entrada nova (casa da vila que cresceu) entra na rede de caminhos; o chão das peças que a trilha toca e o capim de cima dela são refeitos
+  connectPath: (p, w, zone, obs) => { const b = connectPath(p, w, zone, obs); if (!b) return null; const cx = (b[0] + b[2]) / 2, cz = (b[1] + b[3]) / 2, hx = (b[2] - b[0]) / 2 + R + 1, hz = (b[3] - b[1]) / 2 + R + 1;
+    for (const t of TILES) if (t.gm && Math.abs(t.c[0] - cx) < hx && Math.abs(t.c[1] - cz) < hz) groundFor(t); fillField(b[0] - 1, b[1] - 1, b[2] + 1, b[3] + 1); return b; } });
 let lastStrikes = 0;
 let frameN = 0; const clock = new THREE.Clock(); let fpsT = 0, fpsT0 = 0, fpsN = 0, slow = 0;
 const fmtH = h => `${String(Math.floor(h) % 24).padStart(2, '0')}:${String(Math.round((h % 1) * 60) % 60).padStart(2, '0')}`;
