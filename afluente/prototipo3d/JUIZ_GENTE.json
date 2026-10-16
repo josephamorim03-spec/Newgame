@@ -2,36 +2,165 @@
  "tipos": {
   "homem": {
    "medidas": {
-    "altura": 1.696,
-    "cabeca": 0.141,
-    "ombros": 0.272,
-    "quadril": 0.217,
+    "altura": 1.695,
+    "cabeca": 0.139,
+    "ombros": 0.27,
+    "quadril": 0.214,
     "braco": 0.179,
     "antebraco": 0.155,
-    "coxa": 0.246,
-    "canela": 0.249,
+    "coxa": 0.244,
+    "canela": 0.247,
     "pe": 0.155,
-    "hOmbro": 0.808,
-    "hCotovelo": 0.63,
-    "hPunho": 0.489,
-    "hQuadril": 0.531,
-    "hJoelho": 0.286,
-    "triangulos": 20048,
+    "hOmbro": 0.807,
+    "hCotovelo": 0.629,
+    "hPunho": 0.487,
+    "hQuadril": 0.528,
+    "hJoelho": 0.284,
+    "triangulos": 20704,
+    "quina_tronco": 1,
+    "quina_coxa": 1.6,
+    "quina_braço": 1.1,
+    "tampaOmbro": 0,
+    "mão solta do punho": 4.3,
+    "pé solto da perna": 1.5,
+    "cabeça solta do pescoço": 0.6,
+    "cabeloNoRosto": 0,
+    "cabeloFuraChapeu": 0,
+    "lencoNosOlhos": 0,
+    "olhoAFrente": 5.8
+   },
+   "poses": {
+    "braço erguido (lata na cabeça)": {
+     "vinco": 47,
+     "dentro": 0,
+     "cabeca": 0
+    },
+    "braços à frente": {
+     "vinco": 32,
+     "dentro": 0,
+     "cabeca": 0
+    },
+    "braços abertos": {
+     "vinco": 21,
+     "dentro": 0,
+     "cabeca": 0
+    },
+    "agachado juntando": {
+     "vinco": 32,
+     "dentro": 0,
+     "cabeca": 0
+    },
+    "ajoelhado lavando": {
+     "vinco": 69,
+     "dentro": 0,
+     "cabeca": 0
+    },
+    "sentado no chão": {
+     "vinco": 0,
+     "dentro": 0,
+     "cabeca": 0
+    },
+    "enxada no alto": {
+     "vinco": 49,
+     "dentro": 0,
+     "cabeca": 0
+    },
+    "enxuga a testa": {
+     "vinco": 40,
+     "dentro": 0,
+     "cabeca": 0
+    },
+    "mão na cintura": {
+     "vinco": 24,
+     "dentro": 0,
+     "cabeca": 0
+    }
+   },
+   "achados": [
+    {
+     "f": "pose",
+     "pen": 6.14,
+     "msg": "ajoelhado lavando: 69 cm² de pele esticando/encolhendo demais (perna 59, braço 10 cm²)"
+    },
+    {
+     "f": "pose",
+     "pen": 4.9399999999999995,
+     "msg": "enxada no alto: 49 cm² de pele esticando/encolhendo demais (braço 37, tronco 12 cm²)"
+    },
+    {
+     "f": "pose",
+     "pen": 4.82,
+     "msg": "braço erguido (lata na cabeça): 47 cm² de pele esticando/encolhendo demais (braço 35, tronco 12 cm²)"
+    },
+    {
+     "f": "pose",
+     "pen": 4.4,
+     "msg": "enxuga a testa: 40 cm² de pele esticando/encolhendo demais (braço 34, tronco 6 cm²)"
+    },
+    {
+     "f": "pose",
+     "pen": 3.92,
+     "msg": "braços à frente: 32 cm² de pele esticando/encolhendo demais (braço 32 cm²)"
+    },
+    {
+     "f": "pose",
+     "pen": 3.92,
+     "msg": "agachado juntando: 32 cm² de pele esticando/encolhendo demais (braço 32 cm²)"
+    },
+    {
+     "f": "forma",
+     "pen": 0.11736589043531254,
+     "msg": "silhueta facetada: até 1.6 mm de quina no coxa com 18 lados (mais segmentos)"
+    }
+   ],
+   "andar": {
+    "velocidade": 1.25,
+    "deslize": 0.05,
+    "sobeDesce": 6.2,
+    "passoAltura": 0.429,
+    "bracoContraPerna": -0.508
+   },
+   "notas": {
+    "forma": 100,
+    "integração": 100,
+    "pose": 72,
+    "movimento": 100
+   },
+   "nota": 93
+  },
+  "homem de chapéu": {
+   "medidas": {
+    "altura": 1.694,
+    "cabeca": 0.14,
+    "ombros": 0.272,
+    "quadril": 0.216,
+    "braco": 0.179,
+    "antebraco": 0.155,
+    "mao": 0.104,
+    "coxa": 0.247,
+    "canela": 0.25,
+    "pe": 0.155,
+    "hOmbro": 0.809,
+    "hCotovelo": 0.631,
+    "hPunho": 0.49,
+    "hQuadril": 0.534,
+    "hJoelho": 0.287,
+    "triangulos": 20620,
     "quina_tronco": 0.9,
     "quina_coxa": 1.6,
     "quina_braço": 1,
     "tampaOmbro": 0,
-    "mão solta do punho": 4.4,
-    "pé solto da perna": 1.3,
-    "cabeça solta do pescoço": 0.1,
+    "mão solta do punho": 4.7,
+    "pé solto da perna": 1,
+    "cabeça solta do pescoço": 0,
     "cabeloNoRosto": 0,
     "cabeloFuraChapeu": 0,
     "lencoNosOlhos": 0,
-    "olhoAFrente": 5.1
+    "olhoAFrente": 4.9
    },
    "poses": {
     "braço erguido (lata na cabeça)": {
-     "vinco": 48,
+     "vinco": 45,
      "dentro": 0,
      "cabeca": 0
     },
@@ -61,151 +190,12 @@
      "cabeca": 0
     },
     "enxada no alto": {
-     "vinco": 53,
+     "vinco": 48,
      "dentro": 0,
      "cabeca": 0
     },
     "enxuga a testa": {
-     "vinco": 40,
-     "dentro": 0,
-     "cabeca": 0
-    },
-    "mão na cintura": {
-     "vinco": 28,
-     "dentro": 0,
-     "cabeca": 0
-    }
-   },
-   "achados": [
-    {
-     "f": "pose",
-     "pen": 6.2,
-     "msg": "ajoelhado lavando: 70 cm² de pele esticando/encolhendo demais (perna 60, braço 10 cm²)"
-    },
-    {
-     "f": "pose",
-     "pen": 5.18,
-     "msg": "enxada no alto: 53 cm² de pele esticando/encolhendo demais (braço 38, tronco 15 cm²)"
-    },
-    {
-     "f": "pose",
-     "pen": 4.88,
-     "msg": "braço erguido (lata na cabeça): 48 cm² de pele esticando/encolhendo demais (braço 36, tronco 12 cm²)"
-    },
-    {
-     "f": "pose",
-     "pen": 4.4,
-     "msg": "enxuga a testa: 40 cm² de pele esticando/encolhendo demais (braço 34, tronco 6 cm²)"
-    },
-    {
-     "f": "pose",
-     "pen": 3.98,
-     "msg": "braços à frente: 33 cm² de pele esticando/encolhendo demais (braço 33 cm²)"
-    },
-    {
-     "f": "pose",
-     "pen": 3.98,
-     "msg": "agachado juntando: 33 cm² de pele esticando/encolhendo demais (braço 33 cm²)"
-    },
-    {
-     "f": "pose",
-     "pen": 3.6799999999999997,
-     "msg": "mão na cintura: 28 cm² de pele esticando/encolhendo demais (braço 28 cm²)"
-    },
-    {
-     "f": "forma",
-     "pen": 3.516707768285916,
-     "msg": "largura do quadril 0.217 da altura (o corpo de verdade: 0.163–0.215) — longo/largo"
-    },
-    {
-     "f": "forma",
-     "pen": 3.2847270600023166,
-     "msg": "cabeça (alto ao queixo) 0.141 da altura (o corpo de verdade: 0.12–0.14) — longo/largo"
-    }
-   ],
-   "andar": {
-    "velocidade": 1.25,
-    "deslize": 0.05,
-    "sobeDesce": 5.6,
-    "passoAltura": 0.429,
-    "bracoContraPerna": -0.4
-   },
-   "notas": {
-    "forma": 93,
-    "integração": 100,
-    "pose": 68,
-    "movimento": 100
-   },
-   "nota": 90
-  },
-  "homem de chapéu": {
-   "medidas": {
-    "altura": 1.695,
-    "cabeca": 0.141,
-    "ombros": 0.273,
-    "quadril": 0.219,
-    "braco": 0.179,
-    "antebraco": 0.155,
-    "mao": 0.105,
-    "coxa": 0.244,
-    "canela": 0.247,
-    "pe": 0.155,
-    "hOmbro": 0.807,
-    "hCotovelo": 0.629,
-    "hPunho": 0.49,
-    "hQuadril": 0.528,
-    "hJoelho": 0.284,
-    "triangulos": 18976,
-    "quina_tronco": 0.9,
-    "quina_coxa": 1.5,
-    "quina_braço": 1,
-    "tampaOmbro": 0,
-    "mão solta do punho": 4.7,
-    "pé solto da perna": 0.8,
-    "cabeça solta do pescoço": 0.2,
-    "cabeloNoRosto": 0,
-    "cabeloFuraChapeu": 0,
-    "lencoNosOlhos": 0,
-    "olhoAFrente": 5.9
-   },
-   "poses": {
-    "braço erguido (lata na cabeça)": {
-     "vinco": 42,
-     "dentro": 0,
-     "cabeca": 0
-    },
-    "braços à frente": {
-     "vinco": 27,
-     "dentro": 0,
-     "cabeca": 0
-    },
-    "braços abertos": {
-     "vinco": 18,
-     "dentro": 0,
-     "cabeca": 0
-    },
-    "agachado juntando": {
-     "vinco": 27,
-     "dentro": 0,
-     "cabeca": 0
-    },
-    "ajoelhado lavando": {
-     "vinco": 69,
-     "dentro": 0,
-     "cabeca": 0
-    },
-    "sentado no chão": {
-     "vinco": 0,
-     "dentro": 0,
-     "cabeca": 0
-    },
-    "enxada no alto": {
-     "vinco": 47,
-     "dentro": 0,
-     "cabeca": 0
-    },
-    "enxuga a testa": {
-     "vinco": 42,
+     "vinco": 44,
      "dentro": 0,
      "cabeca": 0
     },
@@ -218,415 +208,90 @@
    "achados": [
     {
      "f": "pose",
-     "pen": 6.14,
-     "msg": "ajoelhado lavando: 69 cm² de pele esticando/encolhendo demais (perna 59, braço 10 cm²)"
+     "pen": 6.2,
+     "msg": "ajoelhado lavando: 70 cm² de pele esticando/encolhendo demais (perna 60, braço 10 cm²)"
     },
     {
      "f": "pose",
-     "pen": 4.82,
-     "msg": "enxada no alto: 47 cm² de pele esticando/encolhendo demais (braço 32, tronco 15 cm²)"
+     "pen": 4.88,
+     "msg": "enxada no alto: 48 cm² de pele esticando/encolhendo demais (braço 34, tronco 15 cm²)"
     },
     {
      "f": "pose",
-     "pen": 4.52,
-     "msg": "braço erguido (lata na cabeça): 42 cm² de pele esticando/encolhendo demais (braço 30, tronco 12 cm²)"
+     "pen": 4.699999999999999,
+     "msg": "braço erguido (lata na cabeça): 45 cm² de pele esticando/encolhendo demais (braço 33, tronco 12 cm²)"
     },
     {
      "f": "pose",
-     "pen": 4.52,
-     "msg": "enxuga a testa: 42 cm² de pele esticando/encolhendo demais (braço 36, tronco 6 cm²)"
+     "pen": 4.64,
+     "msg": "enxuga a testa: 44 cm² de pele esticando/encolhendo demais (braço 38, tronco 6 cm²)"
+    },
+    {
+     "f": "pose",
+     "pen": 3.98,
+     "msg": "braços à frente: 33 cm² de pele esticando/encolhendo demais (braço 33 cm²)"
+    },
+    {
+     "f": "pose",
+     "pen": 3.98,
+     "msg": "agachado juntando: 33 cm² de pele esticando/encolhendo demais (braço 33 cm²)"
     },
     {
      "f": "forma",
-     "pen": 4.343587074217499,
-     "msg": "largura do quadril 0.219 da altura (o corpo de verdade: 0.163–0.215) — longo/largo"
-    },
-    {
-     "f": "pose",
-     "pen": 3.62,
-     "msg": "braços à frente: 27 cm² de pele esticando/encolhendo demais (braço 27 cm²)"
-    },
-    {
-     "f": "pose",
-     "pen": 3.62,
-     "msg": "agachado juntando: 27 cm² de pele esticando/encolhendo demais (braço 27 cm²)"
+     "pen": 3.299735007880668,
+     "msg": "largura do quadril 0.216 da altura (o corpo de verdade: 0.163–0.215) — longo/largo"
     },
     {
      "f": "forma",
-     "pen": 3.322775750404919,
-     "msg": "cabeça (alto ao queixo) 0.141 da altura (o corpo de verdade: 0.12–0.14) — longo/largo"
+     "pen": 3.0631465041765265,
+     "msg": "cabeça (alto ao queixo) 0.14 da altura (o corpo de verdade: 0.12–0.14) — longo/largo"
     }
    ],
    "andar": {
     "velocidade": 1.25,
     "deslize": 0.05,
-    "sobeDesce": 5.6,
+    "sobeDesce": 6.2,
     "passoAltura": 0.429,
-    "bracoContraPerna": -0.4
+    "bracoContraPerna": -0.508
    },
    "notas": {
-    "forma": 92,
+    "forma": 94,
     "integração": 100,
-    "pose": 73,
+    "pose": 72,
     "movimento": 100
    },
    "nota": 91
   },
   "mulher de saia": {
    "medidas": {
-    "altura": 1.694,
-    "cabeca": 0.139,
-    "ombros": 0.243,
-    "quadril": 0.218,
+    "altura": 1.693,
+    "cabeca": 0.141,
+    "ombros": 0.247,
+    "quadril": 0.224,
     "braco": 0.173,
     "antebraco": 0.145,
-    "mao": 0.1,
-    "coxa": 0.238,
-    "canela": 0.242,
-    "pe": 0.141,
-    "hOmbro": 0.802,
-    "hCotovelo": 0.629,
-    "hPunho": 0.5,
-    "hQuadril": 0.516,
-    "hJoelho": 0.278,
-    "triangulos": 20968,
+    "mao": 0.097,
+    "coxa": 0.241,
+    "canela": 0.244,
+    "pe": 0.147,
+    "hOmbro": 0.804,
+    "hCotovelo": 0.631,
+    "hPunho": 0.501,
+    "hQuadril": 0.521,
+    "hJoelho": 0.281,
+    "triangulos": 19976,
     "quina_tronco": 0.9,
     "quina_coxa": 1.5,
     "quina_braço": 1,
     "tampaOmbro": 0,
     "mão solta do punho": 4.5,
-    "pé solto da perna": 0.3,
-    "cabeça solta do pescoço": 0.7,
+    "pé solto da perna": 0.7,
+    "cabeça solta do pescoço": 1.3,
     "cabeloNoRosto": 0,
     "cabeloFuraChapeu": 0,
     "lencoNosOlhos": 0,
-    "olhoAFrente": 4.5,
-    "saiaFolga": 38.8
-   },
-   "poses": {
-    "braço erguido (lata na cabeça)": {
-     "vinco": 15,
-     "dentro": 0,
-     "cabeca": 0
-    },
-    "braços à frente": {
-     "vinco": 17,
-     "dentro": 0,
-     "cabeca": 0
-    },
-    "braços abertos": {
-     "vinco": 16,
-     "dentro": 0,
-     "cabeca": 0
-    },
-    "agachado juntando": {
-     "vinco": 17,
-     "dentro": 0,
-     "cabeca": 0
-    },
-    "ajoelhado lavando": {
-     "vinco": 9,
-     "dentro": 0,
-     "cabeca": 0
-    },
-    "sentado no chão": {
-     "vinco": 0,
-     "dentro": 0,
-     "cabeca": 0
-    },
-    "enxada no alto": {
-     "vinco": 18,
-     "dentro": 0,
-     "cabeca": 0
-    },
-    "enxuga a testa": {
-     "vinco": 26,
-     "dentro": 0,
-     "cabeca": 0
-    },
-    "mão na cintura": {
-     "vinco": 21,
-     "dentro": 0,
-     "cabeca": 0
-    }
-   },
-   "achados": [
-    {
-     "f": "pose",
-     "pen": 3.56,
-     "msg": "enxuga a testa: 26 cm² de pele esticando/encolhendo demais (braço 26 cm²)"
-    },
-    {
-     "f": "forma",
-     "pen": 3.0406617226931387,
-     "msg": "altura do punho 0.5 da altura (o corpo de verdade: 0.46–0.5) — longo/largo"
-    }
-   ],
-   "andar": {
-    "velocidade": 1.25,
-    "deslize": 0.05,
-    "sobeDesce": 5.6,
-    "passoAltura": 0.429,
-    "bracoContraPerna": -0.4
-   },
-   "notas": {
-    "forma": 97,
-    "integração": 100,
-    "pose": 96,
-    "movimento": 100
-   },
-   "nota": 98
-  },
-  "mulher de vestido e lenço": {
-   "medidas": {
-    "altura": 1.694,
-    "cabeca": 0.14,
-    "ombros": 0.251,
-    "quadril": 0.235,
-    "braco": 0.173,
-    "antebraco": 0.145,
-    "mao": 0.101,
-    "coxa": 0.24,
-    "canela": 0.244,
-    "pe": 0.147,
-    "hOmbro": 0.803,
-    "hCotovelo": 0.631,
-    "hPunho": 0.503,
-    "hQuadril": 0.521,
-    "hJoelho": 0.281,
-    "triangulos": 19208,
-    "quina_tronco": 0.9,
-    "quina_coxa": 1.4,
-    "quina_braço": 0.9,
-    "tampaOmbro": 0,
-    "mão solta do punho": 4.5,
-    "pé solto da perna": 0.7,
-    "cabeça solta do pescoço": 0.5,
-    "cabeloNoRosto": 2,
-    "cabeloFuraChapeu": 0,
-    "lencoNosOlhos": 0,
-    "olhoAFrente": 4.6,
-    "saiaFolga": 43
-   },
-   "poses": {
-    "braço erguido (lata na cabeça)": {
-     "vinco": 30,
-     "dentro": 0,
-     "cabeca": 0
-    },
-    "braços à frente": {
-     "vinco": 18,
-     "dentro": 0,
-     "cabeca": 0
-    },
-    "braços abertos": {
-     "vinco": 17,
-     "dentro": 0,
-     "cabeca": 0
-    },
-    "agachado juntando": {
-     "vinco": 18,
-     "dentro": 0,
-     "cabeca": 0
-    },
-    "ajoelhado lavando": {
-     "vinco": 9,
-     "dentro": 0,
-     "cabeca": 0
-    },
-    "sentado no chão": {
-     "vinco": 0,
-     "dentro": 0,
-     "cabeca": 0
-    },
-    "enxada no alto": {
-     "vinco": 22,
-     "dentro": 0,
-     "cabeca": 0
-    },
-    "enxuga a testa": {
-     "vinco": 24,
-     "dentro": 0,
-     "cabeca": 0
-    },
-    "mão na cintura": {
-     "vinco": 32,
-     "dentro": 0,
-     "cabeca": 0
-    }
-   },
-   "achados": [
-    {
-     "f": "forma",
-     "pen": 5.940026410051088,
-     "msg": "largura do quadril 0.235 da altura (o corpo de verdade: 0.172–0.225) — longo/largo"
-    },
-    {
-     "f": "pose",
-     "pen": 3.92,
-     "msg": "mão na cintura: 32 cm² de pele esticando/encolhendo demais (braço 32 cm²)"
-    },
-    {
-     "f": "pose",
-     "pen": 3.8,
-     "msg": "braço erguido (lata na cabeça): 30 cm² de pele esticando/encolhendo demais (braço 27, tronco 3 cm²)"
-    },
-    {
-     "f": "forma",
-     "pen": 3.4005148965948586,
-     "msg": "altura do punho 0.503 da altura (o corpo de verdade: 0.46–0.5) — longo/largo"
-    }
-   ],
-   "andar": {
-    "velocidade": 1.25,
-    "deslize": 0.05,
-    "sobeDesce": 5.6,
-    "passoAltura": 0.429,
-    "bracoContraPerna": -0.4
-   },
-   "notas": {
-    "forma": 91,
-    "integração": 100,
-    "pose": 92,
-    "movimento": 100
-   },
-   "nota": 96
-  },
-  "mulher forte de saia comprida": {
-   "medidas": {
-    "altura": 1.695,
-    "cabeca": 0.14,
-    "ombros": 0.249,
-    "quadril": 0.223,
-    "braco": 0.173,
-    "antebraco": 0.145,
-    "mao": 0.098,
-    "coxa": 0.241,
-    "canela": 0.245,
-    "pe": 0.147,
-    "hOmbro": 0.804,
-    "hCotovelo": 0.632,
-    "hPunho": 0.503,
-    "hQuadril": 0.523,
-    "hJoelho": 0.282,
-    "triangulos": 19432,
-    "quina_tronco": 0.9,
-    "quina_coxa": 1.4,
-    "quina_braço": 0.9,
-    "tampaOmbro": 0,
-    "mão solta do punho": 4.5,
-    "pé solto da perna": 0.7,
-    "cabeça solta do pescoço": 0.8,
-    "cabeloNoRosto": 0,
-    "cabeloFuraChapeu": 0,
-    "lencoNosOlhos": 0,
-    "olhoAFrente": 4.7,
-    "saiaFolga": 40.1
-   },
-   "poses": {
-    "braço erguido (lata na cabeça)": {
-     "vinco": 18,
-     "dentro": 0,
-     "cabeca": 0
-    },
-    "braços à frente": {
-     "vinco": 17,
-     "dentro": 0,
-     "cabeca": 0
-    },
-    "braços abertos": {
-     "vinco": 16,
-     "dentro": 0,
-     "cabeca": 0
-    },
-    "agachado juntando": {
-     "vinco": 17,
-     "dentro": 0,
-     "cabeca": 0
-    },
-    "ajoelhado lavando": {
-     "vinco": 9,
-     "dentro": 0,
-     "cabeca": 0
-    },
-    "sentado no chão": {
-     "vinco": 0,
-     "dentro": 0,
-     "cabeca": 0
-    },
-    "enxada no alto": {
-     "vinco": 21,
-     "dentro": 0,
-     "cabeca": 0
-    },
-    "enxuga a testa": {
-     "vinco": 26,
-     "dentro": 0,
-     "cabeca": 0
-    },
-    "mão na cintura": {
-     "vinco": 21,
-     "dentro": 0,
-     "cabeca": 0
-    }
-   },
-   "achados": [
-    {
-     "f": "pose",
-     "pen": 3.56,
-     "msg": "enxuga a testa: 26 cm² de pele esticando/encolhendo demais (braço 26 cm²)"
-    },
-    {
-     "f": "forma",
-     "pen": 3.3149558107925636,
-     "msg": "altura do punho 0.503 da altura (o corpo de verdade: 0.46–0.5) — longo/largo"
-    }
-   ],
-   "andar": {
-    "velocidade": 1.25,
-    "deslize": 0.05,
-    "sobeDesce": 5.6,
-    "passoAltura": 0.429,
-    "bracoContraPerna": -0.4
-   },
-   "notas": {
-    "forma": 97,
-    "integração": 100,
-    "pose": 96,
-    "movimento": 100
-   },
-   "nota": 98
-  },
-  "mulher magra de vestido": {
-   "medidas": {
-    "altura": 1.694,
-    "cabeca": 0.14,
-    "ombros": 0.245,
-    "quadril": 0.223,
-    "braco": 0.173,
-    "antebraco": 0.145,
-    "mao": 0.097,
-    "coxa": 0.238,
-    "canela": 0.242,
-    "pe": 0.147,
-    "hOmbro": 0.802,
-    "hCotovelo": 0.63,
-    "hPunho": 0.501,
-    "hQuadril": 0.517,
-    "hJoelho": 0.279,
-    "triangulos": 18156,
-    "quina_tronco": 0.8,
-    "quina_coxa": 1.4,
-    "quina_braço": 0.9,
-    "tampaOmbro": 0,
-    "mão solta do punho": 4.5,
-    "pé solto da perna": 0.7,
-    "cabeça solta do pescoço": 0.1,
-    "cabeloNoRosto": 0,
-    "cabeloFuraChapeu": 0,
-    "lencoNosOlhos": 0,
-    "olhoAFrente": 4.9,
-    "saiaFolga": 39.6
+    "olhoAFrente": 5.1,
+    "saiaFolga": 45.9
    },
    "poses": {
     "braço erguido (lata na cabeça)": {
@@ -683,16 +348,331 @@
     },
     {
      "f": "forma",
-     "pen": 3.08421885632523,
+     "pen": 3.3658321477270676,
+     "msg": "cabeça (alto ao queixo) 0.141 da altura (o corpo de verdade: 0.12–0.14) — longo/largo"
+    },
+    {
+     "f": "forma",
+     "pen": 3.127888800317319,
      "msg": "altura do punho 0.501 da altura (o corpo de verdade: 0.46–0.5) — longo/largo"
     }
    ],
    "andar": {
     "velocidade": 1.25,
     "deslize": 0.05,
-    "sobeDesce": 5.6,
+    "sobeDesce": 6.2,
     "passoAltura": 0.429,
-    "bracoContraPerna": -0.4
+    "bracoContraPerna": -0.508
+   },
+   "notas": {
+    "forma": 94,
+    "integração": 100,
+    "pose": 96,
+    "movimento": 100
+   },
+   "nota": 97
+  },
+  "mulher de vestido e lenço": {
+   "medidas": {
+    "altura": 1.695,
+    "cabeca": 0.139,
+    "ombros": 0.242,
+    "quadril": 0.216,
+    "braco": 0.173,
+    "antebraco": 0.145,
+    "mao": 0.096,
+    "coxa": 0.241,
+    "canela": 0.245,
+    "pe": 0.141,
+    "hOmbro": 0.804,
+    "hCotovelo": 0.631,
+    "hPunho": 0.502,
+    "hQuadril": 0.521,
+    "hJoelho": 0.281,
+    "triangulos": 20200,
+    "quina_tronco": 0.9,
+    "quina_coxa": 1.5,
+    "quina_braço": 1,
+    "tampaOmbro": 0,
+    "mão solta do punho": 4.5,
+    "pé solto da perna": 0.3,
+    "cabeça solta do pescoço": 0.6,
+    "cabeloNoRosto": 2,
+    "cabeloFuraChapeu": 0,
+    "lencoNosOlhos": 0,
+    "olhoAFrente": 4.9,
+    "saiaFolga": 36.2
+   },
+   "poses": {
+    "braço erguido (lata na cabeça)": {
+     "vinco": 17,
+     "dentro": 0,
+     "cabeca": 0
+    },
+    "braços à frente": {
+     "vinco": 17,
+     "dentro": 0,
+     "cabeca": 0
+    },
+    "braços abertos": {
+     "vinco": 19,
+     "dentro": 0,
+     "cabeca": 0
+    },
+    "agachado juntando": {
+     "vinco": 17,
+     "dentro": 0,
+     "cabeca": 0
+    },
+    "ajoelhado lavando": {
+     "vinco": 11,
+     "dentro": 0,
+     "cabeca": 0
+    },
+    "sentado no chão": {
+     "vinco": 0,
+     "dentro": 0,
+     "cabeca": 0
+    },
+    "enxada no alto": {
+     "vinco": 18,
+     "dentro": 0,
+     "cabeca": 0
+    },
+    "enxuga a testa": {
+     "vinco": 23,
+     "dentro": 0,
+     "cabeca": 0
+    },
+    "mão na cintura": {
+     "vinco": 21,
+     "dentro": 0,
+     "cabeca": 0
+    }
+   },
+   "achados": [
+    {
+     "f": "forma",
+     "pen": 3.2209323727162538,
+     "msg": "altura do punho 0.502 da altura (o corpo de verdade: 0.46–0.5) — longo/largo"
+    }
+   ],
+   "andar": {
+    "velocidade": 1.25,
+    "deslize": 0.05,
+    "sobeDesce": 6.2,
+    "passoAltura": 0.429,
+    "bracoContraPerna": -0.508
+   },
+   "notas": {
+    "forma": 97,
+    "integração": 100,
+    "pose": 100,
+    "movimento": 100
+   },
+   "nota": 99
+  },
+  "mulher forte de saia comprida": {
+   "medidas": {
+    "altura": 1.696,
+    "cabeca": 0.138,
+    "ombros": 0.249,
+    "quadril": 0.223,
+    "braco": 0.173,
+    "antebraco": 0.145,
+    "mao": 0.098,
+    "coxa": 0.243,
+    "canela": 0.247,
+    "pe": 0.146,
+    "hOmbro": 0.805,
+    "hCotovelo": 0.633,
+    "hPunho": 0.505,
+    "hQuadril": 0.526,
+    "hJoelho": 0.283,
+    "triangulos": 19432,
+    "quina_tronco": 0.8,
+    "quina_coxa": 1.4,
+    "quina_braço": 0.9,
+    "tampaOmbro": 0,
+    "mão solta do punho": 4.5,
+    "pé solto da perna": 0.7,
+    "cabeça solta do pescoço": 0.6,
+    "cabeloNoRosto": 0,
+    "cabeloFuraChapeu": 0,
+    "lencoNosOlhos": 0,
+    "olhoAFrente": 4.3,
+    "saiaFolga": 43.5
+   },
+   "poses": {
+    "braço erguido (lata na cabeça)": {
+     "vinco": 18,
+     "dentro": 0,
+     "cabeca": 0
+    },
+    "braços à frente": {
+     "vinco": 18,
+     "dentro": 0,
+     "cabeca": 0
+    },
+    "braços abertos": {
+     "vinco": 16,
+     "dentro": 0,
+     "cabeca": 0
+    },
+    "agachado juntando": {
+     "vinco": 18,
+     "dentro": 0,
+     "cabeca": 0
+    },
+    "ajoelhado lavando": {
+     "vinco": 9,
+     "dentro": 0,
+     "cabeca": 0
+    },
+    "sentado no chão": {
+     "vinco": 0,
+     "dentro": 0,
+     "cabeca": 0
+    },
+    "enxada no alto": {
+     "vinco": 21,
+     "dentro": 0,
+     "cabeca": 0
+    },
+    "enxuga a testa": {
+     "vinco": 26,
+     "dentro": 0,
+     "cabeca": 0
+    },
+    "mão na cintura": {
+     "vinco": 21,
+     "dentro": 0,
+     "cabeca": 0
+    }
+   },
+   "achados": [
+    {
+     "f": "forma",
+     "pen": 3.6111763771399352,
+     "msg": "altura do punho 0.505 da altura (o corpo de verdade: 0.46–0.5) — longo/largo"
+    },
+    {
+     "f": "pose",
+     "pen": 3.56,
+     "msg": "enxuga a testa: 26 cm² de pele esticando/encolhendo demais (braço 26 cm²)"
+    }
+   ],
+   "andar": {
+    "velocidade": 1.25,
+    "deslize": 0.05,
+    "sobeDesce": 6.2,
+    "passoAltura": 0.429,
+    "bracoContraPerna": -0.508
+   },
+   "notas": {
+    "forma": 96,
+    "integração": 100,
+    "pose": 96,
+    "movimento": 100
+   },
+   "nota": 98
+  },
+  "mulher magra de vestido": {
+   "medidas": {
+    "altura": 1.694,
+    "cabeca": 0.138,
+    "ombros": 0.244,
+    "quadril": 0.222,
+    "braco": 0.173,
+    "antebraco": 0.145,
+    "mao": 0.099,
+    "coxa": 0.239,
+    "canela": 0.243,
+    "pe": 0.147,
+    "hOmbro": 0.803,
+    "hCotovelo": 0.63,
+    "hPunho": 0.501,
+    "hQuadril": 0.519,
+    "hJoelho": 0.28,
+    "triangulos": 18156,
+    "quina_tronco": 0.9,
+    "quina_coxa": 1.5,
+    "quina_braço": 1,
+    "tampaOmbro": 0,
+    "mão solta do punho": 4.5,
+    "pé solto da perna": 0.7,
+    "cabeça solta do pescoço": 1.3,
+    "cabeloNoRosto": 0,
+    "cabeloFuraChapeu": 0,
+    "lencoNosOlhos": 0,
+    "olhoAFrente": 4.9,
+    "saiaFolga": 37.3
+   },
+   "poses": {
+    "braço erguido (lata na cabeça)": {
+     "vinco": 20,
+     "dentro": 0,
+     "cabeca": 0
+    },
+    "braços à frente": {
+     "vinco": 18,
+     "dentro": 0,
+     "cabeca": 0
+    },
+    "braços abertos": {
+     "vinco": 16,
+     "dentro": 0,
+     "cabeca": 0
+    },
+    "agachado juntando": {
+     "vinco": 18,
+     "dentro": 0,
+     "cabeca": 0
+    },
+    "ajoelhado lavando": {
+     "vinco": 9,
+     "dentro": 0,
+     "cabeca": 0
+    },
+    "sentado no chão": {
+     "vinco": 0,
+     "dentro": 0,
+     "cabeca": 0
+    },
+    "enxada no alto": {
+     "vinco": 19,
+     "dentro": 0,
+     "cabeca": 0
+    },
+    "enxuga a testa": {
+     "vinco": 27,
+     "dentro": 0,
+     "cabeca": 0
+    },
+    "mão na cintura": {
+     "vinco": 22,
+     "dentro": 0,
+     "cabeca": 0
+    }
+   },
+   "achados": [
+    {
+     "f": "pose",
+     "pen": 3.62,
+     "msg": "enxuga a testa: 27 cm² de pele esticando/encolhendo demais (braço 27 cm²)"
+    },
+    {
+     "f": "forma",
+     "pen": 3.1401071161302307,
+     "msg": "altura do punho 0.501 da altura (o corpo de verdade: 0.46–0.5) — longo/largo"
+    }
+   ],
+   "andar": {
+    "velocidade": 1.25,
+    "deslize": 0.05,
+    "sobeDesce": 6.2,
+    "passoAltura": 0.429,
+    "bracoContraPerna": -0.508
    },
    "notas": {
     "forma": 97,
@@ -704,38 +684,38 @@
   },
   "idoso": {
    "medidas": {
-    "altura": 1.687,
-    "cabeca": 0.143,
-    "ombros": 0.277,
+    "altura": 1.673,
+    "cabeca": 0.141,
+    "ombros": 0.278,
     "quadril": 0.227,
-    "braco": 0.179,
-    "antebraco": 0.156,
-    "mao": 0.109,
-    "coxa": 0.244,
-    "canela": 0.247,
-    "pe": 0.156,
-    "hOmbro": 0.808,
-    "hCotovelo": 0.63,
+    "braco": 0.181,
+    "antebraco": 0.157,
+    "mao": 0.11,
+    "coxa": 0.25,
+    "canela": 0.253,
+    "pe": 0.157,
+    "hOmbro": 0.813,
+    "hCotovelo": 0.635,
     "hPunho": 0.487,
-    "hQuadril": 0.529,
-    "hJoelho": 0.284,
-    "triangulos": 19724,
+    "hQuadril": 0.54,
+    "hJoelho": 0.29,
+    "triangulos": 19848,
     "quina_tronco": 1,
     "quina_coxa": 1.6,
-    "quina_braço": 1.1,
+    "quina_braço": 1,
     "tampaOmbro": 0,
     "mão solta do punho": 4.8,
-    "pé solto da perna": 0.7,
-    "cabeça solta do pescoço": 0.8,
+    "pé solto da perna": 1.2,
+    "cabeça solta do pescoço": 0.5,
     "cabeloNoRosto": 0,
     "cabeloFuraChapeu": 0,
     "lencoNosOlhos": 0,
-    "olhoAFrente": 5.3
+    "olhoAFrente": 5
    },
    "poses": {
     "braço erguido (lata na cabeça)": {
-     "vinco": 48,
-     "dentro": 0,
+     "vinco": 47,
+     "dentro": 4.3,
      "cabeca": 0
     },
     "braços à frente": {
@@ -744,17 +724,17 @@
      "cabeca": 0
     },
     "braços abertos": {
-     "vinco": 20,
+     "vinco": 19,
      "dentro": 0,
      "cabeca": 0
     },
     "agachado juntando": {
-     "vinco": 41,
+     "vinco": 50,
      "dentro": 0,
      "cabeca": 0
     },
     "ajoelhado lavando": {
-     "vinco": 74,
+     "vinco": 75,
      "dentro": 0,
      "cabeca": 0
     },
@@ -764,17 +744,17 @@
      "cabeca": 0
     },
     "enxada no alto": {
-     "vinco": 47,
+     "vinco": 52,
      "dentro": 0,
      "cabeca": 0
     },
     "enxuga a testa": {
-     "vinco": 43,
-     "dentro": 0,
+     "vinco": 42,
+     "dentro": 4.3,
      "cabeca": 0
     },
     "mão na cintura": {
-     "vinco": 36,
+     "vinco": 35,
      "dentro": 0,
      "cabeca": 0
     }
@@ -782,71 +762,66 @@
    "achados": [
     {
      "f": "forma",
-     "pen": 6.853488419276895,
+     "pen": 6.821214522307796,
      "msg": "largura do quadril 0.227 da altura (o corpo de verdade: 0.163–0.215) — longo/largo"
     },
     {
      "f": "pose",
-     "pen": 6.4399999999999995,
-     "msg": "ajoelhado lavando: 74 cm² de pele esticando/encolhendo demais (perna 59, braço 15 cm²)"
+     "pen": 6.5,
+     "msg": "ajoelhado lavando: 75 cm² de pele esticando/encolhendo demais (perna 60, braço 14 cm²)"
     },
     {
      "f": "pose",
-     "pen": 4.88,
-     "msg": "braço erguido (lata na cabeça): 48 cm² de pele esticando/encolhendo demais (braço 35, tronco 13 cm²)"
+     "pen": 5.12,
+     "msg": "enxada no alto: 52 cm² de pele esticando/encolhendo demais (braço 37, tronco 15 cm²)"
+    },
+    {
+     "f": "pose",
+     "pen": 5,
+     "msg": "agachado juntando: 50 cm² de pele esticando/encolhendo demais (braço 28, tronco 14 cm²)"
     },
     {
      "f": "pose",
      "pen": 4.82,
-     "msg": "enxada no alto: 47 cm² de pele esticando/encolhendo demais (braço 34, tronco 13 cm²)"
+     "msg": "braço erguido (lata na cabeça): 47 cm² de pele esticando/encolhendo demais (braço 35, tronco 12 cm²)"
     },
     {
      "f": "pose",
-     "pen": 4.58,
-     "msg": "enxuga a testa: 43 cm² de pele esticando/encolhendo demais (braço 34, tronco 9 cm²)"
+     "pen": 4.52,
+     "msg": "enxuga a testa: 42 cm² de pele esticando/encolhendo demais (braço 33, tronco 9 cm²)"
     },
     {
      "f": "pose",
-     "pen": 4.46,
-     "msg": "agachado juntando: 41 cm² de pele esticando/encolhendo demais (braço 28, tronco 13 cm²)"
+     "pen": 4.1,
+     "msg": "mão na cintura: 35 cm² de pele esticando/encolhendo demais (braço 35 cm²)"
     },
     {
      "f": "forma",
-     "pen": 4.282788400026628,
-     "msg": "cabeça (alto ao queixo) 0.143 da altura (o corpo de verdade: 0.12–0.14) — longo/largo"
+     "pen": 3.7294990477145222,
+     "msg": "largura dos ombros 0.278 da altura (o corpo de verdade: 0.225–0.275) — longo/largo"
     },
     {
-     "f": "pose",
-     "pen": 4.16,
-     "msg": "mão na cintura: 36 cm² de pele esticando/encolhendo demais (braço 36 cm²)"
+     "f": "forma",
+     "pen": 3.691994071513576,
+     "msg": "cabeça (alto ao queixo) 0.141 da altura (o corpo de verdade: 0.12–0.14) — longo/largo"
     },
     {
      "f": "pose",
      "pen": 3.6799999999999997,
      "msg": "braços à frente: 28 cm² de pele esticando/encolhendo demais (braço 28 cm²)"
-    },
-    {
-     "f": "forma",
-     "pen": 3.4152726862465803,
-     "msg": "largura dos ombros 0.277 da altura (o corpo de verdade: 0.225–0.275) — longo/largo"
-    },
-    {
-     "f": "forma",
-     "pen": 0.16638037322750598,
-     "msg": "silhueta facetada: até 1.6 mm de quina no coxa com 18 lados (mais segmentos)"
     }
    ],
    "andar": {
     "velocidade": 1.25,
     "deslize": 0.05,
-    "sobeDesce": 5.6,
+    "sobeDesce": 6.2,
     "passoAltura": 0.429,
-    "bracoContraPerna": -0.4
+    "bracoContraPerna": -0.508
    },
    "notas": {
-    "forma": 85,
+    "forma": 86,
     "integração": 100,
-    "pose": 67,
+    "pose": 66,
     "movimento": 100
    },
    "nota": 88
@@ -855,35 +830,35 @@
    "medidas": {
     "altura": 1.675,
     "cabeca": 0.155,
-    "ombros": 0.24,
-    "quadril": 0.193,
+    "ombros": 0.242,
+    "quadril": 0.194,
     "braco": 0.171,
     "antebraco": 0.142,
     "mao": 0.095,
     "coxa": 0.232,
-    "canela": 0.244,
-    "pe": 0.149,
+    "canela": 0.243,
+    "pe": 0.141,
     "hOmbro": 0.784,
-    "hCotovelo": 0.616,
+    "hCotovelo": 0.615,
     "hPunho": 0.494,
-    "hQuadril": 0.514,
+    "hQuadril": 0.512,
     "hJoelho": 0.281,
-    "triangulos": 18684,
+    "triangulos": 18188,
     "quina_tronco": 0.6,
     "quina_coxa": 1.1,
-    "quina_braço": 0.8,
+    "quina_braço": 0.7,
     "tampaOmbro": 0,
     "mão solta do punho": 4.3,
     "pé solto da perna": 5,
-    "cabeça solta do pescoço": 0.4,
+    "cabeça solta do pescoço": 0.5,
     "cabeloNoRosto": 0,
     "cabeloFuraChapeu": 0,
     "lencoNosOlhos": 0,
-    "olhoAFrente": -1.2
+    "olhoAFrente": -1
    },
    "poses": {
     "braço erguido (lata na cabeça)": {
-     "vinco": 17,
+     "vinco": 15,
      "dentro": 0,
      "cabeca": 0
     },
@@ -893,7 +868,7 @@
      "cabeca": 0
     },
     "braços abertos": {
-     "vinco": 5,
+     "vinco": 0,
      "dentro": 0,
      "cabeca": 0
     },
@@ -931,19 +906,19 @@
    "achados": [
     {
      "f": "forma",
-     "pen": 3.489436321062046,
+     "pen": 3.5177205900203865,
      "msg": "altura do punho 0.494 da altura (o corpo de verdade: 0.42–0.49) — longo/largo"
     }
    ],
    "andar": {
     "velocidade": 1.25,
     "deslize": 0.05,
-    "sobeDesce": 5.6,
+    "sobeDesce": 6.2,
     "passoAltura": 0.429,
-    "bracoContraPerna": -0.4
+    "bracoContraPerna": -0.508
    },
    "notas": {
-    "forma": 97,
+    "forma": 96,
     "integração": 100,
     "pose": 100,
     "movimento": 100
@@ -954,35 +929,35 @@
    "medidas": {
     "altura": 1.674,
     "cabeca": 0.156,
-    "ombros": 0.243,
-    "quadril": 0.197,
+    "ombros": 0.248,
+    "quadril": 0.2,
     "braco": 0.171,
-    "antebraco": 0.143,
-    "mao": 0.094,
-    "coxa": 0.232,
+    "antebraco": 0.142,
+    "mao": 0.091,
+    "coxa": 0.231,
     "canela": 0.243,
-    "pe": 0.149,
-    "hOmbro": 0.784,
-    "hCotovelo": 0.615,
-    "hPunho": 0.492,
+    "pe": 0.141,
+    "hOmbro": 0.783,
+    "hCotovelo": 0.616,
+    "hPunho": 0.495,
     "hQuadril": 0.512,
-    "hJoelho": 0.281,
-    "triangulos": 18604,
-    "quina_tronco": 0.7,
-    "quina_coxa": 1.2,
-    "quina_braço": 0.8,
+    "hJoelho": 0.28,
+    "triangulos": 18108,
+    "quina_tronco": 0.6,
+    "quina_coxa": 1,
+    "quina_braço": 0.7,
     "tampaOmbro": 0,
     "mão solta do punho": 4.3,
     "pé solto da perna": 5,
-    "cabeça solta do pescoço": 0.3,
+    "cabeça solta do pescoço": 0.4,
     "cabeloNoRosto": 0,
     "cabeloFuraChapeu": 0,
     "lencoNosOlhos": 0,
-    "olhoAFrente": -1.1
+    "olhoAFrente": -0.9
    },
    "poses": {
     "braço erguido (lata na cabeça)": {
-     "vinco": 19,
+     "vinco": 20,
      "dentro": 0,
      "cabeca": 0
     },
@@ -992,7 +967,7 @@
      "cabeca": 0
     },
     "braços abertos": {
-     "vinco": 5,
+     "vinco": 0,
      "dentro": 0,
      "cabeca": 0
     },
@@ -1012,17 +987,17 @@
      "cabeca": 0
     },
     "enxada no alto": {
-     "vinco": 18,
+     "vinco": 19,
      "dentro": 0,
      "cabeca": 0
     },
     "enxuga a testa": {
-     "vinco": 22,
+     "vinco": 26,
      "dentro": 0,
      "cabeca": 0
     },
     "mão na cintura": {
-     "vinco": 19,
+     "vinco": 20,
      "dentro": 0,
      "cabeca": 0
     }
@@ -1030,24 +1005,29 @@
    "achados": [
     {
      "f": "forma",
-     "pen": 3.305486134934542,
-     "msg": "altura do punho 0.492 da altura (o corpo de verdade: 0.42–0.49) — longo/largo"
+     "pen": 3.6290318373660897,
+     "msg": "altura do punho 0.495 da altura (o corpo de verdade: 0.42–0.49) — longo/largo"
+    },
+    {
+     "f": "pose",
+     "pen": 3.56,
+     "msg": "enxuga a testa: 26 cm² de pele esticando/encolhendo demais (braço 23, tronco 3 cm²)"
     }
    ],
    "andar": {
     "velocidade": 1.25,
     "deslize": 0.05,
-    "sobeDesce": 5.6,
+    "sobeDesce": 6.2,
     "passoAltura": 0.429,
-    "bracoContraPerna": -0.4
+    "bracoContraPerna": -0.508
    },
    "notas": {
-    "forma": 97,
+    "forma": 96,
     "integração": 100,
-    "pose": 100,
+    "pose": 96,
     "movimento": 100
    },
-   "nota": 99
+   "nota": 98
   }
  }
 }

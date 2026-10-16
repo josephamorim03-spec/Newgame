@@ -605,11 +605,11 @@ function campoCabeca(cr) {
       e = smin(e, sCap(qx, qy, qz, s * 0.06, 0.1, -0.012, s * cr.gonio, cr.gonY, -0.004, m ? 0.011 : 0.0095), 0.016);
       // masseter: enche o lado do rosto entre a maçã e o ângulo da mandíbula (sem sulco entre a bochecha e o osso)
       e = smin(e, sEll(qx, qy, qz, s * (cr.gonio - 0.011), (cr.gonY + 0.095) / 2, 0.008, 0.011, (0.095 - cr.gonY) / 2 + 0.006, 0.022), 0.018);
-      e = smin(e, sCap(qx, qy, qz, s * cr.gonio, cr.gonY, -0.004, s * cr.queixo, 0.012, cr.queixoZ - 0.012, m ? 0.0105 : 0.009), 0.018);
+      e = smin(e, sCap(qx, qy, qz, s * cr.gonio, cr.gonY, -0.004, s * cr.queixo, 0.012, cr.queixoZ - 0.012 + 0.5 * cr.mento, m ? 0.0105 : 0.009), 0.018);
       e = smin(e, sEll(qx, qy, qz, s * 0.043, 0.064, 0.054, 0.021 + cr.bochecha, 0.03, 0.026), 0.024);
       e = smin(e, sEll(qx, qy, qz, s * (cr.gonio * 0.66), 0.042, 0.034, 0.017, 0.03, 0.034), 0.022);   // o lado de baixo do rosto, entre o canto da boca e o ângulo
       e = smin(e, sCap(qx, qy, qz, s * 0.012, 0.143, 0.086, s * 0.046, 0.141, 0.08, 0.006 + cr.arco), 0.012); }
-    e = smin(e, sEll(qx, qy, qz, 0, 0.011, cr.queixoZ - 0.013, cr.queixo + 0.008, 0.019, 0.015), 0.016);   // queixo redondo
+    e = smin(e, sEll(qx, qy, qz, 0, 0.011, cr.queixoZ - 0.013 + cr.mento, cr.queixo + 0.008, 0.019, 0.015 + 0.5 * Math.max(0, cr.mento)), 0.016);   // queixo (o mento, mais para dentro ou mais projetado)
     e = smin(e, sEll(qx, qy, qz, 0, 0.036, cr.queixoZ - 0.006, 0.024, 0.022, 0.016), 0.02);   // entre o lábio de baixo e o queixo (sem o degrau)
     e = smin(e, sEll(qx, qy, qz, 0, 0.022, 0.03, 0.035, 0.012 + cr.papada, 0.035), 0.02);
     d = smin(d, e * fs, 0.03);   // a emenda do crânio com o rosto, larga: sem aresta da têmpora ao ângulo da mandíbula
@@ -669,8 +669,14 @@ function cabeca(P, s, skin, hairC, f, kid) {
   add(new THREE.BoxGeometry(0.028 * b, 0.0014, 0.003).translate(0, (yU + yL) / 2, Math.max(zU, zL) + 0.0015), lip.clone().multiplyScalar(0.5));
   nome = 'barba'; const bigode = () => { for (const sx of [-1, 1]) add(new THREE.SphereGeometry(1, 10, 6).scale(0.019, 0.0065, 0.008).rotateZ(sx * -0.28).translate(sx * 0.013, yU + 0.0065, zU + 0.004), hairC, 2); };
   if (s.beard === 'bigode') bigode();
-  if (s.beard === 'barba') { const bg = new THREE.SphereGeometry(1, 18, 12, 0, Math.PI * 2, Math.PI * 0.55, Math.PI * 0.45), p = bg.attributes.position;
-    for (let i = 0; i < p.count; i++) { const z = p.getZ(i); if (z < -0.2) p.setZ(i, z * 0.6); } bg.scale(0.08 * cr.gonio / 0.0515, 0.075, 0.08).translate(0, 0.088, 0.03); add(bg, hairC, 2); bigode(); }
+  if (s.beard === 'barba') {   // barba cheia: uma casca sobre a superfície do rosto (queixo, mandíbula, embaixo do queixo e costeletas), com a boca de fora
+    const bg = new THREE.SphereGeometry(1, 72, 54), p = bg.attributes.position, u = new THREE.Vector3(), yM = (yU + yL) / 2;
+    for (let i = 0; i < p.count; i++) { u.set(p.getX(i), p.getY(i), p.getZ(i)).normalize(); const r = K.R(u.x, u.y, u.z), x = C0[0] + u.x * r, y = C0[1] + u.y * r, z = C0[2] + u.z * r, ax = Math.abs(x);
+      const lim = 0.074 + 0.045 * smooth01((ax - 0.042) / 0.02), kY = smooth01((lim - y) / 0.016), kZ = smooth01((z + 0.012) / 0.02);   // até a maçã do rosto; do lado sobe na costeleta, até a orelha
+      const boca = smooth01((0.03 * b - ax) / 0.008) * smooth01((y - (yL - 0.012)) / 0.006) * smooth01((yU + 0.004 - y) / 0.004) * smooth01((z - 0.05) / 0.01);
+      const k = kY * kZ * (1 - boca), n = (vn3(u.x * 22, u.y * 22, u.z * 22) - 0.5) * 0.004, vol = (0.008 + 0.004 * smooth01((yM - y) / 0.04) + n) * k * k * (3 - 2 * k) - (k > 0.03 ? 0.003 : 0.04) * (1 - k);   // a borda afina até sumir na pele; longe dela a casca fica funda (sem aparecer nas órbitas)
+      p.setXYZ(i, C0[0] + u.x * (r + vol), C0[1] + u.y * (r + vol), C0[2] + u.z * (r + vol)); }
+    bg.computeVertexNormals(); add(bg, hairC, 2); bigode(); }   // a barba acompanha o queixo
   return { pecas, olhos, R: K.R };
 }
 

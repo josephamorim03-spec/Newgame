@@ -13,6 +13,7 @@ const GENTE = [
   { sex: 'f', h: 1.58, hat: null, hair: 'longo', sleeves: 'curta', dress: true, imc: 26 },
   { sex: 'c', h: 1.2, hat: null, hair: 'curto', dress: false, skirt: 0, imc: 16 },
 ];
+if (process.env.GENTE) GENTE.splice(0, GENTE.length, ...JSON.parse(process.env.GENTE));   // GENTE='[{...}]': outra fileira
 (async () => {
   const b = await pw.chromium.launch({ executablePath: process.env.CHROME || '/opt/pw-browsers/chromium-1194/chrome-linux/chrome', args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
   const p = await b.newPage({ viewport: { width: 200, height: 150 } }), errs = []; p.on('pageerror', e => errs.push(e.message));
