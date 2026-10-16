@@ -270,7 +270,7 @@ function hairShell({ t = 0.012, front = 0.42, side = 0.22, back = -0.6, curl = 0
     const n = curl ? (vn3(x * 7, y * 7, z * 7) - 0.5) * curl * 2 + (vn3(x * 15 + 3, y * 15, z * 15) - 0.5) * curl : (vn3(x * 9, y * 3, z * 9) - 0.5) * 0.004;
     let vol = t + crown * Math.max(0, y) + n + quiff * G(y - 0.7, 0.28) * Math.max(0, z + 0.2);
     if (part) vol -= 0.005 * G(x - part, 0.05) * smooth01((y - 0.3) / 0.2) * (z > -0.3 ? 1 : 0);
-    vol = vol * k - 0.006 * (1 - k);
+    vol = vol * k - 0.05 * (1 - k);   // fora da área do cabelo a casca afunda bem para dentro do crânio (o rosto é esculpido para dentro na mandíbula e na bochecha)
     p.setXYZ(i, x * (SKULL.rx + vol), y * (SKULL.ry + vol * 0.9) + SKULL.cy, z * (SKULL.rz + vol) + SKULL.cz); }
   g.computeVertexNormals(); return g;
 }
@@ -280,7 +280,13 @@ function vn3(x, y, z) { const h = (a, b, c) => { let n = Math.sin(a * 127.1 + b 
   const L = (a, b, t) => a + (b - a) * t;
   return L(L(L(h(i, j, k), h(i + 1, j, k), u), L(h(i, j + 1, k), h(i + 1, j + 1, k), u), v), L(L(h(i, j, k + 1), h(i + 1, j, k + 1), u), L(h(i, j + 1, k + 1), h(i + 1, j + 1, k + 1), u), v), w); }
 function hair(bd, s, hb) {
-  const hc = C(s.hairColor), H = (g, c = hc) => bd.rigid(g, c, hb, 2), h = s.hair, kid = s.sex === 'c', swing = [], capped = ['palha', 'couro', 'bone'].includes(s.hat), scarf = s.hat === 'lenco';   // de chapéu o cabelo fica amassado por baixo
+  const capped = ['palha', 'couro', 'bone'].includes(s.hat), scarf = s.hat === 'lenco';   // de chapéu o cabelo fica amassado por baixo
+  // e nunca atravessa o chapéu: acima da aba, cada ponto do cabelo é puxado para dentro da copa (raio da copa naquela altura)
+  const crown = { palha: [0.2, 0.3, y => 0.1 - (y - 0.2) * 0.19], couro: [0.2, 0.28, y => 0.1 * Math.sqrt(Math.max(0, 1 - ((y - 0.2) / 0.085) ** 2))], bone: [0.16, 0.235, y => 0.1 * Math.sqrt(Math.max(0, 1 - ((y - 0.16) / 0.075) ** 2))] }[s.hat];
+  const fit = g => { if (!crown) return g; const [y0, y1, r] = crown, p = g.attributes.position;
+    for (let i = 0; i < p.count; i++) { let y = p.getY(i); if (y < y0 - 0.01) continue; y = Math.min(y, y1 - 0.008); const x = p.getX(i), z = p.getZ(i), d = Math.hypot(x, z), m = Math.max(0.005, r(y) - 0.006);
+      p.setY(i, y); if (d > m) { p.setX(i, x * m / d); p.setZ(i, z * m / d); } } return g; };
+  const hc = C(s.hairColor), H = (g, c = hc) => bd.rigid(fit(g), c, hb, 2), h = s.hair, kid = s.sex === 'c', swing = [];
   // peça que balança: pivô no ponto de amarrar, a peça pendurada para baixo (desenhada com o mesmo material do corpo)
   const pend = (at, geos) => { const b2 = Builder(); for (const [g, c, pt] of geos) b2.rigid(g, c, 0, pt); const m = new THREE.Mesh(b2.build(), bodyMaterial(null)); m.castShadow = true;
     const pivot = new THREE.Group(); pivot.position.copy(at); pivot.add(m); swing.push({ pivot, a: 0, v: 0, b: 0, vb: 0 }); };
