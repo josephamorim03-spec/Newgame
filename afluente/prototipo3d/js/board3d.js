@@ -114,15 +114,8 @@ export function buildBoard(api) {
     const gm = api.groundFor(t);
     for (const d of A) { const n = TILES.find(u => u.q === q + DIRS[d][0] && u.r === r + DIRS[d][1]); if (n && n.gm) api.groundFor(n); }   /* o rio novo entra um pouco no vizinho */
     const wm = A.length ? api.waterFor(t) : null; api.fillField(c[0] - R - 2, c[1] - R - 2, c[0] + R + 2, c[1] + R + 2); const gr = api.grassFor(t);
-    // árvores: mata nas bordas B, umas árvores e cupinzeiros no campo, buritis e moitas na beira d'água
     const inSector = (x, z, type) => inHex(x, z, c, 0.92) && sectorType(t, x, z) === type;
-    const tries = (n, fn, test, minD) => { let k = 0; for (let i = 0; i < n * 40 && k < n; i++) { const x = c[0] + (rnd() - 0.5) * 2 * R, z = c[1] + (rnd() - 0.5) * 2 * R; if (!inHex(x, z, c, 0.92) || !test(x, z)) continue; if (api.place(fn(), x, z, minD)) k++; } };
-    const nB = e.filter(x => x === 'B').length, nG = e.filter(x => x === 'G').length;
-    tries(nB * 3, () => api.makeTree(t.cerrado ? 'pequi' : 'mata', 0.85 + rnd() * 0.3), (x, z) => inSector(x, z, 'B') && waterDist(x, z) > 1.8, 4.6);
-    tries(nB * 3, () => api.makeTree('moita', 0.8 + rnd() * 0.5), (x, z) => inSector(x, z, 'B') && waterDist(x, z) > 1.2, 2.2);
-    tries(Math.ceil(nG * 0.6), () => (rnd() < 0.15 ? api.makeTree('ipe', 0.8 + rnd() * 0.15) : api.makeTree('cerrado', 0.85 + rnd() * 0.35)), (x, z) => inSector(x, z, 'G') && waterDist(x, z) > 3, 7);
-    tries(Math.ceil(nG * 0.5), api.makeTermite, (x, z) => inSector(x, z, 'G'), 3);
-    if (A.length) { tries(A.length + 1, api.makeBuriti, (x, z) => { const w = waterDist(x, z); return w > 0.8 && w < 3.5; }, 4); tries(A.length * 2, () => api.makeTree('moita', 0.8 + rnd() * 0.4), (x, z) => { const w = waterDist(x, z); return w > 1.4 && w < 6; }, 2.5); }
+    api.plant(t);   /* árvores, moitas, cupinzeiros e pedras pelo motor de flora (flora.js): o setor de cada borda diz o que nasce, a água traz o buritizal */
     const trees = scene.children.filter(o => !before.has(o) && o.isGroup && (o.userData.kind || o.userData.regua === 'buriti'));
     // plantação nas bordas C (milho, girassol ou trigo; as fileiras seguem a direção da peça)
     const crop = ['milho', 'milho', 'girassol', 'trigo'][Math.floor(rnd() * 4)], gap = crop === 'trigo' ? 0.5 : 0.9, step = crop === 'girassol' ? 1.0 : 0.5, pts = [];
