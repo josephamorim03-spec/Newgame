@@ -38,7 +38,7 @@ const rnd = (() => { let a = 1234567; return () => { a = a + 0x6D2B79F5 | 0; let
 const mobile = matchMedia('(pointer:coarse)').matches;
 const renderer = new THREE.WebGLRenderer({ canvas: $('cena'), antialias: true, powerPreference: 'high-performance' });
 let dpr = Math.min(devicePixelRatio || 1, mobile ? 1.6 : 2);
-renderer.setPixelRatio(dpr);
+renderer.setPixelRatio(dpr); renderer.info.autoReset = false;
 renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.toneMapping = THREE.NoToneMapping;           // cores como foram pintadas (sem o "filme" realista)
 renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -1143,7 +1143,7 @@ const board = (new URLSearchParams(location.search).get('jogo') === 'v3' ? build
 let lastStrikes = 0;
 let frameN = 0; const clock = new THREE.Clock(); let fpsT = 0, fpsT0 = 0, fpsN = 0, slow = 0;
 const fmtH = h => `${String(Math.floor(h) % 24).padStart(2, '0')}:${String(Math.round((h % 1) * 60) % 60).padStart(2, '0')}`;
-function frame() {
+function frame() { renderer.info.reset();   // a contagem soma o quadro inteiro (cena, reflexo, sombra e o pós), não só a última passada
   const dt = Math.min(window.__dtMax || 0.1, clock.getDelta());   /* __dtMax: só para os testes num computador sem placa de vídeo */ U.uTime.value += dt; U.uFlowClk.value += dt * (0.55 + U.uRain.value * 0.5);
   const c = climate(dt);
   if (ST.cam !== camMode) { camMode = ST.cam; const game = camMode === 'jogo'; gameCam.state.enabled = game; controls.enabled = !game; $('giro').hidden = !game || !DEBUG;
@@ -1179,6 +1179,8 @@ function frame() {
     else { qSlow = 0; qFast = 0; }
     fpsN = 0; fpsT = 0; }
   requestAnimationFrame(frame);
+  // o vale já aparece (o primeiro quadro com a cena desenhada, depois de os shaders compilarem): tira o aviso de carregando
+  if (!window.__vivo) { window.__t1 = window.__t1 || performance.now(); if (DEBUG || renderer.info.render.triangles > 20000 || performance.now() - window.__t1 > 20000) { window.__vivo = true; const el = $('carregando'); if (el) el.remove(); } }
 }
 requestAnimationFrame(frame);
 /* testes: avança a vida do vale (gente, bichos, porteiras) s segundos sem desenhar, para conferir rotinas longas num computador lento */

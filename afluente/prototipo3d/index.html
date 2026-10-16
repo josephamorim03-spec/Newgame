@@ -37,6 +37,17 @@
 </style>
 </head>
 <body>
+<!-- enquanto o vale é montado (no celular leva alguns segundos): o aviso de carregando; se algo der errado antes do primeiro
+     quadro, a mensagem do erro aparece aqui em vez de a tela ficar parada -->
+<div id="carregando" style="position:fixed;inset:0;z-index:99;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;background:#9fbcbd;color:#16332f;font:800 20px 'Baloo 2',system-ui,sans-serif;text-align:center;padding:24px">
+  <div>Carregando o vale…</div><div id="carregandoSeg" style="font:600 14px Nunito,system-ui,sans-serif;opacity:.75"></div>
+  <div id="carregandoErr" style="font:600 13px ui-monospace,Menlo,monospace;max-width:92vw;white-space:pre-wrap;word-break:break-word;color:#7a1e12;background:#f4efe6;border-radius:12px;padding:10px 12px" hidden></div></div>
+<script>(function(){var t0=Date.now(),err=document.getElementById('carregandoErr'),seg=document.getElementById('carregandoSeg');
+  function show(m){if(window.__vivo)return;err.hidden=false;err.textContent+=(err.textContent?'\n':'')+m;}
+  window.addEventListener('error',function(e){show('Erro: '+(e.message||e)+(e.lineno?' (linha '+e.lineno+':'+e.colno+')':'')+(e.error&&e.error.stack?'\n'+String(e.error.stack).split('\n').slice(0,4).join('\n'):''));});
+  window.addEventListener('unhandledrejection',function(e){var r=e.reason;show('Erro: '+(r&&r.message||r)+(r&&r.stack?'\n'+String(r.stack).split('\n').slice(0,4).join('\n'):''));});
+  try{var c=document.createElement('canvas');if(!c.getContext('webgl2'))show('Este navegador não abriu o WebGL 2 (o 3D do jogo). Tente abrir no Safari ou no Chrome, ou atualize o iOS.');}catch(_){}
+  var iv=setInterval(function(){if(window.__vivo||!document.getElementById('carregando')){clearInterval(iv);return;}seg.textContent=Math.round((Date.now()-t0)/1000)+' s';},1000);})();</script>
 <canvas id="cena" aria-label="O vale em 3D"></canvas>
 <div class="topo">
   <div class="marca"><h1>Afluente</h1><p>prévia 3D · encaixe as peças no vale</p></div>
