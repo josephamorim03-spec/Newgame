@@ -190,6 +190,11 @@ export function animate(a, dt, look, o) {
   if (near && !a.swim) { const hf = gAt(0, R.zf), hb = gAt(0, R.zb), lx = bird ? 0.08 : Math.abs(R.legs[0].x), hl = gAt(lx * 1.5, (R.zf + R.zb) / 2), hr = gAt(-lx * 1.5, (R.zf + R.zb) / 2);
     gy = Math.min((hf + hb) / 2, Math.max(hf, hb) - 0.04 * s); if (!bird) { pitch = Math.atan2(hf - hb, (R.zf - R.zb) * s) * 0.85; roll = Math.atan2(hl - hr, lx * 3 * s) * 0.5; } }
   else gy = g0;
+  // a altura do corpo sai das pernas: o mais alto em que todas alcançam o chão debaixo delas, com a da frente quase reta e o
+  // jarrete de trás na dobra natural (sem isso a perna sobra, dobra no ar e parece pendurada)
+  if (near && !a.swim) { let yb = Infinity; for (const L of R.legs) { V.set(L.hip.position.x, 0, L.hip.position.z); R.root.localToWorld(V); const f = L.bird ? 0.93 : L.front ? 0.985 : 0.955;
+      yb = Math.min(yb, heightAt(V.x, V.z) + (L.L3 + (L.L1 + L.L2) * f) * s - (R.rest.rootY + L.hip.position.y) * s); }
+    if (isFinite(yb)) gy = yb + 0.01; }
   if (a.water && !a.swim) gy = Math.max(gy, g0);
   a.gy = lerpA(a.gy ?? gy, gy, Math.min(1, dt * 10)); a.pitch = lerpA(a.pitch ?? pitch, pitch, Math.min(1, dt * 6)); a.roll = lerpA(a.roll ?? roll, roll, Math.min(1, dt * 6));
   a.lie = (a.lie || 0) + (((a.st === 'lie') ? 1 : 0) - (a.lie || 0)) * Math.min(1, dt * 1.2); const lie = a.lie;
