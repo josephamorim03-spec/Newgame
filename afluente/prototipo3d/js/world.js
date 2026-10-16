@@ -183,9 +183,19 @@ function landOf(t) { const c = {}; for (const e of t.e) if (e !== 'A') c[e] = (c
 export function sectorType(t, x, z) { const d = sectorOf(t, x, z), e = t.e[d]; return e === 'A' ? landOf(t) : e; }
 function sectorBio(t, x, z) { const e = sectorType(t, x, z); if (e === 'G') return t.cerrado ? [0, 0, 1, 0] : [1, 0, 0, 0]; return LANDBIO[e]; }
 // fração de lavoura e de vila num ponto de peça encaixada (com uma margem macia entre setores e na borda)
+// a emenda (capim entre uma roça e outra) só aparece onde o tipo muda: entre dois setores de lavoura da mesma peça, na divisa
+// com a peça vizinha que também é lavoura daquele lado, e no miolo de uma peça toda de lavoura, a roça continua (antes cada
+// setor tinha a sua faixa e a peça virava uma pizza fatiada, com um círculo de capim no meio)
+const tileQR = new Map(); let tileQRn = -1;
+const tileAtQR = (q, r) => { if (tileQRn !== TILES.length) { tileQR.clear(); for (const u of TILES) if (u.q != null) tileQR.set(u.q * 1000 + u.r, u); tileQRn = TILES.length; } return tileQR.get(q * 1000 + r); };
+const edgeType = (t, d) => t.e ? (t.e[d] === 'A' ? landOf(t) : t.e[d]) : null;
 export function sectorWeight(x, z, type) { for (const t of TILES) { if (!t.e || !inHex(x, z, t.c, 1.0001)) continue; if (sectorType(t, x, z) !== type) return 0;
-    const a = Math.atan2(z - t.c[1], x - t.c[0]), d = sectorOf(t, x, z), da = Math.abs(Math.atan2(Math.sin(a - edgeAng(d)), Math.cos(a - edgeAng(d)))), rr = Math.hypot(x - t.c[0], z - t.c[1]);
-    return smooth(0.3, 1.6, hexEdgeDist(x, z, t.c)) * smooth(Math.PI / 6, Math.PI / 6 - 0.12, da) * smooth(1.5, 3.5, rr); } return 0; }
+    const a = Math.atan2(z - t.c[1], x - t.c[0]), d = sectorOf(t, x, z), off = Math.atan2(Math.sin(a - edgeAng(d)), Math.cos(a - edgeAng(d))), da = Math.abs(off), rr = Math.hypot(x - t.c[0], z - t.c[1]);
+    const side = off > 0 ? (d + 5) % 6 : (d + 1) % 6, nb = tileAtQR(t.q + DIRS[d][0], t.r + DIRS[d][1]);
+    const kSide = edgeType(t, side) === type ? 1 : smooth(Math.PI / 6, Math.PI / 6 - 0.12, da);
+    const kEdge = nb && nb.e && edgeType(nb, (d + 3) % 6) === type ? 1 : smooth(0.3, 1.6, hexEdgeDist(x, z, t.c));
+    const kMid = t.e.every((_, i) => edgeType(t, i) === type) ? 1 : smooth(1.5, 3.5, rr);
+    return kEdge * kSide * kMid; } return 0; }
 // distância (m) de um ponto à borda do hexágono de centro c (positiva dentro)
 export function hexEdgeDist(x, z, c) { const dx = Math.abs(x - c[0]), dz = Math.abs(z - c[1]); return R * 0.866 - Math.max(dx, dx * 0.5 + dz * 0.866); }
 export const inAnyTile = (x, z, k = 1) => TILES.some(t => inHex(x, z, t.c, k));

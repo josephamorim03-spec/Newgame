@@ -1092,7 +1092,7 @@ function grassLod() { const qk = [1, 0.65, 0.4][Q]; for (const m of grass.childr
 // ---------- qualidade automática: o aparelho que sofre (menos de ~24 quadros por segundo por uns segundos) desce um degrau;
 // o que sobra folga (mais de ~50) sobe. 0 = cheia, 1 = média (capim 65%, sombra 1024, reflexo menor, pano só perto),
 // 2 = leve (capim 40%, sombra 768, reflexo do céu só, bichos pequenos a cada 2 quadros, pano só bem perto)
-let Q = mobile ? 1 : 0, qSlow = 0, qFast = 0;
+let Q = mobile ? 1 : 0, qSlow = 0, qFast = 0, qAuto = true;   // qAuto: o degrau se ajusta sozinho (o menu de ajustes pode fixar um)
 window.__Q = () => Q;
 function applyQuality() { window.__Qv = Q;
   scene.traverse(o => { if (o.isInstancedMesh && ['milho', 'girassol', 'mandioca'].includes(o.userData.regua)) o.castShadow = Q === 0 && !mobile; });   /* lavoura sem sombra nos degraus mais leves */ const sz = [mobile ? 1536 : 2048, 1024, 768][Q]; if (sun.shadow.mapSize.x !== sz) { sun.shadow.mapSize.set(sz, sz); if (sun.shadow.map) { sun.shadow.map.dispose(); sun.shadow.map = null; } }
@@ -1137,6 +1137,7 @@ const EDGES0 = { rio: 'AGGGGG', mata: 'ABBABB', cachoeira: 'ABBAGG', pasto: 'GGG
 // o jogo: núcleo v5 (o rio é o orçamento, ../../nucleo/regras.js); ?jogo=v3 volta às regras antigas (game3d.js)
 const board = (new URLSearchParams(location.search).get('jogo') === 'v3' ? buildBoard : buildBoard5)({ scene, camera, dom: renderer.domElement, R, TILES, hexCenter, heightAt, waterDist, inHex, edgeMid, DIRS, sectorType, PATHS, addRiver, ST, CENTER, gente,
   edgesOf: t => EDGES0[t.kind].split(''), props, groundFor, waterFor: t => waterMeshFor([t], false), fillField, grassFor, place, makeTree, makeTermite, makeBuriti, plant: t => plantTile(t, floraCtx), fieldAt, blocked, mobile, mergeTrees, buildNear, syncCollision, buildSpot,
+  quality: { get: () => qAuto ? 'auto' : Q, set: v => { if (v === 'auto') { qAuto = true; return; } qAuto = false; v = Math.max(0, Math.min(2, v | 0)); if (v !== Q) { Q = v; applyQuality(); } } },
   // uma entrada nova (casa da vila que cresceu) entra na rede de caminhos; o chão das peças que a trilha toca e o capim de cima dela são refeitos
   connectPath: (p, w, zone, obs) => { const b = connectPath(p, w, zone, obs); if (!b) return null; const cx = (b[0] + b[2]) / 2, cz = (b[1] + b[3]) / 2, hx = (b[2] - b[0]) / 2 + R + 1, hz = (b[3] - b[1]) / 2 + R + 1;
     for (const t of TILES) if (t.gm && Math.abs(t.c[0] - cx) < hx && Math.abs(t.c[1] - cz) < hz) groundFor(t); fillField(b[0] - 1, b[1] - 1, b[2] + 1, b[3] + 1); return b; } });
@@ -1174,7 +1175,8 @@ function frame() { renderer.info.reset();   // a contagem soma o quadro inteiro 
   // quadros por segundo medidos no relógio de verdade (o dt do jogo é limitado a 0,1 s e enganava quando o aparelho sofria)
   const now = performance.now(); fpsN++; fpsT = (now - (fpsT0 || now)) / 1000; if (!fpsT0) fpsT0 = now; if (fpsT > 1) { const fps = fpsN / fpsT; fpsT0 = now; $('info').textContent = `${fmtH(ST.hour)} · ${ST.seca ? 'Seca' : 'Águas'} · vento ${c.base.toFixed(1)} m/s · ${c.Rr > 0.2 ? `chuva ${c.Rr.toFixed(0)} mm/h` : 'sem chuva'} · ${fps.toFixed(0)} qps`;
     $('hora').value = ST.hour;
-    if (fps < 24) { qFast = 0; if (++qSlow >= 3) { qSlow = 0; if (Q < 2) { Q++; applyQuality(); } else if (dpr > 1) { dpr = Math.max(1, dpr - 0.25); renderer.setPixelRatio(dpr); resize(); } } }
+    if (!qAuto) { qSlow = 0; qFast = 0; }
+    else if (fps < 24) { qFast = 0; if (++qSlow >= 3) { qSlow = 0; if (Q < 2) { Q++; applyQuality(); } else if (dpr > 1) { dpr = Math.max(1, dpr - 0.25); renderer.setPixelRatio(dpr); resize(); } } }
     else if (fps > 50) { qSlow = 0; if (++qFast >= 6) { qFast = 0; if (dpr < Math.min(devicePixelRatio || 1, mobile ? 1.6 : 2)) { dpr = Math.min(devicePixelRatio || 1, dpr + 0.25); renderer.setPixelRatio(dpr); resize(); } else if (Q > 0) { Q--; applyQuality(); } } }
     else { qSlow = 0; qFast = 0; }
     fpsN = 0; fpsT = 0; }

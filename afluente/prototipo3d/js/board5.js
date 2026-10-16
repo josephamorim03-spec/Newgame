@@ -12,6 +12,7 @@ import * as THREE from 'three';
 import { Game, rot, KQ, KR, K, PEDIDOS, vazao, nbk, opp, NOME } from '../../nucleo/regras.js';
 import { toon, U } from './mat.js';
 import { createSom } from './som.js';
+import { createMenu } from './menu5.js';
 
 const COL = { A: '#3f8fc0', B: '#2f6a2a', C: '#d9b04a', V: '#c0583a', G: '#8cbf4a' };
 const TEMA = { roca: '🌾 Roça', mata: '🌳 Mata', rio: '💧 Rio', vila: '🏠 Vila' };
@@ -20,13 +21,21 @@ const rnd = (() => { let a = 1618033; return () => { a = a + 0x6D2B79F5 | 0; let
 export function buildBoard5(api) {
   const { scene, camera, dom, R, TILES, hexCenter, heightAt, waterDist, inHex, edgeMid, DIRS, sectorType, PATHS, addRiver, ST } = api;
   const start = TILES.map(t => ({ q: t.q, r: t.r, e: api.edgesOf(t), src: t.kind === 'rio' }));
-  const seed = new URLSearchParams(location.search).get('vale') || ('v5-' + new Date().toISOString().slice(0, 10));
+  // ---------- a partida salva (no aparelho): o sorteio do vale e a lista de jogadas; reabrir refaz o vale jogada por jogada
+  // (o núcleo é determinístico: o mesmo sorteio com as mesmas jogadas dá o mesmo vale)
+  const SAVE = 'afluente:v5:partida', REC = 'afluente:v5:recordes', PREF = 'afluente:v5:ajustes';
+  const ler = k => { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch (e) { return null; } }, gravar = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
+  const hj = new Date(), DIARIO = `v5-${hj.getFullYear()}-${String(hj.getMonth() + 1).padStart(2, '0')}-${String(hj.getDate()).padStart(2, '0')}`,   /* o dia daqui (em UTC o vale do dia virava às 21 h no Brasil) */ urlVale = new URLSearchParams(location.search).get('vale');
+  let salva = ler(SAVE); if (salva && (salva.v !== 1 || salva.over || !Array.isArray(salva.acts))) salva = null;
+  const seed = urlVale || (salva ? salva.seed : DIARIO), retoma = salva && salva.seed === seed && salva.acts.length ? salva.acts : null;
+  const acts = [];   // ['p', casa, lados] colocou · ['s'] passou · ['c', i] escolheu o pacote i
   const game = Game({ seed, start });
   const S = game.S, groundY = (x, z) => Math.max(heightAt(x, z), -0.4);
 
   // ---------- juice: som sintetizado na hora (marimba, água, baque), vibração do celular, tremor da câmera e confete
   const som = createSom(), SFX = som.sfx;
-  const buzz = p => { try { if (navigator.vibrate) navigator.vibrate(p); } catch (e) {} };
+  const pref = Object.assign({ vib: true, q: 'auto', giro: false }, ler(PREF) || {});
+  const buzz = p => { if (!pref.vib) return; try { if (navigator.vibrate) navigator.vibrate(p); } catch (e) {} };
   let shakeT = 0, shakeD = 0.3, shakeA = 0; const shake = (a, d = 0.3) => { shakeA = a; shakeD = d; shakeT = d; };
   // confete (flores e folhas na vila que cresce, gotas no olho-d'água): sobe, cai devagar balançando e some
   const confTex = (() => { const cv = document.createElement('canvas'); cv.width = cv.height = 32; const g = cv.getContext('2d'); g.fillStyle = '#fff'; g.beginPath(); g.ellipse(16, 16, 14, 8, 0, 0, 7); g.fill(); return new THREE.CanvasTexture(cv); })();
@@ -60,7 +69,7 @@ export function buildBoard5(api) {
   const sb = document.createElement('button'); sb.type = 'button'; sb.id = 'somBtn'; const somTxt = () => { sb.innerHTML = som.on ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor"/><path d="M15.5 9a4 4 0 0 1 0 6"/><path d="M18.5 6.5a7.5 7.5 0 0 1 0 11"/></svg>' : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor"/><path d="M16 9.5l5 5"/><path d="M21 9.5l-5 5"/></svg>'; sb.setAttribute('aria-label', som.on ? 'Desligar o som' : 'Ligar o som'); }; somTxt();
   sb.onclick = () => { som.setOn(!som.on); somTxt(); if (som.on) setTimeout(SFX.sel, 60); }; document.body.appendChild(sb);
   const fm = document.createElement('div'); fm.id = 'fim5'; fm.hidden = true; fm.setAttribute('role', 'dialog'); fm.setAttribute('aria-modal', 'true');
-  fm.innerHTML = '<div class="folha"><div class="ic">🌅</div><h2>O vale acolheu</h2><div class="num" id="fimN">0</div><p>pessoas</p><p id="fimS"></p><button type="button" id="fimJ">Jogar outro vale</button></div>'; document.body.appendChild(fm);
+  fm.innerHTML = '<div class="folha"><div class="ic">🌅</div><h2>O vale acolheu</h2><div class="num" id="fimN">0</div><p>pessoas</p><p id="fimS"></p><p id="fimR"></p><button type="button" id="fimJ">Jogar outro vale</button><button type="button" id="fimM" class="m2">Menu</button></div>'; document.body.appendChild(fm);
   let hsI = 0; const KEY = 'afluente:v5:historia';
   function hsShow(i) { if (i) SFX.page(); hsI = i; const [ic, t, x] = HIST[i]; $('hsI').textContent = ic; $('hsT').textContent = t; $('hsP').textContent = x;
     $('hsD').innerHTML = HIST.map((_, j) => `<i class="${j === i ? 'on' : ''}"></i>`).join(''); $('hsIr').textContent = i < HIST.length - 1 ? 'Continuar' : 'Começar'; hs.hidden = false; }
@@ -101,7 +110,7 @@ export function buildBoard5(api) {
     #fim5{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(15,35,35,.35);z-index:25}#fim5[hidden]{display:none}
     #fim5 .folha{width:100%;max-width:380px;text-align:center;background:var(--paper);border-radius:26px;padding:22px 18px 18px;box-shadow:0 10px 34px rgba(0,0,0,.3);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
     #fim5 .ic{font-size:40px}#fim5 h2{margin:4px 0 0;font:800 22px "Baloo 2",system-ui}#fim5 .num{font:800 64px/1.05 "Baloo 2",system-ui}#fim5 p{margin:2px 0 8px;font:700 15px/1.4 Nunito,system-ui}
-    #fim5 button{margin-top:8px;border:0;border-radius:999px;background:var(--ink);color:#fff;font:800 17px "Baloo 2",system-ui;padding:12px 24px;min-height:48px}
+    #fim5 button{margin-top:8px;border:0;border-radius:999px;background:var(--ink);color:#fff;font:800 17px "Baloo 2",system-ui;padding:12px 24px;min-height:48px}#fim5 button.m2{background:none;color:var(--ink);margin-left:6px}#fimR{font-size:14px;opacity:.8}
     #pacote5{position:fixed;inset:0;display:flex;align-items:flex-end;justify-content:center;background:rgba(20,40,40,.35);z-index:20;padding:12px}
     #pacote5[hidden]{display:none}
     #pacote5 .folha{width:100%;max-width:460px;background:var(--paper);border-radius:22px;padding:16px;box-shadow:0 8px 30px rgba(0,0,0,.25);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
@@ -280,9 +289,9 @@ export function buildBoard5(api) {
   $('placar').onclick = () => { SFX.page(); say(placarInfo, 6); };
   $('mao').onclick = () => { if (sel) turn(1); else { SFX.page(); say(`Esta é a peça na mão, virada como vai ficar no mapa. Ela cabe em ${fitN} casa${fitN === 1 ? '' : 's'} com faixa branca (dourada: ajuda uma vila). Toque numa delas; toque de novo (ou na peça) para girar.`, 6); } };
   addEventListener('keydown', e => { if (e.key === 'r' || e.key === 'R') turn(1); if (e.key === 'Enter' && sel) commit(); });
-  const novoVale = () => { location.search = '?vale=' + Date.now().toString(36); };
+  const novoVale = () => { try { localStorage.removeItem(SAVE); } catch (e) {} location.search = '?vale=' + Date.now().toString(36); };
   $('colocar').onclick = () => { if (S.over) { showEnd(); return; } commit(); };
-  function commit() { if (!sel || sel.bad || S.over) return; const { k, q, r } = sel, o = sel.opts[sel.i]; const res = game.place(k, o.e); if (!res) return; sel = null;
+  function commit() { if (!sel || sel.bad || S.over) return; const { k, q, r } = sel, o = sel.opts[sel.i]; const res = game.place(k, o.e); if (!res) return; sel = null; acts.push(['p', k, o.e.join('')]);
     const mq = ghost.userData.mq, c0 = hexCenter(q, r); follow(c0);
     const land = () => { grow(q, r, o.e); dust(c0); SFX.thud(); buzz(18); shake(0.9, 0.28);
       let dl = 0.25; for (const x of res.ev) { const kc = x.k != null ? hexCenter(KQ(x.k), KR(x.k)) : c0;
@@ -296,12 +305,12 @@ export function buildBoard5(api) {
     else land();
     ghost.clear(); gKey = '';
     const txt = res.ev.map(x => x.txt); if (txt.length) say(txt.join(' · '), 5);
-    passIfStuck();
+    passIfStuck(); salvar();
     drawSlots(); refresh(); if (S.escolha.length) setTimeout(openPack, 1300); }
 
   // nenhuma casa serve para a peça na mão: ela passa (o relógio das estações anda junto); repete se a próxima também não servir
   function passIfStuck() { let n = 0; const msgs = [];
-    while (!S.over && !S.escolha.length && !game.fits() && n++ < 30) { const r = game.skip(); msgs.push('a peça não cabia em lugar nenhum e passou'); if (r) for (const x of r.ev) { msgs.push(x.txt); if (x.t === 'pedido') { chegam(x.k, growVillage(x.k), x.lvl >= 2 ? 2 : 1); SFX.grow(); } } }
+    while (!S.over && !S.escolha.length && !game.fits() && n++ < 30) { const r = game.skip(); acts.push(['s']); msgs.push('a peça não cabia em lugar nenhum e passou'); if (r) for (const x of r.ev) { msgs.push(x.txt); if (x.t === 'pedido') { chegam(x.k, growVillage(x.k), x.lvl >= 2 ? 2 : 1); SFX.grow(); } } }
     if (msgs.length) { say(msgs.join(' · ')); SFX.no(); }
     if (S.escolha.length && n) setTimeout(openPack, 600); if (S.over && n) setTimeout(showEnd, 900); }
   // ---------- "A vila cresceu!": dois pacotes; o escolhido entra logo depois da peça na mão
@@ -309,14 +318,14 @@ export function buildBoard5(api) {
     const box = $('pkO'); box.innerHTML = '';
     ch.forEach((p, i) => { const b = document.createElement('button'); b.type = 'button'; b.innerHTML = `<span>${TEMA[p.tema] || p.tema}</span><span class="t"></span>`;
       for (const t of p.tiles) { const c = document.createElement('canvas'); c.width = c.height = 80; drawThumb(c, view(t.e)); b.querySelector('.t').appendChild(c); }
-      b.onclick = () => { game.choose(i); SFX.pack(); buzz(10); pk.hidden = true; if (S.over && !S.escolha.length) setTimeout(showEnd, 600); say(`${TEMA[p.tema] || p.tema}: 3 peças a caminho`); passIfStuck(); drawSlots(); refresh(); if (S.escolha.length) setTimeout(openPack, 300); };
+      b.onclick = () => { game.choose(i); acts.push(['c', i]); salvar(); SFX.pack(); buzz(10); pk.hidden = true; if (S.over && !S.escolha.length) setTimeout(showEnd, 600); say(`${TEMA[p.tema] || p.tema}: 3 peças a caminho`); passIfStuck(); drawSlots(); refresh(); if (S.escolha.length) setTimeout(openPack, 300); };
       box.appendChild(b); });
     pk.hidden = false; SFX.open(); }
 
   // ---------- toque no mapa (sem confundir com arrastar)
   let down = null; const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
   dom.addEventListener('pointerdown', e => { down = { x: e.clientX, y: e.clientY, t: e.timeStamp }; });
-  dom.addEventListener('pointerup', e => { if (!down) return; const mv = Math.hypot(e.clientX - down.x, e.clientY - down.y), dt = e.timeStamp - down.t; down = null; if (mv > 8 || dt > 400) return;
+  dom.addEventListener('pointerup', e => { if (!down) return; if (menu.aberto()) { down = null; return; } const mv = Math.hypot(e.clientX - down.x, e.clientY - down.y), dt = e.timeStamp - down.t; down = null; if (mv > 8 || dt > 400) return;
     const rc = dom.getBoundingClientRect(); ndc.set((e.clientX - rc.left) / rc.width * 2 - 1, -(e.clientY - rc.top) / rc.height * 2 + 1); ray.setFromCamera(ndc, camera);
     ray.camera = camera; const th = ray.intersectObjects(tags.children, false).find(h => h.object.userData.info); if (th) { SFX.page(); say(th.object.userData.info, 6); return; }
     const hit = ray.intersectObjects(slotsG.children.filter(o => o.isMesh), false)[0]; if (hit) { const s = hit.object.userData.slot; if (sel && sel.k === s.k) turn(1); else select(s.k); } });
@@ -341,9 +350,10 @@ export function buildBoard5(api) {
         if (ty === 'A') { for (let r = 0.2; r < 0.95; r += 0.05) { const [x, z] = at(r), w = waterDist(x, z); if (w > 0.7 && w < 1.5) { out.push({ x, z, t: 'A', face: towardW(x, z) }); break; } } }
         else if ('CGBV'.includes(ty)) for (const r of [0.5, 0.4, 0.62, 0.3]) { const [x, z] = at(r); if (waterDist(x, z) > 1.5 && !api.blocked(x, z, 0.7)) { out.push({ x, z, t: ty }); break; } } } }
     return out; }
-  function chegam(id, house, n) { const g = api.gente; if (!g || !g.arrive) return; const v = S.vilas.get(id) || [...S.vilas.values()].find(x => x.tiles.has(id)); if (!v) return;
+  function chegam(id, house, n, perto = false) { const g = api.gente; if (!g || !g.arrive) return; const v = S.vilas.get(id) || [...S.vilas.values()].find(x => x.tiles.has(id)); if (!v) return;
     const c = hexCenter(KQ(v.id), KR(v.id)), C0 = api.CENTER || [0, 0]; let dx = c[0] - C0[0], dz = c[1] - C0[1]; const L = Math.hypot(dx, dz) || 1; dx /= L; dz /= L;
     const spots = vilaSpots(v), door = house ? null : [c[0] + 2, c[1] + 2];
+    if (perto) { const h = house, at = h ? [h.p[0] + Math.sin(h.rot) * (h.d / 2 + 1.4), h.p[1] + Math.cos(h.rot) * (h.d / 2 + 1.4)] : door; for (let i = 0; i < n; i++) g.arrive({ from: [at[0] + i * 0.8, at[1]], house, door, spots }); return; }   // reabrindo o vale: já moram lá
     for (let i = 0; i < n; i++) setTimeout(() => { const j = (i - (n - 1) / 2) * 2.2, from = [c[0] + dx * R * 2.4 - dz * j, c[1] + dz * R * 2.4 + dx * j]; g.arrive({ from, house, door, spots }); }, 1200 + i * 1400); }
 
   // ---------- a peça brota no vale (o mesmo do board3d.js)
@@ -355,10 +365,13 @@ export function buildBoard5(api) {
     if (A.length === 1) { const m0 = edgeMid(c, A[0], 0.9), end = [c[0] + (m0[0] - c[0]) * 0.25, c[1] + (m0[1] - c[1]) * 0.25]; addRiver(curvePts(m0, end, [(m0[0] + end[0]) / 2 + (rnd() - 0.5) * 3, (m0[1] + end[1]) / 2 + (rnd() - 0.5) * 3]), 2.2); }
     else if (A.length === 2) { const a = edgeMid(c, A[0], 0.9), b = edgeMid(c, A[1], 0.9); addRiver(curvePts(a, b, j), 2.6); }
     else for (const d of A) { const a = edgeMid(c, d, 0.9); addRiver(curvePts(a, j, [(a[0] + j[0]) / 2 + (rnd() - 0.5) * 3, (a[1] + j[1]) / 2 + (rnd() - 0.5) * 3]), 2.4); }
-    for (let d = 0; d < 6; d++) if (e[d] === 'V') { const a = -d * Math.PI / 3 + (rnd() - 0.5) * 0.3, k = R * (0.5 + rnd() * 0.1), p = [c[0] + Math.cos(a) * k, c[1] + Math.sin(a) * k];
-      if (waterDist(p[0], p[1]) < 6 || api.blocked(p[0], p[1], 1.0) || (api.buildSpot && !api.buildSpot(p[0], p[1], 4.2))) continue; addHouseAt(j, p); }
+    // uma casa por lado de vila: procura um lugar no setor (vários ângulos e distâncias) longe da água e do que já tem ali,
+    // para a peça de vila nunca ficar sem casa (antes era uma tentativa só, e às vezes não nascia nenhuma)
+    let casas = 0; for (let d = 0; d < 6; d++) if (e[d] === 'V') for (let n = 0; n < 10; n++) { const a = -d * Math.PI / 3 + (rnd() - 0.5) * (0.3 + n * 0.06), k = R * (0.5 + (rnd() - 0.5) * 0.12 * (1 + n * 0.5)), p = [c[0] + Math.cos(a) * k, c[1] + Math.sin(a) * k];
+      if (waterDist(p[0], p[1]) < (n < 6 ? 6 : 4) || api.blocked(p[0], p[1], 1.0) || (api.buildSpot && !api.buildSpot(p[0], p[1], 4.2))) continue; addHouseAt(j, p); casas++; break; }
     const gm = api.groundFor(t);
-    for (const d of A) { const n = TILES.find(u => u.q === q + DIRS[d][0] && u.r === r + DIRS[d][1]); if (n && n.gm) api.groundFor(n); }
+    for (let d = 0; d < 6; d++) { const n = TILES.find(u => u.q === q + DIRS[d][0] && u.r === r + DIRS[d][1]); if (!n || !n.gm) continue;
+      const ne = n.e || (api.edgesOf ? api.edgesOf(n) : null); if (e[d] === 'A' || (e[d] === 'C' && ne && ne[(d + 3) % 6] === 'C')) api.groundFor(n); }   // rio que entra no vizinho; lavoura que continua na do vizinho (some a emenda)
     const wm = A.length ? api.waterFor(t) : null; api.fillField(c[0] - R - 2, c[1] - R - 2, c[0] + R + 2, c[1] + R + 2); const gr = api.grassFor(t);
     const inSector = (x, z, type) => inHex(x, z, c, 0.92) && sectorType(t, x, z) === type;
     api.plant(t);   /* árvores, moitas, cupinzeiros e pedras pelo motor de flora (flora.js): o setor de cada borda diz o que nasce, a água traz o buritizal */
@@ -377,7 +390,7 @@ export function buildBoard5(api) {
     growing.push({ items, wm, t: 0, c });
     ring(c); }
   // a câmera desliza até perto da peça posta (60% do caminho, em ~1 s), para o que acontece ficar à vista
-  let camGo = null, lastCamK = 0;
+  let camGo = null, lastCamK = 0, fimContado = false;
   function follow(c) { const gc = window.__previa && window.__previa.gameCam; if (!gc) return; const f = gc.state; camGo = { gc, x: f.fx + (c[0] - f.fx) * 0.6, z: f.fz + (c[1] - f.fz) * 0.6, t: 0 }; }
   const rings = [];
   function ring(c) { const m = new THREE.Mesh(new THREE.RingGeometry(0.9, 1, 48).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0xfff2c0, transparent: true, opacity: 0.8, depthWrite: false }));
@@ -390,18 +403,50 @@ export function buildBoard5(api) {
   // o fim: quantas pessoas o vale acolheu (contando), as vilas, e um vale novo
   function showEnd() { if (!fm.hidden) return; const vs = [...S.vilas.values()], olhos = [...game.board.values()].filter(t => t.src && !t.nasc).length, mx = vs.reduce((a, v) => Math.max(a, v.lvl), 0);
     $('fimS').textContent = `${vs.length} ${vs.length === 1 ? 'vila' : 'vilas'}, a maior no nível ${mx}${olhos ? ` · ${olhos} ${olhos === 1 ? "olho-d'água ligado" : "olhos-d'água ligados"}` : ''}.`;
+    { const r = Object.assign({ best: 0, partidas: 0, dia: {} }, ler(REC) || {}); if (!fimContado) { fimContado = true; const novo = S.gente > r.best; r.partidas++; r.best = Math.max(r.best, S.gente);
+        if (seed === DIARIO) r.dia[seed] = Math.max(r.dia[seed] || 0, S.gente); gravar(REC, r); try { localStorage.removeItem(SAVE); } catch (e) {}
+        $('fimR').textContent = novo && r.partidas > 1 ? '🏆 Novo recorde!' : `🏆 Recorde: ${r.best} pessoas`; } }
     fm.hidden = false; SFX.end(); buzz([30, 60, 30, 60, 60]); const gc = window.__previa && window.__previa.gameCam; if (gc) burst([gc.state.fx, gc.state.fz], FLORES, 60, 24, 28, 14);
     let n = 0; const el = $('fimN'), tgt = S.gente, st = Math.max(1, Math.ceil(tgt / 40)); const tick = () => { n = Math.min(tgt, n + st); el.textContent = n; if (n < tgt) setTimeout(tick, 35); }; tick(); }
 
-  $('hsIr').onclick = () => { if (hsI < HIST.length - 1) hsShow(hsI + 1); else hsClose(); }; $('hsPular').onclick = hsClose; hb.onclick = () => hsShow(0);
+  $('hsIr').onclick = () => { if (hsI < HIST.length - 1) hsShow(hsI + 1); else hsClose(); }; $('hsPular').onclick = hsClose; hb.onclick = () => hsShow(0); hb.hidden = true; hb.style.display = 'none';   // a história fica no menu
   addEventListener('keydown', e => { if (!hs.hidden && e.key === 'Escape') hsClose(); });
   { const mp = document.querySelector('.marca p'); if (mp) mp.textContent = 'O vale da nascente'; }
-  drawSlots(); refresh(); setTimeout(() => say('Toque numa casa marcada para pôr a peça.', 5), 1500);
+  // ---------- salvar, reabrir, passar a peça, o menu
+  function salvar() { if (S.over) return; gravar(SAVE, { v: 1, seed, acts, gente: S.gente, pilha: S.left, jogadas: acts.filter(a => a[0] !== 'c').length, over: S.over, t: Date.now() }); }
+  // (a cada jogada a tela pede a peça na mão e a próxima, e é isso que sorteia a seguinte: aqui também, na mesma ordem)
+  function reabre(list) { for (const a of list) { if (S.over) break; let ev = null; game.next();
+      if (a[0] === 'p') { const k = a[1], e = a[2].split(''), h = game.hand().e; if (![0, 1, 2, 3, 4, 5].some(r => rot(h, r).join('') === a[2])) break;   // a jogada salva não é a peça da mão: para aqui
+        const res = game.place(k, e); if (!res) break; grow(KQ(k), KR(k), e); ev = res.ev; }
+      else if (a[0] === 's') { const r = game.skip(); if (!r) break; ev = r.ev; } else if (a[0] === 'c') game.choose(a[1]);
+      if (ev) for (const x of ev) if (x.t === 'pedido') chegam(x.k, growVillage(x.k), x.lvl >= 2 ? 2 : 1, true);
+      acts.push(a); game.next(); }
+    for (const g of growing) { for (const o of g.items) o.scale.y = o.userData.sy; if (g.wm) g.wm.visible = true; } growing.length = 0;   // o vale já está pronto, sem brotar de novo
+    for (const r of rings) scene.remove(r.m); rings.length = 0; shownP = S.gente; }
+  function passar() { if (S.over || S.escolha.length) return; sel = null; const r = game.skip(); if (!r) return; acts.push(['s']); SFX.no(); const msgs = ['A peça passou'];
+    for (const x of r.ev) { msgs.push(x.txt); if (x.t === 'pedido') { chegam(x.k, growVillage(x.k), x.lvl >= 2 ? 2 : 1); SFX.grow(); } }
+    say(msgs.join(' · ')); passIfStuck(); salvar(); drawSlots(); refresh(); if (S.escolha.length) setTimeout(openPack, 600); if (S.over && !S.escolha.length) setTimeout(showEnd, 900); }
+  const nomeVale = sd => sd === DIARIO ? 'vale do dia' : sd.startsWith('v5-') ? `vale de ${sd.slice(11, 13)}/${sd.slice(8, 10)}` : `vale ${sd.slice(-4)}`;
+  const vaPara = sd => { try { localStorage.removeItem(SAVE); } catch (e) {} location.search = '?vale=' + encodeURIComponent(sd); };
+  const quality = api.quality;
+  const aplica = () => { if (quality) quality.set(pref.q); const gz = document.getElementById('giro'); if (gz) gz.hidden = !pref.giro; gravar(PREF, pref); };
+  const menu = createMenu({
+    som: n => SFX[n] && SFX[n](),
+    estado: () => { const r = ler(REC) || {}, sv = acts.length && !S.over ? { seed, nome: nomeVale(seed), jogadas: acts.filter(a => a[0] !== 'c').length, gente: S.gente } : null;
+      return { salva: sv, fim: S.over ? String(S.gente) : '', diario: DIARIO, diarioFeito: r.dia && r.dia[DIARIO], recorde: r.best || 0, partidas: r.partidas || 0,
+        atual: { seed, nome: nomeVale(seed), jogadas: acts.filter(a => a[0] !== 'c').length, pilha: S.left, podePassar: !S.over && !S.escolha.length } }; },
+    diario: () => vaPara(DIARIO), novo: () => vaPara(Date.now().toString(36)), recomecar: () => vaPara(seed), passar, historia: () => hsShow(0),
+    ajustes: () => ({ som: som.on, vib: pref.vib, q: pref.q, giro: pref.giro }),
+    ajustar: (k, v) => { if (k === 'som') { som.setOn(v); somTxt(); } else { pref[k] = v; aplica(); if (k === 'vib' && v) buzz(12); } },
+    fechou: () => { if (!acts.length && !seen) hsShow(0); else if (!acts.length) say('Toque numa casa com faixa branca para pôr a peça.', 5); } });
+  aplica();
+  if (retoma) reabre(retoma);
+  drawSlots(); refresh();
   // o título some depois de uns segundos (o vale fica sozinho na tela)
   setTimeout(() => { const m = document.querySelector('.marca'); if (m) { m.style.transition = 'opacity 1.6s ease'; m.style.opacity = '0'; } }, 6000);
-  $('fimJ').onclick = novoVale;
-  if (!seen) hsShow(0);
-  return { game, select, turn, commit, sel: () => sel, update(dt) {
+  $('fimJ').onclick = novoVale; $('fimM').onclick = () => { fm.hidden = true; menu.inicio(); };
+  menu.inicio();   // a tela de início, por cima do vale já montado
+  return { game, select, turn, commit, sel: () => sel, teste: { grow, reabre }, update(dt) {
     som.ambient(dt, { day: U.uDay.value, rain: U.uRain.value, seca: game.isSeca(), water: ambW });
     for (let i = growing.length - 1; i >= 0; i--) { const g = growing[i]; g.t += dt; const k = Math.min(1, g.t / 1.4), e = 1 - Math.pow(1 - k, 3), sp = 1 - Math.exp(-6 * g.t) * Math.cos(11 * g.t);
       for (const o of g.items) o.scale.y = Math.max(0.02, o.userData.sy * (o.userData.soft || k >= 1 ? e : sp)); if (g.wm && k > 0.45) g.wm.visible = true; if (k >= 1) growing.splice(i, 1); }
