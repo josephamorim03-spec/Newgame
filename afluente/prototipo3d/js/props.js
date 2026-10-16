@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from './addons/BufferGeometryUtils.js';
 import { NOISE, WIND } from './glsl.js';
 import { U, HEAD, LIGHT_END, shared, toon } from './mat.js';
-import { LAYOUT, heightAt, hexEdgeDist, blocked, inHex, waterLevelAt } from './world.js';
+import { LAYOUT, heightAt, hexEdgeDist, blocked, inHex, waterLevelAt, fbm } from './world.js';
 import { tag } from './regua.js';
 import { plasterTexture, roofTexture, plankTexture, stoneTexture, chitaTexture } from './textures.js';
 
@@ -438,17 +438,6 @@ export function buildProps(scene, { mobile = false } = {}) {
     const sacos = []; for (let k = 0; k < 5; k++) { const sm = new THREE.Mesh(sacoGeo(), sacoMat); sm.position.set(k < 3 ? (k - 1) * 0.5 : (k - 3.5) * 0.5, 0.26 + (k < 3 ? 0 : 0.24), (rnd() - 0.5) * 0.15); sm.rotation.y = (rnd() - 0.5) * 0.4; sm.castShadow = true; R.add(sm); sacos.push(sm); }
     R.traverse(o => { if (o.isMesh) { o.castShadow = o.receiveShadow = true; } }); R.position.set(Cr.ranchoP[0], heightAt(...Cr.ranchoP), Cr.ranchoP[1]); R.rotation.y = Cr.rot; scene.add(R); tag(R, 'rancho da ração');
     Cr.rancho3d = { sacos, sacoGeo, sacoMat }; }
-  // horta cercada de varas, com canteiros de terra e couves, alfaces e cebolinhas
-  { const Gd = LAYOUT.garden; fence(rectPts(Gd.p, Gd.w, Gd.d, Gd.rot), { name: 'cerca da horta', gate: Gd.gate, leaf: 'cancela', rails: [0.3, 0.6, 0.85], posts: 1.0, step: 1.0, color: 0xa89474 });
-    const beds = [], plants = [], c = Math.cos(Gd.rot), s = Math.sin(Gd.rot), y0 = heightAt(Gd.p[0], Gd.p[1]);
-    for (let b = 0; b < 3; b++) { const lx = -Gd.w / 2 + 0.95 + b * 1.55; beds.push(paint(box(1.0, 0.25, Gd.d - 1.0, lx, 0.05, 0, 1), col(0x6e4630)));
-      for (let k = 0; k < 6; k++) plants.push([lx + (rnd() - 0.5) * 0.4, -Gd.d / 2 + 0.85 + k * (Gd.d - 1.7) / 5, b]); }
-    const bm = new THREE.Mesh(merge(beds), woodMat); bm.receiveShadow = true;
-    const leaf = new THREE.IcosahedronGeometry(1, 1), lm = mat({ color: 0xffffff }), inst = new THREE.InstancedMesh(leaf, lm, plants.length), M = new THREE.Matrix4();
-    plants.forEach(([x, z, b], i) => { const r = b === 1 ? 0.2 : 0.26; M.compose(V3(x, 0.25 + r * 0.4, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(0, rnd() * 6, 0)), V3(r, r * (b === 1 ? 0.6 : 0.85), r)); inst.setMatrixAt(i, M);
-      inst.setColorAt(i, col([0x5f9a3a, 0x9ccb52, 0x4f8a5a][b]).multiplyScalar(0.85 + rnd() * 0.3)); });
-    inst.castShadow = inst.receiveShadow = true; const g = new THREE.Group(); g.add(bm, inst); g.position.set(Gd.p[0], y0, Gd.p[1]); g.rotation.y = Gd.rot; scene.add(g); }
-
   // ---------- roça: paiol de milho sobre esteios, fardos de feno, espantalho no milharal, carroça de boi e o aprisco das ovelhas
   const placeG = (g, P, rot, name, dy = 0) => { g.traverse(o => { if (o.isMesh) o.castShadow = o.receiveShadow = true; }); g.position.set(P[0], heightAt(P[0], P[1]) + dy, P[1]); g.rotation.y = rot || 0; scene.add(g); return tag(g, name); };
   { const Pa = LAYOUT.paiol, w = Pa.w, d = Pa.d, H0 = 0.7, H = H0 + 2.3, pitch = 0.45, ov = 0.45, rh = d / 2 * Math.tan(pitch), g = new THREE.Group(), wood = [], roof = [], fill = [];
@@ -504,6 +493,77 @@ export function buildProps(scene, { mobile = false } = {}) {
       vec3 dw=vec3(uWindDir.x,0.0,uWindDir.y)*bend+vec3(sin(uTime*7.0+position.x*9.0+ip.x),0.0,cos(uTime*6.0+position.z*9.0+ip.z))*0.015*hh*(0.3+q);
       transformed+=inverse(mat3(instanceMatrix))*dw;}`,
     frag: `{float l=dot(diffuseColor.rgb,vec3(0.3,0.5,0.2));diffuseColor.rgb=mix(diffuseColor.rgb,toLin(vec3(0.78,0.66,0.42))*(l*2.2+0.25),uSeca*${dry.toFixed(2)});}` });
+  // ---------- horta da vila, cercada de varas: corredores de terra batida entre canteiros de terra afofada (escura, úmida,
+  // com sulcos de plantio, torrões e palha seca por cima) contidos por tábuas velhas. Cada canteiro tem a sua cultura, com a
+  // forma dela: alface em roseta de folhas crespas, couve de folhas grandes azuladas num talo (as de baixo já colhidas),
+  // cebolinha em touceira, e o tomate envarado — estacas de bambu cruzadas em V, amarradas numa vara por cima, com os pés
+  // subindo por elas e os frutos do verde ao vermelho. Tudo balança com o vento do lugar e murcha na seca. Regador no canto.
+  { const Gd = LAYOUT.garden; fence(rectPts(Gd.p, Gd.w, Gd.d, Gd.rot), { name: 'cerca da horta', gate: Gd.gate, leaf: 'cancela', rails: [0.3, 0.6, 0.85], posts: 1.0, step: 1.0, color: 0xa89474 });
+    const c = Math.cos(Gd.rot), s = Math.sin(Gd.rot), y0 = heightAt(Gd.p[0], Gd.p[1]), wl = (lx, lz) => [Gd.p[0] + lx * c + lz * s, Gd.p[1] - lx * s + lz * c];
+    const yAt = (lx, lz) => heightAt(...wl(lx, lz)) - y0, g = new THREE.Group();
+    // cor por vértice, de um jeito só (folha: base escura, ponta clara, nervura central mais clara)
+    const tint = (geo, f) => { const q = geo.attributes.position, cl = new Float32Array(q.count * 3); for (let i = 0; i < q.count; i++) { const v = f(q.getX(i), q.getY(i), q.getZ(i)); cl[i * 3] = v.r; cl[i * 3 + 1] = v.g; cl[i * 3 + 2] = v.b; } geo.setAttribute('color', new THREE.BufferAttribute(cl, 3)); return geo; };
+    // uma folha: nasce na origem e cresce em +y, larga no meio, encurva para fora (+z) e tem a borda crespa
+    const leafG = (L, W, droop, ruffle, c0, c1, tilt, yaw, at) => { const geo = new THREE.PlaneGeometry(W, L, 4, 5).translate(0, L / 2, 0), q = geo.attributes.position;
+      for (let i = 0; i < q.count; i++) { const x = q.getX(i), y = q.getY(i), t = y / L, wv = Math.sin(Math.PI * Math.pow(Math.max(t, 0.001), 0.75)); q.setX(i, x * wv);
+        q.setZ(i, droop * t * t * L + Math.sin(x / W * 14 + t * 9) * ruffle * Math.abs(x) / W * 2 - Math.abs(x) * 0.25 * W); }   // em calha: a borda sobe um pouco
+      tint(geo, (x, y) => { const t = y / L, k = col(c0).lerp(col(c1), Math.min(1, t * 1.15)); return Math.abs(x) < W * 0.08 ? k.lerp(col(0xdfe8b0), 0.35) : k; });
+      geo.rotateX(tilt).rotateY(yaw).translate(...at); geo.computeVertexNormals(); return geo; };
+    // as culturas (geometria de um pé; cada pé é uma instância girada, um pouco maior ou menor e de tom próprio)
+    const alface = (() => { const parts = []; [[4, 0.085, 0.25, 0.07], [6, 0.12, 0.75, 0.09], [7, 0.14, 1.2, 0.11]].forEach(([n, L, tl, W], r) => { for (let k = 0; k < n; k++)
+        parts.push(leafG(L, W, 0.25 + r * 0.15, 0.012, r ? 0x5f9a2c : 0x8cc23e, r ? 0xb4dc5c : 0xd4ec8a, tl, k / n * 6.283 + r * 0.4, [0, 0.005 * r, 0])); });
+      return merge(parts, ['position', 'normal', 'color']); })();
+    const couve = (() => { const H = 0.34, parts = [tint(new THREE.CylinderGeometry(0.014, 0.02, H, 6).translate(0, H / 2, 0), () => col(0x8aa070))];
+      for (let k = 0; k < 4; k++) parts.push(tint(new THREE.CylinderGeometry(0.012, 0.012, 0.012, 6).translate(0, 0.06 + k * 0.06, 0), () => col(0x9ab088)));   // cicatriz das folhas já colhidas
+      for (let k = 0; k < 7; k++) { const y = H - 0.02 - (k % 3) * 0.035, a = k * 2.4, L = 0.26 + (k < 4 ? 0.04 : -0.04), tl = 0.55 + 0.35 * (k % 3);
+        parts.push(tint(new THREE.CylinderGeometry(0.005, 0.007, 0.08, 4).translate(0, 0.04, 0).rotateX(tl * 0.7).rotateY(a).translate(0, y, 0), () => col(0xa8c08a)));   // pecíolo
+        parts.push(leafG(L, 0.19, 0.35, 0.008, 0x3a6a52, 0x6a9a7a, tl, a, [Math.sin(a) * 0.05, y + 0.05, Math.cos(a) * 0.05])); }
+      return merge(parts, ['position', 'normal', 'color']); })();
+    const cebolinha = (() => { const parts = []; for (let k = 0; k < 13; k++) { const h = 0.22 + rnd() * 0.14, a = rnd() * 6.283, r = rnd() * 0.035, tl = 0.08 + rnd() * 0.22;
+        parts.push(tint(new THREE.CylinderGeometry(0.0025, 0.0055, h, 4, 3).translate(0, h / 2, 0).rotateX(tl).rotateY(a).translate(Math.cos(a) * r, 0, Math.sin(a) * r), (x, y) => col(0x2f6a26).lerp(col(0x7aac4a), y / h))); }
+      return merge(parts, ['position', 'normal', 'color']); })();
+    const tomate = (() => { const H = 1.15, parts = []; for (let k = 0; k < 9; k++) { const y = 0.12 + k * 0.11, a = k * 2.2;
+        parts.push(leafG(0.16, 0.09, 0.4, 0.006, 0x2e5a22, 0x5a8a3a, 0.9 + (k % 2) * 0.3, a, [0, y, 0])); parts.push(leafG(0.12, 0.07, 0.3, 0.006, 0x2e5a22, 0x5a8a3a, 1.1, a + 0.7, [0, y + 0.04, 0])); }
+      parts.push(tint(new THREE.CylinderGeometry(0.006, 0.009, H, 5).translate(0, H / 2, 0), () => col(0x5a7a3a)));   // o caule que sobe pela estaca
+      for (const [y, a, cc] of [[0.35, 0.5, 0xc8301e], [0.42, 2.6, 0xd8501e], [0.55, 4.4, 0x9ab04a], [0.62, 1.4, 0xe0701e], [0.78, 3.4, 0x7aa040], [0.3, 5.5, 0xb8281a]])
+        parts.push(tint(new THREE.SphereGeometry(0.03, 8, 6).scale(1, 0.85, 1).translate(Math.cos(a) * 0.06, y, Math.sin(a) * 0.06), (x, yy) => col(cc).multiplyScalar(0.85 + 0.3 * Math.max(0, yy - y + 0.03) / 0.06)));
+      return merge(parts, ['position', 'normal', 'color']); })();
+    // os canteiros: 1 m de largura, um palmo acima do corredor, com uma cabeceira livre perto do portão
+    const BW = 1.0, BL = Gd.d - 1.35, bz = 0.22, beds = [], boards = [], soilGeos = [], sets = { alface: [], couve: [], cebolinha: [], tomate: [] };
+    [-1.55, 0, 1.55].forEach((lx, b) => { const by = Math.min(yAt(lx, bz - BL / 2), yAt(lx, bz + BL / 2), yAt(lx, bz)), top = 0.17;
+      const sg = new THREE.BoxGeometry(BW - 0.06, 0.32, BL - 0.06, 8, 1, 20), q = sg.attributes.position;
+      for (let i = 0; i < q.count; i++) { if (q.getY(i) < 0) { q.setY(i, -0.15); continue; } const x = q.getX(i), z = q.getZ(i), ex = 1 - Math.pow(Math.abs(x) / (BW / 2), 2);
+        q.setY(i, top + 0.035 * ex + (fbm(x * 9 + b * 3, z * 9, 2) - 0.5) * 0.02); }   // abaulado, com torrões
+      sg.translate(lx, by, bz); soilGeos.push(sg);
+      for (const sx of [-1, 1]) boards.push(paint(box(0.035, 0.2, BL, lx + sx * BW / 2, by + 0.07, bz, 1).rotateZ(sx * 0.04), col(0x8a7a62).multiplyScalar(0.85 + rnd() * 0.25)));   // tábua de beirada, um pouco tombada
+      for (const sz of [-1, 1]) boards.push(paint(box(BW + 0.035, 0.2, 0.035, lx, by + 0.07, bz + sz * BL / 2, 1), col(0x7a6a52).multiplyScalar(0.85 + rnd() * 0.25)));
+      for (const sx of [-1, 1]) for (const sz of [-1, 1]) boards.push(paint(box(0.05, 0.3, 0.05, lx + sx * BW / 2, by + 0.07, bz + sz * BL / 2, 1), col(0x6a5a44)));   // piquetes nos cantos
+      const yTop = by + top + 0.03, put = (k, x, z, sc, tz = null) => sets[k].push([x, yTop, z, sc, tz]);
+      if (b === 0) for (let k = 0; k < 5; k++) put('couve', lx + (k % 2 ? 0.16 : -0.16), bz - BL / 2 + 0.3 + k * (BL - 0.6) / 4, 0.9 + rnd() * 0.25);
+      if (b === 1) { for (let k = 0; k < 7; k++) for (const sx of [-1, 1]) if (k < 5 || sx < 0) put('alface', lx + sx * 0.22 + (rnd() - 0.5) * 0.04, bz - BL / 2 + 0.22 + k * 0.33 + (sx > 0 ? 0.16 : 0), k === 0 ? 0.6 : 0.85 + rnd() * 0.3);   // uma fileira mais nova
+        for (let k = 0; k < 3; k++) put('cebolinha', lx + 0.24 + (rnd() - 0.5) * 0.06, bz + BL / 2 - 0.2 - k * 0.24, 0.9 + rnd() * 0.3); }
+      if (b === 2) for (let k = 0; k < 4; k++) for (const sx of [-1, 1]) put('tomate', lx + sx * 0.25, bz - BL / 2 + 0.35 + k * (BL - 0.7) / 3, 0.85 + rnd() * 0.25, sx * 0.2);   // o pé sobe junto da estaca, inclinado para dentro
+      if (b === 2) { const zs = [bz - BL / 2 + 0.35, bz - BL / 2 + 0.35 + (BL - 0.7)], H = 1.45;   // estacas de bambu cruzadas em V e a vara de amarrar por cima
+        for (let k = 0; k < 4; k++) { const z = zs[0] + k * (zs[1] - zs[0]) / 3; for (const sx of [-1, 1]) { const st = new THREE.CylinderGeometry(0.011, 0.014, H, 5).translate(0, H / 2, 0).rotateZ(sx * 0.2).translate(lx + sx * 0.27, by + top - 0.05, z); boards.push(paint(st, col(0xc8b47a).multiplyScalar(0.9 + rnd() * 0.2))); } }
+        boards.push(paint(new THREE.CylinderGeometry(0.012, 0.012, zs[1] - zs[0] + 0.3, 5).rotateX(Math.PI / 2).translate(lx, by + top - 0.05 + H * Math.cos(0.2) - 0.02, (zs[0] + zs[1]) / 2), col(0xb8a46a))); } });
+    const soilMat = mat({ color: 0xffffff }, { frag: `{vec3 so=mix(vec3(0.17,0.10,0.06),vec3(0.30,0.19,0.11),vnoise(vWp.xz*7.0));float cr=vnoise(vWp.xz*36.0)*0.6+vnoise(vWp.xz*95.0)*0.4;so*=0.72+0.55*cr;
+      so*=0.86+0.14*(0.5+0.5*cos(vLp.x*25.13));   /* sulcos de plantio ao longo do canteiro */
+      float st=smoothstep(0.80,0.88,vnoise(vWp.xz*22.0+3.1))*(0.6+0.4*vnoise(vWp.xz*60.0));so=mix(so,vec3(0.66,0.56,0.32),st*0.75);   /* palha seca por cima */
+      so*=mix(0.62,1.0,smoothstep(-0.02,0.15,vLp.y-${'0.0'}));so=mix(so,so*vec3(1.35,1.28,1.15)+0.05,uSeca*0.55);so*=mix(1.0,0.6,uWet);diffuseColor.rgb=toLin(so);}` });
+    const soil = new THREE.Mesh(merge(soilGeos.map(gg => { gg.computeVertexNormals(); return paint(gg, col(0xffffff)); })), soilMat); soil.receiveShadow = true; soil.castShadow = true;
+    const bm = new THREE.Mesh(merge(boards), woodMat); bm.castShadow = bm.receiveShadow = true; g.add(soil, bm);
+    const M = new THREE.Matrix4(), Q = new THREE.Quaternion(), E = new THREE.Euler();
+    for (const [k, geo, H, tone] of [['alface', alface, 0.2, [0.85, 1.15]], ['couve', couve, 0.5, [0.8, 1.15]], ['cebolinha', cebolinha, 0.35, [0.85, 1.1]], ['tomate', tomate, 1.1, [0.85, 1.1]]]) {
+      const list = sets[k]; if (!list.length) continue; const im = new THREE.InstancedMesh(geo, plantMat(H, k === 'tomate' ? 0.6 : 0.8), list.length);
+      list.forEach(([x, y, z, sc, tz], i) => { M.compose(V3(x, y, z), Q.setFromEuler(tz != null ? E.set(0, rnd() * 6.283, tz, 'ZYX') : E.set((rnd() - 0.5) * 0.12, rnd() * 6.283, (rnd() - 0.5) * 0.12, 'XYZ')), V3(sc, sc * (0.9 + rnd() * 0.2), sc)); im.setMatrixAt(i, M);
+        im.setColorAt(i, new THREE.Color(1, 1, 1).multiplyScalar(tone[0] + rnd() * (tone[1] - tone[0]))); });
+      im.castShadow = im.receiveShadow = true; im.userData.regua = k; g.add(im); }
+    // o regador de lata no canto, perto do portão
+    { const rx = -Gd.w / 2 + 0.45, rz = -Gd.d / 2 + 0.4, ry = yAt(rx, rz), m = col(0x9aa2a6);
+      const rg = merge([paint(new THREE.CylinderGeometry(0.1, 0.11, 0.22, 12).translate(0, 0.11, 0), m), paint(new THREE.CylinderGeometry(0.012, 0.02, 0.3, 6).rotateZ(-0.9).translate(0.2, 0.17, 0), m),
+        paint(new THREE.CylinderGeometry(0.028, 0.018, 0.04, 8).rotateZ(-0.9).translate(0.32, 0.26, 0), col(0x8a9296)), paint(new THREE.TorusGeometry(0.08, 0.008, 4, 12, Math.PI).translate(-0.02, 0.22, 0), m)]);
+      const rgm = new THREE.Mesh(rg, mat({ vertexColors: true }, { frag: 'diffuseColor.rgb*=0.85+0.25*vnoise(vWp.xz*40.0+vWp.y*30.0);' })); rgm.position.set(rx, ry, rz); rgm.rotation.y = 0.8; rgm.castShadow = true; g.add(rgm); }
+    g.position.set(Gd.p[0], y0, Gd.p[1]); g.rotation.y = Gd.rot; scene.add(g); tag(g, 'horta'); }
   // milho: colmo, folhas compridas em arco alternadas, pendão no alto e uma espiga
   function cornGeo() { const H = 2.1, parts = [paint(new THREE.CylinderGeometry(0.016, 0.028, H, 5, 3).translate(0, H / 2, 0), col(0x7fae46))];
     for (let i = 0; i < 7; i++) { const y = 0.35 + i * 0.22, L = 0.85 - Math.abs(i - 2.5) * 0.07, a = i * Math.PI * 0.95 + (rnd() - 0.5) * 0.5, seg = 3, pos = [], cl = [], idx = [];

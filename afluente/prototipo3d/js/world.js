@@ -253,7 +253,7 @@ export function dirtAt(x, z) {
   k = Math.max(k, smooth(2.6, 1.0, Math.hypot(x - L.mill.p[0], z - L.mill.p[1])), smooth(L.praca.r + 1.5, L.praca.r - 1, Math.hypot(x - L.praca.c[0], z - L.praca.c[1])));
   for (const b of [L.venda, L.sobrado, L.celeiro]) k = Math.max(k, smooth(Math.max(b.w, b.d) * 0.5 + 2.4, Math.max(b.w, b.d) * 0.5 + 0.5, Math.hypot(x - b.p[0], z - b.p[1])));
   // curral e aprisco: terra pisada pelo gado e pelas ovelhas, com a borda irregular passando um pouco da cerca
-  for (const b of [L.corral, L.sheepPen]) { const dx = x - b.p[0], dz = z - b.p[1], c = Math.cos(b.rot), s = Math.sin(b.rot), u = Math.abs(dx * c - dz * s) - b.w / 2, v = Math.abs(dx * s + dz * c) - b.d / 2;
+  for (const b of [L.corral, L.sheepPen, L.garden]) { /* a horta: os corredores entre os canteiros são de terra batida */ const dx = x - b.p[0], dz = z - b.p[1], c = Math.cos(b.rot), s = Math.sin(b.rot), u = Math.abs(dx * c - dz * s) - b.w / 2, v = Math.abs(dx * s + dz * c) - b.d / 2;
     const sd = Math.hypot(Math.max(u, 0), Math.max(v, 0)) + Math.min(Math.max(u, v), 0); k = Math.max(k, smooth(0.9, -1.2, sd + (vnoise(x * 0.7, z * 0.7) - 0.5) * 1.2) * 0.85); }
   return k;
 }
