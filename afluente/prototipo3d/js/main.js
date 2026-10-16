@@ -9,7 +9,7 @@ import { NOISE, WIND, CLOUDS } from './glsl.js';
 import { U, HEAD, LIGHT_END, shared, ramp, toon } from './mat.js';
 import { hexEdgeDist } from './world.js';
 import { fbm } from './world.js';
-import { R, TILES, CENTER, RIVER, riverHalfWidth, heightAt, riverInfo, waterDist, biomeAt, SPRING, POOL_R, WATER_Y, vnoise, inHex, inAnyTile, dirtAt, fieldAt, blocked, LAYOUT, rockyAt, waterLevelAt, riverLevel, FALL, CLIFF_X, DROP, LAKE, lakeDist, cliffDrop, smooth } from './world.js';
+import { R, TILES, CENTER, RIVER, SPILL, riverHalfWidth, heightAt, riverInfo, waterDist, biomeAt, SPRING, POOL_R, WATER_Y, vnoise, inHex, inAnyTile, dirtAt, fieldAt, blocked, LAYOUT, rockyAt, waterLevelAt, riverLevel, FALL, CLIFF_X, DROP, LAKE, lakeDist, cliffDrop, smooth } from './world.js';
 import { plantTile } from './flora.js';
 import { buildProps } from './props.js';
 import { hexCenter, edgeMid, DIRS, sectorType, PATHS, addRiver } from './world.js';
@@ -57,6 +57,9 @@ const grade = createGrade(renderer); window.__grade = grade.uniforms;   // a dem
 function resize() { const w = innerWidth, h = innerHeight; renderer.setSize(w, h, false); grade.setSize(w * dpr, h * dpr); { const rk = [0.5, 0.36, 0.25][window.__Qv || 0]; reflRT.setSize(Math.max(2, Math.ceil(w * dpr * rk)), Math.max(2, Math.ceil(h * dpr * rk))); } camera.aspect = w / h; camera.fov = w < h ? 50 : 38; camera.updateProjectionMatrix(); }
 addEventListener('resize', resize); resize();
 
+// células de Voronoi (F1, F2-F1, id da célula): cascalho, pegadas e rachaduras da terra
+const VOR = `vec3 vor(vec2 p){vec2 i=floor(p),f=fract(p);float d1=8.0,d2=8.0,id=0.0;for(int y=-1;y<=1;y++)for(int x=-1;x<=1;x++){vec2 g=vec2(float(x),float(y));
+  vec2 o=vec2(hash21(i+g),hash21(i+g+17.3));vec2 r=g+o-f;float d=dot(r,r);if(d<d1){d2=d1;d1=d;id=hash21(i+g+5.1);}else if(d<d2)d2=d;}return vec3(sqrt(d1),sqrt(d2)-sqrt(d1),id);}\n`;
 const HEXF = `float hexEdge(vec2 p){float R=${R.toFixed(1)};float q=(0.57735*p.x-0.33333*p.y)/R,r=0.66667*p.y/R;float s=-q-r;
   float rq=floor(q+0.5),rr=floor(r+0.5),rs=floor(s+0.5);float dq=abs(rq-q),dr=abs(rr-r),ds=abs(rs-s);
   if(dq>dr&&dq>ds)rq=-rr-rs;else if(dr>ds)rr=-rq-rs;
@@ -118,7 +121,7 @@ const groundMat = toon();
 groundMat.onBeforeCompile = sh => { shared(sh); sh.uniforms.uCenter = { value: new THREE.Vector2(CENTER[0], CENTER[1]) }; sh.uniforms.uFallL = { value: new THREE.Vector4(FALL.p[0] - FALL.t[0] * 0.6, FALL.p[1] - FALL.t[1] * 0.6, FALL.t[0], FALL.t[1]) };
   sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute vec4 bio;attribute vec3 ex;attribute float wlv;varying float vWl;varying float vNy;attribute float wd;attribute float ou;varying vec4 vBio;varying vec3 vEx;varying float vWd;varying vec3 vWp;varying float vOu;')
     .replace('#include <begin_vertex>', '#include <begin_vertex>\nvBio=bio;vEx=ex;vWd=wd;vOu=ou;vWl=wlv;vNy=normal.y;vWp=(modelMatrix*vec4(transformed,1.0)).xyz;');
-  sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec4 vBio;varying vec3 vEx;varying float vWd;varying vec3 vWp;varying float vOu;varying float vWl;varying float vNy;uniform vec2 uCenter;uniform vec4 uFallL;float vHaze;\n' + HEAD + HEXF)
+  sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec4 vBio;varying vec3 vEx;varying float vWd;varying vec3 vWp;varying float vOu;varying float vWl;varying float vNy;uniform vec2 uCenter;uniform vec4 uFallL;float vHaze;\n' + HEAD + HEXF + VOR)
     .replace('#include <color_fragment>', /* glsl */`
       vec2 p=vWp.xz;float n1=fbm(p*0.05),n2=fbm(p*0.4+3.1),n3=vnoise(p*2.4);
       // pasto: verde-amarelado vivo, com manchas mais escuras e mais claras (como pinceladas)
@@ -133,9 +136,29 @@ groundMat.onBeforeCompile = sh => { shared(sh); sh.uniforms.uCenter = { value: n
       // lavoura: leiras norte-sul a cada 0,9 m (as fileiras do milho ficam nas cristas), terra arada escura nos sulcos
       float ridge=0.5+0.5*cos(vWp.x/0.9*6.2832);vec3 tilled=mix(vec3(0.40,0.26,0.16),vec3(0.62,0.44,0.29),ridge)*(0.88+0.24*n3);
       tilled=mix(tilled,vec3(0.70,0.58,0.40)*(0.85+0.3*ridge),uSeca*0.6);col=mix(col,tilled,vEx.x*0.92);
-      // terra batida da vila e dos caminhos: avermelhada, mais clara onde se pisa, com tufos de capim nas bordas
-      vec3 earth=mix(vec3(0.66,0.46,0.31),vec3(0.80,0.62,0.45),n2)*(0.9+0.2*n3);earth=mix(earth,vec3(0.84,0.72,0.55),uSeca*0.4);
-      col=mix(col,earth,smoothstep(0.2,0.7,vEx.y+(n3-0.5)*0.35));
+      // terra batida da vila, dos caminhos e do curral: laterita avermelhada com manchas ocre; o miolo pisado é mais claro e liso,
+      // a beira é terra solta, mais escura e granulada; cascalho miúdo de quartzo e laterita, marcas rasas de pé e de casco onde
+      // se anda mais, tufos de capim que sobram na beira e, na seca, a crosta racha em placas
+      float eW=smoothstep(0.2,0.7,vEx.y+(n3-0.5)*0.35+(vnoise(p*1.7+4.0)-0.5)*0.3);
+      if(eW>0.001){float tr=smoothstep(0.55,1.0,vEx.y);
+        vec3 earth=mix(vec3(0.60,0.38,0.24),vec3(0.76,0.54,0.36),n2);
+        earth=mix(earth,vec3(0.78,0.56,0.30),smoothstep(0.55,0.8,fbm(p*0.35+2.0))*0.45);
+        earth=mix(earth*(0.84+0.14*vnoise(p*7.0)),earth*1.07+vec3(0.03,0.025,0.02),tr)*(0.93+0.14*vnoise(p*2.3));
+        earth*=0.9+0.2*vnoise(p*23.0)*vnoise(p*41.0+3.0);   // grão fino
+        // cascalho: células deformadas (pedra irregular), só 1 em cada ~4 tem pedra, cada uma de um tamanho; borda suave e sombra leve embaixo
+        vec2 pw=p*6.0+vec2(vnoise(p*2.7),vnoise(p*2.7+5.0))*0.9;vec3 v1=vor(pw);float has=step(0.74,v1.z),rad=0.1+0.22*fract(v1.z*37.0);
+        float peb=(1.0-smoothstep(rad*0.7,rad,v1.x))*has*(1.0-tr*0.5);
+        vec3 pc=mix(mix(vec3(0.52,0.34,0.22),vec3(0.66,0.46,0.30),fract(v1.z*11.0)),vec3(0.82,0.78,0.70),step(0.93,v1.z))*(0.85+0.25*smoothstep(rad,0.0,v1.x));
+        earth=mix(earth*(1.0-0.12*(1.0-smoothstep(rad,rad*1.5,v1.x))*has),pc,peb*0.6);
+        // marcas de pé e de casco: ovais rasas, mais onde se pisa (miolo do caminho, terreiro, curral)
+        vec3 v2=vor(vec2(p.x*2.6,p.y*1.7)+vec2(3.1,7.7));earth*=1.0-0.11*(1.0-smoothstep(0.12,0.26,v2.x))*step(0.68,v2.z)*smoothstep(0.35,0.9,vEx.y);
+        if(uSeca>0.3){vec2 pc2=p*2.4+vec2(vnoise(p*1.9),vnoise(p*1.9+7.0))*1.1;vec3 cv=vor(pc2);   // barro seco: placas tortas, fissura fina que some e volta
+          float ck=(1.0-smoothstep(0.0,0.025+0.02*vnoise(p*6.0),cv.y))*smoothstep(0.35,0.7,vnoise(p*3.3+1.0)+0.25)*smoothstep(0.4,0.9,uSeca)*smoothstep(0.35,0.85,vEx.y);
+          earth*=(1.0-0.33*ck)*(1.0-0.07*smoothstep(0.05,0.18,cv.x)*smoothstep(0.4,0.9,uSeca)*smoothstep(0.35,0.85,vEx.y));}
+        earth=mix(earth,vec3(0.84,0.70,0.52)*(0.9+0.2*n3),uSeca*0.35);
+        // erva rala que sobra: manchas pequenas e quebradas (não um tapete verde chapado)
+        float tuft=smoothstep(0.66,0.82,vnoise(p*2.2+9.0)+(1.0-tr)*0.22-0.08)*(1.0-tr)*(1.0-uSeca*0.6)*smoothstep(0.35,0.75,vnoise(p*11.0+2.0));
+        col=mix(col,mix(earth,mix(grass*0.75,earth*0.9+grass*0.25,0.3),tuft*0.6),eW);}
       // lajedo: cascalho e areia clara de quartzito entre tufos ralos
       vec3 grav=mix(vec3(0.66,0.60,0.50),vec3(0.84,0.80,0.70),vnoise(p*5.0))*(0.85+0.3*vnoise(p*17.0));col=mix(col,grav,smoothstep(0.25,0.75,vEx.z+(n3-0.5)*0.4)*0.85);
       float bank=1.0-smoothstep(0.0,2.0,vWd);vec3 sand=mix(vec3(0.78,0.66,0.46),vec3(0.86,0.76,0.56),n3);
@@ -590,7 +613,13 @@ window.__juiz = createJuiz({ fauna, people: () => gente.people });   // o juiz d
 // ---------- água: transparente no raso (vê-se o leito de seixos e as cáusticas), turquesa e depois verde-garrafa no fundo,
 // reflexo de verdade do céu e das árvores (a cena desenhada de novo por uma câmera espelhada), ondinhas que descem com a
 // correnteza, espuma na beira e em volta das pedras, brilhos do sol e anéis de chuva
-const ROCKV = Array.from({ length: 8 }, (_, i) => ROCKS_IN_WATER[i] ? new THREE.Vector3(...ROCKS_IN_WATER[i]) : new THREE.Vector3(0, 0, -1));
+// pedras no leito logo antes da queda (a água bate, espuma e acelera entre elas): ficam nas casas 8 a 11 do uRocks
+{ const iF = RIVER.indexOf(FALL.p); let acc = 0, i = iF, k = 0; const want = [1.5, 2.8, 4.2, 6.0], side = [0.45, -0.6, 0.15, -0.3];
+  while (i > 1 && k < want.length) { acc += Math.hypot(RIVER[i][0] - RIVER[i - 1][0], RIVER[i][1] - RIVER[i - 1][1]); i--;
+    if (acc < want[k]) continue; const [x0, z0] = RIVER[i], ri = riverInfo(x0, z0), hw = riverHalfWidth(ri.s), nx = -FALL.t[1], nz = FALL.t[0];
+    const x = x0 + nx * hw * side[k] + (rnd() - 0.5) * 0.3, z = z0 + nz * hw * side[k] + (rnd() - 0.5) * 0.3, size = 0.32 + rnd() * 0.25, flat = 0.55 + rnd() * 0.15;
+    putStone(x, z, size, flat, waterLevelAt(x, z) + 0.08 + rnd() * 0.1 - size * flat * 0.9); ROCKS_IN_WATER[8 + k] = [x, z, size * 0.95]; k++; } }
+const ROCKV = Array.from({ length: 12 }, (_, i) => ROCKS_IN_WATER[i] ? new THREE.Vector3(...ROCKS_IN_WATER[i]) : new THREE.Vector3(0, 0, -1));
 const waterMat = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, fog: true,
   uniforms: THREE.UniformsUtils.merge([THREE.UniformsLib.fog, { uReflMat: { value: new THREE.Matrix4() } }]),
   vertexShader: /* glsl */`attribute vec2 flow;attribute float dep;varying vec2 vFlow;varying float vDep;varying vec3 vWp;uniform float uWaterDrop;
@@ -598,20 +627,20 @@ const waterMat = new THREE.ShaderMaterial({ transparent: true, depthWrite: false
     void main(){vec3 p=position;p.y-=uWaterDrop;vec4 w=modelMatrix*vec4(p,1.0);vWp=w.xyz;vFlow=flow;vDep=dep-uWaterDrop;vec4 mvPosition=viewMatrix*w;gl_Position=projectionMatrix*mvPosition;
     #include <fog_vertex>
     }`,
-  fragmentShader: /* glsl */`varying vec2 vFlow;varying float vDep;varying vec3 vWp;uniform sampler2D uRefl;uniform mat4 uReflMat;uniform vec3 uRocks[8];uniform vec4 uWade[8];
+  fragmentShader: /* glsl */`varying vec2 vFlow;varying float vDep;varying vec3 vWp;uniform sampler2D uRefl;uniform mat4 uReflMat;uniform vec3 uRocks[12];uniform vec4 uWade[8];
     ${HEAD}
     #include <fog_pars_fragment>
     float hgt(vec2 q){return vnoise(q*vec2(0.55,1.1)-vec2(uFlowClk*0.55,0.0))*0.5+vnoise(q*vec2(1.6,2.4)-vec2(uFlowClk*1.3,0.0))*0.27+vnoise(q*vec2(4.0,5.5)-vec2(uFlowClk*2.2,0.0))*0.14+vnoise(q*vec2(9.0,12.0)-vec2(uFlowClk*3.1,0.0))*0.09;}
     void main(){float d=vDep;if(d<=0.0)discard;
       vec2 p=vWp.xz;vec2 f=length(vFlow)>0.01?normalize(vFlow):vec2(1.0,0.0);vec2 s=vec2(-f.y,f.x);vec2 q=vec2(dot(p,f),dot(p,s));float fl=clamp(length(vFlow),0.0,1.9);
-      float e=0.1,h0=hgt(q),hx=hgt(q+vec2(e,0.0))-h0,hy=hgt(q+vec2(0.0,e))-h0;vec2 gq=vec2(hx,hy)/e*(0.05+0.07*fl+0.25*uRain);vec2 gw=f*gq.x+s*gq.y;
+      float e=0.1,h0=hgt(q),hx=hgt(q+vec2(e,0.0))-h0,hy=hgt(q+vec2(0.0,e))-h0;float rap=smoothstep(1.05,1.7,fl);vec2 gq=vec2(hx,hy)/e*(0.05+0.07*fl+0.25*uRain+0.22*rap);vec2 gw=f*gq.x+s*gq.y;
       float ring=0.0;if(uRain>0.01){vec2 c=floor(p*1.7),fp=fract(p*1.7)-0.5;float r=hash21(c);float t=fract(uTime*1.1+r*7.0);vec2 o=(vec2(hash21(c+3.1),hash21(c+7.7))-0.5)*0.5;
         vec2 dv=fp-o;float dd=length(dv);ring=(1.0-smoothstep(0.0,0.05,abs(dd-t*0.42)))*(1.0-t)*step(r,uRain*0.9+0.1);gw+=dv/max(dd,0.001)*ring*0.5;}
       float foam=0.0;
       // marolas de quem está n'água: anéis que saem do corpo e deitam o reflexo (boi bebendo, capivara, a roupa na pedra, a bola)
       for(int i=0;i<8;i++){vec4 Wd=uWade[i];if(Wd.z<=0.0)continue;vec2 dv=p-Wd.xy;float r=length(dv);float env=exp(-r*1.6/max(Wd.w,0.3));
         gw+=dv/max(r,0.02)*sin(r*15.0-uTime*6.5)*env*Wd.z*0.4;foam+=(1.0-smoothstep(Wd.w*0.6,Wd.w*1.3,r))*0.45*Wd.z*smoothstep(0.35,0.7,vnoise(p*9.0+uTime*2.0));}
-      for(int i=0;i<8;i++){vec3 rk=uRocks[i];if(rk.z<=0.0)continue;vec2 dr=p-rk.xy;float al=dot(dr,f),ac=dot(dr,s),dist=length(dr);
+      for(int i=0;i<12;i++){vec3 rk=uRocks[i];if(rk.z<=0.0)continue;vec2 dr=p-rk.xy;float al=dot(dr,f),ac=dot(dr,s),dist=length(dr);
         float ringF=1.0-smoothstep(rk.z*0.8,rk.z+0.25+0.3*vnoise(vec2(atan(dr.y,dr.x)*3.0,uFlowClk*2.0)),dist);
         float wake=exp(-ac*ac/(rk.z*rk.z*0.7))*smoothstep(0.0,0.5,al)*exp(-al/(2.0+rk.z*3.0));
         foam+=ringF*0.7+wake*0.7*smoothstep(0.45,0.7,vnoise(vec2(al*2.2-uFlowClk*3.5,ac*4.0)));gw+=normalize(dr+1e-3)*(wake+ringF*0.4)*0.12;}
@@ -626,6 +655,8 @@ const waterMat = new THREE.ShaderMaterial({ transparent: true, depthWrite: false
       vec3 Rf=reflect(-V,N);float glint=pow(max(dot(Rf,uSunW),0.0),900.0);col+=uSunC*step(0.5,glint+0.35*hash21(floor(p*9.0)))*glint*2.2*cs;A=min(1.0,A+glint*0.4);
       foam+=0.55*(1.0-smoothstep(0.012,0.07,d))*smoothstep(0.45,0.72,vnoise(q*vec2(3.2,9.0)-vec2(uFlowClk*1.4,0.0)))*smoothstep(0.0,0.01,d);
       foam+=0.28*smoothstep(0.55,1.0,fl)*smoothstep(0.8,0.88,vnoise(q*vec2(1.4,10.0)-vec2(uFlowClk*1.9,0.0)))*smoothstep(0.3,0.8,d);
+      // corredeira antes da queda: riscos brancos compridos que correm ~4 m/s rio abaixo e manchas de espuma que se desmancham
+      foam+=rap*(0.7*smoothstep(0.55,0.82,vnoise(q*vec2(0.9,6.0)-vec2(uFlowClk*4.2,0.0)))+0.45*smoothstep(0.62,0.85,vnoise(q*vec2(2.6,3.2)-vec2(uFlowClk*5.5,uTime*0.4))))*smoothstep(0.05,0.35,d);
       foam=clamp(foam,0.0,1.0);vec3 fc=vec3(0.95,0.98,1.0)*(0.08+0.92*uDay)*(0.65+0.35*cs);
       col=col/max(A,1e-3);col=mix(col,fc,foam*0.8);col+=ring*0.2*uDay;A=max(A,foam*0.8);
       gl_FragColor=vec4(col,A);
@@ -666,13 +697,13 @@ void main(){float s=uv.y*uTf,d=min(uDrop,4.9*s*s);float bal=0.12+uOff+uV0*s,wl=w
   vUv=uv;vS=s;vec4 w=modelMatrix*vec4(p,1.0);vWp=w.xyz;vec4 mvPosition=viewMatrix*w;gl_Position=projectionMatrix*mvPosition;
 #include <fog_vertex>
 }`;
-  const mkMat = layer => { const m = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, side: THREE.DoubleSide, fog: true, uniforms: THREE.UniformsUtils.merge([THREE.UniformsLib.fog, { uLayer: { value: layer }, uOff: { value: layer === 1 ? 0.07 : 0 } }]),
+  const mkMat = layer => { const m = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, side: THREE.DoubleSide, fog: true, uniforms: THREE.UniformsUtils.merge([THREE.UniformsLib.fog, { uLayer: { value: layer }, uOff: { value: layer === 1 ? 0.07 : 0 }, uSeep: { value: 0 } }]),
     vertexShader: layer === 2 ? `varying vec2 vUv;varying vec3 vWp;varying float vS,vWallK;
 #include <fog_pars_vertex>
 void main(){vUv=uv;vS=uv.y;vWallK=1.0;vec4 w=modelMatrix*vec4(position,1.0);vWp=w.xyz;vec4 mvPosition=viewMatrix*w;gl_Position=projectionMatrix*mvPosition;
 #include <fog_vertex>
 }` : FALL_V,
-    fragmentShader: `varying vec2 vUv;varying vec3 vWp;varying float vS,vWallK;uniform float uLayer,uQ;
+    fragmentShader: `varying vec2 vUv;varying vec3 vWp;varying float vS,vWallK;uniform float uLayer,uQ,uSeep;
 ${HEAD}
 #include <fog_pars_fragment>
 void main(){float y=vUv.y,ph=vS-uTime;float thin=clamp(uQ,0.0,1.0);
@@ -684,7 +715,10 @@ void main(){float y=vUv.y,ph=vS-uTime;float thin=clamp(uQ,0.0,1.0);
       if(uLayer<0.5){float wh=smoothstep(0.42-0.22*aer,0.8-0.2*aer,st);c=vec4(mix(body*(0.85+0.3*f3),white,wh*0.55+aer*0.3),(0.42+0.38*wh+0.15*aer)*edge);}
       else if(uLayer<1.5){float wh=smoothstep(0.5-0.18*aer,0.72-0.12*aer,st);float frs=smoothstep(0.25,0.55,vnoise(vec2(vUv.x*13.0,ph*2.4))+0.55-0.6*aer);
         c=vec4(white,wh*edge*(0.35+0.55*aer)*mix(1.0,frs,aer));}
-      else{float wh=smoothstep(0.35,0.75,vnoise(vec2(vUv.x*6.0,y*14.0-uTime*4.0)));c=vec4(mix(body,white,0.4+0.4*wh),(0.18+0.3*wh)*smoothstep(0.1,0.6,uQ)*(1.0-smoothstep(0.6,1.0,abs(vUv.x)))*smoothstep(0.0,0.05,y)*(1.0-smoothstep(0.9,1.0,y)));}
+      else{float fk=max(smoothstep(0.44,0.56,y),uSeep);   // fk: 0 no braço raso sobre a laje, 1 na descida pela rocha
+        float wh=smoothstep(0.35,0.75,vnoise(vec2(vUv.x*6.0,y*mix(9.0,14.0,fk)-uTime*mix(1.6,4.0,fk))));
+        vec3 shal=mix(body*0.55,white,0.12+0.25*wh*smoothstep(0.35,0.7,1.0-abs(vUv.x)));   // em cima, lâmina rasa: quase transparente, um brilho correndo
+        c=vec4(mix(shal,mix(body,white,0.4+0.4*wh),fk),mix(0.16+0.16*wh,0.18+0.3*wh,fk)*smoothstep(0.1,0.6,uQ)*(1.0-smoothstep(0.6,1.0,abs(vUv.x)))*smoothstep(0.0,0.08,y)*(1.0-smoothstep(0.9,1.0,y)));}
       c.a*=(1.0-smoothstep(0.93,1.0,y)*0.6)*smoothstep(0.05,0.3,uQ);gl_FragColor=vec4(c.rgb*light,c.a);
 #include <colorspace_fragment>
 #include <fog_fragment>
@@ -698,11 +732,45 @@ void main(){float y=vUv.y,ph=vS-uTime;float thin=clamp(uQ,0.0,1.0);
   // ficava parte no ar, parte dentro da rocha, e aparecia como riscos brancos soltos
   const ray = new THREE.Raycaster(), gms = TILES.map(t => t.gm).filter(Boolean), down = new THREE.Vector3(0, -1, 0);
   const meshY = (x, z) => { ray.set(new THREE.Vector3(x, 300, z), down); const h = ray.intersectObjects(gms, false)[0]; return h ? h.point.y : heightAt(x, z); };
-  for (const [off, wd] of [[w + 1.6, 0.1], [-(w + 2.4), 0.13], [w + 3.6, 0.07]]) { const pos = [], uv = [], idx = [], N = 22;
-    for (let j = 0; j <= N; j++) { const v = j / N, s = -1.0 + v * 4.2; for (const u of [-1, 1]) { const x = lip[0] + n[0] * (off + u * wd) + FALL.t[0] * s, z = lip[1] + n[1] * (off + u * wd) + FALL.t[1] * s; pos.push(x + FALL.t[0] * 0.06, meshY(x, z) + 0.04, z + FALL.t[1] * 0.06); uv.push(u, v); } }
-    for (let j = 0; j < N; j++) { const a = j * 2; idx.push(a, a + 2, a + 1, a + 1, a + 2, a + 3); }
+  // cada fio tem de onde vir: um braço raso que sai da beira do rio (s = -3,6 m, dentro d'água), serpenteia pela laje até a
+  // borda e só então desce colado na rocha; atrás dele a rocha fica escura de molhada, com limo (antes nasciam do nada no alto)
+  const wetMat = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, uniforms: { uWaterDrop: U.uWaterDrop, uDay: U.uDay },
+    vertexShader: 'varying vec2 vUv;varying vec3 vWp;void main(){vUv=uv;vec4 w=modelMatrix*vec4(position,1.0);vWp=w.xyz;gl_Position=projectionMatrix*viewMatrix*w;}',
+    fragmentShader: `uniform float uWaterDrop,uDay;varying vec2 vUv;varying vec3 vWp;${NOISE}
+      void main(){float e=1.0-smoothstep(0.35,1.0,abs(vUv.x)+(vnoise(vec2(vUv.y*9.0,vWp.y*2.0))-0.5)*0.35);float moss=smoothstep(0.5,0.75,vnoise(vWp.xz*3.0+vWp.y*1.7));
+        float a=e*(0.62+0.25*moss)*smoothstep(0.0,0.06,vUv.y)*(1.0-smoothstep(0.92,1.0,vUv.y))*(1.0-clamp(uWaterDrop*1.2,0.0,0.8));if(a<0.01)discard;
+        gl_FragColor=vec4(mix(vec3(0.05,0.07,0.05),vec3(0.13,0.2,0.08),moss)*(0.3+0.7*uDay),a);
+        #include <colorspace_fragment>
+      }` });
+  const ribbon = (pts, halfW, mat, ro) => { const pos = [], uv = [], idx = [], L = pts.length;
+    for (let j = 0; j < L; j++) { const [x, y, z, hw, lx = n[0], lz = n[1]] = pts[j], v = j / (L - 1); for (const u of [-1, 1]) { pos.push(x + lx * u * hw * halfW, y, z + lz * u * hw * halfW); uv.push(u, v); } }
+    for (let j = 0; j < L - 1; j++) { const a = j * 2; idx.push(a, a + 2, a + 1, a + 1, a + 2, a + 3); }
     const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx);
-    const m = new THREE.Mesh(g, trickle); m.renderOrder = 3; scene.add(m); }
+    const m = new THREE.Mesh(g, mat); m.renderOrder = ro; scene.add(m); return m; };
+  // três fios, cada um com origem que se explica: (1) o transbordo, que sai do rio por um entalhe na borda (SPILL, world.js)
+  // e desce ao lado da queda; (2) e (3) minas: brotam de uma fresta entre as camadas do arenito, 1,6 e 2,4 m abaixo do topo,
+  // com a rocha molhada e o limo começando um palmo acima da fresta (antes os três nasciam do nada no alto da laje)
+  const trickleSeep = mkMat(2); trickleSeep.uniforms.uSeep.value = 1;
+  // o caminho pela rocha, altura por altura: um raio horizontal vindo de fora bate no paredão (o vertical amostra mal a parede
+  // quase a prumo) e a tira fica a poucos cm da rocha, até o pé do talude
+  const back = new THREE.Vector3(-FALL.t[0], 0, -FALL.t[1]), yBot = meshY(lip[0] + FALL.t[0] * 6, lip[1] + FALL.t[1] * 6);
+  const cliffPath = (off, y0, gap, N) => { const out = []; for (let j = 0; j <= N; j++) { const y = y0 + (yBot + 0.15 - y0) * j / N;
+      ray.set(new THREE.Vector3(lip[0] + n[0] * off + FALL.t[0] * 10, y, lip[1] + n[1] * off + FALL.t[1] * 10), back); const h = ray.intersectObjects(gms, false)[0]; if (!h) continue;
+      { const al = (h.point.x - lip[0]) * FALL.t[0] + (h.point.z - lip[1]) * FALL.t[1]; if (al < -2.2 || al > 7) continue; }   // só a face da escarpa (não o barranco lá atrás)
+      // a tira se abre ao longo da face da rocha ali (horizontal e tangente à parede), e se afasta dela pela normal
+      const FN = h.face.normal, lx0 = FN.z, lz0 = -FN.x, ll = Math.hypot(lx0, lz0) || 1, sg = lx0 * n[0] + lz0 * n[1] < 0 ? -1 : 1;
+      out.push([h.point.x + FN.x * gap, h.point.y + FN.y * gap, h.point.z + FN.z * gap, 1, sg * lx0 / ll, sg * lz0 / ll]); } return out; };
+  { const off = SPILL.off, top = [], N = 14;   // (1) do rio, pelo entalhe, até a borda (para onde a rocha acaba: com o recuo da queda a borda fica antes do fim do entalhe)
+    const at = k => [SPILL.a[0] + (SPILL.b[0] - SPILL.a[0]) * k, SPILL.a[1] + (SPILL.b[1] - SPILL.a[1]) * k], wl0 = waterLevelAt(...SPILL.a);
+    let kE = 0; while (kE < 1 && meshY(...at(kE + 0.02)) > wl0 - 0.6) kE += 0.02;
+    for (let j = 0; j <= N; j++) { const k = j / N * kE, [x, z] = at(k);
+      top.push([x, Math.max(meshY(x, z) + 0.03, waterLevelAt(x, z) - 0.02 - 0.06 * j / N), z, 2.2 - 1.2 * j / N]); }
+    const E = top[top.length - 1], yl = E[1], offE = (E[0] - lip[0]) * n[0] + (E[2] - lip[1]) * n[1];   // desce bem de onde o braço chegou à borda
+    const down = cliffPath(offE, yl - 0.05, 0.07, 14), pts = top.concat(down);   // metade da tira em cima, metade na descida (o shader troca de raso para queda no meio)
+    ribbon(pts, 0.14, trickle, 3); ribbon(cliffPath(offE, yl - 0.05, 0.04, 30), 0.14 * 4, wetMat, 2); }
+  for (const [off, wd, depth] of [[-(w + 2.4), 0.11, 1.6], [w + 3.6, 0.07, 2.4]]) {   // (2) e (3) minas na fresta
+    const yTop = meshY(lip[0] + n[0] * off - FALL.t[0], lip[1] + n[1] * off - FALL.t[1]), ys = yTop - depth;
+    ribbon(cliffPath(off, ys, 0.07, 26), wd, trickleSeep, 3); ribbon(cliffPath(off, ys + 0.45, 0.04, 30), wd * 4.5, wetMat, 2); }
   const stoneFree = (x, z, sz) => !placed.some(p => p[3] && Math.hypot(p[0] - x, p[1] - z) < (sz * 1.2 + p[3]) * 0.7);   // encostam, não se fundem
   // blocos caídos do paredão em volta do poço (rio abaixo e dos lados) e cascalho no pé da escarpa, ao longo do vale
   for (let k = 0; k < 11; k++) { const a = Math.atan2(FALL.t[1], FALL.t[0]) + (rnd() - 0.5) * 3.4, r = 4.4 + rnd() * 1.8, x = FALL.pool[0] + Math.cos(a) * r, z = FALL.pool[1] + Math.sin(a) * r;
@@ -759,7 +827,7 @@ void main(){float y=vUv.y,ph=vS-uTime;float thin=clamp(uQ,0.0,1.0);
 const water = new THREE.Group(); scene.add(water);
 function waterMeshFor(tiles, withOutside) { const pos = [], flow = [], depA = [], idx = [];
   for (const t of tiles) { const { pos: P, idx: I } = sectorGrid(t.c, mobile ? 44 : 60), base = pos.length / 3, keep = [];
-    for (let i = 0; i < P.length / 3; i++) { const x = P[i * 3], z = P[i * 3 + 2], ri = riverInfo(x, z), lv = waterLevelAt(x, z), dep = lv - heightAt(x, z); keep.push(dep > -0.2 && waterDist(x, z) < 1.3);   // só onde é rio, poço ou lagoa de verdade
+    for (let i = 0; i < P.length / 3; i++) { const x = P[i * 3], z = P[i * 3 + 2], ri = riverInfo(x, z), lv = waterLevelAt(x, z), dep = lv - heightAt(x, z); keep.push(dep > -0.2 && waterDist(x, z) < 1.3 && (dep < 2.2 || lv < riverLevel(FALL.s + 2) + 0.4) && (ri.extra || ri.d < riverHalfWidth(ri.s) + 0.15 || (Math.hypot(x - FALL.pool[0], z - FALL.pool[1]) < 5.5 && lv < riverLevel(FALL.s + 2) + 0.4) || (ri.s < FALL.s - 0.35 && dep < 1.6)));   /* fora da calha (o entalhe do transbordo), a água para na borda: não desce o paredão junto com o nível do rio */   // só onde é rio, poço ou lagoa de verdade
       const still = Math.hypot(x - SPRING[0], z - SPRING[1]) < POOL_R + 1 || lakeDist(x, z) < 3, sp = (still ? 0.12 : Math.min(1, 0.4 + 0.6 * (1 - ri.d / (riverHalfWidth(ri.s) + 0.5)))) * (ri.s < FALL.s ? 1 + 0.9 * smooth(FALL.s - 12, FALL.s, ri.s) : 1);   // a água acelera chegando na borda da queda
       pos.push(x, lv, z); flow.push(ri.tx * sp, ri.tz * sp); depA.push(dep); }
     for (let i = 0; i < I.length; i += 3) if (keep[I[i]] || keep[I[i + 1]] || keep[I[i + 2]]) idx.push(base + I[i], base + I[i + 1], base + I[i + 2]); }
