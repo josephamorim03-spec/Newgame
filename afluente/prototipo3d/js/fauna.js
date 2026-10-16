@@ -25,7 +25,7 @@ export function buildFauna(scene, opts = {}) {
   const pivot = (parent, x, y, z) => { const g = new THREE.Group(); g.position.set(x, y, z); parent.add(g); return g; };
   const all = [], updaters = [];
 
-  const CM = mat({ vertexColors: true }, { rim: '2.4', frag: 'diffuseColor.rgb*=0.95+0.1*vnoise(vWp.xz*14.0+vWp.y*9.0);diffuseColor.rgb*=mix(1.0,0.82,uWet);' });
+  const CM = mat({ vertexColors: true }, { rim: '2.4', frag: 'diffuseColor.rgb*=0.955+0.09*vnoise(vec2(vLp.z*9.0+vLp.x*4.0,vLp.y*90.0))+0.03*(vnoise(vLp.zy*26.0)-0.5);diffuseColor.rgb*=mix(1.0,0.82,uWet);' });
   // pelagens do gado do Cerrado: o nelore branco é minoria; a maioria é de boi de cor, como no pasto de verdade
   const COATS = [
     { w: 0xe6e1d6, g: 0x8a8680, k: 0.45, p: 3 },                              // nelore: branco a cinza-claro
