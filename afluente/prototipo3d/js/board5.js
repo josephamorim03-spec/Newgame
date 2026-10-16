@@ -56,8 +56,8 @@ export function buildBoard5(api) {
   const hs = document.createElement('div'); hs.id = 'historia'; hs.setAttribute('role', 'dialog'); hs.setAttribute('aria-modal', 'true'); hs.setAttribute('aria-labelledby', 'hsT');
   hs.innerHTML = '<div class="folha"><div class="ic" id="hsI"></div><h2 id="hsT"></h2><p id="hsP"></p><div class="pts" id="hsD"></div><div class="bt"><button type="button" class="pular" id="hsPular">Pular</button><button type="button" class="ir" id="hsIr">Continuar</button></div></div>';
   document.body.appendChild(hs);
-  const hb = document.createElement('button'); hb.type = 'button'; hb.id = 'hsAbre'; hb.textContent = '📖'; hb.setAttribute('aria-label', 'Ler a história do vale'); document.body.appendChild(hb);
-  const sb = document.createElement('button'); sb.type = 'button'; sb.id = 'somBtn'; const somTxt = () => { sb.textContent = som.on ? '🔊' : '🔇'; sb.setAttribute('aria-label', som.on ? 'Desligar o som' : 'Ligar o som'); }; somTxt();
+  const hb = document.createElement('button'); hb.type = 'button'; hb.id = 'hsAbre'; hb.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 5.5c3-1.5 6.5-1.5 10 1v13c-3.5-2.5-7-2.5-10-1z"/><path d="M22 5.5c-3-1.5-6.5-1.5-10 1v13c3.5-2.5 7-2.5 10-1z"/></svg>'; hb.setAttribute('aria-label', 'Ler a história do vale'); document.body.appendChild(hb);
+  const sb = document.createElement('button'); sb.type = 'button'; sb.id = 'somBtn'; const somTxt = () => { sb.innerHTML = som.on ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor"/><path d="M15.5 9a4 4 0 0 1 0 6"/><path d="M18.5 6.5a7.5 7.5 0 0 1 0 11"/></svg>' : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor"/><path d="M16 9.5l5 5"/><path d="M21 9.5l-5 5"/></svg>'; sb.setAttribute('aria-label', som.on ? 'Desligar o som' : 'Ligar o som'); }; somTxt();
   sb.onclick = () => { som.setOn(!som.on); somTxt(); if (som.on) setTimeout(SFX.sel, 60); }; document.body.appendChild(sb);
   const fm = document.createElement('div'); fm.id = 'fim5'; fm.hidden = true; fm.setAttribute('role', 'dialog'); fm.setAttribute('aria-modal', 'true');
   fm.innerHTML = '<div class="folha"><div class="ic">🌅</div><h2>O vale acolheu</h2><div class="num" id="fimN">0</div><p>pessoas</p><p id="fimS"></p><button type="button" id="fimJ">Jogar outro vale</button></div>'; document.body.appendChild(fm);
@@ -77,11 +77,12 @@ export function buildBoard5(api) {
     #aviso{position:fixed;left:50%;transform:translateX(-50%);top:calc(max(12px,env(safe-area-inset-top)) + 46px);max-width:min(360px,calc(100vw - 32px));font:700 13.5px/1.35 Nunito,system-ui;color:#fff;text-align:center;
       background:rgba(20,40,38,.55);border-radius:14px;padding:7px 12px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);opacity:0;transition:opacity .4s ease;pointer-events:none}
     #aviso.on{opacity:1}
-    #jogo .mao{position:fixed;left:max(14px,env(safe-area-inset-left));bottom:max(16px,env(safe-area-inset-bottom));pointer-events:auto;width:96px;height:96px}
+    #jogo .mao{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(max(14px,env(safe-area-inset-bottom)) + 58px);pointer-events:auto;width:96px;height:96px}
     #jogo canvas#mao{width:96px;height:96px;cursor:pointer;touch-action:none;filter:drop-shadow(0 4px 8px rgba(0,0,0,.25))}
-    #jogo canvas#prox{position:absolute;right:-18px;top:-8px;width:34px;height:34px;opacity:.9;filter:drop-shadow(0 2px 4px rgba(0,0,0,.25))}
-    #colocar{position:fixed;left:calc(max(14px,env(safe-area-inset-left)) + 112px);bottom:calc(max(16px,env(safe-area-inset-bottom)) + 22px);pointer-events:auto;border:0;border-radius:999px;background:var(--ink);color:#fff;
-      font:800 16px "Baloo 2",system-ui;padding:10px 20px;min-height:48px;box-shadow:0 3px 14px rgba(0,0,0,.22);max-width:calc(100vw - 150px);animation:sobe .25s cubic-bezier(.2,1.4,.4,1)}
+    #jogo canvas#prox{position:absolute;left:calc(100% + 6px);bottom:6px;width:34px;height:34px;opacity:.9;filter:drop-shadow(0 2px 4px rgba(0,0,0,.25))}
+    #colocar{position:fixed;left:50%;transform:translateX(-50%);bottom:max(14px,env(safe-area-inset-bottom));pointer-events:auto;border:0;border-radius:999px;background:var(--ink);color:#fff;
+      font:800 16px "Baloo 2",system-ui;padding:8px 26px;min-height:44px;box-shadow:0 3px 14px rgba(0,0,0,.22);max-width:calc(100vw - 32px);white-space:nowrap;animation:sobeC .25s cubic-bezier(.2,1.4,.4,1)}
+    @keyframes sobeC{from{transform:translate(-50%,24px);opacity:0}to{transform:translate(-50%,0);opacity:1}}
     #colocar[hidden]{display:none}
     #historia{position:fixed;inset:0;display:flex;align-items:flex-end;justify-content:center;padding:16px;background:linear-gradient(to top,rgba(15,35,35,.55),rgba(15,35,35,.05) 60%);z-index:30}
     #historia[hidden]{display:none}
@@ -91,8 +92,9 @@ export function buildBoard5(api) {
     #historia .bt{display:flex;justify-content:space-between;align-items:center;gap:10px}
     #historia .pular{border:0;background:none;color:var(--ink);opacity:.75;font:700 15px Nunito,system-ui;min-height:44px;padding:0 6px}
     #historia .ir{border:0;border-radius:999px;background:var(--ink);color:#fff;font:800 16px "Baloo 2",system-ui;padding:10px 22px;min-height:44px}
-    #hsAbre,#somBtn{position:fixed;top:max(12px,env(safe-area-inset-top));width:40px;height:40px;border:0;border-radius:50%;background:rgba(252,250,244,.72);color:var(--ink);font:16px/1 system-ui;box-shadow:0 2px 10px rgba(0,0,0,.1);z-index:6;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);padding:0}
-    #hsAbre{right:calc(max(12px,env(safe-area-inset-right)) + 48px)}#somBtn{right:max(12px,env(safe-area-inset-right))}
+    #hsAbre,#somBtn{position:fixed;top:calc(max(12px,env(safe-area-inset-top)) + 4px);width:32px;height:32px;border:0;background:none;padding:4px;z-index:6;color:#fff;filter:drop-shadow(0 1px 3px rgba(0,0,0,.45));line-height:0;cursor:pointer}
+    #hsAbre svg,#somBtn svg{width:24px;height:24px;display:block}
+    #hsAbre{right:calc(max(12px,env(safe-area-inset-right)) + 38px)}#somBtn{right:max(10px,env(safe-area-inset-right))}
     #jogo button,#pacote5 button,#historia button,#hsAbre,#somBtn,#fim5 button{transition:transform .08s ease}#jogo button:active,#pacote5 button:active,#historia button:active,#hsAbre:active,#somBtn:active,#fim5 button:active{transform:scale(.93)}
     @keyframes sobe{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}@keyframes pulsa{0%{transform:scale(1)}35%{transform:scale(1.45)}100%{transform:scale(1)}}
     #pacote5 .folha,#historia .folha,#fim5 .folha{animation:sobe .32s cubic-bezier(.2,1.4,.4,1)}#pP{display:inline-block}#pP.pulsa{animation:pulsa .45s ease-out}
@@ -107,7 +109,7 @@ export function buildBoard5(api) {
     #pacote5 .pks{display:grid;grid-template-columns:1fr 1fr;gap:10px}
     #pacote5 button{display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 8px;border:2px solid var(--line);border-radius:18px;background:#fff;color:var(--ink);font:800 17px "Baloo 2",system-ui;min-height:44px;cursor:pointer}
     #pacote5 button .t{display:flex;gap:2px}#pacote5 canvas{width:40px;height:40px}
-    @media (max-width:520px){#jogo .mao,#jogo canvas#mao{width:84px;height:84px}#colocar{left:calc(max(14px,env(safe-area-inset-left)) + 100px)}
+    @media (max-width:520px){#jogo .mao,#jogo canvas#mao{width:84px;height:84px}
       #placar{left:max(12px,env(safe-area-inset-left));transform:none;gap:9px;padding:6px 12px;font-size:13px}#placar b{font-size:16px}.marca{display:none}}`;
   document.head.appendChild(css);
   const $ = id => document.getElementById(id);
