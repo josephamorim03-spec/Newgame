@@ -35,6 +35,8 @@ export const TIPOS = {
   'homem de chapéu': { sex: 'm', build: 1, hat: 'palha', sleeves: 'curta', hair: 'crespo' },
   'mulher de saia': { sex: 'f', build: 1, hat: null, sleeves: 'curta', hair: 'coque', dress: false, skirt: 0.62, apron: true },
   'mulher de vestido e lenço': { sex: 'f', build: 1, hat: 'lenco', sleeves: 'longa', hair: 'longo', dress: true, skirt: 0.85, apron: false },
+  'mulher forte de saia comprida': { sex: 'f', build: 1.12, hat: null, sleeves: 'curta', hair: 'curto', dress: false, skirt: 0.85, apron: true },   /* o porte muda a saia */
+  'mulher magra de vestido': { sex: 'f', build: 0.88, hat: null, sleeves: 'curta', hair: 'coque', dress: true, skirt: 0.85, apron: false },
   'idoso': { sex: 'm', build: 1, old: true, hat: null, hair: 'careca', sleeves: 'longa' },
   'menino': { sex: 'c', build: 1, hair: 'curto', dress: false, skirt: 0 },
   'menina': { sex: 'c', build: 1, hair: 'tranca', dress: true, skirt: 0.32 },
@@ -94,8 +96,8 @@ export function createJuizGente({ gente, spot = [0, 0] }) {
     Object.assign(M, { cabeca: (top - chin) / H, ombros: 2 * wSh / H, quadril: 2 * wHip / H, braco: sh[1].distanceTo(el[1]) / H, antebraco: el[1].distanceTo(ha[1]) / H, mao: tip / H, coxa: hp[1].distanceTo(kn[1]) / H, canela: kn[1].distanceTo(ft[1]) / H,
       pe: (fz1 - fz0) / H, hOmbro: yS / H, hCotovelo: el[1].y / H, hPunho: ha[1].y / H, hQuadril: yH / H, hJoelho: kn[1].y / H });
     if (['enxada', 'machado', 'vassoura', 'pa', 'serrote', 'vara'].includes(p.s.tool)) delete M.mao;   // mão fechada no cabo: não dá para medir o comprimento
-    for (const k of Object.keys(NOMES)) { if (M[k] == null || !ref[k]) continue; const [lo, hi] = ref[k], v = M[k]; M[k] = r3(v);
-      if (v < lo || v > hi) { const d = Math.max(lo - v, v - hi) / ((lo + hi) / 2); out.push({ f: 'forma', pen: Math.min(14, 3 + 60 * d), msg: `${NOMES[k]} ${r3(v)} da altura (o corpo de verdade: ${lo}–${hi})${v < lo ? ' — curto/estreito' : ' — longo/largo'}` }); } }
+    for (const k of Object.keys(NOMES)) { if (M[k] == null || !ref[k]) continue; const bw = p.bw || 1, larg = k === 'ombros' || k === 'quadril', lo = ref[k][0] * (larg ? Math.min(1, bw) : 1), hi = ref[k][1] * (larg ? Math.max(1, bw) : 1), v = M[k]; M[k] = r3(v);   /* o porte (build) alarga ou estreita ombro e quadril de verdade */
+      if (v < lo || v > hi) { const d = Math.max(lo - v, v - hi) / ((lo + hi) / 2); out.push({ f: 'forma', pen: Math.min(14, 3 + 60 * d), msg: `${NOMES[k]} ${r3(v)} da altura (o corpo de verdade: ${r3(lo)}–${r3(hi)})${v < lo ? ' — curto/estreito' : ' — longo/largo'}` }); } }
     // malha: avesso, degenerados, quina na silhueta
     const ix = g.index.array, nrm = g.attributes.normal, P = g.attributes.position; let inv = 0, deg = 0; const A = new THREE.Vector3(), B = new THREE.Vector3(), C = new THREE.Vector3(), N = new THREE.Vector3(); const invP = {}, degP = {};
     for (let t = 0; t < ix.length; t += 3) { A.fromBufferAttribute(P, ix[t]); B.fromBufferAttribute(P, ix[t + 1]); C.fromBufferAttribute(P, ix[t + 2]); const nn = B.sub(A).cross(C.sub(A)), L = nn.length();
@@ -156,6 +158,15 @@ export function createJuizGente({ gente, spot = [0, 0] }) {
       if (y < prof[0][0] || y > prof[prof.length - 1][0]) continue; let j = 0; while (j < prof.length - 2 && prof[j + 1][0] < y) j++; const a = prof[j], b = prof[j + 1], u = (y - a[0]) / (b[0] - a[0] || 1), L = k => a[k] + (b[k] - a[k]) * u;
       const zz = V.z - L(4), rz = zz > 0 ? L(2) : L(3), e = Math.sqrt((V.x / L(1)) ** 2 + (zz / rz) ** 2); if (e < 1) worst = Math.max(worst, (1 - e) * L(1)); } }
     return worst; }
+
+  // saia estufada: a folga entre o pano e o corpo (tronco e alto da coxa) da cintura até o meio do quadril. Uma saia
+  // de verdade é justa no cós e veste o quadril com 1–3 cm de folga; mais de 4,5 cm (nos 10% mais afastados) é saia de barril (o pano preso longe do corpo)
+  function panoFolga(p) { if (!p.s || !p.s.skirt || !p.cloth || !p.cloth.length) return 0; const prof = p.body.userData.hipProf; if (!prof) return 0;
+    p.g.updateMatrixWorld(true); const Mi = new THREE.Matrix4().copy(p.pelvis.matrixWorld).invert(), pos = p.cloth[0].mesh.geometry.attributes.position; const gaps = [];
+    for (let i = 0; i < pos.count; i++) { V.fromBufferAttribute(pos, i).applyMatrix4(Mi); const y = V.y + 0.95; if (y < 0.86 || y > p.waistY + 0.005 || y > prof[prof.length - 1][0]) continue;
+      let j = 0; while (j < prof.length - 2 && prof[j + 1][0] < y) j++; const a = prof[j], b = prof[j + 1], u = (y - a[0]) / (b[0] - a[0] || 1), L = k => a[k] + (b[k] - a[k]) * u;
+      const zz = V.z - L(4), ang = Math.atan2(zz, V.x), rB = 1 / Math.hypot(Math.cos(ang) / L(1), Math.sin(ang) / (zz > 0 ? L(2) : L(3))); gaps.push(Math.hypot(V.x, zz) - rB); }
+    gaps.sort((x, y) => x - y); return gaps.length ? gaps[Math.floor(gaps.length * 0.9)] : 0; }   /* os 10% mais afastados: onde estufa */
 
   // ---------- POSE
   // vinco: a área de pele (cm², medida parado) dos triângulos que esticam mais de 2,2× ou encolhem a menos de 0,45× com a pose
@@ -220,6 +231,7 @@ export function createJuizGente({ gente, spot = [0, 0] }) {
     { const sp = p.spine; sp.updateMatrixWorld(true); const q = new THREE.Vector3(); sp.getWorldPosition(q); p.g.worldToLocal(q); p.__spine0.copy(q); }
     const F = forma(p, nome, S0, dom), I = integracao(p, S0, dom), Po = poses(p, S0, dom, I.torso);
     step(30); pose(p, {}); const pano = panoDentro(p); if (pano > 0.012) I.out.push({ f: 'integração', pen: Math.min(12, pano * 500), msg: `em pé, o quadril atravessa a saia (${r1(pano * 100)} cm)` });
+    const folga = panoFolga(p); if (folga) I.M.saiaFolga = r1(folga * 1000); if (folga > 0.045) I.out.push({ f: 'forma', pen: Math.min(15, (folga - 0.045) * 400), msg: `a saia estufa longe do corpo: ${r1(folga * 100)} cm de folga entre a cintura e o quadril (justa: 1–3 cm)` });
     p.g.visible = false; p.x += 300; if (p.cloth) for (const c of p.cloth) c.mesh.visible = false;
     return { medidas: { ...F.M, ...I.M }, poses: Po.M, achados: [...F.out, ...I.out, ...Po.out] }; }
   function julgar({ tipos = Object.keys(TIPOS), andarJunto = true } = {}) { const rel = {};

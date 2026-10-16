@@ -118,6 +118,7 @@ export function buildBody(s) {
   const W = (y, a, b) => y < a ? [[B.hips, 1]] : y > b ? [[B.spine, 1]] : [[B.hips, (b - y) / (b - a)], [B.spine, (y - a) / (b - a)]];
   // a blusa de quem usa saia desce até o quadril (fica por baixo do pano): não abre vão na cintura quando ela se curva
   const shirtBottom = s.skirt ? 0.86 : kid ? 0.93 : 0.98;   /* com cinto, a camisa some dentro da calça embaixo do cinto */
+  const skirtY = s.skirt && !kid ? 1.035 : s.dress ? 1.0 : 0.97;   /* a saia é presa na cintura de verdade (a parte mais fina do tronco), não no quadril */
   const tor = f ? [
     [0.80, 0.11, 0.07, 0.08, 0], [0.85, 0.172, 0.1, 0.13, -0.012], [0.90, 0.185, 0.108, 0.14, -0.016], [0.95, 0.178, 0.105, 0.122, -0.012], [1.00, 0.152, 0.098, 0.1, -0.004],
     [1.05, 0.13, 0.088, 0.088, 0.002], [1.10, 0.132, 0.092, 0.088, 0.006], [1.16, 0.145, 0.11, 0.092, 0.01], [1.21, 0.152, 0.14, 0.095, 0.012], [1.26, 0.156, 0.146, 0.098, 0.012],
@@ -188,11 +189,11 @@ export function buildBody(s) {
     const bare = fw === 'chinelo' || fw === 'descalco';
     const leg = [[0.98, f ? 0.092 : 0.088, 0, hp], [0.9, f ? 0.09 : 0.087, -0.004, hp], [0.8, 0.08, 0, hp], [0.68, 0.068, 0.004, hp], [0.58, 0.058, 0.006, hp], [0.55, 0.056, 0.007, 'H1'], [0.52, 0.054, 0.008, -1], [0.49, 0.0535, 0.004, 'K1'], [0.46, 0.053, 0, kn], [0.38, 0.058, -0.014, kn], [0.3, 0.054, -0.012, kn], [0.2, 0.042, -0.004, kn], [0.13, 0.035, 0, kn], [0.09, 0.034, 0, -2], ...(bare ? [[0.055, 0.03, 0.01, ft]] : [])];
     bd.tube(leg.map(([y, r, cz, b]) => { const pants = y >= pantsEnd && !s.skirt; const rr = (pants ? Math.max(r, 0.06) + 0.01 : r) * (f ? 1.02 : 1) * (0.92 + 0.08 * bw);
-      const cc = pants ? bot.clone().multiplyScalar(y < 0.2 ? 0.88 : y > 0.44 && y < 0.56 ? 1.05 : 1) : (s.skirt && s.stockings ? C(s.stockings) : skin);   // barra mais suja, joelho gasto
+      const under = s.skirt && !pants && y >= 0.88, cc = pants ? bot.clone().multiplyScalar(y < 0.2 ? 0.88 : y > 0.44 && y < 0.56 ? 1.05 : 1) : under ? (dressTop ? top : bot).clone().multiplyScalar(0.85) : (s.skirt && s.stockings ? C(s.stockings) : skin);   /* o alto da coxa, embaixo da saia, é do pano dela (anágua): se encostar no pano, não aparece pele */   // barra mais suja, joelho gasto
       // calça: vinco passado na frente, costura do lado, pano que enruga atrás do joelho e embola em cima da botina
       const pk = !pants ? 0 : y < 0.2 ? 1 : y > 0.44 && y < 0.6 ? 0.7 : 0, pw = a => 0.5 + 0.5 * Math.sin(6 * a + y * 70), back = a => y < 0.2 ? 1 : Math.max(0, -Math.sin(a));
       const pc = a => cc.clone().multiplyScalar((1 + 0.07 * Math.max(0, Math.sin(a)) ** 12 - 0.1 * Math.abs(Math.cos(a)) ** 14) * (1 - 0.14 * pk * back(a) * (1 - pw(a))));
-      return { y, cx: lx * (1 - (0.98 - y) * 0.12), cz: pants ? cz * 0.5 : cz, rx: rr, rzF: rr * 1.05, rzB: rr * 1.08, c: pants ? pc : cc, m: pk && y < 0.2 ? (a => 1 + 0.05 * back(a) * pw(a)) : null,   /* atrás do joelho o vinco é só de cor: volume ali estica quando ajoelha */ pat: pants ? botPat : 0, b: b === -1 ? [[sx < 0 ? B.jcL : B.jcR, 1]] : b === 'H1' ? [[hp, 0.6], [sx < 0 ? B.jcL : B.jcR, 0.4]] : b === 'K1' ? [[sx < 0 ? B.jcL : B.jcR, 0.4], [kn, 0.6]] : b === -2 ? [[kn, 0.5], [ft, 0.5]] : [[b, 1]] }; }), SEG.perna, false, true);
+      return { y, cx: lx * (1 - (0.98 - y) * 0.12), cz: pants ? cz * 0.5 : cz, rx: rr, rzF: rr * 1.05, rzB: rr * 1.08, c: pants ? pc : cc, m: pk && y < 0.2 ? (a => 1 + 0.05 * back(a) * pw(a)) : null,   /* atrás do joelho o vinco é só de cor: volume ali estica quando ajoelha */ pat: pants ? botPat : under ? (dressTop ? topPat : botPat) : 0, b: b === -1 ? [[sx < 0 ? B.jcL : B.jcR, 1]] : b === 'H1' ? [[hp, 0.6], [sx < 0 ? B.jcL : B.jcR, 0.4]] : b === 'K1' ? [[sx < 0 ? B.jcL : B.jcR, 0.4], [kn, 0.6]] : b === -2 ? [[kn, 0.5], [ft, 0.5]] : [[b, 1]] }; }), SEG.perna, false, true);
     const fx = lx * (1 - 0.88 * 0.12);
     // barra da calça virada para fora (bainha dobrada, como na roça)
     bd.setPart('roupa');
@@ -298,7 +299,8 @@ export function buildBody(s) {
     bd.rigid(shell(belt, 36, 2, 0.003, q => brown.clone().multiplyScalar(0.9 + 0.2 * Math.min(1, Math.abs(q.y - 0.965) < 0.016 ? 1 : 0.4)), brown.clone().multiplyScalar(0.6), brown.clone().multiplyScalar(0.55), radial), C(0xffffff), B.hips, 5);
     for (const a of [0.35, 1.0, 1.95, 2.6, 2.1 + Math.PI, 1.0 + Math.PI * 1.5]) { const pl = (u, v) => outLeg(surf(0.94 + 0.05 * v, a + (u - 0.5) * 0.05, 0.0072), 0.0072); bd.rigid(shell(pl, 1, 2, 0.002, bot.clone().multiplyScalar(0.8), bot.clone().multiplyScalar(0.6), bot.clone().multiplyScalar(0.6), radial), C(0xffffff), B.hips, botPat); }
     const bk = surf(0.965, Math.PI / 2, 0.0095); bd.rigid(new THREE.BoxGeometry(0.05, 0.04, 0.006).translate(bk.x, bk.y, bk.z), C(0xc8b070), B.hips); bd.rigid(new THREE.BoxGeometry(0.03, 0.022, 0.008).translate(bk.x, bk.y, bk.z + 0.001), C(0x3a2418), B.hips); }
-  if (s.skirt) { const band = new THREE.CylinderGeometry(1, 1.02, 0.03, 22, 1, true).scale(0.158 * bw + 0.004, 1, 0.108 * bw + 0.004).translate(0, 1.0, 0.002); bd.rigid(band, (dressTop ? top : bot).clone().multiplyScalar(0.9), B.hips, dressTop ? topPat : botPat); }
+  if (s.skirt) { const band = (u, v) => surf(skirtY - 0.013 + 0.024 * v, Math.PI / 2 + u * Math.PI * 2, 0.0075), bc = dressTop ? top : bot;   // o cós da saia, justo na cintura
+    bd.rigid(shell(band, 32, 2, 0.003, tint(0.88, bc), tint(0.7, bc), tint(0.66, bc), radial), C(0xffffff), B.hips, dressTop ? topPat : botPat); }
   // ---------- cabeça (as peças são feitas em volta do osso da cabeça e levadas para a altura dele na pose de descanso)
   const HY = 1.47, hd = { rigid: (g, c, b, pt) => bd.rigid(g.translate(0, HY, 0), c, b, pt), setPart: bd.setPart }; bd.setPart('cabeça');
   const eyesAt = [-1, 1].map(sx => V(sx * 0.384, 0.06, 0.921).normalize());
@@ -374,9 +376,12 @@ export function buildBody(s) {
   // a cabeça um tico maior que a anatomia (8% no adulto, 22% na criança): de longe, na câmera do jogo, o rosto e o chapéu leem
   head.scale.setScalar(kid ? 1.2 : 1.03);
   // o perfil do quadril (para o pano da saia não entrar no corpo): [y, meia-largura, frente, costas, deslocamento]
-  const hipProf = tor.filter(r => r[0] >= 0.78 && r[0] <= 1.08).map(([y, rx, rzF, rzB, cz]) => [y, rx * bw, rzF * bw, rzB * bw, cz * bw]);
+  // o perfil que a saia veste: o tronco e, embaixo, o alto das coxas (no corpo mais fino a coxa passa da lateral do quadril)
+  const legOut = y => { if (y > 0.98) return 0; const t = Math.min(1, (0.98 - y) / 0.08), t2 = Math.max(0, Math.min(1, (0.9 - y) / 0.1)), r = (y >= 0.9 ? (f ? 0.092 : 0.088) * (1 - t) + (f ? 0.09 : 0.087) * t : (f ? 0.09 : 0.087) * (1 - t2) + 0.08 * t2) * (f ? 1.02 : 1) * (0.92 + 0.08 * bw);
+    return LX * bw * (1 - (0.98 - y) * 0.12) + r + 0.004; };
+  const hipProf = tor.filter(r => r[0] >= 0.78 && r[0] <= 1.08).map(([y, rx, rzF, rzB, cz]) => [y, Math.max(rx * bw, legOut(y)), rzF * bw, rzB * bw, cz * bw]);
   mesh.userData.hipProf = hipProf; mesh.userData.segs = { tronco: SEG.tronco, 'braço': SEG.braco, coxa: SEG.perna };   // para o juiz (juizgente.js)
-  return { mesh, hips, spine, head, arms, legs, lids, swing, waistY: s.dress ? 1.0 : 0.97, bw, hipProf };
+  return { mesh, hips, spine, head, arms, legs, lids, swing, waistY: skirtY, bw, hipProf };
 }
 
 // ---------- cabelo: um volume que acompanha o crânio, com linha do cabelo de verdade (testa, entradas, acima da orelha,
@@ -454,7 +459,7 @@ function hair(bd, s, hb) {
 }
 
 // ---------- pano (saia, avental): cordas de pontos penduradas na cintura, com gravidade, vento, atrito e choque com as pernas
-export function Cloth({ strips = 22, rows = 8, len = 0.6, r0x = 0.17, r0z = 0.12, flare = 0.12, arc = [0, Math.PI * 2], drop = 0, tex = null, color = 0xffffff, margin = 0.012, minK = 0.55, hip = null }) {
+export function Cloth({ strips = 22, rows = 8, len = 0.6, r0x = 0.17, r0z = 0.12, flare = 0.12, arc = [0, Math.PI * 2], drop = 0, tex = null, color = 0xffffff, margin = 0.012, minK = 0.55, hip = null, y0 = null }) {
   const full = arc[1] - arc[0] >= Math.PI * 2 - 1e-3, ns = full ? strips : strips + 1, N = ns * (rows + 1);
   const P = new Float32Array(N * 3), O = new Float32Array(N * 3), rest = [], seg = len / rows;
   const geo = new THREE.BufferGeometry(), pos = new THREE.BufferAttribute(P, 3), uv = [], idx = [];
@@ -468,7 +473,12 @@ export function Cloth({ strips = 22, rows = 8, len = 0.6, r0x = 0.17, r0z = 0.12
     sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vWp;\n' + HEAD).replace('#include <map_fragment>', '#include <map_fragment>\ndiffuseColor.rgb*=mix(1.0,0.8,uWet);').replace('#include <lights_fragment_end>', LIGHT_END('2.2')); };
   m.customProgramCacheKey = () => 'pano' + (tex ? 1 : 0);
   const mesh = new THREE.Mesh(geo, m); mesh.frustumCulled = false; mesh.castShadow = true; mesh.receiveShadow = true;
-  const ringR = (r, a) => [(r0x + flare * r / rows) * Math.cos(a), (r0z + flare * 0.8 * r / rows) * Math.sin(a)];
+  // a forma de descanso de cada fileira: justa na cintura, vestindo o quadril (o perfil do tronco mais a folga) e,
+  // dali para baixo, abrindo só o tanto do corte (flare)
+  const hipAt0 = y => { if (!hip || y < hip[0][0] || y > hip[hip.length - 1][0]) return null; let i = 0; while (i < hip.length - 2 && hip[i + 1][0] < y) i++; const a = hip[i], b = hip[i + 1], u = (y - a[0]) / (b[0] - a[0] || 1); return a.map((v, j) => v + (b[j] - v) * u); };
+  const RX = [], RZ = []; { let ex = r0x, ez = r0z; for (let r = 0; r <= rows; r++) { const h = y0 != null ? hipAt0(y0 + drop - r * seg) : null;
+    if (h) { ex = Math.max(ex, h[1] + margin * 0.85); ez = Math.max(ez, Math.max(h[2], h[3]) + Math.abs(h[4]) + margin * 0.85); } RX.push(ex + flare * r / rows); RZ.push(ez + flare * 0.8 * r / rows); } }
+  const ringR = (r, a) => [RX[r] * Math.cos(a), RZ[r] * Math.sin(a)];
   const tmp = new THREE.Vector3(), M = new THREE.Matrix4(), HI = new THREE.Matrix4(), lp = new THREE.Vector3();
   // o quadril é uma pilha de elipses (o perfil do tronco do corpo): o ponto do pano que entra é empurrado para fora, no
   // espaço do quadril (vale com ela andando, sentando ou se abaixando)

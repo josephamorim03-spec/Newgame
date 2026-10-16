@@ -105,8 +105,9 @@ export function buildPeople(scene, { mobile = false, fx = null, afx = null, col:
     if (s.skirt) { const len = s.sex === 'c' ? 0.36 : s.skirt <= 0.56 ? 0.5 : s.skirt <= 0.7 ? 0.62 : 0.82, bw = body.bw;
       const t = texOf(s.dress ? s.top.mat : s.bottom.mat), tex = t ? Object.assign(t.clone(), { needsUpdate: true }) : null; if (tex) { tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.repeat.set(1, 1); }
       const hp = body.hipProf, wy = body.waistY, hi = hp.findIndex(r => r[0] >= wy), A = hp[Math.max(0, hi - 1)], Bq = hp[Math.max(0, hi)], u = Bq[0] > A[0] ? (wy - A[0]) / (Bq[0] - A[0]) : 0, at = k => A[k] + (Bq[k] - A[k]) * u;   /* a boca da saia na medida do corpo naquela altura */
-      cl.push(Cloth({ strips: mobile ? 16 : 22, rows: 8, len, r0x: Math.max(0.158 * bw, at(1) + 0.008), r0z: Math.max(0.108 * bw, Math.max(at(2), at(3)) + 0.008), flare: 0.13 + len * 0.08, tex, color: tex ? 0xffffff : (s.dress ? s.top.color : s.bottom.color), hip: body.hipProf })); }
-    if (s.apron) cl.push(Cloth({ strips: 8, rows: 6, len: (s.skirt ? 0.5 : 0.55), r0x: 0.155 * body.bw, r0z: 0.125 * body.bw, flare: 0.08, arc: [Math.PI / 2 - 0.8, Math.PI / 2 + 0.8], color: 0xf2ede2, margin: 0.055, drop: -0.02, minK: 0.92, hip: body.hipProf }));
+      cl.push(Cloth({ strips: mobile ? 16 : 22, rows: 8, len, r0x: at(1) + 0.007, r0z: Math.max(at(2), at(3)) + Math.abs(at(4)) + 0.007, flare: 0.02 + len * 0.05, tex, color: tex ? 0xffffff : (s.dress ? s.top.color : s.bottom.color), hip: body.hipProf, y0: wy })); }
+    if (s.apron) { const hp = body.hipProf, wy = body.waistY, A = hp.reduce((m, r) => Math.abs(r[0] - wy) < Math.abs(m[0] - wy) ? r : m, hp[0]), sk = s.skirt ? 0.012 : 0;   /* o avental na cintura, por cima da saia */
+      cl.push(Cloth({ strips: 8, rows: 6, len: (s.skirt ? 0.5 : 0.55), r0x: A[1] + 0.012 + sk, r0z: A[2] + A[4] + 0.012 + sk, flare: 0.08, y0: wy, arc: [Math.PI / 2 - 0.8, Math.PI / 2 + 0.8], color: 0xf2ede2, margin: 0.055, drop: -0.02, minK: 0.92, hip: body.hipProf })); }
     for (const c of cl) { scene.add(c.mesh); clothes.push(c); }
     g.scale.setScalar(s.h / 1.70);
     const P = { g, body: body.mesh, warmGeo, coolGeo, warm: false, pelvis, spine, head, arms, legs, tool, two, lids: body.lids, swing: body.swing, blinkT: 2 + rnd() * 4, extra, lata, s, cloth: cl, waistY: body.waistY, bw: body.bw, x: 0, z: 0, h: 0, ph: rnd() * 6, t: 0, st: 'post', sit: 0, pitch: 0 };
@@ -117,15 +118,16 @@ export function buildPeople(scene, { mobile = false, fx = null, afx = null, col:
     scene.add(g); return P;
   }
   // o pano anda junto: presa na cintura, bate nas pernas e no quadril, cai no chão, o vento sopra
-  const _a = new THREE.Vector3(), _b = new THREE.Vector3(), _c = new THREE.Vector3(), _d = new THREE.Vector3(), _e = new THREE.Vector3(), _f = new THREE.Vector3(), _h1 = new THREE.Vector3(), _h2 = new THREE.Vector3();
+  const _a = new THREE.Vector3(), _b = new THREE.Vector3(), _c = new THREE.Vector3(), _d = new THREE.Vector3(), _e = new THREE.Vector3(), _f = new THREE.Vector3();
   function stepCloth(p, dt) {
     if (!p.cloth.length) return;
     const cam = window.__cam, far = cam ? Math.hypot(cam.position.x - p.x, cam.position.y, cam.position.z - p.z) : 0, lim = [70, 45, 28][window.__Q ? window.__Q() : 0];
     if (far > lim) { p.clothSkip = (p.clothSkip || 0) + dt; if (p.clothSkip < 0.5) return; dt = Math.min(p.clothSkip, 1 / 30); p.clothSkip = 0; } const vis = p.g.visible; for (const c of p.cloth) c.mesh.visible = vis; if (!vis) { for (const c of p.cloth) c.reset(); return; }
     p.g.updateMatrixWorld(true); const sc = p.g.scale.x, bw = p.bw;
     p.legs[0].hp.getWorldPosition(_a); p.legs[0].kn.getWorldPosition(_b); p.legs[0].ft.getWorldPosition(_c); p.legs[1].hp.getWorldPosition(_d); p.legs[1].kn.getWorldPosition(_e); p.legs[1].ft.getWorldPosition(_f);
-    _h1.copy(_a).lerp(_d, -0.1); _h2.copy(_d).lerp(_a, -0.1); _h1.y += 0.03 * sc; _h2.y += 0.03 * sc;
-    const caps = [[_a, _b, 0.09 * bw * sc], [_b, _c, 0.062 * sc], [_d, _e, 0.09 * bw * sc], [_e, _f, 0.062 * sc], [_h1, _h2, 0.125 * bw * sc]];
+    // só as pernas: o quadril é o perfil do próprio tronco (hipProf, dentro do Cloth); a cápsula grossa que havia aqui
+    // (12,5 cm de raio entre as juntas do quadril) era mais larga que o corpo e estufava a saia como um barril
+    const caps = [[_a, _b, 0.09 * bw * sc], [_b, _c, 0.062 * sc], [_d, _e, 0.09 * bw * sc], [_e, _f, 0.062 * sc]];
     const wv = U.uWindBase.value * (1 + U.uWindIu.value * 0.6), wd = U.uWindDir.value, wind = { x: wd.x * wv * wv * 0.028, z: wd.y * wv * wv * 0.028 };   // arrasto do vento no pano de algodão
     for (const c of p.cloth) c.step(Math.min(dt, 1 / 30), p.pelvis.matrixWorld, p.waistY, caps, heightAt, sc, wind);
   }
@@ -281,7 +283,9 @@ export function buildPeople(scene, { mobile = false, fx = null, afx = null, col:
   // ---------- poses (ângulos em radianos; + na coluna inclina para a frente, − no ombro levanta o braço para a frente)
   const set = (p, o) => { const k = o.k ?? 1, lerp = (obj, key, v) => { obj[key] += (v - obj[key]) * k; };
     lerp(p.pelvis.position, 'y', o.py ?? 0.95); lerp(p.spine.rotation, 'x', o.sp ?? 0); lerp(p.spine.rotation, 'y', o.sy ?? 0); lerp(p.head.rotation, 'x', o.hx ?? 0); lerp(p.head.rotation, 'y', o.hy ?? 0); lerp(p, 'pitch', o.pitch ?? 0);
-    p.arms.forEach((a, i) => { lerp(a.sh.rotation, 'x', (o.sh || [0, 0])[i]); lerp(a.el.rotation, 'x', (o.el || [-0.32, -0.32])[i]); lerp(a.sh.rotation, 'z', (o.shz || [0.1, -0.1])[i]); lerp(a.sh.rotation, 'y', (o.shy || [-0.15, 0.15])[i]); });
+    // quem usa saia solta o braço um pouco para fora: a mão pende do lado da saia, por cima do pano, e não entra nele
+    const sk = p.s && p.s.skirt ? 0.14 : 0;
+    p.arms.forEach((a, i) => { const shx = (o.sh || [0, 0])[i], hang = sk ? Math.max(0, 1 - Math.abs(shx) / 0.9) : 0; lerp(a.sh.rotation, 'x', shx); lerp(a.el.rotation, 'x', (o.el || [-0.32, -0.32])[i]); lerp(a.sh.rotation, 'z', (o.shz || [0.1, -0.1])[i] + (i ? sk : -sk) * hang); lerp(a.sh.rotation, 'y', (o.shy || [-0.15, 0.15])[i]); });
     p.legs.forEach((l, i) => { lerp(l.hp.rotation, 'x', (o.hp || [0, 0])[i]); lerp(l.kn.rotation, 'x', (o.kn || [0, 0])[i]); lerp(l.ft.rotation, 'x', (o.ft || [0, 0])[i]); });
     lerp(p.pelvis.rotation, 'y', o.pry ?? 0); };
   // o passo: ~0,41 da altura andando a ~1,25 m/s (mais curto devagar), ~0,68 correndo; o velho, mais curto
