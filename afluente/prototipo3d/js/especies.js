@@ -67,11 +67,11 @@ export function especies({ M, MJ, rnd }) {
     const shape = (x, y, a, r) => { const z = r.z, s = Math.sin(a), hz = Math.exp(-(((z - 0.42) / 0.16) ** 2));
       if (s > 0) { const top = Math.pow(s, 3); y += hump * hz * top; x *= 1 - 0.18 * hz * top; }   // cupim (redondo, não em bico)
       const dz = Math.max(0, Math.min(1, (z - 0.42) / 0.2)); if (s < 0) { const bot = Math.pow(-s, 5); y -= 0.1 * dz * bot; x *= 1 - 0.6 * dz * bot; }   // barbela no peito
-      if (z < -0.45 && s < 0.2) x *= 1 + 0.05 * Math.cos(a * 2);   // coxa
+      if (s < 0.35) { const side = Math.pow(Math.abs(Math.cos(a)), 1.5); x *= 1 + side * (0.07 * Math.exp(-(((z - 0.4) / 0.13) ** 2)) + 0.09 * Math.exp(-(((z + 0.6) / 0.17) ** 2))); }   // paleta e coxa
       if (z > -0.4 && z < 0.3 && s < -0.3) y -= 0.025 * Math.sin((z + 0.4) / 0.7 * Math.PI);   // barriga
       return [x, y]; };
-    const neckPts = [[0, 1.0, 0.46], [0, 1.1, 0.64], [0, 1.22, 0.81], [0, 1.31, 0.95]], nc = a => shade(0.75)(a);
-    const neck = { pts: neckPts, prof: [{ rx: 0.2, rt: 0.21, rb: 0.3, c: nc }, { rx: 0.175, rt: 0.18, rb: 0.29, c: nc }, { rx: 0.14, rt: 0.145, rb: 0.22, c: nc }, { rx: 0.11, rt: 0.11, rb: 0.13, c: nc }],
+    const neckPts = [[0, 1.01, 0.42], [0, 1.1, 0.64], [0, 1.22, 0.81], [0, 1.31, 0.95]], nc = a => shade(0.75)(a);
+    const neck = { pts: neckPts, prof: [{ rx: 0.232, rt: 0.34, rb: 0.4, e: 2.2, c: nc }, { rx: 0.175, rt: 0.18, rb: 0.29, c: nc }, { rx: 0.14, rt: 0.145, rb: 0.22, c: nc }, { rx: 0.11, rt: 0.11, rb: 0.13, c: nc }],
       shape: (x, v, a, r, i) => { if (v < 0) { const bot = Math.pow(Math.max(0, -Math.sin(a)), 4); x *= 1 - 0.62 * bot * (i < 3 ? 1 : 0.3); } return [x, v]; } };
     // cabeça de zebu: testa larga e chata entre os chifres, bochecha (masseter) cheia embaixo, chanfro que afina e o focinho
     // que alarga de novo, com a almofada escura do nariz, as narinas dos lados e o queixo; olhos grandes de lado
@@ -108,10 +108,10 @@ export function especies({ M, MJ, rnd }) {
     const fl = [0.42, 0.275, 0.14], hl = [0.48, 0.33, 0.14];
     const fprof = [[0, 0.12, 0.13, 0.12], [0.12, 0.115, 0.125, 0.105], [0.24, 0.095, 0.1, 0.08], [0.36, 0.07, 0.072, 0.06], [0.46, 0.056, 0.058, 0.05], [0.5, 0.058, 0.066, 0.052], [0.54, 0.05, 0.052, 0.046],
       [0.6, 0.04, 0.04, 0.041], [0.76, 0.036, 0.036, 0.038], [0.82, 0.044, 0.045, 0.05], [0.86, 0.042, 0.042, 0.046]];
-    const hprof = [[0, 0.16, 0.16, 0.18], [0.12, 0.14, 0.13, 0.16], [0.26, 0.1, 0.085, 0.12], [0.4, 0.068, 0.055, 0.085], [0.48, 0.06, 0.05, 0.085], [0.52, 0.056, 0.048, 0.075], [0.57, 0.042, 0.04, 0.048],
+    const hprof = [[0, 0.11, 0.1, 0.1], [0.12, 0.11, 0.1, 0.11], [0.26, 0.095, 0.08, 0.11], [0.4, 0.068, 0.055, 0.085], [0.48, 0.06, 0.05, 0.085], [0.52, 0.056, 0.048, 0.075], [0.57, 0.042, 0.04, 0.048],
       [0.82, 0.036, 0.036, 0.038], [0.86, 0.044, 0.045, 0.05], [0.89, 0.042, 0.042, 0.046]];
     const hoofC = col(pinkNose ? 0x5a4a3e : 0x2e2622);
-    const leg = (x, z, top, L, prof) => ({ x, z, top: top + 0.06, L: [L[0] + 0.06, L[1], L[2]], prof: [[0, prof[0][1] * 1.25, prof[0][2] * 1.25, prof[0][3] * 1.25], ...prof.map(p => [p[0] * 0.92 + 0.08, p[1], p[2], p[3]])], c: legC(z), foot: casco(x, z, top - L[0] - L[1], L[2], 0.04, legC(z)(0.95), hoofC) });
+    const leg = (x, z, top, L, prof) => ({ x, z, top: top + 0.06, L: [L[0] + 0.06, L[1], L[2]], prof: [[0, prof[0][1], prof[0][2], prof[0][3]], ...prof.map(p => [p[0] * 0.92 + 0.08, p[1], p[2], p[3]])], c: legC(z), foot: casco(x, z, top - L[0] - L[1], L[2], 0.04, legC(z)(0.95), hoofC) });
     const tailPts = [[0, 1.15, -0.9], [0, 1.06, -0.97], [0, 0.88, -1.0], [0, 0.68, -1.0], [0, 0.5, -0.99], [0, 0.4, -0.985], [0, 0.32, -0.98]], tc = i => i >= 5 ? dark : w;
     const extra = []; if (!bull && !calf) { extra.push([sph(0.11, 0.075, 0.13, 0, 0.6, -0.42, 0xdca08c, 12), 'root']); for (const [x, z] of [[0.04, -0.37], [-0.04, -0.37], [0.04, -0.47], [-0.04, -0.47]]) extra.push([cyl(0.012, 0.009, 0.05, 0xd08a78, 6).translate(x, 0.52, z), 'root']); }
     const K = 1.08 * size * (bull ? 1.05 : 1);

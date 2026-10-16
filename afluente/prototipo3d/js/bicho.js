@@ -58,8 +58,8 @@ export const sph = (rx, ry, rz, x, y, z, c, s = 12) => paintG(new THREE.SphereGe
 // ---------- montagem com pele: junta peças, cada vértice com até 4 ossos e pesos
 function Skin() {
   const pos = [], nor = [], colA = [], uv = [], si = [], sw = [], idx = [];
-  function add(geo, wf) { const g = geo; if (!g.attributes.normal) g.computeVertexNormals(); const p = g.attributes.position, n = g.attributes.normal, c = g.attributes.color, u = g.attributes.uv, base = pos.length / 3;
-    for (let i = 0; i < p.count; i++) { const x = p.getX(i), y = p.getY(i), z = p.getZ(i); pos.push(x, y, z); nor.push(n.getX(i), n.getY(i), n.getZ(i));
+  function add(geo, wf, nf = null) { const g = geo; if (!g.attributes.normal) g.computeVertexNormals(); const p = g.attributes.position, n = g.attributes.normal, c = g.attributes.color, u = g.attributes.uv, base = pos.length / 3;
+    for (let i = 0; i < p.count; i++) { const x = p.getX(i), y = p.getY(i), z = p.getZ(i); pos.push(x, y, z); if (nf) { const m = nf(x, y, z, n.getX(i), n.getY(i), n.getZ(i)); nor.push(m[0], m[1], m[2]); } else nor.push(n.getX(i), n.getY(i), n.getZ(i));
       colA.push(c ? c.getX(i) : 1, c ? c.getY(i) : 1, c ? c.getZ(i) : 1); uv.push(u ? u.getX(i) : 0, u ? u.getY(i) : 0);
       const w = (typeof wf === 'number' ? [[wf, 1]] : wf(x, y, z)).filter(e => e[1] > 1e-4).sort((a, b) => b[1] - a[1]).slice(0, 4), s = w.reduce((a, e) => a + e[1], 0) || 1;
       for (let k = 0; k < 4; k++) { si.push(w[k] ? w[k][0] : 0); sw.push(w[k] ? w[k][1] / s : 0); } }
@@ -85,7 +85,19 @@ const blend = (t, t0, w, a, b) => { const k = sstep(t0 - w, t0 + w, t); return [
 export function quad(S) {
   const K = S.K || 1, sk = Skin(), B = Bones(), seg = S.seg || 26;
   const bodyY = S.rootY ?? S.body.rings.reduce((a, r) => a + r.y, 0) / S.body.rings.length, root = B.bone(null, [0, bodyY, 0]);
-  sk.add(loft(S.body.rings, seg, S.body.shape), root.userData.i);
+  // os ossos do quadril e do ombro vêm antes do corpo: a pele do flanco, da coxa e da paleta segue a perna (peso que
+  // diminui com a distância), em vez de ficar parada com a perna saindo de dentro dela e marcando um vinco
+  const hips = S.legs.map(L => B.bone(root, [L.x, L.top, L.z]));
+  // meia-largura do corpo (sem a escultura) na fatia z e na altura y; 0 se y está fora do corpo
+  const RG = S.body.rings, bodyHW = (z, y) => { let i = 0; while (i < RG.length - 2 && RG[i + 1].z < z) i++; const a = RG[i], b = RG[i + 1], t = clamp((z - a.z) / ((b.z - a.z) || 1), 0, 1), L = (k) => a[k] + (b[k] - a[k]) * t;
+    const cy = L('y'), dy = y - cy, r = dy > 0 ? L('rt') : L('rb'); if (Math.abs(dy) >= r) return 0; return L('rx') * Math.sqrt(1 - (dy / r) ** 2); };
+  const bodyAt = z => { let i = 0; while (i < RG.length - 2 && RG[i + 1].z < z) i++; const a = RG[i], b = RG[i + 1], t = clamp((z - a.z) / ((b.z - a.z) || 1), 0, 1); return { y: a.y + (b.y - a.y) * t, rx: a.rx + (b.rx - a.rx) * t, rb: a.rb + (b.rb - a.rb) * t }; };
+  const legNormal = (x, y, z, nx, ny, nz) => { const B0 = bodyAt(z), u = Math.min(0.98, Math.abs(x) / B0.rx), yb = B0.y - B0.rb * Math.sqrt(1 - u * u), k = sstep(yb - 0.14, yb + 0.03, y); if (k <= 0) return [nx, ny, nz];
+    const dy = Math.min(0, y - B0.y), bx = x / (B0.rx * B0.rx), by = dy / (B0.rb * B0.rb), bl = Math.hypot(bx, by) || 1, mx = nx + (bx / bl - nx) * k, my = ny + (by / bl - ny) * k, mz = nz * (1 - k), ml = Math.hypot(mx, my, mz) || 1; return [mx / ml, my / ml, mz / ml]; };
+  sk.add(loft(S.body.rings, seg, S.body.shape), (x, y, z) => { const out = []; let sum = 0;
+    S.legs.forEach((L, i) => { const r0 = L.prof[0][1], d = Math.hypot(x - L.x, (z - L.z) * 0.8);
+      const w = (1 - sstep(r0 * 0.4, r0 * 3.4, d)) * sstep(L.top + 0.3, L.top - 0.15, y) * 0.55; if (w > 0.01) { out.push([hips[i].userData.i, w]); sum += w; } });
+    out.push([root.userData.i, Math.max(0.05, 1 - sum)]); return out; });
   // pescoço e cabeça: o pescoço nasce dentro do peito; perto da base a pele mistura corpo e pescoço, perto da ponta, pescoço e cabeça
   const np = S.neck.pts, neck = B.bone(root, np[0]), head = B.bone(neck, np[np.length - 1]);
   const nlen = []; let acc = 0; nlen.push(0); for (let i = 1; i < np.length; i++) { acc += Math.hypot(np[i][1] - np[i - 1][1], np[i][2] - np[i - 1][2]); nlen.push(acc); }
@@ -93,17 +105,20 @@ export function quad(S) {
   const lastP = S.neck.prof[S.neck.prof.length - 1], profE = S.neck.prof.concat([{ ...lastP, rx: lastP.rx * 0.88, rt: lastP.rt * 0.88, rb: lastP.rb * 0.88 }]);
   const ng = tube(npE, profE, seg - 6, false, S.neck.shape); const nAx = [np[0], np[np.length - 1]];
   const along = (y, z) => { const dy = nAx[1][1] - nAx[0][1], dz = nAx[1][2] - nAx[0][2], l2 = dy * dy + dz * dz; return clamp(((y - nAx[0][1]) * dy + (z - nAx[0][2]) * dz) / l2, 0, 1); };
-  sk.add(ng, (x, y, z) => { const t = along(y, z); return t < 0.5 ? blend(t, 0.22, 0.2, root.userData.i, neck.userData.i) : blend(t, 0.88, 0.1, neck.userData.i, head.userData.i); });
+  sk.add(ng, (x, y, z) => { const t = along(y, z); return t < 0.45 ? blend(t, 0.2, 0.2, root.userData.i, neck.userData.i) : blend(t, 0.8, 0.28, neck.userData.i, head.userData.i); });
   const hp = np[np.length - 1], ears = (S.ears || []).map(e => B.bone(head, [hp[0] + e[0], hp[1] + e[1], hp[2] + e[2]]));
   const snout = S.snout ? B.bone(head, [hp[0] + S.snout[0], hp[1] + S.snout[1], hp[2] + S.snout[2]]) : null;
   const H = { add: (geo, who = 'head') => { geo.translate(hp[0], hp[1], hp[2]); const b = who === 'earL' ? ears[0] : who === 'earR' ? ears[1] : who === 'snout' ? snout : who === 'root' ? root : head; sk.add(geo, b.userData.i); } };
   S.head(H);
   // pernas: um tubo só do alto ao casco, a pele dobrando em volta do joelho e do boleto
   const legs = S.legs.map((L, li) => { const [L1, L2, L3] = L.L, Lt = L1 + L2 + L3, x = L.x, z = L.z, top = L.top;
-    const hip = B.bone(root, [x, top, z]), knee = B.bone(hip, [x, top - L1, z]), ank = B.bone(knee, [x, top - L1 - L2, z]);
-    const pts = L.prof.map(p => [x, top - p[0] * Lt, z + (p[4] || 0)]), prof = L.prof.map(p => ({ rx: p[1], rt: p[2] ?? p[1], rb: p[3] ?? p[1], e: 2, c: a => cfun(L.c)(p[0], a) }));
+    const hip = hips[li], knee = B.bone(hip, [x, top - L1, z]), ank = B.bone(knee, [x, top - L1 - L2, z]);
+    // o alto da perna fica por dentro do tronco (não sai pela lateral do flanco como uma coluna): a largura de cada anel é
+    // limitada pela meia-largura do corpo naquela altura
+    const pts = L.prof.map(p => [x, top - p[0] * Lt, z + (p[4] || 0)]), prof = L.prof.map((p, j) => { const py = top - p[0] * Lt, hw = bodyHW(z, py);
+      const rx = hw > 0 ? Math.min(p[1], Math.max(hw - Math.abs(x) - 0.01, p[1] * 0.55)) : p[1]; return { rx, rt: p[2] ?? p[1], rb: p[3] ?? p[1], e: 2, c: a => cfun(L.c)(p[0], a) }; });
     const t1 = L1 / Lt, t2 = (L1 + L2) / Lt;
-    sk.add(tube(pts, prof, 12, false), (px, py) => { const t = (top - py) / Lt; return t < (t1 + t2) / 2 ? blend(t, t1, 0.03, hip.userData.i, knee.userData.i) : blend(t, t2, 0.025, knee.userData.i, ank.userData.i); });
+    sk.add(tube(pts, prof, 12, false), (px, py) => { const t = (top - py) / Lt; return t < (t1 + t2) / 2 ? blend(t, t1, 0.03, hip.userData.i, knee.userData.i) : blend(t, t2, 0.025, knee.userData.i, ank.userData.i); }, legNormal);
     if (L.foot) sk.add(L.foot, ank.userData.i);
     // a pata de trás pisa um pouco atrás do quadril: no ponto em que a canela (metatarso) fica de pé com o corpo na altura de
     // descanso; o jarrete fica com ~150-160° (vaca de perna boa), em vez de a canela inclinar para a frente
