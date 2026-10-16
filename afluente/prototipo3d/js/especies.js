@@ -120,7 +120,10 @@ export function especies({ M, MJ, rnd }) {
     const hoofC = col(pinkNose ? 0x5a4a3e : 0x2e2622);
     const leg = (x, z, top, L, prof) => ({ x, z, top: top + 0.06, L: [L[0] + 0.06, L[1], L[2]], prof: [[0, prof[0][1], prof[0][2], prof[0][3]], ...prof.map(p => [p[0] * 0.92 + 0.08, p[1], p[2], p[3]])], c: legC(z), foot: casco(x, z, top - L[0] - L[1], L[2], 0.04, legC(z)(0.95), hoofC) });
     const tailPts = [[0, 1.15, -0.9], [0, 1.06, -0.97], [0, 0.88, -1.0], [0, 0.68, -1.0], [0, 0.5, -0.99], [0, 0.4, -0.985], [0, 0.32, -0.98]], tc = i => i >= 5 ? dark : w;
-    const extra = []; if (!bull && !calf) { extra.push([sph(0.11, 0.075, 0.13, 0, 0.6, -0.42, 0xdca08c, 12), 'root']); for (const [x, z] of [[0.04, -0.37], [-0.04, -0.37], [0.04, -0.47], [-0.04, -0.47]]) extra.push([cyl(0.012, 0.009, 0.05, 0xd08a78, 6).translate(x, 0.52, z), 'root']); }
+    const extra = []; if (!bull && !calf) { // úbere: a bolsa pende abaixo da barriga entre as coxas (o alto entra um pouco no corpo, embaixo ela fica à vista),
+      // com as quatro tetas para baixo, um pouco abertas, mais grossas na base
+      extra.push([sph(0.115, 0.085, 0.14, 0, 0.565, -0.42, 0xdca08c, 18), 'root']);
+      for (const [x, z] of [[0.05, -0.36], [-0.05, -0.36], [0.05, -0.48], [-0.05, -0.48]]) extra.push([cyl(0.009, 0.015, 0.07, 0xd08a78, 10).rotateZ(-Math.sign(x) * 0.12).rotateX(Math.sign(z + 0.42) * 0.1).translate(x, 0.485, z), 'root']); }
     const K = 1.08 * size * (bull ? 1.05 : 1);
     // manchas no pixel (ver pelagem); onde a cor do vértice é a do pelo (entre a cor de base e o cinza do lombo)
     const Mv = spotC ? pelagem(coat.spot, w, coat.w === 0xf0ebe2 ? 2.4 : 3.3, 0.6 - (coat.sp || 0) * 0.2, sd) : M;
