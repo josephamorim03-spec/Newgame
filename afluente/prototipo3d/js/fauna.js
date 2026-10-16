@@ -25,7 +25,7 @@ export function buildFauna(scene, opts = {}) {
   const pivot = (parent, x, y, z) => { const g = new THREE.Group(); g.position.set(x, y, z); parent.add(g); return g; };
   const all = [], updaters = [];
 
-  const CM = mat({ vertexColors: true }, { rim: '2.4', frag: 'diffuseColor.rgb*=0.95+0.1*vnoise(vWp.xz*14.0+vWp.y*9.0);diffuseColor.rgb*=mix(1.0,0.82,uWet);' });
+  const CM = mat({ vertexColors: true }, { rim: '2.4', frag: 'diffuseColor.rgb*=0.955+0.09*vnoise(vec2(vLp.z*9.0+vLp.x*4.0,vLp.y*90.0))+0.03*(vnoise(vLp.zy*26.0)-0.5);diffuseColor.rgb*=mix(1.0,0.82,uWet);' });
   // pelagens do gado do Cerrado: o nelore branco é minoria; a maioria é de boi de cor, como no pasto de verdade
   const COATS = [
     { w: 0xe6e1d6, g: 0x8a8680, k: 0.45, p: 3 },                              // nelore: branco a cinza-claro
@@ -128,6 +128,19 @@ export function buildFauna(scene, opts = {}) {
       if (bt) { let e = Math.atan2(bt.x - a.x, bt.z - a.z) - a.h; e = Math.atan2(Math.sin(e), Math.cos(e)); yaw = Math.max(-1.1, Math.min(1.1, e)); } }
     else if (a.st === 'flee') neck = -0.25;
     else if (a.st === 'walk' && !bird) neck = 0.15;
+    // o que o bicho faz parado, de vez em quando: sacode a cabeça (mosca), lambe o flanco, descansa uma perna de trás,
+    // senta (capivara, lobo, onça); a ave arruma as penas ou se sacode
+    const nm = a.g.userData.regua, idle = a.st === 'idle' && a.sp < 0.06;
+    if (!idle) { a.act = null; a.restLeg = -1; a.sit = false; }
+    else { a.ia = (a.ia ?? 2 + rnd() * 6) - dt;
+      if (a.ia < 0 && !a.act) { const can = bird ? ['shake', 'preen', 'preen'] : ['shake', 'lick', ...(['boi', 'bezerro', 'ovelha', 'anta'].includes(nm) ? ['rest', 'rest'] : []), ...(['capivara', 'lobo-guará', 'onça-pintada'].includes(nm) ? ['sit', 'sit'] : [])];
+        a.act = can[Math.floor(rnd() * can.length)]; a.actT = { shake: 1.0, lick: 2.4, preen: 2.6, rest: 7 + rnd() * 8, sit: 8 + rnd() * 10 }[a.act]; a.side = rnd() < 0.5 ? 1 : -1;
+        if (a.act === 'rest') a.restLeg = a.side > 0 ? 2 : 3; if (a.act === 'sit') a.sit = true; }
+      if (a.act) { a.actT -= dt; const u = a.actT;
+        if (a.act === 'shake') { tilt = Math.sin(u * 28) * 0.4 * Math.min(1, u * 3); neck = -0.1; a.earFlap = 1; fast = true; }
+        else if (a.act === 'lick') { yaw = a.side * 1.35; neck = 0.4; R.kind !== 'bird' && (tilt = a.side * 0.2); }
+        else if (a.act === 'preen') { yaw = a.side * 2.4; neck = 0.9; fast = Math.sin(u * 12) > 0; }
+        if (a.actT <= 0) { a.act = null; a.restLeg = -1; a.sit = false; a.ia = 4 + rnd() * 9; } } }
     // garça: fica imóvel olhando a água e dá o bote; no fim do bote, o respingo
     if (a.strike && a.st === 'idle') { a.sk = (a.sk ?? 3 + rnd() * 5) - dt; if (a.sk < 0) { const u = -a.sk / 0.45; strike = Math.sin(Math.min(1, u) * Math.PI); neck = 0.9 * strike; fast = true;
         if (u > 0.5 && !a.splashed) { a.splashed = true; muzzleWorld(a, _m); if (fx) fx.splash(_m.x, waterLevelAt(_m.x, _m.z) - U.uWaterDrop.value, _m.z, 0.35); }
