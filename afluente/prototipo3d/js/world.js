@@ -84,17 +84,23 @@ const cliffX = z => CLIFF_X + (vnoise(z * 0.12, 3.3) - 0.5) * 2.2;
 let Z_FALL = TC.c[1]; for (let i = 0; i < RIVER.length; i++) if (RIVER[i][0] > cliffX(RIVER[i][1])) { Z_FALL = RIVER[i][1]; break; }
 // largura da descida: 1,6 m no paredão da cachoeira (6 m para cada lado), abrindo até ~20 m de encosta longe dela
 const cliffW = z => { const dz = Math.abs(z - Z_FALL); return 1.6 + Math.min(18, Math.max(0, dz - 6) * 0.6) * (0.8 + 0.4 * vnoise(z * 0.05, 5.7)); };
-export function cliffDrop(x, z) { const w = cliffW(z), x0 = cliffX(z) - 0.5 + (vnoise(z * 0.06, 9.1) - 0.5) * w * 0.5;
+function cliffBase(x, z) { const w = cliffW(z), x0 = cliffX(z) - 0.5 + (vnoise(z * 0.06, 9.1) - 0.5) * w * 0.5;
   const u = Math.max(0, Math.min(1, (x - x0) / (w + 0.0001))); if (u <= 0) return 0; if (u >= 1) return DROP;
   // perfil: ombro arredondado em cima, pé que espalha embaixo, e um ressalto de pedra no meio da encosta (onde é larga)
   const ledge = w > 5 ? 0.08 * Math.sin(u * Math.PI * 2) * vnoise(z * 0.11, 2.3) : 0;
   return DROP * Math.max(0, Math.min(1, u * u * (3 - 2 * u) + ledge)); }
+// perto da queda o paredão é arenito em camadas: a descida vira três degraus de ~2 m com borda viva (cada laje com seu
+// recuo); longe dela fica a encosta suave. A água (os níveis do rio) usa o perfil liso; só o chão tem os degraus.
+export function cliffDrop(x, z) { const b = cliffBase(x, z), near = smooth(14, 6, Math.abs(z - Z_FALL)); if (near <= 0 || b <= 0 || b >= DROP) return b;
+  const f = b / DROP, t = f * 3, k = Math.floor(Math.min(t, 2.999)), lip = (vnoise(z * 0.9 + k * 3.1, 11.3 + k) - 0.5) * 0.18, ft = (k + smooth(0.28 + lip, 0.62 + lip, t - k)) / 3;
+  return DROP * (f + (ft - f) * 0.8 * near); }
+const cliffDropW = cliffBase;
 // o quanto a escarpa inclina ali (m por m): casa, roça e árvore não nascem no barranco íngreme
 export const cliffSlope = (x, z) => Math.abs(cliffDrop(x + 0.6, z) - cliffDrop(x - 0.6, z)) / 1.2;
 let S_FALL = 0; for (let i = 0; i < RIVER.length; i++) if (RIVER[i][0] > cliffX(RIVER[i][1])) { S_FALL = i / (RIVER.length - 1) * RLEN; break; }
 export const FALL = (() => { const i = Math.round(S_FALL / RLEN * (RIVER.length - 1)); const t = [RIVER[i + 4][0] - RIVER[i][0], RIVER[i + 4][1] - RIVER[i][1]], l = Math.hypot(...t); return { s: S_FALL, p: RIVER[i], t: [t[0] / l, t[1] / l], pool: [RIVER[i][0] + t[0] / l * 2.8, RIVER[i][1] + t[1] / l * 2.8] }; })();
 export const riverLevel = s => s >= 1e4 ? WATER_Y : WATER_Y - DROP * smooth(S_FALL - 0.3, S_FALL + 0.9, s);
-const levelOf = (ri, x, z) => ri.extra ? WATER_Y - cliffDrop(x, z) : riverLevel(ri.s);
+const levelOf = (ri, x, z) => ri.extra ? WATER_Y - cliffDropW(x, z) : riverLevel(ri.s);
 // a lagoa: bacia de borda irregular, com o mesmo nível d'água do vale de cima
 const TLG = TILES.find(t => t.kind === 'lagoa');
 export const LAKE = { c: [TLG.c[0] - 1, TLG.c[1] + 1], r: 10.5, level: WATER_Y };
@@ -202,7 +208,7 @@ const rot2w = (p, rot, lx, lz) => [p[0] + lx * Math.cos(rot) + lz * Math.sin(rot
 LAYOUT.lav = (() => { const tA = TILES[0]; for (let i = 20; i < 200; i += 3) { const [rx, rz] = RIVER[i]; for (const o of [3.2, -3.2, 3.8, -3.8]) { const x = rx, z = rz + o, w = waterDist(x, z); if (w > 0.4 && w < 1.2 && inHex(x, z, tA.c, 0.85)) return [x, z]; } } return null; })();
 if (LAYOUT.lav) { const [x, z] = LAYOUT.lav, e = 0.6, gx = waterDist(x + e, z) - waterDist(x - e, z), gz = waterDist(x, z + e) - waterDist(x, z - e), n = Math.hypot(gx, gz) || 1, ax = gx / n, az = gz / n;
   LAYOUT.varal = { c: [x + ax * 3.4, z + az * 3.4], dir: [-az, ax], len: 3.4 }; }
-LAYOUT.cruzeiro = { p: rot2w(LAYOUT.chapel.p, LAYOUT.chapel.rot, 6.5, 2.2) };                    // cruz de madeira em frente à capela
+LAYOUT.cruzeiro = { p: rot2w(LAYOUT.chapel.p, LAYOUT.chapel.rot, 7.4, 0.5) };                    // cruz de madeira em frente à capela
 LAYOUT.chapelDoor = rot2w(LAYOUT.chapel.p, LAYOUT.chapel.rot, 4.25 + 0.9, 0);
 LAYOUT.licao = { p: off(tV, -9, 9), rot: Math.PI / 2 };                                          // a mãe ensina as crianças à sombra
 LAYOUT.toco = { p: off(tV, -6.2, 13), rot: 0.4 };                                                // o pai racha lenha no toco

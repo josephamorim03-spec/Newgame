@@ -284,6 +284,7 @@ export function buildProps(scene, { mobile = false } = {}) {
   // ---------- cercas: esteios a cada ~2,2 m seguindo o chão, duas ou três réguas um pouco tortas; uma porteira aberta
   function fence(pts, { name = '', closed = true, gate = -1, posts = 1.35, rails = [0.5, 0.95], step = 2.2, color = 0x9a8470 } = {}) {
     const geos = [], P = [];
+    (LAYOUT.fences = LAYOUT.fences || []).push({ pts, closed, gate, name });   // para a colisão (cada lado é um segmento; a porteira fica aberta)
     const segs = closed ? pts.length : pts.length - 1;
     for (let i = 0; i < segs; i++) { const a = pts[i], b = pts[(i + 1) % pts.length], n = Math.max(1, Math.round(Math.hypot(b[0] - a[0], b[1] - a[1]) / step));
       for (let k = 0; k < n; k++) P.push([a[0] + (b[0] - a[0]) * k / n, a[1] + (b[1] - a[1]) * k / n]); }

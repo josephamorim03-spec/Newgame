@@ -17,6 +17,7 @@ import { buildBoard5 } from './board5.js';
 import { buildFauna } from './fauna.js';
 import { buildPeople } from './people.js';
 import { buildFx } from './fx.js';
+import { buildColisao } from './colisao.js';
 import { createFx } from './aguafx.js';
 import { buildClouds } from './clouds.js';
 import { buildSkyFx } from './skyfx.js';
@@ -111,10 +112,10 @@ function finishGround(pos, idx, out, drop) {
   g.setAttribute('bio', new THREE.BufferAttribute(bio, 4)); g.setAttribute('wd', new THREE.BufferAttribute(wd, 1)); g.setAttribute('ou', new THREE.BufferAttribute(ou, 1)); g.setAttribute('ex', new THREE.BufferAttribute(ex, 3)); g.setAttribute('wlv', new THREE.BufferAttribute(wlA, 1)); g.setIndex(idx); return g;
 }
 const groundMat = toon();
-groundMat.onBeforeCompile = sh => { shared(sh); sh.uniforms.uCenter = { value: new THREE.Vector2(CENTER[0], CENTER[1]) };
+groundMat.onBeforeCompile = sh => { shared(sh); sh.uniforms.uCenter = { value: new THREE.Vector2(CENTER[0], CENTER[1]) }; sh.uniforms.uFallL = { value: new THREE.Vector4(FALL.p[0] - FALL.t[0] * 0.6, FALL.p[1] - FALL.t[1] * 0.6, FALL.t[0], FALL.t[1]) };
   sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute vec4 bio;attribute vec3 ex;attribute float wlv;varying float vWl;varying float vNy;attribute float wd;attribute float ou;varying vec4 vBio;varying vec3 vEx;varying float vWd;varying vec3 vWp;varying float vOu;')
     .replace('#include <begin_vertex>', '#include <begin_vertex>\nvBio=bio;vEx=ex;vWd=wd;vOu=ou;vWl=wlv;vNy=normal.y;vWp=(modelMatrix*vec4(transformed,1.0)).xyz;');
-  sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec4 vBio;varying vec3 vEx;varying float vWd;varying vec3 vWp;varying float vOu;varying float vWl;varying float vNy;uniform vec2 uCenter;float vHaze;\n' + HEAD + HEXF)
+  sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec4 vBio;varying vec3 vEx;varying float vWd;varying vec3 vWp;varying float vOu;varying float vWl;varying float vNy;uniform vec2 uCenter;uniform vec4 uFallL;float vHaze;\n' + HEAD + HEXF)
     .replace('#include <color_fragment>', /* glsl */`
       vec2 p=vWp.xz;float n1=fbm(p*0.05),n2=fbm(p*0.4+3.1),n3=vnoise(p*2.4);
       // pasto: verde-amarelado vivo, com manchas mais escuras e mais claras (como pinceladas)
@@ -139,6 +140,9 @@ groundMat.onBeforeCompile = sh => { shared(sh); sh.uniforms.uCenter = { value: n
       // paredão de pedra onde o chão é íngreme (escarpa da cachoeira): arenito em camadas, com musgo onde respinga
       float steep=1.0-smoothstep(0.45,0.8,vNy);vec3 rock=mix(vec3(0.58,0.50,0.42),vec3(0.72,0.64,0.54),vnoise(vec2(p.x*0.6+p.y,vWp.y*3.2)))*(0.8+0.25*fract(vWp.y*1.7+vnoise(p*0.8)));
       rock=mix(rock,vec3(0.36,0.46,0.24),smoothstep(0.55,0.8,vnoise(p*2.0+vWp.y))*(1.0-smoothstep(1.0,6.0,vWd))*0.7);col=mix(col,rock,steep);
+      // a rocha ao lado da queda fica escura de molhada, com riscos de limo descendo (o borrifo não deixa secar)
+      {vec2 dq=p-uFallL.xy;float al=dot(dq,uFallL.zw),sd=dot(dq,vec2(-uFallL.w,uFallL.z));float nf=exp(-sd*sd/22.0)*smoothstep(-2.5,0.2,al)*(1.0-smoothstep(4.5,8.0,al))*(1.0-uWaterDrop);
+       col=mix(col,col*0.58,nf*max(steep,0.35));col=mix(col,vec3(0.2,0.31,0.19),nf*steep*smoothstep(0.45,0.75,vnoise(vec2(sd*3.2,vWp.y*0.6)))*0.65);}
       float wl=vWl-uWaterDrop-0.06*vOu,dep=(wl-vWp.y)*(1.0-smoothstep(0.3,1.2,vWd)),under=smoothstep(-0.02,0.05,dep);
       vec3 bed=mix(vec3(0.62,0.57,0.44),vec3(0.80,0.74,0.58),n3);float peb=smoothstep(0.5,0.72,vnoise(p*6.0));
       bed=mix(bed,mix(vec3(0.50,0.48,0.45),vec3(0.80,0.77,0.70),vnoise(p*11.0+4.0)),peb*0.85);bed*=0.82+0.18*vnoise(p*23.0);
@@ -233,11 +237,11 @@ const bladeGeos = (() => { const per = TILES.map(() => ({ sd: [], bp: [] })), F 
   return per.map((q, ti) => { const g = new THREE.InstancedBufferGeometry(); g.index = bladeBase.index; for (const k of ['position', 'uv', 'normal']) g.setAttribute(k, bladeBase.attributes[k]);
     g.setAttribute('seed', new THREE.InstancedBufferAttribute(new Float32Array(q.sd), 4)); g.setAttribute('bpos', new THREE.InstancedBufferAttribute(new Float32Array(q.bp), 2));
     g.instanceCount = q.bp.length / 2; g.userData.full = g.instanceCount; g.userData.c = TILES[ti].c; g.boundingSphere = new THREE.Sphere(new THREE.Vector3(TILES[ti].c[0], 0, TILES[ti].c[1]), R + 2); return g; }); })();
-const grassU = { uField: { value: fieldTex }, uFieldO: { value: new THREE.Vector2(CENTER[0] - FIELD.size / 2, CENTER[1] - FIELD.size / 2) }, uFieldS: { value: FIELD.size },
+const grassU = { uPush: { value: Array.from({ length: 16 }, () => new THREE.Vector4()) }, uField: { value: fieldTex }, uFieldO: { value: new THREE.Vector2(CENTER[0] - FIELD.size / 2, CENTER[1] - FIELD.size / 2) }, uFieldS: { value: FIELD.size },
  };
 const grassMat = toon({ side: THREE.DoubleSide });
 grassMat.onBeforeCompile = sh => { shared(sh); Object.assign(sh.uniforms, grassU);
-  sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute vec4 seed;attribute vec2 bpos;uniform sampler2D uField;uniform vec2 uFieldO;uniform float uFieldS,uRain;varying float vGy;varying vec3 vWp;varying float vType;varying float vTone;varying float vGust;\n' + NOISE + WIND)
+  sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute vec4 seed;attribute vec2 bpos;uniform vec4 uPush[16];uniform sampler2D uField;uniform vec2 uFieldO;uniform float uFieldS,uRain;varying float vGy;varying vec3 vWp;varying float vType;varying float vTone;varying float vGust;\n' + NOISE + WIND)
     .replace('#include <beginnormal_vertex>', 'vec3 objectNormal=vec3(0.0,1.0,0.0);')
     .replace('#include <begin_vertex>', /* glsl */`
       vec2 bp=bpos;vec2 fuv=(bp-uFieldO)/uFieldS;vec4 F=texture2D(uField,fuv);
@@ -248,6 +252,9 @@ grassMat.onBeforeCompile = sh => { shared(sh); Object.assign(sh.uniforms, grassU
       float g=gustAt(bp),q=windQ(max(0.0,uWindBase*(1.0+uWindIu*g))),v=uv.y;vGust=clamp(g*0.5*min(1.0,uWindBase/4.0),0.0,1.0);
       float lean=(0.18+0.35*seed.y)+(0.05+0.95*q)+0.12*q*sin(uTime*7.0+seed.x*40.0)+0.25*uRain;
       vec2 wd2=normalize(mix(vec2(cy,sy),uWindDir,clamp(q*1.4+0.25,0.0,1.0)));
+      // quem passa por cima deita o capim para fora do caminho (gente, boi, criança correndo)
+      vec2 pd=vec2(0.0);float pf=0.0;for(int i=0;i<16;i++){vec4 P=uPush[i];if(P.z<=0.0)continue;vec2 dd=bp-P.xy;float L=length(dd);float kk=(1.0-smoothstep(P.z*0.35,P.z,L))*P.w;if(kk>0.0){pd+=dd/max(L,0.03)*kk;pf=max(pf,kk);}}
+      if(pf>0.0){wd2=normalize(mix(wd2,normalize(pd+1e-4),clamp(pf,0.0,1.0)));lean+=pf*1.3;}
       float bend=lean*v*v;vec3 p=vec3(position.x*wdt*cy,0.0,position.x*wdt*sy);
       p+=vec3(wd2.x*bend*H*0.9,v*H*(1.0-0.45*lean*lean*v),wd2.y*bend*H*0.9);
       vec3 transformed=vec3(bp.x,F.r-0.02,bp.y)+p;vGy=v;vWp=transformed;`)
@@ -535,9 +542,25 @@ const shadeTree = scene.children.find(o => o.userData.kind === 'sombra' && inHex
 const clouds = buildClouds(scene, CENTER, { mobile });
 const fx = buildFx(scene, { max: mobile ? 500 : 900 });   // partículas (fx.js)
 const afx = createFx(scene, { mobile });   // anéis na água, respingos e poeira dos bichos e da lagoa (aguafx.js)
-const gente = buildPeople(scene, { mobile, fx, afx });
+// ---------- colisão: o que ocupa o chão (paredes, cercas, troncos, poço, coreto...) para gente e bicho desviarem
+const colisao = buildColisao();
+{ const L = LAYOUT, rot2 = (p, rot, lx, lz) => [p[0] + lx * Math.cos(rot) + lz * Math.sin(rot), p[1] - lx * Math.sin(rot) + lz * Math.cos(rot)];
+  for (const h of L.houses) colisao.box(h.p[0], h.p[1], h.w, h.d, h.rot, 'casa');
+  colisao.box(L.chapel.p[0], L.chapel.p[1], 8.5, 5.4, L.chapel.rot, 'capela'); { const t = rot2(L.chapel.p, L.chapel.rot, 8.5 / 2 - 1.2, -(5.4 / 2 + 1.15)); colisao.box(t[0], t[1], 2.3, 2.3, L.chapel.rot, 'torre'); }
+  for (const k of ['venda', 'sobrado', 'celeiro', 'paiol']) { const b = L[k]; if (b) colisao.box(b.p[0], b.p[1], b.w, b.d, b.rot || 0, k); }
+  colisao.circle(L.well.p[0], L.well.p[1], 0.95, 'poço'); colisao.circle(L.coreto.p[0], L.coreto.p[1], 3.0, 'coreto'); colisao.circle(L.oven.p[0], L.oven.p[1], 1.1, 'forno'); colisao.circle(L.mill.p[0], L.mill.p[1], 1.6, 'moinho');
+  colisao.box(L.cruzeiro.p[0], L.cruzeiro.p[1], 1.6, 1.6, L.chapel.rot + Math.PI / 2, 'cruzeiro'); colisao.circle(L.toco.p[0], L.toco.p[1], 0.36, 'toco'); colisao.box(L.lenha.p[0], L.lenha.p[1], 1.0, 1.0, L.lenha.rot, 'lenha');
+  colisao.box(L.bales.p[0], L.bales.p[1], 2.6, 1.5, L.bales.rot, 'fardos'); colisao.box(L.cart.p[0], L.cart.p[1], 3.6, 1.7, L.cart.rot, 'carroça'); colisao.circle(L.scarecrow.p[0], L.scarecrow.p[1], 0.25, 'espantalho');
+  if (L.varal) for (const k of [-1, 1]) colisao.circle(L.varal.c[0] + L.varal.dir[0] * L.varal.len / 2 * k, L.varal.c[1] + L.varal.dir[1] * L.varal.len / 2 * k, 0.08, 'varal');
+  for (const f of L.fences || []) { const n = f.closed ? f.pts.length : f.pts.length - 1; for (let i = 0; i < n; i++) { if (i === f.gate) continue; const a = f.pts[i], b = f.pts[(i + 1) % f.pts.length]; colisao.seg(a[0], a[1], b[0], b[1], 0.09, 'cerca'); } }
+  // troncos (a copa não atrapalha), cupinzeiros e pedras grandes
+  for (const o of scene.children) { const u = o.userData, s = o.scale.x || 1;
+    if (u.kind && u.kind !== 'moita') colisao.circle(o.position.x, o.position.z, (u.kind === 'sombra' ? 0.38 : u.kind === 'mata' ? 0.3 : 0.22) * s, 'tronco');
+    else if (u.regua === 'buriti' || u.regua === 'pinheiro-bravo') colisao.circle(o.position.x, o.position.z, 0.28 * s, 'tronco');
+    else if (u.regua === 'cupinzeiro') colisao.circle(o.position.x, o.position.z, 0.5 * s, 'cupinzeiro'); } }
+const gente = buildPeople(scene, { mobile, fx, afx, col: colisao });
 const skyfx = buildSkyFx(scene, camera, { mobile, focus: () => camMode === 'jogo' ? gameCam.focus : controls.target });
-const fauna = buildFauna(scene, { mobile, fx: afx, shade: shadeTree ? [shadeTree.position.x, shadeTree.position.z] : null, termites: scene.children.filter(o => o.userData.regua === 'cupinzeiro').map(o => [o.position.x, o.position.z]),
+const fauna = buildFauna(scene, { mobile, fx: afx, col: colisao, shade: shadeTree ? [shadeTree.position.x, shadeTree.position.z] : null, termites: scene.children.filter(o => o.userData.regua === 'cupinzeiro').map(o => [o.position.x, o.position.z]),
   treeTops: scene.children.filter(o => ['cerrado', 'mata', 'sombra'].includes(o.userData.kind)).map(o => { const bb = new THREE.Box3().setFromObject(o); return [o.position.x, bb.max.y - 0.6, o.position.z]; }) });
 // moitas: o sub-bosque da mata e os arbustos do cerrado, que fecham o vão entre o capim e as copas
 scatter(tB, 16, () => makeTree('moita', 0.9 + rnd() * 0.35), (x, z) => { const w = waterDist(x, z); return w > 1.2 && w < 14; }, 2.2);
@@ -563,7 +586,7 @@ const waterMat = new THREE.ShaderMaterial({ transparent: true, depthWrite: false
     void main(){vec3 p=position;p.y-=uWaterDrop;vec4 w=modelMatrix*vec4(p,1.0);vWp=w.xyz;vFlow=flow;vDep=dep-uWaterDrop;vec4 mvPosition=viewMatrix*w;gl_Position=projectionMatrix*mvPosition;
     #include <fog_vertex>
     }`,
-  fragmentShader: /* glsl */`varying vec2 vFlow;varying float vDep;varying vec3 vWp;uniform sampler2D uRefl;uniform mat4 uReflMat;uniform vec3 uRocks[8];
+  fragmentShader: /* glsl */`varying vec2 vFlow;varying float vDep;varying vec3 vWp;uniform sampler2D uRefl;uniform mat4 uReflMat;uniform vec3 uRocks[8];uniform vec4 uWade[8];
     ${HEAD}
     #include <fog_pars_fragment>
     float hgt(vec2 q){return vnoise(q*vec2(0.55,1.1)-vec2(uFlowClk*0.55,0.0))*0.5+vnoise(q*vec2(1.6,2.4)-vec2(uFlowClk*1.3,0.0))*0.27+vnoise(q*vec2(4.0,5.5)-vec2(uFlowClk*2.2,0.0))*0.14+vnoise(q*vec2(9.0,12.0)-vec2(uFlowClk*3.1,0.0))*0.09;}
@@ -573,6 +596,9 @@ const waterMat = new THREE.ShaderMaterial({ transparent: true, depthWrite: false
       float ring=0.0;if(uRain>0.01){vec2 c=floor(p*1.7),fp=fract(p*1.7)-0.5;float r=hash21(c);float t=fract(uTime*1.1+r*7.0);vec2 o=(vec2(hash21(c+3.1),hash21(c+7.7))-0.5)*0.5;
         vec2 dv=fp-o;float dd=length(dv);ring=(1.0-smoothstep(0.0,0.05,abs(dd-t*0.42)))*(1.0-t)*step(r,uRain*0.9+0.1);gw+=dv/max(dd,0.001)*ring*0.5;}
       float foam=0.0;
+      // marolas de quem está n'água: anéis que saem do corpo e deitam o reflexo (boi bebendo, capivara, a roupa na pedra, a bola)
+      for(int i=0;i<8;i++){vec4 Wd=uWade[i];if(Wd.z<=0.0)continue;vec2 dv=p-Wd.xy;float r=length(dv);float env=exp(-r*1.6/max(Wd.w,0.3));
+        gw+=dv/max(r,0.02)*sin(r*15.0-uTime*6.5)*env*Wd.z*0.4;foam+=(1.0-smoothstep(Wd.w*0.6,Wd.w*1.3,r))*0.45*Wd.z*smoothstep(0.35,0.7,vnoise(p*9.0+uTime*2.0));}
       for(int i=0;i<8;i++){vec3 rk=uRocks[i];if(rk.z<=0.0)continue;vec2 dr=p-rk.xy;float al=dot(dr,f),ac=dot(dr,s),dist=length(dr);
         float ringF=1.0-smoothstep(rk.z*0.8,rk.z+0.25+0.3*vnoise(vec2(atan(dr.y,dr.x)*3.0,uFlowClk*2.0)),dist);
         float wake=exp(-ac*ac/(rk.z*rk.z*0.7))*smoothstep(0.0,0.5,al)*exp(-al/(2.0+rk.z*3.0));
@@ -595,33 +621,59 @@ const waterMat = new THREE.ShaderMaterial({ transparent: true, depthWrite: false
       #include <fog_fragment>
     }`,
 });
-Object.assign(waterMat.uniforms, U); waterMat.uniforms.uRefl = { value: reflRT.texture }; waterMat.uniforms.uRocks = { value: ROCKV };
+Object.assign(waterMat.uniforms, U); waterMat.uniforms.uWade = { value: Array.from({ length: 8 }, () => new THREE.Vector4()) }; waterMat.uniforms.uRefl = { value: reflRT.texture }; waterMat.uniforms.uRocks = { value: ROCKV };
 ROCKV[7].set(FALL.pool[0] - FALL.t[0] * 1.2, FALL.pool[1] - FALL.t[1] * 1.2, 2.6);   // a água que cai espuma no poço
-// ---------- a queda: cortina d'água em arco (sai da borda e cai ~6 m), riscos brancos descendo, transparente onde é fina
-{ const n = [-FALL.t[1], FALL.t[0]], w = riverHalfWidth(FALL.s) * 0.95, top = riverLevel(FALL.s - 2), bot = top - DROP, NU = 14, NV = 18, pos = [], uv = [], idx = [];
+// ---------- a queda: o véu d'água em duas camadas. Embaixo, o corpo verde-claro translúcido que incha na borda antes de
+// cair; por cima, os fios brancos que aceleram na descida (a textura corre mais rápido embaixo, como água em queda livre) e
+// se abrem em franjas e furos perto do poço, onde a água já vem cheia de ar. Dos lados, fios d'água escorrem pela rocha.
+{ const n = [-FALL.t[1], FALL.t[0]], w = riverHalfWidth(FALL.s) * 0.95, top = riverLevel(FALL.s - 2), bot = top - DROP;
   const lip = [FALL.p[0] - FALL.t[0] * 0.6, FALL.p[1] - FALL.t[1] * 0.6];
-  for (let j = 0; j <= NV; j++) for (let i = 0; i <= NU; i++) { const u = i / NU * 2 - 1, v = j / NV, out = 0.3 + 1.9 * Math.pow(v, 0.6), drop = DROP * v * v * 0.55 + DROP * v * 0.45;
-    pos.push(lip[0] + n[0] * u * w * (1 - 0.1 * v) + FALL.t[0] * out, top - drop + 0.03, lip[1] + n[1] * u * w * (1 - 0.1 * v) + FALL.t[1] * out); uv.push(u, v); }
-  for (let j = 0; j < NV; j++) for (let i = 0; i < NU; i++) { const a = j * (NU + 1) + i, b = a + NU + 1; idx.push(a, b, a + 1, a + 1, b, b + 1); }
-  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx); g.computeVertexNormals();
-  const fm = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, side: THREE.DoubleSide, fog: true, uniforms: THREE.UniformsUtils.merge([THREE.UniformsLib.fog, {}]),
+  const sheet = (NU, NV, width, extra) => { const pos = [], uv = [], idx = [];
+    for (let j = 0; j <= NV; j++) for (let i = 0; i <= NU; i++) { const u = i / NU * 2 - 1, v = j / NV, out = 0.25 + extra + 1.95 * Math.pow(v, 0.6), drop = DROP * v * v * 0.55 + DROP * v * 0.45;
+      const bulge = 0.06 * Math.max(0, 1 - v / 0.07) * (1 - u * u), ww = width * (1 + 0.16 * v * v) * (1 - 0.08 * Math.sin(v * 9 + u * 3) * v);
+      pos.push(lip[0] + n[0] * u * ww + FALL.t[0] * out, top - drop + 0.03 + bulge, lip[1] + n[1] * u * ww + FALL.t[1] * out); uv.push(u, v); }
+    for (let j = 0; j < NV; j++) for (let i = 0; i < NU; i++) { const a = j * (NU + 1) + i, b = a + NU + 1; idx.push(a, b, a + 1, a + 1, b, b + 1); }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx); return g; };
+  const mkMat = layer => { const m = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, side: THREE.DoubleSide, fog: true, uniforms: THREE.UniformsUtils.merge([THREE.UniformsLib.fog, { uLayer: { value: layer } }]),
     vertexShader: `varying vec2 vUv;varying vec3 vWp;
 #include <fog_pars_vertex>
 void main(){vUv=uv;vec4 w=modelMatrix*vec4(position,1.0);vWp=w.xyz;vec4 mvPosition=viewMatrix*w;gl_Position=projectionMatrix*mvPosition;
 #include <fog_vertex>
 }`,
-    fragmentShader: `varying vec2 vUv;varying vec3 vWp;
+    fragmentShader: `varying vec2 vUv;varying vec3 vWp;uniform float uLayer;
 ${HEAD}
 #include <fog_pars_fragment>
-void main(){float edge=1.0-smoothstep(0.75,1.0,abs(vUv.x));
-      float st=vnoise(vec2(vUv.x*22.0,vUv.y*3.0-uTime*2.6))*0.6+vnoise(vec2(vUv.x*55.0,vUv.y*7.0-uTime*4.0))*0.4;
-      vec3 deep=toLin(vec3(0.3,0.7,0.68))*(0.3+0.7*uDay),white=vec3(0.95,0.98,1.0)*(0.12+0.88*uDay)*(0.75+0.25*cloudShadow(vWp.xz));
-      float wh=smoothstep(0.35,0.75,st+vUv.y*0.35);vec3 col=mix(deep,white,wh);float a=(0.55+0.4*wh)*edge*(1.0-smoothstep(0.92,1.0,vUv.y)*0.5)*(1.0-uWaterDrop*1.5);
-      gl_FragColor=vec4(col,a);
+void main(){float y=vUv.y,sp=sqrt(max(y,0.0));float edge=1.0-smoothstep(0.72-0.3*y,1.0,abs(vUv.x));
+      float f1=vnoise(vec2(vUv.x*24.0,sp*5.0-uTime*3.2)),f2=vnoise(vec2(vUv.x*61.0+3.0,sp*11.0-uTime*5.6)),f3=vnoise(vec2(vUv.x*8.0,sp*2.2-uTime*1.7));
+      float st=f1*0.5+f2*0.33+f3*0.17,aer=smoothstep(0.1,0.95,y),light=(0.12+0.88*uDay)*(0.72+0.28*cloudShadow(vWp.xz));
+      vec3 body=toLin(vec3(0.40,0.76,0.72)),white=vec3(0.96,0.985,1.0);vec4 c;
+      if(uLayer<0.5){float wh=smoothstep(0.42-0.22*aer,0.8-0.2*aer,st);c=vec4(mix(body*(0.85+0.3*f3),white,wh*0.55+aer*0.3),(0.42+0.38*wh+0.15*aer)*edge);}
+      else if(uLayer<1.5){float wh=smoothstep(0.5-0.18*aer,0.72-0.12*aer,st);float frs=smoothstep(0.25,0.55,vnoise(vec2(vUv.x*13.0,sp*3.5-uTime*2.6))+0.55-0.6*aer);
+        c=vec4(white,wh*edge*(0.35+0.55*aer)*mix(1.0,frs,aer));}
+      else{float wh=smoothstep(0.35,0.75,vnoise(vec2(vUv.x*6.0,y*14.0-uTime*4.0)));c=vec4(mix(body,white,0.5+0.5*wh),(0.35+0.45*wh)*(1.0-smoothstep(0.6,1.0,abs(vUv.x)))*smoothstep(0.0,0.05,y)*(1.0-smoothstep(0.9,1.0,y)));}
+      c.a*=(1.0-smoothstep(0.93,1.0,y)*0.6)*(1.0-uWaterDrop*1.5);gl_FragColor=vec4(c.rgb*light,c.a);
 #include <colorspace_fragment>
 #include <fog_fragment>
-}` });
-  Object.assign(fm.uniforms, U); const m = new THREE.Mesh(g, fm); m.renderOrder = 3; scene.add(m);
+}` }); Object.assign(m.uniforms, U); return m; };
+  const NU = mobile ? 14 : 22, NV = mobile ? 18 : 26;
+  const body = new THREE.Mesh(sheet(NU, NV, w, 0), mkMat(0)); body.renderOrder = 3; scene.add(body);
+  const fios = new THREE.Mesh(sheet(NU, NV, w * 1.02, 0.07), mkMat(1)); fios.renderOrder = 4; scene.add(fios);
+  // fios d'água escorrendo pela rocha dos dois lados (onde a escarpa é alta), colados no paredão
+  const trickle = mkMat(2);
+  for (const [off, wd] of [[w + 1.6, 0.16], [-(w + 2.4), 0.22], [w + 3.6, 0.12]]) { const pos = [], uv = [], idx = [], N = 22;
+    for (let j = 0; j <= N; j++) { const v = j / N, s = -1.0 + v * 4.2; for (const u of [-1, 1]) { const x = lip[0] + n[0] * (off + u * wd) + FALL.t[0] * s, z = lip[1] + n[1] * (off + u * wd) + FALL.t[1] * s; pos.push(x, heightAt(x, z) + 0.05, z); uv.push(u, v); } }
+    for (let j = 0; j < N; j++) { const a = j * 2; idx.push(a, a + 2, a + 1, a + 1, a + 2, a + 3); }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx);
+    const m = new THREE.Mesh(g, trickle); m.renderOrder = 3; scene.add(m); }
+  // blocos caídos do paredão em volta do poço (rio abaixo e dos lados) e cascalho no pé da escarpa, ao longo do vale
+  for (let k = 0; k < 11; k++) { const a = Math.atan2(FALL.t[1], FALL.t[0]) + (rnd() - 0.5) * 3.4, r = 4.4 + rnd() * 1.8, x = FALL.pool[0] + Math.cos(a) * r, z = FALL.pool[1] + Math.sin(a) * r;
+    if (waterDist(x, z) > 0.15 && !blocked(x, z, 0.3)) { const sz = 0.45 + rnd() * 0.75; putStone(x, z, sz, 0.6 + rnd() * 0.3); colisao.circle(x, z, sz * 0.6, 'pedra'); } }
+  for (let zz = -26; zz <= 26; zz += 2.2) { const z = FALL.p[1] + zz + (rnd() - 0.5) * 1.5, hTop = heightAt(CLIFF_X - 3, z); if (Math.abs(zz) < w + 4) continue;
+    for (let x = CLIFF_X - 1; x < CLIFF_X + 7; x += 0.25) { if (heightAt(x, z) < hTop - DROP * 0.9 && Math.abs(heightAt(x + 0.4, z) - heightAt(x, z)) < 0.1) { const xx = x + rnd() * 1.2; if (waterDist(xx, z) > 0.5 && rnd() < 0.7) { const sz = 0.22 + rnd() * 0.45; putStone(xx, z, sz, 0.55 + rnd() * 0.3); colisao.circle(xx, z, sz * 0.55, 'pedra'); } break; } } }
+  // onde a água bate no poço: respingos que saltam e borrifo que sobe e o vento leva (partículas, a cada quadro)
+  let acc = 0; window.__fallFx = dt => { acc += dt; if (!fx || acc < 0.06) return; const k = Math.min(4, Math.floor(acc / 0.06)); acc = 0; if (U.uWaterDrop.value > 0.4) return;
+    for (let i = 0; i < k; i++) { const u = (Math.random() * 2 - 1) * w, x = lip[0] + n[0] * u + FALL.t[0] * 2.25, z = lip[1] + n[1] * u + FALL.t[1] * 2.25;
+      fx.emit('respingo', x, bot + 0.05, z, 2, { dir: [FALL.t[0] * 0.8, 1.8, FALL.t[1] * 0.8], spread: 1.3, speed: 1.2 }); if (Math.random() < 0.35) fx.emit('nevoa', x, bot + 0.3, z, 1, { spread: 0.8 }); } };
   // borrifo: neblina que sobe do poço e o vento leva; com sol baixo faz um arquinho de cor
   const NP = mobile ? 160 : 320, P = [], S = []; for (let i = 0; i < NP; i++) { P.push(FALL.pool[0] - FALL.t[0] * 1.0, bot, FALL.pool[1] - FALL.t[1] * 1.0); S.push(Math.random()); }
   const pg = new THREE.BufferGeometry(); pg.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); pg.setAttribute('seed', new THREE.Float32BufferAttribute(S, 1));
@@ -663,6 +715,21 @@ function waterMeshFor(tiles, withOutside) { const pos = [], flow = [], depA = []
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('flow', new THREE.Float32BufferAttribute(flow, 2));
   g.setAttribute('dep', new THREE.Float32BufferAttribute(depA, 1)); g.setIndex(idx); const m = new THREE.Mesh(g, waterMat); m.renderOrder = 2; water.add(m); return m; }
 waterMeshFor(TILES.filter(t => ['rio', 'mata', 'cachoeira', 'lagoa'].includes(t.kind)), true);
+// ---------- folhas e flores boiando: a correnteza leva (mais rápida no meio do rio, mais ainda na chuva e na queda),
+// os remansos da beira seguram e giram; o que sai da água ou chega ao fim do rio volta a cair lá em cima
+{ const N = mobile ? 16 : 36, g = new THREE.PlaneGeometry(0.13, 0.08).rotateX(-Math.PI / 2), m = new THREE.InstancedMesh(g, toon({ color: 0xffffff, side: THREE.DoubleSide }), N), M = new THREE.Matrix4(), Q = new THREE.Quaternion(), Y = new THREE.Vector3(0, 1, 0), S = new THREE.Vector3(1, 1, 1);
+  const COLS = [0x8a9a3a, 0xb8a040, 0x9a6a2a, 0xf2c230, 0x6a8a3a, 0xc88a3a], endS = riverInfo(...RIVER[RIVER.length - 1]).s, L = [];
+  const spawn = (o, anywhere) => { const i = Math.floor(rnd() * (anywhere ? RIVER.length - 20 : 60)), [x, z] = RIVER[i], ri = riverInfo(x, z), w = riverHalfWidth(ri.s), u = (rnd() - 0.5) * w;
+    Object.assign(o, { x: x - ri.tz * u, z: z + ri.tx * u, a: rnd() * 6.28, spin: (rnd() - 0.5) * 0.6, t: 0 }); return o; };
+  for (let i = 0; i < N; i++) { L.push(spawn({}, true)); m.setColorAt(i, new THREE.Color(COLS[i % COLS.length]).multiplyScalar(0.8 + rnd() * 0.3)); }
+  m.renderOrder = 3; m.frustumCulled = false; m.userData.noRegua = true; scene.add(m);
+  window.__leaves = dt => { const rain = U.uRain.value; L.forEach((o, i) => { const ri = riverInfo(o.x, o.z), w = riverHalfWidth(ri.s), c = 1 - Math.min(1, ri.d / Math.max(0.5, w)), nearFall = !ri.extra && Math.abs(ri.s - FALL.s) < 2.5;
+      const v = (0.12 + 0.55 * c * c) * (1 + rain * 0.9) * (nearFall ? 3.5 : 1) * (1 - U.uWaterDrop.value * 0.6);
+      o.x += ri.tx * v * dt; o.z += ri.tz * v * dt; const e = vnoise(o.x * 0.7 + U.uTime.value * 0.1, o.z * 0.7) - 0.5; o.x += -ri.tz * e * 0.08 * dt; o.z += ri.tx * e * 0.08 * dt;   // remoinho da beira
+      o.a += (o.spin + (1 - c) * 0.5 * Math.sign(e)) * dt; o.t += dt;
+      if (waterDist(o.x, o.z) > 0.2 || ri.s > endS - 2 || o.t > 240) spawn(o, false);
+      const y = waterLevelAt(o.x, o.z) - U.uWaterDrop.value + 0.012; Q.setFromAxisAngle(Y, o.a); M.compose(new THREE.Vector3(o.x, y, o.z), Q, S); m.setMatrixAt(i, M); });
+    m.instanceMatrix.needsUpdate = true; }; }
 // o reflexo: a câmera espelhada no plano da água desenha o que fica acima dela (sem capim e sem chuva, para sair barato)
 const mirrorCam = new THREE.PerspectiveCamera(), reflClip = [new THREE.Plane(new THREE.Vector3(0, 1, 0), 0)];
 const BIAS = new THREE.Matrix4().set(0.5, 0, 0, 0.5, 0, 0.5, 0, 0.5, 0, 0, 0.5, 0.5, 0, 0, 0, 1);
@@ -827,6 +894,16 @@ function frame() {
   const ctx = { pxPerUnit: renderer.domElement.height / (2 * Math.tan(camera.fov * Math.PI / 360)), hour: ST.hour }; if (window.__petalPx) window.__petalPx.value = ctx.pxPerUnit; if (window.__mistPx) window.__mistPx.value = ctx.pxPerUnit; window.__hour = ST.hour; ctx.people = gente.people; props.update(dt, ctx); fauna.update(dt, ctx); gente.update(dt); fx.update(dt, ctx); afx.update(dt, ctx); board.update(dt);
   if ((skyfx.fx.strikes || 0) !== lastStrikes) { lastStrikes = skyfx.fx.strikes || 0; setTimeout(() => { fauna.startle(); gente.startle(); }, 250); }   /* o trovão logo depois do clarão assusta gente e bicho */ clouds.update(dt, camera); ctx.Rr = c.Rr; ctx.hour = ST.hour; skyfx.update(dt, ctx);
   { const f = skyfx.fx.flash; if (f > 0) { skyLight.intensity += f * 3; U.uSkyZen.value.lerp(new THREE.Color(0.85, 0.88, 1), f * 0.5); U.uSkyHor.value.lerp(new THREE.Color(0.9, 0.92, 1), f * 0.45); } }   // clarão do raio
+  { const pu = grassU.uPush.value, f = U.uFocus.value, L = []; for (const q of gente.people) if (q.g.visible && q.st !== 'casa') L.push([q.x, q.z, q.s.sex === 'c' ? 0.45 : 0.55, 1]);
+    for (const a of fauna.animals) if (a.rad && a.g.visible) L.push([a.x, a.z, a.rad * 1.5, 1]); if (gente.ball) L.push([gente.ball.x, gente.ball.z, 0.3, gente.ball.y - heightAt(gente.ball.x, gente.ball.z) < 0.3 ? 0.8 : 0]);
+    L.sort((a, b) => Math.hypot(a[0] - f.x, a[1] - f.z) - Math.hypot(b[0] - f.x, b[1] - f.z)); for (let i = 0; i < 16; i++) { const e = L[i]; if (e) pu[i].set(e[0], e[1], e[2], e[3]); else pu[i].set(0, 0, 0, 0); } }
+  { const wu = waterMat.uniforms.uWade.value, L = [];
+    for (const a of fauna.animals) if (a.rad && a.g.visible && waterDist(a.x, a.z) < 0.15) L.push([a.x, a.z, Math.min(1, 0.4 + a.sp * 0.6), a.rad]);
+    for (const q of gente.people) if (q.g.visible && q.job === 'lavar' && q.st === 'post' && q.cyc >= 1 && q.cyc <= 3 && LAYOUT.lavStone) L.push([LAYOUT.lavStone.position.x + Math.sin(q.h) * 0.45, LAYOUT.lavStone.position.z + Math.cos(q.h) * 0.45, q.cyc === 2 ? 1 : 0.6, 0.5]);
+    const b = gente.ball; if (b && waterDist(b.x, b.z) < 0) L.push([b.x, b.z, 0.8, 0.25]);
+    for (let i = 0; i < 8; i++) { const e = L[i]; if (e) wu[i].set(e[0], e[1], e[2], e[3]); else wu[i].set(0, 0, 0, 0); } }
+  if (window.__fallFx) window.__fallFx(dt);
+  if (window.__leaves) window.__leaves(dt);
   ringFog.value = scene.fog.density; ringFogC.value.copy(scene.fog.color);
   // economia sem perder a cena: no degrau cheio tudo a cada quadro; nos mais leves o reflexo da água e o mapa de sombras
   // são refeitos a cada 2 ou 3 quadros (a câmera e o sol andam devagar, a diferença não se vê)
@@ -843,4 +920,4 @@ function frame() {
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
-window.__cam = camera; window.__heightAt = heightAt; window.__tiles = TILES; window.__fall = FALL; window.__previa = { gente, skyfx, gameCam,  ST, U, renderer, scene, camera, controls, fauna, clouds, board, fx, L: LAYOUT, heightAt };
+window.__cam = camera; window.__heightAt = heightAt; window.__tiles = TILES; window.__fall = FALL; window.__previa = { gente, skyfx, gameCam,  ST, U, renderer, scene, camera, controls, fauna, clouds, board, fx, col: colisao, L: LAYOUT, heightAt };

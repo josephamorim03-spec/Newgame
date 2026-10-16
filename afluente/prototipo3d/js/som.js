@@ -91,6 +91,7 @@ export function createSom() {
   // teste: toca um efeito num contexto fora da linha e mede
   async function teste(name) { const O = new OfflineAudioContext(1, 44100 * 2, 44100), sv = [C, D]; C = O; D = wire(O).out;
     try { SFX[name](); } finally { C = sv[0]; D = sv[1]; } const buf = await O.startRendering(), d = buf.getChannelData(0); let pk = 0, s = 0; for (const x of d) { pk = Math.max(pk, Math.abs(x)); s += x * x; } return { pico: +pk.toFixed(3), rms: +Math.sqrt(s / d.length).toFixed(4) }; }
-  const api = { sfx, ambient, setOn, get on() { return AU.on; }, get state() { return AU.ctx ? AU.ctx.state : 'nenhum'; }, get unlocked() { return AU.unlocked; }, teste };
+  const api = { sfx, ambient, setOn, get on() { return AU.on; }, get ctx() { return AU.on && AU.ctx && AU.ctx.state === 'running' ? AU.ctx : null; }, get out() { return AU.out; },   /* para sons do mundo (machado, sino) */
+    get state() { return AU.ctx ? AU.ctx.state : 'nenhum'; }, get unlocked() { return AU.unlocked; }, teste };
   window.__som = api; return api;
 }
