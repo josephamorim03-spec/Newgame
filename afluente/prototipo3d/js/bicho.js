@@ -156,7 +156,7 @@ export function quad(S) {
   const rest = { neck: neck.rotation.x, rootY: root.position.y };
   const zf = (legs[0].z + legs[1].z) / 2, zb = (legs[2].z + legs[3].z) / 2;
   return { g, mesh, root, neck, head, ears, snout, legs, tail, kind: 'quad', rest, zf, zb, headY: hp[1] * K, K, tailRest: S.tail ? S.tail.rest || [-1.2, 0.1] : null,
-    lieDrop: S.legs.reduce((s2, l) => s2 + l.top, 0) / 4 * 0.68, bodyRings: S.body.rings, seg, beak: S.muzzle ? new THREE.Vector3(...S.muzzle).multiplyScalar(K) : null };
+    lieDrop: S.legs.reduce((s2, l) => s2 + l.top, 0) / 4 * 0.68, runShift: S.runShift || 1, bodyRings: S.body.rings, seg, beak: S.muzzle ? new THREE.Vector3(...S.muzzle).multiplyScalar(K) : null };
 }
 
 // ---------- ave: corpo em gota, pescoço em corrente de ossos (S da garça), cabeça com bico, asas dobradas que abrem,
@@ -217,7 +217,8 @@ const lerpA = (o, v, k) => o + (v - o) * k;
 export function animate(a, dt, look, o) {
   const R = a.rig, s = a.g.scale.x, near = o.near, bird = R.kind === 'bird', mv = clamp(a.sp / Math.max(0.05, a.vw), 0, 2.5);
   const Hh = R.legs.length ? (R.legs[R.legs.length - 1].L1 + R.legs[R.legs.length - 1].L2 + R.legs[R.legs.length - 1].L3) * s : 1, Fr = a.sp * a.sp / (9.8 * Hh);
-  const run = bird ? Fr > 0.9 : Fr > 2.0, gk = bird ? (run ? 'bipedRun' : 'biped') : run ? 'gallop' : Fr > 0.4 ? 'trot' : 'walk', G = GAITS[gk]; a.gait = gk; a.fr = Fr;
+  const run = bird ? Fr > 0.9 : Fr > (a.gallopFr ?? 2.0),   // gato quase não trota: da caminhada vai direto ao galope (gallopFr baixo)
+    gk = bird ? (run ? 'bipedRun' : 'biped') : run ? 'gallop' : Fr > 0.4 ? 'trot' : 'walk', G = GAITS[gk]; a.gait = gk; a.fr = Fr;
   if (!a.goff || a.goff.length !== G.off.length) a.goff = G.off.slice(); for (let i = 0; i < G.off.length; i++) { let d = G.off[i] - a.goff[i]; d -= Math.round(d); a.goff[i] = frac(a.goff[i] + d * Math.min(1, dt * 3)); }
   a.duty = lerpA(a.duty ?? G.duty, G.duty, Math.min(1, dt * 3)); const duty = a.duty, cyc = a.ph / (Math.PI * 2);
   a.walkK = lerpA(a.walkK ?? 0, mv > 0.04 ? 1 : 0, Math.min(1, dt * 5)); const wk = a.walkK;
@@ -234,7 +235,9 @@ export function animate(a, dt, look, o) {
   // a altura do corpo sai, a cada quadro, das pernas que estão no chão (pêndulo invertido do andar): cada uma, com a pata
   // onde ela está no passo, alcança no máximo esticada (o casco gira na ponta no fim do apoio e dá um pouco mais); o corpo
   // fica no mais alto em que todas alcançam. Assim a perna da frente fica reta no apoio e o corpo sobe e desce sozinho.
-  const halfW = a.stride * a.duty / 2 / s * Math.min(1, mv * 1.6) * a.walkK;
+  // passada: no galope ela fica bem mais comprida (runStride), com as patas esticando para a frente e para trás; muda aos poucos
+  a.strd = lerpA(a.strd ?? a.stride, gk === 'gallop' && a.runStride ? a.runStride : a.stride, Math.min(1, dt * 3));
+  const halfW = a.strd * a.duty / 2 / s * Math.min(1, mv * 1.6) * a.walkK;
   if (near && !a.swim) { let yb = Infinity, ybH = Infinity, ybAll = Infinity; R.legs.forEach((L, i) => { if (!L.front && (a.sitK || 0) > 0.3) return; const bk = L.back || 0, c = frac(cyc + a.goff[i % a.goff.length]), st = c < a.duty;
       const fast = a.gait !== 'walk', dz = st && !fast ? halfW - c / a.duty * 2 * halfW : 0, sh = (L.shift || 0) * dz, hz = (L.hz0 ?? L.hip.position.z) + sh; V.set(L.hip.position.x, 0, (L.hz0 ?? L.hip.position.z) - bk + dz); R.root.localToWorld(V);
       let hor2 = (dz - sh - bk) * (dz - sh - bk); if (st && L.pl && !L.swung && a.gait === 'walk' && Math.hypot(L.pl.x - V.x, L.pl.z - V.z) < a.stride * 0.45) { W.copy(L.pl); W.y = V.y; R.root.worldToLocal(W); const h2 = (W.z - hz) ** 2 + (W.x - L.hip.position.x) ** 2; if (h2 > ((L.L1 + L.L2) * 0.45) ** 2) L.swung = true; else { hor2 = h2; V.x = L.pl.x; V.z = L.pl.z; } }
@@ -243,6 +246,8 @@ export function animate(a, dt, look, o) {
       ybAll = Math.min(ybAll, v); if (st && a.gait === 'walk') { if (L.front || L.bird) yb = Math.min(yb, v); else if (c / a.duty < 0.6) ybH = Math.min(ybH, v); } });   // no fim do apoio a de trás levanta o calcanhar (não puxa o corpo)
     const yy = Math.min(yb, ybH + 0.01 * s); if (a.gait === 'walk' && isFinite(yy)) gy = yy + 0.01; else if (isFinite(ybAll)) gy = ybAll + 0.01 - (a.gait === 'walk' ? 0 : (0.03 + 0.03 * Math.sin(cyc * Math.PI * 4)) * s); }
   if (a.water && !a.swim) gy = Math.max(gy, g0);
+  // agachar (a onça na espreita): o corpo desce e as pernas, com as patas no chão, dobram sozinhas pela IK
+  if (a.crouch && !a.swim) gy -= a.crouch * 0.12 * s * R.K;
   a.gy = lerpA(a.gy ?? gy, gy, Math.min(1, dt * (near ? 30 : 10))); a.pitch = lerpA(a.pitch ?? pitch, pitch, Math.min(1, dt * 6)); a.roll = lerpA(a.roll ?? roll, roll, Math.min(1, dt * 6));
   a.lie = (a.lie || 0) + (((a.st === 'lie') ? 1 : 0) - (a.lie || 0)) * Math.min(1, dt * 1.2); const lie = a.lie;
   if (a.when) a.g.visible = a.when();
@@ -263,9 +268,9 @@ export function animate(a, dt, look, o) {
   // pernas
   const k = Math.min(1, dt * 18), hip0 = R.root, liftH = (run ? 0.22 : 0.11) * (bird ? 0.8 : 1);
   R.legs.forEach((L, i) => { const c = frac(cyc + a.goff[i % a.goff.length]), stance = c < duty; let dz = 0, lift = 0, curl = 0;
-    const half = a.stride * duty / 2 / s * Math.min(1, mv * 1.6) * wk;
+    const half = a.strd * duty / 2 / s * Math.min(1, mv * 1.6) * wk;
     if (stance) { const u = c / duty; dz = half - u * 2 * half; } else { const u = (c - duty) / (1 - duty), e = (1 - Math.cos(u * Math.PI)) / 2; dz = -half + e * 2 * half; lift = Math.sin(u * Math.PI) * liftH * Math.min(1, mv + 0.3) * wk; curl = Math.sin(u * Math.PI) * wk; }
-    if (L.hz0 != null && !L.bird) L.hip.position.z = L.hz0 + (L.shift || 0) * dz * (a.swim ? 0 : 1);
+    if (L.hz0 != null && !L.bird) L.hip.position.z = L.hz0 + (L.shift || 0) * dz * (a.swim ? 0 : 1) * (run ? R.runShift || 1 : 1);   // no galope do gato a coluna encolhe (patas juntas embaixo) e estica (abertas)
     if (a.restLeg === i && a.restK > 0.01) { dz += 0.07 * R.K * a.restK; lift += 0.05 * a.restK; curl = Math.max(curl, 0.75 * a.restK); }
     let af, bf, footF = L.rf - curl * L.curl * (L.front || L.bird ? 1 : 0.7);
     if (a.swim) { const p = o.time * 5 + i * 1.6; af = Math.sin(p) * 0.6; bf = af + (L.front ? -1 : 1) * (0.6 + Math.cos(p) * 0.5); footF = bf - 0.5; }
@@ -276,7 +281,8 @@ export function animate(a, dt, look, o) {
       const gyF = heightAt(V.x, V.z); W.set(V.x, gyF + L.L3 * s + lift * L.top * s, V.z); hip0.worldToLocal(W);
       const ddx = W.x - L.hip.position.x, ddy = W.y - L.hip.position.y, th = Math.atan2(ddx, -ddy); L.abd = clamp(th, -0.35, 0.35);
       // se a pata cravada ficou longe demais de lado (o bicho virou), ela dá um passo para o lado (repisa no lugar certo)
-      if (Math.abs(th) > 0.33 && stance && L.pl) L.swung = true;
+      // (medido em distância de lado, não em ângulo: agachado o quadril fica mais perto do chão e o ângulo crescia sem a pata sair do lugar)
+      if (Math.abs(ddx) > 0.34 * (L.L1 + L.L2) && stance && L.pl) L.swung = true;
       [af, bf] = ik2(W.z - L.hip.position.z, ddy / Math.cos(L.abd), L.L1, L.L2, L.front && !L.bird);
       // pisada: anel na água rasa ou poeira no chão seco quando corre
       if (o.fx && a.prevC && a.prevC[i] !== undefined && a.prevC[i] >= duty && stance && c < 0.25) { const wlF = waterLevelAt(V.x, V.z) - U.uWaterDrop.value;
@@ -285,7 +291,7 @@ export function animate(a, dt, look, o) {
     if (!a.prevC) a.prevC = []; a.prevC[i] = c;
     let rh = -af, rk = -(bf - af), ra = -(footF - bf - (-R.root.rotation.x));
     if (lie > 0.01) { const fl = L.bird ? [-0.6, 1.4, -0.8] : L.front ? [-1.25, 2.2, 0.6] : [1.2, -2.3, -0.4]; rh = lerpA(rh, fl[0], lie); rk = lerpA(rk, fl[1], lie); ra = lerpA(ra, fl[2], lie); }
-    if (lie < 0.01 && a.sitK < 0.01) { rk = L.front && !L.bird ? clamp(rk, -0.2, 2.2) : clamp(rk, -2.2, 0.2); ra = clamp(ra, -1.5, 1.5); }   // a junta não dobra além do que o bicho dobra
+    if (lie < 0.01 && a.sitK < 0.01) { const cr = (a.crouch || 0) * 0.45; rk = L.front && !L.bird ? clamp(rk, -0.2, 2.2 + cr) : clamp(rk, -2.2 - cr, 0.2); ra = clamp(ra, -1.5 - cr, 1.5 + cr); }   // agachada a perna dobra mais   // a junta não dobra além do que o bicho dobra
     if (!L.front && !L.bird && a.sitK > 0.01) { const sk = a.sitK; rh = lerpA(rh, -1.15, sk); rk = lerpA(rk, -2.35, sk); ra = lerpA(ra, 2.3, sk); }
     L.hip.rotation.z = near && !a.swim && !L.bird && lie < 0.5 ? (L.abd || 0) : L.hip.rotation.z * 0.8;
     const kj = near && !a.swim ? 1 : k; L.hip.rotation.x = lerpA(L.hip.rotation.x, rh, kj); L.knee.rotation.x = lerpA(L.knee.rotation.x, rk, kj); L.ank.rotation.x = lerpA(L.ank.rotation.x, ra, kj); });

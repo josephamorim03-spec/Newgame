@@ -129,7 +129,7 @@ export function buildPeople(scene, { mobile = false, fx = null, afx = null, col:
   }
   // o pano anda junto: preso na cintura, bate nas coxas, nas canelas e no quadril (cápsulas do tamanho do corpo de cada um),
   // cai no chão, o vento sopra; e o pano que a lavadeira tem na mão
-  const _a = new THREE.Vector3(), _b = new THREE.Vector3(), _c = new THREE.Vector3(), _d = new THREE.Vector3(), _e = new THREE.Vector3(), _f = new THREE.Vector3(), _h1 = new THREE.Vector3(), _h2 = new THREE.Vector3(), _vt = new THREE.Vector3();
+  const _a = new THREE.Vector3(), _b = new THREE.Vector3(), _c = new THREE.Vector3(), _d = new THREE.Vector3(), _e = new THREE.Vector3(), _f = new THREE.Vector3(), _vt = new THREE.Vector3();
   const ventoAgora = (x, z, k = 1) => { const wv = U.uWindBase.value * (1 + U.uWindIu.value * 0.6), wd = U.uWindDir.value, t = time * 1.7 + x * 0.3 + z * 0.2, raj = 1 + 0.45 * Math.sin(t) * Math.sin(t * 2.3 + 1.1);
     return _vt.set(wd.x * wv * raj * k, 0.15 * Math.sin(t * 3.1) * wv * k, wd.y * wv * raj * k); };
   function stepCloth(p, dt) {
@@ -139,8 +139,10 @@ export function buildPeople(scene, { mobile = false, fx = null, afx = null, col:
     if (!vis) { for (const c of p.cloth) c.reset(); return; }
     p.g.updateMatrixWorld(true); const sc = p.g.scale.x, md = p.med;
     p.legs[0].hp.getWorldPosition(_a); p.legs[0].kn.getWorldPosition(_b); p.legs[0].ft.getWorldPosition(_c); p.legs[1].hp.getWorldPosition(_d); p.legs[1].kn.getWorldPosition(_e); p.legs[1].ft.getWorldPosition(_f);
-    _h1.copy(_a).lerp(_d, -0.15); _h2.copy(_d).lerp(_a, -0.15); _h1.y += 0.03 * sc; _h2.y += 0.03 * sc;
-    const cap = [[_a, _b, md.coxa * sc], [_b, _c, md.canela * sc], [_d, _e, md.coxa * sc], [_e, _f, md.canela * sc], [_h1, _h2, md.quadril.rx * 0.72 * sc]];
+    // só as pernas: o quadril e a nádega são o perfil do próprio corpo (medidas.perfil, dentro do pano). Uma cápsula entre as
+    // juntas do quadril (0,72 da meia-largura, com as pontas para fora das juntas) chegava a ~25 cm do centro, mais larga que
+    // o corpo, e estufava a saia dos lados como um barril
+    const cap = [[_a, _b, md.coxa * sc], [_b, _c, md.canela * sc], [_d, _e, md.coxa * sc], [_e, _f, md.canela * sc]];
     const env = { cap, chao: heightAt, vento: ventoAgora(p.x, p.z, 0.35), it: 4 };   // roupa vestida: o corpo abriga e perto do chão venta menos
     for (const c of p.cloth) c.passo(Math.min(dt, 1 / 30), p.pelvis.matrixWorld, env);
     if (p.panoMao) maoPano(p, Math.min(dt, 1 / 30));

@@ -35,6 +35,8 @@ export const TIPOS = {
   'homem de chapéu': { sex: 'm', build: 1, hat: 'palha', sleeves: 'curta', hair: 'crespo' },
   'mulher de saia': { sex: 'f', build: 1, hat: null, sleeves: 'curta', hair: 'coque', dress: false, skirt: 0.62, apron: true },
   'mulher de vestido e lenço': { sex: 'f', build: 1, hat: 'lenco', sleeves: 'longa', hair: 'longo', dress: true, skirt: 0.85, apron: false },
+  'mulher forte de saia comprida': { sex: 'f', build: 1.12, hat: null, sleeves: 'curta', hair: 'curto', dress: false, skirt: 0.85, apron: true },   /* o porte muda a saia */
+  'mulher magra de vestido': { sex: 'f', build: 0.88, hat: null, sleeves: 'curta', hair: 'coque', dress: true, skirt: 0.85, apron: false },
   'idoso': { sex: 'm', build: 1, old: true, hat: null, hair: 'careca', sleeves: 'longa' },
   'menino': { sex: 'c', build: 1, hair: 'curto', dress: false, skirt: 0 },
   'menina': { sex: 'c', build: 1, hair: 'tranca', dress: true, skirt: 0.32 },
@@ -94,8 +96,8 @@ export function createJuizGente({ gente, spot = [0, 0] }) {
     Object.assign(M, { cabeca: (top - chin) / H, ombros: 2 * wSh / H, quadril: 2 * wHip / H, braco: sh[1].distanceTo(el[1]) / H, antebraco: el[1].distanceTo(ha[1]) / H, mao: tip / H, coxa: hp[1].distanceTo(kn[1]) / H, canela: kn[1].distanceTo(ft[1]) / H,
       pe: (fz1 - fz0) / H, hOmbro: yS / H, hCotovelo: el[1].y / H, hPunho: ha[1].y / H, hQuadril: yH / H, hJoelho: kn[1].y / H });
     if (['enxada', 'machado', 'vassoura', 'pa', 'serrote', 'vara'].includes(p.s.tool)) delete M.mao;   // mão fechada no cabo: não dá para medir o comprimento
-    for (const k of Object.keys(NOMES)) { if (M[k] == null || !ref[k]) continue; const [lo, hi] = ref[k], v = M[k]; M[k] = r3(v);
-      if (v < lo || v > hi) { const d = Math.max(lo - v, v - hi) / ((lo + hi) / 2); out.push({ f: 'forma', pen: Math.min(14, 3 + 60 * d), msg: `${NOMES[k]} ${r3(v)} da altura (o corpo de verdade: ${lo}–${hi})${v < lo ? ' — curto/estreito' : ' — longo/largo'}` }); } }
+    for (const k of Object.keys(NOMES)) { if (M[k] == null || !ref[k]) continue; const bw = p.bw || 1, larg = k === 'ombros' || k === 'quadril', lo = ref[k][0] * (larg ? Math.min(1, bw) : 1), hi = ref[k][1] * (larg ? Math.max(1, bw) : 1), v = M[k]; M[k] = r3(v);   /* o porte (build) alarga ou estreita ombro e quadril de verdade */
+      if (v < lo || v > hi) { const d = Math.max(lo - v, v - hi) / ((lo + hi) / 2); out.push({ f: 'forma', pen: Math.min(14, 3 + 60 * d), msg: `${NOMES[k]} ${r3(v)} da altura (o corpo de verdade: ${r3(lo)}–${r3(hi)})${v < lo ? ' — curto/estreito' : ' — longo/largo'}` }); } }
     // malha: avesso, degenerados, quina na silhueta
     const ix = g.index.array, nrm = g.attributes.normal, P = g.attributes.position; let inv = 0, deg = 0; const A = new THREE.Vector3(), B = new THREE.Vector3(), C = new THREE.Vector3(), N = new THREE.Vector3(); const invP = {}, degP = {};
     for (let t = 0; t < ix.length; t += 3) { A.fromBufferAttribute(P, ix[t]); B.fromBufferAttribute(P, ix[t + 1]); C.fromBufferAttribute(P, ix[t + 2]); const nn = B.sub(A).cross(C.sub(A)), L = nn.length();
@@ -163,6 +165,25 @@ export function createJuizGente({ gente, spot = [0, 0] }) {
       const zz = V.z - L(4), rz = zz > 0 ? L(2) : L(3), e = Math.sqrt((V.x / L(1)) ** 2 + (zz / rz) ** 2); if (e < 1) worst = Math.max(worst, (1 - e) * L(1)); } }
     return worst; }
 
+  // saia estufada: a folga, dos lados, entre o pano e o corpo (o pano caindo a prumo do mais saliente) da cintura até o meio do quadril. Uma saia
+  // de verdade é justa no cós e veste o quadril com 1–3 cm de folga; mais de 5,5 cm (nos 10% mais afastados) é saia de barril (a cápsula de quadril antiga dava ~7 cm) (o pano preso longe do corpo)
+  function panoFolga(p) { if (!p.s || !p.s.skirt || p.s.sex === 'c' || !p.cloth || !p.cloth.length) return 0;   /* a saia de menina é curta e rodada de propósito */ const md = p.med;
+    p.g.updateMatrixWorld(true); const Mi = new THREE.Matrix4().copy(p.pelvis.matrixWorld).invert(), pos = p.cloth[0].mesh.geometry.attributes.position, gaps = [];
+    if (md && md.perfil && md.saia) {   // o corpo novo: o perfil que a saia veste (a camada desenhada), y a partir do osso do quadril
+      // o pano cai a prumo do mais saliente (na frente ele desce reto da barriga, não entra na virilha): a referência em cada
+      // anel é o maior raio do corpo dali para cima, até o cós; o que passa disso é pano estufado
+      const n = md.perfil[0].R.length, top = md.saia.y, pr = md.perfil.map(r => ({ ...r, R: Float32Array.from(r.R) })).sort((x, y) => x.y - y.y);
+      for (let i = pr.length - 2; i >= 0; i--) if (pr[i + 1].y <= top + 0.01) for (let k = 0; k < n; k++) pr[i].R[k] = Math.max(pr[i].R[k], pr[i + 1].R[k]);
+      for (let i = 0; i < pos.count; i++) { V.fromBufferAttribute(pos, i).applyMatrix4(Mi); if (V.y > top + 0.005 || V.y < top - 0.16 || V.y < pr[0].y || V.y > pr[pr.length - 1].y) continue;
+        let j = 0; while (j < pr.length - 2 && pr[j + 1].y < V.y) j++; const A = pr[j], Bq = pr[j + 1], t = (V.y - A.y) / ((Bq.y - A.y) || 1), cz = A.cz + (Bq.cz - A.cz) * t, zz = V.z - cz, a = Math.atan2(zz, V.x);
+        const f = ((a / (Math.PI * 2)) % 1 + 1) % 1 * n, k = Math.floor(f) % n, k2 = (k + 1) % n, u = f - Math.floor(f), R = (A.R[k] * (1 - u) + A.R[k2] * u) * (1 - t) + (Bq.R[k] * (1 - u) + Bq.R[k2] * u) * t;
+        if (Math.abs(Math.cos(a)) > 0.6) gaps.push(Math.hypot(V.x, zz) - R); } }   /* dos lados (de frente e de costas o pano faz ponte entre as coxas: é caimento, não barril) */
+    else { const prof = p.body.userData.hipProf; if (!prof) return 0;
+      for (let i = 0; i < pos.count; i++) { V.fromBufferAttribute(pos, i).applyMatrix4(Mi); const y = V.y + 0.95; if (y < 0.86 || y > p.waistY + 0.005 || y > prof[prof.length - 1][0]) continue;
+        let j = 0; while (j < prof.length - 2 && prof[j + 1][0] < y) j++; const a = prof[j], b = prof[j + 1], u = (y - a[0]) / (b[0] - a[0] || 1), L = k => a[k] + (b[k] - a[k]) * u;
+        const zz = V.z - L(4), ang = Math.atan2(zz, V.x), rB = 1 / Math.hypot(Math.cos(ang) / L(1), Math.sin(ang) / (zz > 0 ? L(2) : L(3))); if (Math.abs(Math.cos(ang)) > 0.6) gaps.push(Math.hypot(V.x, zz) - rB); } }
+    gaps.sort((x, y) => x - y); return gaps.length ? gaps[Math.floor(gaps.length * 0.9)] : 0; }   /* os 10% mais afastados: onde estufa */
+
   // ---------- POSE
   // vinco: a área de pele (cm², medida parado) dos triângulos que esticam mais de 2,2× ou encolhem a menos de 0,45× com a pose
   // (área, e não contagem: não depende de quantos polígonos a malha tem)
@@ -226,7 +247,10 @@ export function createJuizGente({ gente, spot = [0, 0] }) {
     pose(p, {}); const g = p.body.geometry, dom = dominante(g), S0 = skin(p);
     { const sp = p.spine; sp.updateMatrixWorld(true); const q = new THREE.Vector3(); sp.getWorldPosition(q); p.g.worldToLocal(q); p.__spine0.copy(q); }
     const F = forma(p, nome, S0, dom), I = integracao(p, S0, dom), Po = poses(p, S0, dom, I.torso);
+    const cam = window.__cam, cam0 = cam && cam.position.clone(); if (cam) cam.position.set(p.x, p.g.position.y + 1.5, p.z + 3);   /* o pano só é simulado perto da câmera */
     step(30); pose(p, {}); const pano = panoDentro(p); if (pano > 0.012) I.out.push({ f: 'integração', pen: Math.min(12, pano * 500), msg: `em pé, o quadril atravessa a saia (${r1(pano * 100)} cm)` });
+    const folga = panoFolga(p); if (folga) I.M.saiaFolga = r1(folga * 1000); if (folga > 0.055) I.out.push({ f: 'forma', pen: Math.min(15, (folga - 0.055) * 400), msg: `a saia estufa dos lados: ${r1(folga * 100)} cm de folga entre a cintura e o quadril (justa: 1–3 cm)` });
+    if (cam0) cam.position.copy(cam0);
     p.g.visible = false; p.x += 300; if (p.cloth) for (const c of p.cloth) c.mesh.visible = false;
     return { medidas: { ...F.M, ...I.M }, poses: Po.M, achados: [...F.out, ...I.out, ...Po.out] }; }
   function julgar({ tipos = Object.keys(TIPOS), andarJunto = true } = {}) { const rel = {}; window.__pertoTodos = true;   /* o detalhe de perto (anatomia.js: mãos, chão, braço fora do tronco) ligado para todos */
