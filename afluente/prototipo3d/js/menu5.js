@@ -75,7 +75,7 @@ export function createMenu(ctx) {
     if (s.atual.seed !== s.diario) b.append(btn('🌅', 'Vale do dia', hoje, () => conf('Jogar o vale do dia?', 'A partida de agora fica para trás.', ctx.diario, !!s.salva)));
     b.append(btn('🎲', 'Vale novo', 'um vale sorteado', () => conf('Começar um vale novo?', 'A partida de agora fica para trás.', ctx.novo, !!s.salva), !!s.fim));
     b.append(btn('📖', 'Como jogar', 'as regras em seis cartões', comoJogar), btn('⚙️', 'Ajustes', 'som, vibração, gráficos', ajustes));
-    f.querySelector('button').focus({ preventScroll: true }); }
+    }
   // ---------- pausa (☰ durante o jogo)
   function pausa() { tela = 'pausa'; deOnde = 'pausa'; const s = ctx.estado(), f = folha(`<h2>Pausa</h2><div class="bts"></div>`), b = f.querySelector('.bts');
     b.append(btn('▶️', 'Voltar ao vale', `${s.atual.nome} · jogada ${s.atual.jogadas} · 🧩 ${s.atual.pilha} na pilha`, fechar, true));
@@ -99,7 +99,7 @@ export function createMenu(ctx) {
   // ---------- confirmação (só pergunta quando há o que perder)
   function conf(t, p, sim, perguntar = true) { if (!perguntar) { sim(); return; }
     cf.innerHTML = `<div class="folha"><h2>${t}</h2>${p ? `<p>${p}</p>` : ''}<div class="bts"><button type="button" class="nao">Não</button><button type="button" class="pri sim">Sim</button></div></div>`; cf.hidden = false;
-    cf.querySelector('.nao').onclick = () => { click(); cf.hidden = true; }; cf.querySelector('.sim').onclick = () => { click(); cf.hidden = true; sim(); }; cf.querySelector('.sim').focus({ preventScroll: true }); }
+    cf.querySelector('.nao').onclick = () => { click(); cf.hidden = true; }; cf.querySelector('.sim').onclick = () => { click(); cf.hidden = true; sim(); }; }
   function fechar() { m.hidden = true; tela = null; if (ctx.fechou) ctx.fechou(); }
   mb.onclick = () => { click(); if (m.hidden) pausa(); else fechar(); };
   addEventListener('keydown', e => { if (e.key !== 'Escape') return; if (!cf.hidden) { cf.hidden = true; return; } if (m.hidden) pausa(); else if (tela === 'regras' || tela === 'ajustes') (deOnde === 'pausa' ? pausa : inicio)(); else if (tela === 'pausa') fechar(); });
