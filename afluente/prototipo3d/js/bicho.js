@@ -103,7 +103,10 @@ export function quad(S) {
     const t1 = L1 / Lt, t2 = (L1 + L2) / Lt;
     sk.add(tube(pts, prof, 12, false), (px, py) => { const t = (top - py) / Lt; return t < (t1 + t2) / 2 ? blend(t, t1, 0.03, hip.userData.i, knee.userData.i) : blend(t, t2, 0.025, knee.userData.i, ank.userData.i); });
     if (L.foot) sk.add(L.foot, ank.userData.i);
-    return { hip, knee, ank, L1: L1 * K, L2: L2 * K, L3: L3 * K, x: x * K, z: z * K, top: top * K, front: li < 2, left: x > 0, rf: L.footAngle || 0, curl: L.curl ?? 0.9 }; });
+    // a pata de trás pisa um pouco atrás do quadril: no ponto em que a canela (metatarso) fica de pé com o corpo na altura de
+    // descanso; o jarrete fica com ~150-160° (vaca de perna boa), em vez de a canela inclinar para a frente
+    const hh = top - L3 - L2, back = li >= 2 && hh < L1 ? Math.sqrt(L1 * L1 - hh * hh) : 0;
+    return { hip, knee, ank, L1: L1 * K, L2: L2 * K, L3: L3 * K, x: x * K, z: z * K, top: top * K, front: li < 2, left: x > 0, rf: L.footAngle || 0, curl: L.curl ?? 0.9, back: back * K }; });
   // rabo em corrente
   let tail = []; if (S.tail) { const tp = S.tail.pts, n = S.tail.n || 4; const tl = [0]; let a2 = 0; for (let i = 1; i < tp.length; i++) { a2 += Math.hypot(tp[i][1] - tp[i - 1][1], tp[i][2] - tp[i - 1][2]); tl.push(a2); }
     const at = d => { for (let i = 1; i < tp.length; i++) if (tl[i] >= d) { const k = (d - tl[i - 1]) / (tl[i] - tl[i - 1] || 1); return [tp[i - 1][0], tp[i - 1][1] + (tp[i][1] - tp[i - 1][1]) * k, tp[i - 1][2] + (tp[i][2] - tp[i - 1][2]) * k]; } return tp[tp.length - 1]; };
@@ -190,6 +193,12 @@ export function animate(a, dt, look, o) {
   if (near && !a.swim) { const hf = gAt(0, R.zf), hb = gAt(0, R.zb), lx = bird ? 0.08 : Math.abs(R.legs[0].x), hl = gAt(lx * 1.5, (R.zf + R.zb) / 2), hr = gAt(-lx * 1.5, (R.zf + R.zb) / 2);
     gy = Math.min((hf + hb) / 2, Math.max(hf, hb) - 0.04 * s); if (!bird) { pitch = Math.atan2(hf - hb, (R.zf - R.zb) * s) * 0.85; roll = Math.atan2(hl - hr, lx * 3 * s) * 0.5; } }
   else gy = g0;
+  // a altura do corpo sai das pernas: o mais alto em que todas alcançam o chão debaixo delas, com a da frente quase reta e o
+  // jarrete de trás na dobra natural (sem isso a perna sobra, dobra no ar e parece pendurada)
+  if (near && !a.swim) { let yb = Infinity; for (const L of R.legs) { const bk = L.back || 0; V.set(L.hip.position.x, 0, L.hip.position.z - bk); R.root.localToWorld(V);
+      const reach = L.bird ? (L.L1 + L.L2) * 0.93 : L.front ? (L.L1 + L.L2) * 0.999 : Math.sqrt(Math.max(0, ((L.L1 + L.L2) * 0.999) ** 2 - bk * bk));
+      yb = Math.min(yb, heightAt(V.x, V.z) + (L.L3 + reach) * s - (R.rest.rootY + L.hip.position.y) * s); }
+    if (isFinite(yb)) gy = yb + 0.01; }
   if (a.water && !a.swim) gy = Math.max(gy, g0);
   a.gy = lerpA(a.gy ?? gy, gy, Math.min(1, dt * 10)); a.pitch = lerpA(a.pitch ?? pitch, pitch, Math.min(1, dt * 6)); a.roll = lerpA(a.roll ?? roll, roll, Math.min(1, dt * 6));
   a.lie = (a.lie || 0) + (((a.st === 'lie') ? 1 : 0) - (a.lie || 0)) * Math.min(1, dt * 1.2); const lie = a.lie;
@@ -209,12 +218,12 @@ export function animate(a, dt, look, o) {
     if (stance) { const u = c / duty; dz = half - u * 2 * half; } else { const u = (c - duty) / (1 - duty), e = (1 - Math.cos(u * Math.PI)) / 2; dz = -half + e * 2 * half; lift = Math.sin(u * Math.PI) * liftH * Math.min(1, mv + 0.3) * wk; curl = Math.sin(u * Math.PI) * wk; }
     let af, bf, footF = L.rf - curl * L.curl * (L.front || L.bird ? 1 : 0.7);
     if (a.swim) { const p = o.time * 5 + i * 1.6; af = Math.sin(p) * 0.6; bf = af + (L.front ? -1 : 1) * (0.6 + Math.cos(p) * 0.5); footF = bf - 0.5; }
-    else if (near) { V.set(L.hip.position.x, 0, L.hip.position.z + dz); hip0.localToWorld(V); const gyF = heightAt(V.x, V.z); W.set(V.x, gyF + L.L3 * s + lift * L.top * s, V.z); hip0.worldToLocal(W);
+    else if (near) { V.set(L.hip.position.x, 0, L.hip.position.z + dz - (L.back || 0)); hip0.localToWorld(V); const gyF = heightAt(V.x, V.z); W.set(V.x, gyF + L.L3 * s + lift * L.top * s, V.z); hip0.worldToLocal(W);
       [af, bf] = ik2(W.z - L.hip.position.z, W.y - L.hip.position.y, L.L1, L.L2, L.front && !L.bird);
       // pisada: anel na água rasa ou poeira no chão seco quando corre
       if (o.fx && a.prevC && a.prevC[i] !== undefined && a.prevC[i] >= duty && stance && c < 0.25) { const wlF = waterLevelAt(V.x, V.z) - U.uWaterDrop.value;
         if (wlF > gyF + 0.03) o.fx.ripple(V.x, wlF, V.z, (0.25 + 0.25 * mv) * s); else if (run && U.uSeca.value > 0.3 && !bird) o.fx.dust(V.x, gyF, V.z, s); } }
-    else { const sw = Math.sin((c - (stance ? 0 : duty)) / (stance ? duty : 1 - duty) * Math.PI) * (stance ? 1 : -1); af = -dz / Math.max(0.3, L.L1 + L.L2) * 0.9 + (L.front ? 0.05 : -0.05); bf = af + (L.front ? -1 : 1) * curl * 0.6; void sw; }
+    else { const sw = Math.sin((c - (stance ? 0 : duty)) / (stance ? duty : 1 - duty) * Math.PI) * (stance ? 1 : -1); af = -dz / Math.max(0.3, L.L1 + L.L2) * 0.9 + (L.back ? -0.4 : 0); bf = af + (L.back ? 0.75 : 0) + (L.front ? -1 : 1) * curl * 0.6; void sw; }
     if (!a.prevC) a.prevC = []; a.prevC[i] = c;
     let rh = -af, rk = -(bf - af), ra = -(footF - bf - (-R.root.rotation.x));
     if (lie > 0.01) { const fl = L.bird ? [-0.6, 1.4, -0.8] : L.front ? [-1.25, 2.2, 0.6] : [1.2, -2.3, -0.4]; rh = lerpA(rh, fl[0], lie); rk = lerpA(rk, fl[1], lie); ra = lerpA(ra, fl[2], lie); }
