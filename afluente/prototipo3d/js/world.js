@@ -187,12 +187,25 @@ export const LAYOUT = {
 export const PATHS = [[off(tV, -6.5, -6), off(tV, 0.5, 0.5)], [off(tV, 6.5, -6.5), off(tV, 0.5, 0.5)], [off(tV, -3, 7.5), off(tV, 0.5, 0.5)], [off(tV, 8, 6.5), off(tV, 0.5, 0.5)],
   [off(tV, 0.5, 0.5), off(tV, -17, 2)], [off(tL, 6.4, -19), off(tL, 6.4, 19)],
   [off(tPr, 0, 0), off(tPr, 0, -19)], [off(tPr, 0, 0), off(tPr, -9, -7)], [off(tPr, 0, 0), off(tPr, 9, -6.5)], [off(tRo, 9.5, 8), off(tRo, 1.5, 19)]];
+// ---------- os lugares das cenas do dia a dia (ficam livres de árvore e de capim alto)
+const rot2w = (p, rot, lx, lz) => [p[0] + lx * Math.cos(rot) + lz * Math.sin(rot), p[1] - lx * Math.sin(rot) + lz * Math.cos(rot)];
+// beira do córrego da lavadeira (pedra de lavar) e o varal, uns passos para dentro da terra, ao longo do rio
+LAYOUT.lav = (() => { const tA = TILES[0]; for (let i = 20; i < 200; i += 3) { const [rx, rz] = RIVER[i]; for (const o of [3.2, -3.2, 3.8, -3.8]) { const x = rx, z = rz + o, w = waterDist(x, z); if (w > 0.4 && w < 1.2 && inHex(x, z, tA.c, 0.85)) return [x, z]; } } return null; })();
+if (LAYOUT.lav) { const [x, z] = LAYOUT.lav, e = 0.6, gx = waterDist(x + e, z) - waterDist(x - e, z), gz = waterDist(x, z + e) - waterDist(x, z - e), n = Math.hypot(gx, gz) || 1, ax = gx / n, az = gz / n;
+  LAYOUT.varal = { c: [x + ax * 3.4, z + az * 3.4], dir: [-az, ax], len: 3.4 }; }
+LAYOUT.cruzeiro = { p: rot2w(LAYOUT.chapel.p, LAYOUT.chapel.rot, 6.5, 2.2) };                    // cruz de madeira em frente à capela
+LAYOUT.chapelDoor = rot2w(LAYOUT.chapel.p, LAYOUT.chapel.rot, 4.25 + 0.9, 0);
+LAYOUT.licao = { p: off(tV, -9, 9), rot: Math.PI / 2 };                                          // a mãe ensina as crianças à sombra
+LAYOUT.toco = { p: off(tV, -6.2, 13), rot: 0.4 };                                                // o pai racha lenha no toco
+LAYOUT.lenha = { p: off(tV, -4.4, 13.8), rot: 0.4 };                                             // a pilha de lenha que o lenhador traz da mata
+LAYOUT.spots = [[LAYOUT.cruzeiro.p, 1.6], [LAYOUT.licao.p, 3.2], [LAYOUT.toco.p, 2.2], [LAYOUT.lenha.p, 1.6], ...(LAYOUT.varal ? [[LAYOUT.varal.c, 2.4]] : []), ...(LAYOUT.lav ? [[LAYOUT.lav, 1.4]] : [])];
 function segDist(x, z, a, b) { const vx = b[0] - a[0], vz = b[1] - a[1], t = Math.max(0, Math.min(1, ((x - a[0]) * vx + (z - a[1]) * vz) / (vx * vx + vz * vz))); return Math.hypot(x - a[0] - vx * t, z - a[1] - vz * t); }
 // chão de terra batida: em volta das casas, da capela e do poço, e nos caminhos (gasto no meio, com capim nas bordas)
 export function dirtAt(x, z) {
   let k = 0; const L = LAYOUT;
   for (const h of L.houses) k = Math.max(k, smooth(Math.max(h.w, h.d) * 0.5 + 2.6, Math.max(h.w, h.d) * 0.5 + 0.6, Math.hypot(x - h.p[0], z - h.p[1])));
   k = Math.max(k, smooth(8, 4, Math.hypot(x - L.chapel.p[0], z - L.chapel.p[1])), smooth(3.4, 1.6, Math.hypot(x - L.well.p[0], z - L.well.p[1])));
+  for (const [p, r] of [[L.licao.p, 2.8], [L.toco.p, 2.4], [L.lenha.p, 1.6], [L.cruzeiro.p, 1.8]]) k = Math.max(k, smooth(r + 1.2, r - 0.6, Math.hypot(x - p[0], z - p[1]) + (vnoise(x * 0.9, z * 0.9) - 0.5) * 0.6));
   for (const [a, b] of PATHS) k = Math.max(k, smooth(1.1, 0.35, segDist(x, z, a, b) + (vnoise(x * 0.8, z * 0.8) - 0.5) * 0.4));
   k = Math.max(k, smooth(2.6, 1.0, Math.hypot(x - L.mill.p[0], z - L.mill.p[1])), smooth(L.praca.r + 1.5, L.praca.r - 1, Math.hypot(x - L.praca.c[0], z - L.praca.c[1])));
   for (const b of [L.venda, L.sobrado, L.celeiro]) k = Math.max(k, smooth(Math.max(b.w, b.d) * 0.5 + 2.4, Math.max(b.w, b.d) * 0.5 + 0.5, Math.hypot(x - b.p[0], z - b.p[1])));
@@ -207,5 +220,6 @@ export function blocked(x, z, pad = 0) {
   return L.houses.some(h => inBox(h.p, h.w + 3, h.d + 3, h.rot)) || inBox(L.chapel.p, 8, 12, L.chapel.rot) || Math.hypot(x - L.well.p[0], z - L.well.p[1]) < 2.2 + pad
     || inBox(L.garden.p, L.garden.w + 1, L.garden.d + 1, L.garden.rot) || inBox(L.paiol.p, L.paiol.w + 2.5, L.paiol.d + 2.5, L.paiol.rot) || inBox(L.bales.p, 3.4, 2.4, L.bales.rot)
     || Math.hypot(x - L.scarecrow.p[0], z - L.scarecrow.p[1]) < 1.0 + pad || inBox(L.cart.p, 5, 2.6, L.cart.rot) || inBox(L.sheepPen.p, L.sheepPen.w + 1, L.sheepPen.d + 1, L.sheepPen.rot) || inBox(L.celeiro.p, L.celeiro.w + 3, L.celeiro.d + 3, L.celeiro.rot)
+    || L.spots.some(([p, r]) => Math.hypot(x - p[0], z - p[1]) < r + pad)
     || inBox(L.venda.p, L.venda.w + 3, L.venda.d + 3, L.venda.rot) || inBox(L.sobrado.p, L.sobrado.w + 3, L.sobrado.d + 3, L.sobrado.rot) || Math.hypot(x - L.coreto.p[0], z - L.coreto.p[1]) < 4.2 + pad || Math.hypot(x - L.oven.p[0], z - L.oven.p[1]) < 2.6 + pad || Math.hypot(x - L.cavalete.p[0], z - L.cavalete.p[1]) < 2.2 + pad || inBox(L.corral.p, L.corral.w + 1, L.corral.d + 1, L.corral.rot) || Math.hypot(x - L.mill.p[0], z - L.mill.p[1]) < 3.5 + pad;
 }
