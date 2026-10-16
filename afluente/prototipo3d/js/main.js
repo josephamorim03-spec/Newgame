@@ -16,6 +16,7 @@ import { buildBoard } from './board3d.js';
 import { buildBoard5 } from './board5.js';
 import { buildFauna } from './fauna.js';
 import { buildPeople } from './people.js';
+import { buildFx } from './fx.js';
 import { createFx } from './aguafx.js';
 import { buildClouds } from './clouds.js';
 import { buildSkyFx } from './skyfx.js';
@@ -531,10 +532,11 @@ scatter(tPr, 6, () => makeTree('moita', 0.8 + rnd() * 0.4), (x, z) => Math.hypot
 const props = buildProps(scene, { mobile });
 const shadeTree = scene.children.find(o => o.userData.kind === 'sombra' && inHex(o.position.x, o.position.z, tC.c, 1));
 const clouds = buildClouds(scene, CENTER, { mobile });
-const fx = createFx(scene, { mobile });   // anéis, respingos e poeira (aguafx.js)
-const gente = buildPeople(scene, { mobile, fx });
+const fx = buildFx(scene, { max: mobile ? 500 : 900 });   // partículas (fx.js)
+const afx = createFx(scene, { mobile });   // anéis na água, respingos e poeira dos bichos e da lagoa (aguafx.js)
+const gente = buildPeople(scene, { mobile, fx, afx });
 const skyfx = buildSkyFx(scene, camera, { mobile, focus: () => camMode === 'jogo' ? gameCam.focus : controls.target });
-const fauna = buildFauna(scene, { mobile, fx, shade: shadeTree ? [shadeTree.position.x, shadeTree.position.z] : null, termites: scene.children.filter(o => o.userData.regua === 'cupinzeiro').map(o => [o.position.x, o.position.z]),
+const fauna = buildFauna(scene, { mobile, fx: afx, shade: shadeTree ? [shadeTree.position.x, shadeTree.position.z] : null, termites: scene.children.filter(o => o.userData.regua === 'cupinzeiro').map(o => [o.position.x, o.position.z]),
   treeTops: scene.children.filter(o => ['cerrado', 'mata', 'sombra'].includes(o.userData.kind)).map(o => { const bb = new THREE.Box3().setFromObject(o); return [o.position.x, bb.max.y - 0.6, o.position.z]; }) });
 // moitas: o sub-bosque da mata e os arbustos do cerrado, que fecham o vão entre o capim e as copas
 scatter(tB, 16, () => makeTree('moita', 0.9 + rnd() * 0.35), (x, z) => { const w = waterDist(x, z); return w > 1.2 && w < 14; }, 2.2);
@@ -820,7 +822,7 @@ function frame() {
   if (!!ST.regua !== reguaOn) { reguaOn = !!ST.regua; showRegua(reguaOn); }
   if (people && reguaOn) for (const p of people.children) p.rotation.y = Math.atan2(camera.position.x - p.position.x, camera.position.z - p.position.z);
   if (camMode === 'jogo') U.uFocus.value.copy(gameCam.focus); else U.uFocus.value.copy(camera.position).add(camera.getWorldDirection(_v).multiplyScalar(0.01));   /* câmera livre: só some o que encosta na lente */ fitShadow(); grassLod();
-  const ctx = { pxPerUnit: renderer.domElement.height / (2 * Math.tan(camera.fov * Math.PI / 360)), hour: ST.hour }; if (window.__petalPx) window.__petalPx.value = ctx.pxPerUnit; if (window.__mistPx) window.__mistPx.value = ctx.pxPerUnit; window.__hour = ST.hour; ctx.people = gente.people; props.update(dt, ctx); fauna.update(dt, ctx); fx.update(dt, ctx); gente.update(dt); board.update(dt);
+  const ctx = { pxPerUnit: renderer.domElement.height / (2 * Math.tan(camera.fov * Math.PI / 360)), hour: ST.hour }; if (window.__petalPx) window.__petalPx.value = ctx.pxPerUnit; if (window.__mistPx) window.__mistPx.value = ctx.pxPerUnit; window.__hour = ST.hour; ctx.people = gente.people; props.update(dt, ctx); fauna.update(dt, ctx); gente.update(dt); fx.update(dt, ctx); afx.update(dt, ctx); board.update(dt);
   if ((skyfx.fx.strikes || 0) !== lastStrikes) { lastStrikes = skyfx.fx.strikes || 0; setTimeout(() => { fauna.startle(); gente.startle(); }, 250); }   /* o trovão logo depois do clarão assusta gente e bicho */ clouds.update(dt, camera); ctx.Rr = c.Rr; ctx.hour = ST.hour; skyfx.update(dt, ctx);
   { const f = skyfx.fx.flash; if (f > 0) { skyLight.intensity += f * 3; U.uSkyZen.value.lerp(new THREE.Color(0.85, 0.88, 1), f * 0.5); U.uSkyHor.value.lerp(new THREE.Color(0.9, 0.92, 1), f * 0.45); } }   // clarão do raio
   ringFog.value = scene.fog.density; ringFogC.value.copy(scene.fog.color);
@@ -839,4 +841,4 @@ function frame() {
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
-window.__cam = camera; window.__tiles = TILES; window.__fall = FALL; window.__previa = { gente, skyfx, gameCam,  ST, U, renderer, scene, camera, controls, fauna, clouds, board };
+window.__cam = camera; window.__tiles = TILES; window.__fall = FALL; window.__previa = { gente, skyfx, gameCam,  ST, U, renderer, scene, camera, controls, fauna, clouds, board, fx, L: LAYOUT, heightAt };

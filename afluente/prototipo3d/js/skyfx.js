@@ -52,7 +52,7 @@ export function buildSkyFx(scene, camera, { mobile = false, focus } = {}) {
     const m = new THREE.Mesh(g, boltMat); m.frustumCulled = false; m.renderOrder = 997; return { m, top, bottom };
   }
   // trovão sintetizado: estalo + ronco grave; atraso pela distância e mais abafado quando longe
-  let ac = null; addEventListener('pointerdown', () => { if (!ac) try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { } }, { once: false });
+  let ac = null; addEventListener('pointerdown', () => { if (!ac) try { ac = new (window.AudioContext || window.webkitAudioContext)(); window.__audioCtx = ac; } catch (e) { } }, { once: false });
   function thunder(dist) { if (!ac || ac.state !== 'running' && ac.resume) { if (ac) ac.resume(); if (!ac) return; }
     const dur = 2.5 + Math.min(5, dist / 300), n = ac.sampleRate * dur | 0, buf = ac.createBuffer(1, n, ac.sampleRate), d = buf.getChannelData(0); let b = 0;
     for (let i = 0; i < n; i++) { const t = i / ac.sampleRate; b = b * 0.985 + (rnd() * 2 - 1) * 0.12; const env = (dist < 400 ? Math.exp(-t * 18) * 1.5 : 0) + Math.exp(-t / (dur * 0.35)) * (0.6 + 0.4 * Math.sin(t * 7 + rnd()));

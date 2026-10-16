@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from './addons/BufferGeometryUtils.js';
 import { NOISE, WIND } from './glsl.js';
 import { U, HEAD, LIGHT_END, shared, toon } from './mat.js';
-import { LAYOUT, heightAt, hexEdgeDist, blocked, inHex } from './world.js';
+import { LAYOUT, heightAt, hexEdgeDist, blocked, inHex, waterLevelAt } from './world.js';
 import { tag } from './regua.js';
 import { plasterTexture, roofTexture, plankTexture, stoneTexture, chitaTexture } from './textures.js';
 
@@ -226,10 +226,60 @@ export function buildProps(scene, { mobile = false } = {}) {
     ring.material = stoneMat; inner.geometry.scale(-1, 1, 1); const top = new THREE.Mesh(new THREE.RingGeometry(0.7, 0.9, 18).rotateX(-Math.PI / 2).translate(0, 0.8, 0), stoneMat);
     const water = new THREE.Mesh(new THREE.CircleGeometry(0.7, 18).rotateX(-Math.PI / 2).translate(0, -0.4, 0), new THREE.MeshBasicMaterial({ color: 0x0d2a2c }));
     const wood = merge([paint(box(0.14, 2.0, 0.14, -0.95, 1.0, 0, 1), col(0x7a5a3e)), paint(box(0.14, 2.0, 0.14, 0.95, 1.0, 0, 1), col(0x7a5a3e)),
-      paint(new THREE.CylinderGeometry(0.07, 0.07, 1.9, 8).rotateZ(Math.PI / 2).translate(0, 1.55, 0), col(0x8a6a4a)), paint(box(0.3, 0.32, 0.3, 0.1, 1.15, 0, 1), col(0x6a6a70))]);
+      paint(box(0.05, 0.05, 0.3, 0.95, 1.55, 0, 1), col(0x6a5a4a))]);
     const rf = merge([paint(box(2.5, 0.07, 0.9, 0, 0, 0, 1).rotateX(0.55).translate(0, 2.05, 0.36), col(0xb4563a)), paint(box(2.5, 0.07, 0.9, 0, 0, 0, 1).rotateX(-0.55).translate(0, 2.05, -0.36), col(0xb4563a))]);
     g.add(ring, inner, top, water, new THREE.Mesh(wood, woodMat), new THREE.Mesh(rf, roofMat)); g.traverse(o => { if (o.isMesh) o.castShadow = o.receiveShadow = true; });
+    // o sarilho gira de verdade: eixo com a corda enrolada, manivela do lado de fora do esteio, balde de madeira com aro de ferro
+    const axle = new THREE.Group(); axle.position.set(0, 1.55, 0); g.add(axle);
+    axle.add(new THREE.Mesh(merge([paint(new THREE.CylinderGeometry(0.07, 0.07, 1.9, 10).rotateZ(Math.PI / 2), col(0x8a6a4a)), paint(new THREE.CylinderGeometry(0.095, 0.095, 0.5, 10).rotateZ(Math.PI / 2).translate(0.1, 0, 0), col(0xc8b088)),
+      paint(box(0.05, 0.32, 0.05, 1.08, -0.14, 0, 1), col(0x5a4a3a)), paint(new THREE.CylinderGeometry(0.025, 0.025, 0.2, 6).rotateZ(Math.PI / 2).translate(1.17, -0.28, 0), col(0x6a5a4a))]), woodMat));
+    const bucket = new THREE.Mesh(merge([paint(new THREE.CylinderGeometry(0.13, 0.11, 0.24, 12).translate(0, -0.12, 0), col(0x7a5a3a)), paint(new THREE.TorusGeometry(0.128, 0.012, 4, 14).rotateX(Math.PI / 2).translate(0, -0.05, 0), col(0x4a4a4e)),
+      paint(new THREE.TorusGeometry(0.12, 0.008, 4, 12, Math.PI).translate(0, 0.0, 0), col(0x4a4a4e))]), woodMat);
+    const rope = new THREE.Mesh(new THREE.CylinderGeometry(0.009, 0.009, 1, 5).translate(0, -0.5, 0), mat({ color: 0xc8b088 })); rope.position.set(0.1, 1.55 - 0.09, 0);
+    bucket.position.set(0.1, 1.2, 0); g.add(bucket, rope); bucket.castShadow = true;
+    W.rig = { g, axle, bucket, rope, level: 1, set(l) { this.level = l; const y = -0.45 + (1.2 + 0.45) * l; bucket.position.y = y; rope.scale.y = Math.max(0.02, 1.46 - y); },
+      crankAt: () => g.localToWorld(new THREE.Vector3(1.17, 1.55 - 0.28, 0)) };
+    W.rig.set(1);
     g.position.set(W.p[0], heightAt(W.p[0], W.p[1]) + 0.0, W.p[1]); g.rotation.y = 0.4; scene.add(g); tag(g, 'poço'); }
+  // ---------- cruzeiro em frente à capela: cruz de aroeira sobre dois degraus caiados, com um pano branco e velas no pé
+  { const Cz = LAYOUT.cruzeiro, g = new THREE.Group();
+    g.add(new THREE.Mesh(merge([paint(box(1.6, 0.25, 1.6, 0, 0.12, 0, 1), col(0xeeeae0)), paint(box(1.1, 0.25, 1.1, 0, 0.37, 0, 1), col(0xf4f0e8)),
+      paint(box(0.2, 3.4, 0.2, 0, 0.5 + 1.7, 0, 1), col(0x6a4a30)), paint(box(1.5, 0.18, 0.18, 0, 2.85, 0, 1), col(0x6a4a30)), paint(box(0.24, 0.24, 0.24, 0, 3.92, 0, 1), col(0x5a3e28))]), woodMat));
+    const pano = new THREE.Mesh(new THREE.PlaneGeometry(1.7, 0.42, 6, 2), mat({ color: 0xf6f4ee, side: THREE.DoubleSide })); pano.position.set(0, 2.72, 0.12); g.add(pano); pano.userData.noRegua = true;
+    const vel = new THREE.Mesh(merge([0, 1, 2].map(k => paint(new THREE.CylinderGeometry(0.02, 0.02, 0.16 + k * 0.03, 6).translate(-0.3 + k * 0.12, 0.58 + k * 0.015, 0.4), col(0xf8f2dc)))), mat({ vertexColors: true }));
+    g.add(vel); g.traverse(o => { if (o.isMesh) o.castShadow = o.receiveShadow = true; }); const fl = new THREE.Mesh(new THREE.SphereGeometry(0.03, 6, 4).scale(1, 1.8, 1), glowMat); fl.position.set(-0.18, 0.72, 0.4); g.add(fl); fl.userData.noRegua = true; vel.userData.noRegua = true;
+    g.position.set(Cz.p[0], heightAt(Cz.p[0], Cz.p[1]) - 0.05, Cz.p[1]); g.rotation.y = LAYOUT.chapel.rot + Math.PI / 2; scene.add(g); tag(g, 'cruzeiro');
+    updaters.push((dt, ctx) => { const t = performance.now() / 1000; pano.rotation.x = 0.15 * Math.sin(t * 1.3) * (0.4 + U.uWindBase.value * 0.12); fl.scale.y = 1 + 0.25 * Math.sin(t * 13) * Math.sin(t * 7.3); }); }
+  // ---------- o sino na torre da capela (balança na Ave-Maria)
+  { const lat = new THREE.LatheGeometry([[0, -0.02], [0.24, -0.02], [0.26, 0.02], [0.2, 0.12], [0.15, 0.32], [0.13, 0.4], [0.06, 0.45], [0, 0.46]].map(([x, y]) => new THREE.Vector2(x, y)), 16).translate(0, -0.46, 0);
+    const bell = new THREE.Mesh(lat, mat({ color: 0xb08a3a, side: THREE.DoubleSide }, { rim: '1.6' })), piv = new THREE.Group(); piv.add(bell); bell.castShadow = true;
+    const C = LAYOUT.chapel, w = 8.5, d = 5.4, tx = w / 2 - 1.2, tz = -(d / 2 + 1.15), lp = [C.p[0] + tx * Math.cos(C.rot) + tz * Math.sin(C.rot), C.p[1] - tx * Math.sin(C.rot) + tz * Math.cos(C.rot)];
+    piv.position.set(lp[0], heightAt(C.p[0], C.p[1]) + 9.2 - 0.75, lp[1]); piv.rotation.y = C.rot; scene.add(piv); bell.userData.noRegua = true; LAYOUT.chapel.bell = piv; }
+  // ---------- pedra de lavar na beira do córrego e o varal com as roupas que a lavadeira vai estendendo
+  if (LAYOUT.lav) { const [x, z] = LAYOUT.lav, s = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.22, 0.6, 3, 1, 3), stoneMat); const pp = s.geometry.attributes.position; for (let i = 0; i < pp.count; i++) pp.setY(i, pp.getY(i) + (pp.getY(i) > 0 ? -Math.abs(pp.getX(i)) * 0.12 : 0)); s.geometry.computeVertexNormals();
+    LAYOUT.lavStone = s; s.position.set(x, waterLevelAt(x, z) + 0.02, z); s.castShadow = s.receiveShadow = true; scene.add(s); s.userData.noRegua = true; }
+  if (LAYOUT.varal) { const V = LAYOUT.varal, [cx, cz] = V.c, [dx, dz] = V.dir, g = new THREE.Group(), ends = [-1, 1].map(k => [cx + dx * V.len / 2 * k, cz + dz * V.len / 2 * k]);
+    for (const [px, pz] of ends) { const post = new THREE.Mesh(paint(new THREE.CylinderGeometry(0.045, 0.055, 1.95, 6).translate(0, 0.97, 0), col(0x7a5a3e)), woodMat); post.position.set(px, heightAt(px, pz) - 0.05, pz); post.castShadow = true; post.userData.noRegua = true; scene.add(post); }
+    const y0 = Math.min(...ends.map(([px, pz]) => heightAt(px, pz))) + 1.82, line = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, V.len, 4).rotateZ(Math.PI / 2), mat({ color: 0xe8e0d0 }));
+    g.position.set(cx, y0, cz); g.rotation.y = Math.atan2(-dz, dx); g.add(line); scene.add(g); line.userData.noRegua = true;
+    const cols = [0xf4f0e8, 0xc8382a, 0x2f6aa0, 0xe0a020, 0xf4f0e8, 0x3a8a4a, 0xd8c8e8], items = [];
+    for (let i = 0; i < 7; i++) { const w = 0.38 + (i % 3) * 0.12, h = 0.45 + ((i * 5) % 3) * 0.12, piv = new THREE.Group(); piv.position.set(-V.len / 2 + 0.35 + i * (V.len - 0.7) / 6, 0, 0);
+      const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h, 3, 3).translate(0, -h / 2, 0), mat({ color: cols[i], side: THREE.DoubleSide })); m.castShadow = true; m.userData.noRegua = true; piv.add(m); piv.visible = false; g.add(piv); items.push(piv); }
+    V.items = items; V.n = 0; V.at = i => g.localToWorld(new THREE.Vector3(items[i].position.x, 0, 0));
+    updaters.push(() => { const t = performance.now() / 1000, wv = U.uWindBase.value * (1 + U.uWindIu.value * 0.6); items.forEach((p, i) => { p.rotation.x = Math.sin(t * (1.6 + i * 0.13) + i) * Math.min(0.9, 0.05 + wv * 0.07) + Math.min(0.5, wv * 0.04); }); }); }
+  // ---------- o toco de rachar lenha com a acha em cima, a pilha que o lenhador traz da mata, o banquinho e a esteira da lição
+  { const Tc = LAYOUT.toco, g = new THREE.Group(); g.add(new THREE.Mesh(merge([paint(new THREE.CylinderGeometry(0.3, 0.34, 0.5, 12).translate(0, 0.25, 0), col(0x8a6a4a)), paint(new THREE.CylinderGeometry(0.29, 0.29, 0.01, 12).translate(0, 0.505, 0), col(0xd8c09a))]), woodMat));
+    const half = () => new THREE.Mesh(paint(new THREE.CylinderGeometry(0.12, 0.12, 0.45, 8, 1, false, 0, Math.PI).translate(0, 0.225, 0), col(0xb89468)), woodMat);
+    const a = half(), b = half(); b.rotation.y = Math.PI; a.position.y = b.position.y = 0.5; g.add(a, b); g.traverse(o => { if (o.isMesh) o.castShadow = o.receiveShadow = true; }); a.userData.noRegua = b.userData.noRegua = true;
+    g.position.set(Tc.p[0], heightAt(Tc.p[0], Tc.p[1]) - 0.03, Tc.p[1]); g.rotation.y = Tc.rot; scene.add(g); tag(g, 'toco de rachar lenha'); Tc.halves = [a, b]; Tc.g = g;
+    const Lp = LAYOUT.lenha, pg = new THREE.Group(), logGeo = paint(new THREE.CylinderGeometry(0.07, 0.075, 0.9, 7).rotateZ(Math.PI / 2), col(0x8a6648)), logs = [];
+    for (let i = 0; i < 24; i++) { const layer = Math.floor(i / 4), k = i % 4, m = new THREE.Mesh(logGeo, woodMat); if (layer % 2) { m.rotation.y = Math.PI / 2; m.position.set(-0.24 + k * 0.16, 0.08 + layer * 0.14, 0); } else m.position.set(0, 0.08 + layer * 0.14, -0.24 + k * 0.16);
+      m.castShadow = true; m.visible = i < 10; pg.add(m); logs.push(m); }
+    pg.position.set(Lp.p[0], heightAt(Lp.p[0], Lp.p[1]), Lp.p[1]); pg.rotation.y = Lp.rot; scene.add(pg); tag(pg, 'pilha de lenha'); Lp.logs = logs; Lp.n = 10; Lp.show = n => { Lp.n = Math.max(0, Math.min(24, n)); logs.forEach((m, i) => m.visible = i < Lp.n); };
+    const Li = LAYOUT.licao, st = new THREE.Mesh(merge([paint(box(0.42, 0.05, 0.32, 0, 0.42, 0, 1), col(0x8a6a4a)), ...[[-0.17, -0.12], [0.17, -0.12], [-0.17, 0.12], [0.17, 0.12]].map(([x, z]) => paint(box(0.04, 0.42, 0.04, x, 0.21, z, 1), col(0x7a5a3e)))]), woodMat);
+    st.position.set(Li.p[0], heightAt(Li.p[0], Li.p[1]), Li.p[1]); st.rotation.y = Li.rot; st.castShadow = true; scene.add(st); tag(st, 'banquinho');
+    const est = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 1.3).rotateX(-Math.PI / 2), mat({ color: 0xd8c08a })); const ex = Li.p[0] + Math.sin(Li.rot) * 1.55, ez = Li.p[1] + Math.cos(Li.rot) * 1.55;
+    est.position.set(ex, heightAt(ex, ez) + 0.03, ez); est.rotation.y = Li.rot; est.receiveShadow = true; scene.add(est); }
 
   // ---------- cercas: esteios a cada ~2,2 m seguindo o chão, duas ou três réguas um pouco tortas; uma porteira aberta
   function fence(pts, { name = '', closed = true, gate = -1, posts = 1.35, rails = [0.5, 0.95], step = 2.2, color = 0x9a8470 } = {}) {
