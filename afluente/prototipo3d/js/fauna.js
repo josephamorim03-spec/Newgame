@@ -78,16 +78,19 @@ export function buildFauna(scene, opts = {}) {
   // e da onça; o raio assusta todo mundo; na chuva as galinhas vão para a varanda e as ovelhas se juntam; no calor da seca o
   // gado procura sombra; à noite o gado e as ovelhas deitam
   const FEAR = { 'galinha': [2.2, 2.6], 'capivara': [5, 2.4], 'seriema': [7, 3.6], 'ema': [8, 4.5], 'garça-branca': [5, 1.4], 'garça-moura': [6, 1.4], 'ovelha': [2.6, 1.8],
-    'boi': [1.8, 1.3], 'bezerro': [1.8, 1.3], 'lobo-guará': [12, 3.2], 'anta': [7, 2.2], 'tamanduá-bandeira': [4, 1.0], 'joão-de-barro (na régua)': [1.6, 1.8], 'onça-pintada': [11, 2.6] };
+    'boi': [1.8, 1.3], 'bezerro': [1.8, 1.3], 'lobo-guará': [12, 3.2], 'anta': [7, 2.2], 'tamanduá-bandeira': [4, 1.0], 'joão-de-barro (na régua)': [1.6, 1.8], 'onça-pintada': [11, 3.4] };
   let threats = [];
   const porches = LAYOUT.houses.map(h => [h.p[0] + (-h.w * 0.1) * Math.cos(h.rot) + (h.d / 2 + 1.1) * Math.sin(h.rot), h.p[1] - (-h.w * 0.1) * Math.sin(h.rot) + (h.d / 2 + 1.1) * Math.cos(h.rot)]);
   function brain(a, dt) {
     const name = a.g.userData.regua, fear = FEAR[name], day = U.uDay.value;
     // quem ameaça: gente por perto (criança correndo assusta mais) e a onça (para quem não é onça)
-    if (fear && a.st !== 'lie') { let best = null, bd = 1e9;
+    if (fear && a.st !== 'lie' && !a.__calmo) { let best = null, bd = 1e9;   // (__calmo: o juiz medindo o andar)
       for (const t of threats) { if (t.who === a) continue; if (name === 'onça-pintada' && !t.person) continue; const r = fear[0] * (t.onca ? 2.2 : t.fast ? 1.5 : 1);
         const d = Math.hypot(t.x - a.x, t.z - a.z); if (d < r && d < bd) { bd = d; best = t; } }
       if (best) { a.st = 'flee'; a.t = 1.8 + rnd(); a.from = [best.x, best.z]; } }
+    // a onça às vezes anda na espreita: agachada, devagar, cabeça baixa (some e volta sozinha; na fuga desfaz na hora)
+    if (a.stalker) { a.stk = (a.stk ?? 6 + rnd() * 10) - dt; const on = a.st === 'walk' && a.stk < 0; if (a.stk < -(5 + (a.look % 1) * 5)) a.stk = 10 + rnd() * 16;
+      a.stalk = (a.stalk || 0) + ((on ? 1 : 0) - (a.stalk || 0)) * Math.min(1, dt * (a.st === 'flee' ? 6 : 1.5)); a.crouch = a.stalk; }
     a.t -= dt; const rain = U.uRain.value, hour = window.__hour ?? 15, hot = U.uSeca.value > 0.6 && hour > 11 && hour < 15.5 && day > 0.6 && rain < 0.05;
     const shelter = a.shade && (rain > 0.35 || hot);
     if (a.st === 'startle') { a.st = 'flee'; a.from = [a.x + (rnd() - 0.5), a.z + (rnd() - 0.5)]; }
@@ -95,7 +98,7 @@ export function buildFauna(scene, opts = {}) {
       else { let dx = a.x - a.from[0], dz = a.z - a.from[1]; const d = Math.hypot(dx, dz) || 1; dx /= d; dz /= d;
         let e = Math.atan2(dx, dz) + Math.sin(a.ph * 0.3) * 0.3 - a.h; e = Math.atan2(Math.sin(e), Math.cos(e)); a.h += Math.max(-a.turn * 2.5 * dt, Math.min(a.turn * 2.5 * dt, e));
         a.sp += (fear[1] - a.sp) * Math.min(1, dt * 4); const nx = a.x + Math.sin(a.h) * a.sp * dt, nz = a.z + Math.cos(a.h) * a.sp * dt;
-        if (a.area(nx, nz) || !a.area(a.x, a.z) || (a.allowWater && waterDist(nx, nz) < 0.9)) { a.x = nx; a.z = nz; a.ph += a.sp * dt / a.stride * Math.PI * 2; } else { a.h += (rnd() < 0.5 ? 1 : -1) * Math.PI * 0.5 * dt * 4; a.sp *= 0.5; }
+        if (a.area(nx, nz) || !a.area(a.x, a.z) || (a.allowWater && waterDist(nx, nz) < 0.9)) { a.x = nx; a.z = nz; a.ph += a.sp * dt / (a.strd || a.stride) * Math.PI * 2; } else { a.h += (rnd() < 0.5 ? 1 : -1) * Math.PI * 0.5 * dt * 4; a.sp *= 0.5; }
         return; } }
     // noite: gado e ovelha deitam; de dia levantam
     if ((name === 'boi' || name === 'bezerro' || name === 'ovelha') && !(a.st === 'flee')) { if (day < 0.22 && a.st !== 'lie' && rnd() < dt * 0.2) { a.st = 'lie'; a.sp = 0; } if (a.st === 'lie') { if (day > 0.3) { a.st = 'idle'; a.t = 2; } else return; } }
@@ -123,11 +126,12 @@ export function buildFauna(scene, opts = {}) {
     if (a.rad) for (const t of threats) { if (!t.person) continue; const hl = a.big ? 0.75 * a.g.scale.x : 0, fx = Math.sin(a.h), fz = Math.cos(a.h), u = Math.max(-hl, Math.min(hl, (t.x - a.x) * fx + (t.z - a.z) * fz));
       const dx = a.x + fx * u - t.x, dz = a.z + fz * u - t.z, d = Math.hypot(dx, dz), s = a.rad + 0.3;
       if (d < s && d > 1e-3) { const k = (s - d) * Math.min(1, dt * 8); if (a.area(a.x + dx / d * k, a.z + dz / d * k)) { a.x += dx / d * k; a.z += dz / d * k; } } }
+    if (a.stalker && a.st === 'walk' && a.stk < 0) want *= 0.45;
     a.sp += (want - a.sp) * Math.min(1, dt * 2.5);
     const ox = a.x, oz = a.z, nx = a.x + Math.sin(a.h) * a.sp * dt, nz = a.z + Math.cos(a.h) * a.sp * dt;
     if (a.area(nx, nz) || !a.area(a.x, a.z) || (a.allowWater && waterDist(nx, nz) < 0.9)) { a.x = nx; a.z = nz; } else { a.h += Math.PI * (0.5 + rnd() * 0.5); if (a.st === 'walk' && !a.goal && rnd() < 0.75) { a.tgt = a.pick(null); a.t = 20; } else { a.st = 'idle'; a.t = 1 + rnd() * 2; a.goal = null; } }
     if (a.allowWater && !a.goal && !a.swim && a.area(a.x, a.z)) a.allowWater = false;
-    const fwd = Math.max(0, (a.x - ox) * Math.sin(a.h) + (a.z - oz) * Math.cos(a.h)); a.ph += fwd / a.stride * Math.PI * 2; if (fwd < a.sp * dt * 0.5) a.sp *= 0.5;
+    const fwd = Math.max(0, (a.x - ox) * Math.sin(a.h) + (a.z - oz) * Math.cos(a.h)); a.ph += fwd / (a.strd || a.stride) * Math.PI * 2; if (fwd < a.sp * dt * 0.5) a.sp *= 0.5;
   }
   // bicho de esqueleto: o comportamento diz para onde o pescoço e a cabeça vão; bicho.js faz o resto (patas, chão, rabo)
   const _m = new THREE.Vector3();
@@ -147,7 +151,7 @@ export function buildFauna(scene, opts = {}) {
       let bt = null, bd = 7; for (const t of threats) { if (t.who === a) continue; const d = Math.hypot(t.x - a.x, t.z - a.z); if (d < bd) { bd = d; bt = t; } }
       if (bt) { let e = Math.atan2(bt.x - a.x, bt.z - a.z) - a.h; e = Math.atan2(Math.sin(e), Math.cos(e)); yaw = Math.max(-1.1, Math.min(1.1, e)); } }
     else if (a.st === 'flee') neck = -0.25;
-    else if (a.st === 'walk' && !bird) neck = 0.15;
+    else if (a.st === 'walk' && !bird) { const sk = a.stalk || 0; neck = (a.walkNeck ?? 0.15) + sk * 0.3; head = -sk * 0.22; }   // na espreita a cabeça desce mas o olhar fica à frente
     // o que o bicho faz parado, de vez em quando: sacode a cabeça (mosca), lambe o flanco, descansa uma perna de trás,
     // senta (capivara, lobo, onça); a ave arruma as penas ou se sacode
     const nm = a.g.userData.regua, idle = a.st === 'idle' && a.sp < 0.06;
@@ -245,7 +249,7 @@ export function buildFauna(scene, opts = {}) {
   const mataBeira = (x, z) => { const w = waterDist(x, z); return w > 0.6 && w < 6 && inHex(x, z, tile('mata').c, 0.9) && !blocked(x, z); };
   spawn(anta, 1, { name: 'anta', idleT: [1.5, 4], area: mataBeira, pick: pickIn(mataBeira, tile('mata').c, 14), drinks: drinkSpots(pickIn((x, z) => mataBeira(x, z) || (waterDist(x, z) > 0.25 && waterDist(x, z) < 0.6 && inHex(x, z, tile('mata').c, 0.9)), tile('mata').c, 14)), swims: swimSpots(tile('mata').c, 16), swimmer: true, floatD: 0.55, pg: 0.62, pw: 0.35, vw: 0.6, vg: 0.05, turn: 0.9, stride: 0.9, sep: 2, roam: 6, gp: 0.7, dropNeck: 0.1 });
   const bordaMata = (x, z) => inHex(x, z, tile('mata').c, 0.98) && !inHex(x, z, tile('mata').c, 0.55) && !blocked(x, z);
-  spawn(onca, 1, { name: 'onça-pintada', area: bordaMata, pick: pickIn(bordaMata, tile('mata').c, 18), pg: 0.1, pw: 0.75, vw: 0.9, vg: 0.05, turn: 1.4, stride: 0.95, sep: 2, roam: 12, gp: 0.3, dropNeck: 0.05,
+  spawn(onca, 1, { name: 'onça-pintada', stalker: true, walkNeck: 0.22, gallopFr: 1.0, runStride: 2.1, area: bordaMata, pick: pickIn(bordaMata, tile('mata').c, 18), pg: 0.1, pw: 0.75, vw: 0.9, vg: 0.05, turn: 1.4, stride: 0.95, sep: 2, roam: 12, gp: 0.3, dropNeck: 0.05,
     when: () => U.uDay.value < 0.55 });
   // ovelhas no aprisco: lã fofa em cachos, cara e pernas escuras
   const Sp = LAYOUT.sheepPen, inPen = (x, z) => inBoxAt(x, z, Sp.p, Sp.w - 1.0, Sp.d - 1.0, Sp.rot);

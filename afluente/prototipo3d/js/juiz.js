@@ -81,7 +81,7 @@ export function createJuiz({ fauna, people = () => [] }) {
   function rodar(a, estado, segs, dt, cb) { const t0 = performance.now() / 1000; let t = 0;
     for (let k = 0; k * dt < segs; k++) { t += dt; if (estado === 'walk' || estado === 'trot') { a.st = 'walk'; a.t = 99; if (!a.tgt || Math.hypot(a.tgt[0] - a.x, a.tgt[1] - a.z) < 2) a.tgt = a.pick(null); if (estado === 'trot') a.sp = a.vw * 1.6; }
       else { a.st = estado; a.t = 99; a.tgt = null; if (estado !== 'graze') a.sp = 0; }
-      a.act = null; a.ia = 999; a.sit = false; a.restLeg = -1; a.goal = null; if (k === 0) { a.sitK = 0; a.lie = 0; a.restK = 0; } fauna.step(a, dt, t0 + t); a.g.updateMatrixWorld(true); cb && cb(t); } }
+      a.act = null; a.ia = 999; a.sit = false; a.restLeg = -1; a.goal = null; a.__calmo = estado === 'walk' || estado === 'trot'; if (a.stalker) a.stk = 5; if (k === 0) { a.sitK = 0; a.lie = 0; a.restK = 0; a.stalk = 0; a.crouch = 0; }   /* o andar medido é o normal (a espreita é outra pose) */ fauna.step(a, dt, t0 + t); a.g.updateMatrixWorld(true); cb && cb(t); } a.__calmo = false; }
 
   // ---------- POSE e MOVIMENTO
   function movimento(a) { const R = a.rig, ref = ANAT[a.g.userData.regua], out = [], s = a.g.scale.x; if (R.kind === 'bird' || !ref) return { out, M: {} };
