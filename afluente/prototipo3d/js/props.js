@@ -299,7 +299,7 @@ export function buildProps(scene, { mobile = false } = {}) {
       crankAt: () => g.localToWorld(new THREE.Vector3(1.17, 1.55 - 0.28, 0)), mouthAt: () => g.localToWorld(new THREE.Vector3(0, 0.85, 0)), bucketAt: (v = new THREE.Vector3()) => bucket.getWorldPosition(v),
       lipAt(v = new THREE.Vector3()) { const a = this.tiltAxis; return bucket.localToWorld(v.set(-a.z * 0.13, -0.08, a.x * 0.13)); } };   // a beira do balde que fica para baixo ao despejar
     W.rig.set(1);
-    updaters.push(dt => { const R = W.rig; dt = Math.min(dt, 0.05); if (!R.hand) R.set(R.level);   // largou: volta a pender do gancho wwMat.uniforms.uRip.value = R.splash; R.splash *= Math.exp(-dt * 0.7);
+    updaters.push(dt => { const R = W.rig; dt = Math.min(dt, 0.05); if (!R.hand) R.set(R.level);   /* largou: volta a pender do gancho */ wwMat.uniforms.uRip.value = R.splash; R.splash *= Math.exp(-dt * 0.7);
       // pêndulo: o balde balança quando acelera (sobe aos trancos de cada volta da manivela, desce solto) e quando a pessoa larga
       const inShaft = bucket.position.y < 0.75 && !R.hand;
       swV += (-sw * 9 - swV * (inShaft ? 2.2 : 0.9) + (R.level > 0.02 && R.level < 0.99 ? Math.sin(axle.rotation.x * 2) * 0.6 : 0)) * dt; sw += swV * dt; if (inShaft) sw = Math.max(-0.25, Math.min(0.25, sw));

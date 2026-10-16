@@ -389,7 +389,7 @@
     "hPunho": 0.502,
     "hQuadril": 0.521,
     "hJoelho": 0.281,
-    "triangulos": 20200,
+    "triangulos": 20540,
     "quina_tronco": 0.9,
     "quina_coxa": 1.5,
     "quina_braço": 1,
@@ -397,9 +397,9 @@
     "mão solta do punho": 4.5,
     "pé solto da perna": 0.3,
     "cabeça solta do pescoço": 0.6,
-    "cabeloNoRosto": 2,
+    "cabeloNoRosto": 0,
     "cabeloFuraChapeu": 0,
-    "lencoNosOlhos": 0,
+    "lencoNosOlhos": 14,
     "olhoAFrente": 4.9,
     "saiaFolga": 36.2
    },
@@ -452,6 +452,11 @@
    },
    "achados": [
     {
+     "f": "integração",
+     "pen": 14,
+     "msg": "lenço descendo sobre a testa até os olhos (14 pontos)"
+    },
+    {
      "f": "forma",
      "pen": 3.2209323727162538,
      "msg": "altura do punho 0.502 da altura (o corpo de verdade: 0.46–0.5) — longo/largo"
@@ -466,11 +471,11 @@
    },
    "notas": {
     "forma": 97,
-    "integração": 100,
+    "integração": 86,
     "pose": 100,
     "movimento": 100
    },
-   "nota": 99
+   "nota": 96
   },
   "mulher forte de saia comprida": {
    "medidas": {

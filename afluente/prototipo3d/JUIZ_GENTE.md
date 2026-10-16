@@ -1,6 +1,6 @@
 # O juiz de gente
 
-Relatório de `sim/juiz_gente.js` (o motor fica em `prototipo3d/js/juizgente.js`). Nota média: **96**.
+Relatório de `sim/juiz_gente.js` (o motor fica em `prototipo3d/js/juizgente.js`). Nota média: **95**.
 
 Cada tipo de morador é montado, medido parado, posto nas poses do jogo e (o andar) seguido por 4 s. Na saia, mede-se também a folga do pano até o corpo (saiaFolga, em mm: os 10% mais afastados entre a cintura e o quadril).
 
@@ -9,7 +9,7 @@ Cada tipo de morador é montado, medido parado, posto nas poses do jogo e (o and
 | homem | **93** | 100 | 100 | 72 | 100 | 20704 |
 | homem de chapéu | **91** | 94 | 100 | 72 | 100 | 20620 |
 | mulher de saia | **97** | 94 | 100 | 96 | 100 | 19976 |
-| mulher de vestido e lenço | **99** | 97 | 100 | 100 | 100 | 20200 |
+| mulher de vestido e lenço | **96** | 97 | 86 | 100 | 100 | 20540 |
 | mulher forte de saia comprida | **98** | 96 | 100 | 96 | 100 | 19432 |
 | mulher magra de vestido | **98** | 97 | 100 | 96 | 100 | 18156 |
 | idoso | **88** | 86 | 100 | 66 | 100 | 19848 |
@@ -61,14 +61,15 @@ Poses: braço erguido (lata na cabeça) (vinco 20, dentro 0 mm) · braços à fr
 - **forma** (−3): cabeça (alto ao queixo) 0.141 da altura (o corpo de verdade: 0.12–0.14) — longo/largo
 - **forma** (−3): altura do punho 0.501 da altura (o corpo de verdade: 0.46–0.5) — longo/largo
 
-## mulher de vestido e lenço (99)
+## mulher de vestido e lenço (96)
 
-Medidas (frações da altura; mm nas emendas): altura 1.695 · cabeca 0.139 · ombros 0.242 · quadril 0.216 · braco 0.173 · antebraco 0.145 · mao 0.096 · coxa 0.241 · canela 0.245 · pe 0.141 · hOmbro 0.804 · hCotovelo 0.631 · hPunho 0.502 · hQuadril 0.521 · hJoelho 0.281 · triangulos 20200 · quina_tronco 0.9 · quina_coxa 1.5 · quina_braço 1 · tampaOmbro 0 · mão solta do punho 4.5 · pé solto da perna 0.3 · cabeça solta do pescoço 0.6 · cabeloNoRosto 2 · cabeloFuraChapeu 0 · lencoNosOlhos 0 · olhoAFrente 4.9 · saiaFolga 36.2
+Medidas (frações da altura; mm nas emendas): altura 1.695 · cabeca 0.139 · ombros 0.242 · quadril 0.216 · braco 0.173 · antebraco 0.145 · mao 0.096 · coxa 0.241 · canela 0.245 · pe 0.141 · hOmbro 0.804 · hCotovelo 0.631 · hPunho 0.502 · hQuadril 0.521 · hJoelho 0.281 · triangulos 20540 · quina_tronco 0.9 · quina_coxa 1.5 · quina_braço 1 · tampaOmbro 0 · mão solta do punho 4.5 · pé solto da perna 0.3 · cabeça solta do pescoço 0.6 · cabeloNoRosto 0 · cabeloFuraChapeu 0 · lencoNosOlhos 14 · olhoAFrente 4.9 · saiaFolga 36.2
 
 Andar: velocidade 1.25 · deslize 0.05 · sobeDesce 6.2 · passoAltura 0.429 · bracoContraPerna -0.508
 
 Poses: braço erguido (lata na cabeça) (vinco 17, dentro 0 mm) · braços à frente (vinco 17, dentro 0 mm) · braços abertos (vinco 19, dentro 0 mm) · agachado juntando (vinco 17, dentro 0 mm) · ajoelhado lavando (vinco 11, dentro 0 mm) · sentado no chão (vinco 0, dentro 0 mm) · enxada no alto (vinco 18, dentro 0 mm) · enxuga a testa (vinco 23, dentro 0 mm) · mão na cintura (vinco 21, dentro 0 mm)
 
+- **integração** (−14): lenço descendo sobre a testa até os olhos (14 pontos)
 - **forma** (−3): altura do punho 0.502 da altura (o corpo de verdade: 0.46–0.5) — longo/largo
 
 ## mulher forte de saia comprida (98)
