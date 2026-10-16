@@ -232,27 +232,76 @@ export function buildProps(scene, { mobile = false } = {}) {
   for (const hl of halos) { const sp = new THREE.Sprite(haloMat); sp.scale.setScalar(1.3); sp.position.copy(hl.p); hl.g.add(sp); }
   updaters.push(() => { const n = Math.pow(1 - U.uDay.value, 1.5); haloMat.opacity = n * 0.9; for (const m of curtainMats) m.emissiveIntensity = n * 0.55; });
 
-  // ---------- poço: anel de pedra, água escura lá no fundo, dois esteios, sarilho e telhadinho
-  { const W = LAYOUT.well, g = new THREE.Group();
-    const ring = new THREE.Mesh(new THREE.CylinderGeometry(0.85, 0.9, 1.6, 18, 1, true).translate(0, 0.0, 0), stoneMat), inner = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.7, 1.5, 18, 1, true), stoneMat);
-    ring.material = stoneMat; inner.geometry.scale(-1, 1, 1); const top = new THREE.Mesh(new THREE.RingGeometry(0.7, 0.9, 18).rotateX(-Math.PI / 2).translate(0, 0.8, 0), stoneMat);
-    const water = new THREE.Mesh(new THREE.CircleGeometry(0.7, 18).rotateX(-Math.PI / 2).translate(0, -0.4, 0), new THREE.MeshBasicMaterial({ color: 0x0d2a2c }));
+  // ---------- poço: bocal de pedra assentada, fuste fundo (uns 5 m) que escurece até a água lá embaixo, dois esteios, sarilho e telhadinho
+  { const W = LAYOUT.well, g = new THREE.Group(), WY = -4.4;   // nível da água, em relação ao chão
+    // pedra assentada em fiadas: cada fiada com um número inteiro de pedras na volta (sem emenda), argamassa escura e funda entre elas
+    const MASON = (circ, extra = '') => `{float an=atan(vLp.z,vLp.x)/6.2832+0.5,yy=(vLp.y+9.0)/0.21,row=floor(yy),fy=fract(yy);
+      float N=floor(${circ.toFixed(2)}/(0.27+0.12*hash21(vec2(row,1.7))));float xx=an*N+hash21(vec2(row,4.1)),fx=fract(xx),h=hash21(vec2(mod(floor(xx),N),row));
+      float e=min(min(fx,1.0-fx)*${circ.toFixed(2)}/N,min(fy,1.0-fy)*0.21)+(vnoise(vec2(an*90.0,vLp.y*30.0))-0.5)*0.03;float mort=1.0-smoothstep(0.006,0.028,e);
+      vec3 st=diffuseColor.rgb*mix(vec3(0.80,0.76,0.70),vec3(1.08,1.03,0.95),h)*(0.84+0.2*smoothstep(0.02,0.09,e));diffuseColor.rgb=mix(st,diffuseColor.rgb*vec3(0.36,0.34,0.31),mort);${extra}}`;
+    const ringMat = mat({ map: stoneT, color: 0xbab4a8 }, { frag: MASON(2 * Math.PI * 0.88, `float lo=1.0-smoothstep(-0.05,0.45,vLp.y);float ms=lo*smoothstep(0.35,0.7,fbm(vec2(an*30.0,vLp.y*6.0)))*(1.0-uSeca*0.6);
+      diffuseColor.rgb=mix(diffuseColor.rgb,toLin(vec3(0.30,0.36,0.18)),ms*0.7);diffuseColor.rgb*=mix(1.0,0.72,lo*0.5+uWet*0.3);`) });   // musgo e terra respingada no pé
+    const shaftMat = mat({ map: stoneT, color: 0xa8a296 }, { frag: MASON(2 * Math.PI * 0.7, `float d=0.8-vLp.y;
+      float wet=smoothstep(${(0.8 - WY - 1.3).toFixed(2)},${(0.8 - WY - 0.1).toFixed(2)},d+(vnoise(vec2(an*40.0,vLp.y*3.0))-0.5)*0.8);
+      diffuseColor.rgb=mix(diffuseColor.rgb,toLin(vec3(0.17,0.25,0.12)),wet*0.75*smoothstep(0.35,0.65,vnoise(vec2(an*70.0,vLp.y*9.0))));diffuseColor.rgb*=mix(1.0,0.5,wet);
+      diffuseColor.rgb*=0.002+0.998*exp(-d*1.15);`) });   // lá embaixo a pedra é úmida, com limo, e a luz vai sumindo
+    const coping = mat({ map: stoneT, color: 0xc4beb2 }, { frag: `{float an=atan(vLp.z,vLp.x)/6.2832+0.5,xx=an*11.0,fx=fract(xx),h=hash21(vec2(floor(xx),3.0));float r=length(vLp.xz);
+      float e=min(min(fx,1.0-fx)*0.5,min(r-0.7,0.92-r))+(vnoise(vLp.xz*24.0)-0.5)*0.02;diffuseColor.rgb*=mix(0.42,0.86+0.24*h,smoothstep(0.004,0.022,e));
+      diffuseColor.rgb*=1.0-0.25*uWet;}` });   // lajotas da boca, gastas, com o vão de argamassa
+    const ring = new THREE.Mesh(new THREE.CylinderGeometry(0.88, 0.92, 1.6, 28, 1, true), ringMat);
+    const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.7, 0.8 - WY + 0.3, 24, 6, true).translate(0, (0.8 + WY - 0.3) / 2, 0), shaftMat); shaft.geometry.scale(-1, 1, 1);
+    const top = new THREE.Mesh(new THREE.RingGeometry(0.7, 0.93, 28, 1).rotateX(-Math.PI / 2).translate(0, 0.8, 0), coping);
+    const lip = new THREE.Mesh(new THREE.CylinderGeometry(0.93, 0.93, 0.07, 28, 1, true).translate(0, 0.765, 0), coping);   // a borda da laje sobressai um dedo do anel
+    // a água lá no fundo: quase preta, refletindo a boca do poço (um disco de céu cortado pelo telhado) e fazendo rodinhas quando o balde bate
+    const wwMat = new THREE.ShaderMaterial({ uniforms: { uDay: U.uDay, uTime: U.uTime, uSkyZen: U.uSkyZen, uSkyHor: U.uSkyHor, uRip: { value: 0 }, uC: { value: new THREE.Vector3() }, uH: { value: 0.8 - WY }, uRot: { value: 0.4 } },
+      vertexShader: 'varying vec3 vWp;void main(){vec4 w=modelMatrix*vec4(position,1.0);vWp=w.xyz;gl_Position=projectionMatrix*viewMatrix*w;}',
+      fragmentShader: /* glsl */`uniform float uDay,uTime,uRip,uH,uRot;uniform vec3 uC,uSkyZen,uSkyHor;varying vec3 vWp;
+        void main(){vec2 o=vWp.xz-uC.xz;float r=length(o),ph=r*40.0-uTime*6.5,a=uRip*exp(-r*1.6);
+          vec2 gr=(r>0.001?o/r:vec2(0.0))*cos(ph)*a*0.3+vec2(sin(vWp.x*17.0+uTime*0.8),cos(vWp.z*15.0-uTime*0.7))*0.01;
+          vec3 n=normalize(vec3(-gr.x,1.0,-gr.y)),V=normalize(vWp-cameraPosition),R=reflect(V,n);float ry=max(R.y,0.05);
+          float open=1.0-smoothstep(0.6,0.7,length(o+R.xz*(uH/ry)));vec2 h2=o+R.xz*((uH+1.2)/ry);float c=cos(uRot),s=sin(uRot);vec2 l=vec2(c*h2.x-s*h2.y,s*h2.x+c*h2.y);
+          float roof=step(abs(l.x),1.25)*step(abs(l.y),0.74);vec3 sky=mix(uSkyHor,uSkyZen,clamp(R.y,0.0,1.0))*(0.2+0.8*uDay);
+          vec3 refl=mix(sky,vec3(0.10,0.07,0.05)*(0.2+0.8*uDay),roof);vec3 col=mix(vec3(0.004,0.009,0.009),refl*0.24,open*(1.0-smoothstep(0.55,0.7,r)*0.6));
+          col+=vec3(0.5,0.6,0.6)*max(0.0,cos(ph))*a*0.05*uDay*open;gl_FragColor=vec4(col,1.0);}` });
+    const water = new THREE.Mesh(new THREE.CircleGeometry(0.7, 24).rotateX(-Math.PI / 2).translate(0, WY, 0), wwMat);
     const wood = merge([paint(box(0.14, 2.2, 0.14, -0.95, 1.1, 0, 1), col(0x7a5a3e)), paint(box(0.14, 2.2, 0.14, 0.95, 1.1, 0, 1), col(0x7a5a3e)), paint(box(2.1, 0.1, 0.1, 0, 2.15, 0, 1), col(0x6a4a34)),   // esteios até a cumeeira e a travessa (o telhado ficava solto 25 cm acima)
       paint(box(0.05, 0.05, 0.3, 0.95, 1.55, 0, 1), col(0x6a5a4a))]);
     const rf = merge([paint(box(2.5, 0.07, 0.9, 0, 0, 0, 1).rotateX(0.55).translate(0, 2.05, 0.36), col(0xb4563a)), paint(box(2.5, 0.07, 0.9, 0, 0, 0, 1).rotateX(-0.55).translate(0, 2.05, -0.36), col(0xb4563a))]);
-    g.add(ring, inner, top, water, new THREE.Mesh(wood, woodMat), new THREE.Mesh(rf, roofMat)); g.traverse(o => { if (o.isMesh) o.castShadow = o.receiveShadow = true; });
+    g.add(ring, shaft, top, lip, water, new THREE.Mesh(wood, woodMat), new THREE.Mesh(rf, roofMat)); g.traverse(o => { if (o.isMesh) o.castShadow = o.receiveShadow = true; }); water.castShadow = water.receiveShadow = false;
     // o sarilho gira de verdade: eixo com a corda enrolada, manivela do lado de fora do esteio, balde de madeira com aro de ferro
     const axle = new THREE.Group(); axle.position.set(0, 1.55, 0); g.add(axle);
-    axle.add(new THREE.Mesh(merge([paint(new THREE.CylinderGeometry(0.07, 0.07, 1.9, 10).rotateZ(Math.PI / 2), col(0x8a6a4a)), paint(new THREE.CylinderGeometry(0.095, 0.095, 0.5, 10).rotateZ(Math.PI / 2).translate(0.1, 0, 0), col(0xc8b088)),
-      paint(box(0.05, 0.32, 0.05, 1.08, -0.14, 0, 1), col(0x5a4a3a)), paint(new THREE.CylinderGeometry(0.025, 0.025, 0.2, 6).rotateZ(Math.PI / 2).translate(1.17, -0.28, 0), col(0x6a5a4a))]), woodMat));
-    const bucket = new THREE.Mesh(merge([paint(new THREE.CylinderGeometry(0.13, 0.11, 0.24, 12).translate(0, -0.12, 0), col(0x7a5a3a)), paint(new THREE.TorusGeometry(0.128, 0.012, 4, 14).rotateX(Math.PI / 2).translate(0, -0.05, 0), col(0x4a4a4e)),
-      paint(new THREE.TorusGeometry(0.12, 0.008, 4, 12, Math.PI).translate(0, 0.0, 0), col(0x4a4a4e))]), woodMat);
-    const rope = new THREE.Mesh(new THREE.CylinderGeometry(0.009, 0.009, 1, 5).translate(0, -0.5, 0), mat({ color: 0xc8b088 })); rope.position.set(0.1, 1.55 - 0.09, 0);
-    bucket.position.set(0.1, 1.2, 0); g.add(bucket, rope); bucket.castShadow = true;
-    W.rig = { g, axle, bucket, rope, level: 1, set(l) { this.level = l; const y = -0.45 + (1.2 + 0.45) * l; bucket.position.y = y; rope.scale.y = Math.max(0.02, 1.46 - y); },
-      crankAt: () => g.localToWorld(new THREE.Vector3(1.17, 1.55 - 0.28, 0)) };
+    const drum = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.42, 12).rotateZ(Math.PI / 2).translate(0.1, 0, 0), mat({ color: 0xc8b088 }, { frag: 'diffuseColor.rgb*=0.8+0.35*smoothstep(0.3,0.7,fract(vLp.x*70.0+vLp.y*4.0));' }));   // as voltas da corda
+    axle.add(new THREE.Mesh(merge([paint(new THREE.CylinderGeometry(0.07, 0.07, 1.9, 10).rotateZ(Math.PI / 2), col(0x8a6a4a)),
+      paint(box(0.05, 0.32, 0.05, 1.08, -0.14, 0, 1), col(0x5a4a3a)), paint(new THREE.CylinderGeometry(0.025, 0.025, 0.2, 6).rotateZ(Math.PI / 2).translate(1.17, -0.28, 0), col(0x6a5a4a))]), woodMat), drum);
+    // o balde pendura pela alça: um pivô no gancho da corda, o corpo balança um pouco atrasado; a água dentro aparece quando ele volta cheio
+    const bucket = new THREE.Group(), bBody = new THREE.Mesh(merge([paint(new THREE.CylinderGeometry(0.13, 0.11, 0.24, 12, 1, true).translate(0, -0.2, 0), col(0x7a5a3a)), paint(new THREE.CircleGeometry(0.11, 12).rotateX(-Math.PI / 2).translate(0, -0.319, 0), col(0x5a4028)),
+      paint(new THREE.CylinderGeometry(0.115, 0.11, 0.2, 12, 1, true).scale(-1, 1, 1).translate(0, -0.2, 0), col(0x4a3420)),
+      paint(new THREE.TorusGeometry(0.128, 0.012, 4, 14).rotateX(Math.PI / 2).translate(0, -0.13, 0), col(0x4a4a4e)), paint(new THREE.TorusGeometry(0.115, 0.012, 4, 14).rotateX(Math.PI / 2).translate(0, -0.29, 0), col(0x4a4a4e)),
+      paint(new THREE.TorusGeometry(0.13, 0.008, 4, 12, Math.PI).translate(0, -0.08, 0), col(0x4a4a4e))]), woodMat);
+    const bWater = new THREE.Mesh(new THREE.CircleGeometry(0.118, 12).rotateX(-Math.PI / 2).translate(0, -0.12, 0), mat({ color: 0x3a6a72 }, { frag: 'diffuseColor.rgb*=0.85+0.3*vnoise(vWp.xz*30.0+uTime*2.0);' }));
+    bucket.add(bBody, bWater); bWater.visible = false;
+    const rope = new THREE.Mesh(new THREE.CylinderGeometry(0.009, 0.009, 1, 5).translate(0, -0.5, 0), mat({ color: 0xc8b088 })); rope.position.set(0.1, 1.55 - 0.1, 0);
+    g.add(bucket, rope); bBody.castShadow = true; rope.castShadow = true;
+    const TOP = 1.2, BOT = WY + 0.16, _a = new THREE.Vector3(), _b = new THREE.Vector3(), _q = new THREE.Quaternion(), _y = new THREE.Vector3(0, 1, 0), _c = new THREE.Vector3(), _d = new THREE.Vector3();
+    let sw = 0, swV = 0, wasDown = false;
+    W.rig = { g, axle, bucket, rope, level: 1, full: false, hand: null, tilt: 0, tiltAxis: new THREE.Vector3(1, 0, 0), waterY: WY, splash: 0,
+      // l: 0 = boiando na água, 1 = em cima, na altura da mão; hand (local) e tilt: quando a pessoa pega o balde para despejar
+      set(l) { this.level = l; const y = BOT + (TOP - BOT) * l; if (this.hand) bucket.position.copy(this.hand); else bucket.position.set(0.1, y, 0);
+        const len = 1.45 - y; axle.rotation.x = -len / 0.1;   // a corda que sai é a que desenrola do tambor
+        if (l <= 0.01 && !wasDown) { this.splash = 1; this.full = true; } wasDown = l <= 0.01; bWater.visible = this.full; },
+      crankAt: () => g.localToWorld(new THREE.Vector3(1.17, 1.55 - 0.28, 0)), mouthAt: () => g.localToWorld(new THREE.Vector3(0, 0.85, 0)), bucketAt: (v = new THREE.Vector3()) => bucket.getWorldPosition(v),
+      lipAt(v = new THREE.Vector3()) { const a = this.tiltAxis; return bucket.localToWorld(v.set(-a.z * 0.13, -0.08, a.x * 0.13)); } };   // a beira do balde que fica para baixo ao despejar
     W.rig.set(1);
-    g.position.set(W.p[0], heightAt(W.p[0], W.p[1]) + 0.0, W.p[1]); g.rotation.y = 0.4; scene.add(g); tag(g, 'poço'); }
+    updaters.push(dt => { const R = W.rig; dt = Math.min(dt, 0.05); if (!R.hand) R.set(R.level);   // largou: volta a pender do gancho wwMat.uniforms.uRip.value = R.splash; R.splash *= Math.exp(-dt * 0.7);
+      // pêndulo: o balde balança quando acelera (sobe aos trancos de cada volta da manivela, desce solto) e quando a pessoa larga
+      const inShaft = bucket.position.y < 0.75 && !R.hand;
+      swV += (-sw * 9 - swV * (inShaft ? 2.2 : 0.9) + (R.level > 0.02 && R.level < 0.99 ? Math.sin(axle.rotation.x * 2) * 0.6 : 0)) * dt; sw += swV * dt; if (inShaft) sw = Math.max(-0.25, Math.min(0.25, sw));
+      if (R.hand) { bucket.quaternion.setFromAxisAngle(R.tiltAxis, R.tilt); bucket.position.copy(R.hand).add(_c.set(0, -0.2, 0)).sub(_d.set(0, -0.2, 0).applyQuaternion(bucket.quaternion)); sw = 0; }   // gira pelo meio, não pela alça
+      else bucket.rotation.set(sw * 0.5, 0, R.level <= 0.01 ? 0.3 : 0);
+      // a corda vai do tambor ao gancho do balde (reta; quando a pessoa puxa o balde para fora, ela tomba)
+      _a.set(0.1, 1.45, 0); _b.copy(bucket.position); if (!R.hand) _b.z += Math.sin(sw) * 0.08; rope.position.copy(_a); const d = _b.sub(_a), L = Math.max(0.02, d.length());
+      _q.setFromUnitVectors(_y, d.multiplyScalar(-1 / L)); rope.quaternion.copy(_q); rope.scale.set(1, L, 1); });
+    g.position.set(W.p[0], heightAt(W.p[0], W.p[1]) + 0.0, W.p[1]); g.rotation.y = 0.4; scene.add(g); tag(g, 'poço'); g.updateMatrixWorld(true); wwMat.uniforms.uC.value.setFromMatrixPosition(g.matrixWorld); }
   // ---------- cruzeiro em frente à capela: cruz de aroeira sobre dois degraus caiados, com um pano branco e velas no pé
   { const Cz = LAYOUT.cruzeiro, g = new THREE.Group();
     g.add(new THREE.Mesh(merge([paint(box(1.6, 0.25, 1.6, 0, 0.12, 0, 1), col(0xeeeae0)), paint(box(1.1, 0.25, 1.1, 0, 0.37, 0, 1), col(0xf4f0e8)),
@@ -321,21 +370,30 @@ export function buildProps(scene, { mobile = false } = {}) {
     for (let k = 0; k < nb; k++) { const y = y0 + 0.08 + k * (h - 0.16) / (nb - 1); geos.push(paint(box(L, leaf === 'curral' ? 0.13 : 0.08, 0.035, L / 2, y, 0.04, 1), c.clone().multiplyScalar(0.92 + rnd() * 0.16))); }
     const d = Math.hypot(L - 0.1, h - 0.2), br = box(d, 0.11, 0.035, 0, 0, 0, 1); br.rotateZ(Math.atan2(h - 0.2, L - 0.1)).translate(L / 2, y0 + h / 2, -0.03); geos.push(paint(br, c.clone().multiplyScalar(0.85)));
     for (const y of [y0 + 0.15, y0 + h - 0.15]) geos.push(paint(box(0.12, 0.05, 0.05, 0.0, y, 0, 1), col(0x3a3836)));   // dobradiças
-    geos.push(paint(box(0.16, 0.04, 0.04, L + 0.04, y0 + h * 0.62, 0.05, 1), col(0x3a3836)));                        // trinco
+    geos.push(paint(box(0.05, 0.12, 0.05, L - 0.08, y0 + h * 0.62, 0.06, 1), col(0x3a3836)));                        // a argola do trinco
     const leafM = new THREE.Mesh(merge(geos), woodMat); leafM.castShadow = leafM.receiveShadow = true;
+    // o trinco: uma tramela de ferro que gira na argola e cai no gancho do mourão; quem abre levanta, e ela cai sozinha quando a folha bate
+    const latch = new THREE.Group(); latch.position.set(L - 0.08, y0 + h * 0.62, 0.09); latch.add(new THREE.Mesh(paint(box(0.26, 0.035, 0.03, 0.13, 0, 0, 1), col(0x3a3836)), woodMat)); leafM.add(latch);
     const piv = new THREE.Group(); piv.add(leafM); piv.position.set(ga[0], heightAt(...ga), ga[1]);
     const dx = gb[0] - ga[0], dz = gb[1] - ga[1], r0 = Math.atan2(-dz, dx);
     // abre para dentro do cercado: o lado em que a folha, girada 90°, aponta para o centro
     const inn = [O[0] - (ga[0] + gb[0]) / 2, O[1] - (ga[1] + gb[1]) / 2], sg = Math.cos(r0 + 1.57) * inn[0] - Math.sin(r0 + 1.57) * inn[1] > 0 ? 1 : -1;
     piv.rotation.y = r0; scene.add(piv); tag(piv, 'porteira' + (name ? ' (' + name.replace('cerca d', '') + ')' : ''));
     const nx = -dz / w, nz = dx / w, sIn = nx * inn[0] + nz * inn[1] > 0 ? 1 : -1, cx = (ga[0] + gb[0]) / 2, cz = (ga[1] + gb[1]) / 2;
-    const G = { ga, gb, w, c: [cx, cz], inside: [cx + nx * sIn * 1.4, cz + nz * sIn * 1.4], outside: [cx - nx * sIn * 1.4, cz - nz * sIn * 1.4], open: 0, hold: 0, sound: null, piv,
-      ask() { G.hold = 1.4; },
+    const ax = dx / w, az = dz / w, ix = nx * sIn, iz = nz * sIn;
+    const G = { ga, gb, w, c: [cx, cz], inside: [cx + ix * 1.4, cz + iz * 1.4], outside: [cx - ix * 1.4, cz - iz * 1.4], open: 0, v: 0, hold: 0, lift: 0, sound: null, piv,
+      // onde se fica para alcançar o trinco: além do mourão do trinco, fora do arco que a folha varre ao abrir
+      spot: side => [gb[0] + ax * 0.32 + ix * 0.62 * side, gb[1] + az * 0.32 + iz * 0.62 * side], latchAt: () => latch.getWorldPosition(new THREE.Vector3()),
+      ask() { G.hold = 1.4; G.lift = 1; }, raise() { G.lift = 1; },
       seg() { const a = r0 + sg * G.open * 1.75, ex = ga[0] + Math.cos(a) * w, ez = ga[1] - Math.sin(a) * w; return { ax: ga[0], az: ga[1], bx: ex, bz: ez, r: 0.06 }; } };
-    updaters.push(dt => { G.hold -= dt; const want = G.hold > 0 ? 1 : 0, was = G.open;
-      G.open += Math.sign(want - G.open) * Math.min(Math.abs(want - G.open), dt * (want ? 0.9 : 0.7));
-      if (was === 0 && G.open > 0 && G.sound) G.sound('abre'); if (was > 0 && G.open === 0 && G.sound) G.sound('fecha');
-      piv.rotation.y = r0 + sg * (G.open < 1 ? G.open * G.open * (3 - 2 * G.open) : 1) * 1.75; });
+    let la = 0;
+    updaters.push(dt => { dt = Math.min(dt, 0.05); G.hold -= dt; const was = G.open;
+      if (G.hold > 0) { if (la > 0.8) { G.v += ((0.15 + 1.6 * (1 - G.open)) - G.v) * Math.min(1, dt * 3); G.open = Math.min(1, G.open + G.v * dt); if (G.open >= 1) G.v = 0; } }   // empurrada: arranca devagar e vai até o fim
+      else if (G.open > 0 || G.v !== 0) { G.v -= dt * (0.5 + 1.1 * G.open); G.open += G.v * dt;   // solta: o peso da folha a traz de volta, cada vez mais rápido
+        if (G.open <= 0) { G.open = 0; if (G.v < -0.12) { if (G.sound && G.v < -0.3) G.sound('fecha'); G.v = -G.v * 0.28; } else G.v = 0; } }   // bate no mourão e repica
+      if (was === 0 && G.open > 0 && G.v > 0 && G.hold > 0 && G.sound) G.sound('abre');
+      G.lift = G.hold > 0 ? G.lift : (G.open < 0.02 ? 0 : G.lift); la += ((G.lift > 0 ? 1 : 0) - la) * Math.min(1, dt * (G.lift > 0 ? 7 : 14)); latch.rotation.z = la * 0.9;
+      piv.rotation.y = r0 + sg * G.open * 1.75; });
     (LAYOUT.gates = LAYOUT.gates || []).push(G); return G;
   }
   const rectPts = (o, w, d, rot) => [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([u, v]) => { const x = u * w / 2, z = v * d / 2, c = Math.cos(rot), s = Math.sin(rot); return [o[0] + x * c + z * s, o[1] - x * s + z * c]; });
@@ -345,11 +403,23 @@ export function buildProps(scene, { mobile = false } = {}) {
     const cocho = new THREE.Group(); cocho.add(new THREE.Mesh(merge([paint(box(2.6, 0.12, 0.7, 0, 0.5, 0, 1), wood), paint(box(2.6, 0.45, 0.08, 0, 0.72, 0.33, 1), wood), paint(box(2.6, 0.45, 0.08, 0, 0.72, -0.33, 1), wood),
       paint(box(0.08, 0.45, 0.7, 1.28, 0.72, 0, 1), wood), paint(box(0.08, 0.45, 0.7, -1.28, 0.72, 0, 1), wood), paint(box(0.12, 0.5, 0.12, 1.1, 0.25, 0.25, 1), col(0x6a4a3a)), paint(box(0.12, 0.5, 0.12, -1.1, 0.25, -0.25, 1), col(0x6a4a3a)),
       paint(box(2.44, 0.02, 0.54, 0, 0.565, 0, 1), col(0x5a4632))]), woodMat));                                                       // fundo escuro, gasto
-    // a ração (milho quebrado com capim picado): uma camada que baixa conforme as vacas comem e some quando acaba
-    const racao = new THREE.Mesh(new THREE.BoxGeometry(2.42, 0.3, 0.52).translate(0, -0.15, 0), mat({ color: 0xc9b25a }, { frag: 'diffuseColor.rgb*=0.78+0.4*vnoise(vWp.xz*70.0)+0.12*vnoise(vWp.xz*9.0);' }));
-    racao.position.y = 0.86; cocho.add(racao);
+    // a ração (milho quebrado com capim picado): um monte ao longo do cocho, por colunas — sobe onde o vaqueiro despeja (morrinho
+    // embaixo do saco, que depois se espalha um pouco) e baixa por igual conforme as vacas comem; some quando acaba
+    const NC = 26, CL = 2.42, CW = 0.52, colH = new Float32Array(NC).fill(Cr.feed.level), rg = new THREE.PlaneGeometry(CL, CW, NC - 1, 4).rotateX(-Math.PI / 2), rp = rg.attributes.position;
+    const racao = new THREE.Mesh(rg, mat({ color: 0xc9b25a }, { frag: 'diffuseColor.rgb*=0.78+0.4*vnoise(vWp.xz*70.0)+0.12*vnoise(vWp.xz*9.0);' }));
+    cocho.add(racao);
     cocho.traverse(o => { if (o.isMesh) o.castShadow = o.receiveShadow = true; }); cocho.position.set(x, heightAt(x, z), z); cocho.rotation.y = Cr.rot; scene.add(cocho); tag(cocho, 'cocho');
-    const F = Cr.feed; updaters.push(() => { const l = Math.max(0, Math.min(1, F.level)); racao.visible = l > 0.01; racao.scale.y = Math.max(0.02, l); racao.position.y = 0.58 + 0.28 * l; });
+    const F = Cr.feed; let shown = -1;
+    F.pour = (lx, amt) => { const c = (lx / CL + 0.5) * (NC - 1); for (let i = 0; i < NC; i++) { const w = Math.exp(-(((i - c) / 2.2) ** 2)); colH[i] = Math.min(1.25, colH[i] + amt * w * 2.6); }
+      let m = 0; for (let i = 0; i < NC; i++) m += Math.min(1, colH[i]); F.level = m / NC; };
+    F.cocho = cocho;
+    updaters.push(dt => { dt = Math.min(dt, 0.05); let m = 0; for (let i = 0; i < NC; i++) m += Math.min(1, colH[i]); m /= NC;
+      if (F.level < m - 1e-4) { const f = Math.max(0, F.level) / Math.max(m, 1e-4); for (let i = 0; i < NC; i++) colH[i] *= f; } else if (F.level > m + 0.02) colH.fill(F.level);   // comeram: baixa tudo junto; despejou: o nível é a média
+      for (let i = 1; i < NC - 1; i++) colH[i] += (colH[i - 1] + colH[i + 1] - 2 * colH[i]) * dt * 0.25;   // o monte escorre devagar para os lados
+      let sum = 0; for (let i = 0; i < NC; i++) sum += colH[i]; if (Math.abs(sum - shown) < 1e-4) return; shown = sum;
+      for (let k = 0; k < rp.count; k++) { const xx = rp.getX(k), zz = rp.getZ(k), i = Math.round((xx / CL + 0.5) * (NC - 1)), h = Math.min(1.2, colH[i]), edge = Math.abs(zz) / (CW / 2);
+        rp.setY(k, 0.575 + h * 0.3 * (1 - 0.35 * edge * edge) + (h > 0.01 ? 0.004 : -0.01)); }
+      rp.needsUpdate = true; rg.computeVertexNormals(); racao.visible = sum > 0.02 * NC; });
     // rancho da ração: quatro esteios, telhado de uma água, sacos empilhados num estrado e o balde
     const R = new THREE.Group(), parts = [], rw = 2.2, rd = 1.6, rh = 2.0;
     for (const [px, pz, hh] of [[-rw / 2, -rd / 2, rh + 0.3], [rw / 2, -rd / 2, rh + 0.3], [-rw / 2, rd / 2, rh], [rw / 2, rd / 2, rh]]) parts.push(paint(box(0.12, hh, 0.12, px, hh / 2, pz, 1), col(0x7a5a3a)));
