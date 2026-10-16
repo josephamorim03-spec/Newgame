@@ -118,11 +118,13 @@ function finishGround(pos, idx, out, drop) {
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
   g.setAttribute('bio', new THREE.BufferAttribute(bio, 4)); g.setAttribute('wd', new THREE.BufferAttribute(wd, 1)); g.setAttribute('ou', new THREE.BufferAttribute(ou, 1)); g.setAttribute('ex', new THREE.BufferAttribute(ex, 3)); g.setAttribute('wlv', new THREE.BufferAttribute(wlA, 1)); g.setIndex(idx); return g;
 }
+// onde os fios d'água batem no chão (x, z) e para onde escorrem (dx, dz): poça, encharcado e filete até o poço (preenchido abaixo)
+const TRK = [0, 1, 2].map(() => new THREE.Vector4(0, 0, 0, 0));
 const groundMat = toon();
-groundMat.onBeforeCompile = sh => { shared(sh); sh.uniforms.uCenter = { value: new THREE.Vector2(CENTER[0], CENTER[1]) }; sh.uniforms.uFallL = { value: new THREE.Vector4(FALL.p[0] - FALL.t[0] * 0.6, FALL.p[1] - FALL.t[1] * 0.6, FALL.t[0], FALL.t[1]) };
+groundMat.onBeforeCompile = sh => { shared(sh); sh.uniforms.uCenter = { value: new THREE.Vector2(CENTER[0], CENTER[1]) }; sh.uniforms.uTrk = { value: TRK }; sh.uniforms.uFallL = { value: new THREE.Vector4(FALL.p[0] - FALL.t[0] * 0.6, FALL.p[1] - FALL.t[1] * 0.6, FALL.t[0], FALL.t[1]) };
   sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute vec4 bio;attribute vec3 ex;attribute float wlv;varying float vWl;varying float vNy;attribute float wd;attribute float ou;varying vec4 vBio;varying vec3 vEx;varying float vWd;varying vec3 vWp;varying float vOu;')
     .replace('#include <begin_vertex>', '#include <begin_vertex>\nvBio=bio;vEx=ex;vWd=wd;vOu=ou;vWl=wlv;vNy=normal.y;vWp=(modelMatrix*vec4(transformed,1.0)).xyz;');
-  sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec4 vBio;varying vec3 vEx;varying float vWd;varying vec3 vWp;varying float vOu;varying float vWl;varying float vNy;uniform vec2 uCenter;uniform vec4 uFallL;float vHaze;\n' + HEAD + HEXF + VOR)
+  sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec4 vBio;varying vec3 vEx;varying float vWd;varying vec3 vWp;varying float vOu;varying float vWl;varying float vNy;uniform vec2 uCenter;uniform vec4 uFallL;uniform vec4 uTrk[3];float vHaze;\n' + HEAD + HEXF + VOR)
     .replace('#include <color_fragment>', /* glsl */`
       vec2 p=vWp.xz;float n1=fbm(p*0.05),n2=fbm(p*0.4+3.1),n3=vnoise(p*2.4);
       // pasto: verde-amarelado vivo, com manchas mais escuras e mais claras (como pinceladas)
@@ -170,6 +172,16 @@ groundMat.onBeforeCompile = sh => { shared(sh); sh.uniforms.uCenter = { value: n
       // a rocha ao lado da queda fica escura de molhada, com riscos de limo descendo (o borrifo não deixa secar)
       {vec2 dq=p-uFallL.xy;float al=dot(dq,uFallL.zw),sd=dot(dq,vec2(-uFallL.w,uFallL.z));float nf=exp(-sd*sd/22.0)*smoothstep(-2.5,0.2,al)*(1.0-smoothstep(4.5,8.0,al))*(1.0-uWaterDrop);
        col=mix(col,col*0.58,nf*max(steep,0.35));col=mix(col,vec3(0.2,0.31,0.19),nf*steep*smoothstep(0.45,0.75,vnoise(vec2(sd*3.2,vWp.y*0.6)))*0.65);}
+      // cânion antes da queda: a margem é laje de arenito molhada (não barranco de terra)
+      {vec2 dq=p-uFallL.xy;float al=dot(dq,uFallL.zw);float cy=(1.0-smoothstep(5.0,11.0,-al))*(1.0-smoothstep(0.4,0.9,al))*(1.0-smoothstep(0.8,2.6,vWd))*(1.0-vOu);
+       vec3 lj=mix(vec3(0.46,0.40,0.33),vec3(0.62,0.55,0.45),vnoise(vec2(p.x*1.3+p.y,vWp.y*4.0)))*(0.85+0.2*vnoise(p*6.0));lj=mix(lj,vec3(0.33,0.42,0.22),smoothstep(0.6,0.8,vnoise(p*2.3))*0.6);
+       col=mix(col,lj*mix(1.0,0.7,1.0-smoothstep(0.0,1.2,vWd)),cy*0.85);}
+      // os fios d'água no chão: poça rasa onde batem, chão encharcado com limo em volta e um filete molhado até o poço
+      for(int i=0;i<3;i++){vec4 T=uTrk[i];if(T.z==0.0&&T.w==0.0)continue;vec2 dq=p-T.xy;float r=length(dq)+(vnoise(p*3.0+float(i)*7.0)-0.5)*0.35;
+        vec2 ab=T.zw;float tt=clamp(dot(dq,ab)/dot(ab,ab),0.0,1.0);float rl=length(dq-ab*tt)+(vnoise(p*2.2+3.0)-0.5)*0.25+sin(tt*9.0+float(i))*0.08;
+        float wetT=max(1.0-smoothstep(0.5,1.4,r),(1.0-smoothstep(0.1,0.32,rl))*(1.0-tt*0.4))*(1.0-uWaterDrop*1.4);
+        col=mix(col*0.6,vec3(0.22,0.30,0.14),smoothstep(0.55,0.75,vnoise(p*4.0))*0.35*wetT)*wetT+col*(1.0-wetT);
+        float pd=(1.0-smoothstep(0.15,0.42,r+(vnoise(p*5.0)-0.5)*0.15))*(1.0-uWaterDrop*1.4);col=mix(col,mix(col*0.45,pow(uSkyHor,vec3(0.4545))*0.5,0.45),pd*0.7);}   // poça rasa: escura e com um pouco de céu, borda irregular
       float wl=vWl-uWaterDrop-0.06*vOu,dep=(wl-vWp.y)*(1.0-smoothstep(0.3,1.2,vWd)),under=smoothstep(-0.02,0.05,dep);
       vec3 bed=mix(vec3(0.62,0.57,0.44),vec3(0.80,0.74,0.58),n3);float peb=smoothstep(0.5,0.72,vnoise(p*6.0));
       bed=mix(bed,mix(vec3(0.50,0.48,0.45),vec3(0.80,0.77,0.70),vnoise(p*11.0+4.0)),peb*0.85);bed*=0.82+0.18*vnoise(p*23.0);
@@ -632,33 +644,57 @@ const waterMat = new THREE.ShaderMaterial({ transparent: true, depthWrite: false
   fragmentShader: /* glsl */`varying vec2 vFlow;varying float vDep;varying vec3 vWp;uniform sampler2D uRefl;uniform mat4 uReflMat;uniform vec3 uRocks[12];uniform vec4 uWade[8];
     ${HEAD}
     #include <fog_pars_fragment>
-    float hgt(vec2 q){return vnoise(q*vec2(0.55,1.1)-vec2(uFlowClk*0.55,0.0))*0.5+vnoise(q*vec2(1.6,2.4)-vec2(uFlowClk*1.3,0.0))*0.27+vnoise(q*vec2(4.0,5.5)-vec2(uFlowClk*2.2,0.0))*0.14+vnoise(q*vec2(9.0,12.0)-vec2(uFlowClk*3.1,0.0))*0.09;}
+    const vec2 FALLP=vec2(${FALL.p[0].toFixed(3)},${FALL.p[1].toFixed(3)});const vec2 FALLY=vec2(${(riverLevel(FALL.s - 0.6) - 0.2).toFixed(3)},${(riverLevel(FALL.s + 2) + 0.35).toFixed(3)});
+    // relevo da superfície (sem tempo: quem move é a advecção abaixo) e textura de espuma (manchas com bolhinhas, não riscos)
+    float hgt(vec2 q){return vnoise(q*vec2(0.6,0.95))*0.55+vnoise(q*vec2(1.7,2.3)+3.7)*0.3+vnoise(q*vec2(4.3,5.1)+9.1)*0.15;}
+    float foamT(vec2 q){float n=vnoise(q*vec2(1.6,2.2))*0.55+vnoise(q*vec2(4.2,4.8)+5.0)*0.3+vnoise(q*13.0+2.0)*0.15;return smoothstep(0.42,0.72,n)*(0.65+0.35*vnoise(q*23.0));}
     void main(){float d=vDep;if(d<=0.0)discard;
+      // na queda quem desenha a descida é o véu: a superfície do rio some num corte exato por altura (sem serrilha de triângulo)
+      if(distance(vWp.xz,FALLP)<9.0&&vWp.y+uWaterDrop<FALLY.x&&vWp.y+uWaterDrop>FALLY.y)discard;
       vec2 p=vWp.xz;vec2 f=length(vFlow)>0.01?normalize(vFlow):vec2(1.0,0.0);vec2 s=vec2(-f.y,f.x);vec2 q=vec2(dot(p,f),dot(p,s));float fl=clamp(length(vFlow),0.0,1.9);
-      float e=0.1,h0=hgt(q),hx=hgt(q+vec2(e,0.0))-h0,hy=hgt(q+vec2(0.0,e))-h0;float rap=smoothstep(1.05,1.7,fl);vec2 gq=vec2(hx,hy)/e*(0.05+0.07*fl+0.25*uRain+0.22*rap);vec2 gw=f*gq.x+s*gq.y;
+      float rap=smoothstep(1.05,1.7,fl);
+      // ---- a correnteza contorna as pedras: escoamento potencial em volta de um cilindro (φ e ψ). As coordenadas do desenho se
+      // abrem na frente da pedra e se fecham atrás, então ondas e espuma desviam dela em vez de atravessá-la; na frente a água
+      // sobe num travesseiro, nos lados acelera, atrás fica a esteira com vórtices alternados (Kármán)
+      float foamR=0.0,pillow=0.0,wake=0.0,boil=0.0;vec2 bump=vec2(0.0);
+      for(int i=0;i<12;i++){vec3 rk=uRocks[i];if(rk.z<=0.0)continue;vec2 dr=p-rk.xy;float dist=length(dr);
+        if(i==7){   // onde a queda bate no poço: a água ferve e sai em anéis
+          float k=1.0-smoothstep(rk.z*0.35,rk.z*1.5,dist);boil=max(boil,k);bump+=dr/max(dist,0.05)*sin(dist*6.5-uTime*5.5)*k*0.22;continue;}
+        float a=rk.z,al=dot(dr,f),ac=dot(dr,s),r2=max(dist*dist,a*a*0.8),infl=1.0-smoothstep(a*2.0,a*5.5,dist);
+        q+=vec2(a*a*al/r2,-a*a*ac/r2)*infl;
+        foamR=max(foamR,(1.0-smoothstep(a*0.97,a+0.05+0.1*vnoise(vec2(atan(dr.y,dr.x)*4.0,uFlowClk*2.0)),dist))*(0.45+0.55*smoothstep(0.3,-0.6,al/a)));   // linha de contato fina, mais forte na frente
+        pillow=max(pillow,(1.0-smoothstep(a,a*1.7,dist))*smoothstep(0.3,-0.7,al/a));
+        float wd=a*(0.75+0.22*max(al,0.0)/a),wk=exp(-ac*ac/(wd*wd))*smoothstep(0.2*a,a,al)*exp(-max(al,0.0)/(1.4+a*4.0));
+        wake=max(wake,wk*(0.5+0.5*sin(al*2.6/a-uFlowClk*5.0+sign(ac)*1.57)));
+        bump+=dr/max(dist,0.05)*(1.0-smoothstep(a,a*1.9,dist))*(0.3+0.4*fl);}
+      // ---- advecção com a velocidade local (lenta no remanso, rápida na corredeira) em duas fases que se revezam: o desenho
+      // anda com a água sem se esticar com o tempo
+      float sp=0.3+1.05*fl,t0=fract(uFlowClk*0.45),t1=fract(t0+0.5),wB=abs(1.0-2.0*t0);
+      vec2 qa=q-vec2(t0*2.2*sp,0.0),qb=q-vec2(t1*2.2*sp,0.0)+vec2(5.3,2.9);
+      float e=0.08,amp=0.06+0.07*fl+0.25*uRain+0.26*rap+0.2*boil;
+      float ha=hgt(qa),hb=hgt(qb);vec2 gq=mix(vec2(hgt(qa+vec2(e,0.0))-ha,hgt(qa+vec2(0.0,e))-ha),vec2(hgt(qb+vec2(e,0.0))-hb,hgt(qb+vec2(0.0,e))-hb),wB)/e*amp;
+      vec2 gw=f*gq.x+s*gq.y+bump*0.18;
       float ring=0.0;if(uRain>0.01){vec2 c=floor(p*1.7),fp=fract(p*1.7)-0.5;float r=hash21(c);float t=fract(uTime*1.1+r*7.0);vec2 o=(vec2(hash21(c+3.1),hash21(c+7.7))-0.5)*0.5;
         vec2 dv=fp-o;float dd=length(dv);ring=(1.0-smoothstep(0.0,0.05,abs(dd-t*0.42)))*(1.0-t)*step(r,uRain*0.9+0.1);gw+=dv/max(dd,0.001)*ring*0.5;}
-      float foam=0.0;
+      float fT=mix(foamT(qa*1.3),foamT(qb*1.3),wB);
+      float foam=foamR*0.6+pillow*0.6*fT+wake*fT*0.9;
       // marolas de quem está n'água: anéis que saem do corpo e deitam o reflexo (boi bebendo, capivara, a roupa na pedra, a bola)
       for(int i=0;i<8;i++){vec4 Wd=uWade[i];if(Wd.z<=0.0)continue;vec2 dv=p-Wd.xy;float r=length(dv);float env=exp(-r*1.6/max(Wd.w,0.3));
         gw+=dv/max(r,0.02)*sin(r*15.0-uTime*6.5)*env*Wd.z*0.4;foam+=(1.0-smoothstep(Wd.w*0.6,Wd.w*1.3,r))*0.45*Wd.z*smoothstep(0.35,0.7,vnoise(p*9.0+uTime*2.0));}
-      for(int i=0;i<12;i++){vec3 rk=uRocks[i];if(rk.z<=0.0)continue;vec2 dr=p-rk.xy;float al=dot(dr,f),ac=dot(dr,s),dist=length(dr);
-        float ringF=1.0-smoothstep(rk.z*0.8,rk.z+0.25+0.3*vnoise(vec2(atan(dr.y,dr.x)*3.0,uFlowClk*2.0)),dist);
-        float wake=exp(-ac*ac/(rk.z*rk.z*0.7))*smoothstep(0.0,0.5,al)*exp(-al/(2.0+rk.z*3.0));
-        foam+=ringF*0.7+wake*0.7*smoothstep(0.45,0.7,vnoise(vec2(al*2.2-uFlowClk*3.5,ac*4.0)));gw+=normalize(dr+1e-3)*(wake+ringF*0.4)*0.12;}
       vec3 N=normalize(vec3(-gw.x,1.0,-gw.y));vec3 V=normalize(cameraPosition-vWp);float cv=max(dot(N,V),0.0);
       float F=(0.03+0.75*pow(1.0-cv,4.0))*smoothstep(0.0,0.05,d);float cs=cloudShadow(p);
-      vec4 rc=uReflMat*vec4(vWp,1.0);vec2 ruv=rc.xy/rc.w+N.xz*0.035;vec2 rb=vec2(0.0035,0.0045)*(1.0+2.0*fl);
+      vec4 rc=uReflMat*vec4(vWp,1.0);vec2 ruv=rc.xy/rc.w+N.xz*(0.035+0.16*boil+0.05*rap);/* água revolta quebra o reflexo */vec2 rb=vec2(0.0035,0.0045)*(1.0+2.0*fl);
       vec3 refl=texture2D(uRefl,clamp(ruv,0.002,0.998)).rgb*0.36+(texture2D(uRefl,clamp(ruv+vec2(rb.x,0.0),0.002,0.998)).rgb+texture2D(uRefl,clamp(ruv-vec2(rb.x,0.0),0.002,0.998)).rgb+texture2D(uRefl,clamp(ruv+vec2(0.0,rb.y),0.002,0.998)).rgb+texture2D(uRefl,clamp(ruv-vec2(0.0,rb.y),0.002,0.998)).rgb)*0.16;
       refl=mix(refl,mix(uSkyHor,uSkyZen,0.35),smoothstep(0.6,1.5,abs(vWp.y-(${WATER_Y.toFixed(3)}-uWaterDrop))));
       float Tl=dot(exp(-vec3(1.6,0.6,0.5)*d*0.9),vec3(0.3,0.4,0.3));
       vec3 scat=toLin(mix(vec3(0.30,0.50,0.40),vec3(0.07,0.22,0.20),smoothstep(0.25,1.4,d)))*(0.3+0.7*cs)*(0.04+0.96*uDay);
       vec3 col=scat*(1.0-Tl)*(1.0-F)+refl*F;float A=1.0-Tl*(1.0-F);
-      vec3 Rf=reflect(-V,N);float glint=pow(max(dot(Rf,uSunW),0.0),900.0);col+=uSunC*step(0.5,glint+0.35*hash21(floor(p*9.0)))*glint*2.2*cs;A=min(1.0,A+glint*0.4);
-      foam+=0.55*(1.0-smoothstep(0.012,0.07,d))*smoothstep(0.45,0.72,vnoise(q*vec2(3.2,9.0)-vec2(uFlowClk*1.4,0.0)))*smoothstep(0.0,0.01,d);
-      foam+=0.28*smoothstep(0.55,1.0,fl)*smoothstep(0.8,0.88,vnoise(q*vec2(1.4,10.0)-vec2(uFlowClk*1.9,0.0)))*smoothstep(0.3,0.8,d);
-      // corredeira antes da queda: riscos brancos compridos que correm ~4 m/s rio abaixo e manchas de espuma que se desmancham
-      foam+=rap*(0.7*smoothstep(0.55,0.82,vnoise(q*vec2(0.9,6.0)-vec2(uFlowClk*4.2,0.0)))+0.45*smoothstep(0.62,0.85,vnoise(q*vec2(2.6,3.2)-vec2(uFlowClk*5.5,uTime*0.4))))*smoothstep(0.05,0.35,d);
+      vec3 Rf=reflect(-V,N);float glint=pow(max(dot(Rf,uSunW),0.0),900.0);col+=uSunC*glint*(1.2+1.6*vnoise(p*31.0))*cs;A=min(1.0,A+glint*0.4);
+      // beira (um fio de espuma onde a água fica rasa), corredeira (manchas brancas que andam rápido) e o poço fervendo
+      foam+=0.5*(1.0-smoothstep(0.015,0.08,d))*fT*smoothstep(0.0,0.01,d);
+      foam+=rap*smoothstep(0.3,0.75,vnoise(qa*vec2(0.35,0.6))*0.5+vnoise(qb*vec2(0.35,0.6)+1.0)*0.5)*(0.35+0.65*fT)*smoothstep(0.05,0.35,d);
+      { vec2 bq=p*4.5+vec2(uTime*0.35,-uTime*0.3);float bub=smoothstep(0.5,0.8,vnoise(bq)*0.5+vnoise(bq*2.3+4.0)*0.3+vnoise(bq*5.1-uTime*0.9)*0.2);   // bolhas miúdas que fervem e se desmancham para fora
+        foam+=boil*boil*0.55+boil*bub*0.7; }
       foam=clamp(foam,0.0,1.0);vec3 fc=vec3(0.95,0.98,1.0)*(0.08+0.92*uDay)*(0.65+0.35*cs);
       col=col/max(A,1e-3);col=mix(col,fc,foam*0.8);col+=ring*0.2*uDay;A=max(A,foam*0.8);
       gl_FragColor=vec4(col,A);
@@ -680,7 +716,10 @@ ROCKV[7].set(FALL.pool[0] - FALL.t[0] * 1.2, FALL.pool[1] - FALL.t[1] * 1.2, 2.6
   // riscos se esticam sozinhos embaixo, onde a água já vem a ~11 m/s. O ponto de impacto, os respingos, as ferveduras no
   // poço e a espuma seguem o mesmo cálculo, aqui no JS.
   const G = 9.8, TF = Math.sqrt(2 * DROP / G), cd0 = cliffDrop(lip[0], lip[1]), WALL = [];
-  for (let k = 0; k < 16; k++) { const d = DROP * k / 15; let sx = 0; while (sx < 8 && cliffDrop(lip[0] + FALL.t[0] * sx, lip[1] + FALL.t[1] * sx) - cd0 < d - 0.01) sx += 0.02; WALL.push(sx); }
+  // (até onde a rocha cai de verdade: com o talude no pé ela não chega aos DROP metros, e sem esse teto a busca ia até 8 m e a
+  // última fileira do véu se deitava sobre o poço como um leque)
+  let dMax = 0; for (let sx = 0; sx < 8; sx += 0.05) dMax = Math.max(dMax, cliffDrop(lip[0] + FALL.t[0] * sx, lip[1] + FALL.t[1] * sx) - cd0);
+  for (let k = 0; k < 16; k++) { const d = Math.min(DROP * k / 15, dMax - 0.05); let sx = 0; while (sx < 8 && cliffDrop(lip[0] + FALL.t[0] * sx, lip[1] + FALL.t[1] * sx) - cd0 < d - 0.01) sx += 0.02; WALL.push(sx); }
   const FQ = { q: 1, v0: 2 }, wallAt = d => { const f = Math.max(0, Math.min(14.999, d / DROP * 15)), i0 = Math.floor(f); return WALL[i0] + (WALL[i0 + 1] - WALL[i0]) * (f - i0); };
   const impactOut = () => Math.max(0.1 + FQ.v0 * TF, wallAt(DROP) + 0.06);
   const fallU = { uLip: { value: new THREE.Vector3(lip[0], top, lip[1]) }, uTd: { value: new THREE.Vector2(...FALL.t) }, uNd: { value: new THREE.Vector2(...n) }, uW: { value: w },
@@ -689,10 +728,11 @@ ROCKV[7].set(FALL.pool[0] - FALL.t[0] * 1.2, FALL.pool[1] - FALL.t[1] * 1.2, 2.6
     for (let j = 0; j <= NV; j++) for (let i = 0; i <= NU; i++) { const u = i / NU * 2 - 1, v = Math.pow(j / NV, 0.8); pos.push(lip[0], top - v * DROP, lip[1]); uv.push(u, v); }
     for (let j = 0; j < NV; j++) for (let i = 0; i < NU; i++) { const a = j * (NU + 1) + i, b = a + NU + 1; idx.push(a, b, a + 1, a + 1, b, b + 1); }
     const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx); return g; };
-  const FALL_V = `uniform vec3 uLip;uniform vec2 uTd,uNd;uniform float uW,uV0,uQ,uWall[16],uDrop,uTf,uOff;varying vec2 vUv;varying vec3 vWp;varying float vS,vWallK;
+  const FALL_V = `uniform vec3 uLip;uniform vec2 uTd,uNd;uniform float uW,uV0,uQ,uWall[16],uDrop,uTf,uOff,uTime;varying vec2 vUv;varying vec3 vWp;varying float vS,vWallK;
 #include <fog_pars_vertex>
 float wallAt(float d){float f=clamp(d/uDrop*15.0,0.0,14.999);int i=int(f);return mix(uWall[i],uWall[i+1],fract(f));}
 void main(){float s=uv.y*uTf,d=min(uDrop,4.9*s*s);float bal=0.12+uOff+uV0*s,wl=wallAt(d)+0.07+uOff;float o=max(bal,wl);vWallK=smoothstep(0.0,0.25,wl-bal);
+  o+=0.05*(0.5+0.5*sin(uv.x*13.0+uTime*2.6-uv.y*7.0))*smoothstep(0.12,0.5,uv.y)*smoothstep(0.12,0.35,bal-wl)*clamp(uQ,0.0,1.0);   // só para fora e longe da rocha   // o véu ondula na espessura (não é uma placa lisa)
   float ww=uW*(0.45+0.55*clamp(uQ,0.0,1.25))*(1.0+0.16*uv.y+0.1*vWallK)*(1.0-0.06*sin(uv.y*9.0+uv.x*3.0)*uv.y);
   float bulge=0.05*(1.0-uv.x*uv.x)*max(0.0,1.0-uv.y/0.08)*clamp(uQ,0.3,1.3);
   vec3 p=vec3(uLip.x+uNd.x*uv.x*ww+uTd.x*o,uLip.y-d+0.03+bulge,uLip.z+uNd.y*uv.x*ww+uTd.y*o);
@@ -705,23 +745,31 @@ void main(){float s=uv.y*uTf,d=min(uDrop,4.9*s*s);float bal=0.12+uOff+uV0*s,wl=w
 void main(){vUv=uv;vS=uv.y;vWallK=1.0;vec4 w=modelMatrix*vec4(position,1.0);vWp=w.xyz;vec4 mvPosition=viewMatrix*w;gl_Position=projectionMatrix*mvPosition;
 #include <fog_vertex>
 }` : FALL_V,
-    fragmentShader: `varying vec2 vUv;varying vec3 vWp;varying float vS,vWallK;uniform float uLayer,uQ,uSeep;
+    fragmentShader: `varying vec2 vUv;varying vec3 vWp;varying float vS,vWallK;uniform float uLayer,uQ,uSeep,uDrop;
 ${HEAD}
 #include <fog_pars_fragment>
 void main(){float y=vUv.y,ph=vS-uTime;float thin=clamp(uQ,0.0,1.0);
-      // a borda do véu: com pouca água ele se parte em fios separados
-      float edge=1.0-smoothstep(0.72-0.3*y-0.25*(1.0-thin),1.0,abs(vUv.x));float strands=smoothstep(0.35,0.6,vnoise(vec2(vUv.x*(9.0+10.0*(1.0-thin)),ph*0.8)));edge*=mix(strands,1.0,smoothstep(0.35,0.85,thin));
-      float f1=vnoise(vec2(vUv.x*24.0,ph*7.0)),f2=vnoise(vec2(vUv.x*61.0+3.0,ph*15.0)),f3=vnoise(vec2(vUv.x*8.0,ph*3.0));
+      // os fios balançam um pouco ao cair, e a água desce em pacotes (faixas mais densas e mais ralas que descem pelo véu)
+      float xw=vUv.x+0.035*sin(ph*2.1+vUv.x*5.0)*y,pk=smoothstep(0.3,0.75,vnoise(vec2(xw*4.0,ph*1.7)));
+      // a borda do véu: sempre um pouco recortada; com pouca água ele se parte em fios separados
+      float ax=abs(xw)+(vnoise(vec2(ph*1.4,sign(vUv.x)*3.0))-0.5)*0.16*y;
+      float edge=1.0-smoothstep(0.72-0.3*y-0.25*(1.0-thin),1.0,ax);float strands=smoothstep(0.35,0.6,vnoise(vec2(xw*(9.0+10.0*(1.0-thin)),ph*0.8)));edge*=mix(strands,1.0,smoothstep(0.35,0.85,thin)-0.25*smoothstep(0.55,1.0,y));
+      float f1=vnoise(vec2(xw*24.0,ph*7.0)),f2=vnoise(vec2(xw*61.0+3.0,ph*15.0)),f3=vnoise(vec2(xw*8.0,ph*3.0));
+      // a língua: logo na borda a água passa lisa, translúcida e esverdeada, antes de pegar ar e embranquecer
+      float tongue=1.0-smoothstep(0.03,0.16,y);
       float st=f1*0.5+f2*0.33+f3*0.17,aer=clamp(smoothstep(0.1,0.95,y)+vWallK*0.5,0.0,1.0),light=(0.12+0.88*uDay)*(0.72+0.28*cloudShadow(vWp.xz));
       vec3 body=toLin(vec3(0.40,0.76,0.72)),white=vec3(0.96,0.985,1.0);vec4 c;
-      if(uLayer<0.5){float wh=smoothstep(0.42-0.22*aer,0.8-0.2*aer,st);c=vec4(mix(body*(0.85+0.3*f3),white,wh*0.55+aer*0.3),(0.42+0.38*wh+0.15*aer)*edge);}
+      if(uLayer<0.5){float wh=smoothstep(0.42-0.22*aer,0.8-0.2*aer,st)*(0.6+0.4*pk);c=vec4(mix(body*(0.95+0.3*f3),white,clamp(wh*0.7+aer*0.5+0.1,0.0,0.95)*(1.0-tongue*0.85)),(0.7+0.22*wh+0.08*aer)*edge);
+        c.rgb=mix(c.rgb,body*0.8+uSkyHor*0.22+vec3(0.6,0.7,0.7)*pow(f1,5.0)*1.2,tongue*0.75);c.a=mix(c.a,0.66*edge,tongue);}
       else if(uLayer<1.5){float wh=smoothstep(0.5-0.18*aer,0.72-0.12*aer,st);float frs=smoothstep(0.25,0.55,vnoise(vec2(vUv.x*13.0,ph*2.4))+0.55-0.6*aer);
-        c=vec4(white,wh*edge*(0.35+0.55*aer)*mix(1.0,frs,aer));}
+        c=vec4(white,wh*edge*(0.35+0.55*aer)*mix(1.0,frs,aer)*(0.75+0.25*pk)*1.25*(1.0-tongue*0.95));}
       else{float fk=max(smoothstep(0.44,0.56,y),uSeep);   // fk: 0 no braço raso sobre a laje, 1 na descida pela rocha
         float wh=smoothstep(0.35,0.75,vnoise(vec2(vUv.x*6.0,y*mix(9.0,14.0,fk)-uTime*mix(1.6,4.0,fk))));
         vec3 shal=mix(body*0.55,white,0.12+0.25*wh*smoothstep(0.35,0.7,1.0-abs(vUv.x)));   // em cima, lâmina rasa: quase transparente, um brilho correndo
         c=vec4(mix(shal,mix(body,white,0.4+0.4*wh),fk),mix(0.16+0.16*wh,0.18+0.3*wh,fk)*smoothstep(0.1,0.6,uQ)*(1.0-smoothstep(0.6,1.0,abs(vUv.x)))*smoothstep(0.0,0.08,y)*(1.0-smoothstep(0.9,1.0,y)));}
-      c.a*=(1.0-smoothstep(0.93,1.0,y)*0.6)*smoothstep(0.05,0.3,uQ);gl_FragColor=vec4(c.rgb*light,c.a);
+      c.a*=(1.0-smoothstep(0.93,1.0,y)*0.6)*smoothstep(0.05,0.3,uQ);
+      if(uLayer<1.5)c.a*=1.0-smoothstep(uDrop*0.9,uDrop*1.02,4.9*vS*vS);   // ao tocar o poço o véu afunda (vira a espuma do poço), não se deita sobre a água
+      gl_FragColor=vec4(c.rgb*light,c.a);
 #include <colorspace_fragment>
 #include <fog_fragment>
 }` }); Object.assign(m.uniforms, U, fallU); return m; };
@@ -753,6 +801,9 @@ void main(){float y=vUv.y,ph=vS-uTime;float thin=clamp(uQ,0.0,1.0);
   // e desce ao lado da queda; (2) e (3) minas: brotam de uma fresta entre as camadas do arenito, 1,6 e 2,4 m abaixo do topo,
   // com a rocha molhada e o limo começando um palmo acima da fresta (antes os três nasciam do nada no alto da laje)
   const trickleSeep = mkMat(2); trickleSeep.uniforms.uSeep.value = 1;
+  // o pé de cada fio no chão: a poça e o filete que escorre até o poço (uTrk no chão) e sem capim dentro da poça
+  const footAt = (i, path) => { const b = path[path.length - 1]; if (!b) return; const tx = FALL.pool[0] - b[0], tz = FALL.pool[1] - b[2], L = Math.hypot(tx, tz) || 1, k = Math.min(1, Math.max(0, L - 2.2) / L);
+    TRK[i].set(b[0], b[2], tx * k, tz * k); carveGrass(b[0], b[2], 0.45); };
   // o caminho pela rocha, altura por altura: um raio horizontal vindo de fora bate no paredão (o vertical amostra mal a parede
   // quase a prumo) e a tira fica a poucos cm da rocha, até o pé do talude
   const back = new THREE.Vector3(-FALL.t[0], 0, -FALL.t[1]), yBot = meshY(lip[0] + FALL.t[0] * 6, lip[1] + FALL.t[1] * 6);
@@ -769,10 +820,10 @@ void main(){float y=vUv.y,ph=vS-uTime;float thin=clamp(uQ,0.0,1.0);
       top.push([x, Math.max(meshY(x, z) + 0.03, waterLevelAt(x, z) - 0.02 - 0.06 * j / N), z, 2.2 - 1.2 * j / N]); }
     const E = top[top.length - 1], yl = E[1], offE = (E[0] - lip[0]) * n[0] + (E[2] - lip[1]) * n[1];   // desce bem de onde o braço chegou à borda
     const down = cliffPath(offE, yl - 0.05, 0.07, 14), pts = top.concat(down);   // metade da tira em cima, metade na descida (o shader troca de raso para queda no meio)
-    ribbon(pts, 0.14, trickle, 3); ribbon(cliffPath(offE, yl - 0.05, 0.04, 30), 0.14 * 4, wetMat, 2); }
+    ribbon(pts, 0.14, trickle, 3); ribbon(cliffPath(offE, yl - 0.05, 0.04, 30), 0.14 * 4, wetMat, 2); footAt(0, down); }
   for (const [off, wd, depth] of [[-(w + 2.4), 0.11, 1.6], [w + 3.6, 0.07, 2.4]]) {   // (2) e (3) minas na fresta
     const yTop = meshY(lip[0] + n[0] * off - FALL.t[0], lip[1] + n[1] * off - FALL.t[1]), ys = yTop - depth;
-    ribbon(cliffPath(off, ys, 0.07, 26), wd, trickleSeep, 3); ribbon(cliffPath(off, ys + 0.45, 0.04, 30), wd * 4.5, wetMat, 2); }
+    const dn = cliffPath(off, ys, 0.07, 26); ribbon(dn, wd, trickleSeep, 3); ribbon(cliffPath(off, ys + 0.45, 0.04, 30), wd * 4.5, wetMat, 2); footAt(off < 0 ? 1 : 2, dn); }
   const stoneFree = (x, z, sz) => !placed.some(p => p[3] && Math.hypot(p[0] - x, p[1] - z) < (sz * 1.2 + p[3]) * 0.7);   // encostam, não se fundem
   // blocos caídos do paredão em volta do poço (rio abaixo e dos lados) e cascalho no pé da escarpa, ao longo do vale
   for (let k = 0; k < 11; k++) { const a = Math.atan2(FALL.t[1], FALL.t[0]) + (rnd() - 0.5) * 3.4, r = 4.4 + rnd() * 1.8, x = FALL.pool[0] + Math.cos(a) * r, z = FALL.pool[1] + Math.sin(a) * r;
@@ -1047,4 +1098,4 @@ function frame() {
 requestAnimationFrame(frame);
 /* testes: avança a vida do vale (gente, bichos, porteiras) s segundos sem desenhar, para conferir rotinas longas num computador lento */
 window.__ff = s => { const ctx = { pxPerUnit: 600, hour: ST.hour, people: gente.people }; window.__hour = ST.hour; for (let t = 0; t < s; t += 0.05) { U.uTime.value += 0.05; props.update(0.05, ctx); fauna.update(0.05, ctx); gente.update(0.05); peixes.update(0.05, { people: gente.people, animals: fauna.animals }); if (window.__fallFx) window.__fallFx(0.05); } };
-window.__cam = camera; window.__heightAt = heightAt; window.__tiles = TILES; window.__fall = FALL; window.__previa = { gente, skyfx, gameCam,  ST, U, renderer, scene, camera, controls, fauna, clouds, board, fx, col: colisao, L: LAYOUT, heightAt, peixes };
+window.__cam = camera; window.__heightAt = heightAt; window.__tiles = TILES; window.__fall = FALL; window.__previa = { THREE, gente, skyfx, gameCam,  ST, U, renderer, scene, camera, controls, fauna, clouds, board, fx, col: colisao, L: LAYOUT, heightAt, peixes };

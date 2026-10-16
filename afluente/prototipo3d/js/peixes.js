@@ -109,7 +109,7 @@ export function buildPeixes(scene, { afx = null, fx = null, mobile = false } = {
       let want = f.h, sp = S.v, k = Math.min(1, dt * S.turn);
       let th = null, td = 1e9; for (const t of threats) { const d = Math.hypot(t[0] - f.x, t[1] - f.z); if (d < t[2] && d < td) { td = d; th = t; } }
       if (th && f.st !== 'isca' && f.st !== 'leva') { f.st = 'foge'; f.t = 1 + rnd(); f.from = [th[0], th[1]]; }
-      if (f.st === 'foge') { want = Math.atan2(f.x - f.from[0], f.z - f.from[1]); sp = S.vMax; k = Math.min(1, dt * S.turn * 2); if ((f.t -= dt) < 0) f.st = 'nada'; }
+      if (f.st === 'foge') { if (!f.from) f.from = [f.x - Math.sin(f.h), f.z - Math.cos(f.h)];   /* caiu no raso depois do pulo: foge para a frente */ want = Math.atan2(f.x - f.from[0], f.z - f.from[1]); sp = S.vMax; k = Math.min(1, dt * S.turn * 2); if ((f.t -= dt) < 0) f.st = 'nada'; }
       else if (f.st === 'isca') { const b = f.bait; if (!b || !b.on) { f.st = 'nada'; f.bait = null; }
         else { const d = Math.hypot(b.x - f.x, b.z - f.z); want = Math.atan2(b.x - f.x, b.z - f.z); sp = d > 0.25 ? S.v * 1.3 : 0.05;
           if (d < 0.25 && (f.nibT -= dt) < 0) { f.nibT = 0.45 + rnd() * 0.9; f.nibs++; b.nib = 1; f.x -= Math.sin(f.h) * 0.05; f.z -= Math.cos(f.h) * 0.05;   // belisca e recua

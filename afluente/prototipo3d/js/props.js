@@ -272,13 +272,8 @@ export function buildProps(scene, { mobile = false } = {}) {
     LAYOUT.lavStone = s; s.position.set(x, waterLevelAt(x, z) + 0.02, z); s.castShadow = s.receiveShadow = true; scene.add(s); s.userData.noRegua = true; }
   if (LAYOUT.varal) { const V = LAYOUT.varal, [cx, cz] = V.c, [dx, dz] = V.dir, g = new THREE.Group(), ends = [-1, 1].map(k => [cx + dx * V.len / 2 * k, cz + dz * V.len / 2 * k]);
     for (const [px, pz] of ends) { const post = new THREE.Mesh(paint(new THREE.CylinderGeometry(0.045, 0.055, 1.95, 6).translate(0, 0.97, 0), col(0x7a5a3e)), woodMat); post.position.set(px, heightAt(px, pz) - 0.05, pz); post.castShadow = true; post.userData.noRegua = true; scene.add(post); }
-    const y0 = Math.min(...ends.map(([px, pz]) => heightAt(px, pz))) + 1.82, line = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, V.len, 4).rotateZ(Math.PI / 2), mat({ color: 0xe8e0d0 }));
-    g.position.set(cx, y0, cz); g.rotation.y = Math.atan2(-dz, dx); g.add(line); scene.add(g); line.userData.noRegua = true;
-    const cols = [0xf4f0e8, 0xc8382a, 0x2f6aa0, 0xe0a020, 0xf4f0e8, 0x3a8a4a, 0xd8c8e8], items = [];
-    for (let i = 0; i < 7; i++) { const w = 0.38 + (i % 3) * 0.12, h = 0.45 + ((i * 5) % 3) * 0.12, piv = new THREE.Group(); piv.position.set(-V.len / 2 + 0.35 + i * (V.len - 0.7) / 6, 0, 0);
-      const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h, 3, 3).translate(0, -h / 2, 0), mat({ color: cols[i], side: THREE.DoubleSide })); m.castShadow = true; m.userData.noRegua = true; piv.add(m); piv.visible = false; g.add(piv); items.push(piv); }
-    V.items = items; V.n = 0; V.at = i => g.localToWorld(new THREE.Vector3(items[i].position.x, 0, 0));
-    updaters.push(() => { const t = performance.now() / 1000, wv = U.uWindBase.value * (1 + U.uWindIu.value * 0.6); items.forEach((p, i) => { p.rotation.x = Math.sin(t * (1.6 + i * 0.13) + i) * Math.min(0.9, 0.05 + wv * 0.07) + Math.min(0.5, wv * 0.04); }); }); }
+    // a corda e as peças são pano de verdade (pano.js), montados pela gente (people.js), que tem a lavadeira
+    V.y0 = Math.min(...ends.map(([px, pz]) => heightAt(px, pz))) + 1.82; V.ends = ends; V.n = 0; }
   // ---------- o toco de rachar lenha com a acha em cima, a pilha que o lenhador traz da mata, o banquinho e a esteira da lição
   { const Tc = LAYOUT.toco, g = new THREE.Group(); g.add(new THREE.Mesh(merge([paint(new THREE.CylinderGeometry(0.3, 0.34, 0.5, 12).translate(0, 0.25, 0), col(0x8a6a4a)), paint(new THREE.CylinderGeometry(0.29, 0.29, 0.01, 12).translate(0, 0.505, 0), col(0xd8c09a))]), woodMat));
     const half = () => new THREE.Mesh(paint(new THREE.CylinderGeometry(0.12, 0.12, 0.45, 8, 1, false, 0, Math.PI).translate(0, 0.225, 0), col(0xb89468)), woodMat);

@@ -133,7 +133,8 @@ export function createJuizGente({ gente, spot = [0, 0] }) {
     // rosto (no espaço da cabeça): cabelo que aparece no rosto, cabelo que atravessa o chapéu, lenço sobre os olhos
     p.g.updateMatrixWorld(true); const Mh = new THREE.Matrix4().copy(p.head.matrixWorld).invert(), Mg = p.g.matrixWorld, Hd = [];
     const KIND = { 'cabeça': 0, 'cabelo': 2, 'chapéu': 4, 'lenço': 3, 'olho': 5 };
-    for (let i = 0; i < n; i++) { const pc = PC.of(i); if (!(pc in KIND)) continue; V.set(S[i * 3], S[i * 3 + 1], S[i * 3 + 2]).applyMatrix4(Mg).applyMatrix4(Mh); Hd.push([V.x, V.y, V.z, KIND[pc], i]); }
+    const piv = p.corpo && p.corpo.headPiv;   /* a cabeça gira na junta do crânio (body.js): as medidas do rosto são a partir do queixo */
+    for (let i = 0; i < n; i++) { const pc = PC.of(i); if (!(pc in KIND)) continue; V.set(S[i * 3], S[i * 3 + 1], S[i * 3 + 2]).applyMatrix4(Mg).applyMatrix4(Mh); if (piv) V.add(piv); Hd.push([V.x, V.y, V.z, KIND[pc], i]); }
     const c0 = [0, 0.115, 0.012], dirKey = (x, y, z) => { const dx = x - c0[0], dy = y - c0[1], dz = z - c0[2], r = Math.hypot(dx, dy, dz) || 1; return [Math.round(Math.acos(dy / r) / 0.12) * 100 + Math.round((Math.atan2(dx, dz) + Math.PI) / 0.12), r]; };
     const pele = new Map(), chapeu = new Map(); for (const [x, y, z, pt] of Hd) { const [k, r] = dirKey(x, y, z); if (pt === 0) pele.set(k, Math.max(pele.get(k) || 0, r)); if (pt >= 3) chapeu.set(k, Math.max(chapeu.get(k) || 0, r)); }   // (0 pele, 2 cabelo, 3 lenço, 4 chapéu)
     let rosto = 0, fura = 0, lenco = 0; const barba = false;
@@ -181,11 +182,12 @@ export function createJuizGente({ gente, spot = [0, 0] }) {
     return { n: Math.round(bad), onde: Object.entries(onde).sort((x, y) => y[1] - x[1]).slice(0, 2).map(([k, v]) => `${k} ${v}`).join(', ') }; }
   // braço/mão dentro do tronco: leva o vértice para o espaço do tronco (osso da coluna) e compara com a silhueta parada
   function atravessa(p, S1, dom, torso) { p.g.updateMatrixWorld(true); const Ms = new THREE.Matrix4().copy(p.spine.matrixWorld).invert(), Mg = p.g.matrixWorld, sp0 = p.__spine0; let fundo = 0, cab = 0;
-    for (let i = 0; i < dom.length; i++) { const b = dom[i]; if (b !== 4 && b !== 5 && b !== 7 && b !== 8) continue; V.set(S1[i * 3], S1[i * 3 + 1], S1[i * 3 + 2]).applyMatrix4(Mg).applyMatrix4(Ms).add(sp0);
+    const OB = p.body.userData.ossosBraco ? new Set(p.body.userData.ossosBraco) : new Set([4, 5, 7, 8]), OM = p.body.userData.ossosMao ? new Set(p.body.userData.ossosMao) : new Set([5, 8]);   /* os ossos do antebraço e da mão (body.js diz quais são) */
+    for (let i = 0; i < dom.length; i++) { const b = dom[i]; if (!OB.has(b)) continue; V.set(S1[i * 3], S1[i * 3 + 1], S1[i * 3 + 2]).applyMatrix4(Mg).applyMatrix4(Ms).add(sp0);
       const t = torso(V.y); if (t && V.y > 1.0 && V.y < 1.42) { const e = Math.hypot(V.x / (t[0] - 0.015), V.z / (t[1] - 0.015)); if (e < 1) fundo = Math.max(fundo, (1 - e) * Math.min(t[0], t[1])); } }
     // mão dentro da cabeça
     const Mh = new THREE.Matrix4().copy(p.head.matrixWorld).invert();
-    for (let i = 0; i < dom.length; i++) { if (dom[i] !== 5 && dom[i] !== 8) continue; V.set(S1[i * 3], S1[i * 3 + 1], S1[i * 3 + 2]).applyMatrix4(Mg).applyMatrix4(Mh); const e = Math.hypot(V.x / 0.08, (V.y - 0.115) / 0.105, (V.z - 0.012) / 0.09); if (e < 1) cab = Math.max(cab, (1 - e) * 0.08); }
+    const piv = p.corpo && p.corpo.headPiv; for (let i = 0; i < dom.length; i++) { if (!OM.has(dom[i])) continue; V.set(S1[i * 3], S1[i * 3 + 1], S1[i * 3 + 2]).applyMatrix4(Mg).applyMatrix4(Mh); if (piv) V.add(piv); const e = Math.hypot(V.x / 0.08, (V.y - 0.115) / 0.105, (V.z - 0.012) / 0.09); if (e < 1) cab = Math.max(cab, (1 - e) * 0.08); }
     return { fundo, cab }; }
   function limites(p) { const v = []; p.arms.forEach((a, i) => { if (a.el.rotation.x > 0.08) v.push(`cotovelo ${i ? 'direito' : 'esquerdo'} dobrando ao contrário (${r1(a.el.rotation.x * 57.3)}°)`); if (a.sh.rotation.x < -3.25) v.push(`ombro passou do limite (${r1(-a.sh.rotation.x * 57.3)}°)`); });
     p.legs.forEach((l, i) => { if (l.kn.rotation.x < -0.08) v.push(`joelho ${i ? 'direito' : 'esquerdo'} dobrando ao contrário (${r1(-l.kn.rotation.x * 57.3)}°)`); if (l.kn.rotation.x > 2.65) v.push(`joelho além do limite (${r1(l.kn.rotation.x * 57.3)}°)`); });
@@ -234,7 +236,7 @@ export function createJuizGente({ gente, spot = [0, 0] }) {
     const folga = panoFolga(p); if (folga) I.M.saiaFolga = r1(folga * 1000); if (folga > 0.045) I.out.push({ f: 'forma', pen: Math.min(15, (folga - 0.045) * 400), msg: `a saia estufa longe do corpo: ${r1(folga * 100)} cm de folga entre a cintura e o quadril (justa: 1–3 cm)` });
     p.g.visible = false; p.x += 300; if (p.cloth) for (const c of p.cloth) c.mesh.visible = false;
     return { medidas: { ...F.M, ...I.M }, poses: Po.M, achados: [...F.out, ...I.out, ...Po.out] }; }
-  function julgar({ tipos = Object.keys(TIPOS), andarJunto = true } = {}) { const rel = {};
+  function julgar({ tipos = Object.keys(TIPOS), andarJunto = true } = {}) { const rel = {}; window.__pertoTodos = true;   /* o detalhe de perto (anatomia.js: mãos, chão, braço fora do tronco) ligado para todos */
     for (const t of tipos) rel[t] = julgarTipo(t);
     const A = andarJunto ? andar() : { out: [], M: {} };
     for (const t in rel) { const r = rel[t]; if (andarJunto) { r.andar = A.M; r.achados.push(...A.out.map(x => ({ ...x }))); }
