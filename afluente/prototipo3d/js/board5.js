@@ -13,6 +13,7 @@ import { Game, rot, KQ, KR, K, PEDIDOS, vazao, nbk, opp, NOME, PACIENCIA } from 
 import { toon, U } from './mat.js';
 import { createSom } from './som.js';
 import { createMenu } from './menu5.js';
+import { html, textoHTML, icSVG, icDraw, larguraRica, desenhaRico, ICONE_CSS } from './icones.js';
 
 const COL = { A: '#3f8fc0', B: '#2f6a2a', C: '#d9b04a', V: '#c0583a', G: '#8cbf4a' };
 const TEMA = { roca: '🌾 Roça', mata: '🌳 Mata', rio: '💧 Rio', vila: '🏠 Vila' };
@@ -69,22 +70,22 @@ export function buildBoard5(api) {
   const sb = document.createElement('button'); sb.type = 'button'; sb.id = 'somBtn'; const somTxt = () => { sb.innerHTML = som.on ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor"/><path d="M15.5 9a4 4 0 0 1 0 6"/><path d="M18.5 6.5a7.5 7.5 0 0 1 0 11"/></svg>' : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor"/><path d="M16 9.5l5 5"/><path d="M21 9.5l-5 5"/></svg>'; sb.setAttribute('aria-label', som.on ? 'Desligar o som' : 'Ligar o som'); }; somTxt();
   sb.onclick = () => { som.setOn(!som.on); somTxt(); if (som.on) setTimeout(SFX.sel, 60); }; document.body.appendChild(sb);
   const fm = document.createElement('div'); fm.id = 'fim5'; fm.hidden = true; fm.setAttribute('role', 'dialog'); fm.setAttribute('aria-modal', 'true');
-  fm.innerHTML = '<div class="folha"><div class="ic">🌅</div><h2>O vale acolheu</h2><div class="num" id="fimN">0</div><p>pessoas</p><p id="fimS"></p><p id="fimR"></p><button type="button" id="fimJ">Jogar outro vale</button><button type="button" id="fimC" class="m2">Compartilhar</button><button type="button" id="fimM" class="m2">Menu</button></div>'; document.body.appendChild(fm);
+  fm.innerHTML = '<div class="folha"><div class="ic">' + icSVG('dia') + '</div><h2>O vale acolheu</h2><div class="num" id="fimN">0</div><p>pessoas</p><p id="fimS"></p><p id="fimR"></p><button type="button" id="fimJ">Jogar outro vale</button><button type="button" id="fimC" class="m2">Compartilhar</button><button type="button" id="fimM" class="m2">Menu</button></div>'; document.body.appendChild(fm);
   let hsI = 0; const KEY = 'afluente:v5:historia';
-  function hsShow(i) { if (i) SFX.page(); hsI = i; const [ic, t, x] = HIST[i]; $('hsI').textContent = ic; $('hsT').textContent = t; $('hsP').textContent = x;
+  function hsShow(i) { if (i) SFX.page(); hsI = i; const [ic, t, x] = HIST[i]; $('hsI').innerHTML = html(ic); $('hsT').textContent = t; $('hsP').textContent = x;
     $('hsD').innerHTML = HIST.map((_, j) => `<i class="${j === i ? 'on' : ''}"></i>`).join(''); $('hsIr').textContent = i < HIST.length - 1 ? 'Continuar' : 'Começar'; hs.hidden = false; }
   function hsClose() { hs.hidden = true; try { localStorage.setItem(KEY, '1'); } catch (e) {} }
   let seen = false; try { seen = localStorage.getItem(KEY) === '1'; } catch (e) {}
   hs.hidden = true;
   const pk = document.createElement('div'); pk.id = 'pacote5'; pk.hidden = true; pk.setAttribute('role', 'dialog'); pk.setAttribute('aria-modal', 'true');
   pk.innerHTML = '<div class="folha"><h2 id="pkT">A vila cresceu!</h2><p id="pkS"></p><div class="pks" id="pkO"></div></div>'; document.body.appendChild(pk);
-  const css = document.createElement('style'); css.textContent = `
+  const css = document.createElement('style'); css.textContent = ICONE_CSS + `
     #jogo{pointer-events:none;z-index:5}
     #placar{position:fixed;left:50%;transform:translateX(-50%);top:max(12px,env(safe-area-inset-top));pointer-events:auto;border:0;border-radius:999px;background:rgba(252,250,244,.72);color:var(--ink);
       font:700 14px Nunito,system-ui;padding:6px 14px;min-height:36px;box-shadow:0 2px 12px rgba(0,0,0,.1);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);white-space:nowrap;display:flex;gap:12px;align-items:center}
     #placar b{font:800 17px "Baloo 2",system-ui}#placar .pouco b{color:#d9601a;display:inline-block;animation:pulsa 1.1s ease-in-out infinite}
     #conq5{position:fixed;left:50%;bottom:calc(max(14px,env(safe-area-inset-bottom)) + 168px);transform:translate(-50%,20px);opacity:0;pointer-events:none;z-index:9;background:rgba(252,250,244,.95);color:var(--ink);border-radius:16px;padding:9px 16px;font:800 16px "Baloo 2",system-ui;box-shadow:0 6px 22px rgba(0,0,0,.25);transition:opacity .35s ease,transform .35s cubic-bezier(.2,1.4,.4,1);white-space:nowrap;max-width:calc(100vw - 32px);overflow:hidden;text-overflow:ellipsis}
-    #conq5.on{opacity:1;transform:translate(-50%,0)}#conq5 small{display:block;font:700 12px Nunito,system-ui;opacity:.7}#placar .ag{color:#1f6f9a}#placar span{display:inline-flex;gap:3px;align-items:baseline}
+    #conq5.on{opacity:1;transform:translate(-50%,0)}#conq5 small{display:block;font:700 12px Nunito,system-ui;opacity:.7}#placar .ag{color:#1f6f9a}#placar span{display:inline-flex;gap:4px;align-items:center}#placar .ic5{width:19px;height:19px}#colocar .bx{margin-left:8px;display:inline-flex;gap:4px;align-items:center}#colocar .ic5{width:22px;height:22px;background:#fffaf0;border-radius:50%;padding:2px;box-sizing:border-box}
     #aviso{position:fixed;left:50%;transform:translateX(-50%);top:calc(max(12px,env(safe-area-inset-top)) + 46px);max-width:min(360px,calc(100vw - 32px));font:700 13.5px/1.35 Nunito,system-ui;color:#fff;text-align:center;
       background:rgba(20,40,38,.55);border-radius:14px;padding:7px 12px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);opacity:0;transition:opacity .4s ease;pointer-events:none}
     #aviso.on{opacity:1}
@@ -158,10 +159,10 @@ export function buildBoard5(api) {
   // ---------- etiquetas no mundo (sprites de texto): plaquinhas das vilas, olhos-d'água, "sem água"
   const tags = new THREE.Group(); scene.add(tags);
   function tag(txt, x, y, z, o = {}) { const cv = document.createElement('canvas'), g = cv.getContext('2d'), f = o.size || 44; g.font = `800 ${f}px "Baloo 2", system-ui`;
-    const w = Math.ceil(g.measureText(txt).width) + f * 0.9; cv.width = w; cv.height = Math.ceil(f * 1.5); g.font = `800 ${f}px "Baloo 2", system-ui`;
+    const w = Math.ceil(larguraRica(g, txt, f)) + f * 0.9; cv.width = w; cv.height = Math.ceil(f * 1.5); g.font = `800 ${f}px "Baloo 2", system-ui`;
     const r = cv.height / 2; g.fillStyle = o.bg || 'rgba(255,250,236,.94)'; g.beginPath(); g.roundRect(2, 2, w - 4, cv.height - 4, r - 2); g.fill();
     if (o.ring) { g.lineWidth = 4; g.strokeStyle = o.ring; g.stroke(); }
-    g.fillStyle = o.fg || '#5a3b12'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(txt, w / 2, cv.height / 2 + 2);
+    g.fillStyle = o.fg || '#5a3b12'; g.textAlign = 'center'; g.textBaseline = 'middle'; desenhaRico(g, txt, w / 2, cv.height / 2 + 2, f);
     const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace;
     // tamanho fixo na tela (como um rótulo de jogo), seja qual for a distância da câmera
     const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false, sizeAttenuation: false })); const hh = (o.k || 1) * 0.04; sp.userData.info = o.info || '';
@@ -201,9 +202,9 @@ export function buildBoard5(api) {
     const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(p, 3)); return g; };
   // casas onde a peça na mão ajuda o pedido de uma vila ficam douradas
   function hotSlots(OP) { const hot = new Set(); for (const [k, os] of OP) for (const o of os) if (o.vil.some(v => v.after > v.before)) { hot.add(k); break; } return hot; }
-  // o ✨ (ou 🌳🌾🌿) que flutua sobre a casa onde a peça da mão dá encaixe perfeito ou fecha uma região
-  const bonusTex = {}, bonusSprite = txt => { if (!bonusTex[txt]) { const cv = document.createElement('canvas'); cv.width = cv.height = 128; const g = cv.getContext('2d'); g.font = '92px system-ui'; g.textAlign = 'center'; g.textBaseline = 'middle';
-      g.shadowColor = 'rgba(0,0,0,.35)'; g.shadowBlur = 10; g.fillText(txt, 64, 70); const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; bonusTex[txt] = t; }
+  // o brilho (ou a mata, a lavoura, o campo) que flutua sobre a casa onde a peça da mão dá encaixe perfeito ou fecha uma região
+  const bonusTex = {}, bonusSprite = txt => { if (!bonusTex[txt]) { const cv = document.createElement('canvas'); cv.width = cv.height = 128; const g = cv.getContext('2d');
+      g.shadowColor = 'rgba(0,0,0,.35)'; g.shadowBlur = 10; icDraw(g, txt, 14, 14, 100); const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; bonusTex[txt] = t; }
     const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: bonusTex[txt], transparent: true, depthTest: false, sizeAttenuation: false })); sp.scale.set(0.055, 0.055, 1); sp.renderOrder = 997; return sp; };
   // todas as casas da beira aparecem: onde a peça cabe, faixa branca (dourada se ajuda uma vila); onde não cabe em giro nenhum,
   // faixa escura e fina — tocar nela mostra a peça ali com os lados que brigam em vermelho e diz por quê
@@ -214,7 +215,7 @@ export function buildBoard5(api) {
       const ctr = new THREE.Vector3(c[0], groundY(c[0], c[1]) + 0.2, c[1]), fg = new THREE.BufferGeometry(), fp = []; for (let i = 0; i < 6; i++) fp.push(...ctr.toArray(), ...pts[(i + 1) % 6].toArray(), ...pts[i].toArray());
       fg.setAttribute('position', new THREE.Float32BufferAttribute(fp, 3)); const fm = new THREE.Mesh(fg, ok ? (hot.has(k) ? hotMat : fillMat) : badFillMat); fm.userData.slot = { k, q, r, bad: !ok }; slotsG.add(fm);
       const pf = os.some(o => o.perfect), cl = os.find(o => o.closes && o.closes.length);
-      if (pf || cl) { const sp = bonusSprite(pf ? '✨' : ICO[cl.closes[0].type]); sp.position.set(c[0], groundY(c[0], c[1]) + 5, c[1]); sp.userData.base = sp.position.y; sp.userData.ph = (q * 7 + r * 3) % 6; slotsG.add(sp); } } }
+      if (pf || cl) { const sp = bonusSprite(pf ? 'brilho' : ICN[cl.closes[0].type]); sp.position.set(c[0], groundY(c[0], c[1]) + 5, c[1]); sp.userData.base = sp.position.y; sp.userData.ph = (q * 7 + r * 3) % 6; slotsG.add(sp); } } }
   // a maquete da peça escolhida: uma laje de terra com os seis setores em cima, o rio, árvores, casa e fileiras, flutuando
   // sobre a casa marcada (balança devagar); as marcas verdes/laranja dizem que lado encaixa
   const ghost = new THREE.Group(); scene.add(ghost);
@@ -261,7 +262,7 @@ export function buildBoard5(api) {
   // ---------- escolher, girar, colocar
   let sel = null;
   // o giro sugerido: o que atende ou avança um pedido, liga um olho-d'água, recebe água e encaixa mais lados
-  const ICO = { B: '🌳', C: '🌾', G: '🌿' };
+  const ICO = { B: '{mata}', C: '{lavoura}', G: '{campo}' }, ICN = { B: 'mata', C: 'lavoura', G: 'campo' };
   const value = o => (o.perfect ? 3 : 0) + (o.closes ? o.closes.length * 3 : 0) + o.vil.filter(v => v.done).length * 10 + o.vil.filter(v => v.after > v.before).length * 3 + (o.spring ? 4 : 0) + (o.wetSelf ? 1 : 0) - (o.drySelf ? 2 : 0) - o.lost.length * 2 + o.marks.filter(Boolean).length * 0.5;
   // os giros de uma casa onde a peça não cabe: cada lado com vizinho é igual (verde), terra diferente (laranja) ou rio contra terra (x)
   function tries(k) { const base = game.hand().e, seen = new Set(), out = []; for (let r = 0; r < 6; r++) { const e = rot(base, r), sig = e.join(''); if (seen.has(sig)) continue; seen.add(sig);
@@ -287,16 +288,16 @@ export function buildBoard5(api) {
   function refresh() { const e = sel ? sel.opts[sel.i].e : game.hand().e; drawThumb($('mao'), view(e));
     if (S.left > 1) { drawThumb($('prox'), view(game.next().e)); $('prox').parentElement.style.visibility = 'visible'; } else $('prox').parentElement.style.visibility = 'hidden';
     const [u, f] = flow(), sec = game.isSeca(); ambW = f ? 0.35 + 0.65 * Math.max(0, 1 - u / f) : 0.35;
-    $('placar').innerHTML = `<span>👥 <b id="pP">${shownP}</b></span><span class="ag">💧 <b>${u}/${f}</b></span><span class="${S.left <= 5 && !S.over ? 'pouco' : ''}">🧩 <b>${S.left}</b></span><span>${sec ? '☀️' : '🌧️'} <b>${S.clock + 1}/${game.seasonLen()}</b></span>`;
+    $('placar').innerHTML = html(`<span>👥 <b id="pP">${shownP}</b></span><span class="ag">💧 <b>${u}/${f}</b></span><span class="${S.left <= 5 && !S.over ? 'pouco' : ''}">🧩 <b>${S.left}</b></span><span>${sec ? '☀️' : '🌧️'} <b>${S.clock + 1}/${game.seasonLen()}</b></span>`);
     placarInfo = `${shownP} pessoas no vale · 💧 ${u} de ${f} da água da nascente em uso · 🧩 ${S.left} peça${S.left === 1 ? '' : 's'} na pilha · ${sec ? `☀️ seca: dia ${S.clock + 1} de ${game.seasonLen()}, as nascentes dão a metade` : `🌧️ águas: dia ${S.clock + 1} de ${game.seasonLen()}, depois vem a seca`}`;
     const b = $('colocar');
     if (S.over) { b.hidden = false; b.textContent = 'Fim do vale'; }
     else if (sel && sel.bad) b.hidden = true;
     else if (sel) { const o = sel.opts[sel.i], x = []; if (o.vil.some(v => v.done)) x.push('🏠✓'); if (o.spring) x.push(`+${o.spring}💧`); if (o.perfect) x.push('✨'); for (const c of o.closes || []) x.push(`${ICO[c.type]}+1`); if (o.drySelf || o.lost.length) x.push('🥀');
-      b.hidden = false; b.textContent = 'Colocar' + (x.length ? '  ' + x.join(' ') : ''); }
+      b.hidden = false; b.innerHTML = textoHTML('Colocar') + (x.length ? '<span class="bx">' + x.map(textoHTML).join(' ') + '</span>' : ''); }
     else b.hidden = true;
     drawGhost(); drawTags(sel && !sel.bad ? sel.opts[sel.i] : null); ST.seca = sec; if (S.gente > shownP) countP(); }
-  let sayT = 0, placarInfo = ''; function say(t, sec = 4.5) { const el = $('aviso'); el.textContent = t; el.classList.add('on'); sayT = sec; }
+  let sayT = 0, placarInfo = ''; function say(t, sec = 4.5) { const el = $('aviso'); el.innerHTML = textoHTML(t); el.classList.add('on'); sayT = sec; }
   $('placar').onclick = () => { SFX.page(); say(placarInfo, 6); };
   $('mao').onclick = () => { if (sel) turn(1); else { SFX.page(); say(`Esta é a peça na mão, virada como vai ficar no mapa. Ela cabe em ${fitN} casa${fitN === 1 ? '' : 's'} com faixa branca (dourada: ajuda uma vila). Toque numa delas; toque de novo (ou na peça) para girar.`, 6); } };
   addEventListener('keydown', e => { if (e.key === 'r' || e.key === 'R') turn(1); if (e.key === 'Enter' && sel) commit(); });
@@ -338,7 +339,7 @@ export function buildBoard5(api) {
   // ---------- "A vila cresceu!": dois pacotes; o escolhido entra logo depois da peça na mão
   function openPack() { const ch = S.escolha[0]; if (!ch) { pk.hidden = true; return; } $('pkS').textContent = 'O que chega na pilha? As 3 peças entram logo depois da peça na mão.';
     const box = $('pkO'); box.innerHTML = '';
-    ch.forEach((p, i) => { const b = document.createElement('button'); b.type = 'button'; b.innerHTML = `<span>${TEMA[p.tema] || p.tema}</span><span class="t"></span>`;
+    ch.forEach((p, i) => { const b = document.createElement('button'); b.type = 'button'; b.innerHTML = `<span>${html(TEMA[p.tema] || p.tema)}</span><span class="t"></span>`;
       for (const t of p.tiles) { const c = document.createElement('canvas'); c.width = c.height = 80; drawThumb(c, view(t.e)); b.querySelector('.t').appendChild(c); }
       b.onclick = () => { game.choose(i); acts.push(['c', i]); salvar(); SFX.pack(); buzz(10); pk.hidden = true; if (S.over && !S.escolha.length) setTimeout(showEnd, 600); say(`${TEMA[p.tema] || p.tema}: 3 peças a caminho`); passIfStuck(); drawSlots(); refresh(); if (S.escolha.length) setTimeout(openPack, 300); };
       box.appendChild(b); });
@@ -419,8 +420,8 @@ export function buildBoard5(api) {
     m.position.set(c[0], groundY(c[0], c[1]) + 0.5, c[1]); scene.add(m); rings.push({ m, t: 0 }); }
   const floats = [];
   function floatText(q, r, txt, fill = '#fff6c8', dy = 0, big = 1) { const c = hexCenter(q, r), cv = document.createElement('canvas'), g0 = cv.getContext('2d'); g0.font = '800 64px "Baloo 2", system-ui';
-    const w = Math.max(360, Math.ceil(g0.measureText(txt).width) + 48); cv.width = w; cv.height = 96; const g = cv.getContext('2d');
-    g.font = '800 64px "Baloo 2", system-ui'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineWidth = 10; g.strokeStyle = 'rgba(20,40,30,.7)'; g.strokeText(txt, w / 2, 50); g.fillStyle = fill; g.fillText(txt, w / 2, 50);
+    const w = Math.max(360, Math.ceil(larguraRica(g0, txt, 64)) + 48); cv.width = w; cv.height = 96; const g = cv.getContext('2d');
+    g.font = '800 64px "Baloo 2", system-ui'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineWidth = 10; g.strokeStyle = 'rgba(20,40,30,.7)'; desenhaRico(g, txt, w / 2, 50, 64, 'stroke'); g.fillStyle = fill; desenhaRico(g, txt, w / 2, 50, 64);
     const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cv), transparent: true, depthTest: false })); const y0 = groundY(c[0], c[1]) + 10 + dy;
     sp.scale.set(0.1, 0.1, 1); sp.position.set(c[0], y0, c[1]); sp.renderOrder = 999; scene.add(sp); floats.push({ sp, t: 0, y0, ar: w / 96 * big, big }); }
   // o fim: quantas pessoas o vale acolheu (contando), as vilas, e um vale novo
@@ -431,7 +432,7 @@ export function buildBoard5(api) {
     $('fimS').textContent = `${pl(vs.length, 'vila', 'vilas')}, a maior no nível ${mx}.${extra.length ? ' ' + extra.join(' · ') + '.' : ''}`;
     { const r = Object.assign({ best: 0, partidas: 0, dia: {} }, ler(REC) || {}); if (!fimContado) { fimContado = true; const novo = S.gente > r.best; r.partidas++; r.best = Math.max(r.best, S.gente);
         if (seed === DIARIO) r.dia[seed] = Math.max(r.dia[seed] || 0, S.gente); gravar(REC, r); try { localStorage.removeItem(SAVE); } catch (e) {}
-        $('fimR').textContent = novo && r.partidas > 1 ? '🏆 Novo recorde!' : `🏆 Recorde: ${r.best} pessoas`; } }
+        $('fimR').innerHTML = textoHTML(novo && r.partidas > 1 ? '🏆 Novo recorde!' : `🏆 Recorde: ${r.best} pessoas`); } }
     ganha('primeira'); if (seed === DIARIO) ganha('dia'); if (S.gente >= 50) ganha('gente50'); if (S.gente >= 100) ganha('gente100');
     fm.hidden = false; SFX.end(); buzz([30, 60, 30, 60, 60]); const gc = window.__previa && window.__previa.gameCam; if (gc) burst([gc.state.fx, gc.state.fz], FLORES, 60, 24, 28, 14);
     let n = 0; const el = $('fimN'), tgt = S.gente, st = Math.max(1, Math.ceil(tgt / 40)); const tick = () => { n = Math.min(tgt, n + st); el.textContent = n; if (n < tgt) setTimeout(tick, 35); }; tick(); }
@@ -450,7 +451,7 @@ export function buildBoard5(api) {
     ['seca', '🌧️', 'Atravessou a seca', 'Chegue à volta das chuvas.'], ['gente50', '👥', 'Vale cheio', '50 pessoas num vale.'],
     ['gente100', '🎉', 'Vale em festa', '100 pessoas num vale.'], ['dia', '🌅', 'Vale do dia', 'Termine o vale do dia.']];
   const cq = document.createElement('div'); cq.id = 'conq5'; cq.setAttribute('aria-live', 'polite'); document.body.appendChild(cq); let cqFila = [], cqOn = false;
-  function cqMostra() { if (cqOn || !cqFila.length) return; cqOn = true; const c = cqFila.shift(); cq.innerHTML = `🏅 ${c[1]} ${c[2]}<small>conquista nova</small>`; cq.classList.add('on'); SFX.perfect(); buzz([20, 40, 20]);
+  function cqMostra() { if (cqOn || !cqFila.length) return; cqOn = true; const c = cqFila.shift(); cq.innerHTML = `${icSVG('medalha')} ${html(c[1])} ${c[2]}<small>conquista nova</small>`; cq.classList.add('on'); SFX.perfect(); buzz([20, 40, 20]);
     setTimeout(() => { cq.classList.remove('on'); setTimeout(() => { cqOn = false; cqMostra(); }, 450); }, 3200); }
   function ganha(id) { if (ganhas[id]) return; ganhas[id] = Date.now(); gravar(CONQ, ganhas); const c = CONQUISTAS.find(x => x[0] === id); if (c) { cqFila.push(c); setTimeout(cqMostra, 1600); } }
   function confere(res, boas = 0) { const t = res ? res.ev.map(x => x.t) : [], conta = k => S.log.reduce((n, l) => n + (l.ev || []).filter(x => x.t === k).length, 0);
@@ -506,7 +507,7 @@ export function buildBoard5(api) {
   // o título some depois de uns segundos (o vale fica sozinho na tela)
   setTimeout(() => { const m = document.querySelector('.marca'); if (m) { m.style.transition = 'opacity 1.6s ease'; m.style.opacity = '0'; } }, 6000);
   $('fimJ').onclick = novoVale; $('fimM').onclick = () => { fm.hidden = true; menu.inicio(); };
-  $('fimC').onclick = async () => { const vs = S.vilas.size, txt = `🌄 Afluente · ${nomeVale(seed)}: o vale acolheu ${S.gente} pessoas em ${vs} vila${vs === 1 ? '' : 's'}.`, url = /^https?:/.test(location.href) ? location.href.split('?')[0] + (seed === DIARIO ? '' : '?vale=' + encodeURIComponent(seed)) : '';
+  $('fimC').onclick = async () => { const vs = S.vilas.size, txt = `Afluente · ${nomeVale(seed)}: o vale acolheu ${S.gente} pessoas em ${vs} vila${vs === 1 ? '' : 's'}.`, url = /^https?:/.test(location.href) ? location.href.split('?')[0] + (seed === DIARIO ? '' : '?vale=' + encodeURIComponent(seed)) : '';
     try { if (navigator.share) { await navigator.share({ title: 'Afluente', text: txt, url: url || undefined }); return; } } catch (e) { if (e && e.name === 'AbortError') return; }
     try { await navigator.clipboard.writeText(txt + (url ? ' ' + url : '')); say('Resultado copiado: é só colar na conversa.', 4); } catch (e) { say(txt, 8); } };
   menu.inicio();   // a tela de início, por cima do vale já montado

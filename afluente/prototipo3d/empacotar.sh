@@ -14,7 +14,7 @@ h=open('index.html',encoding='utf-8').read();atm=open('js/atmos.js',encoding='ut
 h=re.sub(r'<script src="js/atmos.js"></script>',lambda m:'<script>\n'+atm+'\n</script>',h)
 h=re.sub(r'<script type="importmap">.*?</script>\s*<script type="module" src="js/main.js"></script>',lambda m:'<script>\n'+b+'\n</script>',h,flags=re.S)
 h=h.replace('<title>Afluente · prévia 3D</title>','<title>Afluente · o vale da nascente</title>')
-h=h.replace('</title>','</title>\n<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E%F0%9F%92%A7%3C/text%3E%3C/svg%3E">',1)
+h=h.replace('</title>','</title>\n<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20viewBox=%270%200%2024%2024%27%3E%3Cpath%20d=%27M12%202.6c2.8%203.5%204.6%205.9%204.6%208.4a4.6%204.6%200%200%201-9.2%200c0-2.5%201.8-4.9%204.6-8.4Z%27%20transform=%27translate%280%203.4%29%20scale%281%29%27%20fill=%27%235fb0dc%27%20stroke=%27%2321403c%27%20stroke-width=%271.6%27%20stroke-linejoin=%27round%27/%3E%3Cpath%20d=%27M9.6%2014.4a3%203%200%200%200%202.2%202.6%27%20transform=%27translate%280%200%29%27%20fill=%27none%27%20stroke=%27%23e6f6ff%27%20stroke-width=%271.6%27%20stroke-linecap=%27round%27/%3E%3C/svg%3E">',1)
 assert 'js/main.js' not in h and 'importmap' not in h
 open(O,'w',encoding='utf-8').write(h);print(O, round(len(h)/1e6,2),'MB')
 PY

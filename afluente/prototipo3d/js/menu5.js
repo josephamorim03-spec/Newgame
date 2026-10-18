@@ -2,8 +2,9 @@
 // o menu de pausa (☰ no canto), "Como jogar" com as regras em cartões, os ajustes (som, vibração, qualidade gráfica,
 // botões de girar o mapa) e as confirmações das coisas que não têm volta (recomeçar, passar a peça).
 // Só desenho e cliques: quem sabe do jogo é o board5.js, que passa as funções em `ctx`.
+import { html, ICONE_CSS } from './icones.js';
 
-const CSS = `
+const CSS = ICONE_CSS + `
   #menu5,#conf5{position:fixed;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;padding:16px;
     background:linear-gradient(to bottom,rgba(15,35,35,.15),rgba(15,35,35,.55));-webkit-tap-highlight-color:transparent}
   #menu5[hidden],#conf5[hidden]{display:none}
@@ -19,14 +20,14 @@ const CSS = `
   #menu5 button:active,#conf5 button:active{transform:scale(.97)}
   #menu5 button:focus:not(:focus-visible),#conf5 button:focus:not(:focus-visible){outline:none}
   #menu5 button.pri,#conf5 button.pri{background:var(--ink);color:#fff;border-color:var(--ink)}
-  #menu5 button .ic{font-size:24px;width:30px;text-align:center;flex:none}
+  #menu5 button .ic{font-size:24px;width:30px;text-align:center;flex:none;display:inline-flex;justify-content:center}
   #menu5 button small{display:block;font:700 13px Nunito,system-ui;opacity:.75;margin-top:1px}
   #menu5 button.pri small{opacity:.85}
   #menu5 .voltar{background:none;border:0;min-height:44px;justify-content:center;font:700 15px Nunito,system-ui;opacity:.8;margin-top:4px}
   #menu5 .regra{display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-top:1px solid var(--line)}
   #menu5 .regra:first-of-type{border-top:0}
   #menu5 .regra.falta{opacity:.5}
-  #menu5 .regra .ic{font-size:26px;width:34px;text-align:center;flex:none;line-height:1.1}
+  #menu5 .regra .ic{font-size:26px;width:34px;text-align:center;flex:none;line-height:1.1;display:inline-flex;justify-content:center}#menu5 .regra.falta .ic5{filter:grayscale(1);opacity:.6}
   #menu5 .regra b{display:block;font:800 16px "Baloo 2",system-ui}
   #menu5 .regra p{margin:2px 0 0;font:600 14.5px/1.4 Nunito,system-ui}
   #menu5 .ctl{margin:6px 0 4px;padding:10px 12px;border-radius:14px;background:rgba(29,59,58,.06);font:600 14px/1.5 Nunito,system-ui}
@@ -63,8 +64,8 @@ export function createMenu(ctx) {
   let tela = null, deOnde = 'inicio';
   const click = () => ctx.som && ctx.som('page');
   const btn = (ic, t, sub, fn, pri) => { const b = document.createElement('button'); b.type = 'button'; if (pri) b.className = 'pri';
-    b.innerHTML = `<span class="ic" aria-hidden="true">${ic}</span><span>${t}${sub ? `<small>${sub}</small>` : ''}</span>`; b.onclick = () => { click(); fn(); }; return b; };
-  const folha = (html) => { m.innerHTML = `<div class="folha">${html}</div>`; m.hidden = false; return m.querySelector('.folha'); };
+    b.innerHTML = `<span class="ic" aria-hidden="true">${html(ic)}</span><span>${html(t)}${sub ? `<small>${html(sub)}</small>` : ''}</span>`; b.onclick = () => { click(); fn(); }; return b; };
+  const folha = (h) => { m.innerHTML = `<div class="folha">${html(h)}</div>`; m.hidden = false; return m.querySelector('.folha'); };
   const voltar = (f, txt = 'Voltar') => { const b = document.createElement('button'); b.type = 'button'; b.className = 'voltar'; b.textContent = txt; b.onclick = () => { click(); f(); }; return b; };
 
   // ---------- a tela de início: o vale aparece atrás, já montado
