@@ -69,7 +69,7 @@ export function buildBoard5(api) {
   const sb = document.createElement('button'); sb.type = 'button'; sb.id = 'somBtn'; const somTxt = () => { sb.innerHTML = som.on ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor"/><path d="M15.5 9a4 4 0 0 1 0 6"/><path d="M18.5 6.5a7.5 7.5 0 0 1 0 11"/></svg>' : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor"/><path d="M16 9.5l5 5"/><path d="M21 9.5l-5 5"/></svg>'; sb.setAttribute('aria-label', som.on ? 'Desligar o som' : 'Ligar o som'); }; somTxt();
   sb.onclick = () => { som.setOn(!som.on); somTxt(); if (som.on) setTimeout(SFX.sel, 60); }; document.body.appendChild(sb);
   const fm = document.createElement('div'); fm.id = 'fim5'; fm.hidden = true; fm.setAttribute('role', 'dialog'); fm.setAttribute('aria-modal', 'true');
-  fm.innerHTML = '<div class="folha"><div class="ic">🌅</div><h2>O vale acolheu</h2><div class="num" id="fimN">0</div><p>pessoas</p><p id="fimS"></p><p id="fimR"></p><button type="button" id="fimJ">Jogar outro vale</button><button type="button" id="fimM" class="m2">Menu</button></div>'; document.body.appendChild(fm);
+  fm.innerHTML = '<div class="folha"><div class="ic">🌅</div><h2>O vale acolheu</h2><div class="num" id="fimN">0</div><p>pessoas</p><p id="fimS"></p><p id="fimR"></p><button type="button" id="fimJ">Jogar outro vale</button><button type="button" id="fimC" class="m2">Compartilhar</button><button type="button" id="fimM" class="m2">Menu</button></div>'; document.body.appendChild(fm);
   let hsI = 0; const KEY = 'afluente:v5:historia';
   function hsShow(i) { if (i) SFX.page(); hsI = i; const [ic, t, x] = HIST[i]; $('hsI').textContent = ic; $('hsT').textContent = t; $('hsP').textContent = x;
     $('hsD').innerHTML = HIST.map((_, j) => `<i class="${j === i ? 'on' : ''}"></i>`).join(''); $('hsIr').textContent = i < HIST.length - 1 ? 'Continuar' : 'Começar'; hs.hidden = false; }
@@ -82,7 +82,9 @@ export function buildBoard5(api) {
     #jogo{pointer-events:none;z-index:5}
     #placar{position:fixed;left:50%;transform:translateX(-50%);top:max(12px,env(safe-area-inset-top));pointer-events:auto;border:0;border-radius:999px;background:rgba(252,250,244,.72);color:var(--ink);
       font:700 14px Nunito,system-ui;padding:6px 14px;min-height:36px;box-shadow:0 2px 12px rgba(0,0,0,.1);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);white-space:nowrap;display:flex;gap:12px;align-items:center}
-    #placar b{font:800 17px "Baloo 2",system-ui}#placar .ag{color:#1f6f9a}#placar span{display:inline-flex;gap:3px;align-items:baseline}
+    #placar b{font:800 17px "Baloo 2",system-ui}#placar .pouco b{color:#d9601a;display:inline-block;animation:pulsa 1.1s ease-in-out infinite}
+    #conq5{position:fixed;left:50%;bottom:calc(max(14px,env(safe-area-inset-bottom)) + 168px);transform:translate(-50%,20px);opacity:0;pointer-events:none;z-index:9;background:rgba(252,250,244,.95);color:var(--ink);border-radius:16px;padding:9px 16px;font:800 16px "Baloo 2",system-ui;box-shadow:0 6px 22px rgba(0,0,0,.25);transition:opacity .35s ease,transform .35s cubic-bezier(.2,1.4,.4,1);white-space:nowrap;max-width:calc(100vw - 32px);overflow:hidden;text-overflow:ellipsis}
+    #conq5.on{opacity:1;transform:translate(-50%,0)}#conq5 small{display:block;font:700 12px Nunito,system-ui;opacity:.7}#placar .ag{color:#1f6f9a}#placar span{display:inline-flex;gap:3px;align-items:baseline}
     #aviso{position:fixed;left:50%;transform:translateX(-50%);top:calc(max(12px,env(safe-area-inset-top)) + 46px);max-width:min(360px,calc(100vw - 32px));font:700 13.5px/1.35 Nunito,system-ui;color:#fff;text-align:center;
       background:rgba(20,40,38,.55);border-radius:14px;padding:7px 12px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);opacity:0;transition:opacity .4s ease;pointer-events:none}
     #aviso.on{opacity:1}
@@ -198,15 +200,21 @@ export function buildBoard5(api) {
   const ringGeo = (c, w) => { const o = hexPts(c, 0.97, 0.3), i = hexPts(c, 0.97 - w / R, 0.3), p = []; for (let k = 0; k < 6; k++) { const k2 = (k + 1) % 6; p.push(...o[k].toArray(), ...o[k2].toArray(), ...i[k2].toArray(), ...o[k].toArray(), ...i[k2].toArray(), ...i[k].toArray()); }
     const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(p, 3)); return g; };
   // casas onde a peça na mão ajuda o pedido de uma vila ficam douradas
-  function hotSlots() { const hot = new Set(); for (const k of game.slots()) for (const o of game.options(k)) if (o.vil.some(v => v.after > v.before)) { hot.add(k); break; } return hot; }
+  function hotSlots(OP) { const hot = new Set(); for (const [k, os] of OP) for (const o of os) if (o.vil.some(v => v.after > v.before)) { hot.add(k); break; } return hot; }
+  // o ✨ (ou 🌳🌾🌿) que flutua sobre a casa onde a peça da mão dá encaixe perfeito ou fecha uma região
+  const bonusTex = {}, bonusSprite = txt => { if (!bonusTex[txt]) { const cv = document.createElement('canvas'); cv.width = cv.height = 128; const g = cv.getContext('2d'); g.font = '92px system-ui'; g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.shadowColor = 'rgba(0,0,0,.35)'; g.shadowBlur = 10; g.fillText(txt, 64, 70); const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; bonusTex[txt] = t; }
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: bonusTex[txt], transparent: true, depthTest: false, sizeAttenuation: false })); sp.scale.set(0.055, 0.055, 1); sp.renderOrder = 997; return sp; };
   // todas as casas da beira aparecem: onde a peça cabe, faixa branca (dourada se ajuda uma vila); onde não cabe em giro nenhum,
   // faixa escura e fina — tocar nela mostra a peça ali com os lados que brigam em vermelho e diz por quê
   let fitN = 0;
-  function drawSlots() { slotsG.clear(); const hot = hotSlots(); fitN = 0;
-    for (const k of game.slots()) { const ok = game.options(k).length > 0, q = KQ(k), r = KR(k), c = hexCenter(q, r), pts = hexPts(c); if (ok) fitN++;
+  function drawSlots() { slotsG.clear(); const OP = new Map(game.slots().map(k => [k, game.options(k)])), hot = hotSlots(OP); fitN = 0;
+    for (const [k, os] of OP) { const ok = os.length > 0, q = KQ(k), r = KR(k), c = hexCenter(q, r), pts = hexPts(c); if (ok) fitN++;
       slotsG.add(new THREE.Mesh(ringGeo(c, ok ? 1.1 : 0.55), ok ? (hot.has(k) ? hotRingMat : ringMat) : badRingMat));
       const ctr = new THREE.Vector3(c[0], groundY(c[0], c[1]) + 0.2, c[1]), fg = new THREE.BufferGeometry(), fp = []; for (let i = 0; i < 6; i++) fp.push(...ctr.toArray(), ...pts[(i + 1) % 6].toArray(), ...pts[i].toArray());
-      fg.setAttribute('position', new THREE.Float32BufferAttribute(fp, 3)); const fm = new THREE.Mesh(fg, ok ? (hot.has(k) ? hotMat : fillMat) : badFillMat); fm.userData.slot = { k, q, r, bad: !ok }; slotsG.add(fm); } }
+      fg.setAttribute('position', new THREE.Float32BufferAttribute(fp, 3)); const fm = new THREE.Mesh(fg, ok ? (hot.has(k) ? hotMat : fillMat) : badFillMat); fm.userData.slot = { k, q, r, bad: !ok }; slotsG.add(fm);
+      const pf = os.some(o => o.perfect), cl = os.find(o => o.closes && o.closes.length);
+      if (pf || cl) { const sp = bonusSprite(pf ? '✨' : ICO[cl.closes[0].type]); sp.position.set(c[0], groundY(c[0], c[1]) + 5, c[1]); sp.userData.base = sp.position.y; sp.userData.ph = (q * 7 + r * 3) % 6; slotsG.add(sp); } } }
   // a maquete da peça escolhida: uma laje de terra com os seis setores em cima, o rio, árvores, casa e fileiras, flutuando
   // sobre a casa marcada (balança devagar); as marcas verdes/laranja dizem que lado encaixa
   const ghost = new THREE.Group(); scene.add(ghost);
@@ -279,7 +287,7 @@ export function buildBoard5(api) {
   function refresh() { const e = sel ? sel.opts[sel.i].e : game.hand().e; drawThumb($('mao'), view(e));
     if (S.left > 1) { drawThumb($('prox'), view(game.next().e)); $('prox').parentElement.style.visibility = 'visible'; } else $('prox').parentElement.style.visibility = 'hidden';
     const [u, f] = flow(), sec = game.isSeca(); ambW = f ? 0.35 + 0.65 * Math.max(0, 1 - u / f) : 0.35;
-    $('placar').innerHTML = `<span>👥 <b id="pP">${shownP}</b></span><span class="ag">💧 <b>${u}/${f}</b></span><span>🧩 <b>${S.left}</b></span><span>${sec ? '☀️' : '🌧️'} <b>${S.clock + 1}/${game.seasonLen()}</b></span>`;
+    $('placar').innerHTML = `<span>👥 <b id="pP">${shownP}</b></span><span class="ag">💧 <b>${u}/${f}</b></span><span class="${S.left <= 5 && !S.over ? 'pouco' : ''}">🧩 <b>${S.left}</b></span><span>${sec ? '☀️' : '🌧️'} <b>${S.clock + 1}/${game.seasonLen()}</b></span>`;
     placarInfo = `${shownP} pessoas no vale · 💧 ${u} de ${f} da água da nascente em uso · 🧩 ${S.left} peça${S.left === 1 ? '' : 's'} na pilha · ${sec ? `☀️ seca: dia ${S.clock + 1} de ${game.seasonLen()}, as nascentes dão a metade` : `🌧️ águas: dia ${S.clock + 1} de ${game.seasonLen()}, depois vem a seca`}`;
     const b = $('colocar');
     if (S.over) { b.hidden = false; b.textContent = 'Fim do vale'; }
@@ -312,6 +320,13 @@ export function buildBoard5(api) {
     ghost.clear(); gKey = '';
     const txt = res.ev.map(x => x.txt); if (txt.length) say(txt.join(' · '), 5);
     dicasDepois(res);
+    // combo: duas ou três coisas boas na mesma jogada; e a sequência de jogadas que rendem alguma coisa
+    const boas = res.ev.filter(x => ['pedido', 'fechou', 'perfeita', 'nascente'].includes(x.t)).length; serie = boas ? serie + 1 : 0;
+    if (boas >= 2) setTimeout(() => { floatText(q, r, boas === 2 ? 'Jogada dupla!' : boas === 3 ? 'Jogada tripla!' : `${boas} de uma vez!`, '#ffd76a', 7, 1.25); SFX.grow(); buzz([15, 30, 15, 30, 40]); shake(0.7, 0.3); burst(c0, OURO, 30, 12, 20, 6); }, 900);
+    else if (serie >= 3) setTimeout(() => floatText(q, r, `🔥 ${serie} seguidas`, '#ffd0a0', 7), 900);
+    if (S.left === 5) setTimeout(() => say('🧩 Últimas 5 peças: escolha bem onde cada uma vai.', 5), 2400);
+    else if (S.left === 1) setTimeout(() => say('🧩 Última peça! Depois dela o vale acaba.', 5), 2400);
+    confere(res, boas);
     passIfStuck(); salvar();
     drawSlots(); refresh(); if (S.escolha.length) setTimeout(openPack, 1300); }
 
@@ -397,16 +412,17 @@ export function buildBoard5(api) {
     growing.push({ items, wm, t: 0, c });
     ring(c); }
   // a câmera desliza até perto da peça posta (60% do caminho, em ~1 s), para o que acontece ficar à vista
-  let camGo = null, lastCamK = 0, fimContado = false;
+  let camGo = null, lastCamK = 0, fimContado = false, serie = 0;
   function follow(c) { const gc = window.__previa && window.__previa.gameCam; if (!gc) return; const f = gc.state; camGo = { gc, x: f.fx + (c[0] - f.fx) * 0.6, z: f.fz + (c[1] - f.fz) * 0.6, t: 0 }; }
   const rings = [];
   function ring(c) { const m = new THREE.Mesh(new THREE.RingGeometry(0.9, 1, 48).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0xfff2c0, transparent: true, opacity: 0.8, depthWrite: false }));
     m.position.set(c[0], groundY(c[0], c[1]) + 0.5, c[1]); scene.add(m); rings.push({ m, t: 0 }); }
   const floats = [];
-  function floatText(q, r, txt, fill = '#fff6c8') { const c = hexCenter(q, r), cv = document.createElement('canvas'); cv.width = 360; cv.height = 96; const g = cv.getContext('2d');
-    g.font = '800 64px "Baloo 2", system-ui'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineWidth = 10; g.strokeStyle = 'rgba(20,40,30,.7)'; g.strokeText(txt, 180, 50); g.fillStyle = fill; g.fillText(txt, 180, 50);
-    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cv), transparent: true, depthTest: false })); const y0 = groundY(c[0], c[1]) + 10;
-    sp.scale.set(0.1, 0.1, 1); sp.position.set(c[0], y0, c[1]); sp.renderOrder = 999; scene.add(sp); floats.push({ sp, t: 0, y0 }); }
+  function floatText(q, r, txt, fill = '#fff6c8', dy = 0, big = 1) { const c = hexCenter(q, r), cv = document.createElement('canvas'), g0 = cv.getContext('2d'); g0.font = '800 64px "Baloo 2", system-ui';
+    const w = Math.max(360, Math.ceil(g0.measureText(txt).width) + 48); cv.width = w; cv.height = 96; const g = cv.getContext('2d');
+    g.font = '800 64px "Baloo 2", system-ui'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineWidth = 10; g.strokeStyle = 'rgba(20,40,30,.7)'; g.strokeText(txt, w / 2, 50); g.fillStyle = fill; g.fillText(txt, w / 2, 50);
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cv), transparent: true, depthTest: false })); const y0 = groundY(c[0], c[1]) + 10 + dy;
+    sp.scale.set(0.1, 0.1, 1); sp.position.set(c[0], y0, c[1]); sp.renderOrder = 999; scene.add(sp); floats.push({ sp, t: 0, y0, ar: w / 96 * big, big }); }
   // o fim: quantas pessoas o vale acolheu (contando), as vilas, e um vale novo
   function showEnd() { if (!fm.hidden) return; const vs = [...S.vilas.values()], olhos = [...game.board.values()].filter(t => t.src && !t.nasc).length, mx = vs.reduce((a, v) => Math.max(a, v.lvl), 0);
     const conta = t => S.log.reduce((n, l) => n + (l.ev || []).filter(x => x.t === t).length, 0), pl = (n, a, b) => `${n} ${n === 1 ? a : b}`;
@@ -416,12 +432,34 @@ export function buildBoard5(api) {
     { const r = Object.assign({ best: 0, partidas: 0, dia: {} }, ler(REC) || {}); if (!fimContado) { fimContado = true; const novo = S.gente > r.best; r.partidas++; r.best = Math.max(r.best, S.gente);
         if (seed === DIARIO) r.dia[seed] = Math.max(r.dia[seed] || 0, S.gente); gravar(REC, r); try { localStorage.removeItem(SAVE); } catch (e) {}
         $('fimR').textContent = novo && r.partidas > 1 ? '🏆 Novo recorde!' : `🏆 Recorde: ${r.best} pessoas`; } }
+    ganha('primeira'); if (seed === DIARIO) ganha('dia'); if (S.gente >= 50) ganha('gente50'); if (S.gente >= 100) ganha('gente100');
     fm.hidden = false; SFX.end(); buzz([30, 60, 30, 60, 60]); const gc = window.__previa && window.__previa.gameCam; if (gc) burst([gc.state.fx, gc.state.fz], FLORES, 60, 24, 28, 14);
     let n = 0; const el = $('fimN'), tgt = S.gente, st = Math.max(1, Math.ceil(tgt / 40)); const tick = () => { n = Math.min(tgt, n + st); el.textContent = n; if (n < tgt) setTimeout(tick, 35); }; tick(); }
 
   $('hsIr').onclick = () => { if (hsI < HIST.length - 1) hsShow(hsI + 1); else hsClose(); }; $('hsPular').onclick = hsClose; hb.onclick = () => hsShow(0); hb.hidden = true; hb.style.display = 'none';   // a história fica no menu
   addEventListener('keydown', e => { if (!hs.hidden && e.key === 'Escape') hsClose(); });
   { const mp = document.querySelector('.marca p'); if (mp) mp.textContent = 'O vale da nascente'; }
+  // ---------- conquistas: marcos que ficam de um vale para o outro (no aparelho), com um aviso que sobe do pé da tela
+  const CONQ = 'afluente:v5:conquistas', ganhas = ler(CONQ) || {};
+  const CONQUISTAS = [['primeira', '🌱', 'Primeiro vale', 'Termine um vale.'], ['olho', '🫧', 'Olho-d\'água', 'Leve o rio até um olho-d\'água.'],
+    ['olho3', '💧', 'Rio de muitas águas', 'Ligue 3 olhos-d\'água num vale só.'], ['perfeito', '✨', 'Encaixe perfeito', 'Uma peça com 3 vizinhos ou mais e todos os lados iguais.'],
+    ['perfeito5', '💎', 'Mão de artesão', '5 encaixes perfeitos num vale.'], ['fecha', '🌳', 'Região fechada', 'Feche uma mata, lavoura ou campo.'],
+    ['fecha6', '🏞️', 'Grande mata', 'Feche uma região de 6 peças ou mais.'], ['dupla', '🎯', 'Jogada dupla', 'Duas coisas boas numa jogada só.'],
+    ['serie', '🔥', 'Na maré boa', '4 jogadas seguidas que rendem alguma coisa.'], ['vila3', '🏘️', 'Vila de verdade', 'Uma vila no nível 3.'],
+    ['vila5', '🏙️', 'Cidadezinha', 'Uma vila no nível 5.'], ['vilas3', '🗺️', 'Três vilas', '3 vilas no mesmo vale.'],
+    ['seca', '🌧️', 'Atravessou a seca', 'Chegue à volta das chuvas.'], ['gente50', '👥', 'Vale cheio', '50 pessoas num vale.'],
+    ['gente100', '🎉', 'Vale em festa', '100 pessoas num vale.'], ['dia', '🌅', 'Vale do dia', 'Termine o vale do dia.']];
+  const cq = document.createElement('div'); cq.id = 'conq5'; cq.setAttribute('aria-live', 'polite'); document.body.appendChild(cq); let cqFila = [], cqOn = false;
+  function cqMostra() { if (cqOn || !cqFila.length) return; cqOn = true; const c = cqFila.shift(); cq.innerHTML = `🏅 ${c[1]} ${c[2]}<small>conquista nova</small>`; cq.classList.add('on'); SFX.perfect(); buzz([20, 40, 20]);
+    setTimeout(() => { cq.classList.remove('on'); setTimeout(() => { cqOn = false; cqMostra(); }, 450); }, 3200); }
+  function ganha(id) { if (ganhas[id]) return; ganhas[id] = Date.now(); gravar(CONQ, ganhas); const c = CONQUISTAS.find(x => x[0] === id); if (c) { cqFila.push(c); setTimeout(cqMostra, 1600); } }
+  function confere(res, boas = 0) { const t = res ? res.ev.map(x => x.t) : [], conta = k => S.log.reduce((n, l) => n + (l.ev || []).filter(x => x.t === k).length, 0);
+    if (t.includes('nascente')) ganha('olho'); if ([...game.board.values()].filter(x => x.src && !x.nasc).length >= 3) ganha('olho3');
+    if (t.includes('perfeita')) ganha('perfeito'); if (conta('perfeita') >= 5) ganha('perfeito5');
+    if (t.includes('fechou')) ganha('fecha'); if (res && res.ev.some(x => x.t === 'fechou' && x.size >= 6)) ganha('fecha6');
+    if (boas >= 2) ganha('dupla'); if (serie >= 4) ganha('serie'); if (t.includes('chuva')) ganha('seca');
+    const lv = Math.max(0, ...[...S.vilas.values()].map(v => v.lvl)); if (lv >= 3) ganha('vila3'); if (lv >= 5) ganha('vila5'); if (S.vilas.size >= 3) ganha('vilas3'); }
+
   // ---------- dicas da primeira partida: cada uma aparece uma vez (no aparelho), na hora em que a coisa acontece
   const DICAS = 'afluente:v5:dicas', vistas = new Set(ler(DICAS) || []);
   function dica(id, txt, atraso = 0) { if (vistas.has(id)) return; vistas.add(id); gravar(DICAS, [...vistas]); const f = () => say('💡 ' + txt, 8); atraso ? setTimeout(f, atraso) : f(); }
@@ -447,7 +485,7 @@ export function buildBoard5(api) {
     for (const r of rings) scene.remove(r.m); rings.length = 0; shownP = S.gente; }
   function passar() { if (S.over || S.escolha.length) return; sel = null; const r = game.skip(); if (!r) return; acts.push(['s']); SFX.no(); const msgs = ['A peça passou'];
     for (const x of r.ev) { msgs.push(x.txt); if (x.t === 'pedido') { chegam(x.k, growVillage(x.k), x.lvl >= 2 ? 2 : 1); SFX.grow(); } }
-    say(msgs.join(' · ')); passIfStuck(); salvar(); drawSlots(); refresh(); if (S.escolha.length) setTimeout(openPack, 600); if (S.over && !S.escolha.length) setTimeout(showEnd, 900); }
+    say(msgs.join(' · ')); confere(r); passIfStuck(); salvar(); drawSlots(); refresh(); if (S.escolha.length) setTimeout(openPack, 600); if (S.over && !S.escolha.length) setTimeout(showEnd, 900); }
   const nomeVale = sd => sd === DIARIO ? 'vale do dia' : sd.startsWith('v5-') ? `vale de ${sd.slice(11, 13)}/${sd.slice(8, 10)}` : `vale ${sd.slice(-4)}`;
   const vaPara = sd => { try { localStorage.removeItem(SAVE); } catch (e) {} location.search = '?vale=' + encodeURIComponent(sd); };
   const quality = api.quality;
@@ -457,6 +495,7 @@ export function buildBoard5(api) {
     estado: () => { const r = ler(REC) || {}, sv = acts.length && !S.over ? { seed, nome: nomeVale(seed), jogadas: acts.filter(a => a[0] !== 'c').length, gente: S.gente } : null;
       return { salva: sv, fim: S.over ? String(S.gente) : '', diario: DIARIO, diarioFeito: r.dia && r.dia[DIARIO], recorde: r.best || 0, partidas: r.partidas || 0,
         atual: { seed, nome: nomeVale(seed), jogadas: acts.filter(a => a[0] !== 'c').length, pilha: S.left, podePassar: !S.over && !S.escolha.length } }; },
+    conquistas: () => CONQUISTAS.map(([id, ic, t, d]) => ({ ic, t, d, ok: !!ganhas[id] })),
     diario: () => vaPara(DIARIO), novo: () => vaPara(Date.now().toString(36)), recomecar: () => vaPara(seed), passar, historia: () => hsShow(0),
     ajustes: () => ({ som: som.on, vib: pref.vib, q: pref.q, giro: pref.giro }),
     ajustar: (k, v) => { if (k === 'som') { som.setOn(v); somTxt(); } else { pref[k] = v; aplica(); if (k === 'vib' && v) buzz(12); } },
@@ -467,6 +506,9 @@ export function buildBoard5(api) {
   // o título some depois de uns segundos (o vale fica sozinho na tela)
   setTimeout(() => { const m = document.querySelector('.marca'); if (m) { m.style.transition = 'opacity 1.6s ease'; m.style.opacity = '0'; } }, 6000);
   $('fimJ').onclick = novoVale; $('fimM').onclick = () => { fm.hidden = true; menu.inicio(); };
+  $('fimC').onclick = async () => { const vs = S.vilas.size, txt = `🌄 Afluente · ${nomeVale(seed)}: o vale acolheu ${S.gente} pessoas em ${vs} vila${vs === 1 ? '' : 's'}.`, url = /^https?:/.test(location.href) ? location.href.split('?')[0] + (seed === DIARIO ? '' : '?vale=' + encodeURIComponent(seed)) : '';
+    try { if (navigator.share) { await navigator.share({ title: 'Afluente', text: txt, url: url || undefined }); return; } } catch (e) { if (e && e.name === 'AbortError') return; }
+    try { await navigator.clipboard.writeText(txt + (url ? ' ' + url : '')); say('Resultado copiado: é só colar na conversa.', 4); } catch (e) { say(txt, 8); } };
   menu.inicio();   // a tela de início, por cima do vale já montado
   return { game, select, turn, commit, sel: () => sel, teste: { grow, reabre }, update(dt) {
     som.ambient(dt, { day: U.uDay.value, rain: U.uRain.value, seca: game.isSeca(), water: ambW });
@@ -488,9 +530,10 @@ export function buildBoard5(api) {
       b.s.position.x += b.vx * dt; b.s.position.y += b.vy * dt; b.s.position.z += b.vz * dt; b.s.material.rotation += b.spin * dt; b.s.material.opacity = Math.min(1, (b.life - b.t) * 2);
       if (b.t > b.life) { scene.remove(b.s); b.s.material.dispose(); bits.splice(i, 1); } }
     for (let i = rings.length - 1; i >= 0; i--) { const r = rings[i]; r.t += dt; const s = 1 + r.t * 26; r.m.scale.set(s, 1, s); r.m.material.opacity = Math.max(0, 0.8 * (1 - r.t / 0.9)); if (r.t > 0.9) { scene.remove(r.m); rings.splice(i, 1); } }
-    for (let i = floats.length - 1; i >= 0; i--) { const f = floats[i]; f.t += dt; const sk = 1 - Math.exp(-8 * f.t) * Math.cos(12 * f.t); f.sp.scale.set(16 * sk, 4.3 * sk, 1); f.sp.position.y = f.y0 + f.t * 3; f.sp.material.opacity = Math.max(0, 1 - f.t / 2.2); if (f.t > 2.2) { scene.remove(f.sp); floats.splice(i, 1); } }
+    for (let i = floats.length - 1; i >= 0; i--) { const f = floats[i]; f.t += dt; const sk = 1 - Math.exp(-8 * f.t) * Math.cos(12 * f.t); f.sp.scale.set(4.3 * (f.ar || 3.75) * sk, 4.3 * (f.big || 1) * sk, 1); f.sp.position.y = f.y0 + f.t * 3; f.sp.material.opacity = Math.max(0, 1 - f.t / 2.2); if (f.t > 2.2) { scene.remove(f.sp); floats.splice(i, 1); } }
     if (camGo) { const f = camGo.gc.state, k = 1 - Math.exp(-dt * 4); f.fx += (camGo.x - f.fx) * k; f.fz += (camGo.z - f.fz) * k; camGo.t += dt; if (camGo.t > 1.4) camGo = null; }
     fillMat.opacity = 0.08 + 0.06 * Math.sin(performance.now() * 0.004); hotMat.opacity = 0.26 + 0.12 * Math.sin(performance.now() * 0.005);
-    ringMat.opacity = 0.7 + 0.25 * Math.sin(performance.now() * 0.004); { const ck = camK(); if (ck !== lastCamK) { lastCamK = ck; refresh(); } }
+    ringMat.opacity = 0.7 + 0.25 * Math.sin(performance.now() * 0.004);
+    { const tt = performance.now() * 0.001; for (const o of slotsG.children) if (o.isSprite) { o.position.y = o.userData.base + Math.sin(tt * 2.2 + o.userData.ph) * 0.8; const k = 0.055 * (1 + 0.08 * Math.sin(tt * 3 + o.userData.ph)); o.scale.set(k, k, 1); } } { const ck = camK(); if (ck !== lastCamK) { lastCamK = ck; refresh(); } }
     if (sayT > 0) { sayT -= dt; if (sayT <= 0) $('aviso').classList.remove('on'); } } };
 }

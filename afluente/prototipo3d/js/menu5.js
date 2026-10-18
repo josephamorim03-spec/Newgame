@@ -25,6 +25,7 @@ const CSS = `
   #menu5 .voltar{background:none;border:0;min-height:44px;justify-content:center;font:700 15px Nunito,system-ui;opacity:.8;margin-top:4px}
   #menu5 .regra{display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-top:1px solid var(--line)}
   #menu5 .regra:first-of-type{border-top:0}
+  #menu5 .regra.falta{opacity:.5}
   #menu5 .regra .ic{font-size:26px;width:34px;text-align:center;flex:none;line-height:1.1}
   #menu5 .regra b{display:block;font:800 16px "Baloo 2",system-ui}
   #menu5 .regra p{margin:2px 0 0;font:600 14.5px/1.4 Nunito,system-ui}
@@ -49,7 +50,7 @@ const REGRAS = [
   ['🫧', 'Olhos-d\'água', 'Espalhados no Cerrado. Leve o rio até um deles e a nascente ganha a água dele.'],
   ['🏠', 'As vilas pedem', 'A plaquinha de cada vila diz o que ela quer: água, lavoura, mata, campo ou crescer. Atendeu: chegam pessoas (os pontos), peças para a pilha (+2 na vila pequena, +1 na média, nenhuma na grande) e você escolhe o pacote das próximas. Faixa dourada: ali a peça ajuda um pedido. Nove jogadas sem avanço e a vila troca de pedido (⏳ avisa).'],
   ['☀️', 'A seca', 'A cada 8 jogadas de águas vêm 4 de seca, e as nascentes dão a metade (o vale avisa antes quem vai secar). Quando a seca chega, a colheita: 1 peça a cada 2 lavouras com água.'],
-  ['✨', 'A pilha é a vida', 'Cada jogada gasta uma peça (passar a peça também). Devolvem uma: o encaixe perfeito (3 vizinhos ou mais, todos os lados iguais, ✨) e a região fechada (mata, lavoura ou campo de 3 peças ou mais sem lado livre, 🌳+1); o botão Colocar mostra antes. Acabou a pilha, acabou o vale: conte as pessoas.'],
+  ['✨', 'A pilha é a vida', 'Cada jogada gasta uma peça (passar a peça também). Devolvem uma: o encaixe perfeito (3 vizinhos ou mais, todos os lados iguais, ✨) e a região fechada (mata, lavoura ou campo de 3 peças ou mais sem lado livre, 🌳+1); o ✨ (ou 🌳🌾🌿) flutuando sobre uma casa mostra onde a peça da mão rende isso. Duas coisas boas na mesma jogada é jogada dupla. Nas últimas 5 peças o 🧩 fica laranja. Acabou a pilha, acabou o vale: conte as pessoas.'],
 ];
 
 export function createMenu(ctx) {
@@ -74,18 +75,23 @@ export function createMenu(ctx) {
     else b.append(btn('▶️', 'Jogar', s.atual.seed === s.diario ? `vale do dia · ${hoje}` : s.atual.nome, fechar, true));
     if (s.atual.seed !== s.diario) b.append(btn('🌅', 'Vale do dia', hoje, () => conf('Jogar o vale do dia?', 'A partida de agora fica para trás.', ctx.diario, !!s.salva)));
     b.append(btn('🎲', 'Vale novo', 'um vale sorteado', () => conf('Começar um vale novo?', 'A partida de agora fica para trás.', ctx.novo, !!s.salva), !!s.fim));
-    b.append(btn('📖', 'Como jogar', 'as regras em seis cartões', comoJogar), btn('⚙️', 'Ajustes', 'som, vibração, gráficos', ajustes));
+    const cq = ctx.conquistas ? ctx.conquistas() : [];
+    b.append(btn('📖', 'Como jogar', 'as regras em seis cartões', comoJogar), ...(cq.length ? [btn('🏅', 'Conquistas', `${cq.filter(c => c.ok).length} de ${cq.length}`, conquistas)] : []), btn('⚙️', 'Ajustes', 'som, vibração, gráficos', ajustes));
     }
   // ---------- pausa (☰ durante o jogo)
   function pausa() { tela = 'pausa'; deOnde = 'pausa'; const s = ctx.estado(), f = folha(`<h2>Pausa</h2><div class="bts"></div>`), b = f.querySelector('.bts');
     b.append(btn('▶️', 'Voltar ao vale', `${s.atual.nome} · jogada ${s.atual.jogadas} · 🧩 ${s.atual.pilha} na pilha`, fechar, true));
     if (s.atual.podePassar) b.append(btn('↷', 'Passar a peça', 'ela vai embora e a jogada conta', () => conf('Passar a peça na mão?', 'Ela sai da pilha sem ser colocada, e o relógio das estações anda uma jogada.', () => { fechar(); ctx.passar(); }, true)));
-    b.append(btn('📖', 'Como jogar', '', comoJogar), btn('🌱', 'A história do vale', '', () => { fechar(); ctx.historia(); }), btn('⚙️', 'Ajustes', '', ajustes));
+    b.append(btn('📖', 'Como jogar', '', comoJogar), btn('🏅', 'Conquistas', '', conquistas), btn('🌱', 'A história do vale', '', () => { fechar(); ctx.historia(); }), btn('⚙️', 'Ajustes', '', ajustes));
     b.append(btn('🔁', 'Recomeçar este vale', 'o mesmo sorteio, do começo', () => conf('Recomeçar este vale?', 'O que você fez nele se perde.', ctx.recomecar, true)));
     b.append(btn('🏡', 'Menu inicial', 'vale do dia, vale novo', inicio)); }
   // ---------- como jogar
   function comoJogar() { tela = 'regras'; const f = folha(`<h2>Como jogar</h2>${REGRAS.map(([i, t, x]) => `<div class="regra"><span class="ic" aria-hidden="true">${i}</span><div><b>${t}</b><p>${x}</p></div></div>`).join('')}
       <div class="ctl"><b>No mapa:</b> arraste para andar · pinça para aproximar · dois dedos girando para virar o vale (a peça da mão gira junto) · toque nas plaquinhas para entender.</div>`);
+    f.append(voltar(() => deOnde === 'pausa' ? pausa() : inicio())); }
+  // ---------- conquistas: os marcos que ficam de um vale para o outro (as que faltam aparecem apagadas, com a dica de como ganhar)
+  function conquistas() { tela = 'conquistas'; const cq = ctx.conquistas(), n = cq.filter(c => c.ok).length;
+    const f = folha(`<h2>Conquistas <small style="font:700 15px Nunito,system-ui;opacity:.7">${n} de ${cq.length}</small></h2>${cq.map(c => `<div class="regra${c.ok ? '' : ' falta'}"><span class="ic" aria-hidden="true">${c.ok ? c.ic : '🔒'}</span><div><b>${c.t}</b><p>${c.d}</p></div></div>`).join('')}`);
     f.append(voltar(() => deOnde === 'pausa' ? pausa() : inicio())); }
   // ---------- ajustes
   function ajustes() { tela = 'ajustes'; const a = ctx.ajustes(), f = folha(`<h2>Ajustes</h2>
@@ -102,6 +108,6 @@ export function createMenu(ctx) {
     cf.querySelector('.nao').onclick = () => { click(); cf.hidden = true; }; cf.querySelector('.sim').onclick = () => { click(); cf.hidden = true; sim(); }; }
   function fechar() { m.hidden = true; tela = null; if (ctx.fechou) ctx.fechou(); }
   mb.onclick = () => { click(); if (m.hidden) pausa(); else fechar(); };
-  addEventListener('keydown', e => { if (e.key !== 'Escape') return; if (!cf.hidden) { cf.hidden = true; return; } if (m.hidden) pausa(); else if (tela === 'regras' || tela === 'ajustes') (deOnde === 'pausa' ? pausa : inicio)(); else if (tela === 'pausa') fechar(); });
+  addEventListener('keydown', e => { if (e.key !== 'Escape') return; if (!cf.hidden) { cf.hidden = true; return; } if (m.hidden) pausa(); else if (tela === 'regras' || tela === 'ajustes' || tela === 'conquistas') (deOnde === 'pausa' ? pausa : inicio)(); else if (tela === 'pausa') fechar(); });
   return { inicio, pausa, comoJogar, fechar, aberto: () => !m.hidden || !cf.hidden, conf };
 }
